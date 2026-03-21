@@ -1,6 +1,8 @@
 import type { ExecutionResult, ModuleDef, ModuleInstance } from '../../engine/types';
 import { formatParamValue, formatSignal, parseParamValue } from '../formatters';
 
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
 interface ParameterInspectorProps {
   execution: ExecutionResult | null;
   executionError: string | null;
@@ -101,39 +103,140 @@ export function ParameterInspector({
                   );
                 }
 
-                const multiline =
-                  field.kind === 'bits' || field.kind === 'wiring';
+                if (field.kind === 'bits') {
+                  const bits = getBitsEditorValue(renderedValue, value);
+
+                  return (
+                    <label key={field.key} className="param-field">
+                      <span>{field.label}</span>
+                      <div className="bits-editor">
+                        <div className="bits-chip-list">
+                          {bits.map((bit, index) => (
+                            <button
+                              key={`${field.key}:${index}`}
+                              type="button"
+                              className={bit === 1 ? 'bit-chip active' : 'bit-chip'}
+                              onClick={() => {
+                                const nextBits = bits.map((entry, entryIndex) =>
+                                  entryIndex === index ? (entry === 1 ? 0 : 1) : entry,
+                                );
+                                applyStructuredParamChange(
+                                  moduleInstance.id,
+                                  field.key,
+                                  nextBits.join(', '),
+                                  field,
+                                  onParamDraftChange,
+                                  onParamChange,
+                                );
+                              }}
+                            >
+                              {bit}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="bits-editor-actions">
+                          <button
+                            type="button"
+                            className="mini-action-button"
+                            onClick={() => {
+                              const nextBits = [...bits, 0];
+                              applyStructuredParamChange(
+                                moduleInstance.id,
+                                field.key,
+                                nextBits.join(', '),
+                                field,
+                                onParamDraftChange,
+                                onParamChange,
+                              );
+                            }}
+                          >
+                            Add Bit
+                          </button>
+                          <button
+                            type="button"
+                            className="mini-action-button"
+                            onClick={() => {
+                              const nextBits = bits.length > 1 ? bits.slice(0, -1) : [0];
+                              applyStructuredParamChange(
+                                moduleInstance.id,
+                                field.key,
+                                nextBits.join(', '),
+                                field,
+                                onParamDraftChange,
+                                onParamChange,
+                              );
+                            }}
+                          >
+                            Remove Last
+                          </button>
+                        </div>
+                        <p className="structured-param-preview">{bits.join(' ')}</p>
+                      </div>
+                      {fieldError ? <p className="field-error">{fieldError}</p> : null}
+                    </label>
+                  );
+                }
+
+                if (field.kind === 'wiring') {
+                  const wiringEntries = getWiringEditorValue(renderedValue, value);
+
+                  return (
+                    <label key={field.key} className="param-field">
+                      <span>{field.label}</span>
+                      <div className="wiring-editor">
+                        <div className="wiring-grid">
+                          {ALPHABET.map((sourceLetter, index) => (
+                            <label key={`${field.key}:${sourceLetter}`} className="wiring-cell">
+                              <span className="wiring-source">{sourceLetter}</span>
+                              <span className="wiring-arrow">→</span>
+                              <select
+                                value={wiringEntries[index] ?? sourceLetter}
+                                onChange={(event) => {
+                                  const nextEntries = wiringEntries.slice();
+                                  nextEntries[index] = event.target.value.toUpperCase();
+                                  applyStructuredParamChange(
+                                    moduleInstance.id,
+                                    field.key,
+                                    nextEntries.join(', '),
+                                    field,
+                                    onParamDraftChange,
+                                    onParamChange,
+                                  );
+                                }}
+                              >
+                                {ALPHABET.map((targetLetter) => (
+                                  <option key={targetLetter} value={targetLetter}>
+                                    {targetLetter}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          ))}
+                        </div>
+                        <p className="structured-param-preview">
+                          {wiringEntries.join(' ')}
+                        </p>
+                      </div>
+                      {fieldError ? <p className="field-error">{fieldError}</p> : null}
+                    </label>
+                  );
+                }
 
                 return (
                   <label key={field.key} className="param-field">
                     <span>{field.label}</span>
-                    {multiline ? (
-                      <textarea
-                        rows={field.kind === 'wiring' ? 3 : 2}
-                        value={renderedValue}
-                        onChange={(event) => {
-                          const rawValue = event.target.value;
-                          onParamDraftChange(moduleInstance.id, field.key, rawValue);
-                          const parsed = parseParamValue(rawValue, field);
-                          if (parsed.ok) {
-                            onParamChange(moduleInstance.id, field.key, parsed.value);
-                          }
-                        }}
-                      />
-                    ) : (
-                      <input
-                        type={field.kind === 'number' ? 'number' : 'text'}
-                        value={renderedValue}
-                        onChange={(event) => {
-                          const rawValue = event.target.value;
-                          onParamDraftChange(moduleInstance.id, field.key, rawValue);
-                          const parsed = parseParamValue(rawValue, field);
-                          if (parsed.ok) {
-                            onParamChange(moduleInstance.id, field.key, parsed.value);
-                          }
-                        }}
-                      />
-                    )}
+                    <input
+                      type={field.kind === 'number' ? 'number' : 'text'}
+                      value={renderedValue}
+                      onChange={(event) => {
+                        const rawValue = event.target.value;
+                        onParamDraftChange(moduleInstance.id, field.key, rawValue);
+                        const parsed = parseParamValue(rawValue, field);
+                        if (parsed.ok) {
+                          onParamChange(moduleInstance.id, field.key, parsed.value);
+                        }
+                      }}
+                    />
                     {fieldError ? <p className="field-error">{fieldError}</p> : null}
                   </label>
                 );
@@ -225,4 +328,59 @@ export function ParameterInspector({
       </ol>
     </aside>
   );
+}
+
+function applyStructuredParamChange(
+  moduleId: string,
+  key: string,
+  rawValue: string,
+  field: ModuleDef['paramSchema'][string],
+  onParamDraftChange: (moduleId: string, key: string, rawValue: string) => void,
+  onParamChange: (moduleId: string, key: string, value: unknown) => void,
+) {
+  onParamDraftChange(moduleId, key, rawValue);
+  const parsed = parseParamValue(rawValue, field);
+  if (parsed.ok) {
+    onParamChange(moduleId, key, parsed.value);
+  }
+}
+
+function getBitsEditorValue(renderedValue: string, value: unknown): number[] {
+  const parsed = parseParamValue(renderedValue, {
+    key: 'bits',
+    label: 'Bits',
+    kind: 'bits',
+    defaultValue: [],
+  });
+  if (parsed.ok && Array.isArray(parsed.value)) {
+    return parsed.value as number[];
+  }
+
+  if (Array.isArray(value) && value.every((entry) => entry === 0 || entry === 1)) {
+    return value as number[];
+  }
+
+  return [0];
+}
+
+function getWiringEditorValue(renderedValue: string, value: unknown): string[] {
+  const parts = renderedValue
+    .split(/[\s,]+/)
+    .filter(Boolean)
+    .map((entry) => entry.toUpperCase())
+    .slice(0, 26);
+
+  if (parts.length === 26 && parts.every((entry) => /^[A-Z]$/.test(entry))) {
+    return parts;
+  }
+
+  if (
+    Array.isArray(value) &&
+    value.length === 26 &&
+    value.every((entry) => typeof entry === 'string' && /^[A-Z]$/.test(entry))
+  ) {
+    return value as string[];
+  }
+
+  return ALPHABET;
 }

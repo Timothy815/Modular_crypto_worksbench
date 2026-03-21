@@ -580,6 +580,83 @@
   font-family: var(--mono);
 }
 
+.bits-editor,
+.wiring-editor {
+  display: grid;
+  gap: 10px;
+}
+
+.bits-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bit-chip,
+.mini-action-button {
+  border: 1px solid rgba(33, 53, 71, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 250, 243, 0.82);
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.bit-chip {
+  min-width: 2.5rem;
+  font-family: var(--mono);
+}
+
+.bit-chip.active {
+  background: rgba(42, 130, 150, 0.14);
+  border-color: rgba(42, 130, 150, 0.32);
+}
+
+.bits-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wiring-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+.wiring-cell {
+  display: grid;
+  grid-template-columns: 1.5rem 0.8rem minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: rgba(38, 70, 83, 0.06);
+}
+
+.wiring-source,
+.wiring-arrow,
+.structured-param-preview {
+  font-family: var(--mono);
+}
+
+.wiring-source {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.wiring-arrow {
+  color: var(--muted);
+}
+
+.structured-param-preview {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
 .empty-state,
 .inspector-warning {
   margin-bottom: 0;
@@ -658,6 +735,10 @@
   }
 
   .selected-ports {
+    grid-template-columns: 1fr;
+  }
+
+  .wiring-grid {
     grid-template-columns: 1fr;
   }
 }
