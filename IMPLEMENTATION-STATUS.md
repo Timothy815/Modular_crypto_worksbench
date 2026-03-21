@@ -23,6 +23,9 @@ Established and now available for other agents:
 - visual workbench canvas
 - add / delete / move / connect editor fundamentals
 - module-role color coding in palette and canvas
+- structured parameter editors for `bits` and `wiring`
+- workbench persistence (autosave/restore + JSON import/export)
+- sticky-note annotations stored as UI metadata
 - GitHub Pages deployment workflow
 
 ---
@@ -66,10 +69,10 @@ The following decisions are no longer just prose; they are reflected in the scaf
 ### Claude
 
 Safe to begin:
-- tighten connection-editing UX in `src/ui/components/workbench-panel.tsx`
-- add UI-side target-port validation and highlighting
-- improve parameter editors for `bits` and `wiring`
-- begin persistence UI groundwork once editor interactions are stable
+- extract `BitsEditor` and `WiringEditor` into dedicated UI components
+- normalize merge-readiness and milestone docs for the current UI branch
+- begin theme-token groundwork for dark mode
+- improve note/layout UX if needed
 
 Should avoid for now:
 - changing `src/engine/types.ts`
@@ -79,13 +82,13 @@ Should avoid for now:
 ### Gemini
 
 Safe to begin:
-- review connection-editing behavior and invalid-target handling
 - review persistence-format boundaries between engine `Project` and UI layout metadata
-- identify editor UX risks before persistence and composite work
+- review annotation model and whether it stays properly outside the engine
+- identify merge-readiness risks before `v0.4.0`
 
 Best focus:
-- whether the editor blocks invalid graph mutations early enough
-- whether layout and project data remain cleanly separated
+- whether layout, annotations, and project data remain cleanly separated
+- whether persistence and import/export are sound enough for classroom use
 - whether the UI is staying aligned with the product-teaching goals
 
 ---
@@ -148,18 +151,25 @@ UI branch currently includes:
 - refactored node DOM with separate body/port hit areas
 - port-to-port connection creation (drag output to input)
 - connection deletion (click existing connection)
+- UI-side connection validation and target highlighting
 - color-coded modules by functional role (source, operator, bridge, sink)
+- structured editors for `bits` and `wiring`
+- workbench persistence with local autosave/restore
+- JSON import/export
+- sticky-note annotations stored in UI metadata
 - improved module placement (new nodes appear in visible area)
 
 Completed UI milestones (March 21, 2026):
 - node DOM refactored for separate body/port interaction
 - connection creation and deletion implemented
+- connection validation and highlighting implemented
 - module category color-coding added
+- structured parameter editors added
+- persistence document boundary added
+- sticky-note annotations added
 - module placement fixed to stay within visible canvas
 
 Next intended UI milestone:
-- tighten connection validation / target highlighting
-- persistence UI (save/load projects + layout)
-- structured editors for `bits` and `wiring` params
+- extract structured editors into dedicated components
 - dark mode via theme tokens
 - prepare `feature/minimal-ui-shell` for merge to `main` and `v0.4.0`

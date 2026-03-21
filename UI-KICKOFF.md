@@ -9,7 +9,10 @@ Checkpoint:
 - `d3c8a22` — Add node movement and panel controls
 - `a48c498` — Improve node dragging and anchors
 - `6252d12` — Add module creation and deletion
-- `current` — Node DOM refactored, connection editing implemented, modules color-coded
+- `5f1f538` — Tighten connection validation and highlighting
+- `e37575e` — Add structured bits and wiring editors
+- `baec33d` — Add workbench persistence and JSON import export
+- `4ebfa9b` — Add sticky-note annotations
 
 This document records the first UI-phase decisions so work can pass cleanly between Codex and Claude.
 
@@ -64,13 +67,13 @@ These files are safe for Claude to continue from later.
 
 ## Recommended Next Steps
 
-Editor fundamentals are now complete. Remaining work:
+Editor fundamentals and persistence groundwork are now complete. Remaining work:
 
-1. Tighten UI-side connection validation and target highlighting.
-2. Improve parameter editing UX for `bits` and `wiring` params.
-3. Introduce theme tokens and dark-mode support without rewriting components.
-4. Persistence UI (save/load projects + layout).
-5. Composite-module UI.
+1. Extract structured param editors into dedicated components.
+2. Introduce theme tokens and dark-mode support without rewriting components.
+3. Prepare merge-readiness cleanup for the minimal UI milestone.
+4. Composite-module UI.
+5. Deeper execution visibility / step-through tooling.
 
 ---
 
@@ -101,13 +104,15 @@ The branch now contains:
 - **module category color-coding** — sources (teal), operators (orange), bridges (purple), sinks (green)
 - **improved module placement** — new nodes placed in visible canvas area, avoids overlap
 - **`src/ui/module-categories.ts`** — shared category mapping for consistent color-coding across palette and canvas
-- **connection editing caveat** — current wiring UX works, but should next block invalid target ports before dispatch
+- **UI-side connection validation** — invalid targets blocked before dispatch, with target highlighting
+- **structured param editing** — `bits` and `wiring` use purpose-built editors instead of raw textareas
+- **workbench persistence** — autosave/restore plus JSON import/export for workbench documents
+- **sticky-note annotations** — draggable canvas notes stored as UI metadata, not engine primitives
 
 What is intentionally not built yet:
-- persistence UI
 - composite-module UI
 - dark mode
-- structured editors for `bits` and `wiring`
+- runtime stepping / deeper trace tooling
 
 Safe resume point for any model:
 - branch: `origin/feature/minimal-ui-shell`
@@ -120,6 +125,7 @@ Safe resume point for any model:
   - `src/ui/module-categories.ts`
 
 This means the branch has validated all four editor fundamentals: add, delete, move, and connect modules.
+It also now has a real workbench lifecycle: persist, restore, export, import, and annotate.
 
 ---
 
@@ -128,7 +134,6 @@ This means the branch has validated all four editor fundamentals: add, delete, m
 - freeform node placement
 - advanced wire routing / rewiring UX
 - drag-and-drop
-- persistence UI
 - composite editing
 - runtime stepping UI
 

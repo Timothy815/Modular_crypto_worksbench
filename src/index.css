@@ -6,6 +6,32 @@
   --muted: #576574;
   --accent: #c8553d;
   --line: rgba(33, 53, 71, 0.12);
+  --surface-strong: rgba(255, 255, 255, 0.72);
+  --surface-panel: rgba(255, 252, 247, 0.9);
+  --surface-button: rgba(255, 250, 243, 0.72);
+  --surface-soft: rgba(38, 70, 83, 0.06);
+  --surface-soft-strong: rgba(38, 70, 83, 0.08);
+  --hero-gradient:
+    radial-gradient(circle at top left, rgba(231, 111, 81, 0.18), transparent 32%),
+    radial-gradient(circle at bottom right, rgba(38, 70, 83, 0.16), transparent 28%),
+    linear-gradient(145deg, rgba(255, 248, 238, 0.96), rgba(245, 239, 227, 0.9));
+  --canvas-background:
+    linear-gradient(rgba(33, 53, 71, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(33, 53, 71, 0.05) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.65), rgba(244, 239, 230, 0.3));
+  --canvas-grid-line: rgba(33, 53, 71, 0.05);
+  --link-primary-text: #fffaf3;
+  --chip-active-bg: var(--ink);
+  --chip-active-text: #fffaf3;
+  --chip-soft-active-bg: rgba(33, 53, 71, 0.08);
+  --connection-stroke: rgba(33, 53, 71, 0.32);
+  --danger-bg: rgba(200, 85, 61, 0.1);
+  --danger-bg-strong: rgba(200, 85, 61, 0.12);
+  --danger-text: #8c3020;
+  --annotation-paper: rgba(255, 245, 179, 0.94);
+  --annotation-handle: rgba(240, 209, 94, 0.5);
+  --annotation-border: rgba(196, 161, 42, 0.28);
+  --annotation-ink: rgba(92, 68, 14, 0.96);
   --mono: 'IBM Plex Mono', 'SFMono-Regular', ui-monospace, monospace;
   --sans: 'Avenir Next', 'Segoe UI', sans-serif;
 
@@ -22,6 +48,58 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+:root[data-theme='dark'] {
+  --paper: #111820;
+  --paper-deep: #16212b;
+  --surface: rgba(22, 30, 39, 0.94);
+  --surface-strong: rgba(24, 34, 45, 0.88);
+  --surface-panel: rgba(18, 27, 36, 0.92);
+  --surface-button: rgba(28, 40, 52, 0.84);
+  --surface-soft: rgba(202, 216, 232, 0.08);
+  --surface-soft-strong: rgba(202, 216, 232, 0.12);
+  --ink: #e7edf3;
+  --muted: #afbcc9;
+  --accent: #f08d69;
+  --line: rgba(202, 216, 232, 0.14);
+  --hero-gradient:
+    radial-gradient(circle at top left, rgba(240, 141, 105, 0.18), transparent 32%),
+    radial-gradient(circle at bottom right, rgba(82, 145, 186, 0.16), transparent 28%),
+    linear-gradient(145deg, rgba(21, 31, 40, 0.98), rgba(18, 26, 34, 0.95));
+  --canvas-background:
+    linear-gradient(rgba(202, 216, 232, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(202, 216, 232, 0.06) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(18, 27, 36, 0.94), rgba(14, 22, 31, 0.98));
+  --canvas-grid-line: rgba(202, 216, 232, 0.06);
+  --link-primary-text: #0f161d;
+  --chip-active-bg: #e7edf3;
+  --chip-active-text: #111820;
+  --chip-soft-active-bg: rgba(202, 216, 232, 0.12);
+  --connection-stroke: rgba(202, 216, 232, 0.35);
+  --danger-bg: rgba(240, 141, 105, 0.12);
+  --danger-bg-strong: rgba(240, 141, 105, 0.16);
+  --danger-text: #ffb59a;
+  --annotation-paper: rgba(87, 70, 18, 0.92);
+  --annotation-handle: rgba(189, 149, 39, 0.46);
+  --annotation-border: rgba(222, 185, 79, 0.28);
+  --annotation-ink: #fff1b8;
+}
+
+html,
+body,
+#root {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(244, 239, 230, 0.92)),
+    linear-gradient(135deg, #efe6d6, #f7f2ea 42%, #e5eef2);
+}
+
+:root[data-theme='dark'] html,
+:root[data-theme='dark'] body,
+:root[data-theme='dark'] #root {
+  background:
+    linear-gradient(180deg, rgba(17, 24, 32, 0.96), rgba(12, 18, 24, 0.98)),
+    linear-gradient(135deg, #101821, #15202a 42%, #1b2631);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -34,6 +112,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  color: var(--ink);
 }
 
 a {

@@ -10,10 +10,7 @@
   padding: 48px;
   border: 1px solid var(--line);
   border-radius: 28px;
-  background:
-    radial-gradient(circle at top left, rgba(231, 111, 81, 0.18), transparent 32%),
-    radial-gradient(circle at bottom right, rgba(38, 70, 83, 0.16), transparent 28%),
-    linear-gradient(145deg, rgba(255, 248, 238, 0.96), rgba(245, 239, 227, 0.9));
+  background: var(--hero-gradient);
   box-shadow: 0 24px 80px rgba(40, 28, 12, 0.08);
 }
 
@@ -62,15 +59,15 @@
 }
 
 .primary-link {
-  color: #fffaf3;
+  color: var(--link-primary-text);
   background: var(--ink);
   box-shadow: 0 12px 24px rgba(38, 70, 83, 0.2);
 }
 
 .secondary-link {
   color: var(--ink);
-  background: rgba(255, 250, 243, 0.72);
-  border: 1px solid rgba(38, 70, 83, 0.14);
+  background: var(--surface-button);
+  border: 1px solid var(--line);
 }
 
 .primary-link:hover,
@@ -83,7 +80,7 @@
   margin: 0 0 16px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(38, 70, 83, 0.08);
+  background: var(--surface-soft-strong);
   font-family: var(--mono);
   font-size: 0.92rem;
   color: var(--ink);
@@ -93,7 +90,7 @@
   margin: 0 0 14px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(42, 130, 150, 0.1);
+  background: rgba(42, 130, 150, 0.12);
   color: var(--ink);
 }
 
@@ -102,8 +99,8 @@
 }
 
 .connection-status-warning {
-  background: rgba(200, 85, 61, 0.12);
-  color: #8c3020;
+  background: var(--danger-bg-strong);
+  color: var(--danger-text);
 }
 
 .workbench-grid {
@@ -130,7 +127,7 @@
   padding: 24px;
   border: 1px solid var(--line);
   border-radius: 24px;
-  background: rgba(255, 252, 247, 0.9);
+  background: var(--surface-panel);
   box-shadow: 0 18px 40px rgba(40, 28, 12, 0.05);
 }
 
@@ -159,9 +156,9 @@
 .primitive-card,
 .trace-card,
 .graph-node {
-  border: 1px solid rgba(33, 53, 71, 0.1);
+  border: 1px solid var(--line);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--surface-strong);
 }
 
 .primitive-card {
@@ -214,9 +211,9 @@
 
 .primitive-add-button,
 .delete-module-button {
-  border: 1px solid rgba(33, 53, 71, 0.14);
+  border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(255, 250, 243, 0.72);
+  background: var(--surface-button);
   padding: 8px 12px;
   font: inherit;
   font-weight: 700;
@@ -226,8 +223,8 @@
 
 .delete-module-button {
   margin-bottom: 14px;
-  color: #8c3020;
-  background: rgba(200, 85, 61, 0.1);
+  color: var(--danger-text);
+  background: var(--danger-bg);
 }
 
 .project-switcher {
@@ -245,9 +242,9 @@
 }
 
 .switch-chip {
-  border: 1px solid rgba(33, 53, 71, 0.12);
+  border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(255, 250, 243, 0.72);
+  background: var(--surface-button);
   padding: 10px 14px;
   font: inherit;
   font-weight: 700;
@@ -256,14 +253,14 @@
 }
 
 .switch-chip.active {
-  background: var(--ink);
-  color: #fffaf3;
+  background: var(--chip-active-bg);
+  color: var(--chip-active-text);
 }
 
 .layout-chip {
-  border: 1px solid rgba(33, 53, 71, 0.12);
+  border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(255, 250, 243, 0.72);
+  background: var(--surface-button);
   padding: 9px 13px;
   font: inherit;
   font-weight: 700;
@@ -272,7 +269,7 @@
 }
 
 .layout-chip.active {
-  background: rgba(33, 53, 71, 0.08);
+  background: var(--chip-soft-active-bg);
 }
 
 .project-summary {
@@ -283,12 +280,9 @@
   margin: 18px 0 20px;
   overflow-x: auto;
   border-radius: 22px;
-  background:
-    linear-gradient(rgba(33, 53, 71, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(33, 53, 71, 0.05) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.65), rgba(244, 239, 230, 0.3));
+  background: var(--canvas-background);
   background-size: 28px 28px, 28px 28px, auto;
-  border: 1px solid rgba(33, 53, 71, 0.08);
+  border: 1px solid var(--line);
 }
 
 .graph-canvas {
@@ -307,7 +301,7 @@
 
 .graph-connections path {
   fill: none;
-  stroke: rgba(33, 53, 71, 0.32);
+  stroke: var(--connection-stroke);
   stroke-width: 3;
   stroke-linecap: round;
 }
@@ -350,9 +344,9 @@
 .canvas-annotation {
   position: absolute;
   width: 200px;
-  border: 1px solid rgba(196, 161, 42, 0.28);
+  border: 1px solid var(--annotation-border);
   border-radius: 16px;
-  background: rgba(255, 245, 179, 0.94);
+  background: var(--annotation-paper);
   box-shadow: 0 12px 28px rgba(111, 85, 20, 0.12);
   overflow: hidden;
 }
@@ -363,12 +357,12 @@
   justify-content: space-between;
   gap: 8px;
   padding: 8px 10px;
-  background: rgba(240, 209, 94, 0.5);
+  background: var(--annotation-handle);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(92, 68, 14, 0.9);
+  color: var(--annotation-ink);
   cursor: grab;
   user-select: none;
 }
@@ -385,7 +379,7 @@
   padding: 10px 12px 12px;
   resize: vertical;
   font: inherit;
-  color: rgba(92, 68, 14, 0.96);
+  color: var(--annotation-ink);
 }
 
 .annotation-delete-button {
@@ -396,7 +390,7 @@
   height: 1.6rem;
   font: inherit;
   font-weight: 700;
-  color: rgba(92, 68, 14, 0.9);
+  color: var(--annotation-ink);
   cursor: pointer;
 }
 
@@ -561,7 +555,7 @@
 .trace-summary {
   padding: 14px 16px;
   border-radius: 18px;
-  background: rgba(38, 70, 83, 0.06);
+  background: var(--surface-soft);
 }
 
 .graph-meta strong,
@@ -627,9 +621,9 @@
 .param-field select,
 .param-field textarea {
   width: 100%;
-  border: 1px solid rgba(33, 53, 71, 0.18);
+  border: 1px solid var(--line);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--surface-strong);
   padding: 10px 12px;
   font: inherit;
   color: var(--ink);
@@ -654,9 +648,9 @@
 
 .bit-chip,
 .mini-action-button {
-  border: 1px solid rgba(33, 53, 71, 0.14);
+  border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(255, 250, 243, 0.82);
+  background: var(--surface-button);
   padding: 8px 12px;
   font: inherit;
   font-weight: 700;
@@ -705,7 +699,7 @@
   gap: 8px;
   padding: 8px 10px;
   border-radius: 14px;
-  background: rgba(38, 70, 83, 0.06);
+  background: var(--surface-soft);
 }
 
 .wiring-source,
@@ -738,22 +732,22 @@
 .field-error {
   margin: 0;
   font-size: 0.86rem;
-  color: #8c3020;
+  color: var(--danger-text);
 }
 
 .inspector-warning,
 .execution-error {
   padding: 14px 16px;
   border-radius: 18px;
-  background: rgba(200, 85, 61, 0.1);
-  color: #7a2e1d;
+  background: var(--danger-bg);
+  color: var(--danger-text);
 }
 
 .selected-trace {
   margin-top: 16px;
   padding: 14px 16px;
   border-radius: 18px;
-  background: rgba(38, 70, 83, 0.06);
+  background: var(--surface-soft);
 }
 
 .selected-ports {
@@ -766,7 +760,7 @@
 .port-group {
   padding: 14px 16px;
   border-radius: 18px;
-  background: rgba(38, 70, 83, 0.06);
+  background: var(--surface-soft);
 }
 
 .port-list {

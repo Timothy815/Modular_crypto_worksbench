@@ -53,7 +53,10 @@ These notes suggest the following near-term UI priorities:
 - Connection editing is complete: port-to-port creation and click-to-delete.
 - Node DOM has been refactored: body and port hit areas are separate.
 - Module color-coding by functional role was added per owner request to aid classroom readability.
-- Next editor priorities: persistence UI, then composite-module editing.
+- Structured editors for `bits` and `wiring` are now in place.
+- Persistence is now in place: autosave/restore and JSON import/export.
+- Sticky-note style annotations are now supported as UI metadata, not as graph primitives.
+- Next editor priorities: dark-mode groundwork, merge-readiness cleanup, then composite-module editing.
 
 ---
 
@@ -68,15 +71,20 @@ The UI now supports:
 - draggable nodes
 - collapsible side panels
 - parameter editing from `paramSchema`
+- structured editors for `bits` and `wiring`
 - port-to-port connection creation (drag from output to input)
 - connection deletion (click to remove)
+- target validation and highlighting during connection editing
 - color-coded modules by functional role (source/operator/bridge/sink)
 - new modules placed within visible canvas area
+- local autosave/restore
+- JSON import/export
+- sticky-note annotations on the canvas
 
 The UI does not yet support:
-- persistence UI
 - composite-module editing
 - dark mode
-- structured editors for `bits` and `wiring` params
+- deeper execution stepping / trace tooling
 
 All four editor fundamentals are now complete: add, delete, move, and connect modules.
+The workbench lifecycle is also now present: persist, restore, export, import, and annotate.

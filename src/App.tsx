@@ -21,6 +21,14 @@ import {
 } from './ui/store';
 
 function App() {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window === 'undefined') {
+      return 'light';
+    }
+
+    const savedTheme = window.localStorage.getItem('mcw:theme');
+    return savedTheme === 'dark' ? 'dark' : 'light';
+  });
   const [state, dispatch] = useReducer(
     uiReducer,
     demoProjects,
@@ -98,6 +106,15 @@ function App() {
     saveWorkspaceToStorage(state);
   }, [state]);
 
+  useEffect(() => {
+    if (typeof document === 'undefined' || typeof window === 'undefined') {
+      return;
+    }
+
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem('mcw:theme', theme);
+  }, [theme]);
+
   return (
     <main className="app-shell">
       <section className="hero-panel">
@@ -124,6 +141,13 @@ function App() {
         </div>
 
         <div className="layout-actions">
+          <button
+            type="button"
+            className={theme === 'dark' ? 'layout-chip active' : 'layout-chip'}
+            onClick={() => setTheme((currentTheme) => (currentTheme === 'light' ? 'dark' : 'light'))}
+          >
+            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+          </button>
           <button
             type="button"
             className={state.showPalette ? 'layout-chip active' : 'layout-chip'}

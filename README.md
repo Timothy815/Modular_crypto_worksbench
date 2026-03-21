@@ -24,12 +24,14 @@ Implemented and locked so far:
 - draggable visual workbench
 - palette-driven module creation
 - port-to-port connection editing
+- structured parameter editors
+- workbench persistence and JSON import/export
+- sticky-note annotations
 - multi-agent coordination and implementation contract
 
 Active next steps:
-- persistence UI (save/load projects + layout)
-- structured editors for `bits` and `wiring`
 - dark mode via theme tokens
+- merge-readiness cleanup for the minimal UI milestone
 - composite-module UI
 
 ## Key Documents
