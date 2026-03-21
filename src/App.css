@@ -724,6 +724,28 @@
   color: var(--muted);
 }
 
+.inspector-tab-row {
+  display: inline-flex;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.inspector-tab {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-button);
+  padding: 8px 14px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.inspector-tab.active {
+  background: var(--ink);
+  color: var(--link-primary-text);
+}
+
 .trace-toolbar {
   display: flex;
   justify-content: space-between;
@@ -735,6 +757,7 @@
 .trace-mode-toggle {
   display: inline-flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .trace-mode-button {

@@ -172,8 +172,14 @@ function App() {
     executionError = 'Execution is blocked until the graph is valid.';
   }
 
+  const effectiveStepIndex =
+    stepIndex !== null && execution && stepIndex < execution.trace.length
+      ? stepIndex
+      : null;
   const steppedModuleId =
-    stepIndex !== null && execution ? execution.trace[stepIndex]?.moduleId ?? null : null;
+    effectiveStepIndex !== null && execution
+      ? execution.trace[effectiveStepIndex]?.moduleId ?? null
+      : null;
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -527,7 +533,8 @@ function App() {
             execution={execution}
             executionError={executionError}
             validationIssues={validationIssues}
-            stepIndex={stepIndex}
+            stepIndex={effectiveStepIndex}
+            project={activeProjectState}
             moduleDef={selectedModuleDef}
             moduleInstance={selectedModule}
             getParamDraft={(moduleId, key) =>
