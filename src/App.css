@@ -538,6 +538,13 @@
   box-shadow: 0 0 0 3px var(--link-primary-bg);
 }
 
+.graph-node-stepped {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 3px var(--link-primary-bg),
+    0 10px 28px color-mix(in srgb, var(--link-primary-bg) 28%, transparent);
+}
+
 .graph-node-selected.graph-node-source {
   border-color: var(--role-source-strong);
 }
@@ -751,6 +758,19 @@
   opacity: 0.55;
 }
 
+.stepper-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.stepper-actions {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .trace-head {
   display: flex;
   justify-content: space-between;
@@ -771,6 +791,11 @@
 .trace-card-active {
   border: 1px solid var(--line-strong);
   background: var(--surface-strong);
+}
+
+.trace-card-stepped {
+  border: 1px solid var(--link-primary-bg);
+  background: color-mix(in srgb, var(--link-primary-bg) 14%, var(--surface-strong));
 }
 
 .inspector-section {

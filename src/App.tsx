@@ -112,6 +112,7 @@ function App() {
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
   const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
   const [hoveredTraceModuleId, setHoveredTraceModuleId] = useState<string | null>(null);
+  const [stepIndex, setStepIndex] = useState<number | null>(null);
 
   const activeProjectDefinition =
     demoProjects.find((project) => project.id === state.activeProjectId) ?? demoProjects[0];
@@ -170,6 +171,9 @@ function App() {
   } else {
     executionError = 'Execution is blocked until the graph is valid.';
   }
+
+  const steppedModuleId =
+    stepIndex !== null && execution ? execution.trace[stepIndex]?.moduleId ?? null : null;
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -315,6 +319,7 @@ function App() {
           selectedModuleId={effectiveSelectedModuleId}
           selectedModuleIds={effectiveSelectedModuleIds}
           hoveredTraceModuleId={hoveredTraceModuleId}
+          steppedModuleId={steppedModuleId}
           onMoveModule={(moduleId, x, y) =>
             dispatch({
               type: 'moveModule',
@@ -522,6 +527,7 @@ function App() {
             execution={execution}
             executionError={executionError}
             validationIssues={validationIssues}
+            stepIndex={stepIndex}
             moduleDef={selectedModuleDef}
             moduleInstance={selectedModule}
             getParamDraft={(moduleId, key) =>
@@ -566,6 +572,7 @@ function App() {
               })
             }
             onTraceHover={setHoveredTraceModuleId}
+            onStepChange={setStepIndex}
           />
         ) : null}
       </section>

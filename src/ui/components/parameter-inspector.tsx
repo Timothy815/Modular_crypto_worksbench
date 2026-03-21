@@ -14,6 +14,7 @@ interface ParameterInspectorProps {
   execution: ExecutionResult | null;
   executionError: string | null;
   validationIssues: ValidationIssue[];
+  stepIndex: number | null;
   moduleDef: ModuleDefinition | null;
   moduleInstance: ModuleInstance | null;
   getParamDraft: (moduleId: string, key: string) => string | undefined;
@@ -22,12 +23,14 @@ interface ParameterInspectorProps {
   onDeleteModule: (moduleId: string) => void;
   onSelectIssueTarget: (moduleId: string) => void;
   onTraceHover: (moduleId: string | null) => void;
+  onStepChange: (nextIndex: number | null) => void;
 }
 
 export function ParameterInspector({
   execution,
   executionError,
   validationIssues,
+  stepIndex,
   moduleDef,
   moduleInstance,
   getParamDraft,
@@ -36,6 +39,7 @@ export function ParameterInspector({
   onDeleteModule,
   onSelectIssueTarget,
   onTraceHover,
+  onStepChange,
 }: ParameterInspectorProps) {
   const [traceMode, setTraceMode] = useState<'focused' | 'full'>('focused');
   const outputTrace = execution?.trace.at(-1);
@@ -57,6 +61,7 @@ export function ParameterInspector({
   const traceEntries = effectiveTraceMode === 'focused' && selectedTrace
     ? [selectedTrace]
     : execution?.trace ?? [];
+  const steppedTrace = stepIndex !== null ? execution?.trace[stepIndex] ?? null : null;
 
   return (
     <aside className="panel inspector-panel">
@@ -76,6 +81,75 @@ export function ParameterInspector({
               : 'Execution is waiting for a valid graph'}
         </p>
       </div>
+
+      {execution && execution.trace.length > 0 ? (
+        <section className="analysis-section">
+          <div className="stepper-head">
+            <span className="meta-label">Step-Through</span>
+            <div className="stepper-actions">
+              <button
+                type="button"
+                className="trace-mode-button"
+                disabled={stepIndex === null || stepIndex <= 0}
+                onClick={() => onStepChange(stepIndex === null ? 0 : Math.max(0, stepIndex - 1))}
+              >
+                Prev
+              </button>
+              <button
+                type="button"
+                className="trace-mode-button"
+                onClick={() =>
+                  onStepChange(
+                    stepIndex === null
+                      ? 0
+                      : Math.min(execution.trace.length - 1, stepIndex + 1),
+                  )
+                }
+              >
+                {stepIndex === null ? 'Start' : 'Next'}
+              </button>
+              <button
+                type="button"
+                className="trace-mode-button"
+                disabled={stepIndex === null}
+                onClick={() => onStepChange(null)}
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+
+          <div className="selected-trace">
+            <span className="meta-label">Current Step</span>
+            {steppedTrace ? (
+              <>
+                <p className="selected-trace-order">
+                  Step {stepIndex! + 1} of {execution.trace.length}
+                </p>
+                <p>
+                  module: <strong>{steppedTrace.moduleId}</strong> ({steppedTrace.defId})
+                </p>
+                <p>
+                  inputs:{' '}
+                  {Object.entries(steppedTrace.inputs)
+                    .map(([, signal]) => formatSignal(signal))
+                    .join(' | ') || 'none'}
+                </p>
+                <p>
+                  outputs:{' '}
+                  {Object.entries(steppedTrace.outputs)
+                    .map(([, signal]) => formatSignal(signal))
+                    .join(' | ') || 'none'}
+                </p>
+              </>
+            ) : (
+              <p className="empty-state">
+                Start stepping to walk the execution order one module at a time.
+              </p>
+            )}
+          </div>
+        </section>
+      ) : null}
 
       {moduleDef && moduleInstance ? (
         <section className="inspector-section">
@@ -344,12 +418,20 @@ export function ParameterInspector({
           <li
             key={entry.moduleId}
             className={
-              entry.moduleId === moduleInstance?.id
+              entry.moduleId === steppedTrace?.moduleId
+                ? 'trace-card trace-card-stepped'
+                : entry.moduleId === moduleInstance?.id
                 ? 'trace-card trace-card-active'
                 : 'trace-card'
             }
             onMouseEnter={() => onTraceHover(entry.moduleId)}
             onMouseLeave={() => onTraceHover(null)}
+            onClick={() =>
+              onStepChange(
+                execution?.trace.findIndex((traceEntry) => traceEntry.moduleId === entry.moduleId) ??
+                  null,
+              )
+            }
           >
             <div className="trace-head">
               <strong>{entry.moduleId}</strong>
