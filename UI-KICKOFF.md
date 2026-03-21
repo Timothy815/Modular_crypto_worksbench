@@ -3,7 +3,8 @@
 Branch: `feature/minimal-ui-shell`
 Checkpoint:
 - `67558b3` — Start minimal UI shell
-- working tree now includes component extraction and param-driven inspector work
+- `4522196` — Add param-driven UI inspector
+- working tree now includes reducer-backed UI state and draft-aware param editing
 
 This document records the first UI-phase decisions so work can pass cleanly between Codex and Claude.
 
@@ -72,12 +73,14 @@ Once back online, Claude should be able to continue from this branch by taking o
 The branch now contains:
 - a `src/ui/` boundary
 - demo project definitions in `src/ui/demo-projects.ts`
+- reducer-backed UI state in `src/ui/store.ts`
 - component extraction for:
   - primitive palette
   - workbench panel
   - parameter inspector
 - selected module state
 - param-driven editing based on `def.paramSchema`
+- draft-aware param parsing and field-level error feedback
 - live re-execution through local UI state
 
 This means the branch has already validated the key UI-side promise of `paramSchema`: the engine metadata can drive browser controls.

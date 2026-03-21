@@ -1,45 +1,32 @@
-import { useState } from 'react';
+import { useReducer } from 'react';
 
 import './App.css';
 import { V1_REGISTRY } from './engine/modules';
-import type { ExecutionResult, Project } from './engine/types';
+import type { ExecutionResult } from './engine/types';
 import { ParameterInspector } from './ui/components/parameter-inspector';
 import { PrimitivePalette } from './ui/components/primitive-palette';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
 import { demoProjects, runDemoProject } from './ui/demo-projects';
-
-function cloneProject(project: Project): Project {
-  return {
-    modules: project.modules.map((moduleInstance) => ({
-      ...moduleInstance,
-      params: { ...moduleInstance.params },
-    })),
-    connections: project.connections.map((connection) => ({
-      from: { ...connection.from },
-      to: { ...connection.to },
-    })),
-  };
-}
+import {
+  createInitialUiState,
+  getDraftValue,
+  getSelectedModuleId,
+  uiReducer,
+} from './ui/store';
 
 function App() {
-  const [projectStates, setProjectStates] = useState<Record<string, Project>>(() =>
-    Object.fromEntries(
-      demoProjects.map((project) => [project.id, cloneProject(project.project)]),
-    ),
-  );
-  const [activeProjectId, setActiveProjectId] = useState(demoProjects[0].id);
-  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(
-    demoProjects[0].project.modules[0]?.id ?? null,
+  const [state, dispatch] = useReducer(
+    uiReducer,
+    demoProjects,
+    createInitialUiState,
   );
 
   const activeProjectDefinition =
-    demoProjects.find((project) => project.id === activeProjectId) ?? demoProjects[0];
+    demoProjects.find((project) => project.id === state.activeProjectId) ?? demoProjects[0];
   const activeProjectState =
-    projectStates[activeProjectDefinition.id] ?? activeProjectDefinition.project;
+    state.projectStates[activeProjectDefinition.id] ?? activeProjectDefinition.project;
   const effectiveSelectedModuleId =
-    activeProjectState.modules.some((moduleInstance) => moduleInstance.id === selectedModuleId)
-      ? selectedModuleId
-      : (activeProjectState.modules[0]?.id ?? null);
+    getSelectedModuleId(state, activeProjectDefinition.id, activeProjectState);
   const selectedModule =
     activeProjectState.modules.find(
       (moduleInstance) => moduleInstance.id === effectiveSelectedModuleId,
@@ -55,28 +42,6 @@ function App() {
     execution = runDemoProject(activeProjectState);
   } catch (error) {
     executionError = error instanceof Error ? error.message : 'Execution failed.';
-  }
-
-  function updateProjectParam(moduleId: string, key: string, value: unknown) {
-    setProjectStates((current) => {
-      const nextProject = cloneProject(current[activeProjectDefinition.id]);
-      nextProject.modules = nextProject.modules.map((moduleInstance) =>
-        moduleInstance.id === moduleId
-          ? {
-              ...moduleInstance,
-              params: {
-                ...moduleInstance.params,
-                [key]: value,
-              },
-            }
-          : moduleInstance,
-      );
-
-      return {
-        ...current,
-        [activeProjectDefinition.id]: nextProject,
-      };
-    });
   }
 
   return (
@@ -114,15 +79,19 @@ function App() {
           execution={execution}
           executionError={executionError}
           selectedModuleId={effectiveSelectedModuleId}
-          onSelectModule={setSelectedModuleId}
-          onSwitchProject={(projectId) => {
-            setActiveProjectId(projectId);
-            setSelectedModuleId(
-              projectStates[projectId]?.modules[0]?.id ??
-                demoProjects.find((project) => project.id === projectId)?.project.modules[0]?.id ??
-                null,
-            );
-          }}
+          onSelectModule={(moduleId) =>
+            dispatch({
+              type: 'selectModule',
+              projectId: activeProjectDefinition.id,
+              moduleId,
+            })
+          }
+          onSwitchProject={(projectId) =>
+            dispatch({
+              type: 'switchProject',
+              projectId,
+            })
+          }
           projects={demoProjects}
         />
 
@@ -131,7 +100,27 @@ function App() {
           executionError={executionError}
           moduleDef={selectedModuleDef}
           moduleInstance={selectedModule}
-          onParamChange={updateProjectParam}
+          getParamDraft={(moduleId, key) =>
+            getDraftValue(state, activeProjectDefinition.id, moduleId, key)
+          }
+          onParamDraftChange={(moduleId, key, rawValue) =>
+            dispatch({
+              type: 'setParamDraft',
+              projectId: activeProjectDefinition.id,
+              moduleId,
+              key,
+              rawValue,
+            })
+          }
+          onParamChange={(moduleId, key, value) =>
+            dispatch({
+              type: 'updateParam',
+              projectId: activeProjectDefinition.id,
+              moduleId,
+              key,
+              value,
+            })
+          }
         />
       </section>
     </main>

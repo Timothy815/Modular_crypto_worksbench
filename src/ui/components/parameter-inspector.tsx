@@ -6,6 +6,8 @@ interface ParameterInspectorProps {
   executionError: string | null;
   moduleDef: ModuleDef | null;
   moduleInstance: ModuleInstance | null;
+  getParamDraft: (moduleId: string, key: string) => string | undefined;
+  onParamDraftChange: (moduleId: string, key: string, rawValue: string) => void;
   onParamChange: (moduleId: string, key: string, value: unknown) => void;
 }
 
@@ -14,6 +16,8 @@ export function ParameterInspector({
   executionError,
   moduleDef,
   moduleInstance,
+  getParamDraft,
+  onParamDraftChange,
   onParamChange,
 }: ParameterInspectorProps) {
   const outputTrace = execution?.trace.at(-1);
@@ -46,6 +50,12 @@ export function ParameterInspector({
               Object.values(moduleDef.paramSchema).map((field) => {
                 const value =
                   moduleInstance.params[field.key] ?? field.defaultValue;
+                const draftValue = getParamDraft(moduleInstance.id, field.key);
+                const renderedValue =
+                  draftValue ?? formatParamValue(value, field);
+                const parsedDraft =
+                  draftValue !== undefined ? parseParamValue(draftValue, field) : null;
+                const fieldError = parsedDraft && !parsedDraft.ok ? parsedDraft.error : null;
 
                 if (field.kind === 'boolean') {
                   return (
@@ -91,28 +101,31 @@ export function ParameterInspector({
                     {multiline ? (
                       <textarea
                         rows={field.kind === 'wiring' ? 3 : 2}
-                        value={formatParamValue(value, field)}
-                        onChange={(event) =>
-                          onParamChange(
-                            moduleInstance.id,
-                            field.key,
-                            parseParamValue(event.target.value, field),
-                          )
-                        }
+                        value={renderedValue}
+                        onChange={(event) => {
+                          const rawValue = event.target.value;
+                          onParamDraftChange(moduleInstance.id, field.key, rawValue);
+                          const parsed = parseParamValue(rawValue, field);
+                          if (parsed.ok) {
+                            onParamChange(moduleInstance.id, field.key, parsed.value);
+                          }
+                        }}
                       />
                     ) : (
                       <input
                         type={field.kind === 'number' ? 'number' : 'text'}
-                        value={formatParamValue(value, field)}
-                        onChange={(event) =>
-                          onParamChange(
-                            moduleInstance.id,
-                            field.key,
-                            parseParamValue(event.target.value, field),
-                          )
-                        }
+                        value={renderedValue}
+                        onChange={(event) => {
+                          const rawValue = event.target.value;
+                          onParamDraftChange(moduleInstance.id, field.key, rawValue);
+                          const parsed = parseParamValue(rawValue, field);
+                          if (parsed.ok) {
+                            onParamChange(moduleInstance.id, field.key, parsed.value);
+                          }
+                        }}
                       />
                     )}
+                    {fieldError ? <p className="field-error">{fieldError}</p> : null}
                   </label>
                 );
               })
@@ -121,8 +134,8 @@ export function ParameterInspector({
 
           {executionError ? (
             <p className="inspector-warning">
-              Current edits make the graph invalid. Fix the parameter values to
-              restore execution.
+              Current edits make the graph invalid. Fix parameter values or graph
+              data to restore execution.
             </p>
           ) : selectedTrace ? (
             <div className="selected-trace">

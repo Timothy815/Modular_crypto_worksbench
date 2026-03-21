@@ -1,5 +1,11 @@
 import type { ParamFieldDef, Signal } from '../engine/types';
 
+export interface ParsedParamResult {
+  ok: boolean;
+  value?: unknown;
+  error?: string;
+}
+
 export function formatSignal(signal: Signal | undefined): string {
   if (!signal) {
     return 'n/a';
@@ -26,25 +32,57 @@ export function formatParamValue(value: unknown, field: ParamFieldDef): string {
   return String(value);
 }
 
-export function parseParamValue(rawValue: string, field: ParamFieldDef): unknown {
+export function parseParamValue(rawValue: string, field: ParamFieldDef): ParsedParamResult {
   switch (field.kind) {
     case 'number':
-      return rawValue === '' ? field.defaultValue : Number(rawValue);
+      if (rawValue.trim() === '') {
+        return { ok: true, value: field.defaultValue };
+      }
+
+      if (!Number.isFinite(Number(rawValue))) {
+        return { ok: false, error: 'Enter a valid finite number.' };
+      }
+
+      return { ok: true, value: Number(rawValue) };
     case 'boolean':
-      return rawValue === 'true';
-    case 'bits':
-      return rawValue
-        .split(/[\s,]+/)
-        .filter(Boolean)
-        .map((part) => Number(part));
-    case 'wiring':
-      return rawValue
+      return { ok: true, value: rawValue === 'true' };
+    case 'bits': {
+      const parts = rawValue.split(/[\s,]+/).filter(Boolean);
+      if (parts.length === 0) {
+        return { ok: false, error: 'Enter bits as comma-separated 0 or 1 values.' };
+      }
+
+      const parsed = parts.map((part) => Number(part));
+      if (!parsed.every((value) => value === 0 || value === 1)) {
+        return { ok: false, error: 'Bits must be 0 or 1.' };
+      }
+
+      return { ok: true, value: parsed };
+    }
+    case 'wiring': {
+      const parts = rawValue
         .split(/[\s,]+/)
         .filter(Boolean)
         .map((part) => part.toUpperCase());
+
+      if (parts.length !== 26) {
+        return { ok: false, error: 'Wiring must contain exactly 26 letters.' };
+      }
+
+      if (!parts.every((part) => /^[A-Z]$/.test(part))) {
+        return { ok: false, error: 'Wiring entries must be single uppercase letters A-Z.' };
+      }
+
+      if (new Set(parts).size !== 26) {
+        return { ok: false, error: 'Wiring must be a permutation with no duplicates.' };
+      }
+
+      return { ok: true, value: parts };
+    }
     case 'select':
+      return { ok: true, value: rawValue };
     case 'string':
     default:
-      return rawValue;
+      return { ok: true, value: rawValue };
   }
 }
