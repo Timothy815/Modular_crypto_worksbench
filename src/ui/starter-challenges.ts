@@ -34,8 +34,8 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       kind: 'output-match-target',
     },
     hints: [
-      'The failure begins in the bit-domain half of the graph, not the rotor side.',
-      'Compare the BitSource stream to the expected challenge behavior.',
+      'The problem is on the bit-domain side of the bridge pipeline, not the text input side.',
+      'Compare the BitSource stream against the target behavior and follow it through XOR.',
     ],
   },
 ];
