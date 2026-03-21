@@ -11,8 +11,10 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository now has a stable engine milestone and an active minimal editor UI on the
-`feature/minimal-ui-shell` branch.
+The repository now has:
+- a stable engine milestone
+- a released minimal editor UI on `main` at `v0.4.0`
+- an active composite-module groundwork branch at `feature/composite-groundwork`
 
 Implemented and locked so far:
 - engine core types
@@ -27,17 +29,20 @@ Implemented and locked so far:
 - structured parameter editors
 - workbench persistence and JSON import/export
 - sticky-note annotations
+- dark mode token groundwork
 - multi-agent coordination and implementation contract
 
 Active next steps:
-- dark mode via theme tokens
-- merge-readiness cleanup for the minimal UI milestone
-- composite-module UI
+- composite definition model
+- composite persistence/library layer
+- composite validation and execution semantics
+- minimal composite UI proof
 
 ## Key Documents
 
 - `PROJECT.md`: product vision and full specification
 - `ENGINE-V1-CONTRACT.md`: locked implementation decisions for the current engine slice
+- `COMPOSITE-V1-CONTRACT.md`: locked direction for the composite groundwork branch
 - `AI-COORDINATION.md`: multi-agent workflow rules
 - `AI-WORKSTREAMS.md`: current ownership boundaries
 - `IMPLEMENTATION-STATUS.md`: live execution status and handoff notes

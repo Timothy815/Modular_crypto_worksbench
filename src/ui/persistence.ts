@@ -1,7 +1,12 @@
+import type { CompositeDef, CompositeLibraryEntry } from '../engine/composites';
 import type { Project } from '../engine/types';
 import type { DemoProject } from './demo-projects';
 import type { UiState } from './store';
-import type { WorkbenchAnnotation, WorkbenchDocument } from './workbench-document';
+import type {
+  CompositeLibraryDocument,
+  WorkbenchAnnotation,
+  WorkbenchDocument,
+} from './workbench-document';
 
 const STORAGE_KEY = 'mcw:workspace:v1';
 
@@ -149,6 +154,17 @@ export function parseWorkbenchDocument(rawValue: string): WorkbenchDocument | nu
   }
 }
 
+export function parseCompositeLibraryDocument(
+  rawValue: string,
+): CompositeLibraryDocument | null {
+  try {
+    const parsed = JSON.parse(rawValue);
+    return isCompositeLibraryDocument(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
   if (typeof value !== 'object' || value === null) {
     return false;
@@ -166,5 +182,56 @@ function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
     typeof candidate.ui.layout === 'object' &&
     candidate.ui.layout !== null &&
     Array.isArray(candidate.ui.annotations)
+  );
+}
+
+function isCompositeLibraryDocument(value: unknown): value is CompositeLibraryDocument {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as CompositeLibraryDocument;
+  return (
+    candidate.version === 1 &&
+    Array.isArray(candidate.entries) &&
+    candidate.entries.every(isCompositeLibraryEntry)
+  );
+}
+
+function isCompositeLibraryEntry(value: unknown): value is CompositeLibraryEntry {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as CompositeLibraryEntry;
+  return (
+    typeof candidate.id === 'string' &&
+    typeof candidate.name === 'string' &&
+    typeof candidate.version === 'number' &&
+    isCompositeDef(candidate.definition)
+  );
+}
+
+function isCompositeDef(value: unknown): value is CompositeDef {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as CompositeDef;
+  return (
+    candidate.kind === 'composite' &&
+    typeof candidate.id === 'string' &&
+    typeof candidate.name === 'string' &&
+    typeof candidate.version === 'number' &&
+    Array.isArray(candidate.inputs) &&
+    Array.isArray(candidate.outputs) &&
+    typeof candidate.paramSchema === 'object' &&
+    candidate.paramSchema !== null &&
+    typeof candidate.project === 'object' &&
+    candidate.project !== null &&
+    Array.isArray(candidate.project.modules) &&
+    Array.isArray(candidate.project.connections) &&
+    Array.isArray(candidate.inputBindings) &&
+    Array.isArray(candidate.outputBindings)
   );
 }

@@ -16,6 +16,11 @@ Checkpoint:
 
 This document records the first UI-phase decisions so work can pass cleanly between Codex and Claude.
 
+Status note:
+- this branch has now been merged to `main`
+- release tag: `v0.4.0`
+- the active next branch is `feature/composite-groundwork`
+
 ---
 
 ## Scope of This Branch

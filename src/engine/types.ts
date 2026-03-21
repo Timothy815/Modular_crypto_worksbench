@@ -87,6 +87,7 @@ export interface ValidationIssue {
     | 'unknown-module-def'
     | 'unknown-module-instance'
     | 'unknown-port'
+    | 'duplicate-external-port'
     | 'missing-required-param'
     | 'unknown-param'
     | 'invalid-param-type'
@@ -94,7 +95,8 @@ export interface ValidationIssue {
     | 'invalid-wiring'
     | 'duplicate-input-connection'
     | 'signal-type-mismatch'
-    | 'cycle-detected';
+    | 'cycle-detected'
+    | 'invalid-composite-binding';
   message: string;
   moduleId?: string;
   connection?: Connection;
