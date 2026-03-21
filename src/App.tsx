@@ -9,6 +9,7 @@ import {
   createCompositeFromSelection,
   replaceSelectionWithComposite,
 } from './ui/composite-authoring';
+import { ComparisonPanel } from './ui/components/comparison-panel';
 import { ParameterInspector } from './ui/components/parameter-inspector';
 import { PrimitivePalette } from './ui/components/primitive-palette';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
@@ -206,6 +207,10 @@ function App() {
     baselineExecution && execution
       ? compareExecutionResults(baselineExecution, execution)
       : null;
+  const divergenceModuleId =
+    executionComparison?.firstDivergence?.variant?.moduleId ??
+    executionComparison?.firstDivergence?.baseline?.moduleId ??
+    null;
   const baselineSelectedModule = comparisonBaseline && selectedModule
     ? comparisonBaseline.project.modules.find((moduleInstance) => moduleInstance.id === selectedModule.id) ?? null
     : null;
@@ -355,6 +360,7 @@ function App() {
           selectedModuleIds={effectiveSelectedModuleIds}
           hoveredTraceModuleId={hoveredTraceModuleId}
           steppedModuleId={steppedModuleId}
+          divergenceModuleId={divergenceModuleId}
           onMoveModule={(moduleId, x, y) =>
             dispatch({
               type: 'moveModule',
@@ -615,120 +621,36 @@ function App() {
       </section>
 
       {!state.compositeEditor ? (
-        <section className="panel comparison-panel">
-          <div className="panel-head">
-            <p className="panel-label">Break Workflow</p>
-            <h2>Baseline vs Variant</h2>
-          </div>
-          <div className="comparison-actions">
-            <button
-              type="button"
-              className="mini-action-button"
-              onClick={() =>
-                dispatch({
-                  type: 'captureComparisonBaseline',
-                  projectId: activeProjectDefinition.id,
-                  capturedAt: new Date().toISOString(),
-                })
-              }
-            >
-              {comparisonBaseline ? 'Recapture Baseline' : 'Capture Baseline'}
-            </button>
-            {comparisonBaseline ? (
-              <button
-                type="button"
-                className="mini-action-button"
-                onClick={() =>
-                  dispatch({
-                    type: 'clearComparisonBaseline',
-                    projectId: activeProjectDefinition.id,
-                  })
-                }
-              >
-                Clear Baseline
-              </button>
-            ) : null}
-          </div>
-
-          {comparisonBaseline ? (
-            <div className="comparison-grid">
-              <div className="comparison-card">
-                <span className="meta-label">Baseline</span>
-                <strong>{activeProjectDefinition.name}</strong>
-                <p className="comparison-copy">
-                  Captured snapshot from the active workbench.
-                </p>
-                <p className="comparison-copy mono-line">
-                  {new Date(comparisonBaseline.capturedAt).toLocaleString()}
-                </p>
-                <p className="comparison-copy">
-                  Output:{' '}
-                  <strong>
-                    {baselineExecution
-                      ? executionComparison?.baselineOutput.formatted ?? 'n/a'
-                      : baselineExecutionError ?? 'blocked'}
-                  </strong>
-                </p>
-              </div>
-              <div className="comparison-card">
-                <span className="meta-label">Variant</span>
-                <strong>Live Workbench</strong>
-                <p className="comparison-copy">
-                  Current editable graph and parameters.
-                </p>
-                <p className="comparison-copy">
-                  Output:{' '}
-                  <strong>
-                    {execution
-                      ? executionComparison?.variantOutput.formatted ?? 'n/a'
-                      : executionError ?? 'blocked'}
-                  </strong>
-                </p>
-              </div>
-              <div className="comparison-card comparison-card-wide">
-                <span className="meta-label">Comparison Summary</span>
-                {executionComparison ? (
-                  <>
-                    <p className="comparison-copy">
-                      Final outputs{' '}
-                      <strong>
-                        {executionComparison.outputsMatch ? 'match' : 'diverge'}
-                      </strong>
-                      .
-                    </p>
-                    {executionComparison.firstDivergence ? (
-                      <p className="comparison-copy">
-                        First divergence at step{' '}
-                        <strong>{executionComparison.firstDivergence.stepIndex + 1}</strong>:
-                        {' '}
-                        <strong>
-                          {executionComparison.firstDivergence.variant?.moduleId ??
-                            executionComparison.firstDivergence.baseline?.moduleId ??
-                            'unknown'}
-                        </strong>
-                        {' '}({executionComparison.firstDivergence.reason}).
-                      </p>
-                    ) : (
-                      <p className="comparison-copy">
-                        No trace divergence detected across the current execution.
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <p className="comparison-copy">
-                    Capture a baseline, then mutate the live workbench to compare outputs and the
-                    first divergent trace step.
-                  </p>
-                )}
-              </div>
-            </div>
-          ) : (
-            <p className="comparison-copy">
-              Capture the current workbench as a baseline, then mutate the live graph to compare
-              outputs and first-divergence behavior.
-            </p>
-          )}
-        </section>
+        <ComparisonPanel
+          projectName={activeProjectDefinition.name}
+          baseline={comparisonBaseline}
+          baselineOutput={
+            baselineExecution
+              ? executionComparison?.baselineOutput.formatted ?? 'n/a'
+              : 'blocked'
+          }
+          variantOutput={
+            execution
+              ? executionComparison?.variantOutput.formatted ?? 'n/a'
+              : 'blocked'
+          }
+          baselineError={baselineExecutionError}
+          variantError={executionError}
+          comparison={executionComparison}
+          onCaptureBaseline={() =>
+            dispatch({
+              type: 'captureComparisonBaseline',
+              projectId: activeProjectDefinition.id,
+              capturedAt: new Date().toISOString(),
+            })
+          }
+          onClearBaseline={() =>
+            dispatch({
+              type: 'clearComparisonBaseline',
+              projectId: activeProjectDefinition.id,
+            })
+          }
+        />
       ) : null}
 
       {isCompositeDialogOpen ? (

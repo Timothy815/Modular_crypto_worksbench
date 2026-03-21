@@ -78,8 +78,8 @@ The following decisions are no longer just prose; they are reflected in the scaf
 Safe to begin:
 - use the current branch `feature/break-workflows`
 - read `BREAK-V1-CONTRACT.md` first
-- start with comparison-result helpers and the first divergence model
-- keep the first break workflow comparison-focused, not attack-automation focused
+- continue from the latest comparison-first break workflow checkpoint
+- keep the break workflow comparison-focused, not attack-automation focused
 
 Should avoid for now:
 - introducing brute-force or automated cryptanalysis too early
@@ -89,9 +89,8 @@ Should avoid for now:
 ### Gemini
 
 Safe to begin:
-- review the `BREAK-V1-CONTRACT.md` milestone framing
-- critique whether comparison-first is the right first break workflow
-- review the first comparison helper/model slice once it lands
+- review the current comparison-first break workflow checkpoint
+- critique whether the branch is ready for richer divergence visualization or merge-readiness cleanup
 
 Best focus:
 - whether the break workflow remains educational and explicit
@@ -153,14 +152,26 @@ Active branch:
 
 Break workflow branch currently includes:
 - `BREAK-V1-CONTRACT.md`
-- no code yet beyond branch setup
-- first intended milestone is comparison-first break workflow scaffolding
+- `src/ui/execution-compare.ts`
+- execution comparison proof tests
+- baseline capture from the live workbench
+- reducer-backed and persisted comparison baseline state
+- baseline-vs-variant comparison summary
+- baseline value visibility next to changed params
+- extracted comparison panel
+- first-divergence canvas highlighting
 
 Latest safe checkpoint for resume:
 - branch: `feature/break-workflows`
-- current branch created from `main` after `v0.6.0`
+- commit: `fd8ab61` — `Unify break baseline state and mutation visibility`
+
+Latest local working state before next checkpoint:
+- extracted `comparison-panel.tsx`
+- side-by-side divergent signal display
+- divergence highlight on the affected canvas node
+- verification clean: `npm test`, `npm run lint`, `npm run build`
 
 Next intended milestone:
-- comparison result helpers
-- first-divergence analysis
-- baseline vs variant comparison UI
+- checkpoint the comparison-visibility pass
+- update branch docs and handoff notes
+- then choose between Gemini review and merge-readiness cleanup

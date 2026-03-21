@@ -126,10 +126,24 @@ What is already shipped on `main`:
 - analysis/debugging visibility
 - stepping and signal-path filtering
 
+Current branch checkpoint:
+- `fd8ab61` — `Unify break baseline state and mutation visibility`
+
+Current branch capabilities:
+- baseline vs variant comparison workflow
+- reducer-backed, persisted baseline capture
+- first-divergence comparison model
+- baseline value chips in the inspector for changed params
+
+Latest local working state before next checkpoint:
+- extracted comparison panel
+- first-divergence node highlight on the canvas
+- side-by-side divergent signal display
+
 Immediate next task:
-- begin the first comparison-first break workflow
-- keep it bounded and educational
-- start with baseline vs variant comparison and first-divergence analysis
+- checkpoint the current comparison-visibility pass
+- then decide between Gemini review and merge-readiness cleanup
+- keep the workflow bounded and educational rather than attack-automation focused
 
 ## When Working on This Project
 

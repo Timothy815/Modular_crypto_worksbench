@@ -37,7 +37,8 @@ Implemented and locked so far:
 Active next steps:
 - comparison-first break workflows
 - baseline vs variant execution comparison
-- first-divergence analysis
+- mutation visibility inside the inspector
+- first-divergence analysis and canvas highlighting
 
 ## Key Documents
 
@@ -75,7 +76,13 @@ Published site:
 The current shipped workbench already supports adding, deleting, moving, connecting, composing,
 and interrogating modules.
 
-The next meaningful product milestones are:
+The active branch is now extending that into comparison-first break workflows:
+- capture the current workbench as a baseline
+- mutate the live graph as a variant
+- compare outputs and first divergence
+- surface changed params and divergent nodes clearly
+
+The next meaningful product milestones after this branch are:
 
 ```text
 build -> analyze -> break
