@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import type {
   ExecutionResult,
   ModuleDefinition,
@@ -18,6 +20,7 @@ interface ParameterInspectorProps {
   onParamDraftChange: (moduleId: string, key: string, rawValue: string) => void;
   onParamChange: (moduleId: string, key: string, value: unknown) => void;
   onDeleteModule: (moduleId: string) => void;
+  onSelectIssueTarget: (moduleId: string) => void;
 }
 
 export function ParameterInspector({
@@ -30,7 +33,9 @@ export function ParameterInspector({
   onParamDraftChange,
   onParamChange,
   onDeleteModule,
+  onSelectIssueTarget,
 }: ParameterInspectorProps) {
+  const [traceMode, setTraceMode] = useState<'focused' | 'full'>('focused');
   const outputTrace = execution?.trace.at(-1);
   const selectedTrace = execution?.trace.find(
     (entry) => entry.moduleId === moduleInstance?.id,
@@ -49,6 +54,10 @@ export function ParameterInspector({
   const globalIssues = moduleInstance
     ? validationIssues.filter((issue) => !selectedIssues.includes(issue))
     : validationIssues;
+  const effectiveTraceMode = selectedTrace ? traceMode : 'full';
+  const traceEntries = effectiveTraceMode === 'focused' && selectedTrace
+    ? [selectedTrace]
+    : execution?.trace ?? [];
 
   return (
     <aside className="panel inspector-panel">
@@ -228,8 +237,20 @@ export function ParameterInspector({
               <span className="meta-label">Selected Issues</span>
               <ul className="issue-list">
                 {selectedIssues.map((issue, index) => (
-                  <li key={`${issue.code}-${index}`} className="issue-card">
+                  <li
+                    key={`${issue.code}-${index}`}
+                    className={getIssueTargetModuleId(issue) ? 'issue-card issue-card-actionable' : 'issue-card'}
+                    onClick={() => {
+                      const targetModuleId = getIssueTargetModuleId(issue);
+                      if (targetModuleId) {
+                        onSelectIssueTarget(targetModuleId);
+                      }
+                    }}
+                  >
                     <strong>{humanizeIssueCode(issue.code)}</strong>
+                    {getIssueTargetModuleId(issue) ? (
+                      <span className="issue-target-chip">{getIssueTargetModuleId(issue)}</span>
+                    ) : null}
                     <p>{issue.message}</p>
                   </li>
                 ))}
@@ -274,8 +295,20 @@ export function ParameterInspector({
           <span className="meta-label">Graph Issues</span>
           <ul className="issue-list">
             {globalIssues.map((issue, index) => (
-              <li key={`${issue.code}-${index}`} className="issue-card">
+              <li
+                key={`${issue.code}-${index}`}
+                className={getIssueTargetModuleId(issue) ? 'issue-card issue-card-actionable' : 'issue-card'}
+                onClick={() => {
+                  const targetModuleId = getIssueTargetModuleId(issue);
+                  if (targetModuleId) {
+                    onSelectIssueTarget(targetModuleId);
+                  }
+                }}
+              >
                 <strong>{humanizeIssueCode(issue.code)}</strong>
+                {getIssueTargetModuleId(issue) ? (
+                  <span className="issue-target-chip">{getIssueTargetModuleId(issue)}</span>
+                ) : null}
                 <p>{issue.message}</p>
               </li>
             ))}
@@ -283,8 +316,34 @@ export function ParameterInspector({
         </section>
       ) : null}
 
+      <div className="trace-toolbar">
+        <span className="meta-label">Execution Trace</span>
+        <div className="trace-mode-toggle">
+          <button
+            type="button"
+            className={effectiveTraceMode === 'focused' ? 'trace-mode-button active' : 'trace-mode-button'}
+            disabled={!selectedTrace}
+            onClick={() => setTraceMode('focused')}
+          >
+            Focused
+          </button>
+          <button
+            type="button"
+            className={effectiveTraceMode === 'full' ? 'trace-mode-button active' : 'trace-mode-button'}
+            onClick={() => setTraceMode('full')}
+          >
+            Full
+          </button>
+        </div>
+      </div>
+
       <ol className="trace-list">
-        {(execution?.trace ?? []).map((entry, index) => (
+        {traceEntries.map((entry) => {
+          const traceIndex = execution?.trace.findIndex(
+            (traceEntry) => traceEntry.moduleId === entry.moduleId,
+          ) ?? -1;
+
+          return (
           <li
             key={entry.moduleId}
             className={
@@ -296,7 +355,7 @@ export function ParameterInspector({
             <div className="trace-head">
               <strong>{entry.moduleId}</strong>
               <span>
-                #{index + 1} {entry.defId}
+                #{traceIndex + 1} {entry.defId}
               </span>
             </div>
             <p>
@@ -312,7 +371,8 @@ export function ParameterInspector({
                 .join(' | ') || 'none'}
             </p>
           </li>
-        ))}
+          );
+        })}
       </ol>
     </aside>
   );
@@ -323,4 +383,8 @@ function humanizeIssueCode(code: ValidationIssue['code']) {
     .split('-')
     .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
     .join(' ');
+}
+
+function getIssueTargetModuleId(issue: ValidationIssue) {
+  return issue.moduleId ?? issue.connection?.to.moduleId ?? issue.connection?.from.moduleId ?? null;
 }

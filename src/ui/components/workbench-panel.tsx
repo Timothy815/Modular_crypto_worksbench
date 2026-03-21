@@ -252,6 +252,24 @@ export function WorkbenchPanel({
     return nextStates;
   }, [activeProjectState, pendingConnection, registry]);
 
+  const moduleIssueCountById = useMemo(() => {
+    const counts: Record<string, number> = {};
+
+    for (const issue of validationIssues) {
+      if (issue.moduleId) {
+        counts[issue.moduleId] = (counts[issue.moduleId] ?? 0) + 1;
+      }
+      if (issue.connection) {
+        counts[issue.connection.from.moduleId] =
+          (counts[issue.connection.from.moduleId] ?? 0) + 1;
+        counts[issue.connection.to.moduleId] =
+          (counts[issue.connection.to.moduleId] ?? 0) + 1;
+      }
+    }
+
+    return counts;
+  }, [validationIssues]);
+
   function startConnectionFromOutput(
     moduleId: string,
     portName: string,
@@ -435,7 +453,17 @@ export function WorkbenchPanel({
               return (
                 <g
                   key={`${connection.from.moduleId}:${connection.from.port}-${connection.to.moduleId}:${connection.to.port}`}
-                  className="connection-group"
+                  className={
+                    validationIssues.some(
+                      (issue) =>
+                        issue.connection?.from.moduleId === connection.from.moduleId &&
+                        issue.connection?.from.port === connection.from.port &&
+                        issue.connection?.to.moduleId === connection.to.moduleId &&
+                        issue.connection?.to.port === connection.to.port,
+                    )
+                      ? 'connection-group connection-group-invalid'
+                      : 'connection-group'
+                  }
                 >
                   <path
                     className="connection-hit-area"
@@ -471,7 +499,8 @@ export function WorkbenchPanel({
                 className={
                   `graph-node graph-node-${category}` +
                   (selectedModuleIds.includes(moduleInstance.id) ? ' graph-node-selected' : '') +
-                  (moduleInstance.id === selectedModuleId ? ' graph-node-primary-selected' : '')
+                  (moduleInstance.id === selectedModuleId ? ' graph-node-primary-selected' : '') +
+                  ((moduleIssueCountById[moduleInstance.id] ?? 0) > 0 ? ' graph-node-invalid' : '')
                 }
                 style={{ left: `${position.x}px`, top: `${position.y}px` }}
               >
@@ -496,6 +525,11 @@ export function WorkbenchPanel({
                 >
                   <span className="graph-node-type">{moduleInstance.defId}</span>
                   <strong>{moduleInstance.id}</strong>
+                  {(moduleIssueCountById[moduleInstance.id] ?? 0) > 0 ? (
+                    <span className="graph-node-issue-badge">
+                      {moduleIssueCountById[moduleInstance.id]}
+                    </span>
+                  ) : null}
                   <div className="graph-node-ports">
                     <span>{def?.inputs.length ?? 0} in</span>
                     <span>{def?.outputs.length ?? 0} out</span>

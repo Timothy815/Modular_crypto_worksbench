@@ -556,6 +556,13 @@ function App() {
                     moduleId,
                   })
             }
+            onSelectIssueTarget={(moduleId) =>
+              dispatch({
+                type: 'selectModule',
+                projectId: activeProjectDefinition.id,
+                moduleId,
+              })
+            }
           />
         ) : null}
       </section>

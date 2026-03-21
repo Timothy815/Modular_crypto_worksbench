@@ -427,6 +427,11 @@
   stroke-width: 3.5;
 }
 
+.connection-group-invalid path:not(.connection-hit-area) {
+  stroke: var(--danger-text);
+  stroke-width: 3.2;
+}
+
 .pending-connection {
   stroke: var(--danger-text);
   stroke-width: 2.5;
@@ -548,6 +553,10 @@
   border-color: var(--role-composite-strong);
 }
 
+.graph-node-invalid {
+  box-shadow: 0 0 0 2px var(--danger-text);
+}
+
 .graph-node-type {
   display: block;
   margin-bottom: 6px;
@@ -569,9 +578,24 @@
 }
 
 .graph-node-body {
+  position: relative;
   padding: 14px 14px 12px;
   cursor: grab;
   user-select: none;
+}
+
+.graph-node-issue-badge {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  min-width: 1.6rem;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--danger-text);
+  color: white;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-align: center;
 }
 
 .graph-node-body:active {
@@ -686,6 +710,40 @@
   margin: 6px 0 0;
   font-size: 0.88rem;
   color: var(--muted);
+}
+
+.trace-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 12px;
+}
+
+.trace-mode-toggle {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.trace-mode-button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-button);
+  padding: 6px 12px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.trace-mode-button.active {
+  background: var(--ink);
+  color: var(--link-primary-text);
+}
+
+.trace-mode-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .trace-head {
@@ -1005,6 +1063,10 @@
   color: var(--danger-text);
 }
 
+.issue-card-actionable {
+  cursor: pointer;
+}
+
 .issue-card strong {
   display: block;
   margin-bottom: 4px;
@@ -1012,6 +1074,18 @@
 
 .issue-card p {
   margin: 0;
+}
+
+.issue-target-chip {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--danger-text);
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  font-weight: 700;
 }
 
 .selected-ports {
