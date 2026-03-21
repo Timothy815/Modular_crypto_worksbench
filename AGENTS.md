@@ -68,7 +68,7 @@ type ModuleRegistry = Record<string, ModuleDef>;
 
 - TypeScript (strict mode), Vite + React 18+, Vitest
 - Graph rendering: React Flow or custom SVG/Canvas
-- State: Zustand or React context
+- State: reducer-backed local UI state (`src/ui/store.ts`) for the current editor slice
 - Persistence: localStorage / IndexedDB
 
 ## Architecture

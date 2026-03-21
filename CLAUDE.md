@@ -76,7 +76,7 @@ type ModuleRegistry = Record<string, ModuleDef>;
 
 - TypeScript (strict mode), Vite + React 18+, Vitest
 - Graph rendering: React Flow or custom SVG/Canvas
-- State: Zustand or React context
+- State: reducer-backed local UI state (`src/ui/store.ts`) for the current editor slice
 - Persistence: localStorage / IndexedDB, JSON serialization
 
 ## Architecture
@@ -107,7 +107,7 @@ src/utils/     — Shared helpers
 
 1. **Engine First** — data models, module evaluation, graph traversal, tests
 2. **Minimal UI** — manual module placement, connections, run + display
-3. **Usability** — drag-and-drop, save/load, inspector
+3. **Usability** — richer connection UX, save/load, inspector polish, theme work
 4. **Composition** — composite modules, local library, versioning
 5. **Expansion** — more modules, step-through, signal tracing, templates
 

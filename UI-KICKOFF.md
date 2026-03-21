@@ -9,7 +9,7 @@ Checkpoint:
 - `d3c8a22` — Add node movement and panel controls
 - `a48c498` — Improve node dragging and anchors
 - `6252d12` — Add module creation and deletion
-- `pending` — Refactor node DOM, add connection editing, color-code modules
+- `current` — Node DOM refactored, connection editing implemented, modules color-coded
 
 This document records the first UI-phase decisions so work can pass cleanly between Codex and Claude.
 
@@ -64,12 +64,13 @@ These files are safe for Claude to continue from later.
 
 ## Recommended Next Steps
 
-Items 1–4 from the original plan are now complete. Remaining work:
+Editor fundamentals are now complete. Remaining work:
 
-1. Improve parameter editing UX for `bits` and `wiring` params.
-2. Introduce theme tokens and dark-mode support without rewriting components.
-3. Persistence UI (save/load projects).
-4. Composite-module UI.
+1. Tighten UI-side connection validation and target highlighting.
+2. Improve parameter editing UX for `bits` and `wiring` params.
+3. Introduce theme tokens and dark-mode support without rewriting components.
+4. Persistence UI (save/load projects + layout).
+5. Composite-module UI.
 
 ---
 
@@ -100,6 +101,7 @@ The branch now contains:
 - **module category color-coding** — sources (teal), operators (orange), bridges (purple), sinks (green)
 - **improved module placement** — new nodes placed in visible canvas area, avoids overlap
 - **`src/ui/module-categories.ts`** — shared category mapping for consistent color-coding across palette and canvas
+- **connection editing caveat** — current wiring UX works, but should next block invalid target ports before dispatch
 
 What is intentionally not built yet:
 - persistence UI
@@ -124,7 +126,7 @@ This means the branch has validated all four editor fundamentals: add, delete, m
 ## Non-Goals For This Slice
 
 - freeform node placement
-- wire drawing
+- advanced wire routing / rewiring UX
 - drag-and-drop
 - persistence UI
 - composite editing
