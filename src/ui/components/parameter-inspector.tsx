@@ -132,6 +132,39 @@ export function ParameterInspector({
             )}
           </div>
 
+          <div className="selected-ports">
+            <div className="port-group">
+              <span className="meta-label">Inputs</span>
+              {moduleDef.inputs.length === 0 ? (
+                <p className="empty-state">No input ports</p>
+              ) : (
+                <ul className="port-list">
+                  {moduleDef.inputs.map((port) => (
+                    <li key={port.name}>
+                      <strong>{port.name}</strong>
+                      <span>{port.type}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="port-group">
+              <span className="meta-label">Outputs</span>
+              {moduleDef.outputs.length === 0 ? (
+                <p className="empty-state">No output ports</p>
+              ) : (
+                <ul className="port-list">
+                  {moduleDef.outputs.map((port) => (
+                    <li key={port.name}>
+                      <strong>{port.name}</strong>
+                      <span>{port.type}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+
           {executionError ? (
             <p className="inspector-warning">
               Current edits make the graph invalid. Fix parameter values or graph

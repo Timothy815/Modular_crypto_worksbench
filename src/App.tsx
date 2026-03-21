@@ -78,6 +78,7 @@ function App() {
           activeProjectState={activeProjectState}
           execution={execution}
           executionError={executionError}
+          registry={V1_REGISTRY}
           selectedModuleId={effectiveSelectedModuleId}
           onSelectModule={(moduleId) =>
             dispatch({

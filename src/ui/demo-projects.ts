@@ -12,6 +12,7 @@ export interface DemoProject {
   summary: string;
   pipeline: string;
   project: Project;
+  layout: Record<string, { x: number; y: number }>;
 }
 
 export const demoProjects: DemoProject[] = [
@@ -36,6 +37,14 @@ export const demoProjects: DemoProject[] = [
         { from: { moduleId: 'xor', port: 'out' }, to: { moduleId: 'decode', port: 'in' } },
         { from: { moduleId: 'decode', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
       ],
+    },
+    layout: {
+      text: { x: 28, y: 72 },
+      key: { x: 28, y: 262 },
+      encode: { x: 240, y: 72 },
+      xor: { x: 452, y: 162 },
+      decode: { x: 664, y: 72 },
+      output: { x: 876, y: 72 },
     },
   },
   {
@@ -77,6 +86,17 @@ export const demoProjects: DemoProject[] = [
         { from: { moduleId: 'xor', port: 'out' }, to: { moduleId: 'decode', port: 'in' } },
         { from: { moduleId: 'decode', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
       ],
+    },
+    layout: {
+      text: { x: 24, y: 132 },
+      'rotor-fwd': { x: 184, y: 132 },
+      reflector: { x: 344, y: 132 },
+      'rotor-rev': { x: 504, y: 132 },
+      encode: { x: 664, y: 132 },
+      key: { x: 664, y: 304 },
+      xor: { x: 824, y: 218 },
+      decode: { x: 984, y: 132 },
+      output: { x: 1144, y: 132 },
     },
   },
 ];
