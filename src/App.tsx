@@ -9,6 +9,8 @@ import {
   createCompositeFromSelection,
   replaceSelectionWithComposite,
 } from './ui/composite-authoring';
+import { evaluateChallengeAttempt } from './ui/challenges';
+import { ChallengePanel } from './ui/components/challenge-panel';
 import { ComparisonPanel } from './ui/components/comparison-panel';
 import { ParameterInspector } from './ui/components/parameter-inspector';
 import { PrimitivePalette } from './ui/components/primitive-palette';
@@ -23,6 +25,7 @@ import {
   parseWorkbenchDocument,
   saveWorkspaceToStorage,
 } from './ui/persistence';
+import { STARTER_CHALLENGES } from './ui/starter-challenges';
 import {
   createInitialUiState,
   getEffectiveRegistry,
@@ -121,6 +124,9 @@ function App() {
   const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
   const [hoveredTraceModuleId, setHoveredTraceModuleId] = useState<string | null>(null);
   const [stepIndex, setStepIndex] = useState<number | null>(null);
+  const [selectedChallengeId, setSelectedChallengeId] = useState(
+    STARTER_CHALLENGES[0]?.id ?? '',
+  );
 
   const activeProjectDefinition =
     demoProjects.find((project) => project.id === state.activeProjectId) ?? demoProjects[0];
@@ -214,6 +220,14 @@ function App() {
   const baselineSelectedModule = comparisonBaseline && selectedModule
     ? comparisonBaseline.project.modules.find((moduleInstance) => moduleInstance.id === selectedModule.id) ?? null
     : null;
+  const selectedChallenge =
+    STARTER_CHALLENGES.find((challenge) => challenge.id === selectedChallengeId) ??
+    STARTER_CHALLENGES[0] ??
+    null;
+  const challengeEvaluation =
+    !state.compositeEditor && selectedChallenge
+      ? evaluateChallengeAttempt(selectedChallenge, activeProjectState, effectiveRegistry)
+      : null;
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -621,36 +635,61 @@ function App() {
       </section>
 
       {!state.compositeEditor ? (
-        <ComparisonPanel
-          projectName={activeProjectDefinition.name}
-          baseline={comparisonBaseline}
-          baselineOutput={
-            baselineExecution
-              ? executionComparison?.baselineOutput.formatted ?? 'n/a'
-              : 'blocked'
-          }
-          variantOutput={
-            execution
-              ? executionComparison?.variantOutput.formatted ?? 'n/a'
-              : 'blocked'
-          }
-          baselineError={baselineExecutionError}
-          variantError={executionError}
-          comparison={executionComparison}
-          onCaptureBaseline={() =>
-            dispatch({
-              type: 'captureComparisonBaseline',
-              projectId: activeProjectDefinition.id,
-              capturedAt: new Date().toISOString(),
-            })
-          }
-          onClearBaseline={() =>
-            dispatch({
-              type: 'clearComparisonBaseline',
-              projectId: activeProjectDefinition.id,
-            })
-          }
-        />
+        <>
+          {selectedChallenge ? (
+            <ChallengePanel
+              challenges={STARTER_CHALLENGES}
+              selectedChallengeId={selectedChallenge.id}
+              evaluation={challengeEvaluation}
+              onSelectChallenge={setSelectedChallengeId}
+              onLoadChallengeStart={() =>
+                dispatch({
+                  type: 'loadDocument',
+                  projectId: activeProjectDefinition.id,
+                  document: {
+                    version: 1,
+                    project: cloneProject(selectedChallenge.startingProject),
+                    ui: {
+                      layout: selectedChallenge.startingLayout ?? activeProjectDefinition.layout,
+                      annotations: [],
+                    },
+                  },
+                })
+              }
+            />
+          ) : null}
+
+          <ComparisonPanel
+            projectName={activeProjectDefinition.name}
+            baseline={comparisonBaseline}
+            baselineOutput={
+              baselineExecution
+                ? executionComparison?.baselineOutput.formatted ?? 'n/a'
+                : 'blocked'
+            }
+            variantOutput={
+              execution
+                ? executionComparison?.variantOutput.formatted ?? 'n/a'
+                : 'blocked'
+            }
+            baselineError={baselineExecutionError}
+            variantError={executionError}
+            comparison={executionComparison}
+            onCaptureBaseline={() =>
+              dispatch({
+                type: 'captureComparisonBaseline',
+                projectId: activeProjectDefinition.id,
+                capturedAt: new Date().toISOString(),
+              })
+            }
+            onClearBaseline={() =>
+              dispatch({
+                type: 'clearComparisonBaseline',
+                projectId: activeProjectDefinition.id,
+              })
+            }
+          />
+        </>
       ) : null}
 
       {isCompositeDialogOpen ? (

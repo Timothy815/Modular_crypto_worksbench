@@ -6,8 +6,9 @@ Last updated: March 21, 2026
 
 ## Current State
 
-The project has shipped the composite and analysis milestones on `main` and has now entered the
-first `Build / Analyze / Break` product phase on `feature/break-workflows`.
+The project has now shipped the composite, analysis, and first break-workflow milestones on `main`
+through `v0.7.0`, and has started the first classroom-facing challenge phase on
+`feature/guided-challenges`.
 
 Established and now available for other agents:
 - implementation contract
@@ -33,6 +34,8 @@ Established and now available for other agents:
 - analysis/debugging visibility workflow
 - step-through execution and signal-path trace filtering
 - `BREAK-V1-CONTRACT.md`
+- comparison-first break workflow on `main` (`v0.7.0`)
+- `GUIDED-CHALLENGES-V1-CONTRACT.md`
 - GitHub Pages deployment workflow
 
 ---
@@ -76,26 +79,26 @@ The following decisions are no longer just prose; they are reflected in the scaf
 ### Claude
 
 Safe to begin:
-- use the current branch `feature/break-workflows`
-- read `BREAK-V1-CONTRACT.md` first
-- continue from the latest comparison-first break workflow checkpoint
-- keep the break workflow comparison-focused, not attack-automation focused
+- use the current branch `feature/guided-challenges`
+- read `GUIDED-CHALLENGES-V1-CONTRACT.md` first
+- keep the first challenge workflow narrow and classroom-facing
+- reuse existing comparison and analysis surfaces instead of inventing a separate scoring system
 
 Should avoid for now:
-- introducing brute-force or automated cryptanalysis too early
+- introducing user accounts, grades, or LMS-like systems too early
 - mutating the core engine contract unless strictly required
-- letting the comparison UI drift into a generic diff tool
+- letting challenge UI become a generic quiz layer detached from machine structure
 
 ### Gemini
 
 Safe to begin:
-- review the current comparison-first break workflow checkpoint
-- critique whether the branch is ready for richer divergence visualization or merge-readiness cleanup
+- review the `GUIDED-CHALLENGES-V1-CONTRACT.md` framing
+- critique whether the first challenge workflow stays explicit, inspectable, and educational
 
 Best focus:
-- whether the break workflow remains educational and explicit
-- whether comparison logic stays engine-adjacent rather than engine-invasive
-- whether the UI communicates mutation and divergence clearly
+- whether challenge checking stays engine-adjacent rather than engine-invasive
+- whether the UI communicates task, success, and failure clearly
+- whether the branch remains aligned with the classroom use case
 
 ---
 
@@ -128,7 +131,7 @@ Architectural normalization added on March 21:
 The next product milestone should be:
 
 ```text
-Build / Analyze / Break -> comparison-first break workflows
+Build / Analyze / Break -> guided challenges
 ```
 
 The canonical hybrid reference machine remains:
@@ -146,32 +149,25 @@ Stable releases on `main`:
 - `v0.4.0` — minimal UI shell milestone
 - `v0.5.0` — composite workflow milestone
 - `v0.6.0` — analysis visibility milestone
+- `v0.7.0` — break workflow milestone
 
 Active branch:
-- `feature/break-workflows`
+- `feature/guided-challenges`
 
-Break workflow branch currently includes:
-- `BREAK-V1-CONTRACT.md`
-- `src/ui/execution-compare.ts`
-- execution comparison proof tests
-- baseline capture from the live workbench
-- reducer-backed and persisted comparison baseline state
-- baseline-vs-variant comparison summary
-- baseline value visibility next to changed params
-- extracted comparison panel
-- first-divergence canvas highlighting
+Guided challenges branch currently includes:
+- `GUIDED-CHALLENGES-V1-CONTRACT.md`
+- challenge definition and evaluation helpers
+- starter challenge seed data
+- challenge evaluation proof tests
+- first challenge panel in the app shell
+- challenge status and target-behavior checking
+- load-challenge-start workflow
 
 Latest safe checkpoint for resume:
-- branch: `feature/break-workflows`
-- commit: `fd8ab61` — `Unify break baseline state and mutation visibility`
-
-Latest local working state before next checkpoint:
-- extracted `comparison-panel.tsx`
-- side-by-side divergent signal display
-- divergence highlight on the affected canvas node
-- verification clean: `npm test`, `npm run lint`, `npm run build`
+- branch: `feature/guided-challenges`
+- current local branch created from `main` after `v0.7.0`
 
 Next intended milestone:
-- checkpoint the comparison-visibility pass
-- update branch docs and handoff notes
-- then choose between Gemini review and merge-readiness cleanup
+- checkpoint the first guided-challenge proof
+- decide whether to add richer challenge state/persistence next
+- then ask Gemini to review the classroom-workflow architecture

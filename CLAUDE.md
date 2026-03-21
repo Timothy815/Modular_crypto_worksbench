@@ -2,7 +2,7 @@
 
 Read PROJECT.md for full project specification.
 Read ENGINE-V1-CONTRACT.md for locked implementation decisions.
-Read BREAK-V1-CONTRACT.md before starting work on `feature/break-workflows`.
+Read GUIDED-CHALLENGES-V1-CONTRACT.md before starting work on `feature/guided-challenges`.
 Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
 
 ## Project: Modular Cryptography Workbench
@@ -43,6 +43,7 @@ Tag `main` at these milestones so we can return to known-good states:
 - `v0.4.0` — Minimal UI functional
 - `v0.5.0` — Composite workflow working
 - `v0.6.0` — Analysis visibility and stepping working
+- `v0.7.0` — Break workflows working
 - `v1.0.0` — V1 milestone complete (all features in ENGINE-V1-CONTRACT.md)
 
 ### Recovery
@@ -114,36 +115,30 @@ src/utils/     — Shared helpers
 4. **Composition** — composite modules, local library, versioning
 5. **Analysis** — step-through, signal tracing, issue surfacing
 6. **Break Workflows** — comparison, mutation experiments, eventually break/challenge tooling
+7. **Guided Challenges** — classroom tasks, success checks, explainable failure
 
-## Current Break Resume Point
+## Current Guided Challenge Resume Point
 
-- Active branch: `feature/break-workflows`
-- Start from `main` after `v0.6.0`
-- Read `BREAK-V1-CONTRACT.md` first
+- Active branch: `feature/guided-challenges`
+- Start from `main` after `v0.7.0`
+- Read `GUIDED-CHALLENGES-V1-CONTRACT.md` first
 
 What is already shipped on `main`:
 - composite contract and full composite workflow
 - analysis/debugging visibility
 - stepping and signal-path filtering
+ - comparison-first break workflows
 
-Current branch checkpoint:
-- `fd8ab61` — `Unify break baseline state and mutation visibility`
-
-Current branch capabilities:
-- baseline vs variant comparison workflow
-- reducer-backed, persisted baseline capture
-- first-divergence comparison model
-- baseline value chips in the inspector for changed params
-
-Latest local working state before next checkpoint:
-- extracted comparison panel
-- first-divergence node highlight on the canvas
-- side-by-side divergent signal display
+Current branch state:
+- challenge contract and handoff setup
+- challenge definition/evaluation helpers
+- one seeded starter challenge
+- first challenge panel and load-start workflow
 
 Immediate next task:
-- checkpoint the current comparison-visibility pass
-- then decide between Gemini review and merge-readiness cleanup
-- keep the workflow bounded and educational rather than attack-automation focused
+- checkpoint the first guided-challenge proof
+- then decide whether challenge state should become reducer-backed before more UI expands
+- keep the first challenge flow narrow, inspectable, and classroom-facing
 
 ## When Working on This Project
 

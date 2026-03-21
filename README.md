@@ -13,8 +13,8 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 The repository now has:
 - a stable engine milestone
-- released UI/editor milestones on `main` through `v0.6.0`
-- an active break-workflows branch at `feature/break-workflows`
+- released UI/editor milestones on `main` through `v0.7.0`
+- an active guided-challenges branch at `feature/guided-challenges`
 
 Implemented and locked so far:
 - engine core types
@@ -32,13 +32,14 @@ Implemented and locked so far:
 - dark mode token groundwork
 - reusable composite workflows
 - analysis visibility and step-through execution
+- comparison-first break workflows
 - multi-agent coordination and implementation contract
 
 Active next steps:
-- comparison-first break workflows
-- baseline vs variant execution comparison
-- mutation visibility inside the inspector
-- first-divergence analysis and canvas highlighting
+- classroom-facing guided challenges
+- target behavior comparison for student machines
+- first reusable challenge session flow
+- explainable success/failure status in the workbench
 
 ## Key Documents
 
@@ -46,6 +47,7 @@ Active next steps:
 - `ENGINE-V1-CONTRACT.md`: locked implementation decisions for the current engine slice
 - `COMPOSITE-V1-CONTRACT.md`: locked direction for the composite groundwork branch
 - `BREAK-V1-CONTRACT.md`: locked direction for the first break-workflows branch
+- `GUIDED-CHALLENGES-V1-CONTRACT.md`: locked direction for the first classroom challenge branch
 - `AI-COORDINATION.md`: multi-agent workflow rules
 - `AI-WORKSTREAMS.md`: current ownership boundaries
 - `IMPLEMENTATION-STATUS.md`: live execution status and handoff notes
@@ -74,18 +76,23 @@ Published site:
 ## Short-Term Goal
 
 The current shipped workbench already supports adding, deleting, moving, connecting, composing,
-and interrogating modules.
+interrogating modules, and comparing broken variants against captured baselines.
 
-The active branch is now extending that into comparison-first break workflows:
-- capture the current workbench as a baseline
-- mutate the live graph as a variant
-- compare outputs and first divergence
-- surface changed params and divergent nodes clearly
+The active branch is now extending that into guided challenges:
+- present a clear classroom task
+- compare a student machine against target behavior
+- report success or failure in an explainable way
+- reuse the existing build/analyze/break surfaces instead of hiding the machine
+
+The first proof on this branch now includes:
+- one seeded repair challenge
+- a challenge panel with explicit prompt and status
+- target-behavior checking against the live workbench
 
 The next meaningful product milestones after this branch are:
 
 ```text
-build -> analyze -> break
+build -> analyze -> break -> guided challenge
 ```
 
 The canonical hybrid reference pipeline remains:
