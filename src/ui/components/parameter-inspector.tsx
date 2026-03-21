@@ -1,4 +1,9 @@
-import type { ExecutionResult, ModuleDefinition, ModuleInstance } from '../../engine/types';
+import type {
+  ExecutionResult,
+  ModuleDefinition,
+  ModuleInstance,
+  ValidationIssue,
+} from '../../engine/types';
 import { BitsEditor } from './editors/bits-editor';
 import { WiringEditor } from './editors/wiring-editor';
 import { formatParamValue, formatSignal, parseParamValue } from '../formatters';
@@ -6,6 +11,7 @@ import { formatParamValue, formatSignal, parseParamValue } from '../formatters';
 interface ParameterInspectorProps {
   execution: ExecutionResult | null;
   executionError: string | null;
+  validationIssues: ValidationIssue[];
   moduleDef: ModuleDefinition | null;
   moduleInstance: ModuleInstance | null;
   getParamDraft: (moduleId: string, key: string) => string | undefined;
@@ -17,6 +23,7 @@ interface ParameterInspectorProps {
 export function ParameterInspector({
   execution,
   executionError,
+  validationIssues,
   moduleDef,
   moduleInstance,
   getParamDraft,
@@ -28,6 +35,20 @@ export function ParameterInspector({
   const selectedTrace = execution?.trace.find(
     (entry) => entry.moduleId === moduleInstance?.id,
   );
+  const selectedTraceOrder = selectedTrace
+    ? (execution?.order.findIndex((moduleId) => moduleId === selectedTrace.moduleId) ?? -1) + 1
+    : null;
+  const selectedIssues = moduleInstance
+    ? validationIssues.filter(
+        (issue) =>
+          issue.moduleId === moduleInstance.id ||
+          issue.connection?.from.moduleId === moduleInstance.id ||
+          issue.connection?.to.moduleId === moduleInstance.id,
+      )
+    : [];
+  const globalIssues = moduleInstance
+    ? validationIssues.filter((issue) => !selectedIssues.includes(issue))
+    : validationIssues;
 
   return (
     <aside className="panel inspector-panel">
@@ -39,6 +60,13 @@ export function ParameterInspector({
       <div className="trace-summary">
         <span className="meta-label">Final Input To Output</span>
         <strong>{formatSignal(outputTrace?.inputs.in)}</strong>
+        <p className="trace-summary-subtitle">
+          {validationIssues.length > 0
+            ? `${validationIssues.length} validation issue${validationIssues.length === 1 ? '' : 's'} blocking execution`
+            : execution
+              ? `${execution.trace.length} module${execution.trace.length === 1 ? '' : 's'} executed`
+              : 'Execution is waiting for a valid graph'}
+        </p>
       </div>
 
       {moduleDef && moduleInstance ? (
@@ -195,14 +223,33 @@ export function ParameterInspector({
             </div>
           </div>
 
+          {selectedIssues.length > 0 ? (
+            <div className="analysis-section">
+              <span className="meta-label">Selected Issues</span>
+              <ul className="issue-list">
+                {selectedIssues.map((issue, index) => (
+                  <li key={`${issue.code}-${index}`} className="issue-card">
+                    <strong>{humanizeIssueCode(issue.code)}</strong>
+                    <p>{issue.message}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           {executionError ? (
             <p className="inspector-warning">
-              Current edits make the graph invalid. Fix parameter values or graph
-              data to restore execution.
+              {validationIssues.length > 0
+                ? 'Current edits make the graph invalid. Resolve the issues below to restore execution.'
+                : executionError}
             </p>
           ) : selectedTrace ? (
             <div className="selected-trace">
               <span className="meta-label">Selected Trace</span>
+              <p className="selected-trace-order">
+                Step {selectedTraceOrder ?? '?'} of{' '}
+                {execution?.order.length ?? 0}
+              </p>
               <p>
                 inputs:{' '}
                 {Object.entries(selectedTrace.inputs)
@@ -222,12 +269,35 @@ export function ParameterInspector({
         <p className="empty-state">Select a module to inspect and edit its parameters.</p>
       )}
 
+      {globalIssues.length > 0 ? (
+        <section className="analysis-section">
+          <span className="meta-label">Graph Issues</span>
+          <ul className="issue-list">
+            {globalIssues.map((issue, index) => (
+              <li key={`${issue.code}-${index}`} className="issue-card">
+                <strong>{humanizeIssueCode(issue.code)}</strong>
+                <p>{issue.message}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <ol className="trace-list">
-        {(execution?.trace ?? []).map((entry) => (
-          <li key={entry.moduleId} className="trace-card">
+        {(execution?.trace ?? []).map((entry, index) => (
+          <li
+            key={entry.moduleId}
+            className={
+              entry.moduleId === moduleInstance?.id
+                ? 'trace-card trace-card-active'
+                : 'trace-card'
+            }
+          >
             <div className="trace-head">
               <strong>{entry.moduleId}</strong>
-              <span>{entry.defId}</span>
+              <span>
+                #{index + 1} {entry.defId}
+              </span>
             </div>
             <p>
               inputs:{' '}
@@ -246,4 +316,11 @@ export function ParameterInspector({
       </ol>
     </aside>
   );
+}
+
+function humanizeIssueCode(code: ValidationIssue['code']) {
+  return code
+    .split('-')
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(' ');
 }

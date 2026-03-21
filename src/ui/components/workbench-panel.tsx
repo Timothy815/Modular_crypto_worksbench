@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
-import type { ExecutionResult, ModuleRegistry, Project } from '../../engine/types';
+import type {
+  ExecutionResult,
+  ModuleRegistry,
+  Project,
+  ValidationIssue,
+} from '../../engine/types';
 import { validateProject } from '../../engine/validation';
 import type { DemoProject } from '../demo-projects';
 import { getModuleCategory } from '../module-categories';
@@ -45,6 +50,7 @@ interface WorkbenchPanelProps {
   annotations: WorkbenchAnnotation[];
   execution: ExecutionResult | null;
   executionError: string | null;
+  validationIssues: ValidationIssue[];
   registry: ModuleRegistry;
   selectedModuleId: string | null;
   selectedModuleIds: string[];
@@ -79,6 +85,7 @@ export function WorkbenchPanel({
   annotations,
   execution,
   executionError,
+  validationIssues,
   registry,
   selectedModuleId,
   selectedModuleIds,
@@ -597,8 +604,19 @@ export function WorkbenchPanel({
 
       {executionError ? (
         <div className="execution-error">
-          <span className="meta-label">Execution Error</span>
-          <strong>{executionError}</strong>
+          <span className="meta-label">
+            {validationIssues.length > 0 ? 'Validation Blocking Execution' : 'Execution Error'}
+          </span>
+          <strong>
+            {validationIssues.length > 0
+              ? validationIssues[0]?.message ?? executionError
+              : executionError}
+          </strong>
+          {validationIssues.length > 1 ? (
+            <p className="execution-error-detail">
+              {validationIssues.length - 1} more issue{validationIssues.length === 2 ? '' : 's'} listed in the inspector.
+            </p>
+          ) : null}
         </div>
       ) : null}
 
@@ -614,6 +632,10 @@ export function WorkbenchPanel({
         <div>
           <span className="meta-label">Execution Order</span>
           <strong>{execution ? execution.order.join(' -> ') : 'blocked'}</strong>
+        </div>
+        <div>
+          <span className="meta-label">Validation</span>
+          <strong>{validationIssues.length > 0 ? `${validationIssues.length} issues` : 'clean'}</strong>
         </div>
       </div>
     </section>
