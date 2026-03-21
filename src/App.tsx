@@ -100,7 +100,23 @@ function App() {
                 : 'workbench-grid workbench-grid-workbench-only'
         }
       >
-        {state.showPalette ? <PrimitivePalette registry={V1_REGISTRY} /> : null}
+        {state.showPalette ? (
+          <PrimitivePalette
+            registry={V1_REGISTRY}
+            onAddModule={(defId) => {
+              const moduleDef = V1_REGISTRY[defId];
+              if (!moduleDef) {
+                return;
+              }
+
+              dispatch({
+                type: 'addModule',
+                projectId: activeProjectDefinition.id,
+                moduleDef,
+              });
+            }}
+          />
+        ) : null}
 
         <WorkbenchPanel
           activeProject={activeProjectDefinition}
@@ -153,17 +169,24 @@ function App() {
                 rawValue,
               })
             }
-            onParamChange={(moduleId, key, value) =>
-              dispatch({
-                type: 'updateParam',
-                projectId: activeProjectDefinition.id,
-                moduleId,
-                key,
-                value,
-              })
-            }
-          />
-        ) : null}
+          onParamChange={(moduleId, key, value) =>
+            dispatch({
+              type: 'updateParam',
+              projectId: activeProjectDefinition.id,
+              moduleId,
+              key,
+              value,
+            })
+          }
+          onDeleteModule={(moduleId) =>
+            dispatch({
+              type: 'removeModule',
+              projectId: activeProjectDefinition.id,
+              moduleId,
+            })
+          }
+        />
+      ) : null}
       </section>
     </main>
   );

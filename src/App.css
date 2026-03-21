@@ -154,6 +154,13 @@
   padding: 14px 16px;
 }
 
+.primitive-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
 .primitive-card + .primitive-card,
 .trace-card + .trace-card {
   margin-top: 12px;
@@ -170,6 +177,24 @@
   font-family: var(--mono);
   font-size: 0.82rem;
   color: var(--muted);
+}
+
+.primitive-add-button,
+.delete-module-button {
+  border: 1px solid rgba(33, 53, 71, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 250, 243, 0.72);
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.delete-module-button {
+  margin-bottom: 14px;
+  color: #8c3020;
+  background: rgba(200, 85, 61, 0.1);
 }
 
 .project-switcher {

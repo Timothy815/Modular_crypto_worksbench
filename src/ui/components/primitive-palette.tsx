@@ -2,9 +2,10 @@ import type { ModuleRegistry } from '../../engine/types';
 
 interface PrimitivePaletteProps {
   registry: ModuleRegistry;
+  onAddModule: (defId: string) => void;
 }
 
-export function PrimitivePalette({ registry }: PrimitivePaletteProps) {
+export function PrimitivePalette({ registry, onAddModule }: PrimitivePaletteProps) {
   const primitiveDefs = Object.values(registry);
 
   return (
@@ -20,9 +21,18 @@ export function PrimitivePalette({ registry }: PrimitivePaletteProps) {
               <strong>{def.name}</strong>
               <p>{def.id}</p>
             </div>
-            <span className="port-count">
-              {def.inputs.length} in / {def.outputs.length} out
-            </span>
+            <div className="primitive-actions">
+              <span className="port-count">
+                {def.inputs.length} in / {def.outputs.length} out
+              </span>
+              <button
+                type="button"
+                className="primitive-add-button"
+                onClick={() => onAddModule(def.id)}
+              >
+                Add
+              </button>
+            </div>
           </li>
         ))}
       </ul>

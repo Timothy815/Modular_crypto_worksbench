@@ -9,6 +9,7 @@ interface ParameterInspectorProps {
   getParamDraft: (moduleId: string, key: string) => string | undefined;
   onParamDraftChange: (moduleId: string, key: string, rawValue: string) => void;
   onParamChange: (moduleId: string, key: string, value: unknown) => void;
+  onDeleteModule: (moduleId: string) => void;
 }
 
 export function ParameterInspector({
@@ -19,6 +20,7 @@ export function ParameterInspector({
   getParamDraft,
   onParamDraftChange,
   onParamChange,
+  onDeleteModule,
 }: ParameterInspectorProps) {
   const outputTrace = execution?.trace.at(-1);
   const selectedTrace = execution?.trace.find(
@@ -42,6 +44,13 @@ export function ParameterInspector({
           <span className="meta-label">Selected Module</span>
           <strong className="selected-module-name">{moduleInstance.id}</strong>
           <p className="selected-module-type">{moduleDef.id}</p>
+          <button
+            type="button"
+            className="delete-module-button"
+            onClick={() => onDeleteModule(moduleInstance.id)}
+          >
+            Delete Module
+          </button>
 
           <div className="param-list">
             {Object.values(moduleDef.paramSchema).length === 0 ? (
