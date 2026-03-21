@@ -4,6 +4,7 @@ import type { ExecutionResult, ModuleRegistry, Project } from '../../engine/type
 import { validateProject } from '../../engine/validation';
 import type { DemoProject } from '../demo-projects';
 import { getModuleCategory } from '../module-categories';
+import type { WorkbenchAnnotation } from '../workbench-document';
 
 const NODE_WIDTH = 132;
 const PORT_GAP = 18;
@@ -38,11 +39,16 @@ interface WorkbenchPanelProps {
   activeProject: DemoProject;
   activeProjectState: Project;
   layout: Record<string, { x: number; y: number }>;
+  annotations: WorkbenchAnnotation[];
   execution: ExecutionResult | null;
   executionError: string | null;
   registry: ModuleRegistry;
   selectedModuleId: string | null;
   onMoveModule: (moduleId: string, x: number, y: number) => void;
+  onAddAnnotation: () => void;
+  onMoveAnnotation: (annotationId: string, x: number, y: number) => void;
+  onUpdateAnnotationText: (annotationId: string, text: string) => void;
+  onRemoveAnnotation: (annotationId: string) => void;
   onSelectModule: (moduleId: string) => void;
   onSwitchProject: (projectId: string) => void;
   onAddConnection: (
@@ -61,11 +67,16 @@ export function WorkbenchPanel({
   activeProject,
   activeProjectState,
   layout,
+  annotations,
   execution,
   executionError,
   registry,
   selectedModuleId,
   onMoveModule,
+  onAddAnnotation,
+  onMoveAnnotation,
+  onUpdateAnnotationText,
+  onRemoveAnnotation,
   onSelectModule,
   onSwitchProject,
   onAddConnection,
@@ -78,6 +89,11 @@ export function WorkbenchPanel({
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const [dragState, setDragState] = useState<{
     moduleId: string;
+    pointerOffsetX: number;
+    pointerOffsetY: number;
+  } | null>(null);
+  const [annotationDragState, setAnnotationDragState] = useState<{
+    annotationId: string;
     pointerOffsetX: number;
     pointerOffsetY: number;
   } | null>(null);
@@ -95,35 +111,51 @@ export function WorkbenchPanel({
   );
 
   useEffect(() => {
-    if (!dragState) {
+    if (!dragState && !annotationDragState) {
       return undefined;
     }
 
     function handlePointerMove(event: MouseEvent) {
-      const activeDrag = dragState;
-      if (!activeDrag) {
-        return;
-      }
-
       const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
       const canvasSurface = canvasSurfaceRef.current;
       if (!canvasRect || !canvasSurface) {
         return;
       }
 
-      const nextX = Math.max(
-        16,
-        event.clientX - canvasRect.left + canvasSurface.scrollLeft - activeDrag.pointerOffsetX,
-      );
-      const nextY = Math.max(
-        16,
-        event.clientY - canvasRect.top + canvasSurface.scrollTop - activeDrag.pointerOffsetY,
-      );
-      onMoveModule(activeDrag.moduleId, nextX, nextY);
+      if (dragState) {
+        const nextX = Math.max(
+          16,
+          event.clientX - canvasRect.left + canvasSurface.scrollLeft - dragState.pointerOffsetX,
+        );
+        const nextY = Math.max(
+          16,
+          event.clientY - canvasRect.top + canvasSurface.scrollTop - dragState.pointerOffsetY,
+        );
+        onMoveModule(dragState.moduleId, nextX, nextY);
+      }
+
+      if (annotationDragState) {
+        const nextX = Math.max(
+          16,
+          event.clientX -
+            canvasRect.left +
+            canvasSurface.scrollLeft -
+            annotationDragState.pointerOffsetX,
+        );
+        const nextY = Math.max(
+          16,
+          event.clientY -
+            canvasRect.top +
+            canvasSurface.scrollTop -
+            annotationDragState.pointerOffsetY,
+        );
+        onMoveAnnotation(annotationDragState.annotationId, nextX, nextY);
+      }
     }
 
     function handlePointerUp() {
       setDragState(null);
+      setAnnotationDragState(null);
     }
 
     window.addEventListener('mousemove', handlePointerMove);
@@ -133,7 +165,7 @@ export function WorkbenchPanel({
       window.removeEventListener('mousemove', handlePointerMove);
       window.removeEventListener('mouseup', handlePointerUp);
     };
-  }, [dragState, onMoveModule]);
+  }, [annotationDragState, dragState, onMoveAnnotation, onMoveModule]);
 
   useEffect(() => {
     if (!pendingConnection) {
@@ -258,6 +290,13 @@ export function WorkbenchPanel({
       </div>
 
       <div className="project-actions">
+        <button
+          type="button"
+          className="mini-action-button"
+          onClick={onAddAnnotation}
+        >
+          Add Note
+        </button>
         <button
           type="button"
           className="mini-action-button"
@@ -470,6 +509,53 @@ export function WorkbenchPanel({
               </div>
             );
           })}
+
+          {annotations.map((annotation) => (
+            <div
+              key={annotation.id}
+              className="canvas-annotation"
+              style={{ left: `${annotation.x}px`, top: `${annotation.y}px` }}
+            >
+              <div
+                className="canvas-annotation-handle"
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
+                  const canvasSurface = canvasSurfaceRef.current;
+                  if (!canvasRect || !canvasSurface) {
+                    return;
+                  }
+
+                  setAnnotationDragState({
+                    annotationId: annotation.id,
+                    pointerOffsetX:
+                      event.clientX - canvasRect.left + canvasSurface.scrollLeft - annotation.x,
+                    pointerOffsetY:
+                      event.clientY - canvasRect.top + canvasSurface.scrollTop - annotation.y,
+                  });
+                }}
+              >
+                Note
+                <button
+                  type="button"
+                  className="annotation-delete-button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onRemoveAnnotation(annotation.id);
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+              <textarea
+                value={annotation.text}
+                onChange={(event) =>
+                  onUpdateAnnotationText(annotation.id, event.target.value)
+                }
+              />
+            </div>
+          ))}
         </div>
       </div>
 

@@ -17,6 +17,10 @@ export type UiAction =
   | { type: 'switchProject'; projectId: string }
   | { type: 'selectModule'; projectId: string; moduleId: string }
   | { type: 'moveModule'; projectId: string; moduleId: string; x: number; y: number }
+  | { type: 'addAnnotation'; projectId: string }
+  | { type: 'moveAnnotation'; projectId: string; annotationId: string; x: number; y: number }
+  | { type: 'updateAnnotationText'; projectId: string; annotationId: string; text: string }
+  | { type: 'removeAnnotation'; projectId: string; annotationId: string }
   | { type: 'addModule'; projectId: string; moduleDef: ModuleDef }
   | { type: 'removeModule'; projectId: string; moduleId: string }
   | {
@@ -66,6 +70,18 @@ function createModuleId(project: Project, defId: string) {
   while (project.modules.some((moduleInstance) => moduleInstance.id === candidate)) {
     index += 1;
     candidate = `${prefix}-${index}`;
+  }
+
+  return candidate;
+}
+
+function createAnnotationId(annotations: WorkbenchAnnotation[]) {
+  let index = annotations.length + 1;
+  let candidate = `note-${index}`;
+
+  while (annotations.some((annotation) => annotation.id === candidate)) {
+    index += 1;
+    candidate = `note-${index}`;
   }
 
   return candidate;
@@ -145,6 +161,78 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
               y: action.y,
             },
           },
+        },
+      };
+    }
+    case 'addAnnotation': {
+      const currentAnnotations = state.annotationsByProject[action.projectId] ?? [];
+      const nextAnnotationId = createAnnotationId(currentAnnotations);
+
+      return {
+        ...state,
+        annotationsByProject: {
+          ...state.annotationsByProject,
+          [action.projectId]: [
+            ...currentAnnotations,
+            {
+              id: nextAnnotationId,
+              x: 72,
+              y: 72,
+              text: 'Add note...',
+            },
+          ],
+        },
+      };
+    }
+    case 'moveAnnotation': {
+      const currentAnnotations = state.annotationsByProject[action.projectId];
+      if (!currentAnnotations) {
+        return state;
+      }
+
+      return {
+        ...state,
+        annotationsByProject: {
+          ...state.annotationsByProject,
+          [action.projectId]: currentAnnotations.map((annotation) =>
+            annotation.id === action.annotationId
+              ? { ...annotation, x: action.x, y: action.y }
+              : annotation,
+          ),
+        },
+      };
+    }
+    case 'updateAnnotationText': {
+      const currentAnnotations = state.annotationsByProject[action.projectId];
+      if (!currentAnnotations) {
+        return state;
+      }
+
+      return {
+        ...state,
+        annotationsByProject: {
+          ...state.annotationsByProject,
+          [action.projectId]: currentAnnotations.map((annotation) =>
+            annotation.id === action.annotationId
+              ? { ...annotation, text: action.text }
+              : annotation,
+          ),
+        },
+      };
+    }
+    case 'removeAnnotation': {
+      const currentAnnotations = state.annotationsByProject[action.projectId];
+      if (!currentAnnotations) {
+        return state;
+      }
+
+      return {
+        ...state,
+        annotationsByProject: {
+          ...state.annotationsByProject,
+          [action.projectId]: currentAnnotations.filter(
+            (annotation) => annotation.id !== action.annotationId,
+          ),
         },
       };
     }

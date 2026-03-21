@@ -69,6 +69,8 @@ function App() {
     state.projectStates[activeProjectDefinition.id] ?? activeProjectDefinition.project;
   const activeLayout =
     state.layoutByProject[activeProjectDefinition.id] ?? activeProjectDefinition.layout;
+  const activeAnnotations =
+    state.annotationsByProject[activeProjectDefinition.id] ?? [];
   const effectiveSelectedModuleId =
     getSelectedModuleId(state, activeProjectDefinition.id, activeProjectState);
   const selectedModule =
@@ -172,6 +174,7 @@ function App() {
           activeProject={activeProjectDefinition}
           activeProjectState={activeProjectState}
           layout={activeLayout}
+          annotations={activeAnnotations}
           execution={execution}
           executionError={executionError}
           registry={V1_REGISTRY}
@@ -183,6 +186,36 @@ function App() {
               moduleId,
               x,
               y,
+            })
+          }
+          onAddAnnotation={() =>
+            dispatch({
+              type: 'addAnnotation',
+              projectId: activeProjectDefinition.id,
+            })
+          }
+          onMoveAnnotation={(annotationId, x, y) =>
+            dispatch({
+              type: 'moveAnnotation',
+              projectId: activeProjectDefinition.id,
+              annotationId,
+              x,
+              y,
+            })
+          }
+          onUpdateAnnotationText={(annotationId, text) =>
+            dispatch({
+              type: 'updateAnnotationText',
+              projectId: activeProjectDefinition.id,
+              annotationId,
+              text,
+            })
+          }
+          onRemoveAnnotation={(annotationId) =>
+            dispatch({
+              type: 'removeAnnotation',
+              projectId: activeProjectDefinition.id,
+              annotationId,
             })
           }
           onSelectModule={(moduleId) =>

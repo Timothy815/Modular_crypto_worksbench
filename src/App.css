@@ -347,6 +347,59 @@
   overflow: visible;
 }
 
+.canvas-annotation {
+  position: absolute;
+  width: 200px;
+  border: 1px solid rgba(196, 161, 42, 0.28);
+  border-radius: 16px;
+  background: rgba(255, 245, 179, 0.94);
+  box-shadow: 0 12px 28px rgba(111, 85, 20, 0.12);
+  overflow: hidden;
+}
+
+.canvas-annotation-handle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(240, 209, 94, 0.5);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(92, 68, 14, 0.9);
+  cursor: grab;
+  user-select: none;
+}
+
+.canvas-annotation-handle:active {
+  cursor: grabbing;
+}
+
+.canvas-annotation textarea {
+  width: 100%;
+  min-height: 96px;
+  border: 0;
+  background: transparent;
+  padding: 10px 12px 12px;
+  resize: vertical;
+  font: inherit;
+  color: rgba(92, 68, 14, 0.96);
+}
+
+.annotation-delete-button {
+  border: 0;
+  background: rgba(255, 255, 255, 0.46);
+  border-radius: 999px;
+  width: 1.6rem;
+  height: 1.6rem;
+  font: inherit;
+  font-weight: 700;
+  color: rgba(92, 68, 14, 0.9);
+  cursor: pointer;
+}
+
 .graph-node-source {
   border-color: rgba(42, 130, 150, 0.35);
   background: rgba(42, 130, 150, 0.08);
