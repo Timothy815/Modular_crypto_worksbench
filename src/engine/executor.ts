@@ -1,7 +1,6 @@
 import {
   type ExecutionResult,
   type ExecutionTraceEntry,
-  type ModuleDef,
   type ModuleInputs,
   type ModuleOutputs,
   type ModuleRegistry,

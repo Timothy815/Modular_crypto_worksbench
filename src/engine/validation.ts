@@ -1,5 +1,4 @@
 import {
-  type Connection,
   type ModuleDef,
   type ModuleInstance,
   type ModuleRegistry,
