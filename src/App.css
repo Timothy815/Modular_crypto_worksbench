@@ -90,8 +90,8 @@
   margin: 0 0 14px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(42, 130, 150, 0.12);
-  color: var(--ink);
+  background: var(--success-bg);
+  color: var(--success-text);
 }
 
 .connection-status strong {
@@ -169,19 +169,19 @@
 }
 
 .primitive-card-source {
-  border-left: 4px solid rgba(42, 130, 150, 0.5);
+  border-left: 4px solid var(--role-source-accent);
 }
 
 .primitive-card-operator {
-  border-left: 4px solid rgba(200, 110, 50, 0.5);
+  border-left: 4px solid var(--role-operator-accent);
 }
 
 .primitive-card-bridge {
-  border-left: 4px solid rgba(130, 80, 170, 0.5);
+  border-left: 4px solid var(--role-bridge-accent);
 }
 
 .primitive-card-sink {
-  border-left: 4px solid rgba(60, 140, 80, 0.5);
+  border-left: 4px solid var(--role-sink-accent);
 }
 
 .primitive-actions {
@@ -323,12 +323,12 @@
 }
 
 .connection-group:hover path:not(.connection-hit-area) {
-  stroke: rgba(200, 85, 61, 0.6);
+  stroke: var(--danger-text);
   stroke-width: 3.5;
 }
 
 .pending-connection {
-  stroke: rgba(200, 85, 61, 0.5);
+  stroke: var(--danger-text);
   stroke-width: 2.5;
   stroke-dasharray: 8 6;
   pointer-events: none;
@@ -395,23 +395,23 @@
 }
 
 .graph-node-source {
-  border-color: rgba(42, 130, 150, 0.35);
-  background: rgba(42, 130, 150, 0.08);
+  border-color: var(--role-source-soft);
+  background: var(--role-source-bg);
 }
 
 .graph-node-operator {
-  border-color: rgba(200, 110, 50, 0.35);
-  background: rgba(200, 110, 50, 0.08);
+  border-color: var(--role-operator-soft);
+  background: var(--role-operator-bg);
 }
 
 .graph-node-bridge {
-  border-color: rgba(130, 80, 170, 0.35);
-  background: rgba(130, 80, 170, 0.08);
+  border-color: var(--role-bridge-soft);
+  background: var(--role-bridge-bg);
 }
 
 .graph-node-sink {
-  border-color: rgba(60, 140, 80, 0.35);
-  background: rgba(60, 140, 80, 0.08);
+  border-color: var(--role-sink-soft);
+  background: var(--role-sink-bg);
 }
 
 .graph-node-selected {
@@ -419,19 +419,19 @@
 }
 
 .graph-node-selected.graph-node-source {
-  border-color: rgba(42, 130, 150, 0.7);
+  border-color: var(--role-source-strong);
 }
 
 .graph-node-selected.graph-node-operator {
-  border-color: rgba(200, 110, 50, 0.7);
+  border-color: var(--role-operator-strong);
 }
 
 .graph-node-selected.graph-node-bridge {
-  border-color: rgba(130, 80, 170, 0.7);
+  border-color: var(--role-bridge-strong);
 }
 
 .graph-node-selected.graph-node-sink {
-  border-color: rgba(60, 140, 80, 0.7);
+  border-color: var(--role-sink-strong);
 }
 
 .graph-node-type {
@@ -507,25 +507,25 @@
 }
 
 .graph-port-droppable .graph-port-dot {
-  box-shadow: 0 0 0 3px rgba(200, 85, 61, 0.4);
+  box-shadow: 0 0 0 3px var(--danger-bg-strong);
 }
 
 .graph-port-valid {
-  color: rgba(42, 130, 150, 0.92);
+  color: var(--success-text);
 }
 
 .graph-port-valid .graph-port-dot {
-  background: rgba(42, 130, 150, 0.95);
-  box-shadow: 0 0 0 4px rgba(42, 130, 150, 0.14);
+  background: var(--success-text);
+  box-shadow: 0 0 0 4px var(--success-bg);
 }
 
 .graph-port-invalid {
-  color: rgba(200, 85, 61, 0.85);
+  color: var(--danger-text);
 }
 
 .graph-port-invalid .graph-port-dot {
-  background: rgba(200, 85, 61, 0.9);
-  box-shadow: 0 0 0 4px rgba(200, 85, 61, 0.12);
+  background: var(--danger-text);
+  box-shadow: 0 0 0 4px var(--danger-bg-strong);
 }
 
 .graph-port-dot {
@@ -538,7 +538,7 @@
 }
 
 .graph-port-dot:hover {
-  box-shadow: 0 0 0 4px rgba(200, 85, 61, 0.5);
+  box-shadow: 0 0 0 4px var(--danger-bg-strong);
 }
 
 .graph-port-label {

@@ -103,7 +103,13 @@ function App() {
       return;
     }
 
-    saveWorkspaceToStorage(state);
+    const timeoutId = window.setTimeout(() => {
+      saveWorkspaceToStorage(state);
+    }, 500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [state]);
 
   useEffect(() => {
