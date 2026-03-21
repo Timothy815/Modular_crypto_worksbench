@@ -2,7 +2,7 @@ import { useEffect, useReducer, useState } from 'react';
 
 import './App.css';
 import { V1_REGISTRY } from './engine/modules';
-import type { ExecutionResult } from './engine/types';
+import type { ExecutionResult, ModuleDef, ModuleDefinition } from './engine/types';
 import { ParameterInspector } from './ui/components/parameter-inspector';
 import { PrimitivePalette } from './ui/components/primitive-palette';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
@@ -86,7 +86,7 @@ function App() {
       (moduleInstance) => moduleInstance.id === effectiveSelectedModuleId,
     ) ?? null;
   const selectedModuleDef = selectedModule
-    ? V1_REGISTRY[selectedModule.defId]
+    ? asPrimitiveModuleDef(V1_REGISTRY[selectedModule.defId] ?? null)
     : null;
 
   let execution: ExecutionResult | null = null;
@@ -186,7 +186,7 @@ function App() {
           <PrimitivePalette
             registry={V1_REGISTRY}
             onAddModule={(defId) => {
-              const moduleDef = V1_REGISTRY[defId];
+              const moduleDef = asPrimitiveModuleDef(V1_REGISTRY[defId] ?? null);
               if (!moduleDef) {
                 return;
               }
@@ -350,3 +350,11 @@ function App() {
 }
 
 export default App;
+
+function asPrimitiveModuleDef(definition: ModuleDefinition | null): ModuleDef | null {
+  if (!definition || !('evaluate' in definition)) {
+    return null;
+  }
+
+  return definition;
+}

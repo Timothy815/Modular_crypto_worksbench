@@ -1,6 +1,6 @@
 import {
   type ConnectionEndpoint,
-  type ModuleDef,
+  type ModuleDefinition,
   type ModuleInstance,
   type ModuleParams,
   type ModuleRegistry,
@@ -11,7 +11,7 @@ import {
 } from './types';
 import type { CompositeDef, CompositePortBinding } from './composites';
 
-function findPort(def: ModuleDef, portName: string, direction: 'input' | 'output') {
+function findPort(def: ModuleDefinition, portName: string, direction: 'input' | 'output') {
   const ports = direction === 'input' ? def.inputs : def.outputs;
   return ports.find((port) => port.name === portName);
 }
@@ -19,7 +19,7 @@ function findPort(def: ModuleDef, portName: string, direction: 'input' | 'output
 function buildModuleMaps(project: Project, registry: ModuleRegistry) {
   const issues: ValidationIssue[] = [];
   const instancesById = new Map<string, ModuleInstance>();
-  const defsByInstanceId = new Map<string, ModuleDef>();
+  const defsByInstanceId = new Map<string, ModuleDefinition>();
 
   for (const moduleInstance of project.modules) {
     if (instancesById.has(moduleInstance.id)) {
@@ -83,7 +83,7 @@ function validateParamValue(field: ParamFieldDef, value: unknown): ValidationIss
 
 function validateParams(
   moduleInstance: ModuleInstance,
-  def: ModuleDef,
+  def: ModuleDefinition,
   issues: ValidationIssue[],
 ) {
   const schemaKeys = new Set(Object.keys(def.paramSchema));

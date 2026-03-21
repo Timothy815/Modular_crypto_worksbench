@@ -1,12 +1,14 @@
 import {
   type ExecutionResult,
   type ExecutionTraceEntry,
+  type ModuleDefinition,
   type ModuleInputs,
   type ModuleOutputs,
   type ModuleRegistry,
   type Project,
 } from './types';
 import { validateProject } from './validation';
+import type { CompositeDef } from './composites';
 
 export class ProjectValidationError extends Error {
   constructor(message: string) {
@@ -65,8 +67,11 @@ function collectInputs(
   moduleId: string,
   project: Project,
   outputsByModuleId: Record<string, ModuleOutputs>,
+  inputOverrides?: Record<string, ModuleInputs>,
 ): ModuleInputs {
-  const inputs: ModuleInputs = {};
+  const inputs: ModuleInputs = {
+    ...(inputOverrides?.[moduleId] ?? {}),
+  };
 
   for (const connection of project.connections) {
     if (connection.to.moduleId !== moduleId) {
@@ -88,7 +93,11 @@ function collectInputs(
   return inputs;
 }
 
-export function executeProject(project: Project, registry: ModuleRegistry): ExecutionResult {
+export function executeProject(
+  project: Project,
+  registry: ModuleRegistry,
+  inputOverrides?: Record<string, ModuleInputs>,
+): ExecutionResult {
   const validation = validateProject(project, registry);
 
   if (!validation.ok) {
@@ -114,8 +123,8 @@ export function executeProject(project: Project, registry: ModuleRegistry): Exec
       );
     }
 
-    const inputs = collectInputs(moduleId, project, outputsByModuleId);
-    const outputs = def.evaluate(inputs, moduleInstance.params);
+    const inputs = collectInputs(moduleId, project, outputsByModuleId, inputOverrides);
+    const outputs = evaluateDefinition(def, inputs, moduleInstance.params, registry);
 
     outputsByModuleId[moduleId] = outputs;
     trace.push({
@@ -131,4 +140,61 @@ export function executeProject(project: Project, registry: ModuleRegistry): Exec
     outputsByModuleId,
     trace,
   };
+}
+
+function evaluateDefinition(
+  def: ModuleDefinition,
+  inputs: ModuleInputs,
+  params: Record<string, unknown>,
+  registry: ModuleRegistry,
+): ModuleOutputs {
+  if (isCompositeDef(def)) {
+    return evaluateComposite(def, inputs, registry);
+  }
+
+  return def.evaluate(inputs, params);
+}
+
+function isCompositeDef(def: ModuleDefinition): def is CompositeDef {
+  return 'kind' in def && def.kind === 'composite';
+}
+
+function evaluateComposite(
+  def: CompositeDef,
+  inputs: ModuleInputs,
+  registry: ModuleRegistry,
+): ModuleOutputs {
+  const inputOverrides: Record<string, ModuleInputs> = {};
+
+  for (const binding of def.inputBindings) {
+    const signal = inputs[binding.externalPort];
+    if (!signal) {
+      throw new ProjectValidationError(
+        `Composite "${def.id}" is missing external input "${binding.externalPort}".`,
+      );
+    }
+
+    inputOverrides[binding.internalModuleId] = {
+      ...(inputOverrides[binding.internalModuleId] ?? {}),
+      [binding.internalPort]: signal,
+    };
+  }
+
+  const internalResult = executeProject(def.project, registry, inputOverrides);
+  const outputs: ModuleOutputs = {};
+
+  for (const binding of def.outputBindings) {
+    const moduleOutputs = internalResult.outputsByModuleId[binding.internalModuleId];
+    const signal = moduleOutputs?.[binding.internalPort];
+
+    if (!signal) {
+      throw new ProjectValidationError(
+        `Composite "${def.id}" could not resolve internal output "${binding.internalModuleId}.${binding.internalPort}".`,
+      );
+    }
+
+    outputs[binding.externalPort] = signal;
+  }
+
+  return outputs;
 }
