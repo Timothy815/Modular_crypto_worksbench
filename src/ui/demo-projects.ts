@@ -4,7 +4,6 @@ import type {
   ExecutionResult,
   ModuleRegistry,
   Project,
-  Signal,
 } from '../engine/types';
 
 export interface DemoProject {
@@ -84,14 +83,4 @@ export const demoProjects: DemoProject[] = [
 
 export function runDemoProject(project: Project, registry: ModuleRegistry = V1_REGISTRY): ExecutionResult {
   return executeProject(project, registry);
-}
-
-export function formatSignal(signal: Signal | undefined): string {
-  if (!signal) {
-    return 'n/a';
-  }
-
-  return signal.type === 'symbol'
-    ? signal.value
-    : `[${signal.value.join(', ')}]`;
 }

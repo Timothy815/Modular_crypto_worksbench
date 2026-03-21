@@ -188,7 +188,16 @@
 }
 
 .graph-node {
+  appearance: none;
+  width: 100%;
+  text-align: left;
   padding: 16px;
+  cursor: pointer;
+}
+
+.graph-node-selected {
+  border-color: rgba(200, 85, 61, 0.55);
+  box-shadow: 0 12px 24px rgba(200, 85, 61, 0.12);
 }
 
 .graph-node-type {
@@ -239,6 +248,76 @@
 
 .trace-card {
   padding: 14px 16px;
+}
+
+.inspector-section {
+  margin-bottom: 18px;
+}
+
+.selected-module-name {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ink);
+}
+
+.selected-module-type {
+  margin-bottom: 14px;
+  font-family: var(--mono);
+  font-size: 0.88rem;
+}
+
+.param-list {
+  display: grid;
+  gap: 12px;
+}
+
+.param-field {
+  display: grid;
+  gap: 8px;
+}
+
+.param-field span {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.param-field input,
+.param-field select,
+.param-field textarea {
+  width: 100%;
+  border: 1px solid rgba(33, 53, 71, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--ink);
+}
+
+.param-field textarea {
+  resize: vertical;
+  font-family: var(--mono);
+}
+
+.empty-state,
+.inspector-warning {
+  margin-bottom: 0;
+  font-size: 0.92rem;
+}
+
+.inspector-warning,
+.execution-error {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(200, 85, 61, 0.1);
+  color: #7a2e1d;
+}
+
+.selected-trace {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(38, 70, 83, 0.06);
 }
 
 @media (max-width: 900px) {

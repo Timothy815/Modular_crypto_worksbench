@@ -2,15 +2,82 @@ import { useState } from 'react';
 
 import './App.css';
 import { V1_REGISTRY } from './engine/modules';
-import { demoProjects, formatSignal, runDemoProject } from './ui/demo-projects';
+import type { ExecutionResult, Project } from './engine/types';
+import { ParameterInspector } from './ui/components/parameter-inspector';
+import { PrimitivePalette } from './ui/components/primitive-palette';
+import { WorkbenchPanel } from './ui/components/workbench-panel';
+import { demoProjects, runDemoProject } from './ui/demo-projects';
+
+function cloneProject(project: Project): Project {
+  return {
+    modules: project.modules.map((moduleInstance) => ({
+      ...moduleInstance,
+      params: { ...moduleInstance.params },
+    })),
+    connections: project.connections.map((connection) => ({
+      from: { ...connection.from },
+      to: { ...connection.to },
+    })),
+  };
+}
 
 function App() {
+  const [projectStates, setProjectStates] = useState<Record<string, Project>>(() =>
+    Object.fromEntries(
+      demoProjects.map((project) => [project.id, cloneProject(project.project)]),
+    ),
+  );
   const [activeProjectId, setActiveProjectId] = useState(demoProjects[0].id);
-  const activeProject =
+  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(
+    demoProjects[0].project.modules[0]?.id ?? null,
+  );
+
+  const activeProjectDefinition =
     demoProjects.find((project) => project.id === activeProjectId) ?? demoProjects[0];
-  const execution = runDemoProject(activeProject.project);
-  const outputTrace = execution.trace.at(-1);
-  const primitiveDefs = Object.values(V1_REGISTRY);
+  const activeProjectState =
+    projectStates[activeProjectDefinition.id] ?? activeProjectDefinition.project;
+  const effectiveSelectedModuleId =
+    activeProjectState.modules.some((moduleInstance) => moduleInstance.id === selectedModuleId)
+      ? selectedModuleId
+      : (activeProjectState.modules[0]?.id ?? null);
+  const selectedModule =
+    activeProjectState.modules.find(
+      (moduleInstance) => moduleInstance.id === effectiveSelectedModuleId,
+    ) ?? null;
+  const selectedModuleDef = selectedModule
+    ? V1_REGISTRY[selectedModule.defId]
+    : null;
+
+  let execution: ExecutionResult | null = null;
+  let executionError: string | null = null;
+
+  try {
+    execution = runDemoProject(activeProjectState);
+  } catch (error) {
+    executionError = error instanceof Error ? error.message : 'Execution failed.';
+  }
+
+  function updateProjectParam(moduleId: string, key: string, value: unknown) {
+    setProjectStates((current) => {
+      const nextProject = cloneProject(current[activeProjectDefinition.id]);
+      nextProject.modules = nextProject.modules.map((moduleInstance) =>
+        moduleInstance.id === moduleId
+          ? {
+              ...moduleInstance,
+              params: {
+                ...moduleInstance.params,
+                [key]: value,
+              },
+            }
+          : moduleInstance,
+      );
+
+      return {
+        ...current,
+        [activeProjectDefinition.id]: nextProject,
+      };
+    });
+  }
 
   return (
     <main className="app-shell">
@@ -39,97 +106,33 @@ function App() {
       </section>
 
       <section className="workbench-grid">
-        <aside className="panel palette-panel">
-          <div className="panel-head">
-            <p className="panel-label">Palette</p>
-            <h2>V1 Primitives</h2>
-          </div>
-          <ul className="primitive-list">
-            {primitiveDefs.map((def) => (
-              <li key={def.id} className="primitive-card">
-                <div>
-                  <strong>{def.name}</strong>
-                  <p>{def.id}</p>
-                </div>
-                <span className="port-count">
-                  {def.inputs.length} in / {def.outputs.length} out
-                </span>
-              </li>
-            ))}
-          </ul>
-        </aside>
+        <PrimitivePalette registry={V1_REGISTRY} />
 
-        <section className="panel canvas-panel">
-          <div className="panel-head">
-            <p className="panel-label">Workbench</p>
-            <h2>Demo Graphs</h2>
-          </div>
+        <WorkbenchPanel
+          activeProject={activeProjectDefinition}
+          activeProjectState={activeProjectState}
+          execution={execution}
+          executionError={executionError}
+          selectedModuleId={effectiveSelectedModuleId}
+          onSelectModule={setSelectedModuleId}
+          onSwitchProject={(projectId) => {
+            setActiveProjectId(projectId);
+            setSelectedModuleId(
+              projectStates[projectId]?.modules[0]?.id ??
+                demoProjects.find((project) => project.id === projectId)?.project.modules[0]?.id ??
+                null,
+            );
+          }}
+          projects={demoProjects}
+        />
 
-          <div className="project-switcher">
-            {demoProjects.map((project) => (
-              <button
-                key={project.id}
-                type="button"
-                className={project.id === activeProject.id ? 'switch-chip active' : 'switch-chip'}
-                onClick={() => setActiveProjectId(project.id)}
-              >
-                {project.name}
-              </button>
-            ))}
-          </div>
-
-          <p className="project-summary">{activeProject.summary}</p>
-          <p className="mono-line">{activeProject.pipeline}</p>
-
-          <div className="graph-strip">
-            {activeProject.project.modules.map((moduleInstance) => (
-              <div key={moduleInstance.id} className="graph-node">
-                <span className="graph-node-type">{moduleInstance.defId}</span>
-                <strong>{moduleInstance.id}</strong>
-              </div>
-            ))}
-          </div>
-
-          <div className="graph-meta">
-            <div>
-              <span className="meta-label">Modules</span>
-              <strong>{activeProject.project.modules.length}</strong>
-            </div>
-            <div>
-              <span className="meta-label">Connections</span>
-              <strong>{activeProject.project.connections.length}</strong>
-            </div>
-            <div>
-              <span className="meta-label">Execution Order</span>
-              <strong>{execution.order.join(' -> ')}</strong>
-            </div>
-          </div>
-        </section>
-
-        <aside className="panel inspector-panel">
-          <div className="panel-head">
-            <p className="panel-label">Inspector</p>
-            <h2>Execution Trace</h2>
-          </div>
-
-          <div className="trace-summary">
-            <span className="meta-label">Final Input To Output</span>
-            <strong>{formatSignal(outputTrace?.inputs.in)}</strong>
-          </div>
-
-          <ol className="trace-list">
-            {execution.trace.map((entry) => (
-              <li key={entry.moduleId} className="trace-card">
-                <div className="trace-head">
-                  <strong>{entry.moduleId}</strong>
-                  <span>{entry.defId}</span>
-                </div>
-                <p>inputs: {Object.entries(entry.inputs).map(([, signal]) => formatSignal(signal)).join(' | ') || 'none'}</p>
-                <p>outputs: {Object.entries(entry.outputs).map(([, signal]) => formatSignal(signal)).join(' | ') || 'none'}</p>
-              </li>
-            ))}
-          </ol>
-        </aside>
+        <ParameterInspector
+          execution={execution}
+          executionError={executionError}
+          moduleDef={selectedModuleDef}
+          moduleInstance={selectedModule}
+          onParamChange={updateProjectParam}
+        />
       </section>
     </main>
   );

@@ -1,6 +1,9 @@
 # MCW — UI Kickoff
 
 Branch: `feature/minimal-ui-shell`
+Checkpoint:
+- `67558b3` — Start minimal UI shell
+- working tree now includes component extraction and param-driven inspector work
 
 This document records the first UI-phase decisions so work can pass cleanly between Codex and Claude.
 
@@ -57,10 +60,27 @@ These files are safe for Claude to continue from later.
 
 Once back online, Claude should be able to continue from this branch by taking one of these bounded tasks:
 
-1. Replace static graph presentation with a more editor-like canvas layout.
-2. Add parameter editing controls for the selected module instance.
-3. Add a second demo graph and graph switching controls.
-4. Begin extracting the shell into `src/ui/components/`.
+1. Replace the current graph strip with a more editor-like canvas layout while preserving the current selection model.
+2. Improve parameter editing UX for `bits` and `wiring` fields with more structured controls.
+3. Add a dedicated selected-module summary card or inline port visualization.
+4. Introduce `src/ui/components/` substructure for canvas-only concerns if the workbench view grows further.
+
+---
+
+## Current Implemented State
+
+The branch now contains:
+- a `src/ui/` boundary
+- demo project definitions in `src/ui/demo-projects.ts`
+- component extraction for:
+  - primitive palette
+  - workbench panel
+  - parameter inspector
+- selected module state
+- param-driven editing based on `def.paramSchema`
+- live re-execution through local UI state
+
+This means the branch has already validated the key UI-side promise of `paramSchema`: the engine metadata can drive browser controls.
 
 ---
 
