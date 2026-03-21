@@ -15,6 +15,7 @@ export interface UiState {
   layoutByProject: Record<string, Record<string, { x: number; y: number }>>;
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
   selectedModuleIdByProject: Record<string, string | null>;
+  selectedModuleIdsByProject: Record<string, string[]>;
   paramDrafts: Record<string, string>;
   showPalette: boolean;
   showInspector: boolean;
@@ -22,7 +23,7 @@ export interface UiState {
 
 export type UiAction =
   | { type: 'switchProject'; projectId: string }
-  | { type: 'selectModule'; projectId: string; moduleId: string }
+  | { type: 'selectModule'; projectId: string; moduleId: string; additive?: boolean }
   | { type: 'moveModule'; projectId: string; moduleId: string; x: number; y: number }
   | { type: 'addAnnotation'; projectId: string }
   | { type: 'moveAnnotation'; projectId: string; annotationId: string; x: number; y: number }
@@ -44,6 +45,8 @@ export type UiAction =
   | { type: 'clearParamDraft'; projectId: string; moduleId: string; key: string }
   | { type: 'loadDocument'; projectId: string; document: WorkbenchDocument }
   | { type: 'loadCompositeLibrary'; document: CompositeLibraryDocument }
+  | { type: 'addCompositeToLibrary'; entry: CompositeLibraryEntry }
+  | { type: 'removeCompositeFromLibrary'; compositeId: string }
   | { type: 'togglePalette' }
   | { type: 'toggleInspector' };
 
@@ -140,6 +143,12 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     selectedModuleIdByProject: Object.fromEntries(
       projects.map((project) => [project.id, project.project.modules[0]?.id ?? null]),
     ),
+    selectedModuleIdsByProject: Object.fromEntries(
+      projects.map((project) => [
+        project.id,
+        project.project.modules[0]?.id ? [project.project.modules[0].id] : [],
+      ]),
+    ),
     paramDrafts: {},
     showPalette: true,
     showInspector: true,
@@ -154,13 +163,12 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
         activeProjectId: action.projectId,
       };
     case 'selectModule':
-      return {
-        ...state,
-        selectedModuleIdByProject: {
-          ...state.selectedModuleIdByProject,
-          [action.projectId]: action.moduleId,
-        },
-      };
+      return applyModuleSelection(
+        state,
+        action.projectId,
+        action.moduleId,
+        action.additive ?? false,
+      );
     case 'moveModule': {
       const currentLayout = state.layoutByProject[action.projectId];
       if (!currentLayout) {
@@ -304,6 +312,10 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           ...state.selectedModuleIdByProject,
           [action.projectId]: nextModuleId,
         },
+        selectedModuleIdsByProject: {
+          ...state.selectedModuleIdsByProject,
+          [action.projectId]: [nextModuleId],
+        },
       };
     }
     case 'removeModule': {
@@ -346,6 +358,10 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
         selectedModuleIdByProject: {
           ...state.selectedModuleIdByProject,
           [action.projectId]: nextProject.modules[0]?.id ?? null,
+        },
+        selectedModuleIdsByProject: {
+          ...state.selectedModuleIdsByProject,
+          [action.projectId]: nextProject.modules[0]?.id ? [nextProject.modules[0].id] : [],
         },
         paramDrafts: nextDrafts,
       };
@@ -480,6 +496,10 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           ...state.selectedModuleIdByProject,
           [action.projectId]: nextProject.modules[0]?.id ?? null,
         },
+        selectedModuleIdsByProject: {
+          ...state.selectedModuleIdsByProject,
+          [action.projectId]: nextProject.modules[0]?.id ? [nextProject.modules[0].id] : [],
+        },
         paramDrafts: nextDrafts,
       };
     }
@@ -495,6 +515,16 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
             outputBindings: entry.definition.outputBindings.map((binding) => ({ ...binding })),
           },
         })),
+      };
+    case 'addCompositeToLibrary':
+      return {
+        ...state,
+        compositeLibrary: [...state.compositeLibrary, action.entry],
+      };
+    case 'removeCompositeFromLibrary':
+      return {
+        ...state,
+        compositeLibrary: state.compositeLibrary.filter((entry) => entry.id !== action.compositeId),
       };
     case 'togglePalette':
       return {
@@ -518,6 +548,18 @@ export function getSelectedModuleId(state: UiState, projectId: string, project: 
     : (project.modules[0]?.id ?? null);
 }
 
+export function getSelectedModuleIds(state: UiState, projectId: string, project: Project): string[] {
+  const allowed = new Set(project.modules.map((moduleInstance) => moduleInstance.id));
+  const selectedModuleIds = state.selectedModuleIdsByProject[projectId] ?? [];
+  const filtered = selectedModuleIds.filter((moduleId) => allowed.has(moduleId));
+
+  if (filtered.length > 0) {
+    return filtered;
+  }
+
+  return project.modules[0]?.id ? [project.modules[0].id] : [];
+}
+
 export function getDraftValue(
   state: UiState,
   projectId: string,
@@ -536,5 +578,48 @@ export function getEffectiveRegistry(
     ...Object.fromEntries(
       compositeLibrary.map((entry) => [entry.id, entry.definition]),
     ),
+  };
+}
+
+function applyModuleSelection(
+  state: UiState,
+  projectId: string,
+  moduleId: string,
+  additive: boolean,
+): UiState {
+  const currentSelection = state.selectedModuleIdsByProject[projectId] ?? [];
+
+  if (!additive) {
+    return {
+      ...state,
+      selectedModuleIdByProject: {
+        ...state.selectedModuleIdByProject,
+        [projectId]: moduleId,
+      },
+      selectedModuleIdsByProject: {
+        ...state.selectedModuleIdsByProject,
+        [projectId]: [moduleId],
+      },
+    };
+  }
+
+  const isAlreadySelected = currentSelection.includes(moduleId);
+  const nextSelection = isAlreadySelected
+    ? currentSelection.filter((selectedId) => selectedId !== moduleId)
+    : [...currentSelection, moduleId];
+
+  return {
+    ...state,
+    selectedModuleIdByProject: {
+      ...state.selectedModuleIdByProject,
+      [projectId]:
+        nextSelection[nextSelection.length - 1] ??
+        state.selectedModuleIdByProject[projectId] ??
+        null,
+    },
+    selectedModuleIdsByProject: {
+      ...state.selectedModuleIdsByProject,
+      [projectId]: nextSelection,
+    },
   };
 }

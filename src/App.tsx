@@ -3,6 +3,7 @@ import { useEffect, useReducer, useState } from 'react';
 import './App.css';
 import { V1_REGISTRY } from './engine/modules';
 import type { ExecutionResult } from './engine/types';
+import { createCompositeFromSelection } from './ui/composite-authoring';
 import { ParameterInspector } from './ui/components/parameter-inspector';
 import { PrimitivePalette } from './ui/components/primitive-palette';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
@@ -20,6 +21,7 @@ import {
   getEffectiveRegistry,
   getDraftValue,
   getSelectedModuleId,
+  getSelectedModuleIds,
   uiReducer,
 } from './ui/store';
 
@@ -46,19 +48,26 @@ function App() {
         return initialState;
       }
 
-        return {
-          ...initialState,
-          activeProjectId: persistedWorkspace.activeProjectId,
-          compositeLibrary:
-            persistedWorkspace.compositeLibrary.entries.length > 0
-              ? persistedWorkspace.compositeLibrary.entries
-              : initialState.compositeLibrary,
-          showPalette: persistedWorkspace.showPalette,
-          showInspector: persistedWorkspace.showInspector,
+      const restoredProjectStates = Object.fromEntries(
+        projects.map((project) => [
+          project.id,
+          persistedWorkspace.documentsByProjectId[project.id]?.project ?? initialState.projectStates[project.id],
+        ]),
+      );
+
+      return {
+        ...initialState,
+        activeProjectId: persistedWorkspace.activeProjectId,
+        compositeLibrary:
+          persistedWorkspace.compositeLibrary.entries.length > 0
+            ? persistedWorkspace.compositeLibrary.entries
+            : initialState.compositeLibrary,
+        showPalette: persistedWorkspace.showPalette,
+        showInspector: persistedWorkspace.showInspector,
         projectStates: Object.fromEntries(
           projects.map((project) => [
             project.id,
-            persistedWorkspace.documentsByProjectId[project.id]?.project ?? initialState.projectStates[project.id],
+            restoredProjectStates[project.id],
           ]),
         ),
         layoutByProject: Object.fromEntries(
@@ -73,10 +82,28 @@ function App() {
             persistedWorkspace.documentsByProjectId[project.id]?.ui.annotations ?? initialState.annotationsByProject[project.id],
           ]),
         ),
+        selectedModuleIdByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            restoredProjectStates[project.id]?.modules[0]?.id ?? null,
+          ]),
+        ),
+        selectedModuleIdsByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            restoredProjectStates[project.id]?.modules[0]?.id
+              ? [restoredProjectStates[project.id].modules[0].id]
+              : [],
+          ]),
+        ),
       };
     },
   );
   const [importError, setImportError] = useState<string | null>(null);
+  const [isCompositeDialogOpen, setIsCompositeDialogOpen] = useState(false);
+  const [compositeName, setCompositeName] = useState('');
+  const [compositeId, setCompositeId] = useState('');
+  const [compositeDialogError, setCompositeDialogError] = useState<string | null>(null);
 
   const activeProjectDefinition =
     demoProjects.find((project) => project.id === state.activeProjectId) ?? demoProjects[0];
@@ -89,6 +116,8 @@ function App() {
     state.annotationsByProject[activeProjectDefinition.id] ?? [];
   const effectiveSelectedModuleId =
     getSelectedModuleId(state, activeProjectDefinition.id, activeProjectState);
+  const effectiveSelectedModuleIds =
+    getSelectedModuleIds(state, activeProjectDefinition.id, activeProjectState);
   const selectedModule =
     activeProjectState.modules.find(
       (moduleInstance) => moduleInstance.id === effectiveSelectedModuleId,
@@ -96,6 +125,20 @@ function App() {
   const selectedModuleDef = selectedModule
     ? (effectiveRegistry[selectedModule.defId] ?? null)
     : null;
+  const compositeUsageCountById = Object.values(state.projectStates).reduce<Record<string, number>>(
+    (counts, project) => {
+      for (const moduleInstance of project.modules) {
+        if (!state.compositeLibrary.some((entry) => entry.id === moduleInstance.defId)) {
+          continue;
+        }
+
+        counts[moduleInstance.defId] = (counts[moduleInstance.defId] ?? 0) + 1;
+      }
+
+      return counts;
+    },
+    {},
+  );
 
   let execution: ExecutionResult | null = null;
   let executionError: string | null = null;
@@ -193,6 +236,7 @@ function App() {
         {state.showPalette ? (
           <PrimitivePalette
             registry={effectiveRegistry}
+            compositeUsageCountById={compositeUsageCountById}
             onAddModule={(defId) => {
               const moduleDef = effectiveRegistry[defId] ?? null;
               if (!moduleDef) {
@@ -205,6 +249,18 @@ function App() {
                 moduleDef,
               });
             }}
+            onExportCompositeLibrary={() =>
+              downloadCompositeLibraryDocument({
+                version: 1,
+                entries: state.compositeLibrary,
+              })
+            }
+            onRemoveComposite={(defId) =>
+              dispatch({
+                type: 'removeCompositeFromLibrary',
+                compositeId: defId,
+              })
+            }
           />
         ) : null}
 
@@ -217,6 +273,7 @@ function App() {
           executionError={executionError}
           registry={effectiveRegistry}
           selectedModuleId={effectiveSelectedModuleId}
+          selectedModuleIds={effectiveSelectedModuleIds}
           onMoveModule={(moduleId, x, y) =>
             dispatch({
               type: 'moveModule',
@@ -256,13 +313,20 @@ function App() {
               annotationId,
             })
           }
-          onSelectModule={(moduleId) =>
+          onSelectModule={(moduleId, additive) =>
             dispatch({
               type: 'selectModule',
               projectId: activeProjectDefinition.id,
               moduleId,
+              additive,
             })
           }
+          onRequestCreateComposite={() => {
+            setCompositeName('');
+            setCompositeId('');
+            setCompositeDialogError(null);
+            setIsCompositeDialogOpen(true);
+          }}
           onAddConnection={(fromModuleId, fromPort, toModuleId, toPort) =>
             dispatch({
               type: 'addConnection',
@@ -323,22 +387,6 @@ function App() {
           }
           projects={demoProjects}
         />
-
-        <div className="library-actions">
-          <button
-            type="button"
-            className="mini-action-button"
-            onClick={() =>
-              downloadCompositeLibraryDocument({
-                version: 1,
-                entries: state.compositeLibrary,
-              })
-            }
-          >
-            Export Composite Library
-          </button>
-        </div>
-
         {importError ? <p className="import-error-banner">{importError}</p> : null}
 
         {state.showInspector ? (
@@ -378,8 +426,117 @@ function App() {
         />
       ) : null}
       </section>
+
+      {isCompositeDialogOpen ? (
+        <div
+          className="dialog-backdrop"
+          onClick={() => {
+            setIsCompositeDialogOpen(false);
+            setCompositeDialogError(null);
+          }}
+        >
+          <div
+            className="dialog-panel"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="panel-label">Composite Authoring</p>
+            <h2>Create Reusable Composite</h2>
+            <p className="dialog-copy">
+              Capture the current selection as a reusable composite module. The
+              selection stays in the workbench; this first version just adds the
+              new composite to the library.
+            </p>
+
+            <p className="dialog-selection-summary">
+              Selected modules: <strong>{effectiveSelectedModuleIds.length}</strong>
+            </p>
+
+            <label className="param-field">
+              <span>Display Name</span>
+              <input
+                type="text"
+                value={compositeName}
+                onChange={(event) => {
+                  const nextName = event.target.value;
+                  setCompositeName(nextName);
+                  if (!compositeId) {
+                    setCompositeId(createCompositeIdCandidate(nextName));
+                  }
+                }}
+                placeholder="Round Trip Bridge"
+              />
+            </label>
+
+            <label className="param-field">
+              <span>Stable Id</span>
+              <input
+                type="text"
+                value={compositeId}
+                onChange={(event) => setCompositeId(event.target.value)}
+                placeholder="RoundTripBridge"
+              />
+            </label>
+
+            {compositeDialogError ? (
+              <p className="field-error">{compositeDialogError}</p>
+            ) : null}
+
+            <div className="dialog-actions">
+              <button
+                type="button"
+                className="secondary-dialog-button"
+                onClick={() => {
+                  setIsCompositeDialogOpen(false);
+                  setCompositeDialogError(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="primary-dialog-button"
+                onClick={() => {
+                  const result = createCompositeFromSelection({
+                    project: activeProjectState,
+                    registry: effectiveRegistry,
+                    name: compositeName,
+                    id: compositeId,
+                    selectedModuleIds: effectiveSelectedModuleIds,
+                  });
+
+                  if (!result.ok || !result.entry) {
+                    setCompositeDialogError(result.error ?? 'Unable to create composite.');
+                    return;
+                  }
+
+                  dispatch({
+                    type: 'addCompositeToLibrary',
+                    entry: result.entry,
+                  });
+                  setIsCompositeDialogOpen(false);
+                  setCompositeDialogError(null);
+                }}
+              >
+                Create Composite
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
 
 export default App;
+
+function createCompositeIdCandidate(name: string) {
+  const stripped = name.replace(/[^A-Za-z0-9]+/g, ' ').trim();
+  if (!stripped) {
+    return '';
+  }
+
+  const words = stripped.split(/\s+/);
+  return words
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join('');
+}

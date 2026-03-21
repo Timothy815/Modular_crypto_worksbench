@@ -44,12 +44,14 @@ interface WorkbenchPanelProps {
   executionError: string | null;
   registry: ModuleRegistry;
   selectedModuleId: string | null;
+  selectedModuleIds: string[];
   onMoveModule: (moduleId: string, x: number, y: number) => void;
   onAddAnnotation: () => void;
   onMoveAnnotation: (annotationId: string, x: number, y: number) => void;
   onUpdateAnnotationText: (annotationId: string, text: string) => void;
   onRemoveAnnotation: (annotationId: string) => void;
-  onSelectModule: (moduleId: string) => void;
+  onSelectModule: (moduleId: string, additive?: boolean) => void;
+  onRequestCreateComposite: () => void;
   onSwitchProject: (projectId: string) => void;
   onAddConnection: (
     fromModuleId: string,
@@ -72,12 +74,14 @@ export function WorkbenchPanel({
   executionError,
   registry,
   selectedModuleId,
+  selectedModuleIds,
   onMoveModule,
   onAddAnnotation,
   onMoveAnnotation,
   onUpdateAnnotationText,
   onRemoveAnnotation,
   onSelectModule,
+  onRequestCreateComposite,
   onSwitchProject,
   onAddConnection,
   onRemoveConnection,
@@ -311,6 +315,14 @@ export function WorkbenchPanel({
         >
           Import JSON
         </button>
+        <button
+          type="button"
+          className="mini-action-button"
+          onClick={onRequestCreateComposite}
+          disabled={selectedModuleIds.length === 0}
+        >
+          Create Composite
+        </button>
         <input
           ref={importInputRef}
           type="file"
@@ -328,6 +340,13 @@ export function WorkbenchPanel({
 
       <p className="project-summary">{activeProject.summary}</p>
       <p className="mono-line">{activeProject.pipeline}</p>
+      {selectedModuleIds.length > 0 ? (
+        <p className="selection-status">
+          Selected modules: <strong>{selectedModuleIds.length}</strong>. Use
+          <strong> Shift-click</strong> or <strong> Cmd/Ctrl-click</strong> to
+          build a composite selection.
+        </p>
+      ) : null}
       {pendingConnection ? (
         <p className="connection-status">
           Wiring from <strong>{pendingConnection.fromModuleId}.{pendingConnection.fromPort}</strong>.
@@ -430,20 +449,23 @@ export function WorkbenchPanel({
                 key={moduleInstance.id}
                 className={
                   `graph-node graph-node-${category}` +
-                  (moduleInstance.id === selectedModuleId ? ' graph-node-selected' : '')
+                  (selectedModuleIds.includes(moduleInstance.id) ? ' graph-node-selected' : '') +
+                  (moduleInstance.id === selectedModuleId ? ' graph-node-primary-selected' : '')
                 }
                 style={{ left: `${position.x}px`, top: `${position.y}px` }}
               >
                 <div
                   className="graph-node-body"
-                  onClick={() => onSelectModule(moduleInstance.id)}
                   onMouseDown={(event) => {
                     event.preventDefault();
                     const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
                     const canvasSurface = canvasSurfaceRef.current;
                     if (!canvasRect || !canvasSurface) return;
 
-                    onSelectModule(moduleInstance.id);
+                    onSelectModule(
+                      moduleInstance.id,
+                      event.shiftKey || event.metaKey || event.ctrlKey,
+                    );
                     setDragState({
                       moduleId: moduleInstance.id,
                       pointerOffsetX: event.clientX - canvasRect.left + canvasSurface.scrollLeft - position.x,
