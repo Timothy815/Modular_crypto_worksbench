@@ -1,7 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 import type { ExecutionResult, ModuleRegistry, Project } from '../../engine/types';
 import type { DemoProject } from '../demo-projects';
+
+const NODE_WIDTH = 132;
+const PORT_GAP = 18;
+const PORT_START_Y = 34;
+
+function getAnchorPosition(
+  x: number,
+  y: number,
+  side: 'left' | 'right',
+  portIndex: number,
+) {
+  return {
+    x: side === 'left' ? x : x + NODE_WIDTH,
+    y: y + PORT_START_Y + portIndex * PORT_GAP,
+  };
+}
 
 interface WorkbenchPanelProps {
   activeProject: DemoProject;
@@ -30,6 +46,7 @@ export function WorkbenchPanel({
   onSwitchProject,
   projects,
 }: WorkbenchPanelProps) {
+  const canvasSurfaceRef = useRef<HTMLDivElement | null>(null);
   const [dragState, setDragState] = useState<{
     moduleId: string;
     pointerOffsetX: number;
@@ -56,8 +73,20 @@ export function WorkbenchPanel({
         return;
       }
 
-      const nextX = Math.max(16, event.clientX - activeDrag.pointerOffsetX);
-      const nextY = Math.max(16, event.clientY - activeDrag.pointerOffsetY);
+      const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
+      const canvasSurface = canvasSurfaceRef.current;
+      if (!canvasRect || !canvasSurface) {
+        return;
+      }
+
+      const nextX = Math.max(
+        16,
+        event.clientX - canvasRect.left + canvasSurface.scrollLeft - activeDrag.pointerOffsetX,
+      );
+      const nextY = Math.max(
+        16,
+        event.clientY - canvasRect.top + canvasSurface.scrollTop - activeDrag.pointerOffsetY,
+      );
       onMoveModule(activeDrag.moduleId, nextX, nextY);
     }
 
@@ -97,14 +126,14 @@ export function WorkbenchPanel({
       <p className="project-summary">{activeProject.summary}</p>
       <p className="mono-line">{activeProject.pipeline}</p>
 
-      <div className="canvas-surface">
+      <div ref={canvasSurfaceRef} className="canvas-surface">
         <div
           className="graph-canvas"
           style={
             {
               '--canvas-width': `${canvasWidth}px`,
               '--canvas-height': `${canvasHeight}px`,
-            } as React.CSSProperties
+            } as CSSProperties
           }
         >
           <svg
@@ -115,21 +144,45 @@ export function WorkbenchPanel({
             {activeProjectState.connections.map((connection) => {
               const from = layout[connection.from.moduleId];
               const to = layout[connection.to.moduleId];
+              const sourceDef = registry[
+                activeProjectState.modules.find(
+                  (moduleInstance) => moduleInstance.id === connection.from.moduleId,
+                )?.defId ?? ''
+              ];
+              const targetDef = registry[
+                activeProjectState.modules.find(
+                  (moduleInstance) => moduleInstance.id === connection.to.moduleId,
+                )?.defId ?? ''
+              ];
 
-              if (!from || !to) {
+              if (!from || !to || !sourceDef || !targetDef) {
                 return null;
               }
 
-              const x1 = from.x + 132;
-              const y1 = from.y + 44;
-              const x2 = to.x;
-              const y2 = to.y + 44;
-              const midX = (x1 + x2) / 2;
+              const sourceIndex = Math.max(
+                0,
+                sourceDef.outputs.findIndex((port) => port.name === connection.from.port),
+              );
+              const targetIndex = Math.max(
+                0,
+                targetDef.inputs.findIndex((port) => port.name === connection.to.port),
+              );
+
+              const sourceSide = from.x <= to.x ? 'right' : 'left';
+              const targetSide = from.x <= to.x ? 'left' : 'right';
+              const sourceAnchor = getAnchorPosition(from.x, from.y, sourceSide, sourceIndex);
+              const targetAnchor = getAnchorPosition(to.x, to.y, targetSide, targetIndex);
+              const horizontalDistance = Math.abs(targetAnchor.x - sourceAnchor.x);
+              const bend = Math.max(56, horizontalDistance * 0.42);
+              const sourceControlX =
+                sourceSide === 'right' ? sourceAnchor.x + bend : sourceAnchor.x - bend;
+              const targetControlX =
+                targetSide === 'left' ? targetAnchor.x - bend : targetAnchor.x + bend;
 
               return (
                 <path
                   key={`${connection.from.moduleId}:${connection.from.port}-${connection.to.moduleId}:${connection.to.port}`}
-                  d={`M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`}
+                  d={`M ${sourceAnchor.x} ${sourceAnchor.y} C ${sourceControlX} ${sourceAnchor.y}, ${targetControlX} ${targetAnchor.y}, ${targetAnchor.x} ${targetAnchor.y}`}
                 />
               );
             })}
@@ -160,6 +213,34 @@ export function WorkbenchPanel({
                   });
                 }}
               >
+                <div className="graph-node-anchor-group graph-node-anchor-group-in">
+                  {(def?.inputs ?? []).map((port, index) => (
+                    <span
+                      key={port.name}
+                      className="graph-port-anchor graph-port-anchor-in"
+                      style={{ top: `${PORT_START_Y + index * PORT_GAP}px` }}
+                      title={`${port.name}: ${port.type}`}
+                    >
+                      <span className="graph-port-dot" />
+                      <span className="graph-port-label">IN</span>
+                    </span>
+                  ))}
+                </div>
+
+                <div className="graph-node-anchor-group graph-node-anchor-group-out">
+                  {(def?.outputs ?? []).map((port, index) => (
+                    <span
+                      key={port.name}
+                      className="graph-port-anchor graph-port-anchor-out"
+                      style={{ top: `${PORT_START_Y + index * PORT_GAP}px` }}
+                      title={`${port.name}: ${port.type}`}
+                    >
+                      <span className="graph-port-label">OUT</span>
+                      <span className="graph-port-dot" />
+                    </span>
+                  ))}
+                </div>
+
                 <span className="graph-node-type">{moduleInstance.defId}</span>
                 <strong>{moduleInstance.id}</strong>
                 <div className="graph-node-ports">
