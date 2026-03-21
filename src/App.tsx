@@ -111,6 +111,7 @@ function App() {
   const [compositeDialogError, setCompositeDialogError] = useState<string | null>(null);
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
   const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
+  const [hoveredTraceModuleId, setHoveredTraceModuleId] = useState<string | null>(null);
 
   const activeProjectDefinition =
     demoProjects.find((project) => project.id === state.activeProjectId) ?? demoProjects[0];
@@ -313,6 +314,7 @@ function App() {
           registry={effectiveRegistry}
           selectedModuleId={effectiveSelectedModuleId}
           selectedModuleIds={effectiveSelectedModuleIds}
+          hoveredTraceModuleId={hoveredTraceModuleId}
           onMoveModule={(moduleId, x, y) =>
             dispatch({
               type: 'moveModule',
@@ -563,6 +565,7 @@ function App() {
                 moduleId,
               })
             }
+            onTraceHover={setHoveredTraceModuleId}
           />
         ) : null}
       </section>

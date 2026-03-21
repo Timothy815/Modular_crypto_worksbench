@@ -21,6 +21,7 @@ interface ParameterInspectorProps {
   onParamChange: (moduleId: string, key: string, value: unknown) => void;
   onDeleteModule: (moduleId: string) => void;
   onSelectIssueTarget: (moduleId: string) => void;
+  onTraceHover: (moduleId: string | null) => void;
 }
 
 export function ParameterInspector({
@@ -34,6 +35,7 @@ export function ParameterInspector({
   onParamChange,
   onDeleteModule,
   onSelectIssueTarget,
+  onTraceHover,
 }: ParameterInspectorProps) {
   const [traceMode, setTraceMode] = useState<'focused' | 'full'>('focused');
   const outputTrace = execution?.trace.at(-1);
@@ -44,16 +46,13 @@ export function ParameterInspector({
     ? (execution?.order.findIndex((moduleId) => moduleId === selectedTrace.moduleId) ?? -1) + 1
     : null;
   const selectedIssues = moduleInstance
-    ? validationIssues.filter(
-        (issue) =>
-          issue.moduleId === moduleInstance.id ||
-          issue.connection?.from.moduleId === moduleInstance.id ||
-          issue.connection?.to.moduleId === moduleInstance.id,
-      )
+    ? validationIssues.filter((issue) => getIssueTargetModuleId(issue) === moduleInstance.id)
     : [];
   const globalIssues = moduleInstance
     ? validationIssues.filter((issue) => !selectedIssues.includes(issue))
     : validationIssues;
+  const groupedSelectedIssues = groupIssuesByTarget(selectedIssues);
+  const groupedGlobalIssues = groupIssuesByTarget(globalIssues);
   const effectiveTraceMode = selectedTrace ? traceMode : 'full';
   const traceEntries = effectiveTraceMode === 'focused' && selectedTrace
     ? [selectedTrace]
@@ -236,22 +235,21 @@ export function ParameterInspector({
             <div className="analysis-section">
               <span className="meta-label">Selected Issues</span>
               <ul className="issue-list">
-                {selectedIssues.map((issue, index) => (
+                {groupedSelectedIssues.map((group, index) => (
                   <li
-                    key={`${issue.code}-${index}`}
-                    className={getIssueTargetModuleId(issue) ? 'issue-card issue-card-actionable' : 'issue-card'}
+                    key={`${group.targetModuleId ?? 'global'}-${index}`}
+                    className={group.targetModuleId ? 'issue-card issue-card-actionable' : 'issue-card'}
                     onClick={() => {
-                      const targetModuleId = getIssueTargetModuleId(issue);
-                      if (targetModuleId) {
-                        onSelectIssueTarget(targetModuleId);
+                      if (group.targetModuleId) {
+                        onSelectIssueTarget(group.targetModuleId);
                       }
                     }}
                   >
-                    <strong>{humanizeIssueCode(issue.code)}</strong>
-                    {getIssueTargetModuleId(issue) ? (
-                      <span className="issue-target-chip">{getIssueTargetModuleId(issue)}</span>
+                    <strong>{group.title}</strong>
+                    {group.targetModuleId ? (
+                      <span className="issue-target-chip">{group.targetModuleId}</span>
                     ) : null}
-                    <p>{issue.message}</p>
+                    <p>{group.messages.join(' ')}</p>
                   </li>
                 ))}
               </ul>
@@ -259,10 +257,10 @@ export function ParameterInspector({
           ) : null}
 
           {executionError ? (
-            <p className="inspector-warning">
+            <p className={validationIssues.length > 0 ? 'inspector-warning' : 'inspector-runtime-error'}>
               {validationIssues.length > 0
                 ? 'Current edits make the graph invalid. Resolve the issues below to restore execution.'
-                : executionError}
+                : `Execution failed even though the graph is valid. ${executionError}`}
             </p>
           ) : selectedTrace ? (
             <div className="selected-trace">
@@ -294,22 +292,21 @@ export function ParameterInspector({
         <section className="analysis-section">
           <span className="meta-label">Graph Issues</span>
           <ul className="issue-list">
-            {globalIssues.map((issue, index) => (
+            {groupedGlobalIssues.map((group, index) => (
               <li
-                key={`${issue.code}-${index}`}
-                className={getIssueTargetModuleId(issue) ? 'issue-card issue-card-actionable' : 'issue-card'}
+                key={`${group.targetModuleId ?? 'global'}-${index}`}
+                className={group.targetModuleId ? 'issue-card issue-card-actionable' : 'issue-card'}
                 onClick={() => {
-                  const targetModuleId = getIssueTargetModuleId(issue);
-                  if (targetModuleId) {
-                    onSelectIssueTarget(targetModuleId);
+                  if (group.targetModuleId) {
+                    onSelectIssueTarget(group.targetModuleId);
                   }
                 }}
               >
-                <strong>{humanizeIssueCode(issue.code)}</strong>
-                {getIssueTargetModuleId(issue) ? (
-                  <span className="issue-target-chip">{getIssueTargetModuleId(issue)}</span>
+                <strong>{group.title}</strong>
+                {group.targetModuleId ? (
+                  <span className="issue-target-chip">{group.targetModuleId}</span>
                 ) : null}
-                <p>{issue.message}</p>
+                <p>{group.messages.join(' ')}</p>
               </li>
             ))}
           </ul>
@@ -351,6 +348,8 @@ export function ParameterInspector({
                 ? 'trace-card trace-card-active'
                 : 'trace-card'
             }
+            onMouseEnter={() => onTraceHover(entry.moduleId)}
+            onMouseLeave={() => onTraceHover(null)}
           >
             <div className="trace-head">
               <strong>{entry.moduleId}</strong>
@@ -387,4 +386,31 @@ function humanizeIssueCode(code: ValidationIssue['code']) {
 
 function getIssueTargetModuleId(issue: ValidationIssue) {
   return issue.moduleId ?? issue.connection?.to.moduleId ?? issue.connection?.from.moduleId ?? null;
+}
+
+function groupIssuesByTarget(issues: ValidationIssue[]) {
+  const groups = new Map<
+    string,
+    { targetModuleId: string | null; title: string; messages: string[] }
+  >();
+
+  for (const issue of issues) {
+    const targetModuleId = getIssueTargetModuleId(issue);
+    const key = `${targetModuleId ?? 'global'}:${issue.code}`;
+    const existing = groups.get(key);
+    if (existing) {
+      if (!existing.messages.includes(issue.message)) {
+        existing.messages.push(issue.message);
+      }
+      continue;
+    }
+
+    groups.set(key, {
+      targetModuleId,
+      title: humanizeIssueCode(issue.code),
+      messages: [issue.message],
+    });
+  }
+
+  return [...groups.values()];
 }

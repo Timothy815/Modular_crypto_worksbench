@@ -533,6 +533,11 @@
   transform: translateY(-1px);
 }
 
+.graph-node-trace-hovered {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px var(--link-primary-bg);
+}
+
 .graph-node-selected.graph-node-source {
   border-color: var(--role-source-strong);
 }
@@ -1022,6 +1027,14 @@
   border-radius: 18px;
   background: var(--danger-bg);
   color: var(--danger-text);
+}
+
+.inspector-runtime-error {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface-soft);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
 }
 
 .execution-error-detail {
