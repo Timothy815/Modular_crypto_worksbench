@@ -1,7 +1,9 @@
 import {
   type ModuleDef,
   type ModuleInstance,
+  type ModuleParams,
   type ModuleRegistry,
+  type ParamFieldDef,
   type Project,
   type ValidationIssue,
   type ValidationResult,
@@ -40,9 +42,146 @@ function buildModuleMaps(project: Project, registry: ModuleRegistry) {
     }
 
     defsByInstanceId.set(moduleInstance.id, def);
+
+    // Validate parameters against schema
+    for (const [key, fieldDef] of Object.entries(def.paramSchema)) {
+      const value = moduleInstance.params[key];
+
+      if (value === undefined || value === null) {
+        if (fieldDef.required) {
+          issues.push({
+            code: 'invalid-params' as any,
+            message: `Module "${moduleInstance.id}" is missing required parameter "${key}".`,
+            moduleId: moduleInstance.id,
+          });
+        }
+        continue;
+      }
+
+      // Type checking based on ParamKind
+      let typeValid = true;
+      switch (fieldDef.kind) {
+        case 'number':
+          typeValid = typeof value === 'number';
+          break;
+        case 'string':
+          typeValid = typeof value === 'string';
+          break;
+        case 'boolean':
+          typeValid = typeof value === 'boolean';
+          break;
+        case 'bits':
+          typeValid = Array.isArray(value) && value.every((v) => typeof v === 'number');
+          break;
+        case 'wiring':
+          // For V1, wiring is a string[] (letter permutation) or number[] (index permutation)
+          typeValid = Array.isArray(value) && value.every((v) => typeof v === 'string' || typeof v === 'number');
+          break;
+        case 'select':
+          typeValid = fieldDef.options?.some((opt) => opt.value === value) ?? false;
+          if (!typeValid) {
+            issues.push({
+              code: 'invalid-params' as any,
+              message: `Module "${moduleInstance.id}" has invalid value for select parameter "${key}".`,
+              moduleId: moduleInstance.id,
+            });
+          }
+          break;
+      }
+
+      if (!typeValid && fieldDef.kind !== 'select') {
+        issues.push({
+          code: 'invalid-params' as any,
+          message: `Module "${moduleInstance.id}" parameter "${key}" expects type "${fieldDef.kind}", but got "${typeof value}".`,
+          moduleId: moduleInstance.id,
+        });
+      }
+    }
   }
 
   return { defsByInstanceId, instancesById, issues };
+}
+
+function validateParamValue(field: ParamFieldDef, value: unknown): ValidationIssue['code'] | null {
+  switch (field.kind) {
+    case 'number':
+      return typeof value === 'number' && Number.isFinite(value)
+        ? null
+        : 'invalid-param-type';
+    case 'string':
+      return typeof value === 'string' ? null : 'invalid-param-type';
+    case 'boolean':
+      return typeof value === 'boolean' ? null : 'invalid-param-type';
+    case 'bits':
+      return Array.isArray(value) && value.every((bit) => bit === 0 || bit === 1)
+        ? null
+        : 'invalid-param-type';
+    case 'wiring':
+      return Array.isArray(value) && value.every((entry) => typeof entry === 'string')
+        ? null
+        : 'invalid-param-type';
+    case 'select': {
+      if (typeof value !== 'string') {
+        return 'invalid-param-type';
+      }
+
+      if (!field.options || field.options.length === 0) {
+        return null;
+      }
+
+      return field.options.some((option) => option.value === value)
+        ? null
+        : 'invalid-param-option';
+    }
+    default:
+      return 'invalid-param-type';
+  }
+}
+
+function validateParams(
+  moduleInstance: ModuleInstance,
+  def: ModuleDef,
+  issues: ValidationIssue[],
+) {
+  const schemaKeys = new Set(Object.keys(def.paramSchema));
+  const params = moduleInstance.params as ModuleParams;
+
+  for (const field of Object.values(def.paramSchema)) {
+    const value = params[field.key];
+
+    if (value === undefined) {
+      if (field.required) {
+        issues.push({
+          code: 'missing-required-param',
+          message: `Module "${moduleInstance.id}" is missing required param "${field.key}".`,
+          moduleId: moduleInstance.id,
+        });
+      }
+      continue;
+    }
+
+    const validationCode = validateParamValue(field, value);
+    if (validationCode) {
+      issues.push({
+        code: validationCode,
+        message:
+          validationCode === 'invalid-param-option'
+            ? `Module "${moduleInstance.id}" has invalid option "${String(value)}" for param "${field.key}".`
+            : `Module "${moduleInstance.id}" has invalid value for param "${field.key}" of kind "${field.kind}".`,
+        moduleId: moduleInstance.id,
+      });
+    }
+  }
+
+  for (const key of Object.keys(params)) {
+    if (!schemaKeys.has(key)) {
+      issues.push({
+        code: 'unknown-param',
+        message: `Module "${moduleInstance.id}" provided unknown param "${key}".`,
+        moduleId: moduleInstance.id,
+      });
+    }
+  }
 }
 
 export function validateProject(project: Project, registry: ModuleRegistry): ValidationResult {
@@ -54,6 +193,11 @@ export function validateProject(project: Project, registry: ModuleRegistry): Val
   for (const moduleInstance of project.modules) {
     adjacency.set(moduleInstance.id, []);
     indegree.set(moduleInstance.id, 0);
+
+    const def = defsByInstanceId.get(moduleInstance.id);
+    if (def) {
+      validateParams(moduleInstance, def, issues);
+    }
   }
 
   for (const connection of project.connections) {
