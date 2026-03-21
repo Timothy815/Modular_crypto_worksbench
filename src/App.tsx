@@ -392,6 +392,7 @@ function App() {
           hoveredTraceModuleId={hoveredTraceModuleId}
           steppedModuleId={steppedModuleId}
           divergenceModuleId={divergenceModuleId}
+          challengeSolved={challengeEvaluation?.status === 'success'}
           onMoveModule={(moduleId, x, y) =>
             dispatch({
               type: 'moveModule',

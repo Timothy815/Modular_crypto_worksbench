@@ -57,6 +57,7 @@ interface WorkbenchPanelProps {
   hoveredTraceModuleId?: string | null;
   steppedModuleId?: string | null;
   divergenceModuleId?: string | null;
+  challengeSolved?: boolean;
   isCompositeEditor?: boolean;
   onMoveModule: (moduleId: string, x: number, y: number) => void;
   onAddAnnotation: () => void;
@@ -95,6 +96,7 @@ export function WorkbenchPanel({
   hoveredTraceModuleId = null,
   steppedModuleId = null,
   divergenceModuleId = null,
+  challengeSolved = false,
   isCompositeEditor = false,
   onMoveModule,
   onAddAnnotation,
@@ -313,7 +315,7 @@ export function WorkbenchPanel({
   }
 
   return (
-    <section className="panel canvas-panel">
+    <section className={challengeSolved ? 'panel canvas-panel canvas-panel-success' : 'panel canvas-panel'}>
       <div className="panel-head">
         <p className="panel-label">Workbench</p>
         <h2>{title ?? 'Demo Graphs'}</h2>

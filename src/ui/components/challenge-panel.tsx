@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { GuidedChallenge, ChallengeEvaluation } from '../challenges';
 
 interface ChallengePanelProps {
@@ -21,11 +21,27 @@ export function ChallengePanel({
   onImportChallenge,
 }: ChallengePanelProps) {
   const importInputRef = useRef<HTMLInputElement | null>(null);
+  const [hintState, setHintState] = useState<{
+    challengeId: string | null;
+    count: number;
+  }>({
+    challengeId: null,
+    count: 0,
+  });
   const selectedChallenge =
     challenges.find((challenge) => challenge.id === selectedChallengeId) ?? null;
+  const availableHints = selectedChallenge?.hints ?? [];
+  const revealedHintCount =
+    hintState.challengeId === selectedChallengeId ? hintState.count : 0;
 
   return (
-    <section className="panel comparison-panel">
+    <section
+      className={
+        evaluation?.status === 'success'
+          ? 'panel comparison-panel challenge-panel-success'
+          : 'panel comparison-panel'
+      }
+    >
       <div className="panel-head">
         <p className="panel-label">Guided Challenge</p>
         <h2>Challenge Mode</h2>
@@ -75,6 +91,24 @@ export function ChallengePanel({
             >
               Load Challenge File
             </button>
+            {availableHints.length > 0 ? (
+              <button
+                type="button"
+                className="mini-action-button"
+                onClick={() =>
+                  setHintState((current) => ({
+                    challengeId: selectedChallengeId,
+                    count: Math.min(
+                      (current.challengeId === selectedChallengeId ? current.count : 0) + 1,
+                      availableHints.length,
+                    ),
+                  }))
+                }
+                disabled={revealedHintCount >= availableHints.length}
+              >
+                {revealedHintCount === 0 ? 'Need A Hint?' : 'Reveal Next Hint'}
+              </button>
+            ) : null}
             <input
               ref={importInputRef}
               type="file"
@@ -96,6 +130,11 @@ export function ChallengePanel({
               <span className="meta-label">Challenge Status</span>
               {evaluation ? (
                 <>
+                  {evaluation.status === 'success' ? (
+                    <div className="challenge-success-banner">
+                      Challenge solved. Your machine matches the target behavior.
+                    </div>
+                  ) : null}
                   <p className="comparison-copy">
                     Status:{' '}
                     <strong>
@@ -154,10 +193,20 @@ export function ChallengePanel({
                       </div>
                     </>
                   ) : null}
-                  {selectedChallenge.hints && selectedChallenge.hints.length > 0 ? (
+                  {availableHints.length > 0 ? (
                     <p className="comparison-copy">
-                      Hints available: <strong>{selectedChallenge.hints.length}</strong>
+                      Hints available: <strong>{availableHints.length}</strong>
                     </p>
+                  ) : null}
+                  {revealedHintCount > 0 ? (
+                    <div className="challenge-hints">
+                      {availableHints.slice(0, revealedHintCount).map((hint, index) => (
+                        <div key={`${selectedChallenge.id}-hint-${index}`} className="comparison-diff-card">
+                          <span className="meta-label">Hint {index + 1}</span>
+                          <p className="comparison-copy">{hint}</p>
+                        </div>
+                      ))}
+                    </div>
                   ) : null}
                 </>
               ) : (
