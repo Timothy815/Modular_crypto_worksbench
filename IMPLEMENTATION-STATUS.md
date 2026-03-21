@@ -6,7 +6,7 @@ Last updated: March 21, 2026
 
 ## Current State
 
-The project has moved from planning-only to implementation scaffold.
+The project has moved well beyond scaffold status.
 
 Established and now available for other agents:
 - implementation contract
@@ -17,7 +17,15 @@ Established and now available for other agents:
 - graph validation
 - param validation against `paramSchema`
 - iterative topological executor
-- initial engine tests
+- V1 primitive module set
+- hybrid reference pipeline tests
+- reducer-backed UI state
+- visual workbench canvas
+- add / delete / move / connect editor fundamentals
+- module-role color coding in palette and canvas
+- structured parameter editors for `bits` and `wiring`
+- workbench persistence (autosave/restore + JSON import/export)
+- sticky-note annotations stored as UI metadata
 - GitHub Pages deployment workflow
 
 ---
@@ -61,34 +69,27 @@ The following decisions are no longer just prose; they are reflected in the scaf
 ### Claude
 
 Safe to begin:
-- primitive module files under `src/engine/modules/`
-- module definitions for:
-  - `TextInput`
-  - `KeyInput`
-  - `BitSource`
-  - `SymbolToBits`
-  - `BitsToSymbol`
-  - `XOR`
-  - `Output`
-- module unit tests
+- extract `BitsEditor` and `WiringEditor` into dedicated UI components
+- normalize merge-readiness and milestone docs for the current UI branch
+- begin theme-token groundwork for dark mode
+- improve note/layout UX if needed
 
 Should avoid for now:
 - changing `src/engine/types.ts`
 - changing executor semantics
-- changing validation rules without coordination
+- hiding domain boundaries for convenience
 
 ### Gemini
 
 Safe to begin:
-- review `src/engine/validation.ts`
-- review `src/engine/executor.ts`
-- review failure modes and edge cases
-- identify missing tests or incorrect assumptions
+- review persistence-format boundaries between engine `Project` and UI layout metadata
+- review annotation model and whether it stays properly outside the engine
+- identify merge-readiness risks before `v0.4.0`
 
 Best focus:
-- whether validation coverage is sufficient
-- whether executor assumptions are too loose
-- whether the future runtime-state seam needs a stronger placeholder
+- whether layout, annotations, and project data remain cleanly separated
+- whether persistence and import/export are sound enough for classroom use
+- whether the UI is staying aligned with the product-teaching goals
 
 ---
 
@@ -104,7 +105,7 @@ Architect expectation for all future changes:
 - lint passes
 - build passes
 
-The public-facing placeholder app and README have been identified as normalization targets and should not be treated as representative product work.
+The UI is now representative product work, though it remains an early editor slice rather than the final product.
 
 ---
 
@@ -116,16 +117,59 @@ Architectural normalization added on March 21:
 - package scripts aligned with contributor workflow
 - contract aligned with record-based registry already used in code
 - validator expanded to cover params as well as graph structure
-- public template surfaces marked for replacement with MCW-specific content
+- public template surfaces replaced with MCW-specific content
 
-The next integration milestone should be:
+The next product milestone should be:
 
 ```text
-TextInput -> SymbolToBits -> XOR -> BitsToSymbol -> Output
+Persistence UI -> composite workflows -> deeper execution visibility
 ```
 
-After that:
+The canonical hybrid reference machine remains:
 
 ```text
 TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol -> Output
 ```
+
+---
+
+## Current Branch Status
+
+Stable engine milestone on `main`:
+- tag `v0.2.0`
+
+Active UI branch:
+- `feature/minimal-ui-shell`
+
+UI branch currently includes:
+- visual workbench canvas
+- reducer-backed UI state
+- node movement
+- collapsible palette / inspector
+- parameter inspector driven by `paramSchema`
+- add/delete module controls
+- refactored node DOM with separate body/port hit areas
+- port-to-port connection creation (drag output to input)
+- connection deletion (click existing connection)
+- UI-side connection validation and target highlighting
+- color-coded modules by functional role (source, operator, bridge, sink)
+- structured editors for `bits` and `wiring`
+- workbench persistence with local autosave/restore
+- JSON import/export
+- sticky-note annotations stored in UI metadata
+- improved module placement (new nodes appear in visible area)
+
+Completed UI milestones (March 21, 2026):
+- node DOM refactored for separate body/port interaction
+- connection creation and deletion implemented
+- connection validation and highlighting implemented
+- module category color-coding added
+- structured parameter editors added
+- persistence document boundary added
+- sticky-note annotations added
+- module placement fixed to stay within visible canvas
+
+Next intended UI milestone:
+- extract structured editors into dedicated components
+- dark mode via theme tokens
+- prepare `feature/minimal-ui-shell` for merge to `main` and `v0.4.0`

@@ -10,10 +10,7 @@
   padding: 48px;
   border: 1px solid var(--line);
   border-radius: 28px;
-  background:
-    radial-gradient(circle at top left, rgba(231, 111, 81, 0.18), transparent 32%),
-    radial-gradient(circle at bottom right, rgba(38, 70, 83, 0.16), transparent 28%),
-    linear-gradient(145deg, rgba(255, 248, 238, 0.96), rgba(245, 239, 227, 0.9));
+  background: var(--hero-gradient);
   box-shadow: 0 24px 80px rgba(40, 28, 12, 0.08);
 }
 
@@ -39,6 +36,13 @@
   margin-top: 28px;
 }
 
+.layout-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
 .primary-link,
 .secondary-link {
   display: inline-flex;
@@ -55,15 +59,15 @@
 }
 
 .primary-link {
-  color: #fffaf3;
+  color: var(--link-primary-text);
   background: var(--ink);
   box-shadow: 0 12px 24px rgba(38, 70, 83, 0.2);
 }
 
 .secondary-link {
   color: var(--ink);
-  background: rgba(255, 250, 243, 0.72);
-  border: 1px solid rgba(38, 70, 83, 0.14);
+  background: var(--surface-button);
+  border: 1px solid var(--line);
 }
 
 .primary-link:hover,
@@ -71,49 +75,709 @@
   transform: translateY(-1px);
 }
 
-.grid-section {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-  margin-top: 24px;
-}
-
-.info-card {
-  padding: 26px;
-  border: 1px solid var(--line);
-  border-radius: 22px;
-  background: rgba(255, 252, 247, 0.9);
-  box-shadow: 0 18px 40px rgba(40, 28, 12, 0.05);
-}
-
-.accent-card {
-  background:
-    linear-gradient(180deg, rgba(42, 157, 143, 0.1), rgba(255, 252, 247, 0.92)),
-    rgba(255, 252, 247, 0.92);
-}
-
-.info-card h2 {
-  margin-bottom: 14px;
-}
-
-.info-card ul {
-  margin: 0;
-  padding-left: 18px;
-  color: var(--muted);
-}
-
-.info-card li + li {
-  margin-top: 10px;
-}
-
 .mono-line {
   display: inline-block;
   margin: 0 0 16px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(38, 70, 83, 0.08);
+  background: var(--surface-soft-strong);
   font-family: var(--mono);
   font-size: 0.92rem;
+  color: var(--ink);
+}
+
+.connection-status {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.connection-status strong {
+  font-family: var(--mono);
+}
+
+.connection-status-warning {
+  background: var(--danger-bg-strong);
+  color: var(--danger-text);
+}
+
+.workbench-grid {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr) 340px;
+  gap: 18px;
+  margin-top: 24px;
+  align-items: start;
+}
+
+.workbench-grid-no-inspector {
+  grid-template-columns: 280px minmax(0, 1fr);
+}
+
+.workbench-grid-no-palette {
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
+
+.workbench-grid-workbench-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.panel {
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--surface-panel);
+  box-shadow: 0 18px 40px rgba(40, 28, 12, 0.05);
+}
+
+.panel-head {
+  margin-bottom: 18px;
+}
+
+.panel-label,
+.meta-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.primitive-list,
+.trace-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.primitive-card,
+.trace-card,
+.graph-node {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface-strong);
+}
+
+.primitive-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.primitive-card-source {
+  border-left: 4px solid var(--role-source-accent);
+}
+
+.primitive-card-operator {
+  border-left: 4px solid var(--role-operator-accent);
+}
+
+.primitive-card-bridge {
+  border-left: 4px solid var(--role-bridge-accent);
+}
+
+.primitive-card-sink {
+  border-left: 4px solid var(--role-sink-accent);
+}
+
+.primitive-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.primitive-card + .primitive-card,
+.trace-card + .trace-card {
+  margin-top: 12px;
+}
+
+.primitive-card p,
+.trace-card p {
+  margin-bottom: 0;
+  font-size: 0.92rem;
+}
+
+.port-count {
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.primitive-add-button,
+.delete-module-button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-button);
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.delete-module-button {
+  margin-bottom: 14px;
+  color: var(--danger-text);
+  background: var(--danger-bg);
+}
+
+.project-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.project-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.switch-chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-button);
+  padding: 10px 14px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.switch-chip.active {
+  background: var(--chip-active-bg);
+  color: var(--chip-active-text);
+}
+
+.layout-chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-button);
+  padding: 9px 13px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.layout-chip.active {
+  background: var(--chip-soft-active-bg);
+}
+
+.project-summary {
+  max-width: 58ch;
+}
+
+.canvas-surface {
+  margin: 18px 0 20px;
+  overflow-x: auto;
+  border-radius: 22px;
+  background: var(--canvas-background);
+  background-size: 28px 28px, 28px 28px, auto;
+  border: 1px solid var(--line);
+}
+
+.graph-canvas {
+  position: relative;
+  width: var(--canvas-width);
+  min-height: var(--canvas-height);
+}
+
+.graph-connections {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.graph-connections path {
+  fill: none;
+  stroke: var(--connection-stroke);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.connection-group {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.connection-hit-area {
+  stroke: transparent;
+  stroke-width: 16;
+  fill: none;
+  pointer-events: stroke;
+}
+
+.connection-group path:not(.connection-hit-area) {
+  pointer-events: none;
+}
+
+.connection-group:hover path:not(.connection-hit-area) {
+  stroke: var(--danger-text);
+  stroke-width: 3.5;
+}
+
+.pending-connection {
+  stroke: var(--danger-text);
+  stroke-width: 2.5;
+  stroke-dasharray: 8 6;
+  pointer-events: none;
+}
+
+.graph-node {
+  position: absolute;
+  width: 132px;
+  text-align: left;
+  overflow: visible;
+}
+
+.canvas-annotation {
+  position: absolute;
+  width: 200px;
+  border: 1px solid var(--annotation-border);
+  border-radius: 16px;
+  background: var(--annotation-paper);
+  box-shadow: 0 12px 28px rgba(111, 85, 20, 0.12);
+  overflow: hidden;
+}
+
+.canvas-annotation-handle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--annotation-handle);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--annotation-ink);
+  cursor: grab;
+  user-select: none;
+}
+
+.canvas-annotation-handle:active {
+  cursor: grabbing;
+}
+
+.canvas-annotation textarea {
+  width: 100%;
+  min-height: 96px;
+  border: 0;
+  background: transparent;
+  padding: 10px 12px 12px;
+  resize: vertical;
+  font: inherit;
+  color: var(--annotation-ink);
+}
+
+.annotation-delete-button {
+  border: 0;
+  background: rgba(255, 255, 255, 0.46);
+  border-radius: 999px;
+  width: 1.6rem;
+  height: 1.6rem;
+  font: inherit;
+  font-weight: 700;
+  color: var(--annotation-ink);
+  cursor: pointer;
+}
+
+.graph-node-source {
+  border-color: var(--role-source-soft);
+  background: var(--role-source-bg);
+}
+
+.graph-node-operator {
+  border-color: var(--role-operator-soft);
+  background: var(--role-operator-bg);
+}
+
+.graph-node-bridge {
+  border-color: var(--role-bridge-soft);
+  background: var(--role-bridge-bg);
+}
+
+.graph-node-sink {
+  border-color: var(--role-sink-soft);
+  background: var(--role-sink-bg);
+}
+
+.graph-node-selected {
+  box-shadow: 0 12px 24px rgba(200, 85, 61, 0.12);
+}
+
+.graph-node-selected.graph-node-source {
+  border-color: var(--role-source-strong);
+}
+
+.graph-node-selected.graph-node-operator {
+  border-color: var(--role-operator-strong);
+}
+
+.graph-node-selected.graph-node-bridge {
+  border-color: var(--role-bridge-strong);
+}
+
+.graph-node-selected.graph-node-sink {
+  border-color: var(--role-sink-strong);
+}
+
+.graph-node-type {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.graph-node-ports {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.graph-node-body {
+  padding: 14px 14px 12px;
+  cursor: grab;
+  user-select: none;
+}
+
+.graph-node-body:active {
+  cursor: grabbing;
+}
+
+.graph-node-anchor-group {
+  position: absolute;
+  inset-block: 0;
+}
+
+.graph-node-anchor-group-in {
+  left: -42px;
+}
+
+.graph-node-anchor-group-out {
+  right: -56px;
+}
+
+.graph-port-anchor {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  cursor: crosshair;
+  pointer-events: auto;
+  transition:
+    transform 120ms ease,
+    color 120ms ease,
+    opacity 120ms ease;
+}
+
+.graph-port-anchor-in {
+  left: 0;
+}
+
+.graph-port-anchor-out {
+  right: 0;
+}
+
+.graph-port-anchor-active {
+  transform: scale(1.04);
+}
+
+.graph-port-droppable .graph-port-dot {
+  box-shadow: 0 0 0 3px var(--danger-bg-strong);
+}
+
+.graph-port-valid {
+  color: var(--success-text);
+}
+
+.graph-port-valid .graph-port-dot {
+  background: var(--success-text);
+  box-shadow: 0 0 0 4px var(--success-bg);
+}
+
+.graph-port-invalid {
+  color: var(--danger-text);
+}
+
+.graph-port-invalid .graph-port-dot {
+  background: var(--danger-text);
+  box-shadow: 0 0 0 4px var(--danger-bg-strong);
+}
+
+.graph-port-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--ink);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.88);
+  transition: box-shadow 120ms ease;
+}
+
+.graph-port-dot:hover {
+  box-shadow: 0 0 0 4px var(--danger-bg-strong);
+}
+
+.graph-port-label {
+  white-space: nowrap;
+}
+
+.graph-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.graph-meta > div,
+.trace-summary {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface-soft);
+}
+
+.graph-meta strong,
+.trace-summary strong {
+  display: block;
+  color: var(--ink);
+}
+
+.trace-summary {
+  margin-bottom: 14px;
+}
+
+.trace-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.trace-head span {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.trace-card {
+  padding: 14px 16px;
+}
+
+.inspector-section {
+  margin-bottom: 18px;
+}
+
+.selected-module-name {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ink);
+}
+
+.selected-module-type {
+  margin-bottom: 14px;
+  font-family: var(--mono);
+  font-size: 0.88rem;
+}
+
+.param-list {
+  display: grid;
+  gap: 12px;
+}
+
+.param-field {
+  display: grid;
+  gap: 8px;
+}
+
+.param-field span {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.param-field input,
+.param-field select,
+.param-field textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-strong);
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--ink);
+}
+
+.param-field textarea {
+  resize: vertical;
+  font-family: var(--mono);
+}
+
+.bits-editor,
+.wiring-editor {
+  display: grid;
+  gap: 10px;
+}
+
+.bits-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bit-chip,
+.mini-action-button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-button);
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.import-error-banner {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(200, 85, 61, 0.12);
+  color: #8c3020;
+}
+
+.bit-chip {
+  min-width: 2.5rem;
+  font-family: var(--mono);
+}
+
+.bit-chip.active {
+  background: rgba(42, 130, 150, 0.14);
+  border-color: rgba(42, 130, 150, 0.32);
+}
+
+.bits-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wiring-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+
+.wiring-cell {
+  display: grid;
+  grid-template-columns: 1.5rem 0.8rem minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: var(--surface-soft);
+}
+
+.wiring-source,
+.wiring-arrow,
+.structured-param-preview {
+  font-family: var(--mono);
+}
+
+.wiring-source {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.wiring-arrow {
+  color: var(--muted);
+}
+
+.structured-param-preview {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.empty-state,
+.inspector-warning {
+  margin-bottom: 0;
+  font-size: 0.92rem;
+}
+
+.field-error {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--danger-text);
+}
+
+.inspector-warning,
+.execution-error {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.selected-trace {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface-soft);
+}
+
+.selected-ports {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.port-group {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface-soft);
+}
+
+.port-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.port-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  color: var(--muted);
+}
+
+.port-list li strong {
   color: var(--ink);
 }
 
@@ -128,7 +792,19 @@
     border-radius: 22px;
   }
 
-  .grid-section {
+  .workbench-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .graph-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .selected-ports {
+    grid-template-columns: 1fr;
+  }
+
+  .wiring-grid {
     grid-template-columns: 1fr;
   }
 }
