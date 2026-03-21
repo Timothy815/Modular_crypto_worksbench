@@ -241,6 +241,10 @@
   margin-bottom: 14px;
 }
 
+.library-actions {
+  margin-bottom: 16px;
+}
+
 .switch-chip {
   border: 1px solid var(--line);
   border-radius: 999px;

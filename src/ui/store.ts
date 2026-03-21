@@ -1,9 +1,15 @@
-import type { ModuleDef, ModuleInstance, Project } from '../engine/types';
+import type { CompositeLibraryEntry } from '../engine/composites';
+import type { ModuleDef, ModuleInstance, ModuleRegistry, Project } from '../engine/types';
 import type { DemoProject } from './demo-projects';
-import type { WorkbenchAnnotation, WorkbenchDocument } from './workbench-document';
+import type {
+  CompositeLibraryDocument,
+  WorkbenchAnnotation,
+  WorkbenchDocument,
+} from './workbench-document';
 
 export interface UiState {
   activeProjectId: string;
+  compositeLibrary: CompositeLibraryEntry[];
   projectStates: Record<string, Project>;
   layoutByProject: Record<string, Record<string, { x: number; y: number }>>;
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
@@ -36,6 +42,7 @@ export type UiAction =
   | { type: 'setParamDraft'; projectId: string; moduleId: string; key: string; rawValue: string }
   | { type: 'clearParamDraft'; projectId: string; moduleId: string; key: string }
   | { type: 'loadDocument'; projectId: string; document: WorkbenchDocument }
+  | { type: 'loadCompositeLibrary'; document: CompositeLibraryDocument }
   | { type: 'togglePalette' }
   | { type: 'toggleInspector' };
 
@@ -103,6 +110,7 @@ function updateModule(
 export function createInitialUiState(projects: DemoProject[]): UiState {
   return {
     activeProjectId: projects[0]?.id ?? '',
+    compositeLibrary: [],
     projectStates: Object.fromEntries(
       projects.map((project) => [project.id, cloneProject(project.project)]),
     ),
@@ -466,6 +474,19 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
         paramDrafts: nextDrafts,
       };
     }
+    case 'loadCompositeLibrary':
+      return {
+        ...state,
+        compositeLibrary: action.document.entries.map((entry) => ({
+          ...entry,
+          definition: {
+            ...entry.definition,
+            project: cloneProject(entry.definition.project),
+            inputBindings: entry.definition.inputBindings.map((binding) => ({ ...binding })),
+            outputBindings: entry.definition.outputBindings.map((binding) => ({ ...binding })),
+          },
+        })),
+      };
     case 'togglePalette':
       return {
         ...state,
@@ -495,4 +516,16 @@ export function getDraftValue(
   key: string,
 ): string | undefined {
   return state.paramDrafts[getDraftKey(projectId, moduleId, key)];
+}
+
+export function getEffectiveRegistry(
+  primitiveRegistry: ModuleRegistry,
+  compositeLibrary: CompositeLibraryEntry[],
+) {
+  return {
+    ...primitiveRegistry,
+    ...Object.fromEntries(
+      compositeLibrary.map((entry) => [entry.id, entry.definition]),
+    ),
+  };
 }

@@ -28,3 +28,12 @@ export interface CompositeLibraryDocument {
   version: 1;
   entries: CompositeLibraryEntry[];
 }
+
+export interface PersistedWorkspaceDocument {
+  version: 1;
+  activeProjectId: string;
+  showPalette: boolean;
+  showInspector: boolean;
+  documentsByProjectId: Record<string, WorkbenchDocument>;
+  compositeLibrary: CompositeLibraryDocument;
+}

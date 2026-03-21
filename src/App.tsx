@@ -9,12 +9,15 @@ import { WorkbenchPanel } from './ui/components/workbench-panel';
 import { demoProjects, runDemoProject } from './ui/demo-projects';
 import {
   downloadDocument,
+  downloadCompositeLibraryDocument,
   loadWorkspaceFromStorage,
+  parseCompositeLibraryDocument,
   parseWorkbenchDocument,
   saveWorkspaceToStorage,
 } from './ui/persistence';
 import {
   createInitialUiState,
+  getEffectiveRegistry,
   getDraftValue,
   getSelectedModuleId,
   uiReducer,
@@ -46,6 +49,7 @@ function App() {
       return {
         ...initialState,
         activeProjectId: persistedWorkspace.activeProjectId,
+        compositeLibrary: persistedWorkspace.compositeLibrary.entries,
         showPalette: persistedWorkspace.showPalette,
         showInspector: persistedWorkspace.showInspector,
         projectStates: Object.fromEntries(
@@ -73,6 +77,7 @@ function App() {
 
   const activeProjectDefinition =
     demoProjects.find((project) => project.id === state.activeProjectId) ?? demoProjects[0];
+  const effectiveRegistry = getEffectiveRegistry(V1_REGISTRY, state.compositeLibrary);
   const activeProjectState =
     state.projectStates[activeProjectDefinition.id] ?? activeProjectDefinition.project;
   const activeLayout =
@@ -86,14 +91,14 @@ function App() {
       (moduleInstance) => moduleInstance.id === effectiveSelectedModuleId,
     ) ?? null;
   const selectedModuleDef = selectedModule
-    ? asPrimitiveModuleDef(V1_REGISTRY[selectedModule.defId] ?? null)
+    ? asPrimitiveModuleDef(effectiveRegistry[selectedModule.defId] ?? null)
     : null;
 
   let execution: ExecutionResult | null = null;
   let executionError: string | null = null;
 
   try {
-    execution = runDemoProject(activeProjectState);
+    execution = runDemoProject(activeProjectState, effectiveRegistry);
   } catch (error) {
     executionError = error instanceof Error ? error.message : 'Execution failed.';
   }
@@ -184,9 +189,9 @@ function App() {
       >
         {state.showPalette ? (
           <PrimitivePalette
-            registry={V1_REGISTRY}
+            registry={effectiveRegistry}
             onAddModule={(defId) => {
-              const moduleDef = asPrimitiveModuleDef(V1_REGISTRY[defId] ?? null);
+              const moduleDef = asPrimitiveModuleDef(effectiveRegistry[defId] ?? null);
               if (!moduleDef) {
                 return;
               }
@@ -207,7 +212,7 @@ function App() {
           annotations={activeAnnotations}
           execution={execution}
           executionError={executionError}
-          registry={V1_REGISTRY}
+          registry={effectiveRegistry}
           selectedModuleId={effectiveSelectedModuleId}
           onMoveModule={(moduleId, x, y) =>
             dispatch({
@@ -284,18 +289,28 @@ function App() {
           }}
           onImportDocument={async (file) => {
             const rawValue = await file.text();
-            const document = parseWorkbenchDocument(rawValue);
-            if (!document) {
-              setImportError('The selected file is not a valid MCW workbench document.');
+            const workbenchDocument = parseWorkbenchDocument(rawValue);
+            if (workbenchDocument) {
+              dispatch({
+                type: 'loadDocument',
+                projectId: activeProjectDefinition.id,
+                document: workbenchDocument,
+              });
+              setImportError(null);
               return;
             }
 
-            dispatch({
-              type: 'loadDocument',
-              projectId: activeProjectDefinition.id,
-              document,
-            });
-            setImportError(null);
+            const libraryDocument = parseCompositeLibraryDocument(rawValue);
+            if (libraryDocument) {
+              dispatch({
+                type: 'loadCompositeLibrary',
+                document: libraryDocument,
+              });
+              setImportError(null);
+              return;
+            }
+
+            setImportError('The selected file is not a valid MCW workbench or composite library document.');
           }}
           onSwitchProject={(projectId) =>
             dispatch({
@@ -305,6 +320,21 @@ function App() {
           }
           projects={demoProjects}
         />
+
+        <div className="library-actions">
+          <button
+            type="button"
+            className="mini-action-button"
+            onClick={() =>
+              downloadCompositeLibraryDocument({
+                version: 1,
+                entries: state.compositeLibrary,
+              })
+            }
+          >
+            Export Composite Library
+          </button>
+        </div>
 
         {importError ? <p className="import-error-banner">{importError}</p> : null}
 

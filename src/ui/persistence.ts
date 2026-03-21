@@ -4,19 +4,12 @@ import type { DemoProject } from './demo-projects';
 import type { UiState } from './store';
 import type {
   CompositeLibraryDocument,
+  PersistedWorkspaceDocument,
   WorkbenchAnnotation,
   WorkbenchDocument,
 } from './workbench-document';
 
 const STORAGE_KEY = 'mcw:workspace:v1';
-
-interface PersistedWorkspace {
-  version: 1;
-  activeProjectId: string;
-  showPalette: boolean;
-  showInspector: boolean;
-  documentsByProjectId: Record<string, WorkbenchDocument>;
-}
 
 function cloneProject(project: Project): Project {
   return {
@@ -59,7 +52,7 @@ export function createDocumentMapFromDemos(
   );
 }
 
-export function buildPersistedWorkspace(state: UiState): PersistedWorkspace {
+export function buildPersistedWorkspace(state: UiState): PersistedWorkspaceDocument {
   return {
     version: 1,
     activeProjectId: state.activeProjectId,
@@ -82,6 +75,18 @@ export function buildPersistedWorkspace(state: UiState): PersistedWorkspace {
         },
       ]),
     ),
+    compositeLibrary: {
+      version: 1,
+      entries: state.compositeLibrary.map((entry) => ({
+        ...entry,
+        definition: {
+          ...entry.definition,
+          project: cloneProject(entry.definition.project),
+          inputBindings: entry.definition.inputBindings.map((binding) => ({ ...binding })),
+          outputBindings: entry.definition.outputBindings.map((binding) => ({ ...binding })),
+        },
+      })),
+    },
   };
 }
 
@@ -95,21 +100,22 @@ export function saveWorkspaceToStorage(
 export function loadWorkspaceFromStorage(
   projects: DemoProject[],
   storage: Storage = window.localStorage,
-): PersistedWorkspace | null {
+): PersistedWorkspaceDocument | null {
   const rawValue = storage.getItem(STORAGE_KEY);
   if (!rawValue) {
     return null;
   }
 
   try {
-    const parsed = JSON.parse(rawValue) as PersistedWorkspace;
+    const parsed = JSON.parse(rawValue) as PersistedWorkspaceDocument;
     if (
       parsed.version !== 1 ||
       typeof parsed.activeProjectId !== 'string' ||
       typeof parsed.showPalette !== 'boolean' ||
       typeof parsed.showInspector !== 'boolean' ||
       typeof parsed.documentsByProjectId !== 'object' ||
-      parsed.documentsByProjectId === null
+      parsed.documentsByProjectId === null ||
+      !isCompositeLibraryDocument(parsed.compositeLibrary)
     ) {
       return null;
     }
@@ -163,6 +169,20 @@ export function parseCompositeLibraryDocument(
   } catch {
     return null;
   }
+}
+
+export function downloadCompositeLibraryDocument(
+  libraryDocument: CompositeLibraryDocument,
+): void {
+  const blob = new Blob([JSON.stringify(libraryDocument, null, 2)], {
+    type: 'application/json',
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = 'composite-library.mcw.json';
+  anchor.click();
+  URL.revokeObjectURL(url);
 }
 
 function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
