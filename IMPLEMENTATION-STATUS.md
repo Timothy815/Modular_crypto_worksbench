@@ -6,7 +6,8 @@ Last updated: March 21, 2026
 
 ## Current State
 
-The project has completed the minimal UI milestone on `main` and has now entered the composite-module groundwork phase on `feature/composite-groundwork`.
+The project has shipped the composite and analysis milestones on `main` and has now entered the
+first `Build / Analyze / Break` product phase on `feature/break-workflows`.
 
 Established and now available for other agents:
 - implementation contract
@@ -28,7 +29,10 @@ Established and now available for other agents:
 - workbench persistence (autosave/restore + JSON import/export)
 - sticky-note annotations stored as UI metadata
 - composite V1 contract
-- initial engine-facing composite type layer
+- first-class composite workflow
+- analysis/debugging visibility workflow
+- step-through execution and signal-path trace filtering
+- `BREAK-V1-CONTRACT.md`
 - GitHub Pages deployment workflow
 
 ---
@@ -72,28 +76,26 @@ The following decisions are no longer just prose; they are reflected in the scaf
 ### Claude
 
 Safe to begin:
-- use the latest safe checkpoint on `feature/composite-groundwork`: `7d8bf3c`
-- expose composite library entries in the palette
-- allow composite definitions to be placed in the workbench, not just primitives
-- make the inspector render composite definitions safely
-- keep the first composite UI proof narrow and end-to-end
+- use the current branch `feature/break-workflows`
+- read `BREAK-V1-CONTRACT.md` first
+- continue from the latest comparison-first break workflow checkpoint
+- keep the break workflow comparison-focused, not attack-automation focused
 
 Should avoid for now:
-- reopening the engine execution model without a concrete blocker
-- starting subgraph-to-composite authoring UI yet
-- hiding domain boundaries for convenience
+- introducing brute-force or automated cryptanalysis too early
+- mutating the core engine contract unless strictly required
+- letting the comparison UI drift into a generic diff tool
 
 ### Gemini
 
 Safe to begin:
-- review the live composite app integration on `feature/composite-groundwork`
-- critique the first composite UI proof once placement is enabled
-- identify any risk in the registry synthesis path before authoring UI begins
+- review the current comparison-first break workflow checkpoint
+- critique whether the branch is ready for richer divergence visualization or merge-readiness cleanup
 
 Best focus:
-- whether reusable composite definitions remain cleanly separated from workbench UI metadata
-- whether persistence and import/export are sound enough for reusable classroom artifacts
-- whether the UI is staying aligned with the product-teaching goals
+- whether the break workflow remains educational and explicit
+- whether comparison logic stays engine-adjacent rather than engine-invasive
+- whether the UI communicates mutation and divergence clearly
 
 ---
 
@@ -126,7 +128,7 @@ Architectural normalization added on March 21:
 The next product milestone should be:
 
 ```text
-Composite groundwork -> reusable composition -> deeper execution visibility
+Build / Analyze / Break -> comparison-first break workflows
 ```
 
 The canonical hybrid reference machine remains:
@@ -142,27 +144,34 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 Stable releases on `main`:
 - `v0.2.0` — primitive engine milestone
 - `v0.4.0` — minimal UI shell milestone
+- `v0.5.0` — composite workflow milestone
+- `v0.6.0` — analysis visibility milestone
 
 Active branch:
-- `feature/composite-groundwork`
+- `feature/break-workflows`
 
-Composite groundwork branch currently includes:
-- `COMPOSITE-V1-CONTRACT.md`
-- engine composite type surface in `src/engine/composites.ts`
-- composite-definition validation
-- composite library persistence shape
-- executable composite support in the engine
-- composite library in app state
-- effective registry synthesis (`primitives + composites`)
-- app execution wired to the synthesized registry
+Break workflow branch currently includes:
+- `BREAK-V1-CONTRACT.md`
+- `src/ui/execution-compare.ts`
+- execution comparison proof tests
+- baseline capture from the live workbench
+- reducer-backed and persisted comparison baseline state
+- baseline-vs-variant comparison summary
+- baseline value visibility next to changed params
+- extracted comparison panel
+- first-divergence canvas highlighting
 
 Latest safe checkpoint for resume:
-- branch: `feature/composite-groundwork`
-- commit: `7d8bf3c`
-- message: `Wire composite library into app registry flow`
+- branch: `feature/break-workflows`
+- commit: `fd8ab61` — `Unify break baseline state and mutation visibility`
+
+Latest local working state before next checkpoint:
+- extracted `comparison-panel.tsx`
+- side-by-side divergent signal display
+- divergence highlight on the affected canvas node
+- verification clean: `npm test`, `npm run lint`, `npm run build`
 
 Next intended milestone:
-- minimal composite UI proof
-- expose composite entries in the palette
-- allow placing a composite instance into a graph
-- prove it executes in the live workbench
+- checkpoint the comparison-visibility pass
+- update branch docs and handoff notes
+- then choose between Gemini review and merge-readiness cleanup

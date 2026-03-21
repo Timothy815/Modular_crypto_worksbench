@@ -9,10 +9,12 @@ import {
   createCompositeFromSelection,
   replaceSelectionWithComposite,
 } from './ui/composite-authoring';
+import { ComparisonPanel } from './ui/components/comparison-panel';
 import { ParameterInspector } from './ui/components/parameter-inspector';
 import { PrimitivePalette } from './ui/components/primitive-palette';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
 import { demoProjects, runDemoProject } from './ui/demo-projects';
+import { compareExecutionResults } from './ui/execution-compare';
 import {
   downloadDocument,
   downloadCompositeLibraryDocument,
@@ -85,6 +87,12 @@ function App() {
           projects.map((project) => [
             project.id,
             persistedWorkspace.documentsByProjectId[project.id]?.ui.annotations ?? initialState.annotationsByProject[project.id],
+          ]),
+        ),
+        comparisonBaselinesByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.comparisonBaselinesByProjectId[project.id] ?? null,
           ]),
         ),
         selectedModuleIdByProject: Object.fromEntries(
@@ -180,6 +188,32 @@ function App() {
     effectiveStepIndex !== null && execution
       ? execution.trace[effectiveStepIndex]?.moduleId ?? null
       : null;
+  const comparisonBaseline = state.comparisonBaselinesByProject[activeProjectDefinition.id] ?? null;
+  const baselineValidation = comparisonBaseline
+    ? validateProject(comparisonBaseline.project, effectiveRegistry)
+    : null;
+  let baselineExecution: ExecutionResult | null = null;
+  let baselineExecutionError: string | null = null;
+  if (comparisonBaseline && baselineValidation?.ok) {
+    try {
+      baselineExecution = runDemoProject(comparisonBaseline.project, effectiveRegistry);
+    } catch (error) {
+      baselineExecutionError = error instanceof Error ? error.message : 'Baseline execution failed.';
+    }
+  } else if (comparisonBaseline && baselineValidation && !baselineValidation.ok) {
+    baselineExecutionError = 'Baseline is no longer valid against the current registry.';
+  }
+  const executionComparison =
+    baselineExecution && execution
+      ? compareExecutionResults(baselineExecution, execution)
+      : null;
+  const divergenceModuleId =
+    executionComparison?.firstDivergence?.variant?.moduleId ??
+    executionComparison?.firstDivergence?.baseline?.moduleId ??
+    null;
+  const baselineSelectedModule = comparisonBaseline && selectedModule
+    ? comparisonBaseline.project.modules.find((moduleInstance) => moduleInstance.id === selectedModule.id) ?? null
+    : null;
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -326,6 +360,7 @@ function App() {
           selectedModuleIds={effectiveSelectedModuleIds}
           hoveredTraceModuleId={hoveredTraceModuleId}
           steppedModuleId={steppedModuleId}
+          divergenceModuleId={divergenceModuleId}
           onMoveModule={(moduleId, x, y) =>
             dispatch({
               type: 'moveModule',
@@ -540,6 +575,7 @@ function App() {
             getParamDraft={(moduleId, key) =>
               getDraftValue(state, activeProjectDefinition.id, moduleId, key)
             }
+            baselineModuleInstance={baselineSelectedModule}
             onParamDraftChange={(moduleId, key, rawValue) =>
               dispatch({
                 type: 'setParamDraft',
@@ -583,6 +619,39 @@ function App() {
           />
         ) : null}
       </section>
+
+      {!state.compositeEditor ? (
+        <ComparisonPanel
+          projectName={activeProjectDefinition.name}
+          baseline={comparisonBaseline}
+          baselineOutput={
+            baselineExecution
+              ? executionComparison?.baselineOutput.formatted ?? 'n/a'
+              : 'blocked'
+          }
+          variantOutput={
+            execution
+              ? executionComparison?.variantOutput.formatted ?? 'n/a'
+              : 'blocked'
+          }
+          baselineError={baselineExecutionError}
+          variantError={executionError}
+          comparison={executionComparison}
+          onCaptureBaseline={() =>
+            dispatch({
+              type: 'captureComparisonBaseline',
+              projectId: activeProjectDefinition.id,
+              capturedAt: new Date().toISOString(),
+            })
+          }
+          onClearBaseline={() =>
+            dispatch({
+              type: 'clearComparisonBaseline',
+              projectId: activeProjectDefinition.id,
+            })
+          }
+        />
+      ) : null}
 
       {isCompositeDialogOpen ? (
         <div

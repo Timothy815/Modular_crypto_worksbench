@@ -2,7 +2,7 @@
 
 Read PROJECT.md for full project specification.
 Read ENGINE-V1-CONTRACT.md for locked implementation decisions.
-Read COMPOSITE-V1-CONTRACT.md before starting work on `feature/composite-groundwork`.
+Read BREAK-V1-CONTRACT.md before starting work on `feature/break-workflows`.
 Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
 
 ## Project: Modular Cryptography Workbench
@@ -41,7 +41,8 @@ Tag `main` at these milestones so we can return to known-good states:
 - `v0.2.0` — All V1 primitive modules implemented and tested
 - `v0.3.0` — Reference hybrid pipeline passing end-to-end
 - `v0.4.0` — Minimal UI functional
-- `v0.5.0` — Save/load working
+- `v0.5.0` — Composite workflow working
+- `v0.6.0` — Analysis visibility and stepping working
 - `v1.0.0` — V1 milestone complete (all features in ENGINE-V1-CONTRACT.md)
 
 ### Recovery
@@ -111,30 +112,38 @@ src/utils/     — Shared helpers
 2. **Minimal UI** — manual module placement, connections, run + display
 3. **Usability** — richer connection UX, save/load, inspector polish, theme work
 4. **Composition** — composite modules, local library, versioning
-5. **Expansion** — more modules, step-through, signal tracing, templates
+5. **Analysis** — step-through, signal tracing, issue surfacing
+6. **Break Workflows** — comparison, mutation experiments, eventually break/challenge tooling
 
-## Current Composite Resume Point
+## Current Break Resume Point
 
-- Active branch: `feature/composite-groundwork`
-- Latest safe checkpoint: `7d8bf3c`
-- Checkpoint message: `Wire composite library into app registry flow`
+- Active branch: `feature/break-workflows`
+- Start from `main` after `v0.6.0`
+- Read `BREAK-V1-CONTRACT.md` first
 
-What is already done on this branch:
-- composite contract in `COMPOSITE-V1-CONTRACT.md`
-- engine-facing composite types
-- composite-definition validation
-- composite library persistence shape
-- executable composite support in the engine
-- app state for composite library
-- effective registry synthesis (`V1_REGISTRY + composite library`)
-- app execution wired to that effective registry
+What is already shipped on `main`:
+- composite contract and full composite workflow
+- analysis/debugging visibility
+- stepping and signal-path filtering
+
+Current branch checkpoint:
+- `fd8ab61` — `Unify break baseline state and mutation visibility`
+
+Current branch capabilities:
+- baseline vs variant comparison workflow
+- reducer-backed, persisted baseline capture
+- first-divergence comparison model
+- baseline value chips in the inspector for changed params
+
+Latest local working state before next checkpoint:
+- extracted comparison panel
+- first-divergence node highlight on the canvas
+- side-by-side divergent signal display
 
 Immediate next task:
-- implement the first minimal composite UI proof
-- expose composite entries in the palette
-- allow composite definitions to be placed in the workbench
-- make the inspector render composite definitions safely
-- prove one composite executes end-to-end in the live workbench
+- checkpoint the current comparison-visibility pass
+- then decide between Gemini review and merge-readiness cleanup
+- keep the workflow bounded and educational rather than attack-automation focused
 
 ## When Working on This Project
 

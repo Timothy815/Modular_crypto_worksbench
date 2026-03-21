@@ -3,6 +3,7 @@ import type { ModuleDefinition, ModuleInstance, ModuleRegistry, Project } from '
 import type { DemoProject } from './demo-projects';
 import { STARTER_COMPOSITE_LIBRARY } from './starter-composites';
 import type {
+  ComparisonBaselineDocument,
   CompositeLibraryDocument,
   WorkbenchAnnotation,
   WorkbenchDocument,
@@ -15,6 +16,7 @@ export interface UiState {
   projectStates: Record<string, Project>;
   layoutByProject: Record<string, Record<string, { x: number; y: number }>>;
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
+  comparisonBaselinesByProject: Record<string, ComparisonBaselineDocument | null>;
   selectedModuleIdByProject: Record<string, string | null>;
   selectedModuleIdsByProject: Record<string, string[]>;
   paramDrafts: Record<string, string>;
@@ -57,6 +59,8 @@ export type UiAction =
   | { type: 'setParamDraft'; projectId: string; moduleId: string; key: string; rawValue: string }
   | { type: 'clearParamDraft'; projectId: string; moduleId: string; key: string }
   | { type: 'loadDocument'; projectId: string; document: WorkbenchDocument }
+  | { type: 'captureComparisonBaseline'; projectId: string; capturedAt: string }
+  | { type: 'clearComparisonBaseline'; projectId: string }
   | { type: 'loadCompositeLibrary'; document: CompositeLibraryDocument }
   | { type: 'addCompositeToLibrary'; entry: CompositeLibraryEntry }
   | { type: 'updateCompositeInLibrary'; entry: CompositeLibraryEntry }
@@ -160,6 +164,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     ),
     annotationsByProject: Object.fromEntries(
       projects.map((project) => [project.id, []]),
+    ),
+    comparisonBaselinesByProject: Object.fromEntries(
+      projects.map((project) => [project.id, null]),
     ),
     selectedModuleIdByProject: Object.fromEntries(
       projects.map((project) => [project.id, project.project.modules[0]?.id ?? null]),
@@ -653,6 +660,33 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
         paramDrafts: nextDrafts,
       };
     }
+    case 'captureComparisonBaseline': {
+      const sourceProject = state.compositeEditor
+        ? state.compositeEditor.project
+        : state.projectStates[action.projectId];
+      if (!sourceProject) {
+        return state;
+      }
+
+      return {
+        ...state,
+        comparisonBaselinesByProject: {
+          ...state.comparisonBaselinesByProject,
+          [action.projectId]: {
+            project: cloneProject(sourceProject),
+            capturedAt: action.capturedAt,
+          },
+        },
+      };
+    }
+    case 'clearComparisonBaseline':
+      return {
+        ...state,
+        comparisonBaselinesByProject: {
+          ...state.comparisonBaselinesByProject,
+          [action.projectId]: null,
+        },
+      };
     case 'loadCompositeLibrary':
       return {
         ...state,

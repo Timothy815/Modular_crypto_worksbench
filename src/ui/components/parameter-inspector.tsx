@@ -18,6 +18,7 @@ interface ParameterInspectorProps {
   validationIssues: ValidationIssue[];
   stepIndex: number | null;
   project: Project;
+  baselineModuleInstance: ModuleInstance | null;
   moduleDef: ModuleDefinition | null;
   moduleInstance: ModuleInstance | null;
   getParamDraft: (moduleId: string, key: string) => string | undefined;
@@ -35,6 +36,7 @@ export function ParameterInspector({
   validationIssues,
   stepIndex,
   project,
+  baselineModuleInstance,
   moduleDef,
   moduleInstance,
   getParamDraft,
@@ -199,6 +201,8 @@ export function ParameterInspector({
               Object.values(moduleDef.paramSchema).map((field) => {
                 const value =
                   moduleInstance.params[field.key] ?? field.defaultValue;
+                const baselineValue =
+                  baselineModuleInstance?.params[field.key] ?? field.defaultValue;
                 const draftValue = getParamDraft(moduleInstance.id, field.key);
                 const renderedValue =
                   draftValue ?? formatParamValue(value, field);
@@ -210,6 +214,11 @@ export function ParameterInspector({
                   return (
                     <label key={field.key} className="param-field">
                       <span>{field.label}</span>
+                      {!areParamValuesEqual(value, baselineValue) ? (
+                        <span className="baseline-chip">
+                          Baseline: {formatParamValue(baselineValue, field)}
+                        </span>
+                      ) : null}
                       <input
                         type="checkbox"
                         checked={Boolean(value)}
@@ -225,6 +234,11 @@ export function ParameterInspector({
                   return (
                     <label key={field.key} className="param-field">
                       <span>{field.label}</span>
+                      {!areParamValuesEqual(value, baselineValue) ? (
+                        <span className="baseline-chip">
+                          Baseline: {formatParamValue(baselineValue, field)}
+                        </span>
+                      ) : null}
                       <select
                         value={String(value)}
                         onChange={(event) =>
@@ -245,6 +259,11 @@ export function ParameterInspector({
                   return (
                     <label key={field.key} className="param-field">
                       <span>{field.label}</span>
+                      {!areParamValuesEqual(value, baselineValue) ? (
+                        <span className="baseline-chip">
+                          Baseline: {formatParamValue(baselineValue, field)}
+                        </span>
+                      ) : null}
                       <BitsEditor
                         field={field}
                         value={value}
@@ -262,6 +281,11 @@ export function ParameterInspector({
                   return (
                     <label key={field.key} className="param-field">
                       <span>{field.label}</span>
+                      {!areParamValuesEqual(value, baselineValue) ? (
+                        <span className="baseline-chip">
+                          Baseline: {formatParamValue(baselineValue, field)}
+                        </span>
+                      ) : null}
                       <WiringEditor
                         field={field}
                         value={value}
@@ -278,6 +302,11 @@ export function ParameterInspector({
                 return (
                   <label key={field.key} className="param-field">
                     <span>{field.label}</span>
+                    {!areParamValuesEqual(value, baselineValue) ? (
+                      <span className="baseline-chip">
+                        Baseline: {formatParamValue(baselineValue, field)}
+                      </span>
+                    ) : null}
                     <input
                       type={field.kind === 'number' ? 'number' : 'text'}
                       value={renderedValue}
@@ -607,4 +636,8 @@ function groupIssuesByTarget(issues: ValidationIssue[]) {
   }
 
   return [...groups.values()];
+}
+
+function areParamValuesEqual(left: unknown, right: unknown) {
+  return JSON.stringify(left) === JSON.stringify(right);
 }

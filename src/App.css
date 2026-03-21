@@ -308,6 +308,51 @@
   margin-bottom: 14px;
 }
 
+.comparison-panel {
+  margin-top: 18px;
+}
+
+.comparison-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.comparison-card {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--surface-soft);
+}
+
+.comparison-card-wide {
+  grid-column: 1 / -1;
+}
+
+.comparison-copy {
+  margin: 8px 0 0;
+}
+
+.comparison-diff-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.comparison-diff-card {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--surface-panel);
+  border: 1px solid var(--line);
+}
+
 .switch-chip {
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -543,6 +588,13 @@
   box-shadow:
     0 0 0 3px var(--link-primary-bg),
     0 10px 28px color-mix(in srgb, var(--link-primary-bg) 28%, transparent);
+}
+
+.graph-node-divergence {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 3px #d28f18,
+    0 12px 30px color-mix(in srgb, #d28f18 35%, transparent);
 }
 
 .graph-node-selected.graph-node-source {
@@ -859,6 +911,19 @@
   font-size: 0.92rem;
   font-weight: 700;
   color: var(--ink);
+}
+
+.baseline-chip {
+  display: inline-block;
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
 }
 
 .param-field input,

@@ -56,6 +56,7 @@ interface WorkbenchPanelProps {
   selectedModuleIds: string[];
   hoveredTraceModuleId?: string | null;
   steppedModuleId?: string | null;
+  divergenceModuleId?: string | null;
   isCompositeEditor?: boolean;
   onMoveModule: (moduleId: string, x: number, y: number) => void;
   onAddAnnotation: () => void;
@@ -93,6 +94,7 @@ export function WorkbenchPanel({
   selectedModuleIds,
   hoveredTraceModuleId = null,
   steppedModuleId = null,
+  divergenceModuleId = null,
   isCompositeEditor = false,
   onMoveModule,
   onAddAnnotation,
@@ -506,6 +508,7 @@ export function WorkbenchPanel({
                   (moduleInstance.id === selectedModuleId ? ' graph-node-primary-selected' : '') +
                   (moduleInstance.id === hoveredTraceModuleId ? ' graph-node-trace-hovered' : '') +
                   (moduleInstance.id === steppedModuleId ? ' graph-node-stepped' : '') +
+                  (moduleInstance.id === divergenceModuleId ? ' graph-node-divergence' : '') +
                   ((moduleIssueCountById[moduleInstance.id] ?? 0) > 0 ? ' graph-node-invalid' : '')
                 }
                 style={{ left: `${position.x}px`, top: `${position.y}px` }}
