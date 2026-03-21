@@ -42,6 +42,10 @@ export function ChallengePanel({
       {selectedChallenge ? (
         <>
           <p className="comparison-copy">{selectedChallenge.prompt}</p>
+          <p className="comparison-copy">
+            Resetting loads the seeded starting machine for this challenge and replaces the current
+            workbench attempt.
+          </p>
 
           <div className="comparison-actions">
             <button
@@ -49,7 +53,7 @@ export function ChallengePanel({
               className="mini-action-button"
               onClick={onLoadChallengeStart}
             >
-              Reset Workbench To Challenge Start
+              Reset Challenge Progress
             </button>
           </div>
 
@@ -74,6 +78,12 @@ export function ChallengePanel({
                       vs current output <strong>{evaluation.comparison.variantOutput.formatted}</strong>.
                     </p>
                   ) : null}
+                  {evaluation.status === 'failure' ? (
+                    <p className="comparison-copy">
+                      Keep iterating on the current machine, or reset the attempt to restart from
+                      the seeded challenge state.
+                    </p>
+                  ) : null}
                   {evaluation.comparison?.firstDivergence ? (
                     <p className="comparison-copy">
                       First divergence at step{' '}
@@ -92,9 +102,23 @@ export function ChallengePanel({
                     </p>
                   ) : null}
                   {evaluation.status === 'blocked' ? (
-                    <p className="comparison-copy">
-                      Fix validation issues before the challenge can be checked.
-                    </p>
+                    <>
+                      <p className="comparison-copy">
+                        Fix validation issues before the challenge can be checked.
+                      </p>
+                      <div className="comparison-issue-list">
+                        {evaluation.currentIssues.slice(0, 3).map((issue, index) => (
+                          <p key={`${issue.code}-${issue.moduleId ?? 'global'}-${index}`} className="field-error">
+                            {formatIssueLead(issue)}{issue.message}
+                          </p>
+                        ))}
+                        {evaluation.currentIssues.length > 3 ? (
+                          <p className="comparison-copy">
+                            + {evaluation.currentIssues.length - 3} more issue(s) in the current graph.
+                          </p>
+                        ) : null}
+                      </div>
+                    </>
                   ) : null}
                 </>
               ) : (
@@ -108,4 +132,16 @@ export function ChallengePanel({
       ) : null}
     </section>
   );
+}
+
+function formatIssueLead(issue: ChallengeEvaluation['currentIssues'][number]) {
+  if (issue.moduleId) {
+    return `${issue.moduleId}: `;
+  }
+
+  if (issue.connection) {
+    return `${issue.connection.from.moduleId} -> ${issue.connection.to.moduleId}: `;
+  }
+
+  return '';
 }
