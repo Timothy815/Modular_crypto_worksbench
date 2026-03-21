@@ -26,6 +26,8 @@ export interface CompositeEditorState {
   entryId: string;
   project: Project;
   layout: Record<string, CompositeLayoutPosition>;
+  originalProject: Project;
+  originalLayout: Record<string, CompositeLayoutPosition>;
   selectedModuleId: string | null;
   selectedModuleIds: string[];
   paramDrafts: Record<string, string>;
@@ -691,6 +693,10 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           entryId: entry.id,
           project: cloneProject(entry.definition.project),
           layout: entry.definition.layout
+            ? cloneLayout(entry.definition.layout)
+            : createAutoLayout(entry.definition.project),
+          originalProject: cloneProject(entry.definition.project),
+          originalLayout: entry.definition.layout
             ? cloneLayout(entry.definition.layout)
             : createAutoLayout(entry.definition.project),
           selectedModuleId: entry.definition.project.modules[0]?.id ?? null,

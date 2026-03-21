@@ -1,4 +1,4 @@
-import type { ParamSchema, PortDef, Project } from './types';
+import type { ModuleDefinition, ParamSchema, PortDef, Project } from './types';
 
 export interface CompositeLayoutPosition {
   x: number;
@@ -30,4 +30,8 @@ export interface CompositeLibraryEntry {
   name: string;
   version: number;
   definition: CompositeDef;
+}
+
+export function isCompositeDefinition(definition: ModuleDefinition): definition is CompositeDef {
+  return 'kind' in definition && definition.kind === 'composite';
 }

@@ -1,3 +1,4 @@
+import { isCompositeDefinition } from '../engine/composites';
 import type { ModuleDefinition } from '../engine/types';
 
 export type ModuleCategory = 'source' | 'operator' | 'bridge' | 'sink' | 'composite';
@@ -17,8 +18,7 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
 export function getModuleCategory(definitionOrDefId: ModuleDefinition | string): ModuleCategory {
   if (
     typeof definitionOrDefId !== 'string' &&
-    'kind' in definitionOrDefId &&
-    definitionOrDefId.kind === 'composite'
+    isCompositeDefinition(definitionOrDefId)
   ) {
     return 'composite';
   }

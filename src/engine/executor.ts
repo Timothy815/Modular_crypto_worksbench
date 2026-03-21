@@ -8,7 +8,7 @@ import {
   type Project,
 } from './types';
 import { validateProject } from './validation';
-import type { CompositeDef } from './composites';
+import { isCompositeDefinition, type CompositeDef } from './composites';
 
 export class ProjectValidationError extends Error {
   constructor(message: string) {
@@ -148,15 +148,11 @@ function evaluateDefinition(
   params: Record<string, unknown>,
   registry: ModuleRegistry,
 ): ModuleOutputs {
-  if (isCompositeDef(def)) {
+  if (isCompositeDefinition(def)) {
     return evaluateComposite(def, inputs, registry);
   }
 
   return def.evaluate(inputs, params);
-}
-
-function isCompositeDef(def: ModuleDefinition): def is CompositeDef {
-  return 'kind' in def && def.kind === 'composite';
 }
 
 function evaluateComposite(

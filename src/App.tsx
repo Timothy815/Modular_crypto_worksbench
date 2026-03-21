@@ -109,6 +109,7 @@ function App() {
   const [compositeName, setCompositeName] = useState('');
   const [compositeId, setCompositeId] = useState('');
   const [compositeDialogError, setCompositeDialogError] = useState<string | null>(null);
+  const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
   const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
 
   const activeProjectDefinition =
@@ -447,7 +448,24 @@ function App() {
               <button
                 type="button"
                 className="secondary-dialog-button"
-                onClick={() => dispatch({ type: 'closeCompositeEditor' })}
+                onClick={() => {
+                  if (!state.compositeEditor) {
+                    return;
+                  }
+
+                  const hasUnsavedChanges =
+                    JSON.stringify(state.compositeEditor.project) !==
+                      JSON.stringify(state.compositeEditor.originalProject) ||
+                    JSON.stringify(state.compositeEditor.layout) !==
+                      JSON.stringify(state.compositeEditor.originalLayout);
+
+                  if (hasUnsavedChanges) {
+                    setIsCloseConfirmOpen(true);
+                    return;
+                  }
+
+                  dispatch({ type: 'closeCompositeEditor' });
+                }}
               >
                 Close
               </button>
@@ -480,6 +498,7 @@ function App() {
                     type: 'updateCompositeInLibrary',
                     entry: nextEntry,
                   });
+                  setIsCloseConfirmOpen(false);
                   dispatch({ type: 'closeCompositeEditor' });
                 }}
               >
@@ -669,6 +688,44 @@ function App() {
                 }}
               >
                 Create Composite
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isCloseConfirmOpen ? (
+        <div
+          className="dialog-backdrop"
+          onClick={() => setIsCloseConfirmOpen(false)}
+        >
+          <div
+            className="dialog-panel"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="panel-label">Unsaved Changes</p>
+            <h2>Discard Composite Edits?</h2>
+            <p className="dialog-copy">
+              You have unsaved changes inside this composite. Closing now will
+              discard those edits.
+            </p>
+            <div className="dialog-actions">
+              <button
+                type="button"
+                className="secondary-dialog-button"
+                onClick={() => setIsCloseConfirmOpen(false)}
+              >
+                Keep Editing
+              </button>
+              <button
+                type="button"
+                className="primary-dialog-button"
+                onClick={() => {
+                  setIsCloseConfirmOpen(false);
+                  dispatch({ type: 'closeCompositeEditor' });
+                }}
+              >
+                Discard Changes
               </button>
             </div>
           </div>

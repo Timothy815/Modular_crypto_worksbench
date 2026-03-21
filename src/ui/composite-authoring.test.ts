@@ -141,4 +141,73 @@ describe('createCompositeFromSelection', () => {
     ]);
     expect(replacement.layout?.['roundtripbridge-1']).toEqual({ x: 258, y: 40 });
   });
+
+  it('replaces a selection with multiple incoming and outgoing boundary connections', () => {
+    const expandedProject: Project = {
+      modules: [
+        { id: 'text-a', defId: 'TextInput', params: { value: 'A' } },
+        { id: 'text-b', defId: 'TextInput', params: { value: 'B' } },
+        { id: 'encode-a', defId: 'SymbolToBits', params: {} },
+        { id: 'encode-b', defId: 'SymbolToBits', params: {} },
+        { id: 'decode-a', defId: 'BitsToSymbol', params: {} },
+        { id: 'decode-b', defId: 'BitsToSymbol', params: {} },
+        { id: 'output-a', defId: 'Output', params: {} },
+        { id: 'output-b', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-a', port: 'out' }, to: { moduleId: 'encode-a', port: 'in' } },
+        { from: { moduleId: 'text-b', port: 'out' }, to: { moduleId: 'encode-b', port: 'in' } },
+        { from: { moduleId: 'encode-a', port: 'out' }, to: { moduleId: 'decode-a', port: 'in' } },
+        { from: { moduleId: 'encode-b', port: 'out' }, to: { moduleId: 'decode-b', port: 'in' } },
+        { from: { moduleId: 'decode-a', port: 'out' }, to: { moduleId: 'output-a', port: 'in' } },
+        { from: { moduleId: 'decode-b', port: 'out' }, to: { moduleId: 'output-b', port: 'in' } },
+      ],
+    };
+
+    const compositeResult = createCompositeFromSelection({
+      project: expandedProject,
+      registry,
+      name: 'Dual Round Trip',
+      id: 'DualRoundTrip',
+      selectedModuleIds: ['encode-a', 'encode-b', 'decode-a', 'decode-b'],
+    });
+
+    expect(compositeResult.ok).toBe(true);
+
+    const replacement = replaceSelectionWithComposite({
+      project: expandedProject,
+      layout: {
+        'text-a': { x: 24, y: 40 },
+        'text-b': { x: 24, y: 180 },
+        'encode-a': { x: 180, y: 40 },
+        'encode-b': { x: 180, y: 180 },
+        'decode-a': { x: 336, y: 40 },
+        'decode-b': { x: 336, y: 180 },
+        'output-a': { x: 492, y: 40 },
+        'output-b': { x: 492, y: 180 },
+      },
+      entry: compositeResult.entry!,
+      selectedModuleIds: ['encode-a', 'encode-b', 'decode-a', 'decode-b'],
+    });
+
+    expect(replacement.ok).toBe(true);
+    expect(replacement.project?.connections).toEqual([
+      {
+        from: { moduleId: 'text-a', port: 'out' },
+        to: { moduleId: 'dualroundtrip-1', port: 'encode_a_in' },
+      },
+      {
+        from: { moduleId: 'text-b', port: 'out' },
+        to: { moduleId: 'dualroundtrip-1', port: 'encode_b_in' },
+      },
+      {
+        from: { moduleId: 'dualroundtrip-1', port: 'decode_a_out' },
+        to: { moduleId: 'output-a', port: 'in' },
+      },
+      {
+        from: { moduleId: 'dualroundtrip-1', port: 'decode_b_out' },
+        to: { moduleId: 'output-b', port: 'in' },
+      },
+    ]);
+  });
 });
