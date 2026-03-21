@@ -24,6 +24,11 @@ export interface WorkbenchDocument {
   ui: WorkbenchUiMetadata;
 }
 
+export interface ComparisonBaselineDocument {
+  project: Project;
+  capturedAt: string;
+}
+
 export interface CompositeLibraryDocument {
   version: 1;
   entries: CompositeLibraryEntry[];
@@ -35,5 +40,6 @@ export interface PersistedWorkspaceDocument {
   showPalette: boolean;
   showInspector: boolean;
   documentsByProjectId: Record<string, WorkbenchDocument>;
+  comparisonBaselinesByProjectId: Record<string, ComparisonBaselineDocument | null>;
   compositeLibrary: CompositeLibraryDocument;
 }

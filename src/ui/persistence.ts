@@ -3,6 +3,7 @@ import type { Project } from '../engine/types';
 import type { DemoProject } from './demo-projects';
 import type { UiState } from './store';
 import type {
+  ComparisonBaselineDocument,
   CompositeLibraryDocument,
   PersistedWorkspaceDocument,
   WorkbenchAnnotation,
@@ -26,6 +27,17 @@ function cloneProject(project: Project): Project {
 
 function cloneAnnotations(annotations: WorkbenchAnnotation[]): WorkbenchAnnotation[] {
   return annotations.map((annotation) => ({ ...annotation }));
+}
+
+function cloneComparisonBaseline(
+  baseline: ComparisonBaselineDocument | null,
+): ComparisonBaselineDocument | null {
+  return baseline
+    ? {
+        project: cloneProject(baseline.project),
+        capturedAt: baseline.capturedAt,
+      }
+    : null;
 }
 
 function buildDefaultDocument(project: DemoProject): WorkbenchDocument {
@@ -73,6 +85,12 @@ export function buildPersistedWorkspace(state: UiState): PersistedWorkspaceDocum
             annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
           },
         },
+      ]),
+    ),
+    comparisonBaselinesByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        cloneComparisonBaseline(state.comparisonBaselinesByProject[projectId]),
       ]),
     ),
     compositeLibrary: {
@@ -123,6 +141,8 @@ export function loadWorkspaceFromStorage(
       typeof parsed.showInspector !== 'boolean' ||
       typeof parsed.documentsByProjectId !== 'object' ||
       parsed.documentsByProjectId === null ||
+      typeof parsed.comparisonBaselinesByProjectId !== 'object' ||
+      parsed.comparisonBaselinesByProjectId === null ||
       !isCompositeLibraryDocument(parsed.compositeLibrary)
     ) {
       return null;
@@ -141,6 +161,13 @@ export function loadWorkspaceFromStorage(
         ? parsed.activeProjectId
         : projects[0]?.id ?? '',
       documentsByProjectId: filteredDocuments,
+      comparisonBaselinesByProjectId: Object.fromEntries(
+        Object.entries(parsed.comparisonBaselinesByProjectId).filter(
+          ([projectId, baseline]) =>
+            allowedProjectIds.has(projectId) &&
+            (baseline === null || isComparisonBaselineDocument(baseline)),
+        ),
+      ),
     };
   } catch {
     return null;
@@ -223,6 +250,21 @@ function isCompositeLibraryDocument(value: unknown): value is CompositeLibraryDo
     candidate.version === 1 &&
     Array.isArray(candidate.entries) &&
     candidate.entries.every(isCompositeLibraryEntry)
+  );
+}
+
+function isComparisonBaselineDocument(value: unknown): value is ComparisonBaselineDocument {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as ComparisonBaselineDocument;
+  return (
+    typeof candidate.capturedAt === 'string' &&
+    typeof candidate.project === 'object' &&
+    candidate.project !== null &&
+    Array.isArray(candidate.project.modules) &&
+    Array.isArray(candidate.project.connections)
   );
 }
 

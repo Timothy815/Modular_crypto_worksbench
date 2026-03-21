@@ -892,6 +892,19 @@
   color: var(--ink);
 }
 
+.baseline-chip {
+  display: inline-block;
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
 .param-field input,
 .param-field select,
 .param-field textarea {

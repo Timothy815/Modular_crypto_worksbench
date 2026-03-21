@@ -32,9 +32,6 @@ import {
 } from './ui/store';
 
 function App() {
-  const [comparisonBaselineByProject, setComparisonBaselineByProject] = useState<
-    Record<string, { project: Project; capturedAt: string }>
-  >({});
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window === 'undefined') {
       return 'light';
@@ -89,6 +86,12 @@ function App() {
           projects.map((project) => [
             project.id,
             persistedWorkspace.documentsByProjectId[project.id]?.ui.annotations ?? initialState.annotationsByProject[project.id],
+          ]),
+        ),
+        comparisonBaselinesByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.comparisonBaselinesByProjectId[project.id] ?? null,
           ]),
         ),
         selectedModuleIdByProject: Object.fromEntries(
@@ -184,7 +187,7 @@ function App() {
     effectiveStepIndex !== null && execution
       ? execution.trace[effectiveStepIndex]?.moduleId ?? null
       : null;
-  const comparisonBaseline = comparisonBaselineByProject[activeProjectDefinition.id] ?? null;
+  const comparisonBaseline = state.comparisonBaselinesByProject[activeProjectDefinition.id] ?? null;
   const baselineValidation = comparisonBaseline
     ? validateProject(comparisonBaseline.project, effectiveRegistry)
     : null;
@@ -203,6 +206,9 @@ function App() {
     baselineExecution && execution
       ? compareExecutionResults(baselineExecution, execution)
       : null;
+  const baselineSelectedModule = comparisonBaseline && selectedModule
+    ? comparisonBaseline.project.modules.find((moduleInstance) => moduleInstance.id === selectedModule.id) ?? null
+    : null;
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -563,6 +569,7 @@ function App() {
             getParamDraft={(moduleId, key) =>
               getDraftValue(state, activeProjectDefinition.id, moduleId, key)
             }
+            baselineModuleInstance={baselineSelectedModule}
             onParamDraftChange={(moduleId, key, rawValue) =>
               dispatch({
                 type: 'setParamDraft',
@@ -618,13 +625,11 @@ function App() {
               type="button"
               className="mini-action-button"
               onClick={() =>
-                setComparisonBaselineByProject((current) => ({
-                  ...current,
-                  [activeProjectDefinition.id]: {
-                    project: cloneProject(activeProjectState),
-                    capturedAt: new Date().toISOString(),
-                  },
-                }))
+                dispatch({
+                  type: 'captureComparisonBaseline',
+                  projectId: activeProjectDefinition.id,
+                  capturedAt: new Date().toISOString(),
+                })
               }
             >
               {comparisonBaseline ? 'Recapture Baseline' : 'Capture Baseline'}
@@ -634,10 +639,9 @@ function App() {
                 type="button"
                 className="mini-action-button"
                 onClick={() =>
-                  setComparisonBaselineByProject((current) => {
-                    const next = { ...current };
-                    delete next[activeProjectDefinition.id];
-                    return next;
+                  dispatch({
+                    type: 'clearComparisonBaseline',
+                    projectId: activeProjectDefinition.id,
                   })
                 }
               >
