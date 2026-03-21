@@ -10,9 +10,24 @@ interface CreateCompositeFromSelectionArgs {
   selectedModuleIds: string[];
 }
 
+interface ReplaceSelectionWithCompositeArgs {
+  project: Project;
+  layout: Record<string, { x: number; y: number }>;
+  entry: CompositeLibraryEntry;
+  selectedModuleIds: string[];
+}
+
 export interface CreateCompositeResult {
   ok: boolean;
   entry?: CompositeLibraryEntry;
+  error?: string;
+}
+
+export interface ReplaceSelectionResult {
+  ok: boolean;
+  project?: Project;
+  layout?: Record<string, { x: number; y: number }>;
+  compositeInstanceId?: string;
   error?: string;
 }
 
@@ -143,6 +158,114 @@ export function createCompositeFromSelection({
   return { ok: true, entry };
 }
 
+export function replaceSelectionWithComposite({
+  project,
+  layout,
+  entry,
+  selectedModuleIds,
+}: ReplaceSelectionWithCompositeArgs): ReplaceSelectionResult {
+  const selectedIdSet = new Set(selectedModuleIds);
+  if (selectedIdSet.size === 0) {
+    return { ok: false, error: 'Select at least one module to replace.' };
+  }
+
+  const selectedModules = project.modules.filter((moduleInstance) => selectedIdSet.has(moduleInstance.id));
+  if (selectedModules.length === 0) {
+    return { ok: false, error: 'Selected modules were not found in the current project.' };
+  }
+
+  const compositeInstanceId = createModuleInstanceId(project, entry.id);
+  const unaffectedModules = project.modules
+    .filter((moduleInstance) => !selectedIdSet.has(moduleInstance.id))
+    .map((moduleInstance) => ({
+      ...moduleInstance,
+      params: { ...moduleInstance.params },
+    }));
+  const unaffectedConnections = project.connections
+    .filter(
+      (connection) =>
+        !selectedIdSet.has(connection.from.moduleId) &&
+        !selectedIdSet.has(connection.to.moduleId),
+    )
+    .map(cloneConnection);
+  const incomingBoundaryConnections = project.connections.filter(
+    (connection) =>
+      !selectedIdSet.has(connection.from.moduleId) &&
+      selectedIdSet.has(connection.to.moduleId),
+  );
+  const outgoingBoundaryConnections = project.connections.filter(
+    (connection) =>
+      selectedIdSet.has(connection.from.moduleId) &&
+      !selectedIdSet.has(connection.to.moduleId),
+  );
+
+  const rewiredIncoming = incomingBoundaryConnections.map((connection) => {
+    const binding = entry.definition.inputBindings.find(
+      (candidate) =>
+        candidate.internalModuleId === connection.to.moduleId &&
+        candidate.internalPort === connection.to.port,
+    );
+    if (!binding) {
+      return null;
+    }
+
+    return {
+      from: { ...connection.from },
+      to: { moduleId: compositeInstanceId, port: binding.externalPort },
+    };
+  });
+  const rewiredOutgoing = outgoingBoundaryConnections.map((connection) => {
+    const binding = entry.definition.outputBindings.find(
+      (candidate) =>
+        candidate.internalModuleId === connection.from.moduleId &&
+        candidate.internalPort === connection.from.port,
+    );
+    if (!binding) {
+      return null;
+    }
+
+    return {
+      from: { moduleId: compositeInstanceId, port: binding.externalPort },
+      to: { ...connection.to },
+    };
+  });
+
+  if (rewiredIncoming.some((connection) => connection === null) || rewiredOutgoing.some((connection) => connection === null)) {
+    return {
+      ok: false,
+      error: 'Unable to reconnect all boundary ports when replacing the selection.',
+    };
+  }
+
+  const centroid = getSelectionCentroid(selectedModules, layout);
+
+  return {
+    ok: true,
+    compositeInstanceId,
+    project: {
+      modules: [
+        ...unaffectedModules,
+        {
+          id: compositeInstanceId,
+          defId: entry.id,
+          params: {},
+        },
+      ],
+      connections: [
+        ...unaffectedConnections,
+        ...(rewiredIncoming as Connection[]),
+        ...(rewiredOutgoing as Connection[]),
+      ],
+    },
+    layout: {
+      ...Object.fromEntries(
+        Object.entries(layout).filter(([moduleId]) => !selectedIdSet.has(moduleId)),
+      ),
+      [compositeInstanceId]: centroid,
+    },
+  };
+}
+
 function buildBoundaryPorts(
   boundaryConnections: Connection[],
   registry: ModuleRegistry,
@@ -222,4 +345,35 @@ function cloneConnection(connection: Connection): Connection {
     from: { ...connection.from },
     to: { ...connection.to },
   };
+}
+
+function createModuleInstanceId(project: Project, defId: string) {
+  const prefix = defId.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase();
+  let index = 1;
+  let candidate = `${prefix}-${index}`;
+
+  while (project.modules.some((moduleInstance) => moduleInstance.id === candidate)) {
+    index += 1;
+    candidate = `${prefix}-${index}`;
+  }
+
+  return candidate;
+}
+
+function getSelectionCentroid(
+  modules: Project['modules'],
+  layout: Record<string, { x: number; y: number }>,
+) {
+  const positions = modules
+    .map((moduleInstance) => layout[moduleInstance.id])
+    .filter((position): position is { x: number; y: number } => Boolean(position));
+
+  if (positions.length === 0) {
+    return { x: 80, y: 80 };
+  }
+
+  const x = Math.round(positions.reduce((sum, position) => sum + position.x, 0) / positions.length);
+  const y = Math.round(positions.reduce((sum, position) => sum + position.y, 0) / positions.length);
+
+  return { x, y };
 }

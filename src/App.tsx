@@ -5,7 +5,10 @@ import type { CompositeLibraryEntry } from './engine/composites';
 import { V1_REGISTRY } from './engine/modules';
 import type { ExecutionResult, Project } from './engine/types';
 import { validateCompositeDef } from './engine/validation';
-import { createCompositeFromSelection } from './ui/composite-authoring';
+import {
+  createCompositeFromSelection,
+  replaceSelectionWithComposite,
+} from './ui/composite-authoring';
 import { ParameterInspector } from './ui/components/parameter-inspector';
 import { PrimitivePalette } from './ui/components/primitive-palette';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
@@ -106,6 +109,7 @@ function App() {
   const [compositeName, setCompositeName] = useState('');
   const [compositeId, setCompositeId] = useState('');
   const [compositeDialogError, setCompositeDialogError] = useState<string | null>(null);
+  const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
 
   const activeProjectDefinition =
     demoProjects.find((project) => project.id === state.activeProjectId) ?? demoProjects[0];
@@ -360,6 +364,7 @@ function App() {
             setCompositeName('');
             setCompositeId('');
             setCompositeDialogError(null);
+            setReplaceSelectionAfterCreate(!state.compositeEditor);
             setIsCompositeDialogOpen(true);
           }}
           onAddConnection={(fromModuleId, fromPort, toModuleId, toPort) =>
@@ -578,6 +583,21 @@ function App() {
               />
             </label>
 
+            <label className="checkbox-field">
+              <input
+                type="checkbox"
+                checked={replaceSelectionAfterCreate}
+                disabled={Boolean(state.compositeEditor)}
+                onChange={(event) => setReplaceSelectionAfterCreate(event.target.checked)}
+              />
+              <span>
+                Replace the current selection with the new composite
+                {state.compositeEditor
+                  ? ' (disabled while editing a composite)'
+                  : ''}
+              </span>
+            </label>
+
             {compositeDialogError ? (
               <p className="field-error">{compositeDialogError}</p>
             ) : null}
@@ -614,6 +634,36 @@ function App() {
                     type: 'addCompositeToLibrary',
                     entry: result.entry,
                   });
+
+                  if (replaceSelectionAfterCreate && !state.compositeEditor) {
+                    const replacement = replaceSelectionWithComposite({
+                      project: activeProjectState,
+                      layout: activeLayout,
+                      entry: result.entry,
+                      selectedModuleIds: effectiveSelectedModuleIds,
+                    });
+
+                    if (!replacement.ok || !replacement.project || !replacement.layout) {
+                      setCompositeDialogError(
+                        replacement.error ?? 'Composite was created, but replacement failed.',
+                      );
+                      return;
+                    }
+
+                    dispatch({
+                      type: 'loadDocument',
+                      projectId: activeProjectDefinition.id,
+                      document: {
+                        version: 1,
+                        project: replacement.project,
+                        ui: {
+                          layout: replacement.layout,
+                          annotations: state.annotationsByProject[activeProjectDefinition.id] ?? [],
+                        },
+                      },
+                    });
+                  }
+
                   setIsCompositeDialogOpen(false);
                   setCompositeDialogError(null);
                 }}

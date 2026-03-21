@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ModuleRegistry, Project } from '../engine/types';
-import { createCompositeFromSelection } from './composite-authoring';
+import { createCompositeFromSelection, replaceSelectionWithComposite } from './composite-authoring';
 
 const registry: ModuleRegistry = {
   TextInput: {
@@ -98,5 +98,47 @@ describe('createCompositeFromSelection', () => {
 
     expect(result.ok).toBe(false);
     expect(result.error).toContain('boundary port');
+  });
+
+  it('replaces a selected subgraph with a composite instance and rewires the graph', () => {
+    const compositeResult = createCompositeFromSelection({
+      project,
+      registry,
+      name: 'Round Trip Bridge',
+      id: 'RoundTripBridge',
+      selectedModuleIds: ['encode', 'decode'],
+    });
+
+    expect(compositeResult.ok).toBe(true);
+
+    const replacement = replaceSelectionWithComposite({
+      project,
+      layout: {
+        text: { x: 24, y: 40 },
+        encode: { x: 180, y: 40 },
+        decode: { x: 336, y: 40 },
+        output: { x: 492, y: 40 },
+      },
+      entry: compositeResult.entry!,
+      selectedModuleIds: ['encode', 'decode'],
+    });
+
+    expect(replacement.ok).toBe(true);
+    expect(replacement.project?.modules.map((moduleInstance) => moduleInstance.defId)).toEqual([
+      'TextInput',
+      'Output',
+      'RoundTripBridge',
+    ]);
+    expect(replacement.project?.connections).toEqual([
+      {
+        from: { moduleId: 'text', port: 'out' },
+        to: { moduleId: 'roundtripbridge-1', port: 'encode_in' },
+      },
+      {
+        from: { moduleId: 'roundtripbridge-1', port: 'decode_out' },
+        to: { moduleId: 'output', port: 'in' },
+      },
+    ]);
+    expect(replacement.layout?.['roundtripbridge-1']).toEqual({ x: 258, y: 40 });
   });
 });
