@@ -162,11 +162,8 @@
 }
 
 .primitive-card {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  display: block;
   padding: 14px 16px;
-  align-items: flex-start;
 }
 
 .primitive-card-source {
@@ -200,9 +197,13 @@
   color: var(--role-composite-ink);
 }
 
+.primitive-main {
+  display: grid;
+  gap: 12px;
+}
+
 .primitive-meta {
   min-width: 0;
-  flex: 1 1 auto;
 }
 
 .primitive-title {
@@ -217,38 +218,42 @@
 .primitive-actions {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 8px;
-  flex: 0 0 auto;
-  min-width: 108px;
+  min-width: 0;
 }
 
 .primitive-button-row {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
   gap: 8px;
 }
 
-.primitive-remove-button {
+.primitive-action-button {
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: var(--danger-bg);
-  padding: 8px 12px;
+  background: var(--surface-button);
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
   font: inherit;
   font-weight: 700;
-  color: var(--danger-text);
+  color: var(--ink);
   cursor: pointer;
 }
 
-.primitive-remove-button:disabled {
+.primitive-action-button-danger {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.primitive-action-button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
 
 .primitive-composite-note {
   margin: 0;
-  text-align: right;
   font-size: 0.78rem;
   color: var(--muted);
 }

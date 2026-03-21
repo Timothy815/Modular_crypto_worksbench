@@ -37,6 +37,9 @@ interface TargetPortState {
 
 interface WorkbenchPanelProps {
   activeProject: DemoProject;
+  title?: string;
+  summary?: string;
+  pipelineLabel?: string;
   activeProjectState: Project;
   layout: Record<string, { x: number; y: number }>;
   annotations: WorkbenchAnnotation[];
@@ -45,6 +48,7 @@ interface WorkbenchPanelProps {
   registry: ModuleRegistry;
   selectedModuleId: string | null;
   selectedModuleIds: string[];
+  isCompositeEditor?: boolean;
   onMoveModule: (moduleId: string, x: number, y: number) => void;
   onAddAnnotation: () => void;
   onMoveAnnotation: (annotationId: string, x: number, y: number) => void;
@@ -67,6 +71,9 @@ interface WorkbenchPanelProps {
 
 export function WorkbenchPanel({
   activeProject,
+  title,
+  summary,
+  pipelineLabel,
   activeProjectState,
   layout,
   annotations,
@@ -75,6 +82,7 @@ export function WorkbenchPanel({
   registry,
   selectedModuleId,
   selectedModuleIds,
+  isCompositeEditor = false,
   onMoveModule,
   onAddAnnotation,
   onMoveAnnotation,
@@ -277,44 +285,50 @@ export function WorkbenchPanel({
     <section className="panel canvas-panel">
       <div className="panel-head">
         <p className="panel-label">Workbench</p>
-        <h2>Demo Graphs</h2>
+        <h2>{title ?? 'Demo Graphs'}</h2>
       </div>
 
-      <div className="project-switcher">
-        {projects.map((project) => (
-          <button
-            key={project.id}
-            type="button"
-            className={project.id === activeProject.id ? 'switch-chip active' : 'switch-chip'}
-            onClick={() => onSwitchProject(project.id)}
-          >
-            {project.name}
-          </button>
-        ))}
-      </div>
+      {!isCompositeEditor ? (
+        <div className="project-switcher">
+          {projects.map((project) => (
+            <button
+              key={project.id}
+              type="button"
+              className={project.id === activeProject.id ? 'switch-chip active' : 'switch-chip'}
+              onClick={() => onSwitchProject(project.id)}
+            >
+              {project.name}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <div className="project-actions">
-        <button
-          type="button"
-          className="mini-action-button"
-          onClick={onAddAnnotation}
-        >
-          Add Note
-        </button>
-        <button
-          type="button"
-          className="mini-action-button"
-          onClick={onExportDocument}
-        >
-          Export JSON
-        </button>
-        <button
-          type="button"
-          className="mini-action-button"
-          onClick={() => importInputRef.current?.click()}
-        >
-          Import JSON
-        </button>
+        {!isCompositeEditor ? (
+          <>
+            <button
+              type="button"
+              className="mini-action-button"
+              onClick={onAddAnnotation}
+            >
+              Add Note
+            </button>
+            <button
+              type="button"
+              className="mini-action-button"
+              onClick={onExportDocument}
+            >
+              Export JSON
+            </button>
+            <button
+              type="button"
+              className="mini-action-button"
+              onClick={() => importInputRef.current?.click()}
+            >
+              Import JSON
+            </button>
+          </>
+        ) : null}
         <button
           type="button"
           className="mini-action-button"
@@ -338,8 +352,8 @@ export function WorkbenchPanel({
         />
       </div>
 
-      <p className="project-summary">{activeProject.summary}</p>
-      <p className="mono-line">{activeProject.pipeline}</p>
+      <p className="project-summary">{summary ?? activeProject.summary}</p>
+      <p className="mono-line">{pipelineLabel ?? activeProject.pipeline}</p>
       {selectedModuleIds.length > 0 ? (
         <p className="selection-status">
           Selected modules: <strong>{selectedModuleIds.length}</strong>. Use

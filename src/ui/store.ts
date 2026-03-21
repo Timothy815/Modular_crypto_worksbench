@@ -46,6 +46,7 @@ export type UiAction =
   | { type: 'loadDocument'; projectId: string; document: WorkbenchDocument }
   | { type: 'loadCompositeLibrary'; document: CompositeLibraryDocument }
   | { type: 'addCompositeToLibrary'; entry: CompositeLibraryEntry }
+  | { type: 'updateCompositeInLibrary'; entry: CompositeLibraryEntry }
   | { type: 'removeCompositeFromLibrary'; compositeId: string }
   | { type: 'togglePalette' }
   | { type: 'toggleInspector' };
@@ -520,6 +521,13 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       return {
         ...state,
         compositeLibrary: [...state.compositeLibrary, action.entry],
+      };
+    case 'updateCompositeInLibrary':
+      return {
+        ...state,
+        compositeLibrary: state.compositeLibrary.map((entry) =>
+          entry.id === action.entry.id ? action.entry : entry,
+        ),
       };
     case 'removeCompositeFromLibrary':
       return {
