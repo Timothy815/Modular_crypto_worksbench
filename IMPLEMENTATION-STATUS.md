@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: March 20, 2026
+Last updated: March 21, 2026
 
 ---
 
@@ -15,8 +15,10 @@ Established and now available for other agents:
 - project toolchain scaffold
 - engine core type definitions
 - graph validation
+- param validation against `paramSchema`
 - iterative topological executor
 - initial engine tests
+- GitHub Pages deployment workflow
 
 ---
 
@@ -90,20 +92,31 @@ Best focus:
 
 ---
 
-## Current Blocker
+## Current Verification State
 
-Verification is not yet runnable in this workspace because dev dependencies are not installed.
+Available checks:
+- `npm test`
+- `npm run lint`
+- `npm run build`
 
-Observed result:
-- `npm test` failed because `vitest` is not installed
+Architect expectation for all future changes:
+- tests pass
+- lint passes
+- build passes
 
-No claim of test pass should be made until dependencies are installed and the suite is executed.
+The public-facing placeholder app and README have been identified as normalization targets and should not be treated as representative product work.
 
 ---
 
 ## Architect Notes
 
 The current scaffold is intentionally narrow. It establishes shared interfaces and execution structure first so other workstreams can build on stable ground.
+
+Architectural normalization added on March 21:
+- package scripts aligned with contributor workflow
+- contract aligned with record-based registry already used in code
+- validator expanded to cover params as well as graph structure
+- public template surfaces marked for replacement with MCW-specific content
 
 The next integration milestone should be:
 

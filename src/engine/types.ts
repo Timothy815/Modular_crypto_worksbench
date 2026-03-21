@@ -87,6 +87,11 @@ export interface ValidationIssue {
     | 'unknown-module-def'
     | 'unknown-module-instance'
     | 'unknown-port'
+    | 'missing-required-param'
+    | 'unknown-param'
+    | 'invalid-param-type'
+    | 'invalid-param-option'
+    | 'invalid-wiring'
     | 'duplicate-input-connection'
     | 'signal-type-mismatch'
     | 'cycle-detected';

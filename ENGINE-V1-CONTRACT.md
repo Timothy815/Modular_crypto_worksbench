@@ -31,19 +31,31 @@ interface Signal {
 ### 2.2 Param Schema
 Every `ModuleDef` must define its parameters using this schema to enable auto-generated UI and validation.
 ```ts
-type ParamKind = 'number' | 'string' | 'boolean' | 'select' | 'wiring';
+type ParamKind = 'number' | 'string' | 'boolean' | 'select' | 'wiring' | 'bits';
+
+interface ParamOption {
+  label: string;
+  value: string;
+}
 
 interface ParamFieldDef {
   key: string;
   label: string;
   kind: ParamKind;
   defaultValue: unknown;
-  options?: string[]; // Required for 'select'
+  required?: boolean;
+  options?: ParamOption[]; // Used by 'select'
 }
 ```
 
 ### 2.3 Module Registry
-Definitions are managed by a central `ModuleRegistry` class to ensure ID uniqueness and provide lookup for the executor and validator.
+V1 uses a simple record-based registry:
+
+```ts
+type ModuleRegistry = Record<string, ModuleDef>;
+```
+
+This is sufficient for the first engine slice and keeps the shared interface simple for multiple agents. A dedicated registry class can be introduced later if dynamic registration or lifecycle behavior becomes necessary.
 
 ### 2.4 Error Model
 - **Validation:** Returns a `ValidationResult` object (collection of errors). Does not throw.
@@ -55,14 +67,14 @@ Definitions are managed by a central `ModuleRegistry` class to ensure ID uniquen
 2. Compute Topological Sort.
 3. Iterate through sorted list.
 4. Each module `evaluate()` called once.
-5. Store results in a run-local `Map<string, Signal>`.
+5. Store results in run-local execution data keyed by module instance ID.
 
 ---
 
 ## 3. The Sprint Backlog (Implementation Sequence)
 
 1.  **Scaffold:** Vite + React + TS + Vitest configuration.
-2.  **Infrastructure:** `types.ts`, `registry.ts`, and the `ModuleRegistry` instance.
+2.  **Infrastructure:** `types.ts` and the shared `ModuleRegistry` type.
 3.  **Validation:** `validation.ts` (Cycle detection, Type checking, Port validation).
 4.  **Executor:** `executor.ts` (Topological sort + iterative loop).
 5.  **General Primitives:** `TextInput`, `KeyInput`, `BitSource`, `SymbolToBits`, `BitsToSymbol`, `XOR`, `Output`.
@@ -75,3 +87,4 @@ Definitions are managed by a central `ModuleRegistry` class to ensure ID uniquen
 - **Testing:** Every module requires a `.test.ts` file covering valid and invalid inputs.
 - **Documentation:** Use JSDoc for complex logic; keep code idiomatic and "boring."
 - **Consistency:** Use `interface` for objects, `PascalCase` for types, and `kebab-case` for files.
+- **Validation:** Graph validation includes structural checks and param validation against `paramSchema`.

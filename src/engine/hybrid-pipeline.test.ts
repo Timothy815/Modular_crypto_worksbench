@@ -68,27 +68,31 @@ describe('Hybrid Pipeline (reference integration test)', () => {
     const afterReflector = result.outputsByModuleId.reflector.out;
     expect(afterReflector).toEqual({ type: 'symbol', value: 'Q' });
 
-    // Encoder: rotor-rev output → 5-bit binary
+    // Reverse rotor uses the same Rotor primitive in V1, so with the current
+    // semantics Q(16) → wiring[16] = X.
+    const afterRotorRev = result.outputsByModuleId['rotor-rev'].out;
+    expect(afterRotorRev).toEqual({ type: 'symbol', value: 'X' });
+
+    // Encoder: X(23) → 10111
     const afterEncoder = result.outputsByModuleId.encoder.out;
-    expect(afterEncoder.type).toBe('bits');
+    expect(afterEncoder).toEqual({ type: 'bits', value: [1, 0, 1, 1, 1] });
 
-    // XOR with keystream [1,0,1,1,0]
+    // XOR with keystream [1,0,1,1,0] → 00001
     const afterXor = result.outputsByModuleId.xor.out;
-    expect(afterXor.type).toBe('bits');
+    expect(afterXor).toEqual({ type: 'bits', value: [0, 0, 0, 0, 1] });
 
-    // Decoder: bits → symbol
+    // Decoder: 00001 → B
     const finalSymbol = result.outputsByModuleId.decoder.out;
-    expect(finalSymbol.type).toBe('symbol');
+    expect(finalSymbol).toEqual({ type: 'symbol', value: 'B' });
 
-    // Freeze the known-answer: compute it once, then lock it
-    // Run 1 result capture (this locks the expected output):
+    // Determinism still matters; rerunning must preserve the same known answer.
     const firstRun = executeProject(project, V1_REGISTRY);
     const secondRun = executeProject(project, V1_REGISTRY);
 
-    // Determinism check — same input always produces same output
     expect(secondRun.outputsByModuleId.decoder.out).toEqual(
       firstRun.outputsByModuleId.decoder.out,
     );
+    expect(firstRun.outputsByModuleId.decoder.out).toEqual({ type: 'symbol', value: 'B' });
   });
 
   it('crosses signal domains correctly (symbol → bits → symbol)', () => {

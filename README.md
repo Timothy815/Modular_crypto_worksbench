@@ -1,73 +1,69 @@
-# React + TypeScript + Vite
+# Modular Cryptography Workbench
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Modular Cryptography Workbench (MCW) is a visual cryptographic construction environment built around typed signal-flow graphs.
 
-Currently, two official plugins are available:
+Instead of selecting a prebuilt cipher, users assemble machines from parts:
+- symbol-domain modules such as rotors and reflectors
+- bit-domain modules such as XOR and key sources
+- explicit bridge modules such as `SymbolToBits` and `BitsToSymbol`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The goal is to make cryptographic structure visible. MCW is designed as a workshop, not a museum.
 
-## React Compiler
+## Current State
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The repository is in the engine-first phase.
 
-## Expanding the ESLint configuration
+Implemented and locked so far:
+- engine core types
+- graph validation
+- iterative topological executor
+- multi-agent coordination and implementation contract
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Planned next:
+- general-purpose primitive modules
+- rotor and reflector primitives
+- hybrid reference pipeline tests
+- minimal interactive UI
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Key Documents
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- `PROJECT.md`: product vision and full specification
+- `ENGINE-V1-CONTRACT.md`: locked implementation decisions for the current engine slice
+- `AI-COORDINATION.md`: multi-agent workflow rules
+- `AI-WORKSTREAMS.md`: current ownership boundaries
+- `IMPLEMENTATION-STATUS.md`: live execution status and handoff notes
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Development
+
+Requirements:
+- Node.js 20+
+
+Commands:
+
+```bash
+npm install
+npm test
+npm run lint
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Deployment
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Pushes to `main` deploy automatically to GitHub Pages through `.github/workflows/deploy.yml`.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Published site:
+- https://timothy815.github.io/Modular_crypto_worksbench/
+
+## Short-Term Goal
+
+The first meaningful engine milestone is a tested pipeline like:
+
+```text
+TextInput -> SymbolToBits -> XOR -> BitsToSymbol -> Output
+```
+
+After that, the project expands toward the hybrid target:
+
+```text
+TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol -> Output
 ```

@@ -9,7 +9,14 @@ const registry: ModuleRegistry = {
     name: 'TextSource',
     inputs: [],
     outputs: [{ name: 'out', type: 'symbol' }],
-    paramSchema: {},
+    paramSchema: {
+      value: {
+        key: 'value',
+        label: 'Value',
+        kind: 'string',
+        defaultValue: 'A',
+      },
+    },
     evaluate: (_inputs, params) => ({
       out: { type: 'symbol', value: String(params.value ?? 'A') },
     }),
@@ -17,6 +24,14 @@ const registry: ModuleRegistry = {
   SymbolEcho: {
     id: 'SymbolEcho',
     name: 'SymbolEcho',
+    inputs: [{ name: 'in', type: 'symbol' }],
+    outputs: [{ name: 'out', type: 'symbol' }],
+    paramSchema: {},
+    evaluate: (inputs) => ({ out: inputs.in }),
+  },
+  BranchSink: {
+    id: 'BranchSink',
+    name: 'BranchSink',
     inputs: [{ name: 'in', type: 'symbol' }],
     outputs: [{ name: 'out', type: 'symbol' }],
     paramSchema: {},
@@ -58,5 +73,46 @@ describe('executeProject', () => {
     expect(result.outputsByModuleId.source.out).toEqual({ type: 'symbol', value: 'Q' });
     expect(result.outputsByModuleId.echo.out).toEqual({ type: 'symbol', value: 'Q' });
     expect(result.trace).toHaveLength(3);
+  });
+
+  it('evaluates a branched graph without recomputing upstream modules', () => {
+    let sourceEvaluations = 0;
+
+    const branchingRegistry: ModuleRegistry = {
+      ...registry,
+      TextSource: {
+        ...registry.TextSource,
+        evaluate: (_inputs, params) => {
+          sourceEvaluations += 1;
+          return {
+            out: { type: 'symbol', value: String(params.value ?? 'A') },
+          };
+        },
+      },
+    };
+
+    const project: Project = {
+      modules: [
+        { id: 'source', defId: 'TextSource', params: { value: 'M' } },
+        { id: 'left', defId: 'BranchSink', params: {} },
+        { id: 'right', defId: 'BranchSink', params: {} },
+      ],
+      connections: [
+        {
+          from: { moduleId: 'source', port: 'out' },
+          to: { moduleId: 'left', port: 'in' },
+        },
+        {
+          from: { moduleId: 'source', port: 'out' },
+          to: { moduleId: 'right', port: 'in' },
+        },
+      ],
+    };
+
+    const result = executeProject(project, branchingRegistry);
+
+    expect(sourceEvaluations).toBe(1);
+    expect(result.outputsByModuleId.left.out).toEqual({ type: 'symbol', value: 'M' });
+    expect(result.outputsByModuleId.right.out).toEqual({ type: 'symbol', value: 'M' });
   });
 });
