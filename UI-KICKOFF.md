@@ -5,7 +5,8 @@ Checkpoint:
 - `67558b3` — Start minimal UI shell
 - `4522196` — Add param-driven UI inspector
 - `5190719` — Refactor UI state into reducer
-- working tree now includes a visual canvas-style workbench and selected-module port visibility
+- `48c6c78` — Add visual workbench canvas
+- working tree now includes reactive node layout and collapsible side panels
 
 This document records the first UI-phase decisions so work can pass cleanly between Codex and Claude.
 
@@ -65,7 +66,7 @@ Once back online, Claude should be able to continue from this branch by taking o
 1. Replace the current graph strip with a more editor-like canvas layout while preserving the current selection model.
 2. Improve parameter editing UX for `bits` and `wiring` fields with more structured controls.
 3. Add inline port anchors or richer connection affordances to the visual canvas.
-4. Decide whether the next branch should introduce lightweight node movement or persistence-first UI.
+4. Introduce theme tokens and dark-mode support without rewriting components.
 
 ---
 
@@ -84,6 +85,9 @@ The branch now contains:
 - draft-aware param parsing and field-level error feedback
 - a visual canvas-style workbench with positioned demo nodes and rendered connections
 - selected-module port visibility in the inspector
+- reactive per-project layout state in the UI store
+- basic node movement
+- collapsible palette and inspector panels so the workbench can expand
 - live re-execution through local UI state
 
 This means the branch has already validated the key UI-side promise of `paramSchema`: the engine metadata can drive browser controls.

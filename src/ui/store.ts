@@ -4,16 +4,22 @@ import type { DemoProject } from './demo-projects';
 export interface UiState {
   activeProjectId: string;
   projectStates: Record<string, Project>;
+  layoutByProject: Record<string, Record<string, { x: number; y: number }>>;
   selectedModuleIdByProject: Record<string, string | null>;
   paramDrafts: Record<string, string>;
+  showPalette: boolean;
+  showInspector: boolean;
 }
 
 export type UiAction =
   | { type: 'switchProject'; projectId: string }
   | { type: 'selectModule'; projectId: string; moduleId: string }
+  | { type: 'moveModule'; projectId: string; moduleId: string; x: number; y: number }
   | { type: 'updateParam'; projectId: string; moduleId: string; key: string; value: unknown }
   | { type: 'setParamDraft'; projectId: string; moduleId: string; key: string; rawValue: string }
-  | { type: 'clearParamDraft'; projectId: string; moduleId: string; key: string };
+  | { type: 'clearParamDraft'; projectId: string; moduleId: string; key: string }
+  | { type: 'togglePalette' }
+  | { type: 'toggleInspector' };
 
 function cloneProject(project: Project): Project {
   return {
@@ -51,10 +57,23 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     projectStates: Object.fromEntries(
       projects.map((project) => [project.id, cloneProject(project.project)]),
     ),
+    layoutByProject: Object.fromEntries(
+      projects.map((project) => [
+        project.id,
+        Object.fromEntries(
+          Object.entries(project.layout).map(([moduleId, position]) => [
+            moduleId,
+            { ...position },
+          ]),
+        ),
+      ]),
+    ),
     selectedModuleIdByProject: Object.fromEntries(
       projects.map((project) => [project.id, project.project.modules[0]?.id ?? null]),
     ),
     paramDrafts: {},
+    showPalette: true,
+    showInspector: true,
   };
 }
 
@@ -73,6 +92,26 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           [action.projectId]: action.moduleId,
         },
       };
+    case 'moveModule': {
+      const currentLayout = state.layoutByProject[action.projectId];
+      if (!currentLayout) {
+        return state;
+      }
+
+      return {
+        ...state,
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: {
+            ...currentLayout,
+            [action.moduleId]: {
+              x: action.x,
+              y: action.y,
+            },
+          },
+        },
+      };
+    }
     case 'updateParam': {
       const currentProject = state.projectStates[action.projectId];
       if (!currentProject) {
@@ -115,6 +154,16 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
         paramDrafts: nextDrafts,
       };
     }
+    case 'togglePalette':
+      return {
+        ...state,
+        showPalette: !state.showPalette,
+      };
+    case 'toggleInspector':
+      return {
+        ...state,
+        showInspector: !state.showInspector,
+      };
     default:
       return state;
   }

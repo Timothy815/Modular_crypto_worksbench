@@ -25,6 +25,8 @@ function App() {
     demoProjects.find((project) => project.id === state.activeProjectId) ?? demoProjects[0];
   const activeProjectState =
     state.projectStates[activeProjectDefinition.id] ?? activeProjectDefinition.project;
+  const activeLayout =
+    state.layoutByProject[activeProjectDefinition.id] ?? activeProjectDefinition.layout;
   const effectiveSelectedModuleId =
     getSelectedModuleId(state, activeProjectDefinition.id, activeProjectState);
   const selectedModule =
@@ -68,18 +70,55 @@ function App() {
             Repository
           </a>
         </div>
+
+        <div className="layout-actions">
+          <button
+            type="button"
+            className={state.showPalette ? 'layout-chip active' : 'layout-chip'}
+            onClick={() => dispatch({ type: 'togglePalette' })}
+          >
+            {state.showPalette ? 'Hide Palette' : 'Show Palette'}
+          </button>
+          <button
+            type="button"
+            className={state.showInspector ? 'layout-chip active' : 'layout-chip'}
+            onClick={() => dispatch({ type: 'toggleInspector' })}
+          >
+            {state.showInspector ? 'Hide Inspector' : 'Show Inspector'}
+          </button>
+        </div>
       </section>
 
-      <section className="workbench-grid">
-        <PrimitivePalette registry={V1_REGISTRY} />
+      <section
+        className={
+          state.showPalette && state.showInspector
+            ? 'workbench-grid'
+            : state.showPalette
+              ? 'workbench-grid workbench-grid-no-inspector'
+              : state.showInspector
+                ? 'workbench-grid workbench-grid-no-palette'
+                : 'workbench-grid workbench-grid-workbench-only'
+        }
+      >
+        {state.showPalette ? <PrimitivePalette registry={V1_REGISTRY} /> : null}
 
         <WorkbenchPanel
           activeProject={activeProjectDefinition}
           activeProjectState={activeProjectState}
+          layout={activeLayout}
           execution={execution}
           executionError={executionError}
           registry={V1_REGISTRY}
           selectedModuleId={effectiveSelectedModuleId}
+          onMoveModule={(moduleId, x, y) =>
+            dispatch({
+              type: 'moveModule',
+              projectId: activeProjectDefinition.id,
+              moduleId,
+              x,
+              y,
+            })
+          }
           onSelectModule={(moduleId) =>
             dispatch({
               type: 'selectModule',
@@ -96,33 +135,35 @@ function App() {
           projects={demoProjects}
         />
 
-        <ParameterInspector
-          execution={execution}
-          executionError={executionError}
-          moduleDef={selectedModuleDef}
-          moduleInstance={selectedModule}
-          getParamDraft={(moduleId, key) =>
-            getDraftValue(state, activeProjectDefinition.id, moduleId, key)
-          }
-          onParamDraftChange={(moduleId, key, rawValue) =>
-            dispatch({
-              type: 'setParamDraft',
-              projectId: activeProjectDefinition.id,
-              moduleId,
-              key,
-              rawValue,
-            })
-          }
-          onParamChange={(moduleId, key, value) =>
-            dispatch({
-              type: 'updateParam',
-              projectId: activeProjectDefinition.id,
-              moduleId,
-              key,
-              value,
-            })
-          }
-        />
+        {state.showInspector ? (
+          <ParameterInspector
+            execution={execution}
+            executionError={executionError}
+            moduleDef={selectedModuleDef}
+            moduleInstance={selectedModule}
+            getParamDraft={(moduleId, key) =>
+              getDraftValue(state, activeProjectDefinition.id, moduleId, key)
+            }
+            onParamDraftChange={(moduleId, key, rawValue) =>
+              dispatch({
+                type: 'setParamDraft',
+                projectId: activeProjectDefinition.id,
+                moduleId,
+                key,
+                rawValue,
+              })
+            }
+            onParamChange={(moduleId, key, value) =>
+              dispatch({
+                type: 'updateParam',
+                projectId: activeProjectDefinition.id,
+                moduleId,
+                key,
+                value,
+              })
+            }
+          />
+        ) : null}
       </section>
     </main>
   );

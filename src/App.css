@@ -39,6 +39,13 @@
   margin-top: 28px;
 }
 
+.layout-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
 .primary-link,
 .secondary-link {
   display: inline-flex;
@@ -88,6 +95,18 @@
   gap: 18px;
   margin-top: 24px;
   align-items: start;
+}
+
+.workbench-grid-no-inspector {
+  grid-template-columns: 280px minmax(0, 1fr);
+}
+
+.workbench-grid-no-palette {
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
+
+.workbench-grid-workbench-only {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .panel {
@@ -176,6 +195,21 @@
   color: #fffaf3;
 }
 
+.layout-chip {
+  border: 1px solid rgba(33, 53, 71, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 250, 243, 0.72);
+  padding: 9px 13px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.layout-chip.active {
+  background: rgba(33, 53, 71, 0.08);
+}
+
 .project-summary {
   max-width: 58ch;
 }
@@ -220,6 +254,7 @@
   text-align: left;
   padding: 14px 14px 12px;
   cursor: pointer;
+  user-select: none;
 }
 
 .graph-node-selected {
