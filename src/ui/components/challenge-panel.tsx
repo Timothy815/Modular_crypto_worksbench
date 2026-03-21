@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type { GuidedChallenge, ChallengeEvaluation } from '../challenges';
 
 interface ChallengePanelProps {
@@ -6,6 +7,8 @@ interface ChallengePanelProps {
   evaluation: ChallengeEvaluation | null;
   onSelectChallenge: (challengeId: string) => void;
   onLoadChallengeStart: () => void;
+  onExportChallenge: () => void;
+  onImportChallenge: (file: File) => void;
 }
 
 export function ChallengePanel({
@@ -14,7 +17,10 @@ export function ChallengePanel({
   evaluation,
   onSelectChallenge,
   onLoadChallengeStart,
+  onExportChallenge,
+  onImportChallenge,
 }: ChallengePanelProps) {
+  const importInputRef = useRef<HTMLInputElement | null>(null);
   const selectedChallenge =
     challenges.find((challenge) => challenge.id === selectedChallengeId) ?? null;
 
@@ -55,6 +61,34 @@ export function ChallengePanel({
             >
               Reset Challenge Progress
             </button>
+            <button
+              type="button"
+              className="mini-action-button"
+              onClick={onExportChallenge}
+            >
+              Export Challenge
+            </button>
+            <button
+              type="button"
+              className="mini-action-button"
+              onClick={() => importInputRef.current?.click()}
+            >
+              Load Challenge File
+            </button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".json,.challenge.json"
+              hidden
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (!file) {
+                  return;
+                }
+                onImportChallenge(file);
+                event.target.value = '';
+              }}
+            />
           </div>
 
           <div className="comparison-grid">
@@ -119,6 +153,11 @@ export function ChallengePanel({
                         ) : null}
                       </div>
                     </>
+                  ) : null}
+                  {selectedChallenge.hints && selectedChallenge.hints.length > 0 ? (
+                    <p className="comparison-copy">
+                      Hints available: <strong>{selectedChallenge.hints.length}</strong>
+                    </p>
                   ) : null}
                 </>
               ) : (

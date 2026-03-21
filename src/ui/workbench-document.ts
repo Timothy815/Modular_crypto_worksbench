@@ -1,5 +1,6 @@
 import type { Project } from '../engine/types';
 import type { CompositeLibraryEntry } from '../engine/composites';
+import type { GuidedChallenge } from './challenges';
 
 export interface WorkbenchPosition {
   x: number;
@@ -42,5 +43,6 @@ export interface PersistedWorkspaceDocument {
   documentsByProjectId: Record<string, WorkbenchDocument>;
   comparisonBaselinesByProjectId: Record<string, ComparisonBaselineDocument | null>;
   activeChallengeIdByProjectId: Record<string, string | null>;
+  challengeLibrary: GuidedChallenge[];
   compositeLibrary: CompositeLibraryDocument;
 }

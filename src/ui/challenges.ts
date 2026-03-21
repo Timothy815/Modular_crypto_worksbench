@@ -6,6 +6,7 @@ import { compareExecutionResults } from './execution-compare';
 import type { WorkbenchPosition } from './workbench-document';
 
 export interface GuidedChallenge {
+  version?: 1;
   id: string;
   title: string;
   prompt: string;
@@ -13,6 +14,7 @@ export interface GuidedChallenge {
   startingLayout?: Record<string, WorkbenchPosition>;
   targetProject: Project;
   success: ChallengeSuccessCondition;
+  hints?: string[];
 }
 
 export interface ChallengeSuccessCondition {

@@ -22,6 +22,7 @@ brokenKeyModule.params.stream = [0, 0, 0, 0, 0];
 
 export const STARTER_CHALLENGES: GuidedChallenge[] = [
   {
+    version: 1,
     id: 'repair-bridge-key',
     title: 'Repair the Bridge Key',
     prompt:
@@ -32,5 +33,9 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     success: {
       kind: 'output-match-target',
     },
+    hints: [
+      'The failure begins in the bit-domain half of the graph, not the rotor side.',
+      'Compare the BitSource stream to the expected challenge behavior.',
+    ],
   },
 ];

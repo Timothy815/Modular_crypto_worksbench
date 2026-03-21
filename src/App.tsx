@@ -20,12 +20,13 @@ import { compareExecutionResults } from './ui/execution-compare';
 import {
   downloadDocument,
   downloadCompositeLibraryDocument,
+  downloadGuidedChallengeDocument,
   loadWorkspaceFromStorage,
+  parseGuidedChallengeDocument,
   parseCompositeLibraryDocument,
   parseWorkbenchDocument,
   saveWorkspaceToStorage,
 } from './ui/persistence';
-import { STARTER_CHALLENGES } from './ui/starter-challenges';
 import {
   createInitialUiState,
   getEffectiveRegistry,
@@ -68,6 +69,10 @@ function App() {
       return {
         ...initialState,
         activeProjectId: persistedWorkspace.activeProjectId,
+        challengeLibrary:
+          persistedWorkspace.challengeLibrary.length > 0
+            ? persistedWorkspace.challengeLibrary
+            : initialState.challengeLibrary,
         compositeLibrary:
           persistedWorkspace.compositeLibrary.entries.length > 0
             ? persistedWorkspace.compositeLibrary.entries
@@ -129,6 +134,7 @@ function App() {
   const [compositeId, setCompositeId] = useState('');
   const [compositeDialogError, setCompositeDialogError] = useState<string | null>(null);
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
+  const [isChallengeResetConfirmOpen, setIsChallengeResetConfirmOpen] = useState(false);
   const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
   const [hoveredTraceModuleId, setHoveredTraceModuleId] = useState<string | null>(null);
   const [stepIndex, setStepIndex] = useState<number | null>(null);
@@ -226,14 +232,14 @@ function App() {
     ? comparisonBaseline.project.modules.find((moduleInstance) => moduleInstance.id === selectedModule.id) ?? null
     : null;
   const selectedChallenge =
-    STARTER_CHALLENGES.find(
+    state.challengeLibrary.find(
       (challenge) =>
         challenge.id ===
         (state.activeChallengeIdByProject[activeProjectDefinition.id] ??
-          STARTER_CHALLENGES[0]?.id ??
+          state.challengeLibrary[0]?.id ??
           null),
     ) ??
-    STARTER_CHALLENGES[0] ??
+    state.challengeLibrary[0] ??
     null;
   const challengeEvaluation =
     !state.compositeEditor && selectedChallenge
@@ -649,7 +655,7 @@ function App() {
         <>
           {selectedChallenge ? (
             <ChallengePanel
-              challenges={STARTER_CHALLENGES}
+              challenges={state.challengeLibrary}
               selectedChallengeId={selectedChallenge.id}
               evaluation={challengeEvaluation}
               onSelectChallenge={(challengeId) =>
@@ -659,26 +665,26 @@ function App() {
                   challengeId,
                 })
               }
-              onLoadChallengeStart={() => {
-                const shouldReset = window.confirm(
-                  `Load "${selectedChallenge.title}" into the current workbench? This will replace the active graph for ${activeProjectDefinition.name}.`,
-                );
-                if (!shouldReset) {
+              onLoadChallengeStart={() => setIsChallengeResetConfirmOpen(true)}
+              onExportChallenge={() => downloadGuidedChallengeDocument(selectedChallenge)}
+              onImportChallenge={async (file) => {
+                const rawValue = await file.text();
+                const challengeDocument = parseGuidedChallengeDocument(rawValue);
+                if (!challengeDocument) {
+                  setImportError('The selected file is not a valid MCW guided challenge document.');
                   return;
                 }
 
                 dispatch({
-                  type: 'loadDocument',
-                  projectId: activeProjectDefinition.id,
-                  document: {
-                    version: 1,
-                    project: cloneProject(selectedChallenge.startingProject),
-                    ui: {
-                      layout: selectedChallenge.startingLayout ?? activeProjectDefinition.layout,
-                      annotations: [],
-                    },
-                  },
+                  type: 'upsertChallenge',
+                  challenge: challengeDocument,
                 });
+                dispatch({
+                  type: 'selectChallenge',
+                  projectId: activeProjectDefinition.id,
+                  challengeId: challengeDocument.id,
+                });
+                setImportError(null);
               }}
             />
           ) : null}
@@ -890,6 +896,54 @@ function App() {
                 }}
               >
                 Discard Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {isChallengeResetConfirmOpen && selectedChallenge ? (
+        <div
+          className="dialog-backdrop"
+          onClick={() => setIsChallengeResetConfirmOpen(false)}
+        >
+          <div
+            className="dialog-panel"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="panel-label">Challenge Reset</p>
+            <h2>Reset Attempt?</h2>
+            <p className="dialog-copy">
+              This will load <strong>{selectedChallenge.title}</strong> into the current workbench
+              and replace the active graph for <strong>{activeProjectDefinition.name}</strong>.
+            </p>
+            <div className="dialog-actions">
+              <button
+                type="button"
+                className="secondary-dialog-button"
+                onClick={() => setIsChallengeResetConfirmOpen(false)}
+              >
+                Keep Current Attempt
+              </button>
+              <button
+                type="button"
+                className="primary-dialog-button"
+                onClick={() => {
+                  dispatch({
+                    type: 'loadDocument',
+                    projectId: activeProjectDefinition.id,
+                    document: {
+                      version: 1,
+                      project: cloneProject(selectedChallenge.startingProject),
+                      ui: {
+                        layout: selectedChallenge.startingLayout ?? activeProjectDefinition.layout,
+                        annotations: [],
+                      },
+                    },
+                  });
+                  setIsChallengeResetConfirmOpen(false);
+                }}
+              >
+                Reset Challenge
               </button>
             </div>
           </div>
