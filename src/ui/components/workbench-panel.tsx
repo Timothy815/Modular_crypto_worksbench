@@ -52,6 +52,8 @@ interface WorkbenchPanelProps {
     toPort: string,
   ) => void;
   onRemoveConnection: (connectionIndex: number) => void;
+  onExportDocument: () => void;
+  onImportDocument: (file: File) => void;
   projects: DemoProject[];
 }
 
@@ -68,9 +70,12 @@ export function WorkbenchPanel({
   onSwitchProject,
   onAddConnection,
   onRemoveConnection,
+  onExportDocument,
+  onImportDocument,
   projects,
 }: WorkbenchPanelProps) {
   const canvasSurfaceRef = useRef<HTMLDivElement | null>(null);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
   const [dragState, setDragState] = useState<{
     moduleId: string;
     pointerOffsetX: number;
@@ -250,6 +255,36 @@ export function WorkbenchPanel({
             {project.name}
           </button>
         ))}
+      </div>
+
+      <div className="project-actions">
+        <button
+          type="button"
+          className="mini-action-button"
+          onClick={onExportDocument}
+        >
+          Export JSON
+        </button>
+        <button
+          type="button"
+          className="mini-action-button"
+          onClick={() => importInputRef.current?.click()}
+        >
+          Import JSON
+        </button>
+        <input
+          ref={importInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden-file-input"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) {
+              onImportDocument(file);
+            }
+            event.target.value = '';
+          }}
+        />
       </div>
 
       <p className="project-summary">{activeProject.summary}</p>

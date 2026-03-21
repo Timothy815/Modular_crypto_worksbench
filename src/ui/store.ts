@@ -1,10 +1,12 @@
 import type { ModuleDef, ModuleInstance, Project } from '../engine/types';
 import type { DemoProject } from './demo-projects';
+import type { WorkbenchAnnotation, WorkbenchDocument } from './workbench-document';
 
 export interface UiState {
   activeProjectId: string;
   projectStates: Record<string, Project>;
   layoutByProject: Record<string, Record<string, { x: number; y: number }>>;
+  annotationsByProject: Record<string, WorkbenchAnnotation[]>;
   selectedModuleIdByProject: Record<string, string | null>;
   paramDrafts: Record<string, string>;
   showPalette: boolean;
@@ -29,6 +31,7 @@ export type UiAction =
   | { type: 'updateParam'; projectId: string; moduleId: string; key: string; value: unknown }
   | { type: 'setParamDraft'; projectId: string; moduleId: string; key: string; rawValue: string }
   | { type: 'clearParamDraft'; projectId: string; moduleId: string; key: string }
+  | { type: 'loadDocument'; projectId: string; document: WorkbenchDocument }
   | { type: 'togglePalette' }
   | { type: 'toggleInspector' };
 
@@ -97,6 +100,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
           ]),
         ),
       ]),
+    ),
+    annotationsByProject: Object.fromEntries(
+      projects.map((project) => [project.id, []]),
     ),
     selectedModuleIdByProject: Object.fromEntries(
       projects.map((project) => [project.id, project.project.modules[0]?.id ?? null]),
@@ -231,6 +237,7 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           ...state.layoutByProject,
           [action.projectId]: nextLayout,
         },
+        annotationsByProject: state.annotationsByProject,
         selectedModuleIdByProject: {
           ...state.selectedModuleIdByProject,
           [action.projectId]: nextProject.modules[0]?.id ?? null,
@@ -330,6 +337,44 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       delete nextDrafts[getDraftKey(action.projectId, action.moduleId, action.key)];
       return {
         ...state,
+        paramDrafts: nextDrafts,
+      };
+    }
+    case 'loadDocument': {
+      const nextProject = cloneProject(action.document.project);
+      const nextLayout = Object.fromEntries(
+        Object.entries(action.document.ui.layout).map(([moduleId, position]) => [
+          moduleId,
+          { ...position },
+        ]),
+      );
+      const nextAnnotations = action.document.ui.annotations.map((annotation) => ({
+        ...annotation,
+      }));
+      const nextDrafts = Object.fromEntries(
+        Object.entries(state.paramDrafts).filter(
+          ([key]) => !key.startsWith(`${action.projectId}:`),
+        ),
+      );
+
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: nextProject,
+        },
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: nextLayout,
+        },
+        annotationsByProject: {
+          ...state.annotationsByProject,
+          [action.projectId]: nextAnnotations,
+        },
+        selectedModuleIdByProject: {
+          ...state.selectedModuleIdByProject,
+          [action.projectId]: nextProject.modules[0]?.id ?? null,
+        },
         paramDrafts: nextDrafts,
       };
     }

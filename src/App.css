@@ -237,6 +237,13 @@
   margin-bottom: 14px;
 }
 
+.project-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
 .switch-chip {
   border: 1px solid rgba(33, 53, 71, 0.12);
   border-radius: 999px;
@@ -602,6 +609,18 @@
   font-weight: 700;
   color: var(--ink);
   cursor: pointer;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.import-error-banner {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(200, 85, 61, 0.12);
+  color: #8c3020;
 }
 
 .bit-chip {

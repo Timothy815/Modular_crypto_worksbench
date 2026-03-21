@@ -1,4 +1,4 @@
-import { useReducer } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 
 import './App.css';
 import { V1_REGISTRY } from './engine/modules';
@@ -7,6 +7,12 @@ import { ParameterInspector } from './ui/components/parameter-inspector';
 import { PrimitivePalette } from './ui/components/primitive-palette';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
 import { demoProjects, runDemoProject } from './ui/demo-projects';
+import {
+  downloadDocument,
+  loadWorkspaceFromStorage,
+  parseWorkbenchDocument,
+  saveWorkspaceToStorage,
+} from './ui/persistence';
 import {
   createInitialUiState,
   getDraftValue,
@@ -18,8 +24,44 @@ function App() {
   const [state, dispatch] = useReducer(
     uiReducer,
     demoProjects,
-    createInitialUiState,
+    (projects) => {
+      const initialState = createInitialUiState(projects);
+      if (typeof window === 'undefined') {
+        return initialState;
+      }
+
+      const persistedWorkspace = loadWorkspaceFromStorage(projects);
+      if (!persistedWorkspace) {
+        return initialState;
+      }
+
+      return {
+        ...initialState,
+        activeProjectId: persistedWorkspace.activeProjectId,
+        showPalette: persistedWorkspace.showPalette,
+        showInspector: persistedWorkspace.showInspector,
+        projectStates: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.documentsByProjectId[project.id]?.project ?? initialState.projectStates[project.id],
+          ]),
+        ),
+        layoutByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.documentsByProjectId[project.id]?.ui.layout ?? initialState.layoutByProject[project.id],
+          ]),
+        ),
+        annotationsByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.documentsByProjectId[project.id]?.ui.annotations ?? initialState.annotationsByProject[project.id],
+          ]),
+        ),
+      };
+    },
   );
+  const [importError, setImportError] = useState<string | null>(null);
 
   const activeProjectDefinition =
     demoProjects.find((project) => project.id === state.activeProjectId) ?? demoProjects[0];
@@ -45,6 +87,14 @@ function App() {
   } catch (error) {
     executionError = error instanceof Error ? error.message : 'Execution failed.';
   }
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    saveWorkspaceToStorage(state);
+  }, [state]);
 
   return (
     <main className="app-shell">
@@ -159,6 +209,31 @@ function App() {
               connectionIndex,
             })
           }
+          onExportDocument={() => {
+            downloadDocument(activeProjectDefinition.id, {
+              version: 1,
+              project: activeProjectState,
+              ui: {
+                layout: activeLayout,
+                annotations: state.annotationsByProject[activeProjectDefinition.id] ?? [],
+              },
+            });
+          }}
+          onImportDocument={async (file) => {
+            const rawValue = await file.text();
+            const document = parseWorkbenchDocument(rawValue);
+            if (!document) {
+              setImportError('The selected file is not a valid MCW workbench document.');
+              return;
+            }
+
+            dispatch({
+              type: 'loadDocument',
+              projectId: activeProjectDefinition.id,
+              document,
+            });
+            setImportError(null);
+          }}
           onSwitchProject={(projectId) =>
             dispatch({
               type: 'switchProject',
@@ -167,6 +242,8 @@ function App() {
           }
           projects={demoProjects}
         />
+
+        {importError ? <p className="import-error-banner">{importError}</p> : null}
 
         {state.showInspector ? (
           <ParameterInspector
