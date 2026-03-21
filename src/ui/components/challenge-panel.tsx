@@ -49,7 +49,7 @@ export function ChallengePanel({
               className="mini-action-button"
               onClick={onLoadChallengeStart}
             >
-              Load Challenge Start
+              Reset Workbench To Challenge Start
             </button>
           </div>
 

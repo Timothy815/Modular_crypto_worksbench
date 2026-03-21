@@ -41,5 +41,6 @@ export interface PersistedWorkspaceDocument {
   showInspector: boolean;
   documentsByProjectId: Record<string, WorkbenchDocument>;
   comparisonBaselinesByProjectId: Record<string, ComparisonBaselineDocument | null>;
+  activeChallengeIdByProjectId: Record<string, string | null>;
   compositeLibrary: CompositeLibraryDocument;
 }

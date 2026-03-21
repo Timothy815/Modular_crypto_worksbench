@@ -98,6 +98,14 @@ function App() {
             persistedWorkspace.comparisonBaselinesByProjectId[project.id] ?? null,
           ]),
         ),
+        activeChallengeIdByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.activeChallengeIdByProjectId[project.id] ??
+              initialState.activeChallengeIdByProject[project.id] ??
+              null,
+          ]),
+        ),
         selectedModuleIdByProject: Object.fromEntries(
           projects.map((project) => [
             project.id,
@@ -124,9 +132,6 @@ function App() {
   const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
   const [hoveredTraceModuleId, setHoveredTraceModuleId] = useState<string | null>(null);
   const [stepIndex, setStepIndex] = useState<number | null>(null);
-  const [selectedChallengeId, setSelectedChallengeId] = useState(
-    STARTER_CHALLENGES[0]?.id ?? '',
-  );
 
   const activeProjectDefinition =
     demoProjects.find((project) => project.id === state.activeProjectId) ?? demoProjects[0];
@@ -221,7 +226,13 @@ function App() {
     ? comparisonBaseline.project.modules.find((moduleInstance) => moduleInstance.id === selectedModule.id) ?? null
     : null;
   const selectedChallenge =
-    STARTER_CHALLENGES.find((challenge) => challenge.id === selectedChallengeId) ??
+    STARTER_CHALLENGES.find(
+      (challenge) =>
+        challenge.id ===
+        (state.activeChallengeIdByProject[activeProjectDefinition.id] ??
+          STARTER_CHALLENGES[0]?.id ??
+          null),
+    ) ??
     STARTER_CHALLENGES[0] ??
     null;
   const challengeEvaluation =
@@ -641,8 +652,21 @@ function App() {
               challenges={STARTER_CHALLENGES}
               selectedChallengeId={selectedChallenge.id}
               evaluation={challengeEvaluation}
-              onSelectChallenge={setSelectedChallengeId}
-              onLoadChallengeStart={() =>
+              onSelectChallenge={(challengeId) =>
+                dispatch({
+                  type: 'selectChallenge',
+                  projectId: activeProjectDefinition.id,
+                  challengeId,
+                })
+              }
+              onLoadChallengeStart={() => {
+                const shouldReset = window.confirm(
+                  `Load "${selectedChallenge.title}" into the current workbench? This will replace the active graph for ${activeProjectDefinition.name}.`,
+                );
+                if (!shouldReset) {
+                  return;
+                }
+
                 dispatch({
                   type: 'loadDocument',
                   projectId: activeProjectDefinition.id,
@@ -654,8 +678,8 @@ function App() {
                       annotations: [],
                     },
                   },
-                })
-              }
+                });
+              }}
             />
           ) : null}
 

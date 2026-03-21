@@ -93,6 +93,12 @@ export function buildPersistedWorkspace(state: UiState): PersistedWorkspaceDocum
         cloneComparisonBaseline(state.comparisonBaselinesByProject[projectId]),
       ]),
     ),
+    activeChallengeIdByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.activeChallengeIdByProject[projectId] ?? null,
+      ]),
+    ),
     compositeLibrary: {
       version: 1,
       entries: state.compositeLibrary.map((entry) => ({
@@ -143,6 +149,8 @@ export function loadWorkspaceFromStorage(
       parsed.documentsByProjectId === null ||
       typeof parsed.comparisonBaselinesByProjectId !== 'object' ||
       parsed.comparisonBaselinesByProjectId === null ||
+      typeof parsed.activeChallengeIdByProjectId !== 'object' ||
+      parsed.activeChallengeIdByProjectId === null ||
       !isCompositeLibraryDocument(parsed.compositeLibrary)
     ) {
       return null;
@@ -166,6 +174,13 @@ export function loadWorkspaceFromStorage(
           ([projectId, baseline]) =>
             allowedProjectIds.has(projectId) &&
             (baseline === null || isComparisonBaselineDocument(baseline)),
+        ),
+      ),
+      activeChallengeIdByProjectId: Object.fromEntries(
+        Object.entries(parsed.activeChallengeIdByProjectId).filter(
+          ([projectId, challengeId]) =>
+            allowedProjectIds.has(projectId) &&
+            (challengeId === null || typeof challengeId === 'string'),
         ),
       ),
     };

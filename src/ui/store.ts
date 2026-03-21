@@ -2,6 +2,7 @@ import type { CompositeLibraryEntry, CompositeLayoutPosition } from '../engine/c
 import type { ModuleDefinition, ModuleInstance, ModuleRegistry, Project } from '../engine/types';
 import type { DemoProject } from './demo-projects';
 import { STARTER_COMPOSITE_LIBRARY } from './starter-composites';
+import { STARTER_CHALLENGES } from './starter-challenges';
 import type {
   ComparisonBaselineDocument,
   CompositeLibraryDocument,
@@ -17,6 +18,7 @@ export interface UiState {
   layoutByProject: Record<string, Record<string, { x: number; y: number }>>;
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
   comparisonBaselinesByProject: Record<string, ComparisonBaselineDocument | null>;
+  activeChallengeIdByProject: Record<string, string | null>;
   selectedModuleIdByProject: Record<string, string | null>;
   selectedModuleIdsByProject: Record<string, string[]>;
   paramDrafts: Record<string, string>;
@@ -59,6 +61,7 @@ export type UiAction =
   | { type: 'setParamDraft'; projectId: string; moduleId: string; key: string; rawValue: string }
   | { type: 'clearParamDraft'; projectId: string; moduleId: string; key: string }
   | { type: 'loadDocument'; projectId: string; document: WorkbenchDocument }
+  | { type: 'selectChallenge'; projectId: string; challengeId: string | null }
   | { type: 'captureComparisonBaseline'; projectId: string; capturedAt: string }
   | { type: 'clearComparisonBaseline'; projectId: string }
   | { type: 'loadCompositeLibrary'; document: CompositeLibraryDocument }
@@ -133,6 +136,7 @@ function updateModule(
 }
 
 export function createInitialUiState(projects: DemoProject[]): UiState {
+  const defaultChallengeId = STARTER_CHALLENGES[0]?.id ?? null;
   return {
     activeProjectId: projects[0]?.id ?? '',
     compositeLibrary: STARTER_COMPOSITE_LIBRARY.map((entry) => ({
@@ -167,6 +171,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     ),
     comparisonBaselinesByProject: Object.fromEntries(
       projects.map((project) => [project.id, null]),
+    ),
+    activeChallengeIdByProject: Object.fromEntries(
+      projects.map((project) => [project.id, defaultChallengeId]),
     ),
     selectedModuleIdByProject: Object.fromEntries(
       projects.map((project) => [project.id, project.project.modules[0]?.id ?? null]),
@@ -660,6 +667,14 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
         paramDrafts: nextDrafts,
       };
     }
+    case 'selectChallenge':
+      return {
+        ...state,
+        activeChallengeIdByProject: {
+          ...state.activeChallengeIdByProject,
+          [action.projectId]: action.challengeId,
+        },
+      };
     case 'captureComparisonBaseline': {
       const sourceProject = state.compositeEditor
         ? state.compositeEditor.project
