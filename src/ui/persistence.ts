@@ -82,6 +82,14 @@ export function buildPersistedWorkspace(state: UiState): PersistedWorkspaceDocum
         definition: {
           ...entry.definition,
           project: cloneProject(entry.definition.project),
+          layout: entry.definition.layout
+            ? Object.fromEntries(
+                Object.entries(entry.definition.layout).map(([moduleId, position]) => [
+                  moduleId,
+                  { ...position },
+                ]),
+              )
+            : undefined,
           inputBindings: entry.definition.inputBindings.map((binding) => ({ ...binding })),
           outputBindings: entry.definition.outputBindings.map((binding) => ({ ...binding })),
         },
@@ -251,6 +259,16 @@ function isCompositeDef(value: unknown): value is CompositeDef {
     candidate.project !== null &&
     Array.isArray(candidate.project.modules) &&
     Array.isArray(candidate.project.connections) &&
+    (candidate.layout === undefined ||
+      (typeof candidate.layout === 'object' &&
+        candidate.layout !== null &&
+        Object.values(candidate.layout).every(
+          (position) =>
+            typeof position === 'object' &&
+            position !== null &&
+            typeof position.x === 'number' &&
+            typeof position.y === 'number',
+        ))) &&
     Array.isArray(candidate.inputBindings) &&
     Array.isArray(candidate.outputBindings)
   );

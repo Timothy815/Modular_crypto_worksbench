@@ -1,4 +1,4 @@
-import type { CompositeLibraryEntry } from '../engine/composites';
+import type { CompositeLibraryEntry, CompositeLayoutPosition } from '../engine/composites';
 import type { ModuleDefinition, ModuleInstance, ModuleRegistry, Project } from '../engine/types';
 import type { DemoProject } from './demo-projects';
 import { STARTER_COMPOSITE_LIBRARY } from './starter-composites';
@@ -11,6 +11,7 @@ import type {
 export interface UiState {
   activeProjectId: string;
   compositeLibrary: CompositeLibraryEntry[];
+  compositeEditor: CompositeEditorState | null;
   projectStates: Record<string, Project>;
   layoutByProject: Record<string, Record<string, { x: number; y: number }>>;
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
@@ -19,6 +20,16 @@ export interface UiState {
   paramDrafts: Record<string, string>;
   showPalette: boolean;
   showInspector: boolean;
+}
+
+export interface CompositeEditorState {
+  entryId: string;
+  project: Project;
+  layout: Record<string, CompositeLayoutPosition>;
+  selectedModuleId: string | null;
+  selectedModuleIds: string[];
+  paramDrafts: Record<string, string>;
+  saveError: string | null;
 }
 
 export type UiAction =
@@ -47,6 +58,9 @@ export type UiAction =
   | { type: 'loadCompositeLibrary'; document: CompositeLibraryDocument }
   | { type: 'addCompositeToLibrary'; entry: CompositeLibraryEntry }
   | { type: 'updateCompositeInLibrary'; entry: CompositeLibraryEntry }
+  | { type: 'openCompositeEditor'; entryId: string }
+  | { type: 'closeCompositeEditor' }
+  | { type: 'setCompositeEditorSaveError'; message: string | null }
   | { type: 'removeCompositeFromLibrary'; compositeId: string }
   | { type: 'togglePalette' }
   | { type: 'toggleInspector' };
@@ -120,10 +134,14 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
       definition: {
         ...entry.definition,
         project: cloneProject(entry.definition.project),
+        layout: entry.definition.layout
+          ? cloneLayout(entry.definition.layout)
+          : undefined,
         inputBindings: entry.definition.inputBindings.map((binding) => ({ ...binding })),
         outputBindings: entry.definition.outputBindings.map((binding) => ({ ...binding })),
       },
     })),
+    compositeEditor: null,
     projectStates: Object.fromEntries(
       projects.map((project) => [project.id, cloneProject(project.project)]),
     ),
@@ -164,13 +182,38 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
         activeProjectId: action.projectId,
       };
     case 'selectModule':
-      return applyModuleSelection(
-        state,
-        action.projectId,
-        action.moduleId,
-        action.additive ?? false,
-      );
+      return state.compositeEditor
+        ? {
+            ...state,
+            compositeEditor: applyCompositeEditorSelection(
+              state.compositeEditor,
+              action.moduleId,
+              action.additive ?? false,
+            ),
+          }
+        : applyModuleSelection(
+            state,
+            action.projectId,
+            action.moduleId,
+            action.additive ?? false,
+          );
     case 'moveModule': {
+      if (state.compositeEditor) {
+        return {
+          ...state,
+          compositeEditor: {
+            ...state.compositeEditor,
+            layout: {
+              ...state.compositeEditor.layout,
+              [action.moduleId]: {
+                x: action.x,
+                y: action.y,
+              },
+            },
+          },
+        };
+      }
+
       const currentLayout = state.layoutByProject[action.projectId];
       if (!currentLayout) {
         return state;
@@ -263,6 +306,13 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       };
     }
     case 'addModule': {
+      if (state.compositeEditor) {
+        return {
+          ...state,
+          compositeEditor: addModuleToCompositeEditor(state.compositeEditor, action.moduleDef),
+        };
+      }
+
       const currentProject = state.projectStates[action.projectId];
       const currentLayout = state.layoutByProject[action.projectId];
       if (!currentProject || !currentLayout) {
@@ -320,6 +370,13 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       };
     }
     case 'removeModule': {
+      if (state.compositeEditor) {
+        return {
+          ...state,
+          compositeEditor: removeModuleFromCompositeEditor(state.compositeEditor, action.moduleId),
+        };
+      }
+
       const currentProject = state.projectStates[action.projectId];
       const currentLayout = state.layoutByProject[action.projectId];
       if (!currentProject || !currentLayout) {
@@ -368,6 +425,13 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       };
     }
     case 'addConnection': {
+      if (state.compositeEditor) {
+        return {
+          ...state,
+          compositeEditor: addConnectionToCompositeEditor(state.compositeEditor, action),
+        };
+      }
+
       const currentProject = state.projectStates[action.projectId];
       if (!currentProject) {
         return state;
@@ -402,6 +466,16 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       };
     }
     case 'removeConnection': {
+      if (state.compositeEditor) {
+        return {
+          ...state,
+          compositeEditor: removeConnectionFromCompositeEditor(
+            state.compositeEditor,
+            action.connectionIndex,
+          ),
+        };
+      }
+
       const currentProject = state.projectStates[action.projectId];
       if (!currentProject) {
         return state;
@@ -421,6 +495,18 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       };
     }
     case 'updateParam': {
+      if (state.compositeEditor) {
+        return {
+          ...state,
+          compositeEditor: updateCompositeEditorParam(
+            state.compositeEditor,
+            action.moduleId,
+            action.key,
+            action.value,
+          ),
+        };
+      }
+
       const currentProject = state.projectStates[action.projectId];
       if (!currentProject) {
         return state;
@@ -447,14 +533,37 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       };
     }
     case 'setParamDraft':
-      return {
-        ...state,
-        paramDrafts: {
-          ...state.paramDrafts,
-          [getDraftKey(action.projectId, action.moduleId, action.key)]: action.rawValue,
-        },
-      };
+      return state.compositeEditor
+        ? {
+            ...state,
+            compositeEditor: {
+              ...state.compositeEditor,
+              paramDrafts: {
+                ...state.compositeEditor.paramDrafts,
+                [`${action.moduleId}:${action.key}`]: action.rawValue,
+              },
+            },
+          }
+        : {
+            ...state,
+            paramDrafts: {
+              ...state.paramDrafts,
+              [getDraftKey(action.projectId, action.moduleId, action.key)]: action.rawValue,
+            },
+          };
     case 'clearParamDraft': {
+      if (state.compositeEditor) {
+        const nextDrafts = { ...state.compositeEditor.paramDrafts };
+        delete nextDrafts[`${action.moduleId}:${action.key}`];
+        return {
+          ...state,
+          compositeEditor: {
+            ...state.compositeEditor,
+            paramDrafts: nextDrafts,
+          },
+        };
+      }
+
       const nextDrafts = { ...state.paramDrafts };
       delete nextDrafts[getDraftKey(action.projectId, action.moduleId, action.key)];
       return {
@@ -512,6 +621,9 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           definition: {
             ...entry.definition,
             project: cloneProject(entry.definition.project),
+            layout: entry.definition.layout
+              ? cloneLayout(entry.definition.layout)
+              : undefined,
             inputBindings: entry.definition.inputBindings.map((binding) => ({ ...binding })),
             outputBindings: entry.definition.outputBindings.map((binding) => ({ ...binding })),
           },
@@ -529,10 +641,50 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           entry.id === action.entry.id ? action.entry : entry,
         ),
       };
+    case 'openCompositeEditor': {
+      const entry = state.compositeLibrary.find((candidate) => candidate.id === action.entryId);
+      if (!entry) {
+        return state;
+      }
+
+      return {
+        ...state,
+        compositeEditor: {
+          entryId: entry.id,
+          project: cloneProject(entry.definition.project),
+          layout: entry.definition.layout
+            ? cloneLayout(entry.definition.layout)
+            : createAutoLayout(entry.definition.project),
+          selectedModuleId: entry.definition.project.modules[0]?.id ?? null,
+          selectedModuleIds: entry.definition.project.modules[0]?.id
+            ? [entry.definition.project.modules[0].id]
+            : [],
+          paramDrafts: {},
+          saveError: null,
+        },
+      };
+    }
+    case 'closeCompositeEditor':
+      return {
+        ...state,
+        compositeEditor: null,
+      };
+    case 'setCompositeEditorSaveError':
+      return state.compositeEditor
+        ? {
+            ...state,
+            compositeEditor: {
+              ...state.compositeEditor,
+              saveError: action.message,
+            },
+          }
+        : state;
     case 'removeCompositeFromLibrary':
       return {
         ...state,
         compositeLibrary: state.compositeLibrary.filter((entry) => entry.id !== action.compositeId),
+        compositeEditor:
+          state.compositeEditor?.entryId === action.compositeId ? null : state.compositeEditor,
       };
     case 'togglePalette':
       return {
@@ -550,6 +702,14 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
 }
 
 export function getSelectedModuleId(state: UiState, projectId: string, project: Project): string | null {
+  if (state.compositeEditor) {
+    return project.modules.some(
+      (moduleInstance) => moduleInstance.id === state.compositeEditor?.selectedModuleId,
+    )
+      ? state.compositeEditor.selectedModuleId
+      : (project.modules[0]?.id ?? null);
+  }
+
   const selectedModuleId = state.selectedModuleIdByProject[projectId];
   return project.modules.some((moduleInstance) => moduleInstance.id === selectedModuleId)
     ? selectedModuleId
@@ -557,6 +717,12 @@ export function getSelectedModuleId(state: UiState, projectId: string, project: 
 }
 
 export function getSelectedModuleIds(state: UiState, projectId: string, project: Project): string[] {
+  if (state.compositeEditor) {
+    const allowed = new Set(project.modules.map((moduleInstance) => moduleInstance.id));
+    const filtered = state.compositeEditor.selectedModuleIds.filter((moduleId) => allowed.has(moduleId));
+    return filtered.length > 0 ? filtered : (project.modules[0]?.id ? [project.modules[0].id] : []);
+  }
+
   const allowed = new Set(project.modules.map((moduleInstance) => moduleInstance.id));
   const selectedModuleIds = state.selectedModuleIdsByProject[projectId] ?? [];
   const filtered = selectedModuleIds.filter((moduleId) => allowed.has(moduleId));
@@ -574,6 +740,10 @@ export function getDraftValue(
   moduleId: string,
   key: string,
 ): string | undefined {
+  if (state.compositeEditor) {
+    return state.compositeEditor.paramDrafts[`${moduleId}:${key}`];
+  }
+
   return state.paramDrafts[getDraftKey(projectId, moduleId, key)];
 }
 
@@ -630,4 +800,190 @@ function applyModuleSelection(
       [projectId]: nextSelection,
     },
   };
+}
+
+function cloneLayout(
+  layout: Record<string, CompositeLayoutPosition>,
+): Record<string, CompositeLayoutPosition> {
+  return Object.fromEntries(
+    Object.entries(layout).map(([moduleId, position]) => [moduleId, { ...position }]),
+  );
+}
+
+function createAutoLayout(project: Project): Record<string, CompositeLayoutPosition> {
+  return Object.fromEntries(
+    project.modules.map((moduleInstance, index) => [
+      moduleInstance.id,
+      {
+        x: 48 + (index % 4) * 188,
+        y: 72 + Math.floor(index / 4) * 120,
+      },
+    ]),
+  );
+}
+
+function applyCompositeEditorSelection(
+  editor: CompositeEditorState,
+  moduleId: string,
+  additive: boolean,
+): CompositeEditorState {
+  if (!additive) {
+    return {
+      ...editor,
+      selectedModuleId: moduleId,
+      selectedModuleIds: [moduleId],
+      saveError: null,
+    };
+  }
+
+  const isSelected = editor.selectedModuleIds.includes(moduleId);
+  const nextSelectedModuleIds = isSelected
+    ? editor.selectedModuleIds.filter((selectedId) => selectedId !== moduleId)
+    : [...editor.selectedModuleIds, moduleId];
+
+  return {
+    ...editor,
+    selectedModuleId:
+      nextSelectedModuleIds[nextSelectedModuleIds.length - 1] ?? editor.selectedModuleId,
+    selectedModuleIds: nextSelectedModuleIds,
+    saveError: null,
+  };
+}
+
+function addModuleToCompositeEditor(
+  editor: CompositeEditorState,
+  moduleDef: ModuleDefinition,
+): CompositeEditorState {
+  const nextModuleId = createModuleId(editor.project, moduleDef.id);
+  const positions = Object.values(editor.layout);
+  const occupied = new Set(positions.map((position) => `${position.x},${position.y}`));
+  let x = 40;
+  let y = 40;
+
+  while (occupied.has(`${x},${y}`)) {
+    x += 160;
+    if (x > 700) {
+      x = 40;
+      y += 100;
+    }
+  }
+
+  return {
+    ...editor,
+    project: {
+      ...cloneProject(editor.project),
+      modules: [
+        ...editor.project.modules,
+        {
+          id: nextModuleId,
+          defId: moduleDef.id,
+          params: buildDefaultParams(moduleDef),
+        },
+      ],
+    },
+    layout: {
+      ...editor.layout,
+      [nextModuleId]: { x, y },
+    },
+    selectedModuleId: nextModuleId,
+    selectedModuleIds: [nextModuleId],
+    saveError: null,
+  };
+}
+
+function removeModuleFromCompositeEditor(
+  editor: CompositeEditorState,
+  moduleId: string,
+): CompositeEditorState {
+  const nextProject = cloneProject(editor.project);
+  nextProject.modules = nextProject.modules.filter((moduleInstance) => moduleInstance.id !== moduleId);
+  nextProject.connections = nextProject.connections.filter(
+    (connection) =>
+      connection.from.moduleId !== moduleId && connection.to.moduleId !== moduleId,
+  );
+  const nextLayout = { ...editor.layout };
+  delete nextLayout[moduleId];
+
+  return {
+    ...editor,
+    project: nextProject,
+    layout: nextLayout,
+    selectedModuleId: nextProject.modules[0]?.id ?? null,
+    selectedModuleIds: nextProject.modules[0]?.id ? [nextProject.modules[0].id] : [],
+    paramDrafts: Object.fromEntries(
+      Object.entries(editor.paramDrafts).filter(([key]) => !key.startsWith(`${moduleId}:`)),
+    ),
+    saveError: null,
+  };
+}
+
+function addConnectionToCompositeEditor(
+  editor: CompositeEditorState,
+  action: Extract<UiAction, { type: 'addConnection' }>,
+): CompositeEditorState {
+  const alreadyExists = editor.project.connections.some(
+    (connection) =>
+      connection.from.moduleId === action.fromModuleId &&
+      connection.from.port === action.fromPort &&
+      connection.to.moduleId === action.toModuleId &&
+      connection.to.port === action.toPort,
+  );
+  if (alreadyExists) {
+    return editor;
+  }
+
+  return {
+    ...editor,
+    project: {
+      ...cloneProject(editor.project),
+      connections: [
+        ...editor.project.connections,
+        {
+          from: { moduleId: action.fromModuleId, port: action.fromPort },
+          to: { moduleId: action.toModuleId, port: action.toPort },
+        },
+      ],
+    },
+    saveError: null,
+  };
+}
+
+function removeConnectionFromCompositeEditor(
+  editor: CompositeEditorState,
+  connectionIndex: number,
+): CompositeEditorState {
+  return {
+    ...editor,
+    project: {
+      ...cloneProject(editor.project),
+      connections: editor.project.connections.filter((_, index) => index !== connectionIndex),
+    },
+    saveError: null,
+  };
+}
+
+function updateCompositeEditorParam(
+  editor: CompositeEditorState,
+  moduleId: string,
+  key: string,
+  value: unknown,
+): CompositeEditorState {
+  return {
+    ...editor,
+    project: updateModule(editor.project, moduleId, (moduleInstance) => ({
+      ...moduleInstance,
+      params: {
+        ...moduleInstance.params,
+        [key]: value,
+      },
+    })),
+    paramDrafts: omitDraftKey(editor.paramDrafts, `${moduleId}:${key}`),
+    saveError: null,
+  };
+}
+
+function omitDraftKey(drafts: Record<string, string>, key: string) {
+  const nextDrafts = { ...drafts };
+  delete nextDrafts[key];
+  return nextDrafts;
 }
