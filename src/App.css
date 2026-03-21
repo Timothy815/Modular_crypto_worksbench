@@ -89,6 +89,23 @@
   color: var(--ink);
 }
 
+.connection-status {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(42, 130, 150, 0.1);
+  color: var(--ink);
+}
+
+.connection-status strong {
+  font-family: var(--mono);
+}
+
+.connection-status-warning {
+  background: rgba(200, 85, 61, 0.12);
+  color: #8c3020;
+}
+
 .workbench-grid {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr) 340px;
@@ -417,6 +434,10 @@
   color: var(--muted);
   cursor: crosshair;
   pointer-events: auto;
+  transition:
+    transform 120ms ease,
+    color 120ms ease,
+    opacity 120ms ease;
 }
 
 .graph-port-anchor-in {
@@ -427,8 +448,30 @@
   right: 0;
 }
 
+.graph-port-anchor-active {
+  transform: scale(1.04);
+}
+
 .graph-port-droppable .graph-port-dot {
   box-shadow: 0 0 0 3px rgba(200, 85, 61, 0.4);
+}
+
+.graph-port-valid {
+  color: rgba(42, 130, 150, 0.92);
+}
+
+.graph-port-valid .graph-port-dot {
+  background: rgba(42, 130, 150, 0.95);
+  box-shadow: 0 0 0 4px rgba(42, 130, 150, 0.14);
+}
+
+.graph-port-invalid {
+  color: rgba(200, 85, 61, 0.85);
+}
+
+.graph-port-invalid .graph-port-dot {
+  background: rgba(200, 85, 61, 0.9);
+  box-shadow: 0 0 0 4px rgba(200, 85, 61, 0.12);
 }
 
 .graph-port-dot {

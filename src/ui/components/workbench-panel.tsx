@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
 import type { ExecutionResult, ModuleRegistry, Project } from '../../engine/types';
+import { validateProject } from '../../engine/validation';
 import type { DemoProject } from '../demo-projects';
 import { getModuleCategory } from '../module-categories';
 
@@ -23,10 +24,14 @@ function getAnchorPosition(
 interface PendingConnection {
   fromModuleId: string;
   fromPort: string;
-  fromSide: 'left' | 'right';
   fromAnchor: { x: number; y: number };
   mouseX: number;
   mouseY: number;
+}
+
+interface TargetPortState {
+  valid: boolean;
+  reason: string | null;
 }
 
 interface WorkbenchPanelProps {
@@ -73,6 +78,7 @@ export function WorkbenchPanel({
   } | null>(null);
   const [pendingConnection, setPendingConnection] =
     useState<PendingConnection | null>(null);
+  const [connectionFeedback, setConnectionFeedback] = useState<string | null>(null);
 
   const canvasWidth = Math.max(
     980,
@@ -162,6 +168,34 @@ export function WorkbenchPanel({
     };
   }, [pendingConnection]);
 
+  const targetPortStates = useMemo(() => {
+    if (!pendingConnection) {
+      return {};
+    }
+
+    const nextStates: Record<string, TargetPortState> = {};
+
+    for (const moduleInstance of activeProjectState.modules) {
+      const targetDef = registry[moduleInstance.defId];
+      if (!targetDef) {
+        continue;
+      }
+
+      for (const inputPort of targetDef.inputs) {
+        nextStates[`${moduleInstance.id}:${inputPort.name}`] = getTargetPortState(
+          activeProjectState,
+          registry,
+          pendingConnection.fromModuleId,
+          pendingConnection.fromPort,
+          moduleInstance.id,
+          inputPort.name,
+        );
+      }
+    }
+
+    return nextStates;
+  }, [activeProjectState, pendingConnection, registry]);
+
   function startConnectionFromOutput(
     moduleId: string,
     portName: string,
@@ -170,10 +204,10 @@ export function WorkbenchPanel({
     const pos = layout[moduleId];
     if (!pos) return;
     const anchor = getAnchorPosition(pos.x, pos.y, 'right', portIndex);
+    setConnectionFeedback(null);
     setPendingConnection({
       fromModuleId: moduleId,
       fromPort: portName,
-      fromSide: 'right',
       fromAnchor: anchor,
       mouseX: anchor.x,
       mouseY: anchor.y,
@@ -182,13 +216,19 @@ export function WorkbenchPanel({
 
   function completeConnectionOnInput(moduleId: string, portName: string) {
     if (!pendingConnection) return;
-    if (pendingConnection.fromModuleId === moduleId) return;
+    const targetState = targetPortStates[`${moduleId}:${portName}`];
+    if (!targetState?.valid) {
+      setConnectionFeedback(targetState?.reason ?? 'Connection blocked.');
+      return;
+    }
+
     onAddConnection(
       pendingConnection.fromModuleId,
       pendingConnection.fromPort,
       moduleId,
       portName,
     );
+    setConnectionFeedback(null);
     setPendingConnection(null);
   }
 
@@ -214,6 +254,14 @@ export function WorkbenchPanel({
 
       <p className="project-summary">{activeProject.summary}</p>
       <p className="mono-line">{activeProject.pipeline}</p>
+      {pendingConnection ? (
+        <p className="connection-status">
+          Wiring from <strong>{pendingConnection.fromModuleId}.{pendingConnection.fromPort}</strong>.
+          Valid inputs glow teal. Invalid targets glow red.
+        </p>
+      ) : connectionFeedback ? (
+        <p className="connection-status connection-status-warning">{connectionFeedback}</p>
+      ) : null}
 
       <div ref={canvasSurfaceRef} className="canvas-surface">
         <div
@@ -341,11 +389,10 @@ export function WorkbenchPanel({
                   {(def?.inputs ?? []).map((port, index) => (
                     <span
                       key={port.name}
-                      className={
-                        pendingConnection
-                          ? 'graph-port-anchor graph-port-anchor-in graph-port-droppable'
-                          : 'graph-port-anchor graph-port-anchor-in'
-                      }
+                      className={getInputAnchorClassName(
+                        pendingConnection,
+                        targetPortStates[`${moduleInstance.id}:${port.name}`],
+                      )}
                       style={{ top: `${PORT_START_Y + index * PORT_GAP}px` }}
                       title={`${port.name}: ${port.type}`}
                       onMouseUp={() =>
@@ -362,7 +409,12 @@ export function WorkbenchPanel({
                   {(def?.outputs ?? []).map((port, index) => (
                     <span
                       key={port.name}
-                      className="graph-port-anchor graph-port-anchor-out"
+                      className={
+                        pendingConnection?.fromModuleId === moduleInstance.id &&
+                        pendingConnection.fromPort === port.name
+                          ? 'graph-port-anchor graph-port-anchor-out graph-port-anchor-active'
+                          : 'graph-port-anchor graph-port-anchor-out'
+                      }
                       style={{ top: `${PORT_START_Y + index * PORT_GAP}px` }}
                       title={`${port.name}: ${port.type}`}
                       onMouseDown={(event) => {
@@ -409,4 +461,120 @@ export function WorkbenchPanel({
       </div>
     </section>
   );
+}
+
+function getInputAnchorClassName(
+  pendingConnection: PendingConnection | null,
+  targetState: TargetPortState | undefined,
+) {
+  if (!pendingConnection) {
+    return 'graph-port-anchor graph-port-anchor-in';
+  }
+
+  if (targetState?.valid) {
+    return 'graph-port-anchor graph-port-anchor-in graph-port-droppable graph-port-valid';
+  }
+
+  return 'graph-port-anchor graph-port-anchor-in graph-port-droppable graph-port-invalid';
+}
+
+function getTargetPortState(
+  project: Project,
+  registry: ModuleRegistry,
+  fromModuleId: string,
+  fromPort: string,
+  toModuleId: string,
+  toPort: string,
+): TargetPortState {
+  if (fromModuleId === toModuleId) {
+    return {
+      valid: false,
+      reason: 'A module cannot connect directly to its own input.',
+    };
+  }
+
+  const sourceInstance = project.modules.find((moduleInstance) => moduleInstance.id === fromModuleId);
+  const targetInstance = project.modules.find((moduleInstance) => moduleInstance.id === toModuleId);
+  if (!sourceInstance || !targetInstance) {
+    return {
+      valid: false,
+      reason: 'Connection references a missing module.',
+    };
+  }
+
+  const sourceDef = registry[sourceInstance.defId];
+  const targetDef = registry[targetInstance.defId];
+  if (!sourceDef || !targetDef) {
+    return {
+      valid: false,
+      reason: 'Connection references a missing module definition.',
+    };
+  }
+
+  const sourcePortDef = sourceDef.outputs.find((port) => port.name === fromPort);
+  const targetPortDef = targetDef.inputs.find((port) => port.name === toPort);
+  if (!sourcePortDef || !targetPortDef) {
+    return {
+      valid: false,
+      reason: 'Connection references an unknown port.',
+    };
+  }
+
+  if (sourcePortDef.type !== targetPortDef.type) {
+    return {
+      valid: false,
+      reason: `Expected ${targetPortDef.type} input, but source provides ${sourcePortDef.type}.`,
+    };
+  }
+
+  if (
+    project.connections.some(
+      (connection) =>
+        connection.from.moduleId === fromModuleId &&
+        connection.from.port === fromPort &&
+        connection.to.moduleId === toModuleId &&
+        connection.to.port === toPort,
+    )
+  ) {
+    return {
+      valid: false,
+      reason: 'That connection already exists.',
+    };
+  }
+
+  if (
+    project.connections.some(
+      (connection) =>
+        connection.to.moduleId === toModuleId &&
+        connection.to.port === toPort,
+    )
+  ) {
+    return {
+      valid: false,
+      reason: 'Each input port may only accept one incoming connection.',
+    };
+  }
+
+  const candidateProject: Project = {
+    modules: project.modules,
+    connections: [
+      ...project.connections,
+      {
+        from: { moduleId: fromModuleId, port: fromPort },
+        to: { moduleId: toModuleId, port: toPort },
+      },
+    ],
+  };
+  const validation = validateProject(candidateProject, registry);
+  if (validation.issues.some((issue) => issue.code === 'cycle-detected')) {
+    return {
+      valid: false,
+      reason: 'That connection would introduce a cycle.',
+    };
+  }
+
+  return {
+    valid: true,
+    reason: null,
+  };
 }
