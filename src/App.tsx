@@ -142,6 +142,23 @@ function App() {
               moduleId,
             })
           }
+          onAddConnection={(fromModuleId, fromPort, toModuleId, toPort) =>
+            dispatch({
+              type: 'addConnection',
+              projectId: activeProjectDefinition.id,
+              fromModuleId,
+              fromPort,
+              toModuleId,
+              toPort,
+            })
+          }
+          onRemoveConnection={(connectionIndex) =>
+            dispatch({
+              type: 'removeConnection',
+              projectId: activeProjectDefinition.id,
+              connectionIndex,
+            })
+          }
           onSwitchProject={(projectId) =>
             dispatch({
               type: 'switchProject',

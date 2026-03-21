@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 import type { ExecutionResult, ModuleRegistry, Project } from '../../engine/types';
 import type { DemoProject } from '../demo-projects';
+import { getModuleCategory } from '../module-categories';
 
 const NODE_WIDTH = 132;
 const PORT_GAP = 18;
@@ -19,6 +20,15 @@ function getAnchorPosition(
   };
 }
 
+interface PendingConnection {
+  fromModuleId: string;
+  fromPort: string;
+  fromSide: 'left' | 'right';
+  fromAnchor: { x: number; y: number };
+  mouseX: number;
+  mouseY: number;
+}
+
 interface WorkbenchPanelProps {
   activeProject: DemoProject;
   activeProjectState: Project;
@@ -30,6 +40,13 @@ interface WorkbenchPanelProps {
   onMoveModule: (moduleId: string, x: number, y: number) => void;
   onSelectModule: (moduleId: string) => void;
   onSwitchProject: (projectId: string) => void;
+  onAddConnection: (
+    fromModuleId: string,
+    fromPort: string,
+    toModuleId: string,
+    toPort: string,
+  ) => void;
+  onRemoveConnection: (connectionIndex: number) => void;
   projects: DemoProject[];
 }
 
@@ -44,6 +61,8 @@ export function WorkbenchPanel({
   onMoveModule,
   onSelectModule,
   onSwitchProject,
+  onAddConnection,
+  onRemoveConnection,
   projects,
 }: WorkbenchPanelProps) {
   const canvasSurfaceRef = useRef<HTMLDivElement | null>(null);
@@ -52,6 +71,8 @@ export function WorkbenchPanel({
     pointerOffsetX: number;
     pointerOffsetY: number;
   } | null>(null);
+  const [pendingConnection, setPendingConnection] =
+    useState<PendingConnection | null>(null);
 
   const canvasWidth = Math.max(
     980,
@@ -103,6 +124,74 @@ export function WorkbenchPanel({
     };
   }, [dragState, onMoveModule]);
 
+  useEffect(() => {
+    if (!pendingConnection) {
+      return undefined;
+    }
+
+    function handleConnectionMove(event: MouseEvent) {
+      const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
+      const canvasSurface = canvasSurfaceRef.current;
+      if (!canvasRect || !canvasSurface) {
+        return;
+      }
+
+      setPendingConnection((prev) =>
+        prev
+          ? {
+              ...prev,
+              mouseX:
+                event.clientX - canvasRect.left + canvasSurface.scrollLeft,
+              mouseY:
+                event.clientY - canvasRect.top + canvasSurface.scrollTop,
+            }
+          : null,
+      );
+    }
+
+    function handleConnectionUp() {
+      setPendingConnection(null);
+    }
+
+    window.addEventListener('mousemove', handleConnectionMove);
+    window.addEventListener('mouseup', handleConnectionUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleConnectionMove);
+      window.removeEventListener('mouseup', handleConnectionUp);
+    };
+  }, [pendingConnection]);
+
+  function startConnectionFromOutput(
+    moduleId: string,
+    portName: string,
+    portIndex: number,
+  ) {
+    const pos = layout[moduleId];
+    if (!pos) return;
+    const anchor = getAnchorPosition(pos.x, pos.y, 'right', portIndex);
+    setPendingConnection({
+      fromModuleId: moduleId,
+      fromPort: portName,
+      fromSide: 'right',
+      fromAnchor: anchor,
+      mouseX: anchor.x,
+      mouseY: anchor.y,
+    });
+  }
+
+  function completeConnectionOnInput(moduleId: string, portName: string) {
+    if (!pendingConnection) return;
+    if (pendingConnection.fromModuleId === moduleId) return;
+    onAddConnection(
+      pendingConnection.fromModuleId,
+      pendingConnection.fromPort,
+      moduleId,
+      portName,
+    );
+    setPendingConnection(null);
+  }
+
   return (
     <section className="panel canvas-panel">
       <div className="panel-head">
@@ -141,7 +230,7 @@ export function WorkbenchPanel({
             viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
             preserveAspectRatio="none"
           >
-            {activeProjectState.connections.map((connection) => {
+            {activeProjectState.connections.map((connection, connectionIndex) => {
               const from = layout[connection.from.moduleId];
               const to = layout[connection.to.moduleId];
               const sourceDef = registry[
@@ -179,47 +268,89 @@ export function WorkbenchPanel({
               const targetControlX =
                 targetSide === 'left' ? targetAnchor.x - bend : targetAnchor.x + bend;
 
+              const pathD = `M ${sourceAnchor.x} ${sourceAnchor.y} C ${sourceControlX} ${sourceAnchor.y}, ${targetControlX} ${targetAnchor.y}, ${targetAnchor.x} ${targetAnchor.y}`;
+
               return (
-                <path
+                <g
                   key={`${connection.from.moduleId}:${connection.from.port}-${connection.to.moduleId}:${connection.to.port}`}
-                  d={`M ${sourceAnchor.x} ${sourceAnchor.y} C ${sourceControlX} ${sourceAnchor.y}, ${targetControlX} ${targetAnchor.y}, ${targetAnchor.x} ${targetAnchor.y}`}
-                />
+                  className="connection-group"
+                >
+                  <path
+                    className="connection-hit-area"
+                    d={pathD}
+                    onClick={() => onRemoveConnection(connectionIndex)}
+                  />
+                  <path d={pathD} />
+                </g>
               );
             })}
+
+            {pendingConnection ? (() => {
+              const { fromAnchor, mouseX, mouseY } = pendingConnection;
+              const dx = Math.abs(mouseX - fromAnchor.x);
+              const bend = Math.max(56, dx * 0.42);
+              return (
+                <path
+                  className="pending-connection"
+                  d={`M ${fromAnchor.x} ${fromAnchor.y} C ${fromAnchor.x + bend} ${fromAnchor.y}, ${mouseX - bend} ${mouseY}, ${mouseX} ${mouseY}`}
+                />
+              );
+            })() : null}
           </svg>
 
           {activeProjectState.modules.map((moduleInstance) => {
             const position = layout[moduleInstance.id] ?? { x: 24, y: 24 };
             const def = registry[moduleInstance.defId];
+            const category = getModuleCategory(moduleInstance.defId);
 
             return (
-              <button
+              <div
                 key={moduleInstance.id}
-                type="button"
                 className={
-                  moduleInstance.id === selectedModuleId
-                    ? 'graph-node graph-node-selected'
-                    : 'graph-node'
+                  `graph-node graph-node-${category}` +
+                  (moduleInstance.id === selectedModuleId ? ' graph-node-selected' : '')
                 }
                 style={{ left: `${position.x}px`, top: `${position.y}px` }}
-                onClick={() => onSelectModule(moduleInstance.id)}
-                onMouseDown={(event) => {
-                  const rect = event.currentTarget.getBoundingClientRect();
-                  onSelectModule(moduleInstance.id);
-                  setDragState({
-                    moduleId: moduleInstance.id,
-                    pointerOffsetX: event.clientX - rect.left,
-                    pointerOffsetY: event.clientY - rect.top,
-                  });
-                }}
               >
+                <div
+                  className="graph-node-body"
+                  onClick={() => onSelectModule(moduleInstance.id)}
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
+                    const canvasSurface = canvasSurfaceRef.current;
+                    if (!canvasRect || !canvasSurface) return;
+
+                    onSelectModule(moduleInstance.id);
+                    setDragState({
+                      moduleId: moduleInstance.id,
+                      pointerOffsetX: event.clientX - canvasRect.left + canvasSurface.scrollLeft - position.x,
+                      pointerOffsetY: event.clientY - canvasRect.top + canvasSurface.scrollTop - position.y,
+                    });
+                  }}
+                >
+                  <span className="graph-node-type">{moduleInstance.defId}</span>
+                  <strong>{moduleInstance.id}</strong>
+                  <div className="graph-node-ports">
+                    <span>{def?.inputs.length ?? 0} in</span>
+                    <span>{def?.outputs.length ?? 0} out</span>
+                  </div>
+                </div>
+
                 <div className="graph-node-anchor-group graph-node-anchor-group-in">
                   {(def?.inputs ?? []).map((port, index) => (
                     <span
                       key={port.name}
-                      className="graph-port-anchor graph-port-anchor-in"
+                      className={
+                        pendingConnection
+                          ? 'graph-port-anchor graph-port-anchor-in graph-port-droppable'
+                          : 'graph-port-anchor graph-port-anchor-in'
+                      }
                       style={{ top: `${PORT_START_Y + index * PORT_GAP}px` }}
                       title={`${port.name}: ${port.type}`}
+                      onMouseUp={() =>
+                        completeConnectionOnInput(moduleInstance.id, port.name)
+                      }
                     >
                       <span className="graph-port-dot" />
                       <span className="graph-port-label">IN</span>
@@ -234,20 +365,22 @@ export function WorkbenchPanel({
                       className="graph-port-anchor graph-port-anchor-out"
                       style={{ top: `${PORT_START_Y + index * PORT_GAP}px` }}
                       title={`${port.name}: ${port.type}`}
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        startConnectionFromOutput(
+                          moduleInstance.id,
+                          port.name,
+                          index,
+                        );
+                      }}
                     >
                       <span className="graph-port-label">OUT</span>
                       <span className="graph-port-dot" />
                     </span>
                   ))}
                 </div>
-
-                <span className="graph-node-type">{moduleInstance.defId}</span>
-                <strong>{moduleInstance.id}</strong>
-                <div className="graph-node-ports">
-                  <span>{def?.inputs.length ?? 0} in</span>
-                  <span>{def?.outputs.length ?? 0} out</span>
-                </div>
-              </button>
+              </div>
             );
           })}
         </div>

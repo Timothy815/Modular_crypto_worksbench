@@ -7,7 +7,9 @@ Checkpoint:
 - `5190719` — Refactor UI state into reducer
 - `48c6c78` — Add visual workbench canvas
 - `d3c8a22` — Add node movement and panel controls
-- working tree now includes graph mutation via add/delete module actions
+- `a48c498` — Improve node dragging and anchors
+- `6252d12` — Add module creation and deletion
+- `pending` — Refactor node DOM, add connection editing, color-code modules
 
 This document records the first UI-phase decisions so work can pass cleanly between Codex and Claude.
 
@@ -60,15 +62,14 @@ These files are safe for Claude to continue from later.
 
 ---
 
-## Recommended Next Steps For Claude
+## Recommended Next Steps
 
-Once back online, Claude should be able to continue from this branch by taking one of these bounded tasks:
+Items 1–4 from the original plan are now complete. Remaining work:
 
-1. Replace the current graph strip with a more editor-like canvas layout while preserving the current selection model.
-2. Improve parameter editing UX for `bits` and `wiring` fields with more structured controls.
-3. Add inline port anchors or richer connection affordances to the visual canvas.
-4. Introduce theme tokens and dark-mode support without rewriting components.
-5. Begin port-to-port connection creation and deletion.
+1. Improve parameter editing UX for `bits` and `wiring` params.
+2. Introduce theme tokens and dark-mode support without rewriting components.
+3. Persistence UI (save/load projects).
+4. Composite-module UI.
 
 ---
 
@@ -93,8 +94,30 @@ The branch now contains:
 - add-module from palette
 - delete-module from inspector
 - live re-execution through local UI state
+- **refactored node DOM** — nodes use separate body and port hit areas
+- **port-to-port connection creation** — drag from output port to input port
+- **connection deletion** — click existing connection to remove (hover highlights orange)
+- **module category color-coding** — sources (teal), operators (orange), bridges (purple), sinks (green)
+- **improved module placement** — new nodes placed in visible canvas area, avoids overlap
+- **`src/ui/module-categories.ts`** — shared category mapping for consistent color-coding across palette and canvas
 
-This means the branch has already validated the key UI-side promise of `paramSchema`: the engine metadata can drive browser controls.
+What is intentionally not built yet:
+- persistence UI
+- composite-module UI
+- dark mode
+- structured editors for `bits` and `wiring`
+
+Safe resume point for any model:
+- branch: `origin/feature/minimal-ui-shell`
+- first files to review:
+  - `PROJECT_OWNER_NOTES.md`
+  - `UI-KICKOFF.md`
+  - `src/App.tsx`
+  - `src/ui/store.ts`
+  - `src/ui/components/workbench-panel.tsx`
+  - `src/ui/module-categories.ts`
+
+This means the branch has validated all four editor fundamentals: add, delete, move, and connect modules.
 
 ---
 

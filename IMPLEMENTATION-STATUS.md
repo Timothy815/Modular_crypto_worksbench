@@ -129,3 +129,38 @@ After that:
 ```text
 TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol -> Output
 ```
+
+---
+
+## Current Branch Status
+
+Stable engine milestone on `main`:
+- tag `v0.2.0`
+
+Active UI branch:
+- `feature/minimal-ui-shell`
+
+UI branch currently includes:
+- visual workbench canvas
+- reducer-backed UI state
+- node movement
+- collapsible palette / inspector
+- parameter inspector driven by `paramSchema`
+- add/delete module controls
+- refactored node DOM with separate body/port hit areas
+- port-to-port connection creation (drag output to input)
+- connection deletion (click existing connection)
+- color-coded modules by functional role (source, operator, bridge, sink)
+- improved module placement (new nodes appear in visible area)
+
+Completed UI milestones (March 21, 2026):
+- node DOM refactored for separate body/port interaction
+- connection creation and deletion implemented
+- module category color-coding added
+- module placement fixed to stay within visible canvas
+
+Next intended UI milestone:
+- merge `feature/minimal-ui-shell` to `main` and tag `v0.4.0`
+- persistence UI (save/load)
+- structured editors for `bits` and `wiring` params
+- dark mode via theme tokens

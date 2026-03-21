@@ -1,4 +1,5 @@
 import type { ModuleRegistry } from '../../engine/types';
+import { getModuleCategory } from '../module-categories';
 
 interface PrimitivePaletteProps {
   registry: ModuleRegistry;
@@ -16,7 +17,7 @@ export function PrimitivePalette({ registry, onAddModule }: PrimitivePaletteProp
       </div>
       <ul className="primitive-list">
         {primitiveDefs.map((def) => (
-          <li key={def.id} className="primitive-card">
+          <li key={def.id} className={`primitive-card primitive-card-${getModuleCategory(def.id)}`}>
             <div>
               <strong>{def.name}</strong>
               <p>{def.id}</p>

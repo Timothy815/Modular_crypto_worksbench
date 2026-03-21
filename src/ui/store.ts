@@ -17,6 +17,15 @@ export type UiAction =
   | { type: 'moveModule'; projectId: string; moduleId: string; x: number; y: number }
   | { type: 'addModule'; projectId: string; moduleDef: ModuleDef }
   | { type: 'removeModule'; projectId: string; moduleId: string }
+  | {
+      type: 'addConnection';
+      projectId: string;
+      fromModuleId: string;
+      fromPort: string;
+      toModuleId: string;
+      toPort: string;
+    }
+  | { type: 'removeConnection'; projectId: string; connectionIndex: number }
   | { type: 'updateParam'; projectId: string; moduleId: string; key: string; value: unknown }
   | { type: 'setParamDraft'; projectId: string; moduleId: string; key: string; rawValue: string }
   | { type: 'clearParamDraft'; projectId: string; moduleId: string; key: string }
@@ -151,8 +160,18 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
         },
       ];
 
-      const maxX = Math.max(24, ...Object.values(currentLayout).map((position) => position.x));
-      const maxY = Math.max(24, ...Object.values(currentLayout).map((position) => position.y));
+      const positions = Object.values(currentLayout);
+      const occupiedSet = new Set(positions.map((p) => `${p.x},${p.y}`));
+      let newX = 40;
+      let newY = 40;
+
+      while (occupiedSet.has(`${newX},${newY}`)) {
+        newX += 160;
+        if (newX > 700) {
+          newX = 40;
+          newY += 100;
+        }
+      }
 
       return {
         ...state,
@@ -165,8 +184,8 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           [action.projectId]: {
             ...currentLayout,
             [nextModuleId]: {
-              x: maxX + 180,
-              y: maxY + 40,
+              x: newX,
+              y: newY,
             },
           },
         },
@@ -217,6 +236,59 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           [action.projectId]: nextProject.modules[0]?.id ?? null,
         },
         paramDrafts: nextDrafts,
+      };
+    }
+    case 'addConnection': {
+      const currentProject = state.projectStates[action.projectId];
+      if (!currentProject) {
+        return state;
+      }
+
+      const alreadyExists = currentProject.connections.some(
+        (c) =>
+          c.from.moduleId === action.fromModuleId &&
+          c.from.port === action.fromPort &&
+          c.to.moduleId === action.toModuleId &&
+          c.to.port === action.toPort,
+      );
+      if (alreadyExists) {
+        return state;
+      }
+
+      const nextProject = cloneProject(currentProject);
+      nextProject.connections = [
+        ...nextProject.connections,
+        {
+          from: { moduleId: action.fromModuleId, port: action.fromPort },
+          to: { moduleId: action.toModuleId, port: action.toPort },
+        },
+      ];
+
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: nextProject,
+        },
+      };
+    }
+    case 'removeConnection': {
+      const currentProject = state.projectStates[action.projectId];
+      if (!currentProject) {
+        return state;
+      }
+
+      const nextProject = cloneProject(currentProject);
+      nextProject.connections = nextProject.connections.filter(
+        (_, i) => i !== action.connectionIndex,
+      );
+
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: nextProject,
+        },
       };
     }
     case 'updateParam': {

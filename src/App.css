@@ -154,6 +154,22 @@
   padding: 14px 16px;
 }
 
+.primitive-card-source {
+  border-left: 4px solid rgba(42, 130, 150, 0.5);
+}
+
+.primitive-card-operator {
+  border-left: 4px solid rgba(200, 110, 50, 0.5);
+}
+
+.primitive-card-bridge {
+  border-left: 4px solid rgba(130, 80, 170, 0.5);
+}
+
+.primitive-card-sink {
+  border-left: 4px solid rgba(60, 140, 80, 0.5);
+}
+
 .primitive-actions {
   display: flex;
   flex-direction: column;
@@ -272,20 +288,79 @@
   stroke-linecap: round;
 }
 
+.connection-group {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.connection-hit-area {
+  stroke: transparent;
+  stroke-width: 16;
+  fill: none;
+  pointer-events: stroke;
+}
+
+.connection-group path:not(.connection-hit-area) {
+  pointer-events: none;
+}
+
+.connection-group:hover path:not(.connection-hit-area) {
+  stroke: rgba(200, 85, 61, 0.6);
+  stroke-width: 3.5;
+}
+
+.pending-connection {
+  stroke: rgba(200, 85, 61, 0.5);
+  stroke-width: 2.5;
+  stroke-dasharray: 8 6;
+  pointer-events: none;
+}
+
 .graph-node {
-  appearance: none;
   position: absolute;
   width: 132px;
   text-align: left;
-  padding: 14px 14px 12px;
-  cursor: pointer;
-  user-select: none;
   overflow: visible;
 }
 
+.graph-node-source {
+  border-color: rgba(42, 130, 150, 0.35);
+  background: rgba(42, 130, 150, 0.08);
+}
+
+.graph-node-operator {
+  border-color: rgba(200, 110, 50, 0.35);
+  background: rgba(200, 110, 50, 0.08);
+}
+
+.graph-node-bridge {
+  border-color: rgba(130, 80, 170, 0.35);
+  background: rgba(130, 80, 170, 0.08);
+}
+
+.graph-node-sink {
+  border-color: rgba(60, 140, 80, 0.35);
+  background: rgba(60, 140, 80, 0.08);
+}
+
 .graph-node-selected {
-  border-color: rgba(200, 85, 61, 0.55);
   box-shadow: 0 12px 24px rgba(200, 85, 61, 0.12);
+}
+
+.graph-node-selected.graph-node-source {
+  border-color: rgba(42, 130, 150, 0.7);
+}
+
+.graph-node-selected.graph-node-operator {
+  border-color: rgba(200, 110, 50, 0.7);
+}
+
+.graph-node-selected.graph-node-bridge {
+  border-color: rgba(130, 80, 170, 0.7);
+}
+
+.graph-node-selected.graph-node-sink {
+  border-color: rgba(60, 140, 80, 0.7);
 }
 
 .graph-node-type {
@@ -308,10 +383,19 @@
   color: var(--muted);
 }
 
+.graph-node-body {
+  padding: 14px 14px 12px;
+  cursor: grab;
+  user-select: none;
+}
+
+.graph-node-body:active {
+  cursor: grabbing;
+}
+
 .graph-node-anchor-group {
   position: absolute;
   inset-block: 0;
-  pointer-events: none;
 }
 
 .graph-node-anchor-group-in {
@@ -331,6 +415,8 @@
   font-size: 0.66rem;
   letter-spacing: 0.08em;
   color: var(--muted);
+  cursor: crosshair;
+  pointer-events: auto;
 }
 
 .graph-port-anchor-in {
@@ -341,12 +427,21 @@
   right: 0;
 }
 
+.graph-port-droppable .graph-port-dot {
+  box-shadow: 0 0 0 3px rgba(200, 85, 61, 0.4);
+}
+
 .graph-port-dot {
   width: 9px;
   height: 9px;
   border-radius: 999px;
   background: var(--ink);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.88);
+  transition: box-shadow 120ms ease;
+}
+
+.graph-port-dot:hover {
+  box-shadow: 0 0 0 4px rgba(200, 85, 61, 0.5);
 }
 
 .graph-port-label {

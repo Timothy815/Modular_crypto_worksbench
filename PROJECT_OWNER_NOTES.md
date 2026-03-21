@@ -43,5 +43,40 @@ These notes suggest the following near-term UI priorities:
 2. Ensure the workbench expands when panels are hidden.
 3. Keep the current light theme as the canonical light-mode foundation.
 4. Prepare the styling system so dark mode can be added without rewriting components.
+5. Treat the workspace as something that can grow arbitrarily large over time.
+6. Keep alternate encodings explicit in the graph, likely as separate modules rather than hidden options inside one encoder module.
 
-These are guidance items, not hard blockers against the next implementation slice.
+---
+
+## Editor Direction Notes
+
+- Connection editing is complete: port-to-port creation and click-to-delete.
+- Node DOM has been refactored: body and port hit areas are separate.
+- Module color-coding by functional role was added per owner request to aid classroom readability.
+- Next editor priorities: persistence UI, then composite-module editing.
+
+---
+
+## Safe Resume Context
+
+Active UI branch: `origin/feature/minimal-ui-shell`
+
+The UI now supports:
+- palette-driven module creation
+- selected-module deletion
+- reducer-backed state
+- draggable nodes
+- collapsible side panels
+- parameter editing from `paramSchema`
+- port-to-port connection creation (drag from output to input)
+- connection deletion (click to remove)
+- color-coded modules by functional role (source/operator/bridge/sink)
+- new modules placed within visible canvas area
+
+The UI does not yet support:
+- persistence UI
+- composite-module editing
+- dark mode
+- structured editors for `bits` and `wiring` params
+
+All four editor fundamentals are now complete: add, delete, move, and connect modules.
