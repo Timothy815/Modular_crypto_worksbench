@@ -1,4 +1,7 @@
-export type ModuleCategory = 'source' | 'operator' | 'bridge' | 'sink';
+import { isCompositeDefinition } from '../engine/composites';
+import type { ModuleDefinition } from '../engine/types';
+
+export type ModuleCategory = 'source' | 'operator' | 'bridge' | 'sink' | 'composite';
 
 const CATEGORY_MAP: Record<string, ModuleCategory> = {
   TextInput: 'source',
@@ -12,6 +15,14 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   Output: 'sink',
 };
 
-export function getModuleCategory(defId: string): ModuleCategory {
+export function getModuleCategory(definitionOrDefId: ModuleDefinition | string): ModuleCategory {
+  if (
+    typeof definitionOrDefId !== 'string' &&
+    isCompositeDefinition(definitionOrDefId)
+  ) {
+    return 'composite';
+  }
+
+  const defId = typeof definitionOrDefId === 'string' ? definitionOrDefId : definitionOrDefId.id;
   return CATEGORY_MAP[defId] ?? 'operator';
 }

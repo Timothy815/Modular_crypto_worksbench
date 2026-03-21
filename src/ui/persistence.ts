@@ -1,17 +1,15 @@
+import type { CompositeDef, CompositeLibraryEntry } from '../engine/composites';
 import type { Project } from '../engine/types';
 import type { DemoProject } from './demo-projects';
 import type { UiState } from './store';
-import type { WorkbenchAnnotation, WorkbenchDocument } from './workbench-document';
+import type {
+  CompositeLibraryDocument,
+  PersistedWorkspaceDocument,
+  WorkbenchAnnotation,
+  WorkbenchDocument,
+} from './workbench-document';
 
 const STORAGE_KEY = 'mcw:workspace:v1';
-
-interface PersistedWorkspace {
-  version: 1;
-  activeProjectId: string;
-  showPalette: boolean;
-  showInspector: boolean;
-  documentsByProjectId: Record<string, WorkbenchDocument>;
-}
 
 function cloneProject(project: Project): Project {
   return {
@@ -54,7 +52,7 @@ export function createDocumentMapFromDemos(
   );
 }
 
-export function buildPersistedWorkspace(state: UiState): PersistedWorkspace {
+export function buildPersistedWorkspace(state: UiState): PersistedWorkspaceDocument {
   return {
     version: 1,
     activeProjectId: state.activeProjectId,
@@ -77,6 +75,26 @@ export function buildPersistedWorkspace(state: UiState): PersistedWorkspace {
         },
       ]),
     ),
+    compositeLibrary: {
+      version: 1,
+      entries: state.compositeLibrary.map((entry) => ({
+        ...entry,
+        definition: {
+          ...entry.definition,
+          project: cloneProject(entry.definition.project),
+          layout: entry.definition.layout
+            ? Object.fromEntries(
+                Object.entries(entry.definition.layout).map(([moduleId, position]) => [
+                  moduleId,
+                  { ...position },
+                ]),
+              )
+            : undefined,
+          inputBindings: entry.definition.inputBindings.map((binding) => ({ ...binding })),
+          outputBindings: entry.definition.outputBindings.map((binding) => ({ ...binding })),
+        },
+      })),
+    },
   };
 }
 
@@ -90,21 +108,22 @@ export function saveWorkspaceToStorage(
 export function loadWorkspaceFromStorage(
   projects: DemoProject[],
   storage: Storage = window.localStorage,
-): PersistedWorkspace | null {
+): PersistedWorkspaceDocument | null {
   const rawValue = storage.getItem(STORAGE_KEY);
   if (!rawValue) {
     return null;
   }
 
   try {
-    const parsed = JSON.parse(rawValue) as PersistedWorkspace;
+    const parsed = JSON.parse(rawValue) as PersistedWorkspaceDocument;
     if (
       parsed.version !== 1 ||
       typeof parsed.activeProjectId !== 'string' ||
       typeof parsed.showPalette !== 'boolean' ||
       typeof parsed.showInspector !== 'boolean' ||
       typeof parsed.documentsByProjectId !== 'object' ||
-      parsed.documentsByProjectId === null
+      parsed.documentsByProjectId === null ||
+      !isCompositeLibraryDocument(parsed.compositeLibrary)
     ) {
       return null;
     }
@@ -149,6 +168,31 @@ export function parseWorkbenchDocument(rawValue: string): WorkbenchDocument | nu
   }
 }
 
+export function parseCompositeLibraryDocument(
+  rawValue: string,
+): CompositeLibraryDocument | null {
+  try {
+    const parsed = JSON.parse(rawValue);
+    return isCompositeLibraryDocument(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function downloadCompositeLibraryDocument(
+  libraryDocument: CompositeLibraryDocument,
+): void {
+  const blob = new Blob([JSON.stringify(libraryDocument, null, 2)], {
+    type: 'application/json',
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = 'composite-library.mcw.json';
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
   if (typeof value !== 'object' || value === null) {
     return false;
@@ -166,5 +210,66 @@ function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
     typeof candidate.ui.layout === 'object' &&
     candidate.ui.layout !== null &&
     Array.isArray(candidate.ui.annotations)
+  );
+}
+
+function isCompositeLibraryDocument(value: unknown): value is CompositeLibraryDocument {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as CompositeLibraryDocument;
+  return (
+    candidate.version === 1 &&
+    Array.isArray(candidate.entries) &&
+    candidate.entries.every(isCompositeLibraryEntry)
+  );
+}
+
+function isCompositeLibraryEntry(value: unknown): value is CompositeLibraryEntry {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as CompositeLibraryEntry;
+  return (
+    typeof candidate.id === 'string' &&
+    typeof candidate.name === 'string' &&
+    typeof candidate.version === 'number' &&
+    isCompositeDef(candidate.definition)
+  );
+}
+
+function isCompositeDef(value: unknown): value is CompositeDef {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as CompositeDef;
+  return (
+    candidate.kind === 'composite' &&
+    typeof candidate.id === 'string' &&
+    typeof candidate.name === 'string' &&
+    typeof candidate.version === 'number' &&
+    Array.isArray(candidate.inputs) &&
+    Array.isArray(candidate.outputs) &&
+    typeof candidate.paramSchema === 'object' &&
+    candidate.paramSchema !== null &&
+    typeof candidate.project === 'object' &&
+    candidate.project !== null &&
+    Array.isArray(candidate.project.modules) &&
+    Array.isArray(candidate.project.connections) &&
+    (candidate.layout === undefined ||
+      (typeof candidate.layout === 'object' &&
+        candidate.layout !== null &&
+        Object.values(candidate.layout).every(
+          (position) =>
+            typeof position === 'object' &&
+            position !== null &&
+            typeof position.x === 'number' &&
+            typeof position.y === 'number',
+        ))) &&
+    Array.isArray(candidate.inputBindings) &&
+    Array.isArray(candidate.outputBindings)
   );
 }

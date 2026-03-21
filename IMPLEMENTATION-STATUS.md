@@ -6,7 +6,7 @@ Last updated: March 21, 2026
 
 ## Current State
 
-The project has moved well beyond scaffold status.
+The project has completed the minimal UI milestone on `main` and has now entered the composite-module groundwork phase on `feature/composite-groundwork`.
 
 Established and now available for other agents:
 - implementation contract
@@ -19,6 +19,7 @@ Established and now available for other agents:
 - iterative topological executor
 - V1 primitive module set
 - hybrid reference pipeline tests
+- released minimal UI shell on `main` (`v0.4.0`)
 - reducer-backed UI state
 - visual workbench canvas
 - add / delete / move / connect editor fundamentals
@@ -26,6 +27,8 @@ Established and now available for other agents:
 - structured parameter editors for `bits` and `wiring`
 - workbench persistence (autosave/restore + JSON import/export)
 - sticky-note annotations stored as UI metadata
+- composite V1 contract
+- initial engine-facing composite type layer
 - GitHub Pages deployment workflow
 
 ---
@@ -69,26 +72,27 @@ The following decisions are no longer just prose; they are reflected in the scaf
 ### Claude
 
 Safe to begin:
-- extract `BitsEditor` and `WiringEditor` into dedicated UI components
-- normalize merge-readiness and milestone docs for the current UI branch
-- begin theme-token groundwork for dark mode
-- improve note/layout UX if needed
+- use the latest safe checkpoint on `feature/composite-groundwork`: `7d8bf3c`
+- expose composite library entries in the palette
+- allow composite definitions to be placed in the workbench, not just primitives
+- make the inspector render composite definitions safely
+- keep the first composite UI proof narrow and end-to-end
 
 Should avoid for now:
-- changing `src/engine/types.ts`
-- changing executor semantics
+- reopening the engine execution model without a concrete blocker
+- starting subgraph-to-composite authoring UI yet
 - hiding domain boundaries for convenience
 
 ### Gemini
 
 Safe to begin:
-- review persistence-format boundaries between engine `Project` and UI layout metadata
-- review annotation model and whether it stays properly outside the engine
-- identify merge-readiness risks before `v0.4.0`
+- review the live composite app integration on `feature/composite-groundwork`
+- critique the first composite UI proof once placement is enabled
+- identify any risk in the registry synthesis path before authoring UI begins
 
 Best focus:
-- whether layout, annotations, and project data remain cleanly separated
-- whether persistence and import/export are sound enough for classroom use
+- whether reusable composite definitions remain cleanly separated from workbench UI metadata
+- whether persistence and import/export are sound enough for reusable classroom artifacts
 - whether the UI is staying aligned with the product-teaching goals
 
 ---
@@ -122,7 +126,7 @@ Architectural normalization added on March 21:
 The next product milestone should be:
 
 ```text
-Persistence UI -> composite workflows -> deeper execution visibility
+Composite groundwork -> reusable composition -> deeper execution visibility
 ```
 
 The canonical hybrid reference machine remains:
@@ -135,41 +139,30 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 ## Current Branch Status
 
-Stable engine milestone on `main`:
-- tag `v0.2.0`
+Stable releases on `main`:
+- `v0.2.0` — primitive engine milestone
+- `v0.4.0` — minimal UI shell milestone
 
-Active UI branch:
-- `feature/minimal-ui-shell`
+Active branch:
+- `feature/composite-groundwork`
 
-UI branch currently includes:
-- visual workbench canvas
-- reducer-backed UI state
-- node movement
-- collapsible palette / inspector
-- parameter inspector driven by `paramSchema`
-- add/delete module controls
-- refactored node DOM with separate body/port hit areas
-- port-to-port connection creation (drag output to input)
-- connection deletion (click existing connection)
-- UI-side connection validation and target highlighting
-- color-coded modules by functional role (source, operator, bridge, sink)
-- structured editors for `bits` and `wiring`
-- workbench persistence with local autosave/restore
-- JSON import/export
-- sticky-note annotations stored in UI metadata
-- improved module placement (new nodes appear in visible area)
+Composite groundwork branch currently includes:
+- `COMPOSITE-V1-CONTRACT.md`
+- engine composite type surface in `src/engine/composites.ts`
+- composite-definition validation
+- composite library persistence shape
+- executable composite support in the engine
+- composite library in app state
+- effective registry synthesis (`primitives + composites`)
+- app execution wired to the synthesized registry
 
-Completed UI milestones (March 21, 2026):
-- node DOM refactored for separate body/port interaction
-- connection creation and deletion implemented
-- connection validation and highlighting implemented
-- module category color-coding added
-- structured parameter editors added
-- persistence document boundary added
-- sticky-note annotations added
-- module placement fixed to stay within visible canvas
+Latest safe checkpoint for resume:
+- branch: `feature/composite-groundwork`
+- commit: `7d8bf3c`
+- message: `Wire composite library into app registry flow`
 
-Next intended UI milestone:
-- extract structured editors into dedicated components
-- dark mode via theme tokens
-- prepare `feature/minimal-ui-shell` for merge to `main` and `v0.4.0`
+Next intended milestone:
+- minimal composite UI proof
+- expose composite entries in the palette
+- allow placing a composite instance into a graph
+- prove it executes in the live workbench

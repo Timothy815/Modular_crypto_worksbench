@@ -1,3 +1,5 @@
+import type { CompositeDef } from './composites';
+
 export type SignalType = 'symbol' | 'bits';
 
 export interface SymbolSignal {
@@ -58,6 +60,8 @@ export interface ModuleDef {
   evaluate: (inputs: ModuleInputs, params: ModuleParams) => ModuleOutputs;
 }
 
+export type ModuleDefinition = ModuleDef | CompositeDef;
+
 export interface ModuleInstance {
   id: string;
   defId: string;
@@ -79,7 +83,7 @@ export interface Project {
   connections: Connection[];
 }
 
-export type ModuleRegistry = Record<string, ModuleDef>;
+export type ModuleRegistry = Record<string, ModuleDefinition>;
 
 export interface ValidationIssue {
   code:
@@ -87,6 +91,7 @@ export interface ValidationIssue {
     | 'unknown-module-def'
     | 'unknown-module-instance'
     | 'unknown-port'
+    | 'duplicate-external-port'
     | 'missing-required-param'
     | 'unknown-param'
     | 'invalid-param-type'
@@ -94,7 +99,8 @@ export interface ValidationIssue {
     | 'invalid-wiring'
     | 'duplicate-input-connection'
     | 'signal-type-mismatch'
-    | 'cycle-detected';
+    | 'cycle-detected'
+    | 'invalid-composite-binding';
   message: string;
   moduleId?: string;
   connection?: Connection;

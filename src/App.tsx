@@ -1,22 +1,32 @@
 import { useEffect, useReducer, useState } from 'react';
 
 import './App.css';
+import type { CompositeLibraryEntry } from './engine/composites';
 import { V1_REGISTRY } from './engine/modules';
-import type { ExecutionResult } from './engine/types';
+import type { ExecutionResult, Project } from './engine/types';
+import { validateCompositeDef } from './engine/validation';
+import {
+  createCompositeFromSelection,
+  replaceSelectionWithComposite,
+} from './ui/composite-authoring';
 import { ParameterInspector } from './ui/components/parameter-inspector';
 import { PrimitivePalette } from './ui/components/primitive-palette';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
 import { demoProjects, runDemoProject } from './ui/demo-projects';
 import {
   downloadDocument,
+  downloadCompositeLibraryDocument,
   loadWorkspaceFromStorage,
+  parseCompositeLibraryDocument,
   parseWorkbenchDocument,
   saveWorkspaceToStorage,
 } from './ui/persistence';
 import {
   createInitialUiState,
+  getEffectiveRegistry,
   getDraftValue,
   getSelectedModuleId,
+  getSelectedModuleIds,
   uiReducer,
 } from './ui/store';
 
@@ -43,15 +53,26 @@ function App() {
         return initialState;
       }
 
+      const restoredProjectStates = Object.fromEntries(
+        projects.map((project) => [
+          project.id,
+          persistedWorkspace.documentsByProjectId[project.id]?.project ?? initialState.projectStates[project.id],
+        ]),
+      );
+
       return {
         ...initialState,
         activeProjectId: persistedWorkspace.activeProjectId,
+        compositeLibrary:
+          persistedWorkspace.compositeLibrary.entries.length > 0
+            ? persistedWorkspace.compositeLibrary.entries
+            : initialState.compositeLibrary,
         showPalette: persistedWorkspace.showPalette,
         showInspector: persistedWorkspace.showInspector,
         projectStates: Object.fromEntries(
           projects.map((project) => [
             project.id,
-            persistedWorkspace.documentsByProjectId[project.id]?.project ?? initialState.projectStates[project.id],
+            restoredProjectStates[project.id],
           ]),
         ),
         layoutByProject: Object.fromEntries(
@@ -66,34 +87,79 @@ function App() {
             persistedWorkspace.documentsByProjectId[project.id]?.ui.annotations ?? initialState.annotationsByProject[project.id],
           ]),
         ),
+        selectedModuleIdByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            restoredProjectStates[project.id]?.modules[0]?.id ?? null,
+          ]),
+        ),
+        selectedModuleIdsByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            restoredProjectStates[project.id]?.modules[0]?.id
+              ? [restoredProjectStates[project.id].modules[0].id]
+              : [],
+          ]),
+        ),
       };
     },
   );
   const [importError, setImportError] = useState<string | null>(null);
+  const [isCompositeDialogOpen, setIsCompositeDialogOpen] = useState(false);
+  const [compositeName, setCompositeName] = useState('');
+  const [compositeId, setCompositeId] = useState('');
+  const [compositeDialogError, setCompositeDialogError] = useState<string | null>(null);
+  const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
+  const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
 
   const activeProjectDefinition =
     demoProjects.find((project) => project.id === state.activeProjectId) ?? demoProjects[0];
-  const activeProjectState =
+  const effectiveRegistry = getEffectiveRegistry(V1_REGISTRY, state.compositeLibrary);
+  const baseProjectState =
     state.projectStates[activeProjectDefinition.id] ?? activeProjectDefinition.project;
-  const activeLayout =
+  const baseLayout =
     state.layoutByProject[activeProjectDefinition.id] ?? activeProjectDefinition.layout;
-  const activeAnnotations =
+  const baseAnnotations =
     state.annotationsByProject[activeProjectDefinition.id] ?? [];
-  const effectiveSelectedModuleId =
-    getSelectedModuleId(state, activeProjectDefinition.id, activeProjectState);
+  const activeCompositeEntry = state.compositeEditor
+    ? state.compositeLibrary.find((entry) => entry.id === state.compositeEditor?.entryId) ?? null
+    : null;
+  const activeProjectState = state.compositeEditor?.project ?? baseProjectState;
+  const activeLayout = state.compositeEditor?.layout ?? baseLayout;
+  const activeAnnotations = state.compositeEditor ? [] : baseAnnotations;
+  const effectiveSelectedModuleId = state.compositeEditor
+    ? state.compositeEditor.selectedModuleId
+    : getSelectedModuleId(state, activeProjectDefinition.id, activeProjectState);
+  const effectiveSelectedModuleIds = state.compositeEditor
+    ? state.compositeEditor.selectedModuleIds
+    : getSelectedModuleIds(state, activeProjectDefinition.id, activeProjectState);
   const selectedModule =
     activeProjectState.modules.find(
       (moduleInstance) => moduleInstance.id === effectiveSelectedModuleId,
     ) ?? null;
   const selectedModuleDef = selectedModule
-    ? V1_REGISTRY[selectedModule.defId]
+    ? (effectiveRegistry[selectedModule.defId] ?? null)
     : null;
+  const compositeUsageCountById = Object.values(state.projectStates).reduce<Record<string, number>>(
+    (counts, project) => {
+      for (const moduleInstance of project.modules) {
+        if (!state.compositeLibrary.some((entry) => entry.id === moduleInstance.defId)) {
+          continue;
+        }
+
+        counts[moduleInstance.defId] = (counts[moduleInstance.defId] ?? 0) + 1;
+      }
+
+      return counts;
+    },
+    {},
+  );
 
   let execution: ExecutionResult | null = null;
   let executionError: string | null = null;
 
   try {
-    execution = runDemoProject(activeProjectState);
+    execution = runDemoProject(activeProjectState, effectiveRegistry);
   } catch (error) {
     executionError = error instanceof Error ? error.message : 'Execution failed.';
   }
@@ -184,9 +250,10 @@ function App() {
       >
         {state.showPalette ? (
           <PrimitivePalette
-            registry={V1_REGISTRY}
+            registry={effectiveRegistry}
+            compositeUsageCountById={compositeUsageCountById}
             onAddModule={(defId) => {
-              const moduleDef = V1_REGISTRY[defId];
+              const moduleDef = effectiveRegistry[defId] ?? null;
               if (!moduleDef) {
                 return;
               }
@@ -197,18 +264,48 @@ function App() {
                 moduleDef,
               });
             }}
+            onExportCompositeLibrary={() =>
+              downloadCompositeLibraryDocument({
+                version: 1,
+                entries: state.compositeLibrary,
+              })
+            }
+            onOpenComposite={(defId) => {
+              dispatch({
+                type: 'openCompositeEditor',
+                entryId: defId,
+              });
+            }}
+            onRemoveComposite={(defId) =>
+              dispatch({
+                type: 'removeCompositeFromLibrary',
+                compositeId: defId,
+              })
+            }
           />
         ) : null}
 
         <WorkbenchPanel
           activeProject={activeProjectDefinition}
+          title={activeCompositeEntry ? `${activeCompositeEntry.name} Internals` : undefined}
+          summary={
+            activeCompositeEntry
+              ? 'Editing the internal graph of a reusable composite. Boundary ports stay fixed in this first editing slice.'
+              : undefined
+          }
+          pipelineLabel={
+            activeCompositeEntry
+              ? `${activeCompositeEntry.definition.inputs.length} in -> reusable composite -> ${activeCompositeEntry.definition.outputs.length} out`
+              : undefined
+          }
           activeProjectState={activeProjectState}
           layout={activeLayout}
           annotations={activeAnnotations}
           execution={execution}
           executionError={executionError}
-          registry={V1_REGISTRY}
+          registry={effectiveRegistry}
           selectedModuleId={effectiveSelectedModuleId}
+          selectedModuleIds={effectiveSelectedModuleIds}
           onMoveModule={(moduleId, x, y) =>
             dispatch({
               type: 'moveModule',
@@ -219,42 +316,58 @@ function App() {
             })
           }
           onAddAnnotation={() =>
-            dispatch({
-              type: 'addAnnotation',
-              projectId: activeProjectDefinition.id,
-            })
+            state.compositeEditor
+              ? undefined
+              : dispatch({
+                  type: 'addAnnotation',
+                  projectId: activeProjectDefinition.id,
+                })
           }
           onMoveAnnotation={(annotationId, x, y) =>
-            dispatch({
-              type: 'moveAnnotation',
-              projectId: activeProjectDefinition.id,
-              annotationId,
-              x,
-              y,
-            })
+            state.compositeEditor
+              ? undefined
+              : dispatch({
+                  type: 'moveAnnotation',
+                  projectId: activeProjectDefinition.id,
+                  annotationId,
+                  x,
+                  y,
+                })
           }
           onUpdateAnnotationText={(annotationId, text) =>
-            dispatch({
-              type: 'updateAnnotationText',
-              projectId: activeProjectDefinition.id,
-              annotationId,
-              text,
-            })
+            state.compositeEditor
+              ? undefined
+              : dispatch({
+                  type: 'updateAnnotationText',
+                  projectId: activeProjectDefinition.id,
+                  annotationId,
+                  text,
+                })
           }
           onRemoveAnnotation={(annotationId) =>
-            dispatch({
-              type: 'removeAnnotation',
-              projectId: activeProjectDefinition.id,
-              annotationId,
-            })
+            state.compositeEditor
+              ? undefined
+              : dispatch({
+                  type: 'removeAnnotation',
+                  projectId: activeProjectDefinition.id,
+                  annotationId,
+                })
           }
-          onSelectModule={(moduleId) =>
+          onSelectModule={(moduleId, additive) =>
             dispatch({
               type: 'selectModule',
               projectId: activeProjectDefinition.id,
               moduleId,
+              additive,
             })
           }
+          onRequestCreateComposite={() => {
+            setCompositeName('');
+            setCompositeId('');
+            setCompositeDialogError(null);
+            setReplaceSelectionAfterCreate(!state.compositeEditor);
+            setIsCompositeDialogOpen(true);
+          }}
           onAddConnection={(fromModuleId, fromPort, toModuleId, toPort) =>
             dispatch({
               type: 'addConnection',
@@ -278,35 +391,122 @@ function App() {
               project: activeProjectState,
               ui: {
                 layout: activeLayout,
-                annotations: state.annotationsByProject[activeProjectDefinition.id] ?? [],
+                annotations: state.compositeEditor
+                  ? []
+                  : state.annotationsByProject[activeProjectDefinition.id] ?? [],
               },
             });
           }}
           onImportDocument={async (file) => {
             const rawValue = await file.text();
-            const document = parseWorkbenchDocument(rawValue);
-            if (!document) {
-              setImportError('The selected file is not a valid MCW workbench document.');
+            const workbenchDocument = parseWorkbenchDocument(rawValue);
+            if (workbenchDocument) {
+              dispatch({
+                type: 'loadDocument',
+                projectId: activeProjectDefinition.id,
+                document: workbenchDocument,
+              });
+              setImportError(null);
               return;
             }
 
-            dispatch({
-              type: 'loadDocument',
-              projectId: activeProjectDefinition.id,
-              document,
-            });
-            setImportError(null);
+            const libraryDocument = parseCompositeLibraryDocument(rawValue);
+            if (libraryDocument) {
+              dispatch({
+                type: 'loadCompositeLibrary',
+                document: libraryDocument,
+              });
+              setImportError(null);
+              return;
+            }
+
+            setImportError('The selected file is not a valid MCW workbench or composite library document.');
           }}
           onSwitchProject={(projectId) =>
-            dispatch({
-              type: 'switchProject',
-              projectId,
-            })
+            state.compositeEditor
+              ? undefined
+              : dispatch({
+                  type: 'switchProject',
+                  projectId,
+                })
           }
-          projects={demoProjects}
+          projects={state.compositeEditor ? [activeProjectDefinition] : demoProjects}
+          isCompositeEditor={Boolean(state.compositeEditor)}
         />
-
         {importError ? <p className="import-error-banner">{importError}</p> : null}
+        {state.compositeEditor && activeCompositeEntry ? (
+          <div className="composite-editor-toolbar">
+            <div>
+              <span className="meta-label">Editing Composite</span>
+              <strong>{activeCompositeEntry.name}</strong>
+              <p className="composite-editor-subtitle">{activeCompositeEntry.id}</p>
+              {state.compositeEditor.saveError ? (
+                <p className="field-error">{state.compositeEditor.saveError}</p>
+              ) : null}
+            </div>
+            <div className="composite-editor-actions">
+              <button
+                type="button"
+                className="secondary-dialog-button"
+                onClick={() => {
+                  if (!state.compositeEditor) {
+                    return;
+                  }
+
+                  const hasUnsavedChanges =
+                    JSON.stringify(state.compositeEditor.project) !==
+                      JSON.stringify(state.compositeEditor.originalProject) ||
+                    JSON.stringify(state.compositeEditor.layout) !==
+                      JSON.stringify(state.compositeEditor.originalLayout);
+
+                  if (hasUnsavedChanges) {
+                    setIsCloseConfirmOpen(true);
+                    return;
+                  }
+
+                  dispatch({ type: 'closeCompositeEditor' });
+                }}
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                className="primary-dialog-button"
+                onClick={() => {
+                  if (!activeCompositeEntry || !state.compositeEditor) {
+                    return;
+                  }
+
+                  const nextEntry: CompositeLibraryEntry = {
+                    ...activeCompositeEntry,
+                    definition: {
+                      ...activeCompositeEntry.definition,
+                      project: cloneProject(state.compositeEditor.project),
+                      layout: { ...state.compositeEditor.layout },
+                    },
+                  };
+                  const validation = validateCompositeDef(nextEntry.definition, effectiveRegistry);
+                  if (!validation.ok) {
+                    dispatch({
+                      type: 'setCompositeEditorSaveError',
+                      message: validation.issues[0]?.message ?? 'Composite is invalid.',
+                    });
+                    return;
+                  }
+
+                  dispatch({
+                    type: 'updateCompositeInLibrary',
+                    entry: nextEntry,
+                  });
+                  setIsCloseConfirmOpen(false);
+                  dispatch({ type: 'closeCompositeEditor' });
+                }}
+              >
+                Save Composite
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         {state.showInspector ? (
           <ParameterInspector
@@ -326,27 +526,245 @@ function App() {
                 rawValue,
               })
             }
-          onParamChange={(moduleId, key, value) =>
-            dispatch({
-              type: 'updateParam',
-              projectId: activeProjectDefinition.id,
-              moduleId,
-              key,
-              value,
-            })
-          }
-          onDeleteModule={(moduleId) =>
-            dispatch({
-              type: 'removeModule',
-              projectId: activeProjectDefinition.id,
-              moduleId,
-            })
-          }
-        />
-      ) : null}
+            onParamChange={(moduleId, key, value) =>
+              dispatch({
+                type: 'updateParam',
+                projectId: activeProjectDefinition.id,
+                moduleId,
+                key,
+                value,
+              })
+            }
+            onDeleteModule={(moduleId) =>
+              state.compositeEditor && activeCompositeEntry && isCompositeBoundaryModule(activeCompositeEntry, moduleId)
+                ? dispatch({
+                    type: 'setCompositeEditorSaveError',
+                    message:
+                      'This module is bound to an exposed composite port. Boundary editing will come in a later slice.',
+                  })
+                : dispatch({
+                    type: 'removeModule',
+                    projectId: activeProjectDefinition.id,
+                    moduleId,
+                  })
+            }
+          />
+        ) : null}
       </section>
+
+      {isCompositeDialogOpen ? (
+        <div
+          className="dialog-backdrop"
+          onClick={() => {
+            setIsCompositeDialogOpen(false);
+            setCompositeDialogError(null);
+          }}
+        >
+          <div
+            className="dialog-panel"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="panel-label">Composite Authoring</p>
+            <h2>Create Reusable Composite</h2>
+            <p className="dialog-copy">
+              Capture the current selection as a reusable composite module. The
+              selection stays in the workbench; this first version just adds the
+              new composite to the library.
+            </p>
+
+            <p className="dialog-selection-summary">
+              Selected modules: <strong>{effectiveSelectedModuleIds.length}</strong>
+            </p>
+
+            <label className="param-field">
+              <span>Display Name</span>
+              <input
+                type="text"
+                value={compositeName}
+                onChange={(event) => {
+                  const nextName = event.target.value;
+                  setCompositeName(nextName);
+                  if (!compositeId) {
+                    setCompositeId(createCompositeIdCandidate(nextName));
+                  }
+                }}
+                placeholder="Round Trip Bridge"
+              />
+            </label>
+
+            <label className="param-field">
+              <span>Stable Id</span>
+              <input
+                type="text"
+                value={compositeId}
+                onChange={(event) => setCompositeId(event.target.value)}
+                placeholder="RoundTripBridge"
+              />
+            </label>
+
+            <label className="checkbox-field">
+              <input
+                type="checkbox"
+                checked={replaceSelectionAfterCreate}
+                disabled={Boolean(state.compositeEditor)}
+                onChange={(event) => setReplaceSelectionAfterCreate(event.target.checked)}
+              />
+              <span>
+                Replace the current selection with the new composite
+                {state.compositeEditor
+                  ? ' (disabled while editing a composite)'
+                  : ''}
+              </span>
+            </label>
+
+            {compositeDialogError ? (
+              <p className="field-error">{compositeDialogError}</p>
+            ) : null}
+
+            <div className="dialog-actions">
+              <button
+                type="button"
+                className="secondary-dialog-button"
+                onClick={() => {
+                  setIsCompositeDialogOpen(false);
+                  setCompositeDialogError(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="primary-dialog-button"
+                onClick={() => {
+                  const result = createCompositeFromSelection({
+                    project: activeProjectState,
+                    registry: effectiveRegistry,
+                    name: compositeName,
+                    id: compositeId,
+                    selectedModuleIds: effectiveSelectedModuleIds,
+                  });
+
+                  if (!result.ok || !result.entry) {
+                    setCompositeDialogError(result.error ?? 'Unable to create composite.');
+                    return;
+                  }
+
+                  dispatch({
+                    type: 'addCompositeToLibrary',
+                    entry: result.entry,
+                  });
+
+                  if (replaceSelectionAfterCreate && !state.compositeEditor) {
+                    const replacement = replaceSelectionWithComposite({
+                      project: activeProjectState,
+                      layout: activeLayout,
+                      entry: result.entry,
+                      selectedModuleIds: effectiveSelectedModuleIds,
+                    });
+
+                    if (!replacement.ok || !replacement.project || !replacement.layout) {
+                      setCompositeDialogError(
+                        replacement.error ?? 'Composite was created, but replacement failed.',
+                      );
+                      return;
+                    }
+
+                    dispatch({
+                      type: 'loadDocument',
+                      projectId: activeProjectDefinition.id,
+                      document: {
+                        version: 1,
+                        project: replacement.project,
+                        ui: {
+                          layout: replacement.layout,
+                          annotations: state.annotationsByProject[activeProjectDefinition.id] ?? [],
+                        },
+                      },
+                    });
+                  }
+
+                  setIsCompositeDialogOpen(false);
+                  setCompositeDialogError(null);
+                }}
+              >
+                Create Composite
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isCloseConfirmOpen ? (
+        <div
+          className="dialog-backdrop"
+          onClick={() => setIsCloseConfirmOpen(false)}
+        >
+          <div
+            className="dialog-panel"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="panel-label">Unsaved Changes</p>
+            <h2>Discard Composite Edits?</h2>
+            <p className="dialog-copy">
+              You have unsaved changes inside this composite. Closing now will
+              discard those edits.
+            </p>
+            <div className="dialog-actions">
+              <button
+                type="button"
+                className="secondary-dialog-button"
+                onClick={() => setIsCloseConfirmOpen(false)}
+              >
+                Keep Editing
+              </button>
+              <button
+                type="button"
+                className="primary-dialog-button"
+                onClick={() => {
+                  setIsCloseConfirmOpen(false);
+                  dispatch({ type: 'closeCompositeEditor' });
+                }}
+              >
+                Discard Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
 
 export default App;
+
+function createCompositeIdCandidate(name: string) {
+  const stripped = name.replace(/[^A-Za-z0-9]+/g, ' ').trim();
+  if (!stripped) {
+    return '';
+  }
+
+  const words = stripped.split(/\s+/);
+  return words
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join('');
+}
+
+function cloneProject(project: Project): Project {
+  return {
+    modules: project.modules.map((moduleInstance) => ({
+      ...moduleInstance,
+      params: { ...moduleInstance.params },
+    })),
+    connections: project.connections.map((connection) => ({
+      from: { ...connection.from },
+      to: { ...connection.to },
+    })),
+  };
+}
+
+function isCompositeBoundaryModule(entry: CompositeLibraryEntry, moduleId: string) {
+  return (
+    entry.definition.inputBindings.some((binding) => binding.internalModuleId === moduleId) ||
+    entry.definition.outputBindings.some((binding) => binding.internalModuleId === moduleId)
+  );
+}

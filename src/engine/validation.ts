@@ -1,5 +1,6 @@
 import {
-  type ModuleDef,
+  type ConnectionEndpoint,
+  type ModuleDefinition,
   type ModuleInstance,
   type ModuleParams,
   type ModuleRegistry,
@@ -8,8 +9,9 @@ import {
   type ValidationIssue,
   type ValidationResult,
 } from './types';
+import type { CompositeDef, CompositePortBinding } from './composites';
 
-function findPort(def: ModuleDef, portName: string, direction: 'input' | 'output') {
+function findPort(def: ModuleDefinition, portName: string, direction: 'input' | 'output') {
   const ports = direction === 'input' ? def.inputs : def.outputs;
   return ports.find((port) => port.name === portName);
 }
@@ -17,7 +19,7 @@ function findPort(def: ModuleDef, portName: string, direction: 'input' | 'output
 function buildModuleMaps(project: Project, registry: ModuleRegistry) {
   const issues: ValidationIssue[] = [];
   const instancesById = new Map<string, ModuleInstance>();
-  const defsByInstanceId = new Map<string, ModuleDef>();
+  const defsByInstanceId = new Map<string, ModuleDefinition>();
 
   for (const moduleInstance of project.modules) {
     if (instancesById.has(moduleInstance.id)) {
@@ -81,7 +83,7 @@ function validateParamValue(field: ParamFieldDef, value: unknown): ValidationIss
 
 function validateParams(
   moduleInstance: ModuleInstance,
-  def: ModuleDef,
+  def: ModuleDefinition,
   issues: ValidationIssue[],
 ) {
   const schemaKeys = new Set(Object.keys(def.paramSchema));
@@ -256,4 +258,134 @@ export function validateProject(project: Project, registry: ModuleRegistry): Val
     ok: issues.length === 0,
     issues,
   };
+}
+
+export function validateCompositeDef(
+  composite: CompositeDef,
+  registry: ModuleRegistry,
+): ValidationResult {
+  const issues: ValidationIssue[] = [];
+  const projectValidation = validateProject(composite.project, registry);
+  issues.push(...projectValidation.issues);
+
+  validateExternalPorts(composite, issues);
+  validateCompositeBindings(
+    composite,
+    composite.inputBindings,
+    'input',
+    registry,
+    issues,
+  );
+  validateCompositeBindings(
+    composite,
+    composite.outputBindings,
+    'output',
+    registry,
+    issues,
+  );
+
+  return {
+    ok: issues.length === 0,
+    issues,
+  };
+}
+
+function validateExternalPorts(
+  composite: CompositeDef,
+  issues: ValidationIssue[],
+) {
+  const seen = new Set<string>();
+
+  for (const port of [...composite.inputs, ...composite.outputs]) {
+    if (seen.has(port.name)) {
+      issues.push({
+        code: 'duplicate-external-port',
+        message: `Composite "${composite.id}" exposes duplicate external port "${port.name}".`,
+      });
+      continue;
+    }
+
+    seen.add(port.name);
+  }
+}
+
+function validateCompositeBindings(
+  composite: CompositeDef,
+  bindings: CompositePortBinding[],
+  direction: 'input' | 'output',
+  registry: ModuleRegistry,
+  issues: ValidationIssue[],
+) {
+  const externalPorts = direction === 'input' ? composite.inputs : composite.outputs;
+  const usedExternalPorts = new Set<string>();
+
+  for (const binding of bindings) {
+    const externalPort = externalPorts.find((port) => port.name === binding.externalPort);
+    if (!externalPort) {
+      issues.push({
+        code: 'invalid-composite-binding',
+        message: `Composite "${composite.id}" binding references unknown external ${direction} port "${binding.externalPort}".`,
+      });
+      continue;
+    }
+
+    if (usedExternalPorts.has(binding.externalPort)) {
+      issues.push({
+        code: 'invalid-composite-binding',
+        message: `Composite "${composite.id}" binds external ${direction} port "${binding.externalPort}" more than once.`,
+      });
+      continue;
+    }
+
+    usedExternalPorts.add(binding.externalPort);
+
+    const endpoint: ConnectionEndpoint =
+      direction === 'input'
+        ? { moduleId: binding.internalModuleId, port: binding.internalPort }
+        : { moduleId: binding.internalModuleId, port: binding.internalPort };
+    const internalPort = findInternalBoundPort(
+      composite.project,
+      endpoint,
+      direction,
+      registry,
+    );
+
+    if (!internalPort) {
+      issues.push({
+        code: 'invalid-composite-binding',
+        message: `Composite "${composite.id}" binding references unknown internal ${direction} port "${binding.internalModuleId}.${binding.internalPort}".`,
+        moduleId: binding.internalModuleId,
+      });
+      continue;
+    }
+
+    if (internalPort.type !== externalPort.type) {
+      issues.push({
+        code: 'signal-type-mismatch',
+        message: `Composite "${composite.id}" has mismatched types between external port "${binding.externalPort}" and internal port "${binding.internalModuleId}.${binding.internalPort}".`,
+        moduleId: binding.internalModuleId,
+      });
+    }
+  }
+}
+
+function findInternalBoundPort(
+  project: Project,
+  endpoint: ConnectionEndpoint,
+  direction: 'input' | 'output',
+  registry: ModuleRegistry,
+) {
+  const moduleInstance = project.modules.find(
+    (candidate) => candidate.id === endpoint.moduleId,
+  );
+  if (!moduleInstance) {
+    return null;
+  }
+
+  const def = registry[moduleInstance.defId];
+  if (!def) {
+    return null;
+  }
+
+  return findPort(def, endpoint.port, direction);
 }

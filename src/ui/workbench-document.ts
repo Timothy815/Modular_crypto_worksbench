@@ -1,4 +1,5 @@
 import type { Project } from '../engine/types';
+import type { CompositeLibraryEntry } from '../engine/composites';
 
 export interface WorkbenchPosition {
   x: number;
@@ -23,3 +24,16 @@ export interface WorkbenchDocument {
   ui: WorkbenchUiMetadata;
 }
 
+export interface CompositeLibraryDocument {
+  version: 1;
+  entries: CompositeLibraryEntry[];
+}
+
+export interface PersistedWorkspaceDocument {
+  version: 1;
+  activeProjectId: string;
+  showPalette: boolean;
+  showInspector: boolean;
+  documentsByProjectId: Record<string, WorkbenchDocument>;
+  compositeLibrary: CompositeLibraryDocument;
+}

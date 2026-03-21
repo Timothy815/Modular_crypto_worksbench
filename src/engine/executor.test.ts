@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import type { CompositeDef } from './composites';
 import { executeProject } from './executor';
 import type { ModuleRegistry, Project } from './types';
 
@@ -45,6 +46,31 @@ const registry: ModuleRegistry = {
     paramSchema: {},
     evaluate: () => ({}),
   },
+};
+
+const symbolEchoComposite: CompositeDef = {
+  id: 'SymbolEchoComposite',
+  name: 'Symbol Echo Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [{ name: 'in', type: 'symbol' }],
+  outputs: [{ name: 'out', type: 'symbol' }],
+  paramSchema: {},
+  project: {
+    modules: [{ id: 'echo-1', defId: 'SymbolEcho', params: {} }],
+    connections: [],
+  },
+  inputBindings: [
+    { externalPort: 'in', internalModuleId: 'echo-1', internalPort: 'in' },
+  ],
+  outputBindings: [
+    { externalPort: 'out', internalModuleId: 'echo-1', internalPort: 'out' },
+  ],
+};
+
+const registryWithComposite: ModuleRegistry = {
+  ...registry,
+  [symbolEchoComposite.id]: symbolEchoComposite,
 };
 
 describe('executeProject', () => {
@@ -114,5 +140,33 @@ describe('executeProject', () => {
     expect(sourceEvaluations).toBe(1);
     expect(result.outputsByModuleId.left.out).toEqual({ type: 'symbol', value: 'M' });
     expect(result.outputsByModuleId.right.out).toEqual({ type: 'symbol', value: 'M' });
+  });
+
+  it('executes a composite module instance like a primitive', () => {
+    const project: Project = {
+      modules: [
+        { id: 'source', defId: 'TextSource', params: { value: 'Z' } },
+        { id: 'composite', defId: 'SymbolEchoComposite', params: {} },
+        { id: 'sink', defId: 'SymbolSink', params: {} },
+      ],
+      connections: [
+        {
+          from: { moduleId: 'source', port: 'out' },
+          to: { moduleId: 'composite', port: 'in' },
+        },
+        {
+          from: { moduleId: 'composite', port: 'out' },
+          to: { moduleId: 'sink', port: 'in' },
+        },
+      ],
+    };
+
+    const result = executeProject(project, registryWithComposite);
+
+    expect(result.outputsByModuleId.composite.out).toEqual({
+      type: 'symbol',
+      value: 'Z',
+    });
+    expect(result.order).toEqual(['source', 'composite', 'sink']);
   });
 });
