@@ -13,8 +13,8 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 The repository now has:
 - a stable engine milestone
-- a released minimal editor UI on `main` at `v0.4.0`
-- an active composite-module groundwork branch at `feature/composite-groundwork`
+- released UI/editor milestones on `main` through `v0.6.0`
+- an active break-workflows branch at `feature/break-workflows`
 
 Implemented and locked so far:
 - engine core types
@@ -30,18 +30,21 @@ Implemented and locked so far:
 - workbench persistence and JSON import/export
 - sticky-note annotations
 - dark mode token groundwork
+- reusable composite workflows
+- analysis visibility and step-through execution
 - multi-agent coordination and implementation contract
 
 Active next steps:
-- minimal composite UI proof
-- composite palette exposure and placement
-- end-to-end workbench proof for one reusable composite
+- comparison-first break workflows
+- baseline vs variant execution comparison
+- first-divergence analysis
 
 ## Key Documents
 
 - `PROJECT.md`: product vision and full specification
 - `ENGINE-V1-CONTRACT.md`: locked implementation decisions for the current engine slice
 - `COMPOSITE-V1-CONTRACT.md`: locked direction for the composite groundwork branch
+- `BREAK-V1-CONTRACT.md`: locked direction for the first break-workflows branch
 - `AI-COORDINATION.md`: multi-agent workflow rules
 - `AI-WORKSTREAMS.md`: current ownership boundaries
 - `IMPLEMENTATION-STATUS.md`: live execution status and handoff notes
@@ -69,12 +72,13 @@ Published site:
 
 ## Short-Term Goal
 
-The current editor milestone already supports adding, deleting, moving, and connecting modules.
+The current shipped workbench already supports adding, deleting, moving, connecting, composing,
+and interrogating modules.
 
 The next meaningful product milestones are:
 
 ```text
-save/load projects -> reusable composition -> deeper execution visibility
+build -> analyze -> break
 ```
 
 The canonical hybrid reference pipeline remains:

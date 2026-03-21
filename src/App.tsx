@@ -13,6 +13,7 @@ import { ParameterInspector } from './ui/components/parameter-inspector';
 import { PrimitivePalette } from './ui/components/primitive-palette';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
 import { demoProjects, runDemoProject } from './ui/demo-projects';
+import { compareExecutionResults } from './ui/execution-compare';
 import {
   downloadDocument,
   downloadCompositeLibraryDocument,
@@ -31,6 +32,9 @@ import {
 } from './ui/store';
 
 function App() {
+  const [comparisonBaselineByProject, setComparisonBaselineByProject] = useState<
+    Record<string, { project: Project; capturedAt: string }>
+  >({});
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window === 'undefined') {
       return 'light';
@@ -179,6 +183,25 @@ function App() {
   const steppedModuleId =
     effectiveStepIndex !== null && execution
       ? execution.trace[effectiveStepIndex]?.moduleId ?? null
+      : null;
+  const comparisonBaseline = comparisonBaselineByProject[activeProjectDefinition.id] ?? null;
+  const baselineValidation = comparisonBaseline
+    ? validateProject(comparisonBaseline.project, effectiveRegistry)
+    : null;
+  let baselineExecution: ExecutionResult | null = null;
+  let baselineExecutionError: string | null = null;
+  if (comparisonBaseline && baselineValidation?.ok) {
+    try {
+      baselineExecution = runDemoProject(comparisonBaseline.project, effectiveRegistry);
+    } catch (error) {
+      baselineExecutionError = error instanceof Error ? error.message : 'Baseline execution failed.';
+    }
+  } else if (comparisonBaseline && baselineValidation && !baselineValidation.ok) {
+    baselineExecutionError = 'Baseline is no longer valid against the current registry.';
+  }
+  const executionComparison =
+    baselineExecution && execution
+      ? compareExecutionResults(baselineExecution, execution)
       : null;
 
   useEffect(() => {
@@ -583,6 +606,126 @@ function App() {
           />
         ) : null}
       </section>
+
+      {!state.compositeEditor ? (
+        <section className="panel comparison-panel">
+          <div className="panel-head">
+            <p className="panel-label">Break Workflow</p>
+            <h2>Baseline vs Variant</h2>
+          </div>
+          <div className="comparison-actions">
+            <button
+              type="button"
+              className="mini-action-button"
+              onClick={() =>
+                setComparisonBaselineByProject((current) => ({
+                  ...current,
+                  [activeProjectDefinition.id]: {
+                    project: cloneProject(activeProjectState),
+                    capturedAt: new Date().toISOString(),
+                  },
+                }))
+              }
+            >
+              {comparisonBaseline ? 'Recapture Baseline' : 'Capture Baseline'}
+            </button>
+            {comparisonBaseline ? (
+              <button
+                type="button"
+                className="mini-action-button"
+                onClick={() =>
+                  setComparisonBaselineByProject((current) => {
+                    const next = { ...current };
+                    delete next[activeProjectDefinition.id];
+                    return next;
+                  })
+                }
+              >
+                Clear Baseline
+              </button>
+            ) : null}
+          </div>
+
+          {comparisonBaseline ? (
+            <div className="comparison-grid">
+              <div className="comparison-card">
+                <span className="meta-label">Baseline</span>
+                <strong>{activeProjectDefinition.name}</strong>
+                <p className="comparison-copy">
+                  Captured snapshot from the active workbench.
+                </p>
+                <p className="comparison-copy mono-line">
+                  {new Date(comparisonBaseline.capturedAt).toLocaleString()}
+                </p>
+                <p className="comparison-copy">
+                  Output:{' '}
+                  <strong>
+                    {baselineExecution
+                      ? executionComparison?.baselineOutput.formatted ?? 'n/a'
+                      : baselineExecutionError ?? 'blocked'}
+                  </strong>
+                </p>
+              </div>
+              <div className="comparison-card">
+                <span className="meta-label">Variant</span>
+                <strong>Live Workbench</strong>
+                <p className="comparison-copy">
+                  Current editable graph and parameters.
+                </p>
+                <p className="comparison-copy">
+                  Output:{' '}
+                  <strong>
+                    {execution
+                      ? executionComparison?.variantOutput.formatted ?? 'n/a'
+                      : executionError ?? 'blocked'}
+                  </strong>
+                </p>
+              </div>
+              <div className="comparison-card comparison-card-wide">
+                <span className="meta-label">Comparison Summary</span>
+                {executionComparison ? (
+                  <>
+                    <p className="comparison-copy">
+                      Final outputs{' '}
+                      <strong>
+                        {executionComparison.outputsMatch ? 'match' : 'diverge'}
+                      </strong>
+                      .
+                    </p>
+                    {executionComparison.firstDivergence ? (
+                      <p className="comparison-copy">
+                        First divergence at step{' '}
+                        <strong>{executionComparison.firstDivergence.stepIndex + 1}</strong>:
+                        {' '}
+                        <strong>
+                          {executionComparison.firstDivergence.variant?.moduleId ??
+                            executionComparison.firstDivergence.baseline?.moduleId ??
+                            'unknown'}
+                        </strong>
+                        {' '}({executionComparison.firstDivergence.reason}).
+                      </p>
+                    ) : (
+                      <p className="comparison-copy">
+                        No trace divergence detected across the current execution.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="comparison-copy">
+                    Capture a baseline, then mutate the live workbench to compare outputs and the
+                    first divergent trace step.
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="comparison-copy">
+              Capture the current workbench as a baseline, then mutate the live graph to compare
+              outputs and first-divergence behavior.
+            </p>
+          )}
+        </section>
+      ) : null}
 
       {isCompositeDialogOpen ? (
         <div

@@ -308,6 +308,37 @@
   margin-bottom: 14px;
 }
 
+.comparison-panel {
+  margin-top: 18px;
+}
+
+.comparison-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.comparison-card {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--surface-soft);
+}
+
+.comparison-card-wide {
+  grid-column: 1 / -1;
+}
+
+.comparison-copy {
+  margin: 8px 0 0;
+}
+
 .switch-chip {
   border: 1px solid var(--line);
   border-radius: 999px;
