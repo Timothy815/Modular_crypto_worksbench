@@ -426,6 +426,23 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
     }
     case 'addConnection': {
       if (state.compositeEditor) {
+        const activeCompositeEntry = state.compositeLibrary.find(
+          (entry) => entry.id === state.compositeEditor?.entryId,
+        );
+        if (
+          activeCompositeEntry &&
+          connectionTouchesProtectedBoundaryPort(activeCompositeEntry, action)
+        ) {
+          return {
+            ...state,
+            compositeEditor: {
+              ...state.compositeEditor,
+              saveError:
+                'This connection touches an exposed composite boundary port. Boundary editing will come in a later slice.',
+            },
+          };
+        }
+
         return {
           ...state,
           compositeEditor: addConnectionToCompositeEditor(state.compositeEditor, action),
@@ -467,6 +484,27 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
     }
     case 'removeConnection': {
       if (state.compositeEditor) {
+        const activeCompositeEntry = state.compositeLibrary.find(
+          (entry) => entry.id === state.compositeEditor?.entryId,
+        );
+        if (
+          activeCompositeEntry &&
+          connectionIndexTouchesProtectedBoundaryPort(
+            activeCompositeEntry,
+            state.compositeEditor.project,
+            action.connectionIndex,
+          )
+        ) {
+          return {
+            ...state,
+            compositeEditor: {
+              ...state.compositeEditor,
+              saveError:
+                'This connection is part of the exposed composite boundary. Boundary editing will come in a later slice.',
+            },
+          };
+        }
+
         return {
           ...state,
           compositeEditor: removeConnectionFromCompositeEditor(
@@ -986,4 +1024,46 @@ function omitDraftKey(drafts: Record<string, string>, key: string) {
   const nextDrafts = { ...drafts };
   delete nextDrafts[key];
   return nextDrafts;
+}
+
+function connectionTouchesProtectedBoundaryPort(
+  entry: CompositeLibraryEntry,
+  action: Extract<UiAction, { type: 'addConnection' }>,
+) {
+  return (
+    entry.definition.inputBindings.some(
+      (binding) =>
+        binding.internalModuleId === action.toModuleId &&
+        binding.internalPort === action.toPort,
+    ) ||
+    entry.definition.outputBindings.some(
+      (binding) =>
+        binding.internalModuleId === action.fromModuleId &&
+        binding.internalPort === action.fromPort,
+    )
+  );
+}
+
+function connectionIndexTouchesProtectedBoundaryPort(
+  entry: CompositeLibraryEntry,
+  project: Project,
+  connectionIndex: number,
+) {
+  const connection = project.connections[connectionIndex];
+  if (!connection) {
+    return false;
+  }
+
+  return (
+    entry.definition.inputBindings.some(
+      (binding) =>
+        binding.internalModuleId === connection.to.moduleId &&
+        binding.internalPort === connection.to.port,
+    ) ||
+    entry.definition.outputBindings.some(
+      (binding) =>
+        binding.internalModuleId === connection.from.moduleId &&
+        binding.internalPort === connection.from.port,
+    )
+  );
 }
