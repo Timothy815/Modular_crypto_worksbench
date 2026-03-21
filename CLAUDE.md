@@ -2,6 +2,8 @@
 
 Read PROJECT.md for full project specification.
 Read ENGINE-V1-CONTRACT.md for locked implementation decisions.
+Read COMPOSITE-V1-CONTRACT.md before starting work on `feature/composite-groundwork`.
+Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
 
 ## Project: Modular Cryptography Workbench
 
@@ -69,7 +71,7 @@ type ModuleDef = { id, name, inputs, outputs, paramSchema, evaluate };
 type ModuleInstance = { id, defId, params };
 type Connection = { from: { moduleId, port }, to: { moduleId, port } };
 type Project = { modules: ModuleInstance[], connections: Connection[] };
-type ModuleRegistry = Record<string, ModuleDef>;
+type ModuleRegistry = Record<string, ModuleDefinition>;
 ```
 
 ## Tech Stack
@@ -110,6 +112,29 @@ src/utils/     — Shared helpers
 3. **Usability** — richer connection UX, save/load, inspector polish, theme work
 4. **Composition** — composite modules, local library, versioning
 5. **Expansion** — more modules, step-through, signal tracing, templates
+
+## Current Composite Resume Point
+
+- Active branch: `feature/composite-groundwork`
+- Latest safe checkpoint: `7d8bf3c`
+- Checkpoint message: `Wire composite library into app registry flow`
+
+What is already done on this branch:
+- composite contract in `COMPOSITE-V1-CONTRACT.md`
+- engine-facing composite types
+- composite-definition validation
+- composite library persistence shape
+- executable composite support in the engine
+- app state for composite library
+- effective registry synthesis (`V1_REGISTRY + composite library`)
+- app execution wired to that effective registry
+
+Immediate next task:
+- implement the first minimal composite UI proof
+- expose composite entries in the palette
+- allow composite definitions to be placed in the workbench
+- make the inspector render composite definitions safely
+- prove one composite executes end-to-end in the live workbench
 
 ## When Working on This Project
 

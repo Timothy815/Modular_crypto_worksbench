@@ -72,26 +72,27 @@ The following decisions are no longer just prose; they are reflected in the scaf
 ### Claude
 
 Safe to begin:
-- implement composite-definition validation against `COMPOSITE-V1-CONTRACT.md`
-- extend persistence to support a composite definition library
-- add one engine-level proof that a composite can be represented cleanly
-- keep the first UI proof narrow
+- use the latest safe checkpoint on `feature/composite-groundwork`: `7d8bf3c`
+- expose composite library entries in the palette
+- allow composite definitions to be placed in the workbench, not just primitives
+- make the inspector render composite definitions safely
+- keep the first composite UI proof narrow and end-to-end
 
 Should avoid for now:
-- changing `src/engine/types.ts`
-- changing executor semantics
+- reopening the engine execution model without a concrete blocker
+- starting subgraph-to-composite authoring UI yet
 - hiding domain boundaries for convenience
 
 ### Gemini
 
 Safe to begin:
-- review the composite contract against the existing engine model
-- identify risks in composite execution semantics before executor changes begin
-- critique persistence boundaries for reusable composite definitions
+- review the live composite app integration on `feature/composite-groundwork`
+- critique the first composite UI proof once placement is enabled
+- identify any risk in the registry synthesis path before authoring UI begins
 
 Best focus:
-- whether layout, annotations, and project data remain cleanly separated
-- whether persistence and import/export are sound enough for classroom use
+- whether reusable composite definitions remain cleanly separated from workbench UI metadata
+- whether persistence and import/export are sound enough for reusable classroom artifacts
 - whether the UI is staying aligned with the product-teaching goals
 
 ---
@@ -147,11 +148,21 @@ Active branch:
 
 Composite groundwork branch currently includes:
 - `COMPOSITE-V1-CONTRACT.md`
-- initial engine composite type surface in `src/engine/composites.ts`
-- no executor or registry semantics changed yet
+- engine composite type surface in `src/engine/composites.ts`
+- composite-definition validation
+- composite library persistence shape
+- executable composite support in the engine
+- composite library in app state
+- effective registry synthesis (`primitives + composites`)
+- app execution wired to the synthesized registry
+
+Latest safe checkpoint for resume:
+- branch: `feature/composite-groundwork`
+- commit: `7d8bf3c`
+- message: `Wire composite library into app registry flow`
 
 Next intended milestone:
-- composite-definition validation
-- composite persistence/library layer
-- engine-level proof of composite representation/execution path
-- minimal UI proof after engine semantics are stable
+- minimal composite UI proof
+- expose composite entries in the palette
+- allow placing a composite instance into a graph
+- prove it executes in the live workbench

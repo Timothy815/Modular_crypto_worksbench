@@ -33,10 +33,9 @@ Implemented and locked so far:
 - multi-agent coordination and implementation contract
 
 Active next steps:
-- composite definition model
-- composite persistence/library layer
-- composite validation and execution semantics
 - minimal composite UI proof
+- composite palette exposure and placement
+- end-to-end workbench proof for one reusable composite
 
 ## Key Documents
 
