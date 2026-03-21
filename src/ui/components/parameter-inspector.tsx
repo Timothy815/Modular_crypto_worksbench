@@ -1,4 +1,4 @@
-import type { ExecutionResult, ModuleDef, ModuleInstance } from '../../engine/types';
+import type { ExecutionResult, ModuleDefinition, ModuleInstance } from '../../engine/types';
 import { BitsEditor } from './editors/bits-editor';
 import { WiringEditor } from './editors/wiring-editor';
 import { formatParamValue, formatSignal, parseParamValue } from '../formatters';
@@ -6,7 +6,7 @@ import { formatParamValue, formatSignal, parseParamValue } from '../formatters';
 interface ParameterInspectorProps {
   execution: ExecutionResult | null;
   executionError: string | null;
-  moduleDef: ModuleDef | null;
+  moduleDef: ModuleDefinition | null;
   moduleInstance: ModuleInstance | null;
   getParamDraft: (moduleId: string, key: string) => string | undefined;
   onParamDraftChange: (moduleId: string, key: string, rawValue: string) => void;
@@ -46,6 +46,9 @@ export function ParameterInspector({
           <span className="meta-label">Selected Module</span>
           <strong className="selected-module-name">{moduleInstance.id}</strong>
           <p className="selected-module-type">{moduleDef.id}</p>
+          {'kind' in moduleDef && moduleDef.kind === 'composite' ? (
+            <p className="selected-module-kind">Composite definition</p>
+          ) : null}
           <button
             type="button"
             className="delete-module-button"

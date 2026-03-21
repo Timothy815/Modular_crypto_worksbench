@@ -423,7 +423,7 @@ export function WorkbenchPanel({
           {activeProjectState.modules.map((moduleInstance) => {
             const position = layout[moduleInstance.id] ?? { x: 24, y: 24 };
             const def = registry[moduleInstance.defId];
-            const category = getModuleCategory(moduleInstance.defId);
+            const category = def ? getModuleCategory(def) : getModuleCategory(moduleInstance.defId);
 
             return (
               <div

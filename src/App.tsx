@@ -2,7 +2,7 @@ import { useEffect, useReducer, useState } from 'react';
 
 import './App.css';
 import { V1_REGISTRY } from './engine/modules';
-import type { ExecutionResult, ModuleDef, ModuleDefinition } from './engine/types';
+import type { ExecutionResult } from './engine/types';
 import { ParameterInspector } from './ui/components/parameter-inspector';
 import { PrimitivePalette } from './ui/components/primitive-palette';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
@@ -46,12 +46,15 @@ function App() {
         return initialState;
       }
 
-      return {
-        ...initialState,
-        activeProjectId: persistedWorkspace.activeProjectId,
-        compositeLibrary: persistedWorkspace.compositeLibrary.entries,
-        showPalette: persistedWorkspace.showPalette,
-        showInspector: persistedWorkspace.showInspector,
+        return {
+          ...initialState,
+          activeProjectId: persistedWorkspace.activeProjectId,
+          compositeLibrary:
+            persistedWorkspace.compositeLibrary.entries.length > 0
+              ? persistedWorkspace.compositeLibrary.entries
+              : initialState.compositeLibrary,
+          showPalette: persistedWorkspace.showPalette,
+          showInspector: persistedWorkspace.showInspector,
         projectStates: Object.fromEntries(
           projects.map((project) => [
             project.id,
@@ -91,7 +94,7 @@ function App() {
       (moduleInstance) => moduleInstance.id === effectiveSelectedModuleId,
     ) ?? null;
   const selectedModuleDef = selectedModule
-    ? asPrimitiveModuleDef(effectiveRegistry[selectedModule.defId] ?? null)
+    ? (effectiveRegistry[selectedModule.defId] ?? null)
     : null;
 
   let execution: ExecutionResult | null = null;
@@ -191,7 +194,7 @@ function App() {
           <PrimitivePalette
             registry={effectiveRegistry}
             onAddModule={(defId) => {
-              const moduleDef = asPrimitiveModuleDef(effectiveRegistry[defId] ?? null);
+              const moduleDef = effectiveRegistry[defId] ?? null;
               if (!moduleDef) {
                 return;
               }
@@ -380,11 +383,3 @@ function App() {
 }
 
 export default App;
-
-function asPrimitiveModuleDef(definition: ModuleDefinition | null): ModuleDef | null {
-  if (!definition || !('evaluate' in definition)) {
-    return null;
-  }
-
-  return definition;
-}

@@ -184,6 +184,21 @@
   border-left: 4px solid var(--role-sink-accent);
 }
 
+.primitive-card-composite {
+  border-left: 4px dashed var(--role-composite-accent);
+}
+
+.module-kind-badge {
+  display: inline-flex;
+  margin-top: 8px;
+  border: 1px dashed var(--role-composite-strong);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--role-composite-ink);
+}
+
 .primitive-actions {
   display: flex;
   flex-direction: column;
@@ -418,6 +433,12 @@
   background: var(--role-sink-bg);
 }
 
+.graph-node-composite {
+  border-style: dashed;
+  border-color: var(--role-composite-soft);
+  background: var(--role-composite-bg);
+}
+
 .graph-node-selected {
   box-shadow: 0 12px 24px rgba(200, 85, 61, 0.12);
 }
@@ -436,6 +457,10 @@
 
 .graph-node-selected.graph-node-sink {
   border-color: var(--role-sink-strong);
+}
+
+.graph-node-selected.graph-node-composite {
+  border-color: var(--role-composite-strong);
 }
 
 .graph-node-type {
@@ -603,6 +628,14 @@
   margin-bottom: 14px;
   font-family: var(--mono);
   font-size: 0.88rem;
+}
+
+.selected-module-kind {
+  margin-top: -8px;
+  margin-bottom: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--role-composite-ink);
 }
 
 .param-list {

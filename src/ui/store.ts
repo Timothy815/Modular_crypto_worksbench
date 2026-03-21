@@ -1,6 +1,7 @@
 import type { CompositeLibraryEntry } from '../engine/composites';
-import type { ModuleDef, ModuleInstance, ModuleRegistry, Project } from '../engine/types';
+import type { ModuleDefinition, ModuleInstance, ModuleRegistry, Project } from '../engine/types';
 import type { DemoProject } from './demo-projects';
+import { STARTER_COMPOSITE_LIBRARY } from './starter-composites';
 import type {
   CompositeLibraryDocument,
   WorkbenchAnnotation,
@@ -27,7 +28,7 @@ export type UiAction =
   | { type: 'moveAnnotation'; projectId: string; annotationId: string; x: number; y: number }
   | { type: 'updateAnnotationText'; projectId: string; annotationId: string; text: string }
   | { type: 'removeAnnotation'; projectId: string; annotationId: string }
-  | { type: 'addModule'; projectId: string; moduleDef: ModuleDef }
+  | { type: 'addModule'; projectId: string; moduleDef: ModuleDefinition }
   | { type: 'removeModule'; projectId: string; moduleId: string }
   | {
       type: 'addConnection';
@@ -63,7 +64,7 @@ function getDraftKey(projectId: string, moduleId: string, key: string): string {
   return `${projectId}:${moduleId}:${key}`;
 }
 
-function buildDefaultParams(moduleDef: ModuleDef) {
+function buildDefaultParams(moduleDef: ModuleDefinition) {
   return Object.fromEntries(
     Object.values(moduleDef.paramSchema).map((field) => [field.key, field.defaultValue]),
   );
@@ -110,7 +111,15 @@ function updateModule(
 export function createInitialUiState(projects: DemoProject[]): UiState {
   return {
     activeProjectId: projects[0]?.id ?? '',
-    compositeLibrary: [],
+    compositeLibrary: STARTER_COMPOSITE_LIBRARY.map((entry) => ({
+      ...entry,
+      definition: {
+        ...entry.definition,
+        project: cloneProject(entry.definition.project),
+        inputBindings: entry.definition.inputBindings.map((binding) => ({ ...binding })),
+        outputBindings: entry.definition.outputBindings.map((binding) => ({ ...binding })),
+      },
+    })),
     projectStates: Object.fromEntries(
       projects.map((project) => [project.id, cloneProject(project.project)]),
     ),
