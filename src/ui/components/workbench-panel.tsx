@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
-import type { ExecutionResult, ModuleRegistry, Project } from '../../engine/types';
+import type {
+  ExecutionResult,
+  ModuleRegistry,
+  Project,
+  ValidationIssue,
+} from '../../engine/types';
 import { validateProject } from '../../engine/validation';
 import type { DemoProject } from '../demo-projects';
 import { getModuleCategory } from '../module-categories';
@@ -45,9 +50,12 @@ interface WorkbenchPanelProps {
   annotations: WorkbenchAnnotation[];
   execution: ExecutionResult | null;
   executionError: string | null;
+  validationIssues: ValidationIssue[];
   registry: ModuleRegistry;
   selectedModuleId: string | null;
   selectedModuleIds: string[];
+  hoveredTraceModuleId?: string | null;
+  steppedModuleId?: string | null;
   isCompositeEditor?: boolean;
   onMoveModule: (moduleId: string, x: number, y: number) => void;
   onAddAnnotation: () => void;
@@ -79,9 +87,12 @@ export function WorkbenchPanel({
   annotations,
   execution,
   executionError,
+  validationIssues,
   registry,
   selectedModuleId,
   selectedModuleIds,
+  hoveredTraceModuleId = null,
+  steppedModuleId = null,
   isCompositeEditor = false,
   onMoveModule,
   onAddAnnotation,
@@ -244,6 +255,24 @@ export function WorkbenchPanel({
 
     return nextStates;
   }, [activeProjectState, pendingConnection, registry]);
+
+  const moduleIssueCountById = useMemo(() => {
+    const counts: Record<string, number> = {};
+
+    for (const issue of validationIssues) {
+      if (issue.moduleId) {
+        counts[issue.moduleId] = (counts[issue.moduleId] ?? 0) + 1;
+      }
+      if (issue.connection) {
+        counts[issue.connection.from.moduleId] =
+          (counts[issue.connection.from.moduleId] ?? 0) + 1;
+        counts[issue.connection.to.moduleId] =
+          (counts[issue.connection.to.moduleId] ?? 0) + 1;
+      }
+    }
+
+    return counts;
+  }, [validationIssues]);
 
   function startConnectionFromOutput(
     moduleId: string,
@@ -428,7 +457,17 @@ export function WorkbenchPanel({
               return (
                 <g
                   key={`${connection.from.moduleId}:${connection.from.port}-${connection.to.moduleId}:${connection.to.port}`}
-                  className="connection-group"
+                  className={
+                    validationIssues.some(
+                      (issue) =>
+                        issue.connection?.from.moduleId === connection.from.moduleId &&
+                        issue.connection?.from.port === connection.from.port &&
+                        issue.connection?.to.moduleId === connection.to.moduleId &&
+                        issue.connection?.to.port === connection.to.port,
+                    )
+                      ? 'connection-group connection-group-invalid'
+                      : 'connection-group'
+                  }
                 >
                   <path
                     className="connection-hit-area"
@@ -464,7 +503,10 @@ export function WorkbenchPanel({
                 className={
                   `graph-node graph-node-${category}` +
                   (selectedModuleIds.includes(moduleInstance.id) ? ' graph-node-selected' : '') +
-                  (moduleInstance.id === selectedModuleId ? ' graph-node-primary-selected' : '')
+                  (moduleInstance.id === selectedModuleId ? ' graph-node-primary-selected' : '') +
+                  (moduleInstance.id === hoveredTraceModuleId ? ' graph-node-trace-hovered' : '') +
+                  (moduleInstance.id === steppedModuleId ? ' graph-node-stepped' : '') +
+                  ((moduleIssueCountById[moduleInstance.id] ?? 0) > 0 ? ' graph-node-invalid' : '')
                 }
                 style={{ left: `${position.x}px`, top: `${position.y}px` }}
               >
@@ -489,6 +531,11 @@ export function WorkbenchPanel({
                 >
                   <span className="graph-node-type">{moduleInstance.defId}</span>
                   <strong>{moduleInstance.id}</strong>
+                  {(moduleIssueCountById[moduleInstance.id] ?? 0) > 0 ? (
+                    <span className="graph-node-issue-badge">
+                      {moduleIssueCountById[moduleInstance.id]}
+                    </span>
+                  ) : null}
                   <div className="graph-node-ports">
                     <span>{def?.inputs.length ?? 0} in</span>
                     <span>{def?.outputs.length ?? 0} out</span>
@@ -597,8 +644,19 @@ export function WorkbenchPanel({
 
       {executionError ? (
         <div className="execution-error">
-          <span className="meta-label">Execution Error</span>
-          <strong>{executionError}</strong>
+          <span className="meta-label">
+            {validationIssues.length > 0 ? 'Validation Blocking Execution' : 'Execution Error'}
+          </span>
+          <strong>
+            {validationIssues.length > 0
+              ? validationIssues[0]?.message ?? executionError
+              : executionError}
+          </strong>
+          {validationIssues.length > 1 ? (
+            <p className="execution-error-detail">
+              {validationIssues.length - 1} more issue{validationIssues.length === 2 ? '' : 's'} listed in the inspector.
+            </p>
+          ) : null}
         </div>
       ) : null}
 
@@ -614,6 +672,10 @@ export function WorkbenchPanel({
         <div>
           <span className="meta-label">Execution Order</span>
           <strong>{execution ? execution.order.join(' -> ') : 'blocked'}</strong>
+        </div>
+        <div>
+          <span className="meta-label">Validation</span>
+          <strong>{validationIssues.length > 0 ? `${validationIssues.length} issues` : 'clean'}</strong>
         </div>
       </div>
     </section>

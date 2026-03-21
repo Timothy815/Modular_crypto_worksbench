@@ -427,6 +427,11 @@
   stroke-width: 3.5;
 }
 
+.connection-group-invalid path:not(.connection-hit-area) {
+  stroke: var(--danger-text);
+  stroke-width: 3.2;
+}
+
 .pending-connection {
   stroke: var(--danger-text);
   stroke-width: 2.5;
@@ -528,6 +533,18 @@
   transform: translateY(-1px);
 }
 
+.graph-node-trace-hovered {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px var(--link-primary-bg);
+}
+
+.graph-node-stepped {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 3px var(--link-primary-bg),
+    0 10px 28px color-mix(in srgb, var(--link-primary-bg) 28%, transparent);
+}
+
 .graph-node-selected.graph-node-source {
   border-color: var(--role-source-strong);
 }
@@ -546,6 +563,10 @@
 
 .graph-node-selected.graph-node-composite {
   border-color: var(--role-composite-strong);
+}
+
+.graph-node-invalid {
+  box-shadow: 0 0 0 2px var(--danger-text);
 }
 
 .graph-node-type {
@@ -569,9 +590,24 @@
 }
 
 .graph-node-body {
+  position: relative;
   padding: 14px 14px 12px;
   cursor: grab;
   user-select: none;
+}
+
+.graph-node-issue-badge {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  min-width: 1.6rem;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--danger-text);
+  color: white;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-align: center;
 }
 
 .graph-node-body:active {
@@ -661,7 +697,7 @@
 
 .graph-meta {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -682,6 +718,82 @@
   margin-bottom: 14px;
 }
 
+.trace-summary-subtitle {
+  margin: 6px 0 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.inspector-tab-row {
+  display: inline-flex;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.inspector-tab {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-button);
+  padding: 8px 14px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.inspector-tab.active {
+  background: var(--ink);
+  color: var(--link-primary-text);
+}
+
+.trace-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 12px;
+}
+
+.trace-mode-toggle {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.trace-mode-button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-button);
+  padding: 6px 12px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.trace-mode-button.active {
+  background: var(--ink);
+  color: var(--link-primary-text);
+}
+
+.trace-mode-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.stepper-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.stepper-actions {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .trace-head {
   display: flex;
   justify-content: space-between;
@@ -697,6 +809,16 @@
 
 .trace-card {
   padding: 14px 16px;
+}
+
+.trace-card-active {
+  border: 1px solid var(--line-strong);
+  background: var(--surface-strong);
+}
+
+.trace-card-stepped {
+  border: 1px solid var(--link-primary-bg);
+  background: color-mix(in srgb, var(--link-primary-bg) 14%, var(--surface-strong));
 }
 
 .inspector-section {
@@ -955,11 +1077,76 @@
   color: var(--danger-text);
 }
 
+.inspector-runtime-error {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface-soft);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+}
+
+.execution-error-detail {
+  margin: 8px 0 0;
+  font-size: 0.88rem;
+}
+
 .selected-trace {
   margin-top: 16px;
   padding: 14px 16px;
   border-radius: 18px;
   background: var(--surface-soft);
+}
+
+.selected-trace-order {
+  margin: 4px 0 10px;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+.analysis-section {
+  margin-top: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.issue-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.issue-card {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.issue-card-actionable {
+  cursor: pointer;
+}
+
+.issue-card strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.issue-card p {
+  margin: 0;
+}
+
+.issue-target-chip {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--danger-text);
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  font-weight: 700;
 }
 
 .selected-ports {

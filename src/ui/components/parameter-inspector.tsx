@@ -1,4 +1,13 @@
-import type { ExecutionResult, ModuleDefinition, ModuleInstance } from '../../engine/types';
+import { useState } from 'react';
+
+import type {
+  Connection,
+  ExecutionResult,
+  ModuleDefinition,
+  ModuleInstance,
+  Project,
+  ValidationIssue,
+} from '../../engine/types';
 import { BitsEditor } from './editors/bits-editor';
 import { WiringEditor } from './editors/wiring-editor';
 import { formatParamValue, formatSignal, parseParamValue } from '../formatters';
@@ -6,28 +15,61 @@ import { formatParamValue, formatSignal, parseParamValue } from '../formatters';
 interface ParameterInspectorProps {
   execution: ExecutionResult | null;
   executionError: string | null;
+  validationIssues: ValidationIssue[];
+  stepIndex: number | null;
+  project: Project;
   moduleDef: ModuleDefinition | null;
   moduleInstance: ModuleInstance | null;
   getParamDraft: (moduleId: string, key: string) => string | undefined;
   onParamDraftChange: (moduleId: string, key: string, rawValue: string) => void;
   onParamChange: (moduleId: string, key: string, value: unknown) => void;
   onDeleteModule: (moduleId: string) => void;
+  onSelectIssueTarget: (moduleId: string) => void;
+  onTraceHover: (moduleId: string | null) => void;
+  onStepChange: (nextIndex: number | null) => void;
 }
 
 export function ParameterInspector({
   execution,
   executionError,
+  validationIssues,
+  stepIndex,
+  project,
   moduleDef,
   moduleInstance,
   getParamDraft,
   onParamDraftChange,
   onParamChange,
   onDeleteModule,
+  onSelectIssueTarget,
+  onTraceHover,
+  onStepChange,
 }: ParameterInspectorProps) {
+  const [traceMode, setTraceMode] = useState<'focused' | 'upstream' | 'downstream' | 'full'>('focused');
+  const [inspectorTab, setInspectorTab] = useState<'configure' | 'analyze'>('configure');
   const outputTrace = execution?.trace.at(-1);
   const selectedTrace = execution?.trace.find(
     (entry) => entry.moduleId === moduleInstance?.id,
   );
+  const selectedTraceOrder = selectedTrace
+    ? (execution?.order.findIndex((moduleId) => moduleId === selectedTrace.moduleId) ?? -1) + 1
+    : null;
+  const selectedIssues = moduleInstance
+    ? validationIssues.filter((issue) => getIssueTargetModuleId(issue) === moduleInstance.id)
+    : [];
+  const globalIssues = moduleInstance
+    ? validationIssues.filter((issue) => !selectedIssues.includes(issue))
+    : validationIssues;
+  const groupedSelectedIssues = groupIssuesByTarget(selectedIssues);
+  const groupedGlobalIssues = groupIssuesByTarget(globalIssues);
+  const effectiveTraceMode = selectedTrace ? traceMode : 'full';
+  const traceEntries = getTraceEntries({
+    execution,
+    project,
+    selectedModuleId: moduleInstance?.id ?? null,
+    traceMode: effectiveTraceMode,
+  });
+  const steppedTrace = stepIndex !== null ? execution?.trace[stepIndex] ?? null : null;
 
   return (
     <aside className="panel inspector-panel">
@@ -36,12 +78,105 @@ export function ParameterInspector({
         <h2>Selection + Trace</h2>
       </div>
 
+      <div className="inspector-tab-row">
+        <button
+          type="button"
+          className={inspectorTab === 'configure' ? 'inspector-tab active' : 'inspector-tab'}
+          onClick={() => setInspectorTab('configure')}
+        >
+          Configure
+        </button>
+        <button
+          type="button"
+          className={inspectorTab === 'analyze' ? 'inspector-tab active' : 'inspector-tab'}
+          onClick={() => setInspectorTab('analyze')}
+        >
+          Analyze
+        </button>
+      </div>
+
       <div className="trace-summary">
         <span className="meta-label">Final Input To Output</span>
         <strong>{formatSignal(outputTrace?.inputs.in)}</strong>
+        <p className="trace-summary-subtitle">
+          {validationIssues.length > 0
+            ? `${validationIssues.length} validation issue${validationIssues.length === 1 ? '' : 's'} blocking execution`
+            : execution
+              ? `${execution.trace.length} module${execution.trace.length === 1 ? '' : 's'} executed`
+              : 'Execution is waiting for a valid graph'}
+        </p>
       </div>
 
-      {moduleDef && moduleInstance ? (
+      {inspectorTab === 'analyze' && execution && execution.trace.length > 0 ? (
+        <section className="analysis-section">
+          <div className="stepper-head">
+            <span className="meta-label">Step-Through</span>
+            <div className="stepper-actions">
+              <button
+                type="button"
+                className="trace-mode-button"
+                disabled={stepIndex === null || stepIndex <= 0}
+                onClick={() => onStepChange(stepIndex === null ? 0 : Math.max(0, stepIndex - 1))}
+              >
+                Prev
+              </button>
+              <button
+                type="button"
+                className="trace-mode-button"
+                onClick={() =>
+                  onStepChange(
+                    stepIndex === null
+                      ? 0
+                      : Math.min(execution.trace.length - 1, stepIndex + 1),
+                  )
+                }
+              >
+                {stepIndex === null ? 'Start' : 'Next'}
+              </button>
+              <button
+                type="button"
+                className="trace-mode-button"
+                disabled={stepIndex === null}
+                onClick={() => onStepChange(null)}
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+
+          <div className="selected-trace">
+            <span className="meta-label">Current Step</span>
+            {steppedTrace ? (
+              <>
+                <p className="selected-trace-order">
+                  Step {stepIndex! + 1} of {execution.trace.length}
+                </p>
+                <p>
+                  module: <strong>{steppedTrace.moduleId}</strong> ({steppedTrace.defId})
+                </p>
+                <p>
+                  inputs:{' '}
+                  {Object.entries(steppedTrace.inputs)
+                    .map(([, signal]) => formatSignal(signal))
+                    .join(' | ') || 'none'}
+                </p>
+                <p>
+                  outputs:{' '}
+                  {Object.entries(steppedTrace.outputs)
+                    .map(([, signal]) => formatSignal(signal))
+                    .join(' | ') || 'none'}
+                </p>
+              </>
+            ) : (
+              <p className="empty-state">
+                Start stepping to walk the execution order one module at a time.
+              </p>
+            )}
+          </div>
+        </section>
+      ) : null}
+
+      {moduleDef && moduleInstance && inspectorTab === 'configure' ? (
         <section className="inspector-section">
           <span className="meta-label">Selected Module</span>
           <strong className="selected-module-name">{moduleInstance.id}</strong>
@@ -195,39 +330,161 @@ export function ParameterInspector({
             </div>
           </div>
 
-          {executionError ? (
-            <p className="inspector-warning">
-              Current edits make the graph invalid. Fix parameter values or graph
-              data to restore execution.
-            </p>
-          ) : selectedTrace ? (
-            <div className="selected-trace">
-              <span className="meta-label">Selected Trace</span>
-              <p>
-                inputs:{' '}
-                {Object.entries(selectedTrace.inputs)
-                  .map(([, signal]) => formatSignal(signal))
-                  .join(' | ') || 'none'}
-              </p>
-              <p>
-                outputs:{' '}
-                {Object.entries(selectedTrace.outputs)
-                  .map(([, signal]) => formatSignal(signal))
-                  .join(' | ') || 'none'}
-              </p>
-            </div>
-          ) : null}
         </section>
       ) : (
-        <p className="empty-state">Select a module to inspect and edit its parameters.</p>
+        inspectorTab === 'configure' ? (
+          <p className="empty-state">Select a module to inspect and edit its parameters.</p>
+        ) : null
       )}
 
+      {inspectorTab === 'analyze' && selectedIssues.length > 0 ? (
+        <section className="analysis-section">
+          <span className="meta-label">Selected Issues</span>
+          <ul className="issue-list">
+            {groupedSelectedIssues.map((group, index) => (
+              <li
+                key={`${group.targetModuleId ?? 'global'}-${index}`}
+                className={group.targetModuleId ? 'issue-card issue-card-actionable' : 'issue-card'}
+                onClick={() => {
+                  if (group.targetModuleId) {
+                    onSelectIssueTarget(group.targetModuleId);
+                  }
+                }}
+              >
+                <strong>{group.title}</strong>
+                {group.targetModuleId ? (
+                  <span className="issue-target-chip">{group.targetModuleId}</span>
+                ) : null}
+                <p>{group.messages.join(' ')}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {inspectorTab === 'analyze' && executionError ? (
+        <p className={validationIssues.length > 0 ? 'inspector-warning' : 'inspector-runtime-error'}>
+          {validationIssues.length > 0
+            ? 'Current edits make the graph invalid. Resolve the issues below to restore execution.'
+            : `Execution failed even though the graph is valid. ${executionError}`}
+        </p>
+      ) : inspectorTab === 'analyze' && selectedTrace ? (
+        <div className="selected-trace">
+          <span className="meta-label">Selected Trace</span>
+          <p className="selected-trace-order">
+            Step {selectedTraceOrder ?? '?'} of{' '}
+            {execution?.order.length ?? 0}
+          </p>
+          <p>
+            inputs:{' '}
+            {Object.entries(selectedTrace.inputs)
+              .map(([, signal]) => formatSignal(signal))
+              .join(' | ') || 'none'}
+          </p>
+          <p>
+            outputs:{' '}
+            {Object.entries(selectedTrace.outputs)
+              .map(([, signal]) => formatSignal(signal))
+              .join(' | ') || 'none'}
+          </p>
+        </div>
+      ) : null}
+
+      {inspectorTab === 'analyze' && globalIssues.length > 0 ? (
+        <section className="analysis-section">
+          <span className="meta-label">Graph Issues</span>
+          <ul className="issue-list">
+            {groupedGlobalIssues.map((group, index) => (
+              <li
+                key={`${group.targetModuleId ?? 'global'}-${index}`}
+                className={group.targetModuleId ? 'issue-card issue-card-actionable' : 'issue-card'}
+                onClick={() => {
+                  if (group.targetModuleId) {
+                    onSelectIssueTarget(group.targetModuleId);
+                  }
+                }}
+              >
+                <strong>{group.title}</strong>
+                {group.targetModuleId ? (
+                  <span className="issue-target-chip">{group.targetModuleId}</span>
+                ) : null}
+                <p>{group.messages.join(' ')}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {inspectorTab === 'analyze' ? (
+      <div className="trace-toolbar">
+        <span className="meta-label">Execution Trace</span>
+        <div className="trace-mode-toggle">
+          <button
+            type="button"
+            className={effectiveTraceMode === 'focused' ? 'trace-mode-button active' : 'trace-mode-button'}
+            disabled={!selectedTrace}
+            onClick={() => setTraceMode('focused')}
+          >
+            Focused
+          </button>
+          <button
+            type="button"
+            className={effectiveTraceMode === 'full' ? 'trace-mode-button active' : 'trace-mode-button'}
+            onClick={() => setTraceMode('full')}
+          >
+            Full
+          </button>
+          <button
+            type="button"
+            className={effectiveTraceMode === 'upstream' ? 'trace-mode-button active' : 'trace-mode-button'}
+            disabled={!selectedTrace}
+            onClick={() => setTraceMode('upstream')}
+          >
+            Upstream
+          </button>
+          <button
+            type="button"
+            className={effectiveTraceMode === 'downstream' ? 'trace-mode-button active' : 'trace-mode-button'}
+            disabled={!selectedTrace}
+            onClick={() => setTraceMode('downstream')}
+          >
+            Downstream
+          </button>
+        </div>
+      </div>
+      ) : null}
+
+      {inspectorTab === 'analyze' ? (
       <ol className="trace-list">
-        {(execution?.trace ?? []).map((entry) => (
-          <li key={entry.moduleId} className="trace-card">
+        {traceEntries.map((entry) => {
+          const traceIndex = execution?.trace.findIndex(
+            (traceEntry) => traceEntry.moduleId === entry.moduleId,
+          ) ?? -1;
+
+          return (
+          <li
+            key={entry.moduleId}
+            className={
+              entry.moduleId === steppedTrace?.moduleId
+                ? 'trace-card trace-card-stepped'
+                : entry.moduleId === moduleInstance?.id
+                ? 'trace-card trace-card-active'
+                : 'trace-card'
+            }
+            onMouseEnter={() => onTraceHover(entry.moduleId)}
+            onMouseLeave={() => onTraceHover(null)}
+            onClick={() =>
+              onStepChange(
+                execution?.trace.findIndex((traceEntry) => traceEntry.moduleId === entry.moduleId) ??
+                  null,
+              )
+            }
+          >
             <div className="trace-head">
               <strong>{entry.moduleId}</strong>
-              <span>{entry.defId}</span>
+              <span>
+                #{traceIndex + 1} {entry.defId}
+              </span>
             </div>
             <p>
               inputs:{' '}
@@ -242,8 +499,112 @@ export function ParameterInspector({
                 .join(' | ') || 'none'}
             </p>
           </li>
-        ))}
+          );
+        })}
       </ol>
+      ) : null}
     </aside>
   );
+}
+
+function humanizeIssueCode(code: ValidationIssue['code']) {
+  return code
+    .split('-')
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(' ');
+}
+
+function getIssueTargetModuleId(issue: ValidationIssue) {
+  return issue.moduleId ?? issue.connection?.to.moduleId ?? issue.connection?.from.moduleId ?? null;
+}
+
+function getTraceEntries(args: {
+  execution: ExecutionResult | null;
+  project: Project;
+  selectedModuleId: string | null;
+  traceMode: 'focused' | 'upstream' | 'downstream' | 'full';
+}) {
+  const { execution, project, selectedModuleId, traceMode } = args;
+  if (!execution) {
+    return [];
+  }
+
+  if (!selectedModuleId || traceMode === 'full') {
+    return execution.trace;
+  }
+
+  if (traceMode === 'focused') {
+    return execution.trace.filter((entry) => entry.moduleId === selectedModuleId);
+  }
+
+  const relatedModuleIds =
+    traceMode === 'upstream'
+      ? collectReachableModules(project.connections, selectedModuleId, 'upstream')
+      : collectReachableModules(project.connections, selectedModuleId, 'downstream');
+
+  relatedModuleIds.add(selectedModuleId);
+  return execution.trace.filter((entry) => relatedModuleIds.has(entry.moduleId));
+}
+
+function collectReachableModules(
+  connections: Connection[],
+  originModuleId: string,
+  direction: 'upstream' | 'downstream',
+) {
+  const visited = new Set<string>();
+  const queue = [originModuleId];
+
+  while (queue.length > 0) {
+    const moduleId = queue.shift();
+    if (!moduleId) {
+      continue;
+    }
+
+    for (const connection of connections) {
+      const nextModuleId =
+        direction === 'upstream'
+          ? connection.to.moduleId === moduleId
+            ? connection.from.moduleId
+            : null
+          : connection.from.moduleId === moduleId
+            ? connection.to.moduleId
+            : null;
+
+      if (!nextModuleId || visited.has(nextModuleId)) {
+        continue;
+      }
+
+      visited.add(nextModuleId);
+      queue.push(nextModuleId);
+    }
+  }
+
+  return visited;
+}
+
+function groupIssuesByTarget(issues: ValidationIssue[]) {
+  const groups = new Map<
+    string,
+    { targetModuleId: string | null; title: string; messages: string[] }
+  >();
+
+  for (const issue of issues) {
+    const targetModuleId = getIssueTargetModuleId(issue);
+    const key = `${targetModuleId ?? 'global'}:${issue.code}`;
+    const existing = groups.get(key);
+    if (existing) {
+      if (!existing.messages.includes(issue.message)) {
+        existing.messages.push(issue.message);
+      }
+      continue;
+    }
+
+    groups.set(key, {
+      targetModuleId,
+      title: humanizeIssueCode(issue.code),
+      messages: [issue.message],
+    });
+  }
+
+  return [...groups.values()];
 }

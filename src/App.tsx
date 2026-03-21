@@ -4,7 +4,7 @@ import './App.css';
 import type { CompositeLibraryEntry } from './engine/composites';
 import { V1_REGISTRY } from './engine/modules';
 import type { ExecutionResult, Project } from './engine/types';
-import { validateCompositeDef } from './engine/validation';
+import { validateCompositeDef, validateProject } from './engine/validation';
 import {
   createCompositeFromSelection,
   replaceSelectionWithComposite,
@@ -111,6 +111,8 @@ function App() {
   const [compositeDialogError, setCompositeDialogError] = useState<string | null>(null);
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
   const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
+  const [hoveredTraceModuleId, setHoveredTraceModuleId] = useState<string | null>(null);
+  const [stepIndex, setStepIndex] = useState<number | null>(null);
 
   const activeProjectDefinition =
     demoProjects.find((project) => project.id === state.activeProjectId) ?? demoProjects[0];
@@ -157,12 +159,27 @@ function App() {
 
   let execution: ExecutionResult | null = null;
   let executionError: string | null = null;
+  const validationResult = validateProject(activeProjectState, effectiveRegistry);
+  const validationIssues = validationResult.issues;
 
-  try {
-    execution = runDemoProject(activeProjectState, effectiveRegistry);
-  } catch (error) {
-    executionError = error instanceof Error ? error.message : 'Execution failed.';
+  if (validationResult.ok) {
+    try {
+      execution = runDemoProject(activeProjectState, effectiveRegistry);
+    } catch (error) {
+      executionError = error instanceof Error ? error.message : 'Execution failed.';
+    }
+  } else {
+    executionError = 'Execution is blocked until the graph is valid.';
   }
+
+  const effectiveStepIndex =
+    stepIndex !== null && execution && stepIndex < execution.trace.length
+      ? stepIndex
+      : null;
+  const steppedModuleId =
+    effectiveStepIndex !== null && execution
+      ? execution.trace[effectiveStepIndex]?.moduleId ?? null
+      : null;
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -303,9 +320,12 @@ function App() {
           annotations={activeAnnotations}
           execution={execution}
           executionError={executionError}
+          validationIssues={validationIssues}
           registry={effectiveRegistry}
           selectedModuleId={effectiveSelectedModuleId}
           selectedModuleIds={effectiveSelectedModuleIds}
+          hoveredTraceModuleId={hoveredTraceModuleId}
+          steppedModuleId={steppedModuleId}
           onMoveModule={(moduleId, x, y) =>
             dispatch({
               type: 'moveModule',
@@ -512,6 +532,9 @@ function App() {
           <ParameterInspector
             execution={execution}
             executionError={executionError}
+            validationIssues={validationIssues}
+            stepIndex={effectiveStepIndex}
+            project={activeProjectState}
             moduleDef={selectedModuleDef}
             moduleInstance={selectedModule}
             getParamDraft={(moduleId, key) =>
@@ -548,6 +571,15 @@ function App() {
                     moduleId,
                   })
             }
+            onSelectIssueTarget={(moduleId) =>
+              dispatch({
+                type: 'selectModule',
+                projectId: activeProjectDefinition.id,
+                moduleId,
+              })
+            }
+            onTraceHover={setHoveredTraceModuleId}
+            onStepChange={setStepIndex}
           />
         ) : null}
       </section>
