@@ -62,6 +62,13 @@ interface WorkbenchPanelProps {
   challengeSolved?: boolean;
   isCompositeEditor?: boolean;
   probedModuleIds?: string[];
+  isTickedMode?: boolean;
+  tickCount?: number;
+  currentTick?: number;
+  collectedOutput?: string | null;
+  tickedParamsByModule?: Record<string, Record<string, unknown>[]> | null;
+  onSetTickedMode?: (enabled: boolean) => void;
+  onSetCurrentTick?: (tick: number) => void;
   onToggleProbe?: (moduleId: string) => void;
   onMoveModule: (moduleId: string, x: number, y: number) => void;
   onAddAnnotation: () => void;
@@ -104,6 +111,13 @@ export function WorkbenchPanel({
   challengeSolved = false,
   isCompositeEditor = false,
   probedModuleIds = [],
+  isTickedMode = false,
+  tickCount = 0,
+  currentTick = 0,
+  collectedOutput = null,
+  tickedParamsByModule = null,
+  onSetTickedMode,
+  onSetCurrentTick,
   onToggleProbe,
   onMoveModule,
   onAddAnnotation,
@@ -422,6 +436,62 @@ export function WorkbenchPanel({
         <p className="connection-status connection-status-warning">{connectionFeedback}</p>
       ) : null}
 
+      {!isCompositeEditor ? (
+        <div className="tick-bar">
+          <label className="tick-bar-toggle">
+            <input
+              type="checkbox"
+              checked={isTickedMode}
+              onChange={(e) => onSetTickedMode?.(e.target.checked)}
+            />
+            <span>Ticked Mode</span>
+          </label>
+          {isTickedMode && tickCount > 0 ? (
+            <>
+              <span className="tick-bar-label">
+                Tick {currentTick + 1} / {tickCount}
+              </span>
+              <input
+                type="range"
+                className="tick-bar-slider"
+                min={0}
+                max={tickCount - 1}
+                value={currentTick}
+                onChange={(e) => onSetCurrentTick?.(Number(e.target.value))}
+                aria-label="Tick scrubber"
+              />
+              <button
+                type="button"
+                className="mini-action-button"
+                disabled={currentTick <= 0}
+                onClick={() => onSetCurrentTick?.(currentTick - 1)}
+                aria-label="Previous tick"
+              >
+                Prev
+              </button>
+              <button
+                type="button"
+                className="mini-action-button"
+                disabled={currentTick >= tickCount - 1}
+                onClick={() => onSetCurrentTick?.(currentTick + 1)}
+                aria-label="Next tick"
+              >
+                Next
+              </button>
+              {collectedOutput !== null ? (
+                <span className="tick-bar-collected">
+                  <span className="meta-label">Output</span> <strong>{collectedOutput}</strong>
+                </span>
+              ) : null}
+            </>
+          ) : isTickedMode ? (
+            <span className="tick-bar-label tick-bar-label-muted">
+              No tick-sliceable sources in graph
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
       <div ref={canvasSurfaceRef} className="canvas-surface">
         <div
           className="graph-canvas"
@@ -592,6 +662,17 @@ export function WorkbenchPanel({
                       {probedModuleIds.includes(moduleInstance.id) ? '\u25C9' : '\u25CB'}
                     </button>
                   ) : null}
+                  {isTickedMode && tickedParamsByModule?.[moduleInstance.id] && tickCount > 0 ? (() => {
+                    const tickParams = tickedParamsByModule[moduleInstance.id]?.[currentTick];
+                    if (!tickParams) return null;
+                    const positionValue = tickParams.position;
+                    if (positionValue === undefined) return null;
+                    return (
+                      <span className="graph-node-tick-state" title={`position = ${positionValue}`}>
+                        pos {String(positionValue)}
+                      </span>
+                    );
+                  })() : null}
                   <div className="graph-node-ports">
                     <span>{def?.inputs.length ?? 0} in</span>
                     <span>{def?.outputs.length ?? 0} out</span>

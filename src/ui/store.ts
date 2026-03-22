@@ -28,6 +28,8 @@ export interface UiState {
   activeTutorialStepByProject: Record<string, number>;
   completedTutorialsByProject: Record<string, string[]>;
   probedModuleIdsByProject: Record<string, string[]>;
+  tickedModeByProject: Record<string, boolean>;
+  currentTickByProject: Record<string, number>;
   selectedModuleIdByProject: Record<string, string | null>;
   selectedModuleIdsByProject: Record<string, string[]>;
   paramDrafts: Record<string, string>;
@@ -78,6 +80,8 @@ export type UiAction =
   | { type: 'resetTutorialProgress'; projectId: string }
   | { type: 'toggleProbe'; projectId: string; moduleId: string }
   | { type: 'clearProbes'; projectId: string }
+  | { type: 'setTickedMode'; projectId: string; enabled: boolean }
+  | { type: 'setCurrentTick'; projectId: string; tick: number }
   | { type: 'captureComparisonBaseline'; projectId: string; capturedAt: string }
   | { type: 'clearComparisonBaseline'; projectId: string }
   | { type: 'loadCompositeLibrary'; document: CompositeLibraryDocument }
@@ -214,6 +218,12 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     ),
     probedModuleIdsByProject: Object.fromEntries(
       projects.map((project) => [project.id, []]),
+    ),
+    tickedModeByProject: Object.fromEntries(
+      projects.map((project) => [project.id, false]),
+    ),
+    currentTickByProject: Object.fromEntries(
+      projects.map((project) => [project.id, 0]),
     ),
     selectedModuleIdByProject: Object.fromEntries(
       projects.map((project) => [project.id, project.project.modules[0]?.id ?? null]),
@@ -853,6 +863,26 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
         probedModuleIdsByProject: {
           ...state.probedModuleIdsByProject,
           [action.projectId]: [],
+        },
+      };
+    case 'setTickedMode':
+      return {
+        ...state,
+        tickedModeByProject: {
+          ...state.tickedModeByProject,
+          [action.projectId]: action.enabled,
+        },
+        currentTickByProject: {
+          ...state.currentTickByProject,
+          [action.projectId]: 0,
+        },
+      };
+    case 'setCurrentTick':
+      return {
+        ...state,
+        currentTickByProject: {
+          ...state.currentTickByProject,
+          [action.projectId]: Math.max(0, Math.trunc(action.tick)),
         },
       };
     case 'clearComparisonBaseline':

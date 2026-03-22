@@ -43,6 +43,10 @@ interface ParameterInspectorProps {
   onCaptureBaseline: () => void;
   onClearBaseline: () => void;
   probedModuleIds: string[];
+  isTickedMode?: boolean;
+  currentTick?: number;
+  tickCount?: number;
+  tickedParamsByModule?: Record<string, Record<string, unknown>[]> | null;
   onToggleProbe: (moduleId: string) => void;
   onClearProbes: () => void;
 }
@@ -73,6 +77,10 @@ export function ParameterInspector({
   onCaptureBaseline,
   onClearBaseline,
   probedModuleIds,
+  isTickedMode = false,
+  currentTick = 0,
+  tickCount = 0,
+  tickedParamsByModule = null,
   onToggleProbe,
   onClearProbes,
 }: ParameterInspectorProps) {
@@ -162,6 +170,31 @@ export function ParameterInspector({
               : 'Execution is waiting for a valid graph'}
         </p>
       </div>
+
+      {inspectorTab === 'analyze' && isTickedMode && tickCount > 0 && moduleInstance ? (
+        <section className="analysis-section tick-state-section">
+          <span className="meta-label">Tick State</span>
+          <p className="tick-state-summary">
+            Viewing tick <strong>{currentTick + 1}</strong> of <strong>{tickCount}</strong>
+          </p>
+          {tickedParamsByModule?.[moduleInstance.id] ? (() => {
+            const tickParams = tickedParamsByModule[moduleInstance.id]?.[currentTick];
+            if (!tickParams) return null;
+            const entries = Object.entries(tickParams);
+            if (entries.length === 0) return null;
+            return (
+              <ul className="tick-param-list">
+                {entries.map(([key, value]) => (
+                  <li key={key} className="tick-param-entry">
+                    <span className="tick-param-key">{key}</span>
+                    <span className="tick-param-value">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                  </li>
+                ))}
+              </ul>
+            );
+          })() : null}
+        </section>
+      ) : null}
 
       {inspectorTab === 'analyze' && execution && execution.trace.length > 0 ? (
         <section className="analysis-section">

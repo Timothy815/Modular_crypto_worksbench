@@ -3,7 +3,8 @@ import { useEffect, useReducer, useState } from 'react';
 import './App.css';
 import type { CompositeLibraryEntry } from './engine/composites';
 import { V1_REGISTRY } from './engine/modules';
-import type { ExecutionResult, Project } from './engine/types';
+import type { ExecutionResult, Project, TickedExecutionResult } from './engine/types';
+import { deriveTickCount, executeTickedProject } from './engine/executor';
 import { validateCompositeDef, validateProject } from './engine/validation';
 import {
   createCompositeFromSelection,
@@ -212,20 +213,52 @@ function App() {
     {},
   );
 
+  const isTickedMode = !state.compositeEditor && (state.tickedModeByProject[activeProjectDefinition.id] ?? false);
+  const currentTick = state.currentTickByProject[activeProjectDefinition.id] ?? 0;
+
   let execution: ExecutionResult | null = null;
   let executionError: string | null = null;
+  let tickedExecution: TickedExecutionResult | null = null;
+  let tickCount: number | null = null;
   const validationResult = validateProject(activeProjectState, effectiveRegistry);
   const validationIssues = validationResult.issues;
 
   if (validationResult.ok) {
     try {
-      execution = runDemoProject(activeProjectState, effectiveRegistry);
+      if (isTickedMode) {
+        tickCount = deriveTickCount(activeProjectState, effectiveRegistry);
+        if (tickCount !== null && tickCount > 0) {
+          tickedExecution = executeTickedProject(activeProjectState, effectiveRegistry, tickCount);
+          const effectiveTick = Math.min(currentTick, tickCount - 1);
+          execution = tickedExecution.ticks[effectiveTick] ?? null;
+        } else {
+          execution = runDemoProject(activeProjectState, effectiveRegistry);
+        }
+      } else {
+        execution = runDemoProject(activeProjectState, effectiveRegistry);
+      }
     } catch (error) {
       executionError = error instanceof Error ? error.message : 'Execution failed.';
     }
   } else {
     executionError = 'Execution is blocked until the graph is valid.';
   }
+
+  const effectiveTickCount = tickCount ?? 0;
+  const effectiveCurrentTick = tickedExecution
+    ? Math.min(currentTick, effectiveTickCount - 1)
+    : 0;
+  const collectedOutput = tickedExecution
+    ? tickedExecution.ticks
+        .map((tick) => {
+          const outputModule = activeProjectState.modules.find((m) => m.defId === 'Output');
+          if (!outputModule) return '';
+          const out = tick.outputsByModuleId[outputModule.id]?.out;
+          if (!out) return '';
+          return out.type === 'symbol' ? out.value : (out.value as number[]).join('');
+        })
+        .join('')
+    : null;
 
   const effectiveStepIndex =
     stepIndex !== null && execution && execution.trace.length > 0
@@ -452,6 +485,25 @@ function App() {
             tutorialStep={activeTutorialStep}
             challengeSolved={challengeEvaluation?.status === 'success'}
             probedModuleIds={state.probedModuleIdsByProject[activeProjectDefinition.id] ?? []}
+            isTickedMode={isTickedMode}
+            tickCount={effectiveTickCount}
+            currentTick={effectiveCurrentTick}
+            collectedOutput={collectedOutput}
+            tickedParamsByModule={tickedExecution?.paramsByModuleByTick ?? null}
+            onSetTickedMode={(enabled) =>
+              dispatch({
+                type: 'setTickedMode',
+                projectId: activeProjectDefinition.id,
+                enabled,
+              })
+            }
+            onSetCurrentTick={(tick) =>
+              dispatch({
+                type: 'setCurrentTick',
+                projectId: activeProjectDefinition.id,
+                tick,
+              })
+            }
             onToggleProbe={(moduleId) =>
               dispatch({
                 type: 'toggleProbe',
@@ -788,6 +840,10 @@ function App() {
                 })
               }
               probedModuleIds={state.probedModuleIdsByProject[activeProjectDefinition.id] ?? []}
+              isTickedMode={isTickedMode}
+              currentTick={effectiveCurrentTick}
+              tickCount={effectiveTickCount}
+              tickedParamsByModule={tickedExecution?.paramsByModuleByTick ?? null}
               onToggleProbe={(moduleId) =>
                 dispatch({
                   type: 'toggleProbe',

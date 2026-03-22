@@ -1717,3 +1717,103 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Tick bar */
+.tick-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: var(--surface-1);
+  font-size: 0.82rem;
+  flex-wrap: wrap;
+}
+
+.tick-bar-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tick-bar-toggle input {
+  accent-color: var(--accent);
+}
+
+.tick-bar-label {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.tick-bar-label-muted {
+  opacity: 0.55;
+  font-style: italic;
+}
+
+.tick-bar-slider {
+  flex: 1;
+  min-width: 80px;
+  max-width: 240px;
+  accent-color: var(--accent);
+}
+
+.tick-bar-collected {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--surface-2);
+}
+
+/* Tick state on nodes */
+.graph-node-tick-state {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--accent);
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+/* Tick state in inspector */
+.tick-state-section {
+  border-left: 3px solid var(--accent);
+  padding-left: 10px;
+}
+
+.tick-state-summary {
+  margin: 4px 0;
+  font-size: 0.82rem;
+}
+
+.tick-param-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tick-param-entry {
+  display: flex;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 0.76rem;
+}
+
+.tick-param-key {
+  color: var(--text-muted);
+  min-width: 64px;
+}
+
+.tick-param-value {
+  font-weight: 600;
+}
