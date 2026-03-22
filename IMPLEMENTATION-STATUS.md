@@ -6,9 +6,9 @@ Last updated: March 22, 2026
 
 ## Current State
 
-The project has now shipped the composite, analysis, break-workflow, and guided-challenges
-milestones on `main` through `v0.8.0`, and has started modern primitive expansion on
-`feature/modern-primitives`.
+The project has now shipped the composite, analysis, break-workflow, guided-challenges, and
+modern-primitives milestones on `main` through `v0.9.0`, and has started final
+polish/tutorial work on `feature/v1-polish-and-tutorials`.
 
 Established and now available for other agents:
 - implementation contract
@@ -38,6 +38,8 @@ Established and now available for other agents:
 - `GUIDED-CHALLENGES-V1-CONTRACT.md`
 - guided challenge workflow on `main` (`v0.8.0`)
 - `MODERN-PRIMITIVES-V1-CONTRACT.md`
+- modern primitive expansion on `main` (`v0.9.0`)
+- `V1-POLISH-AND-TUTORIALS.md`
 - GitHub Pages deployment workflow
 
 ---
@@ -81,26 +83,26 @@ The following decisions are no longer just prose; they are reflected in the scaf
 ### Claude
 
 Safe to begin:
-- use the current branch `feature/modern-primitives`
-- read `MODERN-PRIMITIVES-V1-CONTRACT.md` first
-- expand the primitive library deliberately, not opportunistically
-- keep new modules explicit and teachable inside the existing workbench
+- use the current branch `feature/v1-polish-and-tutorials`
+- read `V1-POLISH-AND-TUTORIALS.md` first
+- treat tutorials as structured UI-layer teaching artifacts
+- keep the workbench transparent while guiding attention
 
 Should avoid for now:
-- jumping straight to full AES or DES-sized systems
-- mutating the core engine contract unless strictly required
-- adding black-box primitives that hide structure instead of teaching it
+- turning tutorials into grading/account systems
+- changing the engine execution model on this branch
+- hiding cryptographic structure behind overly magical onboarding
 
 ### Gemini
 
 Safe to begin:
-- review the `MODERN-PRIMITIVES-V1-CONTRACT.md` framing
-- critique whether the first primitive pack is the right proof of modern-crypto support
+- review `V1-POLISH-AND-TUTORIALS.md`
+- critique whether the first tutorial slice is the right v1 finish direction
 
 Best focus:
-- whether the primitive choices are strategically correct
-- whether param schemas remain usable in the current inspector
-- whether the branch proves modern bit-domain capability without premature complexity
+- whether tutorials strengthen classroom use without obscuring the workbench
+- whether shell/panel consistency is approaching v1 quality
+- whether the final polish branch is tackling the right finish work
 
 ---
 
@@ -153,19 +155,23 @@ Stable releases on `main`:
 - `v0.6.0` — analysis visibility milestone
 - `v0.7.0` — break workflow milestone
 - `v0.8.0` — guided challenges milestone
+- `v0.9.0` — modern primitives milestone
 
 Active branch:
-- `feature/modern-primitives`
+- `feature/v1-polish-and-tutorials`
 
-Modern primitives branch currently includes:
-- `MODERN-PRIMITIVES-V1-CONTRACT.md`
-- branch setup only
+V1 polish/tutorials branch currently includes:
+- `V1-POLISH-AND-TUTORIALS.md`
+- tutorial definitions and seeded starter tutorial
+- reducer-backed tutorial session state
+- tutorial persistence groundwork
+- first tutorial panel in the app shell
 
 Latest safe checkpoint for resume:
-- branch: `feature/modern-primitives`
-- current branch created from `main` after `v0.8.0`
+- branch: `feature/v1-polish-and-tutorials`
+- current branch created from `main` after `v0.9.0`
 
 Next intended milestone:
-- implement the first modern primitive slice
-- start with `Permutation` and `BitShifter`
-- then add tests and a small modern demo proof
+- build guided walkthroughs into a coherent classroom-facing tutorial flow
+- keep polishing shell/panel consistency
+- prepare the product for `v1.0`

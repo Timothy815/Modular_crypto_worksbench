@@ -13,8 +13,8 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 The repository now has:
 - a stable engine milestone
-- released UI/editor milestones on `main` through `v0.8.0`
-- an active modern-primitives branch at `feature/modern-primitives`
+- released UI/editor milestones on `main` through `v0.9.0`
+- an active v1 polish/tutorial branch at `feature/v1-polish-and-tutorials`
 
 Implemented and locked so far:
 - engine core types
@@ -49,6 +49,7 @@ Active next steps:
 - `BREAK-V1-CONTRACT.md`: locked direction for the first break-workflows branch
 - `GUIDED-CHALLENGES-V1-CONTRACT.md`: locked direction for the first classroom challenge branch
 - `MODERN-PRIMITIVES-V1-CONTRACT.md`: locked direction for the first modern primitive expansion branch
+- `V1-POLISH-AND-TUTORIALS.md`: locked direction for the final v1 finish branch
 - `AI-COORDINATION.md`: multi-agent workflow rules
 - `AI-WORKSTREAMS.md`: current ownership boundaries
 - `IMPLEMENTATION-STATUS.md`: live execution status and handoff notes
@@ -80,18 +81,21 @@ The current shipped workbench already supports adding, deleting, moving, connect
 interrogating modules, comparing broken variants against captured baselines, and running guided
 classroom challenges.
 
-The active branch is now extending that into modern primitives:
-- add modern bit-domain building blocks
-- prove that MCW can express more than bridge/XOR toy systems
-- support later classroom challenges built on modern cipher structure
+The active branch is now turning the shipped workbench into a final v1 educational product:
+- guided walkthroughs/tutorials
+- shell and panel polish
+- classroom-ready finish quality
 
 The first proof on this branch now includes:
-- branch setup and contract only
+- branch contract
+- seeded tutorial definitions
+- reducer-backed tutorial session state
+- first walkthrough panel in the app shell
 
 The next meaningful product milestones after this branch are:
 
 ```text
-build -> analyze -> break -> guided challenge -> modern primitive expansion
+build -> analyze -> break -> guided challenge -> modern primitive expansion -> v1 polish/tutorials
 ```
 
 The canonical hybrid reference pipeline remains:

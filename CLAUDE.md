@@ -2,7 +2,7 @@
 
 Read PROJECT.md for full project specification.
 Read ENGINE-V1-CONTRACT.md for locked implementation decisions.
-Read MODERN-PRIMITIVES-V1-CONTRACT.md before starting work on `feature/modern-primitives`.
+Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
 Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
 
 ## Project: Modular Cryptography Workbench
@@ -118,12 +118,13 @@ src/utils/     — Shared helpers
 6. **Break Workflows** — comparison, mutation experiments, eventually break/challenge tooling
 7. **Guided Challenges** — classroom tasks, success checks, explainable failure
 8. **Modern Primitives** — bit-domain expansion beyond XOR and static sources
+9. **V1 Polish & Tutorials** — walkthroughs, finish polish, and classroom-ready guidance
 
-## Current Modern Primitive Resume Point
+## Current V1 Polish Resume Point
 
-- Active branch: `feature/modern-primitives`
-- Start from `main` after `v0.8.0`
-- Read `MODERN-PRIMITIVES-V1-CONTRACT.md` first
+- Active branch: `feature/v1-polish-and-tutorials`
+- Start from `main` after `v0.9.0`
+- Read `V1-POLISH-AND-TUTORIALS.md` first
 
 What is already shipped on `main`:
 - composite contract and full composite workflow
@@ -131,15 +132,18 @@ What is already shipped on `main`:
 - stepping and signal-path filtering
  - comparison-first break workflows
  - guided challenges
+ - modern primitive pack and shell/library UX rework
 
 Current branch state:
-- contract and handoff setup only
-- no modern primitive code yet
+- contract plus first tutorial groundwork
+- seeded walkthrough definitions
+- reducer-backed tutorial session state
+- simple tutorial panel in the app shell
 
 Immediate next task:
-- implement the first primitive slice
-- start with `Permutation` and `BitShifter`
-- keep the modern pack explicit and teachable
+- deepen tutorials without hiding the workbench
+- polish shell/panel consistency
+- prepare the product for `v1.0`
 
 ## When Working on This Project
 

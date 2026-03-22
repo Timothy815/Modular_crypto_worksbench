@@ -14,9 +14,11 @@ import { ChallengePanel } from './ui/components/challenge-panel';
 import { ComparisonPanel } from './ui/components/comparison-panel';
 import { ParameterInspector } from './ui/components/parameter-inspector';
 import { PrimitivePalette } from './ui/components/primitive-palette';
+import { TutorialPanel } from './ui/components/tutorial-panel';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
 import { demoProjects, runDemoProject } from './ui/demo-projects';
 import { compareExecutionResults } from './ui/execution-compare';
+import { clampTutorialStepIndex, getTutorialStep } from './ui/tutorials';
 import {
   downloadDocument,
   downloadCompositeLibraryDocument,
@@ -73,6 +75,10 @@ function App() {
           persistedWorkspace.challengeLibrary.length > 0
             ? persistedWorkspace.challengeLibrary
             : initialState.challengeLibrary,
+        tutorialLibrary:
+          persistedWorkspace.tutorialLibrary.length > 0
+            ? persistedWorkspace.tutorialLibrary
+            : initialState.tutorialLibrary,
         compositeLibrary:
           persistedWorkspace.compositeLibrary.entries.length > 0
             ? persistedWorkspace.compositeLibrary.entries
@@ -109,6 +115,22 @@ function App() {
             persistedWorkspace.activeChallengeIdByProjectId[project.id] ??
               initialState.activeChallengeIdByProject[project.id] ??
               null,
+          ]),
+        ),
+        activeTutorialIdByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.activeTutorialIdByProjectId[project.id] ??
+              initialState.activeTutorialIdByProject[project.id] ??
+              null,
+          ]),
+        ),
+        activeTutorialStepByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.activeTutorialStepByProjectId[project.id] ??
+              initialState.activeTutorialStepByProject[project.id] ??
+              0,
           ]),
         ),
         selectedModuleIdByProject: Object.fromEntries(
@@ -246,6 +268,21 @@ function App() {
     !state.compositeEditor && selectedChallenge
       ? evaluateChallengeAttempt(selectedChallenge, activeProjectState, effectiveRegistry)
       : null;
+  const selectedTutorial =
+    state.tutorialLibrary.find(
+      (tutorial) =>
+        tutorial.id ===
+        (state.activeTutorialIdByProject[activeProjectDefinition.id] ??
+          state.tutorialLibrary[0]?.id ??
+          null),
+    ) ??
+    state.tutorialLibrary[0] ??
+    null;
+  const tutorialStepIndex = clampTutorialStepIndex(
+    selectedTutorial,
+    state.activeTutorialStepByProject[activeProjectDefinition.id] ?? 0,
+  );
+  const selectedTutorialStep = getTutorialStep(selectedTutorial, tutorialStepIndex);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -724,6 +761,43 @@ function App() {
                 });
                 setImportError(null);
               }}
+            />
+          ) : null}
+
+          {selectedTutorial ? (
+            <TutorialPanel
+              tutorials={state.tutorialLibrary}
+              selectedTutorialId={selectedTutorial.id}
+              currentProjectId={activeProjectDefinition.id}
+              stepIndex={tutorialStepIndex}
+              activeStep={selectedTutorialStep}
+              onSelectTutorial={(tutorialId) =>
+                dispatch({
+                  type: 'selectTutorial',
+                  projectId: activeProjectDefinition.id,
+                  tutorialId,
+                })
+              }
+              onSetStep={(stepValue) =>
+                dispatch({
+                  type: 'setTutorialStep',
+                  projectId: activeProjectDefinition.id,
+                  stepIndex: stepValue,
+                })
+              }
+              onSwitchProject={(projectId) =>
+                dispatch({
+                  type: 'switchProject',
+                  projectId,
+                })
+              }
+              onFocusStepModule={(moduleId) =>
+                dispatch({
+                  type: 'selectModule',
+                  projectId: activeProjectDefinition.id,
+                  moduleId,
+                })
+              }
             />
           ) : null}
 
