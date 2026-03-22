@@ -48,6 +48,14 @@ Modules do not auto-advance. A module only advances when it receives an
 explicit clock signal. If there is no clock in the graph, every module
 behaves exactly as it does today — the V1 contract is preserved.
 
+**`clock` is a reserved input port name.** When a `StatefulModuleDef`
+declares an input named `clock` and that port is connected, the executor
+only calls `advance` when the incoming signal is an **active pulse**:
+exactly `{ type: 'bits', value: [1] }`. Any other shape (`[0]`, `[]`,
+multi-bit, or non-bits type) is treated as inactive — no advance occurs.
+If the `clock` port is not connected, the module advances every tick
+(backward compatible).
+
 ### 2.4 Honest Graphs
 
 Clock connections are visible wires, not hidden system behavior. If a
@@ -306,10 +314,13 @@ ticks. For a rotor, this would show position A → B → C → D → E.
 - `StatefulModuleDef` with `advance` function
 - `executeTickedProject` executor wrapper
 - Rotor advance function (proof module)
-- LFSR per-tick mode (proof module)
+- LFSR as `StatefulModuleDef` with `advance` (proof module)
 - Per-tick input slicing for TextInput
 - Per-tick output collection for Output
 - Tick trace types
+- Clock primitive (`TickSliceableModuleDef` source module)
+- Signal-driven advance: `clock` reserved input port, `getClockPulse`
+  helper, `isActivePulse` guard (pulse = exactly `[1]`)
 
 ### 7.1 Composite Statefulness — Known Follow-Up
 
@@ -347,9 +358,8 @@ concrete.
 - Feedback loops (cycles remain prohibited)
 - Conditional clocking (e.g., Enigma double-stepping — future slice)
 - Async or real-time execution
-- Clock as a separate module type (deferred — the tick executor handles
-  advance uniformly for now; a Clock module can be added later for
-  selective per-module clocking)
+- ~~Clock as a separate module type~~ **SHIPPED** — Clock primitive and
+  signal-driven advance are implemented
 - Custom scripting for advance functions
 - Network/multi-machine communication
 - Composites containing stateful modules (see §7.1)

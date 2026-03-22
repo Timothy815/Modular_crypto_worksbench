@@ -5,7 +5,10 @@ const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 export const Rotor: StatefulModuleDef = {
   id: 'Rotor',
   name: 'Rotor',
-  inputs: [{ name: 'in', type: 'symbol' }],
+  inputs: [
+    { name: 'in', type: 'symbol' },
+    { name: 'clock', type: 'bits' },
+  ],
   outputs: [{ name: 'out', type: 'symbol' }],
   paramSchema: {
     wiring: {

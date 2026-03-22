@@ -1,0 +1,353 @@
+import { describe, expect, it } from 'vitest';
+import { executeTickedProject } from './executor';
+import type { ModuleRegistry, Project } from './types';
+import { Clock } from './modules/clock';
+import { LFSR } from './modules/lfsr';
+import { Rotor } from './modules/rotor';
+import { TextInput } from './modules/text-input';
+import { BitSource } from './modules/bit-source';
+
+describe('Signal-driven advance', () => {
+  // LFSR advance trace with seed [1,0,0,1,1], taps "0,2":
+  //   [1,0,0,1,1] → fb=1^0=1, pop 1, unshift 1 → [1,1,0,0,1]
+  //   [1,1,0,0,1] → fb=1^0=1, pop 1, unshift 1 → [1,1,1,0,0]
+  //   [1,1,1,0,0] → fb=1^1=0, pop 0, unshift 0 → [0,1,1,1,0]
+  //   [0,1,1,1,0] → fb=0^1=1, pop 0, unshift 1 → [1,0,1,1,1]
+
+  describe('Clock → LFSR: period-2 clock advances LFSR every other tick', () => {
+    it('LFSR advances only on clock pulse ticks', () => {
+      const registry: ModuleRegistry = { Clock, LFSR };
+
+      const project: Project = {
+        modules: [
+          {
+            id: 'clk',
+            defId: 'Clock',
+            params: { period: 2, offset: 0, length: 6 },
+          },
+          {
+            id: 'lfsr',
+            defId: 'LFSR',
+            params: { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 5 },
+          },
+        ],
+        connections: [
+          {
+            from: { moduleId: 'clk', port: 'pulse' },
+            to: { moduleId: 'lfsr', port: 'clock' },
+          },
+        ],
+      };
+
+      const result = executeTickedProject(project, registry, 6);
+      expect(result.ticks).toHaveLength(6);
+
+      const seeds = result.paramsByModuleByTick['lfsr'].map(
+        (p) => p.seed as number[],
+      );
+
+      // Clock period=2 → pulses on ticks 0, 2, 4; silent on 1, 3, 5
+      expect(seeds[0]).toEqual([1, 0, 0, 1, 1]);
+      expect(seeds[1]).toEqual([1, 1, 0, 0, 1]); // advanced (tick 0 pulsed)
+      expect(seeds[2]).toEqual([1, 1, 0, 0, 1]); // same (tick 1 silent)
+      expect(seeds[3]).toEqual([1, 1, 1, 0, 0]); // advanced (tick 2 pulsed)
+      expect(seeds[4]).toEqual([1, 1, 1, 0, 0]); // same (tick 3 silent)
+      expect(seeds[5]).toEqual([0, 1, 1, 1, 0]); // advanced (tick 4 pulsed)
+    });
+
+    it('LFSR without clock connection advances every tick', () => {
+      const registry: ModuleRegistry = { LFSR };
+
+      const project: Project = {
+        modules: [
+          {
+            id: 'lfsr',
+            defId: 'LFSR',
+            params: { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 5 },
+          },
+        ],
+        connections: [],
+      };
+
+      const result = executeTickedProject(project, registry, 4);
+      const seeds = result.paramsByModuleByTick['lfsr'].map(
+        (p) => p.seed as number[],
+      );
+
+      expect(seeds[0]).toEqual([1, 0, 0, 1, 1]);
+      expect(seeds[1]).toEqual([1, 1, 0, 0, 1]);
+      expect(seeds[2]).toEqual([1, 1, 1, 0, 0]);
+      expect(seeds[3]).toEqual([0, 1, 1, 1, 0]);
+    });
+  });
+
+  describe('Clock → Rotor: period-2 clock advances rotor every other tick', () => {
+    const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    it('rotor position changes only on clock pulse ticks', () => {
+      const registry: ModuleRegistry = { Clock, Rotor, TextInput };
+
+      const project: Project = {
+        modules: [
+          {
+            id: 'clk',
+            defId: 'Clock',
+            params: { period: 2, offset: 0, length: 6 },
+          },
+          {
+            id: 'txt',
+            defId: 'TextInput',
+            params: { value: 'AAAAAA' },
+          },
+          {
+            id: 'rotor',
+            defId: 'Rotor',
+            params: { wiring: ALPHABET.split(''), position: 0 },
+          },
+        ],
+        connections: [
+          {
+            from: { moduleId: 'clk', port: 'pulse' },
+            to: { moduleId: 'rotor', port: 'clock' },
+          },
+          {
+            from: { moduleId: 'txt', port: 'out' },
+            to: { moduleId: 'rotor', port: 'in' },
+          },
+        ],
+      };
+
+      const result = executeTickedProject(project, registry, 6);
+      expect(result.ticks).toHaveLength(6);
+
+      const positions = result.paramsByModuleByTick['rotor'].map(
+        (p) => p.position as number,
+      );
+
+      expect(positions[0]).toBe(0);
+      expect(positions[1]).toBe(1); // advanced (tick 0 pulsed)
+      expect(positions[2]).toBe(1); // same (tick 1 silent)
+      expect(positions[3]).toBe(2); // advanced (tick 2 pulsed)
+      expect(positions[4]).toBe(2); // same (tick 3 silent)
+      expect(positions[5]).toBe(3); // advanced (tick 4 pulsed)
+    });
+
+    it('rotor without clock advances every tick', () => {
+      const registry: ModuleRegistry = { Rotor, TextInput };
+
+      const project: Project = {
+        modules: [
+          {
+            id: 'txt',
+            defId: 'TextInput',
+            params: { value: 'AAAA' },
+          },
+          {
+            id: 'rotor',
+            defId: 'Rotor',
+            params: { wiring: ALPHABET.split(''), position: 0 },
+          },
+        ],
+        connections: [
+          {
+            from: { moduleId: 'txt', port: 'out' },
+            to: { moduleId: 'rotor', port: 'in' },
+          },
+        ],
+      };
+
+      const result = executeTickedProject(project, registry, 4);
+      const positions = result.paramsByModuleByTick['rotor'].map(
+        (p) => p.position as number,
+      );
+
+      expect(positions[0]).toBe(0);
+      expect(positions[1]).toBe(1);
+      expect(positions[2]).toBe(2);
+      expect(positions[3]).toBe(3);
+    });
+  });
+
+  describe('clock offset delays first advance', () => {
+    it('offset=2 means no pulse until tick 2', () => {
+      const registry: ModuleRegistry = { Clock, LFSR };
+
+      const project: Project = {
+        modules: [
+          {
+            id: 'clk',
+            defId: 'Clock',
+            params: { period: 1, offset: 2, length: 5 },
+          },
+          {
+            id: 'lfsr',
+            defId: 'LFSR',
+            params: { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 5 },
+          },
+        ],
+        connections: [
+          {
+            from: { moduleId: 'clk', port: 'pulse' },
+            to: { moduleId: 'lfsr', port: 'clock' },
+          },
+        ],
+      };
+
+      const result = executeTickedProject(project, registry, 5);
+      const seeds = result.paramsByModuleByTick['lfsr'].map(
+        (p) => p.seed as number[],
+      );
+
+      // Clock offset=2, period=1 → pulses: [0,0,1,1,1]
+      // Ticks 0,1: no pulse → no advance
+      // Tick 2: pulse → advance after
+      // Tick 3: pulse → advance after
+      // Tick 4: pulse → advance after
+      expect(seeds[0]).toEqual([1, 0, 0, 1, 1]); // initial
+      expect(seeds[1]).toEqual([1, 0, 0, 1, 1]); // no advance (tick 0 silent)
+      expect(seeds[2]).toEqual([1, 0, 0, 1, 1]); // no advance (tick 1 silent)
+      expect(seeds[3]).toEqual([1, 1, 0, 0, 1]); // advanced (tick 2 pulsed)
+      expect(seeds[4]).toEqual([1, 1, 1, 0, 0]); // advanced (tick 3 pulsed)
+    });
+  });
+
+  describe('inactive pulse shapes produce no advance', () => {
+    it('[0] signal does not trigger advance', () => {
+      const registry: ModuleRegistry = { BitSource, LFSR };
+
+      // BitSource emitting [0] per tick — connected to LFSR clock
+      const project: Project = {
+        modules: [
+          {
+            id: 'src',
+            defId: 'BitSource',
+            params: { stream: [0, 0, 0, 0] },
+          },
+          {
+            id: 'lfsr',
+            defId: 'LFSR',
+            params: { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 5 },
+          },
+        ],
+        connections: [
+          {
+            from: { moduleId: 'src', port: 'out' },
+            to: { moduleId: 'lfsr', port: 'clock' },
+          },
+        ],
+      };
+
+      const result = executeTickedProject(project, registry, 4);
+      const seeds = result.paramsByModuleByTick['lfsr'].map(
+        (p) => p.seed as number[],
+      );
+
+      // All ticks receive [0] → no advance ever
+      for (const seed of seeds) {
+        expect(seed).toEqual([1, 0, 0, 1, 1]);
+      }
+    });
+
+    it('empty [] signal does not trigger advance', () => {
+      const registry: ModuleRegistry = { BitSource, LFSR };
+
+      // BitSource with empty stream → tickSlice produces [] per tick
+      const project: Project = {
+        modules: [
+          {
+            id: 'src',
+            defId: 'BitSource',
+            params: { stream: [] },
+          },
+          {
+            id: 'lfsr',
+            defId: 'LFSR',
+            params: { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 5 },
+          },
+        ],
+        connections: [
+          {
+            from: { moduleId: 'src', port: 'out' },
+            to: { moduleId: 'lfsr', port: 'clock' },
+          },
+        ],
+      };
+
+      const result = executeTickedProject(project, registry, 3);
+      const seeds = result.paramsByModuleByTick['lfsr'].map(
+        (p) => p.seed as number[],
+      );
+
+      for (const seed of seeds) {
+        expect(seed).toEqual([1, 0, 0, 1, 1]);
+      }
+    });
+  });
+
+  describe('shared clock drives multiple stateful modules', () => {
+    it('one clock advances both LFSR and Rotor on the same ticks', () => {
+      const registry: ModuleRegistry = { Clock, LFSR, Rotor, TextInput };
+      const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+      const project: Project = {
+        modules: [
+          {
+            id: 'clk',
+            defId: 'Clock',
+            params: { period: 2, offset: 0, length: 4 },
+          },
+          {
+            id: 'txt',
+            defId: 'TextInput',
+            params: { value: 'AAAA' },
+          },
+          {
+            id: 'lfsr',
+            defId: 'LFSR',
+            params: { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 5 },
+          },
+          {
+            id: 'rotor',
+            defId: 'Rotor',
+            params: { wiring: ALPHABET.split(''), position: 0 },
+          },
+        ],
+        connections: [
+          {
+            from: { moduleId: 'clk', port: 'pulse' },
+            to: { moduleId: 'lfsr', port: 'clock' },
+          },
+          {
+            from: { moduleId: 'clk', port: 'pulse' },
+            to: { moduleId: 'rotor', port: 'clock' },
+          },
+          {
+            from: { moduleId: 'txt', port: 'out' },
+            to: { moduleId: 'rotor', port: 'in' },
+          },
+        ],
+      };
+
+      const result = executeTickedProject(project, registry, 4);
+
+      const lfsrSeeds = result.paramsByModuleByTick['lfsr'].map(
+        (p) => p.seed as number[],
+      );
+      const rotorPositions = result.paramsByModuleByTick['rotor'].map(
+        (p) => p.position as number,
+      );
+
+      // Period=2 → pulse on ticks 0, 2; silent on 1, 3
+      // Both modules should advance in lockstep
+      expect(lfsrSeeds[0]).toEqual([1, 0, 0, 1, 1]); // initial
+      expect(lfsrSeeds[1]).toEqual([1, 1, 0, 0, 1]); // advanced
+      expect(lfsrSeeds[2]).toEqual([1, 1, 0, 0, 1]); // same
+      expect(lfsrSeeds[3]).toEqual([1, 1, 1, 0, 0]); // advanced
+
+      expect(rotorPositions[0]).toBe(0);
+      expect(rotorPositions[1]).toBe(1); // advanced
+      expect(rotorPositions[2]).toBe(1); // same
+      expect(rotorPositions[3]).toBe(2); // advanced
+    });
+  });
+});

@@ -220,6 +220,49 @@ export function deriveTickCount(
   return minLength;
 }
 
+/**
+ * Reserved input port name for conditional advance.
+ * When a stateful module has this port connected, the executor only
+ * calls `advance` when the incoming signal is an active pulse.
+ */
+const CLOCK_PORT = 'clock';
+
+/**
+ * A pulse is active when the signal is exactly `[1]` — a single high
+ * bit. Any other shape (`[0]`, `[]`, multi-bit, non-bits) is inactive.
+ */
+function isActivePulse(signal: { type: string; value: unknown }): boolean {
+  if (signal.type !== 'bits') return false;
+  const bits = signal.value as number[];
+  return bits.length === 1 && bits[0] === 1;
+}
+
+/**
+ * Check if a module's 'clock' input port is connected and, if so,
+ * whether it received an active pulse [1] this tick.
+ *
+ * Returns:
+ * - null: no clock input is connected (caller should use default advance)
+ * - true: clock is connected and pulsed [1]
+ * - false: clock is connected but did not pulse
+ */
+function getClockPulse(
+  moduleId: string,
+  project: Project,
+  outputsByModuleId: Record<string, ModuleOutputs>,
+): boolean | null {
+  const clockConnection = project.connections.find(
+    (c) => c.to.moduleId === moduleId && c.to.port === CLOCK_PORT,
+  );
+  if (!clockConnection) return null;
+
+  const upstreamOutputs = outputsByModuleId[clockConnection.from.moduleId];
+  const signal = upstreamOutputs?.[clockConnection.from.port];
+  if (!signal) return false;
+
+  return isActivePulse(signal);
+}
+
 export function executeTickedProject(
   project: Project,
   registry: ModuleRegistry,
@@ -299,14 +342,24 @@ export function executeTickedProject(
 
     ticks.push({ order, outputsByModuleId, trace });
 
-    // Advance stateful modules for the next tick
+    // Advance stateful modules for the next tick.
+    // Signal-driven advance: if a module's 'clock' input port is connected,
+    // advance only when the clock signal is [1]. If no clock is connected,
+    // advance every tick (backward compatible).
     for (const moduleInstance of project.modules) {
       const def = registry[moduleInstance.defId];
       if (def && isStatefulModule(def)) {
-        currentParams[moduleInstance.id] = def.advance(
-          currentParams[moduleInstance.id],
-          tick,
+        const clockPulse = getClockPulse(
+          moduleInstance.id,
+          project,
+          outputsByModuleId,
         );
+        if (clockPulse === null || clockPulse === true) {
+          currentParams[moduleInstance.id] = def.advance(
+            currentParams[moduleInstance.id],
+            tick,
+          );
+        }
       }
     }
   }

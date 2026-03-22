@@ -4,52 +4,41 @@ Modular Cryptography Workbench (MCW) is a visual cryptographic construction envi
 
 Instead of selecting a prebuilt cipher, users assemble machines from parts:
 - symbol-domain modules such as rotors and reflectors
-- bit-domain modules such as XOR and key sources
+- bit-domain modules such as XOR, LFSR, SBox, Permutation, and BitShifter
 - explicit bridge modules such as `SymbolToBits` and `BitsToSymbol`
 
 The goal is to make cryptographic structure visible. MCW is designed as a workshop, not a museum.
 
 ## Current State
 
-The repository now has:
-- a stable engine milestone
-- released UI/editor milestones on `main` through `v0.9.0`
-- an active v1 polish/tutorial branch at `feature/v1-polish-and-tutorials`
+The repository has shipped all V1 milestones plus a post-v1 advanced foundry slice on `main`.
 
-Implemented and locked so far:
-- engine core types
-- graph validation
-- iterative topological executor
-- V1 primitive modules
-- hybrid reference pipeline tests
-- reducer-backed minimal UI shell
-- draggable visual workbench
-- palette-driven module creation
-- port-to-port connection editing
-- structured parameter editors
-- workbench persistence and JSON import/export
-- sticky-note annotations
-- dark mode token groundwork
+Implemented and shipped:
+- engine core types, graph validation, iterative topological executor
+- V1 primitive modules (symbol + bit domains, bridges, modern primitives)
+- ticked/stateful execution engine (rotor stepping, per-tick source slicing)
+- reducer-backed UI shell with visual workbench canvas
+- draggable modules, port-to-port connections, structured parameter editors
 - reusable composite workflows
-- analysis visibility and step-through execution
+- analysis visibility, step-through execution, signal probing
 - comparison-first break workflows
-- guided challenges
-- multi-agent coordination and implementation contract
-
-Active next steps:
-- modern bit-domain primitive expansion
-- first modern demo graphs
-- proving MCW can teach beyond XOR/bridge-era examples
+- guided challenges and tutorial walkthroughs
+- Build / Guide workspace mode (freeform building vs. tutorial-guided learning)
+- ticked execution UI (tick bar, scrubber, collected output, per-tick state display)
+- workbench persistence and JSON import/export
+- dark mode
+- GitHub Pages deployment
 
 ## Key Documents
 
 - `PROJECT.md`: product vision and full specification
-- `ENGINE-V1-CONTRACT.md`: locked implementation decisions for the current engine slice
-- `COMPOSITE-V1-CONTRACT.md`: locked direction for the composite groundwork branch
-- `BREAK-V1-CONTRACT.md`: locked direction for the first break-workflows branch
-- `GUIDED-CHALLENGES-V1-CONTRACT.md`: locked direction for the first classroom challenge branch
-- `MODERN-PRIMITIVES-V1-CONTRACT.md`: locked direction for the first modern primitive expansion branch
-- `V1-POLISH-AND-TUTORIALS.md`: locked direction for the final v1 finish branch
+- `ENGINE-V1-CONTRACT.md`: locked implementation decisions for the engine
+- `COMPOSITE-V1-CONTRACT.md`: locked direction for composite modules
+- `BREAK-V1-CONTRACT.md`: locked direction for break workflows
+- `GUIDED-CHALLENGES-V1-CONTRACT.md`: locked direction for classroom challenges
+- `MODERN-PRIMITIVES-V1-CONTRACT.md`: locked direction for modern primitive expansion
+- `V1-POLISH-AND-TUTORIALS.md`: locked direction for v1 polish and tutorials
+- `ADVANCED-FOUNDRY-CLOCK-V1.md`: locked direction for ticked/stateful execution
 - `AI-COORDINATION.md`: multi-agent workflow rules
 - `AI-WORKSTREAMS.md`: current ownership boundaries
 - `IMPLEMENTATION-STATUS.md`: live execution status and handoff notes
@@ -75,31 +64,18 @@ Pushes to `main` deploy automatically to GitHub Pages through `.github/workflows
 Published site:
 - https://timothy815.github.io/Modular_crypto_worksbench/
 
-## Short-Term Goal
-
-The current shipped workbench already supports adding, deleting, moving, connecting, composing,
-interrogating modules, comparing broken variants against captured baselines, and running guided
-classroom challenges.
-
-The active branch is now turning the shipped workbench into a final v1 educational product:
-- guided walkthroughs/tutorials
-- shell and panel polish
-- classroom-ready finish quality
-
-The first proof on this branch now includes:
-- branch contract
-- seeded tutorial definitions
-- reducer-backed tutorial session state
-- first walkthrough panel in the app shell
-
-The next meaningful product milestones after this branch are:
-
-```text
-build -> analyze -> break -> guided challenge -> modern primitive expansion -> v1 polish/tutorials
-```
-
-The canonical hybrid reference pipeline remains:
+## The Canonical Pipeline
 
 ```text
 TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol -> Output
 ```
+
+In ticked mode, the rotor advances per character and TextInput emits one character per tick — a full Enigma-style stepping pipeline.
+
+## Near-Term Roadmap
+
+1. Tag `v1.1.0` after review of advanced foundry and workspace mode slices
+2. Tutorial content deepening
+3. Conditional clocking (Enigma double-stepping)
+4. Composite statefulness
+5. Authored tutorials for custom composites

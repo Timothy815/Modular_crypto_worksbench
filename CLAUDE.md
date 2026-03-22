@@ -120,30 +120,28 @@ src/utils/     — Shared helpers
 8. **Modern Primitives** — bit-domain expansion beyond XOR and static sources
 9. **V1 Polish & Tutorials** — walkthroughs, finish polish, and classroom-ready guidance
 
-## Current V1 Polish Resume Point
+## Current Resume Point
 
-- Active branch: `feature/v1-polish-and-tutorials`
-- Start from `main` after `v0.9.0`
-- Read `V1-POLISH-AND-TUTORIALS.md` first
+- Resume from `main` at `d5364bd`
+- All V1 milestones shipped through `v1.0.1`
+- Post-v1 advanced foundry slice merged (ticked execution + Build/Guide mode)
 
-What is already shipped on `main`:
-- composite contract and full composite workflow
-- analysis/debugging visibility
-- stepping and signal-path filtering
- - comparison-first break workflows
- - guided challenges
- - modern primitive pack and shell/library UX rework
+What is shipped on `main`:
+- all V1 engine, UI, and workflow milestones
+- signal probing and analysis hardening
+- ticked/stateful execution engine and UI
+- Build / Guide workspace mode (per-project, persisted)
 
-Current branch state:
-- contract plus first tutorial groundwork
-- seeded walkthrough definitions
-- reducer-backed tutorial session state
-- simple tutorial panel in the app shell
+Key contracts to check before implementation:
+- `ENGINE-V1-CONTRACT.md` for engine decisions
+- `ADVANCED-FOUNDRY-CLOCK-V1.md` for ticked execution decisions (especially §7 for deferred work)
 
-Immediate next task:
-- deepen tutorials without hiding the workbench
-- polish shell/panel consistency
-- prepare the product for `v1.0`
+Near-term follow-ups:
+- tag `v1.1.0` after Gemini review
+- tutorial content deepening
+- conditional clocking (Enigma double-stepping)
+- composite statefulness (recursive advance)
+- authored tutorials for custom composites
 
 ## When Working on This Project
 

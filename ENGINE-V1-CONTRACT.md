@@ -57,11 +57,15 @@ type ModuleRegistry = Record<string, ModuleDef>;
 
 This is sufficient for the first engine slice and keeps the shared interface simple for multiple agents. A dedicated registry class can be introduced later if dynamic registration or lifecycle behavior becomes necessary.
 
-### 2.4 Error Model
+### 2.4 Reserved Port Names
+
+- **`clock`** — Reserved input port for conditional advance of stateful modules. When connected, the ticked executor only calls `advance` if the signal is an active pulse (`{ type: 'bits', value: [1] }`). When unconnected, stateful modules advance every tick (backward compatible). See `ADVANCED-FOUNDRY-CLOCK-V1.md` §2.3 for full specification.
+
+### 2.5 Error Model
 - **Validation:** Returns a `ValidationResult` object (collection of errors). Does not throw.
 - **Runtime (Executor):** Throws immediately if it encounters an invalid state that should have been caught by validation.
 
-### 2.5 Execution Model
+### 2.6 Execution Model
 **Iterative Topological Order:**
 1. Validate Graph.
 2. Compute Topological Sort.

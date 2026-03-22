@@ -1,4 +1,4 @@
-import type { ModuleDef } from '../types';
+import type { StatefulModuleDef } from '../types';
 
 function parseTapIndexes(value: unknown): number[] {
   if (typeof value !== 'string') {
@@ -30,10 +30,27 @@ function xorBits(values: number[]) {
   return values.reduce((accumulator, value) => accumulator ^ value, 0);
 }
 
-export const LFSR: ModuleDef = {
+/**
+ * Shift the register by one step: output the last bit, compute feedback
+ * from tap positions, pop the tail, and unshift the feedback bit.
+ * Returns the output bit and the new register state.
+ */
+function shiftRegister(
+  register: number[],
+  taps: number[],
+): { outputBit: number; next: number[] } {
+  const outputBit = register[register.length - 1];
+  const feedback = xorBits(taps.map((tapIndex) => register[tapIndex]));
+  const next = [feedback, ...register.slice(0, -1)];
+  return { outputBit, next };
+}
+
+export const LFSR: StatefulModuleDef = {
   id: 'LFSR',
   name: 'LFSR',
-  inputs: [],
+  inputs: [
+    { name: 'clock', type: 'bits' },
+  ],
   outputs: [{ name: 'out', type: 'bits' }],
   paramSchema: {
     seed: {
@@ -71,30 +88,41 @@ export const LFSR: ModuleDef = {
       throw new Error('LFSR requires a numeric output length');
     }
 
-    const register = [...seed];
-    if (register.length === 0) {
+    if (seed.length === 0) {
       throw new Error('LFSR seed cannot be empty');
     }
 
     const taps = parseTapIndexes(params.taps);
-    if (taps.some((index) => index >= register.length)) {
+    if (taps.some((index) => index >= seed.length)) {
       throw new Error('LFSR tap index is out of range for the seed width');
     }
 
     const result: number[] = [];
     const totalBits = Math.max(0, Math.trunc(outputLength));
+    let register = [...seed];
 
     for (let index = 0; index < totalBits; index += 1) {
-      const outputBit = register[register.length - 1];
-      result.push(outputBit);
-
-      const feedback = xorBits(taps.map((tapIndex) => register[tapIndex]));
-      register.pop();
-      register.unshift(feedback);
+      const step = shiftRegister(register, taps);
+      result.push(step.outputBit);
+      register = step.next;
     }
 
     return {
       out: { type: 'bits', value: result },
     };
+  },
+  advance: (params) => {
+    const seed = params.seed;
+    if (!Array.isArray(seed) || seed.length === 0) {
+      return params;
+    }
+
+    const taps = parseTapIndexes(params.taps);
+    if (taps.some((index) => index >= seed.length)) {
+      return params;
+    }
+
+    const { next } = shiftRegister(seed as number[], taps);
+    return { ...params, seed: next };
   },
 };
