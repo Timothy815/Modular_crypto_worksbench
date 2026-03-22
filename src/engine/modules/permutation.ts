@@ -1,6 +1,6 @@
 import type { ModuleDef } from '../types';
 
-function parsePermutationOrder(value: unknown): number[] {
+export function parsePermutationOrder(value: unknown): number[] {
   if (typeof value !== 'string') {
     throw new Error('Permutation requires a comma-separated index list');
   }
@@ -20,6 +20,19 @@ function parsePermutationOrder(value: unknown): number[] {
   }
 
   return order;
+}
+
+export function validatePermutationOrderParam(value: unknown): string | null {
+  try {
+    const order = parsePermutationOrder(value);
+    const unique = new Set(order);
+    if (unique.size !== order.length) {
+      return 'Permutation order must not repeat indexes.';
+    }
+    return null;
+  } catch (error) {
+    return error instanceof Error ? error.message : 'Permutation order is invalid.';
+  }
 }
 
 export const Permutation: ModuleDef = {

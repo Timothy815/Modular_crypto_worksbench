@@ -21,6 +21,7 @@ export type ModuleLibraryDomainTab = 'all' | 'symbol' | 'bit' | 'bridge' | 'comp
 interface PrimitiveLibraryMeta {
   sectionId: Exclude<ModuleLibrarySectionId, 'composites'>;
   purpose: string;
+  detail: string;
   searchTerms: string[];
 }
 
@@ -28,66 +29,79 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
   TextInput: {
     sectionId: 'inputs-outputs',
     purpose: 'Emits a single letter symbol into the graph.',
+    detail: 'Use this when a graph should begin with a manually chosen symbol like A, M, or Z.',
     searchTerms: ['text', 'input', 'letter', 'symbol', 'message'],
   },
   KeyInput: {
     sectionId: 'inputs-outputs',
     purpose: 'Emits a single key letter for classical symbol workflows.',
+    detail: 'Useful when a symbolic cipher needs a separate key-style input alongside plaintext.',
     searchTerms: ['key', 'input', 'letter', 'symbol'],
   },
   BitSource: {
     sectionId: 'inputs-outputs',
     purpose: 'Emits a fixed bit pattern for testing or simple round keys.',
+    detail: 'Use this as a simple round key or fixed mask when experimenting in the bit domain.',
     searchTerms: ['bit', 'source', 'key', 'stream', 'bits'],
   },
   Output: {
     sectionId: 'inputs-outputs',
     purpose: 'Collects the final signal at the end of a graph.',
+    detail: 'Place this at the end of a pipeline when you want a result to count as the output.',
     searchTerms: ['output', 'sink', 'result', 'final'],
   },
   Rotor: {
     sectionId: 'symbol-domain',
     purpose: 'Substitutes letters through a positional rotor wiring.',
+    detail: 'A classical substitution component whose output changes with its configured position.',
     searchTerms: ['rotor', 'enigma', 'letter', 'symbol', 'substitution'],
   },
   Reflector: {
     sectionId: 'symbol-domain',
     purpose: 'Reflects a letter back through a paired symbolic wiring.',
+    detail: 'A classical paired mapping used to bounce a symbol back through a symbolic path.',
     searchTerms: ['reflector', 'reflection', 'letter', 'symbol', 'enigma'],
   },
   XOR: {
     sectionId: 'bit-domain',
     purpose: 'Combines two bit streams with exclusive-or.',
+    detail: 'Core bit-mixing primitive for masking, key addition, and reversible combining.',
     searchTerms: ['xor', 'combine', 'mask', 'bits', 'key mixing'],
   },
   Permutation: {
     sectionId: 'transforms',
     purpose: 'Reorders bit positions according to a configured pattern.',
+    detail: 'A diffusion-style transform that shuffles bit positions without changing their values.',
     searchTerms: ['permutation', 'permute', 'reorder', 'shuffle', 'bits'],
   },
   BitShifter: {
     sectionId: 'transforms',
     purpose: 'Shifts or rotates bits left and right.',
+    detail: 'Use this to move bit positions or perform circular rotations within a bit vector.',
     searchTerms: ['shift', 'rotate', 'bits', 'circular', 'left', 'right'],
   },
   SBox: {
     sectionId: 'transforms',
     purpose: 'Substitutes each 4-bit nibble through a lookup table.',
+    detail: 'A nonlinear substitution block that maps each nibble to a different nibble value.',
     searchTerms: ['sbox', 's-box', 'substitute', 'nibble', 'nonlinear', 'bits'],
   },
   LFSR: {
     sectionId: 'state-keystream',
     purpose: 'Generates a deterministic keystream from a seed and tap pattern.',
+    detail: 'A simple keystream generator that expands a register state into a repeatable bit stream.',
     searchTerms: ['lfsr', 'keystream', 'stream', 'register', 'feedback', 'bits'],
   },
   SymbolToBits: {
     sectionId: 'bridges',
     purpose: 'Converts one letter symbol into a 5-bit representation.',
+    detail: 'Use this when a symbolic pipeline needs to cross into bit-based transforms.',
     searchTerms: ['bridge', 'convert', 'encode', 'symbol', 'bits'],
   },
   BitsToSymbol: {
     sectionId: 'bridges',
     purpose: 'Converts a 5-bit value back into a letter symbol.',
+    detail: 'Use this to return from bit-based transforms back into a symbolic result.',
     searchTerms: ['bridge', 'convert', 'decode', 'bits', 'symbol'],
   },
 };
@@ -146,6 +160,17 @@ export function getModulePurpose(definition: ModuleDefinition): string {
   return (
     PRIMITIVE_LIBRARY_META[definition.id]?.purpose ??
     'Reusable primitive module for cryptographic graph experiments.'
+  );
+}
+
+export function getModuleDetail(definition: ModuleDefinition): string {
+  if (isCompositeDefinition(definition)) {
+    return 'Reusable module captured from a workbench subgraph. Open it to inspect or edit its internals.';
+  }
+
+  return (
+    PRIMITIVE_LIBRARY_META[definition.id]?.detail ??
+    'Cryptographic building block for constructing, analyzing, and comparing machine behavior.'
   );
 }
 

@@ -1,6 +1,6 @@
 import type { ModuleDef } from '../types';
 
-function parseTable(value: unknown): number[] {
+export function parseSBoxTable(value: unknown): number[] {
   if (typeof value !== 'string') {
     throw new Error('SBox table must be a comma-separated value list');
   }
@@ -24,6 +24,15 @@ function parseTable(value: unknown): number[] {
   }
 
   return entries;
+}
+
+export function validateSBoxTableParam(value: unknown): string | null {
+  try {
+    parseSBoxTable(value);
+    return null;
+  } catch (error) {
+    return error instanceof Error ? error.message : 'SBox table is invalid.';
+  }
 }
 
 function bitsToNumber(bits: number[]): number {
@@ -67,7 +76,7 @@ export const SBox: ModuleDef = {
       throw new Error('SBox input width must be a multiple of 4 bits');
     }
 
-    const table = parseTable(params.table);
+    const table = parseSBoxTable(params.table);
     const output: number[] = [];
 
     for (let index = 0; index < signal.value.length; index += 4) {

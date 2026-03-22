@@ -277,6 +277,23 @@
   color: var(--muted);
 }
 
+.primitive-help-card {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+}
+
+.primitive-help-card p {
+  margin: 8px 0 0;
+}
+
+.primitive-help-ports {
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
 .palette-panel-compact .primitive-purpose,
 .palette-panel-compact .primitive-section-copy {
   display: none;

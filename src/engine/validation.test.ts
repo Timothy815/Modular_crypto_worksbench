@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { Permutation } from './modules/permutation';
+import { SBox } from './modules/s-box';
 import type { ModuleRegistry, Project } from './types';
 import { validateProject } from './validation';
 
@@ -40,6 +42,8 @@ const registry: ModuleRegistry = {
     paramSchema: {},
     evaluate: (inputs) => ({ out: inputs.in }),
   },
+  [Permutation.id]: Permutation,
+  [SBox.id]: SBox,
 };
 
 describe('validateProject', () => {
@@ -158,5 +162,41 @@ describe('validateProject', () => {
 
     expect(result.ok).toBe(false);
     expect(result.issues.some((issue) => issue.code === 'unknown-module-def')).toBe(true);
+  });
+
+  it('rejects malformed permutation order params before execution', () => {
+    const project: Project = {
+      modules: [{ id: 'permute-1', defId: 'Permutation', params: { order: '0,1,X,3' } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'permute-1' &&
+          issue.message.includes('Permutation order must contain only non-negative integers'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects malformed s-box tables before execution', () => {
+    const project: Project = {
+      modules: [{ id: 'sbox-1', defId: 'SBox', params: { table: '0,1,2,3' } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'sbox-1' &&
+          issue.message.includes('SBox table must contain exactly 16 entries'),
+      ),
+    ).toBe(true);
   });
 });

@@ -4,6 +4,7 @@ import type { ModuleRegistry } from '../../engine/types';
 import { getModuleCategory } from '../module-categories';
 import {
   type ModuleLibraryDomainTab,
+  getModuleDetail,
   getModuleLibrarySectionId,
   getModulePurpose,
   matchesModuleDomainTab,
@@ -219,6 +220,7 @@ function ModuleLibraryCard({
   onRemoveComposite,
 }: ModuleLibraryCardProps) {
   const isComposite = 'kind' in def && def.kind === 'composite';
+  const [showHelp, setShowHelp] = useState(false);
 
   return (
     <li key={def.id} className={`primitive-card primitive-card-${getModuleCategory(def)}`}>
@@ -258,6 +260,17 @@ function ModuleLibraryCard({
                 ✎
               </button>
             ) : null}
+            {viewMode === 'expanded' ? (
+              <button
+                type="button"
+                className="primitive-action-button"
+                onClick={() => setShowHelp((current) => !current)}
+                title={`About ${def.name}`}
+                aria-label={`About ${def.name}`}
+              >
+                ?
+              </button>
+            ) : null}
             {isComposite ? (
               <button
                 type="button"
@@ -284,6 +297,18 @@ function ModuleLibraryCard({
           ) : null}
         </div>
       </div>
+      {viewMode === 'expanded' && showHelp ? (
+        <div className="primitive-help-card">
+          <span className="meta-label">What It Does</span>
+          <p>{getModuleDetail(def)}</p>
+          <p className="primitive-help-ports">
+            Inputs: <strong>{def.inputs.map((port) => `${port.name}:${port.type}`).join(', ') || 'none'}</strong>
+          </p>
+          <p className="primitive-help-ports">
+            Outputs: <strong>{def.outputs.map((port) => `${port.name}:${port.type}`).join(', ') || 'none'}</strong>
+          </p>
+        </div>
+      ) : null}
     </li>
   );
 }
