@@ -93,17 +93,21 @@ export function TutorialPanel({
         </select>
       </label>
 
-      <p className="comparison-copy">{selectedTutorial.summary}</p>
-      <p className="comparison-copy">
-        Designed for <strong>{selectedTutorial.projectId}</strong>.
-        {isCompleted ? (
-          <span className="tutorial-completed-chip">Completed</span>
-        ) : (
-          <span className="tutorial-in-progress-chip">
-            Step {stepIndex + 1} of {totalSteps}
+      <div className="content-selector-card">
+        <p className="comparison-copy">{selectedTutorial.summary}</p>
+        <div className="content-selector-meta">
+          <span className="content-status-chip">
+            Project: <strong>{selectedTutorial.projectId}</strong>
           </span>
-        )}
-      </p>
+          {isCompleted ? (
+            <span className="content-status-chip tutorial-completed-chip">Completed</span>
+          ) : (
+            <span className="content-status-chip tutorial-in-progress-chip">
+              Step {stepIndex + 1} of {totalSteps}
+            </span>
+          )}
+        </div>
+      </div>
 
       {isCompleted ? (
         <div className="tutorial-completed-banner">

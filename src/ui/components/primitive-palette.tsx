@@ -222,15 +222,66 @@ function ModuleLibraryCard({
   const isComposite = 'kind' in def && def.kind === 'composite';
   const [showHelp, setShowHelp] = useState(false);
 
+  if (viewMode === 'compact') {
+    return (
+      <li className={`primitive-card primitive-compact-row primitive-card-${getModuleCategory(def)}`}>
+        <div className="primitive-compact-main">
+          <div className="primitive-compact-meta">
+            <strong className="primitive-title">{def.name}</strong>
+            {isComposite ? (
+              <span className="module-kind-badge">Composite</span>
+            ) : null}
+          </div>
+          <div className="primitive-compact-actions">
+            <button
+              type="button"
+              className="primitive-action-button"
+              onClick={() => onAddModule(def.id)}
+              title={`Add ${def.name}`}
+              aria-label={`Add ${def.name}`}
+            >
+              +
+            </button>
+            {isComposite ? (
+              <button
+                type="button"
+                className="primitive-action-button"
+                onClick={() => onOpenComposite(def.id)}
+                title={`Edit ${def.name}`}
+                aria-label={`Edit ${def.name}`}
+              >
+                ✎
+              </button>
+            ) : null}
+            {isComposite ? (
+              <button
+                type="button"
+                className="primitive-action-button primitive-action-button-danger"
+                onClick={() => onRemoveComposite(def.id)}
+                disabled={usageCount > 0}
+                title={
+                  usageCount > 0
+                    ? 'Remove composite instances from the workbench before deleting it from the library.'
+                    : `Remove ${def.name}`
+                }
+                aria-label={`Remove ${def.name}`}
+              >
+                x
+              </button>
+            ) : null}
+          </div>
+        </div>
+      </li>
+    );
+  }
+
   return (
     <li key={def.id} className={`primitive-card primitive-card-${getModuleCategory(def)}`}>
       <div className="primitive-main">
         <div className="primitive-meta">
           <strong className="primitive-title">{def.name}</strong>
           <p className="primitive-def-id">{def.id}</p>
-          {viewMode === 'expanded' ? (
-            <p className="primitive-purpose">{getModulePurpose(def)}</p>
-          ) : null}
+          <p className="primitive-purpose">{getModulePurpose(def)}</p>
           {isComposite ? (
             <span className="module-kind-badge">Composite</span>
           ) : null}

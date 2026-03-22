@@ -67,16 +67,19 @@ export function ChallengePanel({
 
       {selectedChallenge ? (
         <>
-          <p className="comparison-copy">{selectedChallenge.prompt}</p>
-          {selectedChallenge.difficulty ? (
-            <p className="comparison-copy">
-              Difficulty: <strong>{formatDifficultyLabel(selectedChallenge.difficulty)}</strong>
-            </p>
-          ) : null}
-          <p className="comparison-copy">
-            Resetting loads the seeded starting machine for this challenge and replaces the current
-            workbench attempt.
-          </p>
+          <div className="content-selector-card">
+            <p className="comparison-copy">{selectedChallenge.prompt}</p>
+            <div className="content-selector-meta">
+              {selectedChallenge.difficulty ? (
+                <span className="content-status-chip">
+                  Difficulty: <strong>{formatDifficultyLabel(selectedChallenge.difficulty)}</strong>
+                </span>
+              ) : null}
+              <span className="content-status-chip">
+                Resetting restores the seeded starting machine
+              </span>
+            </div>
+          </div>
 
           <div className="comparison-actions">
             <button

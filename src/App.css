@@ -296,6 +296,32 @@
   gap: 10px;
 }
 
+.primitive-compact-row {
+  padding: 10px 12px;
+}
+
+.primitive-compact-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.primitive-compact-meta {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.primitive-compact-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .primitive-actions {
   display: flex;
   flex-direction: column;
@@ -381,6 +407,34 @@
   gap: 12px;
   align-items: start;
   margin-bottom: 14px;
+}
+
+.content-selector-card {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-soft);
+}
+
+.content-selector-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.content-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 1.9rem;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-panel);
+  font-size: 0.76rem;
 }
 
 .project-selector {
@@ -655,7 +709,6 @@
 .tutorial-completed-chip,
 .tutorial-in-progress-chip {
   display: inline-block;
-  margin-left: 8px;
   padding: 2px 8px;
   border-radius: 999px;
   font-size: 0.78rem;
