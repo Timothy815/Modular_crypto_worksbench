@@ -10,6 +10,8 @@ import {
   type ValidationResult,
 } from './types';
 import type { CompositeDef, CompositePortBinding } from './composites';
+import { validateAsciiSourceValue } from './modules/ascii-source';
+import { validateHexSourceValue } from './modules/hex-source';
 import { validatePermutationOrderParam } from './modules/permutation';
 import { validateSBoxTableParam } from './modules/s-box';
 
@@ -98,6 +100,14 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'SBox' && field.key === 'table') {
     return validateSBoxTableParam(value);
+  }
+
+  if (def.id === 'HexSource' && field.key === 'value') {
+    return validateHexSourceValue(value);
+  }
+
+  if (def.id === 'AsciiSource' && field.key === 'value') {
+    return validateAsciiSourceValue(value);
   }
 
   return null;

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { AsciiSource } from './modules/ascii-source';
+import { HexSource } from './modules/hex-source';
 import { Permutation } from './modules/permutation';
 import { SBox } from './modules/s-box';
 import type { ModuleRegistry, Project } from './types';
@@ -42,6 +44,8 @@ const registry: ModuleRegistry = {
     paramSchema: {},
     evaluate: (inputs) => ({ out: inputs.in }),
   },
+  [AsciiSource.id]: AsciiSource,
+  [HexSource.id]: HexSource,
   [Permutation.id]: Permutation,
   [SBox.id]: SBox,
 };
@@ -196,6 +200,42 @@ describe('validateProject', () => {
         (issue) =>
           issue.moduleId === 'sbox-1' &&
           issue.message.includes('SBox table length must be a power of two'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects malformed hex source params before execution', () => {
+    const project: Project = {
+      modules: [{ id: 'hex-1', defId: 'HexSource', params: { value: 'G1' } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'hex-1' &&
+          issue.message.includes('HexSource accepts only hexadecimal characters 0-9 and A-F'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects non-ascii source params before execution', () => {
+    const project: Project = {
+      modules: [{ id: 'ascii-1', defId: 'AsciiSource', params: { value: 'é' } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'ascii-1' &&
+          issue.message.includes('AsciiSource accepts only 7-bit ASCII characters'),
       ),
     ).toBe(true);
   });

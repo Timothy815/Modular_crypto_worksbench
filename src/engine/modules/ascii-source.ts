@@ -1,17 +1,26 @@
 import type { ModuleDef } from '../types';
 
-function normalizeAscii(value: unknown): string {
+export function validateAsciiSourceValue(value: unknown): string | null {
   if (typeof value !== 'string') {
-    throw new Error('AsciiSource requires a text string');
+    return 'AsciiSource requires a text string';
   }
 
   for (const char of value) {
     if (char.charCodeAt(0) > 0x7f) {
-      throw new Error('AsciiSource accepts only 7-bit ASCII characters');
+      return 'AsciiSource accepts only 7-bit ASCII characters';
     }
   }
 
-  return value;
+  return null;
+}
+
+function normalizeAscii(value: unknown): string {
+  const validationMessage = validateAsciiSourceValue(value);
+  if (validationMessage) {
+    throw new Error(validationMessage);
+  }
+
+  return typeof value === 'string' ? value : '';
 }
 
 function charToBits(char: string): number[] {

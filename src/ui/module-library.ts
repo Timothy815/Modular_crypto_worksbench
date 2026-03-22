@@ -56,6 +56,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this for byte-oriented labs when you want to paste hex test vectors instead of typing raw bits.',
     searchTerms: ['hex', 'source', 'byte', 'vector', 'bits', 'input'],
   },
+  Clock: {
+    sectionId: 'inputs-outputs',
+    purpose: 'Emits a visible pulse stream that marks time in the graph.',
+    detail: 'Use this when stateful modules should advance on explicit ticks instead of hidden timing.',
+    searchTerms: ['clock', 'pulse', 'time', 'tick', 'timing'],
+  },
   Output: {
     sectionId: 'inputs-outputs',
     purpose: 'Collects the final signal at the end of a graph.',

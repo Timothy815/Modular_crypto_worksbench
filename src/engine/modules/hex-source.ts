@@ -1,20 +1,31 @@
 import type { ModuleDef } from '../types';
 
-function sanitizeHex(value: unknown): string {
+export function validateHexSourceValue(value: unknown): string | null {
   if (typeof value !== 'string') {
-    throw new Error('HexSource requires a hex string');
+    return 'HexSource requires a hex string';
   }
 
   const normalized = value.trim().replace(/\s+/g, '').toUpperCase();
   if (normalized.length === 0) {
-    return '';
+    return null;
   }
 
   if (!/^[0-9A-F]+$/.test(normalized)) {
-    throw new Error('HexSource accepts only hexadecimal characters 0-9 and A-F');
+    return 'HexSource accepts only hexadecimal characters 0-9 and A-F';
   }
 
-  return normalized;
+  return null;
+}
+
+function sanitizeHex(value: unknown): string {
+  const validationMessage = validateHexSourceValue(value);
+  if (validationMessage) {
+    throw new Error(validationMessage);
+  }
+
+  return typeof value === 'string'
+    ? value.trim().replace(/\s+/g, '').toUpperCase()
+    : '';
 }
 
 function hexToBits(value: string): number[] {
