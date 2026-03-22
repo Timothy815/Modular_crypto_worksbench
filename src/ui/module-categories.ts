@@ -10,6 +10,8 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   Rotor: 'operator',
   Reflector: 'operator',
   XOR: 'operator',
+  Permutation: 'operator',
+  BitShifter: 'operator',
   SymbolToBits: 'bridge',
   BitsToSymbol: 'bridge',
   Output: 'sink',
