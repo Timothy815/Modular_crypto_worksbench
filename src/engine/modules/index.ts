@@ -10,6 +10,7 @@ import { Rotor } from './rotor';
 import { Reflector } from './reflector';
 import { Permutation } from './permutation';
 import { BitShifter } from './bit-shifter';
+import { LFSR } from './lfsr';
 
 export {
   TextInput,
@@ -23,6 +24,7 @@ export {
   Reflector,
   Permutation,
   BitShifter,
+  LFSR,
 };
 
 export const V1_REGISTRY: ModuleRegistry = {
@@ -37,4 +39,5 @@ export const V1_REGISTRY: ModuleRegistry = {
   [Reflector.id]: Reflector,
   [Permutation.id]: Permutation,
   [BitShifter.id]: BitShifter,
+  [LFSR.id]: LFSR,
 };

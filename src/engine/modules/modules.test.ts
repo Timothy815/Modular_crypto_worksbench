@@ -9,6 +9,7 @@ import { Rotor } from './rotor';
 import { Reflector } from './reflector';
 import { Permutation } from './permutation';
 import { BitShifter } from './bit-shifter';
+import { LFSR } from './lfsr';
 import type { Signal } from '../types';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -215,6 +216,30 @@ describe('BitShifter', () => {
   it('returns zeros when a logical shift exceeds the input width', () => {
     const result = BitShifter.evaluate({ in: bitsSignal }, { amount: 7, mode: 'left' });
     expect(result.out).toEqual({ type: 'bits', value: [0, 0, 0, 0, 0] });
+  });
+});
+
+describe('LFSR', () => {
+  it('emits a deterministic keystream from seed and taps', () => {
+    const result = LFSR.evaluate(
+      {},
+      { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 6 },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 1, 0, 0, 1, 1] });
+  });
+
+  it('returns an empty stream when output length is zero', () => {
+    const result = LFSR.evaluate(
+      {},
+      { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 0 },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [] });
+  });
+
+  it('throws when a tap index is outside the register width', () => {
+    expect(() =>
+      LFSR.evaluate({}, { seed: [1, 0, 1], taps: '0,4', outputLength: 4 }),
+    ).toThrow();
   });
 });
 

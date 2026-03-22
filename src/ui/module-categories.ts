@@ -7,6 +7,7 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   TextInput: 'source',
   KeyInput: 'source',
   BitSource: 'source',
+  LFSR: 'source',
   Rotor: 'operator',
   Reflector: 'operator',
   XOR: 'operator',
