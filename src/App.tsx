@@ -288,6 +288,22 @@ function App() {
   const effectiveCurrentTick = tickedExecution
     ? Math.min(currentTick, effectiveTickCount - 1)
     : 0;
+  const tickHistoryByModule = tickedExecution
+    ? Object.fromEntries(
+        activeProjectState.modules.map((moduleInstance) => {
+          const moduleDef = effectiveRegistry[moduleInstance.defId];
+          const primaryPort = moduleDef?.outputs[0]?.name;
+          if (!primaryPort) {
+            return [moduleInstance.id, []];
+          }
+
+          const history = tickedExecution.ticks.map((tick) =>
+            formatTickSignal(tick.outputsByModuleId[moduleInstance.id]?.[primaryPort]),
+          );
+          return [moduleInstance.id, history];
+        }),
+      )
+    : null;
   const collectedOutput = tickedExecution
     ? tickedExecution.ticks
         .map((tick) => {
@@ -299,6 +315,26 @@ function App() {
         })
         .join('')
     : null;
+
+  useEffect(() => {
+    if (!isTickedMode || !tickedExecution) {
+      return;
+    }
+
+    if (currentTick !== effectiveCurrentTick) {
+      dispatch({
+        type: 'setCurrentTick',
+        projectId: activeProjectDefinition.id,
+        tick: effectiveCurrentTick,
+      });
+    }
+  }, [
+    activeProjectDefinition.id,
+    currentTick,
+    effectiveCurrentTick,
+    isTickedMode,
+    tickedExecution,
+  ]);
 
   useEffect(() => {
     if (
@@ -577,6 +613,7 @@ function App() {
             currentTick={effectiveCurrentTick}
             collectedOutput={collectedOutput}
             tickedParamsByModule={tickedExecution?.paramsByModuleByTick ?? null}
+            tickHistoryByModule={tickHistoryByModule}
             onSetTickedMode={(enabled) =>
               dispatch({
                 type: 'setTickedMode',
@@ -947,6 +984,7 @@ function App() {
               currentTick={effectiveCurrentTick}
               tickCount={effectiveTickCount}
               tickedParamsByModule={tickedExecution?.paramsByModuleByTick ?? null}
+              tickHistoryByModule={tickHistoryByModule}
               onToggleProbe={(moduleId) =>
                 dispatch({
                   type: 'toggleProbe',
@@ -1294,6 +1332,22 @@ function App() {
       ) : null}
     </main>
   );
+}
+
+function formatTickSignal(
+  signal:
+    | ExecutionResult['outputsByModuleId'][string][string]
+    | undefined,
+): string {
+  if (!signal) {
+    return '--';
+  }
+
+  if (signal.type === 'symbol') {
+    return signal.value.length > 0 ? signal.value : '--';
+  }
+
+  return signal.value.length > 0 ? signal.value.join('') : '--';
 }
 
 export default App;

@@ -47,6 +47,7 @@ interface ParameterInspectorProps {
   currentTick?: number;
   tickCount?: number;
   tickedParamsByModule?: Record<string, Record<string, unknown>[]> | null;
+  tickHistoryByModule?: Record<string, string[]> | null;
   onToggleProbe: (moduleId: string) => void;
   onClearProbes: () => void;
 }
@@ -81,6 +82,7 @@ export function ParameterInspector({
   currentTick = 0,
   tickCount = 0,
   tickedParamsByModule = null,
+  tickHistoryByModule = null,
   onToggleProbe,
   onClearProbes,
 }: ParameterInspectorProps) {
@@ -191,6 +193,34 @@ export function ParameterInspector({
                   </li>
                 ))}
               </ul>
+            );
+          })() : null}
+          {tickHistoryByModule?.[moduleInstance.id]?.length ? (() => {
+            const history = tickHistoryByModule[moduleInstance.id];
+            const start = Math.max(0, currentTick - 4);
+            const visibleHistory = history.slice(start, currentTick + 1);
+            if (visibleHistory.length <= 1) {
+              return null;
+            }
+
+            return (
+              <>
+                <p className="tick-history-summary">Recent output history</p>
+                <div className="tick-history-row">
+                  {visibleHistory.map((value, index) => (
+                    <span
+                      key={`${moduleInstance.id}-inspector-history-${start + index}`}
+                      className={
+                        start + index === currentTick
+                          ? 'tick-history-chip active'
+                          : 'tick-history-chip'
+                      }
+                    >
+                      {value}
+                    </span>
+                  ))}
+                </div>
+              </>
             );
           })() : null}
         </section>

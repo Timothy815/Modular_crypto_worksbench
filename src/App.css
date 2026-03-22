@@ -1793,6 +1793,30 @@
   margin-top: 2px;
 }
 
+.graph-node-history {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.graph-node-history-chip {
+  min-width: 18px;
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-2) 85%, transparent);
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  text-align: center;
+}
+
+.graph-node-history-chip.active {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-2));
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+}
+
 /* Tick state in inspector */
 .tick-state-section {
   border-left: 3px solid var(--accent);
@@ -1823,6 +1847,33 @@
 .tick-param-key {
   color: var(--text-muted);
   min-width: 64px;
+}
+
+.tick-history-summary {
+  margin: 8px 0 4px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.tick-history-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tick-history-chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+}
+
+.tick-history-chip.active {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-2));
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
 }
 
 .tick-param-value {

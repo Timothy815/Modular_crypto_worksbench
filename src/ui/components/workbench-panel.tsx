@@ -67,6 +67,7 @@ interface WorkbenchPanelProps {
   currentTick?: number;
   collectedOutput?: string | null;
   tickedParamsByModule?: Record<string, Record<string, unknown>[]> | null;
+  tickHistoryByModule?: Record<string, string[]> | null;
   onSetTickedMode?: (enabled: boolean) => void;
   onSetCurrentTick?: (tick: number) => void;
   isTickPlaybackActive?: boolean;
@@ -120,6 +121,7 @@ export function WorkbenchPanel({
   currentTick = 0,
   collectedOutput = null,
   tickedParamsByModule = null,
+  tickHistoryByModule = null,
   onSetTickedMode,
   onSetCurrentTick,
   isTickPlaybackActive = false,
@@ -702,6 +704,31 @@ export function WorkbenchPanel({
                       <span className="graph-node-tick-state" title={`position = ${positionValue}`}>
                         pos {String(positionValue)}
                       </span>
+                    );
+                  })() : null}
+                  {isTickedMode && tickHistoryByModule?.[moduleInstance.id]?.length ? (() => {
+                    const history = tickHistoryByModule[moduleInstance.id];
+                    const start = Math.max(0, currentTick - 4);
+                    const visibleHistory = history.slice(start, currentTick + 1);
+                    if (visibleHistory.length <= 1) {
+                      return null;
+                    }
+
+                    return (
+                      <div className="graph-node-history" title="Recent tick history">
+                        {visibleHistory.map((value, index) => (
+                          <span
+                            key={`${moduleInstance.id}-history-${start + index}`}
+                            className={
+                              start + index === currentTick
+                                ? 'graph-node-history-chip active'
+                                : 'graph-node-history-chip'
+                            }
+                          >
+                            {value}
+                          </span>
+                        ))}
+                      </div>
                     );
                   })() : null}
                   <div className="graph-node-ports">
