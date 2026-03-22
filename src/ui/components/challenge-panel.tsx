@@ -5,20 +5,24 @@ interface ChallengePanelProps {
   challenges: GuidedChallenge[];
   selectedChallengeId: string;
   evaluation: ChallengeEvaluation | null;
+  canCaptureChallenge: boolean;
   onSelectChallenge: (challengeId: string) => void;
   onLoadChallengeStart: () => void;
   onExportChallenge: () => void;
   onImportChallenge: (file: File) => void;
+  onCaptureChallenge: () => void;
 }
 
 export function ChallengePanel({
   challenges,
   selectedChallengeId,
   evaluation,
+  canCaptureChallenge,
   onSelectChallenge,
   onLoadChallengeStart,
   onExportChallenge,
   onImportChallenge,
+  onCaptureChallenge,
 }: ChallengePanelProps) {
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const [hintState, setHintState] = useState<{
@@ -83,6 +87,19 @@ export function ChallengePanel({
               onClick={onExportChallenge}
             >
               Export Challenge
+            </button>
+            <button
+              type="button"
+              className="mini-action-button"
+              disabled={!canCaptureChallenge}
+              onClick={onCaptureChallenge}
+              title={
+                canCaptureChallenge
+                  ? 'Capture the current graph as a guided challenge using the compare baseline as the target.'
+                  : 'Capture a compare baseline first, then adjust the graph you want students to start from.'
+              }
+            >
+              Capture Current As Challenge
             </button>
             <button
               type="button"
@@ -199,6 +216,12 @@ export function ChallengePanel({
                   {availableHints.length > 0 ? (
                     <p className="comparison-copy">
                       Hints available: <strong>{availableHints.length}</strong>
+                    </p>
+                  ) : null}
+                  {!canCaptureChallenge ? (
+                    <p className="comparison-copy">
+                      To author a challenge, first capture a reference machine in <strong>Compare</strong>,
+                      then return here and capture the current graph as the student starting point.
                     </p>
                   ) : null}
                   {revealedHintCount > 0 ? (

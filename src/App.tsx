@@ -201,6 +201,12 @@ function App() {
   const [compositeDialogError, setCompositeDialogError] = useState<string | null>(null);
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
   const [isChallengeResetConfirmOpen, setIsChallengeResetConfirmOpen] = useState(false);
+  const [isChallengeCaptureOpen, setIsChallengeCaptureOpen] = useState(false);
+  const [challengeCaptureTitle, setChallengeCaptureTitle] = useState('');
+  const [challengeCaptureId, setChallengeCaptureId] = useState('');
+  const [challengeCapturePrompt, setChallengeCapturePrompt] = useState('');
+  const [challengeCaptureHints, setChallengeCaptureHints] = useState('');
+  const [challengeCaptureError, setChallengeCaptureError] = useState<string | null>(null);
   const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
   const [hoveredTraceModuleId, setHoveredTraceModuleId] = useState<string | null>(null);
   const [stepIndex, setStepIndex] = useState<number | null>(null);
@@ -445,6 +451,11 @@ function App() {
   );
   const selectedTutorialStep = getTutorialStep(selectedTutorial, tutorialStepIndex);
   const workspaceMode = state.workspaceModeByProject[activeProjectDefinition.id] ?? 'guide';
+  const canCaptureChallenge =
+    !state.compositeEditor &&
+    comparisonBaseline !== null &&
+    baselineValidation?.ok === true &&
+    baselineExecutionError === null;
   const activeTutorialStep =
     workspaceMode === 'guide' && !state.compositeEditor && selectedTutorial?.projectId === activeProjectDefinition.id
       ? selectedTutorialStep
@@ -1010,6 +1021,7 @@ function App() {
               challenges={state.challengeLibrary}
               selectedChallengeId={selectedChallenge.id}
               evaluation={challengeEvaluation}
+              canCaptureChallenge={canCaptureChallenge}
               onSelectChallenge={(challengeId) =>
                 dispatch({
                   type: 'selectChallenge',
@@ -1019,6 +1031,17 @@ function App() {
               }
               onLoadChallengeStart={() => setIsChallengeResetConfirmOpen(true)}
               onExportChallenge={() => downloadGuidedChallengeDocument(selectedChallenge)}
+              onCaptureChallenge={() => {
+                const defaultTitle = `${activeProjectDefinition.name} Guided Lab`;
+                setChallengeCaptureTitle(defaultTitle);
+                setChallengeCaptureId(createChallengeIdCandidate(defaultTitle));
+                setChallengeCapturePrompt(
+                  `Repair or complete the ${activeProjectDefinition.name} machine until its output matches the captured reference behavior.`,
+                );
+                setChallengeCaptureHints('');
+                setChallengeCaptureError(null);
+                setIsChallengeCaptureOpen(true);
+              }}
               onImportChallenge={async (file) => {
                 const rawValue = await file.text();
                 const challengeDocument = parseGuidedChallengeDocument(rawValue);
@@ -1330,6 +1353,142 @@ function App() {
           </div>
         </div>
       ) : null}
+      {isChallengeCaptureOpen && comparisonBaseline ? (
+        <div
+          className="dialog-backdrop"
+          onClick={() => {
+            setIsChallengeCaptureOpen(false);
+            setChallengeCaptureError(null);
+          }}
+        >
+          <div
+            className="dialog-panel"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="panel-label">Challenge Authoring</p>
+            <h2>Capture Current Graph As Challenge</h2>
+            <p className="dialog-copy">
+              This uses the current graph as the student starting machine and the captured compare
+              baseline as the target behavior.
+            </p>
+
+            <p className="dialog-selection-summary">
+              Start: <strong>{activeProjectDefinition.name}</strong> current graph
+              <br />
+              Target: captured compare baseline
+            </p>
+
+            <label className="param-field">
+              <span>Challenge Title</span>
+              <input
+                type="text"
+                value={challengeCaptureTitle}
+                onChange={(event) => {
+                  const nextTitle = event.target.value;
+                  setChallengeCaptureTitle(nextTitle);
+                  if (!challengeCaptureId) {
+                    setChallengeCaptureId(createChallengeIdCandidate(nextTitle));
+                  }
+                }}
+                placeholder="Sequential Heart Repair"
+              />
+            </label>
+
+            <label className="param-field">
+              <span>Stable Id</span>
+              <input
+                type="text"
+                value={challengeCaptureId}
+                onChange={(event) => setChallengeCaptureId(event.target.value)}
+                placeholder="sequential-heart-repair"
+              />
+            </label>
+
+            <label className="param-field">
+              <span>Student Prompt</span>
+              <textarea
+                value={challengeCapturePrompt}
+                onChange={(event) => setChallengeCapturePrompt(event.target.value)}
+                rows={4}
+                placeholder="Describe what students should repair or discover."
+              />
+            </label>
+
+            <label className="param-field">
+              <span>Hints (one per line)</span>
+              <textarea
+                value={challengeCaptureHints}
+                onChange={(event) => setChallengeCaptureHints(event.target.value)}
+                rows={4}
+                placeholder="The clock period matters.\nInspect the LFSR seed after each pulse."
+              />
+            </label>
+
+            {challengeCaptureError ? (
+              <p className="field-error">{challengeCaptureError}</p>
+            ) : null}
+
+            <div className="dialog-actions">
+              <button
+                type="button"
+                className="secondary-dialog-button"
+                onClick={() => {
+                  setIsChallengeCaptureOpen(false);
+                  setChallengeCaptureError(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="primary-dialog-button"
+                onClick={() => {
+                  const trimmedTitle = challengeCaptureTitle.trim();
+                  const trimmedId = challengeCaptureId.trim();
+                  const trimmedPrompt = challengeCapturePrompt.trim();
+
+                  if (!trimmedTitle || !trimmedId || !trimmedPrompt) {
+                    setChallengeCaptureError('Title, stable id, and prompt are required.');
+                    return;
+                  }
+
+                  const authoredChallenge = {
+                    version: 1 as const,
+                    id: trimmedId,
+                    title: trimmedTitle,
+                    prompt: trimmedPrompt,
+                    startingProject: cloneProject(activeProjectState),
+                    startingLayout: cloneLayout(activeLayout),
+                    targetProject: cloneProject(comparisonBaseline.project),
+                    success: {
+                      kind: 'output-match-target' as const,
+                    },
+                    hints: challengeCaptureHints
+                      .split('\n')
+                      .map((line) => line.trim())
+                      .filter((line) => line.length > 0),
+                  };
+
+                  dispatch({
+                    type: 'upsertChallenge',
+                    challenge: authoredChallenge,
+                  });
+                  dispatch({
+                    type: 'selectChallenge',
+                    projectId: activeProjectDefinition.id,
+                    challengeId: authoredChallenge.id,
+                  });
+                  downloadGuidedChallengeDocument(authoredChallenge);
+                  setIsChallengeCaptureOpen(false);
+                  setChallengeCaptureError(null);
+                }}
+              >
+                Capture Challenge
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
@@ -1362,6 +1521,19 @@ function createCompositeIdCandidate(name: string) {
   return words
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join('');
+}
+
+function createChallengeIdCandidate(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function cloneLayout<T extends Record<string, { x: number; y: number }>>(layout: T): T {
+  return Object.fromEntries(
+    Object.entries(layout).map(([moduleId, position]) => [moduleId, { ...position }]),
+  ) as T;
 }
 
 function isCompositeBoundaryModule(entry: CompositeLibraryEntry, moduleId: string) {
