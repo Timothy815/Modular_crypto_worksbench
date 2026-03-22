@@ -6,10 +6,14 @@ function cloneProject<T>(value: T): T {
 }
 
 const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
+const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 
 if (!bridgeProject) {
   throw new Error('Expected bridge demo project to seed starter challenges.');
+}
+if (!byteRoundProject) {
+  throw new Error('Expected byte-round demo project to seed starter challenges.');
 }
 if (!sequentialProject) {
   throw new Error('Expected sequential demo project to seed starter challenges.');
@@ -17,6 +21,8 @@ if (!sequentialProject) {
 
 const fixedBridgeTarget = cloneProject(bridgeProject.project);
 const brokenBridgeStart = cloneProject(bridgeProject.project);
+const byteRoundTarget = cloneProject(byteRoundProject.project);
+const brokenByteRoundStart = cloneProject(byteRoundProject.project);
 const sequentialTarget = cloneProject(sequentialProject.project);
 const brokenSequentialStart = cloneProject(sequentialProject.project);
 const brokenSequentialTapsStart = cloneProject(sequentialProject.project);
@@ -26,6 +32,14 @@ if (!brokenKeyModule) {
   throw new Error('Expected bridge demo project to contain a key module.');
 }
 brokenKeyModule.params.stream = [0, 0, 0, 0, 0];
+
+const brokenPermutationModule = brokenByteRoundStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'permute',
+);
+if (!brokenPermutationModule) {
+  throw new Error('Expected byte-round demo project to contain a permutation module.');
+}
+brokenPermutationModule.params.order = '0,1,2,3,4,5,6,7';
 
 const brokenClockModule = brokenSequentialStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'clock',
@@ -60,6 +74,25 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     hints: [
       'The problem is on the bit-domain side of the bridge pipeline, not the text input side.',
       'Compare the BitSource stream against the target behavior and follow it through XOR.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'byte-scrambler',
+    title: 'Byte Scrambler',
+    difficulty: 'intermediate',
+    prompt:
+      'The byte-round machine still substitutes correctly, but its bit permutation was flattened. Restore the permutation order so the final bit output matches the captured reference round.',
+    startingProject: brokenByteRoundStart,
+    startingLayout: cloneProject(byteRoundProject.layout),
+    targetProject: byteRoundTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The S-Box table is already correct in this lab.',
+      'Focus on the permutation stage after substitution.',
+      'The target round reverses the bit order after the byte leaves the S-Box.',
     ],
   },
   {

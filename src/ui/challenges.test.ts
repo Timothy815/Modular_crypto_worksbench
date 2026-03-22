@@ -19,10 +19,14 @@ function cloneProject(project: Project): Project {
 
 describe('evaluateChallengeAttempt', () => {
   const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
+  const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
   const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 
   if (!bridgeProject) {
     throw new Error('Expected bridge demo project.');
+  }
+  if (!byteRoundProject) {
+    throw new Error('Expected byte-round project.');
   }
   if (!sequentialProject) {
     throw new Error('Expected sequential project.');
@@ -119,6 +123,35 @@ describe('evaluateChallengeAttempt', () => {
     expect(result.reason).toBe('current-project-runtime-error');
     expect(result.comparison).toBeNull();
     expect(result.currentRuntimeError).toContain('SymbolToBits');
+  });
+
+  it('returns failure when a bit-domain round diverges from the target output bits', () => {
+    const currentProject = cloneProject(byteRoundProject.project);
+    const permutationModule = currentProject.modules.find(
+      (moduleInstance) => moduleInstance.id === 'permute',
+    );
+    if (!permutationModule) {
+      throw new Error('Expected permutation module in byte-round project.');
+    }
+    permutationModule.params.order = '0,1,2,3,4,5,6,7';
+
+    const challenge: GuidedChallenge = {
+      id: 'byte-round-failure',
+      title: 'Byte Round Failure',
+      prompt: 'Repair the byte permutation.',
+      startingProject: cloneProject(currentProject),
+      targetProject: cloneProject(byteRoundProject.project),
+      success: { kind: 'output-match-target' },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, V1_REGISTRY);
+
+    expect(result.status).toBe('failure');
+    expect(result.reason).toBe('diverged-from-target');
+    expect(result.comparison?.outputsMatch).toBe(false);
+    expect(result.comparison?.baselineOutput.formatted).toBe('[1, 1, 0, 0, 1, 0, 1, 0]');
+    expect(result.comparison?.variantOutput.formatted).toBe('[0, 1, 0, 1, 0, 0, 1, 1]');
+    expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('permute');
   });
 
   it('returns success when a sequential project matches the target ticked output stream', () => {
