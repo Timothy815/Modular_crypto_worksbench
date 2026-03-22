@@ -1772,6 +1772,17 @@
   background: var(--surface-2);
 }
 
+.tick-bar-speed {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tick-bar-speed-slider {
+  width: 110px;
+  accent-color: var(--accent);
+}
+
 /* Tick state on nodes */
 .graph-node-tick-state {
   display: block;

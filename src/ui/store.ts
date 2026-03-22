@@ -31,6 +31,8 @@ export interface UiState {
   workspaceModeByProject: Record<string, 'build' | 'guide'>;
   tickedModeByProject: Record<string, boolean>;
   currentTickByProject: Record<string, number>;
+  isTickPlaybackActiveByProject: Record<string, boolean>;
+  tickPlaybackSpeedMsByProject: Record<string, number>;
   selectedModuleIdByProject: Record<string, string | null>;
   selectedModuleIdsByProject: Record<string, string[]>;
   paramDrafts: Record<string, string>;
@@ -84,6 +86,8 @@ export type UiAction =
   | { type: 'setWorkspaceMode'; projectId: string; mode: 'build' | 'guide' }
   | { type: 'setTickedMode'; projectId: string; enabled: boolean }
   | { type: 'setCurrentTick'; projectId: string; tick: number }
+  | { type: 'setTickPlaybackActive'; projectId: string; active: boolean }
+  | { type: 'setTickPlaybackSpeed'; projectId: string; speedMs: number }
   | { type: 'captureComparisonBaseline'; projectId: string; capturedAt: string }
   | { type: 'clearComparisonBaseline'; projectId: string }
   | { type: 'loadCompositeLibrary'; document: CompositeLibraryDocument }
@@ -229,6 +233,12 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     ),
     currentTickByProject: Object.fromEntries(
       projects.map((project) => [project.id, 0]),
+    ),
+    isTickPlaybackActiveByProject: Object.fromEntries(
+      projects.map((project) => [project.id, false]),
+    ),
+    tickPlaybackSpeedMsByProject: Object.fromEntries(
+      projects.map((project) => [project.id, 500]),
     ),
     selectedModuleIdByProject: Object.fromEntries(
       projects.map((project) => [project.id, project.project.modules[0]?.id ?? null]),
@@ -889,6 +899,10 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           ...state.currentTickByProject,
           [action.projectId]: 0,
         },
+        isTickPlaybackActiveByProject: {
+          ...state.isTickPlaybackActiveByProject,
+          [action.projectId]: false,
+        },
       };
     case 'setCurrentTick':
       return {
@@ -896,6 +910,26 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
         currentTickByProject: {
           ...state.currentTickByProject,
           [action.projectId]: Math.max(0, Math.trunc(action.tick)),
+        },
+        isTickPlaybackActiveByProject: {
+          ...state.isTickPlaybackActiveByProject,
+          [action.projectId]: false,
+        },
+      };
+    case 'setTickPlaybackActive':
+      return {
+        ...state,
+        isTickPlaybackActiveByProject: {
+          ...state.isTickPlaybackActiveByProject,
+          [action.projectId]: action.active,
+        },
+      };
+    case 'setTickPlaybackSpeed':
+      return {
+        ...state,
+        tickPlaybackSpeedMsByProject: {
+          ...state.tickPlaybackSpeedMsByProject,
+          [action.projectId]: Math.min(1500, Math.max(100, Math.trunc(action.speedMs))),
         },
       };
     case 'clearComparisonBaseline':

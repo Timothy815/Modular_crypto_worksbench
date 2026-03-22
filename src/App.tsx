@@ -224,6 +224,10 @@ function App() {
 
   const isTickedMode = !state.compositeEditor && (state.tickedModeByProject[activeProjectDefinition.id] ?? false);
   const currentTick = state.currentTickByProject[activeProjectDefinition.id] ?? 0;
+  const isTickPlaybackActive =
+    state.isTickPlaybackActiveByProject[activeProjectDefinition.id] ?? false;
+  const tickPlaybackSpeedMs =
+    state.tickPlaybackSpeedMsByProject[activeProjectDefinition.id] ?? 500;
 
   let execution: ExecutionResult | null = null;
   let executionError: string | null = null;
@@ -268,6 +272,51 @@ function App() {
         })
         .join('')
     : null;
+
+  useEffect(() => {
+    if (
+      !isTickedMode ||
+      !tickedExecution ||
+      effectiveTickCount <= 1 ||
+      !isTickPlaybackActive
+    ) {
+      return;
+    }
+
+    if (effectiveCurrentTick >= effectiveTickCount - 1) {
+      dispatch({
+        type: 'setTickPlaybackActive',
+        projectId: activeProjectDefinition.id,
+        active: false,
+      });
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      dispatch({
+        type: 'setCurrentTick',
+        projectId: activeProjectDefinition.id,
+        tick: effectiveCurrentTick + 1,
+      });
+      dispatch({
+        type: 'setTickPlaybackActive',
+        projectId: activeProjectDefinition.id,
+        active: true,
+      });
+    }, tickPlaybackSpeedMs);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    activeProjectDefinition.id,
+    effectiveCurrentTick,
+    effectiveTickCount,
+    isTickPlaybackActive,
+    isTickedMode,
+    tickPlaybackSpeedMs,
+    tickedExecution,
+  ]);
 
   const effectiveStepIndex =
     stepIndex !== null && execution && execution.trace.length > 0
@@ -513,6 +562,22 @@ function App() {
                 type: 'setCurrentTick',
                 projectId: activeProjectDefinition.id,
                 tick,
+              })
+            }
+            isTickPlaybackActive={isTickPlaybackActive}
+            tickPlaybackSpeedMs={tickPlaybackSpeedMs}
+            onSetTickPlaybackActive={(active) =>
+              dispatch({
+                type: 'setTickPlaybackActive',
+                projectId: activeProjectDefinition.id,
+                active,
+              })
+            }
+            onSetTickPlaybackSpeed={(speedMs) =>
+              dispatch({
+                type: 'setTickPlaybackSpeed',
+                projectId: activeProjectDefinition.id,
+                speedMs,
               })
             }
             onToggleProbe={(moduleId) =>

@@ -69,6 +69,10 @@ interface WorkbenchPanelProps {
   tickedParamsByModule?: Record<string, Record<string, unknown>[]> | null;
   onSetTickedMode?: (enabled: boolean) => void;
   onSetCurrentTick?: (tick: number) => void;
+  isTickPlaybackActive?: boolean;
+  tickPlaybackSpeedMs?: number;
+  onSetTickPlaybackActive?: (active: boolean) => void;
+  onSetTickPlaybackSpeed?: (speedMs: number) => void;
   onToggleProbe?: (moduleId: string) => void;
   onMoveModule: (moduleId: string, x: number, y: number) => void;
   onAddAnnotation: () => void;
@@ -118,6 +122,10 @@ export function WorkbenchPanel({
   tickedParamsByModule = null,
   onSetTickedMode,
   onSetCurrentTick,
+  isTickPlaybackActive = false,
+  tickPlaybackSpeedMs = 500,
+  onSetTickPlaybackActive,
+  onSetTickPlaybackSpeed,
   onToggleProbe,
   onMoveModule,
   onAddAnnotation,
@@ -463,7 +471,7 @@ export function WorkbenchPanel({
               <button
                 type="button"
                 className="mini-action-button"
-                disabled={currentTick <= 0}
+                disabled={currentTick <= 0 || isTickPlaybackActive}
                 onClick={() => onSetCurrentTick?.(currentTick - 1)}
                 aria-label="Previous tick"
               >
@@ -472,12 +480,35 @@ export function WorkbenchPanel({
               <button
                 type="button"
                 className="mini-action-button"
-                disabled={currentTick >= tickCount - 1}
+                disabled={tickCount <= 1 || currentTick >= tickCount - 1}
+                onClick={() => onSetTickPlaybackActive?.(!isTickPlaybackActive)}
+                aria-label={isTickPlaybackActive ? 'Pause tick playback' : 'Play tick playback'}
+              >
+                {isTickPlaybackActive ? 'Pause' : 'Play'}
+              </button>
+              <button
+                type="button"
+                className="mini-action-button"
+                disabled={currentTick >= tickCount - 1 || isTickPlaybackActive}
                 onClick={() => onSetCurrentTick?.(currentTick + 1)}
                 aria-label="Next tick"
               >
                 Next
               </button>
+              <label className="tick-bar-speed">
+                <span className="tick-bar-label">Speed</span>
+                <input
+                  type="range"
+                  className="tick-bar-speed-slider"
+                  min={100}
+                  max={1500}
+                  step={100}
+                  value={tickPlaybackSpeedMs}
+                  onChange={(e) => onSetTickPlaybackSpeed?.(Number(e.target.value))}
+                  aria-label="Tick playback speed"
+                />
+                <span className="tick-bar-label">{(tickPlaybackSpeedMs / 1000).toFixed(1)}s</span>
+              </label>
               {collectedOutput !== null ? (
                 <span className="tick-bar-collected">
                   <span className="meta-label">Output</span> <strong>{collectedOutput}</strong>
