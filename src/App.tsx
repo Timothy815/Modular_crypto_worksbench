@@ -3,7 +3,7 @@ import { useEffect, useReducer, useState } from 'react';
 import './App.css';
 import type { CompositeLibraryEntry } from './engine/composites';
 import { V1_REGISTRY } from './engine/modules';
-import type { ExecutionResult, Project, TickedExecutionResult } from './engine/types';
+import type { ExecutionResult, TickedExecutionResult } from './engine/types';
 import { deriveTickCount, executeTickedProject } from './engine/executor';
 import { validateCompositeDef, validateProject } from './engine/validation';
 import {
@@ -30,6 +30,7 @@ import {
   saveWorkspaceToStorage,
 } from './ui/persistence';
 import {
+  cloneProject,
   createInitialUiState,
   getEffectiveRegistry,
   getDraftValue,
@@ -139,6 +140,14 @@ function App() {
             persistedWorkspace.completedTutorialsByProjectId[project.id] ??
               initialState.completedTutorialsByProject[project.id] ??
               [],
+          ]),
+        ),
+        workspaceModeByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.workspaceModeByProjectId?.[project.id] ??
+              initialState.workspaceModeByProject[project.id] ??
+              'guide',
           ]),
         ),
         selectedModuleIdByProject: Object.fromEntries(
@@ -323,8 +332,9 @@ function App() {
     state.activeTutorialStepByProject[activeProjectDefinition.id] ?? 0,
   );
   const selectedTutorialStep = getTutorialStep(selectedTutorial, tutorialStepIndex);
+  const workspaceMode = state.workspaceModeByProject[activeProjectDefinition.id] ?? 'guide';
   const activeTutorialStep =
-    !state.compositeEditor && selectedTutorial?.projectId === activeProjectDefinition.id
+    workspaceMode === 'guide' && !state.compositeEditor && selectedTutorial?.projectId === activeProjectDefinition.id
       ? selectedTutorialStep
       : null;
   const completedTutorialIds =
@@ -337,6 +347,7 @@ function App() {
 
     if (
       nextIndex === null ||
+      workspaceMode !== 'guide' ||
       !selectedTutorial ||
       state.compositeEditor ||
       selectedTutorial.projectId !== activeProjectDefinition.id ||
@@ -909,6 +920,14 @@ function App() {
               activeStep={selectedTutorialStep}
               completedTutorialIds={completedTutorialIds}
               isCompleted={isTutorialCompleted}
+              workspaceMode={workspaceMode}
+              onSetWorkspaceMode={(mode) =>
+                dispatch({
+                  type: 'setWorkspaceMode',
+                  projectId: activeProjectDefinition.id,
+                  mode,
+                })
+              }
               onSelectTutorial={(tutorialId) =>
                 {
                   const nextTutorial =
@@ -1197,19 +1216,6 @@ function createCompositeIdCandidate(name: string) {
   return words
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join('');
-}
-
-function cloneProject(project: Project): Project {
-  return {
-    modules: project.modules.map((moduleInstance) => ({
-      ...moduleInstance,
-      params: { ...moduleInstance.params },
-    })),
-    connections: project.connections.map((connection) => ({
-      from: { ...connection.from },
-      to: { ...connection.to },
-    })),
-  };
 }
 
 function isCompositeBoundaryModule(entry: CompositeLibraryEntry, moduleId: string) {

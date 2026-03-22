@@ -145,6 +145,12 @@ export function buildPersistedWorkspace(state: UiState): PersistedWorkspaceDocum
         state.completedTutorialsByProject[projectId] ?? [],
       ]),
     ),
+    workspaceModeByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.workspaceModeByProject[projectId] ?? 'guide',
+      ]),
+    ),
     challengeLibrary: state.challengeLibrary.map(cloneChallenge),
     tutorialLibrary: state.tutorialLibrary.map(cloneTutorial),
     compositeLibrary: {
@@ -260,6 +266,13 @@ export function loadWorkspaceFromStorage(
             allowedProjectIds.has(projectId) &&
             Array.isArray(ids) &&
             ids.every((id) => typeof id === 'string'),
+        ),
+      ),
+      workspaceModeByProjectId: Object.fromEntries(
+        Object.entries(parsed.workspaceModeByProjectId ?? {}).filter(
+          ([projectId, mode]) =>
+            allowedProjectIds.has(projectId) &&
+            (mode === 'build' || mode === 'guide'),
         ),
       ),
       challengeLibrary: parsed.challengeLibrary.map(cloneChallenge),

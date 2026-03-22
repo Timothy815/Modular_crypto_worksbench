@@ -28,6 +28,7 @@ export interface UiState {
   activeTutorialStepByProject: Record<string, number>;
   completedTutorialsByProject: Record<string, string[]>;
   probedModuleIdsByProject: Record<string, string[]>;
+  workspaceModeByProject: Record<string, 'build' | 'guide'>;
   tickedModeByProject: Record<string, boolean>;
   currentTickByProject: Record<string, number>;
   selectedModuleIdByProject: Record<string, string | null>;
@@ -80,6 +81,7 @@ export type UiAction =
   | { type: 'resetTutorialProgress'; projectId: string }
   | { type: 'toggleProbe'; projectId: string; moduleId: string }
   | { type: 'clearProbes'; projectId: string }
+  | { type: 'setWorkspaceMode'; projectId: string; mode: 'build' | 'guide' }
   | { type: 'setTickedMode'; projectId: string; enabled: boolean }
   | { type: 'setCurrentTick'; projectId: string; tick: number }
   | { type: 'captureComparisonBaseline'; projectId: string; capturedAt: string }
@@ -94,7 +96,7 @@ export type UiAction =
   | { type: 'togglePalette' }
   | { type: 'toggleInspector' };
 
-function cloneProject(project: Project): Project {
+export function cloneProject(project: Project): Project {
   return {
     modules: project.modules.map((moduleInstance) => ({
       ...moduleInstance,
@@ -218,6 +220,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     ),
     probedModuleIdsByProject: Object.fromEntries(
       projects.map((project) => [project.id, []]),
+    ),
+    workspaceModeByProject: Object.fromEntries(
+      projects.map((project) => [project.id, 'guide' as const]),
     ),
     tickedModeByProject: Object.fromEntries(
       projects.map((project) => [project.id, false]),
@@ -863,6 +868,14 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
         probedModuleIdsByProject: {
           ...state.probedModuleIdsByProject,
           [action.projectId]: [],
+        },
+      };
+    case 'setWorkspaceMode':
+      return {
+        ...state,
+        workspaceModeByProject: {
+          ...state.workspaceModeByProject,
+          [action.projectId]: action.mode,
         },
       };
     case 'setTickedMode':

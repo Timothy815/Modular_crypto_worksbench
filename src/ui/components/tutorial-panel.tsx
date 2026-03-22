@@ -8,6 +8,8 @@ interface TutorialPanelProps {
   activeStep: TutorialStep | null;
   completedTutorialIds: string[];
   isCompleted: boolean;
+  workspaceMode: 'build' | 'guide';
+  onSetWorkspaceMode: (mode: 'build' | 'guide') => void;
   onSelectTutorial: (tutorialId: string) => void;
   onSetStep: (stepIndex: number) => void;
   onSwitchProject: (projectId: string) => void;
@@ -23,6 +25,8 @@ export function TutorialPanel({
   activeStep,
   completedTutorialIds,
   isCompleted,
+  workspaceMode,
+  onSetWorkspaceMode,
   onSelectTutorial,
   onSetStep,
   onSwitchProject,
@@ -47,8 +51,31 @@ export function TutorialPanel({
       <div className="panel-head">
         <p className="panel-label">Guided Tutorial</p>
         <h2>Tutorial Walkthrough</h2>
+        <div className="workspace-mode-switch" role="radiogroup" aria-label="Workspace mode">
+          <button
+            type="button"
+            role="radio"
+            aria-checked={workspaceMode === 'build'}
+            className={workspaceMode === 'build' ? 'workspace-mode-chip active' : 'workspace-mode-chip'}
+            onClick={() => onSetWorkspaceMode('build')}
+          >
+            Build
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={workspaceMode === 'guide'}
+            className={workspaceMode === 'guide' ? 'workspace-mode-chip active' : 'workspace-mode-chip'}
+            onClick={() => onSetWorkspaceMode('guide')}
+          >
+            Guide
+          </button>
+        </div>
         <p className="tutorial-progress-summary">
           {completedCount} of {tutorials.length} completed
+          {workspaceMode === 'build' ? (
+            <span className="workspace-mode-hint"> — canvas overlays paused</span>
+          ) : null}
         </p>
       </div>
 
