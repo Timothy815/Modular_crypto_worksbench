@@ -283,6 +283,10 @@ function App() {
     state.activeTutorialStepByProject[activeProjectDefinition.id] ?? 0,
   );
   const selectedTutorialStep = getTutorialStep(selectedTutorial, tutorialStepIndex);
+  const activeTutorialStep =
+    !state.compositeEditor && selectedTutorial?.projectId === activeProjectDefinition.id
+      ? selectedTutorialStep
+      : null;
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -420,6 +424,7 @@ function App() {
             hoveredTraceModuleId={hoveredTraceModuleId}
             steppedModuleId={steppedModuleId}
             divergenceModuleId={divergenceModuleId}
+            tutorialStep={activeTutorialStep}
             challengeSolved={challengeEvaluation?.status === 'success'}
             onMoveModule={(moduleId, x, y) =>
               dispatch({
@@ -675,6 +680,7 @@ function App() {
               validationIssues={validationIssues}
               stepIndex={effectiveStepIndex}
               project={activeProjectState}
+              tutorialStep={activeTutorialStep}
               moduleDef={selectedModuleDef}
               moduleInstance={selectedModule}
               getParamDraft={(moduleId, key) =>
@@ -772,19 +778,25 @@ function App() {
               stepIndex={tutorialStepIndex}
               activeStep={selectedTutorialStep}
               onSelectTutorial={(tutorialId) =>
-                dispatch({
-                  type: 'selectTutorial',
-                  projectId: activeProjectDefinition.id,
-                  tutorialId,
-                })
+                {
+                  const nextTutorial =
+                    state.tutorialLibrary.find((tutorial) => tutorial.id === tutorialId) ?? null;
+                  setStepIndex(nextTutorial?.steps[0]?.targetStepIndex ?? null);
+                  dispatch({
+                    type: 'selectTutorial',
+                    projectId: activeProjectDefinition.id,
+                    tutorialId,
+                  });
+                }
               }
-              onSetStep={(stepValue) =>
+              onSetStep={(stepValue) => {
+                setStepIndex(selectedTutorial?.steps[stepValue]?.targetStepIndex ?? null);
                 dispatch({
                   type: 'setTutorialStep',
                   projectId: activeProjectDefinition.id,
                   stepIndex: stepValue,
-                })
-              }
+                });
+              }}
               onSwitchProject={(projectId) =>
                 dispatch({
                   type: 'switchProject',

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type {
   Connection,
@@ -11,6 +11,7 @@ import type {
 import { BitsEditor } from './editors/bits-editor';
 import { WiringEditor } from './editors/wiring-editor';
 import { formatParamValue, formatSignal, parseParamValue } from '../formatters';
+import type { TutorialStep } from '../tutorials';
 
 interface ParameterInspectorProps {
   execution: ExecutionResult | null;
@@ -18,6 +19,7 @@ interface ParameterInspectorProps {
   validationIssues: ValidationIssue[];
   stepIndex: number | null;
   project: Project;
+  tutorialStep: TutorialStep | null;
   baselineModuleInstance: ModuleInstance | null;
   moduleDef: ModuleDefinition | null;
   moduleInstance: ModuleInstance | null;
@@ -36,6 +38,7 @@ export function ParameterInspector({
   validationIssues,
   stepIndex,
   project,
+  tutorialStep,
   baselineModuleInstance,
   moduleDef,
   moduleInstance,
@@ -49,6 +52,7 @@ export function ParameterInspector({
 }: ParameterInspectorProps) {
   const [traceMode, setTraceMode] = useState<'focused' | 'upstream' | 'downstream' | 'full'>('focused');
   const [inspectorTab, setInspectorTab] = useState<'configure' | 'analyze'>('configure');
+  const tutorialTraceRef = useRef<HTMLLIElement | null>(null);
   const outputTrace = execution?.trace.at(-1);
   const selectedTrace = execution?.trace.find(
     (entry) => entry.moduleId === moduleInstance?.id,
@@ -72,6 +76,23 @@ export function ParameterInspector({
     traceMode: effectiveTraceMode,
   });
   const steppedTrace = stepIndex !== null ? execution?.trace[stepIndex] ?? null : null;
+  const tutorialTraceEntry = tutorialStep?.focusModuleId
+    ? execution?.trace.find((entry) => entry.moduleId === tutorialStep.focusModuleId) ?? null
+    : null;
+  const tutorialTraceIndex = tutorialTraceEntry
+    ? (execution?.trace.findIndex((entry) => entry.moduleId === tutorialTraceEntry.moduleId) ?? -1) + 1
+    : null;
+
+  useEffect(() => {
+    if (inspectorTab !== 'analyze' || !tutorialTraceRef.current) {
+      return;
+    }
+
+    tutorialTraceRef.current.scrollIntoView({
+      block: 'nearest',
+      behavior: 'smooth',
+    });
+  }, [inspectorTab, tutorialStep?.id, tutorialTraceEntry?.moduleId]);
 
   return (
     <aside className="panel inspector-panel">
@@ -172,6 +193,26 @@ export function ParameterInspector({
             ) : (
               <p className="empty-state">
                 Start stepping to walk the execution order one module at a time.
+              </p>
+            )}
+          </div>
+        </section>
+      ) : null}
+
+      {inspectorTab === 'analyze' && tutorialStep ? (
+        <section className="analysis-section tutorial-analysis-section">
+          <span className="meta-label">Tutorial Focus</span>
+          <div className="tutorial-analysis-card">
+            <strong>{tutorialStep.title}</strong>
+            <p>{tutorialStep.body}</p>
+            {tutorialStep.focusModuleId ? (
+              <p className="tutorial-analysis-target">
+                Focus module: <strong>{tutorialStep.focusModuleId}</strong>
+                {tutorialTraceIndex ? ` • Trace step ${tutorialTraceIndex}` : ''}
+              </p>
+            ) : (
+              <p className="tutorial-analysis-target">
+                This step explains the machine at a higher level instead of a single module.
               </p>
             )}
           </div>
@@ -493,9 +534,14 @@ export function ParameterInspector({
           return (
           <li
             key={entry.moduleId}
+            ref={entry.moduleId === tutorialStep?.focusModuleId ? tutorialTraceRef : null}
             className={
               entry.moduleId === steppedTrace?.moduleId
-                ? 'trace-card trace-card-stepped'
+                ? entry.moduleId === tutorialStep?.focusModuleId
+                  ? 'trace-card trace-card-stepped trace-card-tutorial'
+                  : 'trace-card trace-card-stepped'
+                : entry.moduleId === tutorialStep?.focusModuleId
+                ? 'trace-card trace-card-tutorial'
                 : entry.moduleId === moduleInstance?.id
                 ? 'trace-card trace-card-active'
                 : 'trace-card'

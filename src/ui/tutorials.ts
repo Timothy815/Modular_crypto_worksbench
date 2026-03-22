@@ -3,6 +3,7 @@ export interface TutorialStep {
   title: string;
   body: string;
   focusModuleId?: string;
+  targetStepIndex?: number;
 }
 
 export interface GuidedTutorial {

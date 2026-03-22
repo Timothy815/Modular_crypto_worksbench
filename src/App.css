@@ -575,6 +575,55 @@
   font-size: 0.92rem;
 }
 
+.tutorial-step-banner {
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--role-bridge-bg) 78%, var(--surface-panel));
+  border: 1px solid var(--role-bridge-soft);
+}
+
+.tutorial-step-banner p {
+  margin: 8px 0 0;
+}
+
+.tutorial-step-target {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.tutorial-step-list {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.tutorial-step-chip {
+  width: 100%;
+  display: grid;
+  gap: 3px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-panel);
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.tutorial-step-chip span {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.tutorial-step-chip.active {
+  border-color: var(--role-bridge-strong);
+  background: color-mix(in srgb, var(--role-bridge-bg) 80%, var(--surface-panel));
+}
+
 .canvas-surface {
   margin: 18px 0 20px;
   overflow-x: auto;
@@ -751,6 +800,13 @@
     0 12px 30px color-mix(in srgb, #d28f18 35%, transparent);
 }
 
+.graph-node-tutorial-focus {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--role-bridge-strong) 78%, white),
+    0 14px 32px color-mix(in srgb, var(--role-bridge-strong) 28%, transparent);
+}
+
 .canvas-panel-success {
   border-color: var(--success-text);
   box-shadow:
@@ -821,6 +877,35 @@
   font-size: 0.76rem;
   font-weight: 800;
   text-align: center;
+}
+
+.graph-node-tutorial-badge {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  min-width: 3.6rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--role-bridge-strong) 85%, white);
+  color: var(--link-primary-text);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.tutorial-canvas-callout {
+  position: absolute;
+  z-index: 4;
+  width: min(240px, calc(100% - 32px));
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--role-bridge-soft);
+  background: color-mix(in srgb, var(--surface-panel) 92%, white);
+  box-shadow: 0 16px 32px color-mix(in srgb, var(--role-bridge-strong) 16%, transparent);
+}
+
+.tutorial-canvas-callout p {
+  margin: 8px 0 0;
 }
 
 .graph-node-body:active {
@@ -1032,6 +1117,11 @@
 .trace-card-stepped {
   border: 1px solid var(--link-primary-bg);
   background: color-mix(in srgb, var(--link-primary-bg) 14%, var(--surface-strong));
+}
+
+.trace-card-tutorial {
+  border: 1px solid color-mix(in srgb, var(--accent) 52%, var(--line-strong));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-strong));
 }
 
 .inspector-section {
@@ -1343,6 +1433,26 @@
   margin-top: 16px;
   display: grid;
   gap: 10px;
+}
+
+.tutorial-analysis-section {
+  gap: 8px;
+}
+
+.tutorial-analysis-card {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface-soft));
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+}
+
+.tutorial-analysis-card p {
+  margin: 6px 0 0;
+}
+
+.tutorial-analysis-target {
+  font-size: 0.9rem;
+  color: var(--muted);
 }
 
 .issue-list {

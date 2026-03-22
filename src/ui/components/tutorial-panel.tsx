@@ -112,6 +112,23 @@ export function TutorialPanel({
             <p className="comparison-copy">This tutorial does not define any steps yet.</p>
           )}
         </div>
+        <div className="comparison-card comparison-card-wide">
+          <span className="meta-label">Step Navigator</span>
+          <ol className="tutorial-step-list">
+            {selectedTutorial.steps.map((step, index) => (
+              <li key={step.id}>
+                <button
+                  type="button"
+                  className={index === stepIndex ? 'tutorial-step-chip active' : 'tutorial-step-chip'}
+                  onClick={() => onSetStep(index)}
+                >
+                  <span>Step {index + 1}</span>
+                  <strong>{step.title}</strong>
+                </button>
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
     </section>
   );

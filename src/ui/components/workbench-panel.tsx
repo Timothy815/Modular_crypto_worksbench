@@ -10,6 +10,7 @@ import { validateProject } from '../../engine/validation';
 import type { DemoProject } from '../demo-projects';
 import { getModuleCategory } from '../module-categories';
 import type { WorkbenchAnnotation } from '../workbench-document';
+import type { TutorialStep } from '../tutorials';
 
 const NODE_WIDTH = 132;
 const PORT_GAP = 18;
@@ -57,6 +58,7 @@ interface WorkbenchPanelProps {
   hoveredTraceModuleId?: string | null;
   steppedModuleId?: string | null;
   divergenceModuleId?: string | null;
+  tutorialStep?: TutorialStep | null;
   challengeSolved?: boolean;
   isCompositeEditor?: boolean;
   onMoveModule: (moduleId: string, x: number, y: number) => void;
@@ -96,6 +98,7 @@ export function WorkbenchPanel({
   hoveredTraceModuleId = null,
   steppedModuleId = null,
   divergenceModuleId = null,
+  tutorialStep = null,
   challengeSolved = false,
   isCompositeEditor = false,
   onMoveModule,
@@ -387,6 +390,18 @@ export function WorkbenchPanel({
 
       <p className="project-summary">{summary ?? activeProject.summary}</p>
       <p className="mono-line">{pipelineLabel ?? activeProject.pipeline}</p>
+      {tutorialStep ? (
+        <div className="tutorial-step-banner">
+          <span className="meta-label">Tutorial Step</span>
+          <strong>{tutorialStep.title}</strong>
+          <p>{tutorialStep.body}</p>
+          {tutorialStep.focusModuleId ? (
+            <p className="tutorial-step-target">
+              Focus: <strong>{tutorialStep.focusModuleId}</strong>
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       {selectedModuleIds.length > 0 ? (
         <p className="selection-status">
           Selected modules: <strong>{selectedModuleIds.length}</strong>. Use
@@ -511,6 +526,7 @@ export function WorkbenchPanel({
                   (moduleInstance.id === hoveredTraceModuleId ? ' graph-node-trace-hovered' : '') +
                   (moduleInstance.id === steppedModuleId ? ' graph-node-stepped' : '') +
                   (moduleInstance.id === divergenceModuleId ? ' graph-node-divergence' : '') +
+                  (moduleInstance.id === tutorialStep?.focusModuleId ? ' graph-node-tutorial-focus' : '') +
                   ((moduleIssueCountById[moduleInstance.id] ?? 0) > 0 ? ' graph-node-invalid' : '')
                 }
                 style={{ left: `${position.x}px`, top: `${position.y}px` }}
@@ -536,6 +552,9 @@ export function WorkbenchPanel({
                 >
                   <span className="graph-node-type">{moduleInstance.defId}</span>
                   <strong>{moduleInstance.id}</strong>
+                  {moduleInstance.id === tutorialStep?.focusModuleId ? (
+                    <span className="graph-node-tutorial-badge">Tutorial</span>
+                  ) : null}
                   {(moduleIssueCountById[moduleInstance.id] ?? 0) > 0 ? (
                     <span className="graph-node-issue-badge">
                       {moduleIssueCountById[moduleInstance.id]}
@@ -597,6 +616,20 @@ export function WorkbenchPanel({
               </div>
             );
           })}
+
+          {tutorialStep?.focusModuleId && layout[tutorialStep.focusModuleId] ? (
+            <div
+              className="tutorial-canvas-callout"
+              style={{
+                left: `${layout[tutorialStep.focusModuleId].x + NODE_WIDTH + 18}px`,
+                top: `${layout[tutorialStep.focusModuleId].y - 6}px`,
+              }}
+            >
+              <span className="meta-label">Tutorial Focus</span>
+              <strong>{tutorialStep.title}</strong>
+              <p>{tutorialStep.body}</p>
+            </div>
+          ) : null}
 
           {annotations.map((annotation) => (
             <div
