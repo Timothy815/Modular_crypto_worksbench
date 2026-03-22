@@ -19,9 +19,13 @@ function cloneProject(project: Project): Project {
 
 describe('evaluateChallengeAttempt', () => {
   const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
+  const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 
   if (!bridgeProject) {
     throw new Error('Expected bridge demo project.');
+  }
+  if (!sequentialProject) {
+    throw new Error('Expected sequential project.');
   }
 
   it('returns success when the current project matches the target behavior', () => {
@@ -115,5 +119,51 @@ describe('evaluateChallengeAttempt', () => {
     expect(result.reason).toBe('current-project-runtime-error');
     expect(result.comparison).toBeNull();
     expect(result.currentRuntimeError).toContain('SymbolToBits');
+  });
+
+  it('returns success when a sequential project matches the target ticked output stream', () => {
+    const currentProject = cloneProject(sequentialProject.project);
+    const challenge: GuidedChallenge = {
+      id: 'sequential-match',
+      title: 'Sequential Match',
+      prompt: 'Repair the pulse stream.',
+      startingProject: cloneProject(sequentialProject.project),
+      targetProject: cloneProject(sequentialProject.project),
+      success: { kind: 'output-match-target' },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, V1_REGISTRY);
+
+    expect(result.status).toBe('success');
+    expect(result.reason).toBe('matched-target');
+    expect(result.comparison?.outputsMatch).toBe(true);
+    expect(result.comparison?.baselineOutput.formatted.length).toBeGreaterThan(0);
+  });
+
+  it('returns failure when a sequential project diverges from the target ticked output stream', () => {
+    const currentProject = cloneProject(sequentialProject.project);
+    const clockModule = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'clock');
+    if (!clockModule) {
+      throw new Error('Expected clock module in sequential project.');
+    }
+    clockModule.params.period = 2;
+
+    const challenge: GuidedChallenge = {
+      id: 'sequential-failure',
+      title: 'Sequential Failure',
+      prompt: 'Repair the pulse stream.',
+      startingProject: cloneProject(currentProject),
+      targetProject: cloneProject(sequentialProject.project),
+      success: { kind: 'output-match-target' },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, V1_REGISTRY);
+
+    expect(result.status).toBe('failure');
+    expect(result.reason).toBe('diverged-from-target');
+    expect(result.comparison?.outputsMatch).toBe(false);
+    expect(result.comparison?.baselineOutput.formatted).not.toBe(
+      result.comparison?.variantOutput.formatted,
+    );
   });
 });

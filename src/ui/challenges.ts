@@ -1,5 +1,5 @@
-import { executeProject } from '../engine/executor';
-import type { ModuleRegistry, Project, ValidationIssue } from '../engine/types';
+import { deriveTickCount, executeProject, executeTickedProject } from '../engine/executor';
+import { isStatefulModule, type ModuleRegistry, type Project, type ValidationIssue } from '../engine/types';
 import { validateProject } from '../engine/validation';
 import type { ExecutionComparison } from './execution-compare';
 import { compareExecutionResults } from './execution-compare';
@@ -69,9 +69,24 @@ export function evaluateChallengeAttempt(
     };
   }
 
+  const currentTickCount = deriveTickCount(currentProject, registry);
+  const targetTickCount = deriveTickCount(challenge.targetProject, registry);
+  const useTickedComparison =
+    hasExplicitTimeBehavior(currentProject, registry) ||
+    hasExplicitTimeBehavior(challenge.targetProject, registry);
+
   let currentExecution;
+  let currentTickedExecution;
   try {
-    currentExecution = executeProject(currentProject, registry);
+    if (useTickedComparison) {
+      currentTickedExecution = executeTickedProject(
+        currentProject,
+        registry,
+        currentTickCount ?? 0,
+      );
+    } else {
+      currentExecution = executeProject(currentProject, registry);
+    }
   } catch (error) {
     return {
       status: 'blocked',
@@ -85,8 +100,17 @@ export function evaluateChallengeAttempt(
   }
 
   let targetExecution;
+  let targetTickedExecution;
   try {
-    targetExecution = executeProject(challenge.targetProject, registry);
+    if (useTickedComparison) {
+      targetTickedExecution = executeTickedProject(
+        challenge.targetProject,
+        registry,
+        targetTickCount ?? 0,
+      );
+    } else {
+      targetExecution = executeProject(challenge.targetProject, registry);
+    }
   } catch (error) {
     return {
       status: 'blocked',
@@ -99,7 +123,12 @@ export function evaluateChallengeAttempt(
     };
   }
 
-  const comparison = compareExecutionResults(targetExecution, currentExecution);
+  const comparison = useTickedComparison
+    ? compareTickedChallengeResults(
+        targetTickedExecution ?? executeTickedProject(challenge.targetProject, registry, 0),
+        currentTickedExecution ?? executeTickedProject(currentProject, registry, 0),
+      )
+    : compareExecutionResults(targetExecution!, currentExecution!);
   const matched =
     challenge.success.kind === 'output-match-target'
       ? comparison.outputsMatch
@@ -114,4 +143,54 @@ export function evaluateChallengeAttempt(
     currentRuntimeError: null,
     targetRuntimeError: null,
   };
+}
+
+function compareTickedChallengeResults(
+  baseline: ReturnType<typeof executeTickedProject>,
+  variant: ReturnType<typeof executeTickedProject>,
+): ExecutionComparison {
+  const baselineOutput = collectTickedOutput(baseline);
+  const variantOutput = collectTickedOutput(variant);
+
+  return {
+    baselineOutput: {
+      raw: { type: 'symbol', value: baselineOutput },
+      formatted: baselineOutput || 'n/a',
+    },
+    variantOutput: {
+      raw: { type: 'symbol', value: variantOutput },
+      formatted: variantOutput || 'n/a',
+    },
+    outputsMatch: baselineOutput === variantOutput,
+    firstDivergence: null,
+  };
+}
+
+function collectTickedOutput(result: ReturnType<typeof executeTickedProject>): string {
+  return result.ticks
+    .map((tick) => {
+      const outputModule = tick.trace.find((entry) => entry.defId === 'Output');
+      const signal =
+        outputModule?.outputs.out ??
+        outputModule?.inputs.in ??
+        null;
+
+      if (!signal) {
+        return '';
+      }
+
+      return signal.type === 'symbol' ? signal.value : signal.value.join('');
+    })
+    .join('');
+}
+
+function hasExplicitTimeBehavior(project: Project, registry: ModuleRegistry): boolean {
+  return project.modules.some((moduleInstance) => {
+    const def = registry[moduleInstance.defId];
+    if (!def) {
+      return false;
+    }
+
+    return def.id === 'Clock' || isStatefulModule(def);
+  });
 }
