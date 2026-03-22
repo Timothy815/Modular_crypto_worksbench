@@ -309,6 +309,19 @@ export function WorkbenchPanel({
     return counts;
   }, [validationIssues]);
 
+  const executionSignalByModuleId = useMemo(() => {
+    if (!execution) {
+      return {};
+    }
+
+    return Object.fromEntries(
+      execution.trace.map((entry) => {
+        const primaryOutput = Object.values(entry.outputs)[0] ?? null;
+        return [entry.moduleId, primaryOutput ?? entry.inputs.in ?? null];
+      }),
+    ) as Record<string, ExecutionResult['trace'][number]['inputs'][string] | null>;
+  }, [execution]);
+
   function startConnectionFromOutput(
     moduleId: string,
     portName: string,
@@ -703,6 +716,16 @@ export function WorkbenchPanel({
                     return (
                       <span className="graph-node-tick-state" title={`position = ${positionValue}`}>
                         pos {String(positionValue)}
+                      </span>
+                    );
+                  })() : null}
+                  {isTickedMode && (moduleInstance.defId === 'Output' || moduleInstance.defId === 'BitOutput') ? (() => {
+                    const signal = executionSignalByModuleId[moduleInstance.id];
+                    if (!signal) return null;
+                    const value = signal.type === 'symbol' ? signal.value : `[${signal.value.join(',')}]`;
+                    return (
+                      <span className="graph-node-tick-state" title={`current value = ${value}`}>
+                        {value}
                       </span>
                     );
                   })() : null}

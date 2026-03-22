@@ -189,20 +189,27 @@ describe('Permutation', () => {
     expect(result.out).toEqual({ type: 'bits', value: [1, 1, 0, 0, 1] });
   });
 
-  it('throws when the order length does not match the input width', () => {
-    expect(() =>
-      Permutation.evaluate(
-        { in: { type: 'bits', value: [1, 0, 1, 1, 0] } },
-        { order: '0,1,2' },
-      ),
-    ).toThrow();
+  it('allows compression by selecting fewer indexes than the input width', () => {
+    const result = Permutation.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 1, 0] } },
+      { order: '4,2,0' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [0, 1, 1] });
   });
 
-  it('throws when the order repeats indexes', () => {
+  it('allows expansion-style output by selecting more indexes than the input width', () => {
+    const result = Permutation.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 1, 0] } },
+      { order: '0,1,2,3,4,0,2' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1, 1, 0, 1, 1] });
+    });
+
+  it('throws when any permutation index is outside the input width', () => {
     expect(() =>
       Permutation.evaluate(
         { in: { type: 'bits', value: [1, 0, 1, 1, 0] } },
-        { order: '0,1,1,3,4' },
+        { order: '0,1,5' },
       ),
     ).toThrow();
   });

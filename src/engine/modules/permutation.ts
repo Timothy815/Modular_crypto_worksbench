@@ -24,11 +24,7 @@ export function parsePermutationOrder(value: unknown): number[] {
 
 export function validatePermutationOrderParam(value: unknown): string | null {
   try {
-    const order = parsePermutationOrder(value);
-    const unique = new Set(order);
-    if (unique.size !== order.length) {
-      return 'Permutation order must not repeat indexes.';
-    }
+    parsePermutationOrder(value);
     return null;
   } catch (error) {
     return error instanceof Error ? error.message : 'Permutation order is invalid.';
@@ -57,15 +53,6 @@ export const Permutation: ModuleDef = {
     }
 
     const order = parsePermutationOrder(params.order);
-    if (order.length !== signal.value.length) {
-      throw new Error('Permutation order length must match input width');
-    }
-
-    const unique = new Set(order);
-    if (unique.size !== order.length) {
-      throw new Error('Permutation order must not repeat indexes');
-    }
-
     if (order.some((entry) => entry >= signal.value.length)) {
       throw new Error('Permutation order index is out of range for the input width');
     }
