@@ -19,6 +19,7 @@ const fixedBridgeTarget = cloneProject(bridgeProject.project);
 const brokenBridgeStart = cloneProject(bridgeProject.project);
 const sequentialTarget = cloneProject(sequentialProject.project);
 const brokenSequentialStart = cloneProject(sequentialProject.project);
+const brokenSequentialTapsStart = cloneProject(sequentialProject.project);
 
 const brokenKeyModule = brokenBridgeStart.modules.find((moduleInstance) => moduleInstance.id === 'key');
 if (!brokenKeyModule) {
@@ -33,6 +34,14 @@ if (!brokenClockModule) {
   throw new Error('Expected sequential demo project to contain a clock module.');
 }
 brokenClockModule.params.period = 2;
+
+const brokenTapModule = brokenSequentialTapsStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'lfsr',
+);
+if (!brokenTapModule) {
+  throw new Error('Expected sequential demo project to contain an LFSR module.');
+}
+brokenTapModule.params.taps = '1,4';
 
 export const STARTER_CHALLENGES: GuidedChallenge[] = [
   {
@@ -68,6 +77,24 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The LFSR only advances when the clock sends a live pulse.',
       'Compare the Clock settings to the expected rhythm of the output stream.',
       'A period of 2 means the register only shifts every other tick.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-lfsr-taps',
+    title: 'Repair the LFSR Taps',
+    prompt:
+      'The clock is pulsing correctly, but the keystream itself is wrong. Fix the feedback taps so the running output stream matches the reference machine again.',
+    startingProject: brokenSequentialTapsStart,
+    startingLayout: cloneProject(sequentialProject.layout),
+    targetProject: sequentialTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The clock timing is already correct in this lab.',
+      'The feedback path inside the LFSR determines which new bit gets shifted into the register.',
+      'Compare the tap indexes against the expected repeating pattern in the output stream.',
     ],
   },
 ];

@@ -206,6 +206,7 @@ function App() {
   const [challengeCaptureId, setChallengeCaptureId] = useState('');
   const [challengeCapturePrompt, setChallengeCapturePrompt] = useState('');
   const [challengeCaptureHints, setChallengeCaptureHints] = useState('');
+  const [challengeCaptureShouldExport, setChallengeCaptureShouldExport] = useState(true);
   const [challengeCaptureError, setChallengeCaptureError] = useState<string | null>(null);
   const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
   const [hoveredTraceModuleId, setHoveredTraceModuleId] = useState<string | null>(null);
@@ -1035,10 +1036,20 @@ function App() {
                 const defaultTitle = `${activeProjectDefinition.name} Guided Lab`;
                 setChallengeCaptureTitle(defaultTitle);
                 setChallengeCaptureId(createChallengeIdCandidate(defaultTitle));
-                setChallengeCapturePrompt(
-                  `Repair or complete the ${activeProjectDefinition.name} machine until its output matches the captured reference behavior.`,
-                );
-                setChallengeCaptureHints('');
+                if (activeProjectDefinition.id === 'sequential') {
+                  setChallengeCapturePrompt(
+                    `Repair or complete the ${activeProjectDefinition.name} machine until its running output stream matches the captured reference behavior.`,
+                  );
+                  setChallengeCaptureHints(
+                    'The clock period controls when the machine advances.\nUse the tick bar and probes to find the first wrong moment.',
+                  );
+                } else {
+                  setChallengeCapturePrompt(
+                    `Repair or complete the ${activeProjectDefinition.name} machine until its output matches the captured reference behavior.`,
+                  );
+                  setChallengeCaptureHints('');
+                }
+                setChallengeCaptureShouldExport(true);
                 setChallengeCaptureError(null);
                 setIsChallengeCaptureOpen(true);
               }}
@@ -1424,6 +1435,15 @@ function App() {
               />
             </label>
 
+            <label className="checkbox-field">
+              <input
+                type="checkbox"
+                checked={challengeCaptureShouldExport}
+                onChange={(event) => setChallengeCaptureShouldExport(event.target.checked)}
+              />
+              <span>Download a `.challenge.json` immediately after capture</span>
+            </label>
+
             {challengeCaptureError ? (
               <p className="field-error">{challengeCaptureError}</p>
             ) : null}
@@ -1478,7 +1498,9 @@ function App() {
                     projectId: activeProjectDefinition.id,
                     challengeId: authoredChallenge.id,
                   });
-                  downloadGuidedChallengeDocument(authoredChallenge);
+                  if (challengeCaptureShouldExport) {
+                    downloadGuidedChallengeDocument(authoredChallenge);
+                  }
                   setIsChallengeCaptureOpen(false);
                   setChallengeCaptureError(null);
                 }}
