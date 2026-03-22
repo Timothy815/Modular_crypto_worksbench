@@ -164,11 +164,28 @@ produces a collected sequence:
 
 ### 3.6 Tick Count Determination
 
-The number of ticks is derived from the input length:
-- If the primary source is a `TextInput` with value `"HELLO"`, there
-  are 5 ticks.
-- If multiple sources have different lengths, the shortest determines
-  tick count (with a validation warning for length mismatch).
+The number of ticks is derived from tick-sliceable source modules via
+`deriveTickCount`. Each `TickSliceableModuleDef` declares a `tickLength`
+function that returns the number of ticks its params support:
+
+- `TextInput` with value `"HELLO"` → `tickLength` returns 5
+- `BitSource` with stream `[1,0,1]` → `tickLength` returns 3
+- If multiple sources have different lengths, the **shortest** determines
+  tick count (with a validation warning for length mismatch)
+- If no sliceable sources exist, `deriveTickCount` returns `null`
+
+### 3.7 Tick Overflow Behavior
+
+When `tickCount` exceeds a source module's `tickLength`, the module's
+`tickSlice` returns a degenerate value for the excess ticks:
+
+- `TextInput` emits an empty string `""` for ticks beyond its length
+- `BitSource` emits an empty array `[]` for ticks beyond its length
+
+This is deterministic and honest — the graph still executes, but
+downstream modules receive empty/degenerate inputs. The UI layer may
+surface this as a warning in a future slice. Callers should use
+`deriveTickCount` to avoid overflow when possible.
 
 ---
 
@@ -211,18 +228,30 @@ function isStatefulModule(def: ModuleDefinition): def is StatefulModuleDef {
 
 ### 4.4 Source Slicing
 
-Source modules that provide sequences declare a `tickSlice` function
-(see §3.4). The tick executor detects this via:
+Source modules that provide sequences declare `tickSlice` and
+`tickLength` functions (see §3.4):
 
 ```ts
-function isTickSliceable(def: ModuleDefinition): def is TickSliceableModuleDef {
-  return 'tickSlice' in def && typeof (def as TickSliceableModuleDef).tickSlice === 'function';
+interface TickSliceableModuleDef extends ModuleDef {
+  tickSlice: (params: ModuleParams, tick: number) => ModuleParams;
+  tickLength: (params: ModuleParams) => number;
 }
 ```
 
-The executor calls `tickSlice(params, tick)` to obtain per-tick params
-before calling `evaluate()`. This keeps slicing logic inside the module
-definition, not hardcoded in the executor.
+The tick executor detects this via `isTickSliceable` type guard and
+calls `tickSlice(params, tick)` to obtain per-tick params before
+calling `evaluate()`. `tickLength(params)` is used by `deriveTickCount`
+to determine how many ticks the source supports. This keeps slicing
+logic inside the module definition, not hardcoded in the executor.
+
+### 4.5 Tick Count Derivation
+
+```ts
+function deriveTickCount(project: Project, registry: ModuleRegistry): number | null;
+```
+
+Returns the minimum `tickLength` across all tick-sliceable modules in
+the project, or `null` if no sliceable modules exist.
 
 ---
 

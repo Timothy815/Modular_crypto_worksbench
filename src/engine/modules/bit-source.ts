@@ -1,6 +1,6 @@
-import type { ModuleDef } from '../types';
+import type { TickSliceableModuleDef } from '../types';
 
-export const BitSource: ModuleDef = {
+export const BitSource: TickSliceableModuleDef = {
   id: 'BitSource',
   name: 'Bit Source',
   inputs: [],
@@ -24,4 +24,11 @@ export const BitSource: ModuleDef = {
       out: { type: 'bits', value: stream as number[] },
     };
   },
+  tickSlice: (params, tick) => {
+    const stream = Array.isArray(params.stream) ? (params.stream as number[]) : [];
+    const bit = tick < stream.length ? [stream[tick]] : [];
+    return { ...params, stream: bit };
+  },
+  tickLength: (params) =>
+    Array.isArray(params.stream) ? (params.stream as number[]).length : 0,
 };

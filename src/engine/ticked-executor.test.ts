@@ -1,14 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
-import { executeTickedProject } from './executor';
+import { deriveTickCount, executeTickedProject } from './executor';
 import type {
   ModuleInputs,
   ModuleRegistry,
   Project,
   StatefulModuleDef,
 } from './types';
-import { isStatefulModule } from './types';
+import { isStatefulModule, isTickSliceable } from './types';
 import { Rotor } from './modules/rotor';
+import { TextInput } from './modules/text-input';
+import { BitSource } from './modules/bit-source';
+import { Reflector } from './modules/reflector';
+import { Output } from './modules/output';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
@@ -309,6 +313,275 @@ describe('executeTickedProject', () => {
       );
       expect(sinkOutputs).toHaveLength(3);
       expect(new Set(sinkOutputs).size).toBe(3);
+    });
+  });
+});
+
+describe('isTickSliceable', () => {
+  it('returns true for TextInput', () => {
+    expect(isTickSliceable(TextInput)).toBe(true);
+  });
+
+  it('returns true for BitSource', () => {
+    expect(isTickSliceable(BitSource)).toBe(true);
+  });
+
+  it('returns false for Rotor (stateful but not sliceable)', () => {
+    expect(isTickSliceable(Rotor)).toBe(false);
+  });
+
+  it('returns false for plain modules', () => {
+    expect(isTickSliceable(PassThrough)).toBe(false);
+  });
+});
+
+describe('tickSlice — TextInput', () => {
+  it('slices one character per tick', () => {
+    const params = { value: 'HELLO' };
+    expect(TextInput.tickSlice(params, 0)).toEqual({ value: 'H' });
+    expect(TextInput.tickSlice(params, 1)).toEqual({ value: 'E' });
+    expect(TextInput.tickSlice(params, 4)).toEqual({ value: 'O' });
+  });
+
+  it('returns empty string when tick exceeds length', () => {
+    const params = { value: 'AB' };
+    expect(TextInput.tickSlice(params, 2)).toEqual({ value: '' });
+    expect(TextInput.tickSlice(params, 99)).toEqual({ value: '' });
+  });
+
+  it('reports correct tickLength', () => {
+    expect(TextInput.tickLength({ value: 'HELLO' })).toBe(5);
+    expect(TextInput.tickLength({ value: '' })).toBe(0);
+    expect(TextInput.tickLength({ value: 'A' })).toBe(1);
+  });
+});
+
+describe('tickSlice — BitSource', () => {
+  it('slices one bit per tick', () => {
+    const params = { stream: [1, 0, 1, 1, 0] };
+    expect(BitSource.tickSlice(params, 0)).toEqual({ stream: [1] });
+    expect(BitSource.tickSlice(params, 1)).toEqual({ stream: [0] });
+    expect(BitSource.tickSlice(params, 4)).toEqual({ stream: [0] });
+  });
+
+  it('returns empty array when tick exceeds length', () => {
+    const params = { stream: [1, 0] };
+    expect(BitSource.tickSlice(params, 2)).toEqual({ stream: [] });
+  });
+
+  it('reports correct tickLength', () => {
+    expect(BitSource.tickLength({ stream: [1, 0, 1] })).toBe(3);
+    expect(BitSource.tickLength({ stream: [] })).toBe(0);
+  });
+});
+
+describe('deriveTickCount', () => {
+  const sliceRegistry: ModuleRegistry = {
+    TextInput,
+    BitSource,
+    Rotor,
+    PassThrough,
+  };
+
+  it('derives tick count from a single TextInput', () => {
+    const project: Project = {
+      modules: [{ id: 'src', defId: 'TextInput', params: { value: 'HELLO' } }],
+      connections: [],
+    };
+    expect(deriveTickCount(project, sliceRegistry)).toBe(5);
+  });
+
+  it('derives tick count from a single BitSource', () => {
+    const project: Project = {
+      modules: [{ id: 'bits', defId: 'BitSource', params: { stream: [1, 0, 1] } }],
+      connections: [],
+    };
+    expect(deriveTickCount(project, sliceRegistry)).toBe(3);
+  });
+
+  it('takes the minimum when multiple sources differ', () => {
+    const project: Project = {
+      modules: [
+        { id: 'src1', defId: 'TextInput', params: { value: 'HELLO' } },
+        { id: 'src2', defId: 'TextInput', params: { value: 'AB' } },
+      ],
+      connections: [],
+    };
+    expect(deriveTickCount(project, sliceRegistry)).toBe(2);
+  });
+
+  it('returns null when no sliceable sources exist', () => {
+    const project: Project = {
+      modules: [{ id: 'r1', defId: 'Rotor', params: { wiring: ALPHABET.split(''), position: 0 } }],
+      connections: [],
+    };
+    expect(deriveTickCount(project, sliceRegistry)).toBeNull();
+  });
+});
+
+describe('source slicing integration', () => {
+  const sliceRegistry: ModuleRegistry = {
+    TextInput,
+    BitSource,
+    Rotor,
+    Reflector,
+    Output,
+    PassThrough,
+  };
+
+  it('TextInput auto-slices in ticked execution', () => {
+    const project: Project = {
+      modules: [
+        { id: 'src', defId: 'TextInput', params: { value: 'ABC' } },
+        { id: 'sink', defId: 'PassThrough', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'src', port: 'out' }, to: { moduleId: 'sink', port: 'in' } },
+      ],
+    };
+
+    const result = executeTickedProject(project, sliceRegistry, 3);
+
+    const outputs = result.ticks.map(
+      (tick) => tick.outputsByModuleId.sink.out.value,
+    );
+    expect(outputs).toEqual(['A', 'B', 'C']);
+  });
+
+  it('BitSource auto-slices in ticked execution', () => {
+    const project: Project = {
+      modules: [
+        { id: 'bits', defId: 'BitSource', params: { stream: [1, 0, 1] } },
+      ],
+      connections: [],
+    };
+
+    const result = executeTickedProject(project, sliceRegistry, 3);
+
+    const outputs = result.ticks.map(
+      (tick) => tick.outputsByModuleId.bits.out.value,
+    );
+    expect(outputs).toEqual([[1], [0], [1]]);
+  });
+
+  it('handles tickCount exceeding source length — empty slices', () => {
+    const project: Project = {
+      modules: [
+        { id: 'src', defId: 'TextInput', params: { value: 'AB' } },
+        { id: 'sink', defId: 'PassThrough', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'src', port: 'out' }, to: { moduleId: 'sink', port: 'in' } },
+      ],
+    };
+
+    // 4 ticks for a 2-character source — ticks 2 and 3 get empty string
+    const result = executeTickedProject(project, sliceRegistry, 4);
+    const outputs = result.ticks.map(
+      (tick) => tick.outputsByModuleId.sink.out.value,
+    );
+    expect(outputs).toEqual(['A', 'B', '', '']);
+  });
+
+  it('inputOverridesByTick provides inputs for unconnected ports', () => {
+    // PassThrough has no connected input — override provides it
+    const project: Project = {
+      modules: [
+        { id: 'sink', defId: 'PassThrough', params: {} },
+      ],
+      connections: [],
+    };
+
+    const overrides: Record<string, ModuleInputs>[] = [
+      { sink: { in: { type: 'symbol', value: 'X' } } },
+      { sink: { in: { type: 'symbol', value: 'Y' } } },
+      { sink: { in: { type: 'symbol', value: 'Z' } } },
+    ];
+
+    const result = executeTickedProject(project, sliceRegistry, 3, overrides);
+    const outputs = result.ticks.map(
+      (tick) => tick.outputsByModuleId.sink.out.value,
+    );
+    expect(outputs).toEqual(['X', 'Y', 'Z']);
+  });
+
+  describe('Enigma-style pipeline with source slicing', () => {
+    const enigmaWiring = 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split('');
+    const reflectorWiring = 'ZYXWVUTSRQPONMLKJIHGFEDCBA'.split('');
+
+    it('encrypts HELLO character by character with rotor stepping', () => {
+      const project: Project = {
+        modules: [
+          { id: 'input', defId: 'TextInput', params: { value: 'HELLO' } },
+          { id: 'rotor', defId: 'Rotor', params: { wiring: enigmaWiring, position: 0 } },
+          { id: 'reflector', defId: 'Reflector', params: { wiring: reflectorWiring } },
+          { id: 'output', defId: 'Output', params: {} },
+        ],
+        connections: [
+          { from: { moduleId: 'input', port: 'out' }, to: { moduleId: 'rotor', port: 'in' } },
+          { from: { moduleId: 'rotor', port: 'out' }, to: { moduleId: 'reflector', port: 'in' } },
+          { from: { moduleId: 'reflector', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+        ],
+      };
+
+      const tickCount = deriveTickCount(project, sliceRegistry);
+      expect(tickCount).toBe(5);
+
+      const result = executeTickedProject(project, sliceRegistry, tickCount!);
+
+      // Verify 5 ticks executed
+      expect(result.ticks).toHaveLength(5);
+
+      // Verify rotor position advanced: 0, 1, 2, 3, 4
+      expect(
+        result.paramsByModuleByTick.rotor.map((p) => p.position),
+      ).toEqual([0, 1, 2, 3, 4]);
+
+      // Verify each tick processed one character
+      const inputChars = result.ticks.map(
+        (tick) => tick.trace.find((e) => e.moduleId === 'input')?.outputs.out.value,
+      );
+      expect(inputChars).toEqual(['H', 'E', 'L', 'L', 'O']);
+
+      // Verify output received different symbols due to rotor stepping
+      const outputChars = result.ticks.map(
+        (tick) => tick.trace.find((e) => e.moduleId === 'output')?.inputs.in.value,
+      );
+      expect(outputChars).toHaveLength(5);
+      // Each character is defined (not undefined)
+      expect(outputChars.every((c) => typeof c === 'string' && c.length === 1)).toBe(true);
+
+      // The two L's at ticks 2 and 3 should encrypt differently
+      // because the rotor position differs
+      expect(outputChars[2]).not.toBe(outputChars[3]);
+    });
+
+    it('produces deterministic output across runs', () => {
+      const project: Project = {
+        modules: [
+          { id: 'input', defId: 'TextInput', params: { value: 'HELLO' } },
+          { id: 'rotor', defId: 'Rotor', params: { wiring: enigmaWiring, position: 0 } },
+          { id: 'reflector', defId: 'Reflector', params: { wiring: reflectorWiring } },
+          { id: 'output', defId: 'Output', params: {} },
+        ],
+        connections: [
+          { from: { moduleId: 'input', port: 'out' }, to: { moduleId: 'rotor', port: 'in' } },
+          { from: { moduleId: 'rotor', port: 'out' }, to: { moduleId: 'reflector', port: 'in' } },
+          { from: { moduleId: 'reflector', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+        ],
+      };
+
+      const run1 = executeTickedProject(project, sliceRegistry, 5);
+      const run2 = executeTickedProject(project, sliceRegistry, 5);
+
+      const outputs1 = run1.ticks.map(
+        (tick) => tick.trace.find((e) => e.moduleId === 'output')?.inputs.in.value,
+      );
+      const outputs2 = run2.ticks.map(
+        (tick) => tick.trace.find((e) => e.moduleId === 'output')?.inputs.in.value,
+      );
+
+      expect(outputs1).toEqual(outputs2);
     });
   });
 });
