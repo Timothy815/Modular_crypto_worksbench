@@ -10,6 +10,8 @@ import {
   type ValidationResult,
 } from './types';
 import type { CompositeDef, CompositePortBinding } from './composites';
+import { validatePermutationOrderParam } from './modules/permutation';
+import { validateSBoxTableParam } from './modules/s-box';
 
 function findPort(def: ModuleDefinition, portName: string, direction: 'input' | 'output') {
   const ports = direction === 'input' ? def.inputs : def.outputs;
@@ -81,6 +83,26 @@ function validateParamValue(field: ParamFieldDef, value: unknown): ValidationIss
   }
 }
 
+function getModuleSpecificParamMessage(
+  def: ModuleDefinition,
+  field: ParamFieldDef,
+  value: unknown,
+): string | null {
+  if ('kind' in def && def.kind === 'composite') {
+    return null;
+  }
+
+  if (def.id === 'Permutation' && field.key === 'order') {
+    return validatePermutationOrderParam(value);
+  }
+
+  if (def.id === 'SBox' && field.key === 'table') {
+    return validateSBoxTableParam(value);
+  }
+
+  return null;
+}
+
 function validateParams(
   moduleInstance: ModuleInstance,
   def: ModuleDefinition,
@@ -116,6 +138,16 @@ function validateParams(
       issues.push({
         code: validationCode,
         message,
+        moduleId: moduleInstance.id,
+      });
+      continue;
+    }
+
+    const moduleSpecificMessage = getModuleSpecificParamMessage(def, field, value);
+    if (moduleSpecificMessage) {
+      issues.push({
+        code: 'invalid-param-type',
+        message: `Module "${moduleInstance.id}" parameter "${field.key}" is invalid. ${moduleSpecificMessage}`,
         moduleId: moduleInstance.id,
       });
     }

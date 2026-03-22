@@ -2,6 +2,7 @@ import type { CompositeDef, CompositeLibraryEntry } from '../engine/composites';
 import type { Project } from '../engine/types';
 import type { DemoProject } from './demo-projects';
 import type { GuidedChallenge } from './challenges';
+import type { GuidedTutorial } from './tutorials';
 import type { UiState } from './store';
 import type {
   ComparisonBaselineDocument,
@@ -56,6 +57,14 @@ function cloneChallenge(challenge: GuidedChallenge): GuidedChallenge {
       : undefined,
     targetProject: cloneProject(challenge.targetProject),
     hints: challenge.hints ? [...challenge.hints] : undefined,
+  };
+}
+
+function cloneTutorial(tutorial: GuidedTutorial): GuidedTutorial {
+  return {
+    ...tutorial,
+    version: 1,
+    steps: tutorial.steps.map((step) => ({ ...step })),
   };
 }
 
@@ -118,7 +127,20 @@ export function buildPersistedWorkspace(state: UiState): PersistedWorkspaceDocum
         state.activeChallengeIdByProject[projectId] ?? null,
       ]),
     ),
+    activeTutorialIdByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.activeTutorialIdByProject[projectId] ?? null,
+      ]),
+    ),
+    activeTutorialStepByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.activeTutorialStepByProject[projectId] ?? 0,
+      ]),
+    ),
     challengeLibrary: state.challengeLibrary.map(cloneChallenge),
+    tutorialLibrary: state.tutorialLibrary.map(cloneTutorial),
     compositeLibrary: {
       version: 1,
       entries: state.compositeLibrary.map((entry) => ({
@@ -171,8 +193,14 @@ export function loadWorkspaceFromStorage(
       parsed.comparisonBaselinesByProjectId === null ||
       typeof parsed.activeChallengeIdByProjectId !== 'object' ||
       parsed.activeChallengeIdByProjectId === null ||
+      typeof parsed.activeTutorialIdByProjectId !== 'object' ||
+      parsed.activeTutorialIdByProjectId === null ||
+      typeof parsed.activeTutorialStepByProjectId !== 'object' ||
+      parsed.activeTutorialStepByProjectId === null ||
       !Array.isArray(parsed.challengeLibrary) ||
       !parsed.challengeLibrary.every(isGuidedChallengeDocument) ||
+      !Array.isArray(parsed.tutorialLibrary) ||
+      !parsed.tutorialLibrary.every(isGuidedTutorialDocument) ||
       !isCompositeLibraryDocument(parsed.compositeLibrary)
     ) {
       return null;
@@ -205,7 +233,23 @@ export function loadWorkspaceFromStorage(
             (challengeId === null || typeof challengeId === 'string'),
         ),
       ),
+      activeTutorialIdByProjectId: Object.fromEntries(
+        Object.entries(parsed.activeTutorialIdByProjectId).filter(
+          ([projectId, tutorialId]) =>
+            allowedProjectIds.has(projectId) &&
+            (tutorialId === null || typeof tutorialId === 'string'),
+        ),
+      ),
+      activeTutorialStepByProjectId: Object.fromEntries(
+        Object.entries(parsed.activeTutorialStepByProjectId).filter(
+          ([projectId, stepIndex]) =>
+            allowedProjectIds.has(projectId) &&
+            typeof stepIndex === 'number' &&
+            Number.isFinite(stepIndex),
+        ),
+      ),
       challengeLibrary: parsed.challengeLibrary.map(cloneChallenge),
+      tutorialLibrary: parsed.tutorialLibrary.map(cloneTutorial),
     };
   } catch {
     return null;
@@ -353,6 +397,29 @@ function isGuidedChallengeDocument(value: unknown): value is GuidedChallenge {
     candidate.success.kind === 'output-match-target' &&
     (candidate.hints === undefined ||
       (Array.isArray(candidate.hints) && candidate.hints.every((hint) => typeof hint === 'string')))
+  );
+}
+
+function isGuidedTutorialDocument(value: unknown): value is GuidedTutorial {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as GuidedTutorial;
+  return (
+    (candidate.version === undefined || candidate.version === 1) &&
+    typeof candidate.id === 'string' &&
+    typeof candidate.title === 'string' &&
+    typeof candidate.summary === 'string' &&
+    typeof candidate.projectId === 'string' &&
+    Array.isArray(candidate.steps) &&
+    candidate.steps.every(
+      (step) =>
+        typeof step.id === 'string' &&
+        typeof step.title === 'string' &&
+        typeof step.body === 'string' &&
+        (step.focusModuleId === undefined || typeof step.focusModuleId === 'string'),
+    )
   );
 }
 

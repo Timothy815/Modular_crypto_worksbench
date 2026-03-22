@@ -2,7 +2,7 @@
 
 Read PROJECT.md for full project specification.
 Read ENGINE-V1-CONTRACT.md for locked implementation decisions.
-Read GUIDED-CHALLENGES-V1-CONTRACT.md before starting work on `feature/guided-challenges`.
+Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
 Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
 
 ## Project: Modular Cryptography Workbench
@@ -44,6 +44,7 @@ Tag `main` at these milestones so we can return to known-good states:
 - `v0.5.0` — Composite workflow working
 - `v0.6.0` — Analysis visibility and stepping working
 - `v0.7.0` — Break workflows working
+- `v0.8.0` — Guided challenges working
 - `v1.0.0` — V1 milestone complete (all features in ENGINE-V1-CONTRACT.md)
 
 ### Recovery
@@ -116,29 +117,33 @@ src/utils/     — Shared helpers
 5. **Analysis** — step-through, signal tracing, issue surfacing
 6. **Break Workflows** — comparison, mutation experiments, eventually break/challenge tooling
 7. **Guided Challenges** — classroom tasks, success checks, explainable failure
+8. **Modern Primitives** — bit-domain expansion beyond XOR and static sources
+9. **V1 Polish & Tutorials** — walkthroughs, finish polish, and classroom-ready guidance
 
-## Current Guided Challenge Resume Point
+## Current V1 Polish Resume Point
 
-- Active branch: `feature/guided-challenges`
-- Start from `main` after `v0.7.0`
-- Read `GUIDED-CHALLENGES-V1-CONTRACT.md` first
+- Active branch: `feature/v1-polish-and-tutorials`
+- Start from `main` after `v0.9.0`
+- Read `V1-POLISH-AND-TUTORIALS.md` first
 
 What is already shipped on `main`:
 - composite contract and full composite workflow
 - analysis/debugging visibility
 - stepping and signal-path filtering
  - comparison-first break workflows
+ - guided challenges
+ - modern primitive pack and shell/library UX rework
 
 Current branch state:
-- challenge contract and handoff setup
-- challenge definition/evaluation helpers
-- one seeded starter challenge
-- first challenge panel and load-start workflow
+- contract plus first tutorial groundwork
+- seeded walkthrough definitions
+- reducer-backed tutorial session state
+- simple tutorial panel in the app shell
 
 Immediate next task:
-- checkpoint the first guided-challenge proof
-- then decide whether challenge state should become reducer-backed before more UI expands
-- keep the first challenge flow narrow, inspectable, and classroom-facing
+- deepen tutorials without hiding the workbench
+- polish shell/panel consistency
+- prepare the product for `v1.0`
 
 ## When Working on This Project
 

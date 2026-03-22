@@ -179,6 +179,9 @@ export function ChallengePanel({
                       <p className="comparison-copy">
                         Fix validation issues before the challenge can be checked.
                       </p>
+                      {evaluation.currentRuntimeError ? (
+                        <p className="field-error">{evaluation.currentRuntimeError}</p>
+                      ) : null}
                       <div className="comparison-issue-list">
                         {evaluation.currentIssues.slice(0, 3).map((issue, index) => (
                           <p key={`${issue.code}-${issue.moduleId ?? 'global'}-${index}`} className="field-error">

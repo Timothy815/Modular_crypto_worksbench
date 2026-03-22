@@ -8,6 +8,10 @@ import { XOR } from './xor';
 import { Output } from './output';
 import { Rotor } from './rotor';
 import { Reflector } from './reflector';
+import { Permutation } from './permutation';
+import { BitShifter } from './bit-shifter';
+import { LFSR } from './lfsr';
+import { SBox } from './s-box';
 
 export {
   TextInput,
@@ -19,6 +23,10 @@ export {
   Output,
   Rotor,
   Reflector,
+  Permutation,
+  BitShifter,
+  LFSR,
+  SBox,
 };
 
 export const V1_REGISTRY: ModuleRegistry = {
@@ -31,4 +39,8 @@ export const V1_REGISTRY: ModuleRegistry = {
   [Output.id]: Output,
   [Rotor.id]: Rotor,
   [Reflector.id]: Reflector,
+  [Permutation.id]: Permutation,
+  [BitShifter.id]: BitShifter,
+  [LFSR.id]: LFSR,
+  [SBox.id]: SBox,
 };

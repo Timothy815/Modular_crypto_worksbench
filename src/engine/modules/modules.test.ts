@@ -7,6 +7,10 @@ import { BitsToSymbol } from './bits-to-symbol';
 import { XOR } from './xor';
 import { Rotor } from './rotor';
 import { Reflector } from './reflector';
+import { Permutation } from './permutation';
+import { BitShifter } from './bit-shifter';
+import { LFSR } from './lfsr';
+import { SBox } from './s-box';
 import type { Signal } from '../types';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -70,6 +74,12 @@ describe('SymbolToBits', () => {
   it('throws on non-alphabet character', () => {
     expect(() =>
       SymbolToBits.evaluate({ in: { type: 'symbol', value: '3' } }, {}),
+    ).toThrow();
+  });
+
+  it('throws on multi-character input', () => {
+    expect(() =>
+      SymbolToBits.evaluate({ in: { type: 'symbol', value: 'AB' } }, {}),
     ).toThrow();
   });
 });
@@ -156,6 +166,123 @@ describe('XOR', () => {
       {},
     );
     expect(result.out).toEqual({ type: 'bits', value: [0, 0, 0, 0, 0] });
+  });
+});
+
+describe('Permutation', () => {
+  it('reorders bits by the configured index order', () => {
+    const result = Permutation.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 1, 0] } },
+      { order: '2,0,4,1,3' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 1, 0, 0, 1] });
+  });
+
+  it('throws when the order length does not match the input width', () => {
+    expect(() =>
+      Permutation.evaluate(
+        { in: { type: 'bits', value: [1, 0, 1, 1, 0] } },
+        { order: '0,1,2' },
+      ),
+    ).toThrow();
+  });
+
+  it('throws when the order repeats indexes', () => {
+    expect(() =>
+      Permutation.evaluate(
+        { in: { type: 'bits', value: [1, 0, 1, 1, 0] } },
+        { order: '0,1,1,3,4' },
+      ),
+    ).toThrow();
+  });
+});
+
+describe('BitShifter', () => {
+  const bitsSignal: Signal = { type: 'bits', value: [1, 0, 1, 1, 0] };
+
+  it('shifts bits left with zero fill', () => {
+    const result = BitShifter.evaluate({ in: bitsSignal }, { amount: 2, mode: 'left' });
+    expect(result.out).toEqual({ type: 'bits', value: [1, 1, 0, 0, 0] });
+  });
+
+  it('shifts bits right with zero fill', () => {
+    const result = BitShifter.evaluate({ in: bitsSignal }, { amount: 2, mode: 'right' });
+    expect(result.out).toEqual({ type: 'bits', value: [0, 0, 1, 0, 1] });
+  });
+
+  it('rotates bits left', () => {
+    const result = BitShifter.evaluate({ in: bitsSignal }, { amount: 2, mode: 'rotate-left' });
+    expect(result.out).toEqual({ type: 'bits', value: [1, 1, 0, 1, 0] });
+  });
+
+  it('rotates bits right', () => {
+    const result = BitShifter.evaluate({ in: bitsSignal }, { amount: 1, mode: 'rotate-right' });
+    expect(result.out).toEqual({ type: 'bits', value: [0, 1, 0, 1, 1] });
+  });
+
+  it('returns zeros when a logical shift exceeds the input width', () => {
+    const result = BitShifter.evaluate({ in: bitsSignal }, { amount: 7, mode: 'left' });
+    expect(result.out).toEqual({ type: 'bits', value: [0, 0, 0, 0, 0] });
+  });
+});
+
+describe('LFSR', () => {
+  it('emits a deterministic keystream from seed and taps', () => {
+    const result = LFSR.evaluate(
+      {},
+      { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 6 },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 1, 0, 0, 1, 1] });
+  });
+
+  it('returns an empty stream when output length is zero', () => {
+    const result = LFSR.evaluate(
+      {},
+      { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 0 },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [] });
+  });
+
+  it('throws when a tap index is outside the register width', () => {
+    expect(() =>
+      LFSR.evaluate({}, { seed: [1, 0, 1], taps: '0,4', outputLength: 4 }),
+    ).toThrow();
+  });
+});
+
+describe('SBox', () => {
+  it('substitutes a single nibble through the configured table', () => {
+    const result = SBox.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 0] } },
+      { table: '14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [0, 1, 1, 0] });
+  });
+
+  it('substitutes multiple nibbles in one bit stream', () => {
+    const result = SBox.evaluate(
+      { in: { type: 'bits', value: [0, 0, 0, 1, 1, 1, 1, 1] } },
+      { table: '14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [0, 1, 0, 0, 0, 1, 1, 1] });
+  });
+
+  it('throws when the input width is not a multiple of four', () => {
+    expect(() =>
+      SBox.evaluate(
+        { in: { type: 'bits', value: [1, 0, 1] } },
+        { table: '14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7' },
+      ),
+    ).toThrow();
+  });
+
+  it('throws when the table is not a full 16-entry permutation', () => {
+    expect(() =>
+      SBox.evaluate(
+        { in: { type: 'bits', value: [1, 0, 1, 0] } },
+        { table: '0,1,2,3' },
+      ),
+    ).toThrow();
   });
 });
 

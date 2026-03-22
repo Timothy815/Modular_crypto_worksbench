@@ -27,10 +27,14 @@ export interface ChallengeEvaluation {
     | 'matched-target'
     | 'diverged-from-target'
     | 'current-project-invalid'
-    | 'target-project-invalid';
+    | 'target-project-invalid'
+    | 'current-project-runtime-error'
+    | 'target-project-runtime-error';
   comparison: ExecutionComparison | null;
   currentIssues: ValidationIssue[];
   targetIssues: ValidationIssue[];
+  currentRuntimeError: string | null;
+  targetRuntimeError: string | null;
 }
 
 export function evaluateChallengeAttempt(
@@ -48,6 +52,8 @@ export function evaluateChallengeAttempt(
       comparison: null,
       currentIssues: currentValidation.issues,
       targetIssues: targetValidation.issues,
+      currentRuntimeError: null,
+      targetRuntimeError: null,
     };
   }
 
@@ -58,11 +64,41 @@ export function evaluateChallengeAttempt(
       comparison: null,
       currentIssues: currentValidation.issues,
       targetIssues: targetValidation.issues,
+      currentRuntimeError: null,
+      targetRuntimeError: null,
     };
   }
 
-  const currentExecution = executeProject(currentProject, registry);
-  const targetExecution = executeProject(challenge.targetProject, registry);
+  let currentExecution;
+  try {
+    currentExecution = executeProject(currentProject, registry);
+  } catch (error) {
+    return {
+      status: 'blocked',
+      reason: 'current-project-runtime-error',
+      comparison: null,
+      currentIssues: currentValidation.issues,
+      targetIssues: targetValidation.issues,
+      currentRuntimeError: error instanceof Error ? error.message : 'Current project execution failed.',
+      targetRuntimeError: null,
+    };
+  }
+
+  let targetExecution;
+  try {
+    targetExecution = executeProject(challenge.targetProject, registry);
+  } catch (error) {
+    return {
+      status: 'blocked',
+      reason: 'target-project-runtime-error',
+      comparison: null,
+      currentIssues: currentValidation.issues,
+      targetIssues: targetValidation.issues,
+      currentRuntimeError: null,
+      targetRuntimeError: error instanceof Error ? error.message : 'Target project execution failed.',
+    };
+  }
+
   const comparison = compareExecutionResults(targetExecution, currentExecution);
   const matched =
     challenge.success.kind === 'output-match-target'
@@ -75,5 +111,7 @@ export function evaluateChallengeAttempt(
     comparison,
     currentIssues: currentValidation.issues,
     targetIssues: targetValidation.issues,
+    currentRuntimeError: null,
+    targetRuntimeError: null,
   };
 }

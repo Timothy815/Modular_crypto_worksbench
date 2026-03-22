@@ -1,9 +1,11 @@
 import type { CompositeLibraryEntry, CompositeLayoutPosition } from '../engine/composites';
 import type { ModuleDefinition, ModuleInstance, ModuleRegistry, Project } from '../engine/types';
 import type { GuidedChallenge } from './challenges';
+import type { GuidedTutorial } from './tutorials';
 import type { DemoProject } from './demo-projects';
 import { STARTER_COMPOSITE_LIBRARY } from './starter-composites';
 import { STARTER_CHALLENGES } from './starter-challenges';
+import { STARTER_TUTORIALS } from './starter-tutorials';
 import type {
   ComparisonBaselineDocument,
   CompositeLibraryDocument,
@@ -14,6 +16,7 @@ import type {
 export interface UiState {
   activeProjectId: string;
   challengeLibrary: GuidedChallenge[];
+  tutorialLibrary: GuidedTutorial[];
   compositeLibrary: CompositeLibraryEntry[];
   compositeEditor: CompositeEditorState | null;
   projectStates: Record<string, Project>;
@@ -21,6 +24,8 @@ export interface UiState {
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
   comparisonBaselinesByProject: Record<string, ComparisonBaselineDocument | null>;
   activeChallengeIdByProject: Record<string, string | null>;
+  activeTutorialIdByProject: Record<string, string | null>;
+  activeTutorialStepByProject: Record<string, number>;
   selectedModuleIdByProject: Record<string, string | null>;
   selectedModuleIdsByProject: Record<string, string[]>;
   paramDrafts: Record<string, string>;
@@ -65,6 +70,8 @@ export type UiAction =
   | { type: 'loadDocument'; projectId: string; document: WorkbenchDocument }
   | { type: 'selectChallenge'; projectId: string; challengeId: string | null }
   | { type: 'upsertChallenge'; challenge: GuidedChallenge }
+  | { type: 'selectTutorial'; projectId: string; tutorialId: string | null }
+  | { type: 'setTutorialStep'; projectId: string; stepIndex: number }
   | { type: 'captureComparisonBaseline'; projectId: string; capturedAt: string }
   | { type: 'clearComparisonBaseline'; projectId: string }
   | { type: 'loadCompositeLibrary'; document: CompositeLibraryDocument }
@@ -140,6 +147,7 @@ function updateModule(
 
 export function createInitialUiState(projects: DemoProject[]): UiState {
   const defaultChallengeId = STARTER_CHALLENGES[0]?.id ?? null;
+  const defaultTutorialId = STARTER_TUTORIALS[0]?.id ?? null;
   return {
     activeProjectId: projects[0]?.id ?? '',
     challengeLibrary: STARTER_CHALLENGES.map((challenge) => ({
@@ -148,6 +156,10 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
       startingLayout: challenge.startingLayout ? cloneLayout(challenge.startingLayout) : undefined,
       targetProject: cloneProject(challenge.targetProject),
       hints: challenge.hints ? [...challenge.hints] : undefined,
+    })),
+    tutorialLibrary: STARTER_TUTORIALS.map((tutorial) => ({
+      ...tutorial,
+      steps: tutorial.steps.map((step) => ({ ...step })),
     })),
     compositeLibrary: STARTER_COMPOSITE_LIBRARY.map((entry) => ({
       ...entry,
@@ -184,6 +196,12 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     ),
     activeChallengeIdByProject: Object.fromEntries(
       projects.map((project) => [project.id, defaultChallengeId]),
+    ),
+    activeTutorialIdByProject: Object.fromEntries(
+      projects.map((project) => [project.id, defaultTutorialId]),
+    ),
+    activeTutorialStepByProject: Object.fromEntries(
+      projects.map((project) => [project.id, 0]),
     ),
     selectedModuleIdByProject: Object.fromEntries(
       projects.map((project) => [project.id, project.project.modules[0]?.id ?? null]),
@@ -724,6 +742,26 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
         },
       };
     }
+    case 'selectTutorial':
+      return {
+        ...state,
+        activeTutorialIdByProject: {
+          ...state.activeTutorialIdByProject,
+          [action.projectId]: action.tutorialId,
+        },
+        activeTutorialStepByProject: {
+          ...state.activeTutorialStepByProject,
+          [action.projectId]: 0,
+        },
+      };
+    case 'setTutorialStep':
+      return {
+        ...state,
+        activeTutorialStepByProject: {
+          ...state.activeTutorialStepByProject,
+          [action.projectId]: Math.max(0, Math.trunc(action.stepIndex)),
+        },
+      };
     case 'clearComparisonBaseline':
       return {
         ...state,

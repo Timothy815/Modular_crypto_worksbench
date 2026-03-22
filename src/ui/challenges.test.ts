@@ -91,4 +91,29 @@ describe('evaluateChallengeAttempt', () => {
     expect(result.comparison).toBeNull();
     expect(result.currentIssues.length).toBeGreaterThan(0);
   });
+
+  it('returns blocked when the current project throws during execution', () => {
+    const currentProject = cloneProject(bridgeProject.project);
+    const textModule = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'text');
+    if (!textModule) {
+      throw new Error('Expected text module in bridge project.');
+    }
+    textModule.params.value = 'AB';
+
+    const challenge: GuidedChallenge = {
+      id: 'bridge-runtime-error',
+      title: 'Bridge Runtime Error',
+      prompt: 'Make the output match the target.',
+      startingProject: cloneProject(currentProject),
+      targetProject: cloneProject(bridgeProject.project),
+      success: { kind: 'output-match-target' },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, V1_REGISTRY);
+
+    expect(result.status).toBe('blocked');
+    expect(result.reason).toBe('current-project-runtime-error');
+    expect(result.comparison).toBeNull();
+    expect(result.currentRuntimeError).toContain('SymbolToBits');
+  });
 });
