@@ -147,6 +147,39 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'keystream',
+    name: 'Modern Keystream',
+    summary: 'A clocked LFSR keystream XORs a plaintext bit stream without ever leaving the bit domain.',
+    pipeline: 'Clock -> LFSR -> XOR(BitSource) -> BitOutput',
+    defaultTickedMode: true,
+    project: {
+      modules: [
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 8 } },
+        { id: 'plain', defId: 'BitSource', params: { stream: [1, 0, 1, 1, 0, 0, 1, 0] } },
+        {
+          id: 'lfsr',
+          defId: 'LFSR',
+          params: { seed: [1, 0, 1, 1, 0], taps: '0,2', outputLength: 1 },
+        },
+        { id: 'xor', defId: 'XOR', params: {} },
+        { id: 'output', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'lfsr', port: 'clock' } },
+        { from: { moduleId: 'plain', port: 'out' }, to: { moduleId: 'xor', port: 'a' } },
+        { from: { moduleId: 'lfsr', port: 'out' }, to: { moduleId: 'xor', port: 'b' } },
+        { from: { moduleId: 'xor', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      clock: { x: 48, y: 72 },
+      plain: { x: 48, y: 262 },
+      lfsr: { x: 292, y: 72 },
+      xor: { x: 536, y: 168 },
+      output: { x: 780, y: 168 },
+    },
+  },
+  {
     id: 'hybrid',
     name: 'Hybrid Reference',
     summary: 'The V1 hybrid machine crossing classical and modern domains.',

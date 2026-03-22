@@ -20,6 +20,7 @@ function cloneProject(project: Project): Project {
 describe('evaluateChallengeAttempt', () => {
   const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
   const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
+  const keystreamProject = demoProjects.find((project) => project.id === 'keystream');
   const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 
   if (!bridgeProject) {
@@ -27,6 +28,9 @@ describe('evaluateChallengeAttempt', () => {
   }
   if (!byteRoundProject) {
     throw new Error('Expected byte-round project.');
+  }
+  if (!keystreamProject) {
+    throw new Error('Expected keystream project.');
   }
   if (!sequentialProject) {
     throw new Error('Expected sequential project.');
@@ -171,6 +175,32 @@ describe('evaluateChallengeAttempt', () => {
     expect(result.reason).toBe('matched-target');
     expect(result.comparison?.outputsMatch).toBe(true);
     expect(result.comparison?.baselineOutput.formatted.length).toBeGreaterThan(0);
+  });
+
+  it('returns failure when a keystream machine uses the wrong LFSR seed', () => {
+    const currentProject = cloneProject(keystreamProject.project);
+    const lfsrModule = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'lfsr');
+    if (!lfsrModule) {
+      throw new Error('Expected LFSR module in keystream project.');
+    }
+    lfsrModule.params.seed = [0, 1, 1, 0, 1];
+
+    const challenge: GuidedChallenge = {
+      id: 'keystream-failure',
+      title: 'Keystream Failure',
+      prompt: 'Repair the keystream generator.',
+      startingProject: cloneProject(currentProject),
+      targetProject: cloneProject(keystreamProject.project),
+      success: { kind: 'output-match-target' },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, V1_REGISTRY);
+
+    expect(result.status).toBe('failure');
+    expect(result.reason).toBe('diverged-from-target');
+    expect(result.comparison?.outputsMatch).toBe(false);
+    expect(result.comparison?.firstDivergence?.tickIndex).toBe(0);
+    expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('lfsr');
   });
 
   it('returns failure when a sequential project diverges from the target ticked output stream', () => {

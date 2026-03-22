@@ -7,6 +7,7 @@ function cloneProject<T>(value: T): T {
 
 const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
 const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
+const keystreamProject = demoProjects.find((project) => project.id === 'keystream');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 
 if (!bridgeProject) {
@@ -14,6 +15,9 @@ if (!bridgeProject) {
 }
 if (!byteRoundProject) {
   throw new Error('Expected byte-round demo project to seed starter challenges.');
+}
+if (!keystreamProject) {
+  throw new Error('Expected keystream demo project to seed starter challenges.');
 }
 if (!sequentialProject) {
   throw new Error('Expected sequential demo project to seed starter challenges.');
@@ -23,6 +27,8 @@ const fixedBridgeTarget = cloneProject(bridgeProject.project);
 const brokenBridgeStart = cloneProject(bridgeProject.project);
 const byteRoundTarget = cloneProject(byteRoundProject.project);
 const brokenByteRoundStart = cloneProject(byteRoundProject.project);
+const keystreamTarget = cloneProject(keystreamProject.project);
+const brokenKeystreamStart = cloneProject(keystreamProject.project);
 const sequentialTarget = cloneProject(sequentialProject.project);
 const brokenSequentialStart = cloneProject(sequentialProject.project);
 const brokenSequentialTapsStart = cloneProject(sequentialProject.project);
@@ -40,6 +46,14 @@ if (!brokenPermutationModule) {
   throw new Error('Expected byte-round demo project to contain a permutation module.');
 }
 brokenPermutationModule.params.order = '0,1,2,3,4,5,6,7';
+
+const brokenKeystreamLfsr = brokenKeystreamStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'lfsr',
+);
+if (!brokenKeystreamLfsr) {
+  throw new Error('Expected keystream demo project to contain an LFSR module.');
+}
+brokenKeystreamLfsr.params.seed = [0, 1, 1, 0, 1];
 
 const brokenClockModule = brokenSequentialStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'clock',
@@ -93,6 +107,25 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The S-Box table is already correct in this lab.',
       'Focus on the permutation stage after substitution.',
       'The target round reverses the bit order after the byte leaves the S-Box.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-keystream-seed',
+    title: 'Repair the Keystream Seed',
+    difficulty: 'intermediate',
+    prompt:
+      'The plaintext bits are still correct, but the pseudo-random mask is drifting. Repair the LFSR seed so the running ciphertext stream matches the captured reference machine again.',
+    startingProject: brokenKeystreamStart,
+    startingLayout: cloneProject(keystreamProject.layout),
+    targetProject: keystreamTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The clock timing is already correct in this machine.',
+      'The XOR stage simply mixes the plaintext bits with the current keystream bit.',
+      'If the seed is wrong, the output starts diverging as soon as the first shifted bit changes.',
     ],
   },
   {

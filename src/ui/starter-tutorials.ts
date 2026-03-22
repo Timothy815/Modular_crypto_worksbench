@@ -119,4 +119,48 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       },
     ],
   },
+  {
+    version: 1,
+    id: 'modern-keystream',
+    title: 'The Modern Keystream',
+    summary: 'Learn how a clocked LFSR produces a running bit mask that XOR encrypts a plaintext stream.',
+    projectId: 'keystream',
+    steps: [
+      {
+        id: 'keystream-clock',
+        title: 'Tick The Machine',
+        body: 'Clock controls when the keystream register advances. In ticked mode each pulse corresponds to one bit of the running cipher stream.',
+        focusModuleId: 'clock',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'keystream-plain',
+        title: 'Feed Plaintext Bits',
+        body: 'BitSource provides the plaintext stream one bit at a time. This lets students inspect encryption at the exact bit being processed on the current tick.',
+        focusModuleId: 'plain',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'keystream-lfsr',
+        title: 'Generate The Mask',
+        body: 'LFSR emits one keystream bit per tick because its output length is 1. Its internal seed shifts after each live clock pulse, producing a running pseudo-random mask.',
+        focusModuleId: 'lfsr',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'keystream-xor',
+        title: 'Mix Plaintext And Keystream',
+        body: 'XOR combines the current plaintext bit with the current keystream bit. This is the core stream-cipher operation: plaintext XOR mask = ciphertext.',
+        focusModuleId: 'xor',
+        targetStepIndex: 3,
+      },
+      {
+        id: 'keystream-output',
+        title: 'Read The Cipher Stream',
+        body: 'BitOutput marks the terminal ciphertext sink. Use the tick bar, probes, and challenge workflow here to inspect how the encrypted bit stream evolves over time.',
+        focusModuleId: 'output',
+        targetStepIndex: 4,
+      },
+    ],
+  },
 ];
