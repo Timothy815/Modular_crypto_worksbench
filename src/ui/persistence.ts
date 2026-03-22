@@ -46,6 +46,7 @@ function cloneChallenge(challenge: GuidedChallenge): GuidedChallenge {
   return {
     ...challenge,
     version: 1,
+    difficulty: challenge.difficulty,
     startingProject: cloneProject(challenge.startingProject),
     startingLayout: challenge.startingLayout
       ? Object.fromEntries(
@@ -448,6 +449,10 @@ function isGuidedChallengeDocument(value: unknown): value is GuidedChallenge {
     (candidate.version === undefined || candidate.version === 1) &&
     typeof candidate.id === 'string' &&
     typeof candidate.title === 'string' &&
+    (candidate.difficulty === undefined ||
+      candidate.difficulty === 'beginner' ||
+      candidate.difficulty === 'intermediate' ||
+      candidate.difficulty === 'expert') &&
     typeof candidate.prompt === 'string' &&
     typeof candidate.startingProject === 'object' &&
     candidate.startingProject !== null &&

@@ -59,7 +59,7 @@ export function ChallengePanel({
         >
           {challenges.map((challenge) => (
             <option key={challenge.id} value={challenge.id}>
-              {challenge.title}
+              {formatDifficultyBadge(challenge.difficulty)}{challenge.title}
             </option>
           ))}
         </select>
@@ -68,6 +68,11 @@ export function ChallengePanel({
       {selectedChallenge ? (
         <>
           <p className="comparison-copy">{selectedChallenge.prompt}</p>
+          {selectedChallenge.difficulty ? (
+            <p className="comparison-copy">
+              Difficulty: <strong>{formatDifficultyLabel(selectedChallenge.difficulty)}</strong>
+            </p>
+          ) : null}
           <p className="comparison-copy">
             Resetting loads the seeded starting machine for this challenge and replaces the current
             workbench attempt.
@@ -262,4 +267,20 @@ function formatIssueLead(issue: ChallengeEvaluation['currentIssues'][number]) {
   }
 
   return '';
+}
+
+function formatDifficultyBadge(
+  difficulty: GuidedChallenge['difficulty'],
+) {
+  if (!difficulty) {
+    return '';
+  }
+
+  return `[${formatDifficultyLabel(difficulty)}] `;
+}
+
+function formatDifficultyLabel(
+  difficulty: NonNullable<GuidedChallenge['difficulty']>,
+) {
+  return difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
 }

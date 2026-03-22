@@ -40,6 +40,13 @@ import {
 } from './ui/store';
 
 function App() {
+  const [challengeCaptureShouldExport, setChallengeCaptureShouldExport] = useState<boolean>(() => {
+    if (typeof window === 'undefined') {
+      return true;
+    }
+
+    return window.localStorage.getItem('mcw:challenge-export') !== 'false';
+  });
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window === 'undefined') {
       return 'light';
@@ -206,8 +213,9 @@ function App() {
   const [challengeCaptureId, setChallengeCaptureId] = useState('');
   const [challengeCapturePrompt, setChallengeCapturePrompt] = useState('');
   const [challengeCaptureHints, setChallengeCaptureHints] = useState('');
-  const [challengeCaptureShouldExport, setChallengeCaptureShouldExport] = useState(true);
   const [challengeCaptureError, setChallengeCaptureError] = useState<string | null>(null);
+  const [challengeCaptureDifficulty, setChallengeCaptureDifficulty] =
+    useState<'beginner' | 'intermediate' | 'expert'>('beginner');
   const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
   const [hoveredTraceModuleId, setHoveredTraceModuleId] = useState<string | null>(null);
   const [stepIndex, setStepIndex] = useState<number | null>(null);
@@ -521,6 +529,17 @@ function App() {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem('mcw:theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.localStorage.setItem(
+      'mcw:challenge-export',
+      challengeCaptureShouldExport ? 'true' : 'false',
+    );
+  }, [challengeCaptureShouldExport]);
 
   return (
     <main className="app-shell">
@@ -1037,6 +1056,7 @@ function App() {
                 setChallengeCaptureTitle(defaultTitle);
                 setChallengeCaptureId(createChallengeIdCandidate(defaultTitle));
                 if (activeProjectDefinition.id === 'sequential') {
+                  setChallengeCaptureDifficulty('intermediate');
                   setChallengeCapturePrompt(
                     `Repair or complete the ${activeProjectDefinition.name} machine until its running output stream matches the captured reference behavior.`,
                   );
@@ -1044,6 +1064,7 @@ function App() {
                     'The clock period controls when the machine advances.\nUse the tick bar and probes to find the first wrong moment.',
                   );
                 } else {
+                  setChallengeCaptureDifficulty('beginner');
                   setChallengeCapturePrompt(
                     `Repair or complete the ${activeProjectDefinition.name} machine until its output matches the captured reference behavior.`,
                   );
@@ -1426,6 +1447,22 @@ function App() {
             </label>
 
             <label className="param-field">
+              <span>Difficulty</span>
+              <select
+                value={challengeCaptureDifficulty}
+                onChange={(event) =>
+                  setChallengeCaptureDifficulty(
+                    event.target.value as 'beginner' | 'intermediate' | 'expert',
+                  )
+                }
+              >
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="expert">Expert</option>
+              </select>
+            </label>
+
+            <label className="param-field">
               <span>Hints (one per line)</span>
               <textarea
                 value={challengeCaptureHints}
@@ -1476,6 +1513,7 @@ function App() {
                     version: 1 as const,
                     id: trimmedId,
                     title: trimmedTitle,
+                    difficulty: challengeCaptureDifficulty,
                     prompt: trimmedPrompt,
                     startingProject: cloneProject(activeProjectState),
                     startingLayout: cloneLayout(activeLayout),

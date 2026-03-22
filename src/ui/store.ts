@@ -765,6 +765,7 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       const existing = state.challengeLibrary.some((challenge) => challenge.id === action.challenge.id);
       const nextChallenge = {
         ...action.challenge,
+        difficulty: action.challenge.difficulty,
         startingProject: cloneProject(action.challenge.startingProject),
         startingLayout: action.challenge.startingLayout
           ? cloneLayout(action.challenge.startingLayout)

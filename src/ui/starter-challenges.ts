@@ -48,6 +48,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-bridge-key',
     title: 'Repair the Bridge Key',
+    difficulty: 'beginner',
     prompt:
       'The bridge pipeline was working, but the bit source changed. Adjust the machine until its output matches the reference behavior again.',
     startingProject: brokenBridgeStart,
@@ -65,6 +66,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'restore-sequential-pulse',
     title: 'Restore the Sequential Pulse',
+    difficulty: 'intermediate',
     prompt:
       'The clocked keystream machine is no longer advancing on every tick. Repair the timing so its running output matches the captured reference stream again.',
     startingProject: brokenSequentialStart,
@@ -83,6 +85,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-lfsr-taps',
     title: 'Repair the LFSR Taps',
+    difficulty: 'intermediate',
     prompt:
       'The clock is pulsing correctly, but the keystream itself is wrong. Fix the feedback taps so the running output stream matches the reference machine again.',
     startingProject: brokenSequentialTapsStart,
