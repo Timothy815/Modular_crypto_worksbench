@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { executeTickedProject } from './executor';
+import type { CompositeDef } from './composites';
 import type { ModuleRegistry, Project } from './types';
 import { Clock } from './modules/clock';
 import { LFSR } from './modules/lfsr';
 import { Rotor } from './modules/rotor';
 import { TextInput } from './modules/text-input';
 import { BitSource } from './modules/bit-source';
+import { BitsToSymbol } from './modules/bits-to-symbol';
+import { Output } from './modules/output';
 
 describe('Signal-driven advance', () => {
   // LFSR advance trace with seed [1,0,0,1,1], taps "0,2":
@@ -348,6 +351,143 @@ describe('Signal-driven advance', () => {
       expect(rotorPositions[1]).toBe(1); // advanced
       expect(rotorPositions[2]).toBe(1); // same
       expect(rotorPositions[3]).toBe(2); // advanced
+    });
+  });
+
+  describe('stateful composites', () => {
+    it('clocked stateful internals inside a composite match the unwrapped graph', () => {
+      const symbolStreamComposite: CompositeDef = {
+        id: 'SymbolStream',
+        name: 'Symbol Stream',
+        kind: 'composite',
+        version: 1,
+        inputs: [{ name: 'clock', type: 'bits' }],
+        outputs: [{ name: 'out', type: 'symbol' }],
+        paramSchema: {},
+        project: {
+          modules: [
+            {
+              id: 'lfsr',
+              defId: 'LFSR',
+              params: { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 5 },
+            },
+            {
+              id: 'decode',
+              defId: 'BitsToSymbol',
+              params: {},
+            },
+          ],
+          connections: [
+            {
+              from: { moduleId: 'lfsr', port: 'out' },
+              to: { moduleId: 'decode', port: 'in' },
+            },
+          ],
+        },
+        inputBindings: [
+          {
+            externalPort: 'clock',
+            internalModuleId: 'lfsr',
+            internalPort: 'clock',
+          },
+        ],
+        outputBindings: [
+          {
+            externalPort: 'out',
+            internalModuleId: 'decode',
+            internalPort: 'out',
+          },
+        ],
+      };
+
+      const registry: ModuleRegistry = {
+        Clock,
+        LFSR,
+        BitsToSymbol,
+        Output,
+        [symbolStreamComposite.id]: symbolStreamComposite,
+      };
+
+      const wrappedProject: Project = {
+        modules: [
+          {
+            id: 'clk',
+            defId: 'Clock',
+            params: { period: 1, offset: 0, length: 4 },
+          },
+          {
+            id: 'stream',
+            defId: 'SymbolStream',
+            params: {},
+          },
+          {
+            id: 'output',
+            defId: 'Output',
+            params: {},
+          },
+        ],
+        connections: [
+          {
+            from: { moduleId: 'clk', port: 'pulse' },
+            to: { moduleId: 'stream', port: 'clock' },
+          },
+          {
+            from: { moduleId: 'stream', port: 'out' },
+            to: { moduleId: 'output', port: 'in' },
+          },
+        ],
+      };
+
+      const unwrappedProject: Project = {
+        modules: [
+          {
+            id: 'clk',
+            defId: 'Clock',
+            params: { period: 1, offset: 0, length: 4 },
+          },
+          {
+            id: 'lfsr',
+            defId: 'LFSR',
+            params: { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 5 },
+          },
+          {
+            id: 'decode',
+            defId: 'BitsToSymbol',
+            params: {},
+          },
+          {
+            id: 'output',
+            defId: 'Output',
+            params: {},
+          },
+        ],
+        connections: [
+          {
+            from: { moduleId: 'clk', port: 'pulse' },
+            to: { moduleId: 'lfsr', port: 'clock' },
+          },
+          {
+            from: { moduleId: 'lfsr', port: 'out' },
+            to: { moduleId: 'decode', port: 'in' },
+          },
+          {
+            from: { moduleId: 'decode', port: 'out' },
+            to: { moduleId: 'output', port: 'in' },
+          },
+        ],
+      };
+
+      const wrappedResult = executeTickedProject(wrappedProject, registry, 4);
+      const unwrappedResult = executeTickedProject(unwrappedProject, registry, 4);
+
+      const wrappedOutputs = wrappedResult.ticks.map(
+        (tick) => tick.outputsByModuleId.stream.out,
+      );
+      const unwrappedOutputs = unwrappedResult.ticks.map(
+        (tick) => tick.outputsByModuleId.decode.out,
+      );
+
+      expect(wrappedOutputs).toEqual(unwrappedOutputs);
     });
   });
 });
