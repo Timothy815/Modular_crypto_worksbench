@@ -12,6 +12,9 @@ import { BitsEditor } from './editors/bits-editor';
 import { WiringEditor } from './editors/wiring-editor';
 import { formatParamValue, formatSignal, parseParamValue } from '../formatters';
 import type { TutorialStep } from '../tutorials';
+import { ComparisonPanel } from './comparison-panel';
+import type { ComparisonBaselineDocument } from '../workbench-document';
+import type { ExecutionComparison } from '../execution-compare';
 
 interface ParameterInspectorProps {
   execution: ExecutionResult | null;
@@ -20,6 +23,12 @@ interface ParameterInspectorProps {
   stepIndex: number | null;
   project: Project;
   tutorialStep: TutorialStep | null;
+  projectName: string;
+  comparisonBaseline: ComparisonBaselineDocument | null;
+  executionComparison: ExecutionComparison | null;
+  baselineOutput: string;
+  variantOutput: string;
+  baselineExecutionError: string | null;
   baselineModuleInstance: ModuleInstance | null;
   moduleDef: ModuleDefinition | null;
   moduleInstance: ModuleInstance | null;
@@ -30,6 +39,8 @@ interface ParameterInspectorProps {
   onSelectIssueTarget: (moduleId: string) => void;
   onTraceHover: (moduleId: string | null) => void;
   onStepChange: (nextIndex: number | null) => void;
+  onCaptureBaseline: () => void;
+  onClearBaseline: () => void;
 }
 
 export function ParameterInspector({
@@ -39,6 +50,12 @@ export function ParameterInspector({
   stepIndex,
   project,
   tutorialStep,
+  projectName,
+  comparisonBaseline,
+  executionComparison,
+  baselineOutput,
+  variantOutput,
+  baselineExecutionError,
   baselineModuleInstance,
   moduleDef,
   moduleInstance,
@@ -49,9 +66,11 @@ export function ParameterInspector({
   onSelectIssueTarget,
   onTraceHover,
   onStepChange,
+  onCaptureBaseline,
+  onClearBaseline,
 }: ParameterInspectorProps) {
   const [traceMode, setTraceMode] = useState<'focused' | 'upstream' | 'downstream' | 'full'>('focused');
-  const [inspectorTab, setInspectorTab] = useState<'configure' | 'analyze'>('configure');
+  const [inspectorTab, setInspectorTab] = useState<'configure' | 'analyze' | 'compare'>('configure');
   const tutorialTraceRef = useRef<HTMLLIElement | null>(null);
   const outputTrace = execution?.trace.at(-1);
   const selectedTrace = execution?.trace.find(
@@ -115,6 +134,13 @@ export function ParameterInspector({
           onClick={() => setInspectorTab('analyze')}
         >
           Analyze
+        </button>
+        <button
+          type="button"
+          className={inspectorTab === 'compare' ? 'inspector-tab active' : 'inspector-tab'}
+          onClick={() => setInspectorTab('compare')}
+        >
+          Compare
         </button>
       </div>
 
@@ -577,6 +603,23 @@ export function ParameterInspector({
           );
         })}
       </ol>
+      ) : null}
+
+      {inspectorTab === 'compare' ? (
+        <section className="analysis-section">
+          <ComparisonPanel
+            embedded
+            projectName={projectName}
+            baseline={comparisonBaseline}
+            baselineOutput={baselineOutput}
+            variantOutput={variantOutput}
+            baselineError={baselineExecutionError}
+            variantError={executionError}
+            comparison={executionComparison}
+            onCaptureBaseline={onCaptureBaseline}
+            onClearBaseline={onClearBaseline}
+          />
+        </section>
       ) : null}
     </aside>
   );

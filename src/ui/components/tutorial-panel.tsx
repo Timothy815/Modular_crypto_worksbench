@@ -6,6 +6,8 @@ interface TutorialPanelProps {
   currentProjectId: string;
   stepIndex: number;
   activeStep: TutorialStep | null;
+  completedTutorialIds: string[];
+  isCompleted: boolean;
   onSelectTutorial: (tutorialId: string) => void;
   onSetStep: (stepIndex: number) => void;
   onSwitchProject: (projectId: string) => void;
@@ -18,6 +20,8 @@ export function TutorialPanel({
   currentProjectId,
   stepIndex,
   activeStep,
+  completedTutorialIds,
+  isCompleted,
   onSelectTutorial,
   onSetStep,
   onSwitchProject,
@@ -31,12 +35,19 @@ export function TutorialPanel({
   }
 
   const isTutorialProjectActive = selectedTutorial.projectId === currentProjectId;
+  const totalSteps = selectedTutorial.steps.length;
+  const completedCount = tutorials.filter((tutorial) =>
+    completedTutorialIds.includes(tutorial.id),
+  ).length;
 
   return (
     <section className="panel comparison-panel tutorial-panel">
       <div className="panel-head">
         <p className="panel-label">Guided Tutorial</p>
         <h2>Tutorial Walkthrough</h2>
+        <p className="tutorial-progress-summary">
+          {completedCount} of {tutorials.length} completed
+        </p>
       </div>
 
       <label className="param-field">
@@ -47,7 +58,7 @@ export function TutorialPanel({
         >
           {tutorials.map((tutorial) => (
             <option key={tutorial.id} value={tutorial.id}>
-              {tutorial.title}
+              {completedTutorialIds.includes(tutorial.id) ? '\u2713 ' : ''}{tutorial.title}
             </option>
           ))}
         </select>
@@ -56,7 +67,24 @@ export function TutorialPanel({
       <p className="comparison-copy">{selectedTutorial.summary}</p>
       <p className="comparison-copy">
         Designed for <strong>{selectedTutorial.projectId}</strong>.
+        {isCompleted ? (
+          <span className="tutorial-completed-chip">Completed</span>
+        ) : (
+          <span className="tutorial-in-progress-chip">
+            Step {stepIndex + 1} of {totalSteps}
+          </span>
+        )}
       </p>
+
+      {isCompleted ? (
+        <div className="tutorial-completed-banner">
+          <strong>Tutorial complete</strong>
+          <p>
+            You have walked through all {totalSteps} steps.
+            Try another tutorial, or revisit any step using the navigator below.
+          </p>
+        </div>
+      ) : null}
 
       <div className="comparison-actions">
         {!isTutorialProjectActive ? (
@@ -79,8 +107,8 @@ export function TutorialPanel({
         <button
           type="button"
           className="mini-action-button"
-          disabled={stepIndex >= selectedTutorial.steps.length - 1}
-          onClick={() => onSetStep(Math.min(selectedTutorial.steps.length - 1, stepIndex + 1))}
+          disabled={stepIndex >= totalSteps - 1}
+          onClick={() => onSetStep(Math.min(totalSteps - 1, stepIndex + 1))}
         >
           Next Step
         </button>
@@ -97,7 +125,7 @@ export function TutorialPanel({
 
       <div className="comparison-grid">
         <div className="comparison-card comparison-card-wide">
-          <span className="meta-label">Step {stepIndex + 1}</span>
+          <span className="meta-label">Step {stepIndex + 1} of {totalSteps}</span>
           {activeStep ? (
             <>
               <strong>{activeStep.title}</strong>
@@ -119,10 +147,18 @@ export function TutorialPanel({
               <li key={step.id}>
                 <button
                   type="button"
-                  className={index === stepIndex ? 'tutorial-step-chip active' : 'tutorial-step-chip'}
+                  className={
+                    index === stepIndex
+                      ? 'tutorial-step-chip active'
+                      : index < stepIndex || isCompleted
+                        ? 'tutorial-step-chip visited'
+                        : 'tutorial-step-chip'
+                  }
                   onClick={() => onSetStep(index)}
                 >
-                  <span>Step {index + 1}</span>
+                  <span>
+                    {index < stepIndex || isCompleted ? '\u2713 ' : ''}Step {index + 1}
+                  </span>
                   <strong>{step.title}</strong>
                 </button>
               </li>

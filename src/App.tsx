@@ -11,7 +11,6 @@ import {
 } from './ui/composite-authoring';
 import { evaluateChallengeAttempt } from './ui/challenges';
 import { ChallengePanel } from './ui/components/challenge-panel';
-import { ComparisonPanel } from './ui/components/comparison-panel';
 import { ParameterInspector } from './ui/components/parameter-inspector';
 import { PrimitivePalette } from './ui/components/primitive-palette';
 import { TutorialPanel } from './ui/components/tutorial-panel';
@@ -133,6 +132,14 @@ function App() {
               0,
           ]),
         ),
+        completedTutorialsByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.completedTutorialsByProjectId[project.id] ??
+              initialState.completedTutorialsByProject[project.id] ??
+              [],
+          ]),
+        ),
         selectedModuleIdByProject: Object.fromEntries(
           projects.map((project) => [
             project.id,
@@ -221,8 +228,8 @@ function App() {
   }
 
   const effectiveStepIndex =
-    stepIndex !== null && execution && stepIndex < execution.trace.length
-      ? stepIndex
+    stepIndex !== null && execution && execution.trace.length > 0
+      ? Math.min(Math.max(0, stepIndex), execution.trace.length - 1)
       : null;
   const steppedModuleId =
     effectiveStepIndex !== null && execution
@@ -287,6 +294,61 @@ function App() {
     !state.compositeEditor && selectedTutorial?.projectId === activeProjectDefinition.id
       ? selectedTutorialStep
       : null;
+  const completedTutorialIds =
+    state.completedTutorialsByProject[activeProjectDefinition.id] ?? [];
+  const isTutorialCompleted = selectedTutorial
+    ? completedTutorialIds.includes(selectedTutorial.id)
+    : false;
+  const isOnFinalStep = selectedTutorial
+    ? tutorialStepIndex >= selectedTutorial.steps.length - 1
+    : false;
+
+  useEffect(() => {
+    if (
+      isOnFinalStep &&
+      !isTutorialCompleted &&
+      selectedTutorial &&
+      selectedTutorial.steps.length > 0
+    ) {
+      dispatch({
+        type: 'completeTutorial',
+        projectId: activeProjectDefinition.id,
+        tutorialId: selectedTutorial.id,
+      });
+    }
+  }, [isOnFinalStep, isTutorialCompleted, selectedTutorial, activeProjectDefinition.id]);
+
+  const syncTutorialStepFromTrace = (nextIndex: number | null) => {
+    setStepIndex(nextIndex);
+
+    if (
+      nextIndex === null ||
+      !selectedTutorial ||
+      state.compositeEditor ||
+      selectedTutorial.projectId !== activeProjectDefinition.id ||
+      !execution
+    ) {
+      return;
+    }
+
+    const nextTrace = execution.trace[nextIndex] ?? null;
+    if (!nextTrace) {
+      return;
+    }
+
+    const tutorialStepMatchIndex = selectedTutorial.steps.findIndex(
+      (step) =>
+        step.targetStepIndex === nextIndex ||
+        (step.focusModuleId !== undefined && step.focusModuleId === nextTrace.moduleId),
+    );
+    if (tutorialStepMatchIndex >= 0 && tutorialStepMatchIndex !== tutorialStepIndex) {
+      dispatch({
+        type: 'setTutorialStep',
+        projectId: activeProjectDefinition.id,
+        stepIndex: tutorialStepMatchIndex,
+      });
+    }
+  };
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -681,6 +743,20 @@ function App() {
               stepIndex={effectiveStepIndex}
               project={activeProjectState}
               tutorialStep={activeTutorialStep}
+              projectName={activeProjectDefinition.name}
+              comparisonBaseline={comparisonBaseline}
+              executionComparison={executionComparison}
+              baselineOutput={
+                baselineExecution
+                  ? executionComparison?.baselineOutput.formatted ?? 'n/a'
+                  : 'blocked'
+              }
+              variantOutput={
+                execution
+                  ? executionComparison?.variantOutput.formatted ?? 'n/a'
+                  : 'blocked'
+              }
+              baselineExecutionError={baselineExecutionError}
               moduleDef={selectedModuleDef}
               moduleInstance={selectedModule}
               getParamDraft={(moduleId, key) =>
@@ -726,7 +802,20 @@ function App() {
                 })
               }
               onTraceHover={setHoveredTraceModuleId}
-              onStepChange={setStepIndex}
+              onStepChange={syncTutorialStepFromTrace}
+              onCaptureBaseline={() =>
+                dispatch({
+                  type: 'captureComparisonBaseline',
+                  projectId: activeProjectDefinition.id,
+                  capturedAt: new Date().toISOString(),
+                })
+              }
+              onClearBaseline={() =>
+                dispatch({
+                  type: 'clearComparisonBaseline',
+                  projectId: activeProjectDefinition.id,
+                })
+              }
             />
           </div>
         ) : null}
@@ -777,6 +866,8 @@ function App() {
               currentProjectId={activeProjectDefinition.id}
               stepIndex={tutorialStepIndex}
               activeStep={selectedTutorialStep}
+              completedTutorialIds={completedTutorialIds}
+              isCompleted={isTutorialCompleted}
               onSelectTutorial={(tutorialId) =>
                 {
                   const nextTutorial =
@@ -813,36 +904,6 @@ function App() {
             />
           ) : null}
 
-          <ComparisonPanel
-            projectName={activeProjectDefinition.name}
-            baseline={comparisonBaseline}
-            baselineOutput={
-              baselineExecution
-                ? executionComparison?.baselineOutput.formatted ?? 'n/a'
-                : 'blocked'
-            }
-            variantOutput={
-              execution
-                ? executionComparison?.variantOutput.formatted ?? 'n/a'
-                : 'blocked'
-            }
-            baselineError={baselineExecutionError}
-            variantError={executionError}
-            comparison={executionComparison}
-            onCaptureBaseline={() =>
-              dispatch({
-                type: 'captureComparisonBaseline',
-                projectId: activeProjectDefinition.id,
-                capturedAt: new Date().toISOString(),
-              })
-            }
-            onClearBaseline={() =>
-              dispatch({
-                type: 'clearComparisonBaseline',
-                projectId: activeProjectDefinition.id,
-              })
-            }
-          />
         </>
       ) : null}
 
