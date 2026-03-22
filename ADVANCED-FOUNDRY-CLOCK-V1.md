@@ -1,6 +1,6 @@
 # MCW — Advanced Foundry: Clock & Stateful Advance Contract
 
-**Status:** DRAFT — awaiting Gemini review
+**Status:** REVISED — incorporates Gemini review feedback
 **Date:** March 22, 2026
 **Branch:** `feature/advanced-foundry-clock`
 **Prerequisite:** V1 engine contract (stateless, pure, topological)
@@ -136,9 +136,23 @@ one element per tick when operating in ticked mode:
 - `BitSource` with value `[1,0,1,1]` emits `[1]` at tick 0, `[0]` at
   tick 1, etc.
 
-This slicing happens at the execution loop level, not inside
-`evaluate()`. Source modules continue to declare their full value in
-params — the tick executor slices before calling `evaluate()`.
+Slicing is **module-provided**, not executor-provided. Source modules
+that support ticked mode declare a `tickSlice` function:
+
+```ts
+interface TickSliceableModuleDef extends ModuleDef {
+  tickSlice: (params: ModuleParams, tick: number) => ModuleParams;
+}
+```
+
+`tickSlice(params, tick)` returns the params that should be used for a
+single tick. For TextInput this extracts one character; for BitSource
+this extracts one bit. The tick executor calls `tickSlice` before
+`evaluate()` for modules that declare it.
+
+This keeps the executor generic — it does not need to know the internal
+structure of any module's params. New source modules can define their
+own slicing logic without changing executor code.
 
 ### 3.5 Per-Tick Output Collection
 
@@ -197,10 +211,18 @@ function isStatefulModule(def: ModuleDefinition): def is StatefulModuleDef {
 
 ### 4.4 Source Slicing
 
-Source modules that provide sequences need a way to emit per-tick
-slices. This can be handled by the tick executor recognizing source
-modules and providing `inputOverrides` that slice params before
-evaluation. No changes to `evaluate()` itself.
+Source modules that provide sequences declare a `tickSlice` function
+(see §3.4). The tick executor detects this via:
+
+```ts
+function isTickSliceable(def: ModuleDefinition): def is TickSliceableModuleDef {
+  return 'tickSlice' in def && typeof (def as TickSliceableModuleDef).tickSlice === 'function';
+}
+```
+
+The executor calls `tickSlice(params, tick)` to obtain per-tick params
+before calling `evaluate()`. This keeps slicing logic inside the module
+definition, not hardcoded in the executor.
 
 ---
 
@@ -211,8 +233,7 @@ evaluation. No changes to `evaluate()` itself.
 - V1 modules without `advance` — unchanged, fully backwards compatible
 - Topological sort — unchanged
 - Validation — unchanged (may add optional warnings for tick-mode)
-- Composite modules — unchanged (composites can contain stateful modules;
-  the tick loop wraps the outermost execution)
+- Composite modules — unchanged in the first proof slice (see §7.1)
 - Signal types — unchanged
 - Persistence — existing projects load and run exactly as before
 
@@ -261,6 +282,37 @@ ticks. For a rotor, this would show position A → B → C → D → E.
 - Per-tick output collection for Output
 - Tick trace types
 
+### 7.1 Composite Statefulness — Known Follow-Up
+
+Composites containing stateful modules are a **required future
+capability** but are **not solved in the first proof slice**.
+
+The challenge: `executeTickedProject` loops around `executeProject`,
+but composites call `executeProject` internally via
+`evaluateComposite`. A stateful module inside a composite would need
+its `advance` function called between ticks at the composite's internal
+level, which the current outer loop cannot reach.
+
+Resolution strategy (for a follow-up slice):
+- The tick executor could recursively apply `advance` to stateful
+  modules inside composite definitions
+- Alternatively, composites could declare their own `advance` that
+  delegates to internal stateful modules
+
+For the first proof slice: composites containing stateful modules are
+**explicitly unsupported**. If encountered, the tick executor should
+treat internal stateful modules as stateless (no `advance` call). A
+validation warning may be added later to surface this limitation.
+
+### 7.2 Tick-Trace Performance
+
+Storing a full `ExecutionResult` per tick (§4.1) may become expensive
+for long messages through large graphs. This is a **UI integration
+concern**, not an engine proof concern. The first engine slice stores
+full traces for correctness and testability. A compact trace mode can
+be introduced when UI integration makes performance requirements
+concrete.
+
 ### Out of Scope
 
 - Feedback loops (cycles remain prohibited)
@@ -271,6 +323,7 @@ ticks. For a rotor, this would show position A → B → C → D → E.
   selective per-module clocking)
 - Custom scripting for advance functions
 - Network/multi-machine communication
+- Composites containing stateful modules (see §7.1)
 
 ---
 
@@ -284,22 +337,25 @@ After this contract is reviewed and accepted:
 2. Add `isStatefulModule` type guard
 3. Add `TickedExecutionResult` type
 4. Implement `executeTickedProject` in `src/engine/executor.ts`
+   - wraps the existing executor in a tick loop
+   - calls `advance` on stateful primitive modules between ticks
+   - does **not** recurse into composites (see §7.1)
 5. Add `advance` to the Rotor module definition
-6. Write integration test: 5-character input through a single Rotor in
-   ticked mode, verify that position advances and each character gets a
-   different substitution
-7. Write integration test: LFSR in ticked mode emitting one bit per tick
-   matches the V1 full-stream output
+6. Write integration test: multi-character input through a single Rotor
+   in ticked mode, verify that position advances and each character
+   gets a different substitution
+7. No source slicing in this slice — tests provide per-tick inputs via
+   `inputOverrides`
 
 **Success criteria:** The ticked executor produces correct, deterministic
-output for the Rotor and LFSR, and the existing V1 test suite passes
-unchanged.
+output for the Rotor, and the existing V1 test suite passes unchanged.
 
 ### Slice 2: Source Slicing (engine only)
 
-1. Implement per-tick input slicing for TextInput and BitSource
-2. Implement per-tick output collection for Output
-3. Integration test: full Enigma-style pipeline (TextInput → Rotor →
+1. Add `TickSliceableModuleDef` interface and `isTickSliceable` guard
+2. Add `tickSlice` to TextInput and BitSource module definitions
+3. Implement per-tick output collection for Output
+4. Integration test: full Enigma-style pipeline (TextInput → Rotor →
    Reflector → Rotor → Output) in ticked mode encrypts "HELLO"
    character by character with rotor advancement
 

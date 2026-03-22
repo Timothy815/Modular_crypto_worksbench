@@ -4,8 +4,11 @@ import {
   type ModuleDefinition,
   type ModuleInputs,
   type ModuleOutputs,
+  type ModuleParams,
   type ModuleRegistry,
   type Project,
+  type TickedExecutionResult,
+  isStatefulModule,
 } from './types';
 import { validateProject } from './validation';
 import { isCompositeDefinition, type CompositeDef } from './composites';
@@ -193,4 +196,60 @@ function evaluateComposite(
   }
 
   return outputs;
+}
+
+export function executeTickedProject(
+  project: Project,
+  registry: ModuleRegistry,
+  tickCount: number,
+  inputOverridesByTick?: Record<string, ModuleInputs>[],
+): TickedExecutionResult {
+  const validation = validateProject(project, registry);
+  if (!validation.ok) {
+    const message = validation.issues.map((issue) => issue.message).join('\n');
+    throw new ProjectValidationError(message);
+  }
+
+  const ticks: ExecutionResult[] = [];
+  const paramsByModuleByTick: Record<string, ModuleParams[]> = {};
+
+  // Initialize per-module param snapshots from instance params
+  const currentParams: Record<string, ModuleParams> = {};
+  for (const moduleInstance of project.modules) {
+    currentParams[moduleInstance.id] = { ...moduleInstance.params };
+    paramsByModuleByTick[moduleInstance.id] = [];
+  }
+
+  for (let tick = 0; tick < tickCount; tick++) {
+    // Snapshot current params for tracing
+    for (const moduleInstance of project.modules) {
+      paramsByModuleByTick[moduleInstance.id].push({ ...currentParams[moduleInstance.id] });
+    }
+
+    // Build a project with current-tick params
+    const tickProject: Project = {
+      modules: project.modules.map((moduleInstance) => ({
+        ...moduleInstance,
+        params: { ...currentParams[moduleInstance.id] },
+      })),
+      connections: project.connections,
+    };
+
+    const tickOverrides = inputOverridesByTick?.[tick];
+    const tickResult = executeProject(tickProject, registry, tickOverrides);
+    ticks.push(tickResult);
+
+    // Advance stateful modules for the next tick
+    for (const moduleInstance of project.modules) {
+      const def = registry[moduleInstance.defId];
+      if (def && isStatefulModule(def)) {
+        currentParams[moduleInstance.id] = def.advance(
+          currentParams[moduleInstance.id],
+          tick,
+        );
+      }
+    }
+  }
+
+  return { ticks, paramsByModuleByTick };
 }
