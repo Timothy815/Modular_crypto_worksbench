@@ -48,6 +48,9 @@ export interface PersistedWorkspaceDocument {
   activeTutorialStepByProjectId: Record<string, number>;
   completedTutorialsByProjectId: Record<string, string[]>;
   workspaceModeByProjectId?: Record<string, 'build' | 'guide'>;
+  tickedModeByProjectId?: Record<string, boolean>;
+  currentTickByProjectId?: Record<string, number>;
+  tickPlaybackSpeedMsByProjectId?: Record<string, number>;
   challengeLibrary: GuidedChallenge[];
   tutorialLibrary: GuidedTutorial[];
   compositeLibrary: CompositeLibraryDocument;

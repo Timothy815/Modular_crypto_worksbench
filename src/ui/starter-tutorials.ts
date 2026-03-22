@@ -45,4 +45,41 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       },
     ],
   },
+  {
+    version: 1,
+    id: 'sequential-heart',
+    title: 'The Sequential Heart',
+    summary: 'Learn how a Clock drives an LFSR one tick at a time to produce a running symbol stream.',
+    projectId: 'sequential',
+    steps: [
+      {
+        id: 'sequential-clock',
+        title: 'Time Enters The Graph',
+        body: 'Clock is an explicit source of pulses. In ticked mode, each pulse marks one visible moment in the machine timeline.',
+        focusModuleId: 'clock',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'sequential-lfsr',
+        title: 'Pulse The Register',
+        body: 'The LFSR only advances when its clock input receives a 1 pulse. Watch its internal seed state change from tick to tick.',
+        focusModuleId: 'lfsr',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'sequential-decode',
+        title: 'Decode Each 5-Bit Slice',
+        body: 'BitsToSymbol turns the LFSR output for the current tick into a readable letter. This makes the keystream visible to students.',
+        focusModuleId: 'decode',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'sequential-output',
+        title: 'Read The Stream Over Time',
+        body: 'Output shows the current tick result, while the tick bar collects the full stream as you scrub or press play.',
+        focusModuleId: 'output',
+        targetStepIndex: 3,
+      },
+    ],
+  },
 ];

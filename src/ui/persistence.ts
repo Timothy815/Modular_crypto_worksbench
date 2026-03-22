@@ -151,6 +151,24 @@ export function buildPersistedWorkspace(state: UiState): PersistedWorkspaceDocum
         state.workspaceModeByProject[projectId] ?? 'guide',
       ]),
     ),
+    tickedModeByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.tickedModeByProject[projectId] ?? false,
+      ]),
+    ),
+    currentTickByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.currentTickByProject[projectId] ?? 0,
+      ]),
+    ),
+    tickPlaybackSpeedMsByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.tickPlaybackSpeedMsByProject[projectId] ?? 500,
+      ]),
+    ),
     challengeLibrary: state.challengeLibrary.map(cloneChallenge),
     tutorialLibrary: state.tutorialLibrary.map(cloneTutorial),
     compositeLibrary: {
@@ -273,6 +291,28 @@ export function loadWorkspaceFromStorage(
           ([projectId, mode]) =>
             allowedProjectIds.has(projectId) &&
             (mode === 'build' || mode === 'guide'),
+        ),
+      ),
+      tickedModeByProjectId: Object.fromEntries(
+        Object.entries(parsed.tickedModeByProjectId ?? {}).filter(
+          ([projectId, enabled]) =>
+            allowedProjectIds.has(projectId) && typeof enabled === 'boolean',
+        ),
+      ),
+      currentTickByProjectId: Object.fromEntries(
+        Object.entries(parsed.currentTickByProjectId ?? {}).filter(
+          ([projectId, tick]) =>
+            allowedProjectIds.has(projectId) &&
+            typeof tick === 'number' &&
+            Number.isFinite(tick),
+        ),
+      ),
+      tickPlaybackSpeedMsByProjectId: Object.fromEntries(
+        Object.entries(parsed.tickPlaybackSpeedMsByProjectId ?? {}).filter(
+          ([projectId, speedMs]) =>
+            allowedProjectIds.has(projectId) &&
+            typeof speedMs === 'number' &&
+            Number.isFinite(speedMs),
         ),
       ),
       challengeLibrary: parsed.challengeLibrary.map(cloneChallenge),

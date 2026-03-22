@@ -150,6 +150,33 @@ function App() {
               'guide',
           ]),
         ),
+        tickedModeByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.tickedModeByProjectId?.[project.id] ??
+              initialState.tickedModeByProject[project.id] ??
+              false,
+          ]),
+        ),
+        currentTickByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.currentTickByProjectId?.[project.id] ??
+              initialState.currentTickByProject[project.id] ??
+              0,
+          ]),
+        ),
+        isTickPlaybackActiveByProject: Object.fromEntries(
+          projects.map((project) => [project.id, false]),
+        ),
+        tickPlaybackSpeedMsByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.tickPlaybackSpeedMsByProjectId?.[project.id] ??
+              initialState.tickPlaybackSpeedMsByProject[project.id] ??
+              500,
+          ]),
+        ),
         selectedModuleIdByProject: Object.fromEntries(
           projects.map((project) => [
             project.id,

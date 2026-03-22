@@ -11,6 +11,7 @@ export interface DemoProject {
   name: string;
   summary: string;
   pipeline: string;
+  defaultTickedMode?: boolean;
   project: Project;
   layout: Record<string, { x: number; y: number }>;
 }
@@ -82,6 +83,36 @@ export const demoProjects: DemoProject[] = [
       xor: { x: 664, y: 220 },
       decode: { x: 824, y: 136 },
       output: { x: 984, y: 136 },
+    },
+  },
+  {
+    id: 'sequential',
+    name: 'Sequential Heart',
+    summary: 'A clocked keystream pipeline that turns state changes into a symbol stream over time.',
+    pipeline: 'Clock -> LFSR -> BitsToSymbol -> Output',
+    defaultTickedMode: true,
+    project: {
+      modules: [
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 8 } },
+        {
+          id: 'lfsr',
+          defId: 'LFSR',
+          params: { seed: [1, 0, 1, 1, 0], taps: '0,2', outputLength: 5 },
+        },
+        { id: 'decode', defId: 'BitsToSymbol', params: {} },
+        { id: 'output', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'lfsr', port: 'clock' } },
+        { from: { moduleId: 'lfsr', port: 'out' }, to: { moduleId: 'decode', port: 'in' } },
+        { from: { moduleId: 'decode', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      clock: { x: 48, y: 156 },
+      lfsr: { x: 292, y: 156 },
+      decode: { x: 536, y: 156 },
+      output: { x: 780, y: 156 },
     },
   },
   {

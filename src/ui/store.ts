@@ -163,7 +163,14 @@ function updateModule(
 
 export function createInitialUiState(projects: DemoProject[]): UiState {
   const defaultChallengeId = STARTER_CHALLENGES[0]?.id ?? null;
-  const defaultTutorialId = STARTER_TUTORIALS[0]?.id ?? null;
+  const defaultTutorialByProject = Object.fromEntries(
+    projects.map((project) => [
+      project.id,
+      STARTER_TUTORIALS.find((tutorial) => tutorial.projectId === project.id)?.id ??
+        STARTER_TUTORIALS[0]?.id ??
+        null,
+    ]),
+  );
   return {
     activeProjectId: projects[0]?.id ?? '',
     challengeLibrary: STARTER_CHALLENGES.map((challenge) => ({
@@ -214,7 +221,7 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
       projects.map((project) => [project.id, defaultChallengeId]),
     ),
     activeTutorialIdByProject: Object.fromEntries(
-      projects.map((project) => [project.id, defaultTutorialId]),
+      projects.map((project) => [project.id, defaultTutorialByProject[project.id] ?? null]),
     ),
     activeTutorialStepByProject: Object.fromEntries(
       projects.map((project) => [project.id, 0]),
@@ -229,7 +236,7 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
       projects.map((project) => [project.id, 'guide' as const]),
     ),
     tickedModeByProject: Object.fromEntries(
-      projects.map((project) => [project.id, false]),
+      projects.map((project) => [project.id, project.defaultTickedMode ?? false]),
     ),
     currentTickByProject: Object.fromEntries(
       projects.map((project) => [project.id, 0]),
