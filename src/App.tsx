@@ -299,25 +299,6 @@ function App() {
   const isTutorialCompleted = selectedTutorial
     ? completedTutorialIds.includes(selectedTutorial.id)
     : false;
-  const isOnFinalStep = selectedTutorial
-    ? tutorialStepIndex >= selectedTutorial.steps.length - 1
-    : false;
-
-  useEffect(() => {
-    if (
-      isOnFinalStep &&
-      !isTutorialCompleted &&
-      selectedTutorial &&
-      selectedTutorial.steps.length > 0
-    ) {
-      dispatch({
-        type: 'completeTutorial',
-        projectId: activeProjectDefinition.id,
-        tutorialId: selectedTutorial.id,
-      });
-    }
-  }, [isOnFinalStep, isTutorialCompleted, selectedTutorial, activeProjectDefinition.id]);
-
   const syncTutorialStepFromTrace = (nextIndex: number | null) => {
     setStepIndex(nextIndex);
 
@@ -470,6 +451,14 @@ function App() {
             divergenceModuleId={divergenceModuleId}
             tutorialStep={activeTutorialStep}
             challengeSolved={challengeEvaluation?.status === 'success'}
+            probedModuleIds={state.probedModuleIdsByProject[activeProjectDefinition.id] ?? []}
+            onToggleProbe={(moduleId) =>
+              dispatch({
+                type: 'toggleProbe',
+                projectId: activeProjectDefinition.id,
+                moduleId,
+              })
+            }
             onMoveModule={(moduleId, x, y) =>
               dispatch({
                 type: 'moveModule',
@@ -798,6 +787,20 @@ function App() {
                   projectId: activeProjectDefinition.id,
                 })
               }
+              probedModuleIds={state.probedModuleIdsByProject[activeProjectDefinition.id] ?? []}
+              onToggleProbe={(moduleId) =>
+                dispatch({
+                  type: 'toggleProbe',
+                  projectId: activeProjectDefinition.id,
+                  moduleId,
+                })
+              }
+              onClearProbes={() =>
+                dispatch({
+                  type: 'clearProbes',
+                  projectId: activeProjectDefinition.id,
+                })
+              }
             />
           </div>
         ) : null}
@@ -881,6 +884,12 @@ function App() {
                   type: 'selectModule',
                   projectId: activeProjectDefinition.id,
                   moduleId,
+                })
+              }
+              onResetProgress={() =>
+                dispatch({
+                  type: 'resetTutorialProgress',
+                  projectId: activeProjectDefinition.id,
                 })
               }
             />

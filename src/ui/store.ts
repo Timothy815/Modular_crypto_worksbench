@@ -27,6 +27,7 @@ export interface UiState {
   activeTutorialIdByProject: Record<string, string | null>;
   activeTutorialStepByProject: Record<string, number>;
   completedTutorialsByProject: Record<string, string[]>;
+  probedModuleIdsByProject: Record<string, string[]>;
   selectedModuleIdByProject: Record<string, string | null>;
   selectedModuleIdsByProject: Record<string, string[]>;
   paramDrafts: Record<string, string>;
@@ -74,6 +75,9 @@ export type UiAction =
   | { type: 'selectTutorial'; projectId: string; tutorialId: string | null }
   | { type: 'setTutorialStep'; projectId: string; stepIndex: number }
   | { type: 'completeTutorial'; projectId: string; tutorialId: string }
+  | { type: 'resetTutorialProgress'; projectId: string }
+  | { type: 'toggleProbe'; projectId: string; moduleId: string }
+  | { type: 'clearProbes'; projectId: string }
   | { type: 'captureComparisonBaseline'; projectId: string; capturedAt: string }
   | { type: 'clearComparisonBaseline'; projectId: string }
   | { type: 'loadCompositeLibrary'; document: CompositeLibraryDocument }
@@ -206,6 +210,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
       projects.map((project) => [project.id, 0]),
     ),
     completedTutorialsByProject: Object.fromEntries(
+      projects.map((project) => [project.id, []]),
+    ),
+    probedModuleIdsByProject: Object.fromEntries(
       projects.map((project) => [project.id, []]),
     ),
     selectedModuleIdByProject: Object.fromEntries(
@@ -759,14 +766,42 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           [action.projectId]: 0,
         },
       };
-    case 'setTutorialStep':
+    case 'setTutorialStep': {
+      const clampedStep = Math.max(0, Math.trunc(action.stepIndex));
+      const tutorialId = state.activeTutorialIdByProject[action.projectId] ?? null;
+      const tutorial = tutorialId
+        ? state.tutorialLibrary.find((t) => t.id === tutorialId) ?? null
+        : null;
+      const alreadyCompleted = (
+        state.completedTutorialsByProject[action.projectId] ?? []
+      ).includes(tutorialId ?? '');
+      const isFinalStep =
+        tutorial !== null &&
+        tutorial.steps.length > 0 &&
+        clampedStep >= tutorial.steps.length - 1;
+
+      const nextCompleted =
+        isFinalStep && !alreadyCompleted && tutorialId
+          ? {
+              completedTutorialsByProject: {
+                ...state.completedTutorialsByProject,
+                [action.projectId]: [
+                  ...(state.completedTutorialsByProject[action.projectId] ?? []),
+                  tutorialId,
+                ],
+              },
+            }
+          : {};
+
       return {
         ...state,
         activeTutorialStepByProject: {
           ...state.activeTutorialStepByProject,
-          [action.projectId]: Math.max(0, Math.trunc(action.stepIndex)),
+          [action.projectId]: clampedStep,
         },
+        ...nextCompleted,
       };
+    }
     case 'completeTutorial': {
       const existing = state.completedTutorialsByProject[action.projectId] ?? [];
       if (existing.includes(action.tutorialId)) {
@@ -781,6 +816,39 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
         },
       };
     }
+    case 'resetTutorialProgress':
+      return {
+        ...state,
+        completedTutorialsByProject: {
+          ...state.completedTutorialsByProject,
+          [action.projectId]: [],
+        },
+        activeTutorialStepByProject: {
+          ...state.activeTutorialStepByProject,
+          [action.projectId]: 0,
+        },
+      };
+    case 'toggleProbe': {
+      const probed = state.probedModuleIdsByProject[action.projectId] ?? [];
+      const isProbed = probed.includes(action.moduleId);
+      return {
+        ...state,
+        probedModuleIdsByProject: {
+          ...state.probedModuleIdsByProject,
+          [action.projectId]: isProbed
+            ? probed.filter((id) => id !== action.moduleId)
+            : [...probed, action.moduleId],
+        },
+      };
+    }
+    case 'clearProbes':
+      return {
+        ...state,
+        probedModuleIdsByProject: {
+          ...state.probedModuleIdsByProject,
+          [action.projectId]: [],
+        },
+      };
     case 'clearComparisonBaseline':
       return {
         ...state,

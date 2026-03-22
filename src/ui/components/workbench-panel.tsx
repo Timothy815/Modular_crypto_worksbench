@@ -61,6 +61,8 @@ interface WorkbenchPanelProps {
   tutorialStep?: TutorialStep | null;
   challengeSolved?: boolean;
   isCompositeEditor?: boolean;
+  probedModuleIds?: string[];
+  onToggleProbe?: (moduleId: string) => void;
   onMoveModule: (moduleId: string, x: number, y: number) => void;
   onAddAnnotation: () => void;
   onMoveAnnotation: (annotationId: string, x: number, y: number) => void;
@@ -101,6 +103,8 @@ export function WorkbenchPanel({
   tutorialStep = null,
   challengeSolved = false,
   isCompositeEditor = false,
+  probedModuleIds = [],
+  onToggleProbe,
   onMoveModule,
   onAddAnnotation,
   onMoveAnnotation,
@@ -527,6 +531,7 @@ export function WorkbenchPanel({
                   (moduleInstance.id === steppedModuleId ? ' graph-node-stepped' : '') +
                   (moduleInstance.id === divergenceModuleId ? ' graph-node-divergence' : '') +
                   (moduleInstance.id === tutorialStep?.focusModuleId ? ' graph-node-tutorial-focus' : '') +
+                  (probedModuleIds.includes(moduleInstance.id) ? ' graph-node-probed' : '') +
                   ((moduleIssueCountById[moduleInstance.id] ?? 0) > 0 ? ' graph-node-invalid' : '')
                 }
                 style={{ left: `${position.x}px`, top: `${position.y}px` }}
@@ -559,6 +564,28 @@ export function WorkbenchPanel({
                     <span className="graph-node-issue-badge">
                       {moduleIssueCountById[moduleInstance.id]}
                     </span>
+                  ) : null}
+                  {onToggleProbe ? (
+                    <button
+                      type="button"
+                      className={
+                        probedModuleIds.includes(moduleInstance.id)
+                          ? 'graph-node-probe-button probed'
+                          : 'graph-node-probe-button'
+                      }
+                      title={
+                        probedModuleIds.includes(moduleInstance.id)
+                          ? 'Unpin signal probe'
+                          : 'Pin signal probe'
+                      }
+                      onMouseDown={(event) => event.stopPropagation()}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onToggleProbe(moduleInstance.id);
+                      }}
+                    >
+                      {probedModuleIds.includes(moduleInstance.id) ? '\u25C9' : '\u25CB'}
+                    </button>
                   ) : null}
                   <div className="graph-node-ports">
                     <span>{def?.inputs.length ?? 0} in</span>
@@ -617,19 +644,32 @@ export function WorkbenchPanel({
             );
           })}
 
-          {tutorialStep?.focusModuleId && layout[tutorialStep.focusModuleId] ? (
-            <div
-              className="tutorial-canvas-callout"
-              style={{
-                left: `${layout[tutorialStep.focusModuleId].x + NODE_WIDTH + 18}px`,
-                top: `${layout[tutorialStep.focusModuleId].y - 6}px`,
-              }}
-            >
-              <span className="meta-label">Tutorial Focus</span>
-              <strong>{tutorialStep.title}</strong>
-              <p>{tutorialStep.body}</p>
-            </div>
-          ) : null}
+          {tutorialStep?.focusModuleId && layout[tutorialStep.focusModuleId] ? (() => {
+            const focusPos = layout[tutorialStep.focusModuleId];
+            const CALLOUT_WIDTH = 240;
+            const placeRight = focusPos.x + NODE_WIDTH + 18 + CALLOUT_WIDTH < canvasWidth;
+            const placeBelow = focusPos.y < canvasHeight / 2;
+            return (
+              <div
+                className="tutorial-canvas-callout"
+                style={{
+                  left: placeRight
+                    ? `${focusPos.x + NODE_WIDTH + 18}px`
+                    : `${focusPos.x - CALLOUT_WIDTH - 18}px`,
+                  top: placeBelow
+                    ? `${focusPos.y - 6}px`
+                    : undefined,
+                  bottom: placeBelow
+                    ? undefined
+                    : `${canvasHeight - focusPos.y - 6}px`,
+                }}
+              >
+                <span className="meta-label">Tutorial Focus</span>
+                <strong>{tutorialStep.title}</strong>
+                <p>{tutorialStep.body}</p>
+              </div>
+            );
+          })() : null}
 
           {annotations.map((annotation) => (
             <div

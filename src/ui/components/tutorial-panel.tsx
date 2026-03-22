@@ -12,6 +12,7 @@ interface TutorialPanelProps {
   onSetStep: (stepIndex: number) => void;
   onSwitchProject: (projectId: string) => void;
   onFocusStepModule: (moduleId: string) => void;
+  onResetProgress: () => void;
 }
 
 export function TutorialPanel({
@@ -26,6 +27,7 @@ export function TutorialPanel({
   onSetStep,
   onSwitchProject,
   onFocusStepModule,
+  onResetProgress,
 }: TutorialPanelProps) {
   const selectedTutorial =
     tutorials.find((tutorial) => tutorial.id === selectedTutorialId) ?? null;
@@ -119,6 +121,15 @@ export function TutorialPanel({
             onClick={() => onFocusStepModule(activeStep.focusModuleId!)}
           >
             Focus Module
+          </button>
+        ) : null}
+        {completedTutorialIds.length > 0 ? (
+          <button
+            type="button"
+            className="mini-action-button"
+            onClick={onResetProgress}
+          >
+            Reset Progress
           </button>
         ) : null}
       </div>

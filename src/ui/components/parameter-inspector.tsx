@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import type {
   Connection,
   ExecutionResult,
+  ExecutionTraceEntry,
   ModuleDefinition,
   ModuleInstance,
   Project,
@@ -41,6 +42,9 @@ interface ParameterInspectorProps {
   onStepChange: (nextIndex: number | null) => void;
   onCaptureBaseline: () => void;
   onClearBaseline: () => void;
+  probedModuleIds: string[];
+  onToggleProbe: (moduleId: string) => void;
+  onClearProbes: () => void;
 }
 
 export function ParameterInspector({
@@ -68,6 +72,9 @@ export function ParameterInspector({
   onStepChange,
   onCaptureBaseline,
   onClearBaseline,
+  probedModuleIds,
+  onToggleProbe,
+  onClearProbes,
 }: ParameterInspectorProps) {
   const [traceMode, setTraceMode] = useState<'focused' | 'upstream' | 'downstream' | 'full'>('focused');
   const [inspectorTab, setInspectorTab] = useState<'configure' | 'analyze' | 'compare'>('configure');
@@ -222,6 +229,61 @@ export function ParameterInspector({
               </p>
             )}
           </div>
+        </section>
+      ) : null}
+
+      {inspectorTab === 'analyze' && probedModuleIds.length > 0 ? (
+        <section className="analysis-section probe-section">
+          <div className="probe-head">
+            <span className="meta-label">Pinned Signals</span>
+            <button
+              type="button"
+              className="trace-mode-button"
+              onClick={onClearProbes}
+            >
+              Clear All
+            </button>
+          </div>
+          <ul className="probe-list">
+            {probedModuleIds.map((probedId) => {
+              const probeTrace: ExecutionTraceEntry | undefined = execution?.trace.find(
+                (entry) => entry.moduleId === probedId,
+              );
+              return (
+                <li key={probedId} className="probe-card">
+                  <div className="probe-card-head">
+                    <strong>{probedId}</strong>
+                    <button
+                      type="button"
+                      className="probe-unpin-button"
+                      title="Unpin"
+                      onClick={() => onToggleProbe(probedId)}
+                    >
+                      {'\u2715'}
+                    </button>
+                  </div>
+                  {probeTrace ? (
+                    <>
+                      <p>
+                        in:{' '}
+                        {Object.entries(probeTrace.inputs)
+                          .map(([, signal]) => formatSignal(signal))
+                          .join(' | ') || 'none'}
+                      </p>
+                      <p>
+                        out:{' '}
+                        {Object.entries(probeTrace.outputs)
+                          .map(([, signal]) => formatSignal(signal))
+                          .join(' | ') || 'none'}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="empty-state">Not in current execution</p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         </section>
       ) : null}
 
