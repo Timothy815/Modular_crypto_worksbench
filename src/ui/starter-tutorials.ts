@@ -3,6 +3,37 @@ import type { GuidedTutorial } from './tutorials';
 export const STARTER_TUTORIALS: GuidedTutorial[] = [
   {
     version: 1,
+    id: 'baudot-bridge',
+    title: 'The Baudot Telegraph',
+    group: 'Historical Bridges',
+    summary: 'Learn how teleprinter-era Baudot codewords cross into the bit domain and back again.',
+    projectId: 'baudot-bridge',
+    steps: [
+      {
+        id: 'baudot-source',
+        title: 'Inject Baudot Text',
+        body: 'BaudotSource emits letters-mode ITA2 codewords directly as 5-bit groups. This is the historical teleprinter bridge into the bit domain.',
+        focusModuleId: 'source',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'baudot-decode',
+        title: 'Decode The 5-Bit Stream',
+        body: 'BitsToBaudot groups the incoming bits into 5-bit codewords and decodes them back into teleprinter text. This keeps the bridge explicit instead of hiding the encoding.',
+        focusModuleId: 'decode',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'baudot-output',
+        title: 'Read The Telegraph Result',
+        body: 'Output marks the final decoded teleprinter text so students can inspect or compare the bridge result like any other machine.',
+        focusModuleId: 'output',
+        targetStepIndex: 2,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'bridge-walkthrough',
     title: 'Bridge Walkthrough',
     group: 'Foundations',

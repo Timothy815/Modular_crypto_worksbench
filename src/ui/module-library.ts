@@ -50,6 +50,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when a modern byte-oriented machine should begin from readable ASCII text instead of manually entered bits.',
     searchTerms: ['ascii', 'source', 'text', 'byte', 'input', 'bits'],
   },
+  BaudotSource: {
+    sectionId: 'inputs-outputs',
+    purpose: 'Emits teleprinter-era Baudot letters directly into the bit domain.',
+    detail: 'Use this for historical 5-bit labs when you want explicit Baudot codewords instead of the generic alphabet bridge.',
+    searchTerms: ['baudot', 'teleprinter', 'ita2', 'source', 'letters', '5-bit'],
+  },
   HexSource: {
     sectionId: 'inputs-outputs',
     purpose: 'Emits a hexadecimal value directly into the bit domain.',
@@ -127,6 +133,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Converts 8-bit bytes back into ASCII text.',
     detail: 'Use this to return a byte-domain machine back to readable ASCII when the byte values stay within 7-bit ASCII range.',
     searchTerms: ['bridge', 'ascii', 'decode', 'bits', 'byte', 'text'],
+  },
+  BitsToBaudot: {
+    sectionId: 'bridges',
+    purpose: 'Converts 5-bit Baudot codewords back into teleprinter text.',
+    detail: 'Use this to decode letters-mode Baudot streams after bit-domain transforms or historical keying experiments.',
+    searchTerms: ['bridge', 'baudot', 'ita2', 'decode', 'bits', 'teleprinter'],
   },
   BitsToSymbol: {
     sectionId: 'bridges',

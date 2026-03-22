@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { AsciiSource } from './modules/ascii-source';
+import { BaudotSource } from './modules/baudot-source';
 import { HexSource } from './modules/hex-source';
 import { Permutation } from './modules/permutation';
 import { SBox } from './modules/s-box';
@@ -45,6 +46,7 @@ const registry: ModuleRegistry = {
     evaluate: (inputs) => ({ out: inputs.in }),
   },
   [AsciiSource.id]: AsciiSource,
+  [BaudotSource.id]: BaudotSource,
   [HexSource.id]: HexSource,
   [Permutation.id]: Permutation,
   [SBox.id]: SBox,
@@ -236,6 +238,24 @@ describe('validateProject', () => {
         (issue) =>
           issue.moduleId === 'ascii-1' &&
           issue.message.includes('AsciiSource accepts only 7-bit ASCII characters'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects non-baudot source params before execution', () => {
+    const project: Project = {
+      modules: [{ id: 'baudot-1', defId: 'BaudotSource', params: { value: 'HELLO!' } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'baudot-1' &&
+          issue.message.includes('BaudotSource accepts only letters A-Z and spaces in letters mode'),
       ),
     ).toBe(true);
   });

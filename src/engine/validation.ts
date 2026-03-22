@@ -11,6 +11,7 @@ import {
 } from './types';
 import type { CompositeDef, CompositePortBinding } from './composites';
 import { validateAsciiSourceValue } from './modules/ascii-source';
+import { validateBaudotSourceValue } from './modules/baudot-source';
 import { validateHexSourceValue } from './modules/hex-source';
 import { validatePermutationOrderParam } from './modules/permutation';
 import { validateSBoxTableParam } from './modules/s-box';
@@ -108,6 +109,10 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'AsciiSource' && field.key === 'value') {
     return validateAsciiSourceValue(value);
+  }
+
+  if (def.id === 'BaudotSource' && field.key === 'value') {
+    return validateBaudotSourceValue(value);
   }
 
   return null;

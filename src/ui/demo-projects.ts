@@ -19,6 +19,29 @@ export interface DemoProject {
 
 export const demoProjects: DemoProject[] = [
   {
+    id: 'baudot-bridge',
+    name: 'Baudot Telegraph',
+    group: 'Historical Bridges',
+    summary: 'A teleprinter-era 5-bit bridge that begins in Baudot, stays explicit in bits, and returns to readable text.',
+    pipeline: 'BaudotSource -> BitsToBaudot -> Output',
+    project: {
+      modules: [
+        { id: 'source', defId: 'BaudotSource', params: { value: 'TEST' } },
+        { id: 'decode', defId: 'BitsToBaudot', params: {} },
+        { id: 'output', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'decode', port: 'in' } },
+        { from: { moduleId: 'decode', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      source: { x: 80, y: 156 },
+      decode: { x: 392, y: 156 },
+      output: { x: 704, y: 156 },
+    },
+  },
+  {
     id: 'bridge',
     name: 'Bridge Pipeline',
     group: 'Foundations',

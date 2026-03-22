@@ -3,9 +3,11 @@ import { TextInput } from './text-input';
 import { KeyInput } from './key-input';
 import { BitSource } from './bit-source';
 import { AsciiSource } from './ascii-source';
+import { BaudotSource } from './baudot-source';
 import { HexSource } from './hex-source';
 import { SymbolToBits } from './symbol-to-bits';
 import { BitsToAscii } from './bits-to-ascii';
+import { BitsToBaudot } from './bits-to-baudot';
 import { BitsToSymbol } from './bits-to-symbol';
 import { BitsToHex } from './bits-to-hex';
 import { XOR } from './xor';
@@ -24,9 +26,11 @@ export {
   KeyInput,
   BitSource,
   AsciiSource,
+  BaudotSource,
   HexSource,
   SymbolToBits,
   BitsToAscii,
+  BitsToBaudot,
   BitsToSymbol,
   BitsToHex,
   XOR,
@@ -46,9 +50,11 @@ export const V1_REGISTRY: ModuleRegistry = {
   [KeyInput.id]: KeyInput,
   [BitSource.id]: BitSource,
   [AsciiSource.id]: AsciiSource,
+  [BaudotSource.id]: BaudotSource,
   [HexSource.id]: HexSource,
   [SymbolToBits.id]: SymbolToBits,
   [BitsToAscii.id]: BitsToAscii,
+  [BitsToBaudot.id]: BitsToBaudot,
   [BitsToSymbol.id]: BitsToSymbol,
   [BitsToHex.id]: BitsToHex,
   [XOR.id]: XOR,

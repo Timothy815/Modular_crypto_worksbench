@@ -3,9 +3,11 @@ import { TextInput } from './text-input';
 import { KeyInput } from './key-input';
 import { BitSource } from './bit-source';
 import { AsciiSource } from './ascii-source';
+import { BaudotSource } from './baudot-source';
 import { HexSource } from './hex-source';
 import { SymbolToBits } from './symbol-to-bits';
 import { BitsToAscii } from './bits-to-ascii';
+import { BitsToBaudot } from './bits-to-baudot';
 import { BitsToSymbol } from './bits-to-symbol';
 import { BitsToHex } from './bits-to-hex';
 import { XOR } from './xor';
@@ -81,6 +83,20 @@ describe('AsciiSource', () => {
 
   it('throws on non-ASCII input', () => {
     expect(() => AsciiSource.evaluate({}, { value: 'é' })).toThrow();
+  });
+});
+
+describe('BaudotSource', () => {
+  it('converts letters-mode baudot text into 5-bit codewords', () => {
+    const result = BaudotSource.evaluate({}, { value: 'AB' });
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [0, 0, 0, 1, 1, 1, 1, 0, 0, 1],
+    });
+  });
+
+  it('throws on unsupported punctuation', () => {
+    expect(() => BaudotSource.evaluate({}, { value: 'A!' })).toThrow();
   });
 });
 
@@ -197,6 +213,30 @@ describe('BitsToAscii', () => {
         { in: { type: 'bits', value: [1, 0, 0, 0, 0, 0, 0, 0] } },
         {},
       ),
+    ).toThrow();
+  });
+});
+
+describe('BitsToBaudot', () => {
+  it('converts 5-bit codewords into baudot letters', () => {
+    const result = BitsToBaudot.evaluate(
+      { in: { type: 'bits', value: [0, 0, 0, 1, 1, 1, 1, 0, 0, 1] } },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'AB' });
+  });
+
+  it('renders unknown control codewords as ?', () => {
+    const result = BitsToBaudot.evaluate(
+      { in: { type: 'bits', value: [1, 1, 1, 1, 1] } },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: '?' });
+  });
+
+  it('throws when bit width is not divisible by 5', () => {
+    expect(() =>
+      BitsToBaudot.evaluate({ in: { type: 'bits', value: [0, 0, 0, 1] } }, {}),
     ).toThrow();
   });
 });
