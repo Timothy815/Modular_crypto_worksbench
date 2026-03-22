@@ -7,6 +7,8 @@ import { BitsToSymbol } from './bits-to-symbol';
 import { XOR } from './xor';
 import { Rotor } from './rotor';
 import { Reflector } from './reflector';
+import { Permutation } from './permutation';
+import { BitShifter } from './bit-shifter';
 import type { Signal } from '../types';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -155,6 +157,63 @@ describe('XOR', () => {
       },
       {},
     );
+    expect(result.out).toEqual({ type: 'bits', value: [0, 0, 0, 0, 0] });
+  });
+});
+
+describe('Permutation', () => {
+  it('reorders bits by the configured index order', () => {
+    const result = Permutation.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 1, 0] } },
+      { order: '2,0,4,1,3' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 1, 0, 0, 1] });
+  });
+
+  it('throws when the order length does not match the input width', () => {
+    expect(() =>
+      Permutation.evaluate(
+        { in: { type: 'bits', value: [1, 0, 1, 1, 0] } },
+        { order: '0,1,2' },
+      ),
+    ).toThrow();
+  });
+
+  it('throws when the order repeats indexes', () => {
+    expect(() =>
+      Permutation.evaluate(
+        { in: { type: 'bits', value: [1, 0, 1, 1, 0] } },
+        { order: '0,1,1,3,4' },
+      ),
+    ).toThrow();
+  });
+});
+
+describe('BitShifter', () => {
+  const bitsSignal: Signal = { type: 'bits', value: [1, 0, 1, 1, 0] };
+
+  it('shifts bits left with zero fill', () => {
+    const result = BitShifter.evaluate({ in: bitsSignal }, { amount: 2, mode: 'left' });
+    expect(result.out).toEqual({ type: 'bits', value: [1, 1, 0, 0, 0] });
+  });
+
+  it('shifts bits right with zero fill', () => {
+    const result = BitShifter.evaluate({ in: bitsSignal }, { amount: 2, mode: 'right' });
+    expect(result.out).toEqual({ type: 'bits', value: [0, 0, 1, 0, 1] });
+  });
+
+  it('rotates bits left', () => {
+    const result = BitShifter.evaluate({ in: bitsSignal }, { amount: 2, mode: 'rotate-left' });
+    expect(result.out).toEqual({ type: 'bits', value: [1, 1, 0, 1, 0] });
+  });
+
+  it('rotates bits right', () => {
+    const result = BitShifter.evaluate({ in: bitsSignal }, { amount: 1, mode: 'rotate-right' });
+    expect(result.out).toEqual({ type: 'bits', value: [0, 1, 0, 1, 1] });
+  });
+
+  it('returns zeros when a logical shift exceeds the input width', () => {
+    const result = BitShifter.evaluate({ in: bitsSignal }, { amount: 7, mode: 'left' });
     expect(result.out).toEqual({ type: 'bits', value: [0, 0, 0, 0, 0] });
   });
 });

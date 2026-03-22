@@ -13,8 +13,8 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 The repository now has:
 - a stable engine milestone
-- released UI/editor milestones on `main` through `v0.7.0`
-- an active guided-challenges branch at `feature/guided-challenges`
+- released UI/editor milestones on `main` through `v0.8.0`
+- an active modern-primitives branch at `feature/modern-primitives`
 
 Implemented and locked so far:
 - engine core types
@@ -33,13 +33,13 @@ Implemented and locked so far:
 - reusable composite workflows
 - analysis visibility and step-through execution
 - comparison-first break workflows
+- guided challenges
 - multi-agent coordination and implementation contract
 
 Active next steps:
-- classroom-facing guided challenges
-- target behavior comparison for student machines
-- first reusable challenge session flow
-- explainable success/failure status in the workbench
+- modern bit-domain primitive expansion
+- first modern demo graphs
+- proving MCW can teach beyond XOR/bridge-era examples
 
 ## Key Documents
 
@@ -48,6 +48,7 @@ Active next steps:
 - `COMPOSITE-V1-CONTRACT.md`: locked direction for the composite groundwork branch
 - `BREAK-V1-CONTRACT.md`: locked direction for the first break-workflows branch
 - `GUIDED-CHALLENGES-V1-CONTRACT.md`: locked direction for the first classroom challenge branch
+- `MODERN-PRIMITIVES-V1-CONTRACT.md`: locked direction for the first modern primitive expansion branch
 - `AI-COORDINATION.md`: multi-agent workflow rules
 - `AI-WORKSTREAMS.md`: current ownership boundaries
 - `IMPLEMENTATION-STATUS.md`: live execution status and handoff notes
@@ -76,23 +77,21 @@ Published site:
 ## Short-Term Goal
 
 The current shipped workbench already supports adding, deleting, moving, connecting, composing,
-interrogating modules, and comparing broken variants against captured baselines.
+interrogating modules, comparing broken variants against captured baselines, and running guided
+classroom challenges.
 
-The active branch is now extending that into guided challenges:
-- present a clear classroom task
-- compare a student machine against target behavior
-- report success or failure in an explainable way
-- reuse the existing build/analyze/break surfaces instead of hiding the machine
+The active branch is now extending that into modern primitives:
+- add modern bit-domain building blocks
+- prove that MCW can express more than bridge/XOR toy systems
+- support later classroom challenges built on modern cipher structure
 
 The first proof on this branch now includes:
-- one seeded repair challenge
-- a challenge panel with explicit prompt and status
-- target-behavior checking against the live workbench
+- branch setup and contract only
 
 The next meaningful product milestones after this branch are:
 
 ```text
-build -> analyze -> break -> guided challenge
+build -> analyze -> break -> guided challenge -> modern primitive expansion
 ```
 
 The canonical hybrid reference pipeline remains:
