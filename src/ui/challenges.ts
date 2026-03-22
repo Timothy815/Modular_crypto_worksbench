@@ -3,6 +3,7 @@ import { isStatefulModule, type ModuleRegistry, type Project, type ValidationIss
 import { validateProject } from '../engine/validation';
 import type { ExecutionComparison } from './execution-compare';
 import { compareExecutionResults } from './execution-compare';
+import type { ExecutionResult, ExecutionTraceEntry } from '../engine/types';
 import type { WorkbenchPosition } from './workbench-document';
 
 export interface GuidedChallenge {
@@ -151,6 +152,7 @@ function compareTickedChallengeResults(
 ): ExecutionComparison {
   const baselineOutput = collectTickedOutput(baseline);
   const variantOutput = collectTickedOutput(variant);
+  const firstDivergence = findFirstTickedDivergence(baseline, variant);
 
   return {
     baselineOutput: {
@@ -162,7 +164,7 @@ function compareTickedChallengeResults(
       formatted: variantOutput || 'n/a',
     },
     outputsMatch: baselineOutput === variantOutput,
-    firstDivergence: null,
+    firstDivergence,
   };
 }
 
@@ -193,4 +195,54 @@ function hasExplicitTimeBehavior(project: Project, registry: ModuleRegistry): bo
 
     return def.id === 'Clock' || isStatefulModule(def);
   });
+}
+
+function findFirstTickedDivergence(
+  baseline: ReturnType<typeof executeTickedProject>,
+  variant: ReturnType<typeof executeTickedProject>,
+): ExecutionComparison['firstDivergence'] {
+  const maxTicks = Math.max(baseline.ticks.length, variant.ticks.length);
+
+  for (let tickIndex = 0; tickIndex < maxTicks; tickIndex += 1) {
+    const baselineTick = baseline.ticks[tickIndex] ?? null;
+    const variantTick = variant.ticks[tickIndex] ?? null;
+
+    if (!baselineTick || !variantTick) {
+      return {
+        stepIndex: tickIndex,
+        tickIndex,
+        baseline: getOutputTraceEntry(baselineTick),
+        variant: getOutputTraceEntry(variantTick),
+        reason: 'trace-length',
+      };
+    }
+
+    const perTickComparison = compareExecutionResults(baselineTick, variantTick);
+    if (!perTickComparison.outputsMatch) {
+      if (perTickComparison.firstDivergence) {
+        return {
+          ...perTickComparison.firstDivergence,
+          tickIndex,
+        };
+      }
+
+      return {
+        stepIndex: tickIndex,
+        tickIndex,
+        baseline: getOutputTraceEntry(baselineTick),
+        variant: getOutputTraceEntry(variantTick),
+        reason: 'outputs',
+      };
+    }
+  }
+
+  return null;
+}
+
+function getOutputTraceEntry(result: ExecutionResult | null): ExecutionTraceEntry | null {
+  if (!result) {
+    return null;
+  }
+
+  return result.trace.find((entry) => entry.defId === 'Output') ?? result.trace.at(-1) ?? null;
 }

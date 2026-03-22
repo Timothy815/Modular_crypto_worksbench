@@ -95,8 +95,13 @@ export function ComparisonPanel({
                 {comparison.firstDivergence ? (
                   <>
                     <p className="comparison-copy">
-                      First divergence at step{' '}
-                      <strong>{comparison.firstDivergence.stepIndex + 1}</strong>:{' '}
+                      First divergence at{' '}
+                      <strong>
+                        {comparison.firstDivergence.tickIndex !== undefined
+                          ? `tick ${comparison.firstDivergence.tickIndex + 1}`
+                          : `step ${comparison.firstDivergence.stepIndex + 1}`}
+                      </strong>
+                      :{' '}
                       <strong>
                         {comparison.firstDivergence.variant?.moduleId ??
                           comparison.firstDivergence.baseline?.moduleId ??

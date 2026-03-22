@@ -742,6 +742,14 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           ...state.selectedModuleIdsByProject,
           [action.projectId]: nextProject.modules[0]?.id ? [nextProject.modules[0].id] : [],
         },
+        currentTickByProject: {
+          ...state.currentTickByProject,
+          [action.projectId]: 0,
+        },
+        isTickPlaybackActiveByProject: {
+          ...state.isTickPlaybackActiveByProject,
+          [action.projectId]: false,
+        },
         paramDrafts: nextDrafts,
       };
     }

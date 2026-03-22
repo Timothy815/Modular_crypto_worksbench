@@ -176,8 +176,12 @@ export function ChallengePanel({
                   ) : null}
                   {evaluation.comparison?.firstDivergence ? (
                     <p className="comparison-copy">
-                      First divergence at step{' '}
-                      <strong>{evaluation.comparison.firstDivergence.stepIndex + 1}</strong>{' '}
+                      First divergence at{' '}
+                      <strong>
+                        {evaluation.comparison.firstDivergence.tickIndex !== undefined
+                          ? `tick ${evaluation.comparison.firstDivergence.tickIndex + 1}`
+                          : `step ${evaluation.comparison.firstDivergence.stepIndex + 1}`}
+                      </strong>{' '}
                       on{' '}
                       <strong>
                         {evaluation.comparison.firstDivergence.variant?.moduleId ??

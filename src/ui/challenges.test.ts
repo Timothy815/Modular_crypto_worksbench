@@ -162,6 +162,8 @@ describe('evaluateChallengeAttempt', () => {
     expect(result.status).toBe('failure');
     expect(result.reason).toBe('diverged-from-target');
     expect(result.comparison?.outputsMatch).toBe(false);
+    expect(result.comparison?.firstDivergence?.tickIndex).toBe(2);
+    expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('lfsr');
     expect(result.comparison?.baselineOutput.formatted).not.toBe(
       result.comparison?.variantOutput.formatted,
     );

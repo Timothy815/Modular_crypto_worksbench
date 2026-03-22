@@ -7,6 +7,7 @@ export interface ComparedSignal {
 
 export interface TraceDivergence {
   stepIndex: number;
+  tickIndex?: number;
   baseline: ExecutionTraceEntry | null;
   variant: ExecutionTraceEntry | null;
   reason: 'module-id' | 'def-id' | 'inputs' | 'outputs' | 'trace-length';
