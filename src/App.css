@@ -62,6 +62,10 @@
   gap: 6px;
 }
 
+.inspector-section-select {
+  margin-bottom: 14px;
+}
+
 .header-menu-select select,
 .inspector-section-select select {
   width: 100%;
