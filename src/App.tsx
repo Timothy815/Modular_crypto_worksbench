@@ -326,9 +326,15 @@ function App() {
             (m) => m.defId === 'Output' || m.defId === 'BitOutput',
           );
           if (!outputModule) return '';
-          const out = tick.outputsByModuleId[outputModule.id]?.out;
-          if (!out) return '';
-          return out.type === 'symbol' ? out.value : (out.value as number[]).join('');
+          const outputTraceEntry = tick.trace.find(
+            (entry) => entry.moduleId === outputModule.id,
+          );
+          const signal =
+            tick.outputsByModuleId[outputModule.id]?.out ??
+            outputTraceEntry?.inputs.in ??
+            null;
+          if (!signal) return '';
+          return signal.type === 'symbol' ? signal.value : signal.value.join('');
         })
         .join('')
     : null;
