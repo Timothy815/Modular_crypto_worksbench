@@ -251,4 +251,48 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       },
     ],
   },
+  {
+    version: 1,
+    id: 'gated-keystream',
+    title: 'The Gated Keystream',
+    summary: 'Learn how one keystream register can control when a second register advances.',
+    projectId: 'gated-keystream',
+    steps: [
+      {
+        id: 'gated-clock',
+        title: 'Drive The Gate Register',
+        body: 'Clock advances the first LFSR on every tick. That register does not encrypt the plaintext directly; it decides when the next register is allowed to move.',
+        focusModuleId: 'clock',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'gated-gate',
+        title: 'Generate The Step Signal',
+        body: 'The gate LFSR emits one bit per tick. When that bit is 1, the second LFSR advances. When it is 0, the second register freezes for that tick.',
+        focusModuleId: 'gate',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'gated-data',
+        title: 'Advance Conditionally',
+        body: 'The data LFSR now depends on another module for its clock. This is the core conditional-clocking idea: time is still explicit, but stepping can depend on machine state.',
+        focusModuleId: 'data',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'gated-xor',
+        title: 'Mix With Plaintext',
+        body: 'XOR combines the current plaintext bit with the gated keystream bit. Watch how repeated plaintext bits can encrypt differently when the data register pauses or advances.',
+        focusModuleId: 'xor',
+        targetStepIndex: 3,
+      },
+      {
+        id: 'gated-output',
+        title: 'Inspect The Resulting Stream',
+        body: 'BitOutput marks the final ciphertext sink. Use the tick bar and history chips to see how the gate register changes the rhythm of the output stream.',
+        focusModuleId: 'output',
+        targetStepIndex: 4,
+      },
+    ],
+  },
 ];

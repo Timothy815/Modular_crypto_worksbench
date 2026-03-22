@@ -10,6 +10,7 @@ const byteRoundProject = demoProjects.find((project) => project.id === 'byte-rou
 const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
 const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
 const keystreamProject = demoProjects.find((project) => project.id === 'keystream');
+const gatedKeystreamProject = demoProjects.find((project) => project.id === 'gated-keystream');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 
 if (!bridgeProject) {
@@ -27,6 +28,9 @@ if (!asciiRoundProject) {
 if (!keystreamProject) {
   throw new Error('Expected keystream demo project to seed starter challenges.');
 }
+if (!gatedKeystreamProject) {
+  throw new Error('Expected gated-keystream demo project to seed starter challenges.');
+}
 if (!sequentialProject) {
   throw new Error('Expected sequential demo project to seed starter challenges.');
 }
@@ -41,6 +45,8 @@ const asciiRoundTarget = cloneProject(asciiRoundProject.project);
 const brokenAsciiRoundStart = cloneProject(asciiRoundProject.project);
 const keystreamTarget = cloneProject(keystreamProject.project);
 const brokenKeystreamStart = cloneProject(keystreamProject.project);
+const gatedKeystreamTarget = cloneProject(gatedKeystreamProject.project);
+const brokenGatedKeystreamStart = cloneProject(gatedKeystreamProject.project);
 const sequentialTarget = cloneProject(sequentialProject.project);
 const brokenSequentialStart = cloneProject(sequentialProject.project);
 const brokenSequentialTapsStart = cloneProject(sequentialProject.project);
@@ -82,6 +88,14 @@ if (!brokenKeystreamLfsr) {
   throw new Error('Expected keystream demo project to contain an LFSR module.');
 }
 brokenKeystreamLfsr.params.seed = [0, 1, 1, 0, 1];
+
+const brokenGateLfsr = brokenGatedKeystreamStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'gate',
+);
+if (!brokenGateLfsr) {
+  throw new Error('Expected gated-keystream demo project to contain a gate LFSR.');
+}
+brokenGateLfsr.params.seed = [0, 1, 0, 1, 0];
 
 const brokenClockModule = brokenSequentialStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'clock',
@@ -192,6 +206,25 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The clock timing is already correct in this machine.',
       'The XOR stage simply mixes the plaintext bits with the current keystream bit.',
       'If the seed is wrong, the output starts diverging as soon as the first shifted bit changes.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-gate-seed',
+    title: 'Repair the Gate Seed',
+    difficulty: 'expert',
+    prompt:
+      'The gated keystream machine still has the right plaintext and data register, but the gate register is pulsing the second LFSR at the wrong moments. Repair the gate seed so the ciphertext rhythm matches the captured reference machine again.',
+    startingProject: brokenGatedKeystreamStart,
+    startingLayout: cloneProject(gatedKeystreamProject.layout),
+    targetProject: gatedKeystreamTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The first LFSR is not the mask itself; it controls when the second LFSR advances.',
+      'Watch the gate register output bit on each tick and compare it against the target rhythm.',
+      'A wrong gate seed can leave the second register frozen on the wrong ticks.',
     ],
   },
   {

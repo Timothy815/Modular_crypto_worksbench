@@ -23,6 +23,7 @@ describe('evaluateChallengeAttempt', () => {
   const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
   const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
   const keystreamProject = demoProjects.find((project) => project.id === 'keystream');
+  const gatedKeystreamProject = demoProjects.find((project) => project.id === 'gated-keystream');
   const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 
   if (!bridgeProject) {
@@ -39,6 +40,9 @@ describe('evaluateChallengeAttempt', () => {
   }
   if (!keystreamProject) {
     throw new Error('Expected keystream project.');
+  }
+  if (!gatedKeystreamProject) {
+    throw new Error('Expected gated-keystream project.');
   }
   if (!sequentialProject) {
     throw new Error('Expected sequential project.');
@@ -259,6 +263,32 @@ describe('evaluateChallengeAttempt', () => {
     expect(result.comparison?.outputsMatch).toBe(false);
     expect(result.comparison?.firstDivergence?.tickIndex).toBe(0);
     expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('lfsr');
+  });
+
+  it('returns failure when a gated keystream machine uses the wrong gate seed', () => {
+    const currentProject = cloneProject(gatedKeystreamProject.project);
+    const gateModule = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'gate');
+    if (!gateModule) {
+      throw new Error('Expected gate LFSR module in gated-keystream project.');
+    }
+    gateModule.params.seed = [0, 1, 0, 1, 0];
+
+    const challenge: GuidedChallenge = {
+      id: 'gated-keystream-failure',
+      title: 'Gated Keystream Failure',
+      prompt: 'Repair the gate register.',
+      startingProject: cloneProject(currentProject),
+      targetProject: cloneProject(gatedKeystreamProject.project),
+      success: { kind: 'output-match-target' },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, V1_REGISTRY);
+
+    expect(result.status).toBe('failure');
+    expect(result.reason).toBe('diverged-from-target');
+    expect(result.comparison?.outputsMatch).toBe(false);
+    expect(result.comparison?.firstDivergence?.tickIndex).toBe(1);
+    expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('data');
   });
 
   it('returns failure when a sequential project diverges from the target ticked output stream', () => {

@@ -9,6 +9,8 @@ import { TextInput } from './modules/text-input';
 import { BitSource } from './modules/bit-source';
 import { BitsToSymbol } from './modules/bits-to-symbol';
 import { Output } from './modules/output';
+import { XOR } from './modules/xor';
+import { BitOutput } from './modules/bit-output';
 
 describe('Signal-driven advance', () => {
   // LFSR advance trace with seed [1,0,0,1,1], taps "0,2":
@@ -488,6 +490,82 @@ describe('Signal-driven advance', () => {
       );
 
       expect(wrappedOutputs).toEqual(unwrappedOutputs);
+    });
+  });
+
+  describe('dependent clocking', () => {
+    it('one stateful module can gate another module via its bit output', () => {
+      const registry: ModuleRegistry = { Clock, LFSR, BitSource, XOR, BitOutput };
+
+      const project: Project = {
+        modules: [
+          {
+            id: 'clock',
+            defId: 'Clock',
+            params: { period: 1, offset: 0, length: 6 },
+          },
+          {
+            id: 'plain',
+            defId: 'BitSource',
+            params: { stream: [1, 0, 1, 1, 0, 0] },
+          },
+          {
+            id: 'gate',
+            defId: 'LFSR',
+            params: { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 1 },
+          },
+          {
+            id: 'data',
+            defId: 'LFSR',
+            params: { seed: [1, 1, 0, 1, 0], taps: '1,3', outputLength: 1 },
+          },
+          {
+            id: 'xor',
+            defId: 'XOR',
+            params: {},
+          },
+          {
+            id: 'output',
+            defId: 'BitOutput',
+            params: {},
+          },
+        ],
+        connections: [
+          {
+            from: { moduleId: 'clock', port: 'pulse' },
+            to: { moduleId: 'gate', port: 'clock' },
+          },
+          {
+            from: { moduleId: 'gate', port: 'out' },
+            to: { moduleId: 'data', port: 'clock' },
+          },
+          {
+            from: { moduleId: 'plain', port: 'out' },
+            to: { moduleId: 'xor', port: 'a' },
+          },
+          {
+            from: { moduleId: 'data', port: 'out' },
+            to: { moduleId: 'xor', port: 'b' },
+          },
+          {
+            from: { moduleId: 'xor', port: 'out' },
+            to: { moduleId: 'output', port: 'in' },
+          },
+        ],
+      };
+
+      const result = executeTickedProject(project, registry, 6);
+
+      const gateBits = result.ticks.map((tick) => tick.outputsByModuleId.gate.out.value[0]);
+      const dataSeeds = result.paramsByModuleByTick.data.map((params) => params.seed as number[]);
+
+      expect(gateBits).toEqual([1, 1, 0, 0, 1, 1]);
+      expect(dataSeeds[0]).toEqual([1, 1, 0, 1, 0]);
+      expect(dataSeeds[1]).toEqual([0, 1, 1, 0, 1]); // advanced on tick 0
+      expect(dataSeeds[2]).toEqual([1, 0, 1, 1, 0]); // advanced on tick 1
+      expect(dataSeeds[3]).toEqual([1, 0, 1, 1, 0]); // gate silent on tick 2
+      expect(dataSeeds[4]).toEqual([1, 0, 1, 1, 0]); // gate silent on tick 3
+      expect(dataSeeds[5]).toEqual([1, 1, 0, 1, 1]); // advanced on tick 4
     });
   });
 });

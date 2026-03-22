@@ -248,6 +248,46 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'gated-keystream',
+    name: 'Gated Keystream',
+    summary: 'One clocked LFSR gates a second keystream register, creating a dependent clock chain in the bit domain.',
+    pipeline: 'Clock -> Gate LFSR -> Data LFSR -> XOR(BitSource) -> BitOutput',
+    defaultTickedMode: true,
+    project: {
+      modules: [
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 8 } },
+        { id: 'plain', defId: 'BitSource', params: { stream: [1, 0, 1, 1, 0, 0, 1, 0] } },
+        {
+          id: 'gate',
+          defId: 'LFSR',
+          params: { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 1 },
+        },
+        {
+          id: 'data',
+          defId: 'LFSR',
+          params: { seed: [1, 1, 0, 1, 0], taps: '1,3', outputLength: 1 },
+        },
+        { id: 'xor', defId: 'XOR', params: {} },
+        { id: 'output', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'gate', port: 'clock' } },
+        { from: { moduleId: 'gate', port: 'out' }, to: { moduleId: 'data', port: 'clock' } },
+        { from: { moduleId: 'plain', port: 'out' }, to: { moduleId: 'xor', port: 'a' } },
+        { from: { moduleId: 'data', port: 'out' }, to: { moduleId: 'xor', port: 'b' } },
+        { from: { moduleId: 'xor', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      clock: { x: 40, y: 64 },
+      plain: { x: 40, y: 256 },
+      gate: { x: 260, y: 64 },
+      data: { x: 500, y: 64 },
+      xor: { x: 720, y: 168 },
+      output: { x: 940, y: 168 },
+    },
+  },
+  {
     id: 'hybrid',
     name: 'Hybrid Reference',
     summary: 'The V1 hybrid machine crossing classical and modern domains.',
