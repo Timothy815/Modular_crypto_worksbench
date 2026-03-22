@@ -1,6 +1,7 @@
 import type { CompositeDef, CompositeLibraryEntry } from '../engine/composites';
 import type { Project } from '../engine/types';
 import type { DemoProject } from './demo-projects';
+import type { GuidedChallenge } from './challenges';
 import type { UiState } from './store';
 import type {
   ComparisonBaselineDocument,
@@ -38,6 +39,24 @@ function cloneComparisonBaseline(
         capturedAt: baseline.capturedAt,
       }
     : null;
+}
+
+function cloneChallenge(challenge: GuidedChallenge): GuidedChallenge {
+  return {
+    ...challenge,
+    version: 1,
+    startingProject: cloneProject(challenge.startingProject),
+    startingLayout: challenge.startingLayout
+      ? Object.fromEntries(
+          Object.entries(challenge.startingLayout).map(([moduleId, position]) => [
+            moduleId,
+            { ...position },
+          ]),
+        )
+      : undefined,
+    targetProject: cloneProject(challenge.targetProject),
+    hints: challenge.hints ? [...challenge.hints] : undefined,
+  };
 }
 
 function buildDefaultDocument(project: DemoProject): WorkbenchDocument {
@@ -93,6 +112,13 @@ export function buildPersistedWorkspace(state: UiState): PersistedWorkspaceDocum
         cloneComparisonBaseline(state.comparisonBaselinesByProject[projectId]),
       ]),
     ),
+    activeChallengeIdByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.activeChallengeIdByProject[projectId] ?? null,
+      ]),
+    ),
+    challengeLibrary: state.challengeLibrary.map(cloneChallenge),
     compositeLibrary: {
       version: 1,
       entries: state.compositeLibrary.map((entry) => ({
@@ -143,6 +169,10 @@ export function loadWorkspaceFromStorage(
       parsed.documentsByProjectId === null ||
       typeof parsed.comparisonBaselinesByProjectId !== 'object' ||
       parsed.comparisonBaselinesByProjectId === null ||
+      typeof parsed.activeChallengeIdByProjectId !== 'object' ||
+      parsed.activeChallengeIdByProjectId === null ||
+      !Array.isArray(parsed.challengeLibrary) ||
+      !parsed.challengeLibrary.every(isGuidedChallengeDocument) ||
       !isCompositeLibraryDocument(parsed.compositeLibrary)
     ) {
       return null;
@@ -168,6 +198,14 @@ export function loadWorkspaceFromStorage(
             (baseline === null || isComparisonBaselineDocument(baseline)),
         ),
       ),
+      activeChallengeIdByProjectId: Object.fromEntries(
+        Object.entries(parsed.activeChallengeIdByProjectId).filter(
+          ([projectId, challengeId]) =>
+            allowedProjectIds.has(projectId) &&
+            (challengeId === null || typeof challengeId === 'string'),
+        ),
+      ),
+      challengeLibrary: parsed.challengeLibrary.map(cloneChallenge),
     };
   } catch {
     return null;
@@ -206,6 +244,15 @@ export function parseCompositeLibraryDocument(
   }
 }
 
+export function parseGuidedChallengeDocument(rawValue: string): GuidedChallenge | null {
+  try {
+    const parsed = JSON.parse(rawValue);
+    return isGuidedChallengeDocument(parsed) ? cloneChallenge(parsed) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function downloadCompositeLibraryDocument(
   libraryDocument: CompositeLibraryDocument,
 ): void {
@@ -216,6 +263,18 @@ export function downloadCompositeLibraryDocument(
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = 'composite-library.mcw.json';
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+export function downloadGuidedChallengeDocument(challenge: GuidedChallenge): void {
+  const blob = new Blob([JSON.stringify(cloneChallenge(challenge), null, 2)], {
+    type: 'application/json',
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `${challenge.id}.challenge.json`;
   anchor.click();
   URL.revokeObjectURL(url);
 }
@@ -265,6 +324,35 @@ function isComparisonBaselineDocument(value: unknown): value is ComparisonBaseli
     candidate.project !== null &&
     Array.isArray(candidate.project.modules) &&
     Array.isArray(candidate.project.connections)
+  );
+}
+
+function isGuidedChallengeDocument(value: unknown): value is GuidedChallenge {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as GuidedChallenge;
+  return (
+    (candidate.version === undefined || candidate.version === 1) &&
+    typeof candidate.id === 'string' &&
+    typeof candidate.title === 'string' &&
+    typeof candidate.prompt === 'string' &&
+    typeof candidate.startingProject === 'object' &&
+    candidate.startingProject !== null &&
+    Array.isArray(candidate.startingProject.modules) &&
+    Array.isArray(candidate.startingProject.connections) &&
+    (candidate.startingLayout === undefined ||
+      (typeof candidate.startingLayout === 'object' && candidate.startingLayout !== null)) &&
+    typeof candidate.targetProject === 'object' &&
+    candidate.targetProject !== null &&
+    Array.isArray(candidate.targetProject.modules) &&
+    Array.isArray(candidate.targetProject.connections) &&
+    typeof candidate.success === 'object' &&
+    candidate.success !== null &&
+    candidate.success.kind === 'output-match-target' &&
+    (candidate.hints === undefined ||
+      (Array.isArray(candidate.hints) && candidate.hints.every((hint) => typeof hint === 'string')))
   );
 }
 

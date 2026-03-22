@@ -9,6 +9,8 @@ import {
   createCompositeFromSelection,
   replaceSelectionWithComposite,
 } from './ui/composite-authoring';
+import { evaluateChallengeAttempt } from './ui/challenges';
+import { ChallengePanel } from './ui/components/challenge-panel';
 import { ComparisonPanel } from './ui/components/comparison-panel';
 import { ParameterInspector } from './ui/components/parameter-inspector';
 import { PrimitivePalette } from './ui/components/primitive-palette';
@@ -18,7 +20,9 @@ import { compareExecutionResults } from './ui/execution-compare';
 import {
   downloadDocument,
   downloadCompositeLibraryDocument,
+  downloadGuidedChallengeDocument,
   loadWorkspaceFromStorage,
+  parseGuidedChallengeDocument,
   parseCompositeLibraryDocument,
   parseWorkbenchDocument,
   saveWorkspaceToStorage,
@@ -65,6 +69,10 @@ function App() {
       return {
         ...initialState,
         activeProjectId: persistedWorkspace.activeProjectId,
+        challengeLibrary:
+          persistedWorkspace.challengeLibrary.length > 0
+            ? persistedWorkspace.challengeLibrary
+            : initialState.challengeLibrary,
         compositeLibrary:
           persistedWorkspace.compositeLibrary.entries.length > 0
             ? persistedWorkspace.compositeLibrary.entries
@@ -95,6 +103,14 @@ function App() {
             persistedWorkspace.comparisonBaselinesByProjectId[project.id] ?? null,
           ]),
         ),
+        activeChallengeIdByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.activeChallengeIdByProjectId[project.id] ??
+              initialState.activeChallengeIdByProject[project.id] ??
+              null,
+          ]),
+        ),
         selectedModuleIdByProject: Object.fromEntries(
           projects.map((project) => [
             project.id,
@@ -118,6 +134,7 @@ function App() {
   const [compositeId, setCompositeId] = useState('');
   const [compositeDialogError, setCompositeDialogError] = useState<string | null>(null);
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
+  const [isChallengeResetConfirmOpen, setIsChallengeResetConfirmOpen] = useState(false);
   const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
   const [hoveredTraceModuleId, setHoveredTraceModuleId] = useState<string | null>(null);
   const [stepIndex, setStepIndex] = useState<number | null>(null);
@@ -214,6 +231,20 @@ function App() {
   const baselineSelectedModule = comparisonBaseline && selectedModule
     ? comparisonBaseline.project.modules.find((moduleInstance) => moduleInstance.id === selectedModule.id) ?? null
     : null;
+  const selectedChallenge =
+    state.challengeLibrary.find(
+      (challenge) =>
+        challenge.id ===
+        (state.activeChallengeIdByProject[activeProjectDefinition.id] ??
+          state.challengeLibrary[0]?.id ??
+          null),
+    ) ??
+    state.challengeLibrary[0] ??
+    null;
+  const challengeEvaluation =
+    !state.compositeEditor && selectedChallenge
+      ? evaluateChallengeAttempt(selectedChallenge, activeProjectState, effectiveRegistry)
+      : null;
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -361,6 +392,7 @@ function App() {
           hoveredTraceModuleId={hoveredTraceModuleId}
           steppedModuleId={steppedModuleId}
           divergenceModuleId={divergenceModuleId}
+          challengeSolved={challengeEvaluation?.status === 'success'}
           onMoveModule={(moduleId, x, y) =>
             dispatch({
               type: 'moveModule',
@@ -621,36 +653,74 @@ function App() {
       </section>
 
       {!state.compositeEditor ? (
-        <ComparisonPanel
-          projectName={activeProjectDefinition.name}
-          baseline={comparisonBaseline}
-          baselineOutput={
-            baselineExecution
-              ? executionComparison?.baselineOutput.formatted ?? 'n/a'
-              : 'blocked'
-          }
-          variantOutput={
-            execution
-              ? executionComparison?.variantOutput.formatted ?? 'n/a'
-              : 'blocked'
-          }
-          baselineError={baselineExecutionError}
-          variantError={executionError}
-          comparison={executionComparison}
-          onCaptureBaseline={() =>
-            dispatch({
-              type: 'captureComparisonBaseline',
-              projectId: activeProjectDefinition.id,
-              capturedAt: new Date().toISOString(),
-            })
-          }
-          onClearBaseline={() =>
-            dispatch({
-              type: 'clearComparisonBaseline',
-              projectId: activeProjectDefinition.id,
-            })
-          }
-        />
+        <>
+          {selectedChallenge ? (
+            <ChallengePanel
+              challenges={state.challengeLibrary}
+              selectedChallengeId={selectedChallenge.id}
+              evaluation={challengeEvaluation}
+              onSelectChallenge={(challengeId) =>
+                dispatch({
+                  type: 'selectChallenge',
+                  projectId: activeProjectDefinition.id,
+                  challengeId,
+                })
+              }
+              onLoadChallengeStart={() => setIsChallengeResetConfirmOpen(true)}
+              onExportChallenge={() => downloadGuidedChallengeDocument(selectedChallenge)}
+              onImportChallenge={async (file) => {
+                const rawValue = await file.text();
+                const challengeDocument = parseGuidedChallengeDocument(rawValue);
+                if (!challengeDocument) {
+                  setImportError('The selected file is not a valid MCW guided challenge document.');
+                  return;
+                }
+
+                dispatch({
+                  type: 'upsertChallenge',
+                  challenge: challengeDocument,
+                });
+                dispatch({
+                  type: 'selectChallenge',
+                  projectId: activeProjectDefinition.id,
+                  challengeId: challengeDocument.id,
+                });
+                setImportError(null);
+              }}
+            />
+          ) : null}
+
+          <ComparisonPanel
+            projectName={activeProjectDefinition.name}
+            baseline={comparisonBaseline}
+            baselineOutput={
+              baselineExecution
+                ? executionComparison?.baselineOutput.formatted ?? 'n/a'
+                : 'blocked'
+            }
+            variantOutput={
+              execution
+                ? executionComparison?.variantOutput.formatted ?? 'n/a'
+                : 'blocked'
+            }
+            baselineError={baselineExecutionError}
+            variantError={executionError}
+            comparison={executionComparison}
+            onCaptureBaseline={() =>
+              dispatch({
+                type: 'captureComparisonBaseline',
+                projectId: activeProjectDefinition.id,
+                capturedAt: new Date().toISOString(),
+              })
+            }
+            onClearBaseline={() =>
+              dispatch({
+                type: 'clearComparisonBaseline',
+                projectId: activeProjectDefinition.id,
+              })
+            }
+          />
+        </>
       ) : null}
 
       {isCompositeDialogOpen ? (
@@ -827,6 +897,54 @@ function App() {
                 }}
               >
                 Discard Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {isChallengeResetConfirmOpen && selectedChallenge ? (
+        <div
+          className="dialog-backdrop"
+          onClick={() => setIsChallengeResetConfirmOpen(false)}
+        >
+          <div
+            className="dialog-panel"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="panel-label">Challenge Reset</p>
+            <h2>Reset Attempt?</h2>
+            <p className="dialog-copy">
+              This will load <strong>{selectedChallenge.title}</strong> into the current workbench
+              and replace the active graph for <strong>{activeProjectDefinition.name}</strong>.
+            </p>
+            <div className="dialog-actions">
+              <button
+                type="button"
+                className="secondary-dialog-button"
+                onClick={() => setIsChallengeResetConfirmOpen(false)}
+              >
+                Keep Current Attempt
+              </button>
+              <button
+                type="button"
+                className="primary-dialog-button"
+                onClick={() => {
+                  dispatch({
+                    type: 'loadDocument',
+                    projectId: activeProjectDefinition.id,
+                    document: {
+                      version: 1,
+                      project: cloneProject(selectedChallenge.startingProject),
+                      ui: {
+                        layout: selectedChallenge.startingLayout ?? activeProjectDefinition.layout,
+                        annotations: [],
+                      },
+                    },
+                  });
+                  setIsChallengeResetConfirmOpen(false);
+                }}
+              >
+                Reset Challenge
               </button>
             </div>
           </div>

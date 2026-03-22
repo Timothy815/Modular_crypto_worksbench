@@ -312,6 +312,13 @@
   margin-top: 18px;
 }
 
+.challenge-panel-success {
+  border-color: var(--success-text);
+  box-shadow:
+    0 0 0 3px var(--success-bg),
+    0 18px 42px color-mix(in srgb, var(--success-bg) 42%, transparent);
+}
+
 .comparison-actions {
   display: flex;
   flex-wrap: wrap;
@@ -351,6 +358,23 @@
   border-radius: 16px;
   background: var(--surface-panel);
   border: 1px solid var(--line);
+}
+
+.challenge-success-banner {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--success-bg);
+  color: var(--success-text);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--success-text) 18%, transparent);
+}
+
+.challenge-hints {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .switch-chip {
@@ -595,6 +619,13 @@
   box-shadow:
     0 0 0 3px #d28f18,
     0 12px 30px color-mix(in srgb, #d28f18 35%, transparent);
+}
+
+.canvas-panel-success {
+  border-color: var(--success-text);
+  box-shadow:
+    0 0 0 3px var(--success-bg),
+    0 18px 48px color-mix(in srgb, var(--success-bg) 35%, transparent);
 }
 
 .graph-node-selected.graph-node-source {

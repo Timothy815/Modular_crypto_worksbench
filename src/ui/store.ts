@@ -1,7 +1,9 @@
 import type { CompositeLibraryEntry, CompositeLayoutPosition } from '../engine/composites';
 import type { ModuleDefinition, ModuleInstance, ModuleRegistry, Project } from '../engine/types';
+import type { GuidedChallenge } from './challenges';
 import type { DemoProject } from './demo-projects';
 import { STARTER_COMPOSITE_LIBRARY } from './starter-composites';
+import { STARTER_CHALLENGES } from './starter-challenges';
 import type {
   ComparisonBaselineDocument,
   CompositeLibraryDocument,
@@ -11,12 +13,14 @@ import type {
 
 export interface UiState {
   activeProjectId: string;
+  challengeLibrary: GuidedChallenge[];
   compositeLibrary: CompositeLibraryEntry[];
   compositeEditor: CompositeEditorState | null;
   projectStates: Record<string, Project>;
   layoutByProject: Record<string, Record<string, { x: number; y: number }>>;
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
   comparisonBaselinesByProject: Record<string, ComparisonBaselineDocument | null>;
+  activeChallengeIdByProject: Record<string, string | null>;
   selectedModuleIdByProject: Record<string, string | null>;
   selectedModuleIdsByProject: Record<string, string[]>;
   paramDrafts: Record<string, string>;
@@ -59,6 +63,8 @@ export type UiAction =
   | { type: 'setParamDraft'; projectId: string; moduleId: string; key: string; rawValue: string }
   | { type: 'clearParamDraft'; projectId: string; moduleId: string; key: string }
   | { type: 'loadDocument'; projectId: string; document: WorkbenchDocument }
+  | { type: 'selectChallenge'; projectId: string; challengeId: string | null }
+  | { type: 'upsertChallenge'; challenge: GuidedChallenge }
   | { type: 'captureComparisonBaseline'; projectId: string; capturedAt: string }
   | { type: 'clearComparisonBaseline'; projectId: string }
   | { type: 'loadCompositeLibrary'; document: CompositeLibraryDocument }
@@ -133,8 +139,16 @@ function updateModule(
 }
 
 export function createInitialUiState(projects: DemoProject[]): UiState {
+  const defaultChallengeId = STARTER_CHALLENGES[0]?.id ?? null;
   return {
     activeProjectId: projects[0]?.id ?? '',
+    challengeLibrary: STARTER_CHALLENGES.map((challenge) => ({
+      ...challenge,
+      startingProject: cloneProject(challenge.startingProject),
+      startingLayout: challenge.startingLayout ? cloneLayout(challenge.startingLayout) : undefined,
+      targetProject: cloneProject(challenge.targetProject),
+      hints: challenge.hints ? [...challenge.hints] : undefined,
+    })),
     compositeLibrary: STARTER_COMPOSITE_LIBRARY.map((entry) => ({
       ...entry,
       definition: {
@@ -167,6 +181,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     ),
     comparisonBaselinesByProject: Object.fromEntries(
       projects.map((project) => [project.id, null]),
+    ),
+    activeChallengeIdByProject: Object.fromEntries(
+      projects.map((project) => [project.id, defaultChallengeId]),
     ),
     selectedModuleIdByProject: Object.fromEntries(
       projects.map((project) => [project.id, project.project.modules[0]?.id ?? null]),
@@ -658,6 +675,34 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           [action.projectId]: nextProject.modules[0]?.id ? [nextProject.modules[0].id] : [],
         },
         paramDrafts: nextDrafts,
+      };
+    }
+    case 'selectChallenge':
+      return {
+        ...state,
+        activeChallengeIdByProject: {
+          ...state.activeChallengeIdByProject,
+          [action.projectId]: action.challengeId,
+        },
+      };
+    case 'upsertChallenge': {
+      const existing = state.challengeLibrary.some((challenge) => challenge.id === action.challenge.id);
+      const nextChallenge = {
+        ...action.challenge,
+        startingProject: cloneProject(action.challenge.startingProject),
+        startingLayout: action.challenge.startingLayout
+          ? cloneLayout(action.challenge.startingLayout)
+          : undefined,
+        targetProject: cloneProject(action.challenge.targetProject),
+        hints: action.challenge.hints ? [...action.challenge.hints] : undefined,
+      };
+      return {
+        ...state,
+        challengeLibrary: existing
+          ? state.challengeLibrary.map((challenge) =>
+              challenge.id === nextChallenge.id ? nextChallenge : challenge,
+            )
+          : [...state.challengeLibrary, nextChallenge],
       };
     }
     case 'captureComparisonBaseline': {
