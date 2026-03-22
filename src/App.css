@@ -49,34 +49,30 @@
 
 .app-header-nav {
   flex: 0 1 620px;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  align-items: flex-start;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 220px));
+  justify-content: end;
+  align-items: start;
+  gap: 12px;
 }
 
-.nav-link-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.5rem;
-  padding: 10px 14px;
+.header-menu-select,
+.inspector-section-select {
+  display: grid;
+  gap: 6px;
+}
+
+.header-menu-select select,
+.inspector-section-select select {
+  width: 100%;
+  min-height: 42px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 14px;
   background: var(--surface-button);
   color: var(--ink);
   font: inherit;
   font-weight: 700;
-  text-decoration: none;
-  transition:
-    transform 160ms ease,
-    box-shadow 160ms ease,
-    background-color 160ms ease;
-}
-
-.nav-link-chip:hover {
-  transform: translateY(-1px);
+  padding: 0 14px;
 }
 
 .mono-line {
@@ -567,21 +563,6 @@
   display: grid;
   gap: 10px;
   margin-top: 12px;
-}
-
-.layout-chip {
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface-button);
-  padding: 9px 13px;
-  font: inherit;
-  font-weight: 700;
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.layout-chip.active {
-  background: var(--chip-soft-active-bg);
 }
 
 .palette-tabs {
@@ -1268,29 +1249,6 @@
   margin: 6px 0 0;
   font-size: 0.88rem;
   color: var(--muted);
-}
-
-.inspector-tab-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0 0 14px;
-}
-
-.inspector-tab {
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface-button);
-  padding: 8px 14px;
-  font: inherit;
-  font-weight: 700;
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.inspector-tab.active {
-  background: var(--ink);
-  color: var(--link-primary-text);
 }
 
 .trace-toolbar {

@@ -137,29 +137,19 @@ export function ParameterInspector({
         <h2>Selection + Trace</h2>
       </div>
 
-      <div className="inspector-tab-row">
-        <button
-          type="button"
-          className={inspectorTab === 'configure' ? 'inspector-tab active' : 'inspector-tab'}
-          onClick={() => setInspectorTab('configure')}
+      <label className="inspector-section-select">
+        <span className="meta-label">Section</span>
+        <select
+          value={inspectorTab}
+          onChange={(event) =>
+            setInspectorTab(event.target.value as 'configure' | 'analyze' | 'compare')
+          }
         >
-          Configure
-        </button>
-        <button
-          type="button"
-          className={inspectorTab === 'analyze' ? 'inspector-tab active' : 'inspector-tab'}
-          onClick={() => setInspectorTab('analyze')}
-        >
-          Analyze
-        </button>
-        <button
-          type="button"
-          className={inspectorTab === 'compare' ? 'inspector-tab active' : 'inspector-tab'}
-          onClick={() => setInspectorTab('compare')}
-        >
-          Compare
-        </button>
-      </div>
+          <option value="configure">Configure</option>
+          <option value="analyze">Analyze</option>
+          <option value="compare">Compare</option>
+        </select>
+      </label>
 
       <div className="trace-summary">
         <span className="meta-label">Final Input To Output</span>

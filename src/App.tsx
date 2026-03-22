@@ -40,6 +40,8 @@ import {
 } from './ui/store';
 
 function App() {
+  const [headerResourceAction, setHeaderResourceAction] = useState('');
+  const [headerWorkspaceAction, setHeaderWorkspaceAction] = useState('');
   const [challengeCaptureShouldExport, setChallengeCaptureShouldExport] = useState<boolean>(() => {
     if (typeof window === 'undefined') {
       return true;
@@ -562,51 +564,66 @@ function App() {
         </div>
 
         <nav className="app-header-nav" aria-label="Workbench controls">
-          <a className="nav-link-chip" href="./UI-KICKOFF.md">
-            Notes
-          </a>
-          <a
-            className="nav-link-chip"
-            href="https://github.com/Timothy815/Modular_crypto_worksbench"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Repository
-          </a>
-          <button
-            type="button"
-            className={theme === 'dark' ? 'layout-chip active' : 'layout-chip'}
-            onClick={() => setTheme((currentTheme) => (currentTheme === 'light' ? 'dark' : 'light'))}
-          >
-            {theme === 'dark' ? 'Light' : 'Dark'}
-          </button>
-          <button
-            type="button"
-            className={state.showPalette ? 'layout-chip active' : 'layout-chip'}
-            onClick={() => dispatch({ type: 'togglePalette' })}
-          >
-            {state.showPalette ? 'Hide Tools' : 'Show Tools'}
-          </button>
-          {state.showPalette ? (
-            <button
-              type="button"
-              className={paletteViewMode === 'expanded' ? 'layout-chip active' : 'layout-chip'}
-              onClick={() =>
-                setPaletteViewMode((currentMode) =>
-                  currentMode === 'expanded' ? 'compact' : 'expanded',
-                )
-              }
+          <label className="header-menu-select">
+            <span className="meta-label">Resources</span>
+            <select
+              value={headerResourceAction}
+              onChange={(event) => {
+                const value = event.target.value;
+                setHeaderResourceAction('');
+                if (value === 'notes') {
+                  window.location.href = './UI-KICKOFF.md';
+                } else if (value === 'repo') {
+                  window.open(
+                    'https://github.com/Timothy815/Modular_crypto_worksbench',
+                    '_blank',
+                    'noopener,noreferrer',
+                  );
+                }
+              }}
             >
-              {paletteViewMode === 'expanded' ? 'Compact Tools' : 'Expand Tools'}
-            </button>
-          ) : null}
-          <button
-            type="button"
-            className={state.showInspector ? 'layout-chip active' : 'layout-chip'}
-            onClick={() => dispatch({ type: 'toggleInspector' })}
-          >
-            {state.showInspector ? 'Hide Inspector' : 'Show Inspector'}
-          </button>
+              <option value="">Open…</option>
+              <option value="notes">Notes</option>
+              <option value="repo">Repository</option>
+            </select>
+          </label>
+          <label className="header-menu-select">
+            <span className="meta-label">Workspace</span>
+            <select
+              value={headerWorkspaceAction}
+              onChange={(event) => {
+                const value = event.target.value;
+                setHeaderWorkspaceAction('');
+                if (value === 'toggle-theme') {
+                  setTheme((currentTheme) => (currentTheme === 'light' ? 'dark' : 'light'));
+                } else if (value === 'toggle-palette') {
+                  dispatch({ type: 'togglePalette' });
+                } else if (value === 'toggle-palette-view') {
+                  setPaletteViewMode((currentMode) =>
+                    currentMode === 'expanded' ? 'compact' : 'expanded',
+                  );
+                } else if (value === 'toggle-inspector') {
+                  dispatch({ type: 'toggleInspector' });
+                }
+              }}
+            >
+              <option value="">Actions…</option>
+              <option value="toggle-theme">
+                {theme === 'dark' ? 'Switch To Light' : 'Switch To Dark'}
+              </option>
+              <option value="toggle-palette">
+                {state.showPalette ? 'Hide Tools' : 'Show Tools'}
+              </option>
+              {state.showPalette ? (
+                <option value="toggle-palette-view">
+                  {paletteViewMode === 'expanded' ? 'Compact Tools' : 'Expand Tools'}
+                </option>
+              ) : null}
+              <option value="toggle-inspector">
+                {state.showInspector ? 'Hide Inspector' : 'Show Inspector'}
+              </option>
+            </select>
+          </label>
         </nav>
       </header>
 
