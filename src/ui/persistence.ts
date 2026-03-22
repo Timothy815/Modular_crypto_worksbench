@@ -3,6 +3,8 @@ import type { Project } from '../engine/types';
 import type { DemoProject } from './demo-projects';
 import type { GuidedChallenge } from './challenges';
 import type { GuidedTutorial } from './tutorials';
+import { STARTER_CHALLENGES } from './starter-challenges';
+import { STARTER_TUTORIALS } from './starter-tutorials';
 import type { UiState } from './store';
 import type {
   ComparisonBaselineDocument,
@@ -13,6 +15,12 @@ import type {
 } from './workbench-document';
 
 const STORAGE_KEY = 'mcw:workspace:v1';
+const STARTER_CHALLENGE_GROUP_BY_ID = Object.fromEntries(
+  STARTER_CHALLENGES.map((challenge) => [challenge.id, challenge.group]),
+);
+const STARTER_TUTORIAL_GROUP_BY_ID = Object.fromEntries(
+  STARTER_TUTORIALS.map((tutorial) => [tutorial.id, tutorial.group]),
+);
 
 function cloneProject(project: Project): Project {
   return {
@@ -46,7 +54,7 @@ function cloneChallenge(challenge: GuidedChallenge): GuidedChallenge {
   return {
     ...challenge,
     version: 1,
-    group: challenge.group,
+    group: challenge.group ?? STARTER_CHALLENGE_GROUP_BY_ID[challenge.id],
     difficulty: challenge.difficulty,
     startingProject: cloneProject(challenge.startingProject),
     startingLayout: challenge.startingLayout
@@ -66,7 +74,7 @@ function cloneTutorial(tutorial: GuidedTutorial): GuidedTutorial {
   return {
     ...tutorial,
     version: 1,
-    group: tutorial.group,
+    group: tutorial.group ?? STARTER_TUTORIAL_GROUP_BY_ID[tutorial.id],
     steps: tutorial.steps.map((step) => ({ ...step })),
   };
 }
