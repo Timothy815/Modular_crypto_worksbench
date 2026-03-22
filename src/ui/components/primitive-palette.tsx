@@ -67,43 +67,16 @@ export function PrimitivePalette({
       <div className="panel-head">
         <p className="panel-label">Palette</p>
         <h2>Module Library</h2>
-        <div className="palette-tabs" role="tablist" aria-label="Module library domains">
-          <button
-            type="button"
-            className={activeTab === 'all' ? 'palette-tab active' : 'palette-tab'}
-            onClick={() => setActiveTab('all')}
-          >
-            All
-          </button>
-          <button
-            type="button"
-            className={activeTab === 'symbol' ? 'palette-tab active' : 'palette-tab'}
-            onClick={() => setActiveTab('symbol')}
-          >
-            Symbol
-          </button>
-          <button
-            type="button"
-            className={activeTab === 'bit' ? 'palette-tab active' : 'palette-tab'}
-            onClick={() => setActiveTab('bit')}
-          >
-            Bit
-          </button>
-          <button
-            type="button"
-            className={activeTab === 'bridge' ? 'palette-tab active' : 'palette-tab'}
-            onClick={() => setActiveTab('bridge')}
-          >
-            Bridge
-          </button>
-          <button
-            type="button"
-            className={activeTab === 'composites' ? 'palette-tab active' : 'palette-tab'}
-            onClick={() => setActiveTab('composites')}
-          >
-            Composites
-          </button>
-        </div>
+        <label className="palette-filter">
+          <span className="meta-label">Domain</span>
+          <select value={activeTab} onChange={(event) => setActiveTab(event.target.value as ModuleLibraryDomainTab)}>
+            <option value="all">All Primitives</option>
+            <option value="symbol">Symbol</option>
+            <option value="bit">Bit</option>
+            <option value="bridge">Bridge</option>
+            <option value="composites">Composites</option>
+          </select>
+        </label>
         {activeTab === 'composites' ? (
           <div className="palette-toolbar">
             <button

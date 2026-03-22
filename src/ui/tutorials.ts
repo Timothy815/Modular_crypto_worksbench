@@ -10,6 +10,7 @@ export interface GuidedTutorial {
   version?: 1;
   id: string;
   title: string;
+  group?: string;
   summary: string;
   projectId: string;
   steps: TutorialStep[];

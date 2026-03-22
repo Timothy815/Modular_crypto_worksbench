@@ -118,6 +118,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-bridge-key',
     title: 'Repair the Bridge Key',
+    group: 'Foundations',
     difficulty: 'beginner',
     prompt:
       'The bridge pipeline was working, but the bit source changed. Adjust the machine until its output matches the reference behavior again.',
@@ -136,6 +137,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'byte-scrambler',
     title: 'Byte Scrambler',
+    group: 'Modern Rounds',
     difficulty: 'intermediate',
     prompt:
       'The byte-round machine still substitutes correctly, but its bit permutation was flattened. Restore the permutation order so the final bit output matches the captured reference round.',
@@ -155,6 +157,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-hex-vector',
     title: 'Repair the Hex Vector',
+    group: 'Bridge Rounds',
     difficulty: 'beginner',
     prompt:
       'The byte round itself is wired correctly, but the injected hex test vector is wrong. Restore the input value so the final hex output matches the captured reference machine again.',
@@ -174,6 +177,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-ascii-source',
     title: 'Repair the ASCII Source',
+    group: 'Bridge Rounds',
     difficulty: 'beginner',
     prompt:
       'The byte round itself is wired correctly, but the starting ASCII character is wrong. Restore the source text so the final ASCII output matches the captured reference machine again.',
@@ -193,6 +197,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-keystream-seed',
     title: 'Repair the Keystream Seed',
+    group: 'Sequential',
     difficulty: 'intermediate',
     prompt:
       'The plaintext bits are still correct, but the pseudo-random mask is drifting. Repair the LFSR seed so the running ciphertext stream matches the captured reference machine again.',
@@ -212,6 +217,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-gate-seed',
     title: 'Repair the Gate Seed',
+    group: 'Conditional Clocking',
     difficulty: 'expert',
     prompt:
       'The gated keystream machine still has the right plaintext and data register, but the gate register is pulsing the second LFSR at the wrong moments. Repair the gate seed so the ciphertext rhythm matches the captured reference machine again.',
@@ -231,6 +237,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'restore-sequential-pulse',
     title: 'Restore the Sequential Pulse',
+    group: 'Sequential',
     difficulty: 'intermediate',
     prompt:
       'The clocked keystream machine is no longer advancing on every tick. Repair the timing so its running output matches the captured reference stream again.',
@@ -250,6 +257,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-lfsr-taps',
     title: 'Repair the LFSR Taps',
+    group: 'Sequential',
     difficulty: 'intermediate',
     prompt:
       'The clock is pulsing correctly, but the keystream itself is wrong. Fix the feedback taps so the running output stream matches the reference machine again.',

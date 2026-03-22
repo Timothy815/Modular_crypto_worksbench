@@ -46,6 +46,7 @@ function cloneChallenge(challenge: GuidedChallenge): GuidedChallenge {
   return {
     ...challenge,
     version: 1,
+    group: challenge.group,
     difficulty: challenge.difficulty,
     startingProject: cloneProject(challenge.startingProject),
     startingLayout: challenge.startingLayout
@@ -65,6 +66,7 @@ function cloneTutorial(tutorial: GuidedTutorial): GuidedTutorial {
   return {
     ...tutorial,
     version: 1,
+    group: tutorial.group,
     steps: tutorial.steps.map((step) => ({ ...step })),
   };
 }
@@ -449,6 +451,7 @@ function isGuidedChallengeDocument(value: unknown): value is GuidedChallenge {
     (candidate.version === undefined || candidate.version === 1) &&
     typeof candidate.id === 'string' &&
     typeof candidate.title === 'string' &&
+    (candidate.group === undefined || typeof candidate.group === 'string') &&
     (candidate.difficulty === undefined ||
       candidate.difficulty === 'beginner' ||
       candidate.difficulty === 'intermediate' ||
@@ -482,6 +485,7 @@ function isGuidedTutorialDocument(value: unknown): value is GuidedTutorial {
     (candidate.version === undefined || candidate.version === 1) &&
     typeof candidate.id === 'string' &&
     typeof candidate.title === 'string' &&
+    (candidate.group === undefined || typeof candidate.group === 'string') &&
     typeof candidate.summary === 'string' &&
     typeof candidate.projectId === 'string' &&
     Array.isArray(candidate.steps) &&

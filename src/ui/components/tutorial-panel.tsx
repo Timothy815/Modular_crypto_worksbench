@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import type { GuidedTutorial, TutorialStep } from '../tutorials';
 
 interface TutorialPanelProps {
@@ -33,12 +35,21 @@ export function TutorialPanel({
   onFocusStepModule,
   onResetProgress,
 }: TutorialPanelProps) {
+  const tutorialGroups = useMemo(
+    () => [...new Set(tutorials.map((tutorial) => tutorial.group ?? 'Other'))],
+    [tutorials],
+  );
   const selectedTutorial =
     tutorials.find((tutorial) => tutorial.id === selectedTutorialId) ?? null;
 
   if (!selectedTutorial) {
     return null;
   }
+
+  const activeGroup = selectedTutorial.group ?? 'Other';
+  const visibleTutorials = tutorials.filter(
+    (tutorial) => (tutorial.group ?? 'Other') === activeGroup,
+  );
 
   const isTutorialProjectActive = selectedTutorial.projectId === currentProjectId;
   const totalSteps = selectedTutorial.steps.length;
@@ -79,19 +90,43 @@ export function TutorialPanel({
         </p>
       </div>
 
-      <label className="param-field">
-        <span>Active Tutorial</span>
-        <select
-          value={selectedTutorialId}
-          onChange={(event) => onSelectTutorial(event.target.value)}
-        >
-          {tutorials.map((tutorial) => (
-            <option key={tutorial.id} value={tutorial.id}>
-              {completedTutorialIds.includes(tutorial.id) ? '\u2713 ' : ''}{tutorial.title}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="content-filter-row">
+        <label className="param-field">
+          <span>Group</span>
+          <select
+            value={activeGroup}
+            onChange={(event) => {
+              const nextGroup = event.target.value;
+              const nextTutorial = tutorials.find(
+                (tutorial) => (tutorial.group ?? 'Other') === nextGroup,
+              );
+              if (nextTutorial && nextTutorial.id !== selectedTutorialId) {
+                onSelectTutorial(nextTutorial.id);
+              }
+            }}
+          >
+            {tutorialGroups.map((group) => (
+              <option key={group} value={group}>
+                {group}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="param-field">
+          <span>Active Tutorial</span>
+          <select
+            value={selectedTutorialId}
+            onChange={(event) => onSelectTutorial(event.target.value)}
+          >
+            {visibleTutorials.map((tutorial) => (
+              <option key={tutorial.id} value={tutorial.id}>
+                {completedTutorialIds.includes(tutorial.id) ? '\u2713 ' : ''}{tutorial.title}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       <div className="content-selector-card">
         <p className="comparison-copy">{selectedTutorial.summary}</p>

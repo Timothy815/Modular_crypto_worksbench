@@ -403,9 +403,16 @@
 
 .project-selector-row {
   display: grid;
-  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  grid-template-columns: minmax(180px, 220px) minmax(220px, 280px) minmax(0, 1fr);
   gap: 12px;
   align-items: start;
+  margin-bottom: 14px;
+}
+
+.content-filter-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) minmax(220px, 1fr);
+  gap: 12px;
   margin-bottom: 14px;
 }
 
@@ -576,6 +583,24 @@
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
+}
+
+.palette-filter {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.palette-filter select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-button);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  padding: 0 14px;
 }
 
 .palette-tab {
@@ -1782,7 +1807,8 @@
     gap: 16px;
   }
 
-  .project-selector-row {
+  .project-selector-row,
+  .content-filter-row {
     grid-template-columns: 1fr;
   }
 

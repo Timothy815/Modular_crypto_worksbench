@@ -9,6 +9,7 @@ import type {
 export interface DemoProject {
   id: string;
   name: string;
+  group?: string;
   summary: string;
   pipeline: string;
   defaultTickedMode?: boolean;
@@ -20,6 +21,7 @@ export const demoProjects: DemoProject[] = [
   {
     id: 'bridge',
     name: 'Bridge Pipeline',
+    group: 'Foundations',
     summary: 'A minimal symbol-to-bits-to-symbol run that proves the engine/UI bridge.',
     pipeline: 'TextInput -> SymbolToBits -> XOR -> BitsToSymbol -> Output',
     project: {
@@ -51,6 +53,7 @@ export const demoProjects: DemoProject[] = [
   {
     id: 'modern',
     name: 'Modern Toy Round',
+    group: 'Foundations',
     summary: 'A small bit-domain toy round using permutation and shifting before XOR.',
     pipeline: 'TextInput -> SymbolToBits -> Permutation -> BitShifter -> XOR -> BitsToSymbol -> Output',
     project: {
@@ -88,6 +91,7 @@ export const demoProjects: DemoProject[] = [
   {
     id: 'byte-round',
     name: 'Byte S-Box Round',
+    group: 'Modern Rounds',
     summary: 'An 8-bit substitution and permutation round that stays fully in the bit domain.',
     pipeline: 'BitSource -> SBox(256) -> Permutation -> BitOutput',
     project: {
@@ -119,6 +123,7 @@ export const demoProjects: DemoProject[] = [
   {
     id: 'hex-round',
     name: 'Hex Byte Round',
+    group: 'Bridge Rounds',
     summary: 'A byte-oriented round that starts from hex, stays in bits for substitution/permutation, and returns to hex.',
     pipeline: 'HexSource -> SBox(256) -> Permutation -> BitsToHex -> Output',
     project: {
@@ -153,6 +158,7 @@ export const demoProjects: DemoProject[] = [
   {
     id: 'ascii-round',
     name: 'ASCII Byte Round',
+    group: 'Bridge Rounds',
     summary: 'A byte-oriented round that begins with ASCII text, transforms it in bits, and returns to ASCII.',
     pipeline: 'AsciiSource -> SBox(256) -> Permutation -> BitsToAscii -> Output',
     project: {
@@ -187,6 +193,7 @@ export const demoProjects: DemoProject[] = [
   {
     id: 'sequential',
     name: 'Sequential Heart',
+    group: 'Sequential',
     summary: 'A clocked keystream pipeline that turns state changes into a symbol stream over time.',
     pipeline: 'Clock -> LFSR -> BitsToSymbol -> Output',
     defaultTickedMode: true,
@@ -217,6 +224,7 @@ export const demoProjects: DemoProject[] = [
   {
     id: 'keystream',
     name: 'Modern Keystream',
+    group: 'Sequential',
     summary: 'A clocked LFSR keystream XORs a plaintext bit stream without ever leaving the bit domain.',
     pipeline: 'Clock -> LFSR -> XOR(BitSource) -> BitOutput',
     defaultTickedMode: true,
@@ -250,6 +258,7 @@ export const demoProjects: DemoProject[] = [
   {
     id: 'gated-keystream',
     name: 'Gated Keystream',
+    group: 'Conditional Clocking',
     summary: 'One clocked LFSR gates a second keystream register, creating a dependent clock chain in the bit domain.',
     pipeline: 'Clock -> Gate LFSR -> Data LFSR -> XOR(BitSource) -> BitOutput',
     defaultTickedMode: true,

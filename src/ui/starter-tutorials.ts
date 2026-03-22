@@ -5,6 +5,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
     version: 1,
     id: 'bridge-walkthrough',
     title: 'Bridge Walkthrough',
+    group: 'Foundations',
     summary: 'Learn how MCW crosses from letters into bits and back again.',
     projectId: 'bridge',
     steps: [
@@ -49,6 +50,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
     version: 1,
     id: 'byte-round',
     title: 'The Byte Round',
+    group: 'Modern Rounds',
     summary: 'Learn how an 8-bit S-Box and permutation transform a byte without leaving the bit domain.',
     projectId: 'byte-round',
     steps: [
@@ -86,6 +88,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
     version: 1,
     id: 'hex-round',
     title: 'The Hex Round',
+    group: 'Bridge Rounds',
     summary: 'Learn how MCW can start from a hex test vector, transform it in bits, and return to hex.',
     projectId: 'hex-round',
     steps: [
@@ -130,6 +133,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
     version: 1,
     id: 'ascii-round',
     title: 'The ASCII Round',
+    group: 'Bridge Rounds',
     summary: 'Learn how MCW can start from ASCII text, transform bytes in bits, and return to readable text.',
     projectId: 'ascii-round',
     steps: [
@@ -174,6 +178,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
     version: 1,
     id: 'sequential-heart',
     title: 'The Sequential Heart',
+    group: 'Sequential',
     summary: 'Learn how a Clock drives an LFSR one tick at a time to produce a running symbol stream.',
     projectId: 'sequential',
     steps: [
@@ -211,6 +216,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
     version: 1,
     id: 'modern-keystream',
     title: 'The Modern Keystream',
+    group: 'Sequential',
     summary: 'Learn how a clocked LFSR produces a running bit mask that XOR encrypts a plaintext stream.',
     projectId: 'keystream',
     steps: [
@@ -255,6 +261,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
     version: 1,
     id: 'gated-keystream',
     title: 'The Gated Keystream',
+    group: 'Conditional Clocking',
     summary: 'Learn how one keystream register can control when a second register advances.',
     projectId: 'gated-keystream',
     steps: [

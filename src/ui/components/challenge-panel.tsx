@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { GuidedChallenge, ChallengeEvaluation } from '../challenges';
 
 interface ChallengePanelProps {
@@ -34,9 +34,18 @@ export function ChallengePanel({
   });
   const selectedChallenge =
     challenges.find((challenge) => challenge.id === selectedChallengeId) ?? null;
+  const challengeGroups = useMemo(
+    () => [...new Set(challenges.map((challenge) => challenge.group ?? 'Other'))],
+    [challenges],
+  );
   const availableHints = selectedChallenge?.hints ?? [];
   const revealedHintCount =
     hintState.challengeId === selectedChallengeId ? hintState.count : 0;
+  const activeGroup = selectedChallenge?.group ?? 'Other';
+
+  const visibleChallenges = challenges.filter(
+    (challenge) => (challenge.group ?? 'Other') === activeGroup,
+  );
 
   return (
     <section
@@ -51,19 +60,43 @@ export function ChallengePanel({
         <h2>Challenge Mode</h2>
       </div>
 
-      <label className="param-field">
-        <span>Active Challenge</span>
-        <select
-          value={selectedChallengeId}
-          onChange={(event) => onSelectChallenge(event.target.value)}
-        >
-          {challenges.map((challenge) => (
-            <option key={challenge.id} value={challenge.id}>
-              {formatDifficultyBadge(challenge.difficulty)}{challenge.title}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="content-filter-row">
+        <label className="param-field">
+          <span>Group</span>
+          <select
+            value={activeGroup}
+            onChange={(event) => {
+              const nextGroup = event.target.value;
+              const nextChallenge = challenges.find(
+                (challenge) => (challenge.group ?? 'Other') === nextGroup,
+              );
+              if (nextChallenge && nextChallenge.id !== selectedChallengeId) {
+                onSelectChallenge(nextChallenge.id);
+              }
+            }}
+          >
+            {challengeGroups.map((group) => (
+              <option key={group} value={group}>
+                {group}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="param-field">
+          <span>Active Challenge</span>
+          <select
+            value={selectedChallengeId}
+            onChange={(event) => onSelectChallenge(event.target.value)}
+          >
+            {visibleChallenges.map((challenge) => (
+              <option key={challenge.id} value={challenge.id}>
+                {formatDifficultyBadge(challenge.difficulty)}{challenge.title}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       {selectedChallenge ? (
         <>

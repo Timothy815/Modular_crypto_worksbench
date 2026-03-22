@@ -158,6 +158,11 @@ export function WorkbenchPanel({
   const [pendingConnection, setPendingConnection] =
     useState<PendingConnection | null>(null);
   const [connectionFeedback, setConnectionFeedback] = useState<string | null>(null);
+  const projectGroups = useMemo(
+    () => [...new Set(projects.map((project) => project.group ?? 'Other'))],
+    [projects],
+  );
+  const activeProjectGroup = activeProject.group ?? 'Other';
 
   const canvasWidth = Math.max(
     980,
@@ -166,6 +171,11 @@ export function WorkbenchPanel({
   const canvasHeight = Math.max(
     360,
     ...Object.values(layout).map((position) => position.y + 140),
+  );
+
+  const visibleProjects = useMemo(
+    () => projects.filter((project) => (project.group ?? 'Other') === activeProjectGroup),
+    [activeProjectGroup, projects],
   );
 
   useEffect(() => {
@@ -368,12 +378,33 @@ export function WorkbenchPanel({
       {!isCompositeEditor ? (
         <div className="project-selector-row">
           <label className="project-selector">
+            <span className="meta-label">Group</span>
+            <select
+              value={activeProjectGroup}
+              onChange={(event) => {
+                const nextGroup = event.target.value;
+                const firstProject = projects.find(
+                  (project) => (project.group ?? 'Other') === nextGroup,
+                );
+                if (firstProject && firstProject.id !== activeProject.id) {
+                  onSwitchProject(firstProject.id);
+                }
+              }}
+            >
+              {projectGroups.map((group) => (
+                <option key={group} value={group}>
+                  {group}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="project-selector">
             <span className="meta-label">Demo Graph</span>
             <select
               value={activeProject.id}
               onChange={(event) => onSwitchProject(event.target.value)}
             >
-              {projects.map((project) => (
+              {visibleProjects.map((project) => (
                 <option key={project.id} value={project.id}>
                   {project.name}
                 </option>
