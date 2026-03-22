@@ -14,6 +14,10 @@ export const SymbolToBits: ModuleDef = {
       throw new Error('SymbolToBits expects a symbol signal');
     }
 
+    if (signal.value.length !== 1) {
+      throw new Error(`SymbolToBits expects exactly one symbol, received "${signal.value}"`);
+    }
+
     const index = ALPHABET.indexOf(signal.value.toUpperCase());
     if (index === -1) {
       throw new Error(`SymbolToBits: "${signal.value}" is not in the alphabet`);

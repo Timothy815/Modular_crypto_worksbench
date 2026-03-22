@@ -75,6 +75,12 @@ describe('SymbolToBits', () => {
       SymbolToBits.evaluate({ in: { type: 'symbol', value: '3' } }, {}),
     ).toThrow();
   });
+
+  it('throws on multi-character input', () => {
+    expect(() =>
+      SymbolToBits.evaluate({ in: { type: 'symbol', value: 'AB' } }, {}),
+    ).toThrow();
+  });
 });
 
 describe('BitsToSymbol', () => {
