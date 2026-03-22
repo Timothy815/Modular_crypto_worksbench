@@ -10,6 +10,7 @@ import { Reflector } from './reflector';
 import { Permutation } from './permutation';
 import { BitShifter } from './bit-shifter';
 import { LFSR } from './lfsr';
+import { SBox } from './s-box';
 import type { Signal } from '../types';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -245,6 +246,42 @@ describe('LFSR', () => {
   it('throws when a tap index is outside the register width', () => {
     expect(() =>
       LFSR.evaluate({}, { seed: [1, 0, 1], taps: '0,4', outputLength: 4 }),
+    ).toThrow();
+  });
+});
+
+describe('SBox', () => {
+  it('substitutes a single nibble through the configured table', () => {
+    const result = SBox.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 0] } },
+      { table: '14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [0, 1, 1, 0] });
+  });
+
+  it('substitutes multiple nibbles in one bit stream', () => {
+    const result = SBox.evaluate(
+      { in: { type: 'bits', value: [0, 0, 0, 1, 1, 1, 1, 1] } },
+      { table: '14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [0, 1, 0, 0, 0, 1, 1, 1] });
+  });
+
+  it('throws when the input width is not a multiple of four', () => {
+    expect(() =>
+      SBox.evaluate(
+        { in: { type: 'bits', value: [1, 0, 1] } },
+        { table: '14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7' },
+      ),
+    ).toThrow();
+  });
+
+  it('throws when the table is not a full 16-entry permutation', () => {
+    expect(() =>
+      SBox.evaluate(
+        { in: { type: 'bits', value: [1, 0, 1, 0] } },
+        { table: '0,1,2,3' },
+      ),
     ).toThrow();
   });
 });

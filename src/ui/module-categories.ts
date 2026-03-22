@@ -13,6 +13,7 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   XOR: 'operator',
   Permutation: 'operator',
   BitShifter: 'operator',
+  SBox: 'operator',
   SymbolToBits: 'bridge',
   BitsToSymbol: 'bridge',
   Output: 'sink',
