@@ -267,7 +267,7 @@ describe('SBox', () => {
     expect(result.out).toEqual({ type: 'bits', value: [0, 1, 0, 0, 0, 1, 1, 1] });
   });
 
-  it('throws when the input width is not a multiple of four', () => {
+  it('throws when the input width is not a multiple of the table chunk width', () => {
     expect(() =>
       SBox.evaluate(
         { in: { type: 'bits', value: [1, 0, 1] } },
@@ -276,11 +276,29 @@ describe('SBox', () => {
     ).toThrow();
   });
 
-  it('throws when the table is not a full 16-entry permutation', () => {
+  it('supports 8-bit substitution tables', () => {
+    const identityTable = Array.from({ length: 256 }, (_, index) => index).join(',');
+    const result = SBox.evaluate(
+      {
+        in: {
+          type: 'bits',
+          value: [1, 0, 1, 0, 1, 1, 0, 0],
+        },
+      },
+      { table: identityTable },
+    );
+
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [1, 0, 1, 0, 1, 1, 0, 0],
+    });
+  });
+
+  it('throws when the table length is not a power of two', () => {
     expect(() =>
       SBox.evaluate(
         { in: { type: 'bits', value: [1, 0, 1, 0] } },
-        { table: '0,1,2,3' },
+        { table: '0,1,2' },
       ),
     ).toThrow();
   });

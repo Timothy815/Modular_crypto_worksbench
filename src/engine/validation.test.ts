@@ -184,7 +184,7 @@ describe('validateProject', () => {
 
   it('rejects malformed s-box tables before execution', () => {
     const project: Project = {
-      modules: [{ id: 'sbox-1', defId: 'SBox', params: { table: '0,1,2,3' } }],
+      modules: [{ id: 'sbox-1', defId: 'SBox', params: { table: '0,1,2' } }],
       connections: [],
     };
 
@@ -195,7 +195,7 @@ describe('validateProject', () => {
       result.issues.some(
         (issue) =>
           issue.moduleId === 'sbox-1' &&
-          issue.message.includes('SBox table must contain exactly 16 entries'),
+          issue.message.includes('SBox table length must be a power of two'),
       ),
     ).toBe(true);
   });

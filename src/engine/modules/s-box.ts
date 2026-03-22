@@ -1,5 +1,14 @@
 import type { ModuleDef } from '../types';
 
+function inferSBoxWidth(entryCount: number): number {
+  const width = Math.log2(entryCount);
+  if (!Number.isInteger(width) || width < 1) {
+    throw new Error('SBox table length must be a power of two');
+  }
+
+  return width;
+}
+
 export function parseSBoxTable(value: unknown): number[] {
   if (typeof value !== 'string') {
     throw new Error('SBox table must be a comma-separated value list');
@@ -10,13 +19,12 @@ export function parseSBoxTable(value: unknown): number[] {
     .map((part) => part.trim())
     .filter((part) => part.length > 0);
 
-  if (parts.length !== 16) {
-    throw new Error('SBox table must contain exactly 16 entries');
-  }
+  const width = inferSBoxWidth(parts.length);
+  const maxEntry = (1 << width) - 1;
 
   const entries = parts.map((part) => Number(part));
-  if (entries.some((entry) => !Number.isInteger(entry) || entry < 0 || entry > 15)) {
-    throw new Error('SBox entries must be integers between 0 and 15');
+  if (entries.some((entry) => !Number.isInteger(entry) || entry < 0 || entry > maxEntry)) {
+    throw new Error(`SBox entries must be integers between 0 and ${maxEntry}`);
   }
 
   if (new Set(entries).size !== entries.length) {
@@ -59,7 +67,7 @@ export const SBox: ModuleDef = {
       kind: 'string',
       defaultValue: '14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7',
       required: true,
-      description: 'Sixteen comma-separated nibble outputs (0-15) used for 4-bit substitution',
+      description: 'Comma-separated permutation table. 16 entries = 4-bit S-Box, 256 entries = 8-bit S-Box.',
     },
   },
   evaluate: (inputs, params) => {
@@ -72,17 +80,19 @@ export const SBox: ModuleDef = {
       return { out: { type: 'bits', value: [] } };
     }
 
-    if (signal.value.length % 4 !== 0) {
-      throw new Error('SBox input width must be a multiple of 4 bits');
+    const table = parseSBoxTable(params.table);
+    const width = inferSBoxWidth(table.length);
+
+    if (signal.value.length % width !== 0) {
+      throw new Error(`SBox input width must be a multiple of ${width} bits`);
     }
 
-    const table = parseSBoxTable(params.table);
     const output: number[] = [];
 
-    for (let index = 0; index < signal.value.length; index += 4) {
-      const chunk = signal.value.slice(index, index + 4);
+    for (let index = 0; index < signal.value.length; index += width) {
+      const chunk = signal.value.slice(index, index + width);
       const substituted = table[bitsToNumber(chunk)];
-      output.push(...numberToBits(substituted, 4));
+      output.push(...numberToBits(substituted, width));
     }
 
     return {

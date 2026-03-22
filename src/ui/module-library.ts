@@ -82,9 +82,9 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
   },
   SBox: {
     sectionId: 'transforms',
-    purpose: 'Substitutes each 4-bit nibble through a lookup table.',
-    detail: 'A nonlinear substitution block that maps each nibble to a different nibble value.',
-    searchTerms: ['sbox', 's-box', 'substitute', 'nibble', 'nonlinear', 'bits'],
+    purpose: 'Substitutes each fixed-width bit chunk through a lookup table.',
+    detail: 'A nonlinear substitution block. A 16-entry table gives 4-bit substitution, while a 256-entry table gives 8-bit substitution.',
+    searchTerms: ['sbox', 's-box', 'substitute', 'nibble', 'byte', 'nonlinear', 'bits'],
   },
   LFSR: {
     sectionId: 'state-keystream',
