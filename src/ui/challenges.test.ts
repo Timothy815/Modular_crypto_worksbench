@@ -20,6 +20,7 @@ function cloneProject(project: Project): Project {
 describe('evaluateChallengeAttempt', () => {
   const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
   const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
+  const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
   const keystreamProject = demoProjects.find((project) => project.id === 'keystream');
   const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 
@@ -28,6 +29,9 @@ describe('evaluateChallengeAttempt', () => {
   }
   if (!byteRoundProject) {
     throw new Error('Expected byte-round project.');
+  }
+  if (!hexRoundProject) {
+    throw new Error('Expected hex-round project.');
   }
   if (!keystreamProject) {
     throw new Error('Expected keystream project.');
@@ -156,6 +160,31 @@ describe('evaluateChallengeAttempt', () => {
     expect(result.comparison?.baselineOutput.formatted).toBe('[1, 1, 0, 0, 1, 0, 1, 0]');
     expect(result.comparison?.variantOutput.formatted).toBe('[0, 1, 0, 1, 0, 0, 1, 1]');
     expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('permute');
+  });
+
+  it('returns failure when a hex-round machine starts from the wrong input vector', () => {
+    const currentProject = cloneProject(hexRoundProject.project);
+    const sourceModule = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'source');
+    if (!sourceModule) {
+      throw new Error('Expected hex source module in hex-round project.');
+    }
+    sourceModule.params.value = '3A';
+
+    const challenge: GuidedChallenge = {
+      id: 'hex-round-failure',
+      title: 'Hex Round Failure',
+      prompt: 'Repair the hex input vector.',
+      startingProject: cloneProject(currentProject),
+      targetProject: cloneProject(hexRoundProject.project),
+      success: { kind: 'output-match-target' },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, V1_REGISTRY);
+
+    expect(result.status).toBe('failure');
+    expect(result.reason).toBe('diverged-from-target');
+    expect(result.comparison?.outputsMatch).toBe(false);
+    expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('source');
   });
 
   it('returns success when a sequential project matches the target ticked output stream', () => {

@@ -7,6 +7,7 @@ function cloneProject<T>(value: T): T {
 
 const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
 const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
+const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
 const keystreamProject = demoProjects.find((project) => project.id === 'keystream');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 
@@ -15,6 +16,9 @@ if (!bridgeProject) {
 }
 if (!byteRoundProject) {
   throw new Error('Expected byte-round demo project to seed starter challenges.');
+}
+if (!hexRoundProject) {
+  throw new Error('Expected hex-round demo project to seed starter challenges.');
 }
 if (!keystreamProject) {
   throw new Error('Expected keystream demo project to seed starter challenges.');
@@ -27,6 +31,8 @@ const fixedBridgeTarget = cloneProject(bridgeProject.project);
 const brokenBridgeStart = cloneProject(bridgeProject.project);
 const byteRoundTarget = cloneProject(byteRoundProject.project);
 const brokenByteRoundStart = cloneProject(byteRoundProject.project);
+const hexRoundTarget = cloneProject(hexRoundProject.project);
+const brokenHexRoundStart = cloneProject(hexRoundProject.project);
 const keystreamTarget = cloneProject(keystreamProject.project);
 const brokenKeystreamStart = cloneProject(keystreamProject.project);
 const sequentialTarget = cloneProject(sequentialProject.project);
@@ -46,6 +52,14 @@ if (!brokenPermutationModule) {
   throw new Error('Expected byte-round demo project to contain a permutation module.');
 }
 brokenPermutationModule.params.order = '0,1,2,3,4,5,6,7';
+
+const brokenHexSource = brokenHexRoundStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'source',
+);
+if (!brokenHexSource) {
+  throw new Error('Expected hex-round demo project to contain a hex source.');
+}
+brokenHexSource.params.value = '3A';
 
 const brokenKeystreamLfsr = brokenKeystreamStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'lfsr',
@@ -107,6 +121,25 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The S-Box table is already correct in this lab.',
       'Focus on the permutation stage after substitution.',
       'The target round reverses the bit order after the byte leaves the S-Box.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-hex-vector',
+    title: 'Repair the Hex Vector',
+    difficulty: 'beginner',
+    prompt:
+      'The byte round itself is wired correctly, but the injected hex test vector is wrong. Restore the input value so the final hex output matches the captured reference machine again.',
+    startingProject: brokenHexRoundStart,
+    startingLayout: cloneProject(hexRoundProject.layout),
+    targetProject: hexRoundTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The problem is at the very start of the graph, not in the S-Box or permutation.',
+      'HexSource should inject the same byte the reference machine begins with.',
+      'Compare the current source value against the expected output pattern.',
     ],
   },
   {
