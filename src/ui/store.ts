@@ -477,6 +477,12 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           ...state.selectedModuleIdsByProject,
           [action.projectId]: nextProject.modules[0]?.id ? [nextProject.modules[0].id] : [],
         },
+        probedModuleIdsByProject: {
+          ...state.probedModuleIdsByProject,
+          [action.projectId]: (state.probedModuleIdsByProject[action.projectId] ?? []).filter(
+            (id) => id !== action.moduleId,
+          ),
+        },
         paramDrafts: nextDrafts,
       };
     }

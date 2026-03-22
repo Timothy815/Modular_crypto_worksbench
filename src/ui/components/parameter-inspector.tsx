@@ -239,6 +239,7 @@ export function ParameterInspector({
             <button
               type="button"
               className="trace-mode-button"
+              aria-label="Clear all signal probes"
               onClick={onClearProbes}
             >
               Clear All
@@ -256,6 +257,7 @@ export function ParameterInspector({
                     <button
                       type="button"
                       className="probe-unpin-button"
+                      aria-label={`Unpin signal probe for ${probedId}`}
                       title="Unpin"
                       onClick={() => onToggleProbe(probedId)}
                     >

@@ -1010,6 +1010,7 @@
   border-radius: 10px;
   border: 1px solid var(--probe-soft);
   background: var(--probe-bg);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--probe-strong) 12%, transparent);
 }
 
 .probe-card p {

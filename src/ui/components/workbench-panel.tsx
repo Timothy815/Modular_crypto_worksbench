@@ -573,6 +573,11 @@ export function WorkbenchPanel({
                           ? 'graph-node-probe-button probed'
                           : 'graph-node-probe-button'
                       }
+                      aria-label={
+                        probedModuleIds.includes(moduleInstance.id)
+                          ? `Unpin signal probe for ${moduleInstance.id}`
+                          : `Pin signal probe for ${moduleInstance.id}`
+                      }
                       title={
                         probedModuleIds.includes(moduleInstance.id)
                           ? 'Unpin signal probe'
