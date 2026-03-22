@@ -375,56 +375,35 @@ function App() {
 
   return (
     <main className="app-shell">
-      <section className="hero-panel">
-        <p className="eyebrow">Modular Cryptography Workbench</p>
-        <h1>Move from engine milestone to visible workbench.</h1>
-        <p className="lede">
-          This first UI slice uses the real engine to render a minimal workbench:
-          primitive palette, demo graph, and execution trace. It is a stepping
-          stone toward the node editor, not the final editor itself.
-        </p>
+      <header className="app-header">
+        <div className="app-header-copy">
+          <p className="eyebrow">Modular Cryptography Workbench</p>
+          <h1>Build, analyze, break, and teach cryptographic machines.</h1>
+          <p className="lede">
+            A visual workbench for explicit cryptography across symbols, bits, composites,
+            challenges, and guided tutorials.
+          </p>
+        </div>
 
-        <div className="hero-actions">
-          <a className="primary-link" href="./UI-KICKOFF.md">
-            UI kickoff notes
+        <nav className="app-header-nav" aria-label="Workbench controls">
+          <a className="nav-link-chip" href="./UI-KICKOFF.md">
+            Notes
           </a>
           <a
-            className="secondary-link"
+            className="nav-link-chip"
             href="https://github.com/Timothy815/Modular_crypto_worksbench"
             target="_blank"
             rel="noreferrer"
           >
             Repository
           </a>
-        </div>
-
-        <div className="layout-actions">
           <button
             type="button"
             className={theme === 'dark' ? 'layout-chip active' : 'layout-chip'}
             onClick={() => setTheme((currentTheme) => (currentTheme === 'light' ? 'dark' : 'light'))}
           >
-            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+            {theme === 'dark' ? 'Light' : 'Dark'}
           </button>
-          <button
-            type="button"
-            className={state.showPalette ? 'layout-chip active' : 'layout-chip'}
-            onClick={() => dispatch({ type: 'togglePalette' })}
-          >
-            {state.showPalette ? 'Hide Palette' : 'Show Palette'}
-          </button>
-          <button
-            type="button"
-            className={state.showInspector ? 'layout-chip active' : 'layout-chip'}
-            onClick={() => dispatch({ type: 'toggleInspector' })}
-          >
-            {state.showInspector ? 'Hide Inspector' : 'Show Inspector'}
-          </button>
-        </div>
-      </section>
-
-      <section className="workbench-shell">
-        <div className="workbench-shell-toolbar">
           <button
             type="button"
             className={state.showPalette ? 'layout-chip active' : 'layout-chip'}
@@ -435,7 +414,7 @@ function App() {
           {state.showPalette ? (
             <button
               type="button"
-              className="layout-chip"
+              className={paletteViewMode === 'expanded' ? 'layout-chip active' : 'layout-chip'}
               onClick={() =>
                 setPaletteViewMode((currentMode) =>
                   currentMode === 'expanded' ? 'compact' : 'expanded',
@@ -452,7 +431,10 @@ function App() {
           >
             {state.showInspector ? 'Hide Inspector' : 'Show Inspector'}
           </button>
-        </div>
+        </nav>
+      </header>
+
+      <section className="workbench-shell">
         <div
           className={
             'workbench-stage' +
