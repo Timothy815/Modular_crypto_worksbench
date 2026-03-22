@@ -7,6 +7,7 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   TextInput: 'source',
   KeyInput: 'source',
   BitSource: 'source',
+  HexSource: 'source',
   LFSR: 'source',
   Clock: 'source',
   Rotor: 'operator',
@@ -17,6 +18,7 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   SBox: 'operator',
   SymbolToBits: 'bridge',
   BitsToSymbol: 'bridge',
+  BitsToHex: 'bridge',
   Output: 'sink',
   BitOutput: 'sink',
 };

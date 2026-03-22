@@ -117,6 +117,40 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'hex-round',
+    name: 'Hex Byte Round',
+    summary: 'A byte-oriented round that starts from hex, stays in bits for substitution/permutation, and returns to hex.',
+    pipeline: 'HexSource -> SBox(256) -> Permutation -> BitsToHex -> Output',
+    project: {
+      modules: [
+        { id: 'source', defId: 'HexSource', params: { value: 'A3' } },
+        {
+          id: 'sbox',
+          defId: 'SBox',
+          params: {
+            table: Array.from({ length: 256 }, (_, index) => 255 - index).join(','),
+          },
+        },
+        { id: 'permute', defId: 'Permutation', params: { order: '7,6,5,4,3,2,1,0' } },
+        { id: 'encode', defId: 'BitsToHex', params: {} },
+        { id: 'output', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'sbox', port: 'in' } },
+        { from: { moduleId: 'sbox', port: 'out' }, to: { moduleId: 'permute', port: 'in' } },
+        { from: { moduleId: 'permute', port: 'out' }, to: { moduleId: 'encode', port: 'in' } },
+        { from: { moduleId: 'encode', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      source: { x: 48, y: 156 },
+      sbox: { x: 252, y: 156 },
+      permute: { x: 456, y: 156 },
+      encode: { x: 660, y: 156 },
+      output: { x: 864, y: 156 },
+    },
+  },
+  {
     id: 'sequential',
     name: 'Sequential Heart',
     summary: 'A clocked keystream pipeline that turns state changes into a symbol stream over time.',

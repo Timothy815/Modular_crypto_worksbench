@@ -1,0 +1,48 @@
+import type { ModuleDef } from '../types';
+
+function sanitizeHex(value: unknown): string {
+  if (typeof value !== 'string') {
+    throw new Error('HexSource requires a hex string');
+  }
+
+  const normalized = value.trim().replace(/\s+/g, '').toUpperCase();
+  if (normalized.length === 0) {
+    return '';
+  }
+
+  if (!/^[0-9A-F]+$/.test(normalized)) {
+    throw new Error('HexSource accepts only hexadecimal characters 0-9 and A-F');
+  }
+
+  return normalized;
+}
+
+function hexToBits(value: string): number[] {
+  return value.split('').flatMap((digit) => {
+    const nibble = Number.parseInt(digit, 16);
+    return [3, 2, 1, 0].map((shift) => (nibble >> shift) & 1);
+  });
+}
+
+export const HexSource: ModuleDef = {
+  id: 'HexSource',
+  name: 'Hex Source',
+  inputs: [],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {
+    value: {
+      key: 'value',
+      label: 'Hex Value',
+      kind: 'string',
+      defaultValue: 'A3',
+      required: true,
+      description: 'Hexadecimal input such as A3, 0F, or DEADBEEF',
+    },
+  },
+  evaluate: (_inputs, params) => {
+    const value = sanitizeHex(params.value);
+    return {
+      out: { type: 'bits', value: hexToBits(value) },
+    };
+  },
+};

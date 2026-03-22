@@ -44,6 +44,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this as a simple round key or fixed mask when experimenting in the bit domain.',
     searchTerms: ['bit', 'source', 'key', 'stream', 'bits'],
   },
+  HexSource: {
+    sectionId: 'inputs-outputs',
+    purpose: 'Emits a hexadecimal value directly into the bit domain.',
+    detail: 'Use this for byte-oriented labs when you want to paste hex test vectors instead of typing raw bits.',
+    searchTerms: ['hex', 'source', 'byte', 'vector', 'bits', 'input'],
+  },
   Output: {
     sectionId: 'inputs-outputs',
     purpose: 'Collects the final signal at the end of a graph.',
@@ -109,6 +115,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Converts a 5-bit value back into a letter symbol.',
     detail: 'Use this to return from bit-based transforms back into a symbolic result.',
     searchTerms: ['bridge', 'convert', 'decode', 'bits', 'symbol'],
+  },
+  BitsToHex: {
+    sectionId: 'bridges',
+    purpose: 'Converts a bit signal into hexadecimal text.',
+    detail: 'Use this when a bit-domain machine should end as hex so students can compare byte-oriented results directly.',
+    searchTerms: ['bridge', 'hex', 'encode', 'bits', 'byte', 'output'],
   },
 };
 
