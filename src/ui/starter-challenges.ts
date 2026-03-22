@@ -6,6 +6,7 @@ function cloneProject<T>(value: T): T {
 }
 
 const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
+const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
 const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
 const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
 const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
@@ -15,6 +16,9 @@ const sequentialProject = demoProjects.find((project) => project.id === 'sequent
 
 if (!bridgeProject) {
   throw new Error('Expected bridge demo project to seed starter challenges.');
+}
+if (!baudotProject) {
+  throw new Error('Expected baudot-bridge demo project to seed starter challenges.');
 }
 if (!byteRoundProject) {
   throw new Error('Expected byte-round demo project to seed starter challenges.');
@@ -37,6 +41,8 @@ if (!sequentialProject) {
 
 const fixedBridgeTarget = cloneProject(bridgeProject.project);
 const brokenBridgeStart = cloneProject(bridgeProject.project);
+const baudotTarget = cloneProject(baudotProject.project);
+const brokenBaudotStart = cloneProject(baudotProject.project);
 const byteRoundTarget = cloneProject(byteRoundProject.project);
 const brokenByteRoundStart = cloneProject(byteRoundProject.project);
 const hexRoundTarget = cloneProject(hexRoundProject.project);
@@ -56,6 +62,14 @@ if (!brokenKeyModule) {
   throw new Error('Expected bridge demo project to contain a key module.');
 }
 brokenKeyModule.params.stream = [0, 0, 0, 0, 0];
+
+const brokenBaudotSource = brokenBaudotStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'source',
+);
+if (!brokenBaudotSource) {
+  throw new Error('Expected baudot-bridge demo project to contain a baudot source.');
+}
+brokenBaudotSource.params.value = 'BEST';
 
 const brokenPermutationModule = brokenByteRoundStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'permute',
@@ -131,6 +145,26 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     hints: [
       'The problem is on the bit-domain side of the bridge pipeline, not the text input side.',
       'Compare the BitSource stream against the target behavior and follow it through XOR.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-baudot-source',
+    title: 'Repair the Baudot Source',
+    group: 'Historical Bridges',
+    difficulty: 'beginner',
+    prompt:
+      'The teleprinter bridge is wired correctly, but the Baudot source text was changed. Restore the source so the decoded telegraph output matches the captured reference machine again.',
+    startingProject: brokenBaudotStart,
+    startingLayout: cloneProject(baudotProject.layout),
+    targetProject: baudotTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The bridge and output modules are already correct in this lab.',
+      'Focus on the very first teleprinter text entering the graph.',
+      'A one-letter change in the Baudot source changes the decoded result immediately.',
     ],
   },
   {

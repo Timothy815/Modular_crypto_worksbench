@@ -19,6 +19,7 @@ function cloneProject(project: Project): Project {
 
 describe('evaluateChallengeAttempt', () => {
   const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
+  const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
   const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
   const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
   const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
@@ -28,6 +29,9 @@ describe('evaluateChallengeAttempt', () => {
 
   if (!bridgeProject) {
     throw new Error('Expected bridge demo project.');
+  }
+  if (!baudotProject) {
+    throw new Error('Expected baudot-bridge project.');
   }
   if (!byteRoundProject) {
     throw new Error('Expected byte-round project.');
@@ -139,6 +143,31 @@ describe('evaluateChallengeAttempt', () => {
     expect(result.reason).toBe('current-project-runtime-error');
     expect(result.comparison).toBeNull();
     expect(result.currentRuntimeError).toContain('SymbolToBits');
+  });
+
+  it('returns failure when a baudot bridge starts from the wrong source text', () => {
+    const currentProject = cloneProject(baudotProject.project);
+    const sourceModule = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'source');
+    if (!sourceModule) {
+      throw new Error('Expected baudot source module in baudot project.');
+    }
+    sourceModule.params.value = 'BEST';
+
+    const challenge: GuidedChallenge = {
+      id: 'baudot-failure',
+      title: 'Baudot Failure',
+      prompt: 'Repair the teleprinter source.',
+      startingProject: cloneProject(currentProject),
+      targetProject: cloneProject(baudotProject.project),
+      success: { kind: 'output-match-target' },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, V1_REGISTRY);
+
+    expect(result.status).toBe('failure');
+    expect(result.reason).toBe('diverged-from-target');
+    expect(result.comparison?.outputsMatch).toBe(false);
+    expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('source');
   });
 
   it('returns failure when a bit-domain round diverges from the target output bits', () => {
