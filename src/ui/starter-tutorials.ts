@@ -47,6 +47,43 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
   },
   {
     version: 1,
+    id: 'byte-round',
+    title: 'The Byte Round',
+    summary: 'Learn how an 8-bit S-Box and permutation transform a byte without leaving the bit domain.',
+    projectId: 'byte-round',
+    steps: [
+      {
+        id: 'byte-source',
+        title: 'Start With One Byte',
+        body: 'BitSource emits a full 8-bit value into the round. In this demo the machine stays entirely in the bit domain from start to finish.',
+        focusModuleId: 'source',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'byte-sbox',
+        title: 'Substitute The Byte',
+        body: 'SBox groups the incoming bits into one 8-bit chunk because its table has 256 entries. This is the same substitution pattern used by real byte-oriented ciphers.',
+        focusModuleId: 'sbox',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'byte-permute',
+        title: 'Reorder The Bits',
+        body: 'Permutation then rewires the substituted byte by index. In this round the order is reversed so students can inspect how position changes without changing the bit values themselves.',
+        focusModuleId: 'permute',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'byte-output',
+        title: 'End In Bits',
+        body: 'BitOutput marks the terminal sink for a bit-domain machine. Use the Analyze view and challenge workflow here without forcing the round back into symbols.',
+        focusModuleId: 'output',
+        targetStepIndex: 3,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'sequential-heart',
     title: 'The Sequential Heart',
     summary: 'Learn how a Clock drives an LFSR one tick at a time to produce a running symbol stream.',
