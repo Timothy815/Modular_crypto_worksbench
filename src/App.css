@@ -103,24 +103,80 @@
   color: var(--danger-text);
 }
 
-.workbench-grid {
+.workbench-shell {
+  position: relative;
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr) 360px;
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr);
   margin-top: 24px;
   align-items: start;
 }
 
-.workbench-grid-no-inspector {
-  grid-template-columns: 320px minmax(0, 1fr);
+.workbench-shell-toolbar {
+  position: sticky;
+  top: 14px;
+  z-index: 24;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface-panel) 92%, transparent);
+  backdrop-filter: blur(12px);
 }
 
-.workbench-grid-no-palette {
-  grid-template-columns: minmax(0, 1fr) 360px;
+.workbench-stage,
+.workbench-dock {
+  grid-column: 1;
+  grid-row: 2;
 }
 
-.workbench-grid-workbench-only {
-  grid-template-columns: minmax(0, 1fr);
+.workbench-stage {
+  min-width: 0;
+}
+
+.workbench-stage-has-left {
+  padding-left: 320px;
+}
+
+.workbench-stage-has-left.workbench-stage-tools-compact {
+  padding-left: 232px;
+}
+
+.workbench-stage-has-right {
+  padding-right: 360px;
+}
+
+.workbench-dock {
+  position: sticky;
+  top: 84px;
+  z-index: 18;
+  pointer-events: none;
+}
+
+.workbench-dock > * {
+  pointer-events: auto;
+}
+
+.workbench-dock-left {
+  justify-self: start;
+  width: min(320px, calc(100vw - 48px));
+}
+
+.workbench-dock-left.workbench-dock-compact {
+  width: min(232px, calc(100vw - 48px));
+}
+
+.workbench-dock-right {
+  justify-self: end;
+  width: min(360px, calc(100vw - 48px));
+}
+
+.palette-panel,
+.inspector-panel {
+  max-height: calc(100vh - 110px);
+  overflow: auto;
 }
 
 .panel {
@@ -212,7 +268,26 @@
 }
 
 .primitive-def-id {
+  margin: 4px 0 0;
   overflow-wrap: anywhere;
+}
+
+.primitive-purpose {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.palette-panel-compact .primitive-purpose,
+.palette-panel-compact .primitive-section-copy {
+  display: none;
+}
+
+.palette-panel-compact .primitive-card {
+  padding: 12px 14px;
+}
+
+.palette-panel-compact .primitive-main {
+  gap: 10px;
 }
 
 .primitive-actions {
@@ -410,6 +485,7 @@
 
 .palette-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
 }
@@ -434,6 +510,43 @@
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
+}
+
+.palette-search {
+  display: grid;
+  gap: 6px;
+  margin: 16px 0 14px;
+}
+
+.palette-search input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-button);
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--ink);
+}
+
+.primitive-sections {
+  display: grid;
+  gap: 16px;
+}
+
+.primitive-section {
+  display: grid;
+  gap: 10px;
+}
+
+.primitive-section-head {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.primitive-section-copy {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted);
 }
 
 .project-summary {
@@ -1085,18 +1198,28 @@
 }
 
 @media (max-width: 1320px) {
-  .workbench-grid {
-    grid-template-columns: 300px minmax(0, 1fr);
+  .workbench-stage-has-left {
+    padding-left: 280px;
   }
 
-  .workbench-grid-no-palette,
-  .workbench-grid-no-inspector,
-  .workbench-grid-workbench-only {
-    grid-template-columns: minmax(0, 1fr);
+  .workbench-stage-has-left.workbench-stage-tools-compact {
+    padding-left: 216px;
   }
 
-  .inspector-panel {
-    grid-column: 1 / -1;
+  .workbench-stage-has-right {
+    padding-right: 320px;
+  }
+
+  .workbench-dock-left {
+    width: min(280px, calc(100vw - 48px));
+  }
+
+  .workbench-dock-left.workbench-dock-compact {
+    width: min(216px, calc(100vw - 48px));
+  }
+
+  .workbench-dock-right {
+    width: min(320px, calc(100vw - 48px));
   }
 }
 
@@ -1287,8 +1410,31 @@
     border-radius: 22px;
   }
 
-  .workbench-grid {
-    grid-template-columns: 1fr;
+  .workbench-shell-toolbar {
+    position: static;
+  }
+
+  .workbench-stage-has-left,
+  .workbench-stage-has-left.workbench-stage-tools-compact,
+  .workbench-stage-has-right {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .workbench-dock {
+    position: static;
+    grid-row: auto;
+    width: 100%;
+    pointer-events: auto;
+  }
+
+  .workbench-stage,
+  .workbench-dock {
+    grid-column: auto;
+  }
+
+  .workbench-shell {
+    gap: 16px;
   }
 
   .graph-meta {
