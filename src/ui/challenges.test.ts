@@ -21,6 +21,7 @@ describe('evaluateChallengeAttempt', () => {
   const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
   const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
   const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
+  const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
   const keystreamProject = demoProjects.find((project) => project.id === 'keystream');
   const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 
@@ -32,6 +33,9 @@ describe('evaluateChallengeAttempt', () => {
   }
   if (!hexRoundProject) {
     throw new Error('Expected hex-round project.');
+  }
+  if (!asciiRoundProject) {
+    throw new Error('Expected ascii-round project.');
   }
   if (!keystreamProject) {
     throw new Error('Expected keystream project.');
@@ -176,6 +180,31 @@ describe('evaluateChallengeAttempt', () => {
       prompt: 'Repair the hex input vector.',
       startingProject: cloneProject(currentProject),
       targetProject: cloneProject(hexRoundProject.project),
+      success: { kind: 'output-match-target' },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, V1_REGISTRY);
+
+    expect(result.status).toBe('failure');
+    expect(result.reason).toBe('diverged-from-target');
+    expect(result.comparison?.outputsMatch).toBe(false);
+    expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('source');
+  });
+
+  it('returns failure when an ascii-round machine starts from the wrong source character', () => {
+    const currentProject = cloneProject(asciiRoundProject.project);
+    const sourceModule = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'source');
+    if (!sourceModule) {
+      throw new Error('Expected ASCII source module in ascii-round project.');
+    }
+    sourceModule.params.value = 'C';
+
+    const challenge: GuidedChallenge = {
+      id: 'ascii-round-failure',
+      title: 'ASCII Round Failure',
+      prompt: 'Repair the ASCII input.',
+      startingProject: cloneProject(currentProject),
+      targetProject: cloneProject(asciiRoundProject.project),
       success: { kind: 'output-match-target' },
     };
 

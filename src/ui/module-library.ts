@@ -44,6 +44,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this as a simple round key or fixed mask when experimenting in the bit domain.',
     searchTerms: ['bit', 'source', 'key', 'stream', 'bits'],
   },
+  AsciiSource: {
+    sectionId: 'inputs-outputs',
+    purpose: 'Emits ASCII text directly into the bit domain as bytes.',
+    detail: 'Use this when a modern byte-oriented machine should begin from readable ASCII text instead of manually entered bits.',
+    searchTerms: ['ascii', 'source', 'text', 'byte', 'input', 'bits'],
+  },
   HexSource: {
     sectionId: 'inputs-outputs',
     purpose: 'Emits a hexadecimal value directly into the bit domain.',
@@ -109,6 +115,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Converts one letter symbol into a 5-bit representation.',
     detail: 'Use this when a symbolic pipeline needs to cross into bit-based transforms.',
     searchTerms: ['bridge', 'convert', 'encode', 'symbol', 'bits'],
+  },
+  BitsToAscii: {
+    sectionId: 'bridges',
+    purpose: 'Converts 8-bit bytes back into ASCII text.',
+    detail: 'Use this to return a byte-domain machine back to readable ASCII when the byte values stay within 7-bit ASCII range.',
+    searchTerms: ['bridge', 'ascii', 'decode', 'bits', 'byte', 'text'],
   },
   BitsToSymbol: {
     sectionId: 'bridges',

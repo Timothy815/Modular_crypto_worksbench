@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { TextInput } from './text-input';
 import { KeyInput } from './key-input';
 import { BitSource } from './bit-source';
+import { AsciiSource } from './ascii-source';
 import { HexSource } from './hex-source';
 import { SymbolToBits } from './symbol-to-bits';
+import { BitsToAscii } from './bits-to-ascii';
 import { BitsToSymbol } from './bits-to-symbol';
 import { BitsToHex } from './bits-to-hex';
 import { XOR } from './xor';
@@ -65,6 +67,20 @@ describe('HexSource', () => {
 
   it('throws on non-hex input', () => {
     expect(() => HexSource.evaluate({}, { value: 'G1' })).toThrow();
+  });
+});
+
+describe('AsciiSource', () => {
+  it('converts ASCII text into bytes of bits', () => {
+    const result = AsciiSource.evaluate({}, { value: 'AZ' });
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0],
+    });
+  });
+
+  it('throws on non-ASCII input', () => {
+    expect(() => AsciiSource.evaluate({}, { value: 'é' })).toThrow();
   });
 });
 
@@ -156,6 +172,31 @@ describe('BitsToHex', () => {
   it('throws if the input width is not divisible by 4', () => {
     expect(() =>
       BitsToHex.evaluate({ in: { type: 'bits', value: [1, 0, 1] } }, {}),
+    ).toThrow();
+  });
+});
+
+describe('BitsToAscii', () => {
+  it('converts bits into ASCII text', () => {
+    const result = BitsToAscii.evaluate(
+      { in: { type: 'bits', value: [0, 1, 0, 0, 0, 0, 0, 1] } },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'A' });
+  });
+
+  it('throws if the input width is not divisible by 8', () => {
+    expect(() =>
+      BitsToAscii.evaluate({ in: { type: 'bits', value: [0, 1, 0, 0] } }, {}),
+    ).toThrow();
+  });
+
+  it('throws on byte values outside 7-bit ASCII', () => {
+    expect(() =>
+      BitsToAscii.evaluate(
+        { in: { type: 'bits', value: [1, 0, 0, 0, 0, 0, 0, 0] } },
+        {},
+      ),
     ).toThrow();
   });
 });

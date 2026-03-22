@@ -2,8 +2,10 @@ import type { ModuleRegistry } from '../types';
 import { TextInput } from './text-input';
 import { KeyInput } from './key-input';
 import { BitSource } from './bit-source';
+import { AsciiSource } from './ascii-source';
 import { HexSource } from './hex-source';
 import { SymbolToBits } from './symbol-to-bits';
+import { BitsToAscii } from './bits-to-ascii';
 import { BitsToSymbol } from './bits-to-symbol';
 import { BitsToHex } from './bits-to-hex';
 import { XOR } from './xor';
@@ -21,8 +23,10 @@ export {
   TextInput,
   KeyInput,
   BitSource,
+  AsciiSource,
   HexSource,
   SymbolToBits,
+  BitsToAscii,
   BitsToSymbol,
   BitsToHex,
   XOR,
@@ -41,8 +45,10 @@ export const V1_REGISTRY: ModuleRegistry = {
   [TextInput.id]: TextInput,
   [KeyInput.id]: KeyInput,
   [BitSource.id]: BitSource,
+  [AsciiSource.id]: AsciiSource,
   [HexSource.id]: HexSource,
   [SymbolToBits.id]: SymbolToBits,
+  [BitsToAscii.id]: BitsToAscii,
   [BitsToSymbol.id]: BitsToSymbol,
   [BitsToHex.id]: BitsToHex,
   [XOR.id]: XOR,

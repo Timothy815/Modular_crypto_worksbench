@@ -8,6 +8,7 @@ function cloneProject<T>(value: T): T {
 const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
 const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
 const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
+const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
 const keystreamProject = demoProjects.find((project) => project.id === 'keystream');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 
@@ -19,6 +20,9 @@ if (!byteRoundProject) {
 }
 if (!hexRoundProject) {
   throw new Error('Expected hex-round demo project to seed starter challenges.');
+}
+if (!asciiRoundProject) {
+  throw new Error('Expected ascii-round demo project to seed starter challenges.');
 }
 if (!keystreamProject) {
   throw new Error('Expected keystream demo project to seed starter challenges.');
@@ -33,6 +37,8 @@ const byteRoundTarget = cloneProject(byteRoundProject.project);
 const brokenByteRoundStart = cloneProject(byteRoundProject.project);
 const hexRoundTarget = cloneProject(hexRoundProject.project);
 const brokenHexRoundStart = cloneProject(hexRoundProject.project);
+const asciiRoundTarget = cloneProject(asciiRoundProject.project);
+const brokenAsciiRoundStart = cloneProject(asciiRoundProject.project);
 const keystreamTarget = cloneProject(keystreamProject.project);
 const brokenKeystreamStart = cloneProject(keystreamProject.project);
 const sequentialTarget = cloneProject(sequentialProject.project);
@@ -60,6 +66,14 @@ if (!brokenHexSource) {
   throw new Error('Expected hex-round demo project to contain a hex source.');
 }
 brokenHexSource.params.value = '3A';
+
+const brokenAsciiSource = brokenAsciiRoundStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'source',
+);
+if (!brokenAsciiSource) {
+  throw new Error('Expected ascii-round demo project to contain an ASCII source.');
+}
+brokenAsciiSource.params.value = 'C';
 
 const brokenKeystreamLfsr = brokenKeystreamStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'lfsr',
@@ -140,6 +154,25 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The problem is at the very start of the graph, not in the S-Box or permutation.',
       'HexSource should inject the same byte the reference machine begins with.',
       'Compare the current source value against the expected output pattern.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-ascii-source',
+    title: 'Repair the ASCII Source',
+    difficulty: 'beginner',
+    prompt:
+      'The byte round itself is wired correctly, but the starting ASCII character is wrong. Restore the source text so the final ASCII output matches the captured reference machine again.',
+    startingProject: brokenAsciiRoundStart,
+    startingLayout: cloneProject(asciiRoundProject.layout),
+    targetProject: asciiRoundTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The S-Box and permutation are already correct in this lab.',
+      'Focus on the very first byte entering the graph.',
+      'A one-character change at the source can change the entire byte result.',
     ],
   },
   {
