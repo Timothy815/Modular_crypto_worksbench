@@ -26,6 +26,7 @@ export interface UiState {
   activeChallengeIdByProject: Record<string, string | null>;
   activeTutorialIdByProject: Record<string, string | null>;
   activeTutorialStepByProject: Record<string, number>;
+  completedTutorialsByProject: Record<string, string[]>;
   selectedModuleIdByProject: Record<string, string | null>;
   selectedModuleIdsByProject: Record<string, string[]>;
   paramDrafts: Record<string, string>;
@@ -72,6 +73,7 @@ export type UiAction =
   | { type: 'upsertChallenge'; challenge: GuidedChallenge }
   | { type: 'selectTutorial'; projectId: string; tutorialId: string | null }
   | { type: 'setTutorialStep'; projectId: string; stepIndex: number }
+  | { type: 'completeTutorial'; projectId: string; tutorialId: string }
   | { type: 'captureComparisonBaseline'; projectId: string; capturedAt: string }
   | { type: 'clearComparisonBaseline'; projectId: string }
   | { type: 'loadCompositeLibrary'; document: CompositeLibraryDocument }
@@ -202,6 +204,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     ),
     activeTutorialStepByProject: Object.fromEntries(
       projects.map((project) => [project.id, 0]),
+    ),
+    completedTutorialsByProject: Object.fromEntries(
+      projects.map((project) => [project.id, []]),
     ),
     selectedModuleIdByProject: Object.fromEntries(
       projects.map((project) => [project.id, project.project.modules[0]?.id ?? null]),
@@ -762,6 +767,20 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           [action.projectId]: Math.max(0, Math.trunc(action.stepIndex)),
         },
       };
+    case 'completeTutorial': {
+      const existing = state.completedTutorialsByProject[action.projectId] ?? [];
+      if (existing.includes(action.tutorialId)) {
+        return state;
+      }
+
+      return {
+        ...state,
+        completedTutorialsByProject: {
+          ...state.completedTutorialsByProject,
+          [action.projectId]: [...existing, action.tutorialId],
+        },
+      };
+    }
     case 'clearComparisonBaseline':
       return {
         ...state,

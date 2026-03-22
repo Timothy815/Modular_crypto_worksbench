@@ -132,6 +132,14 @@ function App() {
               0,
           ]),
         ),
+        completedTutorialsByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.completedTutorialsByProjectId[project.id] ??
+              initialState.completedTutorialsByProject[project.id] ??
+              [],
+          ]),
+        ),
         selectedModuleIdByProject: Object.fromEntries(
           projects.map((project) => [
             project.id,
@@ -286,6 +294,30 @@ function App() {
     !state.compositeEditor && selectedTutorial?.projectId === activeProjectDefinition.id
       ? selectedTutorialStep
       : null;
+  const completedTutorialIds =
+    state.completedTutorialsByProject[activeProjectDefinition.id] ?? [];
+  const isTutorialCompleted = selectedTutorial
+    ? completedTutorialIds.includes(selectedTutorial.id)
+    : false;
+  const isOnFinalStep = selectedTutorial
+    ? tutorialStepIndex >= selectedTutorial.steps.length - 1
+    : false;
+
+  useEffect(() => {
+    if (
+      isOnFinalStep &&
+      !isTutorialCompleted &&
+      selectedTutorial &&
+      selectedTutorial.steps.length > 0
+    ) {
+      dispatch({
+        type: 'completeTutorial',
+        projectId: activeProjectDefinition.id,
+        tutorialId: selectedTutorial.id,
+      });
+    }
+  }, [isOnFinalStep, isTutorialCompleted, selectedTutorial, activeProjectDefinition.id]);
+
   const syncTutorialStepFromTrace = (nextIndex: number | null) => {
     setStepIndex(nextIndex);
 
@@ -834,6 +866,8 @@ function App() {
               currentProjectId={activeProjectDefinition.id}
               stepIndex={tutorialStepIndex}
               activeStep={selectedTutorialStep}
+              completedTutorialIds={completedTutorialIds}
+              isCompleted={isTutorialCompleted}
               onSelectTutorial={(tutorialId) =>
                 {
                   const nextTutorial =

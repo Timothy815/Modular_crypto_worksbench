@@ -624,6 +624,59 @@
   background: color-mix(in srgb, var(--role-bridge-bg) 80%, var(--surface-panel));
 }
 
+.tutorial-step-chip.visited {
+  border-color: var(--role-sink-soft);
+  background: color-mix(in srgb, var(--role-sink-bg) 60%, var(--surface-panel));
+}
+
+.tutorial-step-chip.visited span {
+  color: var(--role-sink-strong);
+}
+
+.tutorial-progress-summary {
+  margin: 4px 0 0;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.tutorial-completed-chip,
+.tutorial-in-progress-chip {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.tutorial-completed-chip {
+  background: var(--role-sink-bg);
+  color: var(--role-sink-strong);
+}
+
+.tutorial-in-progress-chip {
+  background: var(--role-source-bg);
+  color: var(--role-source-strong);
+}
+
+.tutorial-completed-banner {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--role-sink-soft);
+  background: var(--role-sink-bg);
+}
+
+.tutorial-completed-banner strong {
+  color: var(--role-sink-strong);
+}
+
+.tutorial-completed-banner p {
+  margin: 6px 0 0;
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+
 .canvas-surface {
   margin: 18px 0 20px;
   overflow-x: auto;
