@@ -11,6 +11,7 @@ interface ComparisonPanelProps {
   comparison: ExecutionComparison | null;
   onCaptureBaseline: () => void;
   onClearBaseline: () => void;
+  embedded?: boolean;
 }
 
 export function ComparisonPanel({
@@ -23,17 +24,19 @@ export function ComparisonPanel({
   comparison,
   onCaptureBaseline,
   onClearBaseline,
+  embedded = false,
 }: ComparisonPanelProps) {
   const divergentSignals = comparison?.firstDivergence
     ? getDivergentSignals(comparison.firstDivergence)
     : null;
-
-  return (
-    <section className="panel comparison-panel">
-      <div className="panel-head">
-        <p className="panel-label">Break Workflow</p>
-        <h2>Baseline vs Variant</h2>
-      </div>
+  const content = (
+    <>
+      {!embedded ? (
+        <div className="panel-head">
+          <p className="panel-label">Break Workflow</p>
+          <h2>Baseline vs Variant</h2>
+        </div>
+      ) : null}
       <div className="comparison-actions">
         <button
           type="button"
@@ -134,8 +137,14 @@ export function ComparisonPanel({
           outputs and first-divergence behavior.
         </p>
       )}
-    </section>
+    </>
   );
+
+  if (embedded) {
+    return <>{content}</>;
+  }
+
+  return <section className="panel comparison-panel">{content}</section>;
 }
 
 function getDivergentSignals(
