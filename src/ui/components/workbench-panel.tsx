@@ -376,42 +376,44 @@ export function WorkbenchPanel({
       </div>
 
       {!isCompositeEditor ? (
-        <div className="project-selector-row">
-          <label className="project-selector">
-            <span className="meta-label">Group</span>
-            <select
-              value={activeProjectGroup}
-              onChange={(event) => {
-                const nextGroup = event.target.value;
-                const firstProject = projects.find(
-                  (project) => (project.group ?? 'Other') === nextGroup,
-                );
-                if (firstProject && firstProject.id !== activeProject.id) {
-                  onSwitchProject(firstProject.id);
-                }
-              }}
-            >
-              {projectGroups.map((group) => (
-                <option key={group} value={group}>
-                  {group}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="project-selector">
-            <span className="meta-label">Demo Graph</span>
-            <select
-              value={activeProject.id}
-              onChange={(event) => onSwitchProject(event.target.value)}
-            >
-              {visibleProjects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="project-context-card">
+        <div className="project-selector-stack">
+          <div className="content-filter-row project-selector-row">
+            <label className="project-selector">
+              <span className="meta-label">Group</span>
+              <select
+                value={activeProjectGroup}
+                onChange={(event) => {
+                  const nextGroup = event.target.value;
+                  const firstProject = projects.find(
+                    (project) => (project.group ?? 'Other') === nextGroup,
+                  );
+                  if (firstProject && firstProject.id !== activeProject.id) {
+                    onSwitchProject(firstProject.id);
+                  }
+                }}
+              >
+                {projectGroups.map((group) => (
+                  <option key={group} value={group}>
+                    {group}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="project-selector">
+              <span className="meta-label">Demo Graph</span>
+              <select
+                value={activeProject.id}
+                onChange={(event) => onSwitchProject(event.target.value)}
+              >
+                {visibleProjects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="project-context-card project-context-card-wide">
             <strong>{activeProject.name}</strong>
             <p>{summary ?? activeProject.summary}</p>
             <code>{pipelineLabel ?? activeProject.pipeline}</code>

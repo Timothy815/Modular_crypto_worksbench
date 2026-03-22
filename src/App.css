@@ -401,12 +401,14 @@
   background: var(--danger-bg);
 }
 
-.project-selector-row {
+.project-selector-stack {
   display: grid;
-  grid-template-columns: minmax(180px, 220px) minmax(220px, 280px) minmax(0, 1fr);
   gap: 12px;
-  align-items: start;
   margin-bottom: 14px;
+}
+
+.project-selector-row {
+  margin-bottom: 0;
 }
 
 .content-filter-row {
@@ -466,6 +468,10 @@
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--surface-soft);
+}
+
+.project-context-card-wide {
+  max-width: none;
 }
 
 .project-context-card strong {
