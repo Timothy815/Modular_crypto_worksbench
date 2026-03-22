@@ -172,7 +172,9 @@ function compareTickedChallengeResults(
 function collectTickedOutput(result: ReturnType<typeof executeTickedProject>): string {
   return result.ticks
     .map((tick) => {
-      const outputModule = tick.trace.find((entry) => entry.defId === 'Output');
+      const outputModule = tick.trace.find(
+        (entry) => entry.defId === 'Output' || entry.defId === 'BitOutput',
+      );
       const signal =
         outputModule?.outputs.out ??
         outputModule?.inputs.in ??
@@ -245,5 +247,9 @@ function getOutputTraceEntry(result: ExecutionResult | null): ExecutionTraceEntr
     return null;
   }
 
-  return result.trace.find((entry) => entry.defId === 'Output') ?? result.trace.at(-1) ?? null;
+  return (
+    result.trace.find((entry) => entry.defId === 'Output' || entry.defId === 'BitOutput') ??
+    result.trace.at(-1) ??
+    null
+  );
 }

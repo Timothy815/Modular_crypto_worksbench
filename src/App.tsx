@@ -322,7 +322,9 @@ function App() {
   const collectedOutput = tickedExecution
     ? tickedExecution.ticks
         .map((tick) => {
-          const outputModule = activeProjectState.modules.find((m) => m.defId === 'Output');
+          const outputModule = activeProjectState.modules.find(
+            (m) => m.defId === 'Output' || m.defId === 'BitOutput',
+          );
           if (!outputModule) return '';
           const out = tick.outputsByModuleId[outputModule.id]?.out;
           if (!out) return '';

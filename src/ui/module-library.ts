@@ -50,6 +50,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Place this at the end of a pipeline when you want a result to count as the output.',
     searchTerms: ['output', 'sink', 'result', 'final'],
   },
+  BitOutput: {
+    sectionId: 'inputs-outputs',
+    purpose: 'Collects the final bit signal at the end of a graph.',
+    detail: 'Use this when a bit-domain machine should end as bits instead of converting back into symbols.',
+    searchTerms: ['bit output', 'output', 'sink', 'bits', 'final'],
+  },
   Rotor: {
     sectionId: 'symbol-domain',
     purpose: 'Substitutes letters through a positional rotor wiring.',

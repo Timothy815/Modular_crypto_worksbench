@@ -86,6 +86,37 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'byte-round',
+    name: 'Byte S-Box Round',
+    summary: 'An 8-bit substitution and permutation round that stays fully in the bit domain.',
+    pipeline: 'BitSource -> SBox(256) -> Permutation -> BitOutput',
+    project: {
+      modules: [
+        { id: 'source', defId: 'BitSource', params: { stream: [1, 0, 1, 0, 1, 1, 0, 0] } },
+        {
+          id: 'sbox',
+          defId: 'SBox',
+          params: {
+            table: Array.from({ length: 256 }, (_, index) => 255 - index).join(','),
+          },
+        },
+        { id: 'permute', defId: 'Permutation', params: { order: '7,6,5,4,3,2,1,0' } },
+        { id: 'output', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'sbox', port: 'in' } },
+        { from: { moduleId: 'sbox', port: 'out' }, to: { moduleId: 'permute', port: 'in' } },
+        { from: { moduleId: 'permute', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      source: { x: 48, y: 156 },
+      sbox: { x: 292, y: 156 },
+      permute: { x: 536, y: 156 },
+      output: { x: 780, y: 156 },
+    },
+  },
+  {
     id: 'sequential',
     name: 'Sequential Heart',
     summary: 'A clocked keystream pipeline that turns state changes into a symbol stream over time.',

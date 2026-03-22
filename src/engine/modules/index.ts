@@ -6,6 +6,7 @@ import { SymbolToBits } from './symbol-to-bits';
 import { BitsToSymbol } from './bits-to-symbol';
 import { XOR } from './xor';
 import { Output } from './output';
+import { BitOutput } from './bit-output';
 import { Rotor } from './rotor';
 import { Reflector } from './reflector';
 import { Permutation } from './permutation';
@@ -22,6 +23,7 @@ export {
   BitsToSymbol,
   XOR,
   Output,
+  BitOutput,
   Rotor,
   Reflector,
   Permutation,
@@ -39,6 +41,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [BitsToSymbol.id]: BitsToSymbol,
   [XOR.id]: XOR,
   [Output.id]: Output,
+  [BitOutput.id]: BitOutput,
   [Rotor.id]: Rotor,
   [Reflector.id]: Reflector,
   [Permutation.id]: Permutation,

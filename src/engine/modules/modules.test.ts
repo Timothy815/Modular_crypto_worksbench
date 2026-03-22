@@ -11,6 +11,7 @@ import { Permutation } from './permutation';
 import { BitShifter } from './bit-shifter';
 import { LFSR } from './lfsr';
 import { SBox } from './s-box';
+import { BitOutput } from './bit-output';
 import type { Signal } from '../types';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -166,6 +167,16 @@ describe('XOR', () => {
       {},
     );
     expect(result.out).toEqual({ type: 'bits', value: [0, 0, 0, 0, 0] });
+  });
+});
+
+describe('BitOutput', () => {
+  it('accepts a bits signal and produces no outputs', () => {
+    const result = BitOutput.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 0, 1, 1, 0, 0] } },
+      {},
+    );
+    expect(result).toEqual({});
   });
 });
 

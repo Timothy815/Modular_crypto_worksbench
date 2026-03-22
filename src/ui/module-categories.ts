@@ -18,6 +18,7 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   SymbolToBits: 'bridge',
   BitsToSymbol: 'bridge',
   Output: 'sink',
+  BitOutput: 'sink',
 };
 
 export function getModuleCategory(definitionOrDefId: ModuleDefinition | string): ModuleCategory {
