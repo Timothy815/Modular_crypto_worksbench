@@ -4,8 +4,12 @@ import {
   type ModuleDefinition,
   type ModuleInputs,
   type ModuleOutputs,
+  type ModuleParams,
   type ModuleRegistry,
   type Project,
+  type TickedExecutionResult,
+  isStatefulModule,
+  isTickSliceable,
 } from './types';
 import { validateProject } from './validation';
 import { isCompositeDefinition, type CompositeDef } from './composites';
@@ -193,4 +197,119 @@ function evaluateComposite(
   }
 
   return outputs;
+}
+
+/**
+ * Derive tick count from tick-sliceable source modules. Returns the
+ * minimum source length, or null if no sliceable sources exist.
+ */
+export function deriveTickCount(
+  project: Project,
+  registry: ModuleRegistry,
+): number | null {
+  let minLength: number | null = null;
+  for (const moduleInstance of project.modules) {
+    const def = registry[moduleInstance.defId];
+    if (def && isTickSliceable(def)) {
+      const length = def.tickLength(moduleInstance.params);
+      if (minLength === null || length < minLength) {
+        minLength = length;
+      }
+    }
+  }
+  return minLength;
+}
+
+export function executeTickedProject(
+  project: Project,
+  registry: ModuleRegistry,
+  tickCount: number,
+  inputOverridesByTick?: Record<string, ModuleInputs>[],
+): TickedExecutionResult {
+  // Validate once — graph structure does not change between ticks
+  const validation = validateProject(project, registry);
+  if (!validation.ok) {
+    const message = validation.issues.map((issue) => issue.message).join('\n');
+    throw new ProjectValidationError(message);
+  }
+
+  // Compute topological order once
+  const order = buildTopologicalOrder(project);
+  const instancesById = new Map(
+    project.modules.map((moduleInstance) => [moduleInstance.id, moduleInstance]),
+  );
+
+  const ticks: ExecutionResult[] = [];
+  const paramsByModuleByTick: Record<string, ModuleParams[]> = {};
+
+  // Initialize per-module param snapshots from instance params
+  const currentParams: Record<string, ModuleParams> = {};
+  for (const moduleInstance of project.modules) {
+    currentParams[moduleInstance.id] = { ...moduleInstance.params };
+    paramsByModuleByTick[moduleInstance.id] = [];
+  }
+
+  for (let tick = 0; tick < tickCount; tick++) {
+    // Build per-tick params: apply tickSlice for sliceable modules,
+    // use currentParams (with advance) for everything else
+    const tickParams: Record<string, ModuleParams> = {};
+    for (const moduleInstance of project.modules) {
+      const def = registry[moduleInstance.defId];
+      if (def && isTickSliceable(def)) {
+        tickParams[moduleInstance.id] = def.tickSlice(
+          currentParams[moduleInstance.id],
+          tick,
+        );
+      } else {
+        tickParams[moduleInstance.id] = { ...currentParams[moduleInstance.id] };
+      }
+    }
+
+    // Snapshot pre-slice params for tracing (the "real" state, not sliced)
+    for (const moduleInstance of project.modules) {
+      paramsByModuleByTick[moduleInstance.id].push({ ...currentParams[moduleInstance.id] });
+    }
+
+    // Execute the graph inline (reusing hoisted order and instancesById)
+    const outputsByModuleId: Record<string, ModuleOutputs> = {};
+    const trace: ExecutionTraceEntry[] = [];
+
+    for (const moduleId of order) {
+      const moduleInstance = instancesById.get(moduleId);
+      if (!moduleInstance) {
+        throw new ProjectValidationError(
+          `Execution referenced unknown module instance "${moduleId}".`,
+        );
+      }
+
+      const def = registry[moduleInstance.defId];
+      if (!def) {
+        throw new ProjectValidationError(
+          `Execution referenced unknown module definition "${moduleInstance.defId}".`,
+        );
+      }
+
+      const tickOverrides = inputOverridesByTick?.[tick];
+      const inputs = collectInputs(moduleId, project, outputsByModuleId, tickOverrides);
+      const outputs = evaluateDefinition(def, inputs, tickParams[moduleInstance.id], registry);
+
+      outputsByModuleId[moduleId] = outputs;
+      trace.push({ moduleId, defId: def.id, inputs, outputs });
+    }
+
+    ticks.push({ order, outputsByModuleId, trace });
+
+    // Advance stateful modules for the next tick
+    for (const moduleInstance of project.modules) {
+      const def = registry[moduleInstance.defId];
+      if (def && isStatefulModule(def)) {
+        currentParams[moduleInstance.id] = def.advance(
+          currentParams[moduleInstance.id],
+          tick,
+        );
+      }
+    }
+  }
+
+  return { ticks, paramsByModuleByTick };
 }

@@ -1,8 +1,8 @@
-import type { ModuleDef } from '../types';
+import type { StatefulModuleDef } from '../types';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-export const Rotor: ModuleDef = {
+export const Rotor: StatefulModuleDef = {
   id: 'Rotor',
   name: 'Rotor',
   inputs: [{ name: 'in', type: 'symbol' }],
@@ -48,4 +48,8 @@ export const Rotor: ModuleDef = {
       out: { type: 'symbol', value: ALPHABET[unshifted] },
     };
   },
+  advance: (params) => ({
+    ...params,
+    position: (((params.position as number) ?? 0) + 1) % 26,
+  }),
 };

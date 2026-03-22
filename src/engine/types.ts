@@ -60,7 +60,29 @@ export interface ModuleDef {
   evaluate: (inputs: ModuleInputs, params: ModuleParams) => ModuleOutputs;
 }
 
+export interface StatefulModuleDef extends ModuleDef {
+  advance: (params: ModuleParams, tick: number) => ModuleParams;
+}
+
+export interface TickSliceableModuleDef extends ModuleDef {
+  tickSlice: (params: ModuleParams, tick: number) => ModuleParams;
+  tickLength: (params: ModuleParams) => number;
+}
+
 export type ModuleDefinition = ModuleDef | CompositeDef;
+
+export function isStatefulModule(def: ModuleDefinition): def is StatefulModuleDef {
+  return 'advance' in def && typeof (def as StatefulModuleDef).advance === 'function';
+}
+
+export function isTickSliceable(def: ModuleDefinition): def is TickSliceableModuleDef {
+  return (
+    'tickSlice' in def &&
+    typeof (def as TickSliceableModuleDef).tickSlice === 'function' &&
+    'tickLength' in def &&
+    typeof (def as TickSliceableModuleDef).tickLength === 'function'
+  );
+}
 
 export interface ModuleInstance {
   id: string;
@@ -122,4 +144,9 @@ export interface ExecutionResult {
   order: string[];
   outputsByModuleId: Record<string, ModuleOutputs>;
   trace: ExecutionTraceEntry[];
+}
+
+export interface TickedExecutionResult {
+  ticks: ExecutionResult[];
+  paramsByModuleByTick: Record<string, ModuleParams[]>;
 }

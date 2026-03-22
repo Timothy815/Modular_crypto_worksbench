@@ -1,6 +1,6 @@
-import type { ModuleDef } from '../types';
+import type { TickSliceableModuleDef } from '../types';
 
-export const TextInput: ModuleDef = {
+export const TextInput: TickSliceableModuleDef = {
   id: 'TextInput',
   name: 'Text Input',
   inputs: [],
@@ -18,4 +18,10 @@ export const TextInput: ModuleDef = {
   evaluate: (_inputs, params) => ({
     out: { type: 'symbol', value: String(params.value ?? 'A') },
   }),
+  tickSlice: (params, tick) => {
+    const full = String(params.value ?? '');
+    const char = tick < full.length ? full[tick] : '';
+    return { ...params, value: char };
+  },
+  tickLength: (params) => String(params.value ?? '').length,
 };
