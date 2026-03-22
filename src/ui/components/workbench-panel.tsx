@@ -366,17 +366,25 @@ export function WorkbenchPanel({
       </div>
 
       {!isCompositeEditor ? (
-        <div className="project-switcher">
-          {projects.map((project) => (
-            <button
-              key={project.id}
-              type="button"
-              className={project.id === activeProject.id ? 'switch-chip active' : 'switch-chip'}
-              onClick={() => onSwitchProject(project.id)}
+        <div className="project-selector-row">
+          <label className="project-selector">
+            <span className="meta-label">Demo Graph</span>
+            <select
+              value={activeProject.id}
+              onChange={(event) => onSwitchProject(event.target.value)}
             >
-              {project.name}
-            </button>
-          ))}
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="project-context-card">
+            <strong>{activeProject.name}</strong>
+            <p>{summary ?? activeProject.summary}</p>
+            <code>{pipelineLabel ?? activeProject.pipeline}</code>
+          </div>
         </div>
       ) : null}
 
@@ -429,8 +437,6 @@ export function WorkbenchPanel({
         />
       </div>
 
-      <p className="project-summary">{summary ?? activeProject.summary}</p>
-      <p className="mono-line">{pipelineLabel ?? activeProject.pipeline}</p>
       {tutorialStep ? (
         <div className="tutorial-step-banner">
           <span className="meta-label">Tutorial Step</span>

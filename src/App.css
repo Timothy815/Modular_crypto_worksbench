@@ -375,11 +375,55 @@
   background: var(--danger-bg);
 }
 
-.project-switcher {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+.project-selector-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
   margin-bottom: 14px;
+}
+
+.project-selector {
+  display: grid;
+  gap: 6px;
+}
+
+.project-selector select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-button);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  padding: 0 14px;
+}
+
+.project-context-card {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-soft);
+}
+
+.project-context-card strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.project-context-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.project-context-card code {
+  display: inline-block;
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 0.84rem;
+  color: var(--ink);
+  overflow-wrap: anywhere;
 }
 
 .project-actions {
@@ -456,22 +500,6 @@
   display: grid;
   gap: 10px;
   margin-top: 12px;
-}
-
-.switch-chip {
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface-button);
-  padding: 10px 14px;
-  font: inherit;
-  font-weight: 700;
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.switch-chip.active {
-  background: var(--chip-active-bg);
-  color: var(--chip-active-text);
 }
 
 .layout-chip {
@@ -553,10 +581,6 @@
   margin: 0;
   font-size: 0.88rem;
   color: var(--muted);
-}
-
-.project-summary {
-  max-width: 58ch;
 }
 
 .selection-status {
@@ -1703,6 +1727,10 @@
 
   .workbench-shell {
     gap: 16px;
+  }
+
+  .project-selector-row {
+    grid-template-columns: 1fr;
   }
 
   .graph-meta {
