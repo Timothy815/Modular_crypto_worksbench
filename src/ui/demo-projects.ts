@@ -415,6 +415,35 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'feistel-network',
+    name: 'Feistel Network',
+    group: 'Modern Rounds',
+    summary: 'A small keyed Feistel network that splits a byte into left and right halves, transforms the right half, recombines the result, and iterates that structure visibly.',
+    pipeline: 'HexSource + Key Bus -> FeistelRoundIterator -> BitsToHex -> Output',
+    project: {
+      modules: [
+        { id: 'source', defId: 'HexSource', params: { value: 'A3' } },
+        { id: 'keybus', defId: 'HexSource', params: { value: '1C' } },
+        { id: 'rounds', defId: 'FeistelRoundIterator', params: { iterationCount: 2 } },
+        { id: 'encode', defId: 'BitsToHex', params: {} },
+        { id: 'output', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'rounds', port: 'in' } },
+        { from: { moduleId: 'keybus', port: 'out' }, to: { moduleId: 'rounds', port: 'key' } },
+        { from: { moduleId: 'rounds', port: 'out' }, to: { moduleId: 'encode', port: 'in' } },
+        { from: { moduleId: 'encode', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      source: { x: 40, y: 160 },
+      keybus: { x: 40, y: 48 },
+      rounds: { x: 360, y: 160 },
+      encode: { x: 680, y: 160 },
+      output: { x: 1000, y: 160 },
+    },
+  },
+  {
     id: 'byte-round',
     name: 'Byte S-Box Round',
     group: 'Modern Rounds',

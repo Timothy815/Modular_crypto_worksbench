@@ -3,6 +3,44 @@ import type { GuidedTutorial } from './tutorials';
 export const STARTER_TUTORIALS: GuidedTutorial[] = [
   {
     version: 1,
+    id: 'feistel-network',
+    title: 'The Feistel Network',
+    group: 'Modern Rounds',
+    summary: 'Learn how a Feistel round branches a block into halves, transforms the right side, and rejoins the result inside an iterator-backed network.',
+    projectId: 'feistel-network',
+    steps: [
+      {
+        id: 'feistel-source',
+        title: 'Inject The Starting Block',
+        body: 'HexSource provides one visible 8-bit block. In this lab, the important idea is not the source format but how one block is split into left and right halves inside the round.',
+        focusModuleId: 'source',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'feistel-keybus',
+        title: 'Feed The Feistel Key Bus',
+        body: 'The key bus still enters as one visible signal. Each Feistel round consumes one 4-bit slice of that bus, so the schedule stays inspectable instead of hidden in params.',
+        focusModuleId: 'keybus',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'feistel-rounds',
+        title: 'Split, Mix, And Rejoin',
+        body: 'Inside each Feistel round, the right half is rotated, XORed with the round key, combined with the left half, and then explicitly rejoined. Nested analysis shows the split branches and the final join path.',
+        focusModuleId: 'rounds',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'feistel-output',
+        title: 'Read The Iterated Result',
+        body: 'BitsToHex and Output render the final network result back into a byte-scale value so students can compare how branching rounds behave as depth increases.',
+        focusModuleId: 'output',
+        targetStepIndex: 3,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'keyed-byte-iterator',
     title: 'The Key Bus',
     group: 'Modern Rounds',

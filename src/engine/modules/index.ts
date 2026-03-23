@@ -17,6 +17,7 @@ import { Rotor } from './rotor';
 import { Reflector } from './reflector';
 import { Permutation } from './permutation';
 import { BitShifter } from './bit-shifter';
+import { BitJoin } from './bit-join';
 import { LFSR } from './lfsr';
 import { SBox } from './s-box';
 import { Clock } from './clock';
@@ -40,6 +41,7 @@ export {
   Reflector,
   Permutation,
   BitShifter,
+  BitJoin,
   LFSR,
   SBox,
   Clock,
@@ -64,6 +66,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [Reflector.id]: Reflector,
   [Permutation.id]: Permutation,
   [BitShifter.id]: BitShifter,
+  [BitJoin.id]: BitJoin,
   [LFSR.id]: LFSR,
   [SBox.id]: SBox,
   [Clock.id]: Clock,

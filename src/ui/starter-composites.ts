@@ -2,6 +2,49 @@ import type { CompositeLibraryEntry } from '../engine/composites';
 
 export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
   {
+    id: 'FeistelRoundComposite',
+    name: 'Feistel Round',
+    version: 1,
+    definition: {
+      id: 'FeistelRoundComposite',
+      name: 'Feistel Round',
+      kind: 'composite',
+      version: 1,
+      inputs: [
+        { name: 'in', type: 'bits' },
+        { name: 'key', type: 'bits' },
+      ],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {},
+      project: {
+        modules: [
+          { id: 'left', defId: 'Permutation', params: { order: '0,1,2,3' } },
+          { id: 'right', defId: 'Permutation', params: { order: '4,5,6,7' } },
+          { id: 'f-shift', defId: 'BitShifter', params: { amount: 1, mode: 'rotate-left' } },
+          { id: 'f-mix', defId: 'XOR', params: {} },
+          { id: 'new-right', defId: 'XOR', params: {} },
+          { id: 'join', defId: 'BitJoin', params: {} },
+        ],
+        connections: [
+          { from: { moduleId: 'right', port: 'out' }, to: { moduleId: 'f-shift', port: 'in' } },
+          { from: { moduleId: 'f-shift', port: 'out' }, to: { moduleId: 'f-mix', port: 'a' } },
+          { from: { moduleId: 'f-mix', port: 'out' }, to: { moduleId: 'new-right', port: 'b' } },
+          { from: { moduleId: 'left', port: 'out' }, to: { moduleId: 'new-right', port: 'a' } },
+          { from: { moduleId: 'right', port: 'out' }, to: { moduleId: 'join', port: 'a' } },
+          { from: { moduleId: 'new-right', port: 'out' }, to: { moduleId: 'join', port: 'b' } },
+        ],
+      },
+      inputBindings: [
+        { externalPort: 'in', internalModuleId: 'left', internalPort: 'in' },
+        { externalPort: 'in', internalModuleId: 'right', internalPort: 'in' },
+        { externalPort: 'key', internalModuleId: 'f-mix', internalPort: 'b' },
+      ],
+      outputBindings: [
+        { externalPort: 'out', internalModuleId: 'join', internalPort: 'out' },
+      ],
+    },
+  },
+  {
     id: 'KeyedByteRoundComposite',
     name: 'Keyed Byte Round',
     version: 1,
@@ -196,6 +239,34 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
       roundDefId: 'KeyedByteRoundComposite',
       iterationCount: 2,
       roundKeyWidth: 8,
+    },
+  },
+  {
+    id: 'FeistelRoundIterator',
+    name: 'Feistel Round Iterator',
+    version: 1,
+    definition: {
+      id: 'FeistelRoundIterator',
+      name: 'Feistel Round Iterator',
+      kind: 'iterator',
+      version: 1,
+      inputs: [
+        { name: 'in', type: 'bits' },
+        { name: 'key', type: 'bits' },
+      ],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {
+        iterationCount: {
+          key: 'iterationCount',
+          label: 'Round Count',
+          kind: 'number',
+          defaultValue: 2,
+          description: 'How many Feistel rounds to auto-unroll from the incoming key bus.',
+        },
+      },
+      roundDefId: 'FeistelRoundComposite',
+      iterationCount: 2,
+      roundKeyWidth: 4,
     },
   },
   {

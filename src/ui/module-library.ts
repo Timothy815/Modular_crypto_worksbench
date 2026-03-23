@@ -110,6 +110,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this to move bit positions or perform circular rotations within a bit vector.',
     searchTerms: ['shift', 'rotate', 'bits', 'circular', 'left', 'right'],
   },
+  BitJoin: {
+    sectionId: 'transforms',
+    purpose: 'Concatenates two bit signals into one longer bit vector.',
+    detail: 'Use this when a machine splits a bit block into branches and later needs to rejoin the ordered halves explicitly.',
+    searchTerms: ['join', 'concat', 'concatenate', 'combine', 'bits', 'feistel'],
+  },
   SBox: {
     sectionId: 'transforms',
     purpose: 'Substitutes each fixed-width bit chunk through a lookup table.',

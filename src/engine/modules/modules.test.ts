@@ -15,6 +15,7 @@ import { Rotor } from './rotor';
 import { Reflector } from './reflector';
 import { Permutation } from './permutation';
 import { BitShifter } from './bit-shifter';
+import { BitJoin } from './bit-join';
 import { LFSR } from './lfsr';
 import { SBox } from './s-box';
 import { BitOutput } from './bit-output';
@@ -383,6 +384,19 @@ describe('BitShifter', () => {
   it('returns zeros when a logical shift exceeds the input width', () => {
     const result = BitShifter.evaluate({ in: bitsSignal }, { amount: 7, mode: 'left' });
     expect(result.out).toEqual({ type: 'bits', value: [0, 0, 0, 0, 0] });
+  });
+});
+
+describe('BitJoin', () => {
+  it('concatenates two bit signals in order', () => {
+    const result = BitJoin.evaluate(
+      {
+        a: { type: 'bits', value: [1, 0, 1, 0] },
+        b: { type: 'bits', value: [0, 1, 1, 1] },
+      },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1, 0, 0, 1, 1, 1] });
   });
 });
 
