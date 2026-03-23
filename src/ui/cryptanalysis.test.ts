@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { analyzeSymbolSignal, analyzeVigenereColumns } from './cryptanalysis';
+import {
+  analyzeSymbolSignal,
+  analyzeVigenereColumns,
+  reconstructVigenereCandidate,
+} from './cryptanalysis';
 
 describe('analyzeSymbolSignal', () => {
   it('returns null for non-symbol signals', () => {
@@ -100,6 +104,17 @@ describe('analyzeVigenereColumns', () => {
     expect(columns[0].topShiftCandidates[0]).toMatchObject({
       shift: 22,
       keyLetter: 'W',
+    });
+  });
+});
+
+describe('reconstructVigenereCandidate', () => {
+  it('builds a key and plaintext preview from per-column shifts', () => {
+    const candidate = reconstructVigenereCandidate('LXFOPVEFRNHR', [11, 4, 12, 14, 13]);
+
+    expect(candidate).toEqual({
+      key: 'LEMON',
+      plaintext: 'ATTACKATDAWN',
     });
   });
 });

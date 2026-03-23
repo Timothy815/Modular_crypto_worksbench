@@ -41,6 +41,11 @@ export interface ShiftScoreEntry {
   preview: string;
 }
 
+export interface VigenereCandidate {
+  key: string;
+  plaintext: string;
+}
+
 export interface SymbolTextAnalysis {
   sourceText: string;
   normalizedText: string;
@@ -75,6 +80,26 @@ export function analyzeVigenereColumns(
       topShiftCandidates: calculateTopShiftCandidates(columnText),
     };
   });
+}
+
+export function reconstructVigenereCandidate(
+  normalizedText: string,
+  shifts: number[],
+): VigenereCandidate {
+  if (normalizedText.length === 0 || shifts.length === 0) {
+    return { key: '', plaintext: '' };
+  }
+
+  let plaintext = '';
+  for (let index = 0; index < normalizedText.length; index += 1) {
+    const shift = shifts[index % shifts.length] ?? 0;
+    plaintext += decodeCaesar(normalizedText[index], shift);
+  }
+
+  return {
+    key: shifts.map((shift) => String.fromCharCode(65 + shift)).join(''),
+    plaintext,
+  };
 }
 
 export function analyzeSymbolSignal(signal: Signal | null): SymbolTextAnalysis | null {

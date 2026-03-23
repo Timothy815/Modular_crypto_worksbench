@@ -1,6 +1,10 @@
 import { useMemo, useState } from 'react';
 
-import { analyzeSymbolSignal, analyzeVigenereColumns } from '../cryptanalysis';
+import {
+  analyzeSymbolSignal,
+  analyzeVigenereColumns,
+  reconstructVigenereCandidate,
+} from '../cryptanalysis';
 import type { WorkspaceMode } from '../workspace-mode';
 
 interface CryptanalysisPanelProps {
@@ -19,6 +23,7 @@ export function CryptanalysisPanel({
   onCiphertextChange,
 }: CryptanalysisPanelProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
+  const [selectedShiftsByColumn, setSelectedShiftsByColumn] = useState<Record<number, number>>({});
   const analysis = analyzeSymbolSignal(
     ciphertext.trim().length > 0 ? { type: 'symbol', value: ciphertext } : null,
   );
@@ -35,6 +40,16 @@ export function CryptanalysisPanel({
         ? analyzeVigenereColumns(analysis.normalizedText, effectivePeriod)
         : [],
     [analysis, effectivePeriod],
+  );
+  const candidateShifts = columnAnalysis.map(
+    (column) => selectedShiftsByColumn[column.columnIndex] ?? column.topShiftCandidates[0]?.shift ?? 0,
+  );
+  const candidate = useMemo(
+    () =>
+      analysis
+        ? reconstructVigenereCandidate(analysis.normalizedText, candidateShifts)
+        : { key: '', plaintext: '' },
+    [analysis, candidateShifts],
   );
 
   return (
@@ -219,6 +234,24 @@ export function CryptanalysisPanel({
                     Best shifts:{' '}
                     <strong>{formatShiftCandidates(column.topShiftCandidates)}</strong>
                   </p>
+                  <label className="param-field">
+                    <span>Chosen Shift</span>
+                    <select
+                      value={selectedShiftsByColumn[column.columnIndex] ?? column.topShiftCandidates[0]?.shift ?? 0}
+                      onChange={(event) =>
+                        setSelectedShiftsByColumn((current) => ({
+                          ...current,
+                          [column.columnIndex]: Number(event.target.value),
+                        }))
+                      }
+                    >
+                      {column.topShiftCandidates.map((entry) => (
+                        <option key={entry.shift} value={entry.shift}>
+                          {entry.keyLetter} ({entry.score.toFixed(1)})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <p className="comparison-copy">
                     Slice: <strong>{truncateText(column.text, 18)}</strong>
                   </p>
@@ -230,6 +263,21 @@ export function CryptanalysisPanel({
               Choose a candidate period to split the ciphertext into Vigenere columns.
             </p>
           )}
+        </div>
+
+        <div className="comparison-card comparison-card-wide">
+          <span className="meta-label">Candidate Reconstruction</span>
+          <strong>
+            {candidate.key ? `Key ${candidate.key}` : 'No candidate key yet'}
+          </strong>
+          <p className="comparison-copy">
+            Plaintext preview:{' '}
+            <strong>{candidate.plaintext ? truncateText(candidate.plaintext, 96) : 'n/a'}</strong>
+          </p>
+          <p className="comparison-copy">
+            This preview reflects the currently chosen shift per column. It is meant to support
+            hypothesis testing, not replace it.
+          </p>
         </div>
       </div>
     </section>
