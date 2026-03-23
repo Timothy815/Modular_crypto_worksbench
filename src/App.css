@@ -1327,6 +1327,14 @@
   gap: 12px;
 }
 
+.stepper-controls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .stepper-actions {
   display: inline-flex;
   gap: 8px;

@@ -89,6 +89,8 @@ export function ParameterInspector({
   const [traceMode, setTraceMode] = useState<'focused' | 'upstream' | 'downstream' | 'full'>('focused');
   const [inspectorTab, setInspectorTab] = useState<'configure' | 'analyze' | 'compare'>('configure');
   const [focusedRoundPath, setFocusedRoundPath] = useState<string>('all');
+  const [requestedStepperMode, setRequestedStepperMode] = useState<'top-level' | 'nested'>('top-level');
+  const [requestedNestedStepIndex, setRequestedNestedStepIndex] = useState<number | null>(null);
   const analysisTrace = useMemo(
     () => execution?.analysisTrace ?? execution?.trace ?? [],
     [execution],
@@ -128,7 +130,27 @@ export function ParameterInspector({
     traceMode: effectiveTraceMode,
     focusedRoundPath: effectiveFocusedRoundPath,
   });
+  const canUseNestedStepper =
+    Boolean(moduleDef && 'kind' in moduleDef && moduleDef.kind === 'iterator' && moduleInstance) &&
+    traceEntries.some((entry) => entry.moduleId.startsWith(`${moduleInstance?.id}/`));
+  const effectiveStepperMode = canUseNestedStepper ? requestedStepperMode : 'top-level';
   const steppedTrace = stepIndex !== null ? execution?.trace[stepIndex] ?? null : null;
+  const steppedAnalysisEntry =
+    effectiveStepperMode === 'nested' && requestedNestedStepIndex !== null
+      ? traceEntries[
+          requestedNestedStepIndex >= 0 && requestedNestedStepIndex < traceEntries.length
+            ? requestedNestedStepIndex
+            : Math.max(0, traceEntries.length - 1)
+        ] ?? null
+      : null;
+  const effectiveNestedStepIndex =
+    effectiveStepperMode === 'nested' && requestedNestedStepIndex !== null
+      ? requestedNestedStepIndex >= 0 && requestedNestedStepIndex < traceEntries.length
+        ? requestedNestedStepIndex
+        : traceEntries.length > 0
+          ? traceEntries.length - 1
+          : null
+      : null;
   const tutorialTraceEntry = tutorialStep?.focusModuleId
     ? execution?.trace.find((entry) => entry.moduleId === tutorialStep.focusModuleId) ?? null
     : null;
@@ -146,6 +168,7 @@ export function ParameterInspector({
       behavior: 'smooth',
     });
   }, [inspectorTab, tutorialStep?.id, tutorialTraceEntry?.moduleId]);
+
 
   return (
     <aside className="panel inspector-panel">
@@ -237,42 +260,148 @@ export function ParameterInspector({
         <section className="analysis-section">
           <div className="stepper-head">
             <span className="meta-label">Step-Through</span>
-            <div className="stepper-actions">
+            <div className="stepper-controls">
+              {canUseNestedStepper ? (
+                <div className="trace-mode-toggle">
+                  <button
+                    type="button"
+                    className={
+                      effectiveStepperMode === 'top-level'
+                        ? 'trace-mode-button active'
+                        : 'trace-mode-button'
+                    }
+                    onClick={() => setRequestedStepperMode('top-level')}
+                  >
+                    Top-Level
+                  </button>
+                  <button
+                    type="button"
+                    className={
+                      effectiveStepperMode === 'nested'
+                        ? 'trace-mode-button active'
+                        : 'trace-mode-button'
+                    }
+                    onClick={() => setRequestedStepperMode('nested')}
+                  >
+                    Nested
+                  </button>
+                </div>
+              ) : null}
+              <div className="stepper-actions">
               <button
                 type="button"
                 className="trace-mode-button"
-                disabled={stepIndex === null || stepIndex <= 0}
-                onClick={() => onStepChange(stepIndex === null ? 0 : Math.max(0, stepIndex - 1))}
+                disabled={
+                  effectiveStepperMode === 'nested'
+                    ? effectiveNestedStepIndex === null || effectiveNestedStepIndex <= 0
+                    : stepIndex === null || stepIndex <= 0
+                }
+                onClick={() => {
+                  if (effectiveStepperMode === 'nested') {
+                    setRequestedNestedStepIndex(
+                      effectiveNestedStepIndex === null
+                        ? 0
+                        : Math.max(0, effectiveNestedStepIndex - 1),
+                    );
+                    return;
+                  }
+
+                  onStepChange(stepIndex === null ? 0 : Math.max(0, stepIndex - 1));
+                }}
               >
                 Prev
               </button>
               <button
                 type="button"
                 className="trace-mode-button"
-                onClick={() =>
+                onClick={() => {
+                  if (effectiveStepperMode === 'nested') {
+                    setRequestedNestedStepIndex(
+                      effectiveNestedStepIndex === null
+                        ? 0
+                        : Math.min(traceEntries.length - 1, effectiveNestedStepIndex + 1),
+                    );
+                    return;
+                  }
+
                   onStepChange(
                     stepIndex === null
                       ? 0
                       : Math.min(execution.trace.length - 1, stepIndex + 1),
-                  )
-                }
+                  );
+                }}
               >
-                {stepIndex === null ? 'Start' : 'Next'}
+                {effectiveStepperMode === 'nested'
+                  ? effectiveNestedStepIndex === null
+                    ? 'Start'
+                    : 'Next'
+                  : stepIndex === null
+                    ? 'Start'
+                    : 'Next'}
               </button>
               <button
                 type="button"
                 className="trace-mode-button"
-                disabled={stepIndex === null}
-                onClick={() => onStepChange(null)}
+                disabled={
+                  effectiveStepperMode === 'nested'
+                    ? effectiveNestedStepIndex === null
+                    : stepIndex === null
+                }
+                onClick={() => {
+                  if (effectiveStepperMode === 'nested') {
+                    setRequestedNestedStepIndex(null);
+                    return;
+                  }
+
+                  onStepChange(null);
+                }}
               >
                 Reset
               </button>
+              </div>
             </div>
           </div>
 
           <div className="selected-trace">
             <span className="meta-label">Current Step</span>
-            {steppedTrace ? (
+            {effectiveStepperMode === 'nested' ? (
+              steppedAnalysisEntry ? (
+                <>
+                  <p className="selected-trace-order">
+                    Nested step {effectiveNestedStepIndex! + 1} of {traceEntries.length}
+                  </p>
+                  <p>
+                    module: <strong>{getDisplayTraceModuleId(steppedAnalysisEntry)}</strong> (
+                    {steppedAnalysisEntry.defId})
+                  </p>
+                  {getIteratorRoundPath(steppedAnalysisEntry) ? (
+                    <p>
+                      round:{' '}
+                      <strong>
+                        {formatIteratorRoundLabel(getIteratorRoundPath(steppedAnalysisEntry) ?? '')}
+                      </strong>
+                    </p>
+                  ) : null}
+                  <p>
+                    inputs:{' '}
+                    {Object.entries(steppedAnalysisEntry.inputs)
+                      .map(([, signal]) => formatSignal(signal))
+                      .join(' | ') || 'none'}
+                  </p>
+                  <p>
+                    outputs:{' '}
+                    {Object.entries(steppedAnalysisEntry.outputs)
+                      .map(([, signal]) => formatSignal(signal))
+                      .join(' | ') || 'none'}
+                  </p>
+                </>
+              ) : (
+                <p className="empty-state">
+                  Start stepping to walk the visible nested analysis trace one internal module at a
+                  time.
+                </p>
+              )
+            ) : steppedTrace ? (
               <>
                 <p className="selected-trace-order">
                  Step {stepIndex! + 1} of {execution.trace.length}
@@ -733,7 +862,11 @@ export function ParameterInspector({
             key={entry.moduleId}
             ref={entry.moduleId === tutorialStep?.focusModuleId ? tutorialTraceRef : null}
             className={
-              topLevelModuleId === steppedTrace?.moduleId
+              effectiveStepperMode === 'nested' && steppedAnalysisEntry?.moduleId === entry.moduleId
+                ? entry.moduleId === tutorialStep?.focusModuleId
+                  ? `trace-card${isNested ? ' trace-card-nested' : ''}${isRoundBoundary ? ' trace-card-round-boundary' : ''} trace-card-stepped trace-card-tutorial`
+                  : `trace-card${isNested ? ' trace-card-nested' : ''}${isRoundBoundary ? ' trace-card-round-boundary' : ''} trace-card-stepped`
+                : topLevelModuleId === steppedTrace?.moduleId
                 ? entry.moduleId === tutorialStep?.focusModuleId
                   ? `trace-card${isNested ? ' trace-card-nested' : ''}${isRoundBoundary ? ' trace-card-round-boundary' : ''} trace-card-stepped trace-card-tutorial`
                   : `trace-card${isNested ? ' trace-card-nested' : ''}${isRoundBoundary ? ' trace-card-round-boundary' : ''} trace-card-stepped`
@@ -747,7 +880,9 @@ export function ParameterInspector({
             onMouseEnter={() => onTraceHover(topLevelModuleId)}
             onMouseLeave={() => onTraceHover(null)}
             onClick={() =>
-              onStepChange(topLevelIndex >= 0 ? topLevelIndex : null)
+              effectiveStepperMode === 'nested'
+                ? setRequestedNestedStepIndex(analysisIndex)
+                : onStepChange(topLevelIndex >= 0 ? topLevelIndex : null)
             }
           >
             <div className="trace-head">
