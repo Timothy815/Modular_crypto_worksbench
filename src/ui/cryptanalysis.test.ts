@@ -5,6 +5,8 @@ import {
   analyzeRoundDiffusion,
   analyzeSymbolSignal,
   analyzeVigenereColumns,
+  bitsToAlphabetSymbol,
+  bitsToAsciiText,
   bitsToHex,
   buildFrequencyGraphEntries,
   calculateBitDifference,
@@ -12,6 +14,7 @@ import {
   hexToBits,
   parseBitString,
   reconstructVigenereCandidate,
+  symbolToBits,
 } from './cryptanalysis';
 
 describe('analyzeSymbolSignal', () => {
@@ -116,6 +119,21 @@ describe('analyzeVigenereColumns', () => {
   });
 });
 
+describe('bit and symbol conversion helpers', () => {
+  it('converts hex values to bits and back', () => {
+    expect(hexToBits('4F')).toEqual([0, 1, 0, 0, 1, 1, 1, 1]);
+    expect(bitsToHex([0, 1, 0, 0, 1, 1, 1, 1])).toBe('4F');
+    expect(bitsToAsciiText([0, 1, 0, 0, 0, 0, 0, 1])).toBe('A');
+  });
+
+  it('converts alphabet symbols to bits and back', () => {
+    expect(symbolToBits('A')).toEqual([0, 0, 0, 0, 0]);
+    expect(symbolToBits('Z')).toEqual([1, 1, 0, 0, 1]);
+    expect(bitsToAlphabetSymbol([0, 1, 1, 0, 0])).toBe('M');
+    expect(bitsToAlphabetSymbol([1, 1, 0, 1, 0])).toBeNull();
+  });
+});
+
 describe('reconstructVigenereCandidate', () => {
   it('builds a key and plaintext preview from per-column shifts', () => {
     const candidate = reconstructVigenereCandidate('LXFOPVEFRNHR', [11, 4, 12, 14, 13]);
@@ -168,6 +186,7 @@ describe('modern bit analysis helpers', () => {
     expect(hexToBits('A3')).toEqual([1, 0, 1, 0, 0, 0, 1, 1]);
     expect(bitsToHex([1, 0, 1, 0, 0, 0, 1, 1])).toBe('A3');
     expect(bitsToHex([1, 0, 1])).toBe('A');
+    expect(bitsToAsciiText([0, 1, 0, 0, 0, 0, 0, 1])).toBe('A');
   });
 
   it('summarizes changed-bit growth across iterator rounds', () => {

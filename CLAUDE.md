@@ -6,6 +6,7 @@ Read ITERATIVE-ROUNDS-AND-KEYSCHEDULES-V1.md before starting work on iterative-r
 Read KEY-SCHEDULE-GROUNDWORK-V1.md before extending iterator-aware key distribution or round-key generation.
 Read CRYPTANALYSIS-WORKSPACE-V1.md before starting work on the post-v1.3 cryptanalysis workspace.
 Read MODERN-ANALYSIS-V1.md before starting work on the post-v1.4 modern-analysis line.
+Read HASHING-V1.md before starting work on the hashing line.
 Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
 Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
 
@@ -130,7 +131,8 @@ src/utils/     — Shared helpers
 - `v1.1.0` and `v1.2.0` are already shipped
 - `v1.3.0` is already shipped
 - `v1.4.0` is already shipped
-- Current `main` is in `v1.5.0` cleanup/framing around the modern-analysis line
+- `v1.5.0` is already shipped
+- Current `main` is defining the post-`v1.5.0` hashing line and modern-analysis breadth direction
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -144,6 +146,7 @@ What is shipped on `main`:
 - lightweight text cryptanalysis in Compare
 - dedicated Cryptanalysis workspace and Vigenere workshop flow
 - modern-analysis Avalanche Explorer and guided Avalanche tutorial
+- hashing is now explicitly in planned scope via contract, not just as an idea
 
 Key contracts to check before implementation:
 - `ENGINE-V1-CONTRACT.md` for engine decisions
@@ -152,12 +155,14 @@ Key contracts to check before implementation:
 - `KEY-SCHEDULE-GROUNDWORK-V1.md` for explicit round-key decisions
 - `CRYPTANALYSIS-WORKSPACE-V1.md` for product boundary and first-slice scope
 - `MODERN-ANALYSIS-V1.md` for the first post-`v1.4.0` visual analysis milestone
+- `HASHING-V1.md` for the future hashing line and scope boundary
+- `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 
 Near-term follow-ups:
-- frame `v1.5.0` as the first Modern Analysis release
-- keep remaining work bounded to polish and release shaping
-- avoid opening a second major analysis family before `v1.5.0`
-- keep hashing on the future backlog
+- define Hashing V1 clearly before implementation
+- then widen modern-analysis breadth across more supported project shapes
+- keep hashing connected to the modern-analysis visual language
+- avoid dropping hashing in as a black-box algorithm picker
 
 ## When Working on This Project
 

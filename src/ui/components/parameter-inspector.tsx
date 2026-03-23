@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { isCompositeDefinition } from '../../engine/composites';
 import type {
   Connection,
   ExecutionResult,
@@ -572,11 +573,21 @@ export function ParameterInspector({
                 const parsedDraft =
                   draftValue !== undefined ? parseParamValue(draftValue, field) : null;
                 const fieldError = parsedDraft && !parsedDraft.ok ? parsedDraft.error : null;
+                const isForwardedParam =
+                  isCompositeDefinition(moduleDef) &&
+                  (moduleDef.forwardedParams ?? []).some(
+                    (binding) => binding.externalParam === field.key,
+                  );
 
                 if (field.kind === 'boolean') {
                   return (
                     <label key={field.key} className="param-field">
-                      <span>{field.label}</span>
+                      <span>
+                        {field.label}
+                        {isForwardedParam ? (
+                          <span className="forwarded-param-chip">Forwarded</span>
+                        ) : null}
+                      </span>
                       {!areParamValuesEqual(value, baselineValue) ? (
                         <span className="baseline-chip">
                           Baseline: {formatParamValue(baselineValue, field)}
@@ -596,7 +607,12 @@ export function ParameterInspector({
                 if (field.kind === 'select') {
                   return (
                     <label key={field.key} className="param-field">
-                      <span>{field.label}</span>
+                      <span>
+                        {field.label}
+                        {isForwardedParam ? (
+                          <span className="forwarded-param-chip">Forwarded</span>
+                        ) : null}
+                      </span>
                       {!areParamValuesEqual(value, baselineValue) ? (
                         <span className="baseline-chip">
                           Baseline: {formatParamValue(baselineValue, field)}
@@ -621,7 +637,12 @@ export function ParameterInspector({
                 if (field.kind === 'bits') {
                   return (
                     <label key={field.key} className="param-field">
-                      <span>{field.label}</span>
+                      <span>
+                        {field.label}
+                        {isForwardedParam ? (
+                          <span className="forwarded-param-chip">Forwarded</span>
+                        ) : null}
+                      </span>
                       {!areParamValuesEqual(value, baselineValue) ? (
                         <span className="baseline-chip">
                           Baseline: {formatParamValue(baselineValue, field)}
@@ -643,7 +664,12 @@ export function ParameterInspector({
                 if (field.kind === 'wiring') {
                   return (
                     <label key={field.key} className="param-field">
-                      <span>{field.label}</span>
+                      <span>
+                        {field.label}
+                        {isForwardedParam ? (
+                          <span className="forwarded-param-chip">Forwarded</span>
+                        ) : null}
+                      </span>
                       {!areParamValuesEqual(value, baselineValue) ? (
                         <span className="baseline-chip">
                           Baseline: {formatParamValue(baselineValue, field)}
@@ -664,7 +690,12 @@ export function ParameterInspector({
 
                 return (
                   <label key={field.key} className="param-field">
-                    <span>{field.label}</span>
+                    <span>
+                      {field.label}
+                      {isForwardedParam ? (
+                        <span className="forwarded-param-chip">Forwarded</span>
+                      ) : null}
+                    </span>
                     {!areParamValuesEqual(value, baselineValue) ? (
                       <span className="baseline-chip">
                         Baseline: {formatParamValue(baselineValue, field)}

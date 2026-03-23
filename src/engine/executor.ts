@@ -183,7 +183,7 @@ function evaluateDefinition(
   registry: ModuleRegistry,
 ): EvaluatedDefinitionResult {
   if (isCompositeDefinition(def)) {
-    return evaluateComposite(moduleId, def, inputs, registry);
+    return evaluateComposite(moduleId, def, inputs, params, registry);
   }
   if (isIteratorDefinition(def)) {
     return evaluateIterator(moduleId, def, inputs, params, registry);
@@ -211,6 +211,7 @@ function evaluateComposite(
   moduleId: string,
   def: CompositeDef,
   inputs: ModuleInputs,
+  params: ModuleParams,
   registry: ModuleRegistry,
 ): EvaluatedDefinitionResult {
   const inputOverrides: Record<string, ModuleInputs> = {};
@@ -229,7 +230,11 @@ function evaluateComposite(
     };
   }
 
-  const internalResult = executeProject(def.project, registry, inputOverrides);
+  const internalResult = executeProject(
+    applyForwardedCompositeParams(def, params),
+    registry,
+    inputOverrides,
+  );
   const outputs: ModuleOutputs = {};
 
   for (const binding of def.outputBindings) {
@@ -248,6 +253,45 @@ function evaluateComposite(
   return {
     outputs,
     hoistedTrace: hoistTraceEntries(internalResult.analysisTrace, moduleId),
+  };
+}
+
+function applyForwardedCompositeParams(
+  def: CompositeDef,
+  params: ModuleParams,
+): Project {
+  if (!def.forwardedParams?.length) {
+    return def.project;
+  }
+
+  const forwardedByModuleId = new Map<string, Record<string, unknown>>();
+  for (const binding of def.forwardedParams) {
+    const value = params[binding.externalParam];
+    if (value === undefined) {
+      continue;
+    }
+
+    forwardedByModuleId.set(binding.internalModuleId, {
+      ...(forwardedByModuleId.get(binding.internalModuleId) ?? {}),
+      [binding.internalParamKey]: value,
+    });
+  }
+
+  if (forwardedByModuleId.size === 0) {
+    return def.project;
+  }
+
+  return {
+    modules: def.project.modules.map((moduleInstance) => ({
+      ...moduleInstance,
+      params: forwardedByModuleId.has(moduleInstance.id)
+        ? {
+            ...moduleInstance.params,
+            ...forwardedByModuleId.get(moduleInstance.id),
+          }
+        : moduleInstance.params,
+    })),
+    connections: def.project.connections,
   };
 }
 
@@ -373,7 +417,10 @@ function createTickedRuntimeState(
     const def = registry[moduleInstance.defId];
     compositeStateByModuleId[moduleInstance.id] =
       def && isCompositeDefinition(def)
-        ? createTickedRuntimeState(def.project, registry)
+        ? createTickedRuntimeState(
+            applyForwardedCompositeParams(def, moduleInstance.params),
+            registry,
+          )
         : undefined;
     iteratorStateByModuleId[moduleInstance.id] =
       def && isIteratorDefinition(def)
@@ -497,6 +544,7 @@ function executeTickedGraph(
           moduleId,
           def,
           inputs,
+          currentParams,
           registry,
           tick,
           runtimeState.compositeStateByModuleId[moduleId],
@@ -554,6 +602,7 @@ function executeTickedComposite(
   moduleId: string,
   def: CompositeDef,
   inputs: ModuleInputs,
+  params: ModuleParams,
   registry: ModuleRegistry,
   tick: number,
   runtimeState?: TickedRuntimeState,
@@ -580,8 +629,9 @@ function executeTickedComposite(
     };
   }
 
+  const internalProject = applyForwardedCompositeParams(def, params);
   const internalResult = executeTickedGraph(
-    def.project,
+    internalProject,
     registry,
     tick,
     runtimeState,

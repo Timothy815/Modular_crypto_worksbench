@@ -11,6 +11,12 @@ export interface CompositePortBinding {
   internalPort: string;
 }
 
+export interface ForwardedParamBinding {
+  externalParam: string;
+  internalModuleId: string;
+  internalParamKey: string;
+}
+
 export interface CompositeDef {
   id: string;
   name: string;
@@ -22,6 +28,7 @@ export interface CompositeDef {
   layout?: Record<string, CompositeLayoutPosition>;
   inputBindings: CompositePortBinding[];
   outputBindings: CompositePortBinding[];
+  forwardedParams?: ForwardedParamBinding[];
   version: number;
 }
 

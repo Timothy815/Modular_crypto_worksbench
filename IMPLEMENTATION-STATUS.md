@@ -97,6 +97,10 @@ Post-`v1.4.0` work merged to `main`:
 - `The Avalanche Effect` tutorial
 - hashing identified as a future scope line and backlog item
 
+Next branch framing after `v1.5.0`:
+- define Hashing V1 as a product contract
+- then widen modern-analysis breadth across more supported project shapes
+
 ---
 
 ## Safe Next Tasks
@@ -104,29 +108,28 @@ Post-`v1.4.0` work merged to `main`:
 ### Claude
 
 Safe to begin:
-- `v1.5.0` cleanup and release framing
-- final modern-analysis copy/help polish
-- release note cleanup for the Avalanche Explorer milestone
-- track hashing as a future backlog line
+- define the first hashing contract
+- then widen modern-analysis support across more project families
+- keep hashing visually aligned with the existing modern-analysis line
 
 Should avoid for now:
 - feedback loops / cycles in the graph
 - async or real-time execution
 - custom scripting for advance functions
 - hidden iterator/key-schedule magic
-- broadening into a second major modern-analysis family before `v1.5.0` is settled
+- treating hashing as a black-box algorithm picker instead of an explicit teaching surface
 
 ### Gemini
 
 Safe to begin:
-- review whether the current modern-analysis line is a clean `v1.5.0` candidate
-- identify whether any remaining work is polish-only
-- help choose the first post-`v1.5.0` analysis direction
+- review whether Hashing V1 is the right next product contract
+- help choose the best first modern-analysis breadth slice after `v1.5.0`
+- help keep hashing and modern analysis connected instead of fragmenting the product
 
 Best focus:
-- whether the current Avalanche Explorer milestone is complete enough for release
-- whether any remaining work is just compatibility/copy polish
-- what should follow after the first modern-analysis milestone
+- whether Hashing V1 has the right scope boundary
+- what the first hashing teaching artifact should look like
+- which modern-analysis breadth slice should land before hashing implementation
 
 ---
 
@@ -137,7 +140,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three pass as of the current `v1.5.0` cleanup line.
+All three pass as of the shipped `v1.5.0` line.
 
 ---
 
@@ -151,10 +154,10 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 ### Near-Term Roadmap
 
-1. **Frame `v1.5.0`** — the first Modern Analysis release
-2. **Final cleanup/polish** — compatibility copy, visual consistency, release notes
-3. **Tag `v1.5.0`**
-4. **Post-`v1.5.0` direction** — broader modern-analysis support or another analysis family
+1. **Define Hashing V1** — lock hashing into the product roadmap
+2. **Widen modern-analysis breadth** — support more project/source/output shapes
+3. **Choose the first hashing teaching artifact**
+4. **Then implement hashing on top of the broader modern-analysis base**
 
 ### Key Contracts
 
@@ -171,3 +174,5 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `KEY-SCHEDULE-GROUNDWORK-V1.md` | Active, implemented as explicit key-bus groundwork |
 | `CRYPTANALYSIS-WORKSPACE-V1.md` | Locked, implemented as the `v1.4.0` workspace boundary |
 | `MODERN-ANALYSIS-V1.md` | Active, implemented as the `v1.5.0` modern-analysis line |
+| `HASHING-V1.md` | Active, defines the future hashing line |
+| `PARAM-FORWARDING-V1.md` | Active, defines explicit exposed-internal controls for reusable architectures |

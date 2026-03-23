@@ -97,7 +97,17 @@ function getModuleSpecificParamMessage(
   field: ParamFieldDef,
   value: unknown,
 ): string | null {
-  if (isCompositeDefinition(def) || isIteratorDefinition(def)) {
+  if (isCompositeDefinition(def)) {
+    return null;
+  }
+
+  if (isIteratorDefinition(def)) {
+    if (field.key === 'iterationCount') {
+      return typeof value === 'number' && Number.isInteger(value) && value > 0
+        ? null
+        : 'Iteration count must be a positive integer';
+    }
+
     return null;
   }
 
@@ -127,6 +137,7 @@ function getModuleSpecificParamMessage(
 function validateParams(
   moduleInstance: ModuleInstance,
   def: ModuleDefinition,
+  registry: ModuleRegistry,
   issues: ValidationIssue[],
 ) {
   const schemaKeys = new Set(Object.keys(def.paramSchema));
@@ -183,6 +194,10 @@ function validateParams(
       });
     }
   }
+
+  if (isCompositeDefinition(def) && def.forwardedParams?.length) {
+    validateForwardedParamValues(moduleInstance, def, registry, issues);
+  }
 }
 
 export function validateProject(project: Project, registry: ModuleRegistry): ValidationResult {
@@ -197,7 +212,7 @@ export function validateProject(project: Project, registry: ModuleRegistry): Val
 
     const def = defsByInstanceId.get(moduleInstance.id);
     if (def) {
-      validateParams(moduleInstance, def, issues);
+      validateParams(moduleInstance, def, registry, issues);
     }
   }
 
@@ -336,11 +351,126 @@ export function validateCompositeDef(
     registry,
     issues,
   );
+  validateForwardedParams(composite, registry, issues);
 
   return {
     ok: issues.length === 0,
     issues,
   };
+}
+
+function validateForwardedParams(
+  composite: CompositeDef,
+  registry: ModuleRegistry,
+  issues: ValidationIssue[],
+) {
+  const seenKeys = new Set<string>();
+
+  for (const binding of composite.forwardedParams ?? []) {
+    if (seenKeys.has(binding.externalParam)) {
+      issues.push({
+        code: 'invalid-composite-binding',
+        message: `Composite "${composite.id}" forwards duplicate external param "${binding.externalParam}".`,
+      });
+      continue;
+    }
+    seenKeys.add(binding.externalParam);
+
+    const externalField = composite.paramSchema[binding.externalParam];
+    if (!externalField) {
+      issues.push({
+        code: 'invalid-composite-binding',
+        message: `Composite "${composite.id}" forwards unknown external param "${binding.externalParam}".`,
+      });
+      continue;
+    }
+
+    const internalModule = composite.project.modules.find(
+      (moduleInstance) => moduleInstance.id === binding.internalModuleId,
+    );
+    if (!internalModule) {
+      issues.push({
+        code: 'invalid-composite-binding',
+        message: `Composite "${composite.id}" forwards "${binding.externalParam}" to unknown internal module "${binding.internalModuleId}".`,
+      });
+      continue;
+    }
+
+    const targetDef = registry[internalModule.defId];
+    if (!targetDef) {
+      issues.push({
+        code: 'unknown-module-def',
+        message: `Composite "${composite.id}" forwards "${binding.externalParam}" through unknown definition "${internalModule.defId}".`,
+      });
+      continue;
+    }
+
+    const targetField = targetDef.paramSchema[binding.internalParamKey];
+    if (!targetField) {
+      issues.push({
+        code: 'invalid-composite-binding',
+        message: `Composite "${composite.id}" forwards "${binding.externalParam}" to missing internal param "${binding.internalModuleId}.${binding.internalParamKey}".`,
+      });
+      continue;
+    }
+
+    if (externalField.kind !== targetField.kind) {
+      issues.push({
+        code: 'invalid-composite-binding',
+        message: `Composite "${composite.id}" forwards "${binding.externalParam}" with kind "${externalField.kind}" to incompatible target kind "${targetField.kind}".`,
+      });
+    }
+  }
+}
+
+function validateForwardedParamValues(
+  moduleInstance: ModuleInstance,
+  composite: CompositeDef,
+  registry: ModuleRegistry,
+  issues: ValidationIssue[],
+) {
+  for (const binding of composite.forwardedParams ?? []) {
+    const value = moduleInstance.params[binding.externalParam];
+    if (value === undefined) {
+      continue;
+    }
+
+    const internalModule = composite.project.modules.find(
+      (candidate) => candidate.id === binding.internalModuleId,
+    );
+    if (!internalModule) {
+      continue;
+    }
+
+    const targetDef = registry[internalModule.defId];
+    if (!targetDef) {
+      continue;
+    }
+
+    const targetField = targetDef.paramSchema[binding.internalParamKey];
+    if (!targetField) {
+      continue;
+    }
+
+    const validationCode = validateParamValue(targetField, value);
+    if (validationCode) {
+      issues.push({
+        code: validationCode,
+        message: `Module "${moduleInstance.id}" has invalid forwarded value for "${binding.externalParam}" targeting "${binding.internalModuleId}.${binding.internalParamKey}".`,
+        moduleId: moduleInstance.id,
+      });
+      continue;
+    }
+
+    const moduleSpecificMessage = getModuleSpecificParamMessage(targetDef, targetField, value);
+    if (moduleSpecificMessage) {
+      issues.push({
+        code: 'invalid-param-type',
+        message: `Module "${moduleInstance.id}" forwarded param "${binding.externalParam}" is invalid for target "${binding.internalModuleId}.${binding.internalParamKey}". ${moduleSpecificMessage}`,
+        moduleId: moduleInstance.id,
+      });
+    }
+  }
 }
 
 export function validateIteratorDef(

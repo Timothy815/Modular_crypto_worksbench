@@ -4,6 +4,8 @@ import {
   analyzeBitDifference,
   analyzeRoundDiffusion,
   analyzeSymbolSignal,
+  bitsToAlphabetSymbol,
+  bitsToAsciiText,
   analyzeVigenereColumns,
   bitsToHex,
   buildFrequencyGraphEntries,
@@ -11,11 +13,13 @@ import {
   hexToBits,
   parseBitString,
   reconstructVigenereCandidate,
+  symbolToBits,
 } from '../cryptanalysis';
 import type { CryptanalysisMode } from '../cryptanalysis-mode';
 import { runDemoProject } from '../demo-projects';
+import type { GuidedTutorial, TutorialStep } from '../tutorials';
 import { validateProject } from '../../engine/validation';
-import type { ExecutionResult, ModuleRegistry, Project, Signal } from '../../engine/types';
+import type { ExecutionResult, ModuleRegistry, Project } from '../../engine/types';
 import { cloneProject } from '../store';
 import type { WorkspaceMode } from '../workspace-mode';
 
@@ -29,11 +33,16 @@ interface CryptanalysisPanelProps {
   modernBaseline: string;
   modernFlipBit: number;
   workspaceMode: WorkspaceMode;
+  tutorial: GuidedTutorial | null;
+  tutorialStep: TutorialStep | null;
+  tutorialStepIndex: number;
   onSetWorkspaceMode: (mode: WorkspaceMode) => void;
   onSetCryptanalysisMode: (mode: CryptanalysisMode) => void;
   onCiphertextChange: (value: string) => void;
   onModernBaselineChange: (value: string) => void;
   onModernFlipBitChange: (value: number) => void;
+  onSetTutorialStep: (stepIndex: number) => void;
+  onFocusTutorialModule: (moduleId: string) => void;
 }
 
 export function CryptanalysisPanel({
@@ -46,11 +55,16 @@ export function CryptanalysisPanel({
   modernBaseline,
   modernFlipBit,
   workspaceMode,
+  tutorial,
+  tutorialStep,
+  tutorialStepIndex,
   onSetWorkspaceMode,
   onSetCryptanalysisMode,
   onCiphertextChange,
   onModernBaselineChange,
   onModernFlipBitChange,
+  onSetTutorialStep,
+  onFocusTutorialModule,
 }: CryptanalysisPanelProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
   const [selectedColumnIndex, setSelectedColumnIndex] = useState<number>(0);
@@ -121,10 +135,31 @@ export function CryptanalysisPanel({
     () => flipBitAtIndex(effectiveInputBits, effectiveModernFlipBit),
     [effectiveInputBits, effectiveModernFlipBit],
   );
+  const variantBridgeSymbol = useMemo(() => {
+    if (flippableSource?.kind !== 'text-symbol-bridge') {
+      return null;
+    }
+
+    return bitsToAlphabetSymbol(variantInputBits);
+  }, [flippableSource, variantInputBits]);
   const inputDifference = useMemo(
     () => analyzeBitDifference(effectiveInputBits, variantInputBits),
     [effectiveInputBits, variantInputBits],
   );
+  const inputHexSummary = useMemo(() => {
+    if (effectiveInputBits.length === 0 || variantInputBits.length === 0) {
+      return null;
+    }
+
+    if (effectiveInputBits.length % 4 !== 0 || variantInputBits.length % 4 !== 0) {
+      return null;
+    }
+
+    return {
+      baseline: bitsToHex(effectiveInputBits),
+      variant: bitsToHex(variantInputBits),
+    };
+  }, [effectiveInputBits, variantInputBits]);
   const variantProject = useMemo(() => {
     if (!flippableSource) {
       return null;
@@ -141,9 +176,23 @@ export function CryptanalysisPanel({
       return nextProject;
     }
 
+    if (flippableSource.kind === 'ascii-source') {
+      targetModule.params.value = bitsToAsciiText(variantInputBits);
+      return nextProject;
+    }
+
+    if (flippableSource.kind === 'text-symbol-bridge') {
+      if (!variantBridgeSymbol) {
+        return null;
+      }
+
+      targetModule.params.value = variantBridgeSymbol;
+      return nextProject;
+    }
+
     targetModule.params.value = bitsToHex(variantInputBits);
     return nextProject;
-  }, [flippableSource, project, variantInputBits]);
+  }, [flippableSource, project, variantBridgeSymbol, variantInputBits]);
   const variantExecution = useMemo(() => {
     if (!variantProject) {
       return null;
@@ -175,12 +224,31 @@ export function CryptanalysisPanel({
 
     return analyzeBitDifference(baselineOutputBits, variantOutputBits);
   }, [baselineOutputBits, variantOutputBits]);
+  const outputHexSummary = useMemo(() => {
+    if (!baselineOutputBits || !variantOutputBits) {
+      return null;
+    }
+
+    if (baselineOutputBits.length === 0 || variantOutputBits.length === 0) {
+      return null;
+    }
+
+    if (baselineOutputBits.length % 4 !== 0 || variantOutputBits.length % 4 !== 0) {
+      return null;
+    }
+
+    return {
+      baseline: bitsToHex(baselineOutputBits),
+      variant: bitsToHex(variantOutputBits),
+    };
+  }, [baselineOutputBits, variantOutputBits]);
   const roundDiffusion = useMemo(
     () => analyzeRoundDiffusion(execution, variantExecution),
     [execution, variantExecution],
   );
   const hasBitDomainOutput = baselineOutputBits !== null;
   const showModernCompatibilityCallout = !flippableSource || !hasBitDomainOutput;
+  const showTutorialCard = tutorial !== null && tutorialStep !== null;
 
   return (
     <section className="panel comparison-panel cryptanalysis-panel">
@@ -243,6 +311,48 @@ export function CryptanalysisPanel({
         </button>
       </div>
 
+      {showTutorialCard ? (
+        <div className="comparison-card comparison-card-wide cryptanalysis-tutorial-card">
+          <span className="meta-label">Guided Tutorial</span>
+          <strong>
+            {tutorial.title} — Step {tutorialStepIndex + 1} of {tutorial.steps.length}
+          </strong>
+          <p className="comparison-copy">{tutorialStep.body}</p>
+          {tutorialStep.focusModuleId ? (
+            <p className="comparison-copy">
+              Step target: <strong>{tutorialStep.focusModuleId}</strong>
+            </p>
+          ) : null}
+          <div className="comparison-actions">
+            <button
+              type="button"
+              className="mini-action-button"
+              disabled={tutorialStepIndex <= 0}
+              onClick={() => onSetTutorialStep(Math.max(0, tutorialStepIndex - 1))}
+            >
+              Previous Step
+            </button>
+            <button
+              type="button"
+              className="mini-action-button"
+              disabled={tutorialStepIndex >= tutorial.steps.length - 1}
+              onClick={() => onSetTutorialStep(Math.min(tutorial.steps.length - 1, tutorialStepIndex + 1))}
+            >
+              Next Step
+            </button>
+            {tutorialStep.focusModuleId ? (
+              <button
+                type="button"
+                className="mini-action-button"
+                onClick={() => onFocusTutorialModule(tutorialStep.focusModuleId!)}
+              >
+                Focus Module
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
       {cryptanalysisMode === 'modern' ? (
         <div className="comparison-grid">
           {showModernCompatibilityCallout ? (
@@ -255,7 +365,8 @@ export function CryptanalysisPanel({
               </strong>
               <p className="comparison-copy">
                 Avalanche Explorer works best when the active machine exposes a real bit-domain input and output.
-                Supported source paths currently begin from <strong>BitSource</strong> or <strong>HexSource</strong>.
+                  Supported source paths currently begin from <strong>BitSource</strong>, <strong>HexSource</strong>, <strong>AsciiSource</strong>, or a
+                  single-letter <strong>TextInput → SymbolToBits</strong> bridge.
               </p>
               <p className="comparison-copy">
                 Recommended projects right now: <strong>Feistel Network</strong>, <strong>Scheduled Byte Iterator</strong>,{' '}
@@ -275,11 +386,16 @@ export function CryptanalysisPanel({
               <>
                 <p className="comparison-copy">
                   Source module: <strong>{flippableSource.moduleId}</strong>
-                  {' '}| kind <strong>{flippableSource.kind === 'bit-source' ? 'BitSource' : 'HexSource'}</strong>
+                  {' '}| kind <strong>{getFlippableSourceKindLabel(flippableSource.kind)}</strong>
                 </p>
                 <p className="comparison-copy">
                   The explorer is now flipping a real project input bit and re-running the machine.
                 </p>
+                {flippableSource.kind === 'text-symbol-bridge' && !variantBridgeSymbol ? (
+                  <p className="comparison-copy">
+                    This particular 5-bit flip lands outside <strong>A-Z</strong>, so the bridge has no honest symbol variant to execute.
+                  </p>
+                ) : null}
               </>
             ) : (
               <>
@@ -301,61 +417,33 @@ export function CryptanalysisPanel({
           </div>
 
           <div className="comparison-card comparison-card-wide">
-            <span className="meta-label">Bit Flip Control</span>
-            <strong>Flip one bit and inspect the difference pattern</strong>
-            {effectiveInputBits.length > 0 ? (
-              <>
-                <div className="cryptanalysis-shift-control-row">
-                  <button
-                    type="button"
-                    className="mini-action-button"
-                    onClick={() => onModernFlipBitChange(Math.max(0, effectiveModernFlipBit - 1))}
-                  >
-                    Bit Left
-                  </button>
-                  <label className="param-field cryptanalysis-shift-slider">
-                    <span>Flip Bit {effectiveModernFlipBit + 1}</span>
-                    <input
-                      type="range"
-                      min={0}
-                      max={Math.max(0, baselineBits.length - 1)}
-                      step={1}
-                      value={effectiveModernFlipBit}
-                      onChange={(event) => onModernFlipBitChange(Number(event.target.value))}
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    className="mini-action-button"
-                    onClick={() =>
-                      onModernFlipBitChange(Math.min(baselineBits.length - 1, effectiveModernFlipBit + 1))
-                    }
-                  >
-                    Bit Right
-                  </button>
-                </div>
-                <p className="comparison-copy">
-                  Baseline length: <strong>{effectiveInputBits.length}</strong> bits
-                  {' '}| changed input bits <strong>{inputDifference.changedCount}</strong>
-                  {' '}| changed percent <strong>{(inputDifference.changedPercent * 100).toFixed(1)}%</strong>
-                </p>
-              </>
-            ) : (
-              <p className="comparison-copy">
-                Enter at least one bit to start the Avalanche Explorer.
-              </p>
-            )}
-          </div>
-
-          <div className="comparison-card comparison-card-wide">
             <span className="meta-label">Input Difference View</span>
             <strong>See the changed source position directly</strong>
             {effectiveInputBits.length > 0 ? (
-              <div className="modern-bit-grid">
-                <BitStripRow label="Baseline" bits={inputDifference.baselineBits} />
-                <BitStripRow label="Variant" bits={inputDifference.variantBits} changedFlags={inputDifference.changedFlags} />
-                <BitStripRow label="Changed" bits={inputDifference.changedFlags.map((changed) => (changed ? 1 : 0))} changedFlags={inputDifference.changedFlags} emphasis="changed" />
-              </div>
+              <>
+                <ModernFlipControl
+                  bitLength={effectiveInputBits.length}
+                  flipBit={effectiveModernFlipBit}
+                  changedCount={inputDifference.changedCount}
+                  changedPercent={inputDifference.changedPercent}
+                  onChange={onModernFlipBitChange}
+                />
+                {inputHexSummary ? (
+                  <div className="cryptanalysis-output-summary-row">
+                    <span className="content-status-chip">
+                      Baseline Hex: <strong>{inputHexSummary.baseline}</strong>
+                    </span>
+                    <span className="content-status-chip">
+                      Variant Hex: <strong>{inputHexSummary.variant}</strong>
+                    </span>
+                  </div>
+                ) : null}
+                <div className="modern-bit-grid">
+                  <BitStripRow label="Baseline" bits={inputDifference.baselineBits} />
+                  <BitStripRow label="Variant" bits={inputDifference.variantBits} changedFlags={inputDifference.changedFlags} />
+                  <BitStripRow label="Changed" bits={inputDifference.changedFlags.map((changed) => (changed ? 1 : 0))} changedFlags={inputDifference.changedFlags} emphasis="changed" />
+                </div>
+              </>
             ) : (
               <p className="comparison-copy">
                 The first modern view uses aligned bit strips so the difference shape is obvious at a glance.
@@ -368,6 +456,24 @@ export function CryptanalysisPanel({
             <strong>Compare real baseline vs variant outputs</strong>
             {outputDifference ? (
               <>
+                <ModernFlipControl
+                  bitLength={effectiveInputBits.length}
+                  flipBit={effectiveModernFlipBit}
+                  changedCount={outputDifference.changedCount}
+                  changedPercent={outputDifference.changedPercent}
+                  metricLabel="changed output bits"
+                  onChange={onModernFlipBitChange}
+                />
+                {outputHexSummary ? (
+                  <div className="cryptanalysis-output-summary-row">
+                    <span className="content-status-chip">
+                      Baseline Hex: <strong>{outputHexSummary.baseline}</strong>
+                    </span>
+                    <span className="content-status-chip">
+                      Variant Hex: <strong>{outputHexSummary.variant}</strong>
+                    </span>
+                  </div>
+                ) : null}
                 <div className="modern-bit-grid">
                   <BitStripRow label="Baseline Out" bits={outputDifference.baselineBits} />
                   <BitStripRow label="Variant Out" bits={outputDifference.variantBits} changedFlags={outputDifference.changedFlags} />
@@ -380,7 +486,9 @@ export function CryptanalysisPanel({
               </>
             ) : (
               <p className="comparison-copy">
-                This project needs a supported bit source and a bit-domain output path before the machine-aware avalanche view can render.
+                {flippableSource?.kind === 'text-symbol-bridge' && !variantBridgeSymbol
+                  ? 'This flip produced a 5-bit code outside A-Z, so there is no valid symbol variant to run through SymbolToBits.'
+                  : 'This project needs a supported bit source and a bit-domain output path before the machine-aware avalanche view can render.'}
               </p>
             )}
           </div>
@@ -390,6 +498,14 @@ export function CryptanalysisPanel({
             <strong>Watch the change spread across internal rounds</strong>
             {roundDiffusion.length > 0 ? (
               <>
+                <ModernFlipControl
+                  bitLength={effectiveInputBits.length}
+                  flipBit={effectiveModernFlipBit}
+                  changedCount={roundDiffusion[roundDiffusion.length - 1]?.changedCount ?? 0}
+                  changedPercent={roundDiffusion[roundDiffusion.length - 1]?.changedPercent ?? 0}
+                  metricLabel="changed digest bits"
+                  onChange={onModernFlipBitChange}
+                />
                 <div className="modern-round-diffusion-matrix">
                   {roundDiffusion.map((entry) => (
                     <div key={entry.moduleId} className="modern-round-diffusion-matrix-row">
@@ -775,6 +891,59 @@ function BitStripRow({
   );
 }
 
+function ModernFlipControl({
+  bitLength,
+  flipBit,
+  changedCount,
+  changedPercent,
+  metricLabel = 'changed input bits',
+  onChange,
+}: {
+  bitLength: number;
+  flipBit: number;
+  changedCount: number;
+  changedPercent: number;
+  metricLabel?: string;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <>
+      <div className="cryptanalysis-shift-control-row cryptanalysis-inline-flip-control">
+        <button
+          type="button"
+          className="mini-action-button"
+          onClick={() => onChange(Math.max(0, flipBit - 1))}
+        >
+          Bit Left
+        </button>
+        <label className="param-field cryptanalysis-shift-slider">
+          <span>Flip Bit {flipBit + 1}</span>
+          <input
+            type="range"
+            min={0}
+            max={Math.max(0, bitLength - 1)}
+            step={1}
+            value={flipBit}
+            onChange={(event) => onChange(Number(event.target.value))}
+          />
+        </label>
+        <button
+          type="button"
+          className="mini-action-button"
+          onClick={() => onChange(Math.min(bitLength - 1, flipBit + 1))}
+        >
+          Bit Right
+        </button>
+      </div>
+      <p className="comparison-copy">
+        Baseline length: <strong>{bitLength}</strong> bits
+        {' '}| {metricLabel} <strong>{changedCount}</strong>
+        {' '}| changed percent <strong>{(changedPercent * 100).toFixed(1)}%</strong>
+      </p>
+    </>
+  );
+}
+
 function formatTopLetters(entries: { letter: string; count: number; share: number }[]) {
   if (entries.length === 0) {
     return 'n/a';
@@ -822,16 +991,34 @@ function getSelectedKeyLetter(
   );
 }
 
-function getTerminalBits(result: ExecutionResult): number[] | null {
-  const terminalTrace = result.trace.at(-1) ?? null;
-  const terminalInput = terminalTrace?.inputs.in ?? null;
-  const terminalOutput =
-    terminalTrace && Object.values(terminalTrace.outputs)[0]
-      ? (Object.values(terminalTrace.outputs)[0] as Signal)
-      : null;
-  const signal = terminalOutput ?? terminalInput ?? null;
+function getFlippableSourceKindLabel(kind: 'bit-source' | 'hex-source' | 'ascii-source' | 'text-symbol-bridge') {
+  switch (kind) {
+    case 'bit-source':
+      return 'BitSource';
+    case 'hex-source':
+      return 'HexSource';
+    case 'ascii-source':
+      return 'AsciiSource';
+    case 'text-symbol-bridge':
+      return 'TextInput → SymbolToBits';
+  }
+}
 
-  return signal?.type === 'bits' ? signal.value : null;
+function getTerminalBits(result: ExecutionResult): number[] | null {
+  for (let index = result.trace.length - 1; index >= 0; index -= 1) {
+    const traceEntry = result.trace[index];
+    const outputSignal = Object.values(traceEntry.outputs).find((signal) => signal.type === 'bits') ?? null;
+    if (outputSignal?.type === 'bits') {
+      return outputSignal.value;
+    }
+
+    const inputSignal = Object.values(traceEntry.inputs).find((signal) => signal.type === 'bits') ?? null;
+    if (inputSignal?.type === 'bits') {
+      return inputSignal.value;
+    }
+  }
+
+  return null;
 }
 
 function findFlippableProjectSource(project: Project) {
@@ -853,6 +1040,44 @@ function findFlippableProjectSource(project: Project) {
         kind: 'hex-source' as const,
         bits: hexToBits(moduleInstance.params.value),
       };
+    }
+
+    if (moduleInstance.defId === 'AsciiSource' && typeof moduleInstance.params.value === 'string') {
+      return {
+        moduleId: moduleInstance.id,
+        moduleName: 'ASCII Source',
+        kind: 'ascii-source' as const,
+        bits: moduleInstance.params.value
+          .split('')
+          .flatMap((char) => {
+            const code = char.charCodeAt(0);
+            return [7, 6, 5, 4, 3, 2, 1, 0].map((shift) => (code >> shift) & 1);
+          }),
+      };
+    }
+
+    if (
+      moduleInstance.defId === 'TextInput' &&
+      typeof moduleInstance.params.value === 'string' &&
+      moduleInstance.params.value.length === 1
+    ) {
+      const bridgeConnection = project.connections.find(
+        (connection) =>
+          connection.from.moduleId === moduleInstance.id &&
+          connection.to.port === 'in' &&
+          project.modules.some(
+            (candidate) => candidate.id === connection.to.moduleId && candidate.defId === 'SymbolToBits',
+          ),
+      );
+      const symbolBits = symbolToBits(moduleInstance.params.value);
+      if (bridgeConnection && symbolBits) {
+        return {
+          moduleId: moduleInstance.id,
+          moduleName: 'Text Input',
+          kind: 'text-symbol-bridge' as const,
+          bits: symbolBits,
+        };
+      }
     }
   }
 

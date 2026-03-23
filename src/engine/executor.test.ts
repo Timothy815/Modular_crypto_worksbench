@@ -38,6 +38,14 @@ const registry: ModuleRegistry = {
     paramSchema: {},
     evaluate: (inputs) => ({ out: inputs.in }),
   },
+  BitsEcho: {
+    id: 'BitsEcho',
+    name: 'BitsEcho',
+    inputs: [{ name: 'in', type: 'bits' }],
+    outputs: [{ name: 'out', type: 'bits' }],
+    paramSchema: {},
+    evaluate: (inputs) => ({ out: inputs.in }),
+  },
   SymbolSink: {
     id: 'SymbolSink',
     name: 'SymbolSink',
@@ -46,6 +54,45 @@ const registry: ModuleRegistry = {
     paramSchema: {},
     evaluate: () => ({}),
   },
+};
+
+const bitsEchoComposite: CompositeDef = {
+  id: 'BitsEchoComposite',
+  name: 'Bits Echo Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [{ name: 'in', type: 'bits' }],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {},
+  project: {
+    modules: [{ id: 'echo-1', defId: 'BitsEcho', params: {} }],
+    connections: [],
+  },
+  inputBindings: [
+    { externalPort: 'in', internalModuleId: 'echo-1', internalPort: 'in' },
+  ],
+  outputBindings: [
+    { externalPort: 'out', internalModuleId: 'echo-1', internalPort: 'out' },
+  ],
+};
+
+const bitsEchoIterator: IteratorDef = {
+  id: 'BitsEchoIterator',
+  name: 'Bits Echo Iterator',
+  kind: 'iterator',
+  version: 1,
+  inputs: [{ name: 'in', type: 'bits' }],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {
+    iterationCount: {
+      key: 'iterationCount',
+      label: 'Round Count',
+      kind: 'number',
+      defaultValue: 2,
+    },
+  },
+  roundDefId: 'BitsEchoComposite',
+  iterationCount: 2,
 };
 
 const symbolEchoComposite: CompositeDef = {
@@ -127,6 +174,46 @@ const keyedBitsIterator: IteratorDef = {
   roundKeyWidth: 2,
 };
 
+const forwardedRoundsComposite: CompositeDef = {
+  id: 'ForwardedRoundsComposite',
+  name: 'Forwarded Rounds Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [{ name: 'in', type: 'bits' }],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {
+    digestRounds: {
+      key: 'digestRounds',
+      label: 'Digest Rounds',
+      kind: 'number',
+      defaultValue: 2,
+    },
+  },
+  project: {
+    modules: [
+      {
+        id: 'iterator-1',
+        defId: 'BitsEchoIterator',
+        params: {},
+      },
+    ],
+    connections: [],
+  },
+  inputBindings: [
+    { externalPort: 'in', internalModuleId: 'iterator-1', internalPort: 'in' },
+  ],
+  outputBindings: [
+    { externalPort: 'out', internalModuleId: 'iterator-1', internalPort: 'out' },
+  ],
+  forwardedParams: [
+    {
+      externalParam: 'digestRounds',
+      internalModuleId: 'iterator-1',
+      internalParamKey: 'iterationCount',
+    },
+  ],
+};
+
 const registryWithComposite: ModuleRegistry = {
   ...registry,
   XorBits: {
@@ -156,11 +243,76 @@ const registryWithComposite: ModuleRegistry = {
   },
   [symbolEchoComposite.id]: symbolEchoComposite,
   [symbolEchoIterator.id]: symbolEchoIterator,
+  [bitsEchoComposite.id]: bitsEchoComposite,
+  [bitsEchoIterator.id]: bitsEchoIterator,
   [keyedBitsRoundComposite.id]: keyedBitsRoundComposite,
   [keyedBitsIterator.id]: keyedBitsIterator,
+  [forwardedRoundsComposite.id]: forwardedRoundsComposite,
 };
 
 describe('executeProject', () => {
+  it('evaluates a forwarded composite parameter without mutating the iterator definition', () => {
+    const oneRoundProject: Project = {
+      modules: [
+        {
+          id: 'source',
+          defId: 'ForwardedRoundsComposite',
+          params: { digestRounds: 1 },
+        },
+      ],
+      connections: [],
+    };
+
+    const oneRoundResult = executeProject(
+      oneRoundProject,
+      registryWithComposite,
+      {
+        source: {
+          in: { type: 'bits', value: [1, 1] },
+        },
+      },
+    );
+
+    expect(oneRoundResult.outputsByModuleId.source.out).toEqual({
+      type: 'bits',
+      value: [1, 1],
+    });
+    expect(
+      oneRoundResult.analysisTrace.some((entry) => entry.moduleId === 'source/iterator-1/round-1'),
+    ).toBe(true);
+    expect(
+      oneRoundResult.analysisTrace.some((entry) => entry.moduleId === 'source/iterator-1/round-2'),
+    ).toBe(false);
+
+    const twoRoundResult = executeProject(
+      {
+        modules: [
+          {
+            id: 'source',
+            defId: 'ForwardedRoundsComposite',
+            params: { digestRounds: 2 },
+          },
+        ],
+        connections: [],
+      },
+      registryWithComposite,
+      {
+        source: {
+          in: { type: 'bits', value: [1, 1] },
+        },
+      },
+    );
+
+    expect(twoRoundResult.outputsByModuleId.source.out).toEqual({
+      type: 'bits',
+      value: [1, 1],
+    });
+    expect(
+      twoRoundResult.analysisTrace.some((entry) => entry.moduleId === 'source/iterator-1/round-2'),
+    ).toBe(true);
+    expect(bitsEchoIterator.iterationCount).toBe(2);
+  });
+
   it('executes a valid graph in topological order', () => {
     const project: Project = {
       modules: [

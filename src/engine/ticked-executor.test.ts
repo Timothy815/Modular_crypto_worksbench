@@ -82,6 +82,45 @@ const PassThroughIterator: IteratorDef = {
   iterationCount: 2,
 };
 
+const ForwardedRotorComposite: CompositeDef = {
+  id: 'ForwardedRotorComposite',
+  name: 'Forwarded Rotor Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [{ name: 'in', type: 'symbol' }],
+  outputs: [{ name: 'out', type: 'symbol' }],
+  paramSchema: {
+    startPosition: {
+      key: 'startPosition',
+      label: 'Start Position',
+      kind: 'number',
+      defaultValue: 0,
+    },
+  },
+  project: {
+    modules: [
+      {
+        id: 'rotor-1',
+        defId: 'Rotor',
+        params: {
+          wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''),
+          position: 0,
+        },
+      },
+    ],
+    connections: [],
+  },
+  inputBindings: [{ externalPort: 'in', internalModuleId: 'rotor-1', internalPort: 'in' }],
+  outputBindings: [{ externalPort: 'out', internalModuleId: 'rotor-1', internalPort: 'out' }],
+  forwardedParams: [
+    {
+      externalParam: 'startPosition',
+      internalModuleId: 'rotor-1',
+      internalParamKey: 'position',
+    },
+  ],
+};
+
 describe('isStatefulModule', () => {
   it('returns true for modules with an advance function', () => {
     expect(isStatefulModule(ShiftModule)).toBe(true);
@@ -102,6 +141,7 @@ describe('executeTickedProject', () => {
     PassThrough,
     PassThroughComposite,
     PassThroughIterator,
+    ForwardedRotorComposite,
     Rotor,
   };
 
@@ -291,6 +331,36 @@ describe('executeTickedProject', () => {
       );
       // All outputs should be unique (different position = different mapping)
       expect(new Set(outputs).size).toBe(5);
+    });
+
+    it('initializes forwarded stateful params before tick 0', () => {
+      const project: Project = {
+        modules: [
+          {
+            id: 'forwarded-rotor',
+            defId: 'ForwardedRotorComposite',
+            params: { startPosition: 5 },
+          },
+        ],
+        connections: [],
+      };
+
+      const overrides: Record<string, ModuleInputs>[] = [
+        { 'forwarded-rotor': { in: { type: 'symbol', value: 'A' } } },
+        { 'forwarded-rotor': { in: { type: 'symbol', value: 'A' } } },
+      ];
+
+      const result = executeTickedProject(project, registry, 2, overrides);
+
+      expect(
+        result.paramsByModuleByTick['forwarded-rotor'][0].startPosition,
+      ).toBe(5);
+      expect(
+        result.ticks[0].analysisTrace.find((entry) => entry.moduleId === 'forwarded-rotor/rotor-1')?.outputs.out.value,
+      ).toBe('B');
+      expect(
+        result.ticks[1].analysisTrace.find((entry) => entry.moduleId === 'forwarded-rotor/rotor-1')?.outputs.out.value,
+      ).toBe('X');
     });
 
     it('wraps rotor position at 26', () => {

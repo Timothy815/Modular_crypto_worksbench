@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { CompositeDef, IteratorDef } from './composites';
 import type { ModuleRegistry } from './types';
-import { validateCompositeDef, validateIteratorDef } from './validation';
+import { validateCompositeDef, validateIteratorDef, validateProject } from './validation';
 
 const registry: ModuleRegistry = {
   Source: {
@@ -173,6 +173,313 @@ describe('validateCompositeDef', () => {
 
     expect(result.ok).toBe(false);
     expect(result.issues.some((issue) => issue.code === 'cycle-detected')).toBe(true);
+  });
+
+  it('accepts a composite with a valid forwarded parameter', () => {
+    const roundComposite: CompositeDef = {
+      id: 'RoundComposite',
+      name: 'Round Composite',
+      kind: 'composite',
+      inputs: [{ name: 'in', type: 'symbol' }],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {},
+      version: 1,
+      project: {
+        modules: [{ id: 'loop-1', defId: 'Loop', params: {} }],
+        connections: [],
+      },
+      inputBindings: [
+        { externalPort: 'in', internalModuleId: 'loop-1', internalPort: 'in' },
+      ],
+      outputBindings: [
+        { externalPort: 'out', internalModuleId: 'loop-1', internalPort: 'out' },
+      ],
+    };
+    const iterator: IteratorDef = {
+      id: 'RoundIterator',
+      name: 'Round Iterator',
+      kind: 'iterator',
+      version: 1,
+      inputs: [{ name: 'in', type: 'symbol' }],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {
+        iterationCount: {
+          key: 'iterationCount',
+          label: 'Round Count',
+          kind: 'number',
+          defaultValue: 2,
+        },
+      },
+      roundDefId: 'RoundComposite',
+      iterationCount: 2,
+    };
+    const composite: CompositeDef = {
+      id: 'ForwardedComposite',
+      name: 'Forwarded Composite',
+      kind: 'composite',
+      version: 1,
+      inputs: [{ name: 'in', type: 'symbol' }],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {
+        rounds: {
+          key: 'rounds',
+          label: 'Rounds',
+          kind: 'number',
+          defaultValue: 2,
+        },
+      },
+      project: {
+        modules: [{ id: 'iterator-1', defId: 'RoundIterator', params: {} }],
+        connections: [],
+      },
+      inputBindings: [
+        { externalPort: 'in', internalModuleId: 'iterator-1', internalPort: 'in' },
+      ],
+      outputBindings: [
+        { externalPort: 'out', internalModuleId: 'iterator-1', internalPort: 'out' },
+      ],
+      forwardedParams: [
+        {
+          externalParam: 'rounds',
+          internalModuleId: 'iterator-1',
+          internalParamKey: 'iterationCount',
+        },
+      ],
+    };
+
+    const result = validateCompositeDef(composite, {
+      ...registry,
+      RoundComposite: roundComposite,
+      RoundIterator: iterator,
+    });
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('rejects a forwarded parameter targeting a missing internal param', () => {
+    const composite: CompositeDef = {
+      id: 'BrokenForwarding',
+      name: 'Broken Forwarding',
+      kind: 'composite',
+      version: 1,
+      inputs: [{ name: 'in', type: 'symbol' }],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {
+        rounds: {
+          key: 'rounds',
+          label: 'Rounds',
+          kind: 'number',
+          defaultValue: 2,
+        },
+      },
+      project: {
+        modules: [{ id: 'loop-1', defId: 'Loop', params: {} }],
+        connections: [],
+      },
+      inputBindings: [
+        { externalPort: 'in', internalModuleId: 'loop-1', internalPort: 'in' },
+      ],
+      outputBindings: [
+        { externalPort: 'out', internalModuleId: 'loop-1', internalPort: 'out' },
+      ],
+      forwardedParams: [
+        {
+          externalParam: 'rounds',
+          internalModuleId: 'loop-1',
+          internalParamKey: 'iterationCount',
+        },
+      ],
+    };
+
+    const result = validateCompositeDef(composite, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'invalid-composite-binding')).toBe(true);
+  });
+
+  it('rejects a forwarded parameter with a kind mismatch', () => {
+    const roundComposite: CompositeDef = {
+      id: 'RoundComposite',
+      name: 'Round Composite',
+      kind: 'composite',
+      inputs: [{ name: 'in', type: 'symbol' }],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {},
+      version: 1,
+      project: {
+        modules: [{ id: 'loop-1', defId: 'Loop', params: {} }],
+        connections: [],
+      },
+      inputBindings: [
+        { externalPort: 'in', internalModuleId: 'loop-1', internalPort: 'in' },
+      ],
+      outputBindings: [
+        { externalPort: 'out', internalModuleId: 'loop-1', internalPort: 'out' },
+      ],
+    };
+    const iterator: IteratorDef = {
+      id: 'RoundIterator',
+      name: 'Round Iterator',
+      kind: 'iterator',
+      version: 1,
+      inputs: [{ name: 'in', type: 'symbol' }],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {
+        iterationCount: {
+          key: 'iterationCount',
+          label: 'Round Count',
+          kind: 'number',
+          defaultValue: 2,
+        },
+      },
+      roundDefId: 'RoundComposite',
+      iterationCount: 2,
+    };
+    const composite: CompositeDef = {
+      id: 'KindMismatchForwarding',
+      name: 'Kind Mismatch Forwarding',
+      kind: 'composite',
+      version: 1,
+      inputs: [{ name: 'in', type: 'symbol' }],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {
+        rounds: {
+          key: 'rounds',
+          label: 'Rounds',
+          kind: 'string',
+          defaultValue: '2',
+        },
+      },
+      project: {
+        modules: [{ id: 'iterator-1', defId: 'RoundIterator', params: {} }],
+        connections: [],
+      },
+      inputBindings: [
+        { externalPort: 'in', internalModuleId: 'iterator-1', internalPort: 'in' },
+      ],
+      outputBindings: [
+        { externalPort: 'out', internalModuleId: 'iterator-1', internalPort: 'out' },
+      ],
+      forwardedParams: [
+        {
+          externalParam: 'rounds',
+          internalModuleId: 'iterator-1',
+          internalParamKey: 'iterationCount',
+        },
+      ],
+    };
+
+    const result = validateCompositeDef(composite, {
+      ...registry,
+      RoundComposite: roundComposite,
+      RoundIterator: iterator,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'invalid-composite-binding')).toBe(true);
+  });
+
+  it('rejects a forwarded value that fails the target param validator', () => {
+    const roundComposite: CompositeDef = {
+      id: 'RoundComposite',
+      name: 'Round Composite',
+      kind: 'composite',
+      inputs: [{ name: 'in', type: 'symbol' }],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {},
+      version: 1,
+      project: {
+        modules: [{ id: 'loop-1', defId: 'Loop', params: {} }],
+        connections: [],
+      },
+      inputBindings: [
+        { externalPort: 'in', internalModuleId: 'loop-1', internalPort: 'in' },
+      ],
+      outputBindings: [
+        { externalPort: 'out', internalModuleId: 'loop-1', internalPort: 'out' },
+      ],
+    };
+    const iterator: IteratorDef = {
+      id: 'RoundIterator',
+      name: 'Round Iterator',
+      kind: 'iterator',
+      version: 1,
+      inputs: [{ name: 'in', type: 'symbol' }],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {
+        iterationCount: {
+          key: 'iterationCount',
+          label: 'Round Count',
+          kind: 'number',
+          defaultValue: 2,
+        },
+      },
+      roundDefId: 'RoundComposite',
+      iterationCount: 2,
+    };
+    const composite: CompositeDef = {
+      id: 'InvalidForwardedValue',
+      name: 'Invalid Forwarded Value',
+      kind: 'composite',
+      version: 1,
+      inputs: [{ name: 'in', type: 'symbol' }],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {
+        rounds: {
+          key: 'rounds',
+          label: 'Rounds',
+          kind: 'number',
+          defaultValue: 2,
+        },
+      },
+      project: {
+        modules: [{ id: 'iterator-1', defId: 'RoundIterator', params: {} }],
+        connections: [],
+      },
+      inputBindings: [
+        { externalPort: 'in', internalModuleId: 'iterator-1', internalPort: 'in' },
+      ],
+      outputBindings: [
+        { externalPort: 'out', internalModuleId: 'iterator-1', internalPort: 'out' },
+      ],
+      forwardedParams: [
+        {
+          externalParam: 'rounds',
+          internalModuleId: 'iterator-1',
+          internalParamKey: 'iterationCount',
+        },
+      ],
+    };
+
+    const result = validateCompositeDef(composite, {
+      ...registry,
+      RoundComposite: roundComposite,
+      RoundIterator: iterator,
+    });
+
+    expect(result.ok).toBe(true);
+
+    const projectResult = validateProject(
+      {
+        modules: [
+          {
+            id: 'forwarded',
+            defId: 'InvalidForwardedValue',
+            params: { rounds: 0 },
+          },
+        ],
+        connections: [],
+      },
+      {
+        ...registry,
+        RoundComposite: roundComposite,
+        RoundIterator: iterator,
+        InvalidForwardedValue: composite,
+      },
+    );
+
+    expect(projectResult.ok).toBe(false);
+    expect(projectResult.issues.some((issue) => issue.moduleId === 'forwarded')).toBe(true);
   });
 });
 

@@ -1,6 +1,8 @@
 import type { ExecutionResult, ExecutionTraceEntry, Signal } from '../engine/types';
 import { ENGLISH_LETTER_FREQUENCIES } from './cryptanalysis-data';
 
+const SYMBOL_BIT_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
 export interface LetterFrequencyEntry {
   letter: string;
   count: number;
@@ -103,6 +105,52 @@ export function bitsToHex(bits: number[]): string {
   }
 
   return output;
+}
+
+export function bitsToAsciiText(bits: number[]): string {
+  if (bits.length === 0) {
+    return '';
+  }
+
+  const padded = [...bits];
+  while (padded.length % 8 !== 0) {
+    padded.push(0);
+  }
+
+  let output = '';
+  for (let index = 0; index < padded.length; index += 8) {
+    const byteBits = padded.slice(index, index + 8);
+    const value = byteBits.reduce((current, bit) => (current << 1) | (bit ? 1 : 0), 0);
+    output += String.fromCharCode(Math.min(value, 0x7f));
+  }
+
+  return output;
+}
+
+export function symbolToBits(symbol: string): number[] | null {
+  if (symbol.length !== 1) {
+    return null;
+  }
+
+  const index = SYMBOL_BIT_ALPHABET.indexOf(symbol.toUpperCase());
+  if (index === -1) {
+    return null;
+  }
+
+  return [4, 3, 2, 1, 0].map((shift) => (index >> shift) & 1);
+}
+
+export function bitsToAlphabetSymbol(bits: number[]): string | null {
+  if (bits.length !== 5) {
+    return null;
+  }
+
+  const index = bits.reduce((value, bit) => (value << 1) | (bit ? 1 : 0), 0);
+  if (index < 0 || index >= SYMBOL_BIT_ALPHABET.length) {
+    return null;
+  }
+
+  return SYMBOL_BIT_ALPHABET[index] ?? null;
 }
 
 export interface SymbolTextAnalysis {

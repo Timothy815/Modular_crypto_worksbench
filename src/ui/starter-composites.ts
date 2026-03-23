@@ -219,6 +219,100 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
     },
   },
   {
+    id: 'HashDigestRoundComposite',
+    name: 'Hash Digest Round',
+    version: 1,
+    source: 'built-in',
+    definition: {
+      id: 'HashDigestRoundComposite',
+      name: 'Hash Digest Round',
+      kind: 'composite',
+      version: 1,
+      inputs: [{ name: 'in', type: 'bits' }],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {
+        rotateMode: {
+          key: 'rotateMode',
+          label: 'Rotate Mode',
+          kind: 'select',
+          defaultValue: 'rotate-left',
+          options: [
+            { label: 'Rotate Left', value: 'rotate-left' },
+            { label: 'Rotate Right', value: 'rotate-right' },
+            { label: 'Left Shift', value: 'left' },
+            { label: 'Right Shift', value: 'right' },
+          ],
+          description: 'How the digest round rearranges the substituted byte before mixing in the constant.',
+        },
+      },
+      project: {
+        modules: [
+          {
+            id: 'sbox',
+            defId: 'SBox',
+            params: {
+              table: Array.from({ length: 256 }, (_, index) => 255 - index).join(','),
+            },
+          },
+          { id: 'rotate', defId: 'BitShifter', params: { amount: 1, mode: 'rotate-left' } },
+          { id: 'constant', defId: 'BitSource', params: { stream: [1, 0, 1, 1, 0, 0, 1, 0] } },
+          { id: 'mix', defId: 'XOR', params: {} },
+        ],
+        connections: [
+          { from: { moduleId: 'sbox', port: 'out' }, to: { moduleId: 'rotate', port: 'in' } },
+          { from: { moduleId: 'rotate', port: 'out' }, to: { moduleId: 'mix', port: 'a' } },
+          { from: { moduleId: 'constant', port: 'out' }, to: { moduleId: 'mix', port: 'b' } },
+        ],
+      },
+      inputBindings: [
+        {
+          externalPort: 'in',
+          internalModuleId: 'sbox',
+          internalPort: 'in',
+        },
+      ],
+      outputBindings: [
+        {
+          externalPort: 'out',
+          internalModuleId: 'mix',
+          internalPort: 'out',
+        },
+      ],
+      forwardedParams: [
+        {
+          externalParam: 'rotateMode',
+          internalModuleId: 'rotate',
+          internalParamKey: 'mode',
+        },
+      ],
+    },
+  },
+  {
+    id: 'HashDigestRoundIterator',
+    name: 'Hash Digest Iterator',
+    version: 1,
+    source: 'built-in',
+    definition: {
+      id: 'HashDigestRoundIterator',
+      name: 'Hash Digest Iterator',
+      kind: 'iterator',
+      version: 1,
+      inputs: [{ name: 'in', type: 'bits' }],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {
+        iterationCount: {
+          key: 'iterationCount',
+          label: 'Round Count',
+          kind: 'number',
+          defaultValue: 4,
+          description: 'How many digest rounds to apply after compression.',
+        },
+      },
+      roundDefId: 'HashDigestRoundComposite',
+      iterationCount: 4,
+    },
+  },
+  {
     id: 'KeyedByteRoundIterator',
     name: 'Keyed Byte Round Iterator',
     version: 1,
@@ -312,6 +406,73 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
           externalPort: 'out',
           internalModuleId: 'decode',
           internalPort: 'out',
+        },
+      ],
+    },
+  },
+  {
+    id: 'ToyCompressionHashComposite',
+    name: 'Toy Compression Hash',
+    version: 1,
+    source: 'built-in',
+    definition: {
+      id: 'ToyCompressionHashComposite',
+      name: 'Toy Compression Hash',
+      kind: 'composite',
+      version: 1,
+      inputs: [
+        { name: 'left', type: 'bits' },
+        { name: 'right', type: 'bits' },
+      ],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {
+        digestRounds: {
+          key: 'digestRounds',
+          label: 'Digest Rounds',
+          kind: 'number',
+          defaultValue: 4,
+          description: 'How many byte-scale rounds finish the compressed digest.',
+        },
+      },
+      project: {
+        modules: [
+          { id: 'left-mix', defId: 'ByteRoundComposite', params: {} },
+          { id: 'right-swap', defId: 'Permutation', params: { order: '7,6,5,4,3,2,1,0' } },
+          { id: 'right-mix', defId: 'ByteRoundComposite', params: {} },
+          { id: 'compress', defId: 'XOR', params: {} },
+          { id: 'digest-rounds', defId: 'HashDigestRoundIterator', params: { iterationCount: 4 } },
+        ],
+        connections: [
+          { from: { moduleId: 'right-swap', port: 'out' }, to: { moduleId: 'right-mix', port: 'in' } },
+          { from: { moduleId: 'left-mix', port: 'out' }, to: { moduleId: 'compress', port: 'a' } },
+          { from: { moduleId: 'right-mix', port: 'out' }, to: { moduleId: 'compress', port: 'b' } },
+          { from: { moduleId: 'compress', port: 'out' }, to: { moduleId: 'digest-rounds', port: 'in' } },
+        ],
+      },
+      inputBindings: [
+        {
+          externalPort: 'left',
+          internalPort: 'in',
+          internalModuleId: 'left-mix',
+        },
+        {
+          externalPort: 'right',
+          internalPort: 'in',
+          internalModuleId: 'right-swap',
+        },
+      ],
+      outputBindings: [
+        {
+          externalPort: 'out',
+          internalModuleId: 'digest-rounds',
+          internalPort: 'out',
+        },
+      ],
+      forwardedParams: [
+        {
+          externalParam: 'digestRounds',
+          internalModuleId: 'digest-rounds',
+          internalParamKey: 'iterationCount',
         },
       ],
     },

@@ -546,6 +546,61 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'toy-compression-hash',
+    name: 'Toy Compression Hash',
+    group: 'Hash Foundations',
+    summary: 'Two visible message bytes are mixed separately, XOR-compressed into one digest byte, and then diffused through repeated digest rounds.',
+    pipeline: 'HexSource + HexSource -> ToyCompressionHashComposite -> BitsToHex -> Output',
+    project: {
+      modules: [
+        { id: 'left-source', defId: 'HexSource', params: { value: 'A3' } },
+        { id: 'right-source', defId: 'HexSource', params: { value: '6F' } },
+        { id: 'hash', defId: 'ToyCompressionHashComposite', params: {} },
+        { id: 'encode', defId: 'BitsToHex', params: {} },
+        { id: 'output', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'left-source', port: 'out' }, to: { moduleId: 'hash', port: 'left' } },
+        { from: { moduleId: 'right-source', port: 'out' }, to: { moduleId: 'hash', port: 'right' } },
+        { from: { moduleId: 'hash', port: 'out' }, to: { moduleId: 'encode', port: 'in' } },
+        { from: { moduleId: 'encode', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      'left-source': { x: 44, y: 108 },
+      'right-source': { x: 44, y: 236 },
+      hash: { x: 352, y: 172 },
+      encode: { x: 660, y: 172 },
+      output: { x: 968, y: 172 },
+    },
+  },
+  {
+    id: 'hash-digest-round',
+    name: 'Hash Digest Round',
+    group: 'Hash Foundations',
+    summary: 'A single digest round that substitutes, rotates, and constant-mixes one byte so students can hear the effect of mode changes before stacking rounds.',
+    pipeline: 'HexSource -> HashDigestRoundComposite -> BitsToHex -> Output',
+    project: {
+      modules: [
+        { id: 'source', defId: 'HexSource', params: { value: 'A3' } },
+        { id: 'digest', defId: 'HashDigestRoundComposite', params: {} },
+        { id: 'encode', defId: 'BitsToHex', params: {} },
+        { id: 'output', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'digest', port: 'in' } },
+        { from: { moduleId: 'digest', port: 'out' }, to: { moduleId: 'encode', port: 'in' } },
+        { from: { moduleId: 'encode', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      source: { x: 48, y: 156 },
+      digest: { x: 336, y: 156 },
+      encode: { x: 624, y: 156 },
+      output: { x: 912, y: 156 },
+    },
+  },
+  {
     id: 'sequential',
     name: 'Sequential Heart',
     group: 'Sequential',

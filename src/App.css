@@ -1634,6 +1634,20 @@
   color: var(--ink);
 }
 
+.forwarded-param-chip {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-soft));
+  color: var(--ink);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .baseline-chip {
   display: inline-block;
   width: fit-content;
@@ -2254,6 +2268,12 @@
   resize: vertical;
 }
 
+.cryptanalysis-tutorial-card {
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 8%, var(--surface-panel)), var(--surface-panel));
+}
+
 .cryptanalysis-textarea-field {
   align-items: stretch;
 }
@@ -2300,6 +2320,21 @@
   align-items: end;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.cryptanalysis-inline-flip-control {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface-1));
+}
+
+.cryptanalysis-output-summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .cryptanalysis-shift-slider {

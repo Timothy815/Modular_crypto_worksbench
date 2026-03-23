@@ -1229,6 +1229,9 @@ function App() {
               modernBaseline={state.modernAnalysisBaselineByProject[activeProjectDefinition.id] ?? ''}
               modernFlipBit={state.modernAnalysisFlipBitByProject[activeProjectDefinition.id] ?? 0}
               workspaceMode={workspaceMode}
+              tutorial={selectedTutorial?.projectId === activeProjectDefinition.id ? selectedTutorial : null}
+              tutorialStep={selectedTutorial?.projectId === activeProjectDefinition.id ? selectedTutorialStep : null}
+              tutorialStepIndex={tutorialStepIndex}
               onSetWorkspaceMode={(mode) =>
                 dispatch({
                   type: 'setWorkspaceMode',
@@ -1262,6 +1265,21 @@ function App() {
                   type: 'setModernAnalysisFlipBit',
                   projectId: activeProjectDefinition.id,
                   value,
+                })
+              }
+              onSetTutorialStep={(stepValue) => {
+                setStepIndex(selectedTutorial?.steps[stepValue]?.targetStepIndex ?? null);
+                dispatch({
+                  type: 'setTutorialStep',
+                  projectId: activeProjectDefinition.id,
+                  stepIndex: stepValue,
+                });
+              }}
+              onFocusTutorialModule={(moduleId) =>
+                dispatch({
+                  type: 'selectModule',
+                  projectId: activeProjectDefinition.id,
+                  moduleId,
                 })
               }
             />
