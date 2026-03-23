@@ -6,11 +6,10 @@ Last updated: March 22, 2026
 
 ## Current State
 
-The project has shipped all V1 milestones through `v1.0.1` on `main`, plus a post-v1
-advanced foundry slice (`feature/advanced-foundry-clock`, now merged) that adds stateful
-ticked execution and a Build / Guide workspace mode.
+The project has shipped through `v1.2.0` on `main`.
 
-Current `main` HEAD: `d5364bd` (Add build and guide workspace modes)
+Current `main` is now in the `v1.3.0` release-framing phase around the
+**Cipher Architecture** milestone.
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -37,6 +36,15 @@ Established and shipped:
 - per-tick source slicing (TextInput, BitSource) and `deriveTickCount`
 - ticked execution UI (tick bar, scrubber, collected output, per-tick inspector state)
 - Build / Guide workspace mode (per-project, persisted)
+- stateful composite ticking support
+- challenge capture / export workflow
+- sequential challenge evaluation and divergence reporting
+- advanced modern foundry primitives and labs
+- multi-format bridges (`HexSource`, `BitsToHex`, `AsciiSource`, `BitsToAscii`)
+- historical bridges and Lorenz-style labs
+- constrained iterators and key-bus distribution
+- nested analysis for composites and iterators
+- Feistel round / iterator teaching loop
 - GitHub Pages deployment workflow
 
 ---
@@ -49,8 +57,10 @@ The following decisions are reflected in shipped code:
 - minimal `ParamSchema`
 - `advance` is pure and opt-in per module (Rotor ships with advance)
 - `tickSlice` / `tickLength` are module-provided, not executor-provided
-- composite statefulness is explicitly deferred (composites containing stateful modules treated as stateless)
 - workspace mode (`'build' | 'guide'`) gates tutorial overlays without clearing tutorial state
+- iterator execution is bounded, linear, and auto-unrolled
+- round-key distribution is explicit signal flow, not hidden executor mutation
+- nested trace visibility is hoisted into `analysisTrace`, not hidden inside black-box execution
 
 ---
 
@@ -66,10 +76,16 @@ The following decisions are reflected in shipped code:
 | `v0.8.0` | Guided challenges |
 | `v1.0.0` | V1 milestone complete |
 | `v1.0.1` | Post-v1 polish (probes, analysis hardening, header compact) |
+| `v1.1.0` | Ticked execution, stateful foundry, sequential labs |
+| `v1.2.0` | Modern foundry, bridges, dependent clocking |
 
-Post-v1.0.1 work merged to `main` (not yet tagged):
-- Advanced foundry clock (ticked execution engine + UI)
-- Build / Guide workspace mode
+Post-`v1.2.0` work merged to `main` (current `v1.3.0` framing line):
+- cipher architecture groundwork
+- constrained iterators
+- key-bus distribution
+- depth tuning
+- nested analysis focus/grouping/stepping
+- Feistel round and iterator labs
 
 ---
 
@@ -78,41 +94,41 @@ Post-v1.0.1 work merged to `main` (not yet tagged):
 ### Claude
 
 Safe to begin:
-- tutorial content deepening (more walkthroughs, composite-aware tutorials)
-- conditional clocking / Enigma double-stepping (engine follow-up from clock contract §7)
-- composite statefulness (follow-up from ADVANCED-FOUNDRY-CLOCK-V1.md §7.1)
-- tick-trace performance optimization (follow-up from §7.2)
-- UI polish: tick mode visual refinements, state timeline visualization
+- `v1.3.0` cleanup and release framing
+- architecture tutorial/content polish tying together iterators, key buses, and Feistel
+- nested-analysis/canvas polish that improves depth readability without changing engine semantics
+- milestone docs / release note cleanup
 
 Should avoid for now:
 - feedback loops / cycles in the graph
 - async or real-time execution
 - custom scripting for advance functions
-- turning tutorials into grading/account systems
+- hidden iterator/key-schedule magic
+- opening another major capability branch before `v1.3.0` framing is complete
 
 ### Gemini
 
 Safe to begin:
-- review the merged Build / Guide mode for gating completeness
-- review ticked execution contract and implementation for correctness
-- critique whether workspace mode naming is clear for classroom use
-- evaluate whether the tutorial panel is the right home for the mode switch
+- review whether the Cipher Architecture line is ready for `v1.3.0`
+- evaluate iterator / key-bus / Feistel UX completeness
+- critique nested-analysis clarity at depth
+- confirm there are no remaining medium/high-severity architectural gaps before release framing
 
 Best focus:
-- whether Build / Guide mode correctly separates learning from building
-- whether ticked execution UI is honest and pedagogically clear
-- whether the codebase is ready for a `v1.1.0` tag
+- whether `v1.3.0` is now a clean stopping point
+- whether any remaining friction is polish-only or still architectural
+- whether the modern cipher teaching loop feels complete enough for a named release
 
 ---
 
 ## Current Verification State
 
 Available checks:
-- `npm test` — 109 tests, 11 test files
+- `npm test`
 - `npm run lint`
 - `npm run build`
 
-All three pass as of `d5364bd`.
+All three pass as of the current `main` release-framing line.
 
 ---
 
@@ -126,11 +142,10 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 ### Near-Term Roadmap
 
-1. **Tag `v1.1.0`** — after Gemini reviews the advanced foundry + workspace mode slices
-2. **Tutorial content deepening** — more walkthroughs, per-project guidance
-3. **Conditional clocking** — Enigma double-stepping as a clock contract follow-up
-4. **Composite statefulness** — recursive advance through composite internals
-5. **Authored tutorials** — composable tutorial definitions that work with custom composites
+1. **Frame `v1.3.0`** — the Cipher Architecture release
+2. **Final cleanup/polish** — nested-step visibility, modern architecture tutorial, wording cleanup
+3. **Tag `v1.3.0`** — after final review confirms no remaining architectural gap
+4. **Post-`v1.3.0` direction** — likely cryptanalysis, richer authored content, or another bounded analysis surface
 
 ### Key Contracts
 
@@ -143,5 +158,5 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `MODERN-PRIMITIVES-V1-CONTRACT.md` | Locked, shipped |
 | `V1-POLISH-AND-TUTORIALS.md` | Locked, shipped |
 | `ADVANCED-FOUNDRY-CLOCK-V1.md` | Locked, shipped (engine + UI slices) |
-| `ITERATIVE-ROUNDS-AND-KEYSCHEDULES-V1.md` | Draft, next major branch anchor |
-| `KEY-SCHEDULE-GROUNDWORK-V1.md` | Draft, explicit sub-key injection anchor |
+| `ITERATIVE-ROUNDS-AND-KEYSCHEDULES-V1.md` | Active, implemented as bounded iterator groundwork |
+| `KEY-SCHEDULE-GROUNDWORK-V1.md` | Active, implemented as explicit key-bus groundwork |

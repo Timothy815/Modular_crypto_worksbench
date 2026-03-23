@@ -11,7 +11,8 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped all V1 milestones plus a post-v1 advanced foundry slice on `main`.
+The repository has shipped through `v1.2.0` and `main` is now in `v1.3.0` framing around the
+**Cipher Architecture** milestone.
 
 Implemented and shipped:
 - engine core types, graph validation, iterative topological executor
@@ -25,6 +26,11 @@ Implemented and shipped:
 - guided challenges and tutorial walkthroughs
 - Build / Guide workspace mode (freeform building vs. tutorial-guided learning)
 - ticked execution UI (tick bar, scrubber, collected output, per-tick state display)
+- advanced modern foundry labs (byte rounds, keystreams, gated clocking)
+- multi-format bridges (hex, ASCII, Baudot)
+- constrained iterators and explicit key-bus distribution
+- nested analysis for composite and iterator internals
+- Feistel round / iterator teaching loop
 - workbench persistence and JSON import/export
 - dark mode
 - GitHub Pages deployment
@@ -74,8 +80,7 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 
 ## Near-Term Roadmap
 
-1. Tag `v1.1.0` after review of advanced foundry and workspace mode slices
-2. Tutorial content deepening
-3. Conditional clocking (Enigma double-stepping)
-4. Composite statefulness
-5. Authored tutorials for custom composites
+1. `v1.3.0` cleanup and milestone framing
+2. Final modern architecture tutorial/content pass
+3. Final iterator/nested-analysis polish if needed
+4. Tag `v1.3.0`
