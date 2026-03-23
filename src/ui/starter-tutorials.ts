@@ -3,6 +3,51 @@ import type { GuidedTutorial } from './tutorials';
 export const STARTER_TUTORIALS: GuidedTutorial[] = [
   {
     version: 1,
+    id: 'iterated-byte-rounds',
+    title: 'The Iterated Rounds',
+    group: 'Modern Rounds',
+    summary: 'Learn how one reusable byte-round composite can be stacked into a multi-round machine.',
+    projectId: 'iterated-byte-rounds',
+    steps: [
+      {
+        id: 'iterated-source',
+        title: 'Inject The Starting Byte',
+        body: 'HexSource provides the initial byte. The important change in this lab is not the input format, but how the same round logic gets reused repeatedly after it enters the graph.',
+        focusModuleId: 'source',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'iterated-round-1',
+        title: 'Run The First Reusable Round',
+        body: 'The first Byte Round composite contains an internal S-Box and permutation. This is the same round structure you would otherwise have to wire by hand each time.',
+        focusModuleId: 'round-1',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'iterated-round-2',
+        title: 'Reuse The Same Round Again',
+        body: 'The second Byte Round composite reuses the exact same internal definition. This is the first step toward iterative cipher structure: reuse before automation.',
+        focusModuleId: 'round-2',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'iterated-encode',
+        title: 'Bridge Back To Hex',
+        body: 'BitsToHex turns the fully iterated bit result back into a byte-scale representation so students can compare multi-round results directly.',
+        focusModuleId: 'encode',
+        targetStepIndex: 3,
+      },
+      {
+        id: 'iterated-output',
+        title: 'Read The Multi-Round Result',
+        body: 'Output marks the final result after both reusable rounds have executed. This shows how a larger cipher can be assembled from one stable round building block.',
+        focusModuleId: 'output',
+        targetStepIndex: 4,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'banked-lorenz',
     title: 'The Banked Lorenz Control',
     group: 'Historical Bridges',

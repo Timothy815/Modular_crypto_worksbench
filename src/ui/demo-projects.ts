@@ -296,6 +296,35 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'iterated-byte-rounds',
+    name: 'Iterated Byte Rounds',
+    group: 'Modern Rounds',
+    summary: 'A byte-oriented machine that reuses the same round composite twice instead of hand-wiring each round from scratch.',
+    pipeline: 'HexSource -> ByteRoundComposite -> ByteRoundComposite -> BitsToHex -> Output',
+    project: {
+      modules: [
+        { id: 'source', defId: 'HexSource', params: { value: 'A3' } },
+        { id: 'round-1', defId: 'ByteRoundComposite', params: {} },
+        { id: 'round-2', defId: 'ByteRoundComposite', params: {} },
+        { id: 'encode', defId: 'BitsToHex', params: {} },
+        { id: 'output', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'round-1', port: 'in' } },
+        { from: { moduleId: 'round-1', port: 'out' }, to: { moduleId: 'round-2', port: 'in' } },
+        { from: { moduleId: 'round-2', port: 'out' }, to: { moduleId: 'encode', port: 'in' } },
+        { from: { moduleId: 'encode', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      source: { x: 48, y: 156 },
+      'round-1': { x: 292, y: 156 },
+      'round-2': { x: 536, y: 156 },
+      encode: { x: 780, y: 156 },
+      output: { x: 1024, y: 156 },
+    },
+  },
+  {
     id: 'byte-round',
     name: 'Byte S-Box Round',
     group: 'Modern Rounds',

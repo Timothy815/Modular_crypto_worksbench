@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { V1_REGISTRY } from '../engine/modules';
 import type { Project } from '../engine/types';
 import { demoProjects } from './demo-projects';
+import { STARTER_COMPOSITE_LIBRARY } from './starter-composites';
 import { evaluateChallengeAttempt, type GuidedChallenge } from './challenges';
 
 function cloneProject(project: Project): Project {
@@ -18,7 +19,14 @@ function cloneProject(project: Project): Project {
 }
 
 describe('evaluateChallengeAttempt', () => {
+  const compositeRegistry = {
+    ...V1_REGISTRY,
+    ...Object.fromEntries(
+      STARTER_COMPOSITE_LIBRARY.map((entry) => [entry.id, entry.definition]),
+    ),
+  };
   const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
+  const iteratedByteRoundsProject = demoProjects.find((project) => project.id === 'iterated-byte-rounds');
   const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
   const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
   const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-lorenz');
@@ -33,6 +41,9 @@ describe('evaluateChallengeAttempt', () => {
 
   if (!bridgeProject) {
     throw new Error('Expected bridge demo project.');
+  }
+  if (!iteratedByteRoundsProject) {
+    throw new Error('Expected iterated-byte-rounds project.');
   }
   if (!baudotProject) {
     throw new Error('Expected baudot-bridge project.');
@@ -318,6 +329,50 @@ describe('evaluateChallengeAttempt', () => {
     expect(result.comparison?.baselineOutput.formatted).toBe('[1, 1, 0, 0, 1, 0, 1, 0]');
     expect(result.comparison?.variantOutput.formatted).toBe('[0, 1, 0, 1, 0, 0, 1, 1]');
     expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('permute');
+  });
+
+  it('returns failure when an iterated round machine bypasses the second composite round', () => {
+    const currentProject = cloneProject(iteratedByteRoundsProject.project);
+    currentProject.connections = currentProject.connections.filter(
+      (connection) =>
+        !(
+          (
+            connection.from.moduleId === 'round-1' &&
+            connection.to.moduleId === 'round-2' &&
+            connection.from.port === 'out' &&
+            connection.to.port === 'in'
+          ) ||
+          (
+            connection.from.moduleId === 'round-2' &&
+            connection.to.moduleId === 'encode' &&
+            connection.from.port === 'out' &&
+            connection.to.port === 'in'
+          )
+        ),
+    );
+    currentProject.connections.push({
+      from: { moduleId: 'source', port: 'out' },
+      to: { moduleId: 'round-2', port: 'in' },
+    });
+    currentProject.connections.push({
+      from: { moduleId: 'round-1', port: 'out' },
+      to: { moduleId: 'encode', port: 'in' },
+    });
+
+    const challenge: GuidedChallenge = {
+      id: 'iterated-round-failure',
+      title: 'Iterated Round Failure',
+      prompt: 'Restore the round stack.',
+      startingProject: cloneProject(currentProject),
+      targetProject: cloneProject(iteratedByteRoundsProject.project),
+      success: { kind: 'output-match-target' },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, compositeRegistry);
+
+    expect(result.status).toBe('failure');
+    expect(result.reason).toBe('diverged-from-target');
+    expect(result.comparison?.outputsMatch).toBe(false);
   });
 
   it('returns failure when a hex-round machine starts from the wrong input vector', () => {

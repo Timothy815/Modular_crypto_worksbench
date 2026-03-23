@@ -11,6 +11,7 @@ const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foun
 const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-lorenz');
 const pairedLorenzProject = demoProjects.find((project) => project.id === 'paired-lorenz');
 const bankedLorenzProject = demoProjects.find((project) => project.id === 'banked-lorenz');
+const iteratedByteRoundsProject = demoProjects.find((project) => project.id === 'iterated-byte-rounds');
 const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
 const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
 const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
@@ -35,6 +36,9 @@ if (!pairedLorenzProject) {
 }
 if (!bankedLorenzProject) {
   throw new Error('Expected banked-lorenz demo project to seed starter challenges.');
+}
+if (!iteratedByteRoundsProject) {
+  throw new Error('Expected iterated-byte-rounds demo project to seed starter challenges.');
 }
 if (!byteRoundProject) {
   throw new Error('Expected byte-round demo project to seed starter challenges.');
@@ -67,6 +71,8 @@ const pairedLorenzTarget = cloneProject(pairedLorenzProject.project);
 const brokenPairedLorenzStart = cloneProject(pairedLorenzProject.project);
 const bankedLorenzTarget = cloneProject(bankedLorenzProject.project);
 const brokenBankedLorenzStart = cloneProject(bankedLorenzProject.project);
+const iteratedByteRoundsTarget = cloneProject(iteratedByteRoundsProject.project);
+const brokenIteratedByteRoundsStart = cloneProject(iteratedByteRoundsProject.project);
 const byteRoundTarget = cloneProject(byteRoundProject.project);
 const brokenByteRoundStart = cloneProject(byteRoundProject.project);
 const hexRoundTarget = cloneProject(hexRoundProject.project);
@@ -126,6 +132,32 @@ if (!brokenBankedLorenzControlB) {
   throw new Error('Expected banked-lorenz demo project to contain control-b.');
 }
 brokenBankedLorenzControlB.params.seed = [0, 1, 1, 0, 0];
+
+brokenIteratedByteRoundsStart.connections = brokenIteratedByteRoundsStart.connections.filter(
+  (connection) =>
+    !(
+      (
+        connection.from.moduleId === 'round-1' &&
+        connection.to.moduleId === 'round-2' &&
+        connection.from.port === 'out' &&
+        connection.to.port === 'in'
+      ) ||
+      (
+        connection.from.moduleId === 'round-2' &&
+        connection.to.moduleId === 'encode' &&
+        connection.from.port === 'out' &&
+        connection.to.port === 'in'
+      )
+    ),
+);
+brokenIteratedByteRoundsStart.connections.push({
+  from: { moduleId: 'source', port: 'out' },
+  to: { moduleId: 'round-2', port: 'in' },
+});
+brokenIteratedByteRoundsStart.connections.push({
+  from: { moduleId: 'round-1', port: 'out' },
+  to: { moduleId: 'encode', port: 'in' },
+});
 
 const brokenPermutationModule = brokenByteRoundStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'permute',
@@ -301,6 +333,26 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The two control wheels are mixed first, and only that mixed bit stream clocks the data wheel.',
       'Watch the gate-mix output to see when the data wheel should or should not advance.',
       'A wrong control wheel can leave the data wheel stepping on the wrong codewords even if the data seed itself is correct.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'restore-round-stack',
+    title: 'Restore the Round Stack',
+    group: 'Modern Rounds',
+    difficulty: 'intermediate',
+    prompt:
+      'The first reusable byte round still runs, but the second round has been bypassed. Restore the stacked round path so the final hex result matches the captured reference machine again.',
+    startingProject: brokenIteratedByteRoundsStart,
+    startingLayout: cloneProject(iteratedByteRoundsProject.layout),
+    targetProject: iteratedByteRoundsTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Both Byte Round composites should participate in the final path.',
+      'Right now the machine bridges back to hex too early.',
+      'Reconnect the output of the first round through the second round before the final bridge.',
     ],
   },
   {
