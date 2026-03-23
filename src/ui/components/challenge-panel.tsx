@@ -199,7 +199,9 @@ export function ChallengePanel({
                       {evaluation.status === 'success'
                         ? 'Matched target'
                         : evaluation.status === 'failure'
-                          ? 'Not yet matched'
+                          ? evaluation.reason === 'matched-target-but-input-not-different'
+                            ? 'Digest matched, but input is unchanged'
+                            : 'Not yet matched'
                           : 'Blocked'}
                     </strong>
                   </p>
@@ -211,8 +213,9 @@ export function ChallengePanel({
                   ) : null}
                   {evaluation.status === 'failure' ? (
                     <p className="comparison-copy">
-                      Keep iterating on the current machine, or reset the attempt to restart from
-                      the seeded challenge state.
+                      {evaluation.reason === 'matched-target-but-input-not-different'
+                        ? 'The digest already matches the target, but the message is still the original seeded input. Change at least one guided input module and keep the digest the same.'
+                        : 'Keep iterating on the current machine, or reset the attempt to restart from the seeded challenge state.'}
                     </p>
                   ) : null}
                   {evaluation.comparison?.firstDivergence ? (

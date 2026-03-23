@@ -21,7 +21,8 @@ export interface GuidedChallenge {
 }
 
 export interface ChallengeSuccessCondition {
-  kind: 'output-match-target';
+  kind: 'output-match-target' | 'output-match-target-with-module-difference';
+  moduleIds?: string[];
 }
 
 export interface ChallengeEvaluation {
@@ -29,6 +30,7 @@ export interface ChallengeEvaluation {
   reason:
     | 'matched-target'
     | 'diverged-from-target'
+    | 'matched-target-but-input-not-different'
     | 'current-project-invalid'
     | 'target-project-invalid'
     | 'current-project-runtime-error'
@@ -135,17 +137,54 @@ export function evaluateChallengeAttempt(
   const matched =
     challenge.success.kind === 'output-match-target'
       ? comparison.outputsMatch
-      : false;
+      : challenge.success.kind === 'output-match-target-with-module-difference'
+        ? comparison.outputsMatch &&
+          hasModuleDifference(
+            currentProject,
+            challenge.targetProject,
+            challenge.success.moduleIds ?? [],
+          )
+        : false;
+
+  const reason =
+    challenge.success.kind === 'output-match-target-with-module-difference' &&
+    comparison.outputsMatch &&
+    !hasModuleDifference(
+      currentProject,
+      challenge.targetProject,
+      challenge.success.moduleIds ?? [],
+    )
+      ? 'matched-target-but-input-not-different'
+      : matched
+        ? 'matched-target'
+        : 'diverged-from-target';
 
   return {
     status: matched ? 'success' : 'failure',
-    reason: matched ? 'matched-target' : 'diverged-from-target',
+    reason,
     comparison,
     currentIssues: currentValidation.issues,
     targetIssues: targetValidation.issues,
     currentRuntimeError: null,
     targetRuntimeError: null,
   };
+}
+
+function hasModuleDifference(
+  currentProject: Project,
+  targetProject: Project,
+  moduleIds: string[],
+): boolean {
+  return moduleIds.some((moduleId) => {
+    const currentModule = currentProject.modules.find((moduleInstance) => moduleInstance.id === moduleId);
+    const targetModule = targetProject.modules.find((moduleInstance) => moduleInstance.id === moduleId);
+
+    if (!currentModule || !targetModule) {
+      return false;
+    }
+
+    return JSON.stringify(currentModule.params) !== JSON.stringify(targetModule.params);
+  });
 }
 
 function compareTickedChallengeResults(

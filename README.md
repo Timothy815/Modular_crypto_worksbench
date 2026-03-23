@@ -80,6 +80,7 @@ Implemented and shipped:
 - `CRYPTANALYSIS-WORKSPACE-V1.md`: locked direction for the dedicated cryptanalysis workspace
 - `MODERN-ANALYSIS-V1.md`: shipped direction for the post-`v1.4.0` modern-analysis line
 - `HASHING-V1.md`: current hashing milestone contract and scope boundary
+- `HASH-COLLISION-CHALLENGE-V1.md`: active direction for the first post-`v1.7.0` hash weakness challenge
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
 - `SBOX-TRANSFORMATION-V1.md`: shipped first lookup/substitution visual family contract
@@ -120,6 +121,7 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 
 1. Tag and frame **`v1.7.0` Hashing V1**
 2. Keep performance/bundle size under watch as inspector and analysis surfaces continue to grow
-3. Decide what follows hashing foundations: collision challenge, polish, or another bounded analysis slice
+3. Start the first post-`v1.7.0` bounded follow-on:
+   `Hash Collision Challenge V1`
 4. Defer deeper transformation playback/animation until classroom feedback justifies it
 5. Avoid scope creep into famous-hash approximations, KDFs, or Merkle-style structures before a new contract says otherwise

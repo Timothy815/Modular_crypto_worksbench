@@ -7,6 +7,7 @@ Read KEY-SCHEDULE-GROUNDWORK-V1.md before extending iterator-aware key distribut
 Read CRYPTANALYSIS-WORKSPACE-V1.md before starting work on the post-v1.3 cryptanalysis workspace.
 Read MODERN-ANALYSIS-V1.md before starting work on the post-v1.4 modern-analysis line.
 Read HASHING-V1.md before starting work on the hashing line.
+Read HASH-COLLISION-CHALLENGE-V1.md before starting work on the first post-`v1.7.0` hashing challenge slice.
 Read TRANSFORMATION-VISUALIZATION-V1.md before starting work on primitive-level drill-down or transformation-legibility features.
 Read SBOX-TRANSFORMATION-V1.md before starting work on the first S-Box transformation view.
 Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
@@ -135,7 +136,8 @@ src/utils/     — Shared helpers
 - `v1.4.0` is already shipped
 - `v1.5.0` is already shipped
 - `v1.6.0` is already shipped
-- Current `main` is in final Hashing V1 framing/polish before the `v1.7.0` checkpoint
+- `v1.7.0` is already shipped
+- Current `main` is focused on the first bounded hash collision challenge after the Hashing V1 milestone
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -152,6 +154,7 @@ What is shipped on `main`:
 - first bounded hashing foundations, demos, and tutorials
 - parameter forwarding on reusable architectures
 - transformation views for `Permutation`, `BitShifter`, `XOR`, and `SBox`
+- Hashing V1 milestone framing through `v1.7.0`
 
 Key contracts to check before implementation:
 - `ENGINE-V1-CONTRACT.md` for engine decisions
@@ -161,14 +164,15 @@ Key contracts to check before implementation:
 - `CRYPTANALYSIS-WORKSPACE-V1.md` for product boundary and first-slice scope
 - `MODERN-ANALYSIS-V1.md` for the first post-`v1.4.0` visual analysis milestone
 - `HASHING-V1.md` for the current hashing line and scope boundary
+- `HASH-COLLISION-CHALLENGE-V1.md` for the first bounded post-hashing milestone challenge slice
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family
 
 Near-term follow-ups:
-- frame and tag `v1.7.0` as the Hashing V1 milestone
+- frame the first bounded hash collision challenge
 - keep hashing connected to the modern-analysis and transformation-visualization surfaces
-- choose the first post-`v1.7.0` branch deliberately
+- reuse the existing guided-challenge system instead of inventing a new one
 - watch bundle growth as a near-term cleanup concern
 - avoid opening a second transformation-visualization slice before classroom feedback
 

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { executeProject } from '../engine/executor';
 import { V1_REGISTRY } from '../engine/modules';
 import type { Project } from '../engine/types';
 import { demoProjects } from './demo-projects';
 import { STARTER_COMPOSITE_LIBRARY } from './starter-composites';
 import { evaluateChallengeAttempt, type GuidedChallenge } from './challenges';
+import { compareExecutionResults } from './execution-compare';
 
 function cloneProject(project: Project): Project {
   return {
@@ -44,6 +46,7 @@ describe('evaluateChallengeAttempt', () => {
   const keystreamProject = demoProjects.find((project) => project.id === 'keystream');
   const gatedKeystreamProject = demoProjects.find((project) => project.id === 'gated-keystream');
   const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
+  const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
 
   if (!bridgeProject) {
     throw new Error('Expected bridge demo project.');
@@ -96,6 +99,9 @@ describe('evaluateChallengeAttempt', () => {
   if (!sequentialProject) {
     throw new Error('Expected sequential project.');
   }
+  if (!toyCompressionHashProject) {
+    throw new Error('Expected toy-compression-hash project.');
+  }
 
   it('returns success when the current project matches the target behavior', () => {
     const currentProject = cloneProject(bridgeProject.project);
@@ -114,6 +120,80 @@ describe('evaluateChallengeAttempt', () => {
     expect(result.reason).toBe('matched-target');
     expect(result.comparison?.outputsMatch).toBe(true);
     expect(result.comparison?.firstDivergence).toBeNull();
+  });
+
+  it('returns failure when a collision challenge matches the digest but keeps the original inputs', () => {
+    const currentProject = cloneProject(toyCompressionHashProject.project);
+    const challenge: GuidedChallenge = {
+      id: 'hash-collision-same-input',
+      title: 'Hash Collision',
+      prompt: 'Find a different input with the same digest.',
+      startingProject: cloneProject(toyCompressionHashProject.project),
+      targetProject: cloneProject(toyCompressionHashProject.project),
+      success: {
+        kind: 'output-match-target-with-module-difference',
+        moduleIds: ['left-source', 'right-source'],
+      },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, compositeRegistry);
+
+    expect(result.status).toBe('failure');
+    expect(result.reason).toBe('matched-target-but-input-not-different');
+    expect(result.comparison?.outputsMatch).toBe(true);
+  });
+
+  it('returns success when a collision challenge finds a different input with the same digest', () => {
+    const currentProject = cloneProject(toyCompressionHashProject.project);
+    const targetExecution = executeProject(cloneProject(toyCompressionHashProject.project), compositeRegistry);
+    const leftSource = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'left-source');
+    const rightSource = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'right-source');
+    if (!leftSource || !rightSource) {
+      throw new Error('Expected left and right source modules in toy-compression-hash project.');
+    }
+
+    const originalLeft = String(leftSource.params.value);
+    const originalRight = String(rightSource.params.value);
+    let foundCollision = false;
+
+    for (let left = 0; left < 256 && !foundCollision; left += 1) {
+      for (let right = 0; right < 256 && !foundCollision; right += 1) {
+        const leftHex = left.toString(16).toUpperCase().padStart(2, '0');
+        const rightHex = right.toString(16).toUpperCase().padStart(2, '0');
+
+        if (leftHex === originalLeft && rightHex === originalRight) {
+          continue;
+        }
+
+        leftSource.params.value = leftHex;
+        rightSource.params.value = rightHex;
+
+        const execution = executeProject(currentProject, compositeRegistry);
+        if (compareExecutionResults(targetExecution, execution).outputsMatch) {
+          foundCollision = true;
+        }
+      }
+    }
+
+    expect(foundCollision).toBe(true);
+
+    const challenge: GuidedChallenge = {
+      id: 'hash-collision-success',
+      title: 'Hash Collision',
+      prompt: 'Find a different input with the same digest.',
+      startingProject: cloneProject(toyCompressionHashProject.project),
+      targetProject: cloneProject(toyCompressionHashProject.project),
+      success: {
+        kind: 'output-match-target-with-module-difference',
+        moduleIds: ['left-source', 'right-source'],
+      },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, compositeRegistry);
+
+    expect(result.status).toBe('success');
+    expect(result.reason).toBe('matched-target');
+    expect(result.comparison?.outputsMatch).toBe(true);
   });
 
   it('returns failure when the current project diverges from the target behavior', () => {

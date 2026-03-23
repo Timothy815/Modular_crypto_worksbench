@@ -8,8 +8,8 @@ Last updated: March 23, 2026
 
 The project has shipped through `v1.6.0` on `main`.
 
-Current `main` is now in active post-`v1.6.0` work around:
-- Hashing V1 framing/polish before tagging
+Current `main` is now in active post-`v1.7.0` planning around:
+- the first bounded hash collision challenge
 - near-term roadmap cleanup after the first transformation and hashing milestones
 
 Established and shipped:
@@ -115,8 +115,9 @@ Post-`v1.5.0` work merged to `main`:
 - iterator-aware nested transformation resolution
 - SBox table-first lookup view with decimal/hex bridge
 
-Post-`v1.6.0` work currently active on `main`:
-- final Hashing V1 framing/polish before tagging
+Post-`v1.7.0` work currently active on `main`:
+- define the first bounded hash collision challenge
+- decide how much challenge guidance vs open exploration belongs in that slice
 
 ---
 
@@ -125,9 +126,9 @@ Post-`v1.6.0` work currently active on `main`:
 ### Claude
 
 Safe to begin:
-- help frame and close Hashing V1 cleanly
-- tighten tutorial wording and “what to look for” guidance in the hash line
-- help identify the best post-`v1.7.0` follow-on
+- help frame the first hash collision challenge cleanly
+- tighten challenge wording and “what success means” guidance
+- help keep the challenge bounded to one honest teaching loop
 
 Should avoid for now:
 - feedback loops / cycles in the graph
@@ -139,14 +140,14 @@ Should avoid for now:
 ### Gemini
 
 Safe to begin:
-- review whether Hashing V1 is ready to tag as `v1.7.0`
-- help choose the best post-`v1.7.0` branch
-- help keep hashing, modern analysis, and transformation legibility connected instead of fragmenting the product
+- review the first hash collision challenge contract and scope
+- help choose the clearest first collision artifact
+- help keep hashing, modern analysis, and challenge workflows connected instead of fragmenting the product
 
 Best focus:
-- whether Hashing V1 is cleanly complete
-- what should come immediately after `v1.7.0`
-- whether any near-term cleanup should interrupt the next branch
+- whether the first collision challenge is bounded correctly
+- whether the toy compression hash is the right first target
+- whether any near-term cleanup should interrupt the challenge slice
 
 ---
 
@@ -171,9 +172,9 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 ### Near-Term Roadmap
 
-1. **Tag and frame `v1.7.0`** — Hashing V1 is the current named milestone
+1. **Frame the first hash collision challenge** — keep it bounded to one tiny-hash teaching loop
 2. **Keep hashing connected to the shipped transformation views** — especially `SBox`, `BitShifter`, and `XOR`
-3. **Choose the first post-`v1.7.0` branch deliberately** — likely collision challenge, polish, or a bounded analysis follow-on
+3. **Use existing challenge infrastructure** — do not invent a second challenge system for hashing
 4. **Treat bundle-size growth as near-term technical debt** — address it before several more large UI surfaces land
 5. **Defer deeper transformation playback/animation** until classroom feedback justifies a second visualization slice
 
@@ -193,6 +194,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `CRYPTANALYSIS-WORKSPACE-V1.md` | Locked, implemented as the `v1.4.0` workspace boundary |
 | `MODERN-ANALYSIS-V1.md` | Active, implemented as the `v1.5.0` modern-analysis line |
 | `HASHING-V1.md` | Active, ready to frame/tag as the `v1.7.0` first hashing milestone contract |
+| `HASH-COLLISION-CHALLENGE-V1.md` | Active, defines the first post-`v1.7.0` bounded hash weakness challenge |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
 | `SBOX-TRANSFORMATION-V1.md` | Shipped as the `v1.6.0` lookup/substitution visual family |

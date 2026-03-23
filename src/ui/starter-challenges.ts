@@ -21,6 +21,7 @@ const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-r
 const keystreamProject = demoProjects.find((project) => project.id === 'keystream');
 const gatedKeystreamProject = demoProjects.find((project) => project.id === 'gated-keystream');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
+const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
 
 if (!bridgeProject) {
   throw new Error('Expected bridge demo project to seed starter challenges.');
@@ -70,6 +71,9 @@ if (!gatedKeystreamProject) {
 if (!sequentialProject) {
   throw new Error('Expected sequential demo project to seed starter challenges.');
 }
+if (!toyCompressionHashProject) {
+  throw new Error('Expected toy-compression-hash project to seed starter challenges.');
+}
 
 const fixedBridgeTarget = cloneProject(bridgeProject.project);
 const brokenBridgeStart = cloneProject(bridgeProject.project);
@@ -104,6 +108,8 @@ const brokenGatedKeystreamStart = cloneProject(gatedKeystreamProject.project);
 const sequentialTarget = cloneProject(sequentialProject.project);
 const brokenSequentialStart = cloneProject(sequentialProject.project);
 const brokenSequentialTapsStart = cloneProject(sequentialProject.project);
+const toyCompressionHashTarget = cloneProject(toyCompressionHashProject.project);
+const toyCompressionHashCollisionStart = cloneProject(toyCompressionHashProject.project);
 
 const brokenKeyModule = brokenBridgeStart.modules.find((moduleInstance) => moduleInstance.id === 'key');
 if (!brokenKeyModule) {
@@ -258,6 +264,27 @@ if (!brokenTapModule) {
 brokenTapModule.params.taps = '1,4';
 
 export const STARTER_CHALLENGES: GuidedChallenge[] = [
+  {
+    version: 1,
+    id: 'find-hash-collision',
+    title: 'Find A Hash Collision',
+    group: 'Hash Foundations',
+    difficulty: 'intermediate',
+    prompt:
+      'The Toy Compression Hash starts from a seeded 2-byte message. Change at least one of the two message bytes so the final digest stays exactly the same. Success means: different input, same digest.',
+    startingProject: toyCompressionHashCollisionStart,
+    startingLayout: cloneProject(toyCompressionHashProject.layout),
+    targetProject: toyCompressionHashTarget,
+    success: {
+      kind: 'output-match-target-with-module-difference',
+      moduleIds: ['left-source', 'right-source'],
+    },
+    hints: [
+      'You are not trying to preserve the whole intermediate trace. Only the final digest has to match.',
+      'At least one of the two HexSource values must change, or the challenge will not count as solved.',
+      'A one-byte digest has only 256 possible outputs, so different 2-byte messages must eventually overlap.',
+    ],
+  },
   {
     version: 1,
     id: 'repair-bridge-key',
