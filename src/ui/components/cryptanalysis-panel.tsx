@@ -1,4 +1,6 @@
-import { analyzeSymbolSignal } from '../cryptanalysis';
+import { useMemo, useState } from 'react';
+
+import { analyzeSymbolSignal, analyzeVigenereColumns } from '../cryptanalysis';
 import type { WorkspaceMode } from '../workspace-mode';
 
 interface CryptanalysisPanelProps {
@@ -16,8 +18,23 @@ export function CryptanalysisPanel({
   onSetWorkspaceMode,
   onCiphertextChange,
 }: CryptanalysisPanelProps) {
+  const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
   const analysis = analyzeSymbolSignal(
     ciphertext.trim().length > 0 ? { type: 'symbol', value: ciphertext } : null,
+  );
+  const availablePeriods = useMemo(
+    () => analysis?.candidatePeriods.map((entry) => entry.period) ?? [],
+    [analysis],
+  );
+  const effectivePeriod = availablePeriods.includes(selectedPeriod)
+    ? selectedPeriod
+    : availablePeriods[0] ?? 1;
+  const columnAnalysis = useMemo(
+    () =>
+      analysis
+        ? analyzeVigenereColumns(analysis.normalizedText, effectivePeriod)
+        : [],
+    [analysis, effectivePeriod],
   );
 
   return (
@@ -154,6 +171,59 @@ export function CryptanalysisPanel({
           ) : (
             <p className="comparison-copy">
               Enter more ciphertext to estimate candidate Vigenere periods.
+            </p>
+          )}
+        </div>
+
+        <div className="comparison-card comparison-card-wide">
+          <span className="meta-label">Column Analysis</span>
+          <div className="content-filter-row">
+            <label className="param-field">
+              <span>Inspect Period</span>
+              <select
+                value={effectivePeriod}
+                onChange={(event) => setSelectedPeriod(Number(event.target.value))}
+                disabled={availablePeriods.length === 0}
+              >
+                {availablePeriods.length === 0 ? (
+                  <option value={1}>No candidates yet</option>
+                ) : (
+                  availablePeriods.map((period) => (
+                    <option key={period} value={period}>
+                      Period {period}
+                    </option>
+                  ))
+                )}
+              </select>
+            </label>
+          </div>
+          {columnAnalysis.length > 0 ? (
+            <div className="comparison-diff-row">
+              {columnAnalysis.map((column) => (
+                <div key={column.columnIndex} className="comparison-diff-card">
+                  <span className="meta-label">Column {column.columnIndex + 1}</span>
+                  <strong>{column.letterCount} letters</strong>
+                  <p className="comparison-copy">
+                    IOC:{' '}
+                    <strong>
+                      {column.indexOfCoincidence !== null
+                        ? column.indexOfCoincidence.toFixed(3)
+                        : 'n/a'}
+                    </strong>
+                  </p>
+                  <p className="comparison-copy">
+                    Top letters:{' '}
+                    <strong>{formatTopLetters(column.topLetters)}</strong>
+                  </p>
+                  <p className="comparison-copy">
+                    Slice: <strong>{truncateText(column.text, 18)}</strong>
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="comparison-copy">
+              Choose a candidate period to split the ciphertext into Vigenere columns.
             </p>
           )}
         </div>

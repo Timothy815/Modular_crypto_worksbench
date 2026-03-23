@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { analyzeSymbolSignal } from './cryptanalysis';
+import { analyzeSymbolSignal, analyzeVigenereColumns } from './cryptanalysis';
 
 describe('analyzeSymbolSignal', () => {
   it('returns null for non-symbol signals', () => {
@@ -70,5 +70,32 @@ describe('analyzeSymbolSignal', () => {
     expect(analysis.candidatePeriods[0]?.period).toBe(6);
     expect(analysis.candidatePeriods[0]?.supportingDistanceCount).toBeGreaterThan(0);
     expect(analysis.candidatePeriods.some((entry) => entry.period === 3)).toBe(true);
+  });
+});
+
+describe('analyzeVigenereColumns', () => {
+  it('splits text into period-based columns with local IOC and frequencies', () => {
+    const columns = analyzeVigenereColumns('ABCABCABC', 3);
+
+    expect(columns).toHaveLength(3);
+    expect(columns[0]).toMatchObject({
+      columnIndex: 0,
+      text: 'AAA',
+      letterCount: 3,
+      topLetters: [{ letter: 'A', count: 3, share: 1 }],
+    });
+    expect(columns[1]).toMatchObject({
+      columnIndex: 1,
+      text: 'BBB',
+      letterCount: 3,
+      topLetters: [{ letter: 'B', count: 3, share: 1 }],
+    });
+    expect(columns[2]).toMatchObject({
+      columnIndex: 2,
+      text: 'CCC',
+      letterCount: 3,
+      topLetters: [{ letter: 'C', count: 3, share: 1 }],
+    });
+    expect(columns[0].indexOfCoincidence).toBe(1);
   });
 });

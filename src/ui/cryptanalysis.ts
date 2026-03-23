@@ -24,6 +24,14 @@ export interface CandidatePeriodEntry {
   supportingDistanceCount: number;
 }
 
+export interface VigenereColumnEntry {
+  columnIndex: number;
+  text: string;
+  letterCount: number;
+  indexOfCoincidence: number | null;
+  topLetters: LetterFrequencyEntry[];
+}
+
 export interface SymbolTextAnalysis {
   sourceText: string;
   normalizedText: string;
@@ -38,6 +46,27 @@ export interface SymbolTextAnalysis {
   candidatePeriods: CandidatePeriodEntry[];
 }
 
+export function analyzeVigenereColumns(
+  normalizedText: string,
+  period: number,
+): VigenereColumnEntry[] {
+  if (period < 1 || normalizedText.length === 0) {
+    return [];
+  }
+
+  return splitIntoColumns(normalizedText, period).map((columnText, index) => {
+    const counts = countLetters(columnText);
+
+    return {
+      columnIndex: index,
+      text: columnText,
+      letterCount: columnText.length,
+      indexOfCoincidence: calculateIndexOfCoincidence([...counts.values()], columnText.length),
+      topLetters: calculateTopLetters(counts, columnText.length),
+    };
+  });
+}
+
 export function analyzeSymbolSignal(signal: Signal | null): SymbolTextAnalysis | null {
   if (!signal || signal.type !== 'symbol') {
     return null;
@@ -48,24 +77,8 @@ export function analyzeSymbolSignal(signal: Signal | null): SymbolTextAnalysis |
   const symbolCount = sourceText.length;
   const letterCount = normalizedText.length;
 
-  const counts = new Map<string, number>();
-  for (const letter of normalizedText) {
-    counts.set(letter, (counts.get(letter) ?? 0) + 1);
-  }
-
-  const topLetters = [...counts.entries()]
-    .sort((left, right) => {
-      if (right[1] === left[1]) {
-        return left[0].localeCompare(right[0]);
-      }
-      return right[1] - left[1];
-    })
-    .slice(0, 5)
-    .map(([letter, count]) => ({
-      letter,
-      count,
-      share: letterCount > 0 ? count / letterCount : 0,
-    }));
+  const counts = countLetters(normalizedText);
+  const topLetters = calculateTopLetters(counts, letterCount);
 
   return {
     sourceText,
@@ -116,6 +129,30 @@ function calculateTopNGrams(text: string, size: number): NGramFrequencyEntry[] {
       gram,
       count,
       share: count / total,
+    }));
+}
+
+function countLetters(text: string) {
+  const counts = new Map<string, number>();
+  for (const letter of text) {
+    counts.set(letter, (counts.get(letter) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function calculateTopLetters(counts: Map<string, number>, letterCount: number): LetterFrequencyEntry[] {
+  return [...counts.entries()]
+    .sort((left, right) => {
+      if (right[1] === left[1]) {
+        return left[0].localeCompare(right[0]);
+      }
+      return right[1] - left[1];
+    })
+    .slice(0, 5)
+    .map(([letter, count]) => ({
+      letter,
+      count,
+      share: letterCount > 0 ? count / letterCount : 0,
     }));
 }
 
