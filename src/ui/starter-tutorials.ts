@@ -851,7 +851,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       {
         id: 'byte-sbox',
         title: 'Substitute The Byte',
-        body: 'SBox groups the incoming bits into one 8-bit chunk because its table has 256 entries. This is the same substitution pattern used by real byte-oriented ciphers.',
+        body: 'SBox groups the incoming bits into one 8-bit chunk because its table has 256 entries. Switch to the right-hand Inspector, open Analyze, and keep the SBox selected to see the substitution table highlight the active row, column, and lookup cell for this byte.',
         focusModuleId: 'sbox',
         targetStepIndex: 1,
       },
@@ -889,7 +889,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       {
         id: 'hex-sbox',
         title: 'Substitute In Bits',
-        body: 'Once the hex value becomes bits, the round works exactly like the byte-domain S-Box machine. The nonlinear substitution still happens entirely in the bit domain.',
+        body: 'Once the hex value becomes bits, the round works exactly like the byte-domain S-Box machine. Switch to the right-hand Inspector, open Analyze, and keep the SBox selected to see how the hex byte splits into the active row and column that pick the highlighted lookup cell.',
         focusModuleId: 'sbox',
         targetStepIndex: 1,
       },

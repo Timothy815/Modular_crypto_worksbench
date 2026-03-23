@@ -2236,6 +2236,7 @@ body.dock-resizing {
 .sbox-table-wrap {
   display: grid;
   gap: 4px;
+  overflow-x: auto;
 }
 
 .sbox-table-cell {
