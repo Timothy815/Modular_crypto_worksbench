@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import {
   analyzeSymbolSignal,
   analyzeVigenereColumns,
+  buildFrequencyGraphEntries,
   reconstructVigenereCandidate,
 } from '../cryptanalysis';
 import type { WorkspaceMode } from '../workspace-mode';
@@ -23,7 +24,8 @@ export function CryptanalysisPanel({
   onCiphertextChange,
 }: CryptanalysisPanelProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
-  const [selectedShiftsByColumn, setSelectedShiftsByColumn] = useState<Record<number, number>>({});
+  const [selectedColumnIndex, setSelectedColumnIndex] = useState<number>(0);
+  const [selectedShiftsByColumnKey, setSelectedShiftsByColumnKey] = useState<Record<string, number>>({});
   const analysis = analyzeSymbolSignal(
     ciphertext.trim().length > 0 ? { type: 'symbol', value: ciphertext } : null,
   );
@@ -42,7 +44,10 @@ export function CryptanalysisPanel({
     [analysis, effectivePeriod],
   );
   const candidateShifts = columnAnalysis.map(
-    (column) => selectedShiftsByColumn[column.columnIndex] ?? column.topShiftCandidates[0]?.shift ?? 0,
+    (column) =>
+      selectedShiftsByColumnKey[getColumnShiftKey(effectivePeriod, column.columnIndex)] ??
+      column.topShiftCandidates[0]?.shift ??
+      0,
   );
   const candidate = useMemo(
     () =>
@@ -50,6 +55,22 @@ export function CryptanalysisPanel({
         ? reconstructVigenereCandidate(analysis.normalizedText, candidateShifts)
         : { key: '', plaintext: '' },
     [analysis, candidateShifts],
+  );
+  const effectiveColumnIndex =
+    columnAnalysis[selectedColumnIndex] ? selectedColumnIndex : 0;
+  const activeColumn = columnAnalysis[effectiveColumnIndex] ?? null;
+  const activeColumnShift =
+    activeColumn
+      ? selectedShiftsByColumnKey[getColumnShiftKey(effectivePeriod, activeColumn.columnIndex)] ??
+        activeColumn.topShiftCandidates[0]?.shift ??
+        0
+      : 0;
+  const activeGraphEntries = useMemo(
+    () =>
+      activeColumn
+        ? buildFrequencyGraphEntries(activeColumn.text, activeColumnShift)
+        : [],
+    [activeColumn, activeColumnShift],
   );
 
   return (
@@ -105,8 +126,8 @@ export function CryptanalysisPanel({
             />
           </label>
           <p className="comparison-copy">
-            Next slices will add repeated-pattern evidence, candidate key lengths, column views,
-            shift scoring, and plaintext reconstruction.
+            Use the evidence below to choose a likely period, then tune one column at a time by
+            aligning its shifted letter frequencies with English.
           </p>
         </div>
 
@@ -213,49 +234,29 @@ export function CryptanalysisPanel({
             </label>
           </div>
           {columnAnalysis.length > 0 ? (
-            <div className="comparison-diff-row">
+            <div className="cryptanalysis-column-summary-row">
               {columnAnalysis.map((column) => (
-                <div key={column.columnIndex} className="comparison-diff-card">
+                <button
+                  key={column.columnIndex}
+                  type="button"
+                  className={
+                    effectiveColumnIndex === column.columnIndex
+                      ? 'cryptanalysis-column-summary cryptanalysis-column-summary-active'
+                      : 'cryptanalysis-column-summary'
+                  }
+                  onClick={() => setSelectedColumnIndex(column.columnIndex)}
+                >
                   <span className="meta-label">Column {column.columnIndex + 1}</span>
-                  <strong>{column.letterCount} letters</strong>
-                  <p className="comparison-copy">
-                    IOC:{' '}
-                    <strong>
-                      {column.indexOfCoincidence !== null
-                        ? column.indexOfCoincidence.toFixed(3)
-                        : 'n/a'}
-                    </strong>
-                  </p>
-                  <p className="comparison-copy">
-                    Top letters:{' '}
-                    <strong>{formatTopLetters(column.topLetters)}</strong>
-                  </p>
-                  <p className="comparison-copy">
-                    Best shifts:{' '}
-                    <strong>{formatShiftCandidates(column.topShiftCandidates)}</strong>
-                  </p>
-                  <label className="param-field">
-                    <span>Chosen Shift</span>
-                    <select
-                      value={selectedShiftsByColumn[column.columnIndex] ?? column.topShiftCandidates[0]?.shift ?? 0}
-                      onChange={(event) =>
-                        setSelectedShiftsByColumn((current) => ({
-                          ...current,
-                          [column.columnIndex]: Number(event.target.value),
-                        }))
-                      }
-                    >
-                      {column.topShiftCandidates.map((entry) => (
-                        <option key={entry.shift} value={entry.shift}>
-                          {entry.keyLetter} ({entry.score.toFixed(1)})
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <p className="comparison-copy">
-                    Slice: <strong>{truncateText(column.text, 18)}</strong>
-                  </p>
-                </div>
+                  <strong>{getSelectedKeyLetter(
+                    column,
+                    selectedShiftsByColumnKey[getColumnShiftKey(effectivePeriod, column.columnIndex)],
+                  )}</strong>
+                  <span className="cryptanalysis-column-summary-ioc">
+                    IOC {column.indexOfCoincidence !== null
+                      ? column.indexOfCoincidence.toFixed(3)
+                      : 'n/a'}
+                  </span>
+                </button>
               ))}
             </div>
           ) : (
@@ -265,11 +266,102 @@ export function CryptanalysisPanel({
           )}
         </div>
 
+        {activeColumn ? (
+          <div className="comparison-card comparison-card-wide">
+            <span className="meta-label">Frequency Matching Workshop</span>
+            <strong>
+              Column {activeColumn.columnIndex + 1} with key letter {getSelectedKeyLetter(
+                activeColumn,
+                selectedShiftsByColumnKey[getColumnShiftKey(effectivePeriod, activeColumn.columnIndex)],
+              )}
+            </strong>
+            <p className="comparison-copy">
+              Slide the shift until the blue column frequencies line up with the amber English bars.
+            </p>
+            <div className="cryptanalysis-shift-control-row">
+              <button
+                type="button"
+                className="mini-action-button"
+                onClick={() =>
+                  setSelectedShiftsByColumnKey((current) => {
+                    const key = getColumnShiftKey(effectivePeriod, activeColumn.columnIndex);
+                    const currentShift = current[key] ?? activeColumn.topShiftCandidates[0]?.shift ?? 0;
+                    return { ...current, [key]: (currentShift + 25) % 26 };
+                  })
+                }
+              >
+                Shift Left
+              </button>
+              <label className="param-field cryptanalysis-shift-slider">
+                <span>
+                  Shift {activeColumnShift} ({String.fromCharCode(65 + activeColumnShift)})
+                </span>
+                <input
+                  type="range"
+                  min={0}
+                  max={25}
+                  step={1}
+                  value={activeColumnShift}
+                  onChange={(event) =>
+                    setSelectedShiftsByColumnKey((current) => ({
+                      ...current,
+                      [getColumnShiftKey(effectivePeriod, activeColumn.columnIndex)]: Number(event.target.value),
+                    }))
+                  }
+                />
+              </label>
+              <button
+                type="button"
+                className="mini-action-button"
+                onClick={() =>
+                  setSelectedShiftsByColumnKey((current) => {
+                    const key = getColumnShiftKey(effectivePeriod, activeColumn.columnIndex);
+                    const currentShift = current[key] ?? activeColumn.topShiftCandidates[0]?.shift ?? 0;
+                    return { ...current, [key]: (currentShift + 1) % 26 };
+                  })
+                }
+              >
+                Shift Right
+              </button>
+            </div>
+            <div className="cryptanalysis-frequency-chart">
+              {activeGraphEntries.map((entry) => (
+                <div key={entry.letter} className="cryptanalysis-frequency-column">
+                  <div className="cryptanalysis-frequency-bars">
+                    <div
+                      className="cryptanalysis-frequency-bar cryptanalysis-frequency-bar-english"
+                      style={{ height: `${Math.max(entry.english * 1440, 6)}px` }}
+                      title={`English ${entry.letter}: ${(entry.english * 100).toFixed(1)}%`}
+                    />
+                    <div
+                      className="cryptanalysis-frequency-bar cryptanalysis-frequency-bar-shifted"
+                      style={{ height: `${Math.max(entry.shifted * 1440, 6)}px` }}
+                      title={`Shifted ${entry.letter}: ${(entry.shifted * 100).toFixed(1)}%`}
+                    />
+                  </div>
+                  <span className="cryptanalysis-frequency-label">{entry.letter}</span>
+                </div>
+              ))}
+            </div>
+            <p className="comparison-copy">
+              Column preview: <strong>{truncateText(activeColumn.text, 28)}</strong>
+            </p>
+          </div>
+        ) : null}
+
         <div className="comparison-card comparison-card-wide">
           <span className="meta-label">Candidate Reconstruction</span>
-          <strong>
-            {candidate.key ? `Key ${candidate.key}` : 'No candidate key yet'}
-          </strong>
+          <div className="cryptanalysis-key-row">
+            {candidate.key ? (
+              candidate.key.split('').map((letter, index) => (
+                <span key={`${letter}-${index}`} className="cryptanalysis-key-chip">
+                  {letter}
+                </span>
+              ))
+            ) : (
+              <strong>No candidate key yet</strong>
+            )}
+          </div>
           <p className="comparison-copy">
             Plaintext preview:{' '}
             <strong>{candidate.plaintext ? truncateText(candidate.plaintext, 96) : 'n/a'}</strong>
@@ -312,14 +404,21 @@ function truncateText(value: string, maxLength = 48) {
   return `${value.slice(0, maxLength)}…`;
 }
 
-function formatShiftCandidates(
-  entries: { keyLetter: string; score: number; preview: string }[],
-) {
-  if (entries.length === 0) {
-    return 'n/a';
-  }
+function getColumnShiftKey(period: number, columnIndex: number) {
+  return `${period}:${columnIndex}`;
+}
 
-  return entries
-    .map((entry) => `${entry.keyLetter} (${entry.score.toFixed(1)}): ${entry.preview}`)
-    .join(' | ');
+function getSelectedKeyLetter(
+  column: {
+    shiftCandidates: { shift: number; keyLetter: string }[];
+    topShiftCandidates: { shift: number; keyLetter: string }[];
+  },
+  selectedShift: number | undefined,
+) {
+  const effectiveShift = selectedShift ?? column.topShiftCandidates[0]?.shift ?? 0;
+  return (
+    column.shiftCandidates.find((entry) => entry.shift === effectiveShift)?.keyLetter ??
+    column.topShiftCandidates[0]?.keyLetter ??
+    '?'
+  );
 }

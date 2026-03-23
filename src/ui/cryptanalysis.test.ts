@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   analyzeSymbolSignal,
   analyzeVigenereColumns,
+  buildFrequencyGraphEntries,
   reconstructVigenereCandidate,
 } from './cryptanalysis';
 
@@ -115,6 +116,18 @@ describe('reconstructVigenereCandidate', () => {
     expect(candidate).toEqual({
       key: 'LEMON',
       plaintext: 'ATTACKATDAWN',
+    });
+  });
+});
+
+describe('buildFrequencyGraphEntries', () => {
+  it('builds shifted frequency bars for a chosen Caesar shift', () => {
+    const graph = buildFrequencyGraphEntries('MMM', 12);
+
+    expect(graph.find((entry) => entry.letter === 'A')).toEqual({
+      letter: 'A',
+      english: expect.any(Number),
+      shifted: 1,
     });
   });
 });

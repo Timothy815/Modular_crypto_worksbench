@@ -31,6 +31,7 @@ export interface VigenereColumnEntry {
   letterCount: number;
   indexOfCoincidence: number | null;
   topLetters: LetterFrequencyEntry[];
+  shiftCandidates: ShiftScoreEntry[];
   topShiftCandidates: ShiftScoreEntry[];
 }
 
@@ -44,6 +45,12 @@ export interface ShiftScoreEntry {
 export interface VigenereCandidate {
   key: string;
   plaintext: string;
+}
+
+export interface FrequencyGraphEntry {
+  letter: string;
+  english: number;
+  shifted: number;
 }
 
 export interface SymbolTextAnalysis {
@@ -77,7 +84,8 @@ export function analyzeVigenereColumns(
       letterCount: columnText.length,
       indexOfCoincidence: calculateIndexOfCoincidence([...counts.values()], columnText.length),
       topLetters: calculateTopLetters(counts, columnText.length),
-      topShiftCandidates: calculateTopShiftCandidates(columnText),
+      shiftCandidates: calculateShiftCandidates(columnText),
+      topShiftCandidates: calculateShiftCandidates(columnText).slice(0, 3),
     };
   });
 }
@@ -100,6 +108,26 @@ export function reconstructVigenereCandidate(
     key: shifts.map((shift) => String.fromCharCode(65 + shift)).join(''),
     plaintext,
   };
+}
+
+export function buildFrequencyGraphEntries(
+  columnText: string,
+  shift: number,
+): FrequencyGraphEntry[] {
+  const decoded = decodeCaesar(columnText, shift);
+  const counts = countLetters(decoded);
+  const total = decoded.length;
+
+  return Array.from({ length: 26 }, (_, index) => {
+    const letter = String.fromCharCode(65 + index);
+    const observed = counts.get(letter) ?? 0;
+
+    return {
+      letter,
+      english: ENGLISH_LETTER_FREQUENCIES[letter] ?? 0,
+      shifted: total > 0 ? observed / total : 0,
+    };
+  });
 }
 
 export function analyzeSymbolSignal(signal: Signal | null): SymbolTextAnalysis | null {
@@ -303,7 +331,7 @@ function calculateIndexOfCoincidenceForText(text: string): number | null {
   return calculateIndexOfCoincidence([...counts.values()], text.length);
 }
 
-function calculateTopShiftCandidates(text: string): ShiftScoreEntry[] {
+function calculateShiftCandidates(text: string): ShiftScoreEntry[] {
   if (text.length === 0) {
     return [];
   }
@@ -319,9 +347,7 @@ function calculateTopShiftCandidates(text: string): ShiftScoreEntry[] {
     });
   }
 
-  return candidates
-    .sort((left, right) => left.score - right.score)
-    .slice(0, 3);
+  return candidates.sort((left, right) => left.score - right.score);
 }
 
 function decodeCaesar(text: string, shift: number) {
