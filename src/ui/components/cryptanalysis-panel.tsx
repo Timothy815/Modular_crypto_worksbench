@@ -327,6 +327,19 @@ export function CryptanalysisPanel({
               >
                 Shift Right
               </button>
+              <button
+                type="button"
+                className="mini-action-button"
+                onClick={() =>
+                  setSelectedShiftsByColumnKey((current) => ({
+                    ...current,
+                    [getColumnShiftKey(effectivePeriod, activeColumn.columnIndex)]:
+                      activeColumn.topShiftCandidates[0]?.shift ?? 0,
+                  }))
+                }
+              >
+                Use Best Fit
+              </button>
             </div>
             <p className="comparison-copy cryptanalysis-help-copy">
               Best fit suggestion:{' '}
