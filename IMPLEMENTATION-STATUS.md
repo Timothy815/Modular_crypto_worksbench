@@ -144,3 +144,4 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `V1-POLISH-AND-TUTORIALS.md` | Locked, shipped |
 | `ADVANCED-FOUNDRY-CLOCK-V1.md` | Locked, shipped (engine + UI slices) |
 | `ITERATIVE-ROUNDS-AND-KEYSCHEDULES-V1.md` | Draft, next major branch anchor |
+| `KEY-SCHEDULE-GROUNDWORK-V1.md` | Draft, explicit sub-key injection anchor |

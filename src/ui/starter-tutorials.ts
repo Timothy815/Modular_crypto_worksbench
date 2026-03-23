@@ -3,6 +3,58 @@ import type { GuidedTutorial } from './tutorials';
 export const STARTER_TUTORIALS: GuidedTutorial[] = [
   {
     version: 1,
+    id: 'keyed-byte-rounds',
+    title: 'The Round Keys',
+    group: 'Modern Rounds',
+    summary: 'Learn how visible sub-keys can feed different repeated rounds without hiding the schedule inside an iterator.',
+    projectId: 'keyed-byte-rounds',
+    steps: [
+      {
+        id: 'keyed-rounds-source',
+        title: 'Inject The Starting Byte',
+        body: 'HexSource still injects the starting byte. The difference in this lab is that each reusable round now receives an explicit round key as a second visible input.',
+        focusModuleId: 'source',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'keyed-rounds-key-1',
+        title: 'Feed The First Round Key',
+        body: 'The first HexSource is a visible sub-key. Nothing about this key is hidden in module params or executor logic; it is just another explicit signal entering the graph.',
+        focusModuleId: 'key-1',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'keyed-rounds-round-1',
+        title: 'Mix Data With The First Round Key',
+        body: 'The first Keyed Byte Round performs substitution, permutation, and then XORs the explicit key into the byte. This is the first honest step toward key-scheduled ciphers.',
+        focusModuleId: 'round-1',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'keyed-rounds-key-2',
+        title: 'Change The Key For The Next Round',
+        body: 'A second visible sub-key feeds the second round. This proves that repeated-round structure and per-round keys can coexist without any iterator-aware magic yet.',
+        focusModuleId: 'key-2',
+        targetStepIndex: 3,
+      },
+      {
+        id: 'keyed-rounds-round-2',
+        title: 'Run The Second Keyed Round',
+        body: 'The second keyed round reuses the same internal round definition but consumes a different key signal. The schedule is still visible on the canvas because each key is explicit.',
+        focusModuleId: 'round-2',
+        targetStepIndex: 4,
+      },
+      {
+        id: 'keyed-rounds-output',
+        title: 'Read The Scheduled Result',
+        body: 'BitsToHex and Output close the loop back into byte-scale text so students can compare how changing one round key alters the final multi-round result.',
+        focusModuleId: 'output',
+        targetStepIndex: 5,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'packaged-iterated-rounds',
     title: 'The Packaged Iteration',
     group: 'Modern Rounds',

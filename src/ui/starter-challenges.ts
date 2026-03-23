@@ -12,6 +12,7 @@ const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-
 const pairedLorenzProject = demoProjects.find((project) => project.id === 'paired-lorenz');
 const bankedLorenzProject = demoProjects.find((project) => project.id === 'banked-lorenz');
 const iteratedByteRoundsProject = demoProjects.find((project) => project.id === 'iterated-byte-rounds');
+const keyedByteRoundsProject = demoProjects.find((project) => project.id === 'keyed-byte-rounds');
 const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
 const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
 const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
@@ -39,6 +40,9 @@ if (!bankedLorenzProject) {
 }
 if (!iteratedByteRoundsProject) {
   throw new Error('Expected iterated-byte-rounds demo project to seed starter challenges.');
+}
+if (!keyedByteRoundsProject) {
+  throw new Error('Expected keyed-byte-rounds demo project to seed starter challenges.');
 }
 if (!byteRoundProject) {
   throw new Error('Expected byte-round demo project to seed starter challenges.');
@@ -73,6 +77,8 @@ const bankedLorenzTarget = cloneProject(bankedLorenzProject.project);
 const brokenBankedLorenzStart = cloneProject(bankedLorenzProject.project);
 const iteratedByteRoundsTarget = cloneProject(iteratedByteRoundsProject.project);
 const brokenIteratedByteRoundsStart = cloneProject(iteratedByteRoundsProject.project);
+const keyedByteRoundsTarget = cloneProject(keyedByteRoundsProject.project);
+const brokenKeyedByteRoundsStart = cloneProject(keyedByteRoundsProject.project);
 const byteRoundTarget = cloneProject(byteRoundProject.project);
 const brokenByteRoundStart = cloneProject(byteRoundProject.project);
 const hexRoundTarget = cloneProject(hexRoundProject.project);
@@ -158,6 +164,14 @@ brokenIteratedByteRoundsStart.connections.push({
   from: { moduleId: 'round-1', port: 'out' },
   to: { moduleId: 'encode', port: 'in' },
 });
+
+const brokenKeyedRoundKey = brokenKeyedByteRoundsStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'key-2',
+);
+if (!brokenKeyedRoundKey) {
+  throw new Error('Expected keyed-byte-rounds demo project to contain key-2.');
+}
+brokenKeyedRoundKey.params.value = '00';
 
 const brokenPermutationModule = brokenByteRoundStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'permute',
@@ -353,6 +367,26 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'Both Byte Round composites should participate in the final path.',
       'Right now the machine bridges back to hex too early.',
       'Reconnect the output of the first round through the second round before the final bridge.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-round-key',
+    title: 'Repair the Round Key',
+    group: 'Modern Rounds',
+    difficulty: 'intermediate',
+    prompt:
+      'The repeated round structure is still wired correctly, but one visible sub-key was changed. Restore the wrong round key so the final byte matches the captured target machine again.',
+    startingProject: brokenKeyedByteRoundsStart,
+    startingLayout: cloneProject(keyedByteRoundsProject.layout),
+    targetProject: keyedByteRoundsTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The reusable round structure is already correct in this lab.',
+      'Compare the first and second key sources separately.',
+      'Only one round key needs to change to restore the target byte.',
     ],
   },
   {

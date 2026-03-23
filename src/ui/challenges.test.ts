@@ -30,6 +30,7 @@ describe('evaluateChallengeAttempt', () => {
     (project) => project.id === 'packaged-iterated-rounds',
   );
   const iteratedByteRoundsProject = demoProjects.find((project) => project.id === 'iterated-byte-rounds');
+  const keyedByteRoundsProject = demoProjects.find((project) => project.id === 'keyed-byte-rounds');
   const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
   const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
   const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-lorenz');
@@ -50,6 +51,9 @@ describe('evaluateChallengeAttempt', () => {
   }
   if (!iteratedByteRoundsProject) {
     throw new Error('Expected iterated-byte-rounds project.');
+  }
+  if (!keyedByteRoundsProject) {
+    throw new Error('Expected keyed-byte-rounds project.');
   }
   if (!baudotProject) {
     throw new Error('Expected baudot-bridge project.');
@@ -403,6 +407,31 @@ describe('evaluateChallengeAttempt', () => {
     expect(result.status).toBe('failure');
     expect(result.reason).toBe('diverged-from-target');
     expect(result.comparison?.outputsMatch).toBe(false);
+  });
+
+  it('returns failure when a keyed iterated-round machine uses the wrong second round key', () => {
+    const currentProject = cloneProject(keyedByteRoundsProject.project);
+    const keyModule = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'key-2');
+    if (!keyModule) {
+      throw new Error('Expected key-2 module in keyed-byte-rounds project.');
+    }
+    keyModule.params.value = '00';
+
+    const challenge: GuidedChallenge = {
+      id: 'keyed-round-failure',
+      title: 'Keyed Round Failure',
+      prompt: 'Repair the changed round key.',
+      startingProject: cloneProject(currentProject),
+      targetProject: cloneProject(keyedByteRoundsProject.project),
+      success: { kind: 'output-match-target' },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, compositeRegistry);
+
+    expect(result.status).toBe('failure');
+    expect(result.reason).toBe('diverged-from-target');
+    expect(result.comparison?.outputsMatch).toBe(false);
+    expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('key-2');
   });
 
   it('returns failure when a hex-round machine starts from the wrong input vector', () => {
