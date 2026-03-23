@@ -3,6 +3,58 @@ import type { GuidedTutorial } from './tutorials';
 export const STARTER_TUTORIALS: GuidedTutorial[] = [
   {
     version: 1,
+    id: 'paired-lorenz',
+    title: 'The Paired Lorenz Wheels',
+    group: 'Historical Bridges',
+    summary: 'Learn how two teleprinter wheel streams can be combined into one masking keystream before decoding the result.',
+    projectId: 'paired-lorenz',
+    steps: [
+      {
+        id: 'paired-lorenz-clock',
+        title: 'Drive Both Wheels Together',
+        body: 'Clock advances both wheel registers on every tick so each codeword sees a fresh pair of 5-bit wheel slices.',
+        focusModuleId: 'clock',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'paired-lorenz-wheel-a',
+        title: 'Emit The First Wheel Slice',
+        body: 'Wheel A emits one 5-bit slice per tick. On its own this is only part of the masking stream, not the full teleprinter key.',
+        focusModuleId: 'wheel-a',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'paired-lorenz-wheel-b',
+        title: 'Emit The Second Wheel Slice',
+        body: 'Wheel B emits a second 5-bit slice. Historical wheel machines become much more interesting once multiple independent streams combine into one key.',
+        focusModuleId: 'wheel-b',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'paired-lorenz-mix',
+        title: 'Combine The Wheel Streams',
+        body: 'The first XOR mixes wheel A and wheel B into a single 5-bit keystream slice. This is the key historical idea in this lab: wheel streams can combine before touching the ciphertext.',
+        focusModuleId: 'mix',
+        targetStepIndex: 3,
+      },
+      {
+        id: 'paired-lorenz-source',
+        title: 'Feed Telegraph Codewords',
+        body: 'BaudotSource still provides one 5-bit teleprinter codeword on each tick, keeping the message rhythm explicit and inspectable.',
+        focusModuleId: 'source',
+        targetStepIndex: 4,
+      },
+      {
+        id: 'paired-lorenz-output',
+        title: 'Recover The Telegraph Text',
+        body: 'The second XOR unmasks the codeword, then BitsToBaudot and Output decode it back into readable teleprinter text.',
+        focusModuleId: 'output',
+        targetStepIndex: 5,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'gated-lorenz',
     title: 'The Gated Lorenz',
     group: 'Historical Bridges',

@@ -22,6 +22,7 @@ describe('evaluateChallengeAttempt', () => {
   const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
   const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
   const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-lorenz');
+  const pairedLorenzProject = demoProjects.find((project) => project.id === 'paired-lorenz');
   const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
   const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
   const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
@@ -40,6 +41,9 @@ describe('evaluateChallengeAttempt', () => {
   }
   if (!gatedLorenzProject) {
     throw new Error('Expected gated-lorenz project.');
+  }
+  if (!pairedLorenzProject) {
+    throw new Error('Expected paired-lorenz project.');
   }
   if (!byteRoundProject) {
     throw new Error('Expected byte-round project.');
@@ -227,6 +231,32 @@ describe('evaluateChallengeAttempt', () => {
     expect(result.comparison?.outputsMatch).toBe(false);
     expect(result.comparison?.firstDivergence?.tickIndex).toBe(1);
     expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('data');
+  });
+
+  it('returns failure when a paired lorenz machine uses the wrong second wheel seed', () => {
+    const currentProject = cloneProject(pairedLorenzProject.project);
+    const wheelBModule = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'wheel-b');
+    if (!wheelBModule) {
+      throw new Error('Expected wheel-b module in paired-lorenz project.');
+    }
+    wheelBModule.params.seed = [0, 0, 1, 1, 0];
+
+    const challenge: GuidedChallenge = {
+      id: 'paired-lorenz-failure',
+      title: 'Paired Lorenz Failure',
+      prompt: 'Repair the second teleprinter wheel.',
+      startingProject: cloneProject(currentProject),
+      targetProject: cloneProject(pairedLorenzProject.project),
+      success: { kind: 'output-match-target' },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, V1_REGISTRY);
+
+    expect(result.status).toBe('failure');
+    expect(result.reason).toBe('diverged-from-target');
+    expect(result.comparison?.outputsMatch).toBe(false);
+    expect(result.comparison?.firstDivergence?.tickIndex).toBe(0);
+    expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('wheel-b');
   });
 
   it('returns failure when a bit-domain round diverges from the target output bits', () => {
