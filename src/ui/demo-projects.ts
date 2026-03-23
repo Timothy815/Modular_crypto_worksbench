@@ -304,7 +304,7 @@ export const demoProjects: DemoProject[] = [
     project: {
       modules: [
         { id: 'source', defId: 'HexSource', params: { value: 'A3' } },
-        { id: 'rounds', defId: 'IteratedByteRoundsComposite', params: {} },
+        { id: 'rounds', defId: 'ByteRoundIterator', params: {} },
         { id: 'encode', defId: 'BitsToHex', params: {} },
         { id: 'output', defId: 'Output', params: {} },
       ],

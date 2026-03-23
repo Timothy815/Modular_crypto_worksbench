@@ -1,4 +1,8 @@
-import type { CompositeLibraryEntry, CompositeLayoutPosition } from '../engine/composites';
+import {
+  isCompositeDefinition,
+  type CompositeLibraryEntry,
+  type CompositeLayoutPosition,
+} from '../engine/composites';
 import type { ModuleDefinition, ModuleInstance, ModuleRegistry, Project } from '../engine/types';
 import type { GuidedChallenge } from './challenges';
 import type { GuidedTutorial } from './tutorials';
@@ -184,18 +188,7 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
       ...tutorial,
       steps: tutorial.steps.map((step) => ({ ...step })),
     })),
-    compositeLibrary: STARTER_COMPOSITE_LIBRARY.map((entry) => ({
-      ...entry,
-      definition: {
-        ...entry.definition,
-        project: cloneProject(entry.definition.project),
-        layout: entry.definition.layout
-          ? cloneLayout(entry.definition.layout)
-          : undefined,
-        inputBindings: entry.definition.inputBindings.map((binding) => ({ ...binding })),
-        outputBindings: entry.definition.outputBindings.map((binding) => ({ ...binding })),
-      },
-    })),
+    compositeLibrary: STARTER_COMPOSITE_LIBRARY.map(cloneReusableEntry),
     compositeEditor: null,
     projectStates: Object.fromEntries(
       projects.map((project) => [project.id, cloneProject(project.project)]),
@@ -259,6 +252,28 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     paramDrafts: {},
     showPalette: true,
     showInspector: true,
+  };
+}
+
+function cloneReusableEntry(entry: CompositeLibraryEntry): CompositeLibraryEntry {
+  if (isCompositeDefinition(entry.definition)) {
+    return {
+      ...entry,
+      definition: {
+        ...entry.definition,
+        project: cloneProject(entry.definition.project),
+        layout: entry.definition.layout
+          ? cloneLayout(entry.definition.layout)
+          : undefined,
+        inputBindings: entry.definition.inputBindings.map((binding) => ({ ...binding })),
+        outputBindings: entry.definition.outputBindings.map((binding) => ({ ...binding })),
+      },
+    };
+  }
+
+  return {
+    ...entry,
+    definition: { ...entry.definition },
   };
 }
 
@@ -959,18 +974,7 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
     case 'loadCompositeLibrary':
       return {
         ...state,
-        compositeLibrary: action.document.entries.map((entry) => ({
-          ...entry,
-          definition: {
-            ...entry.definition,
-            project: cloneProject(entry.definition.project),
-            layout: entry.definition.layout
-              ? cloneLayout(entry.definition.layout)
-              : undefined,
-            inputBindings: entry.definition.inputBindings.map((binding) => ({ ...binding })),
-            outputBindings: entry.definition.outputBindings.map((binding) => ({ ...binding })),
-          },
-        })),
+        compositeLibrary: action.document.entries.map(cloneReusableEntry),
       };
     case 'addCompositeToLibrary':
       return {
@@ -986,7 +990,7 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       };
     case 'openCompositeEditor': {
       const entry = state.compositeLibrary.find((candidate) => candidate.id === action.entryId);
-      if (!entry) {
+      if (!entry || !isCompositeDefinition(entry.definition)) {
         return state;
       }
 
@@ -1339,6 +1343,9 @@ function connectionTouchesProtectedBoundaryPort(
   entry: CompositeLibraryEntry,
   action: Extract<UiAction, { type: 'addConnection' }>,
 ) {
+  if (!isCompositeDefinition(entry.definition)) {
+    return false;
+  }
   return (
     entry.definition.inputBindings.some(
       (binding) =>
@@ -1358,6 +1365,9 @@ function connectionIndexTouchesProtectedBoundaryPort(
   project: Project,
   connectionIndex: number,
 ) {
+  if (!isCompositeDefinition(entry.definition)) {
+    return false;
+  }
   const connection = project.connections[connectionIndex];
   if (!connection) {
     return false;

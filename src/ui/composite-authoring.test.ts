@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ModuleRegistry, Project } from '../engine/types';
+import { isCompositeDefinition } from '../engine/composites';
 import { createCompositeFromSelection, replaceSelectionWithComposite } from './composite-authoring';
 
 const registry: ModuleRegistry = {
@@ -72,14 +73,18 @@ describe('createCompositeFromSelection', () => {
     });
 
     expect(result.ok).toBe(true);
+    expect(result.entry && isCompositeDefinition(result.entry.definition)).toBe(true);
+    if (!result.entry || !isCompositeDefinition(result.entry.definition)) {
+      throw new Error('Expected a composite definition.');
+    }
     expect(result.entry?.definition.inputs).toEqual([
       { name: 'encode_in', type: 'symbol' },
     ]);
     expect(result.entry?.definition.outputs).toEqual([
       { name: 'decode_out', type: 'symbol' },
     ]);
-    expect(result.entry?.definition.project.modules).toHaveLength(2);
-    expect(result.entry?.definition.project.connections).toHaveLength(1);
+    expect(result.entry.definition.project.modules).toHaveLength(2);
+    expect(result.entry.definition.project.connections).toHaveLength(1);
   });
 
   it('rejects a selection with no external boundary', () => {

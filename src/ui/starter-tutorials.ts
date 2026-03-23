@@ -19,7 +19,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       {
         id: 'packaged-iterated-rounds',
         title: 'Run A Bounded Round Chain',
-        body: 'IteratedByteRoundsComposite contains two internal Byte Round composites. This is the smallest honest form of iteration support: bounded, inspectable, and built from reusable rounds rather than hidden looping.',
+        body: 'ByteRoundIterator auto-unrolls two Byte Round composites into one bounded round chain. This is the smallest honest form of iteration support: bounded, inspectable, and built from reusable rounds rather than hidden looping.',
         focusModuleId: 'rounds',
         targetStepIndex: 1,
       },

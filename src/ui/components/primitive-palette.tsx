@@ -193,6 +193,8 @@ function ModuleLibraryCard({
   onRemoveComposite,
 }: ModuleLibraryCardProps) {
   const isComposite = 'kind' in def && def.kind === 'composite';
+  const isIterator = 'kind' in def && def.kind === 'iterator';
+  const isReusable = isComposite || isIterator;
   const [showHelp, setShowHelp] = useState(false);
 
   if (viewMode === 'compact') {
@@ -201,8 +203,8 @@ function ModuleLibraryCard({
         <div className="primitive-compact-main">
           <div className="primitive-compact-meta">
             <strong className="primitive-title">{def.name}</strong>
-            {isComposite ? (
-              <span className="module-kind-badge">Composite</span>
+            {isReusable ? (
+              <span className="module-kind-badge">{isComposite ? 'Composite' : 'Iterator'}</span>
             ) : null}
           </div>
           <div className="primitive-compact-actions">
@@ -226,7 +228,7 @@ function ModuleLibraryCard({
                 ✎
               </button>
             ) : null}
-            {isComposite ? (
+            {isReusable ? (
               <button
                 type="button"
                 className="primitive-action-button primitive-action-button-danger"
@@ -255,8 +257,8 @@ function ModuleLibraryCard({
           <strong className="primitive-title">{def.name}</strong>
           <p className="primitive-def-id">{def.id}</p>
           <p className="primitive-purpose">{getModulePurpose(def)}</p>
-          {isComposite ? (
-            <span className="module-kind-badge">Composite</span>
+          {isReusable ? (
+            <span className="module-kind-badge">{isComposite ? 'Composite' : 'Iterator'}</span>
           ) : null}
         </div>
         <div className="primitive-actions primitive-actions-below">
@@ -295,7 +297,7 @@ function ModuleLibraryCard({
                 ?
               </button>
             ) : null}
-            {isComposite ? (
+            {isReusable ? (
               <button
                 type="button"
                 className="primitive-action-button primitive-action-button-danger"
@@ -312,11 +314,13 @@ function ModuleLibraryCard({
               </button>
             ) : null}
           </div>
-          {isComposite ? (
+          {isReusable ? (
             <p className="primitive-composite-note">
               {usageCount > 0
                 ? `In use ${usageCount} time${usageCount === 1 ? '' : 's'}`
-                : 'Reusable composite'}
+                : isComposite
+                  ? 'Reusable composite'
+                  : 'Reusable iterator'}
             </p>
           ) : null}
         </div>

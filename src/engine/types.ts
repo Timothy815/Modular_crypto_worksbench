@@ -1,4 +1,4 @@
-import type { CompositeDef } from './composites';
+import type { CompositeDef, IteratorDef } from './composites';
 
 export type SignalType = 'symbol' | 'bits';
 
@@ -69,7 +69,7 @@ export interface TickSliceableModuleDef extends ModuleDef {
   tickLength: (params: ModuleParams) => number;
 }
 
-export type ModuleDefinition = ModuleDef | CompositeDef;
+export type ModuleDefinition = ModuleDef | CompositeDef | IteratorDef;
 
 export function isStatefulModule(def: ModuleDefinition): def is StatefulModuleDef {
   return 'advance' in def && typeof (def as StatefulModuleDef).advance === 'function';

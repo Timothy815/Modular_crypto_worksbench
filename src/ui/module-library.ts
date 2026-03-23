@@ -1,4 +1,4 @@
-import { isCompositeDefinition } from '../engine/composites';
+import { isCompositeDefinition, isIteratorDefinition } from '../engine/composites';
 import type { ModuleDefinition } from '../engine/types';
 
 export type ModuleLibrarySectionId =
@@ -193,7 +193,7 @@ export const MODULE_LIBRARY_SECTIONS: ModuleLibrarySection[] = [
 ];
 
 export function getModuleLibrarySectionId(definition: ModuleDefinition): ModuleLibrarySectionId {
-  if (isCompositeDefinition(definition)) {
+  if (isCompositeDefinition(definition) || isIteratorDefinition(definition)) {
     return 'composites';
   }
 
@@ -203,6 +203,9 @@ export function getModuleLibrarySectionId(definition: ModuleDefinition): ModuleL
 export function getModulePurpose(definition: ModuleDefinition): string {
   if (isCompositeDefinition(definition)) {
     return `Reusable composite with ${definition.inputs.length} input${definition.inputs.length === 1 ? '' : 's'} and ${definition.outputs.length} output${definition.outputs.length === 1 ? '' : 's'}.`;
+  }
+  if (isIteratorDefinition(definition)) {
+    return `Bounded iterator repeating "${definition.roundDefId}" for ${definition.iterationCount} round${definition.iterationCount === 1 ? '' : 's'}.`;
   }
 
   return (
@@ -214,6 +217,9 @@ export function getModulePurpose(definition: ModuleDefinition): string {
 export function getModuleDetail(definition: ModuleDefinition): string {
   if (isCompositeDefinition(definition)) {
     return 'Reusable module captured from a workbench subgraph. Open it to inspect or edit its internals.';
+  }
+  if (isIteratorDefinition(definition)) {
+    return 'Reusable bounded round chain that auto-unrolls one round definition a fixed number of times.';
   }
 
   return (
@@ -232,8 +238,8 @@ export function matchesModuleSearch(definition: ModuleDefinition, query: string)
     definition.id,
     definition.name,
     getModulePurpose(definition),
-    ...(isCompositeDefinition(definition)
-      ? ['composite', 'reusable']
+    ...((isCompositeDefinition(definition) || isIteratorDefinition(definition))
+      ? ['composite', 'reusable', 'iterator', 'round chain']
       : PRIMITIVE_LIBRARY_META[definition.id]?.searchTerms ?? []),
   ];
 
@@ -245,14 +251,14 @@ export function matchesModuleDomainTab(
   tab: ModuleLibraryDomainTab,
 ): boolean {
   if (tab === 'all') {
-    return !isCompositeDefinition(definition);
+    return !isCompositeDefinition(definition) && !isIteratorDefinition(definition);
   }
 
   if (tab === 'composites') {
-    return isCompositeDefinition(definition);
+    return isCompositeDefinition(definition) || isIteratorDefinition(definition);
   }
 
-  if (isCompositeDefinition(definition)) {
+  if (isCompositeDefinition(definition) || isIteratorDefinition(definition)) {
     return false;
   }
 

@@ -12,11 +12,17 @@ import {
   isTickSliceable,
 } from './types';
 import { validateProject } from './validation';
-import { isCompositeDefinition, type CompositeDef } from './composites';
+import {
+  isCompositeDefinition,
+  isIteratorDefinition,
+  type CompositeDef,
+  type IteratorDef,
+} from './composites';
 
 interface TickedRuntimeState {
   paramsByModuleId: Record<string, ModuleParams>;
   compositeStateByModuleId: Record<string, TickedRuntimeState | undefined>;
+  iteratorStateByModuleId: Record<string, TickedRuntimeState | undefined>;
 }
 
 export class ProjectValidationError extends Error {
@@ -160,6 +166,9 @@ function evaluateDefinition(
   if (isCompositeDefinition(def)) {
     return evaluateComposite(def, inputs, registry);
   }
+  if (isIteratorDefinition(def)) {
+    return evaluateIterator(def, inputs, registry);
+  }
 
   return def.evaluate(inputs, params);
 }
@@ -204,12 +213,54 @@ function evaluateComposite(
   return outputs;
 }
 
+function buildIteratorProject(def: IteratorDef): Project {
+  const modules = Array.from({ length: def.iterationCount }, (_, index) => ({
+    id: `round-${index + 1}`,
+    defId: def.roundDefId,
+    params: {},
+  }));
+  const connections = Array.from({ length: Math.max(0, modules.length - 1) }, (_, index) => ({
+    from: { moduleId: modules[index].id, port: 'out' },
+    to: { moduleId: modules[index + 1].id, port: 'in' },
+  }));
+
+  return {
+    modules,
+    connections,
+  };
+}
+
+function evaluateIterator(
+  def: IteratorDef,
+  inputs: ModuleInputs,
+  registry: ModuleRegistry,
+): ModuleOutputs {
+  const iteratorProject = buildIteratorProject(def);
+  const firstRoundId = iteratorProject.modules[0]?.id;
+  const lastRoundId = iteratorProject.modules.at(-1)?.id;
+
+  if (!firstRoundId || !lastRoundId) {
+    throw new ProjectValidationError(`Iterator "${def.id}" has no rounds to execute.`);
+  }
+
+  const internalResult = executeProject(iteratorProject, registry, {
+    [firstRoundId]: { in: inputs.in },
+  });
+  const signal = internalResult.outputsByModuleId[lastRoundId]?.out;
+  if (!signal) {
+    throw new ProjectValidationError(`Iterator "${def.id}" could not resolve its final round output.`);
+  }
+
+  return { out: signal };
+}
+
 function createTickedRuntimeState(
   project: Project,
   registry: ModuleRegistry,
 ): TickedRuntimeState {
   const paramsByModuleId: Record<string, ModuleParams> = {};
   const compositeStateByModuleId: Record<string, TickedRuntimeState | undefined> = {};
+  const iteratorStateByModuleId: Record<string, TickedRuntimeState | undefined> = {};
 
   for (const moduleInstance of project.modules) {
     paramsByModuleId[moduleInstance.id] = { ...moduleInstance.params };
@@ -218,11 +269,16 @@ function createTickedRuntimeState(
       def && isCompositeDefinition(def)
         ? createTickedRuntimeState(def.project, registry)
         : undefined;
+    iteratorStateByModuleId[moduleInstance.id] =
+      def && isIteratorDefinition(def)
+        ? createTickedRuntimeState(buildIteratorProject(def), registry)
+        : undefined;
   }
 
   return {
     paramsByModuleId,
     compositeStateByModuleId,
+    iteratorStateByModuleId,
   };
 }
 
@@ -329,6 +385,14 @@ function executeTickedGraph(
           tick,
           runtimeState.compositeStateByModuleId[moduleId],
         )
+      : isIteratorDefinition(def)
+        ? executeTickedIterator(
+            def,
+            inputs,
+            registry,
+            tick,
+            runtimeState.iteratorStateByModuleId[moduleId],
+          )
       : def.evaluate(
           inputs,
           isTickSliceable(def) ? def.tickSlice(currentParams, tick) : { ...currentParams },
@@ -419,6 +483,41 @@ function executeTickedComposite(
   }
 
   return outputs;
+}
+
+function executeTickedIterator(
+  def: IteratorDef,
+  inputs: ModuleInputs,
+  registry: ModuleRegistry,
+  tick: number,
+  runtimeState?: TickedRuntimeState,
+): ModuleOutputs {
+  if (!runtimeState) {
+    throw new ProjectValidationError(`Iterator "${def.id}" is missing ticked runtime state.`);
+  }
+
+  const iteratorProject = buildIteratorProject(def);
+  const firstRoundId = iteratorProject.modules[0]?.id;
+  const lastRoundId = iteratorProject.modules.at(-1)?.id;
+  if (!firstRoundId || !lastRoundId) {
+    throw new ProjectValidationError(`Iterator "${def.id}" has no rounds to execute.`);
+  }
+
+  const internalResult = executeTickedGraph(
+    iteratorProject,
+    registry,
+    tick,
+    runtimeState,
+    {
+      [firstRoundId]: { in: inputs.in },
+    },
+  );
+  const signal = internalResult.outputsByModuleId[lastRoundId]?.out;
+  if (!signal) {
+    throw new ProjectValidationError(`Iterator "${def.id}" could not resolve its final round output.`);
+  }
+
+  return { out: signal };
 }
 
 export function executeTickedProject(

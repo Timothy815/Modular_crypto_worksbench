@@ -25,13 +25,29 @@ export interface CompositeDef {
   version: number;
 }
 
+export interface IteratorDef {
+  id: string;
+  name: string;
+  kind: 'iterator';
+  inputs: PortDef[];
+  outputs: PortDef[];
+  paramSchema: ParamSchema;
+  roundDefId: string;
+  iterationCount: number;
+  version: number;
+}
+
 export interface CompositeLibraryEntry {
   id: string;
   name: string;
   version: number;
-  definition: CompositeDef;
+  definition: CompositeDef | IteratorDef;
 }
 
 export function isCompositeDefinition(definition: ModuleDefinition): definition is CompositeDef {
   return 'kind' in definition && definition.kind === 'composite';
+}
+
+export function isIteratorDefinition(definition: ModuleDefinition): definition is IteratorDef {
+  return 'kind' in definition && definition.kind === 'iterator';
 }

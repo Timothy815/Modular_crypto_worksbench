@@ -1,4 +1,9 @@
-import type { CompositeLibraryEntry, CompositePortBinding } from '../engine/composites';
+import {
+  isCompositeDefinition,
+  type CompositeDef,
+  type CompositeLibraryEntry,
+  type CompositePortBinding,
+} from '../engine/composites';
 import type { Connection, ModuleRegistry, Project } from '../engine/types';
 import { validateCompositeDef } from '../engine/validation';
 
@@ -122,30 +127,32 @@ export function createCompositeFromSelection({
     };
   }
 
+  const definition: CompositeDef = {
+    id: trimmedId,
+    name: trimmedName,
+    kind: 'composite',
+    version: 1,
+    inputs,
+    outputs,
+    paramSchema: {},
+    project: {
+      modules: selectedModules,
+      connections: internalConnections,
+    },
+    inputBindings,
+    outputBindings,
+  };
+
   const entry: CompositeLibraryEntry = {
     id: trimmedId,
     name: trimmedName,
     version: 1,
-    definition: {
-      id: trimmedId,
-      name: trimmedName,
-      kind: 'composite',
-      version: 1,
-      inputs,
-      outputs,
-      paramSchema: {},
-      project: {
-        modules: selectedModules,
-        connections: internalConnections,
-      },
-      inputBindings,
-      outputBindings,
-    },
+    definition,
   };
 
-  const validation = validateCompositeDef(entry.definition, {
+  const validation = validateCompositeDef(definition, {
     ...registry,
-    [entry.id]: entry.definition,
+    [entry.id]: definition,
   });
 
   if (!validation.ok) {
@@ -164,6 +171,12 @@ export function replaceSelectionWithComposite({
   entry,
   selectedModuleIds,
 }: ReplaceSelectionWithCompositeArgs): ReplaceSelectionResult {
+  const definition = entry.definition;
+
+  if (!isCompositeDefinition(definition)) {
+    return { ok: false, error: 'Only composite definitions can replace a selected subgraph.' };
+  }
+
   const selectedIdSet = new Set(selectedModuleIds);
   if (selectedIdSet.size === 0) {
     return { ok: false, error: 'Select at least one module to replace.' };
@@ -200,8 +213,8 @@ export function replaceSelectionWithComposite({
   );
 
   const rewiredIncoming = incomingBoundaryConnections.map((connection) => {
-    const binding = entry.definition.inputBindings.find(
-      (candidate) =>
+    const binding = definition.inputBindings.find(
+      (candidate: CompositePortBinding) =>
         candidate.internalModuleId === connection.to.moduleId &&
         candidate.internalPort === connection.to.port,
     );
@@ -215,8 +228,8 @@ export function replaceSelectionWithComposite({
     };
   });
   const rewiredOutgoing = outgoingBoundaryConnections.map((connection) => {
-    const binding = entry.definition.outputBindings.find(
-      (candidate) =>
+    const binding = definition.outputBindings.find(
+      (candidate: CompositePortBinding) =>
         candidate.internalModuleId === connection.from.moduleId &&
         candidate.internalPort === connection.from.port,
     );

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CompositeDef } from './composites';
+import type { CompositeDef, IteratorDef } from './composites';
 import { executeProject } from './executor';
 import type { ModuleRegistry, Project } from './types';
 
@@ -68,9 +68,22 @@ const symbolEchoComposite: CompositeDef = {
   ],
 };
 
+const symbolEchoIterator: IteratorDef = {
+  id: 'SymbolEchoIterator',
+  name: 'Symbol Echo Iterator',
+  kind: 'iterator',
+  version: 1,
+  inputs: [{ name: 'in', type: 'symbol' }],
+  outputs: [{ name: 'out', type: 'symbol' }],
+  paramSchema: {},
+  roundDefId: 'SymbolEchoComposite',
+  iterationCount: 2,
+};
+
 const registryWithComposite: ModuleRegistry = {
   ...registry,
   [symbolEchoComposite.id]: symbolEchoComposite,
+  [symbolEchoIterator.id]: symbolEchoIterator,
 };
 
 describe('executeProject', () => {
@@ -168,5 +181,33 @@ describe('executeProject', () => {
       value: 'Z',
     });
     expect(result.order).toEqual(['source', 'composite', 'sink']);
+  });
+
+  it('executes an iterator module instance like a bounded repeated chain', () => {
+    const project: Project = {
+      modules: [
+        { id: 'source', defId: 'TextSource', params: { value: 'Z' } },
+        { id: 'iterator', defId: 'SymbolEchoIterator', params: {} },
+        { id: 'sink', defId: 'SymbolSink', params: {} },
+      ],
+      connections: [
+        {
+          from: { moduleId: 'source', port: 'out' },
+          to: { moduleId: 'iterator', port: 'in' },
+        },
+        {
+          from: { moduleId: 'iterator', port: 'out' },
+          to: { moduleId: 'sink', port: 'in' },
+        },
+      ],
+    };
+
+    const result = executeProject(project, registryWithComposite);
+
+    expect(result.outputsByModuleId.iterator.out).toEqual({
+      type: 'symbol',
+      value: 'Z',
+    });
+    expect(result.order).toEqual(['source', 'iterator', 'sink']);
   });
 });

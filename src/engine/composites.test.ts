@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CompositeDef } from './composites';
+import type { CompositeDef, IteratorDef } from './composites';
 import type { ModuleRegistry } from './types';
-import { validateCompositeDef } from './validation';
+import { validateCompositeDef, validateIteratorDef } from './validation';
 
 const registry: ModuleRegistry = {
   Source: {
@@ -173,5 +173,66 @@ describe('validateCompositeDef', () => {
 
     expect(result.ok).toBe(false);
     expect(result.issues.some((issue) => issue.code === 'cycle-detected')).toBe(true);
+  });
+});
+
+describe('validateIteratorDef', () => {
+  it('accepts a structurally valid iterator definition', () => {
+    const roundComposite: CompositeDef = {
+      id: 'RoundComposite',
+      name: 'Round Composite',
+      kind: 'composite',
+      inputs: [{ name: 'in', type: 'symbol' }],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {},
+      version: 1,
+      project: {
+        modules: [{ id: 'loop-1', defId: 'Loop', params: {} }],
+        connections: [],
+      },
+      inputBindings: [
+        { externalPort: 'in', internalModuleId: 'loop-1', internalPort: 'in' },
+      ],
+      outputBindings: [
+        { externalPort: 'out', internalModuleId: 'loop-1', internalPort: 'out' },
+      ],
+    };
+    const iterator: IteratorDef = {
+      id: 'RoundIterator',
+      name: 'Round Iterator',
+      kind: 'iterator',
+      version: 1,
+      inputs: [{ name: 'in', type: 'symbol' }],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {},
+      roundDefId: 'RoundComposite',
+      iterationCount: 2,
+    };
+
+    const result = validateIteratorDef(iterator, {
+      ...registry,
+      RoundComposite: roundComposite,
+    });
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('rejects iterators with unknown round definitions', () => {
+    const iterator: IteratorDef = {
+      id: 'MissingRoundIterator',
+      name: 'Missing Round Iterator',
+      kind: 'iterator',
+      version: 1,
+      inputs: [{ name: 'in', type: 'symbol' }],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {},
+      roundDefId: 'MissingRound',
+      iterationCount: 2,
+    };
+
+    const result = validateIteratorDef(iterator, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'unknown-module-def')).toBe(true);
   });
 });

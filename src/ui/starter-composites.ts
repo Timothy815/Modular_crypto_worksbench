@@ -88,6 +88,22 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
     },
   },
   {
+    id: 'ByteRoundIterator',
+    name: 'Byte Round Iterator',
+    version: 1,
+    definition: {
+      id: 'ByteRoundIterator',
+      name: 'Byte Round Iterator',
+      kind: 'iterator',
+      version: 1,
+      inputs: [{ name: 'in', type: 'bits' }],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {},
+      roundDefId: 'ByteRoundComposite',
+      iterationCount: 2,
+    },
+  },
+  {
     id: 'SymbolRoundTripComposite',
     name: 'Symbol Round Trip',
     version: 1,

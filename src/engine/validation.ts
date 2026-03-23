@@ -9,7 +9,13 @@ import {
   type ValidationIssue,
   type ValidationResult,
 } from './types';
-import type { CompositeDef, CompositePortBinding } from './composites';
+import {
+  isCompositeDefinition,
+  isIteratorDefinition,
+  type CompositeDef,
+  type CompositePortBinding,
+  type IteratorDef,
+} from './composites';
 import { validateAsciiSourceValue } from './modules/ascii-source';
 import { validateBaudotSourceValue } from './modules/baudot-source';
 import { validateHexSourceValue } from './modules/hex-source';
@@ -91,7 +97,7 @@ function getModuleSpecificParamMessage(
   field: ParamFieldDef,
   value: unknown,
 ): string | null {
-  if ('kind' in def && def.kind === 'composite') {
+  if (isCompositeDefinition(def) || isIteratorDefinition(def)) {
     return null;
   }
 
@@ -330,6 +336,69 @@ export function validateCompositeDef(
     registry,
     issues,
   );
+
+  return {
+    ok: issues.length === 0,
+    issues,
+  };
+}
+
+export function validateIteratorDef(
+  iterator: IteratorDef,
+  registry: ModuleRegistry,
+): ValidationResult {
+  const issues: ValidationIssue[] = [];
+  const roundDef = registry[iterator.roundDefId];
+
+  if (!roundDef) {
+    issues.push({
+      code: 'unknown-module-def',
+      message: `Iterator "${iterator.id}" references unknown round definition "${iterator.roundDefId}".`,
+    });
+  } else {
+    if (isIteratorDefinition(roundDef) && roundDef.id === iterator.id) {
+      issues.push({
+        code: 'invalid-composite-binding',
+        message: `Iterator "${iterator.id}" cannot reference itself as its round definition.`,
+      });
+    }
+
+    if (roundDef.inputs.length !== 1 || roundDef.outputs.length !== 1) {
+      issues.push({
+        code: 'invalid-composite-binding',
+        message: `Iterator "${iterator.id}" requires a round definition with exactly one input and one output.`,
+      });
+    } else if (roundDef.inputs[0]?.name !== 'in' || roundDef.outputs[0]?.name !== 'out') {
+      issues.push({
+        code: 'invalid-composite-binding',
+        message: `Iterator "${iterator.id}" currently requires a round definition with ports named "in" and "out".`,
+      });
+    } else if (roundDef.inputs[0]?.type !== roundDef.outputs[0]?.type) {
+      issues.push({
+        code: 'signal-type-mismatch',
+        message: `Iterator "${iterator.id}" requires a round definition whose input and output types match.`,
+      });
+    } else if (
+      iterator.inputs.length !== 1 ||
+      iterator.outputs.length !== 1 ||
+      iterator.inputs[0]?.name !== 'in' ||
+      iterator.outputs[0]?.name !== 'out' ||
+      iterator.inputs[0]?.type !== roundDef.inputs[0]?.type ||
+      iterator.outputs[0]?.type !== roundDef.outputs[0]?.type
+    ) {
+      issues.push({
+        code: 'signal-type-mismatch',
+        message: `Iterator "${iterator.id}" must expose one input and one output matching its round definition.`,
+      });
+    }
+  }
+
+  if (!Number.isInteger(iterator.iterationCount) || iterator.iterationCount < 1) {
+    issues.push({
+      code: 'invalid-param-type',
+      message: `Iterator "${iterator.id}" must declare a positive integer iteration count.`,
+    });
+  }
 
   return {
     ok: issues.length === 0,

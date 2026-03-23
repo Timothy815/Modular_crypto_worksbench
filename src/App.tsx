@@ -1,7 +1,7 @@
 import { useEffect, useReducer, useState } from 'react';
 
 import './App.css';
-import type { CompositeLibraryEntry } from './engine/composites';
+import { isCompositeDefinition, type CompositeLibraryEntry } from './engine/composites';
 import { V1_REGISTRY } from './engine/modules';
 import type { ExecutionResult, TickedExecutionResult } from './engine/types';
 import { deriveTickCount, executeTickedProject } from './engine/executor';
@@ -874,19 +874,24 @@ function App() {
                   type="button"
                   className="primary-dialog-button"
                   onClick={() => {
-                    if (!activeCompositeEntry || !state.compositeEditor) {
+                    if (
+                      !activeCompositeEntry ||
+                      !state.compositeEditor ||
+                      !isCompositeDefinition(activeCompositeEntry.definition)
+                    ) {
                       return;
                     }
 
+                    const nextDefinition = {
+                      ...activeCompositeEntry.definition,
+                      project: cloneProject(state.compositeEditor.project),
+                      layout: { ...state.compositeEditor.layout },
+                    };
                     const nextEntry: CompositeLibraryEntry = {
                       ...activeCompositeEntry,
-                      definition: {
-                        ...activeCompositeEntry.definition,
-                        project: cloneProject(state.compositeEditor.project),
-                        layout: { ...state.compositeEditor.layout },
-                      },
+                      definition: nextDefinition,
                     };
-                    const validation = validateCompositeDef(nextEntry.definition, effectiveRegistry);
+                    const validation = validateCompositeDef(nextDefinition, effectiveRegistry);
                     if (!validation.ok) {
                       dispatch({
                         type: 'setCompositeEditorSaveError',
@@ -1622,6 +1627,9 @@ function cloneLayout<T extends Record<string, { x: number; y: number }>>(layout:
 }
 
 function isCompositeBoundaryModule(entry: CompositeLibraryEntry, moduleId: string) {
+  if (!isCompositeDefinition(entry.definition)) {
+    return false;
+  }
   return (
     entry.definition.inputBindings.some((binding) => binding.internalModuleId === moduleId) ||
     entry.definition.outputBindings.some((binding) => binding.internalModuleId === moduleId)

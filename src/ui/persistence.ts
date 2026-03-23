@@ -1,4 +1,9 @@
-import type { CompositeDef, CompositeLibraryEntry } from '../engine/composites';
+import {
+  isCompositeDefinition,
+  type CompositeDef,
+  type CompositeLibraryEntry,
+  type IteratorDef,
+} from '../engine/composites';
 import type { Project } from '../engine/types';
 import type { DemoProject } from './demo-projects';
 import type { GuidedChallenge } from './challenges';
@@ -76,6 +81,33 @@ function cloneTutorial(tutorial: GuidedTutorial): GuidedTutorial {
     version: 1,
     group: tutorial.group ?? STARTER_TUTORIAL_GROUP_BY_ID[tutorial.id],
     steps: tutorial.steps.map((step) => ({ ...step })),
+  };
+}
+
+function cloneReusableEntry(entry: CompositeLibraryEntry): CompositeLibraryEntry {
+  if (isCompositeDefinition(entry.definition)) {
+    return {
+      ...entry,
+      definition: {
+        ...entry.definition,
+        project: cloneProject(entry.definition.project),
+        layout: entry.definition.layout
+          ? Object.fromEntries(
+              Object.entries(entry.definition.layout).map(([moduleId, position]) => [
+                moduleId,
+                { ...position },
+              ]),
+            )
+          : undefined,
+        inputBindings: entry.definition.inputBindings.map((binding) => ({ ...binding })),
+        outputBindings: entry.definition.outputBindings.map((binding) => ({ ...binding })),
+      },
+    };
+  }
+
+  return {
+    ...entry,
+    definition: { ...entry.definition },
   };
 }
 
@@ -184,23 +216,7 @@ export function buildPersistedWorkspace(state: UiState): PersistedWorkspaceDocum
     tutorialLibrary: state.tutorialLibrary.map(cloneTutorial),
     compositeLibrary: {
       version: 1,
-      entries: state.compositeLibrary.map((entry) => ({
-        ...entry,
-        definition: {
-          ...entry.definition,
-          project: cloneProject(entry.definition.project),
-          layout: entry.definition.layout
-            ? Object.fromEntries(
-                Object.entries(entry.definition.layout).map(([moduleId, position]) => [
-                  moduleId,
-                  { ...position },
-                ]),
-              )
-            : undefined,
-          inputBindings: entry.definition.inputBindings.map((binding) => ({ ...binding })),
-          outputBindings: entry.definition.outputBindings.map((binding) => ({ ...binding })),
-        },
-      })),
+      entries: state.compositeLibrary.map(cloneReusableEntry),
     },
   };
 }
@@ -517,7 +533,7 @@ function isCompositeLibraryEntry(value: unknown): value is CompositeLibraryEntry
     typeof candidate.id === 'string' &&
     typeof candidate.name === 'string' &&
     typeof candidate.version === 'number' &&
-    isCompositeDef(candidate.definition)
+    (isCompositeDef(candidate.definition) || isIteratorDef(candidate.definition))
   );
 }
 
@@ -552,5 +568,25 @@ function isCompositeDef(value: unknown): value is CompositeDef {
         ))) &&
     Array.isArray(candidate.inputBindings) &&
     Array.isArray(candidate.outputBindings)
+  );
+}
+
+function isIteratorDef(value: unknown): value is IteratorDef {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as IteratorDef;
+  return (
+    candidate.kind === 'iterator' &&
+    typeof candidate.id === 'string' &&
+    typeof candidate.name === 'string' &&
+    typeof candidate.version === 'number' &&
+    Array.isArray(candidate.inputs) &&
+    Array.isArray(candidate.outputs) &&
+    typeof candidate.paramSchema === 'object' &&
+    candidate.paramSchema !== null &&
+    typeof candidate.roundDefId === 'string' &&
+    typeof candidate.iterationCount === 'number'
   );
 }
