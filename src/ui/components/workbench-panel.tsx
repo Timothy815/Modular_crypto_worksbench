@@ -751,10 +751,22 @@ export function WorkbenchPanel({
                     const tickParams = tickedParamsByModule[moduleInstance.id]?.[currentTick];
                     if (!tickParams) return null;
                     const positionValue = tickParams.position;
-                    if (positionValue === undefined) return null;
+                    if (positionValue !== undefined) {
+                      return (
+                        <span className="graph-node-tick-state" title={`position = ${positionValue}`}>
+                          pos {String(positionValue)}
+                        </span>
+                      );
+                    }
+                    if (moduleInstance.defId !== 'BaudotSource') return null;
+                    const currentCharacter =
+                      typeof tickParams.value === 'string' && tickParams.value.length > 0
+                        ? tickParams.value
+                        : null;
+                    if (!currentCharacter) return null;
                     return (
-                      <span className="graph-node-tick-state" title={`position = ${positionValue}`}>
-                        pos {String(positionValue)}
+                      <span className="graph-node-tick-state" title={`current character = ${currentCharacter}`}>
+                        char {currentCharacter}
                       </span>
                     );
                   })() : null}
