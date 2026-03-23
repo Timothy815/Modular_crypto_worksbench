@@ -2216,3 +2216,7 @@
   font-weight: 800;
   letter-spacing: 0.04em;
 }
+
+.cryptanalysis-help-copy {
+  color: color-mix(in srgb, var(--text-muted) 88%, var(--text));
+}

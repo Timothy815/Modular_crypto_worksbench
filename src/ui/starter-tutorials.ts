@@ -3,6 +3,46 @@ import type { GuidedTutorial } from './tutorials';
 export const STARTER_TUTORIALS: GuidedTutorial[] = [
   {
     version: 1,
+    id: 'breaking-the-unbreakable',
+    title: 'Breaking the Unbreakable',
+    group: 'Cryptanalysis',
+    summary: 'Walk through the Vigenere cryptanalysis workspace: period hints, column analysis, frequency matching, and plaintext reconstruction.',
+    projectId: 'modern',
+    steps: [
+      {
+        id: 'vigenere-mode',
+        title: 'Enter Cryptanalysis Mode',
+        body: 'Use the header Mode selector or the tutorial mode switch to enter Cryptanalysis. This workflow is intentionally separate from Build and Compare because ciphertext investigation needs its own space.',
+      },
+      {
+        id: 'vigenere-input',
+        title: 'Paste The Ciphertext',
+        body: 'Start by loading ciphertext into the workspace input area. The summary cards normalize the text, count letters, and expose quick IOC and n-gram evidence before any key guesses are made.',
+      },
+      {
+        id: 'vigenere-period',
+        title: 'Look For Period Evidence',
+        body: 'Use repeated fragments and the candidate key-length list together. Supporting distances tell you why a period is plausible, while the average IOC gives a second statistical check.',
+      },
+      {
+        id: 'vigenere-columns',
+        title: 'Split The Cipher Into Columns',
+        body: 'Choose a likely period and inspect the resulting columns. Each column behaves like a Caesar cipher, which is why the workspace shows column-local IOC, top letters, and shift candidates.',
+      },
+      {
+        id: 'vigenere-workshop',
+        title: 'Match The Frequency Shapes',
+        body: 'Pick one column at a time and slide its shifted frequency profile against the fixed English distribution. The important clue is the overall contour: peaks and valleys should begin to line up before the key letter feels trustworthy.',
+      },
+      {
+        id: 'vigenere-reconstruct',
+        title: 'Read The Candidate Plaintext',
+        body: 'As each column shift improves, the candidate key and plaintext update below. This is still a hypothesis bench, not an auto-solver, so use the reconstruction to confirm or challenge your current key guess.',
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'modern-cipher-foundry',
     title: 'The Modern Cipher Foundry',
     group: 'Modern Rounds',

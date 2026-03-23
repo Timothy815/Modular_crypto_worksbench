@@ -147,6 +147,10 @@ export function CryptanalysisPanel({
                 : 'n/a'}
             </strong>
           </p>
+          <p className="comparison-copy cryptanalysis-help-copy">
+            For English text, IOC often trends toward <strong>0.067</strong>. Candidate periods
+            whose column-average IOC rises toward that range deserve closer attention.
+          </p>
           <p className="comparison-copy">
             Top letters: <strong>{formatTopLetters(analysis?.topLetters ?? [])}</strong>
           </p>
@@ -324,6 +328,14 @@ export function CryptanalysisPanel({
                 Shift Right
               </button>
             </div>
+            <p className="comparison-copy cryptanalysis-help-copy">
+              Best fit suggestion:{' '}
+              <strong>
+                {activeColumn.topShiftCandidates[0]
+                  ? `${activeColumn.topShiftCandidates[0].keyLetter} (${activeColumn.topShiftCandidates[0].score.toFixed(1)})`
+                  : 'n/a'}
+              </strong>
+            </p>
             <div className="cryptanalysis-frequency-chart">
               {activeGraphEntries.map((entry) => (
                 <div key={entry.letter} className="cryptanalysis-frequency-column">
