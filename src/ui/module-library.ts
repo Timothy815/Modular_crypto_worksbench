@@ -193,8 +193,8 @@ export const MODULE_LIBRARY_SECTIONS: ModuleLibrarySection[] = [
   },
   {
     id: 'composites',
-    title: 'Reusable',
-    description: 'Reusable composites and bounded iterators authored from workbench round structures.',
+    title: 'Composites',
+    description: 'Composite and iterator architecture modules authored from workbench graph structures.',
   },
 ];
 
@@ -208,7 +208,7 @@ export function getModuleLibrarySectionId(definition: ModuleDefinition): ModuleL
 
 export function getModulePurpose(definition: ModuleDefinition): string {
   if (isCompositeDefinition(definition)) {
-    return `Reusable composite with ${definition.inputs.length} input${definition.inputs.length === 1 ? '' : 's'} and ${definition.outputs.length} output${definition.outputs.length === 1 ? '' : 's'}.`;
+    return `Composite module with ${definition.inputs.length} input${definition.inputs.length === 1 ? '' : 's'} and ${definition.outputs.length} output${definition.outputs.length === 1 ? '' : 's'}.`;
   }
   if (isIteratorDefinition(definition)) {
     return `Bounded iterator repeating "${definition.roundDefId}" for ${definition.iterationCount} round${definition.iterationCount === 1 ? '' : 's'}${definition.roundKeyWidth ? ` with a ${definition.roundKeyWidth}-bit key per round` : ''}.`;
@@ -222,12 +222,12 @@ export function getModulePurpose(definition: ModuleDefinition): string {
 
 export function getModuleDetail(definition: ModuleDefinition): string {
   if (isCompositeDefinition(definition)) {
-    return 'Reusable module captured from a workbench subgraph. Open it to inspect or edit its internals.';
+    return 'Composite module captured from a workbench subgraph. Open it to inspect or edit its internals.';
   }
   if (isIteratorDefinition(definition)) {
     return definition.roundKeyWidth
-      ? 'Reusable bounded round chain that auto-unrolls one round definition a fixed number of times and splits a visible key bus into one sub-key per round.'
-      : 'Reusable bounded round chain that auto-unrolls one round definition a fixed number of times.';
+      ? 'Bounded iterator that auto-unrolls one round definition a fixed number of times and splits a visible key bus into one sub-key per round.'
+      : 'Bounded iterator that auto-unrolls one round definition a fixed number of times.';
   }
 
   return (
@@ -247,7 +247,7 @@ export function matchesModuleSearch(definition: ModuleDefinition, query: string)
     definition.name,
     getModulePurpose(definition),
     ...((isCompositeDefinition(definition) || isIteratorDefinition(definition))
-      ? ['composite', 'reusable', 'iterator', 'round chain']
+      ? ['composite', 'iterator', 'round chain', 'architecture']
       : PRIMITIVE_LIBRARY_META[definition.id]?.searchTerms ?? []),
   ];
 

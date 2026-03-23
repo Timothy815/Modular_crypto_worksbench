@@ -78,7 +78,7 @@ export function PrimitivePalette({
             <option value="symbol">Symbol</option>
             <option value="bit">Bit</option>
             <option value="bridge">Bridge</option>
-            <option value="composites">Reusable</option>
+            <option value="composites">Composites</option>
           </select>
         </label>
         {activeTab === 'composites' ? (
@@ -159,16 +159,36 @@ export function PrimitivePalette({
         <div className="primitive-sections">
           {[
             {
-              id: 'built-in-architectures',
-              title: 'Built-In Architectures',
-              description: 'Shipped round, iterator, and architecture modules provided by the product.',
-              defs: visibleDefs.filter((def) => builtInReusableIds.includes(def.id)),
+              id: 'built-in-composites',
+              title: 'Built-In Composites',
+              description: 'Shipped composite architecture modules provided by the product.',
+              defs: visibleDefs.filter(
+                (def) => builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'composite',
+              ),
             },
             {
-              id: 'user-reusables',
-              title: 'My Reusables',
-              description: 'Editable composites you created yourself.',
-              defs: visibleDefs.filter((def) => !builtInReusableIds.includes(def.id)),
+              id: 'built-in-iterators',
+              title: 'Built-In Iterators',
+              description: 'Shipped bounded iterator architectures provided by the product.',
+              defs: visibleDefs.filter(
+                (def) => builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'iterator',
+              ),
+            },
+            {
+              id: 'user-composites',
+              title: 'My Composites',
+              description: 'Editable composite modules you created yourself.',
+              defs: visibleDefs.filter(
+                (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'composite',
+              ),
+            },
+            {
+              id: 'user-iterators',
+              title: 'My Iterators',
+              description: 'Editable bounded iterator modules you created yourself.',
+              defs: visibleDefs.filter(
+                (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'iterator',
+              ),
             },
           ]
             .filter((section) => section.defs.length > 0)
@@ -202,7 +222,7 @@ export function PrimitivePalette({
       {visibleDefs.length === 0 ? (
         <p className="empty-state">
           {activeTab === 'composites'
-            ? 'No built-in architectures or personal reusables match this search.'
+            ? 'No built-in architectures or personal composites match this search.'
             : 'No primitive modules match this search.'}
         </p>
       ) : null}
