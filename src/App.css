@@ -1270,6 +1270,29 @@
   margin: 16px 0 12px;
 }
 
+.trace-toolbar-controls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.trace-round-select {
+  display: grid;
+  gap: 4px;
+  min-width: 148px;
+}
+
+.trace-round-select select {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-panel);
+  padding: 8px 10px;
+  font: inherit;
+  color: var(--ink);
+}
+
 .trace-mode-toggle {
   display: inline-flex;
   gap: 8px;

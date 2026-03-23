@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type {
   Connection,
@@ -88,7 +88,11 @@ export function ParameterInspector({
 }: ParameterInspectorProps) {
   const [traceMode, setTraceMode] = useState<'focused' | 'upstream' | 'downstream' | 'full'>('focused');
   const [inspectorTab, setInspectorTab] = useState<'configure' | 'analyze' | 'compare'>('configure');
-  const analysisTrace = execution?.analysisTrace ?? execution?.trace ?? [];
+  const [focusedRoundPath, setFocusedRoundPath] = useState<string>('all');
+  const analysisTrace = useMemo(
+    () => execution?.analysisTrace ?? execution?.trace ?? [],
+    [execution],
+  );
   const tutorialTraceRef = useRef<HTMLLIElement | null>(null);
   const outputTrace = execution?.trace.at(-1);
   const selectedTrace = execution?.trace.find(
@@ -106,11 +110,23 @@ export function ParameterInspector({
   const groupedSelectedIssues = groupIssuesByTarget(selectedIssues);
   const groupedGlobalIssues = groupIssuesByTarget(globalIssues);
   const effectiveTraceMode = selectedTrace ? traceMode : 'full';
+  const roundFocusOptions = useMemo(
+    () =>
+      moduleDef && 'kind' in moduleDef && moduleDef.kind === 'iterator' && moduleInstance
+        ? getIteratorRoundOptions(analysisTrace, moduleInstance.id)
+        : [],
+    [analysisTrace, moduleDef, moduleInstance],
+  );
+  const effectiveFocusedRoundPath =
+    focusedRoundPath !== 'all' && roundFocusOptions.some((option) => option.path === focusedRoundPath)
+      ? focusedRoundPath
+      : 'all';
   const traceEntries = getTraceEntries({
     execution,
     project,
     selectedModuleId: moduleInstance?.id ?? null,
     traceMode: effectiveTraceMode,
+    focusedRoundPath: effectiveFocusedRoundPath,
   });
   const steppedTrace = stepIndex !== null ? execution?.trace[stepIndex] ?? null : null;
   const tutorialTraceEntry = tutorialStep?.focusModuleId
@@ -641,7 +657,24 @@ export function ParameterInspector({
       {inspectorTab === 'analyze' ? (
       <div className="trace-toolbar">
         <span className="meta-label">Execution Trace</span>
-        <div className="trace-mode-toggle">
+        <div className="trace-toolbar-controls">
+          {roundFocusOptions.length > 0 ? (
+            <label className="trace-round-select">
+              <span className="meta-label">Focus Round</span>
+              <select
+                value={effectiveFocusedRoundPath}
+                onChange={(event) => setFocusedRoundPath(event.target.value)}
+              >
+                <option value="all">All Rounds</option>
+                {roundFocusOptions.map((option) => (
+                  <option key={option.path} value={option.path}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+          <div className="trace-mode-toggle">
           <button
             type="button"
             className={effectiveTraceMode === 'focused' ? 'trace-mode-button active' : 'trace-mode-button'}
@@ -673,6 +706,7 @@ export function ParameterInspector({
           >
             Downstream
           </button>
+          </div>
         </div>
       </div>
       ) : null}
@@ -778,20 +812,25 @@ function getTraceEntries(args: {
   project: Project;
   selectedModuleId: string | null;
   traceMode: 'focused' | 'upstream' | 'downstream' | 'full';
+  focusedRoundPath: string;
 }) {
-  const { execution, project, selectedModuleId, traceMode } = args;
+  const { execution, project, selectedModuleId, traceMode, focusedRoundPath } = args;
   if (!execution) {
     return [];
   }
 
   const analysisTrace = execution.analysisTrace ?? execution.trace;
+  const roundFilteredTrace =
+    focusedRoundPath === 'all'
+      ? analysisTrace
+      : analysisTrace.filter((entry) => isEntryInsideRound(entry, focusedRoundPath));
 
   if (!selectedModuleId || traceMode === 'full') {
-    return analysisTrace;
+    return roundFilteredTrace;
   }
 
   if (traceMode === 'focused') {
-    return analysisTrace.filter(
+    return roundFilteredTrace.filter(
       (entry) =>
         entry.moduleId === selectedModuleId ||
         entry.moduleId.startsWith(`${selectedModuleId}/`),
@@ -804,12 +843,51 @@ function getTraceEntries(args: {
       : collectReachableModules(project.connections, selectedModuleId, 'downstream');
 
   relatedModuleIds.add(selectedModuleId);
-  return analysisTrace.filter((entry) =>
+  return roundFilteredTrace.filter((entry) =>
     [...relatedModuleIds].some(
       (moduleId) =>
         entry.moduleId === moduleId ||
         entry.moduleId.startsWith(`${moduleId}/`),
     ),
+  );
+}
+
+function getIteratorRoundOptions(analysisTrace: ExecutionTraceEntry[], iteratorModuleId: string) {
+  const seen = new Set<string>();
+  const options: { path: string; label: string }[] = [];
+  const prefix = `${iteratorModuleId}/round-`;
+
+  for (const entry of analysisTrace) {
+    if (!entry.moduleId.startsWith(prefix)) {
+      continue;
+    }
+
+    const parts = entry.moduleId.split('/');
+    const roundIndex = parts.findIndex((part) => /^round-\d+$/.test(part));
+    const roundPart = roundIndex >= 0 ? parts[roundIndex] : null;
+    if (!roundPart) {
+      continue;
+    }
+
+    const path = parts.slice(0, roundIndex + 1).join('/');
+    if (seen.has(path)) {
+      continue;
+    }
+
+    seen.add(path);
+    options.push({
+      path,
+      label: roundPart.replace('round-', 'Round '),
+    });
+  }
+
+  return options.sort((left, right) => left.path.localeCompare(right.path, undefined, { numeric: true }));
+}
+
+function isEntryInsideRound(entry: ExecutionTraceEntry, focusedRoundPath: string) {
+  return (
+    entry.moduleId === focusedRoundPath ||
+    entry.moduleId.startsWith(`${focusedRoundPath}/`)
   );
 }
 
