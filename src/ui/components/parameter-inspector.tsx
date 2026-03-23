@@ -717,6 +717,10 @@ export function ParameterInspector({
           const isNested = (entry.depth ?? 0) > 0;
           const topLevelModuleId = getTopLevelTraceModuleId(entry);
           const nestedPath = getNestedTracePath(entry);
+          const roundPath = getIteratorRoundPath(entry);
+          const previousRoundPath =
+            analysisIndex > 0 ? getIteratorRoundPath(traceEntries[analysisIndex - 1]) : null;
+          const isRoundBoundary = roundPath !== null && roundPath !== previousRoundPath;
           const traceIndex = analysisTrace.findIndex(
             (traceEntry) => traceEntry.moduleId === entry.moduleId,
           );
@@ -731,13 +735,13 @@ export function ParameterInspector({
             className={
               topLevelModuleId === steppedTrace?.moduleId
                 ? entry.moduleId === tutorialStep?.focusModuleId
-                  ? `trace-card${isNested ? ' trace-card-nested' : ''} trace-card-stepped trace-card-tutorial`
-                  : `trace-card${isNested ? ' trace-card-nested' : ''} trace-card-stepped`
+                  ? `trace-card${isNested ? ' trace-card-nested' : ''}${isRoundBoundary ? ' trace-card-round-boundary' : ''} trace-card-stepped trace-card-tutorial`
+                  : `trace-card${isNested ? ' trace-card-nested' : ''}${isRoundBoundary ? ' trace-card-round-boundary' : ''} trace-card-stepped`
                 : entry.moduleId === tutorialStep?.focusModuleId
-                ? `trace-card${isNested ? ' trace-card-nested' : ''} trace-card-tutorial`
+                ? `trace-card${isNested ? ' trace-card-nested' : ''}${isRoundBoundary ? ' trace-card-round-boundary' : ''} trace-card-tutorial`
                 : topLevelModuleId === moduleInstance?.id
-                ? `trace-card${isNested ? ' trace-card-nested' : ''} trace-card-active`
-                : `trace-card${isNested ? ' trace-card-nested' : ''}`
+                ? `trace-card${isNested ? ' trace-card-nested' : ''}${isRoundBoundary ? ' trace-card-round-boundary' : ''} trace-card-active`
+                : `trace-card${isNested ? ' trace-card-nested' : ''}${isRoundBoundary ? ' trace-card-round-boundary' : ''}`
             }
             style={{ marginLeft: `${Math.max(0, (entry.depth ?? 0) * 14)}px` }}
             onMouseEnter={() => onTraceHover(topLevelModuleId)}
@@ -749,9 +753,14 @@ export function ParameterInspector({
             <div className="trace-head">
               <div className="trace-head-labels">
                 <strong>{getDisplayTraceModuleId(entry)}</strong>
-                {isNested ? (
-                  <span className="trace-nested-chip">Inside {topLevelModuleId}</span>
-                ) : null}
+                <div className="trace-chip-row">
+                  {isNested ? (
+                    <span className="trace-nested-chip">Inside {topLevelModuleId}</span>
+                  ) : null}
+                  {roundPath ? (
+                    <span className="trace-round-chip">{formatIteratorRoundLabel(roundPath)}</span>
+                  ) : null}
+                </div>
               </div>
               <span>
                 #{traceIndex >= 0 ? traceIndex + 1 : analysisIndex + 1} {entry.defId}
@@ -907,6 +916,21 @@ function getNestedTracePath(entry: ExecutionTraceEntry) {
   }
 
   return parts.slice(0, -1).join(' / ');
+}
+
+function getIteratorRoundPath(entry: ExecutionTraceEntry) {
+  const parts = entry.moduleId.split('/');
+  const roundIndex = parts.findIndex((part) => /^round-\d+$/.test(part));
+  if (roundIndex < 0) {
+    return null;
+  }
+
+  return parts.slice(0, roundIndex + 1).join('/');
+}
+
+function formatIteratorRoundLabel(roundPath: string) {
+  const roundPart = roundPath.split('/').find((part) => /^round-\d+$/.test(part));
+  return roundPart ? roundPart.replace('round-', 'Round ') : 'Round';
 }
 
 function collectReachableModules(
