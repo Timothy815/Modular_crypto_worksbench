@@ -32,6 +32,7 @@ describe('evaluateChallengeAttempt', () => {
   const iteratedByteRoundsProject = demoProjects.find((project) => project.id === 'iterated-byte-rounds');
   const keyedByteRoundsProject = demoProjects.find((project) => project.id === 'keyed-byte-rounds');
   const keyedByteIteratorProject = demoProjects.find((project) => project.id === 'keyed-byte-iterator');
+  const feistelProject = demoProjects.find((project) => project.id === 'feistel-network');
   const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
   const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
   const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-lorenz');
@@ -58,6 +59,9 @@ describe('evaluateChallengeAttempt', () => {
   }
   if (!keyedByteIteratorProject) {
     throw new Error('Expected keyed-byte-iterator project.');
+  }
+  if (!feistelProject) {
+    throw new Error('Expected feistel-network project.');
   }
   if (!baudotProject) {
     throw new Error('Expected baudot-bridge project.');
@@ -452,6 +456,31 @@ describe('evaluateChallengeAttempt', () => {
       prompt: 'Repair the visible key bus.',
       startingProject: cloneProject(currentProject),
       targetProject: cloneProject(keyedByteIteratorProject.project),
+      success: { kind: 'output-match-target' },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, compositeRegistry);
+
+    expect(result.status).toBe('failure');
+    expect(result.reason).toBe('diverged-from-target');
+    expect(result.comparison?.outputsMatch).toBe(false);
+    expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('keybus');
+  });
+
+  it('returns failure when a feistel iterator uses the wrong visible key bus', () => {
+    const currentProject = cloneProject(feistelProject.project);
+    const keyBusModule = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'keybus');
+    if (!keyBusModule) {
+      throw new Error('Expected keybus module in feistel-network project.');
+    }
+    keyBusModule.params.value = '10';
+
+    const challenge: GuidedChallenge = {
+      id: 'feistel-round-failure',
+      title: 'Feistel Round Failure',
+      prompt: 'Repair the Feistel key bus.',
+      startingProject: cloneProject(currentProject),
+      targetProject: cloneProject(feistelProject.project),
       success: { kind: 'output-match-target' },
     };
 

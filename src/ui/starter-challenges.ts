@@ -14,6 +14,7 @@ const bankedLorenzProject = demoProjects.find((project) => project.id === 'banke
 const iteratedByteRoundsProject = demoProjects.find((project) => project.id === 'iterated-byte-rounds');
 const keyedByteRoundsProject = demoProjects.find((project) => project.id === 'keyed-byte-rounds');
 const keyedByteIteratorProject = demoProjects.find((project) => project.id === 'keyed-byte-iterator');
+const feistelProject = demoProjects.find((project) => project.id === 'feistel-network');
 const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
 const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
 const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
@@ -47,6 +48,9 @@ if (!keyedByteRoundsProject) {
 }
 if (!keyedByteIteratorProject) {
   throw new Error('Expected keyed-byte-iterator demo project to seed starter challenges.');
+}
+if (!feistelProject) {
+  throw new Error('Expected feistel-network demo project to seed starter challenges.');
 }
 if (!byteRoundProject) {
   throw new Error('Expected byte-round demo project to seed starter challenges.');
@@ -85,6 +89,8 @@ const keyedByteRoundsTarget = cloneProject(keyedByteRoundsProject.project);
 const brokenKeyedByteRoundsStart = cloneProject(keyedByteRoundsProject.project);
 const keyedByteIteratorTarget = cloneProject(keyedByteIteratorProject.project);
 const brokenKeyedByteIteratorStart = cloneProject(keyedByteIteratorProject.project);
+const feistelTarget = cloneProject(feistelProject.project);
+const brokenFeistelStart = cloneProject(feistelProject.project);
 const byteRoundTarget = cloneProject(byteRoundProject.project);
 const brokenByteRoundStart = cloneProject(byteRoundProject.project);
 const hexRoundTarget = cloneProject(hexRoundProject.project);
@@ -186,6 +192,14 @@ if (!brokenKeyBusModule) {
   throw new Error('Expected keyed-byte-iterator demo project to contain keybus.');
 }
 brokenKeyBusModule.params.value = '1C00';
+
+const brokenFeistelKeyBus = brokenFeistelStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'keybus',
+);
+if (!brokenFeistelKeyBus) {
+  throw new Error('Expected feistel-network demo project to contain keybus.');
+}
+brokenFeistelKeyBus.params.value = '10';
 
 const brokenPermutationModule = brokenByteRoundStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'permute',
@@ -421,6 +435,26 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The iterator already knows how many rounds it has and how wide each round key should be.',
       'The problem is in the visible key bus entering the iterator, not in the data byte.',
       'Changing the second half of the bus changes only the later round key.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'restore-feistel-rounds',
+    title: 'Repair the Feistel Bus',
+    group: 'Modern Rounds',
+    difficulty: 'intermediate',
+    prompt:
+      'The Feistel network still has the right round structure, but the visible key bus no longer feeds the right sub-keys into its half-block swaps. Restore the bus so the final ciphertext matches the captured reference network again.',
+    startingProject: brokenFeistelStart,
+    startingLayout: cloneProject(feistelProject.layout),
+    targetProject: feistelTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The iterator depth is already correct in this lab.',
+      'Focus on the visible key source feeding the Feistel iterator.',
+      'Each round still swaps halves, but the wrong sub-key changes the recombined output immediately.',
     ],
   },
   {
