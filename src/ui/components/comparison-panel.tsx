@@ -157,6 +157,14 @@ export function ComparisonPanel({
                     Top letters:{' '}
                     <strong>{formatTopLetters(baselineAnalysis.topLetters)}</strong>
                   </p>
+                  <p className="comparison-copy">
+                    Top bigrams:{' '}
+                    <strong>{formatTopNGrams(baselineAnalysis.topBigrams)}</strong>
+                  </p>
+                  <p className="comparison-copy">
+                    Top trigrams:{' '}
+                    <strong>{formatTopNGrams(baselineAnalysis.topTrigrams)}</strong>
+                  </p>
                 </div>
                 <div className="comparison-diff-card">
                   <span className="meta-label">Variant Stats</span>
@@ -172,6 +180,14 @@ export function ComparisonPanel({
                   <p className="comparison-copy">
                     Top letters:{' '}
                     <strong>{formatTopLetters(variantAnalysis.topLetters)}</strong>
+                  </p>
+                  <p className="comparison-copy">
+                    Top bigrams:{' '}
+                    <strong>{formatTopNGrams(variantAnalysis.topBigrams)}</strong>
+                  </p>
+                  <p className="comparison-copy">
+                    Top trigrams:{' '}
+                    <strong>{formatTopNGrams(variantAnalysis.topTrigrams)}</strong>
                   </p>
                 </div>
               </div>
@@ -203,6 +219,18 @@ function formatTopLetters(
 
   return entries
     .map((entry) => `${entry.letter}:${entry.count} (${Math.round(entry.share * 100)}%)`)
+    .join(', ');
+}
+
+function formatTopNGrams(
+  entries: { gram: string; count: number; share: number }[],
+) {
+  if (entries.length === 0) {
+    return 'n/a';
+  }
+
+  return entries
+    .map((entry) => `${entry.gram}:${entry.count} (${Math.round(entry.share * 100)}%)`)
     .join(', ');
 }
 

@@ -22,6 +22,16 @@ describe('analyzeSymbolSignal', () => {
       { letter: 'N', count: 2, share: 2 / 6 },
       { letter: 'B', count: 1, share: 1 / 6 },
     ]);
+    expect(analysis.topBigrams).toEqual([
+      { gram: 'AN', count: 2, share: 2 / 5 },
+      { gram: 'NA', count: 2, share: 2 / 5 },
+      { gram: 'BA', count: 1, share: 1 / 5 },
+    ]);
+    expect(analysis.topTrigrams).toEqual([
+      { gram: 'ANA', count: 2, share: 2 / 4 },
+      { gram: 'BAN', count: 1, share: 1 / 4 },
+      { gram: 'NAN', count: 1, share: 1 / 4 },
+    ]);
     expect(analysis.indexOfCoincidence).toBeCloseTo(4 / 15, 6);
   });
 
@@ -34,5 +44,12 @@ describe('analyzeSymbolSignal', () => {
     expect(analysis.normalizedText).toBe('ABC');
     expect(analysis.letterCount).toBe(3);
     expect(analysis.indexOfCoincidence).toBe(0);
+    expect(analysis.topBigrams).toEqual([
+      { gram: 'AB', count: 1, share: 0.5 },
+      { gram: 'BC', count: 1, share: 0.5 },
+    ]);
+    expect(analysis.topTrigrams).toEqual([
+      { gram: 'ABC', count: 1, share: 1 },
+    ]);
   });
 });
