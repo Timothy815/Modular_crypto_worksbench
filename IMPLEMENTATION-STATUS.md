@@ -143,3 +143,4 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `MODERN-PRIMITIVES-V1-CONTRACT.md` | Locked, shipped |
 | `V1-POLISH-AND-TUTORIALS.md` | Locked, shipped |
 | `ADVANCED-FOUNDRY-CLOCK-V1.md` | Locked, shipped (engine + UI slices) |
+| `ITERATIVE-ROUNDS-AND-KEYSCHEDULES-V1.md` | Draft, next major branch anchor |
