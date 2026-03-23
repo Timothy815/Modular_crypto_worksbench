@@ -601,6 +601,35 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'toy-sponge-hash',
+    name: 'Toy Sponge Hash',
+    group: 'Hash Foundations',
+    summary: 'Two visible message bytes are absorbed one at a time into a 16-bit sponge state, mixed after each absorb, and then squeezed back down to one digest byte.',
+    pipeline: 'HexSource + HexSource -> ToySpongeHashComposite -> BitsToHex -> Output',
+    project: {
+      modules: [
+        { id: 'left-source', defId: 'HexSource', params: { value: 'AA' } },
+        { id: 'right-source', defId: 'HexSource', params: { value: 'BB' } },
+        { id: 'sponge', defId: 'ToySpongeHashComposite', params: {} },
+        { id: 'encode', defId: 'BitsToHex', params: {} },
+        { id: 'output', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'left-source', port: 'out' }, to: { moduleId: 'sponge', port: 'left' } },
+        { from: { moduleId: 'right-source', port: 'out' }, to: { moduleId: 'sponge', port: 'right' } },
+        { from: { moduleId: 'sponge', port: 'out' }, to: { moduleId: 'encode', port: 'in' } },
+        { from: { moduleId: 'encode', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      'left-source': { x: 44, y: 108 },
+      'right-source': { x: 44, y: 236 },
+      sponge: { x: 352, y: 172 },
+      encode: { x: 660, y: 172 },
+      output: { x: 968, y: 172 },
+    },
+  },
+  {
     id: 'sequential',
     name: 'Sequential Heart',
     group: 'Sequential',

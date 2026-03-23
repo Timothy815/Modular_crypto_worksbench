@@ -313,6 +313,87 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
     },
   },
   {
+    id: 'SpongeMixRoundComposite',
+    name: 'Sponge Mix Round',
+    version: 1,
+    source: 'built-in',
+    definition: {
+      id: 'SpongeMixRoundComposite',
+      name: 'Sponge Mix Round',
+      kind: 'composite',
+      version: 1,
+      inputs: [{ name: 'in', type: 'bits' }],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {},
+      project: {
+        modules: [
+          {
+            id: 'sbox',
+            defId: 'SBox',
+            params: {
+              table: Array.from({ length: 256 }, (_, index) => 255 - index).join(','),
+            },
+          },
+          {
+            id: 'permute',
+            defId: 'Permutation',
+            params: { order: '0,5,10,15,4,9,14,3,8,13,2,7,12,1,6,11' },
+          },
+          {
+            id: 'constant',
+            defId: 'BitSource',
+            params: { stream: [1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1] },
+          },
+          { id: 'mix', defId: 'XOR', params: {} },
+        ],
+        connections: [
+          { from: { moduleId: 'sbox', port: 'out' }, to: { moduleId: 'permute', port: 'in' } },
+          { from: { moduleId: 'permute', port: 'out' }, to: { moduleId: 'mix', port: 'a' } },
+          { from: { moduleId: 'constant', port: 'out' }, to: { moduleId: 'mix', port: 'b' } },
+        ],
+      },
+      inputBindings: [
+        {
+          externalPort: 'in',
+          internalModuleId: 'sbox',
+          internalPort: 'in',
+        },
+      ],
+      outputBindings: [
+        {
+          externalPort: 'out',
+          internalModuleId: 'mix',
+          internalPort: 'out',
+        },
+      ],
+    },
+  },
+  {
+    id: 'SpongeMixRoundIterator',
+    name: 'Sponge Mix Iterator',
+    version: 1,
+    source: 'built-in',
+    definition: {
+      id: 'SpongeMixRoundIterator',
+      name: 'Sponge Mix Iterator',
+      kind: 'iterator',
+      version: 1,
+      inputs: [{ name: 'in', type: 'bits' }],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {
+        iterationCount: {
+          key: 'iterationCount',
+          label: 'Mix Rounds',
+          kind: 'number',
+          defaultValue: 2,
+          description: 'How many sponge-style state-mixing rounds to apply after each absorb or squeeze step.',
+        },
+      },
+      roundDefId: 'SpongeMixRoundComposite',
+      iterationCount: 2,
+    },
+  },
+  {
     id: 'KeyedByteRoundIterator',
     name: 'Keyed Byte Round Iterator',
     version: 1,
@@ -472,6 +553,108 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
         {
           externalParam: 'digestRounds',
           internalModuleId: 'digest-rounds',
+          internalParamKey: 'iterationCount',
+        },
+      ],
+    },
+  },
+  {
+    id: 'ToySpongeHashComposite',
+    name: 'Toy Sponge Hash',
+    version: 1,
+    source: 'built-in',
+    definition: {
+      id: 'ToySpongeHashComposite',
+      name: 'Toy Sponge Hash',
+      kind: 'composite',
+      version: 1,
+      inputs: [
+        { name: 'left', type: 'bits' },
+        { name: 'right', type: 'bits' },
+      ],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {
+        absorbMixRounds: {
+          key: 'absorbMixRounds',
+          label: 'Absorb Mix Rounds',
+          kind: 'number',
+          defaultValue: 2,
+          description: 'How many state-mixing rounds run after each absorb step.',
+        },
+        squeezeRounds: {
+          key: 'squeezeRounds',
+          label: 'Squeeze Rounds',
+          kind: 'number',
+          defaultValue: 1,
+          description: 'How many final state-mixing rounds run before the digest byte is squeezed out.',
+        },
+      },
+      project: {
+        modules: [
+          { id: 'iv', defId: 'BitSource', params: { stream: [1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0] } },
+          { id: 'iv-rate', defId: 'Permutation', params: { order: '0,1,2,3,4,5,6,7' } },
+          { id: 'iv-capacity', defId: 'Permutation', params: { order: '8,9,10,11,12,13,14,15' } },
+          { id: 'absorb-left', defId: 'XOR', params: {} },
+          { id: 'state-after-left', defId: 'BitJoin', params: {} },
+          { id: 'mix-left', defId: 'SpongeMixRoundIterator', params: { iterationCount: 2 } },
+          { id: 'left-rate', defId: 'Permutation', params: { order: '0,1,2,3,4,5,6,7' } },
+          { id: 'left-capacity', defId: 'Permutation', params: { order: '8,9,10,11,12,13,14,15' } },
+          { id: 'absorb-right', defId: 'XOR', params: {} },
+          { id: 'state-after-right', defId: 'BitJoin', params: {} },
+          { id: 'mix-right', defId: 'SpongeMixRoundIterator', params: { iterationCount: 2 } },
+          { id: 'squeeze', defId: 'SpongeMixRoundIterator', params: { iterationCount: 1 } },
+          { id: 'digest', defId: 'Permutation', params: { order: '0,1,2,3,4,5,6,7' } },
+        ],
+        connections: [
+          { from: { moduleId: 'iv', port: 'out' }, to: { moduleId: 'iv-rate', port: 'in' } },
+          { from: { moduleId: 'iv', port: 'out' }, to: { moduleId: 'iv-capacity', port: 'in' } },
+          { from: { moduleId: 'iv-rate', port: 'out' }, to: { moduleId: 'absorb-left', port: 'b' } },
+          { from: { moduleId: 'absorb-left', port: 'out' }, to: { moduleId: 'state-after-left', port: 'a' } },
+          { from: { moduleId: 'iv-capacity', port: 'out' }, to: { moduleId: 'state-after-left', port: 'b' } },
+          { from: { moduleId: 'state-after-left', port: 'out' }, to: { moduleId: 'mix-left', port: 'in' } },
+          { from: { moduleId: 'mix-left', port: 'out' }, to: { moduleId: 'left-rate', port: 'in' } },
+          { from: { moduleId: 'mix-left', port: 'out' }, to: { moduleId: 'left-capacity', port: 'in' } },
+          { from: { moduleId: 'left-rate', port: 'out' }, to: { moduleId: 'absorb-right', port: 'b' } },
+          { from: { moduleId: 'absorb-right', port: 'out' }, to: { moduleId: 'state-after-right', port: 'a' } },
+          { from: { moduleId: 'left-capacity', port: 'out' }, to: { moduleId: 'state-after-right', port: 'b' } },
+          { from: { moduleId: 'state-after-right', port: 'out' }, to: { moduleId: 'mix-right', port: 'in' } },
+          { from: { moduleId: 'mix-right', port: 'out' }, to: { moduleId: 'squeeze', port: 'in' } },
+          { from: { moduleId: 'squeeze', port: 'out' }, to: { moduleId: 'digest', port: 'in' } },
+        ],
+      },
+      inputBindings: [
+        {
+          externalPort: 'left',
+          internalModuleId: 'absorb-left',
+          internalPort: 'a',
+        },
+        {
+          externalPort: 'right',
+          internalModuleId: 'absorb-right',
+          internalPort: 'a',
+        },
+      ],
+      outputBindings: [
+        {
+          externalPort: 'out',
+          internalModuleId: 'digest',
+          internalPort: 'out',
+        },
+      ],
+      forwardedParams: [
+        {
+          externalParam: 'absorbMixRounds',
+          internalModuleId: 'mix-left',
+          internalParamKey: 'iterationCount',
+        },
+        {
+          externalParam: 'absorbMixRounds',
+          internalModuleId: 'mix-right',
+          internalParamKey: 'iterationCount',
+        },
+        {
+          externalParam: 'squeezeRounds',
+          internalModuleId: 'squeeze',
           internalParamKey: 'iterationCount',
         },
       ],
