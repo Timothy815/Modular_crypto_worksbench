@@ -216,6 +216,10 @@ export function CryptanalysisPanel({
                     <strong>{formatTopLetters(column.topLetters)}</strong>
                   </p>
                   <p className="comparison-copy">
+                    Best shifts:{' '}
+                    <strong>{formatShiftCandidates(column.topShiftCandidates)}</strong>
+                  </p>
+                  <p className="comparison-copy">
                     Slice: <strong>{truncateText(column.text, 18)}</strong>
                   </p>
                 </div>
@@ -258,4 +262,16 @@ function truncateText(value: string, maxLength = 48) {
   }
 
   return `${value.slice(0, maxLength)}…`;
+}
+
+function formatShiftCandidates(
+  entries: { keyLetter: string; score: number; preview: string }[],
+) {
+  if (entries.length === 0) {
+    return 'n/a';
+  }
+
+  return entries
+    .map((entry) => `${entry.keyLetter} (${entry.score.toFixed(1)}): ${entry.preview}`)
+    .join(' | ');
 }

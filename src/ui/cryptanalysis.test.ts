@@ -97,5 +97,9 @@ describe('analyzeVigenereColumns', () => {
       topLetters: [{ letter: 'C', count: 3, share: 1 }],
     });
     expect(columns[0].indexOfCoincidence).toBe(1);
+    expect(columns[0].topShiftCandidates[0]).toMatchObject({
+      shift: 22,
+      keyLetter: 'W',
+    });
   });
 });

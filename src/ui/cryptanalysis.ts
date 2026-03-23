@@ -1,4 +1,5 @@
 import type { Signal } from '../engine/types';
+import { ENGLISH_LETTER_FREQUENCIES } from './cryptanalysis-data';
 
 export interface LetterFrequencyEntry {
   letter: string;
@@ -30,6 +31,14 @@ export interface VigenereColumnEntry {
   letterCount: number;
   indexOfCoincidence: number | null;
   topLetters: LetterFrequencyEntry[];
+  topShiftCandidates: ShiftScoreEntry[];
+}
+
+export interface ShiftScoreEntry {
+  shift: number;
+  keyLetter: string;
+  score: number;
+  preview: string;
 }
 
 export interface SymbolTextAnalysis {
@@ -63,6 +72,7 @@ export function analyzeVigenereColumns(
       letterCount: columnText.length,
       indexOfCoincidence: calculateIndexOfCoincidence([...counts.values()], columnText.length),
       topLetters: calculateTopLetters(counts, columnText.length),
+      topShiftCandidates: calculateTopShiftCandidates(columnText),
     };
   });
 }
@@ -266,4 +276,53 @@ function calculateIndexOfCoincidenceForText(text: string): number | null {
   }
 
   return calculateIndexOfCoincidence([...counts.values()], text.length);
+}
+
+function calculateTopShiftCandidates(text: string): ShiftScoreEntry[] {
+  if (text.length === 0) {
+    return [];
+  }
+
+  const candidates: ShiftScoreEntry[] = [];
+  for (let shift = 0; shift < 26; shift += 1) {
+    const decoded = decodeCaesar(text, shift);
+    candidates.push({
+      shift,
+      keyLetter: String.fromCharCode(65 + shift),
+      score: calculateChiSquaredScore(decoded),
+      preview: decoded.slice(0, 12),
+    });
+  }
+
+  return candidates
+    .sort((left, right) => left.score - right.score)
+    .slice(0, 3);
+}
+
+function decodeCaesar(text: string, shift: number) {
+  let decoded = '';
+  for (const letter of text) {
+    const value = letter.charCodeAt(0) - 65;
+    const shifted = (value - shift + 26) % 26;
+    decoded += String.fromCharCode(65 + shifted);
+  }
+  return decoded;
+}
+
+function calculateChiSquaredScore(text: string) {
+  if (text.length === 0) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const counts = countLetters(text);
+  let score = 0;
+  for (let index = 0; index < 26; index += 1) {
+    const letter = String.fromCharCode(65 + index);
+    const observed = counts.get(letter) ?? 0;
+    const expected = (ENGLISH_LETTER_FREQUENCIES[letter] ?? 0) * text.length;
+    if (expected > 0) {
+      score += ((observed - expected) ** 2) / expected;
+    }
+  }
+  return score;
 }
