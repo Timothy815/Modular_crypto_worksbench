@@ -40,6 +40,7 @@ interface ParameterInspectorProps {
   onSelectIssueTarget: (moduleId: string) => void;
   onTraceHover: (moduleId: string | null) => void;
   onStepChange: (nextIndex: number | null) => void;
+  onActiveAnalysisTraceChange?: (entry: ExecutionTraceEntry | null) => void;
   onCaptureBaseline: () => void;
   onClearBaseline: () => void;
   probedModuleIds: string[];
@@ -75,6 +76,7 @@ export function ParameterInspector({
   onSelectIssueTarget,
   onTraceHover,
   onStepChange,
+  onActiveAnalysisTraceChange,
   onCaptureBaseline,
   onClearBaseline,
   probedModuleIds,
@@ -168,6 +170,28 @@ export function ParameterInspector({
       behavior: 'smooth',
     });
   }, [inspectorTab, tutorialStep?.id, tutorialTraceEntry?.moduleId]);
+
+  useEffect(() => {
+    if (!onActiveAnalysisTraceChange) {
+      return;
+    }
+
+    if (inspectorTab !== 'analyze' || !execution) {
+      onActiveAnalysisTraceChange(null);
+      return;
+    }
+
+    onActiveAnalysisTraceChange(
+      effectiveStepperMode === 'nested' ? steppedAnalysisEntry : steppedTrace,
+    );
+  }, [
+    execution,
+    inspectorTab,
+    onActiveAnalysisTraceChange,
+    effectiveStepperMode,
+    steppedAnalysisEntry,
+    steppedTrace,
+  ]);
 
 
   return (

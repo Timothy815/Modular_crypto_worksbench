@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 
 import type {
   ExecutionResult,
+  ExecutionTraceEntry,
   ModuleRegistry,
   Project,
   ValidationIssue,
@@ -57,6 +58,8 @@ interface WorkbenchPanelProps {
   selectedModuleIds: string[];
   hoveredTraceModuleId?: string | null;
   steppedModuleId?: string | null;
+  activeAnalysisTraceEntry?: ExecutionTraceEntry | null;
+  activeAnalysisOwnerModuleId?: string | null;
   divergenceModuleId?: string | null;
   tutorialStep?: TutorialStep | null;
   challengeSolved?: boolean;
@@ -111,6 +114,8 @@ export function WorkbenchPanel({
   selectedModuleIds,
   hoveredTraceModuleId = null,
   steppedModuleId = null,
+  activeAnalysisTraceEntry = null,
+  activeAnalysisOwnerModuleId = null,
   divergenceModuleId = null,
   tutorialStep = null,
   challengeSolved = false,
@@ -331,6 +336,22 @@ export function WorkbenchPanel({
       }),
     ) as Record<string, ExecutionResult['trace'][number]['inputs'][string] | null>;
   }, [execution]);
+
+  const activeAnalysisSignalByModuleId = useMemo(() => {
+    if (!activeAnalysisTraceEntry || !activeAnalysisOwnerModuleId) {
+      return {};
+    }
+
+    const primaryOutput = Object.values(activeAnalysisTraceEntry.outputs)[0] ?? null;
+    const signal = primaryOutput ?? activeAnalysisTraceEntry.inputs.in ?? null;
+    if (!signal) {
+      return {};
+    }
+
+    return {
+      [activeAnalysisOwnerModuleId]: signal,
+    } as Record<string, ExecutionTraceEntry['inputs'][string] | null>;
+  }, [activeAnalysisOwnerModuleId, activeAnalysisTraceEntry]);
 
   function startConnectionFromOutput(
     moduleId: string,
@@ -683,7 +704,10 @@ export function WorkbenchPanel({
                   (selectedModuleIds.includes(moduleInstance.id) ? ' graph-node-selected' : '') +
                   (moduleInstance.id === selectedModuleId ? ' graph-node-primary-selected' : '') +
                   (moduleInstance.id === hoveredTraceModuleId ? ' graph-node-trace-hovered' : '') +
-                  (moduleInstance.id === steppedModuleId ? ' graph-node-stepped' : '') +
+                  (moduleInstance.id === steppedModuleId ||
+                  moduleInstance.id === activeAnalysisOwnerModuleId
+                    ? ' graph-node-stepped'
+                    : '') +
                   (moduleInstance.id === divergenceModuleId ? ' graph-node-divergence' : '') +
                   (moduleInstance.id === tutorialStep?.focusModuleId ? ' graph-node-tutorial-focus' : '') +
                   (probedModuleIds.includes(moduleInstance.id) ? ' graph-node-probed' : '') +
@@ -777,6 +801,21 @@ export function WorkbenchPanel({
                     return (
                       <span className="graph-node-tick-state" title={`current value = ${value}`}>
                         {value}
+                      </span>
+                    );
+                  })() : null}
+                  {activeAnalysisTraceEntry && moduleInstance.id === activeAnalysisOwnerModuleId ? (() => {
+                    const signal = activeAnalysisSignalByModuleId[moduleInstance.id];
+                    if (!signal) return null;
+                    const value = signal.type === 'symbol' ? signal.value : `[${signal.value.join(',')}]`;
+                    const nestedModuleName =
+                      activeAnalysisTraceEntry.moduleId.split('/').at(-1) ?? activeAnalysisTraceEntry.moduleId;
+                    return (
+                      <span
+                        className="graph-node-tick-state"
+                        title={`analysis step ${nestedModuleName} = ${value}`}
+                      >
+                        {nestedModuleName}: {value}
                       </span>
                     );
                   })() : null}

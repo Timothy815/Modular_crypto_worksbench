@@ -3,7 +3,7 @@ import { useEffect, useReducer, useState } from 'react';
 import './App.css';
 import { isCompositeDefinition, type CompositeLibraryEntry } from './engine/composites';
 import { V1_REGISTRY } from './engine/modules';
-import type { ExecutionResult, TickedExecutionResult } from './engine/types';
+import type { ExecutionResult, ExecutionTraceEntry, TickedExecutionResult } from './engine/types';
 import { deriveTickCount, executeTickedProject } from './engine/executor';
 import { validateCompositeDef, validateProject } from './engine/validation';
 import {
@@ -221,6 +221,8 @@ function App() {
   const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
   const [hoveredTraceModuleId, setHoveredTraceModuleId] = useState<string | null>(null);
   const [stepIndex, setStepIndex] = useState<number | null>(null);
+  const [activeAnalysisTraceEntry, setActiveAnalysisTraceEntry] =
+    useState<ExecutionTraceEntry | null>(null);
   const [paletteViewMode, setPaletteViewMode] = useState<'compact' | 'expanded'>('expanded');
 
   const activeProjectDefinition =
@@ -414,6 +416,9 @@ function App() {
     effectiveStepIndex !== null && execution
       ? execution.trace[effectiveStepIndex]?.moduleId ?? null
       : null;
+  const activeAnalysisOwnerModuleId = activeAnalysisTraceEntry
+    ? activeAnalysisTraceEntry.moduleId.split('/')[0] ?? activeAnalysisTraceEntry.moduleId
+    : null;
   const comparisonBaseline = state.comparisonBaselinesByProject[activeProjectDefinition.id] ?? null;
   const baselineValidation = comparisonBaseline
     ? validateProject(comparisonBaseline.project, effectiveRegistry)
@@ -660,6 +665,8 @@ function App() {
             selectedModuleIds={effectiveSelectedModuleIds}
             hoveredTraceModuleId={hoveredTraceModuleId}
             steppedModuleId={steppedModuleId}
+            activeAnalysisTraceEntry={activeAnalysisTraceEntry}
+            activeAnalysisOwnerModuleId={activeAnalysisOwnerModuleId}
             divergenceModuleId={divergenceModuleId}
             tutorialStep={activeTutorialStep}
             challengeSolved={challengeEvaluation?.status === 'success'}
@@ -1027,6 +1034,7 @@ function App() {
               }
               onTraceHover={setHoveredTraceModuleId}
               onStepChange={syncTutorialStepFromTrace}
+              onActiveAnalysisTraceChange={setActiveAnalysisTraceEntry}
               onCaptureBaseline={() =>
                 dispatch({
                   type: 'captureComparisonBaseline',
