@@ -368,8 +368,17 @@ export function ParameterInspector({
           <span className="meta-label">Selected Module</span>
           <strong className="selected-module-name">{moduleInstance.id}</strong>
           <p className="selected-module-type">{moduleDef.id}</p>
-          {'kind' in moduleDef && moduleDef.kind === 'composite' ? (
-            <p className="selected-module-kind">Composite definition</p>
+          {'kind' in moduleDef ? (
+            moduleDef.kind === 'composite' ? (
+              <p className="selected-module-kind">Composite definition</p>
+            ) : moduleDef.kind === 'iterator' ? (
+              <p className="selected-module-kind">
+                Iterator definition
+                {typeof moduleDef.roundKeyWidth === 'number'
+                  ? ` • ${moduleDef.roundKeyWidth}-bit round keys`
+                  : ''}
+              </p>
+            ) : null
           ) : null}
           <button
             type="button"

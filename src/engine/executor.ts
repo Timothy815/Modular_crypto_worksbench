@@ -179,14 +179,14 @@ function evaluateDefinition(
   moduleId: string,
   def: ModuleDefinition,
   inputs: ModuleInputs,
-  params: Record<string, unknown>,
+  params: ModuleParams,
   registry: ModuleRegistry,
 ): EvaluatedDefinitionResult {
   if (isCompositeDefinition(def)) {
     return evaluateComposite(moduleId, def, inputs, registry);
   }
   if (isIteratorDefinition(def)) {
-    return evaluateIterator(moduleId, def, inputs, registry);
+    return evaluateIterator(moduleId, def, inputs, params, registry);
   }
 
   return {
@@ -251,8 +251,21 @@ function evaluateComposite(
   };
 }
 
-function buildIteratorProject(def: IteratorDef): Project {
-  const modules = Array.from({ length: def.iterationCount }, (_, index) => ({
+function getResolvedIterationCount(
+  def: IteratorDef,
+  params: ModuleParams,
+): number {
+  const override = params.iterationCount;
+  if (typeof override === 'number' && Number.isInteger(override) && override > 0) {
+    return override;
+  }
+
+  return def.iterationCount;
+}
+
+function buildIteratorProject(def: IteratorDef, params: ModuleParams = {}): Project {
+  const iterationCount = getResolvedIterationCount(def, params);
+  const modules = Array.from({ length: iterationCount }, (_, index) => ({
     id: `round-${index + 1}`,
     defId: def.roundDefId,
     params: {},
@@ -270,6 +283,7 @@ function buildIteratorProject(def: IteratorDef): Project {
 
 function buildIteratorInputOverrides(
   def: IteratorDef,
+  params: ModuleParams,
   iteratorProject: Project,
   inputs: ModuleInputs,
 ): Record<string, ModuleInputs> {
@@ -291,10 +305,11 @@ function buildIteratorInputOverrides(
     throw new ProjectValidationError(`Iterator "${def.id}" requires a bits key bus on input "key".`);
   }
 
-  const expectedBits = def.iterationCount * def.roundKeyWidth;
+  const resolvedIterationCount = getResolvedIterationCount(def, params);
+  const expectedBits = resolvedIterationCount * def.roundKeyWidth;
   if (keySignal.value.length !== expectedBits) {
     throw new ProjectValidationError(
-      `Iterator "${def.id}" requires a key bus of exactly ${expectedBits} bits (${def.iterationCount} x ${def.roundKeyWidth}).`,
+      `Iterator "${def.id}" requires a key bus of exactly ${expectedBits} bits (${resolvedIterationCount} x ${def.roundKeyWidth}).`,
     );
   }
 
@@ -318,9 +333,10 @@ function evaluateIterator(
   moduleId: string,
   def: IteratorDef,
   inputs: ModuleInputs,
+  params: ModuleParams,
   registry: ModuleRegistry,
 ): EvaluatedDefinitionResult {
-  const iteratorProject = buildIteratorProject(def);
+  const iteratorProject = buildIteratorProject(def, params);
   const firstRoundId = iteratorProject.modules[0]?.id;
   const lastRoundId = iteratorProject.modules.at(-1)?.id;
 
@@ -331,7 +347,7 @@ function evaluateIterator(
   const internalResult = executeProject(
     iteratorProject,
     registry,
-    buildIteratorInputOverrides(def, iteratorProject, inputs),
+    buildIteratorInputOverrides(def, params, iteratorProject, inputs),
   );
   const signal = internalResult.outputsByModuleId[lastRoundId]?.out;
   if (!signal) {
@@ -361,7 +377,7 @@ function createTickedRuntimeState(
         : undefined;
     iteratorStateByModuleId[moduleInstance.id] =
       def && isIteratorDefinition(def)
-        ? createTickedRuntimeState(buildIteratorProject(def), registry)
+        ? createTickedRuntimeState(buildIteratorProject(def, moduleInstance.params), registry)
         : undefined;
   }
 
@@ -490,6 +506,7 @@ function executeTickedGraph(
             moduleId,
             def,
             inputs,
+            currentParams,
             registry,
             tick,
             runtimeState.iteratorStateByModuleId[moduleId],
@@ -595,6 +612,7 @@ function executeTickedIterator(
   moduleId: string,
   def: IteratorDef,
   inputs: ModuleInputs,
+  params: ModuleParams,
   registry: ModuleRegistry,
   tick: number,
   runtimeState?: TickedRuntimeState,
@@ -603,7 +621,7 @@ function executeTickedIterator(
     throw new ProjectValidationError(`Iterator "${def.id}" is missing ticked runtime state.`);
   }
 
-  const iteratorProject = buildIteratorProject(def);
+  const iteratorProject = buildIteratorProject(def, params);
   const firstRoundId = iteratorProject.modules[0]?.id;
   const lastRoundId = iteratorProject.modules.at(-1)?.id;
   if (!firstRoundId || !lastRoundId) {
@@ -615,7 +633,7 @@ function executeTickedIterator(
     registry,
     tick,
     runtimeState,
-    buildIteratorInputOverrides(def, iteratorProject, inputs),
+    buildIteratorInputOverrides(def, params, iteratorProject, inputs),
   );
   const signal = internalResult.outputsByModuleId[lastRoundId]?.out;
   if (!signal) {

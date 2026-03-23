@@ -157,7 +157,15 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
       version: 1,
       inputs: [{ name: 'in', type: 'bits' }],
       outputs: [{ name: 'out', type: 'bits' }],
-      paramSchema: {},
+      paramSchema: {
+        iterationCount: {
+          key: 'iterationCount',
+          label: 'Round Count',
+          kind: 'number',
+          defaultValue: 2,
+          description: 'How many times to auto-unroll the repeated round chain.',
+        },
+      },
       roundDefId: 'ByteRoundComposite',
       iterationCount: 2,
     },
@@ -176,7 +184,15 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
         { name: 'key', type: 'bits' },
       ],
       outputs: [{ name: 'out', type: 'bits' }],
-      paramSchema: {},
+      paramSchema: {
+        iterationCount: {
+          key: 'iterationCount',
+          label: 'Round Count',
+          kind: 'number',
+          defaultValue: 2,
+          description: 'How many keyed rounds to auto-unroll from the incoming key bus.',
+        },
+      },
       roundDefId: 'KeyedByteRoundComposite',
       iterationCount: 2,
       roundKeyWidth: 8,

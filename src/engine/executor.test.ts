@@ -114,7 +114,14 @@ const keyedBitsIterator: IteratorDef = {
     { name: 'key', type: 'bits' },
   ],
   outputs: [{ name: 'out', type: 'bits' }],
-  paramSchema: {},
+  paramSchema: {
+    iterationCount: {
+      key: 'iterationCount',
+      label: 'Round Count',
+      kind: 'number',
+      defaultValue: 2,
+    },
+  },
   roundDefId: 'KeyedBitsRoundComposite',
   iterationCount: 2,
   roundKeyWidth: 2,
@@ -320,5 +327,31 @@ describe('executeProject', () => {
     expect(
       result.analysisTrace.find((entry) => entry.moduleId === 'iterator/round-2')?.inputs.key,
     ).toEqual({ type: 'bits', value: [0, 1] });
+  });
+
+  it('allows an iterator instance to override its round count', () => {
+    const project: Project = {
+      modules: [
+        { id: 'iterator', defId: 'KeyedBitsIterator', params: { iterationCount: 3 } },
+      ],
+      connections: [],
+    };
+
+    const result = executeProject(project, registryWithComposite, {
+      iterator: {
+        in: { type: 'bits', value: [1, 0] },
+        key: { type: 'bits', value: [1, 1, 0, 1, 1, 0] },
+      },
+    });
+
+    expect(result.analysisTrace.map((entry) => entry.moduleId)).toEqual([
+      'iterator',
+      'iterator/round-1',
+      'iterator/round-1/xor-1',
+      'iterator/round-2',
+      'iterator/round-2/xor-1',
+      'iterator/round-3',
+      'iterator/round-3/xor-1',
+    ]);
   });
 });
