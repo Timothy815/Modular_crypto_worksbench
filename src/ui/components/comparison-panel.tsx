@@ -1,5 +1,6 @@
 import type { ComparisonBaselineDocument } from '../workbench-document';
 import type { ExecutionComparison } from '../execution-compare';
+import { analyzeSymbolSignal } from '../cryptanalysis';
 
 interface ComparisonPanelProps {
   projectName: string;
@@ -29,6 +30,8 @@ export function ComparisonPanel({
   const divergentSignals = comparison?.firstDivergence
     ? getDivergentSignals(comparison.firstDivergence)
     : null;
+  const baselineAnalysis = analyzeSymbolSignal(comparison?.baselineOutput.raw ?? null);
+  const variantAnalysis = analyzeSymbolSignal(comparison?.variantOutput.raw ?? null);
   const content = (
     <>
       {!embedded ? (
@@ -135,6 +138,45 @@ export function ComparisonPanel({
               </p>
             )}
           </div>
+          {baselineAnalysis && variantAnalysis ? (
+            <div className="comparison-card comparison-card-wide">
+              <span className="meta-label">Text Analysis</span>
+              <div className="comparison-diff-row">
+                <div className="comparison-diff-card">
+                  <span className="meta-label">Baseline Stats</span>
+                  <strong>{baselineAnalysis.letterCount} letters</strong>
+                  <p className="comparison-copy">
+                    IOC:{' '}
+                    <strong>
+                      {baselineAnalysis.indexOfCoincidence !== null
+                        ? baselineAnalysis.indexOfCoincidence.toFixed(3)
+                        : 'n/a'}
+                    </strong>
+                  </p>
+                  <p className="comparison-copy">
+                    Top letters:{' '}
+                    <strong>{formatTopLetters(baselineAnalysis.topLetters)}</strong>
+                  </p>
+                </div>
+                <div className="comparison-diff-card">
+                  <span className="meta-label">Variant Stats</span>
+                  <strong>{variantAnalysis.letterCount} letters</strong>
+                  <p className="comparison-copy">
+                    IOC:{' '}
+                    <strong>
+                      {variantAnalysis.indexOfCoincidence !== null
+                        ? variantAnalysis.indexOfCoincidence.toFixed(3)
+                        : 'n/a'}
+                    </strong>
+                  </p>
+                  <p className="comparison-copy">
+                    Top letters:{' '}
+                    <strong>{formatTopLetters(variantAnalysis.topLetters)}</strong>
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : (
         <p className="comparison-copy">
@@ -150,6 +192,18 @@ export function ComparisonPanel({
   }
 
   return <section className="panel comparison-panel">{content}</section>;
+}
+
+function formatTopLetters(
+  entries: { letter: string; count: number; share: number }[],
+) {
+  if (entries.length === 0) {
+    return 'n/a';
+  }
+
+  return entries
+    .map((entry) => `${entry.letter}:${entry.count} (${Math.round(entry.share * 100)}%)`)
+    .join(', ');
 }
 
 function getDivergentSignals(
