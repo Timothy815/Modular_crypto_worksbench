@@ -10,6 +10,7 @@ const baudotProject = demoProjects.find((project) => project.id === 'baudot-brid
 const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
 const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-lorenz');
 const pairedLorenzProject = demoProjects.find((project) => project.id === 'paired-lorenz');
+const bankedLorenzProject = demoProjects.find((project) => project.id === 'banked-lorenz');
 const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
 const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
 const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
@@ -31,6 +32,9 @@ if (!gatedLorenzProject) {
 }
 if (!pairedLorenzProject) {
   throw new Error('Expected paired-lorenz demo project to seed starter challenges.');
+}
+if (!bankedLorenzProject) {
+  throw new Error('Expected banked-lorenz demo project to seed starter challenges.');
 }
 if (!byteRoundProject) {
   throw new Error('Expected byte-round demo project to seed starter challenges.');
@@ -61,6 +65,8 @@ const gatedLorenzTarget = cloneProject(gatedLorenzProject.project);
 const brokenGatedLorenzStart = cloneProject(gatedLorenzProject.project);
 const pairedLorenzTarget = cloneProject(pairedLorenzProject.project);
 const brokenPairedLorenzStart = cloneProject(pairedLorenzProject.project);
+const bankedLorenzTarget = cloneProject(bankedLorenzProject.project);
+const brokenBankedLorenzStart = cloneProject(bankedLorenzProject.project);
 const byteRoundTarget = cloneProject(byteRoundProject.project);
 const brokenByteRoundStart = cloneProject(byteRoundProject.project);
 const hexRoundTarget = cloneProject(hexRoundProject.project);
@@ -112,6 +118,14 @@ if (!brokenPairedLorenzWheelB) {
   throw new Error('Expected paired-lorenz demo project to contain wheel-b.');
 }
 brokenPairedLorenzWheelB.params.seed = [0, 0, 1, 1, 0];
+
+const brokenBankedLorenzControlB = brokenBankedLorenzStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'control-b',
+);
+if (!brokenBankedLorenzControlB) {
+  throw new Error('Expected banked-lorenz demo project to contain control-b.');
+}
+brokenBankedLorenzControlB.params.seed = [0, 1, 1, 0, 0];
 
 const brokenPermutationModule = brokenByteRoundStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'permute',
@@ -267,6 +281,26 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'Both wheels advance on every tick in this lab.',
       'The first XOR stage combines the two wheel streams before the teleprinter text is unmixed.',
       'If wheel B is wrong, the mixed keystream diverges before the decode stage ever sees a valid codeword.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-control-bank',
+    title: 'Repair the Control Bank',
+    group: 'Historical Bridges',
+    difficulty: 'expert',
+    prompt:
+      'The teleprinter bridge and data wheel are still correct, but one control wheel is generating the wrong gate rhythm. Repair the second control wheel seed so the recovered Baudot output matches the captured reference machine again.',
+    startingProject: brokenBankedLorenzStart,
+    startingLayout: cloneProject(bankedLorenzProject.layout),
+    targetProject: bankedLorenzTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The two control wheels are mixed first, and only that mixed bit stream clocks the data wheel.',
+      'Watch the gate-mix output to see when the data wheel should or should not advance.',
+      'A wrong control wheel can leave the data wheel stepping on the wrong codewords even if the data seed itself is correct.',
     ],
   },
   {

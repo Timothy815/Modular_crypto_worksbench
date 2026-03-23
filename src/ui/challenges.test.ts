@@ -23,6 +23,7 @@ describe('evaluateChallengeAttempt', () => {
   const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
   const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-lorenz');
   const pairedLorenzProject = demoProjects.find((project) => project.id === 'paired-lorenz');
+  const bankedLorenzProject = demoProjects.find((project) => project.id === 'banked-lorenz');
   const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
   const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
   const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
@@ -44,6 +45,9 @@ describe('evaluateChallengeAttempt', () => {
   }
   if (!pairedLorenzProject) {
     throw new Error('Expected paired-lorenz project.');
+  }
+  if (!bankedLorenzProject) {
+    throw new Error('Expected banked-lorenz project.');
   }
   if (!byteRoundProject) {
     throw new Error('Expected byte-round project.');
@@ -257,6 +261,34 @@ describe('evaluateChallengeAttempt', () => {
     expect(result.comparison?.outputsMatch).toBe(false);
     expect(result.comparison?.firstDivergence?.tickIndex).toBe(0);
     expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('wheel-b');
+  });
+
+  it('returns failure when a banked lorenz machine uses the wrong control wheel seed', () => {
+    const currentProject = cloneProject(bankedLorenzProject.project);
+    const controlBModule = currentProject.modules.find(
+      (moduleInstance) => moduleInstance.id === 'control-b',
+    );
+    if (!controlBModule) {
+      throw new Error('Expected control-b module in banked-lorenz project.');
+    }
+    controlBModule.params.seed = [0, 1, 1, 0, 0];
+
+    const challenge: GuidedChallenge = {
+      id: 'banked-lorenz-failure',
+      title: 'Banked Lorenz Failure',
+      prompt: 'Repair the control wheel bank.',
+      startingProject: cloneProject(currentProject),
+      targetProject: cloneProject(bankedLorenzProject.project),
+      success: { kind: 'output-match-target' },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, V1_REGISTRY);
+
+    expect(result.status).toBe('failure');
+    expect(result.reason).toBe('diverged-from-target');
+    expect(result.comparison?.outputsMatch).toBe(false);
+    expect(result.comparison?.firstDivergence?.tickIndex).toBe(1);
+    expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('data');
   });
 
   it('returns failure when a bit-domain round diverges from the target output bits', () => {

@@ -3,6 +3,58 @@ import type { GuidedTutorial } from './tutorials';
 export const STARTER_TUTORIALS: GuidedTutorial[] = [
   {
     version: 1,
+    id: 'banked-lorenz',
+    title: 'The Banked Lorenz Control',
+    group: 'Historical Bridges',
+    summary: 'Learn how two control wheels can combine into one gate signal that decides when a teleprinter data wheel advances.',
+    projectId: 'banked-lorenz',
+    steps: [
+      {
+        id: 'banked-lorenz-clock',
+        title: 'Drive The Control Bank',
+        body: 'Clock advances both control wheels on every tick. The machine still has explicit time, but it now derives its stepping decisions from a small wheel bank rather than one direct signal.',
+        focusModuleId: 'clock',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'banked-lorenz-control-a',
+        title: 'Emit The First Control Bit',
+        body: 'Control wheel A produces one bit per tick. By itself it is only part of the step decision, not the final gate.',
+        focusModuleId: 'control-a',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'banked-lorenz-control-b',
+        title: 'Emit The Second Control Bit',
+        body: 'Control wheel B produces a second control bit. Historical wheel logic gets more interesting once multiple wheels participate in the stepping decision together.',
+        focusModuleId: 'control-b',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'banked-lorenz-gate',
+        title: 'Combine The Control Wheels',
+        body: 'The first XOR turns the two control bits into one explicit gate signal. This gate then decides whether the 5-bit data wheel advances on the current codeword.',
+        focusModuleId: 'gate-mix',
+        targetStepIndex: 3,
+      },
+      {
+        id: 'banked-lorenz-data',
+        title: 'Step The Data Wheel Conditionally',
+        body: 'The data wheel emits one 5-bit keystream slice when the combined gate is live. When the gate is silent, the same slice is reused for the next teleprinter codeword.',
+        focusModuleId: 'data',
+        targetStepIndex: 4,
+      },
+      {
+        id: 'banked-lorenz-output',
+        title: 'Read The Telegraph Result',
+        body: 'BaudotSource feeds one codeword per tick, XOR unmasks it with the data wheel, and BitsToBaudot returns the recovered teleprinter text.',
+        focusModuleId: 'output',
+        targetStepIndex: 5,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'paired-lorenz',
     title: 'The Paired Lorenz Wheels',
     group: 'Historical Bridges',
