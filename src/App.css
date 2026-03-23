@@ -2081,3 +2081,12 @@
   font-style: italic;
   opacity: 0.65;
 }
+
+.cryptanalysis-panel textarea {
+  min-height: 9rem;
+  resize: vertical;
+}
+
+.cryptanalysis-textarea-field {
+  align-items: stretch;
+}

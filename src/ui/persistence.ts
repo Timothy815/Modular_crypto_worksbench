@@ -199,6 +199,12 @@ export function buildPersistedWorkspace(state: UiState): PersistedWorkspaceDocum
         state.workspaceModeByProject[projectId] ?? 'guide',
       ]),
     ),
+    cryptanalysisInputByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.cryptanalysisInputByProject[projectId] ?? '',
+      ]),
+    ),
     tickedModeByProjectId: Object.fromEntries(
       Object.keys(state.projectStates).map((projectId) => [
         projectId,
@@ -322,7 +328,13 @@ export function loadWorkspaceFromStorage(
         Object.entries(parsed.workspaceModeByProjectId ?? {}).filter(
           ([projectId, mode]) =>
             allowedProjectIds.has(projectId) &&
-            (mode === 'build' || mode === 'guide'),
+            (mode === 'build' || mode === 'guide' || mode === 'cryptanalysis'),
+        ),
+      ),
+      cryptanalysisInputByProjectId: Object.fromEntries(
+        Object.entries(parsed.cryptanalysisInputByProjectId ?? {}).filter(
+          ([projectId, value]) =>
+            allowedProjectIds.has(projectId) && typeof value === 'string',
         ),
       ),
       tickedModeByProjectId: Object.fromEntries(

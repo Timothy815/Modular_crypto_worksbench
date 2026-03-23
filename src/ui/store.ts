@@ -8,6 +8,7 @@ import type { ModuleDefinition, ModuleInstance, ModuleRegistry, Project } from '
 import type { GuidedChallenge } from './challenges';
 import type { GuidedTutorial } from './tutorials';
 import type { DemoProject } from './demo-projects';
+import type { WorkspaceMode } from './workspace-mode';
 import { STARTER_COMPOSITE_LIBRARY } from './starter-composites';
 import { STARTER_CHALLENGES } from './starter-challenges';
 import { STARTER_TUTORIALS } from './starter-tutorials';
@@ -33,7 +34,8 @@ export interface UiState {
   activeTutorialStepByProject: Record<string, number>;
   completedTutorialsByProject: Record<string, string[]>;
   probedModuleIdsByProject: Record<string, string[]>;
-  workspaceModeByProject: Record<string, 'build' | 'guide'>;
+  workspaceModeByProject: Record<string, WorkspaceMode>;
+  cryptanalysisInputByProject: Record<string, string>;
   tickedModeByProject: Record<string, boolean>;
   currentTickByProject: Record<string, number>;
   isTickPlaybackActiveByProject: Record<string, boolean>;
@@ -88,7 +90,8 @@ export type UiAction =
   | { type: 'resetTutorialProgress'; projectId: string }
   | { type: 'toggleProbe'; projectId: string; moduleId: string }
   | { type: 'clearProbes'; projectId: string }
-  | { type: 'setWorkspaceMode'; projectId: string; mode: 'build' | 'guide' }
+  | { type: 'setWorkspaceMode'; projectId: string; mode: WorkspaceMode }
+  | { type: 'setCryptanalysisInput'; projectId: string; value: string }
   | { type: 'setTickedMode'; projectId: string; enabled: boolean }
   | { type: 'setCurrentTick'; projectId: string; tick: number }
   | { type: 'setTickPlaybackActive'; projectId: string; active: boolean }
@@ -228,6 +231,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     ),
     workspaceModeByProject: Object.fromEntries(
       projects.map((project) => [project.id, 'guide' as const]),
+    ),
+    cryptanalysisInputByProject: Object.fromEntries(
+      projects.map((project) => [project.id, '']),
     ),
     tickedModeByProject: Object.fromEntries(
       projects.map((project) => [project.id, project.defaultTickedMode ?? false]),
@@ -922,6 +928,14 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
         workspaceModeByProject: {
           ...state.workspaceModeByProject,
           [action.projectId]: action.mode,
+        },
+      };
+    case 'setCryptanalysisInput':
+      return {
+        ...state,
+        cryptanalysisInputByProject: {
+          ...state.cryptanalysisInputByProject,
+          [action.projectId]: action.value,
         },
       };
     case 'setTickedMode':

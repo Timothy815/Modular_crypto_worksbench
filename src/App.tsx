@@ -12,6 +12,7 @@ import {
 } from './ui/composite-authoring';
 import { evaluateChallengeAttempt } from './ui/challenges';
 import { ChallengePanel } from './ui/components/challenge-panel';
+import { CryptanalysisPanel } from './ui/components/cryptanalysis-panel';
 import { ParameterInspector } from './ui/components/parameter-inspector';
 import { PrimitivePalette } from './ui/components/primitive-palette';
 import { TutorialPanel } from './ui/components/tutorial-panel';
@@ -157,6 +158,14 @@ function App() {
             persistedWorkspace.workspaceModeByProjectId?.[project.id] ??
               initialState.workspaceModeByProject[project.id] ??
               'guide',
+          ]),
+        ),
+        cryptanalysisInputByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.cryptanalysisInputByProjectId?.[project.id] ??
+              initialState.cryptanalysisInputByProject[project.id] ??
+              '',
           ]),
         ),
         tickedModeByProject: Object.fromEntries(
@@ -569,6 +578,24 @@ function App() {
         </div>
 
         <nav className="app-header-nav" aria-label="Workbench controls">
+          <label className="header-menu-select">
+            <span className="meta-label">Mode</span>
+            <select
+              value={workspaceMode}
+              disabled={Boolean(state.compositeEditor)}
+              onChange={(event) =>
+                dispatch({
+                  type: 'setWorkspaceMode',
+                  projectId: activeProjectDefinition.id,
+                  mode: event.target.value as 'build' | 'guide' | 'cryptanalysis',
+                })
+              }
+            >
+              <option value="build">Build</option>
+              <option value="guide">Guide</option>
+              <option value="cryptanalysis">Cryptanalysis</option>
+            </select>
+          </label>
           <label className="header-menu-select">
             <span className="meta-label">Resources</span>
             <select
@@ -1100,7 +1127,7 @@ function App() {
 
       {!state.compositeEditor ? (
         <>
-          {selectedChallenge ? (
+          {workspaceMode !== 'cryptanalysis' && selectedChallenge ? (
             <ChallengePanel
               challenges={state.challengeLibrary}
               selectedChallengeId={selectedChallenge.id}
@@ -1160,7 +1187,27 @@ function App() {
             />
           ) : null}
 
-          {selectedTutorial ? (
+          {workspaceMode === 'cryptanalysis' ? (
+            <CryptanalysisPanel
+              projectName={activeProjectDefinition.name}
+              ciphertext={state.cryptanalysisInputByProject[activeProjectDefinition.id] ?? ''}
+              workspaceMode={workspaceMode}
+              onSetWorkspaceMode={(mode) =>
+                dispatch({
+                  type: 'setWorkspaceMode',
+                  projectId: activeProjectDefinition.id,
+                  mode,
+                })
+              }
+              onCiphertextChange={(value) =>
+                dispatch({
+                  type: 'setCryptanalysisInput',
+                  projectId: activeProjectDefinition.id,
+                  value,
+                })
+              }
+            />
+          ) : selectedTutorial ? (
             <TutorialPanel
               tutorials={state.tutorialLibrary}
               selectedTutorialId={selectedTutorial.id}

@@ -2,6 +2,7 @@ import type { Project } from '../engine/types';
 import type { CompositeLibraryEntry } from '../engine/composites';
 import type { GuidedChallenge } from './challenges';
 import type { GuidedTutorial } from './tutorials';
+import type { WorkspaceMode } from './workspace-mode';
 
 export interface WorkbenchPosition {
   x: number;
@@ -47,7 +48,8 @@ export interface PersistedWorkspaceDocument {
   activeTutorialIdByProjectId: Record<string, string | null>;
   activeTutorialStepByProjectId: Record<string, number>;
   completedTutorialsByProjectId: Record<string, string[]>;
-  workspaceModeByProjectId?: Record<string, 'build' | 'guide'>;
+  workspaceModeByProjectId?: Record<string, WorkspaceMode>;
+  cryptanalysisInputByProjectId?: Record<string, string>;
   tickedModeByProjectId?: Record<string, boolean>;
   currentTickByProjectId?: Record<string, number>;
   tickPlaybackSpeedMsByProjectId?: Record<string, number>;
