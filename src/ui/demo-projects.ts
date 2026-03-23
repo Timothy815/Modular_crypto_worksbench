@@ -296,6 +296,32 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'packaged-iterated-rounds',
+    name: 'Packaged Iterated Rounds',
+    group: 'Modern Rounds',
+    summary: 'A two-round byte machine packaged as one reusable composite so repeated round structure stays explicit but compact.',
+    pipeline: 'HexSource -> IteratedByteRoundsComposite -> BitsToHex -> Output',
+    project: {
+      modules: [
+        { id: 'source', defId: 'HexSource', params: { value: 'A3' } },
+        { id: 'rounds', defId: 'IteratedByteRoundsComposite', params: {} },
+        { id: 'encode', defId: 'BitsToHex', params: {} },
+        { id: 'output', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'rounds', port: 'in' } },
+        { from: { moduleId: 'rounds', port: 'out' }, to: { moduleId: 'encode', port: 'in' } },
+        { from: { moduleId: 'encode', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      source: { x: 48, y: 156 },
+      rounds: { x: 372, y: 156 },
+      encode: { x: 696, y: 156 },
+      output: { x: 1020, y: 156 },
+    },
+  },
+  {
     id: 'iterated-byte-rounds',
     name: 'Iterated Byte Rounds',
     group: 'Modern Rounds',

@@ -3,6 +3,44 @@ import type { GuidedTutorial } from './tutorials';
 export const STARTER_TUTORIALS: GuidedTutorial[] = [
   {
     version: 1,
+    id: 'packaged-iterated-rounds',
+    title: 'The Packaged Iteration',
+    group: 'Modern Rounds',
+    summary: 'Learn how a bounded two-round composite keeps repeated byte-round structure compact without hiding what it does.',
+    projectId: 'packaged-iterated-rounds',
+    steps: [
+      {
+        id: 'packaged-iterated-source',
+        title: 'Inject The Starting Byte',
+        body: 'HexSource still injects one visible byte. The difference in this lab is that the repeated round structure is now packaged into one reusable unit.',
+        focusModuleId: 'source',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'packaged-iterated-rounds',
+        title: 'Run A Bounded Round Chain',
+        body: 'IteratedByteRoundsComposite contains two internal Byte Round composites. This is the smallest honest form of iteration support: bounded, inspectable, and built from reusable rounds rather than hidden looping.',
+        focusModuleId: 'rounds',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'packaged-iterated-encode',
+        title: 'Bridge Back To Hex',
+        body: 'BitsToHex renders the final two-round result back into a byte-scale representation so students can compare the packaged form against the stacked form directly.',
+        focusModuleId: 'encode',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'packaged-iterated-output',
+        title: 'Read The Packaged Result',
+        body: 'Output marks the final result after the bounded round chain executes. This keeps iteration visible as a named architectural choice, not a hidden engine trick.',
+        focusModuleId: 'output',
+        targetStepIndex: 3,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'iterated-byte-rounds',
     title: 'The Iterated Rounds',
     group: 'Modern Rounds',

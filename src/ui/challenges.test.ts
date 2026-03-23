@@ -26,6 +26,9 @@ describe('evaluateChallengeAttempt', () => {
     ),
   };
   const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
+  const packagedIteratedRoundsProject = demoProjects.find(
+    (project) => project.id === 'packaged-iterated-rounds',
+  );
   const iteratedByteRoundsProject = demoProjects.find((project) => project.id === 'iterated-byte-rounds');
   const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
   const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
@@ -41,6 +44,9 @@ describe('evaluateChallengeAttempt', () => {
 
   if (!bridgeProject) {
     throw new Error('Expected bridge demo project.');
+  }
+  if (!packagedIteratedRoundsProject) {
+    throw new Error('Expected packaged-iterated-rounds project.');
   }
   if (!iteratedByteRoundsProject) {
     throw new Error('Expected iterated-byte-rounds project.');
@@ -365,6 +371,30 @@ describe('evaluateChallengeAttempt', () => {
       prompt: 'Restore the round stack.',
       startingProject: cloneProject(currentProject),
       targetProject: cloneProject(iteratedByteRoundsProject.project),
+      success: { kind: 'output-match-target' },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, compositeRegistry);
+
+    expect(result.status).toBe('failure');
+    expect(result.reason).toBe('diverged-from-target');
+    expect(result.comparison?.outputsMatch).toBe(false);
+  });
+
+  it('returns failure when a packaged iterated-round machine starts from the wrong source byte', () => {
+    const currentProject = cloneProject(packagedIteratedRoundsProject.project);
+    const sourceModule = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'source');
+    if (!sourceModule) {
+      throw new Error('Expected source module in packaged-iterated-rounds project.');
+    }
+    sourceModule.params.value = '3A';
+
+    const challenge: GuidedChallenge = {
+      id: 'packaged-iterated-failure',
+      title: 'Packaged Iterated Failure',
+      prompt: 'Repair the packaged round input.',
+      startingProject: cloneProject(currentProject),
+      targetProject: cloneProject(packagedIteratedRoundsProject.project),
       success: { kind: 'output-match-target' },
     };
 

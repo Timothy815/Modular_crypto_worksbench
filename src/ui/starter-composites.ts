@@ -48,6 +48,46 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
     },
   },
   {
+    id: 'IteratedByteRoundsComposite',
+    name: 'Iterated Byte Rounds',
+    version: 1,
+    definition: {
+      id: 'IteratedByteRoundsComposite',
+      name: 'Iterated Byte Rounds',
+      kind: 'composite',
+      version: 1,
+      inputs: [{ name: 'in', type: 'bits' }],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {},
+      project: {
+        modules: [
+          { id: 'round-1', defId: 'ByteRoundComposite', params: {} },
+          { id: 'round-2', defId: 'ByteRoundComposite', params: {} },
+        ],
+        connections: [
+          {
+            from: { moduleId: 'round-1', port: 'out' },
+            to: { moduleId: 'round-2', port: 'in' },
+          },
+        ],
+      },
+      inputBindings: [
+        {
+          externalPort: 'in',
+          internalModuleId: 'round-1',
+          internalPort: 'in',
+        },
+      ],
+      outputBindings: [
+        {
+          externalPort: 'out',
+          internalModuleId: 'round-2',
+          internalPort: 'out',
+        },
+      ],
+    },
+  },
+  {
     id: 'SymbolRoundTripComposite',
     name: 'Symbol Round Trip',
     version: 1,
