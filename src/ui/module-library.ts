@@ -187,8 +187,8 @@ export const MODULE_LIBRARY_SECTIONS: ModuleLibrarySection[] = [
   },
   {
     id: 'composites',
-    title: 'Composites',
-    description: 'Reusable modules authored from workbench subgraphs.',
+    title: 'Reusable',
+    description: 'Reusable composites and bounded iterators authored from workbench round structures.',
   },
 ];
 

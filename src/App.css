@@ -242,6 +242,13 @@
   color: var(--role-composite-ink);
 }
 
+.module-kind-badge-iterator {
+  border-style: solid;
+  border-color: var(--link-primary-text);
+  background: color-mix(in srgb, var(--link-primary-bg) 40%, white);
+  color: var(--link-primary-text);
+}
+
 .primitive-main {
   display: grid;
   gap: 12px;

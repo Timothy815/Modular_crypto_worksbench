@@ -74,7 +74,7 @@ export function PrimitivePalette({
             <option value="symbol">Symbol</option>
             <option value="bit">Bit</option>
             <option value="bridge">Bridge</option>
-            <option value="composites">Composites</option>
+            <option value="composites">Reusable</option>
           </select>
         </label>
         {activeTab === 'composites' ? (
@@ -114,7 +114,7 @@ export function PrimitivePalette({
           onChange={(event) => setSearchQuery(event.target.value)}
           placeholder={
             activeTab === 'composites'
-              ? 'Search composites by name or id'
+              ? 'Search composites and iterators by name or id'
               : 'Search by name, purpose, or keyword'
           }
         />
@@ -167,7 +167,7 @@ export function PrimitivePalette({
       {visibleDefs.length === 0 ? (
         <p className="empty-state">
           {activeTab === 'composites'
-            ? 'No composites in the library yet.'
+            ? 'No reusable composites or iterators in the library yet.'
             : 'No primitive modules match this search.'}
         </p>
       ) : null}
@@ -204,7 +204,9 @@ function ModuleLibraryCard({
           <div className="primitive-compact-meta">
             <strong className="primitive-title">{def.name}</strong>
             {isReusable ? (
-              <span className="module-kind-badge">{isComposite ? 'Composite' : 'Iterator'}</span>
+              <span className={isComposite ? 'module-kind-badge' : 'module-kind-badge module-kind-badge-iterator'}>
+                {isComposite ? 'Composite' : 'Iterator'}
+              </span>
             ) : null}
           </div>
           <div className="primitive-compact-actions">
@@ -258,7 +260,9 @@ function ModuleLibraryCard({
           <p className="primitive-def-id">{def.id}</p>
           <p className="primitive-purpose">{getModulePurpose(def)}</p>
           {isReusable ? (
-            <span className="module-kind-badge">{isComposite ? 'Composite' : 'Iterator'}</span>
+            <span className={isComposite ? 'module-kind-badge' : 'module-kind-badge module-kind-badge-iterator'}>
+              {isComposite ? 'Composite' : 'Iterator'}
+            </span>
           ) : null}
         </div>
         <div className="primitive-actions primitive-actions-below">
@@ -320,7 +324,7 @@ function ModuleLibraryCard({
                 ? `In use ${usageCount} time${usageCount === 1 ? '' : 's'}`
                 : isComposite
                   ? 'Reusable composite'
-                  : 'Reusable iterator'}
+                  : 'Reusable iterator chain'}
             </p>
           ) : null}
         </div>
