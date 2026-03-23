@@ -611,12 +611,19 @@ function App() {
                     '_blank',
                     'noopener,noreferrer',
                   );
+                } else if (value === 'cipher-museum') {
+                  window.open(
+                    'https://timothy815.github.io/cipher-museum/#/',
+                    '_blank',
+                    'noopener,noreferrer',
+                  );
                 }
               }}
             >
               <option value="">Open…</option>
               <option value="notes">Notes</option>
               <option value="repo">Repository</option>
+              <option value="cipher-museum">Cipher Museum</option>
             </select>
           </label>
           <label className="header-menu-select">
