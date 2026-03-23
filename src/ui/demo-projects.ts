@@ -386,6 +386,35 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'keyed-byte-iterator',
+    name: 'Scheduled Byte Iterator',
+    group: 'Modern Rounds',
+    summary: 'A bounded keyed iterator splits one visible key bus into round-sized sub-keys and feeds them across the unrolled round chain.',
+    pipeline: 'HexSource + Key Bus -> KeyedByteRoundIterator -> BitsToHex -> Output',
+    project: {
+      modules: [
+        { id: 'source', defId: 'HexSource', params: { value: 'A3' } },
+        { id: 'keybus', defId: 'HexSource', params: { value: '1CE7' } },
+        { id: 'rounds', defId: 'KeyedByteRoundIterator', params: {} },
+        { id: 'encode', defId: 'BitsToHex', params: {} },
+        { id: 'output', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'rounds', port: 'in' } },
+        { from: { moduleId: 'keybus', port: 'out' }, to: { moduleId: 'rounds', port: 'key' } },
+        { from: { moduleId: 'rounds', port: 'out' }, to: { moduleId: 'encode', port: 'in' } },
+        { from: { moduleId: 'encode', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      source: { x: 40, y: 160 },
+      keybus: { x: 40, y: 48 },
+      rounds: { x: 360, y: 160 },
+      encode: { x: 680, y: 160 },
+      output: { x: 1000, y: 160 },
+    },
+  },
+  {
     id: 'byte-round',
     name: 'Byte S-Box Round',
     group: 'Modern Rounds',

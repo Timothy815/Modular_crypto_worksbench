@@ -235,4 +235,88 @@ describe('validateIteratorDef', () => {
     expect(result.ok).toBe(false);
     expect(result.issues.some((issue) => issue.code === 'unknown-module-def')).toBe(true);
   });
+
+  it('accepts a keyed iterator definition with a fixed-width key bus', () => {
+    const keyedRoundComposite: CompositeDef = {
+      id: 'KeyedRoundComposite',
+      name: 'Keyed Round Composite',
+      kind: 'composite',
+      inputs: [
+        { name: 'in', type: 'bits' },
+        { name: 'key', type: 'bits' },
+      ],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {},
+      version: 1,
+      project: {
+        modules: [],
+        connections: [],
+      },
+      inputBindings: [],
+      outputBindings: [],
+    };
+    const iterator: IteratorDef = {
+      id: 'KeyedRoundIterator',
+      name: 'Keyed Round Iterator',
+      kind: 'iterator',
+      version: 1,
+      inputs: [
+        { name: 'in', type: 'bits' },
+        { name: 'key', type: 'bits' },
+      ],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {},
+      roundDefId: 'KeyedRoundComposite',
+      iterationCount: 2,
+      roundKeyWidth: 8,
+    };
+
+    const result = validateIteratorDef(iterator, {
+      ...registry,
+      KeyedRoundComposite: keyedRoundComposite,
+    });
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('rejects keyed iterators whose round shape does not expose a key port', () => {
+    const roundComposite: CompositeDef = {
+      id: 'RoundComposite',
+      name: 'Round Composite',
+      kind: 'composite',
+      inputs: [{ name: 'in', type: 'bits' }],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {},
+      version: 1,
+      project: {
+        modules: [],
+        connections: [],
+      },
+      inputBindings: [],
+      outputBindings: [],
+    };
+    const iterator: IteratorDef = {
+      id: 'BrokenKeyedIterator',
+      name: 'Broken Keyed Iterator',
+      kind: 'iterator',
+      version: 1,
+      inputs: [
+        { name: 'in', type: 'bits' },
+        { name: 'key', type: 'bits' },
+      ],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {},
+      roundDefId: 'RoundComposite',
+      iterationCount: 2,
+      roundKeyWidth: 8,
+    };
+
+    const result = validateIteratorDef(iterator, {
+      ...registry,
+      RoundComposite: roundComposite,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'invalid-composite-binding')).toBe(true);
+  });
 });

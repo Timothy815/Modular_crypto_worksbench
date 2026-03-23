@@ -31,6 +31,7 @@ describe('evaluateChallengeAttempt', () => {
   );
   const iteratedByteRoundsProject = demoProjects.find((project) => project.id === 'iterated-byte-rounds');
   const keyedByteRoundsProject = demoProjects.find((project) => project.id === 'keyed-byte-rounds');
+  const keyedByteIteratorProject = demoProjects.find((project) => project.id === 'keyed-byte-iterator');
   const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
   const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
   const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-lorenz');
@@ -54,6 +55,9 @@ describe('evaluateChallengeAttempt', () => {
   }
   if (!keyedByteRoundsProject) {
     throw new Error('Expected keyed-byte-rounds project.');
+  }
+  if (!keyedByteIteratorProject) {
+    throw new Error('Expected keyed-byte-iterator project.');
   }
   if (!baudotProject) {
     throw new Error('Expected baudot-bridge project.');
@@ -432,6 +436,31 @@ describe('evaluateChallengeAttempt', () => {
     expect(result.reason).toBe('diverged-from-target');
     expect(result.comparison?.outputsMatch).toBe(false);
     expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('key-2');
+  });
+
+  it('returns failure when a keyed iterator machine uses the wrong second key slice in its bus', () => {
+    const currentProject = cloneProject(keyedByteIteratorProject.project);
+    const keyBusModule = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'keybus');
+    if (!keyBusModule) {
+      throw new Error('Expected keybus module in keyed-byte-iterator project.');
+    }
+    keyBusModule.params.value = '1C00';
+
+    const challenge: GuidedChallenge = {
+      id: 'key-bus-failure',
+      title: 'Key Bus Failure',
+      prompt: 'Repair the visible key bus.',
+      startingProject: cloneProject(currentProject),
+      targetProject: cloneProject(keyedByteIteratorProject.project),
+      success: { kind: 'output-match-target' },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, compositeRegistry);
+
+    expect(result.status).toBe('failure');
+    expect(result.reason).toBe('diverged-from-target');
+    expect(result.comparison?.outputsMatch).toBe(false);
+    expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('keybus');
   });
 
   it('returns failure when a hex-round machine starts from the wrong input vector', () => {

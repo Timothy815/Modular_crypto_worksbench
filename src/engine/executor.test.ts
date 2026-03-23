@@ -80,10 +80,77 @@ const symbolEchoIterator: IteratorDef = {
   iterationCount: 2,
 };
 
+const keyedBitsRoundComposite: CompositeDef = {
+  id: 'KeyedBitsRoundComposite',
+  name: 'Keyed Bits Round Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [
+    { name: 'in', type: 'bits' },
+    { name: 'key', type: 'bits' },
+  ],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {},
+  project: {
+    modules: [{ id: 'xor-1', defId: 'XorBits', params: {} }],
+    connections: [],
+  },
+  inputBindings: [
+    { externalPort: 'in', internalModuleId: 'xor-1', internalPort: 'a' },
+    { externalPort: 'key', internalModuleId: 'xor-1', internalPort: 'b' },
+  ],
+  outputBindings: [
+    { externalPort: 'out', internalModuleId: 'xor-1', internalPort: 'out' },
+  ],
+};
+
+const keyedBitsIterator: IteratorDef = {
+  id: 'KeyedBitsIterator',
+  name: 'Keyed Bits Iterator',
+  kind: 'iterator',
+  version: 1,
+  inputs: [
+    { name: 'in', type: 'bits' },
+    { name: 'key', type: 'bits' },
+  ],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {},
+  roundDefId: 'KeyedBitsRoundComposite',
+  iterationCount: 2,
+  roundKeyWidth: 2,
+};
+
 const registryWithComposite: ModuleRegistry = {
   ...registry,
+  XorBits: {
+    id: 'XorBits',
+    name: 'Xor Bits',
+    inputs: [
+      { name: 'a', type: 'bits' },
+      { name: 'b', type: 'bits' },
+    ],
+    outputs: [{ name: 'out', type: 'bits' }],
+    paramSchema: {},
+    evaluate: (inputs) => {
+      if (inputs.a.type !== 'bits' || inputs.b.type !== 'bits') {
+        throw new Error('XorBits expects bits signals.');
+      }
+
+      const aBits = inputs.a.value;
+      const bBits = inputs.b.value;
+
+      return {
+        out: {
+          type: 'bits',
+          value: aBits.map((bit, index) => bit ^ (bBits[index] ?? 0)),
+        },
+      };
+    },
+  },
   [symbolEchoComposite.id]: symbolEchoComposite,
   [symbolEchoIterator.id]: symbolEchoIterator,
+  [keyedBitsRoundComposite.id]: keyedBitsRoundComposite,
+  [keyedBitsIterator.id]: keyedBitsIterator,
 };
 
 describe('executeProject', () => {
@@ -226,5 +293,32 @@ describe('executeProject', () => {
       'iterator/round-2/echo-1',
       'sink',
     ]);
+  });
+
+  it('distributes a fixed-width key bus across keyed iterator rounds', () => {
+    const project: Project = {
+      modules: [
+        { id: 'iterator', defId: 'KeyedBitsIterator', params: {} },
+      ],
+      connections: [],
+    };
+
+    const result = executeProject(project, registryWithComposite, {
+      iterator: {
+        in: { type: 'bits', value: [1, 0] },
+        key: { type: 'bits', value: [1, 1, 0, 1] },
+      },
+    });
+
+    expect(result.outputsByModuleId.iterator.out).toEqual({
+      type: 'bits',
+      value: [0, 0],
+    });
+    expect(
+      result.analysisTrace.find((entry) => entry.moduleId === 'iterator/round-1')?.inputs.key,
+    ).toEqual({ type: 'bits', value: [1, 1] });
+    expect(
+      result.analysisTrace.find((entry) => entry.moduleId === 'iterator/round-2')?.inputs.key,
+    ).toEqual({ type: 'bits', value: [0, 1] });
   });
 });

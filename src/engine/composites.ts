@@ -34,6 +34,7 @@ export interface IteratorDef {
   paramSchema: ParamSchema;
   roundDefId: string;
   iterationCount: number;
+  roundKeyWidth?: number;
   version: number;
 }
 

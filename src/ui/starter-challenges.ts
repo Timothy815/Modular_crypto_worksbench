@@ -13,6 +13,7 @@ const pairedLorenzProject = demoProjects.find((project) => project.id === 'paire
 const bankedLorenzProject = demoProjects.find((project) => project.id === 'banked-lorenz');
 const iteratedByteRoundsProject = demoProjects.find((project) => project.id === 'iterated-byte-rounds');
 const keyedByteRoundsProject = demoProjects.find((project) => project.id === 'keyed-byte-rounds');
+const keyedByteIteratorProject = demoProjects.find((project) => project.id === 'keyed-byte-iterator');
 const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
 const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
 const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
@@ -43,6 +44,9 @@ if (!iteratedByteRoundsProject) {
 }
 if (!keyedByteRoundsProject) {
   throw new Error('Expected keyed-byte-rounds demo project to seed starter challenges.');
+}
+if (!keyedByteIteratorProject) {
+  throw new Error('Expected keyed-byte-iterator demo project to seed starter challenges.');
 }
 if (!byteRoundProject) {
   throw new Error('Expected byte-round demo project to seed starter challenges.');
@@ -79,6 +83,8 @@ const iteratedByteRoundsTarget = cloneProject(iteratedByteRoundsProject.project)
 const brokenIteratedByteRoundsStart = cloneProject(iteratedByteRoundsProject.project);
 const keyedByteRoundsTarget = cloneProject(keyedByteRoundsProject.project);
 const brokenKeyedByteRoundsStart = cloneProject(keyedByteRoundsProject.project);
+const keyedByteIteratorTarget = cloneProject(keyedByteIteratorProject.project);
+const brokenKeyedByteIteratorStart = cloneProject(keyedByteIteratorProject.project);
 const byteRoundTarget = cloneProject(byteRoundProject.project);
 const brokenByteRoundStart = cloneProject(byteRoundProject.project);
 const hexRoundTarget = cloneProject(hexRoundProject.project);
@@ -172,6 +178,14 @@ if (!brokenKeyedRoundKey) {
   throw new Error('Expected keyed-byte-rounds demo project to contain key-2.');
 }
 brokenKeyedRoundKey.params.value = '00';
+
+const brokenKeyBusModule = brokenKeyedByteIteratorStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'keybus',
+);
+if (!brokenKeyBusModule) {
+  throw new Error('Expected keyed-byte-iterator demo project to contain keybus.');
+}
+brokenKeyBusModule.params.value = '1C00';
 
 const brokenPermutationModule = brokenByteRoundStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'permute',
@@ -387,6 +401,26 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The reusable round structure is already correct in this lab.',
       'Compare the first and second key sources separately.',
       'Only one round key needs to change to restore the target byte.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-key-bus',
+    title: 'Repair the Key Bus',
+    group: 'Modern Rounds',
+    difficulty: 'intermediate',
+    prompt:
+      'The keyed iterator is wired correctly, but the visible key bus was changed. Restore the key bus so each internal round receives the right sub-key again.',
+    startingProject: brokenKeyedByteIteratorStart,
+    startingLayout: cloneProject(keyedByteIteratorProject.layout),
+    targetProject: keyedByteIteratorTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The iterator already knows how many rounds it has and how wide each round key should be.',
+      'The problem is in the visible key bus entering the iterator, not in the data byte.',
+      'Changing the second half of the bus changes only the later round key.',
     ],
   },
   {

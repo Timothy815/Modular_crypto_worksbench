@@ -349,6 +349,7 @@ export function validateIteratorDef(
 ): ValidationResult {
   const issues: ValidationIssue[] = [];
   const roundDef = registry[iterator.roundDefId];
+  const hasKeyBus = iterator.roundKeyWidth !== undefined;
 
   if (!roundDef) {
     issues.push({
@@ -363,27 +364,40 @@ export function validateIteratorDef(
       });
     }
 
-    if (roundDef.inputs.length !== 1 || roundDef.outputs.length !== 1) {
+    const expectedInputCount = hasKeyBus ? 2 : 1;
+
+    if (roundDef.inputs.length !== expectedInputCount || roundDef.outputs.length !== 1) {
       issues.push({
         code: 'invalid-composite-binding',
-        message: `Iterator "${iterator.id}" requires a round definition with exactly one input and one output.`,
+        message: `Iterator "${iterator.id}" requires a round definition with exactly ${expectedInputCount} input${expectedInputCount === 1 ? '' : 's'} and one output.`,
       });
-    } else if (roundDef.inputs[0]?.name !== 'in' || roundDef.outputs[0]?.name !== 'out') {
+    } else if (
+      roundDef.inputs[0]?.name !== 'in' ||
+      roundDef.outputs[0]?.name !== 'out' ||
+      (hasKeyBus && roundDef.inputs[1]?.name !== 'key')
+    ) {
       issues.push({
         code: 'invalid-composite-binding',
-        message: `Iterator "${iterator.id}" currently requires a round definition with ports named "in" and "out".`,
+        message: `Iterator "${iterator.id}" currently requires round ports named "in"${hasKeyBus ? ', "key",' : ' and'} "out".`,
       });
     } else if (roundDef.inputs[0]?.type !== roundDef.outputs[0]?.type) {
       issues.push({
         code: 'signal-type-mismatch',
         message: `Iterator "${iterator.id}" requires a round definition whose input and output types match.`,
       });
+    } else if (hasKeyBus && roundDef.inputs[1]?.type !== 'bits') {
+      issues.push({
+        code: 'signal-type-mismatch',
+        message: `Iterator "${iterator.id}" requires its round key port to use bits signals.`,
+      });
     } else if (
-      iterator.inputs.length !== 1 ||
+      iterator.inputs.length !== expectedInputCount ||
       iterator.outputs.length !== 1 ||
       iterator.inputs[0]?.name !== 'in' ||
+      (hasKeyBus && iterator.inputs[1]?.name !== 'key') ||
       iterator.outputs[0]?.name !== 'out' ||
       iterator.inputs[0]?.type !== roundDef.inputs[0]?.type ||
+      (hasKeyBus && iterator.inputs[1]?.type !== 'bits') ||
       iterator.outputs[0]?.type !== roundDef.outputs[0]?.type
     ) {
       issues.push({
@@ -397,6 +411,16 @@ export function validateIteratorDef(
     issues.push({
       code: 'invalid-param-type',
       message: `Iterator "${iterator.id}" must declare a positive integer iteration count.`,
+    });
+  }
+
+  if (
+    hasKeyBus &&
+    (!Number.isInteger(iterator.roundKeyWidth) || (iterator.roundKeyWidth ?? 0) < 1)
+  ) {
+    issues.push({
+      code: 'invalid-param-type',
+      message: `Iterator "${iterator.id}" must declare a positive integer round key width when key distribution is enabled.`,
     });
   }
 

@@ -3,6 +3,44 @@ import type { GuidedTutorial } from './tutorials';
 export const STARTER_TUTORIALS: GuidedTutorial[] = [
   {
     version: 1,
+    id: 'keyed-byte-iterator',
+    title: 'The Key Bus',
+    group: 'Modern Rounds',
+    summary: 'Learn how one visible key bus can be split into per-round sub-keys by a bounded keyed iterator.',
+    projectId: 'keyed-byte-iterator',
+    steps: [
+      {
+        id: 'keyed-iterator-source',
+        title: 'Inject The Starting Byte',
+        body: 'The data path still begins with one visible HexSource. The iterator itself is not inventing input; it is only structuring how repeated keyed rounds consume it.',
+        focusModuleId: 'source',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'keyed-iterator-keybus',
+        title: 'Provide One Visible Key Bus',
+        body: 'This HexSource carries the whole key bus. In this first slice, the bus is just a fixed-width bit signal that will be split into one sub-key per round.',
+        focusModuleId: 'keybus',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'keyed-iterator-rounds',
+        title: 'Split The Bus Across Rounds',
+        body: 'KeyedByteRoundIterator auto-unrolls two keyed rounds and slices the incoming key bus into one 8-bit key for round 1 and one 8-bit key for round 2. The nested analysis trace shows which round received which sub-key.',
+        focusModuleId: 'rounds',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'keyed-iterator-output',
+        title: 'Read The Scheduled Result',
+        body: 'BitsToHex and Output render the final iterated byte. This is the smallest honest step from visible sub-keys toward future iterator-aware key scheduling.',
+        focusModuleId: 'output',
+        targetStepIndex: 3,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'keyed-byte-rounds',
     title: 'The Round Keys',
     group: 'Modern Rounds',

@@ -205,7 +205,7 @@ export function getModulePurpose(definition: ModuleDefinition): string {
     return `Reusable composite with ${definition.inputs.length} input${definition.inputs.length === 1 ? '' : 's'} and ${definition.outputs.length} output${definition.outputs.length === 1 ? '' : 's'}.`;
   }
   if (isIteratorDefinition(definition)) {
-    return `Bounded iterator repeating "${definition.roundDefId}" for ${definition.iterationCount} round${definition.iterationCount === 1 ? '' : 's'}.`;
+    return `Bounded iterator repeating "${definition.roundDefId}" for ${definition.iterationCount} round${definition.iterationCount === 1 ? '' : 's'}${definition.roundKeyWidth ? ` with a ${definition.roundKeyWidth}-bit key per round` : ''}.`;
   }
 
   return (
@@ -219,7 +219,9 @@ export function getModuleDetail(definition: ModuleDefinition): string {
     return 'Reusable module captured from a workbench subgraph. Open it to inspect or edit its internals.';
   }
   if (isIteratorDefinition(definition)) {
-    return 'Reusable bounded round chain that auto-unrolls one round definition a fixed number of times.';
+    return definition.roundKeyWidth
+      ? 'Reusable bounded round chain that auto-unrolls one round definition a fixed number of times and splits a visible key bus into one sub-key per round.'
+      : 'Reusable bounded round chain that auto-unrolls one round definition a fixed number of times.';
   }
 
   return (

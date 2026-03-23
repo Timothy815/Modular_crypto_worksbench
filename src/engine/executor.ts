@@ -268,6 +268,52 @@ function buildIteratorProject(def: IteratorDef): Project {
   };
 }
 
+function buildIteratorInputOverrides(
+  def: IteratorDef,
+  iteratorProject: Project,
+  inputs: ModuleInputs,
+): Record<string, ModuleInputs> {
+  const firstRoundId = iteratorProject.modules[0]?.id;
+  if (!firstRoundId) {
+    throw new ProjectValidationError(`Iterator "${def.id}" has no rounds to execute.`);
+  }
+
+  const inputOverrides: Record<string, ModuleInputs> = {
+    [firstRoundId]: { in: inputs.in },
+  };
+
+  if (def.roundKeyWidth === undefined) {
+    return inputOverrides;
+  }
+
+  const keySignal = inputs.key;
+  if (!keySignal || keySignal.type !== 'bits') {
+    throw new ProjectValidationError(`Iterator "${def.id}" requires a bits key bus on input "key".`);
+  }
+
+  const expectedBits = def.iterationCount * def.roundKeyWidth;
+  if (keySignal.value.length !== expectedBits) {
+    throw new ProjectValidationError(
+      `Iterator "${def.id}" requires a key bus of exactly ${expectedBits} bits (${def.iterationCount} x ${def.roundKeyWidth}).`,
+    );
+  }
+
+  for (let index = 0; index < iteratorProject.modules.length; index += 1) {
+    const moduleId = iteratorProject.modules[index]?.id;
+    if (!moduleId) {
+      continue;
+    }
+    const start = index * def.roundKeyWidth;
+    const end = start + def.roundKeyWidth;
+    inputOverrides[moduleId] = {
+      ...(inputOverrides[moduleId] ?? {}),
+      key: { type: 'bits', value: keySignal.value.slice(start, end) },
+    };
+  }
+
+  return inputOverrides;
+}
+
 function evaluateIterator(
   moduleId: string,
   def: IteratorDef,
@@ -282,9 +328,11 @@ function evaluateIterator(
     throw new ProjectValidationError(`Iterator "${def.id}" has no rounds to execute.`);
   }
 
-  const internalResult = executeProject(iteratorProject, registry, {
-    [firstRoundId]: { in: inputs.in },
-  });
+  const internalResult = executeProject(
+    iteratorProject,
+    registry,
+    buildIteratorInputOverrides(def, iteratorProject, inputs),
+  );
   const signal = internalResult.outputsByModuleId[lastRoundId]?.out;
   if (!signal) {
     throw new ProjectValidationError(`Iterator "${def.id}" could not resolve its final round output.`);
@@ -567,9 +615,7 @@ function executeTickedIterator(
     registry,
     tick,
     runtimeState,
-    {
-      [firstRoundId]: { in: inputs.in },
-    },
+    buildIteratorInputOverrides(def, iteratorProject, inputs),
   );
   const signal = internalResult.outputsByModuleId[lastRoundId]?.out;
   if (!signal) {
