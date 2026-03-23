@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { deriveTickCount, executeTickedProject } from './executor';
+import type { CompositeDef, IteratorDef } from './composites';
 import type {
   ModuleInputs,
   ModuleRegistry,
@@ -53,6 +54,34 @@ const PassThrough = {
   evaluate: (inputs: ModuleInputs) => ({ out: inputs.in }),
 };
 
+const PassThroughComposite: CompositeDef = {
+  id: 'PassThroughComposite',
+  name: 'Pass Through Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [{ name: 'in', type: 'symbol' }],
+  outputs: [{ name: 'out', type: 'symbol' }],
+  paramSchema: {},
+  project: {
+    modules: [{ id: 'pass-1', defId: 'PassThrough', params: {} }],
+    connections: [],
+  },
+  inputBindings: [{ externalPort: 'in', internalModuleId: 'pass-1', internalPort: 'in' }],
+  outputBindings: [{ externalPort: 'out', internalModuleId: 'pass-1', internalPort: 'out' }],
+};
+
+const PassThroughIterator: IteratorDef = {
+  id: 'PassThroughIterator',
+  name: 'Pass Through Iterator',
+  kind: 'iterator',
+  version: 1,
+  inputs: [{ name: 'in', type: 'symbol' }],
+  outputs: [{ name: 'out', type: 'symbol' }],
+  paramSchema: {},
+  roundDefId: 'PassThroughComposite',
+  iterationCount: 2,
+};
+
 describe('isStatefulModule', () => {
   it('returns true for modules with an advance function', () => {
     expect(isStatefulModule(ShiftModule)).toBe(true);
@@ -71,6 +100,8 @@ describe('executeTickedProject', () => {
   const registry: ModuleRegistry = {
     ShiftModule,
     PassThrough,
+    PassThroughComposite,
+    PassThroughIterator,
     Rotor,
   };
 
@@ -186,6 +217,28 @@ describe('executeTickedProject', () => {
       type: 'symbol',
       value: 'D',
     });
+  });
+
+  it('hoists nested analysis trace for iterator execution while preserving top-level trace', () => {
+    const project: Project = {
+      modules: [{ id: 'iter1', defId: 'PassThroughIterator', params: {} }],
+      connections: [],
+    };
+
+    const overrides: Record<string, ModuleInputs>[] = [
+      { iter1: { in: { type: 'symbol', value: 'A' } } },
+    ];
+
+    const result = executeTickedProject(project, registry, 1, overrides);
+
+    expect(result.ticks[0].trace.map((entry) => entry.moduleId)).toEqual(['iter1']);
+    expect(result.ticks[0].analysisTrace.map((entry) => entry.moduleId)).toEqual([
+      'iter1',
+      'iter1/round-1',
+      'iter1/round-1/pass-1',
+      'iter1/round-2',
+      'iter1/round-2/pass-1',
+    ]);
   });
 
   it('handles zero ticks gracefully', () => {

@@ -181,6 +181,13 @@ describe('executeProject', () => {
       value: 'Z',
     });
     expect(result.order).toEqual(['source', 'composite', 'sink']);
+    expect(result.trace.map((entry) => entry.moduleId)).toEqual(['source', 'composite', 'sink']);
+    expect(result.analysisTrace.map((entry) => entry.moduleId)).toEqual([
+      'source',
+      'composite',
+      'composite/echo-1',
+      'sink',
+    ]);
   });
 
   it('executes an iterator module instance like a bounded repeated chain', () => {
@@ -209,5 +216,15 @@ describe('executeProject', () => {
       value: 'Z',
     });
     expect(result.order).toEqual(['source', 'iterator', 'sink']);
+    expect(result.trace.map((entry) => entry.moduleId)).toEqual(['source', 'iterator', 'sink']);
+    expect(result.analysisTrace.map((entry) => entry.moduleId)).toEqual([
+      'source',
+      'iterator',
+      'iterator/round-1',
+      'iterator/round-1/echo-1',
+      'iterator/round-2',
+      'iterator/round-2/echo-1',
+      'sink',
+    ]);
   });
 });

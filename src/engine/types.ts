@@ -138,12 +138,15 @@ export interface ExecutionTraceEntry {
   defId: string;
   inputs: ModuleInputs;
   outputs: ModuleOutputs;
+  scopeModuleId?: string;
+  depth?: number;
 }
 
 export interface ExecutionResult {
   order: string[];
   outputsByModuleId: Record<string, ModuleOutputs>;
   trace: ExecutionTraceEntry[];
+  analysisTrace: ExecutionTraceEntry[];
 }
 
 export interface TickedExecutionResult {

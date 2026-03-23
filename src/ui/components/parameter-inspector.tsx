@@ -88,6 +88,7 @@ export function ParameterInspector({
 }: ParameterInspectorProps) {
   const [traceMode, setTraceMode] = useState<'focused' | 'upstream' | 'downstream' | 'full'>('focused');
   const [inspectorTab, setInspectorTab] = useState<'configure' | 'analyze' | 'compare'>('configure');
+  const analysisTrace = execution?.analysisTrace ?? execution?.trace ?? [];
   const tutorialTraceRef = useRef<HTMLLIElement | null>(null);
   const outputTrace = execution?.trace.at(-1);
   const selectedTrace = execution?.trace.find(
@@ -216,7 +217,7 @@ export function ParameterInspector({
         </section>
       ) : null}
 
-      {inspectorTab === 'analyze' && execution && execution.trace.length > 0 ? (
+     {inspectorTab === 'analyze' && execution && execution.trace.length > 0 ? (
         <section className="analysis-section">
           <div className="stepper-head">
             <span className="meta-label">Step-Through</span>
@@ -258,7 +259,7 @@ export function ParameterInspector({
             {steppedTrace ? (
               <>
                 <p className="selected-trace-order">
-                  Step {stepIndex! + 1} of {execution.trace.length}
+                 Step {stepIndex! + 1} of {execution.trace.length}
                 </p>
                 <p>
                   module: <strong>{steppedTrace.moduleId}</strong> ({steppedTrace.defId})
@@ -278,7 +279,7 @@ export function ParameterInspector({
               </>
             ) : (
               <p className="empty-state">
-                Start stepping to walk the execution order one module at a time.
+               Start stepping to walk the execution order one module at a time.
               </p>
             )}
           </div>
@@ -581,12 +582,12 @@ export function ParameterInspector({
             ? 'Current edits make the graph invalid. Resolve the issues below to restore execution.'
             : `Execution failed even though the graph is valid. ${executionError}`}
         </p>
-      ) : inspectorTab === 'analyze' && selectedTrace ? (
+     ) : inspectorTab === 'analyze' && selectedTrace ? (
         <div className="selected-trace">
           <span className="meta-label">Selected Trace</span>
           <p className="selected-trace-order">
             Step {selectedTraceOrder ?? '?'} of{' '}
-            {execution?.order.length ?? 0}
+            {analysisTrace.length}
           </p>
           <p>
             inputs:{' '}
@@ -669,8 +670,11 @@ export function ParameterInspector({
 
       {inspectorTab === 'analyze' ? (
       <ol className="trace-list">
-        {traceEntries.map((entry) => {
-          const traceIndex = execution?.trace.findIndex(
+        {traceEntries.map((entry, analysisIndex) => {
+          const traceIndex = analysisTrace.findIndex(
+            (traceEntry) => traceEntry.moduleId === entry.moduleId,
+          );
+          const topLevelIndex = execution?.trace.findIndex(
             (traceEntry) => traceEntry.moduleId === entry.moduleId,
           ) ?? -1;
 
@@ -692,16 +696,13 @@ export function ParameterInspector({
             onMouseEnter={() => onTraceHover(entry.moduleId)}
             onMouseLeave={() => onTraceHover(null)}
             onClick={() =>
-              onStepChange(
-                execution?.trace.findIndex((traceEntry) => traceEntry.moduleId === entry.moduleId) ??
-                  null,
-              )
+              onStepChange(topLevelIndex >= 0 ? topLevelIndex : null)
             }
           >
             <div className="trace-head">
               <strong>{entry.moduleId}</strong>
               <span>
-                #{traceIndex + 1} {entry.defId}
+                #{traceIndex >= 0 ? traceIndex + 1 : analysisIndex + 1} {entry.defId}
               </span>
             </div>
             <p>
@@ -764,12 +765,16 @@ function getTraceEntries(args: {
     return [];
   }
 
+  const analysisTrace = execution.analysisTrace ?? execution.trace;
+
   if (!selectedModuleId || traceMode === 'full') {
-    return execution.trace;
+    return analysisTrace;
   }
 
   if (traceMode === 'focused') {
-    return execution.trace.filter((entry) => entry.moduleId === selectedModuleId);
+    return analysisTrace.filter(
+      (entry) => (entry.scopeModuleId ?? entry.moduleId) === selectedModuleId,
+    );
   }
 
   const relatedModuleIds =
@@ -778,7 +783,9 @@ function getTraceEntries(args: {
       : collectReachableModules(project.connections, selectedModuleId, 'downstream');
 
   relatedModuleIds.add(selectedModuleId);
-  return execution.trace.filter((entry) => relatedModuleIds.has(entry.moduleId));
+  return analysisTrace.filter((entry) =>
+    relatedModuleIds.has(entry.scopeModuleId ?? entry.moduleId),
+  );
 }
 
 function collectReachableModules(

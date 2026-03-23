@@ -19,6 +19,11 @@ import {
   type IteratorDef,
 } from './composites';
 
+interface EvaluatedDefinitionResult {
+  outputs: ModuleOutputs;
+  hoistedTrace: ExecutionTraceEntry[];
+}
+
 interface TickedRuntimeState {
   paramsByModuleId: Record<string, ModuleParams>;
   compositeStateByModuleId: Record<string, TickedRuntimeState | undefined>;
@@ -123,6 +128,7 @@ export function executeProject(
   const order = buildTopologicalOrder(project);
   const outputsByModuleId: Record<string, ModuleOutputs> = {};
   const trace: ExecutionTraceEntry[] = [];
+  const analysisTrace: ExecutionTraceEntry[] = [];
   const instancesById = new Map(project.modules.map((moduleInstance) => [moduleInstance.id, moduleInstance]));
 
   for (const moduleId of order) {
@@ -139,45 +145,74 @@ export function executeProject(
     }
 
     const inputs = collectInputs(moduleId, project, outputsByModuleId, inputOverrides);
-    const outputs = evaluateDefinition(def, inputs, moduleInstance.params, registry);
-
-    outputsByModuleId[moduleId] = outputs;
-    trace.push({
+    const traceEntry: ExecutionTraceEntry = {
       moduleId,
       defId: def.id,
       inputs,
-      outputs,
-    });
+      outputs: {},
+      scopeModuleId: moduleId,
+      depth: 0,
+    };
+    const { outputs, hoistedTrace } = evaluateDefinition(
+      moduleId,
+      def,
+      inputs,
+      moduleInstance.params,
+      registry,
+    );
+    traceEntry.outputs = outputs;
+
+    outputsByModuleId[moduleId] = outputs;
+    trace.push(traceEntry);
+    analysisTrace.push(traceEntry, ...hoistedTrace);
   }
 
   return {
     order,
     outputsByModuleId,
     trace,
+    analysisTrace,
   };
 }
 
 function evaluateDefinition(
+  moduleId: string,
   def: ModuleDefinition,
   inputs: ModuleInputs,
   params: Record<string, unknown>,
   registry: ModuleRegistry,
-): ModuleOutputs {
+): EvaluatedDefinitionResult {
   if (isCompositeDefinition(def)) {
-    return evaluateComposite(def, inputs, registry);
+    return evaluateComposite(moduleId, def, inputs, registry);
   }
   if (isIteratorDefinition(def)) {
-    return evaluateIterator(def, inputs, registry);
+    return evaluateIterator(moduleId, def, inputs, registry);
   }
 
-  return def.evaluate(inputs, params);
+  return {
+    outputs: def.evaluate(inputs, params),
+    hoistedTrace: [],
+  };
+}
+
+function hoistTraceEntries(
+  trace: ExecutionTraceEntry[],
+  parentModuleId: string,
+): ExecutionTraceEntry[] {
+  return trace.map((entry) => ({
+    ...entry,
+    moduleId: `${parentModuleId}/${entry.moduleId}`,
+    scopeModuleId: parentModuleId,
+    depth: (entry.depth ?? 0) + 1,
+  }));
 }
 
 function evaluateComposite(
+  moduleId: string,
   def: CompositeDef,
   inputs: ModuleInputs,
   registry: ModuleRegistry,
-): ModuleOutputs {
+): EvaluatedDefinitionResult {
   const inputOverrides: Record<string, ModuleInputs> = {};
 
   for (const binding of def.inputBindings) {
@@ -210,7 +245,10 @@ function evaluateComposite(
     outputs[binding.externalPort] = signal;
   }
 
-  return outputs;
+  return {
+    outputs,
+    hoistedTrace: hoistTraceEntries(internalResult.analysisTrace, moduleId),
+  };
 }
 
 function buildIteratorProject(def: IteratorDef): Project {
@@ -231,10 +269,11 @@ function buildIteratorProject(def: IteratorDef): Project {
 }
 
 function evaluateIterator(
+  moduleId: string,
   def: IteratorDef,
   inputs: ModuleInputs,
   registry: ModuleRegistry,
-): ModuleOutputs {
+): EvaluatedDefinitionResult {
   const iteratorProject = buildIteratorProject(def);
   const firstRoundId = iteratorProject.modules[0]?.id;
   const lastRoundId = iteratorProject.modules.at(-1)?.id;
@@ -251,7 +290,10 @@ function evaluateIterator(
     throw new ProjectValidationError(`Iterator "${def.id}" could not resolve its final round output.`);
   }
 
-  return { out: signal };
+  return {
+    outputs: { out: signal },
+    hoistedTrace: hoistTraceEntries(internalResult.analysisTrace, moduleId),
+  };
 }
 
 function createTickedRuntimeState(
@@ -356,6 +398,7 @@ function executeTickedGraph(
   const order = buildTopologicalOrder(project);
   const outputsByModuleId: Record<string, ModuleOutputs> = {};
   const trace: ExecutionTraceEntry[] = [];
+  const analysisTrace: ExecutionTraceEntry[] = [];
   const instancesById = new Map(
     project.modules.map((moduleInstance) => [moduleInstance.id, moduleInstance]),
   );
@@ -377,8 +420,17 @@ function executeTickedGraph(
 
     const inputs = collectInputs(moduleId, project, outputsByModuleId, inputOverrides);
     const currentParams = runtimeState.paramsByModuleId[moduleId] ?? {};
-    const outputs = isCompositeDefinition(def)
+    const traceEntry: ExecutionTraceEntry = {
+      moduleId,
+      defId: def.id,
+      inputs,
+      outputs: {},
+      scopeModuleId: moduleId,
+      depth: 0,
+    };
+    const { outputs, hoistedTrace } = isCompositeDefinition(def)
       ? executeTickedComposite(
+          moduleId,
           def,
           inputs,
           registry,
@@ -387,24 +439,25 @@ function executeTickedGraph(
         )
       : isIteratorDefinition(def)
         ? executeTickedIterator(
+            moduleId,
             def,
             inputs,
             registry,
             tick,
             runtimeState.iteratorStateByModuleId[moduleId],
-          )
-      : def.evaluate(
-          inputs,
-          isTickSliceable(def) ? def.tickSlice(currentParams, tick) : { ...currentParams },
-        );
+        )
+      : {
+          outputs: def.evaluate(
+            inputs,
+            isTickSliceable(def) ? def.tickSlice(currentParams, tick) : { ...currentParams },
+          ),
+          hoistedTrace: [],
+        };
+    traceEntry.outputs = outputs;
 
     outputsByModuleId[moduleId] = outputs;
-    trace.push({
-      moduleId,
-      defId: def.id,
-      inputs,
-      outputs,
-    });
+    trace.push(traceEntry);
+    analysisTrace.push(traceEntry, ...hoistedTrace);
   }
 
   for (const moduleInstance of project.modules) {
@@ -428,16 +481,18 @@ function executeTickedGraph(
     order,
     outputsByModuleId,
     trace,
+    analysisTrace,
   };
 }
 
 function executeTickedComposite(
+  moduleId: string,
   def: CompositeDef,
   inputs: ModuleInputs,
   registry: ModuleRegistry,
   tick: number,
   runtimeState?: TickedRuntimeState,
-): ModuleOutputs {
+): EvaluatedDefinitionResult {
   if (!runtimeState) {
     throw new ProjectValidationError(
       `Composite "${def.id}" is missing ticked runtime state.`,
@@ -482,16 +537,20 @@ function executeTickedComposite(
     outputs[binding.externalPort] = signal;
   }
 
-  return outputs;
+  return {
+    outputs,
+    hoistedTrace: hoistTraceEntries(internalResult.analysisTrace, moduleId),
+  };
 }
 
 function executeTickedIterator(
+  moduleId: string,
   def: IteratorDef,
   inputs: ModuleInputs,
   registry: ModuleRegistry,
   tick: number,
   runtimeState?: TickedRuntimeState,
-): ModuleOutputs {
+): EvaluatedDefinitionResult {
   if (!runtimeState) {
     throw new ProjectValidationError(`Iterator "${def.id}" is missing ticked runtime state.`);
   }
@@ -517,7 +576,10 @@ function executeTickedIterator(
     throw new ProjectValidationError(`Iterator "${def.id}" could not resolve its final round output.`);
   }
 
-  return { out: signal };
+  return {
+    outputs: { out: signal },
+    hoistedTrace: hoistTraceEntries(internalResult.analysisTrace, moduleId),
+  };
 }
 
 export function executeTickedProject(
