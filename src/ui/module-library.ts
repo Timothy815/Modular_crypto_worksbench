@@ -53,7 +53,7 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
   BaudotSource: {
     sectionId: 'inputs-outputs',
     purpose: 'Emits teleprinter-era Baudot letters directly into the bit domain.',
-    detail: 'Use this for historical 5-bit labs when you want explicit Baudot codewords instead of the generic alphabet bridge.',
+    detail: 'Use this for historical 5-bit labs when you want explicit Baudot codewords instead of the generic alphabet bridge. This is the right starting point for teleprinter and Lorenz-style experiments.',
     searchTerms: ['baudot', 'teleprinter', 'ita2', 'source', 'letters', '5-bit'],
   },
   HexSource: {
@@ -137,7 +137,7 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
   BitsToBaudot: {
     sectionId: 'bridges',
     purpose: 'Converts 5-bit Baudot codewords back into teleprinter text.',
-    detail: 'Use this to decode letters-mode Baudot streams after bit-domain transforms or historical keying experiments.',
+    detail: 'Use this to decode letters-mode Baudot streams after bit-domain transforms or historical keying experiments such as Lorenz-style teleprinter masking.',
     searchTerms: ['bridge', 'baudot', 'ita2', 'decode', 'bits', 'teleprinter'],
   },
   BitsToSymbol: {

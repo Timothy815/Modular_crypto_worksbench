@@ -98,6 +98,15 @@ describe('BaudotSource', () => {
   it('throws on unsupported punctuation', () => {
     expect(() => BaudotSource.evaluate({}, { value: 'A!' })).toThrow();
   });
+
+  it('tickSlice emits one baudot character per tick', () => {
+    const sliced = BaudotSource.tickSlice({ value: 'AB' }, 1);
+    const result = BaudotSource.evaluate({}, sliced);
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [1, 1, 0, 0, 1],
+    });
+  });
 });
 
 describe('SymbolToBits', () => {

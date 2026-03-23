@@ -3,6 +3,58 @@ import type { GuidedTutorial } from './tutorials';
 export const STARTER_TUTORIALS: GuidedTutorial[] = [
   {
     version: 1,
+    id: 'lorenz-foundation',
+    title: 'The Lorenz Foundation',
+    group: 'Historical Bridges',
+    summary: 'Learn how a teleprinter-era keystream masks Baudot text with an LFSR before decoding it back into readable output.',
+    projectId: 'lorenz-foundation',
+    steps: [
+      {
+        id: 'lorenz-clock',
+        title: 'Tick The Telegraph',
+        body: 'Clock advances the keystream register one codeword at a time. This keeps the message rhythm explicit instead of hiding it inside a batch transform.',
+        focusModuleId: 'clock',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'lorenz-source',
+        title: 'Feed One Baudot Codeword Per Tick',
+        body: 'BaudotSource slices one teleprinter character into 5 bits on each tick. The ciphertext stays visible as real Baudot codewords rather than opaque text.',
+        focusModuleId: 'source',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'lorenz-lfsr',
+        title: 'Generate The Key Stream',
+        body: 'LFSR emits one 5-bit keystream slice on each live pulse. This stands in for the wheel-driven keystream logic of Lorenz-style machines.',
+        focusModuleId: 'lfsr',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'lorenz-xor',
+        title: 'Mix Ciphertext And Key',
+        body: 'XOR combines the incoming Baudot bits with the keystream bits. This is the core teleprinter masking step that links Lorenz-era systems to modern stream ciphers.',
+        focusModuleId: 'xor',
+        targetStepIndex: 3,
+      },
+      {
+        id: 'lorenz-decode',
+        title: 'Decode Back To Telegraph Text',
+        body: 'BitsToBaudot groups the unmixed bits back into 5-bit codewords and decodes them into readable teleprinter text.',
+        focusModuleId: 'decode',
+        targetStepIndex: 4,
+      },
+      {
+        id: 'lorenz-output',
+        title: 'Read The Recovered Message',
+        body: 'Output marks the final recovered teleprinter message. This closes the loop from historical bridge to keystream logic and back again.',
+        focusModuleId: 'output',
+        targetStepIndex: 5,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'baudot-bridge',
     title: 'The Baudot Telegraph',
     group: 'Historical Bridges',

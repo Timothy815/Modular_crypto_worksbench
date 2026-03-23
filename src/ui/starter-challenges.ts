@@ -7,6 +7,7 @@ function cloneProject<T>(value: T): T {
 
 const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
 const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
+const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
 const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
 const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
 const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
@@ -19,6 +20,9 @@ if (!bridgeProject) {
 }
 if (!baudotProject) {
   throw new Error('Expected baudot-bridge demo project to seed starter challenges.');
+}
+if (!lorenzProject) {
+  throw new Error('Expected lorenz-foundation demo project to seed starter challenges.');
 }
 if (!byteRoundProject) {
   throw new Error('Expected byte-round demo project to seed starter challenges.');
@@ -43,6 +47,8 @@ const fixedBridgeTarget = cloneProject(bridgeProject.project);
 const brokenBridgeStart = cloneProject(bridgeProject.project);
 const baudotTarget = cloneProject(baudotProject.project);
 const brokenBaudotStart = cloneProject(baudotProject.project);
+const lorenzTarget = cloneProject(lorenzProject.project);
+const brokenLorenzStart = cloneProject(lorenzProject.project);
 const byteRoundTarget = cloneProject(byteRoundProject.project);
 const brokenByteRoundStart = cloneProject(byteRoundProject.project);
 const hexRoundTarget = cloneProject(hexRoundProject.project);
@@ -70,6 +76,14 @@ if (!brokenBaudotSource) {
   throw new Error('Expected baudot-bridge demo project to contain a baudot source.');
 }
 brokenBaudotSource.params.value = 'BEST';
+
+const brokenLorenzLfsr = brokenLorenzStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'lfsr',
+);
+if (!brokenLorenzLfsr) {
+  throw new Error('Expected lorenz-foundation demo project to contain an LFSR module.');
+}
+brokenLorenzLfsr.params.seed = [0, 0, 0, 0, 1];
 
 const brokenPermutationModule = brokenByteRoundStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'permute',
@@ -165,6 +179,26 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The bridge and output modules are already correct in this lab.',
       'Focus on the very first teleprinter text entering the graph.',
       'A one-letter change in the Baudot source changes the decoded result immediately.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'teleprinter-tweak',
+    title: 'The Teleprinter Tweak',
+    group: 'Historical Bridges',
+    difficulty: 'intermediate',
+    prompt:
+      'The teleprinter ciphertext and bridge are correct, but the keystream no longer unmasks the message properly. Repair the LFSR seed so the recovered Baudot output matches the captured reference machine again.',
+    startingProject: brokenLorenzStart,
+    startingLayout: cloneProject(lorenzProject.layout),
+    targetProject: lorenzTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The source ciphertext is already correct in this lab.',
+      'Focus on the LFSR seed feeding the XOR stage.',
+      'If the keystream is wrong, the first divergence appears as soon as the wrong 5-bit group is unmixed.',
     ],
   },
   {

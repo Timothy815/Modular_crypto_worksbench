@@ -20,6 +20,7 @@ function cloneProject(project: Project): Project {
 describe('evaluateChallengeAttempt', () => {
   const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
   const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
+  const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
   const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
   const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
   const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
@@ -32,6 +33,9 @@ describe('evaluateChallengeAttempt', () => {
   }
   if (!baudotProject) {
     throw new Error('Expected baudot-bridge project.');
+  }
+  if (!lorenzProject) {
+    throw new Error('Expected lorenz-foundation project.');
   }
   if (!byteRoundProject) {
     throw new Error('Expected byte-round project.');
@@ -168,6 +172,31 @@ describe('evaluateChallengeAttempt', () => {
     expect(result.reason).toBe('diverged-from-target');
     expect(result.comparison?.outputsMatch).toBe(false);
     expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('source');
+  });
+
+  it('returns failure when a lorenz-style keystream uses the wrong lfsr seed', () => {
+    const currentProject = cloneProject(lorenzProject.project);
+    const lfsrModule = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'lfsr');
+    if (!lfsrModule) {
+      throw new Error('Expected LFSR module in lorenz project.');
+    }
+    lfsrModule.params.seed = [0, 0, 0, 0, 1];
+
+    const challenge: GuidedChallenge = {
+      id: 'lorenz-failure',
+      title: 'Lorenz Failure',
+      prompt: 'Repair the teleprinter keystream.',
+      startingProject: cloneProject(currentProject),
+      targetProject: cloneProject(lorenzProject.project),
+      success: { kind: 'output-match-target' },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, V1_REGISTRY);
+
+    expect(result.status).toBe('failure');
+    expect(result.reason).toBe('diverged-from-target');
+    expect(result.comparison?.outputsMatch).toBe(false);
+    expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('lfsr');
   });
 
   it('returns failure when a bit-domain round diverges from the target output bits', () => {

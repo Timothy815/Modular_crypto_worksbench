@@ -42,6 +42,43 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'lorenz-foundation',
+    name: 'Lorenz SZ42 Foundation',
+    group: 'Historical Bridges',
+    summary: 'A clocked teleprinter-style keystream machine that unmasks one Baudot codeword per tick before decoding it back into text.',
+    pipeline: 'Clock -> BaudotSource -> XOR <- LFSR -> BitsToBaudot -> Output',
+    defaultTickedMode: true,
+    project: {
+      modules: [
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 5 } },
+        { id: 'source', defId: 'BaudotSource', params: { value: 'WCNCE' } },
+        {
+          id: 'lfsr',
+          defId: 'LFSR',
+          params: { seed: [1, 1, 1, 0, 0], taps: '1,3', outputLength: 5 },
+        },
+        { id: 'xor', defId: 'XOR', params: {} },
+        { id: 'decode', defId: 'BitsToBaudot', params: {} },
+        { id: 'output', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'lfsr', port: 'clock' } },
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'xor', port: 'a' } },
+        { from: { moduleId: 'lfsr', port: 'out' }, to: { moduleId: 'xor', port: 'b' } },
+        { from: { moduleId: 'xor', port: 'out' }, to: { moduleId: 'decode', port: 'in' } },
+        { from: { moduleId: 'decode', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      clock: { x: 40, y: 68 },
+      source: { x: 40, y: 236 },
+      lfsr: { x: 280, y: 68 },
+      xor: { x: 520, y: 152 },
+      decode: { x: 760, y: 152 },
+      output: { x: 1000, y: 152 },
+    },
+  },
+  {
     id: 'bridge',
     name: 'Bridge Pipeline',
     group: 'Foundations',

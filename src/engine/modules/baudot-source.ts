@@ -1,11 +1,11 @@
-import type { ModuleDef } from '../types';
+import type { TickSliceableModuleDef } from '../types';
 import { encodeBaudotText, validateBaudotText } from './baudot-codec';
 
 export function validateBaudotSourceValue(value: unknown): string | null {
   return validateBaudotText(value);
 }
 
-export const BaudotSource: ModuleDef = {
+export const BaudotSource: TickSliceableModuleDef = {
   id: 'BaudotSource',
   name: 'Baudot Source',
   inputs: [],
@@ -33,4 +33,12 @@ export const BaudotSource: ModuleDef = {
       },
     };
   },
+  tickSlice: (params, tick) => {
+    const value = typeof params.value === 'string' ? params.value : '';
+    return {
+      ...params,
+      value: value[tick] ?? '',
+    };
+  },
+  tickLength: (params) => (typeof params.value === 'string' ? params.value.length : 0),
 };
