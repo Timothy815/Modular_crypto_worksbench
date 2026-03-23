@@ -4,6 +4,7 @@ Read PROJECT.md for full project specification.
 Read ENGINE-V1-CONTRACT.md for locked implementation decisions.
 Read ITERATIVE-ROUNDS-AND-KEYSCHEDULES-V1.md before starting work on iterative-round abstractions or key-schedule groundwork.
 Read KEY-SCHEDULE-GROUNDWORK-V1.md before extending iterator-aware key distribution or round-key generation.
+Read CRYPTANALYSIS-WORKSPACE-V1.md before starting work on the post-v1.3 cryptanalysis workspace.
 Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
 Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
 
@@ -126,7 +127,8 @@ src/utils/     — Shared helpers
 
 - Resume from current `main`
 - `v1.1.0` and `v1.2.0` are already shipped
-- Current `main` is in `v1.3.0` milestone framing around the Cipher Architecture line
+- `v1.3.0` is already shipped
+- Current `main` has started the cryptanalysis workspace line
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -137,18 +139,20 @@ What is shipped on `main`:
 - historical teleprinter / Lorenz teaching loops
 - constrained iterators, key-bus distribution, depth tuning
 - nested composite/iterator analysis and Feistel teaching loop
+- lightweight text cryptanalysis in Compare
 
 Key contracts to check before implementation:
 - `ENGINE-V1-CONTRACT.md` for engine decisions
 - `ADVANCED-FOUNDRY-CLOCK-V1.md` for ticked execution decisions (especially §7 for deferred work)
 - `ITERATIVE-ROUNDS-AND-KEYSCHEDULES-V1.md` for bounded iterator decisions
 - `KEY-SCHEDULE-GROUNDWORK-V1.md` for explicit round-key decisions
+- `CRYPTANALYSIS-WORKSPACE-V1.md` for product boundary and first-slice scope
 
 Near-term follow-ups:
-- `v1.3.0` cleanup and milestone framing
-- modern architecture tutorial/content polish
-- final iterator/nested-analysis UX cleanup
-- then tag `v1.3.0`
+- add the dedicated Cryptanalysis workspace shell
+- land the Vigenere first-pass toolchain
+- keep Compare limited to lightweight inline stats
+- avoid automated cracking/search in the first cryptanalysis milestone
 
 ## When Working on This Project
 

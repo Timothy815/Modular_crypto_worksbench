@@ -6,10 +6,10 @@ Last updated: March 22, 2026
 
 ## Current State
 
-The project has shipped through `v1.2.0` on `main`.
+The project has shipped through `v1.3.0` on `main`.
 
-Current `main` is now in the `v1.3.0` release-framing phase around the
-**Cipher Architecture** milestone.
+Current `main` has begun the post-`v1.3.0`
+**Cryptanalysis Workspace** line.
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -45,6 +45,7 @@ Established and shipped:
 - constrained iterators and key-bus distribution
 - nested analysis for composites and iterators
 - Feistel round / iterator teaching loop
+- lightweight cryptanalysis instrumentation in Compare
 - GitHub Pages deployment workflow
 
 ---
@@ -78,14 +79,12 @@ The following decisions are reflected in shipped code:
 | `v1.0.1` | Post-v1 polish (probes, analysis hardening, header compact) |
 | `v1.1.0` | Ticked execution, stateful foundry, sequential labs |
 | `v1.2.0` | Modern foundry, bridges, dependent clocking |
+| `v1.3.0` | Cipher architecture |
 
-Post-`v1.2.0` work merged to `main` (current `v1.3.0` framing line):
-- cipher architecture groundwork
-- constrained iterators
-- key-bus distribution
-- depth tuning
-- nested analysis focus/grouping/stepping
-- Feistel round and iterator labs
+Post-`v1.3.0` work merged to `main`:
+- protected built-in architectures and duplicate-as-custom flow
+- composite vs iterator palette split
+- lightweight text cryptanalysis in Compare
 
 ---
 
@@ -94,30 +93,30 @@ Post-`v1.2.0` work merged to `main` (current `v1.3.0` framing line):
 ### Claude
 
 Safe to begin:
-- `v1.3.0` cleanup and release framing
-- architecture tutorial/content polish tying together iterators, key buses, and Feistel
-- nested-analysis/canvas polish that improves depth readability without changing engine semantics
-- milestone docs / release note cleanup
+- `feature/cryptanalysis-workspace-vigenere`
+- cryptanalysis workspace contract and shell
+- reusable English frequency/reference data
+- Vigenere-focused key-length and column-analysis tooling
 
 Should avoid for now:
 - feedback loops / cycles in the graph
 - async or real-time execution
 - custom scripting for advance functions
 - hidden iterator/key-schedule magic
-- opening another major capability branch before `v1.3.0` framing is complete
+- automated cracking/search as the first cryptanalysis slice
 
 ### Gemini
 
 Safe to begin:
-- review whether the Cipher Architecture line is ready for `v1.3.0`
-- evaluate iterator / key-bus / Feistel UX completeness
-- critique nested-analysis clarity at depth
-- confirm there are no remaining medium/high-severity architectural gaps before release framing
+- review whether Cryptanalysis should be its own workspace
+- critique the product boundary between Compare and Cryptanalysis
+- validate Vigenere as the first classical attack workflow
+- help sequence future cryptanalysis families after Vigenere
 
 Best focus:
-- whether `v1.3.0` is now a clean stopping point
-- whether any remaining friction is polish-only or still architectural
-- whether the modern cipher teaching loop feels complete enough for a named release
+- whether the first cryptanalysis milestone is bounded correctly
+- whether analysis should remain classical-only at first
+- whether any important discovery tool is missing from the Vigenere first pass
 
 ---
 
@@ -128,7 +127,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three pass as of the current `main` release-framing line.
+All three pass as of the current post-`v1.3.0` line.
 
 ---
 
@@ -142,10 +141,10 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 ### Near-Term Roadmap
 
-1. **Frame `v1.3.0`** — the Cipher Architecture release
-2. **Final cleanup/polish** — nested-step visibility, modern architecture tutorial, wording cleanup
-3. **Tag `v1.3.0`** — after final review confirms no remaining architectural gap
-4. **Post-`v1.3.0` direction** — likely cryptanalysis, richer authored content, or another bounded analysis surface
+1. **Cryptanalysis workspace contract** — lock the product boundary before adding UI
+2. **Workspace shell** — add a dedicated Cryptanalysis mode
+3. **Vigenere first pass** — IOC, repeated patterns, period hints, column analysis
+4. **Post-Vigenere direction** — broader classical attack tooling, then possibly modern analysis lines
 
 ### Key Contracts
 
@@ -160,3 +159,4 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `ADVANCED-FOUNDRY-CLOCK-V1.md` | Locked, shipped (engine + UI slices) |
 | `ITERATIVE-ROUNDS-AND-KEYSCHEDULES-V1.md` | Active, implemented as bounded iterator groundwork |
 | `KEY-SCHEDULE-GROUNDWORK-V1.md` | Active, implemented as explicit key-bus groundwork |
+| `CRYPTANALYSIS-WORKSPACE-V1.md` | Active, defines post-`v1.3.0` workspace boundary |
