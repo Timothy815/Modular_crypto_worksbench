@@ -52,4 +52,23 @@ describe('analyzeSymbolSignal', () => {
       { gram: 'ABC', count: 1, share: 1 },
     ]);
   });
+
+  it('finds repeated fragments and candidate periods for polyalphabetic-style text', () => {
+    const analysis = analyzeSymbolSignal({
+      type: 'symbol',
+      value: 'ABCXYZABCXYZABCXYZ',
+    });
+    if (!analysis) {
+      throw new Error('Expected symbol analysis.');
+    }
+
+    expect(analysis.repeatedFragments[0]).toEqual({
+      fragment: 'ABCXY',
+      positions: [0, 6, 12],
+      distances: [6, 6],
+    });
+    expect(analysis.candidatePeriods[0]?.period).toBe(6);
+    expect(analysis.candidatePeriods[0]?.supportingDistanceCount).toBeGreaterThan(0);
+    expect(analysis.candidatePeriods.some((entry) => entry.period === 3)).toBe(true);
+  });
 });

@@ -113,6 +113,50 @@ export function CryptanalysisPanel({
             <strong>{analysis ? truncateText(analysis.normalizedText) : 'n/a'}</strong>
           </p>
         </div>
+
+        <div className="comparison-card comparison-card-wide">
+          <span className="meta-label">Repeated Fragment Evidence</span>
+          <strong>Kasiski-style repetition hints</strong>
+          {analysis && analysis.repeatedFragments.length > 0 ? (
+            <div className="cryptanalysis-list">
+              {analysis.repeatedFragments.map((entry) => (
+                <p key={`${entry.fragment}-${entry.positions.join('-')}`} className="comparison-copy">
+                  <strong>{entry.fragment}</strong> at {entry.positions.join(', ')}
+                  {' '}| distances {entry.distances.join(', ')}
+                </p>
+              ))}
+            </div>
+          ) : (
+            <p className="comparison-copy">
+              No repeated fragments detected yet. Longer ciphertext usually gives stronger evidence.
+            </p>
+          )}
+        </div>
+
+        <div className="comparison-card comparison-card-wide">
+          <span className="meta-label">Candidate Key Lengths</span>
+          <strong>IOC plus repetition support</strong>
+          {analysis && analysis.candidatePeriods.length > 0 ? (
+            <div className="cryptanalysis-list">
+              {analysis.candidatePeriods.map((entry) => (
+                <p key={entry.period} className="comparison-copy">
+                  <strong>Period {entry.period}</strong>
+                  {' '}| avg IOC{' '}
+                  <strong>
+                    {entry.averageIndexOfCoincidence !== null
+                      ? entry.averageIndexOfCoincidence.toFixed(3)
+                      : 'n/a'}
+                  </strong>
+                  {' '}| supporting distances <strong>{entry.supportingDistanceCount}</strong>
+                </p>
+              ))}
+            </div>
+          ) : (
+            <p className="comparison-copy">
+              Enter more ciphertext to estimate candidate Vigenere periods.
+            </p>
+          )}
+        </div>
       </div>
     </section>
   );

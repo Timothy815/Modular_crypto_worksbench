@@ -12,6 +12,18 @@ export interface NGramFrequencyEntry {
   share: number;
 }
 
+export interface RepeatedFragmentEntry {
+  fragment: string;
+  positions: number[];
+  distances: number[];
+}
+
+export interface CandidatePeriodEntry {
+  period: number;
+  averageIndexOfCoincidence: number | null;
+  supportingDistanceCount: number;
+}
+
 export interface SymbolTextAnalysis {
   sourceText: string;
   normalizedText: string;
@@ -22,6 +34,8 @@ export interface SymbolTextAnalysis {
   topLetters: LetterFrequencyEntry[];
   topBigrams: NGramFrequencyEntry[];
   topTrigrams: NGramFrequencyEntry[];
+  repeatedFragments: RepeatedFragmentEntry[];
+  candidatePeriods: CandidatePeriodEntry[];
 }
 
 export function analyzeSymbolSignal(signal: Signal | null): SymbolTextAnalysis | null {
@@ -63,6 +77,8 @@ export function analyzeSymbolSignal(signal: Signal | null): SymbolTextAnalysis |
     topLetters,
     topBigrams: calculateTopNGrams(normalizedText, 2),
     topTrigrams: calculateTopNGrams(normalizedText, 3),
+    repeatedFragments: calculateRepeatedFragments(normalizedText),
+    candidatePeriods: calculateCandidatePeriods(normalizedText),
   };
 }
 
@@ -101,4 +117,116 @@ function calculateTopNGrams(text: string, size: number): NGramFrequencyEntry[] {
       count,
       share: count / total,
     }));
+}
+
+function calculateRepeatedFragments(text: string): RepeatedFragmentEntry[] {
+  const entries: RepeatedFragmentEntry[] = [];
+
+  for (let size = 5; size >= 3; size -= 1) {
+    if (text.length < size * 2) {
+      continue;
+    }
+
+    const positionsByFragment = new Map<string, number[]>();
+    for (let index = 0; index <= text.length - size; index += 1) {
+      const fragment = text.slice(index, index + size);
+      const positions = positionsByFragment.get(fragment) ?? [];
+      positions.push(index);
+      positionsByFragment.set(fragment, positions);
+    }
+
+    for (const [fragment, positions] of positionsByFragment.entries()) {
+      if (positions.length < 2) {
+        continue;
+      }
+
+      const distances: number[] = [];
+      for (let index = 1; index < positions.length; index += 1) {
+        distances.push(positions[index] - positions[index - 1]);
+      }
+
+      entries.push({
+        fragment,
+        positions,
+        distances,
+      });
+    }
+  }
+
+  return entries
+    .sort((left, right) => {
+      if (right.fragment.length !== left.fragment.length) {
+        return right.fragment.length - left.fragment.length;
+      }
+      if (right.positions.length !== left.positions.length) {
+        return right.positions.length - left.positions.length;
+      }
+      return left.fragment.localeCompare(right.fragment);
+    })
+    .slice(0, 8);
+}
+
+function calculateCandidatePeriods(text: string): CandidatePeriodEntry[] {
+  const maxPeriod = Math.min(12, Math.floor(text.length / 2));
+  if (maxPeriod < 1) {
+    return [];
+  }
+
+  const repeatedFragments = calculateRepeatedFragments(text);
+
+  const candidates: CandidatePeriodEntry[] = [];
+  for (let period = 1; period <= maxPeriod; period += 1) {
+    const columns = splitIntoColumns(text, period);
+    const columnIocs = columns
+      .map((column) => calculateIndexOfCoincidenceForText(column))
+      .filter((value): value is number => value !== null);
+    const averageIndexOfCoincidence =
+      columnIocs.length > 0
+        ? columnIocs.reduce((sum, value) => sum + value, 0) / columnIocs.length
+        : null;
+    const supportingDistanceCount = repeatedFragments.reduce(
+      (sum, entry) =>
+        sum + entry.distances.filter((distance) => distance % period === 0).length,
+      0,
+    );
+
+    candidates.push({
+      period,
+      averageIndexOfCoincidence,
+      supportingDistanceCount,
+    });
+  }
+
+  return candidates
+    .sort((left, right) => {
+      if (right.supportingDistanceCount !== left.supportingDistanceCount) {
+        return right.supportingDistanceCount - left.supportingDistanceCount;
+      }
+      const leftIoc = left.averageIndexOfCoincidence ?? -1;
+      const rightIoc = right.averageIndexOfCoincidence ?? -1;
+      if (rightIoc !== leftIoc) {
+        return rightIoc - leftIoc;
+      }
+      return left.period - right.period;
+    })
+    .slice(0, 6);
+}
+
+function splitIntoColumns(text: string, period: number): string[] {
+  const columns = Array.from({ length: period }, () => '');
+
+  for (let index = 0; index < text.length; index += 1) {
+    columns[index % period] += text[index];
+  }
+
+  return columns;
+}
+
+function calculateIndexOfCoincidenceForText(text: string): number | null {
+  const counts = new Map<string, number>();
+  for (const letter of text) {
+    counts.set(letter, (counts.get(letter) ?? 0) + 1);
+  }
+
+  return calculateIndexOfCoincidence([...counts.values()], text.length);
 }
