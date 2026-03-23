@@ -36,8 +36,10 @@ interface CryptanalysisPanelProps {
   tutorial: GuidedTutorial | null;
   tutorialStep: TutorialStep | null;
   tutorialStepIndex: number;
+  tutorialNotesVisible: boolean;
   onSetWorkspaceMode: (mode: WorkspaceMode) => void;
   onSetCryptanalysisMode: (mode: CryptanalysisMode) => void;
+  onSetTutorialNotesVisible: (visible: boolean) => void;
   onCiphertextChange: (value: string) => void;
   onModernBaselineChange: (value: string) => void;
   onModernFlipBitChange: (value: number) => void;
@@ -58,8 +60,10 @@ export function CryptanalysisPanel({
   tutorial,
   tutorialStep,
   tutorialStepIndex,
+  tutorialNotesVisible,
   onSetWorkspaceMode,
   onSetCryptanalysisMode,
+  onSetTutorialNotesVisible,
   onCiphertextChange,
   onModernBaselineChange,
   onModernFlipBitChange,
@@ -309,6 +313,15 @@ export function CryptanalysisPanel({
         >
           Modern
         </button>
+        {tutorial ? (
+          <button
+            type="button"
+            className="workspace-mode-chip"
+            onClick={() => onSetTutorialNotesVisible(!tutorialNotesVisible)}
+          >
+            {tutorialNotesVisible ? 'Hide Notes' : 'Show Notes'}
+          </button>
+        ) : null}
       </div>
 
       {showTutorialCard ? (

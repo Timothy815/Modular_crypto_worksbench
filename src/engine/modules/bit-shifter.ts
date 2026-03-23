@@ -22,7 +22,7 @@ export const BitShifter: ModuleDef = {
       kind: 'number',
       defaultValue: 1,
       required: true,
-      description: 'How many positions to shift or rotate',
+      description: 'How many positions to shift or rotate by',
     },
     mode: {
       key: 'mode',
@@ -31,8 +31,8 @@ export const BitShifter: ModuleDef = {
       defaultValue: 'left',
       required: true,
       options: [
-        { label: 'Left', value: 'left' },
-        { label: 'Right', value: 'right' },
+        { label: 'Shift Left', value: 'left' },
+        { label: 'Shift Right', value: 'right' },
         { label: 'Rotate Left', value: 'rotate-left' },
         { label: 'Rotate Right', value: 'rotate-right' },
       ],

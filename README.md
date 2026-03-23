@@ -66,6 +66,7 @@ Implemented and shipped:
 - `MODERN-ANALYSIS-V1.md`: active direction for the post-`v1.4.0` modern-analysis line
 - `HASHING-V1.md`: active direction for the future hashing line
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
+- `TRANSFORMATION-VISUALIZATION-V1.md`: active direction for primitive-level transformation legibility and drill-down views
 - `AI-COORDINATION.md`: multi-agent workflow rules
 - `AI-WORKSTREAMS.md`: current ownership boundaries
 - `IMPLEMENTATION-STATUS.md`: live execution status and handoff notes
@@ -101,8 +102,8 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 
 ## Near-Term Roadmap
 
-1. Frame `v1.5.0` as the first Modern Analysis release
-2. Final modern-analysis copy / visual polish if needed
-3. Tag `v1.5.0`
-4. Define Hashing V1 before implementation to keep it aligned with the workbench model
-5. Then widen modern-analysis breadth across more project shapes
+1. Continue bounded hashing foundations and compare the emerging hash teaching shapes
+2. Tighten tutorial wording and “what to look for” guidance across existing labs
+3. Define the first Transformation Visualization slice before implementation
+4. Add primitive-level drill-down views for key opaque operations
+5. Only then decide whether deeper animation and multi-step playback belong in the next milestone

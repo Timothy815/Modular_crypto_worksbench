@@ -41,6 +41,7 @@ export interface CompositeLibraryDocument {
 export interface PersistedWorkspaceDocument {
   version: 1;
   activeProjectId: string;
+  defaultWorkspaceMode?: WorkspaceMode;
   showPalette: boolean;
   showInspector: boolean;
   documentsByProjectId: Record<string, WorkbenchDocument>;
@@ -49,6 +50,7 @@ export interface PersistedWorkspaceDocument {
   activeTutorialIdByProjectId: Record<string, string | null>;
   activeTutorialStepByProjectId: Record<string, number>;
   completedTutorialsByProjectId: Record<string, string[]>;
+  tutorialNotesVisibleByProjectId?: Record<string, boolean>;
   workspaceModeByProjectId?: Record<string, WorkspaceMode>;
   cryptanalysisModeByProjectId?: Record<string, CryptanalysisMode>;
   cryptanalysisInputByProjectId?: Record<string, string>;

@@ -214,6 +214,28 @@ const forwardedRoundsComposite: CompositeDef = {
   ],
 };
 
+const permutationComposite: CompositeDef = {
+  id: 'PermutationComposite',
+  name: 'Permutation Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [{ name: 'in', type: 'bits' }],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {},
+  project: {
+    modules: [
+      {
+        id: 'permute-1',
+        defId: 'PermutationBits',
+        params: { order: '2,0,3,1' },
+      },
+    ],
+    connections: [],
+  },
+  inputBindings: [{ externalPort: 'in', internalModuleId: 'permute-1', internalPort: 'in' }],
+  outputBindings: [{ externalPort: 'out', internalModuleId: 'permute-1', internalPort: 'out' }],
+};
+
 const registryWithComposite: ModuleRegistry = {
   ...registry,
   XorBits: {
@@ -248,6 +270,46 @@ const registryWithComposite: ModuleRegistry = {
   [keyedBitsRoundComposite.id]: keyedBitsRoundComposite,
   [keyedBitsIterator.id]: keyedBitsIterator,
   [forwardedRoundsComposite.id]: forwardedRoundsComposite,
+  PermutationBits: {
+    id: 'PermutationBits',
+    name: 'Permutation Bits',
+    inputs: [{ name: 'in', type: 'bits' }],
+    outputs: [{ name: 'out', type: 'bits' }],
+    paramSchema: {
+      order: {
+        key: 'order',
+        label: 'Order',
+        kind: 'string',
+        defaultValue: '0,1,2,3',
+      },
+    },
+    evaluate: (inputs, params) => {
+      if (inputs.in.type !== 'bits') {
+        throw new Error('PermutationBits expects a bits signal.');
+      }
+
+      let order: number[];
+      if (Array.isArray(params.order)) {
+        order = params.order.map((value) => Number(value));
+      } else {
+        order = String(params.order ?? '')
+          .split(',')
+          .map((part) => Number(part.trim()));
+      }
+      const permuted: number[] = [];
+      for (const index of order) {
+        permuted.push(inputs.in.value[index] ?? 0);
+      }
+
+      return {
+        out: {
+          type: 'bits' as const,
+          value: permuted,
+        },
+      };
+    },
+  },
+  [permutationComposite.id]: permutationComposite,
 };
 
 describe('executeProject', () => {
@@ -505,5 +567,27 @@ describe('executeProject', () => {
       'iterator/round-3',
       'iterator/round-3/xor-1',
     ]);
+  });
+
+  it('preserves nested permutation inputs and outputs in hoisted analysis trace entries', () => {
+    const project: Project = {
+      modules: [{ id: 'permute', defId: 'PermutationComposite', params: {} }],
+      connections: [],
+    };
+
+    const result = executeProject(project, registryWithComposite, {
+      permute: {
+        in: { type: 'bits', value: [1, 0, 1, 1] },
+      },
+    });
+
+    const nestedEntry = result.analysisTrace.find((entry) => entry.moduleId === 'permute/permute-1');
+
+    expect(nestedEntry).toBeTruthy();
+    expect(nestedEntry?.defId).toBe('PermutationBits');
+    expect(nestedEntry?.inputs.in).toEqual({ type: 'bits', value: [1, 0, 1, 1] });
+    expect(nestedEntry?.outputs.out).toEqual({ type: 'bits', value: [1, 1, 1, 0] });
+    expect(nestedEntry?.scopeModuleId).toBe('permute');
+    expect(nestedEntry?.depth).toBe(1);
   });
 });

@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from 'react';
+import { useEffect, useReducer, useState, type CSSProperties } from 'react';
 
 import './App.css';
 import { isCompositeDefinition, type CompositeLibraryEntry } from './engine/composites';
@@ -40,9 +40,46 @@ import {
   uiReducer,
 } from './ui/store';
 
+const MIN_LEFT_DOCK_WIDTH = 220;
+const MAX_LEFT_DOCK_WIDTH = 520;
+const MIN_RIGHT_DOCK_WIDTH = 280;
+const MAX_RIGHT_DOCK_WIDTH = 680;
+
+function clampDockWidth(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
+
 function App() {
   const [headerResourceAction, setHeaderResourceAction] = useState('');
   const [headerWorkspaceAction, setHeaderWorkspaceAction] = useState('');
+  const [learningPanelTab, setLearningPanelTab] = useState<'tutorial' | 'challenge'>('tutorial');
+  const [leftDockWidth, setLeftDockWidth] = useState(() => {
+    if (typeof window === 'undefined') {
+      return 320;
+    }
+
+    const rawValue = window.localStorage.getItem('mcw:left-dock-width');
+    const parsedValue = rawValue ? Number(rawValue) : NaN;
+    return Number.isFinite(parsedValue)
+      ? clampDockWidth(parsedValue, MIN_LEFT_DOCK_WIDTH, MAX_LEFT_DOCK_WIDTH)
+      : 320;
+  });
+  const [rightDockWidth, setRightDockWidth] = useState(() => {
+    if (typeof window === 'undefined') {
+      return 360;
+    }
+
+    const rawValue = window.localStorage.getItem('mcw:right-dock-width');
+    const parsedValue = rawValue ? Number(rawValue) : NaN;
+    return Number.isFinite(parsedValue)
+      ? clampDockWidth(parsedValue, MIN_RIGHT_DOCK_WIDTH, MAX_RIGHT_DOCK_WIDTH)
+      : 360;
+  });
+  const [dockResizeState, setDockResizeState] = useState<{
+    side: 'left' | 'right';
+    originX: number;
+    originWidth: number;
+  } | null>(null);
   const [challengeCaptureShouldExport, setChallengeCaptureShouldExport] = useState<boolean>(() => {
     if (typeof window === 'undefined') {
       return true;
@@ -82,6 +119,7 @@ function App() {
       return {
         ...initialState,
         activeProjectId: persistedWorkspace.activeProjectId,
+        defaultWorkspaceMode: persistedWorkspace.defaultWorkspaceMode ?? initialState.defaultWorkspaceMode,
         challengeLibrary:
           persistedWorkspace.challengeLibrary.length > 0
             ? persistedWorkspace.challengeLibrary
@@ -150,6 +188,14 @@ function App() {
             persistedWorkspace.completedTutorialsByProjectId[project.id] ??
               initialState.completedTutorialsByProject[project.id] ??
               [],
+          ]),
+        ),
+        tutorialNotesVisibleByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.tutorialNotesVisibleByProjectId?.[project.id] ??
+              initialState.tutorialNotesVisibleByProject[project.id] ??
+              true,
           ]),
         ),
         workspaceModeByProject: Object.fromEntries(
@@ -508,13 +554,28 @@ function App() {
   );
   const selectedTutorialStep = getTutorialStep(selectedTutorial, tutorialStepIndex);
   const workspaceMode = state.workspaceModeByProject[activeProjectDefinition.id] ?? 'guide';
+  const hasChallengePanel = workspaceMode !== 'cryptanalysis' && Boolean(selectedChallenge);
+  const hasTutorialPanel = workspaceMode !== 'cryptanalysis' && Boolean(selectedTutorial);
+  const activeLearningPanelTab =
+    learningPanelTab === 'challenge'
+      ? hasChallengePanel
+        ? 'challenge'
+        : 'tutorial'
+      : hasTutorialPanel
+        ? 'tutorial'
+        : 'challenge';
+  const tutorialNotesVisible =
+    state.tutorialNotesVisibleByProject[activeProjectDefinition.id] ?? true;
   const canCaptureChallenge =
     !state.compositeEditor &&
     comparisonBaseline !== null &&
     baselineValidation?.ok === true &&
     baselineExecutionError === null;
   const activeTutorialStep =
-    workspaceMode === 'guide' && !state.compositeEditor && selectedTutorial?.projectId === activeProjectDefinition.id
+    workspaceMode === 'guide' &&
+    tutorialNotesVisible &&
+    !state.compositeEditor &&
+    selectedTutorial?.projectId === activeProjectDefinition.id
       ? selectedTutorialStep
       : null;
   const completedTutorialIds =
@@ -589,6 +650,52 @@ function App() {
     );
   }, [challengeCaptureShouldExport]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.localStorage.setItem('mcw:left-dock-width', String(leftDockWidth));
+  }, [leftDockWidth]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.localStorage.setItem('mcw:right-dock-width', String(rightDockWidth));
+  }, [rightDockWidth]);
+
+  useEffect(() => {
+    if (!dockResizeState || typeof window === 'undefined') {
+      return;
+    }
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (dockResizeState.side === 'left') {
+        const nextWidth = dockResizeState.originWidth + (event.clientX - dockResizeState.originX);
+        setLeftDockWidth(clampDockWidth(nextWidth, MIN_LEFT_DOCK_WIDTH, MAX_LEFT_DOCK_WIDTH));
+      } else {
+        const nextWidth = dockResizeState.originWidth - (event.clientX - dockResizeState.originX);
+        setRightDockWidth(clampDockWidth(nextWidth, MIN_RIGHT_DOCK_WIDTH, MAX_RIGHT_DOCK_WIDTH));
+      }
+    };
+
+    const handlePointerUp = () => {
+      setDockResizeState(null);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    document.body.classList.add('dock-resizing');
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      document.body.classList.remove('dock-resizing');
+    };
+  }, [dockResizeState]);
+
   return (
     <main className="app-shell">
       <header className="app-header">
@@ -602,6 +709,23 @@ function App() {
         </div>
 
         <nav className="app-header-nav" aria-label="Workbench controls">
+          <label className="header-menu-select">
+            <span className="meta-label">Start Mode</span>
+            <select
+              value={state.defaultWorkspaceMode}
+              disabled={Boolean(state.compositeEditor)}
+              onChange={(event) =>
+                dispatch({
+                  type: 'setDefaultWorkspaceMode',
+                  mode: event.target.value as 'build' | 'guide' | 'cryptanalysis',
+                })
+              }
+            >
+              <option value="build">Build</option>
+              <option value="guide">Guide</option>
+              <option value="cryptanalysis">Cryptanalysis</option>
+            </select>
+          </label>
           <label className="header-menu-select">
             <span className="meta-label">Mode</span>
             <select
@@ -667,6 +791,12 @@ function App() {
                   );
                 } else if (value === 'toggle-inspector') {
                   dispatch({ type: 'toggleInspector' });
+                } else if (value === 'toggle-step-notes') {
+                  dispatch({
+                    type: 'setTutorialNotesVisible',
+                    projectId: activeProjectDefinition.id,
+                    visible: !tutorialNotesVisible,
+                  });
                 }
               }}
             >
@@ -685,12 +815,23 @@ function App() {
               <option value="toggle-inspector">
                 {state.showInspector ? 'Hide Inspector' : 'Show Inspector'}
               </option>
+              <option value="toggle-step-notes">
+                {tutorialNotesVisible ? 'Hide Step Notes' : 'Show Step Notes'}
+              </option>
             </select>
           </label>
         </nav>
       </header>
 
-      <section className="workbench-shell">
+      <section
+        className="workbench-shell"
+        style={
+          {
+            '--left-dock-width': `${leftDockWidth}px`,
+            '--right-dock-width': `${rightDockWidth}px`,
+          } as CSSProperties
+        }
+      >
         <div
           className={
             'workbench-stage' +
@@ -727,6 +868,11 @@ function App() {
             activeAnalysisOwnerModuleId={activeAnalysisOwnerModuleId}
             divergenceModuleId={divergenceModuleId}
             tutorialStep={activeTutorialStep}
+            tutorialTitle={selectedTutorial?.projectId === activeProjectDefinition.id ? selectedTutorial.title : null}
+            tutorialStepIndex={tutorialStepIndex}
+            tutorialStepCount={selectedTutorial?.projectId === activeProjectDefinition.id ? selectedTutorial.steps.length : 0}
+            showTutorialToggle={Boolean(selectedTutorial?.projectId === activeProjectDefinition.id)}
+            tutorialNotesVisible={tutorialNotesVisible}
             challengeSolved={challengeEvaluation?.status === 'success'}
             probedModuleIds={state.probedModuleIdsByProject[activeProjectDefinition.id] ?? []}
             isTickedMode={isTickedMode}
@@ -896,6 +1042,21 @@ function App() {
                     projectId,
                   })
             }
+            onSetTutorialStep={(stepValue) => {
+              setStepIndex(selectedTutorial?.steps[stepValue]?.targetStepIndex ?? null);
+              dispatch({
+                type: 'setTutorialStep',
+                projectId: activeProjectDefinition.id,
+                stepIndex: stepValue,
+              });
+            }}
+            onSetTutorialNotesVisible={(visible) =>
+              dispatch({
+                type: 'setTutorialNotesVisible',
+                projectId: activeProjectDefinition.id,
+                visible,
+              })
+            }
             projects={state.compositeEditor ? [activeProjectDefinition] : demoProjects}
             isCompositeEditor={Boolean(state.compositeEditor)}
           />
@@ -980,7 +1141,9 @@ function App() {
           ) : null}
         </div>
         {state.showPalette ? (
-          <div className={paletteViewMode === 'compact' ? 'workbench-dock workbench-dock-left workbench-dock-compact' : 'workbench-dock workbench-dock-left'}>
+          <div
+            className={paletteViewMode === 'compact' ? 'workbench-dock workbench-dock-left workbench-dock-compact' : 'workbench-dock workbench-dock-left'}
+          >
             <PrimitivePalette
               registry={effectiveRegistry}
               viewMode={paletteViewMode}
@@ -1047,12 +1210,27 @@ function App() {
                 })
               }
             />
+            <button
+              type="button"
+              className="dock-resize-handle dock-resize-handle-right"
+              aria-label="Resize tool palette"
+              title="Drag to resize tool palette"
+              onPointerDown={(event) => {
+                event.preventDefault();
+                setDockResizeState({
+                  side: 'left',
+                  originX: event.clientX,
+                  originWidth: leftDockWidth,
+                });
+              }}
+            />
           </div>
         ) : null}
         {state.showInspector ? (
           <div className="workbench-dock workbench-dock-right">
             <ParameterInspector
               execution={execution}
+              registry={effectiveRegistry}
               executionError={executionError}
               validationIssues={validationIssues}
               stepIndex={effectiveStepIndex}
@@ -1152,72 +1330,26 @@ function App() {
                 })
               }
             />
+            <button
+              type="button"
+              className="dock-resize-handle dock-resize-handle-left"
+              aria-label="Resize inspector"
+              title="Drag to resize inspector"
+              onPointerDown={(event) => {
+                event.preventDefault();
+                setDockResizeState({
+                  side: 'right',
+                  originX: event.clientX,
+                  originWidth: rightDockWidth,
+                });
+              }}
+            />
           </div>
         ) : null}
       </section>
 
       {!state.compositeEditor ? (
         <>
-          {workspaceMode !== 'cryptanalysis' && selectedChallenge ? (
-            <ChallengePanel
-              challenges={state.challengeLibrary}
-              selectedChallengeId={selectedChallenge.id}
-              evaluation={challengeEvaluation}
-              canCaptureChallenge={canCaptureChallenge}
-              onSelectChallenge={(challengeId) =>
-                dispatch({
-                  type: 'selectChallenge',
-                  projectId: activeProjectDefinition.id,
-                  challengeId,
-                })
-              }
-              onLoadChallengeStart={() => setIsChallengeResetConfirmOpen(true)}
-              onExportChallenge={() => downloadGuidedChallengeDocument(selectedChallenge)}
-              onCaptureChallenge={() => {
-                const defaultTitle = `${activeProjectDefinition.name} Guided Lab`;
-                setChallengeCaptureTitle(defaultTitle);
-                setChallengeCaptureId(createChallengeIdCandidate(defaultTitle));
-                if (activeProjectDefinition.id === 'sequential') {
-                  setChallengeCaptureDifficulty('intermediate');
-                  setChallengeCapturePrompt(
-                    `Repair or complete the ${activeProjectDefinition.name} machine until its running output stream matches the captured reference behavior.`,
-                  );
-                  setChallengeCaptureHints(
-                    'The clock period controls when the machine advances.\nUse the tick bar and probes to find the first wrong moment.',
-                  );
-                } else {
-                  setChallengeCaptureDifficulty('beginner');
-                  setChallengeCapturePrompt(
-                    `Repair or complete the ${activeProjectDefinition.name} machine until its output matches the captured reference behavior.`,
-                  );
-                  setChallengeCaptureHints('');
-                }
-                setChallengeCaptureShouldExport(true);
-                setChallengeCaptureError(null);
-                setIsChallengeCaptureOpen(true);
-              }}
-              onImportChallenge={async (file) => {
-                const rawValue = await file.text();
-                const challengeDocument = parseGuidedChallengeDocument(rawValue);
-                if (!challengeDocument) {
-                  setImportError('The selected file is not a valid MCW guided challenge document.');
-                  return;
-                }
-
-                dispatch({
-                  type: 'upsertChallenge',
-                  challenge: challengeDocument,
-                });
-                dispatch({
-                  type: 'selectChallenge',
-                  projectId: activeProjectDefinition.id,
-                  challengeId: challengeDocument.id,
-                });
-                setImportError(null);
-              }}
-            />
-          ) : null}
-
           {workspaceMode === 'cryptanalysis' ? (
             <CryptanalysisPanel
               projectName={activeProjectDefinition.name}
@@ -1230,8 +1362,13 @@ function App() {
               modernFlipBit={state.modernAnalysisFlipBitByProject[activeProjectDefinition.id] ?? 0}
               workspaceMode={workspaceMode}
               tutorial={selectedTutorial?.projectId === activeProjectDefinition.id ? selectedTutorial : null}
-              tutorialStep={selectedTutorial?.projectId === activeProjectDefinition.id ? selectedTutorialStep : null}
+              tutorialStep={
+                tutorialNotesVisible && selectedTutorial?.projectId === activeProjectDefinition.id
+                  ? selectedTutorialStep
+                  : null
+              }
               tutorialStepIndex={tutorialStepIndex}
+              tutorialNotesVisible={tutorialNotesVisible}
               onSetWorkspaceMode={(mode) =>
                 dispatch({
                   type: 'setWorkspaceMode',
@@ -1244,6 +1381,13 @@ function App() {
                   type: 'setCryptanalysisMode',
                   projectId: activeProjectDefinition.id,
                   mode,
+                })
+              }
+              onSetTutorialNotesVisible={(visible) =>
+                dispatch({
+                  type: 'setTutorialNotesVisible',
+                  projectId: activeProjectDefinition.id,
+                  visible,
                 })
               }
               onCiphertextChange={(value) =>
@@ -1283,63 +1427,175 @@ function App() {
                 })
               }
             />
-          ) : selectedTutorial ? (
-            <TutorialPanel
-              tutorials={state.tutorialLibrary}
-              selectedTutorialId={selectedTutorial.id}
-              currentProjectId={activeProjectDefinition.id}
-              stepIndex={tutorialStepIndex}
-              activeStep={selectedTutorialStep}
-              completedTutorialIds={completedTutorialIds}
-              isCompleted={isTutorialCompleted}
-              workspaceMode={workspaceMode}
-              onSetWorkspaceMode={(mode) =>
-                dispatch({
-                  type: 'setWorkspaceMode',
-                  projectId: activeProjectDefinition.id,
-                  mode,
-                })
-              }
-              onSelectTutorial={(tutorialId) =>
-                {
-                  const nextTutorial =
-                    state.tutorialLibrary.find((tutorial) => tutorial.id === tutorialId) ?? null;
-                  setStepIndex(nextTutorial?.steps[0]?.targetStepIndex ?? null);
-                  dispatch({
-                    type: 'selectTutorial',
-                    projectId: activeProjectDefinition.id,
-                    tutorialId,
-                  });
-                }
-              }
-              onSetStep={(stepValue) => {
-                setStepIndex(selectedTutorial?.steps[stepValue]?.targetStepIndex ?? null);
-                dispatch({
-                  type: 'setTutorialStep',
-                  projectId: activeProjectDefinition.id,
-                  stepIndex: stepValue,
-                });
-              }}
-              onSwitchProject={(projectId) =>
-                dispatch({
-                  type: 'switchProject',
-                  projectId,
-                })
-              }
-              onFocusStepModule={(moduleId) =>
-                dispatch({
-                  type: 'selectModule',
-                  projectId: activeProjectDefinition.id,
-                  moduleId,
-                })
-              }
-              onResetProgress={() =>
-                dispatch({
-                  type: 'resetTutorialProgress',
-                  projectId: activeProjectDefinition.id,
-                })
-              }
-            />
+          ) : hasChallengePanel || hasTutorialPanel ? (
+            <section className="learning-dock">
+              <div className="learning-dock-tabs" role="tablist" aria-label="Learning panel">
+                {hasTutorialPanel ? (
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeLearningPanelTab === 'tutorial'}
+                    className={
+                      activeLearningPanelTab === 'tutorial'
+                        ? 'learning-dock-tab active'
+                        : 'learning-dock-tab'
+                    }
+                    onClick={() => setLearningPanelTab('tutorial')}
+                  >
+                    Tutorial
+                  </button>
+                ) : null}
+                {hasChallengePanel ? (
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeLearningPanelTab === 'challenge'}
+                    className={
+                      activeLearningPanelTab === 'challenge'
+                        ? 'learning-dock-tab active'
+                        : 'learning-dock-tab'
+                    }
+                    onClick={() => setLearningPanelTab('challenge')}
+                  >
+                    Challenge
+                  </button>
+                ) : null}
+              </div>
+
+              {activeLearningPanelTab === 'challenge' && selectedChallenge ? (
+                <ChallengePanel
+                  challenges={state.challengeLibrary}
+                  selectedChallengeId={selectedChallenge.id}
+                  evaluation={challengeEvaluation}
+                  canCaptureChallenge={canCaptureChallenge}
+                  onSelectChallenge={(challengeId) =>
+                    {
+                      setLearningPanelTab('challenge');
+                      dispatch({
+                        type: 'selectChallenge',
+                        projectId: activeProjectDefinition.id,
+                        challengeId,
+                      });
+                    }
+                  }
+                  onLoadChallengeStart={() => {
+                    setLearningPanelTab('challenge');
+                    setIsChallengeResetConfirmOpen(true);
+                  }}
+                  onExportChallenge={() => downloadGuidedChallengeDocument(selectedChallenge)}
+                  onCaptureChallenge={() => {
+                    setLearningPanelTab('challenge');
+                    const defaultTitle = `${activeProjectDefinition.name} Guided Lab`;
+                    setChallengeCaptureTitle(defaultTitle);
+                    setChallengeCaptureId(createChallengeIdCandidate(defaultTitle));
+                    if (activeProjectDefinition.id === 'sequential') {
+                      setChallengeCaptureDifficulty('intermediate');
+                      setChallengeCapturePrompt(
+                        `Repair or complete the ${activeProjectDefinition.name} machine until its running output stream matches the captured reference behavior.`,
+                      );
+                      setChallengeCaptureHints(
+                        'The clock period controls when the machine advances.\nUse the tick bar and probes to find the first wrong moment.',
+                      );
+                    } else {
+                      setChallengeCaptureDifficulty('beginner');
+                      setChallengeCapturePrompt(
+                        `Repair or complete the ${activeProjectDefinition.name} machine until its output matches the captured reference behavior.`,
+                      );
+                      setChallengeCaptureHints('');
+                    }
+                    setChallengeCaptureShouldExport(true);
+                    setChallengeCaptureError(null);
+                    setIsChallengeCaptureOpen(true);
+                  }}
+                  onImportChallenge={async (file) => {
+                    const rawValue = await file.text();
+                    const challengeDocument = parseGuidedChallengeDocument(rawValue);
+                    if (!challengeDocument) {
+                      setImportError('The selected file is not a valid MCW guided challenge document.');
+                      return;
+                    }
+
+                    dispatch({
+                      type: 'upsertChallenge',
+                      challenge: challengeDocument,
+                    });
+                    setLearningPanelTab('challenge');
+                    dispatch({
+                      type: 'selectChallenge',
+                      projectId: activeProjectDefinition.id,
+                      challengeId: challengeDocument.id,
+                    });
+                    setImportError(null);
+                  }}
+                />
+              ) : null}
+
+              {activeLearningPanelTab === 'tutorial' && selectedTutorial ? (
+                <TutorialPanel
+                  tutorials={state.tutorialLibrary}
+                  selectedTutorialId={selectedTutorial.id}
+                  currentProjectId={activeProjectDefinition.id}
+                  stepIndex={tutorialStepIndex}
+                  activeStep={selectedTutorialStep}
+                  completedTutorialIds={completedTutorialIds}
+                  isCompleted={isTutorialCompleted}
+                  workspaceMode={workspaceMode}
+                  tutorialNotesVisible={tutorialNotesVisible}
+                  onSetWorkspaceMode={(mode) =>
+                    dispatch({
+                      type: 'setWorkspaceMode',
+                      projectId: activeProjectDefinition.id,
+                      mode,
+                    })
+                  }
+                  onSetTutorialNotesVisible={(visible) =>
+                    dispatch({
+                      type: 'setTutorialNotesVisible',
+                      projectId: activeProjectDefinition.id,
+                      visible,
+                    })
+                  }
+                  onSelectTutorial={(tutorialId) => {
+                    const nextTutorial =
+                      state.tutorialLibrary.find((tutorial) => tutorial.id === tutorialId) ?? null;
+                    setLearningPanelTab('tutorial');
+                    setStepIndex(nextTutorial?.steps[0]?.targetStepIndex ?? null);
+                    dispatch({
+                      type: 'selectTutorial',
+                      projectId: activeProjectDefinition.id,
+                      tutorialId,
+                    });
+                  }}
+                  onSetStep={(stepValue) => {
+                    setStepIndex(selectedTutorial?.steps[stepValue]?.targetStepIndex ?? null);
+                    dispatch({
+                      type: 'setTutorialStep',
+                      projectId: activeProjectDefinition.id,
+                      stepIndex: stepValue,
+                    });
+                  }}
+                  onSwitchProject={(projectId) =>
+                    dispatch({
+                      type: 'switchProject',
+                      projectId,
+                    })
+                  }
+                  onFocusStepModule={(moduleId) =>
+                    dispatch({
+                      type: 'selectModule',
+                      projectId: activeProjectDefinition.id,
+                      moduleId,
+                    })
+                  }
+                  onResetProgress={() =>
+                    dispatch({
+                      type: 'resetTutorialProgress',
+                      projectId: activeProjectDefinition.id,
+                    })
+                  }
+                />
+              ) : null}
+            </section>
           ) : null}
 
         </>
@@ -1718,6 +1974,7 @@ function App() {
                     type: 'upsertChallenge',
                     challenge: authoredChallenge,
                   });
+                  setLearningPanelTab('challenge');
                   dispatch({
                     type: 'selectChallenge',
                     projectId: activeProjectDefinition.id,

@@ -144,6 +144,7 @@ export function buildPersistedWorkspace(state: UiState): PersistedWorkspaceDocum
   return {
     version: 1,
     activeProjectId: state.activeProjectId,
+    defaultWorkspaceMode: state.defaultWorkspaceMode,
     showPalette: state.showPalette,
     showInspector: state.showInspector,
     documentsByProjectId: Object.fromEntries(
@@ -191,6 +192,12 @@ export function buildPersistedWorkspace(state: UiState): PersistedWorkspaceDocum
       Object.keys(state.projectStates).map((projectId) => [
         projectId,
         state.completedTutorialsByProject[projectId] ?? [],
+      ]),
+    ),
+    tutorialNotesVisibleByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.tutorialNotesVisibleByProject[projectId] ?? true,
       ]),
     ),
     workspaceModeByProjectId: Object.fromEntries(
@@ -304,6 +311,12 @@ export function loadWorkspaceFromStorage(
       activeProjectId: allowedProjectIds.has(parsed.activeProjectId)
         ? parsed.activeProjectId
         : projects[0]?.id ?? '',
+      defaultWorkspaceMode:
+        parsed.defaultWorkspaceMode === 'build' ||
+        parsed.defaultWorkspaceMode === 'guide' ||
+        parsed.defaultWorkspaceMode === 'cryptanalysis'
+          ? parsed.defaultWorkspaceMode
+          : 'guide',
       documentsByProjectId: filteredDocuments,
       comparisonBaselinesByProjectId: Object.fromEntries(
         Object.entries(parsed.comparisonBaselinesByProjectId).filter(
@@ -340,6 +353,12 @@ export function loadWorkspaceFromStorage(
             allowedProjectIds.has(projectId) &&
             Array.isArray(ids) &&
             ids.every((id) => typeof id === 'string'),
+        ),
+      ),
+      tutorialNotesVisibleByProjectId: Object.fromEntries(
+        Object.entries(parsed.tutorialNotesVisibleByProjectId ?? {}).filter(
+          ([projectId, visible]) =>
+            allowedProjectIds.has(projectId) && typeof visible === 'boolean',
         ),
       ),
       workspaceModeByProjectId: Object.fromEntries(

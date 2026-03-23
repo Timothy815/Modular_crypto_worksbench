@@ -8,8 +8,10 @@ Last updated: March 23, 2026
 
 The project has shipped through `v1.4.0` on `main`.
 
-Current `main` is now in `v1.5.0` cleanup/framing around the
-**Modern Analysis** milestone.
+Current `main` is now beyond `v1.5.0` and in active post-release work around:
+- hashing foundations
+- parameter forwarding
+- future transformation legibility
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -97,6 +99,13 @@ Post-`v1.4.0` work merged to `main`:
 - `The Avalanche Effect` tutorial
 - hashing identified as a future scope line and backlog item
 
+Post-`v1.5.0` work currently active on `main`:
+- Hashing V1 contract framing
+- parameter forwarding contract + first implementation slice
+- toy compression hash and toy sponge hash teaching artifacts
+- hash-focused demos and tutorials
+- active planning for primitive-level transformation visualization
+
 Next branch framing after `v1.5.0`:
 - define Hashing V1 as a product contract
 - then widen modern-analysis breadth across more supported project shapes
@@ -108,9 +117,9 @@ Next branch framing after `v1.5.0`:
 ### Claude
 
 Safe to begin:
-- define the first hashing contract
-- then widen modern-analysis support across more project families
-- keep hashing visually aligned with the existing modern-analysis line
+- continue bounded hashing teaching artifacts
+- tighten tutorial wording and “what to look for” guidance
+- help frame the first transformation-visualization slice without over-scoping it
 
 Should avoid for now:
 - feedback loops / cycles in the graph
@@ -122,14 +131,14 @@ Should avoid for now:
 ### Gemini
 
 Safe to begin:
-- review whether Hashing V1 is the right next product contract
-- help choose the best first modern-analysis breadth slice after `v1.5.0`
-- help keep hashing and modern analysis connected instead of fragmenting the product
+- review the transformation-visualization contract and first-slice scope
+- help choose the first primitive set for drill-down views
+- help keep hashing, modern analysis, and transformation legibility connected instead of fragmenting the product
 
 Best focus:
-- whether Hashing V1 has the right scope boundary
-- what the first hashing teaching artifact should look like
-- which modern-analysis breadth slice should land before hashing implementation
+- whether transformation visualization has the right product boundary
+- what the first primitive drill-down should be
+- how much tutorial tightening should land before new visualization implementation
 
 ---
 
@@ -140,7 +149,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three pass as of the shipped `v1.5.0` line.
+All three passed on the most recent hashing / forwarding slices.
 
 ---
 
@@ -154,10 +163,11 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 ### Near-Term Roadmap
 
-1. **Define Hashing V1** — lock hashing into the product roadmap
-2. **Widen modern-analysis breadth** — support more project/source/output shapes
-3. **Choose the first hashing teaching artifact**
-4. **Then implement hashing on top of the broader modern-analysis base**
+1. **Continue bounded hashing foundations** — make the hash teaching shapes clearer and more comparable
+2. **Tighten tutorial wording** — make navigation and “what to look for” guidance more explicit
+3. **Define Transformation Visualization V1** — lock primitive-level drill-down into the roadmap
+4. **Choose the first primitive visualization proof**
+5. **Then implement the first legibility slice on top of existing analysis surfaces**
 
 ### Key Contracts
 
@@ -174,5 +184,6 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `KEY-SCHEDULE-GROUNDWORK-V1.md` | Active, implemented as explicit key-bus groundwork |
 | `CRYPTANALYSIS-WORKSPACE-V1.md` | Locked, implemented as the `v1.4.0` workspace boundary |
 | `MODERN-ANALYSIS-V1.md` | Active, implemented as the `v1.5.0` modern-analysis line |
-| `HASHING-V1.md` | Active, defines the future hashing line |
-| `PARAM-FORWARDING-V1.md` | Active, defines explicit exposed-internal controls for reusable architectures |
+| `HASHING-V1.md` | Active, now implemented as first bounded hashing foundations |
+| `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
+| `TRANSFORMATION-VISUALIZATION-V1.md` | Active, defines the future primitive-level drill-down line |

@@ -12,7 +12,9 @@ interface TutorialPanelProps {
   completedTutorialIds: string[];
   isCompleted: boolean;
   workspaceMode: WorkspaceMode;
+  tutorialNotesVisible: boolean;
   onSetWorkspaceMode: (mode: WorkspaceMode) => void;
+  onSetTutorialNotesVisible: (visible: boolean) => void;
   onSelectTutorial: (tutorialId: string) => void;
   onSetStep: (stepIndex: number) => void;
   onSwitchProject: (projectId: string) => void;
@@ -29,7 +31,9 @@ export function TutorialPanel({
   completedTutorialIds,
   isCompleted,
   workspaceMode,
+  tutorialNotesVisible,
   onSetWorkspaceMode,
+  onSetTutorialNotesVisible,
   onSelectTutorial,
   onSetStep,
   onSwitchProject,
@@ -167,6 +171,13 @@ export function TutorialPanel({
       ) : null}
 
       <div className="comparison-actions">
+        <button
+          type="button"
+          className="mini-action-button"
+          onClick={() => onSetTutorialNotesVisible(!tutorialNotesVisible)}
+        >
+          {tutorialNotesVisible ? 'Hide Step Notes' : 'Show Step Notes'}
+        </button>
         {!isTutorialProjectActive ? (
           <button
             type="button"

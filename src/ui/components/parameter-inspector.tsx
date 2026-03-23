@@ -6,6 +6,7 @@ import type {
   ExecutionResult,
   ExecutionTraceEntry,
   ModuleDefinition,
+  ModuleRegistry,
   ModuleInstance,
   Project,
   ValidationIssue,
@@ -17,9 +18,11 @@ import type { TutorialStep } from '../tutorials';
 import { ComparisonPanel } from './comparison-panel';
 import type { ComparisonBaselineDocument } from '../workbench-document';
 import type { ExecutionComparison } from '../execution-compare';
+import { resolveTraceModuleInstance } from '../transformation-resolver';
 
 interface ParameterInspectorProps {
   execution: ExecutionResult | null;
+  registry: ModuleRegistry;
   executionError: string | null;
   validationIssues: ValidationIssue[];
   stepIndex: number | null;
@@ -56,6 +59,7 @@ interface ParameterInspectorProps {
 
 export function ParameterInspector({
   execution,
+  registry,
   executionError,
   validationIssues,
   stepIndex,
@@ -159,6 +163,15 @@ export function ParameterInspector({
     : null;
   const tutorialTraceIndex = tutorialTraceEntry
     ? (execution?.trace.findIndex((entry) => entry.moduleId === tutorialTraceEntry.moduleId) ?? -1) + 1
+    : null;
+  const activeTransformationEntry =
+    inspectorTab === 'analyze'
+      ? effectiveStepperMode === 'nested'
+        ? steppedAnalysisEntry
+        : selectedTrace
+      : null;
+  const transformationView = activeTransformationEntry
+    ? getTransformationView(activeTransformationEntry, project, registry)
     : null;
 
   useEffect(() => {
@@ -529,6 +542,159 @@ export function ParameterInspector({
                 This step explains the machine at a higher level instead of a single module.
               </p>
             )}
+          </div>
+        </section>
+      ) : null}
+
+      {inspectorTab === 'analyze' && transformationView ? (
+        <section className="analysis-section transformation-section">
+          <span className="meta-label">Transformation</span>
+          <div className="transformation-card">
+            <div className="transformation-card-head">
+              <strong>{transformationView.title}</strong>
+              <span>
+                {getDisplayTraceModuleId(transformationView.entry)} ({transformationView.entry.defId})
+              </span>
+            </div>
+            <p className="transformation-copy">
+              {transformationView.copy}
+            </p>
+            {transformationView.kind === 'routing' ? (
+              <>
+                {transformationView.configLabel && transformationView.configValue ? (
+                  <div className="transformation-order">
+                    <span className="meta-label">{transformationView.configLabel}</span>
+                    <code>{transformationView.configValue}</code>
+                  </div>
+                ) : null}
+                <div className="transformation-routing-head">
+                  <span className="meta-label">Input</span>
+                  <span className="meta-label">{transformationView.middleLabel}</span>
+                  <span className="meta-label">Output</span>
+                </div>
+                <div className="transformation-routing">
+                  <div className="transformation-lane">
+                    <div className="transformation-lane-cells">
+                      {transformationView.inputLane.map((row) => (
+                        <div key={`input-${row.inputIndex}`} className="transformation-lane-cell">
+                          <span className="transformation-index">{row.inputIndex}</span>
+                          <strong>{row.inputBit}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div
+                    className="transformation-wire-canvas"
+                    aria-hidden="true"
+                    style={{ height: `${transformationView.svgHeight}px` }}
+                  >
+                    <svg
+                      viewBox={`0 0 220 ${transformationView.svgHeight}`}
+                      preserveAspectRatio="none"
+                    >
+                      {transformationView.rows.map((row) =>
+                        row.kind === 'line' ? (
+                          <line
+                            key={`wire-${row.inputIndex}-${row.outputIndex}`}
+                            x1="18"
+                            y1={row.inputY}
+                            x2="202"
+                            y2={row.outputY}
+                            stroke={row.color}
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            opacity="0.92"
+                          />
+                        ) : (
+                          <g key={`fill-${row.outputIndex}`}>
+                            <line
+                              x1="18"
+                              y1={row.outputY}
+                              x2="202"
+                              y2={row.outputY}
+                              stroke={row.color}
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeDasharray="7 6"
+                              opacity="0.88"
+                            />
+                            <text
+                              x="110"
+                              y={row.outputY - 6}
+                              textAnchor="middle"
+                              className="transformation-wire-label"
+                            >
+                              0-fill
+                            </text>
+                          </g>
+                        ),
+                      )}
+                    </svg>
+                  </div>
+                  <div className="transformation-lane transformation-output-lane">
+                    <div className="transformation-lane-cells">
+                      {transformationView.outputLane.map((row) => (
+                        <div
+                          key={`output-${row.outputIndex}`}
+                          className={
+                            row.kind === 'fill'
+                              ? 'transformation-lane-cell transformation-output-cell transformation-output-fill'
+                              : 'transformation-lane-cell transformation-output-cell'
+                          }
+                        >
+                          <span className="transformation-index">{row.outputIndex}</span>
+                          <strong>{row.outputBit}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="transformation-order">
+                  <span className="meta-label">Rule</span>
+                  <code>same {'->'} 0, different {'->'} 1</code>
+                </div>
+                <div className="xor-grid">
+                  <div className="xor-grid-head">
+                    <span className="meta-label">Index</span>
+                    <span className="meta-label">Input A</span>
+                    <span className="meta-label">Input B</span>
+                    <span className="meta-label">Compare</span>
+                    <span className="meta-label">Output</span>
+                  </div>
+                  {transformationView.rows.map((row) => (
+                    <div key={`xor-${row.index}`} className="xor-grid-row">
+                      <span className="xor-grid-index">{row.index}</span>
+                      <span className="xor-grid-bit">{row.aBit}</span>
+                      <span className="xor-grid-bit">{row.bBit}</span>
+                      <span
+                        className={
+                          row.resultBit === 1
+                            ? 'xor-grid-compare xor-grid-compare-different'
+                            : 'xor-grid-compare'
+                        }
+                      >
+                        {row.explanation}
+                      </span>
+                      <span
+                        className={
+                          row.resultBit === 1
+                            ? 'xor-grid-bit xor-grid-bit-active'
+                            : 'xor-grid-bit'
+                        }
+                      >
+                        {row.resultBit}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            <p className="transformation-summary">
+              {transformationView.summary}
+            </p>
           </div>
         </section>
       ) : null}
@@ -993,6 +1159,326 @@ export function ParameterInspector({
       ) : null}
     </aside>
   );
+}
+
+interface RoutingTransformationRow {
+  inputIndex: number;
+  inputBit: number;
+  outputIndex: number;
+  outputBit: number;
+  inputY: number;
+  outputY: number;
+  color: string;
+  kind: 'line' | 'fill';
+}
+
+interface XorTransformationRow {
+  index: number;
+  aBit: number;
+  bBit: number;
+  resultBit: number;
+  explanation: 'same' | 'different';
+}
+
+interface RoutingTransformationView {
+  entry: ExecutionTraceEntry;
+  kind: 'routing';
+  title: string;
+  copy: string;
+  configLabel: string | null;
+  configValue: string | null;
+  middleLabel: string;
+  rows: RoutingTransformationRow[];
+  inputLane: RoutingTransformationRow[];
+  outputLane: RoutingTransformationRow[];
+  svgHeight: number;
+  summary: string;
+}
+
+interface XorTransformationView {
+  entry: ExecutionTraceEntry;
+  kind: 'xor';
+  title: string;
+  copy: string;
+  rows: XorTransformationRow[];
+  summary: string;
+}
+
+type TransformationView = RoutingTransformationView | XorTransformationView;
+
+function getTransformationView(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): TransformationView | null {
+  if (entry.defId === 'Permutation' || entry.defId === 'PermutationBits') {
+    return getPermutationTransformation(entry, project, registry);
+  }
+  if (entry.defId === 'BitShifter') {
+    return getBitShifterTransformation(entry, project, registry);
+  }
+  if (entry.defId === 'XOR') {
+    return getXorTransformation(entry);
+  }
+  return null;
+}
+
+function getPermutationTransformation(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): RoutingTransformationView | null {
+  const resolved = resolveTraceModuleInstance(entry.moduleId, project, registry);
+  if (!resolved) {
+    return null;
+  }
+
+  const orderValue = resolved.instance.params.order;
+  const order = parsePermutationOrder(orderValue);
+  const inputSignal = entry.inputs.in;
+  const outputSignal = entry.outputs.out;
+  if (inputSignal?.type !== 'bits' || outputSignal?.type !== 'bits') {
+    return null;
+  }
+
+  const rows = order.map((sourceIndex, outputIndex) => ({
+    inputIndex: sourceIndex,
+    inputBit: inputSignal.value[sourceIndex] ?? 0,
+    outputIndex,
+    outputBit: outputSignal.value[outputIndex] ?? 0,
+    kind: 'line' as const,
+  }));
+  const inputLane = [...rows].sort((left, right) => left.inputIndex - right.inputIndex);
+  const outputLane = [...rows].sort((left, right) => left.outputIndex - right.outputIndex);
+  const laneHeight = 32;
+  const laneGap = 6;
+  const laneStep = laneHeight + laneGap;
+  const laneOffset = laneHeight / 2;
+  const svgHeight = Math.max(laneHeight, rows.length * laneHeight + Math.max(0, rows.length - 1) * laneGap);
+  const rowsWithPositions = rows.map((row) => ({
+    ...row,
+    inputY: laneOffset + inputLane.findIndex((candidate) => candidate.inputIndex === row.inputIndex) * laneStep,
+    outputY:
+      laneOffset + outputLane.findIndex((candidate) => candidate.outputIndex === row.outputIndex) * laneStep,
+    color: getPermutationWireColor(row.inputIndex),
+  }));
+
+  const inputLaneRows = [...rowsWithPositions].sort((left, right) => left.inputIndex - right.inputIndex);
+  const outputLaneRows = [...rowsWithPositions].sort((left, right) => left.outputIndex - right.outputIndex);
+
+  return {
+    entry,
+    kind: 'routing',
+    title: 'Permutation Mapping',
+    copy: 'This permutation reorders bit positions without changing the bit values themselves.',
+    configLabel: 'Order',
+    configValue: order.join(', '),
+    middleLabel: 'Route',
+    rows: rowsWithPositions,
+    inputLane: inputLaneRows,
+    outputLane: outputLaneRows,
+    svgHeight,
+    summary:
+      rows.length === 0
+        ? 'This permutation has no visible positions to remap.'
+        : `Output position 0 reads input position ${rows[0]?.inputIndex}. Each wire shows where one input position lands in the output.`,
+  };
+}
+
+function getBitShifterTransformation(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): RoutingTransformationView | null {
+  const resolved = resolveTraceModuleInstance(entry.moduleId, project, registry);
+  if (!resolved) {
+    return null;
+  }
+
+  const amountValue = resolved.instance.params.amount;
+  const modeValue = resolved.instance.params.mode;
+  const amount =
+    typeof amountValue === 'number' && Number.isFinite(amountValue)
+      ? Math.max(0, Math.trunc(amountValue))
+      : 0;
+  const mode =
+    typeof modeValue === 'string' ? modeValue : 'left';
+  const inputSignal = entry.inputs.in;
+  const outputSignal = entry.outputs.out;
+  if (inputSignal?.type !== 'bits' || outputSignal?.type !== 'bits') {
+    return null;
+  }
+
+  const bitLength = Math.max(inputSignal.value.length, outputSignal.value.length);
+  if (bitLength === 0) {
+    return null;
+  }
+
+  const rows: RoutingTransformationRow[] = [];
+  for (let outputIndex = 0; outputIndex < outputSignal.value.length; outputIndex += 1) {
+    const sourceIndex = getBitShifterSourceIndex(outputIndex, inputSignal.value.length, amount, mode);
+    rows.push({
+      inputIndex: sourceIndex ?? outputIndex,
+      inputBit: sourceIndex === null ? 0 : inputSignal.value[sourceIndex] ?? 0,
+      outputIndex,
+      outputBit: outputSignal.value[outputIndex] ?? 0,
+      inputY: 0,
+      outputY: 0,
+      color: sourceIndex === null ? 'var(--muted)' : getPermutationWireColor(sourceIndex),
+      kind: sourceIndex === null ? 'fill' : 'line',
+    });
+  }
+
+  const laneHeight = 32;
+  const laneGap = 6;
+  const laneStep = laneHeight + laneGap;
+  const laneOffset = laneHeight / 2;
+  const svgHeight = Math.max(
+    laneHeight,
+    outputSignal.value.length * laneHeight + Math.max(0, outputSignal.value.length - 1) * laneGap,
+  );
+
+  const rowsWithPositions = rows.map((row) => ({
+    ...row,
+    inputY: row.kind === 'fill' ? laneOffset + row.outputIndex * laneStep : laneOffset + row.inputIndex * laneStep,
+    outputY: laneOffset + row.outputIndex * laneStep,
+  }));
+
+  const inputLane = inputSignal.value.map((inputBit, inputIndex) => {
+    const row = rowsWithPositions.find((candidate) => candidate.inputIndex === inputIndex && candidate.kind === 'line');
+    return {
+      inputIndex,
+      inputBit,
+      outputIndex: row?.outputIndex ?? inputIndex,
+      outputBit: row?.outputBit ?? 0,
+      inputY: laneOffset + inputIndex * laneStep,
+      outputY: row?.outputY ?? laneOffset + inputIndex * laneStep,
+      color: row?.color ?? getPermutationWireColor(inputIndex),
+      kind: 'line' as const,
+    };
+  });
+  const outputLane = [...rowsWithPositions].sort((left, right) => left.outputIndex - right.outputIndex);
+
+  return {
+    entry,
+    kind: 'routing',
+    title: 'Bit Shift Mapping',
+    copy:
+      mode === 'rotate-left' || mode === 'rotate-right'
+        ? 'This shifter rotates positions, so bits wrap around instead of dropping off the edge.'
+        : 'This shifter moves positions and fills the opened edge with zero bits.',
+    configLabel: 'Mode / Amount',
+    configValue: `${formatBitShifterMode(mode)} · ${amount}`,
+    middleLabel: mode.startsWith('rotate') ? 'Wrap' : 'Shift',
+    rows: rowsWithPositions,
+    inputLane,
+    outputLane,
+    svgHeight,
+    summary: getBitShifterSummary(mode, amount, rowsWithPositions),
+  };
+}
+
+function getXorTransformation(entry: ExecutionTraceEntry): XorTransformationView | null {
+  const inputA = entry.inputs.a;
+  const inputB = entry.inputs.b;
+  const output = entry.outputs.out;
+  if (inputA?.type !== 'bits' || inputB?.type !== 'bits' || output?.type !== 'bits') {
+    return null;
+  }
+
+  const length = Math.min(inputA.value.length, inputB.value.length, output.value.length);
+  const rows: XorTransformationRow[] = [];
+  for (let index = 0; index < length; index += 1) {
+    const aBit = inputA.value[index] ?? 0;
+    const bBit = inputB.value[index] ?? 0;
+    const resultBit = output.value[index] ?? 0;
+    rows.push({
+      index,
+      aBit,
+      bBit,
+      resultBit,
+      explanation: aBit === bBit ? 'same' : 'different',
+    });
+  }
+
+  const differentCount = rows.filter((row) => row.resultBit === 1).length;
+  return {
+    entry,
+    kind: 'xor',
+    title: 'Exclusive-Or Comparison',
+    copy:
+      'XOR compares two input bits at the same position. When exactly one input is 1, the output becomes 1. When both inputs match, the output becomes 0.',
+    rows,
+    summary:
+      rows.length === 0
+        ? 'This XOR has no overlapping bit positions to compare.'
+        : `${differentCount} of ${rows.length} bit pair${rows.length === 1 ? '' : 's'} differ. XOR outputs 1 only where the two inputs disagree.`,
+  };
+}
+
+function parsePermutationOrder(value: unknown): number[] {
+  if (typeof value !== 'string') {
+    return [];
+  }
+
+  return value
+    .split(',')
+    .map((part) => Number(part.trim()))
+    .filter((part) => Number.isInteger(part) && part >= 0);
+}
+
+function getPermutationWireColor(index: number) {
+  const hue = (index * 47) % 360;
+  return `hsl(${hue} 72% 54%)`;
+}
+
+function getBitShifterSourceIndex(
+  outputIndex: number,
+  bitLength: number,
+  amount: number,
+  mode: string,
+) {
+  switch (mode) {
+    case 'left':
+      return outputIndex + amount < bitLength ? outputIndex + amount : null;
+    case 'right':
+      return outputIndex - amount >= 0 ? outputIndex - amount : null;
+    case 'rotate-left':
+      return bitLength === 0 ? null : (outputIndex + (amount % bitLength)) % bitLength;
+    case 'rotate-right':
+      if (bitLength === 0) {
+        return null;
+      }
+      return (outputIndex - (amount % bitLength) + bitLength) % bitLength;
+    default:
+      return null;
+  }
+}
+
+function formatBitShifterMode(mode: string) {
+  switch (mode) {
+    case 'left':
+      return 'Shift Left';
+    case 'right':
+      return 'Shift Right';
+    case 'rotate-left':
+      return 'Rotate Left';
+    case 'rotate-right':
+      return 'Rotate Right';
+    default:
+      return mode;
+  }
+}
+
+function getBitShifterSummary(mode: string, amount: number, rows: RoutingTransformationRow[]) {
+  const fillCount = rows.filter((row) => row.kind === 'fill').length;
+  if (mode === 'rotate-left' || mode === 'rotate-right') {
+    return `Every output position pulls from another input position. A ${formatBitShifterMode(mode).toLowerCase()} by ${amount} wraps bits around the far edge instead of discarding them.`;
+  }
+
+  return fillCount === 0
+    ? `This shift moves every visible bit by ${amount} position${amount === 1 ? '' : 's'} without opening a zero-filled edge.`
+    : `${fillCount} output position${fillCount === 1 ? '' : 's'} are zero-filled because a plain ${formatBitShifterMode(mode).toLowerCase()} shift drops bits off one edge and opens space on the other.`;
 }
 
 function humanizeIssueCode(code: ValidationIssue['code']) {

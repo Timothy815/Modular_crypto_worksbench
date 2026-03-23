@@ -62,6 +62,11 @@ interface WorkbenchPanelProps {
   activeAnalysisOwnerModuleId?: string | null;
   divergenceModuleId?: string | null;
   tutorialStep?: TutorialStep | null;
+  tutorialTitle?: string | null;
+  tutorialStepIndex?: number;
+  tutorialStepCount?: number;
+  showTutorialToggle?: boolean;
+  tutorialNotesVisible?: boolean;
   challengeSolved?: boolean;
   isCompositeEditor?: boolean;
   probedModuleIds?: string[];
@@ -95,6 +100,8 @@ interface WorkbenchPanelProps {
   onRemoveConnection: (connectionIndex: number) => void;
   onExportDocument: () => void;
   onImportDocument: (file: File) => void;
+  onSetTutorialStep?: (stepIndex: number) => void;
+  onSetTutorialNotesVisible?: (visible: boolean) => void;
   projects: DemoProject[];
 }
 
@@ -118,6 +125,11 @@ export function WorkbenchPanel({
   activeAnalysisOwnerModuleId = null,
   divergenceModuleId = null,
   tutorialStep = null,
+  tutorialTitle = null,
+  tutorialStepIndex = 0,
+  tutorialStepCount = 0,
+  showTutorialToggle = false,
+  tutorialNotesVisible = true,
   challengeSolved = false,
   isCompositeEditor = false,
   probedModuleIds = [],
@@ -146,6 +158,8 @@ export function WorkbenchPanel({
   onRemoveConnection,
   onExportDocument,
   onImportDocument,
+  onSetTutorialStep,
+  onSetTutorialNotesVisible,
   projects,
 }: WorkbenchPanelProps) {
   const canvasSurfaceRef = useRef<HTMLDivElement | null>(null);
@@ -476,6 +490,15 @@ export function WorkbenchPanel({
         >
           Create Composite
         </button>
+        {showTutorialToggle ? (
+          <button
+            type="button"
+            className="mini-action-button"
+            onClick={() => onSetTutorialNotesVisible?.(!tutorialNotesVisible)}
+          >
+            {tutorialNotesVisible ? 'Hide Step Notes' : 'Show Step Notes'}
+          </button>
+        ) : null}
         <input
           ref={importInputRef}
           type="file"
@@ -494,13 +517,48 @@ export function WorkbenchPanel({
       {tutorialStep ? (
         <div className="tutorial-step-banner">
           <span className="meta-label">Tutorial Step</span>
-          <strong>{tutorialStep.title}</strong>
+          <strong>
+            {tutorialTitle ? `${tutorialTitle} — ` : ''}
+            {tutorialStep.title}
+            {tutorialStepCount > 0 ? ` (${tutorialStepIndex + 1}/${tutorialStepCount})` : ''}
+          </strong>
           <p>{tutorialStep.body}</p>
           {tutorialStep.focusModuleId ? (
             <p className="tutorial-step-target">
               Focus: <strong>{tutorialStep.focusModuleId}</strong>
             </p>
           ) : null}
+          <div className="tutorial-step-actions">
+            {onSetTutorialStep && tutorialStepCount > 0 ? (
+              <>
+                <button
+                  type="button"
+                  className="mini-action-button"
+                  disabled={tutorialStepIndex <= 0}
+                  onClick={() => onSetTutorialStep(Math.max(0, tutorialStepIndex - 1))}
+                >
+                  &lt;&lt;
+                </button>
+                <button
+                  type="button"
+                  className="mini-action-button"
+                  disabled={tutorialStepIndex >= tutorialStepCount - 1}
+                  onClick={() => onSetTutorialStep(Math.min(tutorialStepCount - 1, tutorialStepIndex + 1))}
+                >
+                  &gt;&gt;
+                </button>
+              </>
+            ) : null}
+            {showTutorialToggle ? (
+              <button
+                type="button"
+                className="mini-action-button"
+                onClick={() => onSetTutorialNotesVisible?.(!tutorialNotesVisible)}
+              >
+                Hide
+              </button>
+            ) : null}
+          </div>
         </div>
       ) : null}
       {selectedModuleIds.length > 0 ? (

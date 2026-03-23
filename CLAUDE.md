@@ -7,6 +7,7 @@ Read KEY-SCHEDULE-GROUNDWORK-V1.md before extending iterator-aware key distribut
 Read CRYPTANALYSIS-WORKSPACE-V1.md before starting work on the post-v1.3 cryptanalysis workspace.
 Read MODERN-ANALYSIS-V1.md before starting work on the post-v1.4 modern-analysis line.
 Read HASHING-V1.md before starting work on the hashing line.
+Read TRANSFORMATION-VISUALIZATION-V1.md before starting work on primitive-level drill-down or transformation-legibility features.
 Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
 Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
 
@@ -157,12 +158,14 @@ Key contracts to check before implementation:
 - `MODERN-ANALYSIS-V1.md` for the first post-`v1.4.0` visual analysis milestone
 - `HASHING-V1.md` for the future hashing line and scope boundary
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
+- `TRANSFORMATION-VISUALIZATION-V1.md` for primitive-level transformation legibility and drill-down scope
 
 Near-term follow-ups:
-- define Hashing V1 clearly before implementation
-- then widen modern-analysis breadth across more supported project shapes
+- continue bounded hashing foundations
+- tighten tutorial wording and “what to look for” guidance
 - keep hashing connected to the modern-analysis visual language
-- avoid dropping hashing in as a black-box algorithm picker
+- frame the first transformation-visualization slice before implementation
+- avoid dropping transformation views in as decorative motion without explanation
 
 ## When Working on This Project
 

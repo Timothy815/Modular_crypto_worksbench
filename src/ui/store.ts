@@ -22,6 +22,7 @@ import type {
 
 export interface UiState {
   activeProjectId: string;
+  defaultWorkspaceMode: WorkspaceMode;
   challengeLibrary: GuidedChallenge[];
   tutorialLibrary: GuidedTutorial[];
   compositeLibrary: CompositeLibraryEntry[];
@@ -34,6 +35,7 @@ export interface UiState {
   activeTutorialIdByProject: Record<string, string | null>;
   activeTutorialStepByProject: Record<string, number>;
   completedTutorialsByProject: Record<string, string[]>;
+  tutorialNotesVisibleByProject: Record<string, boolean>;
   probedModuleIdsByProject: Record<string, string[]>;
   workspaceModeByProject: Record<string, WorkspaceMode>;
   cryptanalysisModeByProject: Record<string, CryptanalysisMode>;
@@ -92,8 +94,10 @@ export type UiAction =
   | { type: 'setTutorialStep'; projectId: string; stepIndex: number }
   | { type: 'completeTutorial'; projectId: string; tutorialId: string }
   | { type: 'resetTutorialProgress'; projectId: string }
+  | { type: 'setTutorialNotesVisible'; projectId: string; visible: boolean }
   | { type: 'toggleProbe'; projectId: string; moduleId: string }
   | { type: 'clearProbes'; projectId: string }
+  | { type: 'setDefaultWorkspaceMode'; mode: WorkspaceMode }
   | { type: 'setWorkspaceMode'; projectId: string; mode: WorkspaceMode }
   | { type: 'setCryptanalysisMode'; projectId: string; mode: CryptanalysisMode }
   | { type: 'setCryptanalysisInput'; projectId: string; value: string }
@@ -188,6 +192,7 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
   );
   return {
     activeProjectId: projects[0]?.id ?? '',
+    defaultWorkspaceMode: 'guide',
     challengeLibrary: STARTER_CHALLENGES.map((challenge) => ({
       ...challenge,
       startingProject: cloneProject(challenge.startingProject),
@@ -232,6 +237,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     ),
     completedTutorialsByProject: Object.fromEntries(
       projects.map((project) => [project.id, []]),
+    ),
+    tutorialNotesVisibleByProject: Object.fromEntries(
+      projects.map((project) => [project.id, true]),
     ),
     probedModuleIdsByProject: Object.fromEntries(
       projects.map((project) => [project.id, []]),
@@ -917,6 +925,14 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           [action.projectId]: 0,
         },
       };
+    case 'setTutorialNotesVisible':
+      return {
+        ...state,
+        tutorialNotesVisibleByProject: {
+          ...state.tutorialNotesVisibleByProject,
+          [action.projectId]: action.visible,
+        },
+      };
     case 'toggleProbe': {
       const probed = state.probedModuleIdsByProject[action.projectId] ?? [];
       const isProbed = probed.includes(action.moduleId);
@@ -937,6 +953,14 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           ...state.probedModuleIdsByProject,
           [action.projectId]: [],
         },
+      };
+    case 'setDefaultWorkspaceMode':
+      return {
+        ...state,
+        defaultWorkspaceMode: action.mode,
+        workspaceModeByProject: Object.fromEntries(
+          Object.keys(state.projectStates).map((projectId) => [projectId, action.mode]),
+        ),
       };
     case 'setWorkspaceMode':
       return {
