@@ -21,6 +21,7 @@ describe('evaluateChallengeAttempt', () => {
   const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
   const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
   const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
+  const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-lorenz');
   const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
   const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
   const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
@@ -36,6 +37,9 @@ describe('evaluateChallengeAttempt', () => {
   }
   if (!lorenzProject) {
     throw new Error('Expected lorenz-foundation project.');
+  }
+  if (!gatedLorenzProject) {
+    throw new Error('Expected gated-lorenz project.');
   }
   if (!byteRoundProject) {
     throw new Error('Expected byte-round project.');
@@ -197,6 +201,32 @@ describe('evaluateChallengeAttempt', () => {
     expect(result.reason).toBe('diverged-from-target');
     expect(result.comparison?.outputsMatch).toBe(false);
     expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('lfsr');
+  });
+
+  it('returns failure when a gated lorenz machine uses the wrong gate seed', () => {
+    const currentProject = cloneProject(gatedLorenzProject.project);
+    const gateModule = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'gate');
+    if (!gateModule) {
+      throw new Error('Expected gate LFSR module in gated-lorenz project.');
+    }
+    gateModule.params.seed = [0, 1, 0, 1, 0];
+
+    const challenge: GuidedChallenge = {
+      id: 'gated-lorenz-failure',
+      title: 'Gated Lorenz Failure',
+      prompt: 'Repair the teleprinter wheel gate.',
+      startingProject: cloneProject(currentProject),
+      targetProject: cloneProject(gatedLorenzProject.project),
+      success: { kind: 'output-match-target' },
+    };
+
+    const result = evaluateChallengeAttempt(challenge, currentProject, V1_REGISTRY);
+
+    expect(result.status).toBe('failure');
+    expect(result.reason).toBe('diverged-from-target');
+    expect(result.comparison?.outputsMatch).toBe(false);
+    expect(result.comparison?.firstDivergence?.tickIndex).toBe(1);
+    expect(result.comparison?.firstDivergence?.variant?.moduleId).toBe('data');
   });
 
   it('returns failure when a bit-domain round diverges from the target output bits', () => {

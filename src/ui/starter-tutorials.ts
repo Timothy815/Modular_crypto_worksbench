@@ -3,6 +3,58 @@ import type { GuidedTutorial } from './tutorials';
 export const STARTER_TUTORIALS: GuidedTutorial[] = [
   {
     version: 1,
+    id: 'gated-lorenz',
+    title: 'The Gated Lorenz',
+    group: 'Historical Bridges',
+    summary: 'Learn how one wheel stream can control when a second teleprinter keystream register advances.',
+    projectId: 'gated-lorenz',
+    steps: [
+      {
+        id: 'gated-lorenz-clock',
+        title: 'Drive The First Wheel',
+        body: 'Clock advances the gate register on every tick. In this lab, time stays explicit while the teleprinter machine decides for itself when the data wheel is allowed to move.',
+        focusModuleId: 'clock',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'gated-lorenz-gate',
+        title: 'Emit The Step Signal',
+        body: 'The gate LFSR produces one bit each tick. A 1 pulse advances the 5-bit data register; a 0 leaves it frozen for that codeword.',
+        focusModuleId: 'gate',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'gated-lorenz-data',
+        title: 'Advance The Key Wheel Conditionally',
+        body: 'The data LFSR emits one 5-bit keystream slice per active step. This models the idea that a teleprinter-era masking wheel can be driven by another part of the machine instead of raw clock time alone.',
+        focusModuleId: 'data',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'gated-lorenz-source',
+        title: 'Hold One Codeword Per Tick',
+        body: 'BaudotSource still feeds one 5-bit codeword on every tick, so students can compare the teleprinter text rhythm against the gated keystream rhythm directly.',
+        focusModuleId: 'source',
+        targetStepIndex: 3,
+      },
+      {
+        id: 'gated-lorenz-xor',
+        title: 'Unmix Telegraph And Key',
+        body: 'XOR combines the incoming Baudot codeword with the current 5-bit keystream slice. When the data wheel pauses, the same key slice is reused for another teleprinter character.',
+        focusModuleId: 'xor',
+        targetStepIndex: 4,
+      },
+      {
+        id: 'gated-lorenz-output',
+        title: 'Read The Result',
+        body: 'BitsToBaudot and Output close the loop back into readable teleprinter text. Use playback and the history chips to see where gate pulses change the recovered message.',
+        focusModuleId: 'output',
+        targetStepIndex: 5,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'lorenz-foundation',
     title: 'The Lorenz Foundation',
     group: 'Historical Bridges',

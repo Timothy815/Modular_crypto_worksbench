@@ -8,6 +8,7 @@ function cloneProject<T>(value: T): T {
 const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
 const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
 const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
+const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-lorenz');
 const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
 const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
 const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
@@ -23,6 +24,9 @@ if (!baudotProject) {
 }
 if (!lorenzProject) {
   throw new Error('Expected lorenz-foundation demo project to seed starter challenges.');
+}
+if (!gatedLorenzProject) {
+  throw new Error('Expected gated-lorenz demo project to seed starter challenges.');
 }
 if (!byteRoundProject) {
   throw new Error('Expected byte-round demo project to seed starter challenges.');
@@ -49,6 +53,8 @@ const baudotTarget = cloneProject(baudotProject.project);
 const brokenBaudotStart = cloneProject(baudotProject.project);
 const lorenzTarget = cloneProject(lorenzProject.project);
 const brokenLorenzStart = cloneProject(lorenzProject.project);
+const gatedLorenzTarget = cloneProject(gatedLorenzProject.project);
+const brokenGatedLorenzStart = cloneProject(gatedLorenzProject.project);
 const byteRoundTarget = cloneProject(byteRoundProject.project);
 const brokenByteRoundStart = cloneProject(byteRoundProject.project);
 const hexRoundTarget = cloneProject(hexRoundProject.project);
@@ -84,6 +90,14 @@ if (!brokenLorenzLfsr) {
   throw new Error('Expected lorenz-foundation demo project to contain an LFSR module.');
 }
 brokenLorenzLfsr.params.seed = [0, 0, 0, 0, 1];
+
+const brokenGatedLorenzGate = brokenGatedLorenzStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'gate',
+);
+if (!brokenGatedLorenzGate) {
+  throw new Error('Expected gated-lorenz demo project to contain a gate LFSR module.');
+}
+brokenGatedLorenzGate.params.seed = [0, 1, 0, 1, 0];
 
 const brokenPermutationModule = brokenByteRoundStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'permute',
@@ -199,6 +213,26 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The source ciphertext is already correct in this lab.',
       'Focus on the LFSR seed feeding the XOR stage.',
       'If the keystream is wrong, the first divergence appears as soon as the wrong 5-bit group is unmixed.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-wheel-gate',
+    title: 'Repair the Wheel Gate',
+    group: 'Historical Bridges',
+    difficulty: 'expert',
+    prompt:
+      'The teleprinter ciphertext and data wheel are still correct, but the gate wheel is stepping the 5-bit keystream at the wrong moments. Repair the gate seed so the recovered Baudot output matches the captured reference machine again.',
+    startingProject: brokenGatedLorenzStart,
+    startingLayout: cloneProject(gatedLorenzProject.layout),
+    targetProject: gatedLorenzTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The first wheel does not decode the message directly; it controls when the second wheel advances.',
+      'Watch the gate output on each tick and compare its rhythm against the target run.',
+      'If the gate wheel pauses the data wheel on the wrong codeword, the recovered teleprinter text drifts immediately.',
     ],
   },
   {
