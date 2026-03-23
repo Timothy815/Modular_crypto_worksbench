@@ -8,6 +8,7 @@ Read CRYPTANALYSIS-WORKSPACE-V1.md before starting work on the post-v1.3 cryptan
 Read MODERN-ANALYSIS-V1.md before starting work on the post-v1.4 modern-analysis line.
 Read HASHING-V1.md before starting work on the hashing line.
 Read TRANSFORMATION-VISUALIZATION-V1.md before starting work on primitive-level drill-down or transformation-legibility features.
+Read SBOX-TRANSFORMATION-V1.md before starting work on the first S-Box transformation view.
 Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
 Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
 
@@ -133,7 +134,7 @@ src/utils/     — Shared helpers
 - `v1.3.0` is already shipped
 - `v1.4.0` is already shipped
 - `v1.5.0` is already shipped
-- Current `main` is defining the post-`v1.5.0` hashing line and modern-analysis breadth direction
+- Current `main` is extending hashing and transformation-legibility depth after the first transformation milestone
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -148,6 +149,7 @@ What is shipped on `main`:
 - dedicated Cryptanalysis workspace and Vigenere workshop flow
 - modern-analysis Avalanche Explorer and guided Avalanche tutorial
 - hashing is now explicitly in planned scope via contract, not just as an idea
+- first transformation views for `Permutation`, `BitShifter`, and `XOR`
 
 Key contracts to check before implementation:
 - `ENGINE-V1-CONTRACT.md` for engine decisions
@@ -159,12 +161,13 @@ Key contracts to check before implementation:
 - `HASHING-V1.md` for the future hashing line and scope boundary
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for primitive-level transformation legibility and drill-down scope
+- `SBOX-TRANSFORMATION-V1.md` for the next lookup/substitution visual family
 
 Near-term follow-ups:
 - continue bounded hashing foundations
-- tighten tutorial wording and “what to look for” guidance
 - keep hashing connected to the modern-analysis visual language
-- frame the first transformation-visualization slice before implementation
+- design the first `SBox` transformation view before implementation
+- avoid turning substitution into a dense table browser
 - avoid dropping transformation views in as decorative motion without explanation
 
 ## When Working on This Project

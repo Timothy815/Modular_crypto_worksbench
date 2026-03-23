@@ -105,5 +105,6 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 1. Continue bounded hashing foundations and compare the emerging hash teaching shapes
 2. Tighten tutorial wording and “what to look for” guidance across existing labs
 3. Define the first Transformation Visualization slice before implementation
+4. Define the first `SBox` transformation view before implementation
 4. Add primitive-level drill-down views for key opaque operations
 5. Only then decide whether deeper animation and multi-step playback belong in the next milestone

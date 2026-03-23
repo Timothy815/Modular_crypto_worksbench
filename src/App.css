@@ -2204,6 +2204,147 @@ body.dock-resizing {
   border-color: color-mix(in srgb, var(--danger-text) 42%, var(--line));
 }
 
+.sbox-chunk-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.sbox-chunk-chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-weight: 700;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.sbox-chunk-chip.active {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--line));
+  color: var(--ink);
+}
+
+.sbox-view {
+  display: grid;
+  gap: 14px;
+}
+
+.sbox-table-wrap {
+  display: grid;
+  gap: 4px;
+}
+
+.sbox-table-cell {
+  min-height: 34px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sbox-table-cell.context {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--line));
+}
+
+.sbox-table-cell.active {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.sbox-table-corner,
+.sbox-table-header {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.sbox-table-header.active {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-radius: 8px;
+}
+
+.sbox-table-row-header {
+  justify-content: flex-end;
+  padding-right: 8px;
+}
+
+.sbox-table-value {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1;
+}
+
+.sbox-lookup-banner {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-soft));
+}
+
+.sbox-bits,
+.sbox-lookup-index {
+  display: block;
+  font-family: var(--mono);
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.sbox-detail-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sbox-detail-chip {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+}
+
+.sbox-detail-metric {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.sbox-chunk-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.sbox-chunk-summary {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.sbox-chunk-summary.active {
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--line));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-soft));
+}
+
 .issue-list {
   margin: 0;
   padding: 0;

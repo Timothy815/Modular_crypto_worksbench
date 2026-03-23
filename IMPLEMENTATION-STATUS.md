@@ -163,11 +163,11 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 ### Near-Term Roadmap
 
-1. **Continue bounded hashing foundations** — make the hash teaching shapes clearer and more comparable
-2. **Tighten tutorial wording** — make navigation and “what to look for” guidance more explicit
-3. **Define Transformation Visualization V1** — lock primitive-level drill-down into the roadmap
-4. **Choose the first primitive visualization proof**
-5. **Then implement the first legibility slice on top of existing analysis surfaces**
+1. **Checkpoint the first transformation slice** — `Permutation`, `BitShifter`, and `XOR` now form a coherent first legibility milestone
+2. **Design the first `SBox` transformation view** — lock the lookup/substitution visual family before implementation
+3. **Then implement `SBox` as the next transformation proof**
+4. **Only after that, consider low-priority structural freebies like `BitJoin`**
+5. **Keep hashing and modern-analysis teaching content aligned with the new transformation surfaces**
 
 ### Key Contracts
 
@@ -186,4 +186,5 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `MODERN-ANALYSIS-V1.md` | Active, implemented as the `v1.5.0` modern-analysis line |
 | `HASHING-V1.md` | Active, now implemented as first bounded hashing foundations |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
-| `TRANSFORMATION-VISUALIZATION-V1.md` | Active, defines the future primitive-level drill-down line |
+| `TRANSFORMATION-VISUALIZATION-V1.md` | Active, implemented as the first primitive legibility slice |
+| `SBOX-TRANSFORMATION-V1.md` | Active, defines the next lookup/substitution visual family |

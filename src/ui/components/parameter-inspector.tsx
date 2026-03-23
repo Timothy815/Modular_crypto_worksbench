@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 
 import { isCompositeDefinition } from '../../engine/composites';
 import type {
@@ -19,6 +19,7 @@ import { ComparisonPanel } from './comparison-panel';
 import type { ComparisonBaselineDocument } from '../workbench-document';
 import type { ExecutionComparison } from '../execution-compare';
 import { resolveTraceModuleInstance } from '../transformation-resolver';
+import { parseSBoxTable } from '../../engine/modules/s-box';
 
 interface ParameterInspectorProps {
   execution: ExecutionResult | null;
@@ -98,6 +99,7 @@ export function ParameterInspector({
   const [focusedRoundPath, setFocusedRoundPath] = useState<string>('all');
   const [requestedStepperMode, setRequestedStepperMode] = useState<'top-level' | 'nested'>('top-level');
   const [requestedNestedStepIndex, setRequestedNestedStepIndex] = useState<number | null>(null);
+  const [requestedLookupChunkIndex, setRequestedLookupChunkIndex] = useState(0);
   const analysisTrace = useMemo(
     () => execution?.analysisTrace ?? execution?.trace ?? [],
     [execution],
@@ -173,6 +175,19 @@ export function ParameterInspector({
   const transformationView = activeTransformationEntry
     ? getTransformationView(activeTransformationEntry, project, registry)
     : null;
+  const effectiveLookupChunkIndex =
+    transformationView?.kind === 'lookup'
+      ? transformationView.chunks[
+          requestedLookupChunkIndex >= 0 &&
+          requestedLookupChunkIndex < transformationView.chunks.length
+            ? requestedLookupChunkIndex
+            : 0
+        ]?.index ?? 0
+      : 0;
+  const activeLookupChunk =
+    transformationView?.kind === 'lookup'
+      ? transformationView.chunks.find((chunk) => chunk.index === effectiveLookupChunkIndex) ?? null
+      : null;
 
   useEffect(() => {
     if (inspectorTab !== 'analyze' || !tutorialTraceRef.current) {
@@ -206,7 +221,6 @@ export function ParameterInspector({
     steppedAnalysisEntry,
     steppedTrace,
   ]);
-
 
   return (
     <aside className="panel inspector-panel">
@@ -650,7 +664,7 @@ export function ParameterInspector({
                   </div>
                 </div>
               </>
-            ) : (
+            ) : transformationView.kind === 'xor' ? (
               <>
                 <div className="transformation-order">
                   <span className="meta-label">Rule</span>
@@ -691,9 +705,151 @@ export function ParameterInspector({
                   ))}
                 </div>
               </>
+            ) : (
+              <>
+                <div className="transformation-order">
+                  <span className="meta-label">Chunk Width</span>
+                  <code>{transformationView.chunkWidth} bits</code>
+                </div>
+                {transformationView.chunks.length > 1 ? (
+                  <div className="sbox-chunk-selector">
+                    {transformationView.chunks.map((chunk) => (
+                      <button
+                        key={`sbox-chunk-${chunk.index}`}
+                        type="button"
+                        className={
+                          chunk.index === effectiveLookupChunkIndex
+                            ? 'sbox-chunk-chip active'
+                            : 'sbox-chunk-chip'
+                        }
+                        onClick={() => setRequestedLookupChunkIndex(chunk.index)}
+                      >
+                        Chunk {chunk.index + 1}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                {activeLookupChunk ? (
+                  <div className="sbox-view">
+                    <div
+                      className="sbox-table-wrap"
+                      style={{ gridTemplateColumns: `56px repeat(${transformationView.gridColumns}, minmax(0, 1fr))` }}
+                    >
+                      <span className="sbox-table-corner" />
+                      {Array.from({ length: transformationView.gridColumns }, (_, columnIndex) => (
+                        <span
+                          key={`sbox-col-${columnIndex}`}
+                          className={
+                            transformationView.usesHexGrid &&
+                            columnIndex === activeLookupChunk.inputValue % transformationView.gridColumns
+                              ? 'sbox-table-header active'
+                              : 'sbox-table-header'
+                          }
+                        >
+                          {formatSBoxAxisLabel(columnIndex, transformationView.gridColumns)}
+                        </span>
+                      ))}
+                      {transformationView.table.map((value, index) => (
+                        <Fragment key={`sbox-cell-wrap-${index}`}>
+                          {index % transformationView.gridColumns === 0 ? (
+                            <span
+                              className={
+                                transformationView.usesHexGrid &&
+                                Math.floor(index / transformationView.gridColumns) ===
+                                  Math.floor(activeLookupChunk.inputValue / transformationView.gridColumns)
+                                  ? 'sbox-table-header sbox-table-row-header active'
+                                  : 'sbox-table-header sbox-table-row-header'
+                              }
+                            >
+                              {formatSBoxAxisLabel(
+                                Math.floor(index / transformationView.gridColumns),
+                                transformationView.gridColumns,
+                              )}
+                            </span>
+                          ) : null}
+                          <div
+                            key={`sbox-cell-${index}`}
+                            className={
+                              index === activeLookupChunk.inputValue
+                                ? 'sbox-table-cell active'
+                                : transformationView.usesHexGrid &&
+                                    (Math.floor(index / transformationView.gridColumns) ===
+                                      Math.floor(activeLookupChunk.inputValue / transformationView.gridColumns) ||
+                                      index % transformationView.gridColumns ===
+                                        activeLookupChunk.inputValue % transformationView.gridColumns)
+                                  ? 'sbox-table-cell context'
+                                : 'sbox-table-cell'
+                            }
+                            title={`table[${index}] = ${value}`}
+                          >
+                            <strong className="sbox-table-value">{formatSBoxAxisLabel(value, transformationView.gridColumns)}</strong>
+                          </div>
+                        </Fragment>
+                      ))}
+                    </div>
+                    <div className="sbox-lookup-banner">
+                      <span className="meta-label">Active Lookup</span>
+                      <strong className="sbox-lookup-index">
+                        {transformationView.usesHexGrid
+                          ? `table[0x${formatSBoxHexValue(activeLookupChunk.inputValue, transformationView.chunkWidth)}] = 0x${formatSBoxHexValue(activeLookupChunk.outputValue, transformationView.chunkWidth)}`
+                          : `table[${activeLookupChunk.inputValue}] = ${activeLookupChunk.outputValue}`}
+                      </strong>
+                      {transformationView.usesHexGrid ? (
+                        <p className="comparison-copy">
+                          Hex <strong>{formatSBoxHexValue(activeLookupChunk.inputValue, transformationView.chunkWidth)}</strong> means row{' '}
+                          <strong>{formatSBoxAxisLabel(Math.floor(activeLookupChunk.inputValue / transformationView.gridColumns), transformationView.gridColumns)}</strong>{' '}
+                          and column{' '}
+                          <strong>{formatSBoxAxisLabel(activeLookupChunk.inputValue % transformationView.gridColumns, transformationView.gridColumns)}</strong>.
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="sbox-detail-row">
+                      <div className="sbox-detail-chip">
+                        <span className="meta-label">Input Chunk</span>
+                        <strong className="sbox-bits">{activeLookupChunk.inputBits.join('')}</strong>
+                        <span className="sbox-detail-metric">
+                          {transformationView.usesHexGrid
+                            ? `hex ${formatSBoxHexValue(activeLookupChunk.inputValue, transformationView.chunkWidth)} · decimal ${activeLookupChunk.inputValue}`
+                            : `decimal ${activeLookupChunk.inputValue}`}
+                        </span>
+                      </div>
+                      <div className="sbox-detail-chip">
+                        <span className="meta-label">Output Chunk</span>
+                        <strong className="sbox-bits">{activeLookupChunk.outputBits.join('')}</strong>
+                        <span className="sbox-detail-metric">
+                          {transformationView.usesHexGrid
+                            ? `hex ${formatSBoxHexValue(activeLookupChunk.outputValue, transformationView.chunkWidth)} · decimal ${activeLookupChunk.outputValue}`
+                            : `decimal ${activeLookupChunk.outputValue}`}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="sbox-chunk-grid">
+                      {transformationView.chunks.map((chunk) => (
+                        <button
+                          key={`sbox-summary-${chunk.index}`}
+                          type="button"
+                          className={
+                            chunk.index === effectiveLookupChunkIndex
+                              ? 'sbox-chunk-summary active'
+                              : 'sbox-chunk-summary'
+                          }
+                          onClick={() => setRequestedLookupChunkIndex(chunk.index)}
+                        >
+                          <span className="meta-label">Chunk {chunk.index + 1}</span>
+                          <p className="comparison-copy">
+                            {chunk.inputBits.join('')} ({chunk.inputValue}) {'->'} {chunk.outputBits.join('')} ({chunk.outputValue})
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </>
             )}
             <p className="transformation-summary">
-              {transformationView.summary}
+              {transformationView.kind === 'lookup' && activeLookupChunk
+                ? `Input chunk ${activeLookupChunk.inputBits.join('')} is index ${activeLookupChunk.inputValue}. The substitution table maps ${activeLookupChunk.inputValue} to ${activeLookupChunk.outputValue}, so the output chunk becomes ${activeLookupChunk.outputBits.join('')}.`
+                : transformationView.summary}
             </p>
           </div>
         </section>
@@ -1204,7 +1360,33 @@ interface XorTransformationView {
   summary: string;
 }
 
-type TransformationView = RoutingTransformationView | XorTransformationView;
+interface LookupTransformationChunk {
+  index: number;
+  inputBits: number[];
+  inputValue: number;
+  outputValue: number;
+  outputBits: number[];
+}
+
+interface LookupTransformationView {
+  entry: ExecutionTraceEntry;
+  kind: 'lookup';
+  title: string;
+  copy: string;
+  chunkWidth: number;
+  gridColumns: number;
+  table: number[];
+  usesHexGrid: boolean;
+  activeRowIndex: number | null;
+  activeColumnIndex: number | null;
+  chunks: LookupTransformationChunk[];
+  summary: string;
+}
+
+type TransformationView =
+  | RoutingTransformationView
+  | XorTransformationView
+  | LookupTransformationView;
 
 function getTransformationView(
   entry: ExecutionTraceEntry,
@@ -1219,6 +1401,9 @@ function getTransformationView(
   }
   if (entry.defId === 'XOR') {
     return getXorTransformation(entry);
+  }
+  if (entry.defId === 'SBox') {
+    return getSBoxTransformation(entry, project, registry);
   }
   return null;
 }
@@ -1416,6 +1601,71 @@ function getXorTransformation(entry: ExecutionTraceEntry): XorTransformationView
   };
 }
 
+function getSBoxTransformation(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): LookupTransformationView | null {
+  const resolved = resolveTraceModuleInstance(entry.moduleId, project, registry);
+  if (!resolved) {
+    return null;
+  }
+
+  const inputSignal = entry.inputs.in;
+  const outputSignal = entry.outputs.out;
+  if (inputSignal?.type !== 'bits' || outputSignal?.type !== 'bits') {
+    return null;
+  }
+
+  const table = parseSBoxTable(resolved.instance.params.table);
+  const chunkWidth = inferLookupChunkWidth(table.length);
+  if (chunkWidth < 1 || inputSignal.value.length % chunkWidth !== 0) {
+    return null;
+  }
+
+  const chunks: LookupTransformationChunk[] = [];
+  for (let start = 0; start < inputSignal.value.length; start += chunkWidth) {
+    const inputBits = inputSignal.value.slice(start, start + chunkWidth);
+    const outputBits = outputSignal.value.slice(start, start + chunkWidth);
+    const inputValue = bitsToNumber(inputBits);
+    const outputValue = bitsToNumber(outputBits);
+    chunks.push({
+      index: start / chunkWidth,
+      inputBits,
+      inputValue,
+      outputValue,
+      outputBits,
+    });
+  }
+
+  const gridColumns = Math.sqrt(table.length);
+
+  return {
+    entry,
+    kind: 'lookup',
+    title: 'Substitution Lookup',
+    copy:
+      'SBox groups bits into fixed-width chunks, reads each chunk as a number, and substitutes it with the table value stored at that index.',
+    chunkWidth,
+    gridColumns: Number.isInteger(gridColumns) ? gridColumns : Math.min(table.length, 16),
+    table,
+    usesHexGrid: chunkWidth >= 8 && Number.isInteger(gridColumns) && gridColumns === 16,
+    activeRowIndex:
+      chunkWidth >= 8 && Number.isInteger(gridColumns) && gridColumns === 16 && chunks.length > 0
+        ? Math.floor(chunks[0].inputValue / gridColumns)
+        : null,
+    activeColumnIndex:
+      chunkWidth >= 8 && Number.isInteger(gridColumns) && gridColumns === 16 && chunks.length > 0
+        ? chunks[0].inputValue % gridColumns
+        : null,
+    chunks,
+    summary:
+      chunks.length === 1
+        ? 'This S-Box replaces one grouped value with another by table lookup.'
+        : `This S-Box processes ${chunks.length} grouped chunks independently, using the same substitution table for each chunk.`,
+  };
+}
+
 function parsePermutationOrder(value: unknown): number[] {
   if (typeof value !== 'string') {
     return [];
@@ -1479,6 +1729,24 @@ function getBitShifterSummary(mode: string, amount: number, rows: RoutingTransfo
   return fillCount === 0
     ? `This shift moves every visible bit by ${amount} position${amount === 1 ? '' : 's'} without opening a zero-filled edge.`
     : `${fillCount} output position${fillCount === 1 ? '' : 's'} are zero-filled because a plain ${formatBitShifterMode(mode).toLowerCase()} shift drops bits off one edge and opens space on the other.`;
+}
+
+function inferLookupChunkWidth(entryCount: number) {
+  const width = Math.log2(entryCount);
+  return Number.isInteger(width) && width > 0 ? width : 0;
+}
+
+function bitsToNumber(bits: number[]) {
+  return bits.reduce((value, bit) => (value << 1) | bit, 0);
+}
+
+function formatSBoxAxisLabel(value: number, gridColumns: number) {
+  return gridColumns >= 16 ? value.toString(16).toUpperCase() : String(value);
+}
+
+function formatSBoxHexValue(value: number, chunkWidth: number) {
+  const digits = Math.max(1, Math.ceil(chunkWidth / 4));
+  return value.toString(16).toUpperCase().padStart(digits, '0');
 }
 
 function humanizeIssueCode(code: ValidationIssue['code']) {
