@@ -160,12 +160,36 @@ function App() {
               'guide',
           ]),
         ),
+        cryptanalysisModeByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.cryptanalysisModeByProjectId?.[project.id] ??
+              initialState.cryptanalysisModeByProject[project.id] ??
+              'classical',
+          ]),
+        ),
         cryptanalysisInputByProject: Object.fromEntries(
           projects.map((project) => [
             project.id,
             persistedWorkspace.cryptanalysisInputByProjectId?.[project.id] ??
               initialState.cryptanalysisInputByProject[project.id] ??
               '',
+          ]),
+        ),
+        modernAnalysisBaselineByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.modernAnalysisBaselineByProjectId?.[project.id] ??
+              initialState.modernAnalysisBaselineByProject[project.id] ??
+              '',
+          ]),
+        ),
+        modernAnalysisFlipBitByProject: Object.fromEntries(
+          projects.map((project) => [
+            project.id,
+            persistedWorkspace.modernAnalysisFlipBitByProjectId?.[project.id] ??
+              initialState.modernAnalysisFlipBitByProject[project.id] ??
+              0,
           ]),
         ),
         tickedModeByProject: Object.fromEntries(
@@ -1197,7 +1221,13 @@ function App() {
           {workspaceMode === 'cryptanalysis' ? (
             <CryptanalysisPanel
               projectName={activeProjectDefinition.name}
+              project={activeProjectState}
+              registry={effectiveRegistry}
+              execution={execution}
               ciphertext={state.cryptanalysisInputByProject[activeProjectDefinition.id] ?? ''}
+              cryptanalysisMode={state.cryptanalysisModeByProject[activeProjectDefinition.id] ?? 'classical'}
+              modernBaseline={state.modernAnalysisBaselineByProject[activeProjectDefinition.id] ?? ''}
+              modernFlipBit={state.modernAnalysisFlipBitByProject[activeProjectDefinition.id] ?? 0}
               workspaceMode={workspaceMode}
               onSetWorkspaceMode={(mode) =>
                 dispatch({
@@ -1206,9 +1236,30 @@ function App() {
                   mode,
                 })
               }
+              onSetCryptanalysisMode={(mode) =>
+                dispatch({
+                  type: 'setCryptanalysisMode',
+                  projectId: activeProjectDefinition.id,
+                  mode,
+                })
+              }
               onCiphertextChange={(value) =>
                 dispatch({
                   type: 'setCryptanalysisInput',
+                  projectId: activeProjectDefinition.id,
+                  value,
+                })
+              }
+              onModernBaselineChange={(value) =>
+                dispatch({
+                  type: 'setModernAnalysisBaseline',
+                  projectId: activeProjectDefinition.id,
+                  value,
+                })
+              }
+              onModernFlipBitChange={(value) =>
+                dispatch({
+                  type: 'setModernAnalysisFlipBit',
                   projectId: activeProjectDefinition.id,
                   value,
                 })

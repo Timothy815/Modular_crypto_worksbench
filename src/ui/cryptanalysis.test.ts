@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  analyzeBitDifference,
+  analyzeRoundDiffusion,
   analyzeSymbolSignal,
   analyzeVigenereColumns,
+  bitsToHex,
   buildFrequencyGraphEntries,
+  calculateBitDifference,
+  flipBitAtIndex,
+  hexToBits,
+  parseBitString,
   reconstructVigenereCandidate,
 } from './cryptanalysis';
 
@@ -129,5 +136,113 @@ describe('buildFrequencyGraphEntries', () => {
       english: expect.any(Number),
       shifted: 1,
     });
+  });
+});
+
+describe('modern bit analysis helpers', () => {
+  it('parses bit strings while ignoring non-bit separators', () => {
+    expect(parseBitString('10 01-11x')).toEqual([1, 0, 0, 1, 1, 1]);
+  });
+
+  it('flips one bit at a chosen index', () => {
+    expect(flipBitAtIndex([1, 0, 1, 0], 1)).toEqual([1, 1, 1, 0]);
+    expect(flipBitAtIndex([1, 0, 1, 0], 9)).toEqual([1, 0, 1, 0]);
+  });
+
+  it('calculates changed flags and summary metrics', () => {
+    expect(calculateBitDifference([1, 0, 1, 0], [1, 1, 0, 0])).toEqual([
+      false,
+      true,
+      true,
+      false,
+    ]);
+
+    expect(analyzeBitDifference([1, 0, 1, 0], [1, 1, 0, 0])).toMatchObject({
+      changedFlags: [false, true, true, false],
+      changedCount: 2,
+      changedPercent: 0.5,
+    });
+  });
+
+  it('converts hex values to bits and back', () => {
+    expect(hexToBits('A3')).toEqual([1, 0, 1, 0, 0, 0, 1, 1]);
+    expect(bitsToHex([1, 0, 1, 0, 0, 0, 1, 1])).toBe('A3');
+    expect(bitsToHex([1, 0, 1])).toBe('A');
+  });
+
+  it('summarizes changed-bit growth across iterator rounds', () => {
+    const baseline = {
+      order: [],
+      outputsByModuleId: {},
+      trace: [],
+      analysisTrace: [
+        {
+          moduleId: 'rounds/round-1',
+          defId: 'Round',
+          inputs: { in: { type: 'bits', value: [0, 0, 0, 0] } },
+          outputs: { out: { type: 'bits', value: [1, 0, 0, 0] } },
+        },
+        {
+          moduleId: 'rounds/round-1/xor-1',
+          defId: 'XOR',
+          inputs: { a: { type: 'bits', value: [0, 0, 0, 0] } },
+          outputs: { out: { type: 'bits', value: [1, 0, 0, 0] } },
+        },
+        {
+          moduleId: 'rounds/round-2',
+          defId: 'Round',
+          inputs: { in: { type: 'bits', value: [1, 0, 0, 0] } },
+          outputs: { out: { type: 'bits', value: [1, 1, 0, 0] } },
+        },
+      ],
+    };
+    const variant = {
+      order: [],
+      outputsByModuleId: {},
+      trace: [],
+      analysisTrace: [
+        {
+          moduleId: 'rounds/round-1',
+          defId: 'Round',
+          inputs: { in: { type: 'bits', value: [1, 0, 0, 0] } },
+          outputs: { out: { type: 'bits', value: [1, 1, 0, 0] } },
+        },
+        {
+          moduleId: 'rounds/round-1/xor-1',
+          defId: 'XOR',
+          inputs: { a: { type: 'bits', value: [1, 0, 0, 0] } },
+          outputs: { out: { type: 'bits', value: [1, 1, 0, 0] } },
+        },
+        {
+          moduleId: 'rounds/round-2',
+          defId: 'Round',
+          inputs: { in: { type: 'bits', value: [1, 1, 0, 0] } },
+          outputs: { out: { type: 'bits', value: [1, 1, 1, 0] } },
+        },
+      ],
+    };
+
+    expect(analyzeRoundDiffusion(baseline as never, variant as never)).toEqual([
+      {
+        round: 1,
+        moduleId: 'rounds/round-1/xor-1',
+        label: 'xor-1',
+        baselineBits: [1, 0, 0, 0],
+        variantBits: [1, 1, 0, 0],
+        changedFlags: [false, true, false, false],
+        changedCount: 1,
+        changedPercent: 0.25,
+      },
+      {
+        round: 2,
+        moduleId: 'rounds/round-2',
+        label: 'Round',
+        baselineBits: [1, 1, 0, 0],
+        variantBits: [1, 1, 1, 0],
+        changedFlags: [false, false, true, false],
+        changedCount: 1,
+        changedPercent: 0.25,
+      },
+    ]);
   });
 });

@@ -199,10 +199,28 @@ export function buildPersistedWorkspace(state: UiState): PersistedWorkspaceDocum
         state.workspaceModeByProject[projectId] ?? 'guide',
       ]),
     ),
+    cryptanalysisModeByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.cryptanalysisModeByProject[projectId] ?? 'classical',
+      ]),
+    ),
     cryptanalysisInputByProjectId: Object.fromEntries(
       Object.keys(state.projectStates).map((projectId) => [
         projectId,
         state.cryptanalysisInputByProject[projectId] ?? '',
+      ]),
+    ),
+    modernAnalysisBaselineByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.modernAnalysisBaselineByProject[projectId] ?? '',
+      ]),
+    ),
+    modernAnalysisFlipBitByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.modernAnalysisFlipBitByProject[projectId] ?? 0,
       ]),
     ),
     tickedModeByProjectId: Object.fromEntries(
@@ -331,10 +349,31 @@ export function loadWorkspaceFromStorage(
             (mode === 'build' || mode === 'guide' || mode === 'cryptanalysis'),
         ),
       ),
+      cryptanalysisModeByProjectId: Object.fromEntries(
+        Object.entries(parsed.cryptanalysisModeByProjectId ?? {}).filter(
+          ([projectId, mode]) =>
+            allowedProjectIds.has(projectId) &&
+            (mode === 'classical' || mode === 'modern'),
+        ),
+      ),
       cryptanalysisInputByProjectId: Object.fromEntries(
         Object.entries(parsed.cryptanalysisInputByProjectId ?? {}).filter(
           ([projectId, value]) =>
             allowedProjectIds.has(projectId) && typeof value === 'string',
+        ),
+      ),
+      modernAnalysisBaselineByProjectId: Object.fromEntries(
+        Object.entries(parsed.modernAnalysisBaselineByProjectId ?? {}).filter(
+          ([projectId, value]) =>
+            allowedProjectIds.has(projectId) && typeof value === 'string',
+        ),
+      ),
+      modernAnalysisFlipBitByProjectId: Object.fromEntries(
+        Object.entries(parsed.modernAnalysisFlipBitByProjectId ?? {}).filter(
+          ([projectId, value]) =>
+            allowedProjectIds.has(projectId) &&
+            typeof value === 'number' &&
+            Number.isFinite(value),
         ),
       ),
       tickedModeByProjectId: Object.fromEntries(

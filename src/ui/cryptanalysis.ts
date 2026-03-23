@@ -1,4 +1,4 @@
-import type { Signal } from '../engine/types';
+import type { ExecutionResult, ExecutionTraceEntry, Signal } from '../engine/types';
 import { ENGLISH_LETTER_FREQUENCIES } from './cryptanalysis-data';
 
 export interface LetterFrequencyEntry {
@@ -51,6 +51,58 @@ export interface FrequencyGraphEntry {
   letter: string;
   english: number;
   shifted: number;
+}
+
+export interface BitDifferenceAnalysis {
+  baselineBits: number[];
+  variantBits: number[];
+  changedFlags: boolean[];
+  changedCount: number;
+  changedPercent: number;
+}
+
+export interface RoundDiffusionEntry {
+  round: number;
+  moduleId: string;
+  label: string;
+  baselineBits: number[];
+  variantBits: number[];
+  changedFlags: boolean[];
+  changedCount: number;
+  changedPercent: number;
+}
+
+export function hexToBits(value: string): number[] {
+  return value
+    .trim()
+    .replace(/\s+/g, '')
+    .toUpperCase()
+    .split('')
+    .filter((digit) => /^[0-9A-F]$/.test(digit))
+    .flatMap((digit) => {
+      const nibble = Number.parseInt(digit, 16);
+      return [3, 2, 1, 0].map((shift) => (nibble >> shift) & 1);
+    });
+}
+
+export function bitsToHex(bits: number[]): string {
+  if (bits.length === 0) {
+    return '';
+  }
+
+  const padded = [...bits];
+  while (padded.length % 4 !== 0) {
+    padded.push(0);
+  }
+
+  let output = '';
+  for (let index = 0; index < padded.length; index += 4) {
+    const nibbleBits = padded.slice(index, index + 4);
+    const nibble = nibbleBits.reduce((value, bit) => (value << 1) | (bit ? 1 : 0), 0);
+    output += nibble.toString(16).toUpperCase();
+  }
+
+  return output;
 }
 
 export interface SymbolTextAnalysis {
@@ -158,6 +210,85 @@ export function analyzeSymbolSignal(signal: Signal | null): SymbolTextAnalysis |
   };
 }
 
+export function parseBitString(value: string): number[] {
+  return value
+    .replace(/[^01]/g, '')
+    .split('')
+    .map((bit) => Number(bit));
+}
+
+export function flipBitAtIndex(bits: number[], index: number): number[] {
+  if (index < 0 || index >= bits.length) {
+    return [...bits];
+  }
+
+  return bits.map((bit, currentIndex) => (currentIndex === index ? (bit === 0 ? 1 : 0) : bit));
+}
+
+export function calculateBitDifference(a: number[], b: number[]): boolean[] {
+  const maxLength = Math.max(a.length, b.length);
+  return Array.from({ length: maxLength }, (_, index) => (a[index] ?? -1) !== (b[index] ?? -1));
+}
+
+export function analyzeBitDifference(baselineBits: number[], variantBits: number[]): BitDifferenceAnalysis {
+  const changedFlags = calculateBitDifference(baselineBits, variantBits);
+  const changedCount = changedFlags.filter(Boolean).length;
+
+  return {
+    baselineBits,
+    variantBits,
+    changedFlags,
+    changedCount,
+    changedPercent: changedFlags.length > 0 ? changedCount / changedFlags.length : 0,
+  };
+}
+
+export function analyzeRoundDiffusion(
+  baseline: ExecutionResult | null,
+  variant: ExecutionResult | null,
+): RoundDiffusionEntry[] {
+  if (!baseline || !variant) {
+    return [];
+  }
+
+  const baselineByModuleId = new Map(
+    baseline.analysisTrace.map((entry) => [entry.moduleId, entry] as const),
+  );
+  const latestByRound = new Map<number, RoundDiffusionEntry>();
+
+  for (const variantEntry of variant.analysisTrace) {
+    const round = extractRoundNumber(variantEntry.moduleId);
+    if (round === null) {
+      continue;
+    }
+
+    const baselineEntry = baselineByModuleId.get(variantEntry.moduleId);
+    if (!baselineEntry) {
+      continue;
+    }
+
+    const baselineBits = getEntryBits(baselineEntry);
+    const variantBits = getEntryBits(variantEntry);
+    if (!baselineBits || !variantBits) {
+      continue;
+    }
+
+    const diff = analyzeBitDifference(baselineBits, variantBits);
+    latestByRound.set(round, {
+      round,
+      moduleId: variantEntry.moduleId,
+      label: formatRoundDiffusionLabel(variantEntry),
+      baselineBits,
+      variantBits,
+      changedFlags: diff.changedFlags,
+      changedCount: diff.changedCount,
+      changedPercent: diff.changedPercent,
+    });
+  }
+
+  return [...latestByRound.values()].sort((left, right) => left.round - right.round);
+}
+
 function calculateIndexOfCoincidence(counts: number[], totalLetters: number) {
   if (totalLetters < 2) {
     return null;
@@ -193,6 +324,32 @@ function calculateTopNGrams(text: string, size: number): NGramFrequencyEntry[] {
       count,
       share: count / total,
     }));
+}
+
+function getEntryBits(entry: ExecutionTraceEntry): number[] | null {
+  const firstOutput = Object.values(entry.outputs).find((signal) => signal.type === 'bits') ?? null;
+  if (firstOutput?.type === 'bits') {
+    return firstOutput.value;
+  }
+
+  const firstInput = Object.values(entry.inputs).find((signal) => signal.type === 'bits') ?? null;
+  return firstInput?.type === 'bits' ? firstInput.value : null;
+}
+
+function extractRoundNumber(moduleId: string): number | null {
+  const roundPart = moduleId.split('/').find((part) => /^round-\d+$/.test(part));
+  if (!roundPart) {
+    return null;
+  }
+
+  const parsed = Number(roundPart.replace('round-', ''));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatRoundDiffusionLabel(entry: ExecutionTraceEntry): string {
+  const parts = entry.moduleId.split('/');
+  const lastPart = parts[parts.length - 1] ?? entry.moduleId;
+  return lastPart.startsWith('round-') ? entry.defId : lastPart;
 }
 
 function countLetters(text: string) {

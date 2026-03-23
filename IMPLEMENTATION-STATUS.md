@@ -6,10 +6,10 @@ Last updated: March 23, 2026
 
 ## Current State
 
-The project has shipped through `v1.3.0` on `main`.
+The project has shipped through `v1.4.0` on `main`.
 
-Current `main` is now in `v1.4.0` cleanup/framing around the
-**Cryptanalysis Workspace** milestone.
+Current `main` is now in `v1.5.0` cleanup/framing around the
+**Modern Analysis** milestone.
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -48,6 +48,8 @@ Established and shipped:
 - lightweight cryptanalysis instrumentation in Compare
 - dedicated cryptanalysis workspace mode
 - Vigenere cryptanalysis workflow
+- modern analysis workflow
+- `v1.4.0` release framing and tutorial pass
 - GitHub Pages deployment workflow
 
 ---
@@ -83,20 +85,17 @@ The following decisions are reflected in shipped code:
 | `v1.1.0` | Ticked execution, stateful foundry, sequential labs |
 | `v1.2.0` | Modern foundry, bridges, dependent clocking |
 | `v1.3.0` | Cipher architecture |
+| `v1.4.0` | Cryptanalysis workspace |
 
-Post-`v1.3.0` work merged to `main`:
-- protected built-in architectures and duplicate-as-custom flow
-- composite vs iterator palette split
-- lightweight text cryptanalysis in Compare
-- dedicated Cryptanalysis mode
-- Vigenere workspace:
-  - IOC / n-grams
-  - repeated fragments
-  - candidate periods
-  - column analysis
-  - shift matching workshop
-  - plaintext reconstruction
-- `Breaking the Unbreakable` tutorial
+Post-`v1.4.0` work merged to `main`:
+- Modern Analysis contract framing
+- `Classical / Modern` cryptanalysis sub-modes
+- Avalanche Explorer
+- machine-aware output difference for supported bit/hex source paths
+- round-aware diffusion summaries and progression matrix
+- compatibility callouts for unsupported project shapes
+- `The Avalanche Effect` tutorial
+- hashing identified as a future scope line and backlog item
 
 ---
 
@@ -105,29 +104,29 @@ Post-`v1.3.0` work merged to `main`:
 ### Claude
 
 Safe to begin:
-- `v1.4.0` cleanup and tag framing
-- final cryptanalysis copy/help polish
-- release note cleanup for the workspace milestone
-- post-`v1.4.0` branch framing
+- `v1.5.0` cleanup and release framing
+- final modern-analysis copy/help polish
+- release note cleanup for the Avalanche Explorer milestone
+- track hashing as a future backlog line
 
 Should avoid for now:
 - feedback loops / cycles in the graph
 - async or real-time execution
 - custom scripting for advance functions
 - hidden iterator/key-schedule magic
-- opening a second major cryptanalysis family before `v1.4.0` is settled
+- broadening into a second major modern-analysis family before `v1.5.0` is settled
 
 ### Gemini
 
 Safe to begin:
-- review whether the current cryptanalysis line is a clean `v1.4.0` candidate
+- review whether the current modern-analysis line is a clean `v1.5.0` candidate
 - identify whether any remaining work is polish-only
-- help choose the first post-`v1.4.0` analysis direction
+- help choose the first post-`v1.5.0` analysis direction
 
 Best focus:
-- whether the current Vigenere workspace is complete enough for a release
-- whether one more bounded classical slice is needed before tagging
-- what should follow after the first cryptanalysis milestone
+- whether the current Avalanche Explorer milestone is complete enough for release
+- whether any remaining work is just compatibility/copy polish
+- what should follow after the first modern-analysis milestone
 
 ---
 
@@ -138,7 +137,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three pass as of the current `v1.4.0` cleanup line.
+All three pass as of the current `v1.5.0` cleanup line.
 
 ---
 
@@ -152,10 +151,10 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 ### Near-Term Roadmap
 
-1. **Frame `v1.4.0`** — the Cryptanalysis Workspace release
-2. **Final cleanup/polish** — copy, help text, and release notes
-3. **Tag `v1.4.0`**
-4. **Post-`v1.4.0` direction** — broader classical attack tooling or modern analysis instruments
+1. **Frame `v1.5.0`** — the first Modern Analysis release
+2. **Final cleanup/polish** — compatibility copy, visual consistency, release notes
+3. **Tag `v1.5.0`**
+4. **Post-`v1.5.0` direction** — broader modern-analysis support or another analysis family
 
 ### Key Contracts
 
@@ -170,4 +169,5 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `ADVANCED-FOUNDRY-CLOCK-V1.md` | Locked, shipped (engine + UI slices) |
 | `ITERATIVE-ROUNDS-AND-KEYSCHEDULES-V1.md` | Active, implemented as bounded iterator groundwork |
 | `KEY-SCHEDULE-GROUNDWORK-V1.md` | Active, implemented as explicit key-bus groundwork |
-| `CRYPTANALYSIS-WORKSPACE-V1.md` | Active, defines post-`v1.3.0` workspace boundary |
+| `CRYPTANALYSIS-WORKSPACE-V1.md` | Locked, implemented as the `v1.4.0` workspace boundary |
+| `MODERN-ANALYSIS-V1.md` | Active, implemented as the `v1.5.0` modern-analysis line |

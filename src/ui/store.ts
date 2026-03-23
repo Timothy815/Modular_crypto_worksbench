@@ -6,6 +6,7 @@ import {
 } from '../engine/composites';
 import type { ModuleDefinition, ModuleInstance, ModuleRegistry, Project } from '../engine/types';
 import type { GuidedChallenge } from './challenges';
+import type { CryptanalysisMode } from './cryptanalysis-mode';
 import type { GuidedTutorial } from './tutorials';
 import type { DemoProject } from './demo-projects';
 import type { WorkspaceMode } from './workspace-mode';
@@ -35,7 +36,10 @@ export interface UiState {
   completedTutorialsByProject: Record<string, string[]>;
   probedModuleIdsByProject: Record<string, string[]>;
   workspaceModeByProject: Record<string, WorkspaceMode>;
+  cryptanalysisModeByProject: Record<string, CryptanalysisMode>;
   cryptanalysisInputByProject: Record<string, string>;
+  modernAnalysisBaselineByProject: Record<string, string>;
+  modernAnalysisFlipBitByProject: Record<string, number>;
   tickedModeByProject: Record<string, boolean>;
   currentTickByProject: Record<string, number>;
   isTickPlaybackActiveByProject: Record<string, boolean>;
@@ -91,7 +95,10 @@ export type UiAction =
   | { type: 'toggleProbe'; projectId: string; moduleId: string }
   | { type: 'clearProbes'; projectId: string }
   | { type: 'setWorkspaceMode'; projectId: string; mode: WorkspaceMode }
+  | { type: 'setCryptanalysisMode'; projectId: string; mode: CryptanalysisMode }
   | { type: 'setCryptanalysisInput'; projectId: string; value: string }
+  | { type: 'setModernAnalysisBaseline'; projectId: string; value: string }
+  | { type: 'setModernAnalysisFlipBit'; projectId: string; value: number }
   | { type: 'setTickedMode'; projectId: string; enabled: boolean }
   | { type: 'setCurrentTick'; projectId: string; tick: number }
   | { type: 'setTickPlaybackActive'; projectId: string; active: boolean }
@@ -232,8 +239,17 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     workspaceModeByProject: Object.fromEntries(
       projects.map((project) => [project.id, 'guide' as const]),
     ),
+    cryptanalysisModeByProject: Object.fromEntries(
+      projects.map((project) => [project.id, 'classical' as const]),
+    ),
     cryptanalysisInputByProject: Object.fromEntries(
       projects.map((project) => [project.id, '']),
+    ),
+    modernAnalysisBaselineByProject: Object.fromEntries(
+      projects.map((project) => [project.id, '']),
+    ),
+    modernAnalysisFlipBitByProject: Object.fromEntries(
+      projects.map((project) => [project.id, 0]),
     ),
     tickedModeByProject: Object.fromEntries(
       projects.map((project) => [project.id, project.defaultTickedMode ?? false]),
@@ -930,12 +946,36 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           [action.projectId]: action.mode,
         },
       };
+    case 'setCryptanalysisMode':
+      return {
+        ...state,
+        cryptanalysisModeByProject: {
+          ...state.cryptanalysisModeByProject,
+          [action.projectId]: action.mode,
+        },
+      };
     case 'setCryptanalysisInput':
       return {
         ...state,
         cryptanalysisInputByProject: {
           ...state.cryptanalysisInputByProject,
           [action.projectId]: action.value,
+        },
+      };
+    case 'setModernAnalysisBaseline':
+      return {
+        ...state,
+        modernAnalysisBaselineByProject: {
+          ...state.modernAnalysisBaselineByProject,
+          [action.projectId]: action.value,
+        },
+      };
+    case 'setModernAnalysisFlipBit':
+      return {
+        ...state,
+        modernAnalysisFlipBitByProject: {
+          ...state.modernAnalysisFlipBitByProject,
+          [action.projectId]: Math.max(0, Math.trunc(action.value)),
         },
       };
     case 'setTickedMode':

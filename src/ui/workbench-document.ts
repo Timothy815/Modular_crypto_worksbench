@@ -1,6 +1,7 @@
 import type { Project } from '../engine/types';
 import type { CompositeLibraryEntry } from '../engine/composites';
 import type { GuidedChallenge } from './challenges';
+import type { CryptanalysisMode } from './cryptanalysis-mode';
 import type { GuidedTutorial } from './tutorials';
 import type { WorkspaceMode } from './workspace-mode';
 
@@ -49,7 +50,10 @@ export interface PersistedWorkspaceDocument {
   activeTutorialStepByProjectId: Record<string, number>;
   completedTutorialsByProjectId: Record<string, string[]>;
   workspaceModeByProjectId?: Record<string, WorkspaceMode>;
+  cryptanalysisModeByProjectId?: Record<string, CryptanalysisMode>;
   cryptanalysisInputByProjectId?: Record<string, string>;
+  modernAnalysisBaselineByProjectId?: Record<string, string>;
+  modernAnalysisFlipBitByProjectId?: Record<string, number>;
   tickedModeByProjectId?: Record<string, boolean>;
   currentTickByProjectId?: Record<string, number>;
   tickPlaybackSpeedMsByProjectId?: Record<string, number>;

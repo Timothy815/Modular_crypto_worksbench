@@ -5,6 +5,7 @@ Read ENGINE-V1-CONTRACT.md for locked implementation decisions.
 Read ITERATIVE-ROUNDS-AND-KEYSCHEDULES-V1.md before starting work on iterative-round abstractions or key-schedule groundwork.
 Read KEY-SCHEDULE-GROUNDWORK-V1.md before extending iterator-aware key distribution or round-key generation.
 Read CRYPTANALYSIS-WORKSPACE-V1.md before starting work on the post-v1.3 cryptanalysis workspace.
+Read MODERN-ANALYSIS-V1.md before starting work on the post-v1.4 modern-analysis line.
 Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
 Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
 
@@ -128,7 +129,8 @@ src/utils/     — Shared helpers
 - Resume from current `main`
 - `v1.1.0` and `v1.2.0` are already shipped
 - `v1.3.0` is already shipped
-- Current `main` has started the cryptanalysis workspace line
+- `v1.4.0` is already shipped
+- Current `main` is in `v1.5.0` cleanup/framing around the modern-analysis line
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -140,6 +142,8 @@ What is shipped on `main`:
 - constrained iterators, key-bus distribution, depth tuning
 - nested composite/iterator analysis and Feistel teaching loop
 - lightweight text cryptanalysis in Compare
+- dedicated Cryptanalysis workspace and Vigenere workshop flow
+- modern-analysis Avalanche Explorer and guided Avalanche tutorial
 
 Key contracts to check before implementation:
 - `ENGINE-V1-CONTRACT.md` for engine decisions
@@ -147,12 +151,13 @@ Key contracts to check before implementation:
 - `ITERATIVE-ROUNDS-AND-KEYSCHEDULES-V1.md` for bounded iterator decisions
 - `KEY-SCHEDULE-GROUNDWORK-V1.md` for explicit round-key decisions
 - `CRYPTANALYSIS-WORKSPACE-V1.md` for product boundary and first-slice scope
+- `MODERN-ANALYSIS-V1.md` for the first post-`v1.4.0` visual analysis milestone
 
 Near-term follow-ups:
-- add the dedicated Cryptanalysis workspace shell
-- land the Vigenere first-pass toolchain
-- keep Compare limited to lightweight inline stats
-- avoid automated cracking/search in the first cryptanalysis milestone
+- frame `v1.5.0` as the first Modern Analysis release
+- keep remaining work bounded to polish and release shaping
+- avoid opening a second major analysis family before `v1.5.0`
+- keep hashing on the future backlog
 
 ## When Working on This Project
 

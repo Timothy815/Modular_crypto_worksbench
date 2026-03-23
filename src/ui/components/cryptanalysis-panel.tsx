@@ -1,27 +1,56 @@
 import { useMemo, useState } from 'react';
 
 import {
+  analyzeBitDifference,
+  analyzeRoundDiffusion,
   analyzeSymbolSignal,
   analyzeVigenereColumns,
+  bitsToHex,
   buildFrequencyGraphEntries,
+  flipBitAtIndex,
+  hexToBits,
+  parseBitString,
   reconstructVigenereCandidate,
 } from '../cryptanalysis';
+import type { CryptanalysisMode } from '../cryptanalysis-mode';
+import { runDemoProject } from '../demo-projects';
+import { validateProject } from '../../engine/validation';
+import type { ExecutionResult, ModuleRegistry, Project, Signal } from '../../engine/types';
+import { cloneProject } from '../store';
 import type { WorkspaceMode } from '../workspace-mode';
 
 interface CryptanalysisPanelProps {
   projectName: string;
+  project: Project;
+  registry: ModuleRegistry;
+  execution: ExecutionResult | null;
   ciphertext: string;
+  cryptanalysisMode: CryptanalysisMode;
+  modernBaseline: string;
+  modernFlipBit: number;
   workspaceMode: WorkspaceMode;
   onSetWorkspaceMode: (mode: WorkspaceMode) => void;
+  onSetCryptanalysisMode: (mode: CryptanalysisMode) => void;
   onCiphertextChange: (value: string) => void;
+  onModernBaselineChange: (value: string) => void;
+  onModernFlipBitChange: (value: number) => void;
 }
 
 export function CryptanalysisPanel({
   projectName,
+  project,
+  registry,
+  execution,
   ciphertext,
+  cryptanalysisMode,
+  modernBaseline,
+  modernFlipBit,
   workspaceMode,
   onSetWorkspaceMode,
+  onSetCryptanalysisMode,
   onCiphertextChange,
+  onModernBaselineChange,
+  onModernFlipBitChange,
 }: CryptanalysisPanelProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
   const [selectedColumnIndex, setSelectedColumnIndex] = useState<number>(0);
@@ -72,12 +101,92 @@ export function CryptanalysisPanel({
         : [],
     [activeColumn, activeColumnShift],
   );
+  const baselineBits = useMemo(() => parseBitString(modernBaseline), [modernBaseline]);
+  const flippableSource = useMemo(() => findFlippableProjectSource(project), [project]);
+  const projectSourceBits = useMemo(() => {
+    if (!flippableSource) {
+      return [];
+    }
+
+    if (flippableSource.kind === 'bit-source') {
+      return [...flippableSource.bits];
+    }
+
+    return [...flippableSource.bits];
+  }, [flippableSource]);
+  const effectiveInputBits = flippableSource ? projectSourceBits : baselineBits;
+  const effectiveModernFlipBit =
+    effectiveInputBits.length > 0 ? Math.min(Math.max(0, modernFlipBit), effectiveInputBits.length - 1) : 0;
+  const variantInputBits = useMemo(
+    () => flipBitAtIndex(effectiveInputBits, effectiveModernFlipBit),
+    [effectiveInputBits, effectiveModernFlipBit],
+  );
+  const inputDifference = useMemo(
+    () => analyzeBitDifference(effectiveInputBits, variantInputBits),
+    [effectiveInputBits, variantInputBits],
+  );
+  const variantProject = useMemo(() => {
+    if (!flippableSource) {
+      return null;
+    }
+
+    const nextProject = cloneProject(project);
+    const targetModule = nextProject.modules.find((moduleInstance) => moduleInstance.id === flippableSource.moduleId);
+    if (!targetModule) {
+      return null;
+    }
+
+    if (flippableSource.kind === 'bit-source') {
+      targetModule.params.stream = variantInputBits;
+      return nextProject;
+    }
+
+    targetModule.params.value = bitsToHex(variantInputBits);
+    return nextProject;
+  }, [flippableSource, project, variantInputBits]);
+  const variantExecution = useMemo(() => {
+    if (!variantProject) {
+      return null;
+    }
+
+    const validation = validateProject(variantProject, registry);
+    if (!validation.ok) {
+      return null;
+    }
+
+    try {
+      return runDemoProject(variantProject, registry);
+    } catch {
+      return null;
+    }
+  }, [registry, variantProject]);
+  const baselineOutputBits = useMemo(
+    () => (execution ? getTerminalBits(execution) : null),
+    [execution],
+  );
+  const variantOutputBits = useMemo(
+    () => (variantExecution ? getTerminalBits(variantExecution) : null),
+    [variantExecution],
+  );
+  const outputDifference = useMemo(() => {
+    if (!baselineOutputBits || !variantOutputBits) {
+      return null;
+    }
+
+    return analyzeBitDifference(baselineOutputBits, variantOutputBits);
+  }, [baselineOutputBits, variantOutputBits]);
+  const roundDiffusion = useMemo(
+    () => analyzeRoundDiffusion(execution, variantExecution),
+    [execution, variantExecution],
+  );
+  const hasBitDomainOutput = baselineOutputBits !== null;
+  const showModernCompatibilityCallout = !flippableSource || !hasBitDomainOutput;
 
   return (
     <section className="panel comparison-panel cryptanalysis-panel">
       <div className="panel-head">
         <p className="panel-label">Cryptanalysis Workspace</p>
-        <h2>Vigenere Analysis Lab</h2>
+        <h2>{cryptanalysisMode === 'classical' ? 'Vigenere Analysis Lab' : 'Avalanche Explorer'}</h2>
         <div className="workspace-mode-switch" role="radiogroup" aria-label="Workspace mode">
           <button
             type="button"
@@ -108,11 +217,231 @@ export function CryptanalysisPanel({
           </button>
         </div>
         <p className="comparison-copy">
-          Standalone ciphertext investigation for {projectName}. This first shell keeps discovery
-          work separate from Compare while the full Vigenere workflow comes in.
+          Standalone cryptanalysis for {projectName}. Compare stays compact; deeper investigation
+          happens here.
         </p>
       </div>
 
+      <div className="cryptanalysis-mode-switch" role="radiogroup" aria-label="Cryptanalysis mode">
+        <button
+          type="button"
+          role="radio"
+          aria-checked={cryptanalysisMode === 'classical'}
+          className={cryptanalysisMode === 'classical' ? 'workspace-mode-chip active' : 'workspace-mode-chip'}
+          onClick={() => onSetCryptanalysisMode('classical')}
+        >
+          Classical
+        </button>
+        <button
+          type="button"
+          role="radio"
+          aria-checked={cryptanalysisMode === 'modern'}
+          className={cryptanalysisMode === 'modern' ? 'workspace-mode-chip active' : 'workspace-mode-chip'}
+          onClick={() => onSetCryptanalysisMode('modern')}
+        >
+          Modern
+        </button>
+      </div>
+
+      {cryptanalysisMode === 'modern' ? (
+        <div className="comparison-grid">
+          {showModernCompatibilityCallout ? (
+            <div className="comparison-card comparison-card-wide cryptanalysis-modern-callout">
+              <span className="meta-label">Modern Analysis Compatibility</span>
+              <strong>
+                {flippableSource
+                  ? 'This project needs a bit-domain output path for full avalanche comparison.'
+                  : 'This project needs a supported bit-domain source for full avalanche comparison.'}
+              </strong>
+              <p className="comparison-copy">
+                Avalanche Explorer works best when the active machine exposes a real bit-domain input and output.
+                Supported source paths currently begin from <strong>BitSource</strong> or <strong>HexSource</strong>.
+              </p>
+              <p className="comparison-copy">
+                Recommended projects right now: <strong>Feistel Network</strong>, <strong>Scheduled Byte Iterator</strong>,{' '}
+                <strong>Hex Byte Round</strong>, or <strong>Byte S-Box Round</strong>.
+              </p>
+            </div>
+          ) : null}
+
+          <div className="comparison-card comparison-card-wide">
+            <span className="meta-label">Baseline Bits</span>
+            <strong>
+              {flippableSource
+                ? `Using ${flippableSource.moduleName} from the active project`
+                : 'Manual baseline input'}
+            </strong>
+            {flippableSource ? (
+              <>
+                <p className="comparison-copy">
+                  Source module: <strong>{flippableSource.moduleId}</strong>
+                  {' '}| kind <strong>{flippableSource.kind === 'bit-source' ? 'BitSource' : 'HexSource'}</strong>
+                </p>
+                <p className="comparison-copy">
+                  The explorer is now flipping a real project input bit and re-running the machine.
+                </p>
+              </>
+            ) : (
+              <>
+                <label className="param-field cryptanalysis-textarea-field">
+                  <span>Baseline Input</span>
+                  <textarea
+                    value={modernBaseline}
+                    onChange={(event) => onModernBaselineChange(event.target.value)}
+                    placeholder="Example: 1011010010110100"
+                    rows={4}
+                    spellCheck={false}
+                  />
+                </label>
+                <p className="comparison-copy">
+                  No supported project source detected yet, so this view is using a manual bit baseline.
+                </p>
+              </>
+            )}
+          </div>
+
+          <div className="comparison-card comparison-card-wide">
+            <span className="meta-label">Bit Flip Control</span>
+            <strong>Flip one bit and inspect the difference pattern</strong>
+            {effectiveInputBits.length > 0 ? (
+              <>
+                <div className="cryptanalysis-shift-control-row">
+                  <button
+                    type="button"
+                    className="mini-action-button"
+                    onClick={() => onModernFlipBitChange(Math.max(0, effectiveModernFlipBit - 1))}
+                  >
+                    Bit Left
+                  </button>
+                  <label className="param-field cryptanalysis-shift-slider">
+                    <span>Flip Bit {effectiveModernFlipBit + 1}</span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={Math.max(0, baselineBits.length - 1)}
+                      step={1}
+                      value={effectiveModernFlipBit}
+                      onChange={(event) => onModernFlipBitChange(Number(event.target.value))}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="mini-action-button"
+                    onClick={() =>
+                      onModernFlipBitChange(Math.min(baselineBits.length - 1, effectiveModernFlipBit + 1))
+                    }
+                  >
+                    Bit Right
+                  </button>
+                </div>
+                <p className="comparison-copy">
+                  Baseline length: <strong>{effectiveInputBits.length}</strong> bits
+                  {' '}| changed input bits <strong>{inputDifference.changedCount}</strong>
+                  {' '}| changed percent <strong>{(inputDifference.changedPercent * 100).toFixed(1)}%</strong>
+                </p>
+              </>
+            ) : (
+              <p className="comparison-copy">
+                Enter at least one bit to start the Avalanche Explorer.
+              </p>
+            )}
+          </div>
+
+          <div className="comparison-card comparison-card-wide">
+            <span className="meta-label">Input Difference View</span>
+            <strong>See the changed source position directly</strong>
+            {effectiveInputBits.length > 0 ? (
+              <div className="modern-bit-grid">
+                <BitStripRow label="Baseline" bits={inputDifference.baselineBits} />
+                <BitStripRow label="Variant" bits={inputDifference.variantBits} changedFlags={inputDifference.changedFlags} />
+                <BitStripRow label="Changed" bits={inputDifference.changedFlags.map((changed) => (changed ? 1 : 0))} changedFlags={inputDifference.changedFlags} emphasis="changed" />
+              </div>
+            ) : (
+              <p className="comparison-copy">
+                The first modern view uses aligned bit strips so the difference shape is obvious at a glance.
+              </p>
+            )}
+          </div>
+
+          <div className="comparison-card comparison-card-wide">
+            <span className="meta-label">Machine Output Difference</span>
+            <strong>Compare real baseline vs variant outputs</strong>
+            {outputDifference ? (
+              <>
+                <div className="modern-bit-grid">
+                  <BitStripRow label="Baseline Out" bits={outputDifference.baselineBits} />
+                  <BitStripRow label="Variant Out" bits={outputDifference.variantBits} changedFlags={outputDifference.changedFlags} />
+                  <BitStripRow label="Changed Out" bits={outputDifference.changedFlags.map((changed) => (changed ? 1 : 0))} changedFlags={outputDifference.changedFlags} emphasis="changed" />
+                </div>
+                <p className="comparison-copy">
+                  Changed output bits <strong>{outputDifference.changedCount}</strong>
+                  {' '}| changed percent <strong>{(outputDifference.changedPercent * 100).toFixed(1)}%</strong>
+                </p>
+              </>
+            ) : (
+              <p className="comparison-copy">
+                This project needs a supported bit source and a bit-domain output path before the machine-aware avalanche view can render.
+              </p>
+            )}
+          </div>
+
+          <div className="comparison-card comparison-card-wide">
+            <span className="meta-label">Round-Aware Diffusion</span>
+            <strong>Watch the change spread across internal rounds</strong>
+            {roundDiffusion.length > 0 ? (
+              <>
+                <div className="modern-round-diffusion-matrix">
+                  {roundDiffusion.map((entry) => (
+                    <div key={entry.moduleId} className="modern-round-diffusion-matrix-row">
+                      <div className="modern-round-diffusion-matrix-copy">
+                        <span className="meta-label">R{entry.round}</span>
+                        <strong>{entry.label}</strong>
+                      </div>
+                      <div className="modern-round-diffusion-matrix-strip">
+                        {entry.changedFlags.map((changed, index) => (
+                          <span
+                            key={`${entry.moduleId}-${index}`}
+                            className={changed ? 'modern-round-diffusion-matrix-cell active' : 'modern-round-diffusion-matrix-cell'}
+                            title={`Round ${entry.round}, bit ${index + 1}: ${changed ? 'changed' : 'same'}`}
+                          />
+                        ))}
+                      </div>
+                      <div className="modern-round-diffusion-matrix-metric">
+                        <strong>{entry.changedCount}</strong>
+                        <span>{(entry.changedPercent * 100).toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="modern-round-diffusion-list">
+                  {roundDiffusion.map((entry) => (
+                    <div key={entry.moduleId} className="modern-round-diffusion-row">
+                      <div className="modern-round-diffusion-copy">
+                        <span className="meta-label">Round {entry.round}</span>
+                        <strong>{entry.label}</strong>
+                        <span className="comparison-copy">
+                          {entry.changedCount} changed bits ({(entry.changedPercent * 100).toFixed(1)}%)
+                        </span>
+                      </div>
+                      <div className="modern-round-diffusion-bar">
+                        <div
+                          className="modern-round-diffusion-fill"
+                          style={{ width: `${Math.max(entry.changedPercent * 100, 2)}%` }}
+                          title={`${(entry.changedPercent * 100).toFixed(1)}% changed`}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="comparison-copy">
+                Round-aware diffusion appears when the active machine exposes iterator-style internal rounds in the analysis trace.
+              </p>
+            )}
+          </div>
+        </div>
+      ) : (
       <div className="comparison-grid">
         <div className="comparison-card comparison-card-wide">
           <span className="meta-label">Ciphertext Input</span>
@@ -397,7 +726,52 @@ export function CryptanalysisPanel({
           </p>
         </div>
       </div>
+      )}
     </section>
+  );
+}
+
+interface BitStripRowProps {
+  label: string;
+  bits: number[];
+  changedFlags?: boolean[];
+  emphasis?: 'default' | 'changed';
+  compact?: boolean;
+}
+
+function BitStripRow({
+  label,
+  bits,
+  changedFlags = [],
+  emphasis = 'default',
+  compact = false,
+}: BitStripRowProps) {
+  return (
+    <div className={compact ? 'modern-bit-row modern-bit-row-compact' : 'modern-bit-row'}>
+      <span className="meta-label modern-bit-row-label">{label}</span>
+      <div className={compact ? 'modern-bit-strip modern-bit-strip-compact' : 'modern-bit-strip'}>
+        {bits.map((bit, index) => {
+          const changed = changedFlags[index] ?? false;
+          return (
+            <span
+              key={`${label}-${index}`}
+              className={[
+                'modern-bit-cell',
+                compact ? 'modern-bit-cell-compact' : '',
+                bit === 1 ? 'modern-bit-cell-on' : 'modern-bit-cell-off',
+                changed ? 'modern-bit-cell-changed' : '',
+                emphasis === 'changed' ? 'modern-bit-cell-diff' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              title={`Bit ${index + 1}: ${bit}`}
+            >
+              {bit}
+            </span>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -446,4 +820,41 @@ function getSelectedKeyLetter(
     column.topShiftCandidates[0]?.keyLetter ??
     '?'
   );
+}
+
+function getTerminalBits(result: ExecutionResult): number[] | null {
+  const terminalTrace = result.trace.at(-1) ?? null;
+  const terminalInput = terminalTrace?.inputs.in ?? null;
+  const terminalOutput =
+    terminalTrace && Object.values(terminalTrace.outputs)[0]
+      ? (Object.values(terminalTrace.outputs)[0] as Signal)
+      : null;
+  const signal = terminalOutput ?? terminalInput ?? null;
+
+  return signal?.type === 'bits' ? signal.value : null;
+}
+
+function findFlippableProjectSource(project: Project) {
+  for (const moduleInstance of project.modules) {
+    if (moduleInstance.defId === 'BitSource' && Array.isArray(moduleInstance.params.stream)) {
+      const bits = (moduleInstance.params.stream as number[]).map((bit) => (bit ? 1 : 0));
+      return {
+        moduleId: moduleInstance.id,
+        moduleName: 'Bit Source',
+        kind: 'bit-source' as const,
+        bits,
+      };
+    }
+
+    if (moduleInstance.defId === 'HexSource' && typeof moduleInstance.params.value === 'string') {
+      return {
+        moduleId: moduleInstance.id,
+        moduleName: 'Hex Source',
+        kind: 'hex-source' as const,
+        bits: hexToBits(moduleInstance.params.value),
+      };
+    }
+  }
+
+  return null;
 }

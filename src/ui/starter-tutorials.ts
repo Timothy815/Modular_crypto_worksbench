@@ -3,6 +3,56 @@ import type { GuidedTutorial } from './tutorials';
 export const STARTER_TUTORIALS: GuidedTutorial[] = [
   {
     version: 1,
+    id: 'avalanche-effect',
+    title: 'The Avalanche Effect',
+    group: 'Cryptanalysis',
+    summary: 'Use the modern Cryptanalysis workspace to flip one bit, compare real machine outputs, and watch diffusion spread across Feistel rounds.',
+    projectId: 'feistel-network',
+    steps: [
+      {
+        id: 'avalanche-mode',
+        title: 'Enter Modern Cryptanalysis',
+        body: 'Switch into Cryptanalysis mode, then choose the Modern sub-mode. This is the dedicated workspace for asking how strongly a machine diffuses change, not just whether it runs.',
+      },
+      {
+        id: 'avalanche-source',
+        title: 'Start From A Real Machine Input',
+        body: 'In the Feistel demo, Avalanche Explorer reads the actual HexSource feeding the network. That keeps the experiment honest: you are perturbing a visible project input, not a hidden test harness.',
+        focusModuleId: 'source',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'avalanche-flip',
+        title: 'Flip One Bit Only',
+        body: 'Move the flip control one position at a time. The important setup is tiny: one bit changes, everything else stays fixed. Avalanche is meaningful only when the perturbation is small and explicit.',
+        focusModuleId: 'source',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'avalanche-output',
+        title: 'Compare The Final Output',
+        body: 'Look at the baseline and variant output strips together. A strong iterated machine should turn a tiny source change into a broad output difference rather than a small local disturbance.',
+        focusModuleId: 'output',
+        targetStepIndex: 3,
+      },
+      {
+        id: 'avalanche-rounds',
+        title: 'Watch The Change Bloom Across Rounds',
+        body: 'The round-aware diffusion view is the key modern-analysis idea. Instead of only counting changed output bits, it shows where the changed positions appear and how the spread grows from round to round.',
+        focusModuleId: 'rounds',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'avalanche-read',
+        title: 'Read Diffusion As A Shape',
+        body: 'Do not treat the explorer like a calculator. Read the matrix and strips visually: weak diffusion stays narrow, stronger diffusion blooms wider. The shape of the spread is the lesson.',
+        focusModuleId: 'rounds',
+        targetStepIndex: 2,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'breaking-the-unbreakable',
     title: 'Breaking the Unbreakable',
     group: 'Cryptanalysis',

@@ -11,8 +11,8 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.3.0` and `main` is now in `v1.4.0` cleanup/framing around the
-**Cryptanalysis Workspace** milestone.
+The repository has shipped through `v1.4.0` and `main` is now in
+`v1.5.0` cleanup/framing around the **Modern Analysis** milestone.
 
 Implemented and shipped:
 - engine core types, graph validation, iterative topological executor
@@ -40,6 +40,14 @@ Implemented and shipped:
   - graph-and-slide frequency matching
   - candidate plaintext reconstruction
 - `Breaking the Unbreakable` tutorial
+- modern analysis workflow:
+  - `Classical / Modern` cryptanalysis sub-modes
+  - Avalanche Explorer
+  - aligned bit-difference strips
+  - machine-aware output difference for supported bit/hex source paths
+  - round-aware diffusion summaries and progression matrix
+- `The Avalanche Effect` tutorial
+- `v1.4.0` release framing and workspace polish
 - workbench persistence and JSON import/export
 - dark mode
 - GitHub Pages deployment
@@ -54,6 +62,8 @@ Implemented and shipped:
 - `MODERN-PRIMITIVES-V1-CONTRACT.md`: locked direction for modern primitive expansion
 - `V1-POLISH-AND-TUTORIALS.md`: locked direction for v1 polish and tutorials
 - `ADVANCED-FOUNDRY-CLOCK-V1.md`: locked direction for ticked/stateful execution
+- `CRYPTANALYSIS-WORKSPACE-V1.md`: locked direction for the dedicated cryptanalysis workspace
+- `MODERN-ANALYSIS-V1.md`: active direction for the post-`v1.4.0` modern-analysis line
 - `AI-COORDINATION.md`: multi-agent workflow rules
 - `AI-WORKSTREAMS.md`: current ownership boundaries
 - `IMPLEMENTATION-STATUS.md`: live execution status and handoff notes
@@ -89,7 +99,7 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 
 ## Near-Term Roadmap
 
-1. `v1.4.0` cleanup and milestone framing
-2. Final cryptanalysis copy / help polish if needed
-3. Tag `v1.4.0`
-4. Post-`v1.4.0` direction: broader classical attack tooling or modern analysis instruments
+1. Frame `v1.5.0` as the first Modern Analysis release
+2. Final modern-analysis copy / visual polish if needed
+3. Tag `v1.5.0`
+4. Keep hashing on the backlog as a future cryptography scope line

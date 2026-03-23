@@ -180,6 +180,18 @@
   margin-bottom: 18px;
 }
 
+.cryptanalysis-mode-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+
+.cryptanalysis-modern-callout {
+  border-color: color-mix(in srgb, var(--danger-text) 28%, var(--line));
+  background: color-mix(in srgb, var(--danger-bg-strong) 24%, var(--surface-panel));
+}
+
 .panel-label,
 .meta-label {
   display: block;
@@ -247,6 +259,161 @@
   border-color: var(--link-primary-text);
   background: color-mix(in srgb, var(--link-primary-bg) 40%, white);
   color: var(--link-primary-text);
+}
+
+.modern-bit-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.modern-bit-row {
+  display: grid;
+  gap: 8px;
+}
+
+.modern-bit-row-compact {
+  gap: 4px;
+}
+
+.modern-bit-row-label {
+  margin-bottom: 0;
+}
+
+.modern-bit-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.modern-bit-strip-compact {
+  gap: 2px;
+}
+
+.modern-bit-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface-soft-strong);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.modern-bit-cell-compact {
+  min-width: 16px;
+  min-height: 16px;
+  border-radius: 5px;
+  font-size: 0.58rem;
+}
+
+.modern-bit-cell-on {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-soft-strong));
+  color: var(--ink);
+}
+
+.modern-bit-cell-off {
+  color: var(--muted);
+}
+
+.modern-bit-cell-changed {
+  border-color: var(--danger-text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger-text) 45%, transparent);
+}
+
+.modern-bit-cell-diff.modern-bit-cell-on {
+  background: color-mix(in srgb, var(--danger-text) 18%, var(--surface-soft-strong));
+}
+
+.modern-round-diffusion-list {
+  display: grid;
+  gap: 12px;
+}
+
+.modern-round-diffusion-matrix {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.modern-round-diffusion-matrix-row {
+  display: grid;
+  grid-template-columns: minmax(72px, 112px) minmax(0, 1fr) minmax(64px, auto);
+  align-items: center;
+  gap: 10px;
+}
+
+.modern-round-diffusion-matrix-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.modern-round-diffusion-matrix-copy .meta-label {
+  margin-bottom: 0;
+}
+
+.modern-round-diffusion-matrix-strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(10px, 1fr);
+  gap: 2px;
+}
+
+.modern-round-diffusion-matrix-cell {
+  min-height: 16px;
+  border-radius: 4px;
+  background: var(--surface-soft-strong);
+  border: 1px solid var(--line);
+}
+
+.modern-round-diffusion-matrix-cell.active {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 70%, white), var(--danger-text));
+  border-color: color-mix(in srgb, var(--danger-text) 55%, transparent);
+}
+
+.modern-round-diffusion-matrix-metric {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.modern-round-diffusion-row {
+  display: grid;
+  gap: 10px;
+}
+
+.modern-round-diffusion-bit-strips {
+  display: grid;
+  gap: 6px;
+}
+
+.modern-round-diffusion-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.modern-round-diffusion-copy .comparison-copy {
+  margin: 0;
+}
+
+.modern-round-diffusion-bar {
+  width: 100%;
+  min-height: 14px;
+  border-radius: 999px;
+  background: var(--surface-soft-strong);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.modern-round-diffusion-fill {
+  min-height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 76%, white), var(--danger-text));
 }
 
 .primitive-main {
