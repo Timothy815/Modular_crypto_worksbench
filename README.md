@@ -11,8 +11,8 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.2.0` and `main` is now in `v1.3.0` framing around the
-**Cipher Architecture** milestone.
+The repository has shipped through `v1.3.0` and `main` is now in `v1.4.0` cleanup/framing around the
+**Cryptanalysis Workspace** milestone.
 
 Implemented and shipped:
 - engine core types, graph validation, iterative topological executor
@@ -31,6 +31,15 @@ Implemented and shipped:
 - constrained iterators and explicit key-bus distribution
 - nested analysis for composite and iterator internals
 - Feistel round / iterator teaching loop
+- dedicated Cryptanalysis workspace mode
+- Vigenere analysis workflow:
+  - IOC and n-gram summaries
+  - repeated-fragment / Kasiski-style evidence
+  - candidate key-length estimation
+  - period-based column analysis
+  - graph-and-slide frequency matching
+  - candidate plaintext reconstruction
+- `Breaking the Unbreakable` tutorial
 - workbench persistence and JSON import/export
 - dark mode
 - GitHub Pages deployment
@@ -80,7 +89,7 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 
 ## Near-Term Roadmap
 
-1. `v1.3.0` cleanup and milestone framing
-2. Final modern architecture tutorial/content pass
-3. Final iterator/nested-analysis polish if needed
-4. Tag `v1.3.0`
+1. `v1.4.0` cleanup and milestone framing
+2. Final cryptanalysis copy / help polish if needed
+3. Tag `v1.4.0`
+4. Post-`v1.4.0` direction: broader classical attack tooling or modern analysis instruments

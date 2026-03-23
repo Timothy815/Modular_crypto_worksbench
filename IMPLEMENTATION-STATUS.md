@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: March 22, 2026
+Last updated: March 23, 2026
 
 ---
 
@@ -8,8 +8,8 @@ Last updated: March 22, 2026
 
 The project has shipped through `v1.3.0` on `main`.
 
-Current `main` has begun the post-`v1.3.0`
-**Cryptanalysis Workspace** line.
+Current `main` is now in `v1.4.0` cleanup/framing around the
+**Cryptanalysis Workspace** milestone.
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -46,6 +46,8 @@ Established and shipped:
 - nested analysis for composites and iterators
 - Feistel round / iterator teaching loop
 - lightweight cryptanalysis instrumentation in Compare
+- dedicated cryptanalysis workspace mode
+- Vigenere cryptanalysis workflow
 - GitHub Pages deployment workflow
 
 ---
@@ -62,6 +64,7 @@ The following decisions are reflected in shipped code:
 - iterator execution is bounded, linear, and auto-unrolled
 - round-key distribution is explicit signal flow, not hidden executor mutation
 - nested trace visibility is hoisted into `analysisTrace`, not hidden inside black-box execution
+- cryptanalysis workspace state is persisted separately from engine project state
 
 ---
 
@@ -85,6 +88,15 @@ Post-`v1.3.0` work merged to `main`:
 - protected built-in architectures and duplicate-as-custom flow
 - composite vs iterator palette split
 - lightweight text cryptanalysis in Compare
+- dedicated Cryptanalysis mode
+- Vigenere workspace:
+  - IOC / n-grams
+  - repeated fragments
+  - candidate periods
+  - column analysis
+  - shift matching workshop
+  - plaintext reconstruction
+- `Breaking the Unbreakable` tutorial
 
 ---
 
@@ -93,30 +105,29 @@ Post-`v1.3.0` work merged to `main`:
 ### Claude
 
 Safe to begin:
-- `feature/cryptanalysis-workspace-vigenere`
-- cryptanalysis workspace contract and shell
-- reusable English frequency/reference data
-- Vigenere-focused key-length and column-analysis tooling
+- `v1.4.0` cleanup and tag framing
+- final cryptanalysis copy/help polish
+- release note cleanup for the workspace milestone
+- post-`v1.4.0` branch framing
 
 Should avoid for now:
 - feedback loops / cycles in the graph
 - async or real-time execution
 - custom scripting for advance functions
 - hidden iterator/key-schedule magic
-- automated cracking/search as the first cryptanalysis slice
+- opening a second major cryptanalysis family before `v1.4.0` is settled
 
 ### Gemini
 
 Safe to begin:
-- review whether Cryptanalysis should be its own workspace
-- critique the product boundary between Compare and Cryptanalysis
-- validate Vigenere as the first classical attack workflow
-- help sequence future cryptanalysis families after Vigenere
+- review whether the current cryptanalysis line is a clean `v1.4.0` candidate
+- identify whether any remaining work is polish-only
+- help choose the first post-`v1.4.0` analysis direction
 
 Best focus:
-- whether the first cryptanalysis milestone is bounded correctly
-- whether analysis should remain classical-only at first
-- whether any important discovery tool is missing from the Vigenere first pass
+- whether the current Vigenere workspace is complete enough for a release
+- whether one more bounded classical slice is needed before tagging
+- what should follow after the first cryptanalysis milestone
 
 ---
 
@@ -127,7 +138,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three pass as of the current post-`v1.3.0` line.
+All three pass as of the current `v1.4.0` cleanup line.
 
 ---
 
@@ -141,10 +152,10 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 ### Near-Term Roadmap
 
-1. **Cryptanalysis workspace contract** — lock the product boundary before adding UI
-2. **Workspace shell** — add a dedicated Cryptanalysis mode
-3. **Vigenere first pass** — IOC, repeated patterns, period hints, column analysis
-4. **Post-Vigenere direction** — broader classical attack tooling, then possibly modern analysis lines
+1. **Frame `v1.4.0`** — the Cryptanalysis Workspace release
+2. **Final cleanup/polish** — copy, help text, and release notes
+3. **Tag `v1.4.0`**
+4. **Post-`v1.4.0` direction** — broader classical attack tooling or modern analysis instruments
 
 ### Key Contracts
 
