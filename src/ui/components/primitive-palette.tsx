@@ -18,6 +18,7 @@ interface PrimitivePaletteProps {
   onToggleViewMode: () => void;
   onAddModule: (defId: string) => void;
   onOpenComposite: (defId: string) => void;
+  onDuplicateReusable: (defId: string) => void;
   onExportCompositeLibrary: () => void;
   onRemoveComposite: (defId: string) => void;
   compositeUsageCountById: Record<string, number>;
@@ -30,6 +31,7 @@ export function PrimitivePalette({
   onToggleViewMode,
   onAddModule,
   onOpenComposite,
+  onDuplicateReusable,
   onExportCompositeLibrary,
   onRemoveComposite,
   compositeUsageCountById,
@@ -145,6 +147,7 @@ export function PrimitivePalette({
                     isBuiltInReusable={false}
                     onAddModule={onAddModule}
                     onOpenComposite={onOpenComposite}
+                    onDuplicateReusable={onDuplicateReusable}
                     onRemoveComposite={onRemoveComposite}
                   />
                 ))}
@@ -187,6 +190,7 @@ export function PrimitivePalette({
                       isBuiltInReusable={builtInReusableIds.includes(def.id)}
                       onAddModule={onAddModule}
                       onOpenComposite={onOpenComposite}
+                      onDuplicateReusable={onDuplicateReusable}
                       onRemoveComposite={onRemoveComposite}
                     />
                   ))}
@@ -213,6 +217,7 @@ interface ModuleLibraryCardProps {
   isBuiltInReusable: boolean;
   onAddModule: (defId: string) => void;
   onOpenComposite: (defId: string) => void;
+  onDuplicateReusable: (defId: string) => void;
   onRemoveComposite: (defId: string) => void;
 }
 
@@ -223,6 +228,7 @@ function ModuleLibraryCard({
   isBuiltInReusable,
   onAddModule,
   onOpenComposite,
+  onDuplicateReusable,
   onRemoveComposite,
 }: ModuleLibraryCardProps) {
   const isComposite = 'kind' in def && def.kind === 'composite';
@@ -252,6 +258,17 @@ function ModuleLibraryCard({
             >
               +
             </button>
+            {isBuiltInReusable ? (
+              <button
+                type="button"
+                className="primitive-action-button"
+                onClick={() => onDuplicateReusable(def.id)}
+                title={`Duplicate ${def.name} into My Reusables`}
+                aria-label={`Duplicate ${def.name} into My Reusables`}
+              >
+                ⧉
+              </button>
+            ) : null}
             {isComposite && !isBuiltInReusable ? (
               <button
                 type="button"
@@ -312,6 +329,17 @@ function ModuleLibraryCard({
             >
               +
             </button>
+            {isBuiltInReusable ? (
+              <button
+                type="button"
+                className="primitive-action-button"
+                onClick={() => onDuplicateReusable(def.id)}
+                title={`Duplicate ${def.name} into My Reusables`}
+                aria-label={`Duplicate ${def.name} into My Reusables`}
+              >
+                ⧉
+              </button>
+            ) : null}
             {isComposite && !isBuiltInReusable ? (
               <button
                 type="button"
