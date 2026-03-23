@@ -671,11 +671,14 @@ export function ParameterInspector({
       {inspectorTab === 'analyze' ? (
       <ol className="trace-list">
         {traceEntries.map((entry, analysisIndex) => {
+          const isNested = (entry.depth ?? 0) > 0;
+          const topLevelModuleId = getTopLevelTraceModuleId(entry);
+          const nestedPath = getNestedTracePath(entry);
           const traceIndex = analysisTrace.findIndex(
             (traceEntry) => traceEntry.moduleId === entry.moduleId,
           );
           const topLevelIndex = execution?.trace.findIndex(
-            (traceEntry) => traceEntry.moduleId === entry.moduleId,
+            (traceEntry) => traceEntry.moduleId === topLevelModuleId,
           ) ?? -1;
 
           return (
@@ -683,28 +686,35 @@ export function ParameterInspector({
             key={entry.moduleId}
             ref={entry.moduleId === tutorialStep?.focusModuleId ? tutorialTraceRef : null}
             className={
-              entry.moduleId === steppedTrace?.moduleId
+              topLevelModuleId === steppedTrace?.moduleId
                 ? entry.moduleId === tutorialStep?.focusModuleId
-                  ? 'trace-card trace-card-stepped trace-card-tutorial'
-                  : 'trace-card trace-card-stepped'
+                  ? `trace-card${isNested ? ' trace-card-nested' : ''} trace-card-stepped trace-card-tutorial`
+                  : `trace-card${isNested ? ' trace-card-nested' : ''} trace-card-stepped`
                 : entry.moduleId === tutorialStep?.focusModuleId
-                ? 'trace-card trace-card-tutorial'
-                : entry.moduleId === moduleInstance?.id
-                ? 'trace-card trace-card-active'
-                : 'trace-card'
+                ? `trace-card${isNested ? ' trace-card-nested' : ''} trace-card-tutorial`
+                : topLevelModuleId === moduleInstance?.id
+                ? `trace-card${isNested ? ' trace-card-nested' : ''} trace-card-active`
+                : `trace-card${isNested ? ' trace-card-nested' : ''}`
             }
-            onMouseEnter={() => onTraceHover(entry.moduleId)}
+            style={{ marginLeft: `${Math.max(0, (entry.depth ?? 0) * 14)}px` }}
+            onMouseEnter={() => onTraceHover(topLevelModuleId)}
             onMouseLeave={() => onTraceHover(null)}
             onClick={() =>
               onStepChange(topLevelIndex >= 0 ? topLevelIndex : null)
             }
           >
             <div className="trace-head">
-              <strong>{entry.moduleId}</strong>
+              <div className="trace-head-labels">
+                <strong>{getDisplayTraceModuleId(entry)}</strong>
+                {isNested ? (
+                  <span className="trace-nested-chip">Inside {topLevelModuleId}</span>
+                ) : null}
+              </div>
               <span>
                 #{traceIndex >= 0 ? traceIndex + 1 : analysisIndex + 1} {entry.defId}
               </span>
             </div>
+            {nestedPath ? <p className="trace-nested-path">{nestedPath}</p> : null}
             <p>
               inputs:{' '}
               {Object.entries(entry.inputs)
@@ -773,7 +783,9 @@ function getTraceEntries(args: {
 
   if (traceMode === 'focused') {
     return analysisTrace.filter(
-      (entry) => (entry.scopeModuleId ?? entry.moduleId) === selectedModuleId,
+      (entry) =>
+        entry.moduleId === selectedModuleId ||
+        entry.moduleId.startsWith(`${selectedModuleId}/`),
     );
   }
 
@@ -784,8 +796,30 @@ function getTraceEntries(args: {
 
   relatedModuleIds.add(selectedModuleId);
   return analysisTrace.filter((entry) =>
-    relatedModuleIds.has(entry.scopeModuleId ?? entry.moduleId),
+    [...relatedModuleIds].some(
+      (moduleId) =>
+        entry.moduleId === moduleId ||
+        entry.moduleId.startsWith(`${moduleId}/`),
+    ),
   );
+}
+
+function getTopLevelTraceModuleId(entry: ExecutionTraceEntry) {
+  return entry.moduleId.split('/')[0] ?? entry.moduleId;
+}
+
+function getDisplayTraceModuleId(entry: ExecutionTraceEntry) {
+  const parts = entry.moduleId.split('/');
+  return parts[parts.length - 1] ?? entry.moduleId;
+}
+
+function getNestedTracePath(entry: ExecutionTraceEntry) {
+  const parts = entry.moduleId.split('/');
+  if (parts.length <= 1) {
+    return null;
+  }
+
+  return parts.slice(0, -1).join(' / ');
 }
 
 function collectReachableModules(

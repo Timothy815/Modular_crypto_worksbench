@@ -1306,8 +1306,14 @@
 .trace-head {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   gap: 12px;
   margin-bottom: 10px;
+}
+
+.trace-head-labels {
+  display: grid;
+  gap: 4px;
 }
 
 .trace-head span {
@@ -1318,6 +1324,10 @@
 
 .trace-card {
   padding: 14px 16px;
+}
+
+.trace-card-nested {
+  border-style: dashed;
 }
 
 .trace-card-active {
@@ -1333,6 +1343,26 @@
 .trace-card-tutorial {
   border: 1px solid color-mix(in srgb, var(--accent) 52%, var(--line-strong));
   background: color-mix(in srgb, var(--accent) 10%, var(--surface-strong));
+}
+
+.trace-nested-chip {
+  display: inline-flex;
+  width: fit-content;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-panel) 68%, white);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.trace-nested-path {
+  margin: -2px 0 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.78rem;
 }
 
 .inspector-section {
