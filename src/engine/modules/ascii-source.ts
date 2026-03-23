@@ -1,4 +1,4 @@
-import type { ModuleDef } from '../types';
+import type { TickSliceableModuleDef } from '../types';
 
 export function validateAsciiSourceValue(value: unknown): string | null {
   if (typeof value !== 'string') {
@@ -28,7 +28,7 @@ function charToBits(char: string): number[] {
   return [7, 6, 5, 4, 3, 2, 1, 0].map((shift) => (code >> shift) & 1);
 }
 
-export const AsciiSource: ModuleDef = {
+export const AsciiSource: TickSliceableModuleDef = {
   id: 'AsciiSource',
   name: 'ASCII Source',
   inputs: [],
@@ -49,4 +49,12 @@ export const AsciiSource: ModuleDef = {
       out: { type: 'bits', value: value.split('').flatMap(charToBits) },
     };
   },
+  tickSlice: (params, tick) => {
+    const value = normalizeAscii(params.value);
+    return {
+      ...params,
+      value: value[tick] ?? '',
+    };
+  },
+  tickLength: (params) => normalizeAscii(params.value).length,
 };

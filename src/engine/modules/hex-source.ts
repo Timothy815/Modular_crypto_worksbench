@@ -1,4 +1,4 @@
-import type { ModuleDef } from '../types';
+import type { TickSliceableModuleDef } from '../types';
 
 export function validateHexSourceValue(value: unknown): string | null {
   if (typeof value !== 'string') {
@@ -35,7 +35,7 @@ function hexToBits(value: string): number[] {
   });
 }
 
-export const HexSource: ModuleDef = {
+export const HexSource: TickSliceableModuleDef = {
   id: 'HexSource',
   name: 'Hex Source',
   inputs: [],
@@ -56,4 +56,13 @@ export const HexSource: ModuleDef = {
       out: { type: 'bits', value: hexToBits(value) },
     };
   },
+  tickSlice: (params, tick) => {
+    const value = sanitizeHex(params.value);
+    const start = tick * 2;
+    return {
+      ...params,
+      value: value.slice(start, start + 2),
+    };
+  },
+  tickLength: (params) => Math.ceil(sanitizeHex(params.value).length / 2),
 };

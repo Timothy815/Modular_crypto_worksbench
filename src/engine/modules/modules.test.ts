@@ -70,6 +70,12 @@ describe('HexSource', () => {
   it('throws on non-hex input', () => {
     expect(() => HexSource.evaluate({}, { value: 'G1' })).toThrow();
   });
+
+  it('tickSlice emits one byte of hex per tick', () => {
+    const sliced = HexSource.tickSlice({ value: 'A3F0' }, 1);
+    const result = HexSource.evaluate({}, sliced);
+    expect(result.out).toEqual({ type: 'bits', value: [1, 1, 1, 1, 0, 0, 0, 0] });
+  });
 });
 
 describe('AsciiSource', () => {
@@ -83,6 +89,15 @@ describe('AsciiSource', () => {
 
   it('throws on non-ASCII input', () => {
     expect(() => AsciiSource.evaluate({}, { value: 'é' })).toThrow();
+  });
+
+  it('tickSlice emits one ASCII character per tick', () => {
+    const sliced = AsciiSource.tickSlice({ value: 'AZ' }, 1);
+    const result = AsciiSource.evaluate({}, sliced);
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [0, 1, 0, 1, 1, 0, 1, 0],
+    });
   });
 });
 
