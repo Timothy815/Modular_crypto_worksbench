@@ -11,8 +11,9 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.4.0` and `main` is now in
-`v1.5.0` cleanup/framing around the **Modern Analysis** milestone.
+The repository has shipped through `v1.6.0`.
+
+`main` is now positioned to frame/tag **Hashing V1** as the next named teaching milestone after `v1.6.0`.
 
 Implemented and shipped:
 - engine core types, graph validation, iterative topological executor
@@ -47,7 +48,21 @@ Implemented and shipped:
   - machine-aware output difference for supported bit/hex source paths
   - round-aware diffusion summaries and progression matrix
 - `The Avalanche Effect` tutorial
+- hashing foundations:
+  - toy compression hash
+  - toy sponge hash
+  - hash-focused demos and guided tutorials
+  - exposed internal controls for digest/mix behavior via parameter forwarding
+- transformation visualization workflow in Inspector `Analyze`:
+  - `Permutation`
+  - `BitShifter`
+  - `XOR`
+  - `SBox`
+  - iterator-aware nested transformation resolution
 - `v1.4.0` release framing and workspace polish
+- `v1.5.0` Modern Analysis milestone
+- `v1.6.0` Transformation Visualization Phase 1 milestone
+- Hashing V1 milestone groundwork is complete and ready for `v1.7.0` framing/tagging
 - workbench persistence and JSON import/export
 - dark mode
 - GitHub Pages deployment
@@ -63,10 +78,11 @@ Implemented and shipped:
 - `V1-POLISH-AND-TUTORIALS.md`: locked direction for v1 polish and tutorials
 - `ADVANCED-FOUNDRY-CLOCK-V1.md`: locked direction for ticked/stateful execution
 - `CRYPTANALYSIS-WORKSPACE-V1.md`: locked direction for the dedicated cryptanalysis workspace
-- `MODERN-ANALYSIS-V1.md`: active direction for the post-`v1.4.0` modern-analysis line
-- `HASHING-V1.md`: active direction for the future hashing line
+- `MODERN-ANALYSIS-V1.md`: shipped direction for the post-`v1.4.0` modern-analysis line
+- `HASHING-V1.md`: current hashing milestone contract and scope boundary
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
-- `TRANSFORMATION-VISUALIZATION-V1.md`: active direction for primitive-level transformation legibility and drill-down views
+- `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
+- `SBOX-TRANSFORMATION-V1.md`: shipped first lookup/substitution visual family contract
 - `AI-COORDINATION.md`: multi-agent workflow rules
 - `AI-WORKSTREAMS.md`: current ownership boundaries
 - `IMPLEMENTATION-STATUS.md`: live execution status and handoff notes
@@ -102,9 +118,8 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 
 ## Near-Term Roadmap
 
-1. Continue bounded hashing foundations and compare the emerging hash teaching shapes
-2. Tighten tutorial wording and “what to look for” guidance across existing labs
-3. Define the first Transformation Visualization slice before implementation
-4. Define the first `SBox` transformation view before implementation
-4. Add primitive-level drill-down views for key opaque operations
-5. Only then decide whether deeper animation and multi-step playback belong in the next milestone
+1. Tag and frame **`v1.7.0` Hashing V1**
+2. Keep performance/bundle size under watch as inspector and analysis surfaces continue to grow
+3. Decide what follows hashing foundations: collision challenge, polish, or another bounded analysis slice
+4. Defer deeper transformation playback/animation until classroom feedback justifies it
+5. Avoid scope creep into famous-hash approximations, KDFs, or Merkle-style structures before a new contract says otherwise

@@ -2,6 +2,8 @@
 
 Last updated: March 24, 2026
 
+Status: Ready to frame/tag as the `v1.7.0` Hashing V1 milestone.
+
 ## Purpose
 
 This contract defines the first hashing line for the Modular Cryptography Workbench.
@@ -37,7 +39,7 @@ Hashing should not begin as:
 
 ## First Milestone
 
-The first hashing milestone should be **Hash Construction Foundations**.
+The first hashing milestone is **Hash Construction Foundations**.
 
 It should let a student:
 - see how a small structured bit input is mixed into a fixed-size output
@@ -49,7 +51,7 @@ The first milestone should focus on small explicit constructions, not industrial
 
 ## Include
 
-The first hashing milestone should include:
+The first hashing milestone includes:
 - one or more starter hash-like demo constructions
 - explicit bit-domain pipelines built from existing and small new primitives
 - cryptanalysis support through the modern Avalanche Explorer
@@ -59,7 +61,7 @@ The first hashing milestone should include:
   - compressed or fixed-size digest out
   - avalanche under one-bit input change
 
-Good first teaching artifacts could include:
+The shipped teaching artifacts include:
 - a toy compression chain
 - a sponge-like absorb/mix/squeeze teaching model
 - a Feistel-inspired or SP-inspired digest toy if it stays honest and visible
@@ -122,9 +124,9 @@ This is strategically important: hashing should reinforce the modern-analysis li
 
 1. Define Hashing V1 as a product contract.
 2. Continue modern-analysis breadth so the Avalanche Explorer is more generally useful.
-3. Add one bounded hash-construction teaching artifact.
-4. Attach a guided tutorial to that artifact.
-5. Only then decide whether famous-hash approximations belong in a later slice.
+3. Add bounded hash-construction teaching artifacts.
+4. Attach guided tutorials to those artifacts.
+5. Complete the first hashing milestone before considering famous-hash approximations.
 
 ## Success Criteria
 
@@ -134,3 +136,12 @@ Hashing V1 is successful when a student can:
 - see the digest change strongly
 - inspect how the mixing rounds contributed to that change
 - leave with a concrete intuition for why hashing is a distinct cryptographic tool, not just "encryption without a key"
+
+Current shipped milestone coverage:
+- `Toy Compression Hash`
+- `Toy Sponge Hash`
+- `Hash Digest Round`
+- `Compression vs Sponge`
+- Avalanche Explorer support for the hash teaching artifacts
+- parameter-forwarded controls for digest/mix behavior
+- transformation views that explain the internal `SBox`, `BitShifter`, `Permutation`, and `XOR` steps used by the hash artifacts

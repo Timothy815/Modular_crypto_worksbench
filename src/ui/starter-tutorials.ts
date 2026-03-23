@@ -211,7 +211,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       {
         id: 'digest-round-compare',
         title: 'Compare Rotate And Shift Behaviors',
-        body: 'Change Rotate Mode between rotate-left, rotate-right, left shift, and right shift in the inspector. After each change, look back at the final output. The lesson is not which mode is “best,” but how a small internal mode change reshapes the byte before constant mixing.',
+        body: 'Change Rotate Mode between rotate-left, rotate-right, left shift, and right shift in the inspector. Then switch to the right-hand Inspector, open Analyze, and keep the digest round selected so the transformation view shows exactly how rotate and shift route bits differently before constant mixing.',
         focusModuleId: 'digest',
         targetStepIndex: 1,
       },
