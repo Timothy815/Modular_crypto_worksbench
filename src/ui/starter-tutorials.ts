@@ -3,6 +3,51 @@ import type { GuidedTutorial } from './tutorials';
 export const STARTER_TUTORIALS: GuidedTutorial[] = [
   {
     version: 1,
+    id: 'modern-cipher-foundry',
+    title: 'The Modern Cipher Foundry',
+    group: 'Modern Rounds',
+    summary: 'See how bridges, visible round keys, bounded iterators, and nested analysis combine into one inspectable cipher architecture workflow.',
+    projectId: 'feistel-network',
+    steps: [
+      {
+        id: 'modern-foundry-bridge',
+        title: 'Start With A Real Input Bridge',
+        body: 'HexSource turns the machine into a practical byte-oriented workbench instead of a raw bit toy. One visible byte enters the architecture as a full 8-bit block that students can change directly.',
+        focusModuleId: 'source',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'modern-foundry-keybus',
+        title: 'Keep Round Keys Visible',
+        body: 'The key bus is still just another signal on the canvas. MCW does not hide sub-keys inside executor magic: the bus stays explicit, and each round consumes one visible slice of it.',
+        focusModuleId: 'keybus',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'modern-foundry-iterator',
+        title: 'Package Repetition Honestly',
+        body: 'FeistelRoundIterator gives the machine repeated structure without becoming an opaque loop. It is bounded, linear, and auto-unrolled, so the architecture stays inspectable even as depth increases.',
+        focusModuleId: 'rounds',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'modern-foundry-analysis',
+        title: 'Step Inside The Architecture',
+        body: 'Analyze can now focus one round at a time, group deep traces by round, and step nested internals directly. That is the core v1.3 idea: complex ciphers should still be teachable as visible structure.',
+        focusModuleId: 'rounds',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'modern-foundry-output',
+        title: 'Close The Loop Back To Readable Output',
+        body: 'BitsToHex and Output turn the final iterated block back into a readable byte-scale result. This completes the foundry loop: inject real data, run explicit architecture, and inspect the resulting ciphertext.',
+        focusModuleId: 'output',
+        targetStepIndex: 3,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'feistel-network',
     title: 'The Feistel Network',
     group: 'Modern Rounds',
