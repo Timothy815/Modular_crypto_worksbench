@@ -932,6 +932,9 @@ function App() {
                 )
               }
               compositeUsageCountById={compositeUsageCountById}
+              builtInReusableIds={state.compositeLibrary
+                .filter((entry) => entry.source === 'built-in')
+                .map((entry) => entry.id)}
               onAddModule={(defId) => {
                 const moduleDef = effectiveRegistry[defId] ?? null;
                 if (!moduleDef) {

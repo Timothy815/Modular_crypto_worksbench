@@ -5,6 +5,7 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
     id: 'FeistelRoundComposite',
     name: 'Feistel Round',
     version: 1,
+    source: 'built-in',
     definition: {
       id: 'FeistelRoundComposite',
       name: 'Feistel Round',
@@ -48,6 +49,7 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
     id: 'KeyedByteRoundComposite',
     name: 'Keyed Byte Round',
     version: 1,
+    source: 'built-in',
     definition: {
       id: 'KeyedByteRoundComposite',
       name: 'Keyed Byte Round',
@@ -107,6 +109,7 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
     id: 'ByteRoundComposite',
     name: 'Byte Round',
     version: 1,
+    source: 'built-in',
     definition: {
       id: 'ByteRoundComposite',
       name: 'Byte Round',
@@ -153,6 +156,7 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
     id: 'IteratedByteRoundsComposite',
     name: 'Iterated Byte Rounds',
     version: 1,
+    source: 'built-in',
     definition: {
       id: 'IteratedByteRoundsComposite',
       name: 'Iterated Byte Rounds',
@@ -193,6 +197,7 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
     id: 'ByteRoundIterator',
     name: 'Byte Round Iterator',
     version: 1,
+    source: 'built-in',
     definition: {
       id: 'ByteRoundIterator',
       name: 'Byte Round Iterator',
@@ -217,6 +222,7 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
     id: 'KeyedByteRoundIterator',
     name: 'Keyed Byte Round Iterator',
     version: 1,
+    source: 'built-in',
     definition: {
       id: 'KeyedByteRoundIterator',
       name: 'Keyed Byte Round Iterator',
@@ -245,6 +251,7 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
     id: 'FeistelRoundIterator',
     name: 'Feistel Round Iterator',
     version: 1,
+    source: 'built-in',
     definition: {
       id: 'FeistelRoundIterator',
       name: 'Feistel Round Iterator',

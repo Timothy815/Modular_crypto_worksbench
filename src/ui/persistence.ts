@@ -8,6 +8,7 @@ import type { Project } from '../engine/types';
 import type { DemoProject } from './demo-projects';
 import type { GuidedChallenge } from './challenges';
 import type { GuidedTutorial } from './tutorials';
+import { STARTER_COMPOSITE_LIBRARY } from './starter-composites';
 import { STARTER_CHALLENGES } from './starter-challenges';
 import { STARTER_TUTORIALS } from './starter-tutorials';
 import type { UiState } from './store';
@@ -85,9 +86,12 @@ function cloneTutorial(tutorial: GuidedTutorial): GuidedTutorial {
 }
 
 function cloneReusableEntry(entry: CompositeLibraryEntry): CompositeLibraryEntry {
+  const starterEntry = STARTER_COMPOSITE_LIBRARY.find((candidate) => candidate.id === entry.id);
+  const source = entry.source ?? starterEntry?.source ?? 'user';
   if (isCompositeDefinition(entry.definition)) {
     return {
       ...entry,
+      source,
       definition: {
         ...entry.definition,
         project: cloneProject(entry.definition.project),
@@ -107,6 +111,7 @@ function cloneReusableEntry(entry: CompositeLibraryEntry): CompositeLibraryEntry
 
   return {
     ...entry,
+    source,
     definition: { ...entry.definition },
   };
 }
@@ -533,6 +538,9 @@ function isCompositeLibraryEntry(value: unknown): value is CompositeLibraryEntry
     typeof candidate.id === 'string' &&
     typeof candidate.name === 'string' &&
     typeof candidate.version === 'number' &&
+    (candidate.source === undefined ||
+      candidate.source === 'built-in' ||
+      candidate.source === 'user') &&
     (isCompositeDef(candidate.definition) || isIteratorDef(candidate.definition))
   );
 }

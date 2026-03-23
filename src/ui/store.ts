@@ -1,5 +1,6 @@
 import {
   isCompositeDefinition,
+  isBuiltInCompositeLibraryEntry,
   type CompositeLibraryEntry,
   type CompositeLayoutPosition,
 } from '../engine/composites';
@@ -256,9 +257,12 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
 }
 
 function cloneReusableEntry(entry: CompositeLibraryEntry): CompositeLibraryEntry {
+  const starterEntry = STARTER_COMPOSITE_LIBRARY.find((candidate) => candidate.id === entry.id);
+  const source = entry.source ?? starterEntry?.source ?? 'user';
   if (isCompositeDefinition(entry.definition)) {
     return {
       ...entry,
+      source,
       definition: {
         ...entry.definition,
         project: cloneProject(entry.definition.project),
@@ -273,6 +277,7 @@ function cloneReusableEntry(entry: CompositeLibraryEntry): CompositeLibraryEntry
 
   return {
     ...entry,
+    source,
     definition: { ...entry.definition },
   };
 }
@@ -974,7 +979,12 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
     case 'loadCompositeLibrary':
       return {
         ...state,
-        compositeLibrary: action.document.entries.map(cloneReusableEntry),
+        compositeLibrary: [
+          ...state.compositeLibrary.filter((entry) => isBuiltInCompositeLibraryEntry(entry)),
+          ...action.document.entries
+            .map(cloneReusableEntry)
+            .filter((entry) => !isBuiltInCompositeLibraryEntry(entry)),
+        ],
       };
     case 'addCompositeToLibrary':
       return {
@@ -990,7 +1000,7 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
       };
     case 'openCompositeEditor': {
       const entry = state.compositeLibrary.find((candidate) => candidate.id === action.entryId);
-      if (!entry || !isCompositeDefinition(entry.definition)) {
+      if (!entry || !isCompositeDefinition(entry.definition) || isBuiltInCompositeLibraryEntry(entry)) {
         return state;
       }
 
@@ -1031,6 +1041,13 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           }
         : state;
     case 'removeCompositeFromLibrary':
+      if (
+        state.compositeLibrary.some(
+          (entry) => entry.id === action.compositeId && isBuiltInCompositeLibraryEntry(entry),
+        )
+      ) {
+        return state;
+      }
       return {
         ...state,
         compositeLibrary: state.compositeLibrary.filter((entry) => entry.id !== action.compositeId),

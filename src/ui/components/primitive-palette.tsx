@@ -21,6 +21,7 @@ interface PrimitivePaletteProps {
   onExportCompositeLibrary: () => void;
   onRemoveComposite: (defId: string) => void;
   compositeUsageCountById: Record<string, number>;
+  builtInReusableIds: string[];
 }
 
 export function PrimitivePalette({
@@ -32,6 +33,7 @@ export function PrimitivePalette({
   onExportCompositeLibrary,
   onRemoveComposite,
   compositeUsageCountById,
+  builtInReusableIds,
 }: PrimitivePaletteProps) {
   const [activeTab, setActiveTab] = useState<ModuleLibraryDomainTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -140,6 +142,7 @@ export function PrimitivePalette({
                     def={def}
                     viewMode={viewMode}
                     usageCount={compositeUsageCountById[def.id] ?? 0}
+                    isBuiltInReusable={false}
                     onAddModule={onAddModule}
                     onOpenComposite={onOpenComposite}
                     onRemoveComposite={onRemoveComposite}
@@ -150,24 +153,52 @@ export function PrimitivePalette({
           ))}
         </div>
       ) : (
-        <ul className="primitive-list">
-          {visibleDefs.map((def) => (
-            <ModuleLibraryCard
-              key={def.id}
-              def={def}
-              viewMode={viewMode}
-              usageCount={compositeUsageCountById[def.id] ?? 0}
-              onAddModule={onAddModule}
-              onOpenComposite={onOpenComposite}
-              onRemoveComposite={onRemoveComposite}
-            />
-          ))}
-        </ul>
+        <div className="primitive-sections">
+          {[
+            {
+              id: 'built-in-architectures',
+              title: 'Built-In Architectures',
+              description: 'Shipped round, iterator, and architecture modules provided by the product.',
+              defs: visibleDefs.filter((def) => builtInReusableIds.includes(def.id)),
+            },
+            {
+              id: 'user-reusables',
+              title: 'My Reusables',
+              description: 'Editable composites you created yourself.',
+              defs: visibleDefs.filter((def) => !builtInReusableIds.includes(def.id)),
+            },
+          ]
+            .filter((section) => section.defs.length > 0)
+            .map((section) => (
+              <section key={section.id} className="primitive-section">
+                <div className="primitive-section-head">
+                  <p className="panel-label">{section.title}</p>
+                  {viewMode === 'expanded' ? (
+                    <p className="primitive-section-copy">{section.description}</p>
+                  ) : null}
+                </div>
+                <ul className="primitive-list">
+                  {section.defs.map((def) => (
+                    <ModuleLibraryCard
+                      key={def.id}
+                      def={def}
+                      viewMode={viewMode}
+                      usageCount={compositeUsageCountById[def.id] ?? 0}
+                      isBuiltInReusable={builtInReusableIds.includes(def.id)}
+                      onAddModule={onAddModule}
+                      onOpenComposite={onOpenComposite}
+                      onRemoveComposite={onRemoveComposite}
+                    />
+                  ))}
+                </ul>
+              </section>
+            ))}
+        </div>
       )}
       {visibleDefs.length === 0 ? (
         <p className="empty-state">
           {activeTab === 'composites'
-            ? 'No reusable composites or iterators in the library yet.'
+            ? 'No built-in architectures or personal reusables match this search.'
             : 'No primitive modules match this search.'}
         </p>
       ) : null}
@@ -179,6 +210,7 @@ interface ModuleLibraryCardProps {
   def: ModuleRegistry[string];
   viewMode: 'compact' | 'expanded';
   usageCount: number;
+  isBuiltInReusable: boolean;
   onAddModule: (defId: string) => void;
   onOpenComposite: (defId: string) => void;
   onRemoveComposite: (defId: string) => void;
@@ -188,6 +220,7 @@ function ModuleLibraryCard({
   def,
   viewMode,
   usageCount,
+  isBuiltInReusable,
   onAddModule,
   onOpenComposite,
   onRemoveComposite,
@@ -205,7 +238,7 @@ function ModuleLibraryCard({
             <strong className="primitive-title">{def.name}</strong>
             {isReusable ? (
               <span className={isComposite ? 'module-kind-badge' : 'module-kind-badge module-kind-badge-iterator'}>
-                {isComposite ? 'Composite' : 'Iterator'}
+                {isBuiltInReusable ? 'Architecture' : isComposite ? 'Composite' : 'Iterator'}
               </span>
             ) : null}
           </div>
@@ -219,7 +252,7 @@ function ModuleLibraryCard({
             >
               +
             </button>
-            {isComposite ? (
+            {isComposite && !isBuiltInReusable ? (
               <button
                 type="button"
                 className="primitive-action-button"
@@ -230,7 +263,7 @@ function ModuleLibraryCard({
                 ✎
               </button>
             ) : null}
-            {isReusable ? (
+            {isReusable && !isBuiltInReusable ? (
               <button
                 type="button"
                 className="primitive-action-button primitive-action-button-danger"
@@ -261,7 +294,7 @@ function ModuleLibraryCard({
           <p className="primitive-purpose">{getModulePurpose(def)}</p>
           {isReusable ? (
             <span className={isComposite ? 'module-kind-badge' : 'module-kind-badge module-kind-badge-iterator'}>
-              {isComposite ? 'Composite' : 'Iterator'}
+              {isBuiltInReusable ? 'Architecture' : isComposite ? 'Composite' : 'Iterator'}
             </span>
           ) : null}
         </div>
@@ -279,7 +312,7 @@ function ModuleLibraryCard({
             >
               +
             </button>
-            {isComposite ? (
+            {isComposite && !isBuiltInReusable ? (
               <button
                 type="button"
                 className="primitive-action-button"
@@ -301,7 +334,7 @@ function ModuleLibraryCard({
                 ?
               </button>
             ) : null}
-            {isReusable ? (
+            {isReusable && !isBuiltInReusable ? (
               <button
                 type="button"
                 className="primitive-action-button primitive-action-button-danger"

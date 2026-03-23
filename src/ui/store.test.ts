@@ -42,4 +42,38 @@ describe('uiReducer', () => {
     expect(nextState.currentTickByProject[projectId]).toBe(0);
     expect(nextState.isTickPlaybackActiveByProject[projectId]).toBe(false);
   });
+
+  it('does not remove built-in architecture entries from the library', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const builtInEntry = initialState.compositeLibrary.find((entry) => entry.source === 'built-in');
+
+    if (!builtInEntry) {
+      throw new Error('Expected a built-in reusable entry.');
+    }
+
+    const nextState = uiReducer(initialState, {
+      type: 'removeCompositeFromLibrary',
+      compositeId: builtInEntry.id,
+    });
+
+    expect(nextState.compositeLibrary.some((entry) => entry.id === builtInEntry.id)).toBe(true);
+  });
+
+  it('does not open the editor for built-in architecture entries', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const builtInComposite = initialState.compositeLibrary.find(
+      (entry) => entry.source === 'built-in' && entry.definition.kind === 'composite',
+    );
+
+    if (!builtInComposite) {
+      throw new Error('Expected a built-in composite entry.');
+    }
+
+    const nextState = uiReducer(initialState, {
+      type: 'openCompositeEditor',
+      entryId: builtInComposite.id,
+    });
+
+    expect(nextState.compositeEditor).toBeNull();
+  });
 });

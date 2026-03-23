@@ -147,6 +147,7 @@ export function createCompositeFromSelection({
     id: trimmedId,
     name: trimmedName,
     version: 1,
+    source: 'user',
     definition,
   };
 

@@ -42,7 +42,12 @@ export interface CompositeLibraryEntry {
   id: string;
   name: string;
   version: number;
+  source?: 'built-in' | 'user';
   definition: CompositeDef | IteratorDef;
+}
+
+export function isBuiltInCompositeLibraryEntry(entry: CompositeLibraryEntry) {
+  return entry.source === 'built-in';
 }
 
 export function isCompositeDefinition(definition: ModuleDefinition): definition is CompositeDef {
