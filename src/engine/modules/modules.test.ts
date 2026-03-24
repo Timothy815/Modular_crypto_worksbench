@@ -5,6 +5,9 @@ import { BitSource } from './bit-source';
 import { AsciiSource } from './ascii-source';
 import { BaudotSource } from './baudot-source';
 import { HexSource } from './hex-source';
+import { IV } from './iv';
+import { Nonce } from './nonce';
+import { Salt } from './salt';
 import { SymbolToBits } from './symbol-to-bits';
 import { BitsToAscii } from './bits-to-ascii';
 import { BitsToBaudot } from './bits-to-baudot';
@@ -107,6 +110,30 @@ describe('HexSource', () => {
     const sliced = HexSource.tickSlice({ value: 'A3F0' }, 1);
     const result = HexSource.evaluate({}, sliced);
     expect(result.out).toEqual({ type: 'bits', value: [1, 1, 1, 1, 0, 0, 0, 0] });
+  });
+});
+
+describe('Protocol material sources', () => {
+  it('pads IV values on the right to the declared width', () => {
+    const result = IV.evaluate({}, { value: 'A3', width: 16 });
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    });
+  });
+
+  it('normalizes lower-case nonce hex and preserves exact width', () => {
+    const result = Nonce.evaluate({}, { value: '0f', width: 8 });
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [0, 0, 0, 0, 1, 1, 1, 1],
+    });
+  });
+
+  it('throws when a salt value exceeds the declared width', () => {
+    expect(() => Salt.evaluate({}, { value: 'A3F1', width: 8 })).toThrow(
+      /exceeds declared width/i,
+    );
   });
 });
 

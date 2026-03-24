@@ -2,7 +2,7 @@
 
 Last updated: March 24, 2026
 
-Status: Proposed.
+Status: Shipped in `v1.17.0`.
 
 ## Purpose
 
@@ -91,7 +91,7 @@ The first milestone should include:
   - `value` parameter: hex string (like HexSource)
   - `width` parameter: target bit-width (e.g., 8, 16, 32)
   - validation: value must match declared width
-  - evaluate: emit the value as a bit vector, padded or truncated to width
+  - evaluate: emit the value as a bit vector, zero-padded on the right to width if short
 
 - `Nonce` — number-used-once source
   - same structural shape as IV
@@ -115,10 +115,11 @@ The implementation should prefer sharing a common evaluate helper rather than du
 
 ### Width validation
 
-Each module should validate that the supplied hex value, when converted to bits, produces exactly `width` bits:
-- if the hex value is too short, pad to width (matching BitPad behavior)
-- if the hex value is too long, reject with a validation error
+Each module should validate that the supplied hex value, when converted to bits, does not exceed `width` bits:
+- if the hex value is too short, zero-pad on the right to `width` (matching BitPad's default behavior)
+- if the hex value is too long, **reject with a validation error** — silent truncation would hide a width mismatch the student should see
 - the width parameter itself should be validated as a positive integer
+- width must be a multiple of 4 (one hex digit = 4 bits) to keep the hex ↔ width relationship clean for students
 
 ## Exclude
 
@@ -131,6 +132,7 @@ This milestone should explicitly avoid:
 - protocol orchestration or sequencing logic
 - number-theoretic primitives
 - any module that takes the message as input alongside the protocol material
+- a dedicated `CounterSource` module (the shipped `Counter` from v1.15.0 can serve this role in demos)
 
 ## Relationship to Existing Modules
 
@@ -145,6 +147,24 @@ Protocol-material sources are deliberately close to `HexSource` in structure. Th
 
 A student should be able to explain: "I could use HexSource for the IV, but then the graph doesn't show that this input has a special role."
 
+### Why not just use HexSource?
+
+This is the right question to ask, and the contract should answer it directly.
+
+In the first slice, `IV`, `Nonce`, and `Salt` share identical evaluate logic. The engine cannot enforce uniqueness, randomness, or any protocol-level property — those are semantic constraints that a stateless DAG cannot express. The distinction is **intentionally graph-legibility only** for the first milestone.
+
+This is not accidental duplication. It is the same design decision that makes `KeyInput` a separate module from `TextInput` even though both emit a symbol. The graph should name the role, not just the data type.
+
+The explicit `width` parameter is the one behavioral difference from HexSource: protocol-material sources declare their expected width up front and reject values that exceed it, while HexSource derives width implicitly from whatever hex string the user types. This makes width a visible, inspectable contract between the source and the downstream pipeline.
+
+Future slices may add behavioral differences (e.g., nonce-uniqueness warnings, salt-randomness hints), but the first slice does not depend on them.
+
+### Counter-source deferral
+
+The vocabulary roadmap lists "explicit counter sources" as a protocol-material item. For this first slice, a dedicated `CounterSource` module is **deferred**.
+
+MCW already ships a `Counter` module (v1.15.0) that produces a `bits` output and advances per tick. In a protocol-material demo, the existing `Counter` can serve the structural role of a counter-mode input without a new engine primitive. If a future CTR-mode teaching surface requires a counter with different semantics (e.g., a non-ticked, parameter-driven counter that emits a fixed block), that should be proposed in a follow-on contract, not bundled here.
+
 ## Visual / Teaching Principles
 
 Prefer:
@@ -158,15 +178,30 @@ Avoid:
 - teaching uniqueness or randomness properties through enforcement rather than observation
 - adding "secure by default" generation that removes the teaching surface
 
-## Suggested Teaching Additions
+## Shipped Teaching Additions
 
-The first milestone should likely ship with:
-- one tutorial on protocol material and why it matters
-- one demo workspace such as:
-  - `HexSource -> BitPad -> BitSplit -> XOR(IV) on left + XOR(key) on right -> BitJoin -> BitsToHex -> Output`
-  - where the IV source is visibly distinct from the message source and the key source
-- one bounded challenge such as:
-  - a pipeline where the IV is missing or set to all zeros, and the student must supply the correct IV to match a reference output
+The first milestone shipped with:
+
+### Demo workspaces
+
+- `Protocol Material Mixer`
+  - `HexSource(message) -> BitPad(16) -> BitSplit(8) -> XOR(IV, left half) + XOR(key, right half) -> BitJoin -> BitsToHex -> Output`
+  - shows three distinct labeled sources: message, IV, and key
+  - invites students to change the IV value and observe that the output changes while the graph remains structurally legible
+
+### Tutorials
+
+- `Protocol Material Is Context`
+  - teaches why protocol material belongs beside the message rather than hiding inside unnamed generic sources
+  - contrasts labeled IV material with generic key/message sources on the same graph
+  - emphasizes that IV/nonce/salt are structured inputs, not magic security switches
+
+### Challenges
+
+- `Repair the IV`
+  - starts from a framed mixer where the IV value is wrong
+  - asks the student to restore the explicit IV source so the output again matches the reference graph
+  - teaches that protocol material affects machine behavior even in a small bounded pipeline
 
 ## Success Criteria
 

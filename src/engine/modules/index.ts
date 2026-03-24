@@ -5,7 +5,10 @@ import { BitSource } from './bit-source';
 import { AsciiSource } from './ascii-source';
 import { BaudotSource } from './baudot-source';
 import { HexSource } from './hex-source';
+import { IV } from './iv';
+import { Nonce } from './nonce';
 import { SymbolToBits } from './symbol-to-bits';
+import { Salt } from './salt';
 import { BitsToAscii } from './bits-to-ascii';
 import { BitsToBaudot } from './bits-to-baudot';
 import { BitsToSymbol } from './bits-to-symbol';
@@ -42,7 +45,10 @@ export {
   AsciiSource,
   BaudotSource,
   HexSource,
+  IV,
+  Nonce,
   SymbolToBits,
+  Salt,
   BitsToAscii,
   BitsToBaudot,
   BitsToSymbol,
@@ -80,7 +86,10 @@ export const V1_REGISTRY: ModuleRegistry = {
   [AsciiSource.id]: AsciiSource,
   [BaudotSource.id]: BaudotSource,
   [HexSource.id]: HexSource,
+  [IV.id]: IV,
+  [Nonce.id]: Nonce,
   [SymbolToBits.id]: SymbolToBits,
+  [Salt.id]: Salt,
   [BitsToAscii.id]: BitsToAscii,
   [BitsToBaudot.id]: BitsToBaudot,
   [BitsToSymbol.id]: BitsToSymbol,

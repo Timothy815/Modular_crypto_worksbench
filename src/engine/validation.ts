@@ -27,6 +27,10 @@ import { validateModuloParam } from './modules/modulo';
 import { validateCounterParam } from './modules/counter';
 import { validateBitSplitParam } from './modules/bit-split';
 import { validateBitPadParam } from './modules/bit-pad';
+import {
+  validateProtocolMaterialParam,
+  validateProtocolMaterialValueFitsWidth,
+} from './modules/protocol-material';
 
 const EQUAL_WIDTH_BINARY_MODULE_IDS = new Set([
   'AND',
@@ -146,6 +150,10 @@ function getModuleSpecificParamMessage(
     return validateHexSourceValue(value);
   }
 
+  if ((def.id === 'IV' || def.id === 'Nonce' || def.id === 'Salt') && (field.key === 'value' || field.key === 'width')) {
+    return validateProtocolMaterialParam(field.key, value);
+  }
+
   if (def.id === 'AsciiSource' && field.key === 'value') {
     return validateAsciiSourceValue(value);
   }
@@ -262,6 +270,16 @@ function inferStaticBitWidth(
     case 'HexSource': {
       const value = instance.params.value;
       width = typeof value === 'string' ? value.replace(/\s+/g, '').length * 4 : null;
+      break;
+    }
+    case 'IV':
+    case 'Nonce':
+    case 'Salt': {
+      const widthParam = instance.params.width;
+      width =
+        typeof widthParam === 'number' && Number.isInteger(widthParam) && widthParam > 0
+          ? widthParam
+          : null;
       break;
     }
     case 'AsciiSource': {
@@ -488,6 +506,19 @@ function validateParams(
         message: `Module "${moduleInstance.id}" provided unknown param "${key}".`,
         moduleId: moduleInstance.id,
       });
+    }
+  }
+
+  if (!isCompositeDefinition(def) && !isIteratorDefinition(def)) {
+    if (def.id === 'IV' || def.id === 'Nonce' || def.id === 'Salt') {
+      const widthMessage = validateProtocolMaterialValueFitsWidth(params.value, params.width);
+      if (widthMessage) {
+        issues.push({
+          code: 'invalid-param-type',
+          message: `Module "${moduleInstance.id}" parameter "value" is invalid. ${widthMessage}`,
+          moduleId: moduleInstance.id,
+        });
+      }
     }
   }
 

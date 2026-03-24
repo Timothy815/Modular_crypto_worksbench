@@ -178,8 +178,16 @@ src/utils/     — Shared helpers
   - `Visible Block Boundaries` and `Padding Before Splitting` tutorials
   - `Repair the Split Width` and `Repair the Pad Width` challenges
   - Analyze transformation views for `BitSplit` and `BitPad`
+- `v1.17.0` is now the protocol-material milestone:
+  - `IV`
+  - `Nonce`
+  - `Salt`
+  - source-only protocol-material helper with shared width-aware validation
+  - explicit reject-if-too-long behavior and right-padding for short hex values
+  - `Protocol Material Mixer` demo workspace
+  - `Protocol Material Is Context` tutorial
+  - `Repair the IV` challenge
 - Current `main` should treat the next phase as **primitive-language expansion**
-  - protocol-material primitives (framing now exists as a foundation)
   - stream-control follow-ons
   - advanced rotor realism as one bounded sub-line
 
@@ -221,6 +229,10 @@ What is shipped on `main`:
   - width-aware validation for split and pad parameters
   - `Split Transform Rejoin` and `Pad and Split` demos, `Visible Block Boundaries` and `Padding Before Splitting` tutorials, `Repair the Split Width` and `Repair the Pad Width` challenges
   - Analyze transformation views for `BitSplit` and `BitPad`
+- first bounded protocol-material vocabulary:
+  - `IV`, `Nonce`, and `Salt` source modules on `bits`
+  - shared width-aware validation and explicit reject-if-too-long behavior
+  - `Protocol Material Mixer` demo, `Protocol Material Is Context` tutorial, and `Repair the IV` challenge
 
 Key contracts to check before implementation:
 - `ENGINE-V1-CONTRACT.md` for engine decisions
@@ -238,14 +250,14 @@ Key contracts to check before implementation:
 - `CRYPTO-OPERATORS-V1.md` for the shipped first bounded operator-expansion line
 - `CONTROL-PRIMITIVES-V1.md` for the shipped first bounded control/counter/gate line
 - `BLOCK-FRAMING-V1.md` for the shipped first bounded block-framing vocabulary
-- `PROTOCOL-MATERIAL-V1.md` for the proposed first bounded protocol-input slice
+- `PROTOCOL-MATERIAL-V1.md` for the shipped first bounded protocol-input slice
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family
 
 Near-term follow-ups:
 - treat the next phase as expressive machine-language growth, not just the next isolated feature
-- continue from shipped operator/control/framing foundations toward the next missing language family
+- continue from shipped operator/control/framing/protocol-material foundations toward the next missing language family
 - keep advanced rotor realism explicitly on the future docket as one bounded sub-line:
   - `ringOffset` separate from `position`
   - notch / turnover behavior

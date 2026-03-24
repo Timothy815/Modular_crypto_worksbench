@@ -12,12 +12,15 @@ import { Counter } from './modules/counter';
 import { Equals } from './modules/equals';
 import { Gate } from './modules/gate';
 import { HexSource } from './modules/hex-source';
+import { IV } from './modules/iv';
 import { Modulo } from './modules/modulo';
+import { Nonce } from './modules/nonce';
 import { NOT } from './modules/not';
 import { OR } from './modules/or';
 import { Permutation } from './modules/permutation';
 import { Plugboard } from './modules/plugboard';
 import { Reflector } from './modules/reflector';
+import { Salt } from './modules/salt';
 import { SBox } from './modules/s-box';
 import { SubMod } from './modules/sub-mod';
 import { XOR } from './modules/xor';
@@ -65,6 +68,9 @@ const registry: ModuleRegistry = {
   [AsciiSource.id]: AsciiSource,
   [BaudotSource.id]: BaudotSource,
   [HexSource.id]: HexSource,
+  [IV.id]: IV,
+  [Nonce.id]: Nonce,
+  [Salt.id]: Salt,
   [XOR.id]: XOR,
   [AND.id]: AND,
   [OR.id]: OR,
@@ -302,6 +308,53 @@ describe('validateProject', () => {
           issue.message.includes('HexSource accepts only hexadecimal characters 0-9 and A-F'),
       ),
     ).toBe(true);
+  });
+
+  it('rejects protocol-material width values that are not multiples of 4', () => {
+    const project: Project = {
+      modules: [{ id: 'iv-1', defId: 'IV', params: { value: 'A3', width: 10 } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'iv-1' &&
+          issue.message.includes('multiple of 4 bits'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects protocol-material values whose hex width exceeds the declared width', () => {
+    const project: Project = {
+      modules: [{ id: 'nonce-1', defId: 'Nonce', params: { value: 'A3F1', width: 8 } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'nonce-1' &&
+          issue.message.includes('must fit within the declared width'),
+      ),
+    ).toBe(true);
+  });
+
+  it('accepts protocol-material values that are shorter than the declared width', () => {
+    const project: Project = {
+      modules: [{ id: 'salt-1', defId: 'Salt', params: { value: 'A3', width: 16 } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(true);
   });
 
   it('rejects non-ascii source params before execution', () => {

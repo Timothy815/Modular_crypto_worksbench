@@ -1,6 +1,6 @@
 # MCW — Cryptographic Vocabulary Roadmap
 
-Status: Active strategic roadmap after `v1.16.0`.
+Status: Active strategic roadmap after `v1.17.0`.
 
 This document reframes MCW as a cryptographic systems IDE:
 - not a code generator
@@ -184,14 +184,18 @@ Already identified and should remain on the roadmap:
 - reversible rotation direction
 - flipped insertion
 
-### 7. Protocol Material Primitives
+### 7. Protocol Material Primitives — *first milestone shipped in `v1.17.0`*
 
-Needed additions likely include:
-- `Nonce`
-- `Salt`
-- `IV`
-- explicit counter sources
+Shipped in `v1.17.0`:
+- `PROTOCOL-MATERIAL-V1.md` — `IV`, `Nonce`, `Salt`
+- `Protocol Material Mixer` demo workspace
+- `Protocol Material Is Context` tutorial
+- `Repair the IV` challenge
+
+Still open:
+- explicit counter sources (if later justified beyond shipped `Counter`)
 - key-material shaping helpers
+- stronger protocol-context teaching lines after classroom use
 
 ### 8. Number-Theoretic / Asymmetric Foundations
 
@@ -263,11 +267,14 @@ Purpose:
 
 Likely bounded slices:
 - `KEY-SCHEDULE-V2.md`
-- `PROTOCOL-MATERIAL-V1.md`
+- `PROTOCOL-MATERIAL-V1.md` (shipped in `v1.17.0`)
 
-Likely deliverables:
-- more expressive key schedule construction
+Shipped in `v1.17.0`:
 - nonce / salt / IV sources
+- first protocol-material demo/tutorial/challenge line
+
+Still open:
+- more expressive key schedule construction
 - explicit per-round/per-block material routing
 
 Teaching additions:
@@ -339,17 +346,18 @@ To protect the product identity, avoid:
 The roadmap is now validated through shipped foundations in three phases:
 - Phase 1: `CRYPTO-OPERATORS-V1.md` and `CONTROL-PRIMITIVES-V1.md` (shipped in `v1.14.0` / `v1.15.0`)
 - Phase 3: `BLOCK-FRAMING-V1.md` (shipped in `v1.16.0`)
+- Phase 4: `PROTOCOL-MATERIAL-V1.md` first slice (shipped in `v1.17.0`)
 
-The next strategic direction after `v1.16.0` should be:
+The next strategic direction after `v1.17.0` should be:
 
 > keep expanding MCW into a fully expressive cryptographic machine language
 
 The clearest next move is not “which algorithm next?”
 
 It is:
-- block/framing vocabulary is now shipped — framing exists as a foundation for protocol-material work
-- introduce protocol-material primitives now that framing gives them a real structural role
-- keep advanced rotor realism as a bounded follow-on, not the whole roadmap
+- block/framing and first protocol-material vocabulary are now shipped
+- keep stream-control follow-ons and advanced rotor realism as the clearest remaining near-term lines
+- keep protocol-material follow-ons bounded rather than jumping to mode presets
 - keep tutorials and challenges shipping alongside the new language
 
 That is the path from:

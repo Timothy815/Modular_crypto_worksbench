@@ -10,6 +10,7 @@ const beyondXorProject = demoProjects.find((project) => project.id === 'beyond-x
 const controlProject = demoProjects.find((project) => project.id === 'counter-pulse-gate');
 const splitTransformProject = demoProjects.find((project) => project.id === 'split-transform-rejoin');
 const padAndSplitProject = demoProjects.find((project) => project.id === 'pad-and-split');
+const protocolMaterialProject = demoProjects.find((project) => project.id === 'protocol-material-mixer');
 const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
 const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
 const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-lorenz');
@@ -42,6 +43,9 @@ if (!splitTransformProject) {
 }
 if (!padAndSplitProject) {
   throw new Error('Expected pad-and-split demo project to seed starter challenges.');
+}
+if (!protocolMaterialProject) {
+  throw new Error('Expected protocol-material-mixer demo project to seed starter challenges.');
 }
 if (!baudotProject) {
   throw new Error('Expected baudot-bridge demo project to seed starter challenges.');
@@ -105,6 +109,8 @@ const splitTransformTarget = cloneProject(splitTransformProject.project);
 const brokenSplitTransformStart = cloneProject(splitTransformProject.project);
 const padAndSplitTarget = cloneProject(padAndSplitProject.project);
 const brokenPadAndSplitStart = cloneProject(padAndSplitProject.project);
+const protocolMaterialTarget = cloneProject(protocolMaterialProject.project);
+const brokenProtocolMaterialStart = cloneProject(protocolMaterialProject.project);
 const baudotTarget = cloneProject(baudotProject.project);
 const brokenBaudotStart = cloneProject(baudotProject.project);
 const lorenzTarget = cloneProject(lorenzProject.project);
@@ -178,6 +184,14 @@ if (!brokenControlThreshold) {
   throw new Error('Expected counter-pulse-gate demo project to contain a threshold module.');
 }
 brokenControlThreshold.params.value = 'C';
+
+const brokenProtocolIv = brokenProtocolMaterialStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'iv',
+);
+if (!brokenProtocolIv) {
+  throw new Error('Expected protocol-material-mixer demo project to contain an IV module.');
+}
+brokenProtocolIv.params.value = '00';
 
 const brokenBaudotSource = brokenBaudotStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'source',
@@ -366,6 +380,27 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The clock, counter, comparator, and gate are already connected correctly.',
       'Focus on the symbol feeding SymbolToBits before the AtLeast comparison.',
       'Step through ticks: the data register should stay still at first, then begin advancing only after the threshold is reached.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-iv',
+    title: 'Repair the IV',
+    projectId: 'protocol-material-mixer',
+    group: 'Protocol Materials',
+    difficulty: 'beginner',
+    prompt:
+      'This framed mixer keeps the message and key intact, but its IV has been replaced with the wrong value. Restore the IV so the graph once again matches the captured reference output and the upper branch is labeled by the right protocol material.',
+    startingProject: brokenProtocolMaterialStart,
+    startingLayout: cloneProject(protocolMaterialProject.layout),
+    targetProject: protocolMaterialTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The message path, pad, split, and key source are already correct.',
+      'Focus on the IV module, not the generic HexSource key.',
+      'The captured reference machine uses a non-zero 8-bit IV value on the upper branch.',
     ],
   },
   {

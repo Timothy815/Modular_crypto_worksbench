@@ -62,6 +62,24 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this for byte-oriented labs when you want to paste hex test vectors instead of typing raw bits.',
     searchTerms: ['hex', 'source', 'byte', 'vector', 'bits', 'input'],
   },
+  IV: {
+    sectionId: 'inputs-outputs',
+    purpose: 'Emits a visible initialization vector as a fixed-width bit word.',
+    detail: 'Use this when a block or stream construction should show its initialization material explicitly instead of hiding it inside a generic source.',
+    searchTerms: ['iv', 'initialization vector', 'source', 'protocol', 'bits', 'context'],
+  },
+  Nonce: {
+    sectionId: 'inputs-outputs',
+    purpose: 'Emits a visible nonce as a fixed-width bit word.',
+    detail: 'Use this when a machine should carry uniqueness material explicitly in the graph rather than treating it as an unnamed hex constant.',
+    searchTerms: ['nonce', 'source', 'protocol', 'unique', 'bits', 'context'],
+  },
+  Salt: {
+    sectionId: 'inputs-outputs',
+    purpose: 'Emits a visible salt as a fixed-width bit word.',
+    detail: 'Use this when a hashing or key-derivation lab should distinguish salt material from message or key inputs.',
+    searchTerms: ['salt', 'source', 'protocol', 'hash', 'bits', 'context'],
+  },
   Clock: {
     sectionId: 'inputs-outputs',
     purpose: 'Emits a visible pulse stream that marks time in the graph.',

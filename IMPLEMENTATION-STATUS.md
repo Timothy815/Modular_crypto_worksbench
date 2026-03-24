@@ -6,19 +6,27 @@ Last updated: March 24, 2026
 
 ## Current State
 
-The project has shipped through `v1.16.0` on `main`.
+The project has shipped through `v1.17.0` on `main`.
 
-Current `main` is now positioned beyond the first completed block-framing milestone.
+Current `main` is now positioned beyond the first completed protocol-material milestone.
 That milestone shipped:
-- first bounded block-framing vocabulary on `bits`:
-  - `BitSplit` (one `bits` input → two `bits` outputs: `left`/`right`, explicit `leftWidth` param)
-  - `BitPad` (one `bits` input → one `bits` output, target width, pad side, pad bit)
-  - reuse of existing `BitJoin` for block rejoining
-- width-aware validation for `BitSplit` leftWidth and `BitPad` targetWidth
-- first block-framing teaching surface:
-  - `Split Transform Rejoin` and `Pad and Split` demo workspaces
-  - `Visible Block Boundaries` and `Padding Before Splitting` tutorials
-  - `Repair the Split Width` and `Repair the Pad Width` challenges
+- first bounded protocol-material vocabulary on `bits`:
+  - `IV`
+  - `Nonce`
+  - `Salt`
+  - shared protocol-material helper for visible source-only semantics
+- width-aware validation for declared protocol-material width
+- reject-if-too-long validation and right-padding for short hex values
+- first protocol-material teaching surface:
+  - `Protocol Material Mixer` demo workspace
+  - `Protocol Material Is Context` tutorial
+  - `Repair the IV` challenge
+
+The already-shipped block-framing foundation remains in place:
+- `BitSplit`, `BitPad`, and reuse of `BitJoin`
+- `Split Transform Rejoin` and `Pad and Split` demo workspaces
+- `Visible Block Boundaries` and `Padding Before Splitting` tutorials
+- `Repair the Split Width` and `Repair the Pad Width` challenges
 - Analyze-tab transformation views for `BitSplit` and `BitPad`
 
 The next strategic direction is broader than rotor deepening:
@@ -27,7 +35,6 @@ The next strategic direction is broader than rotor deepening:
 - ship tutorials and challenges alongside each new vocabulary family
 
 The next most important missing vocabulary families are:
-- protocol-material primitives (`IV`, nonce, salt, counter sources)
 - stream-cipher control vocabulary
 - advanced rotor realism as one bounded sub-line
 
@@ -121,6 +128,7 @@ The following decisions are reflected in shipped code:
 | `v1.14.0` | Cryptographic Operators |
 | `v1.15.0` | Control Primitives |
 | `v1.16.0` | Block Framing |
+| `v1.17.0` | Protocol Material |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -188,7 +196,7 @@ Post-`v1.12.0` work merged to `main`:
   - composite unzip with forwarded-param carry-through
   - dark-mode-safe reflector and plugboard pair rendering
 
-Strategic direction after `v1.13.0` (validated through `v1.16.0`):
+Strategic direction after `v1.13.0` (validated through `v1.17.0`):
 - `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` now frames MCW as a cryptographic systems IDE
 - the next roadmap focus is expressive primitive language growth rather than only choosing the next isolated feature line
 - Phase 1 foundations are now shipped through:
@@ -229,6 +237,17 @@ Post-`v1.15.0` work merged to `main`:
   - `Repair the Split Width` and `Repair the Pad Width` challenges
   - Analyze-tab transformation views for `BitSplit` and `BitPad`
 
+Post-`v1.16.0` work merged to `main`:
+- bounded protocol-material slice:
+  - `IV`
+  - `Nonce`
+  - `Salt`
+  - source-only protocol-material helper with shared width-aware validation
+  - explicit reject-if-too-long behavior and right-padding for short hex values
+  - `Protocol Material Mixer` demo workspace
+  - `Protocol Material Is Context` tutorial
+  - `Repair the IV` challenge
+
 ---
 
 ## Safe Next Tasks
@@ -253,14 +272,14 @@ Should avoid for now:
 
 Safe to begin:
 - review whether the vocabulary roadmap is coherent and well-sequenced
-- review what should follow the now-shipped operator/control foundation
+- review what should follow the now-shipped operator/control/framing/protocol-material foundation
 - help keep the new builder workflow connected to future language growth
 - help pressure-test future bounded rotor/reflector follow-ons against the broader vocabulary plan
 - review what tutorial/challenge support should accompany each new primitive family
 
 Best focus:
-- which language family should follow the shipped block-framing foundation
-- whether protocol-material primitives are the clearest next line now that framing exists
+- which language family should follow the shipped protocol-material foundation
+- whether stream-control follow-ons or advanced rotor realism should come next
 - whether advanced rotor realism should wait until the broader vocabulary is stronger
 
 ---
@@ -272,7 +291,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed on the most recent block-framing slice.
+All three passed on the most recent protocol-material slice.
 
 ---
 
@@ -287,7 +306,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 ### Near-Term Roadmap
 
 1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
-2. **Continue the primitive-language roadmap beyond shipped block-framing vocabulary** — the clearest remaining language families are protocol-material primitives, stream-control follow-ons, and advanced rotor realism
+2. **Continue the primitive-language roadmap beyond shipped protocol-material vocabulary** — the clearest remaining language families are stream-control follow-ons and advanced rotor realism
 3. **Keep advanced rotor realism on the docket as a bounded sub-line** — `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion remain important, but should not monopolize the roadmap
 4. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
 5. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
@@ -323,7 +342,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `CRYPTO-OPERATORS-V1.md` | Shipped in `v1.14.0` as bounded boolean and fixed-width word arithmetic expansion |
 | `CONTROL-PRIMITIVES-V1.md` | Shipped in `v1.15.0` as bounded counter/compare/gate control vocabulary |
 | `BLOCK-FRAMING-V1.md` | Shipped in `v1.16.0` as bounded block-framing vocabulary for visible splitting, rejoining, and padding |
-| `PROTOCOL-MATERIAL-V1.md` | Proposed — first bounded protocol-input slice for IV, nonce, and salt sources |
+| `PROTOCOL-MATERIAL-V1.md` | Shipped in `v1.17.0` as bounded protocol-input vocabulary for IV, nonce, and salt sources |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
 | `SBOX-TRANSFORMATION-V1.md` | Shipped as the `v1.6.0` lookup/substitution visual family |
