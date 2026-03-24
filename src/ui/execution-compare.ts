@@ -39,11 +39,31 @@ export function findFirstTraceDivergence(
   baseline: ExecutionResult,
   variant: ExecutionResult,
 ): TraceDivergence | null {
-  const maxLength = Math.max(baseline.trace.length, variant.trace.length);
+  return findFirstEntryDivergence(baseline.trace, variant.trace);
+}
+
+export function findFirstAnalysisTraceDivergence(
+  baseline: ExecutionResult,
+  variant: ExecutionResult,
+  ignoredModuleIds: string[] = [],
+): TraceDivergence | null {
+  return findFirstEntryDivergence(
+    baseline.analysisTrace,
+    variant.analysisTrace,
+    new Set(ignoredModuleIds),
+  );
+}
+
+function findFirstEntryDivergence(
+  baselineEntries: ExecutionTraceEntry[],
+  variantEntries: ExecutionTraceEntry[],
+  ignoredModuleIds: Set<string> = new Set(),
+): TraceDivergence | null {
+  const maxLength = Math.max(baselineEntries.length, variantEntries.length);
 
   for (let stepIndex = 0; stepIndex < maxLength; stepIndex += 1) {
-    const baselineEntry = baseline.trace[stepIndex] ?? null;
-    const variantEntry = variant.trace[stepIndex] ?? null;
+    const baselineEntry = baselineEntries[stepIndex] ?? null;
+    const variantEntry = variantEntries[stepIndex] ?? null;
 
     if (!baselineEntry || !variantEntry) {
       return {
@@ -52,6 +72,13 @@ export function findFirstTraceDivergence(
         variant: variantEntry,
         reason: 'trace-length',
       };
+    }
+
+    if (
+      baselineEntry.moduleId === variantEntry.moduleId &&
+      ignoredModuleIds.has(baselineEntry.moduleId)
+    ) {
+      continue;
     }
 
     if (baselineEntry.moduleId !== variantEntry.moduleId) {

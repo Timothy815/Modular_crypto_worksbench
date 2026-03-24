@@ -206,6 +206,9 @@ describe('evaluateChallengeAttempt', () => {
     expect(result.status).toBe('success');
     expect(result.reason).toBe('matched-target');
     expect(result.comparison?.outputsMatch).toBe(true);
+    expect(result.analysisDivergence).not.toBeNull();
+    expect(result.analysisDivergence?.baseline?.moduleId).not.toBe('left-source');
+    expect(result.analysisDivergence?.baseline?.moduleId).not.toBe('right-source');
   });
 
   it('can find a collision for the seeded toy sponge hash target', () => {

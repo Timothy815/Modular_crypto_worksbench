@@ -1,8 +1,8 @@
 import { deriveTickCount, executeProject, executeTickedProject } from '../engine/executor';
 import { isStatefulModule, type ModuleRegistry, type Project, type ValidationIssue } from '../engine/types';
 import { validateProject } from '../engine/validation';
-import type { ExecutionComparison } from './execution-compare';
-import { compareExecutionResults } from './execution-compare';
+import type { ExecutionComparison, TraceDivergence } from './execution-compare';
+import { compareExecutionResults, findFirstAnalysisTraceDivergence } from './execution-compare';
 import type { ExecutionResult, ExecutionTraceEntry } from '../engine/types';
 import type { WorkbenchPosition } from './workbench-document';
 
@@ -37,6 +37,7 @@ export interface ChallengeEvaluation {
     | 'current-project-runtime-error'
     | 'target-project-runtime-error';
   comparison: ExecutionComparison | null;
+  analysisDivergence: TraceDivergence | null;
   currentIssues: ValidationIssue[];
   targetIssues: ValidationIssue[];
   currentRuntimeError: string | null;
@@ -56,6 +57,7 @@ export function evaluateChallengeAttempt(
       status: 'blocked',
       reason: 'current-project-invalid',
       comparison: null,
+      analysisDivergence: null,
       currentIssues: currentValidation.issues,
       targetIssues: targetValidation.issues,
       currentRuntimeError: null,
@@ -68,6 +70,7 @@ export function evaluateChallengeAttempt(
       status: 'blocked',
       reason: 'target-project-invalid',
       comparison: null,
+      analysisDivergence: null,
       currentIssues: currentValidation.issues,
       targetIssues: targetValidation.issues,
       currentRuntimeError: null,
@@ -98,6 +101,7 @@ export function evaluateChallengeAttempt(
       status: 'blocked',
       reason: 'current-project-runtime-error',
       comparison: null,
+      analysisDivergence: null,
       currentIssues: currentValidation.issues,
       targetIssues: targetValidation.issues,
       currentRuntimeError: error instanceof Error ? error.message : 'Current project execution failed.',
@@ -122,6 +126,7 @@ export function evaluateChallengeAttempt(
       status: 'blocked',
       reason: 'target-project-runtime-error',
       comparison: null,
+      analysisDivergence: null,
       currentIssues: currentValidation.issues,
       targetIssues: targetValidation.issues,
       currentRuntimeError: null,
@@ -135,6 +140,16 @@ export function evaluateChallengeAttempt(
         currentTickedExecution ?? executeTickedProject(currentProject, registry, 0),
       )
     : compareExecutionResults(targetExecution!, currentExecution!);
+  const analysisDivergence =
+    useTickedComparison || !targetExecution || !currentExecution
+      ? null
+      : findFirstAnalysisTraceDivergence(
+          targetExecution,
+          currentExecution,
+          challenge.success.kind === 'output-match-target-with-module-difference'
+            ? challenge.success.moduleIds ?? []
+            : [],
+        );
   const matched =
     challenge.success.kind === 'output-match-target'
       ? comparison.outputsMatch
@@ -164,6 +179,7 @@ export function evaluateChallengeAttempt(
     status: matched ? 'success' : 'failure',
     reason,
     comparison,
+    analysisDivergence,
     currentIssues: currentValidation.issues,
     targetIssues: targetValidation.issues,
     currentRuntimeError: null,

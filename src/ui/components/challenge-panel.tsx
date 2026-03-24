@@ -74,6 +74,9 @@ export function ChallengePanel({
         })
         .filter((row): row is NonNullable<typeof row> => row !== null)
     : [];
+  const internalDivergenceSignals = evaluation?.analysisDivergence
+    ? formatDivergenceSignals(evaluation.analysisDivergence)
+    : null;
 
   const visibleChallenges = challenges.filter(
     (challenge) => (challenge.group ?? 'Other') === activeGroup,
@@ -287,6 +290,35 @@ export function ChallengePanel({
                       becomes the same again.
                     </p>
                   ) : null}
+                  {evaluation.status === 'success' &&
+                  isHashCollisionChallenge &&
+                  evaluation.analysisDivergence ? (
+                    <div className="challenge-guided-compare">
+                      <span className="meta-label">Internal Divergence</span>
+                      <p className="comparison-copy">
+                        First internal divergence appears at{' '}
+                        <strong>step {evaluation.analysisDivergence.stepIndex + 1}</strong> on{' '}
+                        <strong>
+                          {evaluation.analysisDivergence.variant?.moduleId ??
+                            evaluation.analysisDivergence.baseline?.moduleId ??
+                            'unknown'}
+                        </strong>{' '}
+                        by changing <strong>{formatDivergenceReasonLabel(evaluation.analysisDivergence.reason)}</strong>.
+                      </p>
+                      {internalDivergenceSignals ? (
+                        <div className="challenge-guided-values">
+                          <div className="challenge-guided-card">
+                            <span className="meta-label">Original Path</span>
+                            <code>{internalDivergenceSignals.baseline}</code>
+                          </div>
+                          <div className="challenge-guided-card">
+                            <span className="meta-label">Colliding Path</span>
+                            <code>{internalDivergenceSignals.variant}</code>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
                   {isHashCollisionChallenge && guidedComparisonRows.length > 0 ? (
                     <div className="challenge-guided-compare">
                       <span className="meta-label">Message Comparison</span>
@@ -408,4 +440,58 @@ function formatDifficultyLabel(
   difficulty: NonNullable<GuidedChallenge['difficulty']>,
 ) {
   return difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+}
+
+function formatDivergenceReasonLabel(reason: NonNullable<ChallengeEvaluation['analysisDivergence']>['reason']) {
+  if (reason === 'inputs') {
+    return 'input signal';
+  }
+
+  if (reason === 'outputs') {
+    return 'output signal';
+  }
+
+  if (reason === 'def-id') {
+    return 'module type';
+  }
+
+  if (reason === 'module-id') {
+    return 'module identity';
+  }
+
+  return 'trace length';
+}
+
+function formatDivergenceSignals(
+  divergence: NonNullable<ChallengeEvaluation['analysisDivergence']>,
+) {
+  const baselineEntry = divergence.baseline;
+  const variantEntry = divergence.variant;
+  if (!baselineEntry || !variantEntry) {
+    return null;
+  }
+
+  const baselineSignal =
+    divergence.reason === 'inputs'
+      ? Object.values(baselineEntry.inputs)[0]
+      : Object.values(baselineEntry.outputs)[0];
+  const variantSignal =
+    divergence.reason === 'inputs'
+      ? Object.values(variantEntry.inputs)[0]
+      : Object.values(variantEntry.outputs)[0];
+
+  return {
+    baseline: formatSignalForDisplay(baselineSignal),
+    variant: formatSignalForDisplay(variantSignal),
+  };
+}
+
+function formatSignalForDisplay(
+  signal: { type: 'symbol'; value: string } | { type: 'bits'; value: number[] } | undefined,
+) {
+  if (!signal) {
+    return 'n/a';
+  }
+
+  return signal.type === 'symbol' ? signal.value : `[${signal.value.join(', ')}]`;
 }
