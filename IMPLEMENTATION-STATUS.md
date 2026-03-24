@@ -225,6 +225,17 @@ Post-`v1.14.0` work merged to `main`:
   - `Repair the Control Threshold` challenge
   - Analyze-tab transformation views for `Equals`, `AtLeast`, and `Gate`
 
+Post-`v1.15.0` work on `main` (pending checkpoint review):
+- bounded block-framing slice:
+  - `BitSplit` (one `bits` input → two `bits` outputs: `left`/`right`, explicit `leftWidth` param)
+  - `BitPad` (one `bits` input → one `bits` output, target width, pad side, pad bit)
+  - reuse of existing `BitJoin` for block rejoining
+  - width-aware validation for `BitSplit` leftWidth and `BitPad` targetWidth
+  - `Split Transform Rejoin` demo workspace
+  - `Visible Block Boundaries` tutorial
+  - `Repair the Split Width` challenge
+  - Analyze-tab transformation views for `BitSplit` and `BitPad`
+
 ---
 
 ## Safe Next Tasks
@@ -284,6 +295,8 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
 2. **Continue the primitive-language roadmap beyond first control vocabulary** — the clearest remaining language families are block/framing, stream-control follow-ons, and protocol-material primitives
+   Immediate contract:
+   `BLOCK-FRAMING-V1.md`
 3. **Keep advanced rotor realism on the docket as a bounded sub-line** — `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion remain important, but should not monopolize the roadmap
 4. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
 5. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
@@ -318,6 +331,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` | Active strategic roadmap for growing MCW into a fully expressive cryptographic systems IDE |
 | `CRYPTO-OPERATORS-V1.md` | Shipped in `v1.14.0` as bounded boolean and fixed-width word arithmetic expansion |
 | `CONTROL-PRIMITIVES-V1.md` | Shipped in `v1.15.0` as bounded counter/compare/gate control vocabulary |
+| `BLOCK-FRAMING-V1.md` | Proposed first post-Phase-1 framing vocabulary slice |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
 | `SBOX-TRANSFORMATION-V1.md` | Shipped as the `v1.6.0` lookup/substitution visual family |

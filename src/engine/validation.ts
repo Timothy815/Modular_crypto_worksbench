@@ -25,6 +25,8 @@ import { validateReflectorWiringParam } from './modules/reflector';
 import { validateSBoxTableParam } from './modules/s-box';
 import { validateModuloParam } from './modules/modulo';
 import { validateCounterParam } from './modules/counter';
+import { validateBitSplitParam } from './modules/bit-split';
+import { validateBitPadParam } from './modules/bit-pad';
 
 const EQUAL_WIDTH_BINARY_MODULE_IDS = new Set([
   'AND',
@@ -158,6 +160,14 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'Counter') {
     return validateCounterParam(field.key, value);
+  }
+
+  if (def.id === 'BitSplit') {
+    return validateBitSplitParam(field.key, value);
+  }
+
+  if (def.id === 'BitPad') {
+    return validateBitPadParam(field.key, value);
   }
 
   return null;
@@ -323,6 +333,17 @@ function inferStaticBitWidth(
       width = leftWidth !== null && rightWidth !== null ? leftWidth + rightWidth : null;
       break;
     }
+    case 'BitSplit':
+      width = null;
+      break;
+    case 'BitPad': {
+      const tw = instance.params.targetWidth;
+      if (typeof tw === 'number' && Number.isInteger(tw) && tw >= 1) {
+        const inputW = inferFromInput();
+        width = inputW !== null && inputW >= tw ? inputW : tw;
+      }
+      break;
+    }
     default:
       width = null;
   }
@@ -380,6 +401,28 @@ function validateBitWidthConstraints(
         issues.push({
           code: 'invalid-param-type',
           message: `Module "${moduleInstance.id}" parameter "modulus" is invalid. Modulo modulus must not exceed the input word range for a ${inputWidth}-bit input.`,
+          moduleId: moduleInstance.id,
+        });
+      }
+    }
+
+    if (def.id === 'BitSplit') {
+      const upstream = incomingConnections.get(`${moduleInstance.id}:in`);
+      const leftWidth = moduleInstance.params.leftWidth;
+      if (
+        !upstream ||
+        typeof leftWidth !== 'number' ||
+        !Number.isInteger(leftWidth) ||
+        leftWidth < 1
+      ) {
+        continue;
+      }
+
+      const inputWidth = getWidth(upstream.moduleId);
+      if (inputWidth !== null && leftWidth >= inputWidth) {
+        issues.push({
+          code: 'invalid-param-type',
+          message: `Module "${moduleInstance.id}" parameter "leftWidth" is invalid. BitSplit leftWidth must be less than the input width (${inputWidth}).`,
           moduleId: moduleInstance.id,
         });
       }

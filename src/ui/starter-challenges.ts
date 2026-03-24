@@ -8,6 +8,7 @@ function cloneProject<T>(value: T): T {
 const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
 const beyondXorProject = demoProjects.find((project) => project.id === 'beyond-xor');
 const controlProject = demoProjects.find((project) => project.id === 'counter-pulse-gate');
+const splitTransformProject = demoProjects.find((project) => project.id === 'split-transform-rejoin');
 const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
 const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
 const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-lorenz');
@@ -34,6 +35,9 @@ if (!beyondXorProject) {
 }
 if (!controlProject) {
   throw new Error('Expected counter-pulse-gate demo project to seed starter challenges.');
+}
+if (!splitTransformProject) {
+  throw new Error('Expected split-transform-rejoin demo project to seed starter challenges.');
 }
 if (!baudotProject) {
   throw new Error('Expected baudot-bridge demo project to seed starter challenges.');
@@ -93,6 +97,8 @@ const beyondXorTarget = cloneProject(beyondXorProject.project);
 const brokenBeyondXorStart = cloneProject(beyondXorProject.project);
 const controlTarget = cloneProject(controlProject.project);
 const brokenControlStart = cloneProject(controlProject.project);
+const splitTransformTarget = cloneProject(splitTransformProject.project);
+const brokenSplitTransformStart = cloneProject(splitTransformProject.project);
 const baudotTarget = cloneProject(baudotProject.project);
 const brokenBaudotStart = cloneProject(baudotProject.project);
 const lorenzTarget = cloneProject(lorenzProject.project);
@@ -142,6 +148,14 @@ if (!brokenBeyondXorMask) {
   throw new Error('Expected beyond-xor demo project to contain a mask source.');
 }
 brokenBeyondXorMask.params.stream = [0, 0, 1, 1, 1, 1, 0, 0];
+
+const brokenSplitModule = brokenSplitTransformStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'split',
+);
+if (!brokenSplitModule) {
+  throw new Error('Expected split-transform-rejoin demo project to contain a split module.');
+}
+brokenSplitModule.params.leftWidth = 4;
 
 const brokenControlThreshold = brokenControlStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'threshold',
@@ -338,6 +352,27 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The clock, counter, comparator, and gate are already connected correctly.',
       'Focus on the symbol feeding SymbolToBits before the AtLeast comparison.',
       'Step through ticks: the data register should stay still at first, then begin advancing only after the threshold is reached.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-split-width',
+    title: 'Repair the Split Width',
+    projectId: 'split-transform-rejoin',
+    group: 'Block Framing',
+    difficulty: 'beginner',
+    prompt:
+      'This machine splits a 16-bit message into two blocks for independent processing, but the split boundary is wrong. The left block is too small and the right block is too large. Restore the split width so each half gets the right number of bits and the final hex output matches the captured reference machine again.',
+    startingProject: brokenSplitTransformStart,
+    startingLayout: cloneProject(splitTransformProject.layout),
+    targetProject: splitTransformTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The XOR keys and join module are already wired correctly.',
+      'Focus on the leftWidth parameter of the BitSplit module.',
+      'A 16-bit message split into two equal halves means each half should be 8 bits.',
     ],
   },
   {

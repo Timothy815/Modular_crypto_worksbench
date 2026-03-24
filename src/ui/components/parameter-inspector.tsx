@@ -940,6 +940,89 @@ export function ParameterInspector({
                   ))}
                 </div>
               </>
+            ) : transformationView.kind === 'split' ? (
+              <>
+                <div className="transformation-order">
+                  <span className="meta-label">Split Point</span>
+                  <code>leftWidth = {transformationView.leftWidth}</code>
+                </div>
+                <div className="xor-grid">
+                  <div className="xor-grid-head">
+                    <span className="meta-label">Index</span>
+                    <span className="meta-label">Input</span>
+                    <span className="meta-label">Block</span>
+                  </div>
+                  {transformationView.inputBits.map((bit, index) => (
+                    <div key={`split-${index}`} className="xor-grid-row">
+                      <span className="xor-grid-index">{index}</span>
+                      <span
+                        className={
+                          index < transformationView.leftWidth
+                            ? 'xor-grid-bit xor-grid-bit-active'
+                            : 'xor-grid-bit'
+                        }
+                      >
+                        {bit}
+                      </span>
+                      <span
+                        className={
+                          index < transformationView.leftWidth
+                            ? 'xor-grid-compare xor-grid-compare-different'
+                            : 'xor-grid-compare'
+                        }
+                      >
+                        {index < transformationView.leftWidth ? 'left' : 'right'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : transformationView.kind === 'pad' ? (
+              <>
+                <div className="transformation-order">
+                  <span className="meta-label">Target Width</span>
+                  <code>{transformationView.targetWidth} bits</code>
+                </div>
+                <div className="transformation-order">
+                  <span className="meta-label">Pad</span>
+                  <code>{transformationView.padCount} × {transformationView.padBit} on {transformationView.side}</code>
+                </div>
+                <div className="xor-grid">
+                  <div className="xor-grid-head">
+                    <span className="meta-label">Index</span>
+                    <span className="meta-label">Output</span>
+                    <span className="meta-label">Source</span>
+                  </div>
+                  {transformationView.outputBits.map((bit, index) => {
+                    const isPad = transformationView.side === 'left'
+                      ? index < transformationView.padCount
+                      : index >= transformationView.inputBits.length;
+                    return (
+                      <div key={`pad-${index}`} className="xor-grid-row">
+                        <span className="xor-grid-index">{index}</span>
+                        <span
+                          className={
+                            isPad
+                              ? 'xor-grid-bit'
+                              : 'xor-grid-bit xor-grid-bit-active'
+                          }
+                        >
+                          {bit}
+                        </span>
+                        <span
+                          className={
+                            isPad
+                              ? 'xor-grid-compare'
+                              : 'xor-grid-compare xor-grid-compare-different'
+                          }
+                        >
+                          {isPad ? 'pad' : 'original'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             ) : (
               <>
                 <div className="transformation-order">
@@ -2552,12 +2635,40 @@ interface LookupTransformationView {
   summary: string;
 }
 
+interface SplitTransformationView {
+  entry: ExecutionTraceEntry;
+  kind: 'split';
+  title: string;
+  copy: string;
+  inputBits: number[];
+  leftWidth: number;
+  leftBits: number[];
+  rightBits: number[];
+  summary: string;
+}
+
+interface PadTransformationView {
+  entry: ExecutionTraceEntry;
+  kind: 'pad';
+  title: string;
+  copy: string;
+  inputBits: number[];
+  outputBits: number[];
+  targetWidth: number;
+  side: string;
+  padBit: number;
+  padCount: number;
+  summary: string;
+}
+
 type TransformationView =
   | RoutingTransformationView
   | XorTransformationView
   | CompareTransformationView
   | GateTransformationView
-  | LookupTransformationView;
+  | LookupTransformationView
+  | SplitTransformationView
+  | PadTransformationView;
 
 const PERMUTATION_EDITOR_PORT_HEIGHT = 52;
 const PERMUTATION_EDITOR_PORT_GAP = 10;
@@ -2623,6 +2734,12 @@ function getTransformationView(
   }
   if (entry.defId === 'SBox') {
     return getSBoxTransformation(entry, project, registry);
+  }
+  if (entry.defId === 'BitSplit') {
+    return getSplitTransformation(entry, project, registry);
+  }
+  if (entry.defId === 'BitPad') {
+    return getPadTransformation(entry, project, registry);
   }
   return null;
 }
@@ -2976,6 +3093,80 @@ function getSBoxTransformation(
       chunks.length === 1
         ? 'This S-Box replaces one grouped value with another by table lookup.'
         : `This S-Box processes ${chunks.length} grouped chunks independently, using the same substitution table for each chunk.`,
+  };
+}
+
+function getSplitTransformation(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): SplitTransformationView | null {
+  const resolved = resolveTraceModuleInstance(entry.moduleId, project, registry);
+  if (!resolved) {
+    return null;
+  }
+
+  const input = entry.inputs.in;
+  const left = entry.outputs.left;
+  const right = entry.outputs.right;
+  if (input?.type !== 'bits' || left?.type !== 'bits' || right?.type !== 'bits') {
+    return null;
+  }
+
+  const leftWidth = left.value.length;
+
+  return {
+    entry,
+    kind: 'split',
+    title: 'Block Split',
+    copy:
+      'BitSplit divides one bit vector into two sub-blocks at the configured left width. The first leftWidth bits become the left output, and the remaining bits become the right output.',
+    inputBits: input.value,
+    leftWidth,
+    leftBits: left.value,
+    rightBits: right.value,
+    summary: `A ${input.value.length}-bit input was split into a ${leftWidth}-bit left block and a ${input.value.length - leftWidth}-bit right block.`,
+  };
+}
+
+function getPadTransformation(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): PadTransformationView | null {
+  const resolved = resolveTraceModuleInstance(entry.moduleId, project, registry);
+  if (!resolved) {
+    return null;
+  }
+
+  const input = entry.inputs.in;
+  const output = entry.outputs.out;
+  if (input?.type !== 'bits' || output?.type !== 'bits') {
+    return null;
+  }
+
+  const targetWidth = typeof resolved.instance.params.targetWidth === 'number'
+    ? resolved.instance.params.targetWidth
+    : output.value.length;
+  const side = resolved.instance.params.side === 'left' ? 'left' : 'right';
+  const padBit = resolved.instance.params.padBit === '1' ? 1 : 0;
+  const padCount = Math.max(0, output.value.length - input.value.length);
+
+  return {
+    entry,
+    kind: 'pad',
+    title: 'Block Pad',
+    copy:
+      'BitPad extends a bit vector to a target width by appending or prepending a chosen pad bit. If the input already meets the target, it passes through unchanged.',
+    inputBits: input.value,
+    outputBits: output.value,
+    targetWidth,
+    side,
+    padBit,
+    padCount,
+    summary: padCount > 0
+      ? `${padCount} ${padBit === 0 ? 'zero' : 'one'} bit${padCount === 1 ? '' : 's'} ${side === 'left' ? 'prepended' : 'appended'} to reach ${output.value.length} bits.`
+      : `Input already meets the target width (${output.value.length} bits), so no padding was added.`,
   };
 }
 

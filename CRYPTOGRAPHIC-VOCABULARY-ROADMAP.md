@@ -367,15 +367,20 @@ To protect the product identity, avoid:
 
 ## Current Conclusion
 
-The next strategic direction after `v1.13.0` should be:
+The roadmap is now validated through shipped Phase 1 foundations:
+- `CRYPTO-OPERATORS-V1.md`
+- `CONTROL-PRIMITIVES-V1.md`
 
-> expand MCW into a fully expressive cryptographic machine language
+The next strategic direction after `v1.15.0` should be:
 
-The clearest first move is not “which algorithm next?”
+> keep expanding MCW into a fully expressive cryptographic machine language
+
+The clearest next move is not “which algorithm next?”
 
 It is:
-- strengthen operator vocabulary
-- strengthen control vocabulary
+- establish honest block/framing vocabulary
+- keep advanced rotor realism as a bounded follow-on, not the whole roadmap
+- introduce protocol-material primitives only after framing gives them a real structural role
 - keep tutorials and challenges shipping alongside the new language
 
 That is the path from:

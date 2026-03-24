@@ -29,6 +29,8 @@ import { Plugboard } from './plugboard';
 import { Permutation } from './permutation';
 import { BitShifter } from './bit-shifter';
 import { BitJoin } from './bit-join';
+import { BitSplit } from './bit-split';
+import { BitPad } from './bit-pad';
 import { LFSR } from './lfsr';
 import { SBox } from './s-box';
 import { Clock } from './clock';
@@ -64,6 +66,8 @@ export {
   Permutation,
   BitShifter,
   BitJoin,
+  BitSplit,
+  BitPad,
   LFSR,
   SBox,
   Clock,
@@ -100,6 +104,8 @@ export const V1_REGISTRY: ModuleRegistry = {
   [Permutation.id]: Permutation,
   [BitShifter.id]: BitShifter,
   [BitJoin.id]: BitJoin,
+  [BitSplit.id]: BitSplit,
+  [BitPad.id]: BitPad,
   [LFSR.id]: LFSR,
   [SBox.id]: SBox,
   [Clock.id]: Clock,

@@ -33,6 +33,8 @@ import { pairReflectorLetters, Reflector } from './reflector';
 import { Permutation } from './permutation';
 import { BitShifter } from './bit-shifter';
 import { BitJoin } from './bit-join';
+import { BitSplit } from './bit-split';
+import { BitPad } from './bit-pad';
 import { LFSR } from './lfsr';
 import {
   buildIdentitySBoxTable,
@@ -853,5 +855,109 @@ describe('Reflector', () => {
     expect(rewired[1]).toBe('A');
     expect(rewired[24]).toBe('Z');
     expect(rewired[25]).toBe('Y');
+  });
+});
+
+describe('BitSplit', () => {
+  it('splits a 16-bit input into two 8-bit halves', () => {
+    const input = [1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1];
+    const result = BitSplit.evaluate(
+      { in: { type: 'bits', value: input } },
+      { leftWidth: 8 },
+    );
+    expect(result.left).toEqual({ type: 'bits', value: [1, 0, 1, 0, 1, 0, 1, 0] });
+    expect(result.right).toEqual({ type: 'bits', value: [0, 1, 0, 1, 0, 1, 0, 1] });
+  });
+
+  it('splits with asymmetric widths', () => {
+    const input = [1, 1, 0, 0, 1, 0, 1, 0];
+    const result = BitSplit.evaluate(
+      { in: { type: 'bits', value: input } },
+      { leftWidth: 3 },
+    );
+    expect(result.left).toEqual({ type: 'bits', value: [1, 1, 0] });
+    expect(result.right).toEqual({ type: 'bits', value: [0, 1, 0, 1, 0] });
+  });
+
+  it('throws when leftWidth exceeds input length', () => {
+    expect(() =>
+      BitSplit.evaluate(
+        { in: { type: 'bits', value: [1, 0, 1, 0] } },
+        { leftWidth: 8 },
+      ),
+    ).toThrow('exceeds input length');
+  });
+
+  it('throws on non-bits input', () => {
+    expect(() =>
+      BitSplit.evaluate(
+        { in: { type: 'symbol', value: 'A' } },
+        { leftWidth: 4 },
+      ),
+    ).toThrow('bits');
+  });
+
+  it('round-trips with BitJoin', () => {
+    const original = [1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0];
+    const split = BitSplit.evaluate(
+      { in: { type: 'bits', value: original } },
+      { leftWidth: 8 },
+    );
+    const joined = BitJoin.evaluate(
+      { a: split.left, b: split.right },
+      {},
+    );
+    expect(joined.out).toEqual({ type: 'bits', value: original });
+  });
+});
+
+describe('BitPad', () => {
+  it('pads a short vector to the target width with zeros on the right', () => {
+    const result = BitPad.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1] } },
+      { targetWidth: 8 },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1, 0, 0, 0, 0, 0] });
+  });
+
+  it('pads on the left when side is left', () => {
+    const result = BitPad.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1] } },
+      { targetWidth: 8, side: 'left' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [0, 0, 0, 0, 0, 1, 0, 1] });
+  });
+
+  it('pads with ones when padBit is 1', () => {
+    const result = BitPad.evaluate(
+      { in: { type: 'bits', value: [0, 1] } },
+      { targetWidth: 4, padBit: '1' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [0, 1, 1, 1] });
+  });
+
+  it('passes through when input already meets target width', () => {
+    const result = BitPad.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 0] } },
+      { targetWidth: 4 },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1, 0] });
+  });
+
+  it('passes through when input exceeds target width', () => {
+    const result = BitPad.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 0, 1, 1] } },
+      { targetWidth: 4 },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1, 0, 1, 1] });
+  });
+
+  it('throws on non-bits input', () => {
+    expect(() =>
+      BitPad.evaluate(
+        { in: { type: 'symbol', value: 'A' } },
+        { targetWidth: 8 },
+      ),
+    ).toThrow('bits');
   });
 });

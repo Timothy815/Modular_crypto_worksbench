@@ -182,6 +182,18 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when a machine splits a bit block into branches and later needs to rejoin the ordered halves explicitly.',
     searchTerms: ['join', 'concat', 'concatenate', 'combine', 'bits', 'feistel'],
   },
+  BitSplit: {
+    sectionId: 'transforms',
+    purpose: 'Splits one bit vector into two halves at a specified width.',
+    detail: 'Use this to divide a bit block into explicit left and right sub-blocks for independent processing before rejoining.',
+    searchTerms: ['split', 'divide', 'half', 'block', 'framing', 'bits', 'feistel'],
+  },
+  BitPad: {
+    sectionId: 'transforms',
+    purpose: 'Pads a bit vector to a target width with zeros or ones.',
+    detail: 'Use this when a short bit vector needs to reach a required block size before entering a fixed-width transform.',
+    searchTerms: ['pad', 'padding', 'extend', 'fill', 'block', 'width', 'bits'],
+  },
   SBox: {
     sectionId: 'transforms',
     purpose: 'Substitutes each fixed-width bit chunk through a lookup table.',

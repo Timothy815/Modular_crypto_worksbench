@@ -5,7 +5,9 @@ import { AddMod } from './modules/add-mod';
 import { AND } from './modules/and';
 import { AtLeast } from './modules/at-least';
 import { BaudotSource } from './modules/baudot-source';
+import { BitPad } from './modules/bit-pad';
 import { BitSource } from './modules/bit-source';
+import { BitSplit } from './modules/bit-split';
 import { Counter } from './modules/counter';
 import { Equals } from './modules/equals';
 import { Gate } from './modules/gate';
@@ -78,6 +80,8 @@ const registry: ModuleRegistry = {
   [Plugboard.id]: Plugboard,
   [Reflector.id]: Reflector,
   [SBox.id]: SBox,
+  [BitSplit.id]: BitSplit,
+  [BitPad.id]: BitPad,
 };
 
 describe('validateProject', () => {
@@ -409,6 +413,81 @@ describe('validateProject', () => {
         (issue) =>
           issue.moduleId === 'mod' &&
           issue.message.includes('must not exceed the input word range'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects BitSplit leftWidth that is not a positive integer', () => {
+    const project: Project = {
+      modules: [{ id: 'split', defId: 'BitSplit', params: { leftWidth: 0 } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'split' &&
+          issue.message.includes('leftWidth'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects BitSplit leftWidth >= static input width', () => {
+    const project: Project = {
+      modules: [
+        { id: 'source', defId: 'BitSource', params: { stream: [1, 0, 1, 0] } },
+        { id: 'split', defId: 'BitSplit', params: { leftWidth: 4 } },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'split', port: 'in' } },
+      ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'split' &&
+          issue.message.includes('must be less than the input width'),
+      ),
+    ).toBe(true);
+  });
+
+  it('accepts valid BitSplit leftWidth within input width', () => {
+    const project: Project = {
+      modules: [
+        { id: 'source', defId: 'BitSource', params: { stream: [1, 0, 1, 0, 1, 0, 1, 0] } },
+        { id: 'split', defId: 'BitSplit', params: { leftWidth: 4 } },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'split', port: 'in' } },
+      ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('rejects BitPad targetWidth that is not a positive integer', () => {
+    const project: Project = {
+      modules: [{ id: 'pad', defId: 'BitPad', params: { targetWidth: 0 } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'pad' &&
+          issue.message.includes('targetWidth'),
       ),
     ).toBe(true);
   });

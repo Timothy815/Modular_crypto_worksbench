@@ -29,6 +29,8 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   Permutation: 'operator',
   BitShifter: 'operator',
   BitJoin: 'operator',
+  BitSplit: 'operator',
+  BitPad: 'operator',
   SBox: 'operator',
   SymbolToBits: 'bridge',
   BitsToAscii: 'bridge',
