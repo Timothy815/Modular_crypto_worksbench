@@ -9,6 +9,7 @@ import { Gate } from './modules/gate';
 import { KeyInput } from './modules/key-input';
 import { LFSR } from './modules/lfsr';
 import { Rotor } from './modules/rotor';
+import { OR } from './modules/or';
 import { SymbolToBits } from './modules/symbol-to-bits';
 import { TextInput } from './modules/text-input';
 import { BitSource } from './modules/bit-source';
@@ -140,6 +141,77 @@ describe('Signal-driven advance', () => {
       expect(positions[3]).toBe(2); // advanced (tick 2 pulsed)
       expect(positions[4]).toBe(2); // same (tick 3 silent)
       expect(positions[5]).toBe(3); // advanced (tick 4 pulsed)
+    });
+
+    it('uses explicit turnover wiring to produce the middle-rotor double-step pattern', () => {
+      const registry: ModuleRegistry = { Clock, Gate, OR, Rotor, Output };
+
+      const project: Project = {
+        modules: [
+          { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 4 } },
+          {
+            id: 'left',
+            defId: 'Rotor',
+            params: {
+              wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''),
+              position: 0,
+              ringOffset: 2,
+              notches: 'Q',
+            },
+          },
+          {
+            id: 'middle',
+            defId: 'Rotor',
+            params: {
+              wiring: 'AJDKSIRUXBLHWTMCQGZNPYFVOE'.split(''),
+              position: 4,
+              ringOffset: 0,
+              notches: 'E',
+            },
+          },
+          {
+            id: 'right',
+            defId: 'Rotor',
+            params: {
+              wiring: 'BDFHJLCPRTXVZNYEIWGAKMUSQO'.split(''),
+              position: 15,
+              ringOffset: 0,
+              notches: 'Q',
+            },
+          },
+          { id: 'middle-vote', defId: 'OR', params: {} },
+          { id: 'middle-gate', defId: 'Gate', params: {} },
+          { id: 'left-gate', defId: 'Gate', params: {} },
+          { id: 'out', defId: 'Output', params: {} },
+        ],
+        connections: [
+          { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'right', port: 'clock' } },
+          { from: { moduleId: 'right', port: 'turnover' }, to: { moduleId: 'middle-vote', port: 'a' } },
+          { from: { moduleId: 'middle', port: 'turnover' }, to: { moduleId: 'middle-vote', port: 'b' } },
+          { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'middle-gate', port: 'in' } },
+          { from: { moduleId: 'middle-vote', port: 'out' }, to: { moduleId: 'middle-gate', port: 'control' } },
+          { from: { moduleId: 'middle-gate', port: 'out' }, to: { moduleId: 'middle', port: 'clock' } },
+          { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'left-gate', port: 'in' } },
+          { from: { moduleId: 'middle', port: 'turnover' }, to: { moduleId: 'left-gate', port: 'control' } },
+          { from: { moduleId: 'left-gate', port: 'out' }, to: { moduleId: 'left', port: 'clock' } },
+          { from: { moduleId: 'right', port: 'out' }, to: { moduleId: 'middle', port: 'in' } },
+          { from: { moduleId: 'middle', port: 'out' }, to: { moduleId: 'left', port: 'in' } },
+          { from: { moduleId: 'left', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+        ],
+      };
+
+      const overrides = Array.from({ length: 4 }, () => ({
+        right: { in: { type: 'symbol' as const, value: 'A' } },
+      }));
+
+      const result = executeTickedProject(project, registry, 4, overrides);
+
+      expect(result.paramsByModuleByTick.left.map((params) => params.position)).toEqual([0, 1, 1, 1]);
+      expect(result.paramsByModuleByTick.middle.map((params) => params.position)).toEqual([4, 5, 6, 6]);
+      expect(result.paramsByModuleByTick.right.map((params) => params.position)).toEqual([15, 16, 17, 18]);
+
+      expect(result.ticks[0].outputsByModuleId.middle.turnover.value).toEqual([1]);
+      expect(result.ticks[1].outputsByModuleId.right.turnover.value).toEqual([1]);
     });
 
     it('rotor without clock advances every tick', () => {

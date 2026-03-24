@@ -19,6 +19,8 @@ import {
   type IteratorDef,
 } from './composites';
 
+const CLOCK_PORT = 'clock';
+
 interface EvaluatedDefinitionResult {
   outputs: ModuleOutputs;
   hoistedTrace: ExecutionTraceEntry[];
@@ -37,7 +39,7 @@ export class ProjectValidationError extends Error {
   }
 }
 
-function buildTopologicalOrder(project: Project): string[] {
+function buildTopologicalOrder(project: Project, registry: ModuleRegistry): string[] {
   const adjacency = new Map<string, string[]>();
   const indegree = new Map<string, number>();
 
@@ -47,6 +49,12 @@ function buildTopologicalOrder(project: Project): string[] {
   }
 
   for (const connection of project.connections) {
+    const targetInstance = project.modules.find((moduleInstance) => moduleInstance.id === connection.to.moduleId);
+    const targetDef = targetInstance ? registry[targetInstance.defId] : null;
+    if (connection.to.port === CLOCK_PORT && targetDef && isStatefulModule(targetDef)) {
+      continue;
+    }
+
     adjacency.get(connection.from.moduleId)?.push(connection.to.moduleId);
     indegree.set(
       connection.to.moduleId,
@@ -86,6 +94,7 @@ function buildTopologicalOrder(project: Project): string[] {
 function collectInputs(
   moduleId: string,
   project: Project,
+  registry: ModuleRegistry,
   outputsByModuleId: Record<string, ModuleOutputs>,
   inputOverrides?: Record<string, ModuleInputs>,
 ): ModuleInputs {
@@ -95,6 +104,12 @@ function collectInputs(
 
   for (const connection of project.connections) {
     if (connection.to.moduleId !== moduleId) {
+      continue;
+    }
+
+    const targetInstance = project.modules.find((moduleInstance) => moduleInstance.id === connection.to.moduleId);
+    const targetDef = targetInstance ? registry[targetInstance.defId] : null;
+    if (connection.to.port === CLOCK_PORT && targetDef && isStatefulModule(targetDef)) {
       continue;
     }
 
@@ -125,7 +140,7 @@ export function executeProject(
     throw new ProjectValidationError(message);
   }
 
-  const order = buildTopologicalOrder(project);
+  const order = buildTopologicalOrder(project, registry);
   const outputsByModuleId: Record<string, ModuleOutputs> = {};
   const trace: ExecutionTraceEntry[] = [];
   const analysisTrace: ExecutionTraceEntry[] = [];
@@ -144,7 +159,7 @@ export function executeProject(
       );
     }
 
-    const inputs = collectInputs(moduleId, project, outputsByModuleId, inputOverrides);
+    const inputs = collectInputs(moduleId, project, registry, outputsByModuleId, inputOverrides);
     const traceEntry: ExecutionTraceEntry = {
       moduleId,
       defId: def.id,
@@ -461,8 +476,6 @@ export function deriveTickCount(
  * When a stateful module has this port connected, the executor only
  * calls `advance` when the incoming signal is an active pulse.
  */
-const CLOCK_PORT = 'clock';
-
 /**
  * A pulse is active when the signal is exactly `[1]` — a single high
  * bit. Any other shape (`[0]`, `[]`, multi-bit, non-bits) is inactive.
@@ -506,7 +519,7 @@ function executeTickedGraph(
   runtimeState: TickedRuntimeState,
   inputOverrides?: Record<string, ModuleInputs>,
 ): ExecutionResult {
-  const order = buildTopologicalOrder(project);
+  const order = buildTopologicalOrder(project, registry);
   const outputsByModuleId: Record<string, ModuleOutputs> = {};
   const trace: ExecutionTraceEntry[] = [];
   const analysisTrace: ExecutionTraceEntry[] = [];
@@ -529,7 +542,7 @@ function executeTickedGraph(
       );
     }
 
-    const inputs = collectInputs(moduleId, project, outputsByModuleId, inputOverrides);
+    const inputs = collectInputs(moduleId, project, registry, outputsByModuleId, inputOverrides);
     const currentParams = runtimeState.paramsByModuleId[moduleId] ?? {};
     const traceEntry: ExecutionTraceEntry = {
       moduleId,

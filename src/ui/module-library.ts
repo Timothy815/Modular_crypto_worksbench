@@ -106,9 +106,9 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
   },
   Rotor: {
     sectionId: 'symbol-domain',
-    purpose: 'Substitutes letters through a positional rotor wiring.',
-    detail: 'A classical substitution component whose output changes with its configured position.',
-    searchTerms: ['rotor', 'enigma', 'letter', 'symbol', 'substitution'],
+    purpose: 'Substitutes letters through a rotor wiring with separate position, ring setting, and turnover state.',
+    detail: 'A classical substitution component whose mapping changes with position while exposing turnover as visible machine logic.',
+    searchTerms: ['rotor', 'enigma', 'letter', 'symbol', 'substitution', 'ring setting', 'notch', 'turnover'],
   },
   Plugboard: {
     sectionId: 'symbol-domain',

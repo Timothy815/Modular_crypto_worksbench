@@ -8,6 +8,7 @@ import {
   type Project,
   type ValidationIssue,
   type ValidationResult,
+  isStatefulModule,
 } from './types';
 import {
   isCompositeDefinition,
@@ -22,6 +23,7 @@ import { validateHexSourceValue } from './modules/hex-source';
 import { validatePermutationOrderParam } from './modules/permutation';
 import { validatePlugboardWiringParam } from './modules/plugboard';
 import { validateReflectorWiringParam } from './modules/reflector';
+import { validateRotorParam } from './modules/rotor';
 import { validateSBoxTableParam } from './modules/s-box';
 import { validateModuloParam } from './modules/modulo';
 import { validateCounterParam } from './modules/counter';
@@ -42,6 +44,7 @@ const EQUAL_WIDTH_BINARY_MODULE_IDS = new Set([
 ]);
 
 const SINGLE_BIT_TERNARY_MODULE_IDS = new Set(['Majority']);
+const CLOCK_PORT = 'clock';
 
 function findPort(def: ModuleDefinition, portName: string, direction: 'input' | 'output') {
   const ports = direction === 'input' ? def.inputs : def.outputs;
@@ -146,6 +149,10 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'Plugboard' && field.key === 'wiring') {
     return validatePlugboardWiringParam(value);
+  }
+
+  if (def.id === 'Rotor' && (field.key === 'position' || field.key === 'ringOffset' || field.key === 'notches')) {
+    return validateRotorParam(field.key, value);
   }
 
   if (def.id === 'HexSource' && field.key === 'value') {
@@ -633,11 +640,13 @@ export function validateProject(project: Project, registry: ModuleRegistry): Val
       continue;
     }
 
-    adjacency.get(connection.from.moduleId)?.push(connection.to.moduleId);
-    indegree.set(
-      connection.to.moduleId,
-      (indegree.get(connection.to.moduleId) ?? 0) + 1,
-    );
+    if (!(connection.to.port === CLOCK_PORT && !isCompositeDefinition(targetDef) && !isIteratorDefinition(targetDef) && isStatefulModule(targetDef))) {
+      adjacency.get(connection.from.moduleId)?.push(connection.to.moduleId);
+      indegree.set(
+        connection.to.moduleId,
+        (indegree.get(connection.to.moduleId) ?? 0) + 1,
+      );
+    }
   }
 
   const ready = [...indegree.entries()]

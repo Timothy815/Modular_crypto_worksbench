@@ -26,6 +26,7 @@ const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-r
 const keystreamProject = demoProjects.find((project) => project.id === 'keystream');
 const gatedKeystreamProject = demoProjects.find((project) => project.id === 'gated-keystream');
 const majorityKeystreamProject = demoProjects.find((project) => project.id === 'majority-keystream');
+const advancedRotorSteppingProject = demoProjects.find((project) => project.id === 'advanced-rotor-stepping');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
 const toySpongeHashProject = demoProjects.find((project) => project.id === 'toy-sponge-hash');
@@ -93,6 +94,9 @@ if (!gatedKeystreamProject) {
 if (!majorityKeystreamProject) {
   throw new Error('Expected majority-keystream demo project to seed starter challenges.');
 }
+if (!advancedRotorSteppingProject) {
+  throw new Error('Expected advanced-rotor-stepping demo project to seed starter challenges.');
+}
 if (!sequentialProject) {
   throw new Error('Expected sequential demo project to seed starter challenges.');
 }
@@ -145,6 +149,8 @@ const gatedKeystreamTarget = cloneProject(gatedKeystreamProject.project);
 const brokenGatedKeystreamStart = cloneProject(gatedKeystreamProject.project);
 const majorityKeystreamTarget = cloneProject(majorityKeystreamProject.project);
 const brokenMajorityKeystreamStart = cloneProject(majorityKeystreamProject.project);
+const advancedRotorSteppingTarget = cloneProject(advancedRotorSteppingProject.project);
+const brokenAdvancedRotorSteppingStart = cloneProject(advancedRotorSteppingProject.project);
 const sequentialTarget = cloneProject(sequentialProject.project);
 const brokenSequentialStart = cloneProject(sequentialProject.project);
 const brokenSequentialTapsStart = cloneProject(sequentialProject.project);
@@ -198,6 +204,14 @@ if (!brokenProtocolIv) {
   throw new Error('Expected protocol-material-mixer demo project to contain an IV module.');
 }
 brokenProtocolIv.params.value = '00';
+
+const brokenMiddleRotor = brokenAdvancedRotorSteppingStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'middle',
+);
+if (!brokenMiddleRotor) {
+  throw new Error('Expected advanced-rotor-stepping demo project to contain a middle rotor.');
+}
+brokenMiddleRotor.params.notches = 'F';
 
 const brokenBaudotSource = brokenBaudotStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'source',
@@ -838,6 +852,27 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The Majority module and Gate wiring are already correct.',
       'Focus on the three 1-bit control registers feeding the vote.',
       'If one control stream is wrong, the majority decision flips only on the ticks where that stream should have been the deciding vote.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-rotor-notch',
+    title: 'Repair the Rotor Notch',
+    projectId: 'advanced-rotor-stepping',
+    group: 'Rotor Realism',
+    difficulty: 'expert',
+    prompt:
+      'This stepped rotor machine still has the right wiring, clock, and gate layout, but the middle rotor is turning over at the wrong window letter. Restore the notch so the visible stepping pattern and output stream match the reference machine again.',
+    startingProject: brokenAdvancedRotorSteppingStart,
+    startingLayout: cloneProject(advancedRotorSteppingProject.layout),
+    targetProject: advancedRotorSteppingTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The OR and Gate wiring are already correct; the mistake lives inside the middle rotor params.',
+      'Watch when the left gate opens. It should happen when the middle rotor turnover bit goes active, not one tick later.',
+      'A wrong notch changes the stepping rhythm even if every wiring table stays the same.',
     ],
   },
   {

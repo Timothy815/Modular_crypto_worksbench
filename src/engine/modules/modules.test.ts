@@ -32,7 +32,13 @@ import {
   serializePlugboardWiring,
   unpairPlugboardLetter,
 } from './plugboard';
-import { Rotor, serializeRotorWiring, swapRotorWiringTargets } from './rotor';
+import {
+  Rotor,
+  isRotorTurnoverActive,
+  parseRotorNotches,
+  serializeRotorWiring,
+  swapRotorWiringTargets,
+} from './rotor';
 import { pairReflectorLetters, Reflector } from './reflector';
 import { Permutation } from './permutation';
 import { BitShifter } from './bit-shifter';
@@ -835,6 +841,7 @@ describe('Rotor', () => {
 
   // Simple shifted wiring: BCDEFGHIJKLMNOPQRSTUVWXYZA
   const shiftedWiring = ALPHABET.slice(1).split('').concat(['A']);
+  const enigmaWiring = 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split('');
 
   it('passes through with identity wiring at position 0', () => {
     const result = Rotor.evaluate(
@@ -842,6 +849,7 @@ describe('Rotor', () => {
       { wiring: identityWiring, position: 0 },
     );
     expect(result.out).toEqual({ type: 'symbol', value: 'A' });
+    expect(result.turnover).toEqual({ type: 'bits', value: [0] });
   });
 
   it('applies substitution with shifted wiring at position 0', () => {
@@ -869,6 +877,31 @@ describe('Rotor', () => {
       { wiring: shiftedWiring, position: 0 },
     );
     expect(result.out).toEqual({ type: 'symbol', value: 'A' });
+  });
+
+  it('applies ring offset separately from position', () => {
+    const result = Rotor.evaluate(
+      { in: { type: 'symbol', value: 'A' } },
+      { wiring: enigmaWiring, position: 0, ringOffset: 1 },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'K' });
+  });
+
+  it('parses one or more notch letters into alphabet indexes', () => {
+    expect(parseRotorNotches('Q, E')).toEqual([16, 4]);
+  });
+
+  it('marks turnover active when the visible position matches a notch', () => {
+    expect(isRotorTurnoverActive(16, 0, [16])).toBe(true);
+    expect(isRotorTurnoverActive(15, 0, [16])).toBe(false);
+  });
+
+  it('shifts the visible turnover position when ring offset changes', () => {
+    const result = Rotor.evaluate(
+      { in: { type: 'symbol', value: 'A' } },
+      { wiring: identityWiring, position: 15, ringOffset: 1, notches: 'Q' },
+    );
+    expect(result.turnover).toEqual({ type: 'bits', value: [1] });
   });
 
   it('swaps rotor target letters while preserving the permutation', () => {

@@ -1074,6 +1074,78 @@ export const demoProjects: DemoProject[] = [
       output: { x: 1144, y: 132 },
     },
   },
+  {
+    id: 'advanced-rotor-stepping',
+    name: 'Advanced Rotor Stepping',
+    summary: 'A bounded three-rotor machine with explicit turnover wiring, ring setting, and visible double-step control.',
+    pipeline: 'TextInput -> Rotor -> Rotor -> Rotor -> Output, with Clock -> Gate/OR control wiring for turnover and double-step',
+    project: {
+      modules: [
+        { id: 'text', defId: 'TextInput', params: { value: 'AAAA' } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 4 } },
+        {
+          id: 'right',
+          defId: 'Rotor',
+          params: {
+            wiring: 'BDFHJLCPRTXVZNYEIWGAKMUSQO'.split(''),
+            position: 15,
+            ringOffset: 0,
+            notches: 'Q',
+          },
+        },
+        {
+          id: 'middle',
+          defId: 'Rotor',
+          params: {
+            wiring: 'AJDKSIRUXBLHWTMCQGZNPYFVOE'.split(''),
+            position: 4,
+            ringOffset: 0,
+            notches: 'E',
+          },
+        },
+        {
+          id: 'left',
+          defId: 'Rotor',
+          params: {
+            wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''),
+            position: 0,
+            ringOffset: 2,
+            notches: 'Q',
+          },
+        },
+        { id: 'middle-vote', defId: 'OR', params: {} },
+        { id: 'middle-gate', defId: 'Gate', params: {} },
+        { id: 'left-gate', defId: 'Gate', params: {} },
+        { id: 'output', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'right', port: 'in' } },
+        { from: { moduleId: 'right', port: 'out' }, to: { moduleId: 'middle', port: 'in' } },
+        { from: { moduleId: 'middle', port: 'out' }, to: { moduleId: 'left', port: 'in' } },
+        { from: { moduleId: 'left', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'right', port: 'clock' } },
+        { from: { moduleId: 'right', port: 'turnover' }, to: { moduleId: 'middle-vote', port: 'a' } },
+        { from: { moduleId: 'middle', port: 'turnover' }, to: { moduleId: 'middle-vote', port: 'b' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'middle-gate', port: 'in' } },
+        { from: { moduleId: 'middle-vote', port: 'out' }, to: { moduleId: 'middle-gate', port: 'control' } },
+        { from: { moduleId: 'middle-gate', port: 'out' }, to: { moduleId: 'middle', port: 'clock' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'left-gate', port: 'in' } },
+        { from: { moduleId: 'middle', port: 'turnover' }, to: { moduleId: 'left-gate', port: 'control' } },
+        { from: { moduleId: 'left-gate', port: 'out' }, to: { moduleId: 'left', port: 'clock' } },
+      ],
+    },
+    layout: {
+      text: { x: 40, y: 208 },
+      clock: { x: 40, y: 40 },
+      right: { x: 280, y: 208 },
+      'middle-vote': { x: 520, y: 40 },
+      'middle-gate': { x: 760, y: 40 },
+      middle: { x: 760, y: 208 },
+      'left-gate': { x: 1000, y: 40 },
+      left: { x: 1240, y: 208 },
+      output: { x: 1480, y: 208 },
+    },
+  },
 ];
 
 export function runDemoProject(project: Project, registry: ModuleRegistry = V1_REGISTRY): ExecutionResult {

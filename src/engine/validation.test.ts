@@ -21,6 +21,7 @@ import { OR } from './modules/or';
 import { Permutation } from './modules/permutation';
 import { Plugboard } from './modules/plugboard';
 import { Reflector } from './modules/reflector';
+import { Rotor } from './modules/rotor';
 import { Salt } from './modules/salt';
 import { SBox } from './modules/s-box';
 import { SubMod } from './modules/sub-mod';
@@ -85,6 +86,7 @@ const registry: ModuleRegistry = {
   [SubMod.id]: SubMod,
   [Modulo.id]: Modulo,
   [Permutation.id]: Permutation,
+  [Rotor.id]: Rotor,
   [Plugboard.id]: Plugboard,
   [Reflector.id]: Reflector,
   [SBox.id]: SBox,
@@ -290,6 +292,62 @@ describe('validateProject', () => {
         (issue) =>
           issue.moduleId === 'plugboard-1' &&
           issue.message.includes('Plugboard wiring must be reciprocal'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects rotor ring offsets outside the alphabet range', () => {
+    const project: Project = {
+      modules: [
+        {
+          id: 'rotor-1',
+          defId: 'Rotor',
+          params: {
+            wiring: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+            position: 0,
+            ringOffset: 26,
+          },
+        },
+      ],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'rotor-1' &&
+          issue.message.includes('Ring offset must be an integer from 0 to 25'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects malformed rotor notch lists before execution', () => {
+    const project: Project = {
+      modules: [
+        {
+          id: 'rotor-1',
+          defId: 'Rotor',
+          params: {
+            wiring: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+            position: 0,
+            notches: 'Q, 3',
+          },
+        },
+      ],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'rotor-1' &&
+          issue.message.includes('Notches must use uppercase single letters'),
       ),
     ).toBe(true);
   });
