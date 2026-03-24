@@ -9,6 +9,7 @@ const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
 const beyondXorProject = demoProjects.find((project) => project.id === 'beyond-xor');
 const controlProject = demoProjects.find((project) => project.id === 'counter-pulse-gate');
 const splitTransformProject = demoProjects.find((project) => project.id === 'split-transform-rejoin');
+const padAndSplitProject = demoProjects.find((project) => project.id === 'pad-and-split');
 const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
 const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
 const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-lorenz');
@@ -38,6 +39,9 @@ if (!controlProject) {
 }
 if (!splitTransformProject) {
   throw new Error('Expected split-transform-rejoin demo project to seed starter challenges.');
+}
+if (!padAndSplitProject) {
+  throw new Error('Expected pad-and-split demo project to seed starter challenges.');
 }
 if (!baudotProject) {
   throw new Error('Expected baudot-bridge demo project to seed starter challenges.');
@@ -99,6 +103,8 @@ const controlTarget = cloneProject(controlProject.project);
 const brokenControlStart = cloneProject(controlProject.project);
 const splitTransformTarget = cloneProject(splitTransformProject.project);
 const brokenSplitTransformStart = cloneProject(splitTransformProject.project);
+const padAndSplitTarget = cloneProject(padAndSplitProject.project);
+const brokenPadAndSplitStart = cloneProject(padAndSplitProject.project);
 const baudotTarget = cloneProject(baudotProject.project);
 const brokenBaudotStart = cloneProject(baudotProject.project);
 const lorenzTarget = cloneProject(lorenzProject.project);
@@ -156,6 +162,14 @@ if (!brokenSplitModule) {
   throw new Error('Expected split-transform-rejoin demo project to contain a split module.');
 }
 brokenSplitModule.params.leftWidth = 4;
+
+const brokenPadModule = brokenPadAndSplitStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'pad',
+);
+if (!brokenPadModule) {
+  throw new Error('Expected pad-and-split demo project to contain a pad module.');
+}
+brokenPadModule.params.targetWidth = 12;
 
 const brokenControlThreshold = brokenControlStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'threshold',
@@ -373,6 +387,27 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The XOR keys and join module are already wired correctly.',
       'Focus on the leftWidth parameter of the BitSplit module.',
       'A 16-bit message split into two equal halves means each half should be 8 bits.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-pad-width',
+    title: 'Repair the Pad Width',
+    projectId: 'pad-and-split',
+    group: 'Block Framing',
+    difficulty: 'beginner',
+    prompt:
+      'This machine pads a short 8-bit input up to 16 bits before splitting it into two blocks, but the pad target is wrong. The padded output is too short for the split to produce two equal 8-bit halves. Fix the pad target width so the downstream split and transforms produce the correct output again.',
+    startingProject: brokenPadAndSplitStart,
+    startingLayout: cloneProject(padAndSplitProject.layout),
+    targetProject: padAndSplitTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The split, XOR keys, and join are already correct.',
+      'Focus on the targetWidth parameter of the BitPad module.',
+      'An 8-bit source needs to be padded to 16 bits so the split can produce two 8-bit halves.',
     ],
   },
   {

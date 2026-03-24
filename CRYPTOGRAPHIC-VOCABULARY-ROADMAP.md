@@ -1,6 +1,6 @@
 # MCW — Cryptographic Vocabulary Roadmap
 
-Status: Active strategic roadmap after `v1.13.0`.
+Status: Active strategic roadmap after `v1.16.0`.
 
 This document reframes MCW as a cryptographic systems IDE:
 - not a code generator
@@ -115,44 +115,32 @@ The current product is strong enough for:
 
 It is not yet fully expressive.
 
-The most important missing families are:
+The most important missing families are listed below. Families that have already shipped their first milestone are marked; remaining items within those families are still open.
 
-### 1. Operator Vocabulary
+### 1. Operator Vocabulary — *first milestone shipped in `v1.14.0`*
 
-Operators are the grammar of the machine language.
+Shipped:
+- `AND`, `OR`, `NOT`
+- `AddMod`, `SubMod`, `Modulo`
+- `Equals`, `Gate`
 
-Needed additions likely include:
-- `AND`
-- `OR`
-- `NOT`
-- `ADD mod N`
-- `SUB mod N`
-- `Modulo`
-- `Compare`
-- `Equals`
-- `GreaterThan` / threshold-style checks
-- `Mux`
-- `Gate`
+Still open over time:
+- `Mux` / demux
+- `GreaterThan` / richer threshold-style checks
+- inversion helpers where structurally honest
 
-Why this matters:
-- modern constructions rely on more than XOR
-- mechanized stepping logic needs conditions
-- public-key and number-theoretic lines eventually require arithmetic vocabulary
+### 2. Control / Trigger Vocabulary — *first milestone shipped in `v1.15.0`*
 
-### 2. Control / Trigger Vocabulary
-
-Needed additions likely include:
+Shipped:
 - `Counter`
+- `Equals`, `AtLeast`
+- `Gate` (one-bit control semantics)
+
+Still open over time:
 - explicit trigger / pulse modules
 - condition-to-pulse conversion
 - conditional stepping / advance control
 - modular wrap / rollover helpers
-
-Why this matters:
-- rotor turnover and notch behavior
-- irregular clocking for stream ciphers
-- gated state machines
-- scheduler and protocol control logic
 
 ### 3. Stream-Cipher Vocabulary
 
@@ -168,18 +156,17 @@ Still needed over time:
 - filtered/irregular clocking control
 - explicit keystream split/use patterns
 
-### 4. Block / Framing Vocabulary
+### 4. Block / Framing Vocabulary — *first milestone shipped in `v1.16.0`*
 
-Needed additions likely include:
-- split message into blocks
-- join blocks
-- pad
+Shipped:
+- `BitSplit` (split one bit vector into left/right halves)
+- `BitPad` (pad to target width)
+- reuse of existing `BitJoin` for rejoining
+
+Still open over time:
 - unpad
-- explicit chaining helpers later
-
-Why this matters:
-- block ciphers are not just round functions
-- message framing should be visible, not assumed
+- explicit chaining helpers
+- message-boundary handling beyond single-vector framing
 
 ### 5. Symbol- and Message-Level Permutation Vocabulary
 
@@ -227,27 +214,14 @@ It should progress through bounded vocabulary lines, each with:
 - one tutorial
 - one guided challenge or analysis exercise where appropriate
 
-### Phase 1 — Operator And Control Foundations
+### Phase 1 — Operator And Control Foundations — *shipped*
 
-Purpose:
-- make the machine language more expressive
-- unlock condition-driven behavior
-
-Likely bounded slices:
-- `CRYPTO-OPERATORS-V1.md`
-- `CONTROL-PRIMITIVES-V1.md`
-
-Likely deliverables:
-- boolean operators beyond XOR
-- modular arithmetic basics
-- compare / equals
-- counter
-- trigger / pulse / gate primitives
-
-Teaching additions:
-- operator tutorial
-- gated-clock or threshold-trigger demo
-- challenge showing a rotor/clock/control interaction
+Shipped in `v1.14.0` and `v1.15.0`:
+- `CRYPTO-OPERATORS-V1.md` — `AND`, `OR`, `NOT`, `AddMod`, `SubMod`, `Modulo`
+- `CONTROL-PRIMITIVES-V1.md` — `Counter`, `Equals`, `AtLeast`, `Gate`
+- `Beyond XOR` demo/tutorial/challenge
+- `Counter Pulse Gate` demo/tutorial/challenge
+- Analyze transformation views for `Equals`, `AtLeast`, and `Gate`
 
 ### Phase 2 — Mechanized And Stream Expressiveness
 
@@ -268,24 +242,19 @@ Teaching additions:
 - stream combiner tutorial
 - guided challenge around predicting / modifying stepping behavior
 
-### Phase 3 — Block And Framing Foundations
+### Phase 3 — Block And Framing Foundations — *first slice shipped*
 
-Purpose:
-- move from round toys to honest block-machine construction
+Shipped in `v1.16.0`:
+- `BLOCK-FRAMING-V1.md` — `BitSplit`, `BitPad`, reuse of `BitJoin`
+- `Split Transform Rejoin` and `Pad and Split` demo workspaces
+- `Visible Block Boundaries` and `Padding Before Splitting` tutorials
+- `Repair the Split Width` and `Repair the Pad Width` challenges
+- Analyze transformation views for `BitSplit` and `BitPad`
 
-Likely bounded slices:
-- `BLOCK-FRAMING-V1.md`
+Still open:
 - `SYMBOL-PERMUTATION-V1.md`
-
-Likely deliverables:
-- chunk/join
-- pad/unpad
-- message-level permutation
-- inverse-permutation authoring helper
-
-Teaching additions:
-- build-a-block-pipeline tutorial
-- challenge on framing or block-mode behavior
+- unpad semantics
+- message-level permutation / inverse-permutation authoring
 
 ### Phase 4 — Scheduler And Protocol Inputs
 
@@ -367,20 +336,20 @@ To protect the product identity, avoid:
 
 ## Current Conclusion
 
-The roadmap is now validated through shipped Phase 1 foundations:
-- `CRYPTO-OPERATORS-V1.md`
-- `CONTROL-PRIMITIVES-V1.md`
+The roadmap is now validated through shipped foundations in three phases:
+- Phase 1: `CRYPTO-OPERATORS-V1.md` and `CONTROL-PRIMITIVES-V1.md` (shipped in `v1.14.0` / `v1.15.0`)
+- Phase 3: `BLOCK-FRAMING-V1.md` (shipped in `v1.16.0`)
 
-The next strategic direction after `v1.15.0` should be:
+The next strategic direction after `v1.16.0` should be:
 
 > keep expanding MCW into a fully expressive cryptographic machine language
 
 The clearest next move is not “which algorithm next?”
 
 It is:
-- establish honest block/framing vocabulary
+- block/framing vocabulary is now shipped — framing exists as a foundation for protocol-material work
+- introduce protocol-material primitives now that framing gives them a real structural role
 - keep advanced rotor realism as a bounded follow-on, not the whole roadmap
-- introduce protocol-material primitives only after framing gives them a real structural role
 - keep tutorials and challenges shipping alongside the new language
 
 That is the path from:

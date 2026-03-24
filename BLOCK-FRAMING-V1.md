@@ -2,7 +2,7 @@
 
 Last updated: March 24, 2026
 
-Status: Implemented, pending checkpoint review for `v1.16.0`.
+Status: Shipped in `v1.16.0`.
 
 ## Purpose
 
@@ -118,13 +118,15 @@ Avoid:
 - teaching padding and protocol state in the same first pass
 - pretending that one long bit vector has implicit block structure without a framing module
 
-## Suggested Teaching Additions
+## Shipped Teaching Additions
 
-The first milestone should likely ship with:
-- one tutorial on visible block boundaries
-- one demo workspace such as:
-  - `HexSource -> BitSplit -> two visible transforms -> BitJoin -> BitsToHex -> Output`
-- one bounded challenge repairing either the split width or a padding parameter
+The first milestone shipped with:
+- `Visible Block Boundaries` tutorial (BitSplit-focused, 6 steps)
+- `Padding Before Splitting` tutorial (BitPad-focused, 4 steps)
+- `Split Transform Rejoin` demo: `HexSource -> BitSplit -> two XOR transforms -> BitJoin -> BitsToHex -> Output`
+- `Pad and Split` demo: `HexSource -> BitPad -> BitSplit -> two XOR transforms -> BitJoin -> BitsToHex -> Output`
+- `Repair the Split Width` challenge (breaks BitSplit leftWidth)
+- `Repair the Pad Width` challenge (breaks BitPad targetWidth)
 
 ## Success Criteria
 

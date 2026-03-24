@@ -6,27 +6,20 @@ Last updated: March 24, 2026
 
 ## Current State
 
-The project has shipped through `v1.15.0` on `main`.
+The project has shipped through `v1.16.0` on `main`.
 
-Current `main` is now positioned beyond the first completed control-primitives milestone.
+Current `main` is now positioned beyond the first completed block-framing milestone.
 That milestone shipped:
-- first bounded control vocabulary on `bits`:
-  - `Counter`
-  - `Equals`
-  - `AtLeast`
-  - `Gate`
-- explicit one-bit control semantics:
-  - active pulse is `[1]`
-  - inactive control is `[0]`
-- width-aware validation for control comparisons and counter params
-- first control teaching surface:
-  - `Counter Pulse Gate` demo workspace
-  - `Counters, Conditions, and Pulses` tutorial
-  - `Repair the Control Threshold` challenge
-- Analyze-tab transformation views for:
-  - `Equals`
-  - `AtLeast`
-  - `Gate`
+- first bounded block-framing vocabulary on `bits`:
+  - `BitSplit` (one `bits` input → two `bits` outputs: `left`/`right`, explicit `leftWidth` param)
+  - `BitPad` (one `bits` input → one `bits` output, target width, pad side, pad bit)
+  - reuse of existing `BitJoin` for block rejoining
+- width-aware validation for `BitSplit` leftWidth and `BitPad` targetWidth
+- first block-framing teaching surface:
+  - `Split Transform Rejoin` and `Pad and Split` demo workspaces
+  - `Visible Block Boundaries` and `Padding Before Splitting` tutorials
+  - `Repair the Split Width` and `Repair the Pad Width` challenges
+- Analyze-tab transformation views for `BitSplit` and `BitPad`
 
 The next strategic direction is broader than rotor deepening:
 - treat MCW explicitly as a **cryptographic systems IDE**
@@ -34,9 +27,8 @@ The next strategic direction is broader than rotor deepening:
 - ship tutorials and challenges alongside each new vocabulary family
 
 The next most important missing vocabulary families are:
-- block / framing primitives
-- stream-cipher control vocabulary
 - protocol-material primitives (`IV`, nonce, salt, counter sources)
+- stream-cipher control vocabulary
 - advanced rotor realism as one bounded sub-line
 
 Established and shipped:
@@ -128,6 +120,7 @@ The following decisions are reflected in shipped code:
 | `v1.13.0` | Builder Workflow |
 | `v1.14.0` | Cryptographic Operators |
 | `v1.15.0` | Control Primitives |
+| `v1.16.0` | Block Framing |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -195,7 +188,7 @@ Post-`v1.12.0` work merged to `main`:
   - composite unzip with forwarded-param carry-through
   - dark-mode-safe reflector and plugboard pair rendering
 
-Strategic direction after `v1.13.0`:
+Strategic direction after `v1.13.0` (validated through `v1.16.0`):
 - `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` now frames MCW as a cryptographic systems IDE
 - the next roadmap focus is expressive primitive language growth rather than only choosing the next isolated feature line
 - Phase 1 foundations are now shipped through:
@@ -225,15 +218,15 @@ Post-`v1.14.0` work merged to `main`:
   - `Repair the Control Threshold` challenge
   - Analyze-tab transformation views for `Equals`, `AtLeast`, and `Gate`
 
-Post-`v1.15.0` work on `main` (pending checkpoint review):
+Post-`v1.15.0` work merged to `main`:
 - bounded block-framing slice:
   - `BitSplit` (one `bits` input → two `bits` outputs: `left`/`right`, explicit `leftWidth` param)
   - `BitPad` (one `bits` input → one `bits` output, target width, pad side, pad bit)
   - reuse of existing `BitJoin` for block rejoining
   - width-aware validation for `BitSplit` leftWidth and `BitPad` targetWidth
-  - `Split Transform Rejoin` demo workspace
-  - `Visible Block Boundaries` tutorial
-  - `Repair the Split Width` challenge
+  - `Split Transform Rejoin` and `Pad and Split` demo workspaces
+  - `Visible Block Boundaries` and `Padding Before Splitting` tutorials
+  - `Repair the Split Width` and `Repair the Pad Width` challenges
   - Analyze-tab transformation views for `BitSplit` and `BitPad`
 
 ---
@@ -266,9 +259,9 @@ Safe to begin:
 - review what tutorial/challenge support should accompany each new primitive family
 
 Best focus:
-- which language family should follow the shipped operator/control foundation
-- whether advanced rotor realism should wait until control vocabulary exists
-- whether stream, block, and protocol-material lines are sequenced sensibly
+- which language family should follow the shipped block-framing foundation
+- whether protocol-material primitives are the clearest next line now that framing exists
+- whether advanced rotor realism should wait until the broader vocabulary is stronger
 
 ---
 
@@ -279,7 +272,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed on the most recent control-primitives slice.
+All three passed on the most recent block-framing slice.
 
 ---
 
@@ -294,9 +287,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 ### Near-Term Roadmap
 
 1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
-2. **Continue the primitive-language roadmap beyond first control vocabulary** — the clearest remaining language families are block/framing, stream-control follow-ons, and protocol-material primitives
-   Immediate contract:
-   `BLOCK-FRAMING-V1.md`
+2. **Continue the primitive-language roadmap beyond shipped block-framing vocabulary** — the clearest remaining language families are protocol-material primitives, stream-control follow-ons, and advanced rotor realism
 3. **Keep advanced rotor realism on the docket as a bounded sub-line** — `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion remain important, but should not monopolize the roadmap
 4. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
 5. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
@@ -331,7 +322,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` | Active strategic roadmap for growing MCW into a fully expressive cryptographic systems IDE |
 | `CRYPTO-OPERATORS-V1.md` | Shipped in `v1.14.0` as bounded boolean and fixed-width word arithmetic expansion |
 | `CONTROL-PRIMITIVES-V1.md` | Shipped in `v1.15.0` as bounded counter/compare/gate control vocabulary |
-| `BLOCK-FRAMING-V1.md` | Proposed first post-Phase-1 framing vocabulary slice |
+| `BLOCK-FRAMING-V1.md` | Shipped in `v1.16.0` as bounded block-framing vocabulary for visible splitting, rejoining, and padding |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
 | `SBOX-TRANSFORMATION-V1.md` | Shipped as the `v1.6.0` lookup/substitution visual family |

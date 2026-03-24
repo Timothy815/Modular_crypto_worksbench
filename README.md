@@ -11,19 +11,17 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.15.0`.
+The repository has shipped through `v1.16.0`.
 
-`main` now includes the completed first milestone of **control primitives**:
-- `Counter`
-- `Equals`
-- `AtLeast`
-- `Gate`
-- explicit one-bit control semantics on `bits`
-- width-aware validation for control comparisons and counter params
-- `Counter Pulse Gate` demo workspace
-- `Counters, Conditions, and Pulses` tutorial
-- `Repair the Control Threshold` challenge
-- Analyze transformation views for `Equals`, `AtLeast`, and `Gate`
+`main` now includes the completed first milestone of **block framing**:
+- `BitSplit` — splits one bit vector into explicit left/right sub-blocks at a configured width
+- `BitPad` — pads a bit vector to a target width with a chosen pad bit and side
+- reuse of existing `BitJoin` for block rejoining
+- width-aware validation for split and pad parameters
+- `Split Transform Rejoin` and `Pad and Split` demo workspaces
+- `Visible Block Boundaries` and `Padding Before Splitting` tutorials
+- `Repair the Split Width` and `Repair the Pad Width` challenges
+- Analyze transformation views for `BitSplit` and `BitPad`
 
 Implemented and shipped:
 - engine core types, graph validation, iterative topological executor
@@ -140,7 +138,7 @@ Implemented and shipped:
 - `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md`: active strategic roadmap for growing MCW into a fully expressive cryptographic systems IDE
 - `CRYPTO-OPERATORS-V1.md`: shipped first foundational operator-expansion slice for boolean and fixed-width word arithmetic
 - `CONTROL-PRIMITIVES-V1.md`: shipped first bounded counter/compare/gate slice for condition-driven machines
-- `BLOCK-FRAMING-V1.md`: proposed first post-Phase-1 framing slice for visible block boundaries, rejoining, and padding
+- `BLOCK-FRAMING-V1.md`: shipped first post-Phase-1 framing slice for visible block boundaries, rejoining, and padding
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
 - `SBOX-TRANSFORMATION-V1.md`: shipped first lookup/substitution visual family contract
@@ -180,10 +178,8 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 ## Near-Term Roadmap
 
 1. Treat MCW explicitly as a **cryptographic systems IDE** and grow the primitive language toward full expressive coverage, not just isolated feature branches
-2. Continue the new primitive-language phase beyond first control vocabulary:
-   block/framing, stream-control follow-ons, and protocol-material primitives are the clearest remaining language families
-   Immediate contract:
-   `BLOCK-FRAMING-V1.md`
+2. Continue the primitive-language phase beyond shipped block-framing vocabulary:
+   protocol-material primitives, stream-control follow-ons, and advanced rotor realism are the clearest remaining language families
 3. Keep advanced rotor realism on deck as one bounded sub-line inside that broader vocabulary roadmap:
    `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion
 4. Add one tutorial plus one demo/challenge whenever a major new primitive family ships so the language grows with teaching support

@@ -16,6 +16,7 @@ Read SBOX-TRANSFORMATION-V1.md before starting work on the first S-Box transform
 Read CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md before starting work on new primitive-language families, operator/control expansion, or long-range roadmap framing.
 Read CRYPTO-OPERATORS-V1.md before starting work on the first post-`v1.13.0` operator-expansion slice.
 Read CONTROL-PRIMITIVES-V1.md before starting work on counters, triggers, gates, or explicit conditional machine behavior.
+Read BLOCK-FRAMING-V1.md before starting work on block splitting, padding, rejoining, or framing follow-ons.
 Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
 Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
 
@@ -167,9 +168,18 @@ src/utils/     — Shared helpers
   - explicit one-bit control semantics on `bits`
   - `Counter Pulse Gate` demo/tutorial/challenge
   - Analyze transformation views for `Equals`, `AtLeast`, and `Gate`
+- `v1.16.0` is now the block-framing milestone:
+  - `BitSplit` (one `bits` input → two `bits` outputs: `left`/`right`, explicit `leftWidth` param)
+  - `BitPad` (one `bits` input → one `bits` output, target width, pad side, pad bit)
+  - reuse of existing `BitJoin` for block rejoining
+  - width-aware validation for split and pad parameters
+  - `Split Transform Rejoin` and `Pad and Split` demo workspaces
+  - `Visible Block Boundaries` and `Padding Before Splitting` tutorials
+  - `Repair the Split Width` and `Repair the Pad Width` challenges
+  - Analyze transformation views for `BitSplit` and `BitPad`
 - Current `main` should treat the next phase as **primitive-language expansion**
-  - block/framing vocabulary
-  - protocol-material primitives
+  - protocol-material primitives (framing now exists as a foundation)
+  - stream-control follow-ons
   - advanced rotor realism as one bounded sub-line
 
 What is shipped on `main`:
@@ -205,6 +215,11 @@ What is shipped on `main`:
   - `Reflector` socket-pair editor with involution-safe pairing
   - `Rotor` wire editor with runtime-centered anchors and dotted endpoints
   - reflector validation hardening
+- first bounded block-framing vocabulary:
+  - `BitSplit` and `BitPad` primitives on `bits`
+  - width-aware validation for split and pad parameters
+  - `Split Transform Rejoin` and `Pad and Split` demos, `Visible Block Boundaries` and `Padding Before Splitting` tutorials, `Repair the Split Width` and `Repair the Pad Width` challenges
+  - Analyze transformation views for `BitSplit` and `BitPad`
 
 Key contracts to check before implementation:
 - `ENGINE-V1-CONTRACT.md` for engine decisions
@@ -221,13 +236,14 @@ Key contracts to check before implementation:
 - `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` for the new long-range language/roadmap framing
 - `CRYPTO-OPERATORS-V1.md` for the shipped first bounded operator-expansion line
 - `CONTROL-PRIMITIVES-V1.md` for the shipped first bounded control/counter/gate line
+- `BLOCK-FRAMING-V1.md` for the shipped first bounded block-framing vocabulary
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family
 
 Near-term follow-ups:
 - treat the next phase as expressive machine-language growth, not just the next isolated feature
-- continue from shipped operator/control foundations toward the next missing language family
+- continue from shipped operator/control/framing foundations toward the next missing language family
 - keep advanced rotor realism explicitly on the future docket as one bounded sub-line:
   - `ringOffset` separate from `position`
   - notch / turnover behavior
