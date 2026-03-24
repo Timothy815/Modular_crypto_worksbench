@@ -20,6 +20,14 @@ function cloneProject(project: Project): Project {
   };
 }
 
+function formatBitsAsHex(bits: number[]): string {
+  let output = '';
+  for (let index = 0; index < bits.length; index += 4) {
+    output += parseInt(bits.slice(index, index + 4).join(''), 2).toString(16).toUpperCase();
+  }
+  return output;
+}
+
 describe('evaluateChallengeAttempt', () => {
   const compositeRegistry = {
     ...V1_REGISTRY,
@@ -47,6 +55,7 @@ describe('evaluateChallengeAttempt', () => {
   const gatedKeystreamProject = demoProjects.find((project) => project.id === 'gated-keystream');
   const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
   const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
+  const toySpongeHashProject = demoProjects.find((project) => project.id === 'toy-sponge-hash');
 
   if (!bridgeProject) {
     throw new Error('Expected bridge demo project.');
@@ -101,6 +110,9 @@ describe('evaluateChallengeAttempt', () => {
   }
   if (!toyCompressionHashProject) {
     throw new Error('Expected toy-compression-hash project.');
+  }
+  if (!toySpongeHashProject) {
+    throw new Error('Expected toy-sponge-hash project.');
   }
 
   it('returns success when the current project matches the target behavior', () => {
@@ -194,6 +206,110 @@ describe('evaluateChallengeAttempt', () => {
     expect(result.status).toBe('success');
     expect(result.reason).toBe('matched-target');
     expect(result.comparison?.outputsMatch).toBe(true);
+  });
+
+  it('can find a collision for the seeded toy sponge hash target', () => {
+    const currentProject = cloneProject(toySpongeHashProject.project);
+    const targetExecution = executeProject(cloneProject(toySpongeHashProject.project), compositeRegistry);
+    const leftSource = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'left-source');
+    const rightSource = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'right-source');
+    if (!leftSource || !rightSource) {
+      throw new Error('Expected left and right source modules in toy-sponge-hash project.');
+    }
+
+    const originalLeft = String(leftSource.params.value);
+    const originalRight = String(rightSource.params.value);
+    let foundCollision = false;
+
+    for (let left = 0; left < 256 && !foundCollision; left += 1) {
+      for (let right = 0; right < 256 && !foundCollision; right += 1) {
+        const leftHex = left.toString(16).toUpperCase().padStart(2, '0');
+        const rightHex = right.toString(16).toUpperCase().padStart(2, '0');
+
+        if (leftHex === originalLeft && rightHex === originalRight) {
+          continue;
+        }
+
+        leftSource.params.value = leftHex;
+        rightSource.params.value = rightHex;
+
+        const execution = executeProject(currentProject, compositeRegistry);
+        if (compareExecutionResults(targetExecution, execution).outputsMatch) {
+          foundCollision = true;
+        }
+      }
+    }
+
+    expect(foundCollision).toBe(true);
+  });
+
+  it('compression hash covers the full digest byte when sweeping one message byte', () => {
+    const seen = new Set<string>();
+    let previousDigest: string | null = null;
+    let adjacentSame = 0;
+
+    for (let right = 0; right < 256; right += 1) {
+      const project = cloneProject(toyCompressionHashProject.project);
+      const leftSource = project.modules.find((moduleInstance) => moduleInstance.id === 'left-source');
+      const rightSource = project.modules.find((moduleInstance) => moduleInstance.id === 'right-source');
+
+      if (!leftSource || !rightSource) {
+        throw new Error('Expected left and right source modules in toy-compression-hash project.');
+      }
+
+      leftSource.params.value = 'AA';
+      rightSource.params.value = right.toString(16).toUpperCase().padStart(2, '0');
+
+      const terminalSignal = executeProject(project, compositeRegistry).trace.at(-1)?.inputs.in;
+      if (!terminalSignal || terminalSignal.type !== 'symbol') {
+        throw new Error('Expected terminal hex output for toy-compression-hash.');
+      }
+
+      seen.add(terminalSignal.value);
+      if (previousDigest === terminalSignal.value) {
+        adjacentSame += 1;
+      }
+      previousDigest = terminalSignal.value;
+    }
+
+    expect(seen.size).toBe(256);
+    expect(adjacentSame).toBe(0);
+  });
+
+  it('sponge hash uses a broad digest spread instead of collapsing into a tiny repeat set', () => {
+    const seen = new Set<string>();
+    let previousDigest: string | null = null;
+    let adjacentSame = 0;
+
+    for (let right = 0; right < 256; right += 1) {
+      const project = cloneProject(toySpongeHashProject.project);
+      const leftSource = project.modules.find((moduleInstance) => moduleInstance.id === 'left-source');
+      const rightSource = project.modules.find((moduleInstance) => moduleInstance.id === 'right-source');
+
+      if (!leftSource || !rightSource) {
+        throw new Error('Expected left and right source modules in toy-sponge-hash project.');
+      }
+
+      leftSource.params.value = 'AA';
+      rightSource.params.value = right.toString(16).toUpperCase().padStart(2, '0');
+
+      const terminalSignal = executeProject(project, compositeRegistry).trace.at(-1)?.inputs.in;
+      if (!terminalSignal) {
+        throw new Error('Expected terminal output for toy-sponge-hash.');
+      }
+
+      const digestValue =
+        terminalSignal.type === 'symbol' ? terminalSignal.value : formatBitsAsHex(terminalSignal.value);
+
+      seen.add(digestValue);
+      if (previousDigest === digestValue) {
+        adjacentSame += 1;
+      }
+      previousDigest = digestValue;
+    }
+
+    expect(seen.size).toBeGreaterThanOrEqual(128);
+    expect(adjacentSame).toBe(0);
   });
 
   it('returns failure when the current project diverges from the target behavior', () => {

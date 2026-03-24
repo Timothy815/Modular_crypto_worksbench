@@ -10,6 +10,7 @@ export interface GuidedChallenge {
   version?: 1;
   id: string;
   title: string;
+  projectId?: string;
   group?: string;
   difficulty?: 'beginner' | 'intermediate' | 'expert';
   prompt: string;

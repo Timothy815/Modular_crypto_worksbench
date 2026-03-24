@@ -8,9 +8,9 @@ Last updated: March 23, 2026
 
 The project has shipped through `v1.7.0` on `main`.
 
-Current `main` is now in active post-`v1.7.0` work around:
-- the first bounded hash collision challenge
-- `v1.8.0` framing/tagging
+Current `main` is now in active post-`v1.8.0` planning around:
+- the bounded sponge-collision follow-on
+- choosing whether post-collision interpretation guidance belongs in the same slice
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -116,10 +116,9 @@ Post-`v1.5.0` work merged to `main`:
 - iterator-aware nested transformation resolution
 - SBox table-first lookup view with decimal/hex bridge
 
-Post-`v1.7.0` work currently active on `main`:
-- first bounded hash collision challenge
-- collision-aware challenge messaging
-- `HexSource` stepping for manual collision exploration
+Post-`v1.8.0` work currently active on `main`:
+- define the bounded sponge-collision follow-on
+- decide how much extra interpretation guidance belongs in that slice
 
 ---
 
@@ -128,9 +127,9 @@ Post-`v1.7.0` work currently active on `main`:
 ### Claude
 
 Safe to begin:
-- help frame and close the first hash collision challenge cleanly
-- tighten challenge wording and “what success means” guidance
-- help keep the challenge bounded to one honest teaching loop
+- help frame the sponge-collision follow-on cleanly
+- tighten challenge wording around “harder structure, same tiny digest”
+- help keep the second collision slice bounded
 
 Should avoid for now:
 - feedback loops / cycles in the graph
@@ -142,13 +141,13 @@ Should avoid for now:
 ### Gemini
 
 Safe to begin:
-- review whether the first hash collision challenge is ready for `v1.8.0`
-- help choose the best post-`v1.8.0` branch
+- review the sponge-collision contract and scope
+- help choose whether interpretation guidance belongs in the same slice
 - help keep hashing, modern analysis, and challenge workflows connected instead of fragmenting the product
 
 Best focus:
-- whether the first collision challenge is cleanly complete
-- what should come immediately after `v1.8.0`
+- whether sponge collision is the right next challenge
+- whether the toy sponge is the right second target
 - whether any near-term cleanup should interrupt the next branch
 
 ---
@@ -174,9 +173,9 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 ### Near-Term Roadmap
 
-1. **Tag and frame `v1.8.0`** — the first bounded hash collision challenge is the current named milestone
+1. **Frame the sponge-collision follow-on** — keep it bounded and structurally distinct from the compression challenge
 2. **Keep hashing connected to the shipped transformation views** — especially `SBox`, `BitShifter`, and `XOR`
-3. **Choose the first post-`v1.8.0` branch deliberately** — likely sponge collision, deeper analysis guidance, or polish
+3. **Decide whether post-collision interpretation guidance belongs alongside sponge collision**
 4. **Treat bundle-size growth as near-term technical debt** — address it before several more large UI surfaces land
 5. **Defer deeper transformation playback/animation** until classroom feedback justifies a second visualization slice
 
@@ -196,7 +195,8 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `CRYPTANALYSIS-WORKSPACE-V1.md` | Locked, implemented as the `v1.4.0` workspace boundary |
 | `MODERN-ANALYSIS-V1.md` | Active, implemented as the `v1.5.0` modern-analysis line |
 | `HASHING-V1.md` | Shipped as the `v1.7.0` first hashing milestone contract |
-| `HASH-COLLISION-CHALLENGE-V1.md` | Active, defines the first post-`v1.7.0` bounded hash weakness challenge |
+| `HASH-COLLISION-CHALLENGE-V1.md` | Shipped as the `v1.8.0` first bounded hash weakness challenge |
+| `SPONGE-COLLISION-CHALLENGE-V1.md` | Active, defines the bounded sponge-collision follow-on |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
 | `SBOX-TRANSFORMATION-V1.md` | Shipped as the `v1.6.0` lookup/substitution visual family |

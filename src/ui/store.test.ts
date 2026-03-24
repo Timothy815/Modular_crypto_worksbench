@@ -76,4 +76,15 @@ describe('uiReducer', () => {
 
     expect(nextState.compositeEditor).toBeNull();
   });
+
+  it('defaults each project to a matching starter challenge when one exists', () => {
+    const initialState = createInitialUiState(demoProjects);
+
+    expect(initialState.activeChallengeIdByProject['toy-compression-hash']).toBe(
+      'find-hash-collision',
+    );
+    expect(initialState.activeChallengeIdByProject['toy-sponge-hash']).toBe(
+      'find-sponge-collision',
+    );
+  });
 });

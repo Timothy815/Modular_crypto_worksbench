@@ -524,16 +524,23 @@ function App() {
   const baselineSelectedModule = comparisonBaseline && selectedModule
     ? comparisonBaseline.project.modules.find((moduleInstance) => moduleInstance.id === selectedModule.id) ?? null
     : null;
+  const activeChallengeId = state.activeChallengeIdByProject[activeProjectDefinition.id] ?? null;
+  const challengeSelectedForProject =
+    activeChallengeId !== null
+      ? state.challengeLibrary.find(
+          (challenge) =>
+            challenge.id === activeChallengeId &&
+            (challenge.projectId === undefined || challenge.projectId === activeProjectDefinition.id),
+        ) ?? null
+      : null;
   const selectedChallenge =
-    state.challengeLibrary.find(
-      (challenge) =>
-        challenge.id ===
-        (state.activeChallengeIdByProject[activeProjectDefinition.id] ??
-          state.challengeLibrary[0]?.id ??
-          null),
-    ) ??
+    challengeSelectedForProject ??
+    state.challengeLibrary.find((candidate) => candidate.projectId === activeProjectDefinition.id) ??
     state.challengeLibrary[0] ??
     null;
+  const selectedChallengeProjectId = selectedChallenge?.projectId ?? activeProjectDefinition.id;
+  const selectedChallengeProjectDefinition =
+    demoProjects.find((project) => project.id === selectedChallengeProjectId) ?? activeProjectDefinition;
   const challengeEvaluation =
     !state.compositeEditor && selectedChallenge
       ? evaluateChallengeAttempt(selectedChallenge, activeProjectState, effectiveRegistry)
@@ -1470,10 +1477,19 @@ function App() {
                   canCaptureChallenge={canCaptureChallenge}
                   onSelectChallenge={(challengeId) =>
                     {
+                      const nextChallenge =
+                        state.challengeLibrary.find((challenge) => challenge.id === challengeId) ?? null;
+                      const challengeProjectId = nextChallenge?.projectId ?? activeProjectDefinition.id;
                       setLearningPanelTab('challenge');
+                      if (challengeProjectId !== activeProjectDefinition.id) {
+                        dispatch({
+                          type: 'switchProject',
+                          projectId: challengeProjectId,
+                        });
+                      }
                       dispatch({
                         type: 'selectChallenge',
-                        projectId: activeProjectDefinition.id,
+                        projectId: challengeProjectId,
                         challengeId,
                       });
                     }
@@ -1519,10 +1535,17 @@ function App() {
                       type: 'upsertChallenge',
                       challenge: challengeDocument,
                     });
+                    const challengeProjectId = challengeDocument.projectId ?? activeProjectDefinition.id;
                     setLearningPanelTab('challenge');
+                    if (challengeProjectId !== activeProjectDefinition.id) {
+                      dispatch({
+                        type: 'switchProject',
+                        projectId: challengeProjectId,
+                      });
+                    }
                     dispatch({
                       type: 'selectChallenge',
-                      projectId: activeProjectDefinition.id,
+                      projectId: challengeProjectId,
                       challengeId: challengeDocument.id,
                     });
                     setImportError(null);
@@ -1793,7 +1816,7 @@ function App() {
             <h2>Reset Attempt?</h2>
             <p className="dialog-copy">
               This will load <strong>{selectedChallenge.title}</strong> into the current workbench
-              and replace the active graph for <strong>{activeProjectDefinition.name}</strong>.
+              and replace the graph for <strong>{selectedChallengeProjectDefinition.name}</strong>.
             </p>
             <div className="dialog-actions">
               <button
@@ -1807,14 +1830,21 @@ function App() {
                 type="button"
                 className="primary-dialog-button"
                 onClick={() => {
+                  if (selectedChallengeProjectId !== activeProjectDefinition.id) {
+                    dispatch({
+                      type: 'switchProject',
+                      projectId: selectedChallengeProjectId,
+                    });
+                  }
                   dispatch({
                     type: 'loadDocument',
-                    projectId: activeProjectDefinition.id,
+                    projectId: selectedChallengeProjectId,
                     document: {
                       version: 1,
                       project: cloneProject(selectedChallenge.startingProject),
                       ui: {
-                        layout: selectedChallenge.startingLayout ?? activeProjectDefinition.layout,
+                        layout:
+                          selectedChallenge.startingLayout ?? selectedChallengeProjectDefinition.layout,
                         annotations: [],
                       },
                     },
@@ -1956,6 +1986,7 @@ function App() {
                     version: 1 as const,
                     id: trimmedId,
                     title: trimmedTitle,
+                    projectId: activeProjectDefinition.id,
                     difficulty: challengeCaptureDifficulty,
                     prompt: trimmedPrompt,
                     startingProject: cloneProject(activeProjectState),

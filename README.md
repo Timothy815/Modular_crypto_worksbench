@@ -86,6 +86,7 @@ Implemented and shipped:
 - `MODERN-ANALYSIS-V1.md`: shipped direction for the post-`v1.4.0` modern-analysis line
 - `HASHING-V1.md`: shipped first hashing milestone contract and scope boundary
 - `HASH-COLLISION-CHALLENGE-V1.md`: active direction for the first post-`v1.7.0` hash weakness challenge
+- `SPONGE-COLLISION-CHALLENGE-V1.md`: active direction for the bounded sponge-collision follow-on
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
 - `SBOX-TRANSFORMATION-V1.md`: shipped first lookup/substitution visual family contract
@@ -124,8 +125,8 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 
 ## Near-Term Roadmap
 
-1. Tag and frame **`v1.8.0`** around the first bounded hash collision challenge
+1. Start the bounded sponge-collision follow-on after `v1.8.0`
 2. Keep performance/bundle size under watch as inspector and analysis surfaces continue to grow
-3. Decide what follows the first collision challenge: sponge collision, deeper analysis guidance, or polish
+3. Decide whether sponge collision should stand alone or be paired with deeper post-collision guidance
 4. Defer deeper transformation playback/animation until classroom feedback justifies it
 5. Avoid scope creep into brute-force tooling, birthday-bound calculators, famous-hash comparisons, or KDF/Merkle-style structures before a new contract says otherwise

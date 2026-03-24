@@ -227,7 +227,11 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
       projects.map((project) => [project.id, null]),
     ),
     activeChallengeIdByProject: Object.fromEntries(
-      projects.map((project) => [project.id, defaultChallengeId]),
+      projects.map((project) => [
+        project.id,
+        STARTER_CHALLENGES.find((challenge) => challenge.projectId === project.id)?.id ??
+          defaultChallengeId,
+      ]),
     ),
     activeTutorialIdByProject: Object.fromEntries(
       projects.map((project) => [project.id, defaultTutorialByProject[project.id] ?? null]),

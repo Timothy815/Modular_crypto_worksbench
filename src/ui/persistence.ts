@@ -550,6 +550,7 @@ function isGuidedChallengeDocument(value: unknown): value is GuidedChallenge {
     (candidate.version === undefined || candidate.version === 1) &&
     typeof candidate.id === 'string' &&
     typeof candidate.title === 'string' &&
+    (candidate.projectId === undefined || typeof candidate.projectId === 'string') &&
     (candidate.group === undefined || typeof candidate.group === 'string') &&
     (candidate.difficulty === undefined ||
       candidate.difficulty === 'beginner' ||
@@ -568,7 +569,10 @@ function isGuidedChallengeDocument(value: unknown): value is GuidedChallenge {
     Array.isArray(candidate.targetProject.connections) &&
     typeof candidate.success === 'object' &&
     candidate.success !== null &&
-    candidate.success.kind === 'output-match-target' &&
+    (candidate.success.kind === 'output-match-target' ||
+      (candidate.success.kind === 'output-match-target-with-module-difference' &&
+        Array.isArray(candidate.success.moduleIds) &&
+        candidate.success.moduleIds.every((moduleId) => typeof moduleId === 'string'))) &&
     (candidate.hints === undefined ||
       (Array.isArray(candidate.hints) && candidate.hints.every((hint) => typeof hint === 'string')))
   );

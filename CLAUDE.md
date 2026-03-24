@@ -8,6 +8,7 @@ Read CRYPTANALYSIS-WORKSPACE-V1.md before starting work on the post-v1.3 cryptan
 Read MODERN-ANALYSIS-V1.md before starting work on the post-v1.4 modern-analysis line.
 Read HASHING-V1.md before starting work on the hashing line.
 Read HASH-COLLISION-CHALLENGE-V1.md before starting work on the first post-`v1.7.0` hashing challenge slice.
+Read SPONGE-COLLISION-CHALLENGE-V1.md before starting work on the bounded sponge-collision follow-on.
 Read TRANSFORMATION-VISUALIZATION-V1.md before starting work on primitive-level drill-down or transformation-legibility features.
 Read SBOX-TRANSFORMATION-V1.md before starting work on the first S-Box transformation view.
 Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
@@ -137,7 +138,8 @@ src/utils/     — Shared helpers
 - `v1.5.0` is already shipped
 - `v1.6.0` is already shipped
 - `v1.7.0` is already shipped
-- Current `main` is in final framing/polish for the first bounded hash collision challenge before `v1.8.0`
+- `v1.8.0` is already shipped
+- Current `main` is focused on the bounded sponge-collision follow-on after the first collision milestone
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -165,14 +167,15 @@ Key contracts to check before implementation:
 - `MODERN-ANALYSIS-V1.md` for the first post-`v1.4.0` visual analysis milestone
 - `HASHING-V1.md` for the current hashing line and scope boundary
 - `HASH-COLLISION-CHALLENGE-V1.md` for the first bounded post-hashing milestone challenge slice
+- `SPONGE-COLLISION-CHALLENGE-V1.md` for the bounded sponge-collision follow-on
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family
 
 Near-term follow-ups:
-- frame and tag `v1.8.0` around the first bounded hash collision challenge
+- frame the bounded sponge-collision follow-on
 - keep hashing connected to the modern-analysis and transformation-visualization surfaces
-- choose the first post-`v1.8.0` branch deliberately
+- decide whether post-collision interpretation guidance belongs in the same slice
 - watch bundle growth as a near-term cleanup concern
 - avoid opening a second transformation-visualization slice before classroom feedback
 

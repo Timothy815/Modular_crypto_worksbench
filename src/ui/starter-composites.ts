@@ -603,7 +603,10 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
           { id: 'state-after-right', defId: 'BitJoin', params: {} },
           { id: 'mix-right', defId: 'SpongeMixRoundIterator', params: { iterationCount: 2 } },
           { id: 'squeeze', defId: 'SpongeMixRoundIterator', params: { iterationCount: 1 } },
-          { id: 'digest', defId: 'Permutation', params: { order: '0,1,2,3,4,5,6,7' } },
+          { id: 'squeeze-rate', defId: 'Permutation', params: { order: '0,1,2,3,4,5,6,7' } },
+          { id: 'squeeze-capacity', defId: 'Permutation', params: { order: '8,9,10,11,12,13,14,15' } },
+          { id: 'digest-fold', defId: 'XOR', params: {} },
+          { id: 'digest-rounds', defId: 'HashDigestRoundIterator', params: { iterationCount: 1 } },
         ],
         connections: [
           { from: { moduleId: 'iv', port: 'out' }, to: { moduleId: 'iv-rate', port: 'in' } },
@@ -619,7 +622,11 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
           { from: { moduleId: 'left-capacity', port: 'out' }, to: { moduleId: 'state-after-right', port: 'b' } },
           { from: { moduleId: 'state-after-right', port: 'out' }, to: { moduleId: 'mix-right', port: 'in' } },
           { from: { moduleId: 'mix-right', port: 'out' }, to: { moduleId: 'squeeze', port: 'in' } },
-          { from: { moduleId: 'squeeze', port: 'out' }, to: { moduleId: 'digest', port: 'in' } },
+          { from: { moduleId: 'squeeze', port: 'out' }, to: { moduleId: 'squeeze-rate', port: 'in' } },
+          { from: { moduleId: 'squeeze', port: 'out' }, to: { moduleId: 'squeeze-capacity', port: 'in' } },
+          { from: { moduleId: 'squeeze-rate', port: 'out' }, to: { moduleId: 'digest-fold', port: 'a' } },
+          { from: { moduleId: 'squeeze-capacity', port: 'out' }, to: { moduleId: 'digest-fold', port: 'b' } },
+          { from: { moduleId: 'digest-fold', port: 'out' }, to: { moduleId: 'digest-rounds', port: 'in' } },
         ],
       },
       inputBindings: [
@@ -637,7 +644,7 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
       outputBindings: [
         {
           externalPort: 'out',
-          internalModuleId: 'digest',
+          internalModuleId: 'digest-rounds',
           internalPort: 'out',
         },
       ],

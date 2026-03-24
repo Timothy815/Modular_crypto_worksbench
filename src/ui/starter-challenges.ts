@@ -22,6 +22,7 @@ const keystreamProject = demoProjects.find((project) => project.id === 'keystrea
 const gatedKeystreamProject = demoProjects.find((project) => project.id === 'gated-keystream');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
+const toySpongeHashProject = demoProjects.find((project) => project.id === 'toy-sponge-hash');
 
 if (!bridgeProject) {
   throw new Error('Expected bridge demo project to seed starter challenges.');
@@ -74,6 +75,9 @@ if (!sequentialProject) {
 if (!toyCompressionHashProject) {
   throw new Error('Expected toy-compression-hash project to seed starter challenges.');
 }
+if (!toySpongeHashProject) {
+  throw new Error('Expected toy-sponge-hash project to seed starter challenges.');
+}
 
 const fixedBridgeTarget = cloneProject(bridgeProject.project);
 const brokenBridgeStart = cloneProject(bridgeProject.project);
@@ -110,6 +114,8 @@ const brokenSequentialStart = cloneProject(sequentialProject.project);
 const brokenSequentialTapsStart = cloneProject(sequentialProject.project);
 const toyCompressionHashTarget = cloneProject(toyCompressionHashProject.project);
 const toyCompressionHashCollisionStart = cloneProject(toyCompressionHashProject.project);
+const toySpongeHashTarget = cloneProject(toySpongeHashProject.project);
+const toySpongeHashCollisionStart = cloneProject(toySpongeHashProject.project);
 
 const brokenKeyModule = brokenBridgeStart.modules.find((moduleInstance) => moduleInstance.id === 'key');
 if (!brokenKeyModule) {
@@ -268,6 +274,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'find-hash-collision',
     title: 'Find A Hash Collision',
+    projectId: 'toy-compression-hash',
     group: 'Hash Foundations',
     difficulty: 'intermediate',
     prompt:
@@ -288,8 +295,32 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
   },
   {
     version: 1,
+    id: 'find-sponge-collision',
+    title: 'Find A Sponge Collision',
+    projectId: 'toy-sponge-hash',
+    group: 'Hash Foundations',
+    difficulty: 'expert',
+    prompt:
+      'The Toy Sponge Hash begins from a seeded 2-byte message. Change at least one of the two message bytes so the final digest stays exactly the same. This should feel harder than the compression-hash collision because the message disturbs a larger internal state before the digest is squeezed out.',
+    startingProject: toySpongeHashCollisionStart,
+    startingLayout: cloneProject(toySpongeHashProject.layout),
+    targetProject: toySpongeHashTarget,
+    success: {
+      kind: 'output-match-target-with-module-difference',
+      moduleIds: ['left-source', 'right-source'],
+    },
+    hints: [
+      'The goal is still simple: different message, same digest. You are not matching the whole internal trace.',
+      'Use the HexSource stepping buttons to walk the message space instead of retyping every value.',
+      'A richer internal structure can make the search feel harder without changing the fact that a 1-byte digest has only 256 outputs.',
+      'After you find one, open Analyze or Modern Cryptanalysis and compare how the sponge absorbed and mixed the colliding messages.',
+    ],
+  },
+  {
+    version: 1,
     id: 'repair-bridge-key',
     title: 'Repair the Bridge Key',
+    projectId: 'bridge',
     group: 'Foundations',
     difficulty: 'beginner',
     prompt:
@@ -309,6 +340,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-baudot-source',
     title: 'Repair the Baudot Source',
+    projectId: 'baudot-bridge',
     group: 'Historical Bridges',
     difficulty: 'beginner',
     prompt:
@@ -329,6 +361,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'teleprinter-tweak',
     title: 'The Teleprinter Tweak',
+    projectId: 'lorenz-foundation',
     group: 'Historical Bridges',
     difficulty: 'intermediate',
     prompt:
@@ -349,6 +382,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-wheel-gate',
     title: 'Repair the Wheel Gate',
+    projectId: 'gated-lorenz',
     group: 'Historical Bridges',
     difficulty: 'expert',
     prompt:
@@ -369,6 +403,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-wheel-pair',
     title: 'Repair the Wheel Pair',
+    projectId: 'paired-lorenz',
     group: 'Historical Bridges',
     difficulty: 'expert',
     prompt:
@@ -389,6 +424,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-control-bank',
     title: 'Repair the Control Bank',
+    projectId: 'banked-lorenz',
     group: 'Historical Bridges',
     difficulty: 'expert',
     prompt:
@@ -409,6 +445,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'restore-round-stack',
     title: 'Restore the Round Stack',
+    projectId: 'iterated-byte-rounds',
     group: 'Modern Rounds',
     difficulty: 'intermediate',
     prompt:
@@ -429,6 +466,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-round-key',
     title: 'Repair the Round Key',
+    projectId: 'keyed-byte-rounds',
     group: 'Modern Rounds',
     difficulty: 'intermediate',
     prompt:
@@ -449,6 +487,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-key-bus',
     title: 'Repair the Key Bus',
+    projectId: 'keyed-byte-iterator',
     group: 'Modern Rounds',
     difficulty: 'intermediate',
     prompt:
@@ -469,6 +508,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'restore-feistel-rounds',
     title: 'Repair the Feistel Bus',
+    projectId: 'feistel-network',
     group: 'Modern Rounds',
     difficulty: 'intermediate',
     prompt:
@@ -489,6 +529,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'byte-scrambler',
     title: 'Byte Scrambler',
+    projectId: 'byte-round',
     group: 'Modern Rounds',
     difficulty: 'intermediate',
     prompt:
@@ -509,6 +550,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-hex-vector',
     title: 'Repair the Hex Vector',
+    projectId: 'hex-round',
     group: 'Bridge Rounds',
     difficulty: 'beginner',
     prompt:
@@ -529,6 +571,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-ascii-source',
     title: 'Repair the ASCII Source',
+    projectId: 'ascii-round',
     group: 'Bridge Rounds',
     difficulty: 'beginner',
     prompt:
@@ -549,6 +592,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-keystream-seed',
     title: 'Repair the Keystream Seed',
+    projectId: 'keystream',
     group: 'Sequential',
     difficulty: 'intermediate',
     prompt:
@@ -569,6 +613,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-gate-seed',
     title: 'Repair the Gate Seed',
+    projectId: 'gated-keystream',
     group: 'Conditional Clocking',
     difficulty: 'expert',
     prompt:
@@ -589,6 +634,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'restore-sequential-pulse',
     title: 'Restore the Sequential Pulse',
+    projectId: 'sequential',
     group: 'Sequential',
     difficulty: 'intermediate',
     prompt:
@@ -609,6 +655,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     version: 1,
     id: 'repair-lfsr-taps',
     title: 'Repair the LFSR Taps',
+    projectId: 'sequential',
     group: 'Sequential',
     difficulty: 'intermediate',
     prompt:
