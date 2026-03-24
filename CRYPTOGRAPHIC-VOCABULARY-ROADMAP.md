@@ -1,6 +1,6 @@
 # MCW — Cryptographic Vocabulary Roadmap
 
-Status: Active strategic roadmap after `v1.17.0`.
+Status: Active strategic roadmap after `v1.18.0`.
 
 This document reframes MCW as a cryptographic systems IDE:
 - not a code generator
@@ -227,7 +227,7 @@ Shipped in `v1.14.0` and `v1.15.0`:
 - `Counter Pulse Gate` demo/tutorial/challenge
 - Analyze transformation views for `Equals`, `AtLeast`, and `Gate`
 
-### Phase 2 — Mechanized And Stream Expressiveness
+### Phase 2 — Mechanized And Stream Expressiveness — *first stream slice shipped*
 
 Purpose:
 - let the workbench express richer stateful machines
@@ -236,10 +236,17 @@ Likely bounded slices:
 - `ADVANCED-ROTOR-REALISM-V1.md`
 - `STREAM-CIPHER-V1.md`
 
-Likely deliverables:
+Shipped in `v1.18.0`:
+- `STREAM-CIPHER-V1.md` first slice:
+  - `Majority`
+  - `Majority-Clocked Keystream` demo workspace
+  - `The Majority-Clocked Keystream` tutorial
+  - `Repair the Majority Vote` challenge
+
+Still open:
 - ring settings, turnover, double-step, direction control
-- irregular clocking support
-- better keystream machine examples
+- richer stream combiners / filter functions
+- better keystream machine examples beyond the first majority-clocking loop
 
 Teaching additions:
 - rotor stepping tutorial
@@ -343,21 +350,22 @@ To protect the product identity, avoid:
 
 ## Current Conclusion
 
-The roadmap is now validated through shipped foundations in three phases:
+The roadmap is now validated through shipped foundations across four phases:
 - Phase 1: `CRYPTO-OPERATORS-V1.md` and `CONTROL-PRIMITIVES-V1.md` (shipped in `v1.14.0` / `v1.15.0`)
+- Phase 2: `STREAM-CIPHER-V1.md` first slice (shipped in `v1.18.0`)
 - Phase 3: `BLOCK-FRAMING-V1.md` (shipped in `v1.16.0`)
 - Phase 4: `PROTOCOL-MATERIAL-V1.md` first slice (shipped in `v1.17.0`)
 
-The next strategic direction after `v1.17.0` should be:
+The next strategic direction after `v1.18.0` should be:
 
 > keep expanding MCW into a fully expressive cryptographic machine language
 
 The clearest next move is not “which algorithm next?”
 
 It is:
-- block/framing and first protocol-material vocabulary are now shipped
-- introduce a first bounded stream-cipher line for visible combiners and irregular clocking
-- keep advanced rotor realism as the next bounded sub-line after that shared vocabulary move
+- block/framing, protocol-material, and first stream vocabulary are now shipped
+- keep advanced rotor realism as the clearest next bounded sub-line
+- keep deeper stream-combiner follow-ons bounded rather than turning the stream line into preset sprawl
 - keep protocol-material follow-ons bounded rather than jumping to mode presets
 - keep tutorials and challenges shipping alongside the new language
 

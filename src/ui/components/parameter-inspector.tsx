@@ -940,6 +940,47 @@ export function ParameterInspector({
                   ))}
                 </div>
               </>
+            ) : transformationView.kind === 'majority' ? (
+              <>
+                <div className="transformation-order">
+                  <span className="meta-label">Rule</span>
+                  <code>at least 2 active gives 1, otherwise 0</code>
+                </div>
+                <div className="transformation-order">
+                  <span className="meta-label">Active Count</span>
+                  <code>{transformationView.activeCount} / 3 gives {transformationView.outputBit}</code>
+                </div>
+                <div className="xor-grid">
+                  <div className="xor-grid-head">
+                    <span className="meta-label">Input</span>
+                    <span className="meta-label">Bit</span>
+                    <span className="meta-label">State</span>
+                  </div>
+                  {transformationView.inputs.map((input) => (
+                    <div key={`majority-${input.label}`} className="xor-grid-row">
+                      <span className="xor-grid-index">{input.label}</span>
+                      <span
+                        className={
+                          input.bit === 1
+                            ? 'xor-grid-bit xor-grid-bit-active'
+                            : 'xor-grid-bit'
+                        }
+                      >
+                        {input.bit}
+                      </span>
+                      <span
+                        className={
+                          input.bit === 1
+                            ? 'xor-grid-compare xor-grid-compare-different'
+                            : 'xor-grid-compare'
+                        }
+                      >
+                        {input.bit === 1 ? 'active' : 'inactive'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : transformationView.kind === 'split' ? (
               <>
                 <div className="transformation-order">
@@ -2612,6 +2653,17 @@ interface GateTransformationView {
   summary: string;
 }
 
+interface MajorityTransformationView {
+  entry: ExecutionTraceEntry;
+  kind: 'majority';
+  title: string;
+  copy: string;
+  inputs: { label: string; bit: number }[];
+  activeCount: number;
+  outputBit: number;
+  summary: string;
+}
+
 interface LookupTransformationChunk {
   index: number;
   inputBits: number[];
@@ -2666,6 +2718,7 @@ type TransformationView =
   | XorTransformationView
   | CompareTransformationView
   | GateTransformationView
+  | MajorityTransformationView
   | LookupTransformationView
   | SplitTransformationView
   | PadTransformationView;
@@ -2731,6 +2784,9 @@ function getTransformationView(
   }
   if (entry.defId === 'Gate') {
     return getGateTransformation(entry);
+  }
+  if (entry.defId === 'Majority') {
+    return getMajorityTransformation(entry);
   }
   if (entry.defId === 'SBox') {
     return getSBoxTransformation(entry, project, registry);
@@ -3028,6 +3084,41 @@ function getGateTransformation(entry: ExecutionTraceEntry): GateTransformationVi
     summary: active
       ? 'The control pulse is active, so the gate passes the incoming word through unchanged.'
       : 'The control pulse is inactive, so the gate blocks the word and emits zeros instead.',
+  };
+}
+
+function getMajorityTransformation(entry: ExecutionTraceEntry): MajorityTransformationView | null {
+  const inputA = entry.inputs.a;
+  const inputB = entry.inputs.b;
+  const inputC = entry.inputs.c;
+  const output = entry.outputs.out;
+  if (inputA?.type !== 'bits' || inputB?.type !== 'bits' || inputC?.type !== 'bits' || output?.type !== 'bits') {
+    return null;
+  }
+
+  const a = inputA.value[0] ?? 0;
+  const b = inputB.value[0] ?? 0;
+  const c = inputC.value[0] ?? 0;
+  const activeCount = a + b + c;
+  const outputBit = output.value[0] ?? 0;
+
+  return {
+    entry,
+    kind: 'majority',
+    title: 'Majority Vote',
+    copy:
+      'Majority reads three 1-bit inputs and emits [1] when at least two of them are active. It is a small visible voting rule for stream control and irregular clocking.',
+    inputs: [
+      { label: 'A', bit: a },
+      { label: 'B', bit: b },
+      { label: 'C', bit: c },
+    ],
+    activeCount,
+    outputBit,
+    summary:
+      outputBit === 1
+        ? `${activeCount} of 3 inputs are active, so the majority output is [1].`
+        : `${activeCount} of 3 inputs are active, so the majority output stays [0].`,
   };
 }
 

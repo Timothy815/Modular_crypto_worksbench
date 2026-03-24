@@ -2,7 +2,7 @@
 
 Last updated: March 24, 2026
 
-Status: Proposed.
+Status: Shipped in `v1.18.0`.
 
 ## Purpose
 
@@ -147,34 +147,30 @@ Avoid:
 - describing irregular clocking only in prose while the graph stays generic
 - teaching statistical security claims in the first slice
 
-## Suggested Teaching Additions
+## Shipped Teaching Additions
 
-The first milestone should likely ship with:
+The first milestone shipped with:
 
 ### Demo workspace
 
-- `Visible Register Combiner`
-  - two or three `LFSR` registers
-  - a visible combiner path
-  - one final XOR against a message source or visible output sink
-
-- `Irregular Clocking`
-  - one control path that decides whether another register advances
-  - should rely on explicit `Clock`, `Gate`, and `Majority`/comparator logic
+- `Majority-Clocked Keystream`
+  - `Clock -> 3 Control LFSRs -> Majority -> Gate(clock pulse) -> Data LFSR -> XOR(BitSource) -> BitOutput`
+  - makes three separate control streams vote on whether the data register advances
+  - keeps irregular clocking visible as graph logic rather than hidden stepping behavior
 
 ### Tutorial
 
-One tutorial (4-6 steps) teaching:
-- how a keystream machine is built from explicit registers
-- why a combiner matters
-- how irregular clocking changes the observed behavior
-- why visible control paths are better than hidden stepping rules
+- `The Majority-Clocked Keystream`
+  - teaches how three control registers feed a visible majority vote
+  - shows how `Majority` and `Gate` together decide whether a downstream register advances
+  - emphasizes irregular clocking as explicit structure, not module magic
 
 ### Challenge
 
-One bounded challenge such as:
-- a multi-register stream machine with the wrong combiner or wrong control wiring
-- the student must restore the combiner/control path so the output matches a captured reference
+- `Repair the Majority Vote`
+  - starts from a majority-clocked keystream machine with one bad control-register seed
+  - asks the student to restore the control stream so the majority vote opens the gate on the right ticks
+  - teaches that the combiner/control path changes the output rhythm in a visible way
 
 ## Success Criteria
 

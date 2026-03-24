@@ -11,27 +11,26 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.17.0`.
+The repository has shipped through `v1.18.0`.
 
-`main` now includes the completed first milestone of **protocol material**:
-- visible protocol-input sources:
+`main` now includes the completed first milestone of **stream-cipher expressiveness**:
+- new primitive:
+  - `Majority`
+- strict 1-bit width validation for three-input majority voting
+- Analyze transformation view for `Majority`
+- `Majority-Clocked Keystream` demo workspace
+- `The Majority-Clocked Keystream` tutorial
+- `Repair the Majority Vote` challenge
+
+Shipped stream foundations build on the already-shipped protocol-material and block-framing slices:
+- protocol inputs:
   - `IV`
   - `Nonce`
   - `Salt`
-- shared width-aware validation for declared protocol-material width
-- explicit reject-if-too-long behavior and right-padding for short hex values
-- `Protocol Material Mixer` demo workspace
-- `Protocol Material Is Context` tutorial
-- `Repair the IV` challenge
-
-Shipped protocol-material foundations build on the already-shipped block-framing slice:
-- `BitSplit`
-- `BitPad`
-- reuse of existing `BitJoin`
-- `Split Transform Rejoin` and `Pad and Split` demo workspaces
-- `Visible Block Boundaries` and `Padding Before Splitting` tutorials
-- `Repair the Split Width` and `Repair the Pad Width` challenges
-- Analyze transformation views for `BitSplit` and `BitPad`
+- framing:
+  - `BitSplit`
+  - `BitPad`
+  - reuse of existing `BitJoin`
 
 Implemented and shipped:
 - engine core types, graph validation, iterative topological executor
@@ -89,6 +88,7 @@ Implemented and shipped:
 - `v1.15.0` Control Primitives milestone
 - `v1.16.0` Block Framing milestone
 - `v1.17.0` Protocol Material milestone
+- `v1.18.0` Stream Cipher Foundations milestone
 - first bounded hash collision challenge:
   - seeded `Find A Hash Collision` challenge
   - same-digest / different-input success rule
@@ -152,7 +152,7 @@ Implemented and shipped:
 - `CONTROL-PRIMITIVES-V1.md`: shipped first bounded counter/compare/gate slice for condition-driven machines
 - `BLOCK-FRAMING-V1.md`: shipped first post-Phase-1 framing slice for visible block boundaries, rejoining, and padding
 - `PROTOCOL-MATERIAL-V1.md`: shipped first bounded protocol-input slice for IV, nonce, and salt sources
-- `STREAM-CIPHER-V1.md`: proposed first bounded stream-machine slice for visible combiners and irregular clocking
+- `STREAM-CIPHER-V1.md`: shipped first bounded stream-machine slice for visible majority logic and irregular clocking
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
 - `SBOX-TRANSFORMATION-V1.md`: shipped first lookup/substitution visual family contract
@@ -192,10 +192,8 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 ## Near-Term Roadmap
 
 1. Treat MCW explicitly as a **cryptographic systems IDE** and grow the primitive language toward full expressive coverage, not just isolated feature branches
-2. Continue the primitive-language phase beyond shipped protocol-material vocabulary:
-   stream-cipher expressiveness is the clearest next shared language line, followed by advanced rotor realism
-   Immediate contract:
-   `STREAM-CIPHER-V1.md`
+2. Continue the primitive-language phase beyond shipped stream foundations:
+   advanced rotor realism is now the clearest next bounded line, with deeper stream-combiner follow-ons after that
 3. Keep advanced rotor realism on deck as one bounded sub-line inside that broader vocabulary roadmap:
    `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion
 4. Add one tutorial plus one demo/challenge whenever a major new primitive family ships so the language grows with teaching support

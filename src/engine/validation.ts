@@ -41,6 +41,8 @@ const EQUAL_WIDTH_BINARY_MODULE_IDS = new Set([
   'AtLeast',
 ]);
 
+const SINGLE_BIT_TERNARY_MODULE_IDS = new Set(['Majority']);
+
 function findPort(def: ModuleDefinition, portName: string, direction: 'input' | 'output') {
   const ports = direction === 'input' ? def.inputs : def.outputs;
   return ports.find((port) => port.name === portName);
@@ -332,6 +334,7 @@ function inferStaticBitWidth(
       break;
     case 'Equals':
     case 'AtLeast':
+    case 'Majority':
       width = 1;
       break;
     case 'Permutation': {
@@ -441,6 +444,23 @@ function validateBitWidthConstraints(
         issues.push({
           code: 'invalid-param-type',
           message: `Module "${moduleInstance.id}" parameter "leftWidth" is invalid. BitSplit leftWidth must be less than the input width (${inputWidth}).`,
+          moduleId: moduleInstance.id,
+        });
+      }
+    }
+
+    if (SINGLE_BIT_TERNARY_MODULE_IDS.has(def.id)) {
+      const inputPorts = ['a', 'b', 'c'] as const;
+      const knownWidths = inputPorts
+        .map((portName) => incomingConnections.get(`${moduleInstance.id}:${portName}`))
+        .filter((endpoint): endpoint is ConnectionEndpoint => endpoint !== undefined)
+        .map((endpoint) => getWidth(endpoint.moduleId))
+        .filter((width): width is number => width !== null);
+
+      if (knownWidths.some((width) => width !== 1)) {
+        issues.push({
+          code: 'signal-width-mismatch',
+          message: `Module "${moduleInstance.id}" requires 1-bit inputs on ports a, b, and c.`,
           moduleId: moduleInstance.id,
         });
       }

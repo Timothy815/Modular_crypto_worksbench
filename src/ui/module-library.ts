@@ -164,6 +164,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Interprets the bit vector as an unsigned word and returns the remainder in the same width.',
     searchTerms: ['modulo', 'remainder', 'mod', 'word', 'bits', 'operator'],
   },
+  Majority: {
+    sectionId: 'bit-domain',
+    purpose: 'Emits a 1-bit result when at least two of three 1-bit inputs are active.',
+    detail: 'Useful for visible stream-control and irregular-clocking logic where three control bits should vote on whether a pulse is active.',
+    searchTerms: ['majority', 'vote', 'control', 'stream', 'clocking', 'bits', 'operator'],
+  },
   Equals: {
     sectionId: 'bit-domain',
     purpose: 'Emits a one-bit control signal when two equal-width bit words match exactly.',

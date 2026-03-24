@@ -25,6 +25,7 @@ const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round
 const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
 const keystreamProject = demoProjects.find((project) => project.id === 'keystream');
 const gatedKeystreamProject = demoProjects.find((project) => project.id === 'gated-keystream');
+const majorityKeystreamProject = demoProjects.find((project) => project.id === 'majority-keystream');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
 const toySpongeHashProject = demoProjects.find((project) => project.id === 'toy-sponge-hash');
@@ -89,6 +90,9 @@ if (!keystreamProject) {
 if (!gatedKeystreamProject) {
   throw new Error('Expected gated-keystream demo project to seed starter challenges.');
 }
+if (!majorityKeystreamProject) {
+  throw new Error('Expected majority-keystream demo project to seed starter challenges.');
+}
 if (!sequentialProject) {
   throw new Error('Expected sequential demo project to seed starter challenges.');
 }
@@ -139,6 +143,8 @@ const keystreamTarget = cloneProject(keystreamProject.project);
 const brokenKeystreamStart = cloneProject(keystreamProject.project);
 const gatedKeystreamTarget = cloneProject(gatedKeystreamProject.project);
 const brokenGatedKeystreamStart = cloneProject(gatedKeystreamProject.project);
+const majorityKeystreamTarget = cloneProject(majorityKeystreamProject.project);
+const brokenMajorityKeystreamStart = cloneProject(majorityKeystreamProject.project);
 const sequentialTarget = cloneProject(sequentialProject.project);
 const brokenSequentialStart = cloneProject(sequentialProject.project);
 const brokenSequentialTapsStart = cloneProject(sequentialProject.project);
@@ -322,6 +328,14 @@ if (!brokenGateLfsr) {
   throw new Error('Expected gated-keystream demo project to contain a gate LFSR.');
 }
 brokenGateLfsr.params.seed = [0, 1, 0, 1, 0];
+
+const brokenMajorityControlB = brokenMajorityKeystreamStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'control-b',
+);
+if (!brokenMajorityControlB) {
+  throw new Error('Expected majority-keystream demo project to contain control-b.');
+}
+brokenMajorityControlB.params.seed = [0, 0, 0, 1, 0];
 
 const brokenClockModule = brokenSequentialStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'clock',
@@ -803,6 +817,27 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The first LFSR is not the mask itself; it controls when the second LFSR advances.',
       'Watch the gate register output bit on each tick and compare it against the target rhythm.',
       'A wrong gate seed can leave the second register frozen on the wrong ticks.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-majority-vote',
+    title: 'Repair the Majority Vote',
+    projectId: 'majority-keystream',
+    group: 'Conditional Clocking',
+    difficulty: 'expert',
+    prompt:
+      'This majority-clocked keystream machine still has the right plaintext, data register, and vote wiring, but one control register is voting incorrectly. Repair the bad control seed so the majority gate opens on the right ticks and the output stream matches the captured reference again.',
+    startingProject: brokenMajorityKeystreamStart,
+    startingLayout: cloneProject(majorityKeystreamProject.layout),
+    targetProject: majorityKeystreamTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The Majority module and Gate wiring are already correct.',
+      'Focus on the three 1-bit control registers feeding the vote.',
+      'If one control stream is wrong, the majority decision flips only on the ticks where that stream should have been the deciding vote.',
     ],
   },
   {

@@ -19,6 +19,7 @@ import { AtLeast } from './at-least';
 import { Counter } from './counter';
 import { Equals } from './equals';
 import { Gate } from './gate';
+import { Majority } from './majority';
 import { Modulo } from './modulo';
 import { NOT } from './not';
 import { OR } from './or';
@@ -134,6 +135,45 @@ describe('Protocol material sources', () => {
     expect(() => Salt.evaluate({}, { value: 'A3F1', width: 8 })).toThrow(
       /exceeds declared width/i,
     );
+  });
+});
+
+describe('Majority', () => {
+  it('emits 1 when at least two inputs are active', () => {
+    const result = Majority.evaluate(
+      {
+        a: { type: 'bits', value: [1] },
+        b: { type: 'bits', value: [0] },
+        c: { type: 'bits', value: [1] },
+      },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1] });
+  });
+
+  it('emits 0 when fewer than two inputs are active', () => {
+    const result = Majority.evaluate(
+      {
+        a: { type: 'bits', value: [1] },
+        b: { type: 'bits', value: [0] },
+        c: { type: 'bits', value: [0] },
+      },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [0] });
+  });
+
+  it('throws when any input is wider than one bit', () => {
+    expect(() =>
+      Majority.evaluate(
+        {
+          a: { type: 'bits', value: [1, 0] },
+          b: { type: 'bits', value: [0] },
+          c: { type: 'bits', value: [1] },
+        },
+        {},
+      ),
+    ).toThrow(/1-bit word/i);
   });
 });
 

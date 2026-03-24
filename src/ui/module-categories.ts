@@ -26,6 +26,7 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   AddMod: 'operator',
   SubMod: 'operator',
   Modulo: 'operator',
+  Majority: 'operator',
   Equals: 'operator',
   AtLeast: 'operator',
   Gate: 'operator',

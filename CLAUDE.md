@@ -187,9 +187,16 @@ src/utils/     — Shared helpers
   - `Protocol Material Mixer` demo workspace
   - `Protocol Material Is Context` tutorial
   - `Repair the IV` challenge
+- `v1.18.0` is now the stream-cipher milestone:
+  - `Majority`
+  - strict 1-bit width validation for majority inputs
+  - Analyze transformation view for `Majority`
+  - `Majority-Clocked Keystream` demo workspace
+  - `The Majority-Clocked Keystream` tutorial
+  - `Repair the Majority Vote` challenge
 - Current `main` should treat the next phase as **primitive-language expansion**
-  - stream-control follow-ons
   - advanced rotor realism as one bounded sub-line
+  - deeper stream-combiner follow-ons after the first majority slice
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -233,6 +240,11 @@ What is shipped on `main`:
   - `IV`, `Nonce`, and `Salt` source modules on `bits`
   - shared width-aware validation and explicit reject-if-too-long behavior
   - `Protocol Material Mixer` demo, `Protocol Material Is Context` tutorial, and `Repair the IV` challenge
+- first bounded stream-cipher vocabulary:
+  - `Majority`
+  - strict 1-bit width validation for the three vote inputs
+  - `Majority-Clocked Keystream` demo, `The Majority-Clocked Keystream` tutorial, and `Repair the Majority Vote` challenge
+  - Analyze transformation view for `Majority`
 
 Key contracts to check before implementation:
 - `ENGINE-V1-CONTRACT.md` for engine decisions
@@ -257,7 +269,7 @@ Key contracts to check before implementation:
 
 Near-term follow-ups:
 - treat the next phase as expressive machine-language growth, not just the next isolated feature
-- continue from shipped operator/control/framing/protocol-material foundations toward the next missing language family
+- continue from shipped operator/control/framing/protocol-material/stream foundations toward the next missing language family
 - keep advanced rotor realism explicitly on the future docket as one bounded sub-line:
   - `ringOffset` separate from `position`
   - notch / turnover behavior

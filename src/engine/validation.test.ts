@@ -13,6 +13,7 @@ import { Equals } from './modules/equals';
 import { Gate } from './modules/gate';
 import { HexSource } from './modules/hex-source';
 import { IV } from './modules/iv';
+import { Majority } from './modules/majority';
 import { Modulo } from './modules/modulo';
 import { Nonce } from './modules/nonce';
 import { NOT } from './modules/not';
@@ -69,6 +70,7 @@ const registry: ModuleRegistry = {
   [BaudotSource.id]: BaudotSource,
   [HexSource.id]: HexSource,
   [IV.id]: IV,
+  [Majority.id]: Majority,
   [Nonce.id]: Nonce,
   [Salt.id]: Salt,
   [XOR.id]: XOR,
@@ -355,6 +357,34 @@ describe('validateProject', () => {
     const result = validateProject(project, registry);
 
     expect(result.ok).toBe(true);
+  });
+
+  it('rejects Majority when a statically known input is wider than one bit', () => {
+    const project: Project = {
+      modules: [
+        { id: 'a', defId: 'BitSource', params: { stream: [1, 0] } },
+        { id: 'b', defId: 'BitSource', params: { stream: [1] } },
+        { id: 'c', defId: 'BitSource', params: { stream: [0] } },
+        { id: 'vote', defId: 'Majority', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'a', port: 'out' }, to: { moduleId: 'vote', port: 'a' } },
+        { from: { moduleId: 'b', port: 'out' }, to: { moduleId: 'vote', port: 'b' } },
+        { from: { moduleId: 'c', port: 'out' }, to: { moduleId: 'vote', port: 'c' } },
+      ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'vote' &&
+          issue.code === 'signal-width-mismatch' &&
+          issue.message.includes('requires 1-bit inputs'),
+      ),
+    ).toBe(true);
   });
 
   it('rejects non-ascii source params before execution', () => {

@@ -6,28 +6,26 @@ Last updated: March 24, 2026
 
 ## Current State
 
-The project has shipped through `v1.17.0` on `main`.
+The project has shipped through `v1.18.0` on `main`.
 
-Current `main` is now positioned beyond the first completed protocol-material milestone.
+Current `main` is now positioned beyond the first completed stream-cipher milestone.
 That milestone shipped:
-- first bounded protocol-material vocabulary on `bits`:
+- first bounded stream-machine vocabulary:
+  - `Majority`
+- strict 1-bit width validation for the three voting inputs
+- Analyze-tab transformation view for `Majority`
+- first stream-control teaching surface:
+  - `Majority-Clocked Keystream` demo workspace
+  - `The Majority-Clocked Keystream` tutorial
+  - `Repair the Majority Vote` challenge
+
+The already-shipped protocol-material and block-framing foundations remain in place:
+- protocol inputs:
   - `IV`
   - `Nonce`
   - `Salt`
-  - shared protocol-material helper for visible source-only semantics
-- width-aware validation for declared protocol-material width
-- reject-if-too-long validation and right-padding for short hex values
-- first protocol-material teaching surface:
-  - `Protocol Material Mixer` demo workspace
-  - `Protocol Material Is Context` tutorial
-  - `Repair the IV` challenge
-
-The already-shipped block-framing foundation remains in place:
-- `BitSplit`, `BitPad`, and reuse of `BitJoin`
-- `Split Transform Rejoin` and `Pad and Split` demo workspaces
-- `Visible Block Boundaries` and `Padding Before Splitting` tutorials
-- `Repair the Split Width` and `Repair the Pad Width` challenges
-- Analyze-tab transformation views for `BitSplit` and `BitPad`
+- framing:
+  - `BitSplit`, `BitPad`, and reuse of `BitJoin`
 
 The next strategic direction is broader than rotor deepening:
 - treat MCW explicitly as a **cryptographic systems IDE**
@@ -35,8 +33,8 @@ The next strategic direction is broader than rotor deepening:
 - ship tutorials and challenges alongside each new vocabulary family
 
 The next most important missing vocabulary families are:
-- stream-cipher expressiveness and irregular clocking vocabulary
 - advanced rotor realism as one bounded sub-line
+- deeper stream-combiner / filter-function follow-ons after the first majority slice
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -129,6 +127,7 @@ The following decisions are reflected in shipped code:
 | `v1.15.0` | Control Primitives |
 | `v1.16.0` | Block Framing |
 | `v1.17.0` | Protocol Material |
+| `v1.18.0` | Stream Cipher Foundations |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -196,7 +195,7 @@ Post-`v1.12.0` work merged to `main`:
   - composite unzip with forwarded-param carry-through
   - dark-mode-safe reflector and plugboard pair rendering
 
-Strategic direction after `v1.13.0` (validated through `v1.17.0`):
+Strategic direction after `v1.13.0` (validated through `v1.18.0`):
 - `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` now frames MCW as a cryptographic systems IDE
 - the next roadmap focus is expressive primitive language growth rather than only choosing the next isolated feature line
 - Phase 1 foundations are now shipped through:
@@ -248,6 +247,15 @@ Post-`v1.16.0` work merged to `main`:
   - `Protocol Material Is Context` tutorial
   - `Repair the IV` challenge
 
+Post-`v1.17.0` work merged to `main`:
+- bounded stream-cipher slice:
+  - `Majority`
+  - strict 1-bit width validation for majority inputs
+  - Analyze-tab transformation view for `Majority`
+  - `Majority-Clocked Keystream` demo workspace
+  - `The Majority-Clocked Keystream` tutorial
+  - `Repair the Majority Vote` challenge
+
 ---
 
 ## Safe Next Tasks
@@ -279,7 +287,7 @@ Safe to begin:
 
 Best focus:
 - which language family should follow the shipped protocol-material foundation
-- whether stream-control follow-ons or advanced rotor realism should come next
+- whether advanced rotor realism or a second stream-combiner slice should come next
 - whether advanced rotor realism should wait until the broader vocabulary is stronger
 
 ---
@@ -291,7 +299,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed on the most recent protocol-material slice.
+All three passed on the most recent stream-cipher slice.
 
 ---
 
@@ -306,9 +314,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 ### Near-Term Roadmap
 
 1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
-2. **Continue the primitive-language roadmap beyond shipped protocol-material vocabulary** — the clearest remaining language families are stream-control follow-ons and advanced rotor realism
-   Immediate contract:
-   `STREAM-CIPHER-V1.md`
+2. **Continue the primitive-language roadmap beyond shipped stream foundations** — the clearest remaining language families are advanced rotor realism and deeper stream-combiner follow-ons
 3. **Keep advanced rotor realism on the docket as a bounded sub-line** — `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion remain important, but should not monopolize the roadmap
 4. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
 5. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
@@ -345,7 +351,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `CONTROL-PRIMITIVES-V1.md` | Shipped in `v1.15.0` as bounded counter/compare/gate control vocabulary |
 | `BLOCK-FRAMING-V1.md` | Shipped in `v1.16.0` as bounded block-framing vocabulary for visible splitting, rejoining, and padding |
 | `PROTOCOL-MATERIAL-V1.md` | Shipped in `v1.17.0` as bounded protocol-input vocabulary for IV, nonce, and salt sources |
-| `STREAM-CIPHER-V1.md` | Proposed — first bounded stream-machine slice for visible combiners and irregular clocking |
+| `STREAM-CIPHER-V1.md` | Shipped in `v1.18.0` as bounded stream-machine slice for visible majority logic and irregular clocking |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
 | `SBOX-TRANSFORMATION-V1.md` | Shipped as the `v1.6.0` lookup/substitution visual family |
