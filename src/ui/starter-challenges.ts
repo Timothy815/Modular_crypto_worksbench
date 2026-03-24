@@ -26,6 +26,7 @@ const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-r
 const keystreamProject = demoProjects.find((project) => project.id === 'keystream');
 const gatedKeystreamProject = demoProjects.find((project) => project.id === 'gated-keystream');
 const majorityKeystreamProject = demoProjects.find((project) => project.id === 'majority-keystream');
+const filteredKeystreamProject = demoProjects.find((project) => project.id === 'filtered-keystream');
 const advancedRotorSteppingProject = demoProjects.find((project) => project.id === 'advanced-rotor-stepping');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
@@ -94,6 +95,9 @@ if (!gatedKeystreamProject) {
 if (!majorityKeystreamProject) {
   throw new Error('Expected majority-keystream demo project to seed starter challenges.');
 }
+if (!filteredKeystreamProject) {
+  throw new Error('Expected filtered-keystream demo project to seed starter challenges.');
+}
 if (!advancedRotorSteppingProject) {
   throw new Error('Expected advanced-rotor-stepping demo project to seed starter challenges.');
 }
@@ -149,6 +153,8 @@ const gatedKeystreamTarget = cloneProject(gatedKeystreamProject.project);
 const brokenGatedKeystreamStart = cloneProject(gatedKeystreamProject.project);
 const majorityKeystreamTarget = cloneProject(majorityKeystreamProject.project);
 const brokenMajorityKeystreamStart = cloneProject(majorityKeystreamProject.project);
+const filteredKeystreamTarget = cloneProject(filteredKeystreamProject.project);
+const brokenFilteredKeystreamStart = cloneProject(filteredKeystreamProject.project);
 const advancedRotorSteppingTarget = cloneProject(advancedRotorSteppingProject.project);
 const brokenAdvancedRotorSteppingStart = cloneProject(advancedRotorSteppingProject.project);
 const sequentialTarget = cloneProject(sequentialProject.project);
@@ -350,6 +356,14 @@ if (!brokenMajorityControlB) {
   throw new Error('Expected majority-keystream demo project to contain control-b.');
 }
 brokenMajorityControlB.params.seed = [0, 0, 0, 1, 0];
+
+const brokenFilteredControl = brokenFilteredKeystreamStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'control',
+);
+if (!brokenFilteredControl) {
+  throw new Error('Expected filtered-keystream demo project to contain a control register.');
+}
+brokenFilteredControl.params.seed = [0];
 
 const brokenClockModule = brokenSequentialStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'clock',
@@ -852,6 +866,27 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The Majority module and Gate wiring are already correct.',
       'Focus on the three 1-bit control registers feeding the vote.',
       'If one control stream is wrong, the majority decision flips only on the ticks where that stream should have been the deciding vote.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-filter-selector',
+    title: 'Repair the Filter Selector',
+    projectId: 'filtered-keystream',
+    group: 'Conditional Clocking',
+    difficulty: 'expert',
+    prompt:
+      'This filtered keystream machine still has the right plaintext and candidate data streams, but the selector register is choosing the wrong source on each tick. Repair the bad control seed so the output stream matches the captured reference machine again.',
+    startingProject: brokenFilteredKeystreamStart,
+    startingLayout: cloneProject(filteredKeystreamProject.layout),
+    targetProject: filteredKeystreamTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Both candidate data registers are already correct; the problem is in the select line.',
+      'Mux does not vote and it does not gate time. It simply chooses input a or input b.',
+      'If the selector bit flips, the machine keeps the same rhythm but chooses the wrong keystream source.',
     ],
   },
   {

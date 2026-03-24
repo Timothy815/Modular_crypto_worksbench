@@ -981,6 +981,51 @@ export function ParameterInspector({
                   ))}
                 </div>
               </>
+            ) : transformationView.kind === 'mux' ? (
+              <>
+                <div className="transformation-order">
+                  <span className="meta-label">Rule</span>
+                  <code>select = 0 {'->'} a · select = 1 {'->'} b</code>
+                </div>
+                <div className="transformation-order">
+                  <span className="meta-label">Chosen Input</span>
+                  <code>{transformationView.chosenInput} gives {transformationView.outputBit}</code>
+                </div>
+                <div className="xor-grid">
+                  <div className="xor-grid-head">
+                    <span className="meta-label">Input</span>
+                    <span className="meta-label">Bit</span>
+                    <span className="meta-label">State</span>
+                  </div>
+                  {[
+                    { label: 'select', bit: transformationView.selectBit, chosen: false },
+                    { label: 'a', bit: transformationView.aBit, chosen: transformationView.chosenInput === 'a' },
+                    { label: 'b', bit: transformationView.bBit, chosen: transformationView.chosenInput === 'b' },
+                  ].map((input) => (
+                    <div key={`mux-${input.label}`} className="xor-grid-row">
+                      <span className="xor-grid-index">{input.label}</span>
+                      <span
+                        className={
+                          input.bit === 1
+                            ? 'xor-grid-bit xor-grid-bit-active'
+                            : 'xor-grid-bit'
+                        }
+                      >
+                        {input.bit}
+                      </span>
+                      <span
+                        className={
+                          input.chosen
+                            ? 'xor-grid-compare xor-grid-compare-different'
+                            : 'xor-grid-compare'
+                        }
+                      >
+                        {input.label === 'select' ? 'control' : input.chosen ? 'chosen' : 'ignored'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : transformationView.kind === 'split' ? (
               <>
                 <div className="transformation-order">
@@ -2664,6 +2709,19 @@ interface MajorityTransformationView {
   summary: string;
 }
 
+interface MuxTransformationView {
+  entry: ExecutionTraceEntry;
+  kind: 'mux';
+  title: string;
+  copy: string;
+  selectBit: number;
+  aBit: number;
+  bBit: number;
+  outputBit: number;
+  chosenInput: 'a' | 'b';
+  summary: string;
+}
+
 interface LookupTransformationChunk {
   index: number;
   inputBits: number[];
@@ -2719,6 +2777,7 @@ type TransformationView =
   | CompareTransformationView
   | GateTransformationView
   | MajorityTransformationView
+  | MuxTransformationView
   | LookupTransformationView
   | SplitTransformationView
   | PadTransformationView;
@@ -2787,6 +2846,9 @@ function getTransformationView(
   }
   if (entry.defId === 'Majority') {
     return getMajorityTransformation(entry);
+  }
+  if (entry.defId === 'Mux') {
+    return getMuxTransformation(entry);
   }
   if (entry.defId === 'SBox') {
     return getSBoxTransformation(entry, project, registry);
@@ -3119,6 +3181,39 @@ function getMajorityTransformation(entry: ExecutionTraceEntry): MajorityTransfor
       outputBit === 1
         ? `${activeCount} of 3 inputs are active, so the majority output is [1].`
         : `${activeCount} of 3 inputs are active, so the majority output stays [0].`,
+  };
+}
+
+function getMuxTransformation(entry: ExecutionTraceEntry): MuxTransformationView | null {
+  const select = entry.inputs.select;
+  const inputA = entry.inputs.a;
+  const inputB = entry.inputs.b;
+  const output = entry.outputs.out;
+  if (select?.type !== 'bits' || inputA?.type !== 'bits' || inputB?.type !== 'bits' || output?.type !== 'bits') {
+    return null;
+  }
+
+  const selectBit = select.value[0] ?? 0;
+  const aBit = inputA.value[0] ?? 0;
+  const bBit = inputB.value[0] ?? 0;
+  const outputBit = output.value[0] ?? 0;
+  const chosenInput = selectBit === 1 ? 'b' : 'a';
+
+  return {
+    entry,
+    kind: 'mux',
+    title: 'Bit Selector',
+    copy:
+      'Mux reads one 1-bit select line and chooses which of two candidate 1-bit inputs continues forward. It is visible selection, not voting or pulse gating.',
+    selectBit,
+    aBit,
+    bBit,
+    outputBit,
+    chosenInput,
+    summary:
+      chosenInput === 'a'
+        ? `Select is [0], so Mux forwards input a (${aBit}) and ignores input b (${bBit}).`
+        : `Select is [1], so Mux forwards input b (${bBit}) and ignores input a (${aBit}).`,
   };
 }
 

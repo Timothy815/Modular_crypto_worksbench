@@ -170,6 +170,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Useful for visible stream-control and irregular-clocking logic where three control bits should vote on whether a pulse is active.',
     searchTerms: ['majority', 'vote', 'control', 'stream', 'clocking', 'bits', 'operator'],
   },
+  Mux: {
+    sectionId: 'bit-domain',
+    purpose: 'Selects one of two 1-bit inputs using a visible 1-bit control input.',
+    detail: 'Useful for filtered keystream machines where one control bit chooses which candidate bit continues forward.',
+    searchTerms: ['mux', 'select', 'selector', 'filter', 'stream', 'bits', 'operator'],
+  },
   Equals: {
     sectionId: 'bit-domain',
     purpose: 'Emits a one-bit control signal when two equal-width bit words match exactly.',

@@ -15,6 +15,7 @@ import { HexSource } from './modules/hex-source';
 import { IV } from './modules/iv';
 import { Majority } from './modules/majority';
 import { Modulo } from './modules/modulo';
+import { Mux } from './modules/mux';
 import { Nonce } from './modules/nonce';
 import { NOT } from './modules/not';
 import { OR } from './modules/or';
@@ -72,6 +73,7 @@ const registry: ModuleRegistry = {
   [HexSource.id]: HexSource,
   [IV.id]: IV,
   [Majority.id]: Majority,
+  [Mux.id]: Mux,
   [Nonce.id]: Nonce,
   [Salt.id]: Salt,
   [XOR.id]: XOR,
@@ -439,6 +441,34 @@ describe('validateProject', () => {
       result.issues.some(
         (issue) =>
           issue.moduleId === 'vote' &&
+          issue.code === 'signal-width-mismatch' &&
+          issue.message.includes('requires 1-bit inputs'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects Mux when a statically known input is wider than one bit', () => {
+    const project: Project = {
+      modules: [
+        { id: 'select', defId: 'BitSource', params: { stream: [1] } },
+        { id: 'a', defId: 'BitSource', params: { stream: [1, 0] } },
+        { id: 'b', defId: 'BitSource', params: { stream: [0] } },
+        { id: 'mux', defId: 'Mux', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'select', port: 'out' }, to: { moduleId: 'mux', port: 'select' } },
+        { from: { moduleId: 'a', port: 'out' }, to: { moduleId: 'mux', port: 'a' } },
+        { from: { moduleId: 'b', port: 'out' }, to: { moduleId: 'mux', port: 'b' } },
+      ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'mux' &&
           issue.code === 'signal-width-mismatch' &&
           issue.message.includes('requires 1-bit inputs'),
       ),

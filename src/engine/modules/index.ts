@@ -21,6 +21,7 @@ import { AddMod } from './add-mod';
 import { SubMod } from './sub-mod';
 import { Modulo } from './modulo';
 import { Majority } from './majority';
+import { Mux } from './mux';
 import { Counter } from './counter';
 import { Equals } from './equals';
 import { AtLeast } from './at-least';
@@ -62,6 +63,7 @@ export {
   SubMod,
   Modulo,
   Majority,
+  Mux,
   Counter,
   Equals,
   AtLeast,
@@ -104,6 +106,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [SubMod.id]: SubMod,
   [Modulo.id]: Modulo,
   [Majority.id]: Majority,
+  [Mux.id]: Mux,
   [Counter.id]: Counter,
   [Equals.id]: Equals,
   [AtLeast.id]: AtLeast,

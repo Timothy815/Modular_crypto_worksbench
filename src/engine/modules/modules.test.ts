@@ -20,6 +20,7 @@ import { Counter } from './counter';
 import { Equals } from './equals';
 import { Gate } from './gate';
 import { Majority } from './majority';
+import { Mux } from './mux';
 import { Modulo } from './modulo';
 import { NOT } from './not';
 import { OR } from './or';
@@ -176,6 +177,45 @@ describe('Majority', () => {
           a: { type: 'bits', value: [1, 0] },
           b: { type: 'bits', value: [0] },
           c: { type: 'bits', value: [1] },
+        },
+        {},
+      ),
+    ).toThrow(/1-bit word/i);
+  });
+});
+
+describe('Mux', () => {
+  it('emits input a when select is 0', () => {
+    const result = Mux.evaluate(
+      {
+        select: { type: 'bits', value: [0] },
+        a: { type: 'bits', value: [1] },
+        b: { type: 'bits', value: [0] },
+      },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1] });
+  });
+
+  it('emits input b when select is 1', () => {
+    const result = Mux.evaluate(
+      {
+        select: { type: 'bits', value: [1] },
+        a: { type: 'bits', value: [1] },
+        b: { type: 'bits', value: [0] },
+      },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [0] });
+  });
+
+  it('throws when one input is wider than one bit', () => {
+    expect(() =>
+      Mux.evaluate(
+        {
+          select: { type: 'bits', value: [1] },
+          a: { type: 'bits', value: [1, 0] },
+          b: { type: 'bits', value: [0] },
         },
         {},
       ),
