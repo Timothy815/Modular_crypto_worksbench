@@ -11,26 +11,26 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.18.0`.
+The repository has shipped through `v1.19.0`.
 
-`main` now includes the completed first milestone of **stream-cipher expressiveness**:
-- new primitive:
+`main` now includes the completed first milestone of **advanced rotor realism**:
+- `Rotor` now distinguishes:
+  - `position`
+  - `ringOffset`
+  - `notches`
+  - visible `turnover`
+- turnover-driven stepping is expressed through explicit `Clock` / `OR` / `Gate` wiring rather than hidden rotor-bank executor logic
+- `Advanced Rotor Stepping` demo workspace
+- `Advanced Rotor Stepping` tutorial
+- `Repair the Rotor Notch` challenge
+
+Shipped stream and protocol/framing foundations remain in place:
+- stream-machine expressiveness:
   - `Majority`
-- strict 1-bit width validation for three-input majority voting
-- Analyze transformation view for `Majority`
-- `Majority-Clocked Keystream` demo workspace
-- `The Majority-Clocked Keystream` tutorial
-- `Repair the Majority Vote` challenge
-
-Shipped stream foundations build on the already-shipped protocol-material and block-framing slices:
 - protocol inputs:
-  - `IV`
-  - `Nonce`
-  - `Salt`
+  - `IV`, `Nonce`, `Salt`
 - framing:
-  - `BitSplit`
-  - `BitPad`
-  - reuse of existing `BitJoin`
+  - `BitSplit`, `BitPad`, and reuse of existing `BitJoin`
 
 Implemented and shipped:
 - engine core types, graph validation, iterative topological executor
@@ -89,6 +89,7 @@ Implemented and shipped:
 - `v1.16.0` Block Framing milestone
 - `v1.17.0` Protocol Material milestone
 - `v1.18.0` Stream Cipher Foundations milestone
+- `v1.19.0` Advanced Rotor Realism milestone
 - first bounded hash collision challenge:
   - seeded `Find A Hash Collision` challenge
   - same-digest / different-input success rule
@@ -153,7 +154,7 @@ Implemented and shipped:
 - `BLOCK-FRAMING-V1.md`: shipped first post-Phase-1 framing slice for visible block boundaries, rejoining, and padding
 - `PROTOCOL-MATERIAL-V1.md`: shipped first bounded protocol-input slice for IV, nonce, and salt sources
 - `STREAM-CIPHER-V1.md`: shipped first bounded stream-machine slice for visible majority logic and irregular clocking
-- `ADVANCED-ROTOR-REALISM-V1.md`: proposed first bounded rotor-realism slice for ring setting, turnover, and double-step behavior
+- `ADVANCED-ROTOR-REALISM-V1.md`: shipped first bounded rotor-realism slice for ring setting, turnover, and double-step behavior
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
 - `SBOX-TRANSFORMATION-V1.md`: shipped first lookup/substitution visual family contract
@@ -193,12 +194,10 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 ## Near-Term Roadmap
 
 1. Treat MCW explicitly as a **cryptographic systems IDE** and grow the primitive language toward full expressive coverage, not just isolated feature branches
-2. Continue the primitive-language phase beyond shipped stream foundations:
-   advanced rotor realism is now the clearest next bounded line, with deeper stream-combiner follow-ons after that
-   Immediate contract:
-   `ADVANCED-ROTOR-REALISM-V1.md`
-3. Keep advanced rotor realism on deck as one bounded sub-line inside that broader vocabulary roadmap:
-   `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion
+2. Continue the primitive-language phase beyond shipped stream and rotor foundations:
+   the next bounded decision should stay within shared vocabulary growth rather than preset-building
+3. Keep future rotor follow-ons bounded:
+   reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices rather than spilling into convenience presets
 4. Add one tutorial plus one demo/challenge whenever a major new primitive family ships so the language grows with teaching support
 5. Keep performance/bundle size under watch now that builder workflow and tactile editors both sit behind the guardrails
 6. Monitor classroom use of workspace library and composite unzip before widening them into sharing, folders, or bulk-expansion tooling

@@ -1,6 +1,6 @@
 # MCW — Cryptographic Vocabulary Roadmap
 
-Status: Active strategic roadmap after `v1.18.0`.
+Status: Active strategic roadmap after `v1.19.0`.
 
 This document reframes MCW as a cryptographic systems IDE:
 - not a code generator
@@ -175,12 +175,14 @@ Needed additions likely include:
 - invert / reverse-permutation helpers where appropriate
 - copy-and-invert authoring helpers for reversible designs
 
-### 6. Advanced Rotor Realism
+### 6. Advanced Rotor Realism — *first milestone shipped in `v1.19.0`*
 
-Already identified and should remain on the roadmap:
+Shipped:
 - `ringOffset` separate from `position`
 - notch / turnover behavior
 - double-step logic
+
+Still open over time:
 - reversible rotation direction
 - flipped insertion
 
@@ -227,7 +229,7 @@ Shipped in `v1.14.0` and `v1.15.0`:
 - `Counter Pulse Gate` demo/tutorial/challenge
 - Analyze transformation views for `Equals`, `AtLeast`, and `Gate`
 
-### Phase 2 — Mechanized And Stream Expressiveness — *first stream slice shipped*
+### Phase 2 — Mechanized And Stream Expressiveness — *first slices shipped*
 
 Purpose:
 - let the workbench express richer stateful machines
@@ -243,9 +245,18 @@ Shipped in `v1.18.0`:
   - `The Majority-Clocked Keystream` tutorial
   - `Repair the Majority Vote` challenge
 
+Shipped in `v1.19.0`:
+- `ADVANCED-ROTOR-REALISM-V1.md` first slice:
+  - `ringOffset`
+  - `notches`
+  - visible `turnover`
+  - `Advanced Rotor Stepping` demo workspace
+  - `Advanced Rotor Stepping` tutorial
+  - `Repair the Rotor Notch` challenge
+
 Still open:
-- ring settings, turnover, double-step, direction control
 - richer stream combiners / filter functions
+- rotor direction control / flipped insertion follow-ons
 - better keystream machine examples beyond the first majority-clocking loop
 
 Teaching additions:
@@ -352,25 +363,24 @@ To protect the product identity, avoid:
 
 The roadmap is now validated through shipped foundations across four phases:
 - Phase 1: `CRYPTO-OPERATORS-V1.md` and `CONTROL-PRIMITIVES-V1.md` (shipped in `v1.14.0` / `v1.15.0`)
-- Phase 2: `STREAM-CIPHER-V1.md` first slice (shipped in `v1.18.0`)
+- Phase 2: `STREAM-CIPHER-V1.md` and `ADVANCED-ROTOR-REALISM-V1.md` first slices (shipped in `v1.18.0` / `v1.19.0`)
 - Phase 3: `BLOCK-FRAMING-V1.md` (shipped in `v1.16.0`)
 - Phase 4: `PROTOCOL-MATERIAL-V1.md` first slice (shipped in `v1.17.0`)
 
-The next strategic direction after `v1.18.0` should be:
+The next strategic direction after `v1.19.0` should be:
 
 > keep expanding MCW into a fully expressive cryptographic machine language
 
 The clearest next move is not “which algorithm next?”
 
 It is:
-- block/framing, protocol-material, and first stream vocabulary are now shipped
-- keep advanced rotor realism as the clearest next bounded sub-line
+- block/framing, protocol-material, first stream vocabulary, and first rotor-realism vocabulary are now shipped
 - keep deeper stream-combiner follow-ons bounded rather than turning the stream line into preset sprawl
 - keep protocol-material follow-ons bounded rather than jumping to mode presets
+- keep future rotor follow-ons bounded rather than turning mechanized realism into hidden helpers
 - keep tutorials and challenges shipping alongside the new language
 
-The immediate next contract is:
-- `ADVANCED-ROTOR-REALISM-V1.md`
+The immediate next contract should be chosen from the next shared-language gap rather than from preset pressure.
 
 That is the path from:
 - strong teaching workbench

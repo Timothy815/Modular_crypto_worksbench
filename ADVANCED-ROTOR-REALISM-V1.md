@@ -2,7 +2,7 @@
 
 Last updated: March 24, 2026
 
-Status: Proposed.
+Status: Shipped in `v1.19.0`.
 
 ## Purpose
 
@@ -149,9 +149,7 @@ Avoid:
 - hiding double-step behavior inside undocumented runtime shortcuts
 - letting rotor realism monopolize the broader roadmap
 
-## Suggested Teaching Additions
-
-The first milestone should likely ship with:
+## Shipped Teaching Additions
 
 ### Demo workspace
 
@@ -162,7 +160,8 @@ The first milestone should likely ship with:
 
 ### Tutorial
 
-One tutorial (4-6 steps) teaching:
+- `Advanced Rotor Stepping`
+  - teaches:
 - rotor position vs ring setting
 - what a notch does
 - why turnover matters
@@ -170,9 +169,16 @@ One tutorial (4-6 steps) teaching:
 
 ### Challenge
 
-One bounded challenge such as:
-- a rotor machine with the wrong ring setting or notch parameter
-- the student must restore the machine so the output and stepping behavior match a reference
+- `Repair the Rotor Notch`
+  - restores the stepping pattern by repairing a wrong turnover letter in the middle rotor
+
+## Shipped Notes
+
+`v1.19.0` delivered the first bounded realism slice by:
+- extending `Rotor` with `ringOffset`, `notches`, and visible `turnover`
+- keeping rotor advance local rather than introducing a hidden rotor-bank manager
+- treating `clock` connections into stateful modules as temporal advance edges rather than same-tick DAG dependencies
+- using explicit `Clock`, `Gate`, and `OR` wiring to demonstrate turnover and the middle-rotor double-step
 
 ## Success Criteria
 

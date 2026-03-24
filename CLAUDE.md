@@ -194,9 +194,16 @@ src/utils/     — Shared helpers
   - `Majority-Clocked Keystream` demo workspace
   - `The Majority-Clocked Keystream` tutorial
   - `Repair the Majority Vote` challenge
+- `v1.19.0` is now the advanced-rotor milestone:
+  - `Rotor` now separates `position` from `ringOffset`
+  - `notches` and visible 1-bit `turnover`
+  - temporal `clock` edges for stateful-module advance
+  - `Advanced Rotor Stepping` demo workspace
+  - `Advanced Rotor Stepping` tutorial
+  - `Repair the Rotor Notch` challenge
 - Current `main` should treat the next phase as **primitive-language expansion**
-  - advanced rotor realism as one bounded sub-line
   - deeper stream-combiner follow-ons after the first majority slice
+  - scheduler / permutation / bounded rotor follow-ons after the shipped realism slice
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -245,6 +252,11 @@ What is shipped on `main`:
   - strict 1-bit width validation for the three vote inputs
   - `Majority-Clocked Keystream` demo, `The Majority-Clocked Keystream` tutorial, and `Repair the Majority Vote` challenge
   - Analyze transformation view for `Majority`
+- first bounded advanced-rotor realism vocabulary:
+  - `ringOffset`, `notches`, and visible `turnover` on `Rotor`
+  - temporal `clock` handling for stateful advance edges
+  - explicit turnover-driven double-step wiring via `Clock`, `OR`, and `Gate`
+  - `Advanced Rotor Stepping` demo/tutorial/challenge
 
 Key contracts to check before implementation:
 - `ENGINE-V1-CONTRACT.md` for engine decisions
@@ -263,19 +275,18 @@ Key contracts to check before implementation:
 - `CONTROL-PRIMITIVES-V1.md` for the shipped first bounded control/counter/gate line
 - `BLOCK-FRAMING-V1.md` for the shipped first bounded block-framing vocabulary
 - `PROTOCOL-MATERIAL-V1.md` for the shipped first bounded protocol-input slice
+- `ADVANCED-ROTOR-REALISM-V1.md` for the shipped first bounded rotor-realism slice
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family
 
 Near-term follow-ups:
 - treat the next phase as expressive machine-language growth, not just the next isolated feature
-- continue from shipped operator/control/framing/protocol-material/stream foundations toward the next missing language family
-- keep advanced rotor realism explicitly on the future docket as one bounded sub-line:
-  - `ringOffset` separate from `position`
-  - notch / turnover behavior
-  - double-step logic
+- continue from shipped operator/control/framing/protocol-material/stream/rotor foundations toward the next missing language family
+- keep future rotor follow-ons bounded:
   - reversible rotation direction
   - flipped insertion
+  - deeper rotor-bank realism only if it remains explicit
 - plan tutorials and challenges alongside any new primitive family so the language and teaching layers grow together
 - treat `WORKBENCH-ERGONOMICS-V1.md`, `WORKSPACE-LIBRARY-V1.md`, and `COMPOSITE-UNZIP-V1.md` as shipped first-milestone builder foundations
 - avoid widening workspace library into sharing/folders or unzip into bulk/iterator expansion without a new contract
