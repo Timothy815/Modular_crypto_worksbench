@@ -9,6 +9,7 @@ Read MODERN-ANALYSIS-V1.md before starting work on the post-v1.4 modern-analysis
 Read HASHING-V1.md before starting work on the hashing line.
 Read HASH-COLLISION-CHALLENGE-V1.md before starting work on the first post-`v1.7.0` hashing challenge slice.
 Read SPONGE-COLLISION-CHALLENGE-V1.md before starting work on the bounded sponge-collision follow-on.
+Read POST-COLLISION-INTERPRETATION-V1.md before extending the collision-teaching line beyond the shipped nudges/comparison slice.
 Read TRANSFORMATION-VISUALIZATION-V1.md before starting work on primitive-level drill-down or transformation-legibility features.
 Read SBOX-TRANSFORMATION-V1.md before starting work on the first S-Box transformation view.
 Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
@@ -140,7 +141,8 @@ src/utils/     — Shared helpers
 - `v1.7.0` is already shipped
 - `v1.8.0` is already shipped
 - `v1.9.0` is already shipped
-- Current `main` is beyond the bounded sponge-collision follow-on and should treat the collision line as shipped unless a new bounded interpretation slice is chosen
+- `v1.10.0` is already shipped
+- Current `main` is beyond the first bounded interpretation follow-on and should treat deeper internal-trace comparison as deferred work, not assumed scope
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -163,6 +165,11 @@ What is shipped on `main`:
   - sponge-hash collision
   - project-aware challenge ownership
   - sponge-hash digest-path correction with audit-style regression tests
+- first bounded post-collision interpretation slice:
+  - side-by-side original vs colliding message comparison
+  - post-success nudges into `Analyze` and `Modern Cryptanalysis`
+  - sponge-hardening asymmetry fix removing the paired-step shortcut
+  - bundle/performance guardrails and build-time chunk budget enforcement
 
 Key contracts to check before implementation:
 - `ENGINE-V1-CONTRACT.md` for engine decisions
@@ -174,15 +181,15 @@ Key contracts to check before implementation:
 - `HASHING-V1.md` for the current hashing line and scope boundary
 - `HASH-COLLISION-CHALLENGE-V1.md` for the first bounded post-hashing milestone challenge slice
 - `SPONGE-COLLISION-CHALLENGE-V1.md` for the shipped sponge-collision follow-on
-- `POST-COLLISION-INTERPRETATION-V1.md` for the proposed bounded follow-on after the shipped collision challenges
+- `POST-COLLISION-INTERPRETATION-V1.md` for the partially shipped bounded follow-on after the collision challenges
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family
 
 Near-term follow-ups:
-- decide whether post-collision interpretation guidance deserves its own bounded slice
+- decide whether post-collision interpretation should deepen into internal trace divergence comparison or pause for classroom feedback
 - keep hashing connected to the modern-analysis and transformation-visualization surfaces
-- watch bundle growth as a near-term cleanup concern
+- keep bundle growth inside the new guardrails
 - monitor challenge-induced project switching in classroom use before adding warnings
 - avoid opening a second transformation-visualization slice before classroom feedback
 

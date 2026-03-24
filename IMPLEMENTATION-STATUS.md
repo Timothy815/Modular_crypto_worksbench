@@ -1,15 +1,21 @@
 # MCW — Implementation Status
 
-Last updated: March 23, 2026
+Last updated: March 24, 2026
 
 ---
 
 ## Current State
 
-The project has shipped through `v1.9.0` on `main`.
+The project has shipped through `v1.10.0` on `main`.
 
-Current `main` is now positioned beyond the bounded sponge-collision follow-on and sponge-hash stabilization work.
-The next likely line is a bounded post-collision interpretation slice.
+Current `main` is now positioned beyond the first bounded post-collision interpretation slice.
+That slice shipped:
+- post-success interpretation nudges in the collision challenge flow
+- side-by-side original vs colliding message comparison
+- sponge hardening to remove the discovered paired-input shortcut
+- bundle/performance guardrails and pedagogical audit guardrails
+
+The deeper internal-trace divergence comparison described by the interpretation contract remains deferred.
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -94,6 +100,7 @@ The following decisions are reflected in shipped code:
 | `v1.7.0` | Hashing V1 |
 | `v1.8.0` | Hash Collision Challenge |
 | `v1.9.0` | Sponge Collision Challenge |
+| `v1.10.0` | Collision Interpretation Foundations |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -126,6 +133,16 @@ Post-`v1.8.0` work merged to `main`:
 - sponge digest-path correction using folded rate + capacity contribution
 - audit-style regression tests for hash output spread and adjacent-repeat sanity
 
+Post-`v1.9.0` work merged to `main`:
+- bounded post-collision interpretation follow-on
+- side-by-side original vs colliding message comparison in hash collision challenges
+- post-success interpretation nudges into `Analyze` and `Modern Cryptanalysis`
+- sponge absorb asymmetry fix to remove sampled paired `(+k,+k)` digest preservation
+- sampled symmetry-regression tests for toy sponge hardening
+- lazy-loaded secondary panels
+- React vendor chunk split
+- build-time bundle-size guard
+
 ---
 
 ## Safe Next Tasks
@@ -133,8 +150,8 @@ Post-`v1.8.0` work merged to `main`:
 ### Claude
 
 Safe to begin:
-- help decide whether post-collision interpretation guidance deserves its own bounded slice
-- tighten release framing around the two collision-teaching artifacts
+- help decide whether the interpretation line should deepen into internal trace divergence comparison
+- help assess whether collision/interpretation work should now pause for classroom feedback
 - help keep any follow-on hash weakness work bounded
 
 Should avoid for now:
@@ -147,12 +164,12 @@ Should avoid for now:
 ### Gemini
 
 Safe to begin:
-- review whether post-collision interpretation guidance is worth a separate slice
+- review whether the partially shipped interpretation line should deepen or pause
 - help keep hashing, modern analysis, and challenge workflows connected instead of fragmenting the product
 - help pressure-test future bounded challenge ideas against the shipped collision line
 
 Best focus:
-- whether the collision line should pause here or deepen interpretation next
+- whether the collision/interpretation line should pause here or deepen interpretation next
 - whether any near-term cleanup should interrupt the next branch
 - whether the next milestone should stay in hashing/challenges or switch focus
 
@@ -165,7 +182,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed on the most recent sponge-collision slice.
+All three passed on the most recent collision-interpretation / sponge-hardening slice.
 
 ---
 
@@ -179,9 +196,9 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 ### Near-Term Roadmap
 
-1. **Decide whether post-collision interpretation guidance deserves its own bounded slice**
+1. **Decide whether post-collision interpretation should deepen into internal trace divergence comparison or pause for classroom feedback**
 2. **Keep hashing connected to the shipped transformation views** — especially `SBox`, `BitShifter`, and `XOR`
-3. **Treat bundle-size growth as near-term technical debt** — address it before several more large UI surfaces land
+3. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
 4. **Monitor challenge-induced project switching in classroom use** before adding warning dialogs
 5. **Defer deeper transformation playback/animation** until classroom feedback justifies a second visualization slice
 
@@ -203,7 +220,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `HASHING-V1.md` | Shipped as the `v1.7.0` first hashing milestone contract |
 | `HASH-COLLISION-CHALLENGE-V1.md` | Shipped as the `v1.8.0` first bounded hash weakness challenge |
 | `SPONGE-COLLISION-CHALLENGE-V1.md` | Shipped as the `v1.9.0` sponge-collision follow-on |
-| `POST-COLLISION-INTERPRETATION-V1.md` | Proposed bounded follow-on for explaining why colliding messages still differ internally |
+| `POST-COLLISION-INTERPRETATION-V1.md` | Partially shipped in `v1.10.0` — nudges and message comparison delivered; deeper internal-trace comparison deferred |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
 | `SBOX-TRANSFORMATION-V1.md` | Shipped as the `v1.6.0` lookup/substitution visual family |

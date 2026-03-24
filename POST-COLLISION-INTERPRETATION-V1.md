@@ -1,8 +1,8 @@
 # Post-Collision Interpretation V1
 
-Last updated: March 23, 2026
+Last updated: March 24, 2026
 
-Status: Proposed next bounded slice after the `v1.9.0` sponge-collision milestone.
+Status: Partially shipped in `v1.10.0` — post-success nudges and side-by-side message comparison delivered; deeper internal-trace divergence comparison remains deferred.
 
 ## Purpose
 
@@ -54,16 +54,19 @@ The student should be able to:
 
 ## Include
 
-The first milestone should likely include:
+The first milestone includes:
 - a clearer post-success nudge from the collision challenges into interpretation
-- a bounded comparison view or helper for:
+- a bounded comparison helper for:
   - original input
   - colliding input
-  - same digest
-  - first or major internal divergence
+  - same digest framing
 - support for both shipped collision families:
   - `Toy Compression Hash`
   - `Toy Sponge Hash`
+
+Still deferred within this contract:
+- first or major internal divergence comparison
+- a more explicit internal-difference helper beyond nudges into existing surfaces
 
 Prefer lightweight reuse over new systems.
 
@@ -99,5 +102,7 @@ This slice is successful when a student can:
 - find a collision using the shipped challenge
 - move into an interpretation workflow without losing context
 - see that the messages differ while the digest matches
-- identify at least one place where the internal paths diverged before collapsing back to the same digest
 - leave with a better intuition for why “same digest” is not the same as “same internal behavior”
+
+The remaining deferred goal is:
+- identify at least one place where the internal paths diverged before collapsing back to the same digest

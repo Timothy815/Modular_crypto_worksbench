@@ -11,9 +11,13 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.9.0`.
+The repository has shipped through `v1.10.0`.
 
-`main` now includes the bounded **sponge-collision follow-on** and the sponge-hash audit/fix work that completed the next collision-teaching slice.
+`main` now includes the first bounded **post-collision interpretation** slice:
+- side-by-side original vs colliding message comparison in the challenge flow
+- post-success nudges into `Analyze` and `Modern Cryptanalysis`
+- a hardened toy sponge that avoids the discovered paired-input symmetry
+- bundle and audit guardrails to keep future teaching artifacts honest
 
 Implemented and shipped:
 - engine core types, graph validation, iterative topological executor
@@ -74,6 +78,15 @@ Implemented and shipped:
   - project-correct challenge selection/reset/import behavior
   - corrected sponge digest extraction using folded rate + capacity contribution
   - audit-style hash-spread regression tests
+- first bounded post-collision interpretation follow-on:
+  - side-by-side original vs current message comparison for hash collision challenges
+  - post-success interpretation nudges into `Analyze` and `Modern Cryptanalysis`
+  - hardened sponge absorb path with asymmetric right-input preparation
+  - sampled symmetry-regression tests for paired input shifts
+- bundle/performance guardrails:
+  - lazy-loaded secondary panels
+  - React vendor chunk split
+  - build-time bundle-size check
 - workbench persistence and JSON import/export
 - dark mode
 - GitHub Pages deployment
@@ -93,7 +106,7 @@ Implemented and shipped:
 - `HASHING-V1.md`: shipped first hashing milestone contract and scope boundary
 - `HASH-COLLISION-CHALLENGE-V1.md`: shipped first bounded hash weakness challenge
 - `SPONGE-COLLISION-CHALLENGE-V1.md`: shipped sponge-collision follow-on and sponge-hash correction slice
-- `POST-COLLISION-INTERPRETATION-V1.md`: proposed bounded follow-on for understanding why colliding messages still differ internally
+- `POST-COLLISION-INTERPRETATION-V1.md`: partially shipped bounded follow-on for understanding why colliding messages still differ internally
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
 - `SBOX-TRANSFORMATION-V1.md`: shipped first lookup/substitution visual family contract
@@ -132,8 +145,8 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 
 ## Near-Term Roadmap
 
-1. Decide whether post-collision interpretation guidance deserves its own bounded slice
-2. Keep performance/bundle size under watch as inspector and analysis surfaces continue to grow
+1. Decide whether the post-collision interpretation line should deepen into internal trace divergence comparison or pause for classroom feedback
+2. Keep performance/bundle size under watch now that build-time guardrails are in place
 3. Monitor challenge-induced project switching in classroom use before adding warning dialogs
 4. Defer deeper transformation playback/animation until classroom feedback justifies it
 5. Avoid scope creep into brute-force tooling, birthday-bound calculators, famous-hash comparisons, or KDF/Merkle-style structures before a new contract says otherwise
