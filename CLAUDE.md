@@ -10,6 +10,7 @@ Read HASHING-V1.md before starting work on the hashing line.
 Read HASH-COLLISION-CHALLENGE-V1.md before starting work on the first post-`v1.7.0` hashing challenge slice.
 Read SPONGE-COLLISION-CHALLENGE-V1.md before starting work on the bounded sponge-collision follow-on.
 Read POST-COLLISION-INTERPRETATION-V1.md before extending the collision-teaching line beyond the shipped nudges/comparison slice.
+Read CUSTOM-SBOX-AUTHORING-V1.md before starting work on editable substitution-table authoring.
 Read TRANSFORMATION-VISUALIZATION-V1.md before starting work on primitive-level drill-down or transformation-legibility features.
 Read SBOX-TRANSFORMATION-V1.md before starting work on the first S-Box transformation view.
 Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
@@ -184,12 +185,20 @@ Key contracts to check before implementation:
 - `HASH-COLLISION-CHALLENGE-V1.md` for the first bounded post-hashing milestone challenge slice
 - `SPONGE-COLLISION-CHALLENGE-V1.md` for the shipped sponge-collision follow-on
 - `POST-COLLISION-INTERPRETATION-V1.md` for the shipped first interpretation milestone after the collision challenges
+- `CUSTOM-SBOX-AUTHORING-V1.md` for the next bounded substitution-table authoring slice
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family
 
 Near-term follow-ups:
+- begin bounded custom `SBox` authoring without turning it into a cryptanalysis suite
 - decide whether post-collision interpretation should deepen beyond the shipped first-divergence helper or pause for classroom feedback
+- keep advanced rotor realism explicitly on the future docket:
+  - `ringOffset` separate from `position`
+  - notch / turnover behavior
+  - double-step logic
+  - reversible rotation direction
+  - flipped insertion
 - keep hashing connected to the modern-analysis and transformation-visualization surfaces
 - keep bundle growth inside the new guardrails
 - monitor challenge-induced project switching in classroom use before adding warnings

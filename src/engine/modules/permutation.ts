@@ -31,6 +31,36 @@ export function validatePermutationOrderParam(value: unknown): string | null {
   }
 }
 
+export function serializePermutationOrder(order: number[]): string {
+  return order.join(',');
+}
+
+export function buildIdentityPermutationOrder(length: number): number[] {
+  return Array.from({ length }, (_, index) => index);
+}
+
+export function buildReversePermutationOrder(length: number): number[] {
+  return Array.from({ length }, (_, index) => length - 1 - index);
+}
+
+export function swapPermutationOrderPositions(order: number[], leftIndex: number, rightIndex: number): number[] {
+  if (
+    leftIndex < 0 ||
+    rightIndex < 0 ||
+    leftIndex >= order.length ||
+    rightIndex >= order.length ||
+    leftIndex === rightIndex
+  ) {
+    return [...order];
+  }
+
+  const nextOrder = [...order];
+  const leftValue = nextOrder[leftIndex];
+  nextOrder[leftIndex] = nextOrder[rightIndex];
+  nextOrder[rightIndex] = leftValue;
+  return nextOrder;
+}
+
 export const Permutation: ModuleDef = {
   id: 'Permutation',
   name: 'Permutation',

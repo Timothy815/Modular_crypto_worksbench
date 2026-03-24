@@ -860,6 +860,239 @@ body.dock-resizing {
   overflow-wrap: anywhere;
 }
 
+.sbox-editor {
+  display: grid;
+  gap: 12px;
+}
+
+.sbox-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sbox-editor-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sbox-editor-grid {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: auto;
+  background: var(--surface-panel);
+}
+
+.sbox-editor-cell {
+  border: 0;
+  border-radius: 0;
+  min-height: 38px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.sbox-editor-cell:hover {
+  background: color-mix(in srgb, var(--analysis-accent) 10%, white);
+}
+
+.sbox-editor-detail {
+  display: grid;
+  gap: 10px;
+}
+
+.sbox-editor-select {
+  margin: 0;
+}
+
+.sbox-editor-raw {
+  margin: 0;
+}
+
+.sbox-editor-raw textarea {
+  min-height: 96px;
+  font-family: var(--mono);
+  font-size: 0.88rem;
+}
+
+.permutation-editor {
+  display: grid;
+  gap: 12px;
+}
+
+.permutation-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.permutation-editor-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.permutation-wire-editor {
+  display: grid;
+  grid-template-columns: max-content 220px max-content;
+  gap: 12px;
+  align-items: start;
+  justify-content: center;
+}
+
+.permutation-wire-lane {
+  display: grid;
+  gap: 10px;
+  justify-items: stretch;
+}
+
+.permutation-wire-lane-label {
+  padding: 0 8px;
+}
+
+.permutation-wire-canvas {
+  display: flex;
+  align-items: stretch;
+}
+
+.permutation-wire-canvas svg {
+  width: 100%;
+  height: 100%;
+}
+
+.permutation-port {
+  appearance: none;
+  box-sizing: border-box;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 6px;
+  height: 52px;
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-panel);
+  font: inherit;
+  line-height: 1;
+  text-align: left;
+}
+
+.permutation-port-input {
+  cursor: grab;
+}
+
+.permutation-port-input:active {
+  cursor: grabbing;
+}
+
+.permutation-port.active {
+  border-color: var(--analysis-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--analysis-accent) 18%, transparent);
+}
+
+.permutation-slot-value {
+  color: var(--ink);
+}
+
+.permutation-editor-raw {
+  margin: 0;
+}
+
+.permutation-editor-raw textarea {
+  min-height: 80px;
+  font-family: var(--mono);
+  font-size: 0.88rem;
+}
+
+.reflector-editor {
+  display: grid;
+  gap: 12px;
+}
+
+.reflector-editor-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.reflector-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+  gap: 8px;
+}
+
+.reflector-socket {
+  display: grid;
+  gap: 4px;
+  padding: 10px 10px 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--reflector-pair-accent, var(--line)) 35%, var(--line));
+  border-radius: 14px;
+  background: var(--reflector-pair-surface, var(--surface-panel));
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+.reflector-socket::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  background: var(--reflector-pair-accent, var(--analysis-accent));
+}
+
+.reflector-socket.active {
+  border-color: var(--reflector-pair-accent, var(--analysis-accent));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--reflector-pair-accent, var(--analysis-accent)) 18%, transparent);
+}
+
+.reflector-socket-letter {
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.reflector-socket-chip {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--reflector-pair-accent, var(--analysis-accent)) 12%, white);
+  color: color-mix(in srgb, var(--reflector-pair-accent, var(--analysis-accent)) 82%, black);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.reflector-socket-pair {
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+}
+
+.reflector-editor-raw {
+  margin: 0;
+}
+
+.reflector-editor-raw textarea {
+  min-height: 96px;
+  font-family: var(--mono);
+  font-size: 0.88rem;
+}
+
+@media (max-width: 900px) {
+  .permutation-wire-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .permutation-wire-canvas {
+    order: 3;
+  }
+}
+
 .palette-tabs {
   display: flex;
   flex-wrap: wrap;

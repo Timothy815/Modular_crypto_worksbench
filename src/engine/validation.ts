@@ -20,6 +20,7 @@ import { validateAsciiSourceValue } from './modules/ascii-source';
 import { validateBaudotSourceValue } from './modules/baudot-source';
 import { validateHexSourceValue } from './modules/hex-source';
 import { validatePermutationOrderParam } from './modules/permutation';
+import { validateReflectorWiringParam } from './modules/reflector';
 import { validateSBoxTableParam } from './modules/s-box';
 
 function findPort(def: ModuleDefinition, portName: string, direction: 'input' | 'output') {
@@ -117,6 +118,10 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'SBox' && field.key === 'table') {
     return validateSBoxTableParam(value);
+  }
+
+  if (def.id === 'Reflector' && field.key === 'wiring') {
+    return validateReflectorWiringParam(value);
   }
 
   if (def.id === 'HexSource' && field.key === 'value') {

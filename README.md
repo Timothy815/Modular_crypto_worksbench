@@ -109,6 +109,9 @@ Implemented and shipped:
 - `HASH-COLLISION-CHALLENGE-V1.md`: shipped first bounded hash weakness challenge
 - `SPONGE-COLLISION-CHALLENGE-V1.md`: shipped sponge-collision follow-on and sponge-hash correction slice
 - `POST-COLLISION-INTERPRETATION-V1.md`: shipped first milestone for understanding why colliding messages still differ internally
+- `CUSTOM-SBOX-AUTHORING-V1.md`: proposed bounded authoring slice for editable substitution-table design inside the workbench
+- `CUSTOM-PERMUTATION-AUTHORING-V1.md`: proposed bounded tactile authoring slice for editable routing/permutation design inside the workbench
+- `CUSTOM-REFLECTOR-AUTHORING-V1.md`: proposed bounded tactile authoring slice for paired reflector wiring inside the workbench
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
 - `SBOX-TRANSFORMATION-V1.md`: shipped first lookup/substitution visual family contract
@@ -147,8 +150,11 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 
 ## Near-Term Roadmap
 
-1. Decide whether the post-collision interpretation line should deepen beyond the shipped first-divergence helper or pause for classroom feedback
-2. Keep performance/bundle size under watch now that build-time guardrails are in place
-3. Monitor challenge-induced project switching in classroom use before adding warning dialogs
-4. Defer deeper transformation playback/animation until classroom feedback justifies it
-5. Avoid scope creep into brute-force tooling, birthday-bound calculators, famous-hash comparisons, or KDF/Merkle-style structures before a new contract says otherwise
+1. Continue bounded tactile authoring with:
+   `SBox`, `Permutation`, then `Reflector`
+2. Decide later whether the post-collision interpretation line should deepen beyond the shipped first-divergence helper or pause for classroom feedback
+3. Keep performance/bundle size under watch now that build-time guardrails are in place
+4. Keep advanced rotor realism explicitly on deck:
+   `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion
+5. Monitor challenge-induced project switching in classroom use before adding warning dialogs
+6. Avoid scope creep into brute-force tooling, birthday-bound calculators, famous-hash comparisons, or KDF/Merkle-style structures before a new contract says otherwise

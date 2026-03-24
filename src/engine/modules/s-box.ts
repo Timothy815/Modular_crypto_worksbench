@@ -43,6 +43,40 @@ export function validateSBoxTableParam(value: unknown): string | null {
   }
 }
 
+export function serializeSBoxTable(table: number[]): string {
+  return table.join(',');
+}
+
+export function buildIdentitySBoxTable(entryCount: number): number[] {
+  inferSBoxWidth(entryCount);
+  return Array.from({ length: entryCount }, (_, index) => index);
+}
+
+export function buildReverseSBoxTable(entryCount: number): number[] {
+  return [...buildIdentitySBoxTable(entryCount)].reverse();
+}
+
+export function swapSBoxEntry(table: number[], index: number, nextValue: number): number[] {
+  if (index < 0 || index >= table.length) {
+    return [...table];
+  }
+
+  if (!Number.isInteger(nextValue) || nextValue < 0 || nextValue >= table.length) {
+    return [...table];
+  }
+
+  const nextIndex = table.indexOf(nextValue);
+  if (nextIndex < 0 || nextIndex === index) {
+    return [...table];
+  }
+
+  const currentValue = table[index];
+  const nextTable = [...table];
+  nextTable[index] = nextValue;
+  nextTable[nextIndex] = currentValue;
+  return nextTable;
+}
+
 function bitsToNumber(bits: number[]): number {
   return bits.reduce((value, bit) => (value << 1) | bit, 0);
 }

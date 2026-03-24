@@ -2,6 +2,29 @@ import type { StatefulModuleDef } from '../types';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+export function serializeRotorWiring(wiring: string[]): string {
+  return wiring.join(', ');
+}
+
+export function swapRotorWiringTargets(wiring: string[], leftIndex: number, rightIndex: number): string[] {
+  if (
+    !Array.isArray(wiring) ||
+    leftIndex < 0 ||
+    rightIndex < 0 ||
+    leftIndex >= wiring.length ||
+    rightIndex >= wiring.length ||
+    leftIndex === rightIndex
+  ) {
+    return [...wiring];
+  }
+
+  const nextWiring = [...wiring];
+  const leftValue = nextWiring[leftIndex];
+  nextWiring[leftIndex] = nextWiring[rightIndex];
+  nextWiring[rightIndex] = leftValue;
+  return nextWiring;
+}
+
 export const Rotor: StatefulModuleDef = {
   id: 'Rotor',
   name: 'Rotor',

@@ -4,6 +4,7 @@ import { AsciiSource } from './modules/ascii-source';
 import { BaudotSource } from './modules/baudot-source';
 import { HexSource } from './modules/hex-source';
 import { Permutation } from './modules/permutation';
+import { Reflector } from './modules/reflector';
 import { SBox } from './modules/s-box';
 import type { ModuleRegistry, Project } from './types';
 import { validateProject } from './validation';
@@ -49,6 +50,7 @@ const registry: ModuleRegistry = {
   [BaudotSource.id]: BaudotSource,
   [HexSource.id]: HexSource,
   [Permutation.id]: Permutation,
+  [Reflector.id]: Reflector,
   [SBox.id]: SBox,
 };
 
@@ -202,6 +204,30 @@ describe('validateProject', () => {
         (issue) =>
           issue.moduleId === 'sbox-1' &&
           issue.message.includes('SBox table length must be a power of two'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects malformed reflector wiring before execution', () => {
+    const project: Project = {
+      modules: [
+        {
+          id: 'reflector-1',
+          defId: 'Reflector',
+          params: { wiring: 'BCDEFGHIJKLMNOPQRSTUVWXYZA'.split('') },
+        },
+      ],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'reflector-1' &&
+          issue.message.includes('Reflector wiring must be involutive'),
       ),
     ).toBe(true);
   });

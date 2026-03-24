@@ -1,4 +1,12 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Fragment,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 
 import { isCompositeDefinition } from '../../engine/composites';
 import type {
@@ -19,7 +27,28 @@ import { ComparisonPanel } from './comparison-panel';
 import type { ComparisonBaselineDocument } from '../workbench-document';
 import type { ExecutionComparison } from '../execution-compare';
 import { resolveTraceModuleInstance } from '../transformation-resolver';
-import { parseSBoxTable } from '../../engine/modules/s-box';
+import {
+  buildIdentityPermutationOrder,
+  buildReversePermutationOrder,
+  serializePermutationOrder,
+  swapPermutationOrderPositions,
+} from '../../engine/modules/permutation';
+import {
+  pairReflectorLetters,
+  parseReflectorWiring,
+  serializeReflectorWiring,
+} from '../../engine/modules/reflector';
+import {
+  serializeRotorWiring,
+  swapRotorWiringTargets,
+} from '../../engine/modules/rotor';
+import {
+  buildIdentitySBoxTable,
+  buildReverseSBoxTable,
+  parseSBoxTable,
+  serializeSBoxTable,
+  swapSBoxEntry,
+} from '../../engine/modules/s-box';
 
 interface ParameterInspectorProps {
   execution: ExecutionResult | null;
@@ -100,6 +129,28 @@ export function ParameterInspector({
   const [requestedStepperMode, setRequestedStepperMode] = useState<'top-level' | 'nested'>('top-level');
   const [requestedNestedStepIndex, setRequestedNestedStepIndex] = useState<number | null>(null);
   const [requestedLookupChunkIndex, setRequestedLookupChunkIndex] = useState(0);
+  const [draggedPermutationInputIndex, setDraggedPermutationInputIndex] = useState<number | null>(null);
+  const [draggedRotorInputIndex, setDraggedRotorInputIndex] = useState<number | null>(null);
+  const [selectedReflectorLetter, setSelectedReflectorLetter] = useState<string | null>(null);
+  const [requestedSBoxEditIndex, setRequestedSBoxEditIndex] = useState(0);
+  const permutationInputLaneRef = useRef<HTMLDivElement | null>(null);
+  const permutationOutputLaneRef = useRef<HTMLDivElement | null>(null);
+  const permutationInputRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const permutationOutputRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const rotorInputLaneRef = useRef<HTMLDivElement | null>(null);
+  const rotorOutputLaneRef = useRef<HTMLDivElement | null>(null);
+  const rotorInputRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const rotorOutputRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [permutationWireLayout, setPermutationWireLayout] = useState<{
+    height: number;
+    inputYs: number[];
+    outputYs: number[];
+  } | null>(null);
+  const [rotorWireLayout, setRotorWireLayout] = useState<{
+    height: number;
+    inputYs: number[];
+    outputYs: number[];
+  } | null>(null);
   const analysisTrace = useMemo(
     () => execution?.analysisTrace ?? execution?.trace ?? [],
     [execution],
@@ -188,6 +239,102 @@ export function ParameterInspector({
     transformationView?.kind === 'lookup'
       ? transformationView.chunks.find((chunk) => chunk.index === effectiveLookupChunkIndex) ?? null
       : null;
+  const editableSelectedPermutationOrder = useMemo(() => {
+    if (moduleDef?.id !== 'Permutation' || !moduleInstance) {
+      return null;
+    }
+
+    const field = moduleDef.paramSchema.order;
+    return getEditablePermutationOrder(
+      moduleInstance.params.order ?? field?.defaultValue ?? '',
+    );
+  }, [moduleDef, moduleInstance]);
+  const editableSelectedRotorWiring = useMemo(() => {
+    if (moduleDef?.id !== 'Rotor' || !moduleInstance) {
+      return null;
+    }
+
+    const field = moduleDef.paramSchema.wiring;
+    return getEditableRotorWiring(
+      moduleInstance.params.wiring ?? field?.defaultValue ?? '',
+    );
+  }, [moduleDef, moduleInstance]);
+  const editableSelectedPermutationOrderKey = editableSelectedPermutationOrder?.join(',') ?? '';
+  const editableSelectedRotorWiringKey = editableSelectedRotorWiring?.join(',') ?? '';
+
+  useLayoutEffect(() => {
+    if (!editableSelectedPermutationOrder) {
+      return;
+    }
+
+    const measure = () => {
+      const layout = measureWireLayout(
+        permutationInputLaneRef.current,
+        permutationOutputLaneRef.current,
+        permutationInputRefs.current,
+        permutationOutputRefs.current,
+      );
+      setPermutationWireLayout(layout);
+    };
+
+    const frameId = window.requestAnimationFrame(measure);
+
+    const observer =
+      typeof ResizeObserver !== 'undefined' &&
+      permutationInputLaneRef.current &&
+      permutationOutputLaneRef.current
+        ? new ResizeObserver(() => measure())
+        : null;
+
+    if (observer && permutationInputLaneRef.current && permutationOutputLaneRef.current) {
+      observer.observe(permutationInputLaneRef.current);
+      observer.observe(permutationOutputLaneRef.current);
+    }
+
+    window.addEventListener('resize', measure);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      observer?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [editableSelectedPermutationOrder, editableSelectedPermutationOrderKey]);
+
+  useLayoutEffect(() => {
+    if (!editableSelectedRotorWiring) {
+      return;
+    }
+
+    const measure = () => {
+      const layout = measureWireLayout(
+        rotorInputLaneRef.current,
+        rotorOutputLaneRef.current,
+        rotorInputRefs.current,
+        rotorOutputRefs.current,
+      );
+      setRotorWireLayout(layout);
+    };
+
+    const frameId = window.requestAnimationFrame(measure);
+
+    const observer =
+      typeof ResizeObserver !== 'undefined' &&
+      rotorInputLaneRef.current &&
+      rotorOutputLaneRef.current
+        ? new ResizeObserver(() => measure())
+        : null;
+
+    if (observer && rotorInputLaneRef.current && rotorOutputLaneRef.current) {
+      observer.observe(rotorInputLaneRef.current);
+      observer.observe(rotorOutputLaneRef.current);
+    }
+
+    window.addEventListener('resize', measure);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      observer?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [editableSelectedRotorWiring, editableSelectedRotorWiringKey]);
 
   useEffect(() => {
     if (inspectorTab !== 'analyze' || !tutorialTraceRef.current) {
@@ -984,6 +1131,291 @@ export function ParameterInspector({
                 }
 
                 if (field.kind === 'wiring') {
+                  const isRotorWiringField =
+                    moduleDef.id === 'Rotor' && field.key === 'wiring';
+                  const isReflectorWiringField =
+                    moduleDef.id === 'Reflector' && field.key === 'wiring';
+
+                  if (isRotorWiringField) {
+                    const rotorWiring = getEditableRotorWiring(value);
+                    const baselineRotorWiring = getEditableRotorWiring(baselineValue);
+                    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+                    const rotorSvgHeight =
+                      rotorWireLayout?.height ??
+                      (rotorWiring
+                        ? rotorWiring.length * PERMUTATION_EDITOR_PORT_HEIGHT +
+                          Math.max(0, rotorWiring.length - 1) * PERMUTATION_EDITOR_PORT_GAP
+                        : 0);
+
+                    return (
+                      <label key={field.key} className="param-field">
+                        <span>
+                          {field.label}
+                          {isForwardedParam ? (
+                            <span className="forwarded-param-chip">Forwarded</span>
+                          ) : null}
+                        </span>
+                        {baselineRotorWiring && !areParamValuesEqual(value, baselineValue) ? (
+                          <span className="baseline-chip">
+                            Baseline: {serializeRotorWiring(baselineRotorWiring)}
+                          </span>
+                        ) : null}
+                        {rotorWiring ? (
+                          <div className="permutation-editor">
+                            <div className="permutation-editor-meta">
+                              <span className="content-status-chip">
+                                Drag an input wire onto an output letter to replug the rotor wiring
+                              </span>
+                              <span className="content-status-chip">
+                                Position stays separate from the authored wiring
+                              </span>
+                            </div>
+                            <div className="permutation-wire-editor">
+                              <div className="permutation-wire-lane" ref={rotorInputLaneRef}>
+                                <span className="meta-label permutation-wire-lane-label">Input</span>
+                                {alphabet.map((letter, inputIndex) => (
+                                  <button
+                                    key={`rotor-input-${letter}`}
+                                    type="button"
+                                    ref={(node) => {
+                                      rotorInputRefs.current[inputIndex] = node;
+                                    }}
+                                    draggable
+                                    className={
+                                      draggedRotorInputIndex === inputIndex
+                                        ? 'permutation-port permutation-port-input active'
+                                        : 'permutation-port permutation-port-input'
+                                    }
+                                    onDragStart={() => setDraggedRotorInputIndex(inputIndex)}
+                                    onDragEnd={() => setDraggedRotorInputIndex(null)}
+                                  >
+                                    <strong className="permutation-slot-value">{letter}</strong>
+                                  </button>
+                                ))}
+                              </div>
+                              <div
+                                className="permutation-wire-canvas"
+                                aria-hidden="true"
+                                style={{ height: `${rotorSvgHeight}px` }}
+                              >
+                                <svg
+                                  viewBox={`0 0 220 ${rotorSvgHeight}`}
+                                  preserveAspectRatio="none"
+                                >
+                                  {rotorWiring.map((targetLetter, inputIndex) => {
+                                    const y1 =
+                                      rotorWireLayout?.inputYs[inputIndex] ??
+                                      (PERMUTATION_EDITOR_HEADER_OFFSET +
+                                        PERMUTATION_EDITOR_PORT_HEIGHT / 2 +
+                                        inputIndex *
+                                          (PERMUTATION_EDITOR_PORT_HEIGHT + PERMUTATION_EDITOR_PORT_GAP));
+                                    const y2 =
+                                      rotorWireLayout?.outputYs[alphabet.indexOf(targetLetter)] ??
+                                      (PERMUTATION_EDITOR_HEADER_OFFSET +
+                                        PERMUTATION_EDITOR_PORT_HEIGHT / 2 +
+                                        alphabet.indexOf(targetLetter) *
+                                          (PERMUTATION_EDITOR_PORT_HEIGHT + PERMUTATION_EDITOR_PORT_GAP));
+                                    const color = getPermutationWireColor(inputIndex);
+
+                                    return (
+                                      <g key={`rotor-wire-${inputIndex}`}>
+                                        <line
+                                          x1="18"
+                                          y1={y1}
+                                          x2="202"
+                                          y2={y2}
+                                          stroke={color}
+                                          strokeWidth="3"
+                                          strokeLinecap="round"
+                                          opacity="0.92"
+                                        />
+                                        <circle cx="18" cy={y1} r="4" fill={color} opacity="0.98" />
+                                        <circle cx="202" cy={y2} r="4" fill={color} opacity="0.98" />
+                                      </g>
+                                    );
+                                  })}
+                                </svg>
+                              </div>
+                              <div className="permutation-wire-lane" ref={rotorOutputLaneRef}>
+                                <span className="meta-label permutation-wire-lane-label">Output</span>
+                                {alphabet.map((outputLetter) => {
+                                  const sourceInputIndex = rotorWiring.findIndex(
+                                    (entry) => entry === outputLetter,
+                                  );
+
+                                  return (
+                                    <button
+                                      key={`rotor-output-${outputLetter}`}
+                                      type="button"
+                                      ref={(node) => {
+                                        rotorOutputRefs.current[alphabet.indexOf(outputLetter)] = node;
+                                      }}
+                                      className="permutation-port permutation-port-output"
+                                      onDragOver={(event) => event.preventDefault()}
+                                      onDrop={(event) => {
+                                        event.preventDefault();
+                                        if (draggedRotorInputIndex === null) {
+                                          return;
+                                        }
+
+                                        const nextWiring = swapRotorWiringTargets(
+                                          rotorWiring,
+                                          draggedRotorInputIndex,
+                                          sourceInputIndex,
+                                        );
+                                        const serialized = serializeRotorWiring(nextWiring);
+                                        setDraggedRotorInputIndex(null);
+                                        onParamDraftChange(moduleInstance.id, field.key, serialized);
+                                        onParamChange(moduleInstance.id, field.key, nextWiring);
+                                      }}
+                                    >
+                                      <strong className="permutation-slot-value">{outputLetter}</strong>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                            <label className="param-field permutation-editor-raw">
+                              <span>Raw Wiring</span>
+                              <textarea
+                                value={renderedValue}
+                                onChange={(event) => {
+                                  const rawValue = event.target.value;
+                                  onParamDraftChange(moduleInstance.id, field.key, rawValue);
+                                  const parsed = parseParamValue(rawValue, field);
+                                  if (parsed.ok) {
+                                    onParamChange(moduleInstance.id, field.key, parsed.value);
+                                  }
+                                }}
+                              />
+                              {fieldError ? <p className="field-error">{fieldError}</p> : null}
+                            </label>
+                          </div>
+                        ) : (
+                          <>
+                            <WiringEditor
+                              field={field}
+                              value={value}
+                              renderedValue={renderedValue}
+                              moduleId={moduleInstance.id}
+                              onParamDraftChange={onParamDraftChange}
+                              onParamChange={onParamChange}
+                            />
+                            {fieldError ? <p className="field-error">{fieldError}</p> : null}
+                          </>
+                        )}
+                      </label>
+                    );
+                  }
+
+                  if (isReflectorWiringField) {
+                    const reflectorWiring = getEditableReflectorWiring(value);
+                    const baselineReflectorWiring = getEditableReflectorWiring(baselineValue);
+                    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+                    const reflectorPairStyles = reflectorWiring
+                      ? buildReflectorPairStyles(reflectorWiring)
+                      : {};
+
+                    return (
+                      <label key={field.key} className="param-field">
+                        <span>
+                          {field.label}
+                          {isForwardedParam ? (
+                            <span className="forwarded-param-chip">Forwarded</span>
+                          ) : null}
+                        </span>
+                        {baselineReflectorWiring && !areParamValuesEqual(value, baselineValue) ? (
+                          <span className="baseline-chip">
+                            Baseline: {serializeReflectorWiring(baselineReflectorWiring)}
+                          </span>
+                        ) : null}
+                        {reflectorWiring ? (
+                          <div className="reflector-editor">
+                            <div className="reflector-editor-meta">
+                              <span className="content-status-chip">
+                                Click one letter, then another, to re-pair the sockets
+                              </span>
+                              <span className="content-status-chip">
+                                Selected: {selectedReflectorLetter ?? 'none'}
+                              </span>
+                            </div>
+                            <div className="reflector-editor-grid">
+                              {alphabet.map((letter, index) => (
+                                <button
+                                  key={`reflector-socket-${letter}`}
+                                  type="button"
+                                  style={reflectorPairStyles[getReflectorPairKey(letter, reflectorWiring[index])]}
+                                  className={
+                                    selectedReflectorLetter === letter
+                                      ? 'reflector-socket active'
+                                      : 'reflector-socket'
+                                  }
+                                  onClick={() => {
+                                    if (selectedReflectorLetter === null) {
+                                      setSelectedReflectorLetter(letter);
+                                      return;
+                                    }
+
+                                    if (selectedReflectorLetter === letter) {
+                                      setSelectedReflectorLetter(null);
+                                      return;
+                                    }
+
+                                    const nextWiring = pairReflectorLetters(
+                                      reflectorWiring,
+                                      selectedReflectorLetter,
+                                      letter,
+                                    );
+                                    const serialized = serializeReflectorWiring(nextWiring);
+                                    setSelectedReflectorLetter(null);
+                                    onParamDraftChange(moduleInstance.id, field.key, serialized);
+                                    onParamChange(moduleInstance.id, field.key, nextWiring);
+                                  }}
+                                >
+                                  <span className="meta-label">Socket</span>
+                                  <strong className="reflector-socket-letter">{letter}</strong>
+                                  <span className="reflector-socket-chip">
+                                    {getReflectorPairKey(letter, reflectorWiring[index]).replace('-', ' ↔ ')}
+                                  </span>
+                                  <span className="reflector-socket-pair">
+                                    Paired with <strong>{reflectorWiring[index]}</strong>
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                            <label className="param-field reflector-editor-raw">
+                              <span>Raw Wiring</span>
+                              <textarea
+                                value={renderedValue}
+                                onChange={(event) => {
+                                  const rawValue = event.target.value;
+                                  onParamDraftChange(moduleInstance.id, field.key, rawValue);
+                                  const parsed = parseParamValue(rawValue, field);
+                                  if (parsed.ok) {
+                                    onParamChange(moduleInstance.id, field.key, parsed.value);
+                                  }
+                                }}
+                              />
+                              {fieldError ? <p className="field-error">{fieldError}</p> : null}
+                            </label>
+                          </div>
+                        ) : (
+                          <>
+                            <WiringEditor
+                              field={field}
+                              value={value}
+                              renderedValue={renderedValue}
+                              moduleId={moduleInstance.id}
+                              onParamDraftChange={onParamDraftChange}
+                              onParamChange={onParamChange}
+                            />
+                            {fieldError ? <p className="field-error">{fieldError}</p> : null}
+                          </>
+                        )}
+                      </label>
+                    );
+                  }
+
                   return (
                     <label key={field.key} className="param-field">
                       <span>
@@ -1006,6 +1438,396 @@ export function ParameterInspector({
                         onParamChange={onParamChange}
                       />
                       {fieldError ? <p className="field-error">{fieldError}</p> : null}
+                    </label>
+                  );
+                }
+
+                const isSBoxTableField =
+                  moduleDef.id === 'SBox' &&
+                  field.key === 'table' &&
+                  field.kind === 'string';
+
+                if (isSBoxTableField) {
+                  const editableTable = getEditableSBoxTable(value);
+                  const baselineTable = getEditableSBoxTable(baselineValue);
+                  const selectedEntryIndex =
+                    editableTable && editableTable.length > 0
+                      ? Math.min(Math.max(0, requestedSBoxEditIndex), editableTable.length - 1)
+                      : 0;
+                  const selectedEntryValue = editableTable?.[selectedEntryIndex] ?? 0;
+                  const usesHexGrid = editableTable?.length === 256;
+                  const gridColumns = editableTable ? Math.min(16, Math.max(1, Math.sqrt(editableTable.length))) : 4;
+
+                  return (
+                    <label key={field.key} className="param-field">
+                      <span>
+                        {field.label}
+                        {isForwardedParam ? (
+                          <span className="forwarded-param-chip">Forwarded</span>
+                        ) : null}
+                      </span>
+                      {baselineTable && !areParamValuesEqual(value, baselineValue) ? (
+                        <span className="baseline-chip">
+                          Baseline: {baselineTable.length} entries
+                        </span>
+                      ) : null}
+                      {editableTable ? (
+                        <div className="sbox-editor">
+                          <div className="sbox-editor-actions">
+                            <button
+                              type="button"
+                              className="mini-action-button"
+                              onClick={() => {
+                                const nextValue = serializeSBoxTable(buildIdentitySBoxTable(editableTable.length));
+                                onParamDraftChange(moduleInstance.id, field.key, nextValue);
+                                onParamChange(moduleInstance.id, field.key, nextValue);
+                              }}
+                            >
+                              Reset To Identity
+                            </button>
+                            <button
+                              type="button"
+                              className="mini-action-button"
+                              onClick={() => {
+                                const nextValue = serializeSBoxTable(buildReverseSBoxTable(editableTable.length));
+                                onParamDraftChange(moduleInstance.id, field.key, nextValue);
+                                onParamChange(moduleInstance.id, field.key, nextValue);
+                              }}
+                            >
+                              Reset To Reverse
+                            </button>
+                          </div>
+                          <div className="sbox-editor-meta">
+                            <span className="content-status-chip">{editableTable.length} entries</span>
+                            <span className="content-status-chip">
+                              Safe edit mode swaps entries so the table stays a valid permutation
+                            </span>
+                          </div>
+                          <div
+                            className="sbox-editor-grid"
+                            style={{ gridTemplateColumns: `56px repeat(${gridColumns}, minmax(0, 1fr))` }}
+                          >
+                            <span className="sbox-table-corner" />
+                            {Array.from({ length: gridColumns }, (_, columnIndex) => (
+                              <span key={`sbox-editor-col-${columnIndex}`} className="sbox-table-header">
+                                {formatSBoxAxisLabel(columnIndex, gridColumns)}
+                              </span>
+                            ))}
+                            {editableTable.map((entryValue, index) => (
+                              <Fragment key={`sbox-editor-cell-wrap-${index}`}>
+                                {index % gridColumns === 0 ? (
+                                  <span className="sbox-table-header sbox-table-row-header">
+                                    {formatSBoxAxisLabel(Math.floor(index / gridColumns), gridColumns)}
+                                  </span>
+                                ) : null}
+                                <button
+                                  type="button"
+                                  className={
+                                    index === selectedEntryIndex
+                                      ? 'sbox-table-cell active sbox-editor-cell'
+                                      : 'sbox-table-cell sbox-editor-cell'
+                                  }
+                                  onClick={() => setRequestedSBoxEditIndex(index)}
+                                  title={`table[${index}] = ${entryValue}`}
+                                >
+                                  <strong className="sbox-table-value">
+                                    {formatSBoxAxisLabel(entryValue, gridColumns)}
+                                  </strong>
+                                </button>
+                              </Fragment>
+                            ))}
+                          </div>
+                          <div className="sbox-editor-detail">
+                            <div className="sbox-detail-chip">
+                              <span className="meta-label">Selected Entry</span>
+                              <strong className="sbox-bits">
+                                {usesHexGrid
+                                  ? `table[0x${formatSBoxHexValue(selectedEntryIndex, 8)}]`
+                                  : `table[${selectedEntryIndex}]`}
+                              </strong>
+                              <span className="sbox-detail-metric">
+                                {usesHexGrid
+                                  ? `current output 0x${formatSBoxHexValue(selectedEntryValue, 8)} · decimal ${selectedEntryValue}`
+                                  : `current output ${selectedEntryValue}`}
+                              </span>
+                            </div>
+                            <label className="param-field sbox-editor-select">
+                              <span>Swap selected entry with value</span>
+                              <select
+                                value={String(selectedEntryValue)}
+                                onChange={(event) => {
+                                  const nextEntryValue = Number(event.target.value);
+                                  const nextTable = swapSBoxEntry(
+                                    editableTable,
+                                    selectedEntryIndex,
+                                    nextEntryValue,
+                                  );
+                                  const serialized = serializeSBoxTable(nextTable);
+                                  onParamDraftChange(moduleInstance.id, field.key, serialized);
+                                  onParamChange(moduleInstance.id, field.key, serialized);
+                                }}
+                              >
+                                {editableTable.map((_, optionValue) => (
+                                  <option key={`sbox-editor-option-${optionValue}`} value={optionValue}>
+                                    {usesHexGrid
+                                      ? `0x${formatSBoxHexValue(optionValue, 8)} · ${optionValue}`
+                                      : optionValue}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          </div>
+                          <label className="param-field sbox-editor-raw">
+                            <span>Raw CSV Table</span>
+                            <textarea
+                              value={renderedValue}
+                              onChange={(event) => {
+                                const rawValue = event.target.value;
+                                onParamDraftChange(moduleInstance.id, field.key, rawValue);
+                                const parsed = parseParamValue(rawValue, field);
+                                if (parsed.ok) {
+                                  onParamChange(moduleInstance.id, field.key, parsed.value);
+                                }
+                              }}
+                            />
+                            {fieldError ? <p className="field-error">{fieldError}</p> : null}
+                          </label>
+                        </div>
+                      ) : (
+                        <>
+                          <input
+                            type="text"
+                            value={renderedValue}
+                            onChange={(event) => {
+                              const rawValue = event.target.value;
+                              onParamDraftChange(moduleInstance.id, field.key, rawValue);
+                              const parsed = parseParamValue(rawValue, field);
+                              if (parsed.ok) {
+                                onParamChange(moduleInstance.id, field.key, parsed.value);
+                              }
+                            }}
+                          />
+                          <p className="field-error">
+                            {fieldError ?? 'S-Box editor is unavailable until the table parses again.'}
+                          </p>
+                        </>
+                      )}
+                    </label>
+                  );
+                }
+
+                const isPermutationOrderField =
+                  moduleDef.id === 'Permutation' &&
+                  field.key === 'order' &&
+                  field.kind === 'string';
+
+                if (isPermutationOrderField) {
+                  const editableOrder = getEditablePermutationOrder(value);
+                  const baselineOrder = getEditablePermutationOrder(baselineValue);
+                  const canUseVisualPermutationEditor =
+                    editableOrder ? isSimplePermutationOrder(editableOrder) : false;
+                  const permutationSvgHeight =
+                    permutationWireLayout?.height ??
+                    (editableOrder && canUseVisualPermutationEditor
+                      ? editableOrder.length * PERMUTATION_EDITOR_PORT_HEIGHT +
+                        Math.max(0, editableOrder.length - 1) * PERMUTATION_EDITOR_PORT_GAP
+                      : 0);
+
+                  return (
+                    <label key={field.key} className="param-field">
+                      <span>
+                        {field.label}
+                        {isForwardedParam ? (
+                          <span className="forwarded-param-chip">Forwarded</span>
+                        ) : null}
+                      </span>
+                      {baselineOrder && !areParamValuesEqual(value, baselineValue) ? (
+                        <span className="baseline-chip">
+                          Baseline: {serializePermutationOrder(baselineOrder)}
+                        </span>
+                      ) : null}
+                      {editableOrder ? (
+                        <div className="permutation-editor">
+                          <div className="permutation-editor-actions">
+                            <button
+                              type="button"
+                              className="mini-action-button"
+                              onClick={() => {
+                                const nextValue = serializePermutationOrder(
+                                  buildIdentityPermutationOrder(editableOrder.length),
+                                );
+                                onParamDraftChange(moduleInstance.id, field.key, nextValue);
+                                onParamChange(moduleInstance.id, field.key, nextValue);
+                              }}
+                            >
+                              Reset To Identity
+                            </button>
+                            <button
+                              type="button"
+                              className="mini-action-button"
+                              onClick={() => {
+                                const nextValue = serializePermutationOrder(
+                                  buildReversePermutationOrder(editableOrder.length),
+                                );
+                                onParamDraftChange(moduleInstance.id, field.key, nextValue);
+                                onParamChange(moduleInstance.id, field.key, nextValue);
+                              }}
+                            >
+                              Reset To Reverse
+                            </button>
+                          </div>
+                          <div className="permutation-editor-meta">
+                            <span className="content-status-chip">{editableOrder.length} output slots</span>
+                            <span className="content-status-chip">
+                              {canUseVisualPermutationEditor
+                                ? 'Drag an input wire onto an output slot to replug the routing'
+                                : 'Raw CSV remains available for non-bijective or repeated routing patterns'}
+                            </span>
+                          </div>
+                          {canUseVisualPermutationEditor ? (
+                            <div className="permutation-wire-editor">
+                              <div className="permutation-wire-lane" ref={permutationInputLaneRef}>
+                                {editableOrder.map((_, inputIndex) => (
+                                  <button
+                                    key={`perm-input-${inputIndex}`}
+                                    type="button"
+                                    ref={(node) => {
+                                      permutationInputRefs.current[inputIndex] = node;
+                                    }}
+                                    draggable
+                                    className={
+                                      draggedPermutationInputIndex === inputIndex
+                                        ? 'permutation-port permutation-port-input active'
+                                        : 'permutation-port permutation-port-input'
+                                    }
+                                    onDragStart={() => setDraggedPermutationInputIndex(inputIndex)}
+                                    onDragEnd={() => setDraggedPermutationInputIndex(null)}
+                                  >
+                                    <span className="meta-label">Input</span>
+                                    <strong className="permutation-slot-value">{inputIndex}</strong>
+                                  </button>
+                                ))}
+                              </div>
+                              <div
+                                className="permutation-wire-canvas"
+                                aria-hidden="true"
+                                style={{ height: `${permutationSvgHeight}px` }}
+                              >
+                                <svg
+                                  viewBox={`0 0 220 ${permutationSvgHeight}`}
+                                  preserveAspectRatio="none"
+                                >
+                                  {editableOrder.map((inputIndex, outputIndex) => {
+                                    const y1 =
+                                      permutationWireLayout?.inputYs[inputIndex] ??
+                                      (PERMUTATION_EDITOR_HEADER_OFFSET +
+                                        PERMUTATION_EDITOR_PORT_HEIGHT / 2 +
+                                        inputIndex *
+                                          (PERMUTATION_EDITOR_PORT_HEIGHT + PERMUTATION_EDITOR_PORT_GAP));
+                                    const y2 =
+                                      permutationWireLayout?.outputYs[outputIndex] ??
+                                      (PERMUTATION_EDITOR_HEADER_OFFSET +
+                                        PERMUTATION_EDITOR_PORT_HEIGHT / 2 +
+                                        outputIndex *
+                                          (PERMUTATION_EDITOR_PORT_HEIGHT + PERMUTATION_EDITOR_PORT_GAP));
+                                    const color = getPermutationWireColor(inputIndex);
+
+                                    return (
+                                      <g key={`perm-wire-${outputIndex}`}>
+                                        <line
+                                          x1="18"
+                                          y1={y1}
+                                          x2="202"
+                                          y2={y2}
+                                          stroke={color}
+                                          strokeWidth="3"
+                                          strokeLinecap="round"
+                                          opacity="0.92"
+                                        />
+                                        <circle cx="18" cy={y1} r="4" fill={color} opacity="0.98" />
+                                        <circle cx="202" cy={y2} r="4" fill={color} opacity="0.98" />
+                                      </g>
+                                    );
+                                  })}
+                                </svg>
+                              </div>
+                              <div className="permutation-wire-lane" ref={permutationOutputLaneRef}>
+                                {editableOrder.map((inputIndex, outputIndex) => (
+                                  <button
+                                    key={`perm-output-${outputIndex}`}
+                                    type="button"
+                                    ref={(node) => {
+                                      permutationOutputRefs.current[outputIndex] = node;
+                                    }}
+                                    className="permutation-port permutation-port-output"
+                                    onDragOver={(event) => event.preventDefault()}
+                                    onDrop={(event) => {
+                                      event.preventDefault();
+                                      if (draggedPermutationInputIndex === null) {
+                                        return;
+                                      }
+
+                                      const sourceOutputIndex = editableOrder.findIndex(
+                                        (entry) => entry === draggedPermutationInputIndex,
+                                      );
+                                      if (sourceOutputIndex < 0) {
+                                        setDraggedPermutationInputIndex(null);
+                                        return;
+                                      }
+
+                                      const nextOrder = swapPermutationOrderPositions(
+                                        editableOrder,
+                                        sourceOutputIndex,
+                                        outputIndex,
+                                      );
+                                      const serialized = serializePermutationOrder(nextOrder);
+                                      setDraggedPermutationInputIndex(null);
+                                      onParamDraftChange(moduleInstance.id, field.key, serialized);
+                                      onParamChange(moduleInstance.id, field.key, serialized);
+                                    }}
+                                  >
+                                    <span className="meta-label">Output {outputIndex}</span>
+                                    <strong className="permutation-slot-value">Input {inputIndex}</strong>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ) : null}
+                          <label className="param-field permutation-editor-raw">
+                            <span>Raw CSV Order</span>
+                            <textarea
+                              value={renderedValue}
+                              onChange={(event) => {
+                                const rawValue = event.target.value;
+                                onParamDraftChange(moduleInstance.id, field.key, rawValue);
+                                const parsed = parseParamValue(rawValue, field);
+                                if (parsed.ok) {
+                                  onParamChange(moduleInstance.id, field.key, parsed.value);
+                                }
+                              }}
+                            />
+                            {fieldError ? <p className="field-error">{fieldError}</p> : null}
+                          </label>
+                        </div>
+                      ) : (
+                        <>
+                          <input
+                            type="text"
+                            value={renderedValue}
+                            onChange={(event) => {
+                              const rawValue = event.target.value;
+                              onParamDraftChange(moduleInstance.id, field.key, rawValue);
+                              const parsed = parseParamValue(rawValue, field);
+                              if (parsed.ok) {
+                                onParamChange(moduleInstance.id, field.key, parsed.value);
+                              }
+                            }}
+                          />
+                          <p className="field-error">
+                            {fieldError ?? 'Permutation editor is unavailable until the order parses again.'}
+                          </p>
+                        </>
+                      )}
                     </label>
                   );
                 }
@@ -1421,6 +2243,48 @@ type TransformationView =
   | XorTransformationView
   | LookupTransformationView;
 
+const PERMUTATION_EDITOR_PORT_HEIGHT = 52;
+const PERMUTATION_EDITOR_PORT_GAP = 10;
+const PERMUTATION_EDITOR_HEADER_OFFSET = 22;
+
+function measureWireLayout(
+  inputLane: HTMLDivElement | null,
+  outputLane: HTMLDivElement | null,
+  inputButtons: Array<HTMLButtonElement | null>,
+  outputButtons: Array<HTMLButtonElement | null>,
+): { height: number; inputYs: number[]; outputYs: number[] } | null {
+  if (!inputLane || !outputLane) {
+    return null;
+  }
+
+  const inputLaneRect = inputLane.getBoundingClientRect();
+  const outputLaneRect = outputLane.getBoundingClientRect();
+  const inputYs = inputButtons
+    .map((button) =>
+      button
+        ? button.getBoundingClientRect().top - inputLaneRect.top + button.getBoundingClientRect().height / 2
+        : null,
+    )
+    .filter((value): value is number => value !== null);
+  const outputYs = outputButtons
+    .map((button) =>
+      button
+        ? button.getBoundingClientRect().top - outputLaneRect.top + button.getBoundingClientRect().height / 2
+        : null,
+    )
+    .filter((value): value is number => value !== null);
+
+  if (inputYs.length === 0 || outputYs.length === 0) {
+    return null;
+  }
+
+  return {
+    height: Math.max(inputLaneRect.height, outputLaneRect.height),
+    inputYs,
+    outputYs,
+  };
+}
+
 function getTransformationView(
   entry: ExecutionTraceEntry,
   project: Project,
@@ -1795,6 +2659,85 @@ function formatSBoxAxisLabel(value: number, gridColumns: number) {
 function formatSBoxHexValue(value: number, chunkWidth: number) {
   const digits = Math.max(1, Math.ceil(chunkWidth / 4));
   return value.toString(16).toUpperCase().padStart(digits, '0');
+}
+
+function getEditablePermutationOrder(value: unknown): number[] | null {
+  try {
+    return parsePermutationOrder(value);
+  } catch {
+    return null;
+  }
+}
+
+function getEditableReflectorWiring(value: unknown): string[] | null {
+  try {
+    return parseReflectorWiring(value);
+  } catch {
+    return null;
+  }
+}
+
+function getEditableRotorWiring(value: unknown): string[] | null {
+  return Array.isArray(value) &&
+    value.length === 26 &&
+    value.every((entry) => typeof entry === 'string' && /^[A-Z]$/.test(entry))
+    ? (value as string[])
+    : null;
+}
+
+function isSimplePermutationOrder(order: number[]) {
+  if (order.length === 0) {
+    return false;
+  }
+
+  const sorted = [...order].sort((left, right) => left - right);
+  return sorted.every((value, index) => value === index);
+}
+
+const REFLECTOR_PAIR_PALETTE = [
+  { accent: '#2F6FB3', surface: '#E7F0FB' },
+  { accent: '#2C8C73', surface: '#E6F5F0' },
+  { accent: '#B86A2F', surface: '#FAEBDD' },
+  { accent: '#7A5CC7', surface: '#EEE9FB' },
+  { accent: '#B24C6B', surface: '#F9E6EC' },
+  { accent: '#5E8D3A', surface: '#EDF5E3' },
+  { accent: '#C08A1B', surface: '#FBF2DC' },
+  { accent: '#3C7E9E', surface: '#E4F1F7' },
+  { accent: '#9B5D8C', surface: '#F4E8F1' },
+  { accent: '#8F6B38', surface: '#F5EDDF' },
+  { accent: '#4466C1', surface: '#E8EDFB' },
+  { accent: '#A15434', surface: '#F7E9E1' },
+  { accent: '#4E8A8C', surface: '#E6F3F3' },
+];
+
+function getReflectorPairKey(left: string, right: string) {
+  return [left, right].sort().join('-');
+}
+
+function buildReflectorPairStyles(wiring: string[]) {
+  const uniquePairKeys = [...new Set(wiring.map((target, index) => getReflectorPairKey(String.fromCharCode(65 + index), target)))];
+  uniquePairKeys.sort();
+
+  return Object.fromEntries(
+    uniquePairKeys.map((pairKey, index) => {
+      const palette = REFLECTOR_PAIR_PALETTE[index % REFLECTOR_PAIR_PALETTE.length];
+      return [
+        pairKey,
+        ({
+          '--reflector-pair-accent': palette.accent,
+          '--reflector-pair-surface': palette.surface,
+        } as CSSProperties),
+      ];
+    }),
+  ) as Record<string, CSSProperties>;
+}
+
+function getEditableSBoxTable(value: unknown): number[] | null {
+  try {
+    return parseSBoxTable(value);
+  } catch {
+    return null;
+  }
 }
 
 function humanizeIssueCode(code: ValidationIssue['code']) {

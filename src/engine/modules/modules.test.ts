@@ -11,13 +11,25 @@ import { BitsToBaudot } from './bits-to-baudot';
 import { BitsToSymbol } from './bits-to-symbol';
 import { BitsToHex } from './bits-to-hex';
 import { XOR } from './xor';
-import { Rotor } from './rotor';
-import { Reflector } from './reflector';
+import { Rotor, serializeRotorWiring, swapRotorWiringTargets } from './rotor';
+import { pairReflectorLetters, Reflector } from './reflector';
 import { Permutation } from './permutation';
 import { BitShifter } from './bit-shifter';
 import { BitJoin } from './bit-join';
 import { LFSR } from './lfsr';
-import { SBox } from './s-box';
+import {
+  buildIdentitySBoxTable,
+  buildReverseSBoxTable,
+  SBox,
+  serializeSBoxTable,
+  swapSBoxEntry,
+} from './s-box';
+import {
+  buildIdentityPermutationOrder,
+  buildReversePermutationOrder,
+  serializePermutationOrder,
+  swapPermutationOrderPositions,
+} from './permutation';
 import { BitOutput } from './bit-output';
 import type { Signal } from '../types';
 
@@ -356,6 +368,19 @@ describe('Permutation', () => {
       ),
     ).toThrow();
   });
+
+  it('builds identity and reverse teaching orders', () => {
+    expect(buildIdentityPermutationOrder(5)).toEqual([0, 1, 2, 3, 4]);
+    expect(buildReversePermutationOrder(5)).toEqual([4, 3, 2, 1, 0]);
+  });
+
+  it('swaps output positions without changing the underlying multiset of indexes', () => {
+    expect(swapPermutationOrderPositions([2, 0, 4, 1, 3], 1, 3)).toEqual([2, 1, 4, 0, 3]);
+  });
+
+  it('serializes permutation orders back into the stored param format', () => {
+    expect(serializePermutationOrder([2, 0, 4, 1, 3])).toBe('2,0,4,1,3');
+  });
 });
 
 describe('BitShifter', () => {
@@ -476,6 +501,19 @@ describe('SBox', () => {
       ),
     ).toThrow();
   });
+
+  it('builds bounded identity and reverse teaching tables', () => {
+    expect(buildIdentitySBoxTable(16)).toEqual(Array.from({ length: 16 }, (_, index) => index));
+    expect(buildReverseSBoxTable(16)).toEqual(Array.from({ length: 16 }, (_, index) => 15 - index));
+  });
+
+  it('swaps authored entries while preserving the permutation', () => {
+    expect(swapSBoxEntry([0, 1, 2, 3], 1, 3)).toEqual([0, 3, 2, 1]);
+  });
+
+  it('serializes authored tables back into the stored param format', () => {
+    expect(serializeSBoxTable([14, 4, 13, 1])).toBe('14,4,13,1');
+  });
 });
 
 describe('Rotor', () => {
@@ -519,6 +557,16 @@ describe('Rotor', () => {
     );
     expect(result.out).toEqual({ type: 'symbol', value: 'A' });
   });
+
+  it('swaps rotor target letters while preserving the permutation', () => {
+    expect(swapRotorWiringTargets(identityWiring, 0, 25)).toEqual(
+      'ZBCDEFGHIJKLMNOPQRSTUVWXYA'.split(''),
+    );
+  });
+
+  it('serializes rotor wiring back into the raw editable form', () => {
+    expect(serializeRotorWiring(shiftedWiring)).toBe('B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A');
+  });
 });
 
 describe('Reflector', () => {
@@ -553,5 +601,13 @@ describe('Reflector', () => {
       );
       expect((second.out as Signal & { type: 'symbol' }).value).toBe(letter);
     }
+  });
+
+  it('re-pairs reflector sockets while preserving involution', () => {
+    const rewired = pairReflectorLetters(reverseWiring, 'A', 'B');
+    expect(rewired[0]).toBe('B');
+    expect(rewired[1]).toBe('A');
+    expect(rewired[24]).toBe('Z');
+    expect(rewired[25]).toBe('Y');
   });
 });
