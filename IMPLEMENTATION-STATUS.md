@@ -198,7 +198,8 @@ Post-`v1.12.0` work merged to `main`:
 Strategic direction after `v1.13.0`:
 - `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` now frames MCW as a cryptographic systems IDE
 - the next roadmap focus is expressive primitive language growth rather than only choosing the next isolated feature line
-- the next proposed bounded sequence is:
+- Phase 1 foundations are now shipped through:
+  - `CRYPTO-OPERATORS-V1.md`
   - `CONTROL-PRIMITIVES-V1.md`
 
 Post-`v1.13.0` work merged to `main`:
@@ -248,13 +249,13 @@ Should avoid for now:
 
 Safe to begin:
 - review whether the vocabulary roadmap is coherent and well-sequenced
-- review whether `CONTROL-PRIMITIVES-V1.md` is the right next foundation after shipped operators
+- review what should follow the now-shipped operator/control foundation
 - help keep the new builder workflow connected to future language growth
 - help pressure-test future bounded rotor/reflector follow-ons against the broader vocabulary plan
 - review what tutorial/challenge support should accompany each new primitive family
 
 Best focus:
-- whether control primitives are now the right next milestone after shipped operators
+- which language family should follow the shipped operator/control foundation
 - whether advanced rotor realism should wait until control vocabulary exists
 - whether stream, block, and protocol-material lines are sequenced sensibly
 

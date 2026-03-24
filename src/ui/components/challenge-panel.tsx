@@ -307,16 +307,22 @@ export function ChallengePanel({
                       </p>
                       {internalDivergenceSignals ? (
                         <div className="challenge-guided-values">
-                          <div className="challenge-guided-card">
+                          <div className="challenge-guided-card-analysis">
                             <span className="meta-label">Original Path</span>
                             <code>{internalDivergenceSignals.baseline}</code>
                           </div>
-                          <div className="challenge-guided-card">
+                          <div className="challenge-guided-card-analysis">
                             <span className="meta-label">Colliding Path</span>
                             <code>{internalDivergenceSignals.variant}</code>
                           </div>
                         </div>
                       ) : null}
+                      <p className="transformation-summary">
+                        <span className="workspace-mode-hint">
+                          * Identification skips guided source modules to focus on the first
+                          functional divergence within the machine structure.
+                        </span>
+                      </p>
                     </div>
                   ) : null}
                   {isHashCollisionChallenge && guidedComparisonRows.length > 0 ? (

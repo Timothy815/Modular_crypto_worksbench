@@ -288,6 +288,11 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
         focusModuleId: 'hash',
         targetStepIndex: 1,
       },
+      {
+        id: 'hash-autopsy',
+        title: 'The Hash Autopsy',
+        body: 'When you find a collision in a challenge, use the Internal Divergence card to identify the first mathematical operator where the two messages began to collide or diverge. By combining the side-by-side message comparison with the transformation views in Analyze, you can perform a true autopsy on why different inputs produced the same digest.',
+      },
     ],
   },
   {
