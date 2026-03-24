@@ -2,6 +2,8 @@
 
 Last updated: March 23, 2026
 
+Status: Ready to frame/tag as the `v1.8.0` bounded hash challenge milestone.
+
 ## Purpose
 
 This contract defines the first post-`v1.7.0` hashing challenge slice for the Modular Cryptography Workbench.

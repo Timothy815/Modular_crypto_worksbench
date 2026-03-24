@@ -137,7 +137,7 @@ src/utils/     — Shared helpers
 - `v1.5.0` is already shipped
 - `v1.6.0` is already shipped
 - `v1.7.0` is already shipped
-- Current `main` is focused on the first bounded hash collision challenge after the Hashing V1 milestone
+- Current `main` is in final framing/polish for the first bounded hash collision challenge before `v1.8.0`
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -170,9 +170,9 @@ Key contracts to check before implementation:
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family
 
 Near-term follow-ups:
-- frame the first bounded hash collision challenge
+- frame and tag `v1.8.0` around the first bounded hash collision challenge
 - keep hashing connected to the modern-analysis and transformation-visualization surfaces
-- reuse the existing guided-challenge system instead of inventing a new one
+- choose the first post-`v1.8.0` branch deliberately
 - watch bundle growth as a near-term cleanup concern
 - avoid opening a second transformation-visualization slice before classroom feedback
 

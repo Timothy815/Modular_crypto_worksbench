@@ -11,9 +11,9 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.6.0`.
+The repository has shipped through `v1.7.0`.
 
-`main` is now positioned to frame/tag **Hashing V1** as the next named teaching milestone after `v1.6.0`.
+`main` is now positioned to frame/tag **`v1.8.0`** around the first bounded **Hash Collision Challenge** slice.
 
 Implemented and shipped:
 - engine core types, graph validation, iterative topological executor
@@ -62,7 +62,12 @@ Implemented and shipped:
 - `v1.4.0` release framing and workspace polish
 - `v1.5.0` Modern Analysis milestone
 - `v1.6.0` Transformation Visualization Phase 1 milestone
-- Hashing V1 milestone groundwork is complete and ready for `v1.7.0` framing/tagging
+- `v1.7.0` Hashing V1 milestone
+- first bounded hash collision challenge:
+  - seeded `Find A Hash Collision` challenge
+  - same-digest / different-input success rule
+  - collision-aware challenge status copy
+  - `HexSource` `-1 / +1` stepping for manual exploration
 - workbench persistence and JSON import/export
 - dark mode
 - GitHub Pages deployment
@@ -79,7 +84,7 @@ Implemented and shipped:
 - `ADVANCED-FOUNDRY-CLOCK-V1.md`: locked direction for ticked/stateful execution
 - `CRYPTANALYSIS-WORKSPACE-V1.md`: locked direction for the dedicated cryptanalysis workspace
 - `MODERN-ANALYSIS-V1.md`: shipped direction for the post-`v1.4.0` modern-analysis line
-- `HASHING-V1.md`: current hashing milestone contract and scope boundary
+- `HASHING-V1.md`: shipped first hashing milestone contract and scope boundary
 - `HASH-COLLISION-CHALLENGE-V1.md`: active direction for the first post-`v1.7.0` hash weakness challenge
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
@@ -119,9 +124,8 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 
 ## Near-Term Roadmap
 
-1. Tag and frame **`v1.7.0` Hashing V1**
+1. Tag and frame **`v1.8.0`** around the first bounded hash collision challenge
 2. Keep performance/bundle size under watch as inspector and analysis surfaces continue to grow
-3. Start the first post-`v1.7.0` bounded follow-on:
-   `Hash Collision Challenge V1`
+3. Decide what follows the first collision challenge: sponge collision, deeper analysis guidance, or polish
 4. Defer deeper transformation playback/animation until classroom feedback justifies it
-5. Avoid scope creep into famous-hash approximations, KDFs, or Merkle-style structures before a new contract says otherwise
+5. Avoid scope creep into brute-force tooling, birthday-bound calculators, famous-hash comparisons, or KDF/Merkle-style structures before a new contract says otherwise

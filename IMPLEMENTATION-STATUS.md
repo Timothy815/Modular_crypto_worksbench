@@ -6,11 +6,11 @@ Last updated: March 23, 2026
 
 ## Current State
 
-The project has shipped through `v1.6.0` on `main`.
+The project has shipped through `v1.7.0` on `main`.
 
-Current `main` is now in active post-`v1.7.0` planning around:
+Current `main` is now in active post-`v1.7.0` work around:
 - the first bounded hash collision challenge
-- near-term roadmap cleanup after the first transformation and hashing milestones
+- `v1.8.0` framing/tagging
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -92,6 +92,7 @@ The following decisions are reflected in shipped code:
 | `v1.4.0` | Cryptanalysis workspace |
 | `v1.5.0` | Modern Analysis |
 | `v1.6.0` | Transformation Visualization Phase 1 |
+| `v1.7.0` | Hashing V1 |
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
 - `Classical / Modern` cryptanalysis sub-modes
@@ -116,8 +117,9 @@ Post-`v1.5.0` work merged to `main`:
 - SBox table-first lookup view with decimal/hex bridge
 
 Post-`v1.7.0` work currently active on `main`:
-- define the first bounded hash collision challenge
-- decide how much challenge guidance vs open exploration belongs in that slice
+- first bounded hash collision challenge
+- collision-aware challenge messaging
+- `HexSource` stepping for manual collision exploration
 
 ---
 
@@ -126,7 +128,7 @@ Post-`v1.7.0` work currently active on `main`:
 ### Claude
 
 Safe to begin:
-- help frame the first hash collision challenge cleanly
+- help frame and close the first hash collision challenge cleanly
 - tighten challenge wording and “what success means” guidance
 - help keep the challenge bounded to one honest teaching loop
 
@@ -140,14 +142,14 @@ Should avoid for now:
 ### Gemini
 
 Safe to begin:
-- review the first hash collision challenge contract and scope
-- help choose the clearest first collision artifact
+- review whether the first hash collision challenge is ready for `v1.8.0`
+- help choose the best post-`v1.8.0` branch
 - help keep hashing, modern analysis, and challenge workflows connected instead of fragmenting the product
 
 Best focus:
-- whether the first collision challenge is bounded correctly
-- whether the toy compression hash is the right first target
-- whether any near-term cleanup should interrupt the challenge slice
+- whether the first collision challenge is cleanly complete
+- what should come immediately after `v1.8.0`
+- whether any near-term cleanup should interrupt the next branch
 
 ---
 
@@ -158,7 +160,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed on the most recent hashing / forwarding slices.
+All three passed on the most recent collision-challenge slice.
 
 ---
 
@@ -172,9 +174,9 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 ### Near-Term Roadmap
 
-1. **Frame the first hash collision challenge** — keep it bounded to one tiny-hash teaching loop
+1. **Tag and frame `v1.8.0`** — the first bounded hash collision challenge is the current named milestone
 2. **Keep hashing connected to the shipped transformation views** — especially `SBox`, `BitShifter`, and `XOR`
-3. **Use existing challenge infrastructure** — do not invent a second challenge system for hashing
+3. **Choose the first post-`v1.8.0` branch deliberately** — likely sponge collision, deeper analysis guidance, or polish
 4. **Treat bundle-size growth as near-term technical debt** — address it before several more large UI surfaces land
 5. **Defer deeper transformation playback/animation** until classroom feedback justifies a second visualization slice
 
@@ -193,7 +195,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `KEY-SCHEDULE-GROUNDWORK-V1.md` | Active, implemented as explicit key-bus groundwork |
 | `CRYPTANALYSIS-WORKSPACE-V1.md` | Locked, implemented as the `v1.4.0` workspace boundary |
 | `MODERN-ANALYSIS-V1.md` | Active, implemented as the `v1.5.0` modern-analysis line |
-| `HASHING-V1.md` | Active, ready to frame/tag as the `v1.7.0` first hashing milestone contract |
+| `HASHING-V1.md` | Shipped as the `v1.7.0` first hashing milestone contract |
 | `HASH-COLLISION-CHALLENGE-V1.md` | Active, defines the first post-`v1.7.0` bounded hash weakness challenge |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
