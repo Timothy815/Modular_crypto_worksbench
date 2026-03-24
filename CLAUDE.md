@@ -17,6 +17,7 @@ Read CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md before starting work on new primitive-l
 Read CRYPTO-OPERATORS-V1.md before starting work on the first post-`v1.13.0` operator-expansion slice.
 Read CONTROL-PRIMITIVES-V1.md before starting work on counters, triggers, gates, or explicit conditional machine behavior.
 Read BLOCK-FRAMING-V1.md before starting work on block splitting, padding, rejoining, or framing follow-ons.
+Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
 Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
 
@@ -237,6 +238,7 @@ Key contracts to check before implementation:
 - `CRYPTO-OPERATORS-V1.md` for the shipped first bounded operator-expansion line
 - `CONTROL-PRIMITIVES-V1.md` for the shipped first bounded control/counter/gate line
 - `BLOCK-FRAMING-V1.md` for the shipped first bounded block-framing vocabulary
+- `PROTOCOL-MATERIAL-V1.md` for the proposed first bounded protocol-input slice
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family

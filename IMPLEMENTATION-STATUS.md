@@ -323,6 +323,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `CRYPTO-OPERATORS-V1.md` | Shipped in `v1.14.0` as bounded boolean and fixed-width word arithmetic expansion |
 | `CONTROL-PRIMITIVES-V1.md` | Shipped in `v1.15.0` as bounded counter/compare/gate control vocabulary |
 | `BLOCK-FRAMING-V1.md` | Shipped in `v1.16.0` as bounded block-framing vocabulary for visible splitting, rejoining, and padding |
+| `PROTOCOL-MATERIAL-V1.md` | Proposed — first bounded protocol-input slice for IV, nonce, and salt sources |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
 | `SBOX-TRANSFORMATION-V1.md` | Shipped as the `v1.6.0` lookup/substitution visual family |
