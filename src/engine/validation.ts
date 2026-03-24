@@ -23,6 +23,9 @@ import { validatePermutationOrderParam } from './modules/permutation';
 import { validatePlugboardWiringParam } from './modules/plugboard';
 import { validateReflectorWiringParam } from './modules/reflector';
 import { validateSBoxTableParam } from './modules/s-box';
+import { validateModuloParam } from './modules/modulo';
+
+const EQUAL_WIDTH_BINARY_MODULE_IDS = new Set(['AND', 'OR', 'AddMod', 'SubMod']);
 
 function findPort(def: ModuleDefinition, portName: string, direction: 'input' | 'output') {
   const ports = direction === 'input' ? def.inputs : def.outputs;
@@ -141,7 +144,222 @@ function getModuleSpecificParamMessage(
     return validateBaudotSourceValue(value);
   }
 
+  if (def.id === 'Modulo' && field.key === 'modulus') {
+    return validateModuloParam(value);
+  }
+
   return null;
+}
+
+function buildIncomingConnectionMap(project: Project) {
+  const incomingConnections = new Map<string, ConnectionEndpoint>();
+
+  for (const connection of project.connections) {
+    incomingConnections.set(`${connection.to.moduleId}:${connection.to.port}`, connection.from);
+  }
+
+  return incomingConnections;
+}
+
+function inferStaticBitWidth(
+  moduleId: string,
+  defsByInstanceId: Map<string, ModuleDefinition>,
+  instancesById: Map<string, ModuleInstance>,
+  incomingConnections: Map<string, ConnectionEndpoint>,
+  memo: Map<string, number | null>,
+  visiting: Set<string>,
+): number | null {
+  if (memo.has(moduleId)) {
+    return memo.get(moduleId) ?? null;
+  }
+
+  if (visiting.has(moduleId)) {
+    return null;
+  }
+
+  const def = defsByInstanceId.get(moduleId);
+  const instance = instancesById.get(moduleId);
+  if (!def || !instance || isCompositeDefinition(def) || isIteratorDefinition(def)) {
+    memo.set(moduleId, null);
+    return null;
+  }
+
+  visiting.add(moduleId);
+
+  const inferFromInput = (portName = 'in') => {
+    const upstream = incomingConnections.get(`${moduleId}:${portName}`);
+    if (!upstream) {
+      return null;
+    }
+
+    return inferStaticBitWidth(
+      upstream.moduleId,
+      defsByInstanceId,
+      instancesById,
+      incomingConnections,
+      memo,
+      visiting,
+    );
+  };
+
+  const inferBinaryWidth = () => {
+    const left = incomingConnections.get(`${moduleId}:a`);
+    const right = incomingConnections.get(`${moduleId}:b`);
+    if (!left || !right) {
+      return null;
+    }
+
+    const leftWidth = inferStaticBitWidth(
+      left.moduleId,
+      defsByInstanceId,
+      instancesById,
+      incomingConnections,
+      memo,
+      visiting,
+    );
+    const rightWidth = inferStaticBitWidth(
+      right.moduleId,
+      defsByInstanceId,
+      instancesById,
+      incomingConnections,
+      memo,
+      visiting,
+    );
+
+    return leftWidth !== null && leftWidth === rightWidth ? leftWidth : null;
+  };
+
+  let width: number | null = null;
+
+  switch (def.id) {
+    case 'BitSource': {
+      const stream = instance.params.stream;
+      width = Array.isArray(stream) ? stream.length : null;
+      break;
+    }
+    case 'HexSource': {
+      const value = instance.params.value;
+      width = typeof value === 'string' ? value.replace(/\s+/g, '').length * 4 : null;
+      break;
+    }
+    case 'AsciiSource': {
+      const value = instance.params.value;
+      width = typeof value === 'string' ? value.length * 8 : null;
+      break;
+    }
+    case 'BaudotSource': {
+      const value = instance.params.value;
+      width = typeof value === 'string' ? value.length * 5 : null;
+      break;
+    }
+    case 'SymbolToBits':
+      width = 5;
+      break;
+    case 'Clock': {
+      const length = instance.params.length;
+      width = typeof length === 'number' && Number.isInteger(length) && length >= 0 ? length : null;
+      break;
+    }
+    case 'LFSR': {
+      const outputLength = instance.params.outputLength;
+      width =
+        typeof outputLength === 'number' && Number.isInteger(outputLength) && outputLength >= 0
+          ? outputLength
+          : null;
+      break;
+    }
+    case 'XOR':
+    case 'AND':
+    case 'OR':
+    case 'AddMod':
+    case 'SubMod':
+      width = inferBinaryWidth();
+      break;
+    case 'NOT':
+    case 'BitShifter':
+    case 'Modulo':
+    case 'SBox':
+      width = inferFromInput();
+      break;
+    case 'Permutation': {
+      const order = instance.params.order;
+      if (typeof order === 'string') {
+        const entries = order
+          .split(',')
+          .map((part) => part.trim())
+          .filter((part) => part.length > 0);
+        width = entries.length > 0 ? entries.length : null;
+      }
+      break;
+    }
+    case 'BitJoin': {
+      const leftWidth = inferFromInput('a');
+      const rightWidth = inferFromInput('b');
+      width = leftWidth !== null && rightWidth !== null ? leftWidth + rightWidth : null;
+      break;
+    }
+    default:
+      width = null;
+  }
+
+  visiting.delete(moduleId);
+  memo.set(moduleId, width);
+  return width;
+}
+
+function validateBitWidthConstraints(
+  project: Project,
+  defsByInstanceId: Map<string, ModuleDefinition>,
+  instancesById: Map<string, ModuleInstance>,
+  issues: ValidationIssue[],
+) {
+  const incomingConnections = buildIncomingConnectionMap(project);
+  const memo = new Map<string, number | null>();
+
+  const getWidth = (moduleId: string) =>
+    inferStaticBitWidth(moduleId, defsByInstanceId, instancesById, incomingConnections, memo, new Set());
+
+  for (const moduleInstance of project.modules) {
+    const def = defsByInstanceId.get(moduleInstance.id);
+    if (!def || isCompositeDefinition(def) || isIteratorDefinition(def)) {
+      continue;
+    }
+
+    if (EQUAL_WIDTH_BINARY_MODULE_IDS.has(def.id)) {
+      const left = incomingConnections.get(`${moduleInstance.id}:a`);
+      const right = incomingConnections.get(`${moduleInstance.id}:b`);
+
+      if (left && right) {
+        const leftWidth = getWidth(left.moduleId);
+        const rightWidth = getWidth(right.moduleId);
+
+        if (leftWidth !== null && rightWidth !== null && leftWidth !== rightWidth) {
+          issues.push({
+            code: 'signal-width-mismatch',
+            message: `Module "${moduleInstance.id}" requires equal-width bits inputs, but received widths ${leftWidth} and ${rightWidth}.`,
+            moduleId: moduleInstance.id,
+          });
+        }
+      }
+    }
+
+    if (def.id === 'Modulo') {
+      const upstream = incomingConnections.get(`${moduleInstance.id}:in`);
+      const modulus = moduleInstance.params.modulus;
+      if (!upstream || typeof modulus !== 'number' || !Number.isInteger(modulus) || modulus <= 0) {
+        continue;
+      }
+
+      const inputWidth = getWidth(upstream.moduleId);
+      if (inputWidth !== null && modulus > 2 ** inputWidth) {
+        issues.push({
+          code: 'invalid-param-type',
+          message: `Module "${moduleInstance.id}" parameter "modulus" is invalid. Modulo modulus must not exceed the input word range for a ${inputWidth}-bit input.`,
+          moduleId: moduleInstance.id,
+        });
+      }
+    }
+  }
 }
 
 function validateParams(
@@ -331,6 +549,8 @@ export function validateProject(project: Project, registry: ModuleRegistry): Val
       message: 'The project graph contains a cycle and cannot be executed as a DAG.',
     });
   }
+
+  validateBitWidthConstraints(project, defsByInstanceId, instancesById, issues);
 
   return {
     ok: issues.length === 0,

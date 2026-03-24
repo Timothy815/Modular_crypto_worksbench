@@ -11,15 +11,19 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.13.0`.
+The repository has shipped through `v1.14.0`.
 
-`main` now includes the completed first milestone of **builder workflow**:
-- multi-select group movement on the workbench
-- graph-aware `Tidy Layout`
-- blank personal workspaces
-- saved and deletable user workspace library entries
-- instance-level composite unzip back into editable modules
-- dark-mode-safe reflector and plugboard tactile editor rendering
+`main` now includes the completed first milestone of **cryptographic operators**:
+- boolean operators: `AND`, `OR`, `NOT`
+- fixed-width word arithmetic on `bits`:
+  - `ADD mod 2^n`
+  - `SUB mod 2^n`
+  - `Modulo`
+- explicit big-endian word interpretation for arithmetic over `bits`
+- width-aware validation for the new boolean / arithmetic family
+- `Beyond XOR` demo workspace
+- `Beyond XOR` tutorial
+- `Repair the Word Mask` challenge
 
 Implemented and shipped:
 - engine core types, graph validation, iterative topological executor
@@ -127,6 +131,9 @@ Implemented and shipped:
 - `WORKBENCH-ERGONOMICS-V1.md`: shipped bounded workbench-usability slice for multi-select, group movement, and one-click cleanup
 - `WORKSPACE-LIBRARY-V1.md`: shipped bounded workspace-management slice for blank build spaces and saved personal collections
 - `COMPOSITE-UNZIP-V1.md`: shipped bounded inverse-composition slice for expanding a composite instance back into editable modules
+- `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md`: active strategic roadmap for growing MCW into a fully expressive cryptographic systems IDE
+- `CRYPTO-OPERATORS-V1.md`: shipped first foundational operator-expansion slice for boolean and fixed-width word arithmetic
+- `CONTROL-PRIMITIVES-V1.md`: proposed first bounded counter/trigger/gate slice for condition-driven machines
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
 - `SBOX-TRANSFORMATION-V1.md`: shipped first lookup/substitution visual family contract
@@ -165,10 +172,15 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 
 ## Near-Term Roadmap
 
-1. Keep advanced rotor realism explicitly on deck:
+1. Treat MCW explicitly as a **cryptographic systems IDE** and grow the primitive language toward full expressive coverage, not just isolated feature branches
+2. Continue the new primitive-language phase with **control vocabulary**:
+   compare/equals, counter, trigger/pulse, gate/mux
+   Immediate contract sequence:
+   `CONTROL-PRIMITIVES-V1.md`
+3. Keep advanced rotor realism on deck as one bounded sub-line inside that broader vocabulary roadmap:
    `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion
-2. Decide whether the next line should deepen rotor realism or switch to a new teaching/product surface
-3. Keep performance/bundle size under watch now that builder workflow and tactile editors both sit behind the guardrails
-4. Monitor classroom use of workspace library and composite unzip before widening them into sharing, folders, or bulk-expansion tooling
-5. Monitor challenge-induced project switching in classroom use before adding warning dialogs
-6. Avoid scope creep into brute-force tooling, birthday-bound calculators, famous-hash comparisons, or KDF/Merkle-style structures before a new contract says otherwise
+4. Add one tutorial plus one demo/challenge whenever a major new primitive family ships so the language grows with teaching support
+5. Keep performance/bundle size under watch now that builder workflow and tactile editors both sit behind the guardrails
+6. Monitor classroom use of workspace library and composite unzip before widening them into sharing, folders, or bulk-expansion tooling
+7. Monitor challenge-induced project switching in classroom use before adding warning dialogs
+8. Avoid scope creep into brute-force tooling, birthday-bound calculators, famous-hash comparisons, or premature asymmetric demos before the underlying vocabulary exists

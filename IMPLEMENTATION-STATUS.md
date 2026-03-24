@@ -6,24 +6,33 @@ Last updated: March 24, 2026
 
 ## Current State
 
-The project has shipped through `v1.13.0` on `main`.
+The project has shipped through `v1.14.0` on `main`.
 
-Current `main` is now positioned beyond the first completed builder-workflow milestone.
+Current `main` is now positioned beyond the first completed cryptographic-operators milestone.
 That milestone shipped:
-- multi-select group movement on the workbench canvas
-- graph-aware `Tidy Layout`
-- blank personal workspaces plus save/delete in a persistent user workspace library
-- composite unzip back into editable workspace modules
-- dark-mode-safe reflector and plugboard tactile editor rendering
+- boolean operators: `AND`, `OR`, `NOT`
+- fixed-width word arithmetic over `bits`:
+  - `AddMod`
+  - `SubMod`
+  - `Modulo`
+- explicit big-endian unsigned interpretation for arithmetic over bit words
+- width-aware validation for the new boolean / arithmetic family
+- first operator teaching surface:
+  - `Beyond XOR` demo workspace
+  - `Beyond XOR` tutorial
+  - `Repair the Word Mask` challenge
 
-The next likely follow-on in the authored-machine area is later rotor deepening:
-  - `ringOffset` separate from `position`
-  - turnover / notch behavior
-  - double-step logic
-  - reversible rotation direction
-  - flipped rotor insertion for Fialka-style versatility
+The next strategic direction is broader than rotor deepening:
+- treat MCW explicitly as a **cryptographic systems IDE**
+- expand the machine language so it can express more of cryptography honestly
+- ship tutorials and challenges alongside each new vocabulary family
 
-The open product question is whether to deepen rotor realism next or switch to a different teaching/product line after the builder-workflow milestone.
+The next most important missing vocabulary families are:
+- control / trigger primitives (`Counter`, compare/equality, pulses, gates)
+- block / framing primitives
+- stream-cipher control vocabulary
+- protocol-material primitives (`IV`, nonce, salt, counter sources)
+- advanced rotor realism as one bounded sub-line
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -112,6 +121,7 @@ The following decisions are reflected in shipped code:
 | `v1.11.0` | Collision Interpretation Helper |
 | `v1.12.0` | Tactile Primitive Authoring |
 | `v1.13.0` | Builder Workflow |
+| `v1.14.0` | Cryptographic Operators |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -179,6 +189,22 @@ Post-`v1.12.0` work merged to `main`:
   - composite unzip with forwarded-param carry-through
   - dark-mode-safe reflector and plugboard pair rendering
 
+Strategic direction after `v1.13.0`:
+- `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` now frames MCW as a cryptographic systems IDE
+- the next roadmap focus is expressive primitive language growth rather than only choosing the next isolated feature line
+- the next proposed bounded sequence is:
+  - `CONTROL-PRIMITIVES-V1.md`
+
+Post-`v1.13.0` work merged to `main`:
+- bounded operator-expansion slice:
+  - `AND`, `OR`, `NOT`
+  - `AddMod`, `SubMod`, `Modulo`
+  - explicit big-endian bit-word arithmetic decision
+  - width-aware validation for the new equal-width operator family
+  - `Beyond XOR` demo workspace
+  - `Beyond XOR` tutorial
+  - `Repair the Word Mask` challenge
+
 ---
 
 ## Safe Next Tasks
@@ -186,11 +212,11 @@ Post-`v1.12.0` work merged to `main`:
 ### Claude
 
 Safe to begin:
-- help assess whether the builder-workflow milestone is the right stopping point
-- help decide whether rotor realism should deepen next or remain deferred
-- help keep any follow-on rotor-realism work bounded
+- help assess whether the primitive language is missing a foundational family
+- help pressure-test the operator/control roadmap against product scope
+- help keep rotor realism as one bounded sub-line inside the broader vocabulary roadmap
 - help pressure-test the shipped builder workflow as a daily-use construction surface
-- help pressure-test the next post-builder-workflow branch for scope control and sequencing
+- help review future tutorial/challenge additions that accompany new vocabulary lines
 
 Should avoid for now:
 - feedback loops / cycles in the graph
@@ -202,16 +228,16 @@ Should avoid for now:
 ### Gemini
 
 Safe to begin:
-- review whether the builder-workflow milestone is properly bounded as a teaching surface
-- review whether rotor realism should deepen next or stay deferred
-- help keep the new builder workflow connected to existing transformation and historical-teaching surfaces
-- help pressure-test future bounded rotor/reflector follow-ons against the shipped authoring and builder lines
-- review what should follow after the shipped ergonomics/library/unzip milestone
+- review whether the vocabulary roadmap is coherent and well-sequenced
+- review whether `CONTROL-PRIMITIVES-V1.md` is the right next foundation after shipped operators
+- help keep the new builder workflow connected to future language growth
+- help pressure-test future bounded rotor/reflector follow-ons against the broader vocabulary plan
+- review what tutorial/challenge support should accompany each new primitive family
 
 Best focus:
-- whether the collision/interpretation line should pause here or deepen interpretation next
-- whether any near-term cleanup should interrupt the next branch
-- whether the next milestone should stay in hashing/challenges or switch focus
+- whether control primitives are now the right next milestone after shipped operators
+- whether advanced rotor realism should wait until control vocabulary exists
+- whether stream, block, and protocol-material lines are sequenced sensibly
 
 ---
 
@@ -236,9 +262,12 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 ### Near-Term Roadmap
 
-1. **Keep advanced rotor realism on the docket** — `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion should be treated as an important future rotor line, not forgotten polish
-2. **Decide whether rotor realism should deepen next** — `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion are now the clearest authored-machine follow-on
-3. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
+1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
+2. **Continue the primitive-language roadmap with control primitives** — compare/equality, counters, pulses, gates, and mux-style control are now the clearest missing language family after shipped operators
+   Proposed contract sequence:
+   `CONTROL-PRIMITIVES-V1.md`
+3. **Keep advanced rotor realism on the docket as a bounded sub-line** — `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion remain important, but should not monopolize the roadmap
+4. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
 5. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
 6. **Monitor challenge-induced project switching in classroom use** before adding warning dialogs
 7. **Defer deeper transformation playback/animation** until classroom feedback justifies a second visualization slice
@@ -265,9 +294,12 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `CUSTOM-SBOX-AUTHORING-V1.md` | Shipped in `v1.12.0` as bounded substitution-table authoring |
 | `CUSTOM-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.12.0` as bounded tactile routing authoring |
 | `CUSTOM-REFLECTOR-AUTHORING-V1.md` | Shipped in `v1.12.0` as bounded paired reflector authoring |
-| `WORKBENCH-ERGONOMICS-V1.md` | Proposed bounded workbench usability slice for multi-select, group movement, and cleanup |
-| `WORKSPACE-LIBRARY-V1.md` | Proposed bounded workspace-management slice for blank spaces and saved user collections |
-| `COMPOSITE-UNZIP-V1.md` | Proposed bounded inverse-composition slice for expanding one composite instance back into editable modules |
+| `WORKBENCH-ERGONOMICS-V1.md` | Shipped in `v1.13.0` as bounded workbench usability improvements |
+| `WORKSPACE-LIBRARY-V1.md` | Shipped in `v1.13.0` as bounded blank/save/delete user workspace management |
+| `COMPOSITE-UNZIP-V1.md` | Shipped in `v1.13.0` as bounded inverse-composition for one composite instance |
+| `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` | Active strategic roadmap for growing MCW into a fully expressive cryptographic systems IDE |
+| `CRYPTO-OPERATORS-V1.md` | Shipped in `v1.14.0` as bounded boolean and fixed-width word arithmetic expansion |
+| `CONTROL-PRIMITIVES-V1.md` | Proposed first bounded control/counter/trigger slice |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
 | `SBOX-TRANSFORMATION-V1.md` | Shipped as the `v1.6.0` lookup/substitution visual family |

@@ -13,6 +13,9 @@ Read POST-COLLISION-INTERPRETATION-V1.md before extending the collision-teaching
 Read CUSTOM-SBOX-AUTHORING-V1.md before starting work on editable substitution-table authoring.
 Read TRANSFORMATION-VISUALIZATION-V1.md before starting work on primitive-level drill-down or transformation-legibility features.
 Read SBOX-TRANSFORMATION-V1.md before starting work on the first S-Box transformation view.
+Read CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md before starting work on new primitive-language families, operator/control expansion, or long-range roadmap framing.
+Read CRYPTO-OPERATORS-V1.md before starting work on the first post-`v1.13.0` operator-expansion slice.
+Read CONTROL-PRIMITIVES-V1.md before starting work on counters, triggers, gates, or explicit conditional machine behavior.
 Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
 Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
 
@@ -150,7 +153,19 @@ src/utils/     — Shared helpers
   - graph-aware `Tidy Layout`
   - blank and saved/deletable personal workspaces
   - composite unzip back into editable internals
-- Current `main` should treat rotor realism as a new bounded decision, not assumed scope
+- `v1.14.0` is now the cryptographic-operators milestone:
+  - `AND`, `OR`, `NOT`
+  - `AddMod`, `SubMod`, `Modulo`
+  - explicit big-endian fixed-width arithmetic on `bits`
+  - width-aware validation for the new operator family
+  - `Beyond XOR` demo/tutorial/challenge
+- Current `main` should treat the next phase as **primitive-language expansion**
+  - control / trigger vocabulary
+  - block/framing vocabulary
+  - protocol-material primitives
+  - advanced rotor realism as one bounded sub-line
+- The first proposed sequence inside that phase is:
+  - `CONTROL-PRIMITIVES-V1.md`
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -198,18 +213,25 @@ Key contracts to check before implementation:
 - `SPONGE-COLLISION-CHALLENGE-V1.md` for the shipped sponge-collision follow-on
 - `POST-COLLISION-INTERPRETATION-V1.md` for the shipped first interpretation milestone after the collision challenges
 - `CUSTOM-SBOX-AUTHORING-V1.md` for the shipped substitution-table authoring slice
+- `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` for the new long-range language/roadmap framing
+- `CRYPTO-OPERATORS-V1.md` for the shipped first bounded operator-expansion line
+- `CONTROL-PRIMITIVES-V1.md` for the first bounded condition/trigger line
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family
 
 Near-term follow-ups:
-- decide whether advanced rotor realism should deepen next or remain deferred after classroom feedback
-- keep advanced rotor realism explicitly on the future docket:
+- treat the next phase as expressive machine-language growth, not just the next isolated feature
+- start with operator/control vocabulary unless a stronger bounded contract supersedes it
+- current proposed sequence:
+  - `CONTROL-PRIMITIVES-V1.md`
+- keep advanced rotor realism explicitly on the future docket as one bounded sub-line:
   - `ringOffset` separate from `position`
   - notch / turnover behavior
   - double-step logic
   - reversible rotation direction
   - flipped insertion
+- plan tutorials and challenges alongside any new primitive family so the language and teaching layers grow together
 - treat `WORKBENCH-ERGONOMICS-V1.md`, `WORKSPACE-LIBRARY-V1.md`, and `COMPOSITE-UNZIP-V1.md` as shipped first-milestone builder foundations
 - avoid widening workspace library into sharing/folders or unzip into bulk/iterator expansion without a new contract
 - keep hashing connected to the modern-analysis and transformation-visualization surfaces

@@ -104,6 +104,42 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Core bit-mixing primitive for masking, key addition, and reversible combining.',
     searchTerms: ['xor', 'combine', 'mask', 'bits', 'key mixing'],
   },
+  AND: {
+    sectionId: 'bit-domain',
+    purpose: 'Combines two bit streams with bitwise AND.',
+    detail: 'Useful for masking and local bit selection in toy round functions and control logic.',
+    searchTerms: ['and', 'mask', 'bits', 'boolean', 'operator'],
+  },
+  OR: {
+    sectionId: 'bit-domain',
+    purpose: 'Combines two bit streams with bitwise OR.',
+    detail: 'Useful for local bit merging in visible boolean constructions.',
+    searchTerms: ['or', 'merge', 'bits', 'boolean', 'operator'],
+  },
+  NOT: {
+    sectionId: 'bit-domain',
+    purpose: 'Flips each bit in a bit stream.',
+    detail: 'Useful when a machine should invert a visible bit pattern without changing its width.',
+    searchTerms: ['not', 'invert', 'flip', 'bits', 'boolean', 'operator'],
+  },
+  AddMod: {
+    sectionId: 'bit-domain',
+    purpose: 'Adds two equal-width bit words modulo 2^n.',
+    detail: 'Interprets each bit vector as a fixed-width unsigned word and wraps on overflow.',
+    searchTerms: ['add', 'mod', 'addition', 'arx', 'word', 'bits', 'operator'],
+  },
+  SubMod: {
+    sectionId: 'bit-domain',
+    purpose: 'Subtracts one equal-width bit word from another modulo 2^n.',
+    detail: 'Interprets each bit vector as a fixed-width unsigned word and wraps on underflow.',
+    searchTerms: ['sub', 'subtract', 'mod', 'word', 'bits', 'operator'],
+  },
+  Modulo: {
+    sectionId: 'bit-domain',
+    purpose: 'Reduces one fixed-width bit word by an explicit modulus.',
+    detail: 'Interprets the bit vector as an unsigned word and returns the remainder in the same width.',
+    searchTerms: ['modulo', 'remainder', 'mod', 'word', 'bits', 'operator'],
+  },
   Permutation: {
     sectionId: 'transforms',
     purpose: 'Reorders bit positions according to a configured pattern.',

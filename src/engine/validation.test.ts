@@ -1,12 +1,20 @@
 import { describe, expect, it } from 'vitest';
 
 import { AsciiSource } from './modules/ascii-source';
+import { AddMod } from './modules/add-mod';
+import { AND } from './modules/and';
 import { BaudotSource } from './modules/baudot-source';
+import { BitSource } from './modules/bit-source';
 import { HexSource } from './modules/hex-source';
+import { Modulo } from './modules/modulo';
+import { NOT } from './modules/not';
+import { OR } from './modules/or';
 import { Permutation } from './modules/permutation';
 import { Plugboard } from './modules/plugboard';
 import { Reflector } from './modules/reflector';
 import { SBox } from './modules/s-box';
+import { SubMod } from './modules/sub-mod';
+import { XOR } from './modules/xor';
 import type { ModuleRegistry, Project } from './types';
 import { validateProject } from './validation';
 
@@ -47,9 +55,17 @@ const registry: ModuleRegistry = {
     paramSchema: {},
     evaluate: (inputs) => ({ out: inputs.in }),
   },
+  [BitSource.id]: BitSource,
   [AsciiSource.id]: AsciiSource,
   [BaudotSource.id]: BaudotSource,
   [HexSource.id]: HexSource,
+  [XOR.id]: XOR,
+  [AND.id]: AND,
+  [OR.id]: OR,
+  [NOT.id]: NOT,
+  [AddMod.id]: AddMod,
+  [SubMod.id]: SubMod,
+  [Modulo.id]: Modulo,
   [Permutation.id]: Permutation,
   [Plugboard.id]: Plugboard,
   [Reflector.id]: Reflector,
@@ -308,6 +324,46 @@ describe('validateProject', () => {
         (issue) =>
           issue.moduleId === 'baudot-1' &&
           issue.message.includes('BaudotSource accepts only letters A-Z and spaces in letters mode'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects equal-width binary operators when static source widths differ', () => {
+    const project: Project = {
+      modules: [
+        { id: 'left', defId: 'BitSource', params: { stream: [1, 0, 1, 0] } },
+        { id: 'right', defId: 'BitSource', params: { stream: [1, 0, 1] } },
+        { id: 'add', defId: 'AddMod', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'left', port: 'out' }, to: { moduleId: 'add', port: 'a' } },
+        { from: { moduleId: 'right', port: 'out' }, to: { moduleId: 'add', port: 'b' } },
+      ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'signal-width-mismatch')).toBe(true);
+  });
+
+  it('rejects modulo params larger than the statically known input width supports', () => {
+    const project: Project = {
+      modules: [
+        { id: 'source', defId: 'BitSource', params: { stream: [1, 0, 1, 0] } },
+        { id: 'mod', defId: 'Modulo', params: { modulus: 32 } },
+      ],
+      connections: [{ from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'mod', port: 'in' } }],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'mod' &&
+          issue.message.includes('must not exceed the input word range'),
       ),
     ).toBe(true);
   });

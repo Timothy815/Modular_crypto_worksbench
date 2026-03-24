@@ -6,6 +6,7 @@ function cloneProject<T>(value: T): T {
 }
 
 const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
+const beyondXorProject = demoProjects.find((project) => project.id === 'beyond-xor');
 const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
 const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
 const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-lorenz');
@@ -26,6 +27,9 @@ const toySpongeHashProject = demoProjects.find((project) => project.id === 'toy-
 
 if (!bridgeProject) {
   throw new Error('Expected bridge demo project to seed starter challenges.');
+}
+if (!beyondXorProject) {
+  throw new Error('Expected beyond-xor demo project to seed starter challenges.');
 }
 if (!baudotProject) {
   throw new Error('Expected baudot-bridge demo project to seed starter challenges.');
@@ -81,6 +85,8 @@ if (!toySpongeHashProject) {
 
 const fixedBridgeTarget = cloneProject(bridgeProject.project);
 const brokenBridgeStart = cloneProject(bridgeProject.project);
+const beyondXorTarget = cloneProject(beyondXorProject.project);
+const brokenBeyondXorStart = cloneProject(beyondXorProject.project);
 const baudotTarget = cloneProject(baudotProject.project);
 const brokenBaudotStart = cloneProject(baudotProject.project);
 const lorenzTarget = cloneProject(lorenzProject.project);
@@ -122,6 +128,14 @@ if (!brokenKeyModule) {
   throw new Error('Expected bridge demo project to contain a key module.');
 }
 brokenKeyModule.params.stream = [0, 0, 0, 0, 0];
+
+const brokenBeyondXorMask = brokenBeyondXorStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'mask',
+);
+if (!brokenBeyondXorMask) {
+  throw new Error('Expected beyond-xor demo project to contain a mask source.');
+}
+brokenBeyondXorMask.params.stream = [0, 0, 1, 1, 1, 1, 0, 0];
 
 const brokenBaudotSource = brokenBaudotStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'source',
@@ -270,6 +284,27 @@ if (!brokenTapModule) {
 brokenTapModule.params.taps = '1,4';
 
 export const STARTER_CHALLENGES: GuidedChallenge[] = [
+  {
+    version: 1,
+    id: 'repair-mask-word',
+    title: 'Repair the Word Mask',
+    projectId: 'beyond-xor',
+    group: 'Foundations',
+    difficulty: 'beginner',
+    prompt:
+      'This machine no longer relies on XOR alone. The word addition and rotation are still correct, but the boolean mask is wrong. Restore the mask source so the final hex output matches the captured reference machine again.',
+    startingProject: brokenBeyondXorStart,
+    startingLayout: cloneProject(beyondXorProject.layout),
+    targetProject: beyondXorTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The ADD mod 2^n and rotate stages are already correct in this lab.',
+      'Focus on the visible bit mask feeding the AND stage.',
+      'A boolean operator is only as useful as the mask word it receives.',
+    ],
+  },
   {
     version: 1,
     id: 'find-hash-collision',

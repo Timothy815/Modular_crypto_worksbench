@@ -12,12 +12,10 @@ export const XOR: ModuleDef = {
   evaluate: (inputs) => {
     const a = inputs.a;
     const b = inputs.b;
-
     if (a.type !== 'bits' || b.type !== 'bits') {
       throw new Error('XOR expects two bits signals');
     }
 
-    // XOR element-wise, using the shorter length
     const len = Math.min(a.value.length, b.value.length);
     const result: number[] = [];
     for (let i = 0; i < len; i++) {

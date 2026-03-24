@@ -10,6 +10,12 @@ import { BitsToAscii } from './bits-to-ascii';
 import { BitsToBaudot } from './bits-to-baudot';
 import { BitsToSymbol } from './bits-to-symbol';
 import { BitsToHex } from './bits-to-hex';
+import { AddMod } from './add-mod';
+import { AND } from './and';
+import { Modulo } from './modulo';
+import { NOT } from './not';
+import { OR } from './or';
+import { SubMod } from './sub-mod';
 import { XOR } from './xor';
 import {
   buildIdentityPlugboardWiring,
@@ -371,6 +377,94 @@ describe('XOR', () => {
       {},
     );
     expect(result.out).toEqual({ type: 'bits', value: [0, 0, 0, 0, 0] });
+  });
+});
+
+describe('Boolean operators', () => {
+  const left: Signal = { type: 'bits', value: [1, 0, 1, 0] };
+  const right: Signal = { type: 'bits', value: [1, 1, 0, 0] };
+
+  it('AND combines equal-width words', () => {
+    expect(AND.evaluate({ a: left, b: right }, {}).out).toEqual({
+      type: 'bits',
+      value: [1, 0, 0, 0],
+    });
+  });
+
+  it('OR combines equal-width words', () => {
+    expect(OR.evaluate({ a: left, b: right }, {}).out).toEqual({
+      type: 'bits',
+      value: [1, 1, 1, 0],
+    });
+  });
+
+  it('NOT flips bits in place', () => {
+    expect(NOT.evaluate({ in: left }, {}).out).toEqual({
+      type: 'bits',
+      value: [0, 1, 0, 1],
+    });
+  });
+});
+
+describe('Word arithmetic operators', () => {
+  it('ADD mod 2^n uses big-endian fixed-width arithmetic', () => {
+    const result = AddMod.evaluate(
+      {
+        a: { type: 'bits', value: [1, 0, 1, 0, 0, 0, 1, 1] },
+        b: { type: 'bits', value: [0, 0, 0, 0, 0, 0, 0, 1] },
+      },
+      {},
+    );
+
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [1, 0, 1, 0, 0, 1, 0, 0],
+    });
+  });
+
+  it('ADD mod 2^n wraps on overflow', () => {
+    const result = AddMod.evaluate(
+      {
+        a: { type: 'bits', value: [1, 1, 1, 1, 1, 1, 1, 1] },
+        b: { type: 'bits', value: [0, 0, 0, 0, 0, 0, 0, 1] },
+      },
+      {},
+    );
+
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [0, 0, 0, 0, 0, 0, 0, 0],
+    });
+  });
+
+  it('SUB mod 2^n wraps on underflow', () => {
+    const result = SubMod.evaluate(
+      {
+        a: { type: 'bits', value: [0, 0, 0, 0] },
+        b: { type: 'bits', value: [0, 0, 0, 1] },
+      },
+      {},
+    );
+
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [1, 1, 1, 1],
+    });
+  });
+
+  it('Modulo reduces a bit word while preserving width', () => {
+    const result = Modulo.evaluate({ in: { type: 'bits', value: [1, 0, 1, 0] } }, { modulus: 3 });
+
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [0, 0, 0, 1],
+    });
+  });
+
+  it('Modulo rejects a modulus larger than the input word range', () => {
+    expect(() =>
+      Modulo.evaluate({ in: { type: 'bits', value: [1, 0, 1, 0] } }, { modulus: 32 }),
+    ).toThrow('word range');
   });
 });
 

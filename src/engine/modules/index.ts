@@ -11,6 +11,12 @@ import { BitsToBaudot } from './bits-to-baudot';
 import { BitsToSymbol } from './bits-to-symbol';
 import { BitsToHex } from './bits-to-hex';
 import { XOR } from './xor';
+import { AND } from './and';
+import { OR } from './or';
+import { NOT } from './not';
+import { AddMod } from './add-mod';
+import { SubMod } from './sub-mod';
+import { Modulo } from './modulo';
 import { Output } from './output';
 import { BitOutput } from './bit-output';
 import { Rotor } from './rotor';
@@ -36,6 +42,12 @@ export {
   BitsToSymbol,
   BitsToHex,
   XOR,
+  AND,
+  OR,
+  NOT,
+  AddMod,
+  SubMod,
+  Modulo,
   Output,
   BitOutput,
   Rotor,
@@ -62,6 +74,12 @@ export const V1_REGISTRY: ModuleRegistry = {
   [BitsToSymbol.id]: BitsToSymbol,
   [BitsToHex.id]: BitsToHex,
   [XOR.id]: XOR,
+  [AND.id]: AND,
+  [OR.id]: OR,
+  [NOT.id]: NOT,
+  [AddMod.id]: AddMod,
+  [SubMod.id]: SubMod,
+  [Modulo.id]: Modulo,
   [Output.id]: Output,
   [BitOutput.id]: BitOutput,
   [Rotor.id]: Rotor,
