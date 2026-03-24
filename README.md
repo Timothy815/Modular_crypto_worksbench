@@ -11,9 +11,9 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.7.0`.
+The repository has shipped through `v1.9.0`.
 
-`main` is now positioned to frame/tag **`v1.8.0`** around the first bounded **Hash Collision Challenge** slice.
+`main` now includes the bounded **sponge-collision follow-on** and the sponge-hash audit/fix work that completed the next collision-teaching slice.
 
 Implemented and shipped:
 - engine core types, graph validation, iterative topological executor
@@ -68,6 +68,12 @@ Implemented and shipped:
   - same-digest / different-input success rule
   - collision-aware challenge status copy
   - `HexSource` `-1 / +1` stepping for manual exploration
+- sponge collision follow-on:
+  - seeded `Find A Sponge Collision` challenge
+  - challenge ownership by `projectId`
+  - project-correct challenge selection/reset/import behavior
+  - corrected sponge digest extraction using folded rate + capacity contribution
+  - audit-style hash-spread regression tests
 - workbench persistence and JSON import/export
 - dark mode
 - GitHub Pages deployment
@@ -85,8 +91,8 @@ Implemented and shipped:
 - `CRYPTANALYSIS-WORKSPACE-V1.md`: locked direction for the dedicated cryptanalysis workspace
 - `MODERN-ANALYSIS-V1.md`: shipped direction for the post-`v1.4.0` modern-analysis line
 - `HASHING-V1.md`: shipped first hashing milestone contract and scope boundary
-- `HASH-COLLISION-CHALLENGE-V1.md`: active direction for the first post-`v1.7.0` hash weakness challenge
-- `SPONGE-COLLISION-CHALLENGE-V1.md`: active direction for the bounded sponge-collision follow-on
+- `HASH-COLLISION-CHALLENGE-V1.md`: shipped first bounded hash weakness challenge
+- `SPONGE-COLLISION-CHALLENGE-V1.md`: shipped sponge-collision follow-on and sponge-hash correction slice
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
 - `SBOX-TRANSFORMATION-V1.md`: shipped first lookup/substitution visual family contract
@@ -125,8 +131,8 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 
 ## Near-Term Roadmap
 
-1. Start the bounded sponge-collision follow-on after `v1.8.0`
+1. Decide whether post-collision interpretation guidance deserves its own bounded slice
 2. Keep performance/bundle size under watch as inspector and analysis surfaces continue to grow
-3. Decide whether sponge collision should stand alone or be paired with deeper post-collision guidance
+3. Monitor challenge-induced project switching in classroom use before adding warning dialogs
 4. Defer deeper transformation playback/animation until classroom feedback justifies it
 5. Avoid scope creep into brute-force tooling, birthday-bound calculators, famous-hash comparisons, or KDF/Merkle-style structures before a new contract says otherwise

@@ -2,6 +2,8 @@
 
 Last updated: March 23, 2026
 
+Status: Shipped as the `v1.9.0` sponge-collision follow-on milestone.
+
 ## Purpose
 
 This contract defines the second bounded hash-collision challenge slice for the Modular Cryptography Workbench.

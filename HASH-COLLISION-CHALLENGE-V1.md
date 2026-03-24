@@ -2,7 +2,7 @@
 
 Last updated: March 23, 2026
 
-Status: Ready to frame/tag as the `v1.8.0` bounded hash challenge milestone.
+Status: Shipped as the `v1.8.0` bounded hash challenge milestone.
 
 ## Purpose
 

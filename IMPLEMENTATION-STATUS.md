@@ -6,11 +6,9 @@ Last updated: March 23, 2026
 
 ## Current State
 
-The project has shipped through `v1.7.0` on `main`.
+The project has shipped through `v1.9.0` on `main`.
 
-Current `main` is now in active post-`v1.8.0` planning around:
-- the bounded sponge-collision follow-on
-- choosing whether post-collision interpretation guidance belongs in the same slice
+Current `main` is now positioned beyond the bounded sponge-collision follow-on and sponge-hash stabilization work.
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -93,6 +91,9 @@ The following decisions are reflected in shipped code:
 | `v1.5.0` | Modern Analysis |
 | `v1.6.0` | Transformation Visualization Phase 1 |
 | `v1.7.0` | Hashing V1 |
+| `v1.8.0` | Hash Collision Challenge |
+| `v1.9.0` | Sponge Collision Challenge |
+
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
 - `Classical / Modern` cryptanalysis sub-modes
@@ -116,9 +117,13 @@ Post-`v1.5.0` work merged to `main`:
 - iterator-aware nested transformation resolution
 - SBox table-first lookup view with decimal/hex bridge
 
-Post-`v1.8.0` work currently active on `main`:
-- define the bounded sponge-collision follow-on
-- decide how much extra interpretation guidance belongs in that slice
+Post-`v1.8.0` work merged to `main`:
+- bounded sponge-collision follow-on
+- `Find A Sponge Collision` challenge
+- challenge ownership by `projectId`
+- project-correct challenge selection/reset/import behavior
+- sponge digest-path correction using folded rate + capacity contribution
+- audit-style regression tests for hash output spread and adjacent-repeat sanity
 
 ---
 
@@ -127,9 +132,9 @@ Post-`v1.8.0` work currently active on `main`:
 ### Claude
 
 Safe to begin:
-- help frame the sponge-collision follow-on cleanly
-- tighten challenge wording around “harder structure, same tiny digest”
-- help keep the second collision slice bounded
+- help decide whether post-collision interpretation guidance deserves its own bounded slice
+- tighten release framing around the two collision-teaching artifacts
+- help keep any follow-on hash weakness work bounded
 
 Should avoid for now:
 - feedback loops / cycles in the graph
@@ -141,14 +146,14 @@ Should avoid for now:
 ### Gemini
 
 Safe to begin:
-- review the sponge-collision contract and scope
-- help choose whether interpretation guidance belongs in the same slice
+- review whether post-collision interpretation guidance is worth a separate slice
 - help keep hashing, modern analysis, and challenge workflows connected instead of fragmenting the product
+- help pressure-test future bounded challenge ideas against the shipped collision line
 
 Best focus:
-- whether sponge collision is the right next challenge
-- whether the toy sponge is the right second target
+- whether the collision line should pause here or deepen interpretation next
 - whether any near-term cleanup should interrupt the next branch
+- whether the next milestone should stay in hashing/challenges or switch focus
 
 ---
 
@@ -159,7 +164,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed on the most recent collision-challenge slice.
+All three passed on the most recent sponge-collision slice.
 
 ---
 
@@ -173,10 +178,10 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 ### Near-Term Roadmap
 
-1. **Frame the sponge-collision follow-on** — keep it bounded and structurally distinct from the compression challenge
+1. **Decide whether post-collision interpretation guidance deserves its own bounded slice**
 2. **Keep hashing connected to the shipped transformation views** — especially `SBox`, `BitShifter`, and `XOR`
-3. **Decide whether post-collision interpretation guidance belongs alongside sponge collision**
-4. **Treat bundle-size growth as near-term technical debt** — address it before several more large UI surfaces land
+3. **Treat bundle-size growth as near-term technical debt** — address it before several more large UI surfaces land
+4. **Monitor challenge-induced project switching in classroom use** before adding warning dialogs
 5. **Defer deeper transformation playback/animation** until classroom feedback justifies a second visualization slice
 
 ### Key Contracts
@@ -196,7 +201,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `MODERN-ANALYSIS-V1.md` | Active, implemented as the `v1.5.0` modern-analysis line |
 | `HASHING-V1.md` | Shipped as the `v1.7.0` first hashing milestone contract |
 | `HASH-COLLISION-CHALLENGE-V1.md` | Shipped as the `v1.8.0` first bounded hash weakness challenge |
-| `SPONGE-COLLISION-CHALLENGE-V1.md` | Active, defines the bounded sponge-collision follow-on |
+| `SPONGE-COLLISION-CHALLENGE-V1.md` | Shipped as the `v1.9.0` sponge-collision follow-on |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
 | `SBOX-TRANSFORMATION-V1.md` | Shipped as the `v1.6.0` lookup/substitution visual family |

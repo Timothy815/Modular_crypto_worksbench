@@ -139,7 +139,8 @@ src/utils/     — Shared helpers
 - `v1.6.0` is already shipped
 - `v1.7.0` is already shipped
 - `v1.8.0` is already shipped
-- Current `main` is focused on the bounded sponge-collision follow-on after the first collision milestone
+- `v1.9.0` is already shipped
+- Current `main` is beyond the bounded sponge-collision follow-on and should treat the collision line as shipped unless a new bounded interpretation slice is chosen
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -157,6 +158,11 @@ What is shipped on `main`:
 - parameter forwarding on reusable architectures
 - transformation views for `Permutation`, `BitShifter`, `XOR`, and `SBox`
 - Hashing V1 milestone framing through `v1.7.0`
+- first two bounded hash collision challenges:
+  - compression-hash collision
+  - sponge-hash collision
+  - project-aware challenge ownership
+  - sponge-hash digest-path correction with audit-style regression tests
 
 Key contracts to check before implementation:
 - `ENGINE-V1-CONTRACT.md` for engine decisions
@@ -167,16 +173,16 @@ Key contracts to check before implementation:
 - `MODERN-ANALYSIS-V1.md` for the first post-`v1.4.0` visual analysis milestone
 - `HASHING-V1.md` for the current hashing line and scope boundary
 - `HASH-COLLISION-CHALLENGE-V1.md` for the first bounded post-hashing milestone challenge slice
-- `SPONGE-COLLISION-CHALLENGE-V1.md` for the bounded sponge-collision follow-on
+- `SPONGE-COLLISION-CHALLENGE-V1.md` for the shipped sponge-collision follow-on
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family
 
 Near-term follow-ups:
-- frame the bounded sponge-collision follow-on
+- decide whether post-collision interpretation guidance deserves its own bounded slice
 - keep hashing connected to the modern-analysis and transformation-visualization surfaces
-- decide whether post-collision interpretation guidance belongs in the same slice
 - watch bundle growth as a near-term cleanup concern
+- monitor challenge-induced project switching in classroom use before adding warnings
 - avoid opening a second transformation-visualization slice before classroom feedback
 
 ## When Working on This Project
