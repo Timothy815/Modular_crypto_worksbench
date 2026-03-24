@@ -20,6 +20,7 @@ import { validateAsciiSourceValue } from './modules/ascii-source';
 import { validateBaudotSourceValue } from './modules/baudot-source';
 import { validateHexSourceValue } from './modules/hex-source';
 import { validatePermutationOrderParam } from './modules/permutation';
+import { validatePlugboardWiringParam } from './modules/plugboard';
 import { validateReflectorWiringParam } from './modules/reflector';
 import { validateSBoxTableParam } from './modules/s-box';
 
@@ -122,6 +123,10 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'Reflector' && field.key === 'wiring') {
     return validateReflectorWiringParam(value);
+  }
+
+  if (def.id === 'Plugboard' && field.key === 'wiring') {
+    return validatePlugboardWiringParam(value);
   }
 
   if (def.id === 'HexSource' && field.key === 'value') {

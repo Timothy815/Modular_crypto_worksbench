@@ -1,7 +1,37 @@
 import { describe, expect, it } from 'vitest';
 
+import { demoProjects } from './demo-projects';
+import { loadWorkspaceFromStorage, parseCompositeLibraryDocument, parseGuidedChallengeDocument, saveWorkspaceToStorage } from './persistence';
+import { createInitialUiState, uiReducer } from './store';
 import type { CompositeLibraryDocument } from './workbench-document';
-import { parseCompositeLibraryDocument, parseGuidedChallengeDocument } from './persistence';
+
+class MemoryStorage implements Storage {
+  private values = new Map<string, string>();
+
+  get length() {
+    return this.values.size;
+  }
+
+  clear(): void {
+    this.values.clear();
+  }
+
+  getItem(key: string): string | null {
+    return this.values.get(key) ?? null;
+  }
+
+  key(index: number): string | null {
+    return [...this.values.keys()][index] ?? null;
+  }
+
+  removeItem(key: string): void {
+    this.values.delete(key);
+  }
+
+  setItem(key: string, value: string): void {
+    this.values.set(key, value);
+  }
+}
 
 describe('parseCompositeLibraryDocument', () => {
   it('accepts a valid composite library document', () => {
@@ -78,5 +108,37 @@ describe('parseGuidedChallengeDocument', () => {
 
     expect(result?.projectId).toBe('toy-sponge-hash');
     expect(result?.success.kind).toBe('output-match-target-with-module-difference');
+  });
+});
+
+describe('workspace persistence', () => {
+  it('round-trips user workspaces through storage', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const stateWithWorkspace = uiReducer(initialState, {
+      type: 'createBlankWorkspace',
+      workspaceId: 'my-scratchpad',
+      name: 'My Scratchpad',
+      summary: 'A blank personal workspace for building from scratch.',
+      pipeline: 'Blank canvas',
+    });
+    const storage = new MemoryStorage();
+
+    saveWorkspaceToStorage(stateWithWorkspace, storage);
+    const restored = loadWorkspaceFromStorage(demoProjects, storage);
+
+    expect(restored?.userWorkspaceLibrary).toEqual([
+      {
+        id: 'my-scratchpad',
+        name: 'My Scratchpad',
+        group: 'My Workspaces',
+        summary: 'A blank personal workspace for building from scratch.',
+        pipeline: 'Blank canvas',
+        defaultTickedMode: false,
+      },
+    ]);
+    expect(restored?.documentsByProjectId['my-scratchpad']?.project).toEqual({
+      modules: [],
+      connections: [],
+    });
   });
 });

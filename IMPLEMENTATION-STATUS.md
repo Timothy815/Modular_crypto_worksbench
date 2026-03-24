@@ -6,23 +6,24 @@ Last updated: March 24, 2026
 
 ## Current State
 
-The project has shipped through `v1.12.0` on `main`.
+The project has shipped through `v1.13.0` on `main`.
 
-Current `main` is now positioned beyond the first completed tactile primitive authoring milestone.
+Current `main` is now positioned beyond the first completed builder-workflow milestone.
 That milestone shipped:
-- bounded custom `SBox` authoring with grid editing and synced raw CSV
-- tactile `Permutation` wire authoring with synced raw CSV fallback
-- tactile `Reflector` socket-pair authoring with involution-safe editing
-- tactile `Rotor` wiring authoring with runtime-centered wire anchors and synced raw wiring
-- reflector-specific validation hardening
+- multi-select group movement on the workbench canvas
+- graph-aware `Tidy Layout`
+- blank personal workspaces plus save/delete in a persistent user workspace library
+- composite unzip back into editable workspace modules
+- dark-mode-safe reflector and plugboard tactile editor rendering
 
-The next likely follow-on in this area is later rotor deepening:
+The next likely follow-on in the authored-machine area is later rotor deepening:
   - `ringOffset` separate from `position`
   - turnover / notch behavior
   - double-step logic
   - reversible rotation direction
   - flipped rotor insertion for Fialka-style versatility
-The open product question remains whether to deepen rotor realism next or switch to another bounded line after this authoring milestone.
+
+The open product question is whether to deepen rotor realism next or switch to a different teaching/product line after the builder-workflow milestone.
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -110,6 +111,7 @@ The following decisions are reflected in shipped code:
 | `v1.10.0` | Collision Interpretation Foundations |
 | `v1.11.0` | Collision Interpretation Helper |
 | `v1.12.0` | Tactile Primitive Authoring |
+| `v1.13.0` | Builder Workflow |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -169,6 +171,14 @@ Post-`v1.11.0` work merged to `main`:
 - runtime-measured rotor/permutation wire anchors with dotted endpoints
 - future rotor-realism line explicitly kept on the roadmap
 
+Post-`v1.12.0` work merged to `main`:
+- bounded builder workflow slice:
+  - multi-select group movement
+  - graph-aware `Tidy Layout`
+  - blank workspaces and saved/deletable personal workspace library
+  - composite unzip with forwarded-param carry-through
+  - dark-mode-safe reflector and plugboard pair rendering
+
 ---
 
 ## Safe Next Tasks
@@ -176,10 +186,11 @@ Post-`v1.11.0` work merged to `main`:
 ### Claude
 
 Safe to begin:
-- help assess whether the tactile primitive authoring milestone is the right stopping point
+- help assess whether the builder-workflow milestone is the right stopping point
 - help decide whether rotor realism should deepen next or remain deferred
 - help keep any follow-on rotor-realism work bounded
-- help pressure-test the shipped authoring surfaces as teaching tools
+- help pressure-test the shipped builder workflow as a daily-use construction surface
+- help pressure-test the next post-builder-workflow branch for scope control and sequencing
 
 Should avoid for now:
 - feedback loops / cycles in the graph
@@ -191,10 +202,11 @@ Should avoid for now:
 ### Gemini
 
 Safe to begin:
-- review whether the tactile primitive authoring milestone is properly bounded as a teaching surface
+- review whether the builder-workflow milestone is properly bounded as a teaching surface
 - review whether rotor realism should deepen next or stay deferred
-- help keep the new authoring line connected to existing transformation and historical-teaching surfaces
-- help pressure-test future bounded rotor/reflector follow-ons against the shipped authoring line
+- help keep the new builder workflow connected to existing transformation and historical-teaching surfaces
+- help pressure-test future bounded rotor/reflector follow-ons against the shipped authoring and builder lines
+- review what should follow after the shipped ergonomics/library/unzip milestone
 
 Best focus:
 - whether the collision/interpretation line should pause here or deepen interpretation next
@@ -210,7 +222,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed on the most recent tactile primitive authoring slice.
+All three passed on the most recent builder-workflow slice.
 
 ---
 
@@ -225,10 +237,11 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 ### Near-Term Roadmap
 
 1. **Keep advanced rotor realism on the docket** — `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion should be treated as an important future rotor line, not forgotten polish
-2. **Decide whether rotor realism should deepen next or remain deferred after classroom feedback**
-3. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
-4. **Monitor challenge-induced project switching in classroom use** before adding warning dialogs
-5. **Defer deeper transformation playback/animation** until classroom feedback justifies a second visualization slice
+2. **Decide whether rotor realism should deepen next** — `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion are now the clearest authored-machine follow-on
+3. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
+5. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
+6. **Monitor challenge-induced project switching in classroom use** before adding warning dialogs
+7. **Defer deeper transformation playback/animation** until classroom feedback justifies a second visualization slice
 
 ### Key Contracts
 
@@ -252,6 +265,9 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `CUSTOM-SBOX-AUTHORING-V1.md` | Shipped in `v1.12.0` as bounded substitution-table authoring |
 | `CUSTOM-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.12.0` as bounded tactile routing authoring |
 | `CUSTOM-REFLECTOR-AUTHORING-V1.md` | Shipped in `v1.12.0` as bounded paired reflector authoring |
+| `WORKBENCH-ERGONOMICS-V1.md` | Proposed bounded workbench usability slice for multi-select, group movement, and cleanup |
+| `WORKSPACE-LIBRARY-V1.md` | Proposed bounded workspace-management slice for blank spaces and saved user collections |
+| `COMPOSITE-UNZIP-V1.md` | Proposed bounded inverse-composition slice for expanding one composite instance back into editable modules |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
 | `SBOX-TRANSFORMATION-V1.md` | Shipped as the `v1.6.0` lookup/substitution visual family |

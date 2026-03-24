@@ -38,6 +38,15 @@ export interface CompositeLibraryDocument {
   entries: CompositeLibraryEntry[];
 }
 
+export interface UserWorkspaceMetadata {
+  id: string;
+  name: string;
+  group?: string;
+  summary: string;
+  pipeline: string;
+  defaultTickedMode?: boolean;
+}
+
 export interface PersistedWorkspaceDocument {
   version: 1;
   activeProjectId: string;
@@ -62,4 +71,5 @@ export interface PersistedWorkspaceDocument {
   challengeLibrary: GuidedChallenge[];
   tutorialLibrary: GuidedTutorial[];
   compositeLibrary: CompositeLibraryDocument;
+  userWorkspaceLibrary?: UserWorkspaceMetadata[];
 }

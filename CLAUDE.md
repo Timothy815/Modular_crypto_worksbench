@@ -145,7 +145,12 @@ src/utils/     — Shared helpers
 - `v1.10.0` is already shipped
 - `v1.11.0` is already shipped
 - `v1.12.0` is already shipped
-- Current `main` is beyond the first tactile primitive authoring milestone and should treat rotor realism as a new bounded decision, not assumed scope
+- `v1.13.0` is now the builder-workflow milestone:
+  - multi-select group movement
+  - graph-aware `Tidy Layout`
+  - blank and saved/deletable personal workspaces
+  - composite unzip back into editable internals
+- Current `main` should treat rotor realism as a new bounded decision, not assumed scope
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -205,6 +210,8 @@ Near-term follow-ups:
   - double-step logic
   - reversible rotation direction
   - flipped insertion
+- treat `WORKBENCH-ERGONOMICS-V1.md`, `WORKSPACE-LIBRARY-V1.md`, and `COMPOSITE-UNZIP-V1.md` as shipped first-milestone builder foundations
+- avoid widening workspace library into sharing/folders or unzip into bulk/iterator expansion without a new contract
 - keep hashing connected to the modern-analysis and transformation-visualization surfaces
 - keep bundle growth inside the new guardrails
 - monitor challenge-induced project switching in classroom use before adding warnings

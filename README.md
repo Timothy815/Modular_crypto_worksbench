@@ -11,14 +11,15 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.12.0`.
+The repository has shipped through `v1.13.0`.
 
-`main` now includes the completed first milestone of **tactile primitive authoring**:
-- custom `SBox` grid authoring with synced raw CSV
-- tactile `Permutation` wire authoring with synced raw CSV fallback
-- tactile `Reflector` socket-pair authoring with involution-safe editing
-- tactile `Rotor` wiring authoring with runtime-centered wire anchors and dotted endpoints
-- reflector validation hardening for malformed wiring
+`main` now includes the completed first milestone of **builder workflow**:
+- multi-select group movement on the workbench
+- graph-aware `Tidy Layout`
+- blank personal workspaces
+- saved and deletable user workspace library entries
+- instance-level composite unzip back into editable modules
+- dark-mode-safe reflector and plugboard tactile editor rendering
 
 Implemented and shipped:
 - engine core types, graph validation, iterative topological executor
@@ -90,6 +91,12 @@ Implemented and shipped:
   - `Permutation` wire editor for simple one-to-one routing with synced raw CSV fallback
   - `Reflector` socket-pair editor with shared pair styling and synced raw wiring
   - `Rotor` wire editor with runtime-centered anchors and dotted endpoints
+- builder workflow ergonomics:
+  - multi-select group movement
+  - graph-aware `Tidy Layout`
+  - blank and saved personal workspaces under `My Workspaces`
+  - deletion for user-owned workspaces only
+  - instance-level composite unzip with forwarded-param carry-through
 - bundle/performance guardrails:
   - lazy-loaded secondary panels
   - React vendor chunk split
@@ -117,6 +124,9 @@ Implemented and shipped:
 - `CUSTOM-SBOX-AUTHORING-V1.md`: shipped bounded authoring slice for editable substitution-table design inside the workbench
 - `CUSTOM-PERMUTATION-AUTHORING-V1.md`: shipped bounded tactile authoring slice for editable routing/permutation design inside the workbench
 - `CUSTOM-REFLECTOR-AUTHORING-V1.md`: shipped bounded tactile authoring slice for paired reflector wiring inside the workbench
+- `WORKBENCH-ERGONOMICS-V1.md`: shipped bounded workbench-usability slice for multi-select, group movement, and one-click cleanup
+- `WORKSPACE-LIBRARY-V1.md`: shipped bounded workspace-management slice for blank build spaces and saved personal collections
+- `COMPOSITE-UNZIP-V1.md`: shipped bounded inverse-composition slice for expanding a composite instance back into editable modules
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
 - `SBOX-TRANSFORMATION-V1.md`: shipped first lookup/substitution visual family contract
@@ -157,7 +167,8 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 
 1. Keep advanced rotor realism explicitly on deck:
    `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion
-2. Decide whether rotor realism should deepen next or remain deferred after classroom use
-3. Keep performance/bundle size under watch now that build-time guardrails are in place
-4. Monitor challenge-induced project switching in classroom use before adding warning dialogs
-5. Avoid scope creep into brute-force tooling, birthday-bound calculators, famous-hash comparisons, or KDF/Merkle-style structures before a new contract says otherwise
+2. Decide whether the next line should deepen rotor realism or switch to a new teaching/product surface
+3. Keep performance/bundle size under watch now that builder workflow and tactile editors both sit behind the guardrails
+4. Monitor classroom use of workspace library and composite unzip before widening them into sharing, folders, or bulk-expansion tooling
+5. Monitor challenge-induced project switching in classroom use before adding warning dialogs
+6. Avoid scope creep into brute-force tooling, birthday-bound calculators, famous-hash comparisons, or KDF/Merkle-style structures before a new contract says otherwise

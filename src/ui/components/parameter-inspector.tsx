@@ -34,6 +34,13 @@ import {
   swapPermutationOrderPositions,
 } from '../../engine/modules/permutation';
 import {
+  buildIdentityPlugboardWiring,
+  pairPlugboardLetters,
+  parsePlugboardWiring,
+  serializePlugboardWiring,
+  unpairPlugboardLetter,
+} from '../../engine/modules/plugboard';
+import {
   pairReflectorLetters,
   parseReflectorWiring,
   serializeReflectorWiring,
@@ -71,6 +78,7 @@ interface ParameterInspectorProps {
   onParamDraftChange: (moduleId: string, key: string, rawValue: string) => void;
   onParamChange: (moduleId: string, key: string, value: unknown) => void;
   onDeleteModule: (moduleId: string) => void;
+  onUnzipComposite?: (moduleId: string) => void;
   onSelectIssueTarget: (moduleId: string) => void;
   onTraceHover: (moduleId: string | null) => void;
   onStepChange: (nextIndex: number | null) => void;
@@ -108,6 +116,7 @@ export function ParameterInspector({
   onParamDraftChange,
   onParamChange,
   onDeleteModule,
+  onUnzipComposite,
   onSelectIssueTarget,
   onTraceHover,
   onStepChange,
@@ -131,6 +140,7 @@ export function ParameterInspector({
   const [requestedLookupChunkIndex, setRequestedLookupChunkIndex] = useState(0);
   const [draggedPermutationInputIndex, setDraggedPermutationInputIndex] = useState<number | null>(null);
   const [draggedRotorInputIndex, setDraggedRotorInputIndex] = useState<number | null>(null);
+  const [selectedPlugboardLetter, setSelectedPlugboardLetter] = useState<string | null>(null);
   const [selectedReflectorLetter, setSelectedReflectorLetter] = useState<string | null>(null);
   const [requestedSBoxEditIndex, setRequestedSBoxEditIndex] = useState(0);
   const permutationInputLaneRef = useRef<HTMLDivElement | null>(null);
@@ -1019,13 +1029,24 @@ export function ParameterInspector({
               </p>
             ) : null
           ) : null}
-          <button
-            type="button"
-            className="delete-module-button"
-            onClick={() => onDeleteModule(moduleInstance.id)}
-          >
-            Delete Module
-          </button>
+          <div className="selected-module-actions">
+            {isCompositeDefinition(moduleDef) && onUnzipComposite ? (
+              <button
+                type="button"
+                className="primitive-add-button"
+                onClick={() => onUnzipComposite(moduleInstance.id)}
+              >
+                Unzip Composite
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="delete-module-button"
+              onClick={() => onDeleteModule(moduleInstance.id)}
+            >
+              Delete Module
+            </button>
+          </div>
 
           <div className="param-list">
             {Object.values(moduleDef.paramSchema).length === 0 ? (
@@ -1133,6 +1154,8 @@ export function ParameterInspector({
                 if (field.kind === 'wiring') {
                   const isRotorWiringField =
                     moduleDef.id === 'Rotor' && field.key === 'wiring';
+                  const isPlugboardWiringField =
+                    moduleDef.id === 'Plugboard' && field.key === 'wiring';
                   const isReflectorWiringField =
                     moduleDef.id === 'Reflector' && field.key === 'wiring';
 
@@ -1308,12 +1331,187 @@ export function ParameterInspector({
                     );
                   }
 
+                  if (isPlugboardWiringField) {
+                    const plugboardWiring = getEditablePlugboardWiring(value);
+                    const baselinePlugboardWiring = getEditablePlugboardWiring(baselineValue);
+                    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+                    const plugboardPairStyles = plugboardWiring
+                      ? buildPairStyles(plugboardWiring, { includeSelfPairs: false })
+                      : {};
+                    const activePlugboardPairs = plugboardWiring
+                      ? alphabet.filter((letter, index) => plugboardWiring[index] !== letter).length / 2
+                      : 0;
+                    const canUnpairSelectedPlugboardLetter =
+                      plugboardWiring &&
+                      selectedPlugboardLetter &&
+                      plugboardWiring[alphabet.indexOf(selectedPlugboardLetter)] !== selectedPlugboardLetter;
+
+                    return (
+                      <label key={field.key} className="param-field">
+                        <span>
+                          {field.label}
+                          {isForwardedParam ? (
+                            <span className="forwarded-param-chip">Forwarded</span>
+                          ) : null}
+                        </span>
+                        {baselinePlugboardWiring && !areParamValuesEqual(value, baselineValue) ? (
+                          <span className="baseline-chip">
+                            Baseline: {serializePlugboardWiring(baselinePlugboardWiring)}
+                          </span>
+                        ) : null}
+                        {plugboardWiring ? (
+                          <div className="reflector-editor">
+                            <div className="reflector-editor-meta">
+                              <span className="content-status-chip">
+                                Click one letter, then another, to pair them. Unpaired letters pass straight through.
+                              </span>
+                              <span className="content-status-chip">
+                                Active pairs: {activePlugboardPairs}
+                              </span>
+                              <span className="content-status-chip">
+                                Selected: {selectedPlugboardLetter ?? 'none'}
+                              </span>
+                            </div>
+                            <div className="permutation-editor-actions">
+                              <button
+                                type="button"
+                                className="mini-action-button"
+                                onClick={() => {
+                                  const nextWiring = buildIdentityPlugboardWiring();
+                                  const serialized = serializePlugboardWiring(nextWiring);
+                                  setSelectedPlugboardLetter(null);
+                                  onParamDraftChange(moduleInstance.id, field.key, serialized);
+                                  onParamChange(moduleInstance.id, field.key, nextWiring);
+                                }}
+                              >
+                                Reset To Identity
+                              </button>
+                              <button
+                                type="button"
+                                className="mini-action-button"
+                                disabled={!canUnpairSelectedPlugboardLetter}
+                                onClick={() => {
+                                  if (!selectedPlugboardLetter) {
+                                    return;
+                                  }
+
+                                  const nextWiring = unpairPlugboardLetter(
+                                    plugboardWiring,
+                                    selectedPlugboardLetter,
+                                  );
+                                  const serialized = serializePlugboardWiring(nextWiring);
+                                  setSelectedPlugboardLetter(null);
+                                  onParamDraftChange(moduleInstance.id, field.key, serialized);
+                                  onParamChange(moduleInstance.id, field.key, nextWiring);
+                                }}
+                              >
+                                Unpair Selected
+                              </button>
+                            </div>
+                            <div className="reflector-editor-grid">
+                              {alphabet.map((letter, index) => {
+                                const partner = plugboardWiring[index];
+                                const pairKey =
+                                  partner === letter ? null : getPairKey(letter, partner);
+
+                                return (
+                                  <button
+                                    key={`plugboard-socket-${letter}`}
+                                    type="button"
+                                    style={pairKey ? plugboardPairStyles[pairKey] : undefined}
+                                    className={
+                                      selectedPlugboardLetter === letter
+                                        ? 'reflector-socket active'
+                                        : partner === letter
+                                          ? 'reflector-socket reflector-socket-self'
+                                          : 'reflector-socket'
+                                    }
+                                    onClick={() => {
+                                      if (selectedPlugboardLetter === null) {
+                                        setSelectedPlugboardLetter(letter);
+                                        return;
+                                      }
+
+                                      if (selectedPlugboardLetter === letter) {
+                                        setSelectedPlugboardLetter(null);
+                                        return;
+                                      }
+
+                                      const nextWiring = pairPlugboardLetters(
+                                        plugboardWiring,
+                                        selectedPlugboardLetter,
+                                        letter,
+                                      );
+                                      const serialized = serializePlugboardWiring(nextWiring);
+                                      setSelectedPlugboardLetter(null);
+                                      onParamDraftChange(moduleInstance.id, field.key, serialized);
+                                      onParamChange(moduleInstance.id, field.key, nextWiring);
+                                    }}
+                                  >
+                                    <span className="meta-label">Socket</span>
+                                    <strong className="reflector-socket-letter">{letter}</strong>
+                                    {partner === letter ? (
+                                      <>
+                                        <span className="reflector-socket-chip reflector-socket-chip-self">
+                                          Pass Through
+                                        </span>
+                                        <span className="reflector-socket-pair">
+                                          Unpaired <strong>{letter}</strong> remains itself
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <span className="reflector-socket-chip">
+                                          {getPairKey(letter, partner).replace('-', ' ↔ ')}
+                                        </span>
+                                        <span className="reflector-socket-pair">
+                                          Paired with <strong>{partner}</strong>
+                                        </span>
+                                      </>
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <label className="param-field reflector-editor-raw">
+                              <span>Raw Wiring</span>
+                              <textarea
+                                value={renderedValue}
+                                onChange={(event) => {
+                                  const rawValue = event.target.value;
+                                  onParamDraftChange(moduleInstance.id, field.key, rawValue);
+                                  const parsed = parseParamValue(rawValue, field);
+                                  if (parsed.ok) {
+                                    onParamChange(moduleInstance.id, field.key, parsed.value);
+                                  }
+                                }}
+                              />
+                              {fieldError ? <p className="field-error">{fieldError}</p> : null}
+                            </label>
+                          </div>
+                        ) : (
+                          <>
+                            <WiringEditor
+                              field={field}
+                              value={value}
+                              renderedValue={renderedValue}
+                              moduleId={moduleInstance.id}
+                              onParamDraftChange={onParamDraftChange}
+                              onParamChange={onParamChange}
+                            />
+                            {fieldError ? <p className="field-error">{fieldError}</p> : null}
+                          </>
+                        )}
+                      </label>
+                    );
+                  }
+
                   if (isReflectorWiringField) {
                     const reflectorWiring = getEditableReflectorWiring(value);
                     const baselineReflectorWiring = getEditableReflectorWiring(baselineValue);
                     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
                     const reflectorPairStyles = reflectorWiring
-                      ? buildReflectorPairStyles(reflectorWiring)
+                      ? buildPairStyles(reflectorWiring)
                       : {};
 
                     return (
@@ -1344,7 +1542,7 @@ export function ParameterInspector({
                                 <button
                                   key={`reflector-socket-${letter}`}
                                   type="button"
-                                  style={reflectorPairStyles[getReflectorPairKey(letter, reflectorWiring[index])]}
+                                  style={reflectorPairStyles[getPairKey(letter, reflectorWiring[index])]}
                                   className={
                                     selectedReflectorLetter === letter
                                       ? 'reflector-socket active'
@@ -1375,7 +1573,7 @@ export function ParameterInspector({
                                   <span className="meta-label">Socket</span>
                                   <strong className="reflector-socket-letter">{letter}</strong>
                                   <span className="reflector-socket-chip">
-                                    {getReflectorPairKey(letter, reflectorWiring[index]).replace('-', ' ↔ ')}
+                                    {getPairKey(letter, reflectorWiring[index]).replace('-', ' ↔ ')}
                                   </span>
                                   <span className="reflector-socket-pair">
                                     Paired with <strong>{reflectorWiring[index]}</strong>
@@ -2677,6 +2875,14 @@ function getEditableReflectorWiring(value: unknown): string[] | null {
   }
 }
 
+function getEditablePlugboardWiring(value: unknown): string[] | null {
+  try {
+    return parsePlugboardWiring(value);
+  } catch {
+    return null;
+  }
+}
+
 function getEditableRotorWiring(value: unknown): string[] | null {
   return Array.isArray(value) &&
     value.length === 26 &&
@@ -2695,27 +2901,38 @@ function isSimplePermutationOrder(order: number[]) {
 }
 
 const REFLECTOR_PAIR_PALETTE = [
-  { accent: '#2F6FB3', surface: '#E7F0FB' },
-  { accent: '#2C8C73', surface: '#E6F5F0' },
-  { accent: '#B86A2F', surface: '#FAEBDD' },
-  { accent: '#7A5CC7', surface: '#EEE9FB' },
-  { accent: '#B24C6B', surface: '#F9E6EC' },
-  { accent: '#5E8D3A', surface: '#EDF5E3' },
-  { accent: '#C08A1B', surface: '#FBF2DC' },
-  { accent: '#3C7E9E', surface: '#E4F1F7' },
-  { accent: '#9B5D8C', surface: '#F4E8F1' },
-  { accent: '#8F6B38', surface: '#F5EDDF' },
-  { accent: '#4466C1', surface: '#E8EDFB' },
-  { accent: '#A15434', surface: '#F7E9E1' },
-  { accent: '#4E8A8C', surface: '#E6F3F3' },
+  { accent: '#2F6FB3' },
+  { accent: '#2C8C73' },
+  { accent: '#B86A2F' },
+  { accent: '#7A5CC7' },
+  { accent: '#B24C6B' },
+  { accent: '#5E8D3A' },
+  { accent: '#C08A1B' },
+  { accent: '#3C7E9E' },
+  { accent: '#9B5D8C' },
+  { accent: '#8F6B38' },
+  { accent: '#4466C1' },
+  { accent: '#A15434' },
+  { accent: '#4E8A8C' },
 ];
 
-function getReflectorPairKey(left: string, right: string) {
+function getPairKey(left: string, right: string) {
   return [left, right].sort().join('-');
 }
 
-function buildReflectorPairStyles(wiring: string[]) {
-  const uniquePairKeys = [...new Set(wiring.map((target, index) => getReflectorPairKey(String.fromCharCode(65 + index), target)))];
+function buildPairStyles(
+  wiring: string[],
+  options?: { includeSelfPairs?: boolean },
+) {
+  const includeSelfPairs = options?.includeSelfPairs ?? true;
+  const uniquePairKeys = [
+    ...new Set(
+      wiring
+        .map((target, index) => [String.fromCharCode(65 + index), target] as const)
+        .filter(([source, target]) => includeSelfPairs || source !== target)
+        .map(([source, target]) => getPairKey(source, target)),
+    ),
+  ];
   uniquePairKeys.sort();
 
   return Object.fromEntries(
@@ -2725,7 +2942,6 @@ function buildReflectorPairStyles(wiring: string[]) {
         pairKey,
         ({
           '--reflector-pair-accent': palette.accent,
-          '--reflector-pair-surface': palette.surface,
         } as CSSProperties),
       ];
     }),

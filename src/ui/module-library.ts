@@ -86,6 +86,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'A classical substitution component whose output changes with its configured position.',
     searchTerms: ['rotor', 'enigma', 'letter', 'symbol', 'substitution'],
   },
+  Plugboard: {
+    sectionId: 'symbol-domain',
+    purpose: 'Swaps selected letter pairs while leaving unpaired letters unchanged.',
+    detail: 'A reciprocal entry/exit mapping layer for rotor-style machines. Unpaired letters pass straight through.',
+    searchTerms: ['plugboard', 'pairing', 'swap', 'letter', 'symbol', 'steckerbrett'],
+  },
   Reflector: {
     sectionId: 'symbol-domain',
     purpose: 'Reflects a letter back through a paired symbolic wiring.',

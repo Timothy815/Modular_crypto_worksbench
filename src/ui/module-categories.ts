@@ -14,6 +14,7 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   Clock: 'source',
   Rotor: 'operator',
   Reflector: 'operator',
+  Plugboard: 'operator',
   XOR: 'operator',
   Permutation: 'operator',
   BitShifter: 'operator',

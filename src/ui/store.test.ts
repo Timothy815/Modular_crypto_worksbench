@@ -87,4 +87,159 @@ describe('uiReducer', () => {
       'find-sponge-collision',
     );
   });
+
+  it('moves an existing multi-selection together', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const project = initialState.projectStates[projectId];
+    const firstModuleId = project.modules[0]?.id;
+    const secondModuleId = project.modules[1]?.id;
+
+    if (!firstModuleId || !secondModuleId) {
+      throw new Error('Expected at least two modules in the sequential demo.');
+    }
+
+    const selectedState = uiReducer(
+      uiReducer(initialState, {
+        type: 'selectModule',
+        projectId,
+        moduleId: firstModuleId,
+      }),
+      {
+        type: 'selectModule',
+        projectId,
+        moduleId: secondModuleId,
+        additive: true,
+      },
+    );
+
+    const nextState = uiReducer(selectedState, {
+      type: 'moveModules',
+      projectId,
+      positions: {
+        [firstModuleId]: { x: 320, y: 180 },
+        [secondModuleId]: { x: 508, y: 180 },
+      },
+    });
+
+    expect(nextState.layoutByProject[projectId]?.[firstModuleId]).toEqual({ x: 320, y: 180 });
+    expect(nextState.layoutByProject[projectId]?.[secondModuleId]).toEqual({ x: 508, y: 180 });
+  });
+
+  it('tidies layout into a clean grid while preserving all modules', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const project = initialState.projectStates[projectId];
+    const scrambledState = uiReducer(initialState, {
+      type: 'moveModules',
+      projectId,
+      positions: Object.fromEntries(
+        project.modules.slice(0, 3).map((moduleInstance, index) => [
+          moduleInstance.id,
+          {
+            x: 480 - index * 97,
+            y: 260 + index * 53,
+          },
+        ]),
+      ),
+    });
+
+    const tidiedState = uiReducer(scrambledState, {
+      type: 'tidyLayout',
+      projectId,
+    });
+
+    const tidiedPositions = project.modules.map(
+      (moduleInstance) => tidiedState.layoutByProject[projectId]?.[moduleInstance.id],
+    );
+
+    expect(tidiedPositions.every(Boolean)).toBe(true);
+    expect(new Set(tidiedPositions.map((position) => `${position?.x},${position?.y}`)).size).toBe(
+      tidiedPositions.length,
+    );
+    expect(
+      project.connections.every((connection) => {
+        const from = tidiedState.layoutByProject[projectId]?.[connection.from.moduleId];
+        const to = tidiedState.layoutByProject[projectId]?.[connection.to.moduleId];
+        return Boolean(from && to && from.x < to.x);
+      }),
+    ).toBe(true);
+    expect(tidiedState.layoutByProject[projectId]?.clock).toEqual({ x: 48, y: 72 });
+    expect(tidiedState.layoutByProject[projectId]?.lfsr?.x).toBe(292);
+    expect(tidiedState.layoutByProject[projectId]?.decode?.x).toBe(536);
+    expect(tidiedState.layoutByProject[projectId]?.output?.x).toBe(780);
+  });
+
+  it('creates a blank personal workspace in build mode', () => {
+    const initialState = createInitialUiState(demoProjects);
+
+    const nextState = uiReducer(initialState, {
+      type: 'createBlankWorkspace',
+      workspaceId: 'my-scratchpad',
+      name: 'My Scratchpad',
+      summary: 'A blank personal workspace for building from scratch.',
+      pipeline: 'Blank canvas',
+    });
+
+    expect(nextState.activeProjectId).toBe('my-scratchpad');
+    expect(nextState.userWorkspaceLibrary).toEqual([
+      {
+        id: 'my-scratchpad',
+        name: 'My Scratchpad',
+        group: 'My Workspaces',
+        summary: 'A blank personal workspace for building from scratch.',
+        pipeline: 'Blank canvas',
+        defaultTickedMode: false,
+      },
+    ]);
+    expect(nextState.projectStates['my-scratchpad']).toEqual({ modules: [], connections: [] });
+    expect(nextState.workspaceModeByProject['my-scratchpad']).toBe('build');
+  });
+
+  it('saves the current graph into a personal workspace entry', () => {
+    const initialState = createInitialUiState(demoProjects);
+
+    const nextState = uiReducer(initialState, {
+      type: 'saveWorkspaceAs',
+      sourceProjectId: 'sequential',
+      workspaceId: 'sequential-copy',
+      name: 'Sequential Copy',
+      summary: 'A personal copy of the sequential graph.',
+      pipeline: 'Clock -> LFSR -> BitsToSymbol -> Output',
+      defaultTickedMode: true,
+    });
+
+    expect(nextState.activeProjectId).toBe('sequential-copy');
+    expect(nextState.userWorkspaceLibrary[0]?.id).toBe('sequential-copy');
+    expect(nextState.projectStates['sequential-copy']).toEqual(
+      initialState.projectStates['sequential'],
+    );
+    expect(nextState.layoutByProject['sequential-copy']).toEqual(
+      initialState.layoutByProject['sequential'],
+    );
+    expect(nextState.activeChallengeIdByProject['sequential-copy']).toBeNull();
+  });
+
+  it('removes a personal workspace and falls back to a demo project', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const stateWithWorkspace = uiReducer(initialState, {
+      type: 'createBlankWorkspace',
+      workspaceId: 'my-scratchpad',
+      name: 'My Scratchpad',
+      summary: 'A blank personal workspace for building from scratch.',
+      pipeline: 'Blank canvas',
+    });
+
+    const nextState = uiReducer(stateWithWorkspace, {
+      type: 'removeWorkspace',
+      workspaceId: 'my-scratchpad',
+      fallbackProjectId: 'baudot-bridge',
+    });
+
+    expect(nextState.activeProjectId).toBe('baudot-bridge');
+    expect(nextState.userWorkspaceLibrary).toEqual([]);
+    expect(nextState.projectStates['my-scratchpad']).toBeUndefined();
+    expect(nextState.layoutByProject['my-scratchpad']).toBeUndefined();
+    expect(nextState.workspaceModeByProject['my-scratchpad']).toBeUndefined();
+  });
 });

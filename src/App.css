@@ -618,6 +618,17 @@ body.dock-resizing {
   background: var(--danger-bg);
 }
 
+.selected-module-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.selected-module-actions .delete-module-button {
+  margin-bottom: 0;
+}
+
 .project-selector-stack {
   display: grid;
   gap: 12px;
@@ -1030,7 +1041,11 @@ body.dock-resizing {
   padding: 10px 10px 10px 12px;
   border: 1px solid color-mix(in srgb, var(--reflector-pair-accent, var(--line)) 35%, var(--line));
   border-radius: 14px;
-  background: var(--reflector-pair-surface, var(--surface-panel));
+  background: color-mix(
+    in srgb,
+    var(--reflector-pair-accent, var(--analysis-accent)) 10%,
+    var(--surface-panel)
+  );
   text-align: left;
   position: relative;
   overflow: hidden;
@@ -1049,6 +1064,15 @@ body.dock-resizing {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--reflector-pair-accent, var(--analysis-accent)) 18%, transparent);
 }
 
+.reflector-socket-self {
+  border-color: var(--line);
+  background: color-mix(in srgb, var(--line) 6%, var(--surface-panel));
+}
+
+.reflector-socket-self::before {
+  background: color-mix(in srgb, var(--line) 72%, transparent);
+}
+
 .reflector-socket-letter {
   color: var(--ink);
   font-size: 1rem;
@@ -1061,16 +1085,30 @@ body.dock-resizing {
   gap: 6px;
   padding: 3px 7px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--reflector-pair-accent, var(--analysis-accent)) 12%, white);
-  color: color-mix(in srgb, var(--reflector-pair-accent, var(--analysis-accent)) 82%, black);
+  background: color-mix(
+    in srgb,
+    var(--reflector-pair-accent, var(--analysis-accent)) 16%,
+    var(--surface-soft)
+  );
+  color: var(--ink);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.03em;
+  border: 1px solid color-mix(
+    in srgb,
+    var(--reflector-pair-accent, var(--analysis-accent)) 28%,
+    var(--line)
+  );
 }
 
 .reflector-socket-pair {
   color: var(--ink-soft);
   font-size: 0.86rem;
+}
+
+.reflector-socket-chip-self {
+  background: color-mix(in srgb, var(--line) 12%, var(--surface-soft));
+  color: var(--ink-soft);
 }
 
 .reflector-editor-raw {

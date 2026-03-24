@@ -3,12 +3,13 @@ import { lazy, Suspense, useEffect, useReducer, useState, type CSSProperties } f
 import './App.css';
 import { isCompositeDefinition, type CompositeLibraryEntry } from './engine/composites';
 import { V1_REGISTRY } from './engine/modules';
-import type { ExecutionResult, ExecutionTraceEntry, TickedExecutionResult } from './engine/types';
+import type { ExecutionResult, ExecutionTraceEntry, Project, TickedExecutionResult } from './engine/types';
 import { deriveTickCount, executeTickedProject } from './engine/executor';
 import { validateCompositeDef, validateProject } from './engine/validation';
 import {
   createCompositeFromSelection,
   replaceSelectionWithComposite,
+  unzipCompositeInstance,
 } from './ui/composite-authoring';
 import { evaluateChallengeAttempt } from './ui/challenges';
 import { PrimitivePalette } from './ui/components/primitive-palette';
@@ -60,6 +61,31 @@ const TutorialPanel = lazy(() =>
 
 function clampDockWidth(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+function slugifyWorkspaceName(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function createUniqueWorkspaceId(name: string, usedIds: Set<string>) {
+  const base = slugifyWorkspaceName(name) || 'workspace';
+  let nextId = base;
+  let index = 2;
+  while (usedIds.has(nextId)) {
+    nextId = `${base}-${index}`;
+    index += 1;
+  }
+  return nextId;
+}
+
+function describeWorkspacePipeline(project: Project) {
+  return project.modules.length > 0
+    ? project.modules.map((moduleInstance) => moduleInstance.defId).join(' -> ')
+    : 'Blank canvas';
 }
 
 function LazyPanelFallback({
@@ -129,18 +155,35 @@ function App() {
     uiReducer,
     demoProjects,
     (projects) => {
-      const initialState = createInitialUiState(projects);
       if (typeof window === 'undefined') {
-        return initialState;
+        return createInitialUiState(projects);
       }
 
       const persistedWorkspace = loadWorkspaceFromStorage(projects);
+      const userWorkspaceProjects = (persistedWorkspace?.userWorkspaceLibrary ?? []).map(
+        (workspace) => ({
+          id: workspace.id,
+          name: workspace.name,
+          group: workspace.group ?? 'My Workspaces',
+          summary: workspace.summary,
+          pipeline: workspace.pipeline,
+          defaultTickedMode: workspace.defaultTickedMode,
+          project:
+            persistedWorkspace?.documentsByProjectId[workspace.id]?.project ?? {
+              modules: [],
+              connections: [],
+            },
+          layout: persistedWorkspace?.documentsByProjectId[workspace.id]?.ui.layout ?? {},
+        }),
+      );
+      const allProjects = [...projects, ...userWorkspaceProjects];
+      const initialState = createInitialUiState(allProjects);
       if (!persistedWorkspace) {
         return initialState;
       }
 
       const restoredProjectStates = Object.fromEntries(
-        projects.map((project) => [
+        allProjects.map((project) => [
           project.id,
           persistedWorkspace.documentsByProjectId[project.id]?.project ?? initialState.projectStates[project.id],
         ]),
@@ -162,34 +205,35 @@ function App() {
           persistedWorkspace.compositeLibrary.entries.length > 0
             ? persistedWorkspace.compositeLibrary.entries
             : initialState.compositeLibrary,
+        userWorkspaceLibrary: persistedWorkspace.userWorkspaceLibrary ?? [],
         showPalette: persistedWorkspace.showPalette,
         showInspector: persistedWorkspace.showInspector,
         projectStates: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             restoredProjectStates[project.id],
           ]),
         ),
         layoutByProject: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             persistedWorkspace.documentsByProjectId[project.id]?.ui.layout ?? initialState.layoutByProject[project.id],
           ]),
         ),
         annotationsByProject: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             persistedWorkspace.documentsByProjectId[project.id]?.ui.annotations ?? initialState.annotationsByProject[project.id],
           ]),
         ),
         comparisonBaselinesByProject: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             persistedWorkspace.comparisonBaselinesByProjectId[project.id] ?? null,
           ]),
         ),
         activeChallengeIdByProject: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             persistedWorkspace.activeChallengeIdByProjectId[project.id] ??
               initialState.activeChallengeIdByProject[project.id] ??
@@ -197,7 +241,7 @@ function App() {
           ]),
         ),
         activeTutorialIdByProject: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             persistedWorkspace.activeTutorialIdByProjectId[project.id] ??
               initialState.activeTutorialIdByProject[project.id] ??
@@ -205,7 +249,7 @@ function App() {
           ]),
         ),
         activeTutorialStepByProject: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             persistedWorkspace.activeTutorialStepByProjectId[project.id] ??
               initialState.activeTutorialStepByProject[project.id] ??
@@ -213,7 +257,7 @@ function App() {
           ]),
         ),
         completedTutorialsByProject: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             persistedWorkspace.completedTutorialsByProjectId[project.id] ??
               initialState.completedTutorialsByProject[project.id] ??
@@ -221,7 +265,7 @@ function App() {
           ]),
         ),
         tutorialNotesVisibleByProject: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             persistedWorkspace.tutorialNotesVisibleByProjectId?.[project.id] ??
               initialState.tutorialNotesVisibleByProject[project.id] ??
@@ -229,7 +273,7 @@ function App() {
           ]),
         ),
         workspaceModeByProject: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             persistedWorkspace.workspaceModeByProjectId?.[project.id] ??
               initialState.workspaceModeByProject[project.id] ??
@@ -237,7 +281,7 @@ function App() {
           ]),
         ),
         cryptanalysisModeByProject: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             persistedWorkspace.cryptanalysisModeByProjectId?.[project.id] ??
               initialState.cryptanalysisModeByProject[project.id] ??
@@ -245,7 +289,7 @@ function App() {
           ]),
         ),
         cryptanalysisInputByProject: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             persistedWorkspace.cryptanalysisInputByProjectId?.[project.id] ??
               initialState.cryptanalysisInputByProject[project.id] ??
@@ -253,7 +297,7 @@ function App() {
           ]),
         ),
         modernAnalysisBaselineByProject: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             persistedWorkspace.modernAnalysisBaselineByProjectId?.[project.id] ??
               initialState.modernAnalysisBaselineByProject[project.id] ??
@@ -261,7 +305,7 @@ function App() {
           ]),
         ),
         modernAnalysisFlipBitByProject: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             persistedWorkspace.modernAnalysisFlipBitByProjectId?.[project.id] ??
               initialState.modernAnalysisFlipBitByProject[project.id] ??
@@ -269,7 +313,7 @@ function App() {
           ]),
         ),
         tickedModeByProject: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             persistedWorkspace.tickedModeByProjectId?.[project.id] ??
               initialState.tickedModeByProject[project.id] ??
@@ -277,7 +321,7 @@ function App() {
           ]),
         ),
         currentTickByProject: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             persistedWorkspace.currentTickByProjectId?.[project.id] ??
               initialState.currentTickByProject[project.id] ??
@@ -285,10 +329,10 @@ function App() {
           ]),
         ),
         isTickPlaybackActiveByProject: Object.fromEntries(
-          projects.map((project) => [project.id, false]),
+          allProjects.map((project) => [project.id, false]),
         ),
         tickPlaybackSpeedMsByProject: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             persistedWorkspace.tickPlaybackSpeedMsByProjectId?.[project.id] ??
               initialState.tickPlaybackSpeedMsByProject[project.id] ??
@@ -296,13 +340,13 @@ function App() {
           ]),
         ),
         selectedModuleIdByProject: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             restoredProjectStates[project.id]?.modules[0]?.id ?? null,
           ]),
         ),
         selectedModuleIdsByProject: Object.fromEntries(
-          projects.map((project) => [
+          allProjects.map((project) => [
             project.id,
             restoredProjectStates[project.id]?.modules[0]?.id
               ? [restoredProjectStates[project.id].modules[0].id]
@@ -334,8 +378,22 @@ function App() {
     useState<ExecutionTraceEntry | null>(null);
   const [paletteViewMode, setPaletteViewMode] = useState<'compact' | 'expanded'>('expanded');
 
+  const availableProjects = [
+    ...demoProjects,
+    ...state.userWorkspaceLibrary.map((workspace) => ({
+      id: workspace.id,
+      name: workspace.name,
+      group: workspace.group ?? 'My Workspaces',
+      summary: workspace.summary,
+      pipeline: workspace.pipeline,
+      defaultTickedMode: workspace.defaultTickedMode,
+      project: state.projectStates[workspace.id] ?? { modules: [], connections: [] },
+      layout: state.layoutByProject[workspace.id] ?? {},
+    })),
+  ];
   const activeProjectDefinition =
-    demoProjects.find((project) => project.id === state.activeProjectId) ?? demoProjects[0];
+    availableProjects.find((project) => project.id === state.activeProjectId) ??
+    availableProjects[0];
   const effectiveRegistry = getEffectiveRegistry(V1_REGISTRY, state.compositeLibrary);
   const baseProjectState =
     state.projectStates[activeProjectDefinition.id] ?? activeProjectDefinition.project;
@@ -570,7 +628,8 @@ function App() {
     null;
   const selectedChallengeProjectId = selectedChallenge?.projectId ?? activeProjectDefinition.id;
   const selectedChallengeProjectDefinition =
-    demoProjects.find((project) => project.id === selectedChallengeProjectId) ?? activeProjectDefinition;
+    availableProjects.find((project) => project.id === selectedChallengeProjectId) ??
+    activeProjectDefinition;
   const challengeEvaluation =
     !state.compositeEditor && selectedChallenge
       ? evaluateChallengeAttempt(selectedChallenge, activeProjectState, effectiveRegistry)
@@ -733,6 +792,133 @@ function App() {
     };
   }, [dockResizeState]);
 
+  function handleCreateBlankWorkspace() {
+    const proposedName = window.prompt('Blank workspace name:', 'New Workspace');
+    const name = proposedName?.trim();
+    if (!name) {
+      return;
+    }
+    const workspaceId = createUniqueWorkspaceId(
+      name,
+      new Set(availableProjects.map((project) => project.id)),
+    );
+    dispatch({
+      type: 'createBlankWorkspace',
+      workspaceId,
+      name,
+      summary: 'A blank personal workspace for building from scratch.',
+      pipeline: 'Blank canvas',
+    });
+  }
+
+  function handleSaveCurrentWorkspace() {
+    const existingWorkspace = state.userWorkspaceLibrary.find(
+      (workspace) => workspace.id === activeProjectDefinition.id,
+    );
+    const proposedName = window.prompt(
+      'Save workspace as:',
+      existingWorkspace?.name ?? `${activeProjectDefinition.name} Copy`,
+    );
+    const name = proposedName?.trim();
+    if (!name) {
+      return;
+    }
+    const usedIds = new Set(availableProjects.map((project) => project.id));
+    if (existingWorkspace) {
+      usedIds.delete(existingWorkspace.id);
+    }
+    const workspaceId = existingWorkspace?.id ?? createUniqueWorkspaceId(name, usedIds);
+    dispatch({
+      type: 'saveWorkspaceAs',
+      sourceProjectId: activeProjectDefinition.id,
+      workspaceId,
+      name,
+      summary:
+        existingWorkspace?.summary ??
+        `A personal workspace built from ${activeProjectDefinition.name}.`,
+      pipeline: describeWorkspacePipeline(activeProjectState),
+      defaultTickedMode: state.tickedModeByProject[activeProjectDefinition.id] ?? false,
+    });
+  }
+
+  function handleDeleteCurrentWorkspace() {
+    const existingWorkspace = state.userWorkspaceLibrary.find(
+      (workspace) => workspace.id === activeProjectDefinition.id,
+    );
+    if (!existingWorkspace) {
+      return;
+    }
+    const shouldDelete = window.confirm(
+      `Delete workspace "${existingWorkspace.name}"? This removes its saved copy from your personal workspace library.`,
+    );
+    if (!shouldDelete) {
+      return;
+    }
+    dispatch({
+      type: 'removeWorkspace',
+      workspaceId: existingWorkspace.id,
+      fallbackProjectId: demoProjects[0]?.id ?? '',
+    });
+  }
+
+  function handleUnzipComposite(moduleId: string) {
+    if (!selectedModule || selectedModule.id !== moduleId) {
+      return;
+    }
+    const compositeEntry = state.compositeLibrary.find(
+      (entry) => entry.id === selectedModule.defId,
+    );
+    if (!compositeEntry) {
+      return;
+    }
+
+    const unzipped = unzipCompositeInstance({
+      project: activeProjectState,
+      layout: activeLayout,
+      entry: compositeEntry,
+      moduleId,
+      moduleParams: selectedModule.params,
+    });
+
+    if (!unzipped.ok || !unzipped.project || !unzipped.layout) {
+      setImportError(unzipped.error ?? 'Unable to unzip the selected composite.');
+      return;
+    }
+
+    dispatch({
+      type: 'loadDocument',
+      projectId: activeProjectDefinition.id,
+      document: {
+        version: 1,
+        project: unzipped.project,
+        ui: {
+          layout: unzipped.layout,
+          annotations: state.compositeEditor
+            ? []
+            : state.annotationsByProject[activeProjectDefinition.id] ?? [],
+        },
+      },
+    });
+    setImportError(null);
+
+    const [firstModuleId, ...restModuleIds] = unzipped.selectedModuleIds ?? [];
+    if (firstModuleId) {
+      dispatch({
+        type: 'selectModule',
+        projectId: activeProjectDefinition.id,
+        moduleId: firstModuleId,
+      });
+      for (const selectedModuleId of restModuleIds) {
+        dispatch({
+          type: 'selectModule',
+          projectId: activeProjectDefinition.id,
+          moduleId: selectedModuleId,
+          additive: true,
+        });
+      }
+    }
+  }
+
   return (
     <main className="app-shell">
       <header className="app-header">
@@ -834,10 +1020,23 @@ function App() {
                     projectId: activeProjectDefinition.id,
                     visible: !tutorialNotesVisible,
                   });
+                } else if (value === 'new-blank-workspace') {
+                  handleCreateBlankWorkspace();
+                } else if (value === 'save-current-workspace') {
+                  handleSaveCurrentWorkspace();
+                } else if (value === 'delete-current-workspace') {
+                  handleDeleteCurrentWorkspace();
                 }
               }}
             >
               <option value="">Actions…</option>
+              <option value="new-blank-workspace">New Blank Workspace</option>
+              <option value="save-current-workspace">Save Current Workspace</option>
+              {state.userWorkspaceLibrary.some(
+                (workspace) => workspace.id === activeProjectDefinition.id,
+              ) ? (
+                <option value="delete-current-workspace">Delete Workspace</option>
+              ) : null}
               <option value="toggle-theme">
                 {theme === 'dark' ? 'Switch To Light' : 'Switch To Dark'}
               </option>
@@ -964,6 +1163,13 @@ function App() {
                 y,
               })
             }
+            onMoveModules={(positions) =>
+              dispatch({
+                type: 'moveModules',
+                projectId: activeProjectDefinition.id,
+                positions,
+              })
+            }
             onAddAnnotation={() =>
               state.compositeEditor
                 ? undefined
@@ -1071,6 +1277,12 @@ function App() {
 
               setImportError('The selected file is not a valid MCW workbench or composite library document.');
             }}
+            onTidyLayout={() =>
+              dispatch({
+                type: 'tidyLayout',
+                projectId: activeProjectDefinition.id,
+              })
+            }
             onSwitchProject={(projectId) =>
               state.compositeEditor
                 ? undefined
@@ -1094,7 +1306,7 @@ function App() {
                 visible,
               })
             }
-            projects={state.compositeEditor ? [activeProjectDefinition] : demoProjects}
+            projects={state.compositeEditor ? [activeProjectDefinition] : availableProjects}
             isCompositeEditor={Boolean(state.compositeEditor)}
           />
           {importError ? <p className="import-error-banner">{importError}</p> : null}
@@ -1325,6 +1537,7 @@ function App() {
                         moduleId,
                       })
                 }
+                onUnzipComposite={(moduleId) => handleUnzipComposite(moduleId)}
                 onSelectIssueTarget={(moduleId) =>
                   dispatch({
                     type: 'selectModule',

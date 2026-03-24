@@ -4,6 +4,7 @@ import { AsciiSource } from './modules/ascii-source';
 import { BaudotSource } from './modules/baudot-source';
 import { HexSource } from './modules/hex-source';
 import { Permutation } from './modules/permutation';
+import { Plugboard } from './modules/plugboard';
 import { Reflector } from './modules/reflector';
 import { SBox } from './modules/s-box';
 import type { ModuleRegistry, Project } from './types';
@@ -50,6 +51,7 @@ const registry: ModuleRegistry = {
   [BaudotSource.id]: BaudotSource,
   [HexSource.id]: HexSource,
   [Permutation.id]: Permutation,
+  [Plugboard.id]: Plugboard,
   [Reflector.id]: Reflector,
   [SBox.id]: SBox,
 };
@@ -228,6 +230,30 @@ describe('validateProject', () => {
         (issue) =>
           issue.moduleId === 'reflector-1' &&
           issue.message.includes('Reflector wiring must be involutive'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects malformed plugboard wiring before execution', () => {
+    const project: Project = {
+      modules: [
+        {
+          id: 'plugboard-1',
+          defId: 'Plugboard',
+          params: { wiring: 'BCADEFGHIJKLMNOPQRSTUVWXYZ'.split('') },
+        },
+      ],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'plugboard-1' &&
+          issue.message.includes('Plugboard wiring must be reciprocal'),
       ),
     ).toBe(true);
   });

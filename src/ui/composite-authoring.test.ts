@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import type { ModuleRegistry, Project } from '../engine/types';
 import { isCompositeDefinition } from '../engine/composites';
-import { createCompositeFromSelection, replaceSelectionWithComposite } from './composite-authoring';
+import {
+  createCompositeFromSelection,
+  replaceSelectionWithComposite,
+  unzipCompositeInstance,
+} from './composite-authoring';
 
 const registry: ModuleRegistry = {
   TextInput: {
@@ -45,6 +49,23 @@ const registry: ModuleRegistry = {
     outputs: [],
     paramSchema: {},
     evaluate: () => ({}),
+  },
+  ShiftBits: {
+    id: 'ShiftBits',
+    name: 'Shift Bits',
+    inputs: [{ name: 'in', type: 'bits' }],
+    outputs: [{ name: 'out', type: 'bits' }],
+    paramSchema: {
+      amount: {
+        key: 'amount',
+        label: 'Amount',
+        kind: 'number',
+        defaultValue: 1,
+      },
+    },
+    evaluate: (_inputs, params) => ({
+      out: { type: 'bits', value: [Number(params.amount ?? 1)] },
+    }),
   },
 };
 
@@ -214,5 +235,125 @@ describe('createCompositeFromSelection', () => {
         to: { moduleId: 'output-b', port: 'in' },
       },
     ]);
+  });
+
+  it('unzips a composite instance back into workspace modules without touching the library entry', () => {
+    const compositeResult = createCompositeFromSelection({
+      project,
+      registry,
+      name: 'Round Trip Bridge',
+      id: 'RoundTripBridge',
+      selectedModuleIds: ['encode', 'decode'],
+    });
+
+    expect(compositeResult.ok).toBe(true);
+
+    const replacement = replaceSelectionWithComposite({
+      project,
+      layout: {
+        text: { x: 24, y: 40 },
+        encode: { x: 180, y: 40 },
+        decode: { x: 336, y: 40 },
+        output: { x: 492, y: 40 },
+      },
+      entry: compositeResult.entry!,
+      selectedModuleIds: ['encode', 'decode'],
+    });
+
+    expect(replacement.ok).toBe(true);
+
+    const unzipped = unzipCompositeInstance({
+      project: replacement.project!,
+      layout: replacement.layout!,
+      entry: compositeResult.entry!,
+      moduleId: replacement.compositeInstanceId!,
+    });
+
+    expect(unzipped.ok).toBe(true);
+    expect(unzipped.project?.modules.map((moduleInstance) => moduleInstance.id)).toEqual([
+      'text',
+      'output',
+      'roundtripbridge-1-encode',
+      'roundtripbridge-1-decode',
+    ]);
+    expect(unzipped.project?.connections).toEqual([
+      {
+        from: { moduleId: 'roundtripbridge-1-encode', port: 'out' },
+        to: { moduleId: 'roundtripbridge-1-decode', port: 'in' },
+      },
+      {
+        from: { moduleId: 'text', port: 'out' },
+        to: { moduleId: 'roundtripbridge-1-encode', port: 'in' },
+      },
+      {
+        from: { moduleId: 'roundtripbridge-1-decode', port: 'out' },
+        to: { moduleId: 'output', port: 'in' },
+      },
+    ]);
+    expect(compositeResult.entry?.id).toBe('RoundTripBridge');
+    expect(unzipped.selectedModuleIds).toEqual([
+      'roundtripbridge-1-encode',
+      'roundtripbridge-1-decode',
+    ]);
+  });
+
+  it('applies forwarded composite params into unzipped internal modules', () => {
+    const forwardedEntry = {
+      id: 'ForwardedShiftComposite',
+      name: 'Forwarded Shift Composite',
+      version: 1,
+      source: 'user' as const,
+      definition: {
+        id: 'ForwardedShiftComposite',
+        name: 'Forwarded Shift Composite',
+        kind: 'composite' as const,
+        version: 1,
+        inputs: [{ name: 'in', type: 'bits' as const }],
+        outputs: [{ name: 'out', type: 'bits' as const }],
+        paramSchema: {
+          amount: {
+            key: 'amount',
+            label: 'Amount',
+            kind: 'number' as const,
+            defaultValue: 1,
+          },
+        },
+        project: {
+          modules: [{ id: 'shift-1', defId: 'ShiftBits', params: { amount: 1 } }],
+          connections: [],
+        },
+        layout: {
+          'shift-1': { x: 120, y: 80 },
+        },
+        inputBindings: [{ externalPort: 'in', internalModuleId: 'shift-1', internalPort: 'in' }],
+        outputBindings: [{ externalPort: 'out', internalModuleId: 'shift-1', internalPort: 'out' }],
+        forwardedParams: [
+          { externalParam: 'amount', internalModuleId: 'shift-1', internalParamKey: 'amount' },
+        ],
+      },
+    };
+
+    const forwardedProject: Project = {
+      modules: [
+        { id: 'composite-1', defId: 'ForwardedShiftComposite', params: { amount: 5 } },
+      ],
+      connections: [],
+    };
+
+    const unzipped = unzipCompositeInstance({
+      project: forwardedProject,
+      layout: {
+        'composite-1': { x: 320, y: 200 },
+      },
+      entry: forwardedEntry,
+      moduleId: 'composite-1',
+      moduleParams: { amount: 5 },
+    });
+
+    expect(unzipped.ok).toBe(true);
+    expect(unzipped.project?.modules).toEqual([
+      { id: 'composite-1-shift-1', defId: 'ShiftBits', params: { amount: 5 } },
+    ]);
+    expect(unzipped.selectedModuleIds).toEqual(['composite-1-shift-1']);
   });
 });

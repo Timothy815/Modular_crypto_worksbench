@@ -16,6 +16,7 @@ import type {
   ComparisonBaselineDocument,
   CompositeLibraryDocument,
   PersistedWorkspaceDocument,
+  UserWorkspaceMetadata,
   WorkbenchAnnotation,
   WorkbenchDocument,
 } from './workbench-document';
@@ -114,6 +115,12 @@ function cloneReusableEntry(entry: CompositeLibraryEntry): CompositeLibraryEntry
     source,
     definition: { ...entry.definition },
   };
+}
+
+function cloneUserWorkspaceMetadata(
+  workspace: UserWorkspaceMetadata,
+): UserWorkspaceMetadata {
+  return { ...workspace };
 }
 
 function buildDefaultDocument(project: DemoProject): WorkbenchDocument {
@@ -254,6 +261,7 @@ export function buildPersistedWorkspace(state: UiState): PersistedWorkspaceDocum
       version: 1,
       entries: state.compositeLibrary.map(cloneReusableEntry),
     },
+    userWorkspaceLibrary: state.userWorkspaceLibrary.map(cloneUserWorkspaceMetadata),
   };
 }
 
@@ -294,12 +302,20 @@ export function loadWorkspaceFromStorage(
       !parsed.challengeLibrary.every(isGuidedChallengeDocument) ||
       !Array.isArray(parsed.tutorialLibrary) ||
       !parsed.tutorialLibrary.every(isGuidedTutorialDocument) ||
-      !isCompositeLibraryDocument(parsed.compositeLibrary)
+      !isCompositeLibraryDocument(parsed.compositeLibrary) ||
+      !(
+        parsed.userWorkspaceLibrary === undefined ||
+        (Array.isArray(parsed.userWorkspaceLibrary) &&
+          parsed.userWorkspaceLibrary.every(isUserWorkspaceMetadata))
+      )
     ) {
       return null;
     }
 
-    const allowedProjectIds = new Set(projects.map((project) => project.id));
+    const allowedProjectIds = new Set([
+      ...projects.map((project) => project.id),
+      ...(parsed.userWorkspaceLibrary ?? []).map((workspace) => workspace.id),
+    ]);
     const filteredDocuments = Object.fromEntries(
       Object.entries(parsed.documentsByProjectId).filter(([projectId, document]) =>
         allowedProjectIds.has(projectId) && isWorkbenchDocument(document),
@@ -419,10 +435,30 @@ export function loadWorkspaceFromStorage(
       ),
       challengeLibrary: parsed.challengeLibrary.map(cloneChallenge),
       tutorialLibrary: parsed.tutorialLibrary.map(cloneTutorial),
+      userWorkspaceLibrary: (parsed.userWorkspaceLibrary ?? []).map(
+        cloneUserWorkspaceMetadata,
+      ),
     };
   } catch {
     return null;
   }
+}
+
+function isUserWorkspaceMetadata(value: unknown): value is UserWorkspaceMetadata {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const workspace = value as Partial<UserWorkspaceMetadata>;
+  return (
+    typeof workspace.id === 'string' &&
+    typeof workspace.name === 'string' &&
+    (workspace.group === undefined || typeof workspace.group === 'string') &&
+    typeof workspace.summary === 'string' &&
+    typeof workspace.pipeline === 'string' &&
+    (workspace.defaultTickedMode === undefined ||
+      typeof workspace.defaultTickedMode === 'boolean')
+  );
 }
 
 export function downloadDocument(projectId: string, workbenchDocument: WorkbenchDocument): void {

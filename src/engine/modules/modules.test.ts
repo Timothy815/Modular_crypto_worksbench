@@ -11,6 +11,13 @@ import { BitsToBaudot } from './bits-to-baudot';
 import { BitsToSymbol } from './bits-to-symbol';
 import { BitsToHex } from './bits-to-hex';
 import { XOR } from './xor';
+import {
+  buildIdentityPlugboardWiring,
+  pairPlugboardLetters,
+  Plugboard,
+  serializePlugboardWiring,
+  unpairPlugboardLetter,
+} from './plugboard';
 import { Rotor, serializeRotorWiring, swapRotorWiringTargets } from './rotor';
 import { pairReflectorLetters, Reflector } from './reflector';
 import { Permutation } from './permutation';
@@ -275,6 +282,48 @@ describe('BitsToBaudot', () => {
     expect(() =>
       BitsToBaudot.evaluate({ in: { type: 'bits', value: [0, 0, 0, 1] } }, {}),
     ).toThrow();
+  });
+});
+
+describe('Plugboard', () => {
+  it('passes through unpaired letters', () => {
+    const result = Plugboard.evaluate(
+      { in: { type: 'symbol', value: 'A' } },
+      { wiring: buildIdentityPlugboardWiring() },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'A' });
+  });
+
+  it('swaps paired letters reciprocally', () => {
+    const wiring = pairPlugboardLetters(buildIdentityPlugboardWiring(), 'A', 'Z');
+    const result = Plugboard.evaluate(
+      { in: { type: 'symbol', value: 'A' } },
+      { wiring },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'Z' });
+    expect(
+      Plugboard.evaluate({ in: { type: 'symbol', value: 'Z' } }, { wiring }).out,
+    ).toEqual({ type: 'symbol', value: 'A' });
+  });
+
+  it('repairs displaced partners when re-pairing letters', () => {
+    const first = pairPlugboardLetters(buildIdentityPlugboardWiring(), 'A', 'Z');
+    const second = pairPlugboardLetters(first, 'A', 'B');
+    expect(second[0]).toBe('B');
+    expect(second[1]).toBe('A');
+    expect(second[25]).toBe('Z');
+  });
+
+  it('can unpair a selected letter back to passthrough', () => {
+    const paired = pairPlugboardLetters(buildIdentityPlugboardWiring(), 'C', 'D');
+    const unpaired = unpairPlugboardLetter(paired, 'C');
+    expect(unpaired[2]).toBe('C');
+    expect(unpaired[3]).toBe('D');
+  });
+
+  it('serializes plugboard wiring for raw editing', () => {
+    const wiring = pairPlugboardLetters(buildIdentityPlugboardWiring(), 'A', 'Z');
+    expect(serializePlugboardWiring(wiring)).toContain('Z');
   });
 });
 

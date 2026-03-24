@@ -16,6 +16,7 @@ import { STARTER_TUTORIALS } from './starter-tutorials';
 import type {
   ComparisonBaselineDocument,
   CompositeLibraryDocument,
+  UserWorkspaceMetadata,
   WorkbenchAnnotation,
   WorkbenchDocument,
 } from './workbench-document';
@@ -26,6 +27,7 @@ export interface UiState {
   challengeLibrary: GuidedChallenge[];
   tutorialLibrary: GuidedTutorial[];
   compositeLibrary: CompositeLibraryEntry[];
+  userWorkspaceLibrary: UserWorkspaceMetadata[];
   compositeEditor: CompositeEditorState | null;
   projectStates: Record<string, Project>;
   layoutByProject: Record<string, Record<string, { x: number; y: number }>>;
@@ -67,8 +69,31 @@ export interface CompositeEditorState {
 
 export type UiAction =
   | { type: 'switchProject'; projectId: string }
+  | {
+      type: 'createBlankWorkspace';
+      workspaceId: string;
+      name: string;
+      summary: string;
+      pipeline: string;
+    }
+  | {
+      type: 'saveWorkspaceAs';
+      sourceProjectId: string;
+      workspaceId: string;
+      name: string;
+      summary: string;
+      pipeline: string;
+      defaultTickedMode?: boolean;
+    }
+  | { type: 'removeWorkspace'; workspaceId: string; fallbackProjectId: string }
   | { type: 'selectModule'; projectId: string; moduleId: string; additive?: boolean }
   | { type: 'moveModule'; projectId: string; moduleId: string; x: number; y: number }
+  | {
+      type: 'moveModules';
+      projectId: string;
+      positions: Record<string, { x: number; y: number }>;
+    }
+  | { type: 'tidyLayout'; projectId: string }
   | { type: 'addAnnotation'; projectId: string }
   | { type: 'moveAnnotation'; projectId: string; annotationId: string; x: number; y: number }
   | { type: 'updateAnnotationText'; projectId: string; annotationId: string; text: string }
@@ -130,6 +155,10 @@ export function cloneProject(project: Project): Project {
       to: { ...connection.to },
     })),
   };
+}
+
+function cloneAnnotations(annotations: WorkbenchAnnotation[]): WorkbenchAnnotation[] {
+  return annotations.map((annotation) => ({ ...annotation }));
 }
 
 function getDraftKey(projectId: string, moduleId: string, key: string): string {
@@ -205,6 +234,7 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
       steps: tutorial.steps.map((step) => ({ ...step })),
     })),
     compositeLibrary: STARTER_COMPOSITE_LIBRARY.map(cloneReusableEntry),
+    userWorkspaceLibrary: [],
     compositeEditor: null,
     projectStates: Object.fromEntries(
       projects.map((project) => [project.id, cloneProject(project.project)]),
@@ -323,6 +353,314 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
         ...state,
         activeProjectId: action.projectId,
       };
+    case 'createBlankWorkspace': {
+      return {
+        ...state,
+        activeProjectId: action.workspaceId,
+        userWorkspaceLibrary: [
+          ...state.userWorkspaceLibrary.filter((workspace) => workspace.id !== action.workspaceId),
+          {
+            id: action.workspaceId,
+            name: action.name,
+            group: 'My Workspaces',
+            summary: action.summary,
+            pipeline: action.pipeline,
+            defaultTickedMode: false,
+          },
+        ],
+        projectStates: {
+          ...state.projectStates,
+          [action.workspaceId]: {
+            modules: [],
+            connections: [],
+          },
+        },
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.workspaceId]: {},
+        },
+        annotationsByProject: {
+          ...state.annotationsByProject,
+          [action.workspaceId]: [],
+        },
+        comparisonBaselinesByProject: {
+          ...state.comparisonBaselinesByProject,
+          [action.workspaceId]: null,
+        },
+        activeChallengeIdByProject: {
+          ...state.activeChallengeIdByProject,
+          [action.workspaceId]: null,
+        },
+        activeTutorialIdByProject: {
+          ...state.activeTutorialIdByProject,
+          [action.workspaceId]: null,
+        },
+        activeTutorialStepByProject: {
+          ...state.activeTutorialStepByProject,
+          [action.workspaceId]: 0,
+        },
+        completedTutorialsByProject: {
+          ...state.completedTutorialsByProject,
+          [action.workspaceId]: [],
+        },
+        tutorialNotesVisibleByProject: {
+          ...state.tutorialNotesVisibleByProject,
+          [action.workspaceId]: true,
+        },
+        probedModuleIdsByProject: {
+          ...state.probedModuleIdsByProject,
+          [action.workspaceId]: [],
+        },
+        workspaceModeByProject: {
+          ...state.workspaceModeByProject,
+          [action.workspaceId]: 'build',
+        },
+        cryptanalysisModeByProject: {
+          ...state.cryptanalysisModeByProject,
+          [action.workspaceId]: 'classical',
+        },
+        cryptanalysisInputByProject: {
+          ...state.cryptanalysisInputByProject,
+          [action.workspaceId]: '',
+        },
+        modernAnalysisBaselineByProject: {
+          ...state.modernAnalysisBaselineByProject,
+          [action.workspaceId]: '',
+        },
+        modernAnalysisFlipBitByProject: {
+          ...state.modernAnalysisFlipBitByProject,
+          [action.workspaceId]: 0,
+        },
+        tickedModeByProject: {
+          ...state.tickedModeByProject,
+          [action.workspaceId]: false,
+        },
+        currentTickByProject: {
+          ...state.currentTickByProject,
+          [action.workspaceId]: 0,
+        },
+        isTickPlaybackActiveByProject: {
+          ...state.isTickPlaybackActiveByProject,
+          [action.workspaceId]: false,
+        },
+        tickPlaybackSpeedMsByProject: {
+          ...state.tickPlaybackSpeedMsByProject,
+          [action.workspaceId]: 500,
+        },
+        selectedModuleIdByProject: {
+          ...state.selectedModuleIdByProject,
+          [action.workspaceId]: null,
+        },
+        selectedModuleIdsByProject: {
+          ...state.selectedModuleIdsByProject,
+          [action.workspaceId]: [],
+        },
+      };
+    }
+    case 'saveWorkspaceAs': {
+      const sourceProject = state.projectStates[action.sourceProjectId];
+      const sourceLayout = state.layoutByProject[action.sourceProjectId];
+      const sourceAnnotations = state.annotationsByProject[action.sourceProjectId] ?? [];
+      if (!sourceProject || !sourceLayout) {
+        return state;
+      }
+      const selectedModuleId = sourceProject.modules[0]?.id ?? null;
+      return {
+        ...state,
+        activeProjectId: action.workspaceId,
+        userWorkspaceLibrary: [
+          ...state.userWorkspaceLibrary.filter((workspace) => workspace.id !== action.workspaceId),
+          {
+            id: action.workspaceId,
+            name: action.name,
+            group: 'My Workspaces',
+            summary: action.summary,
+            pipeline: action.pipeline,
+            defaultTickedMode: action.defaultTickedMode ?? false,
+          },
+        ],
+        projectStates: {
+          ...state.projectStates,
+          [action.workspaceId]: cloneProject(sourceProject),
+        },
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.workspaceId]: cloneLayout(sourceLayout),
+        },
+        annotationsByProject: {
+          ...state.annotationsByProject,
+          [action.workspaceId]: cloneAnnotations(sourceAnnotations),
+        },
+        comparisonBaselinesByProject: {
+          ...state.comparisonBaselinesByProject,
+          [action.workspaceId]: null,
+        },
+        activeChallengeIdByProject: {
+          ...state.activeChallengeIdByProject,
+          [action.workspaceId]: null,
+        },
+        activeTutorialIdByProject: {
+          ...state.activeTutorialIdByProject,
+          [action.workspaceId]: null,
+        },
+        activeTutorialStepByProject: {
+          ...state.activeTutorialStepByProject,
+          [action.workspaceId]: 0,
+        },
+        completedTutorialsByProject: {
+          ...state.completedTutorialsByProject,
+          [action.workspaceId]: [],
+        },
+        tutorialNotesVisibleByProject: {
+          ...state.tutorialNotesVisibleByProject,
+          [action.workspaceId]: true,
+        },
+        probedModuleIdsByProject: {
+          ...state.probedModuleIdsByProject,
+          [action.workspaceId]: [],
+        },
+        workspaceModeByProject: {
+          ...state.workspaceModeByProject,
+          [action.workspaceId]:
+            state.workspaceModeByProject[action.sourceProjectId] ?? state.defaultWorkspaceMode,
+        },
+        cryptanalysisModeByProject: {
+          ...state.cryptanalysisModeByProject,
+          [action.workspaceId]: 'classical',
+        },
+        cryptanalysisInputByProject: {
+          ...state.cryptanalysisInputByProject,
+          [action.workspaceId]: '',
+        },
+        modernAnalysisBaselineByProject: {
+          ...state.modernAnalysisBaselineByProject,
+          [action.workspaceId]: '',
+        },
+        modernAnalysisFlipBitByProject: {
+          ...state.modernAnalysisFlipBitByProject,
+          [action.workspaceId]: 0,
+        },
+        tickedModeByProject: {
+          ...state.tickedModeByProject,
+          [action.workspaceId]: action.defaultTickedMode ?? false,
+        },
+        currentTickByProject: {
+          ...state.currentTickByProject,
+          [action.workspaceId]: 0,
+        },
+        isTickPlaybackActiveByProject: {
+          ...state.isTickPlaybackActiveByProject,
+          [action.workspaceId]: false,
+        },
+        tickPlaybackSpeedMsByProject: {
+          ...state.tickPlaybackSpeedMsByProject,
+          [action.workspaceId]: 500,
+        },
+        selectedModuleIdByProject: {
+          ...state.selectedModuleIdByProject,
+          [action.workspaceId]: selectedModuleId,
+        },
+        selectedModuleIdsByProject: {
+          ...state.selectedModuleIdsByProject,
+          [action.workspaceId]: selectedModuleId ? [selectedModuleId] : [],
+        },
+      };
+    }
+    case 'removeWorkspace': {
+      if (!state.userWorkspaceLibrary.some((workspace) => workspace.id === action.workspaceId)) {
+        return state;
+      }
+
+      const nextState: UiState = {
+        ...state,
+        activeProjectId:
+          state.activeProjectId === action.workspaceId
+            ? action.fallbackProjectId
+            : state.activeProjectId,
+        userWorkspaceLibrary: state.userWorkspaceLibrary.filter(
+          (workspace) => workspace.id !== action.workspaceId,
+        ),
+        projectStates: removeProjectEntry(state.projectStates, action.workspaceId),
+        layoutByProject: removeProjectEntry(state.layoutByProject, action.workspaceId),
+        annotationsByProject: removeProjectEntry(state.annotationsByProject, action.workspaceId),
+        comparisonBaselinesByProject: removeProjectEntry(
+          state.comparisonBaselinesByProject,
+          action.workspaceId,
+        ),
+        activeChallengeIdByProject: removeProjectEntry(
+          state.activeChallengeIdByProject,
+          action.workspaceId,
+        ),
+        activeTutorialIdByProject: removeProjectEntry(
+          state.activeTutorialIdByProject,
+          action.workspaceId,
+        ),
+        activeTutorialStepByProject: removeProjectEntry(
+          state.activeTutorialStepByProject,
+          action.workspaceId,
+        ),
+        completedTutorialsByProject: removeProjectEntry(
+          state.completedTutorialsByProject,
+          action.workspaceId,
+        ),
+        tutorialNotesVisibleByProject: removeProjectEntry(
+          state.tutorialNotesVisibleByProject,
+          action.workspaceId,
+        ),
+        probedModuleIdsByProject: removeProjectEntry(
+          state.probedModuleIdsByProject,
+          action.workspaceId,
+        ),
+        workspaceModeByProject: removeProjectEntry(
+          state.workspaceModeByProject,
+          action.workspaceId,
+        ),
+        cryptanalysisModeByProject: removeProjectEntry(
+          state.cryptanalysisModeByProject,
+          action.workspaceId,
+        ),
+        cryptanalysisInputByProject: removeProjectEntry(
+          state.cryptanalysisInputByProject,
+          action.workspaceId,
+        ),
+        modernAnalysisBaselineByProject: removeProjectEntry(
+          state.modernAnalysisBaselineByProject,
+          action.workspaceId,
+        ),
+        modernAnalysisFlipBitByProject: removeProjectEntry(
+          state.modernAnalysisFlipBitByProject,
+          action.workspaceId,
+        ),
+        tickedModeByProject: removeProjectEntry(state.tickedModeByProject, action.workspaceId),
+        currentTickByProject: removeProjectEntry(
+          state.currentTickByProject,
+          action.workspaceId,
+        ),
+        isTickPlaybackActiveByProject: removeProjectEntry(
+          state.isTickPlaybackActiveByProject,
+          action.workspaceId,
+        ),
+        tickPlaybackSpeedMsByProject: removeProjectEntry(
+          state.tickPlaybackSpeedMsByProject,
+          action.workspaceId,
+        ),
+        selectedModuleIdByProject: removeProjectEntry(
+          state.selectedModuleIdByProject,
+          action.workspaceId,
+        ),
+        selectedModuleIdsByProject: removeProjectEntry(
+          state.selectedModuleIdsByProject,
+          action.workspaceId,
+        ),
+        paramDrafts: Object.fromEntries(
+          Object.entries(state.paramDrafts).filter(
+            ([key]) => !key.startsWith(`${action.workspaceId}:`),
+          ),
+        ),
+      };
+
+      return nextState;
+    }
     case 'selectModule':
       return state.compositeEditor
         ? {
@@ -372,6 +710,64 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
               y: action.y,
             },
           },
+        },
+      };
+    }
+    case 'moveModules': {
+      if (state.compositeEditor) {
+        return {
+          ...state,
+          compositeEditor: {
+            ...state.compositeEditor,
+            layout: {
+              ...state.compositeEditor.layout,
+              ...action.positions,
+            },
+          },
+        };
+      }
+
+      const currentLayout = state.layoutByProject[action.projectId];
+      if (!currentLayout) {
+        return state;
+      }
+
+      return {
+        ...state,
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: {
+            ...currentLayout,
+            ...action.positions,
+          },
+        },
+      };
+    }
+    case 'tidyLayout': {
+      if (state.compositeEditor) {
+        return {
+          ...state,
+          compositeEditor: {
+            ...state.compositeEditor,
+            layout: createTidiedLayout(
+              state.compositeEditor.project,
+              state.compositeEditor.layout,
+            ),
+          },
+        };
+      }
+
+      const currentProject = state.projectStates[action.projectId];
+      const currentLayout = state.layoutByProject[action.projectId];
+      if (!currentProject || !currentLayout) {
+        return state;
+      }
+
+      return {
+        ...state,
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: createTidiedLayout(currentProject, currentLayout),
         },
       };
     }
@@ -1260,6 +1656,15 @@ function cloneLayout(
   );
 }
 
+function removeProjectEntry<T>(
+  record: Record<string, T>,
+  projectId: string,
+): Record<string, T> {
+  return Object.fromEntries(
+    Object.entries(record).filter(([candidateProjectId]) => candidateProjectId !== projectId),
+  );
+}
+
 function createAutoLayout(project: Project): Record<string, CompositeLayoutPosition> {
   return Object.fromEntries(
     project.modules.map((moduleInstance, index) => [
@@ -1269,6 +1674,119 @@ function createAutoLayout(project: Project): Record<string, CompositeLayoutPosit
         y: 72 + Math.floor(index / 4) * 120,
       },
     ]),
+  );
+}
+
+function createTidiedLayout(
+  project: Project,
+  currentLayout: Record<string, CompositeLayoutPosition>,
+): Record<string, CompositeLayoutPosition> {
+  const adjacency = new Map<string, string[]>();
+  const indegree = new Map<string, number>();
+  const layerByModuleId = new Map<string, number>();
+
+  for (const moduleInstance of project.modules) {
+    adjacency.set(moduleInstance.id, []);
+    indegree.set(moduleInstance.id, 0);
+  }
+
+  for (const connection of project.connections) {
+    adjacency.get(connection.from.moduleId)?.push(connection.to.moduleId);
+    indegree.set(
+      connection.to.moduleId,
+      (indegree.get(connection.to.moduleId) ?? 0) + 1,
+    );
+  }
+
+  const positionSort = (leftId: string, rightId: string) => {
+    const leftPosition = currentLayout[leftId] ?? { x: 0, y: 0 };
+    const rightPosition = currentLayout[rightId] ?? { x: 0, y: 0 };
+    if (leftPosition.x !== rightPosition.x) {
+      return leftPosition.x - rightPosition.x;
+    }
+    if (leftPosition.y !== rightPosition.y) {
+      return leftPosition.y - rightPosition.y;
+    }
+    return leftId.localeCompare(rightId);
+  };
+
+  const queue = project.modules
+    .map((moduleInstance) => moduleInstance.id)
+    .filter((moduleId) => (indegree.get(moduleId) ?? 0) === 0)
+    .sort(positionSort);
+  const processed = new Set<string>();
+
+  while (queue.length > 0) {
+    const moduleId = queue.shift();
+    if (!moduleId || processed.has(moduleId)) {
+      continue;
+    }
+    processed.add(moduleId);
+
+    for (const targetModuleId of adjacency.get(moduleId) ?? []) {
+      layerByModuleId.set(
+        targetModuleId,
+        Math.max(
+          layerByModuleId.get(targetModuleId) ?? 0,
+          (layerByModuleId.get(moduleId) ?? 0) + 1,
+        ),
+      );
+      const nextIndegree = (indegree.get(targetModuleId) ?? 0) - 1;
+      indegree.set(targetModuleId, nextIndegree);
+      if (nextIndegree === 0) {
+        queue.push(targetModuleId);
+        queue.sort(positionSort);
+      }
+    }
+  }
+
+  const remainingModuleIds = project.modules
+    .map((moduleInstance) => moduleInstance.id)
+    .filter((moduleId) => !processed.has(moduleId))
+    .sort(positionSort);
+
+  for (const moduleId of remainingModuleIds) {
+    const inboundLayers = project.connections
+      .filter((connection) => connection.to.moduleId === moduleId)
+      .map((connection) => (layerByModuleId.get(connection.from.moduleId) ?? 0) + 1);
+    layerByModuleId.set(moduleId, inboundLayers.length > 0 ? Math.max(...inboundLayers) : 0);
+  }
+
+  const modulesByLayer = new Map<number, string[]>();
+  for (const moduleInstance of project.modules) {
+    const layer = layerByModuleId.get(moduleInstance.id) ?? 0;
+    modulesByLayer.set(layer, [...(modulesByLayer.get(layer) ?? []), moduleInstance.id]);
+  }
+
+  const columnXStart = 48;
+  const rowYStart = 72;
+  const columnGap = 244;
+  const rowGap = 148;
+
+  return Object.fromEntries(
+    [...modulesByLayer.entries()]
+      .sort(([leftLayer], [rightLayer]) => leftLayer - rightLayer)
+      .flatMap(([layer, moduleIds]) =>
+        moduleIds
+          .sort((leftId, rightId) => {
+            const leftPosition = currentLayout[leftId] ?? { x: 0, y: 0 };
+            const rightPosition = currentLayout[rightId] ?? { x: 0, y: 0 };
+            if (leftPosition.y !== rightPosition.y) {
+              return leftPosition.y - rightPosition.y;
+            }
+            if (leftPosition.x !== rightPosition.x) {
+              return leftPosition.x - rightPosition.x;
+            }
+            return leftId.localeCompare(rightId);
+          })
+          .map((moduleId, rowIndex) => [
+            moduleId,
+            {
+              x: columnXStart + layer * columnGap,
+              y: rowYStart + rowIndex * rowGap,
+            },
+          ]),
+      ),
   );
 }
 

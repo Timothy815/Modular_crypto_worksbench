@@ -84,6 +84,7 @@ interface WorkbenchPanelProps {
   onSetTickPlaybackSpeed?: (speedMs: number) => void;
   onToggleProbe?: (moduleId: string) => void;
   onMoveModule: (moduleId: string, x: number, y: number) => void;
+  onMoveModules: (positions: Record<string, { x: number; y: number }>) => void;
   onAddAnnotation: () => void;
   onMoveAnnotation: (annotationId: string, x: number, y: number) => void;
   onUpdateAnnotationText: (annotationId: string, text: string) => void;
@@ -100,6 +101,7 @@ interface WorkbenchPanelProps {
   onRemoveConnection: (connectionIndex: number) => void;
   onExportDocument: () => void;
   onImportDocument: (file: File) => void;
+  onTidyLayout: () => void;
   onSetTutorialStep?: (stepIndex: number) => void;
   onSetTutorialNotesVisible?: (visible: boolean) => void;
   projects: DemoProject[];
@@ -147,6 +149,7 @@ export function WorkbenchPanel({
   onSetTickPlaybackSpeed,
   onToggleProbe,
   onMoveModule,
+  onMoveModules,
   onAddAnnotation,
   onMoveAnnotation,
   onUpdateAnnotationText,
@@ -158,6 +161,7 @@ export function WorkbenchPanel({
   onRemoveConnection,
   onExportDocument,
   onImportDocument,
+  onTidyLayout,
   onSetTutorialStep,
   onSetTutorialNotesVisible,
   projects,
@@ -168,6 +172,10 @@ export function WorkbenchPanel({
     moduleId: string;
     pointerOffsetX: number;
     pointerOffsetY: number;
+    anchorStartX: number;
+    anchorStartY: number;
+    moduleIds: string[];
+    initialPositions: Record<string, { x: number; y: number }>;
   } | null>(null);
   const [annotationDragState, setAnnotationDragState] = useState<{
     annotationId: string;
@@ -218,7 +226,26 @@ export function WorkbenchPanel({
           16,
           event.clientY - canvasRect.top + canvasSurface.scrollTop - dragState.pointerOffsetY,
         );
-        onMoveModule(dragState.moduleId, nextX, nextY);
+        if (dragState.moduleIds.length <= 1) {
+          onMoveModule(dragState.moduleId, nextX, nextY);
+        } else {
+          const deltaX = nextX - dragState.anchorStartX;
+          const deltaY = nextY - dragState.anchorStartY;
+          onMoveModules(
+            Object.fromEntries(
+              dragState.moduleIds.map((moduleId) => {
+                const initialPosition = dragState.initialPositions[moduleId];
+                return [
+                  moduleId,
+                  {
+                    x: Math.max(16, initialPosition.x + deltaX),
+                    y: Math.max(16, initialPosition.y + deltaY),
+                  },
+                ];
+              }),
+            ),
+          );
+        }
       }
 
       if (annotationDragState) {
@@ -252,7 +279,7 @@ export function WorkbenchPanel({
       window.removeEventListener('mousemove', handlePointerMove);
       window.removeEventListener('mouseup', handlePointerUp);
     };
-  }, [annotationDragState, dragState, onMoveAnnotation, onMoveModule]);
+  }, [annotationDragState, dragState, onMoveAnnotation, onMoveModule, onMoveModules]);
 
   useEffect(() => {
     if (!pendingConnection) {
@@ -435,7 +462,7 @@ export function WorkbenchPanel({
               </select>
             </label>
             <label className="project-selector">
-              <span className="meta-label">Demo Graph</span>
+              <span className="meta-label">Workspace</span>
               <select
                 value={activeProject.id}
                 onChange={(event) => onSwitchProject(event.target.value)}
@@ -472,6 +499,13 @@ export function WorkbenchPanel({
               onClick={onExportDocument}
             >
               Export JSON
+            </button>
+            <button
+              type="button"
+              className="mini-action-button"
+              onClick={onTidyLayout}
+            >
+              Tidy Layout
             </button>
             <button
               type="button"
@@ -565,7 +599,7 @@ export function WorkbenchPanel({
         <p className="selection-status">
           Selected modules: <strong>{selectedModuleIds.length}</strong>. Use
           <strong> Shift-click</strong> or <strong> Cmd/Ctrl-click</strong> to
-          build a composite selection.
+          build a composite selection, then drag any selected module to move the group.
         </p>
       ) : null}
       {pendingConnection ? (
@@ -780,15 +814,33 @@ export function WorkbenchPanel({
                     const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
                     const canvasSurface = canvasSurfaceRef.current;
                     if (!canvasRect || !canvasSurface) return;
-
-                    onSelectModule(
-                      moduleInstance.id,
-                      event.shiftKey || event.metaKey || event.ctrlKey,
-                    );
+                    const isAdditiveSelection = event.shiftKey || event.metaKey || event.ctrlKey;
+                    if (isAdditiveSelection) {
+                      onSelectModule(moduleInstance.id, true);
+                      return;
+                    }
+                    const isDraggingExistingSelection =
+                      selectedModuleIds.length > 1 &&
+                      selectedModuleIds.includes(moduleInstance.id);
+                    const draggedModuleIds = isDraggingExistingSelection
+                      ? selectedModuleIds
+                      : [moduleInstance.id];
+                    if (!isDraggingExistingSelection) {
+                      onSelectModule(moduleInstance.id, false);
+                    }
                     setDragState({
                       moduleId: moduleInstance.id,
                       pointerOffsetX: event.clientX - canvasRect.left + canvasSurface.scrollLeft - position.x,
                       pointerOffsetY: event.clientY - canvasRect.top + canvasSurface.scrollTop - position.y,
+                      anchorStartX: position.x,
+                      anchorStartY: position.y,
+                      moduleIds: draggedModuleIds,
+                      initialPositions: Object.fromEntries(
+                        draggedModuleIds.map((draggedModuleId) => [
+                          draggedModuleId,
+                          layout[draggedModuleId] ?? { x: 24, y: 24 },
+                        ]),
+                      ),
                     });
                   }}
                 >
