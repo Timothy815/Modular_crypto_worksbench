@@ -599,6 +599,7 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
           { id: 'mix-left', defId: 'SpongeMixRoundIterator', params: { iterationCount: 2 } },
           { id: 'left-rate', defId: 'Permutation', params: { order: '0,1,2,3,4,5,6,7' } },
           { id: 'left-capacity', defId: 'Permutation', params: { order: '8,9,10,11,12,13,14,15' } },
+          { id: 'right-prepare', defId: 'HashDigestRoundComposite', params: { rotateMode: 'rotate-right' } },
           { id: 'absorb-right', defId: 'XOR', params: {} },
           { id: 'state-after-right', defId: 'BitJoin', params: {} },
           { id: 'mix-right', defId: 'SpongeMixRoundIterator', params: { iterationCount: 2 } },
@@ -617,6 +618,7 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
           { from: { moduleId: 'state-after-left', port: 'out' }, to: { moduleId: 'mix-left', port: 'in' } },
           { from: { moduleId: 'mix-left', port: 'out' }, to: { moduleId: 'left-rate', port: 'in' } },
           { from: { moduleId: 'mix-left', port: 'out' }, to: { moduleId: 'left-capacity', port: 'in' } },
+          { from: { moduleId: 'right-prepare', port: 'out' }, to: { moduleId: 'absorb-right', port: 'a' } },
           { from: { moduleId: 'left-rate', port: 'out' }, to: { moduleId: 'absorb-right', port: 'b' } },
           { from: { moduleId: 'absorb-right', port: 'out' }, to: { moduleId: 'state-after-right', port: 'a' } },
           { from: { moduleId: 'left-capacity', port: 'out' }, to: { moduleId: 'state-after-right', port: 'b' } },
@@ -637,8 +639,8 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
         },
         {
           externalPort: 'right',
-          internalModuleId: 'absorb-right',
-          internalPort: 'a',
+          internalModuleId: 'right-prepare',
+          internalPort: 'in',
         },
       ],
       outputBindings: [

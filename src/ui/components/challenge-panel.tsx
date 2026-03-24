@@ -1,10 +1,12 @@
 import { useMemo, useRef, useState } from 'react';
 import type { GuidedChallenge, ChallengeEvaluation } from '../challenges';
+import type { Project } from '../../engine/types';
 
 interface ChallengePanelProps {
   challenges: GuidedChallenge[];
   selectedChallengeId: string;
   evaluation: ChallengeEvaluation | null;
+  currentProject: Project;
   canCaptureChallenge: boolean;
   onSelectChallenge: (challengeId: string) => void;
   onLoadChallengeStart: () => void;
@@ -17,6 +19,7 @@ export function ChallengePanel({
   challenges,
   selectedChallengeId,
   evaluation,
+  currentProject,
   canCaptureChallenge,
   onSelectChallenge,
   onLoadChallengeStart,
@@ -44,6 +47,33 @@ export function ChallengePanel({
   const activeGroup = selectedChallenge?.group ?? 'Other';
   const isCollisionChallenge =
     selectedChallenge?.success.kind === 'output-match-target-with-module-difference';
+  const isHashCollisionChallenge =
+    isCollisionChallenge && (selectedChallenge?.group ?? '') === 'Hash Foundations';
+  const guidedModuleIds = isCollisionChallenge
+    ? selectedChallenge?.success.moduleIds ?? []
+    : [];
+  const guidedComparisonRows = selectedChallenge
+    ? guidedModuleIds
+        .map((moduleId) => {
+          const targetModule =
+            selectedChallenge.targetProject.modules.find((moduleInstance) => moduleInstance.id === moduleId) ??
+            null;
+          const currentModule =
+            currentProject.modules.find((moduleInstance) => moduleInstance.id === moduleId) ?? null;
+
+          if (!targetModule || !currentModule) {
+            return null;
+          }
+
+          return {
+            moduleId,
+            label: formatGuidedModuleLabel(moduleId),
+            targetValue: formatParamsForDisplay(targetModule.params),
+            currentValue: formatParamsForDisplay(currentModule.params),
+          };
+        })
+        .filter((row): row is NonNullable<typeof row> => row !== null)
+    : [];
 
   const visibleChallenges = challenges.filter(
     (challenge) => (challenge.group ?? 'Other') === activeGroup,
@@ -249,6 +279,34 @@ export function ChallengePanel({
                         : 'No divergence detected against the target behavior.'}
                     </p>
                   ) : null}
+                  {evaluation.status === 'success' && isHashCollisionChallenge ? (
+                    <p className="comparison-copy">
+                      Next step: keep the same two messages in view, then open <strong>Analyze</strong>{' '}
+                      to inspect where their internal paths diverge and open <strong>Modern
+                      Cryptanalysis</strong> to compare how those differences spread before the digest
+                      becomes the same again.
+                    </p>
+                  ) : null}
+                  {isHashCollisionChallenge && guidedComparisonRows.length > 0 ? (
+                    <div className="challenge-guided-compare">
+                      <span className="meta-label">Message Comparison</span>
+                      {guidedComparisonRows.map((row) => (
+                        <div key={row.moduleId} className="challenge-guided-row">
+                          <strong>{row.label}</strong>
+                          <div className="challenge-guided-values">
+                            <div className="challenge-guided-card">
+                              <span className="meta-label">Original</span>
+                              <code>{row.targetValue}</code>
+                            </div>
+                            <div className="challenge-guided-card">
+                              <span className="meta-label">Current</span>
+                              <code>{row.currentValue}</code>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                   {evaluation.status === 'blocked' ? (
                     <>
                       <p className="comparison-copy">
@@ -316,6 +374,24 @@ function formatIssueLead(issue: ChallengeEvaluation['currentIssues'][number]) {
   }
 
   return '';
+}
+
+function formatGuidedModuleLabel(moduleId: string) {
+  return moduleId
+    .split('-')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function formatParamsForDisplay(params: Record<string, unknown>) {
+  const entries = Object.entries(params);
+  if (entries.length === 0) {
+    return 'n/a';
+  }
+
+  return entries
+    .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(',') : String(value)}`)
+    .join(' | ');
 }
 
 function formatDifficultyBadge(

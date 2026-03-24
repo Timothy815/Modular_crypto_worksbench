@@ -312,6 +312,49 @@ describe('evaluateChallengeAttempt', () => {
     expect(adjacentSame).toBe(0);
   });
 
+  it('sponge hash does not preserve the digest under sampled paired (+k,+k) byte shifts', () => {
+    const deltas = [1, 2, 4, 8, 16, 32, 64, 128];
+
+    for (const delta of deltas) {
+      let preservedCount = 0;
+      let samples = 0;
+
+      for (let left = 0; left < 256; left += 17) {
+        for (let right = 0; right < 256; right += 19) {
+          const project = cloneProject(toySpongeHashProject.project);
+          const shiftedProject = cloneProject(toySpongeHashProject.project);
+          const leftSource = project.modules.find((moduleInstance) => moduleInstance.id === 'left-source');
+          const rightSource = project.modules.find((moduleInstance) => moduleInstance.id === 'right-source');
+          const shiftedLeftSource = shiftedProject.modules.find((moduleInstance) => moduleInstance.id === 'left-source');
+          const shiftedRightSource = shiftedProject.modules.find((moduleInstance) => moduleInstance.id === 'right-source');
+
+          if (!leftSource || !rightSource || !shiftedLeftSource || !shiftedRightSource) {
+            throw new Error('Expected left and right source modules in toy-sponge-hash project.');
+          }
+
+          leftSource.params.value = left.toString(16).toUpperCase().padStart(2, '0');
+          rightSource.params.value = right.toString(16).toUpperCase().padStart(2, '0');
+          shiftedLeftSource.params.value = ((left + delta) & 0xff).toString(16).toUpperCase().padStart(2, '0');
+          shiftedRightSource.params.value = ((right + delta) & 0xff).toString(16).toUpperCase().padStart(2, '0');
+
+          const currentDigest = executeProject(project, compositeRegistry).trace.at(-1)?.inputs.in;
+          const shiftedDigest = executeProject(shiftedProject, compositeRegistry).trace.at(-1)?.inputs.in;
+
+          if (!currentDigest || !shiftedDigest || currentDigest.type !== 'symbol' || shiftedDigest.type !== 'symbol') {
+            throw new Error('Expected terminal hex output for toy-sponge-hash.');
+          }
+
+          samples += 1;
+          if (currentDigest.value === shiftedDigest.value) {
+            preservedCount += 1;
+          }
+        }
+      }
+
+      expect(preservedCount, `delta ${delta} preserved ${preservedCount}/${samples} sampled sponge digests`).toBe(0);
+    }
+  });
+
   it('returns failure when the current project diverges from the target behavior', () => {
     const currentProject = cloneProject(bridgeProject.project);
     const keyModule = currentProject.modules.find((moduleInstance) => moduleInstance.id === 'key');

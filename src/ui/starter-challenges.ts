@@ -290,7 +290,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'You are not trying to preserve the whole intermediate trace. Only the final digest has to match.',
       'At least one of the two HexSource values must change, or the challenge will not count as solved.',
       'A one-byte digest has only 256 possible outputs, so different 2-byte messages must eventually overlap.',
-      'If you want to understand why two different messages can still land on the same digest, open Analyze or Modern Cryptanalysis after you find one and compare the structures, not just the result.',
+      'After you find one, keep both messages in view and open Analyze or Modern Cryptanalysis. Look for where the traces first diverge, then where the compression path folds those differences back into the same digest byte.',
     ],
   },
   {
@@ -313,7 +313,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The goal is still simple: different message, same digest. You are not matching the whole internal trace.',
       'Use the HexSource stepping buttons to walk the message space instead of retyping every value.',
       'A richer internal structure can make the search feel harder without changing the fact that a 1-byte digest has only 256 outputs.',
-      'After you find one, open Analyze or Modern Cryptanalysis and compare how the sponge absorbed and mixed the colliding messages.',
+      'After you find one, open Analyze or Modern Cryptanalysis and compare where the sponge absorbs the two messages differently, then where the later squeeze/fold path hides those differences behind the same digest.',
     ],
   },
   {

@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState, type CSSProperties } from 'react';
+import { lazy, Suspense, useEffect, useReducer, useState, type CSSProperties } from 'react';
 
 import './App.css';
 import { isCompositeDefinition, type CompositeLibraryEntry } from './engine/composites';
@@ -11,11 +11,7 @@ import {
   replaceSelectionWithComposite,
 } from './ui/composite-authoring';
 import { evaluateChallengeAttempt } from './ui/challenges';
-import { ChallengePanel } from './ui/components/challenge-panel';
-import { CryptanalysisPanel } from './ui/components/cryptanalysis-panel';
-import { ParameterInspector } from './ui/components/parameter-inspector';
 import { PrimitivePalette } from './ui/components/primitive-palette';
-import { TutorialPanel } from './ui/components/tutorial-panel';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
 import { demoProjects, runDemoProject } from './ui/demo-projects';
 import { compareExecutionResults } from './ui/execution-compare';
@@ -45,8 +41,42 @@ const MAX_LEFT_DOCK_WIDTH = 520;
 const MIN_RIGHT_DOCK_WIDTH = 280;
 const MAX_RIGHT_DOCK_WIDTH = 680;
 
+const ChallengePanel = lazy(() =>
+  import('./ui/components/challenge-panel').then((module) => ({ default: module.ChallengePanel })),
+);
+const CryptanalysisPanel = lazy(() =>
+  import('./ui/components/cryptanalysis-panel').then((module) => ({
+    default: module.CryptanalysisPanel,
+  })),
+);
+const ParameterInspector = lazy(() =>
+  import('./ui/components/parameter-inspector').then((module) => ({
+    default: module.ParameterInspector,
+  })),
+);
+const TutorialPanel = lazy(() =>
+  import('./ui/components/tutorial-panel').then((module) => ({ default: module.TutorialPanel })),
+);
+
 function clampDockWidth(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+function LazyPanelFallback({
+  label = 'Loading',
+  title = 'Preparing panel…',
+}: {
+  label?: string;
+  title?: string;
+}) {
+  return (
+    <section className="panel comparison-panel">
+      <div className="panel-head">
+        <p className="panel-label">{label}</p>
+        <h2>{title}</h2>
+      </div>
+    </section>
+  );
 }
 
 function App() {
@@ -1235,108 +1265,110 @@ function App() {
         ) : null}
         {state.showInspector ? (
           <div className="workbench-dock workbench-dock-right">
-            <ParameterInspector
-              execution={execution}
-              registry={effectiveRegistry}
-              executionError={executionError}
-              validationIssues={validationIssues}
-              stepIndex={effectiveStepIndex}
-              project={activeProjectState}
-              tutorialStep={activeTutorialStep}
-              projectName={activeProjectDefinition.name}
-              comparisonBaseline={comparisonBaseline}
-              executionComparison={executionComparison}
-              baselineOutput={
-                baselineExecution
-                  ? executionComparison?.baselineOutput.formatted ?? 'n/a'
-                  : 'blocked'
-              }
-              variantOutput={
-                execution
-                  ? executionComparison?.variantOutput.formatted ?? 'n/a'
-                  : 'blocked'
-              }
-              baselineExecutionError={baselineExecutionError}
-              moduleDef={selectedModuleDef}
-              moduleInstance={selectedModule}
-              getParamDraft={(moduleId, key) =>
-                getDraftValue(state, activeProjectDefinition.id, moduleId, key)
-              }
-              baselineModuleInstance={baselineSelectedModule}
-              onParamDraftChange={(moduleId, key, rawValue) =>
-                dispatch({
-                  type: 'setParamDraft',
-                  projectId: activeProjectDefinition.id,
-                  moduleId,
-                  key,
-                  rawValue,
-                })
-              }
-              onParamChange={(moduleId, key, value) =>
-                dispatch({
-                  type: 'updateParam',
-                  projectId: activeProjectDefinition.id,
-                  moduleId,
-                  key,
-                  value,
-                })
-              }
-              onDeleteModule={(moduleId) =>
-                state.compositeEditor && activeCompositeEntry && isCompositeBoundaryModule(activeCompositeEntry, moduleId)
-                  ? dispatch({
-                      type: 'setCompositeEditorSaveError',
-                      message:
-                        'This module is bound to an exposed composite port. Boundary editing will come in a later slice.',
-                    })
-                  : dispatch({
-                      type: 'removeModule',
-                      projectId: activeProjectDefinition.id,
-                      moduleId,
-                    })
-              }
-              onSelectIssueTarget={(moduleId) =>
-                dispatch({
-                  type: 'selectModule',
-                  projectId: activeProjectDefinition.id,
-                  moduleId,
-                })
-              }
-              onTraceHover={setHoveredTraceModuleId}
-              onStepChange={syncTutorialStepFromTrace}
-              onActiveAnalysisTraceChange={setActiveAnalysisTraceEntry}
-              onCaptureBaseline={() =>
-                dispatch({
-                  type: 'captureComparisonBaseline',
-                  projectId: activeProjectDefinition.id,
-                  capturedAt: new Date().toISOString(),
-                })
-              }
-              onClearBaseline={() =>
-                dispatch({
-                  type: 'clearComparisonBaseline',
-                  projectId: activeProjectDefinition.id,
-                })
-              }
-              probedModuleIds={state.probedModuleIdsByProject[activeProjectDefinition.id] ?? []}
-              isTickedMode={isTickedMode}
-              currentTick={effectiveCurrentTick}
-              tickCount={effectiveTickCount}
-              tickedParamsByModule={tickedExecution?.paramsByModuleByTick ?? null}
-              tickHistoryByModule={tickHistoryByModule}
-              onToggleProbe={(moduleId) =>
-                dispatch({
-                  type: 'toggleProbe',
-                  projectId: activeProjectDefinition.id,
-                  moduleId,
-                })
-              }
-              onClearProbes={() =>
-                dispatch({
-                  type: 'clearProbes',
-                  projectId: activeProjectDefinition.id,
-                })
-              }
-            />
+            <Suspense fallback={<LazyPanelFallback label="Analyze" title="Loading inspector…" />}>
+              <ParameterInspector
+                execution={execution}
+                registry={effectiveRegistry}
+                executionError={executionError}
+                validationIssues={validationIssues}
+                stepIndex={effectiveStepIndex}
+                project={activeProjectState}
+                tutorialStep={activeTutorialStep}
+                projectName={activeProjectDefinition.name}
+                comparisonBaseline={comparisonBaseline}
+                executionComparison={executionComparison}
+                baselineOutput={
+                  baselineExecution
+                    ? executionComparison?.baselineOutput.formatted ?? 'n/a'
+                    : 'blocked'
+                }
+                variantOutput={
+                  execution
+                    ? executionComparison?.variantOutput.formatted ?? 'n/a'
+                    : 'blocked'
+                }
+                baselineExecutionError={baselineExecutionError}
+                moduleDef={selectedModuleDef}
+                moduleInstance={selectedModule}
+                getParamDraft={(moduleId, key) =>
+                  getDraftValue(state, activeProjectDefinition.id, moduleId, key)
+                }
+                baselineModuleInstance={baselineSelectedModule}
+                onParamDraftChange={(moduleId, key, rawValue) =>
+                  dispatch({
+                    type: 'setParamDraft',
+                    projectId: activeProjectDefinition.id,
+                    moduleId,
+                    key,
+                    rawValue,
+                  })
+                }
+                onParamChange={(moduleId, key, value) =>
+                  dispatch({
+                    type: 'updateParam',
+                    projectId: activeProjectDefinition.id,
+                    moduleId,
+                    key,
+                    value,
+                  })
+                }
+                onDeleteModule={(moduleId) =>
+                  state.compositeEditor && activeCompositeEntry && isCompositeBoundaryModule(activeCompositeEntry, moduleId)
+                    ? dispatch({
+                        type: 'setCompositeEditorSaveError',
+                        message:
+                          'This module is bound to an exposed composite port. Boundary editing will come in a later slice.',
+                      })
+                    : dispatch({
+                        type: 'removeModule',
+                        projectId: activeProjectDefinition.id,
+                        moduleId,
+                      })
+                }
+                onSelectIssueTarget={(moduleId) =>
+                  dispatch({
+                    type: 'selectModule',
+                    projectId: activeProjectDefinition.id,
+                    moduleId,
+                  })
+                }
+                onTraceHover={setHoveredTraceModuleId}
+                onStepChange={syncTutorialStepFromTrace}
+                onActiveAnalysisTraceChange={setActiveAnalysisTraceEntry}
+                onCaptureBaseline={() =>
+                  dispatch({
+                    type: 'captureComparisonBaseline',
+                    projectId: activeProjectDefinition.id,
+                    capturedAt: new Date().toISOString(),
+                  })
+                }
+                onClearBaseline={() =>
+                  dispatch({
+                    type: 'clearComparisonBaseline',
+                    projectId: activeProjectDefinition.id,
+                  })
+                }
+                probedModuleIds={state.probedModuleIdsByProject[activeProjectDefinition.id] ?? []}
+                isTickedMode={isTickedMode}
+                currentTick={effectiveCurrentTick}
+                tickCount={effectiveTickCount}
+                tickedParamsByModule={tickedExecution?.paramsByModuleByTick ?? null}
+                tickHistoryByModule={tickHistoryByModule}
+                onToggleProbe={(moduleId) =>
+                  dispatch({
+                    type: 'toggleProbe',
+                    projectId: activeProjectDefinition.id,
+                    moduleId,
+                  })
+                }
+                onClearProbes={() =>
+                  dispatch({
+                    type: 'clearProbes',
+                    projectId: activeProjectDefinition.id,
+                  })
+                }
+              />
+            </Suspense>
             <button
               type="button"
               className="dock-resize-handle dock-resize-handle-left"
@@ -1358,82 +1390,86 @@ function App() {
       {!state.compositeEditor ? (
         <>
           {workspaceMode === 'cryptanalysis' ? (
-            <CryptanalysisPanel
-              projectName={activeProjectDefinition.name}
-              project={activeProjectState}
-              registry={effectiveRegistry}
-              execution={execution}
-              ciphertext={state.cryptanalysisInputByProject[activeProjectDefinition.id] ?? ''}
-              cryptanalysisMode={state.cryptanalysisModeByProject[activeProjectDefinition.id] ?? 'classical'}
-              modernBaseline={state.modernAnalysisBaselineByProject[activeProjectDefinition.id] ?? ''}
-              modernFlipBit={state.modernAnalysisFlipBitByProject[activeProjectDefinition.id] ?? 0}
-              workspaceMode={workspaceMode}
-              tutorial={selectedTutorial?.projectId === activeProjectDefinition.id ? selectedTutorial : null}
-              tutorialStep={
-                tutorialNotesVisible && selectedTutorial?.projectId === activeProjectDefinition.id
-                  ? selectedTutorialStep
-                  : null
-              }
-              tutorialStepIndex={tutorialStepIndex}
-              tutorialNotesVisible={tutorialNotesVisible}
-              onSetWorkspaceMode={(mode) =>
-                dispatch({
-                  type: 'setWorkspaceMode',
-                  projectId: activeProjectDefinition.id,
-                  mode,
-                })
-              }
-              onSetCryptanalysisMode={(mode) =>
-                dispatch({
-                  type: 'setCryptanalysisMode',
-                  projectId: activeProjectDefinition.id,
-                  mode,
-                })
-              }
-              onSetTutorialNotesVisible={(visible) =>
-                dispatch({
-                  type: 'setTutorialNotesVisible',
-                  projectId: activeProjectDefinition.id,
-                  visible,
-                })
-              }
-              onCiphertextChange={(value) =>
-                dispatch({
-                  type: 'setCryptanalysisInput',
-                  projectId: activeProjectDefinition.id,
-                  value,
-                })
-              }
-              onModernBaselineChange={(value) =>
-                dispatch({
-                  type: 'setModernAnalysisBaseline',
-                  projectId: activeProjectDefinition.id,
-                  value,
-                })
-              }
-              onModernFlipBitChange={(value) =>
-                dispatch({
-                  type: 'setModernAnalysisFlipBit',
-                  projectId: activeProjectDefinition.id,
-                  value,
-                })
-              }
-              onSetTutorialStep={(stepValue) => {
-                setStepIndex(selectedTutorial?.steps[stepValue]?.targetStepIndex ?? null);
-                dispatch({
-                  type: 'setTutorialStep',
-                  projectId: activeProjectDefinition.id,
-                  stepIndex: stepValue,
-                });
-              }}
-              onFocusTutorialModule={(moduleId) =>
-                dispatch({
-                  type: 'selectModule',
-                  projectId: activeProjectDefinition.id,
-                  moduleId,
-                })
-              }
-            />
+            <Suspense
+              fallback={<LazyPanelFallback label="Cryptanalysis" title="Loading analysis workspace…" />}
+            >
+              <CryptanalysisPanel
+                projectName={activeProjectDefinition.name}
+                project={activeProjectState}
+                registry={effectiveRegistry}
+                execution={execution}
+                ciphertext={state.cryptanalysisInputByProject[activeProjectDefinition.id] ?? ''}
+                cryptanalysisMode={state.cryptanalysisModeByProject[activeProjectDefinition.id] ?? 'classical'}
+                modernBaseline={state.modernAnalysisBaselineByProject[activeProjectDefinition.id] ?? ''}
+                modernFlipBit={state.modernAnalysisFlipBitByProject[activeProjectDefinition.id] ?? 0}
+                workspaceMode={workspaceMode}
+                tutorial={selectedTutorial?.projectId === activeProjectDefinition.id ? selectedTutorial : null}
+                tutorialStep={
+                  tutorialNotesVisible && selectedTutorial?.projectId === activeProjectDefinition.id
+                    ? selectedTutorialStep
+                    : null
+                }
+                tutorialStepIndex={tutorialStepIndex}
+                tutorialNotesVisible={tutorialNotesVisible}
+                onSetWorkspaceMode={(mode) =>
+                  dispatch({
+                    type: 'setWorkspaceMode',
+                    projectId: activeProjectDefinition.id,
+                    mode,
+                  })
+                }
+                onSetCryptanalysisMode={(mode) =>
+                  dispatch({
+                    type: 'setCryptanalysisMode',
+                    projectId: activeProjectDefinition.id,
+                    mode,
+                  })
+                }
+                onSetTutorialNotesVisible={(visible) =>
+                  dispatch({
+                    type: 'setTutorialNotesVisible',
+                    projectId: activeProjectDefinition.id,
+                    visible,
+                  })
+                }
+                onCiphertextChange={(value) =>
+                  dispatch({
+                    type: 'setCryptanalysisInput',
+                    projectId: activeProjectDefinition.id,
+                    value,
+                  })
+                }
+                onModernBaselineChange={(value) =>
+                  dispatch({
+                    type: 'setModernAnalysisBaseline',
+                    projectId: activeProjectDefinition.id,
+                    value,
+                  })
+                }
+                onModernFlipBitChange={(value) =>
+                  dispatch({
+                    type: 'setModernAnalysisFlipBit',
+                    projectId: activeProjectDefinition.id,
+                    value,
+                  })
+                }
+                onSetTutorialStep={(stepValue) => {
+                  setStepIndex(selectedTutorial?.steps[stepValue]?.targetStepIndex ?? null);
+                  dispatch({
+                    type: 'setTutorialStep',
+                    projectId: activeProjectDefinition.id,
+                    stepIndex: stepValue,
+                  });
+                }}
+                onFocusTutorialModule={(moduleId) =>
+                  dispatch({
+                    type: 'selectModule',
+                    projectId: activeProjectDefinition.id,
+                    moduleId,
+                  })
+                }
+              />
+            </Suspense>
           ) : hasChallengePanel || hasTutorialPanel ? (
             <section className="learning-dock">
               <div className="learning-dock-tabs" role="tablist" aria-label="Learning panel">
@@ -1470,16 +1506,74 @@ function App() {
               </div>
 
               {activeLearningPanelTab === 'challenge' && selectedChallenge ? (
+                <Suspense fallback={<LazyPanelFallback label="Challenge" title="Loading challenge…" />}>
                 <ChallengePanel
                   challenges={state.challengeLibrary}
                   selectedChallengeId={selectedChallenge.id}
                   evaluation={challengeEvaluation}
+                  currentProject={activeProjectState}
                   canCaptureChallenge={canCaptureChallenge}
                   onSelectChallenge={(challengeId) =>
-                    {
-                      const nextChallenge =
-                        state.challengeLibrary.find((challenge) => challenge.id === challengeId) ?? null;
-                      const challengeProjectId = nextChallenge?.projectId ?? activeProjectDefinition.id;
+                      {
+                        const nextChallenge =
+                          state.challengeLibrary.find((challenge) => challenge.id === challengeId) ?? null;
+                        const challengeProjectId = nextChallenge?.projectId ?? activeProjectDefinition.id;
+                        setLearningPanelTab('challenge');
+                        if (challengeProjectId !== activeProjectDefinition.id) {
+                          dispatch({
+                            type: 'switchProject',
+                            projectId: challengeProjectId,
+                          });
+                        }
+                        dispatch({
+                          type: 'selectChallenge',
+                          projectId: challengeProjectId,
+                          challengeId,
+                        });
+                      }
+                    }
+                    onLoadChallengeStart={() => {
+                      setLearningPanelTab('challenge');
+                      setIsChallengeResetConfirmOpen(true);
+                    }}
+                    onExportChallenge={() => downloadGuidedChallengeDocument(selectedChallenge)}
+                    onCaptureChallenge={() => {
+                      setLearningPanelTab('challenge');
+                      const defaultTitle = `${activeProjectDefinition.name} Guided Lab`;
+                      setChallengeCaptureTitle(defaultTitle);
+                      setChallengeCaptureId(createChallengeIdCandidate(defaultTitle));
+                      if (activeProjectDefinition.id === 'sequential') {
+                        setChallengeCaptureDifficulty('intermediate');
+                        setChallengeCapturePrompt(
+                          `Repair or complete the ${activeProjectDefinition.name} machine until its running output stream matches the captured reference behavior.`,
+                        );
+                        setChallengeCaptureHints(
+                          'The clock period controls when the machine advances.\nUse the tick bar and probes to find the first wrong moment.',
+                        );
+                      } else {
+                        setChallengeCaptureDifficulty('beginner');
+                        setChallengeCapturePrompt(
+                          `Repair or complete the ${activeProjectDefinition.name} machine until its output matches the captured reference behavior.`,
+                        );
+                        setChallengeCaptureHints('');
+                      }
+                      setChallengeCaptureShouldExport(true);
+                      setChallengeCaptureError(null);
+                      setIsChallengeCaptureOpen(true);
+                    }}
+                    onImportChallenge={async (file) => {
+                      const rawValue = await file.text();
+                      const challengeDocument = parseGuidedChallengeDocument(rawValue);
+                      if (!challengeDocument) {
+                        setImportError('The selected file is not a valid MCW guided challenge document.');
+                        return;
+                      }
+
+                      dispatch({
+                        type: 'upsertChallenge',
+                        challenge: challengeDocument,
+                      });
+                      const challengeProjectId = challengeDocument.projectId ?? activeProjectDefinition.id;
                       setLearningPanelTab('challenge');
                       if (challengeProjectId !== activeProjectDefinition.id) {
                         dispatch({
@@ -1490,133 +1584,80 @@ function App() {
                       dispatch({
                         type: 'selectChallenge',
                         projectId: challengeProjectId,
-                        challengeId,
+                        challengeId: challengeDocument.id,
                       });
-                    }
-                  }
-                  onLoadChallengeStart={() => {
-                    setLearningPanelTab('challenge');
-                    setIsChallengeResetConfirmOpen(true);
-                  }}
-                  onExportChallenge={() => downloadGuidedChallengeDocument(selectedChallenge)}
-                  onCaptureChallenge={() => {
-                    setLearningPanelTab('challenge');
-                    const defaultTitle = `${activeProjectDefinition.name} Guided Lab`;
-                    setChallengeCaptureTitle(defaultTitle);
-                    setChallengeCaptureId(createChallengeIdCandidate(defaultTitle));
-                    if (activeProjectDefinition.id === 'sequential') {
-                      setChallengeCaptureDifficulty('intermediate');
-                      setChallengeCapturePrompt(
-                        `Repair or complete the ${activeProjectDefinition.name} machine until its running output stream matches the captured reference behavior.`,
-                      );
-                      setChallengeCaptureHints(
-                        'The clock period controls when the machine advances.\nUse the tick bar and probes to find the first wrong moment.',
-                      );
-                    } else {
-                      setChallengeCaptureDifficulty('beginner');
-                      setChallengeCapturePrompt(
-                        `Repair or complete the ${activeProjectDefinition.name} machine until its output matches the captured reference behavior.`,
-                      );
-                      setChallengeCaptureHints('');
-                    }
-                    setChallengeCaptureShouldExport(true);
-                    setChallengeCaptureError(null);
-                    setIsChallengeCaptureOpen(true);
-                  }}
-                  onImportChallenge={async (file) => {
-                    const rawValue = await file.text();
-                    const challengeDocument = parseGuidedChallengeDocument(rawValue);
-                    if (!challengeDocument) {
-                      setImportError('The selected file is not a valid MCW guided challenge document.');
-                      return;
-                    }
-
-                    dispatch({
-                      type: 'upsertChallenge',
-                      challenge: challengeDocument,
-                    });
-                    const challengeProjectId = challengeDocument.projectId ?? activeProjectDefinition.id;
-                    setLearningPanelTab('challenge');
-                    if (challengeProjectId !== activeProjectDefinition.id) {
-                      dispatch({
-                        type: 'switchProject',
-                        projectId: challengeProjectId,
-                      });
-                    }
-                    dispatch({
-                      type: 'selectChallenge',
-                      projectId: challengeProjectId,
-                      challengeId: challengeDocument.id,
-                    });
-                    setImportError(null);
-                  }}
-                />
+                      setImportError(null);
+                    }}
+                  />
+                </Suspense>
               ) : null}
 
               {activeLearningPanelTab === 'tutorial' && selectedTutorial ? (
-                <TutorialPanel
-                  tutorials={state.tutorialLibrary}
-                  selectedTutorialId={selectedTutorial.id}
-                  currentProjectId={activeProjectDefinition.id}
-                  stepIndex={tutorialStepIndex}
-                  activeStep={selectedTutorialStep}
-                  completedTutorialIds={completedTutorialIds}
-                  isCompleted={isTutorialCompleted}
-                  workspaceMode={workspaceMode}
-                  tutorialNotesVisible={tutorialNotesVisible}
-                  onSetWorkspaceMode={(mode) =>
-                    dispatch({
-                      type: 'setWorkspaceMode',
-                      projectId: activeProjectDefinition.id,
-                      mode,
-                    })
-                  }
-                  onSetTutorialNotesVisible={(visible) =>
-                    dispatch({
-                      type: 'setTutorialNotesVisible',
-                      projectId: activeProjectDefinition.id,
-                      visible,
-                    })
-                  }
-                  onSelectTutorial={(tutorialId) => {
-                    const nextTutorial =
-                      state.tutorialLibrary.find((tutorial) => tutorial.id === tutorialId) ?? null;
-                    setLearningPanelTab('tutorial');
-                    setStepIndex(nextTutorial?.steps[0]?.targetStepIndex ?? null);
-                    dispatch({
-                      type: 'selectTutorial',
-                      projectId: activeProjectDefinition.id,
-                      tutorialId,
-                    });
-                  }}
-                  onSetStep={(stepValue) => {
-                    setStepIndex(selectedTutorial?.steps[stepValue]?.targetStepIndex ?? null);
-                    dispatch({
-                      type: 'setTutorialStep',
-                      projectId: activeProjectDefinition.id,
-                      stepIndex: stepValue,
-                    });
-                  }}
-                  onSwitchProject={(projectId) =>
-                    dispatch({
-                      type: 'switchProject',
-                      projectId,
-                    })
-                  }
-                  onFocusStepModule={(moduleId) =>
-                    dispatch({
-                      type: 'selectModule',
-                      projectId: activeProjectDefinition.id,
-                      moduleId,
-                    })
-                  }
-                  onResetProgress={() =>
-                    dispatch({
-                      type: 'resetTutorialProgress',
-                      projectId: activeProjectDefinition.id,
-                    })
-                  }
-                />
+                <Suspense fallback={<LazyPanelFallback label="Tutorial" title="Loading tutorial…" />}>
+                  <TutorialPanel
+                    tutorials={state.tutorialLibrary}
+                    selectedTutorialId={selectedTutorial.id}
+                    currentProjectId={activeProjectDefinition.id}
+                    stepIndex={tutorialStepIndex}
+                    activeStep={selectedTutorialStep}
+                    completedTutorialIds={completedTutorialIds}
+                    isCompleted={isTutorialCompleted}
+                    workspaceMode={workspaceMode}
+                    tutorialNotesVisible={tutorialNotesVisible}
+                    onSetWorkspaceMode={(mode) =>
+                      dispatch({
+                        type: 'setWorkspaceMode',
+                        projectId: activeProjectDefinition.id,
+                        mode,
+                      })
+                    }
+                    onSetTutorialNotesVisible={(visible) =>
+                      dispatch({
+                        type: 'setTutorialNotesVisible',
+                        projectId: activeProjectDefinition.id,
+                        visible,
+                      })
+                    }
+                    onSelectTutorial={(tutorialId) => {
+                      const nextTutorial =
+                        state.tutorialLibrary.find((tutorial) => tutorial.id === tutorialId) ?? null;
+                      setLearningPanelTab('tutorial');
+                      setStepIndex(nextTutorial?.steps[0]?.targetStepIndex ?? null);
+                      dispatch({
+                        type: 'selectTutorial',
+                        projectId: activeProjectDefinition.id,
+                        tutorialId,
+                      });
+                    }}
+                    onSetStep={(stepValue) => {
+                      setStepIndex(selectedTutorial?.steps[stepValue]?.targetStepIndex ?? null);
+                      dispatch({
+                        type: 'setTutorialStep',
+                        projectId: activeProjectDefinition.id,
+                        stepIndex: stepValue,
+                      });
+                    }}
+                    onSwitchProject={(projectId) =>
+                      dispatch({
+                        type: 'switchProject',
+                        projectId,
+                      })
+                    }
+                    onFocusStepModule={(moduleId) =>
+                      dispatch({
+                        type: 'selectModule',
+                        projectId: activeProjectDefinition.id,
+                        moduleId,
+                      })
+                    }
+                    onResetProgress={() =>
+                      dispatch({
+                        type: 'resetTutorialProgress',
+                        projectId: activeProjectDefinition.id,
+                      })
+                    }
+                  />
+                </Suspense>
               ) : null}
             </section>
           ) : null}

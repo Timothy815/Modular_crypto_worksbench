@@ -9,6 +9,7 @@ Last updated: March 23, 2026
 The project has shipped through `v1.9.0` on `main`.
 
 Current `main` is now positioned beyond the bounded sponge-collision follow-on and sponge-hash stabilization work.
+The next likely line is a bounded post-collision interpretation slice.
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -202,6 +203,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `HASHING-V1.md` | Shipped as the `v1.7.0` first hashing milestone contract |
 | `HASH-COLLISION-CHALLENGE-V1.md` | Shipped as the `v1.8.0` first bounded hash weakness challenge |
 | `SPONGE-COLLISION-CHALLENGE-V1.md` | Shipped as the `v1.9.0` sponge-collision follow-on |
+| `POST-COLLISION-INTERPRETATION-V1.md` | Proposed bounded follow-on for explaining why colliding messages still differ internally |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
 | `SBOX-TRANSFORMATION-V1.md` | Shipped as the `v1.6.0` lookup/substitution visual family |
