@@ -2,7 +2,7 @@
 
 Last updated: March 24, 2026
 
-Status: Proposed follow-on after `CRYPTO-OPERATORS-V1.md`.
+Status: Shipped in `v1.15.0`.
 
 ## Purpose
 

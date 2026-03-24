@@ -862,6 +862,84 @@ export function ParameterInspector({
                   ))}
                 </div>
               </>
+            ) : transformationView.kind === 'compare' ? (
+              <>
+                <div className="transformation-order">
+                  <span className="meta-label">{transformationView.ruleLabel}</span>
+                  <code>{transformationView.ruleValue}</code>
+                </div>
+                <div className="transformation-order">
+                  <span className="meta-label">Unsigned Words</span>
+                  <code>
+                    A = {transformationView.leftValue} · B = {transformationView.rightValue} · out = {transformationView.outputBit}
+                  </code>
+                </div>
+                <div className="xor-grid">
+                  <div className="xor-grid-head">
+                    <span className="meta-label">Index</span>
+                    <span className="meta-label">Input A</span>
+                    <span className="meta-label">Input B</span>
+                    <span className="meta-label">Compare</span>
+                  </div>
+                  {transformationView.rows.map((row) => (
+                    <div key={`compare-${row.index}`} className="xor-grid-row">
+                      <span className="xor-grid-index">{row.index}</span>
+                      <span className="xor-grid-bit">{row.aBit}</span>
+                      <span className="xor-grid-bit">{row.bBit}</span>
+                      <span
+                        className={
+                          row.explanation === 'different'
+                            ? 'xor-grid-compare xor-grid-compare-different'
+                            : 'xor-grid-compare'
+                        }
+                      >
+                        {row.explanation}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : transformationView.kind === 'gate' ? (
+              <>
+                <div className="transformation-order">
+                  <span className="meta-label">Control</span>
+                  <code>
+                    {transformationView.controlValue.join('') || '[]'} {'->'} {transformationView.active ? 'open' : 'closed'}
+                  </code>
+                </div>
+                <div className="xor-grid">
+                  <div className="xor-grid-head">
+                    <span className="meta-label">Index</span>
+                    <span className="meta-label">Input</span>
+                    <span className="meta-label">Gate</span>
+                    <span className="meta-label">Output</span>
+                  </div>
+                  {transformationView.rows.map((row) => (
+                    <div key={`gate-${row.index}`} className="xor-grid-row">
+                      <span className="xor-grid-index">{row.index}</span>
+                      <span className="xor-grid-bit">{row.inputBit}</span>
+                      <span
+                        className={
+                          transformationView.active
+                            ? 'xor-grid-compare xor-grid-compare-different'
+                            : 'xor-grid-compare'
+                        }
+                      >
+                        {transformationView.active ? 'pass' : 'block'}
+                      </span>
+                      <span
+                        className={
+                          row.outputBit === 1
+                            ? 'xor-grid-bit xor-grid-bit-active'
+                            : 'xor-grid-bit'
+                        }
+                      >
+                        {row.outputBit}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : (
               <>
                 <div className="transformation-order">
@@ -2413,6 +2491,44 @@ interface XorTransformationView {
   summary: string;
 }
 
+interface CompareTransformationRow {
+  index: number;
+  aBit: number;
+  bBit: number;
+  explanation: 'same' | 'different';
+}
+
+interface CompareTransformationView {
+  entry: ExecutionTraceEntry;
+  kind: 'compare';
+  title: string;
+  copy: string;
+  ruleLabel: string;
+  ruleValue: string;
+  leftValue: number;
+  rightValue: number;
+  outputBit: number;
+  rows: CompareTransformationRow[];
+  summary: string;
+}
+
+interface GateTransformationRow {
+  index: number;
+  inputBit: number;
+  outputBit: number;
+}
+
+interface GateTransformationView {
+  entry: ExecutionTraceEntry;
+  kind: 'gate';
+  title: string;
+  copy: string;
+  controlValue: number[];
+  active: boolean;
+  rows: GateTransformationRow[];
+  summary: string;
+}
+
 interface LookupTransformationChunk {
   index: number;
   inputBits: number[];
@@ -2439,6 +2555,8 @@ interface LookupTransformationView {
 type TransformationView =
   | RoutingTransformationView
   | XorTransformationView
+  | CompareTransformationView
+  | GateTransformationView
   | LookupTransformationView;
 
 const PERMUTATION_EDITOR_PORT_HEIGHT = 52;
@@ -2496,6 +2614,12 @@ function getTransformationView(
   }
   if (entry.defId === 'XOR') {
     return getXorTransformation(entry);
+  }
+  if (entry.defId === 'Equals' || entry.defId === 'AtLeast') {
+    return getCompareTransformation(entry);
+  }
+  if (entry.defId === 'Gate') {
+    return getGateTransformation(entry);
   }
   if (entry.defId === 'SBox') {
     return getSBoxTransformation(entry, project, registry);
@@ -2708,6 +2832,85 @@ function getXorTransformation(entry: ExecutionTraceEntry): XorTransformationView
       rows.length === 0
         ? 'This XOR has no overlapping bit positions to compare.'
         : `${differentCount} of ${rows.length} bit pair${rows.length === 1 ? '' : 's'} differ. XOR outputs 1 only where the two inputs disagree.`,
+  };
+}
+
+function getCompareTransformation(entry: ExecutionTraceEntry): CompareTransformationView | null {
+  const inputA = entry.inputs.a;
+  const inputB = entry.inputs.b;
+  const output = entry.outputs.out;
+  if (inputA?.type !== 'bits' || inputB?.type !== 'bits' || output?.type !== 'bits') {
+    return null;
+  }
+
+  const length = Math.min(inputA.value.length, inputB.value.length);
+  const rows: CompareTransformationRow[] = [];
+  for (let index = 0; index < length; index += 1) {
+    const aBit = inputA.value[index] ?? 0;
+    const bBit = inputB.value[index] ?? 0;
+    rows.push({
+      index,
+      aBit,
+      bBit,
+      explanation: aBit === bBit ? 'same' : 'different',
+    });
+  }
+
+  const leftValue = bitsToNumber(inputA.value);
+  const rightValue = bitsToNumber(inputB.value);
+  const outputBit = output.value[0] ?? 0;
+  const isEquality = entry.defId === 'Equals';
+
+  return {
+    entry,
+    kind: 'compare',
+    title: isEquality ? 'Equality Comparison' : 'Threshold Comparison',
+    copy: isEquality
+      ? 'Equals checks whether two same-width bit words match exactly, then emits a one-bit control result.'
+      : 'AtLeast reads both inputs as fixed-width unsigned words, then emits a one-bit control result when the left word has reached or exceeded the right one.',
+    ruleLabel: 'Rule',
+    ruleValue: isEquality ? 'A == B -> [1], else [0]' : 'A >= B -> [1], else [0]',
+    leftValue,
+    rightValue,
+    outputBit,
+    rows,
+    summary: isEquality
+      ? outputBit === 1
+        ? `The two ${length}-bit words match exactly, so the control output is active.`
+        : `At least one bit differs, so the equality control output stays inactive.`
+      : outputBit === 1
+        ? `${leftValue} has reached or exceeded ${rightValue}, so the threshold output is active.`
+        : `${leftValue} is still below ${rightValue}, so the threshold output stays inactive.`,
+  };
+}
+
+function getGateTransformation(entry: ExecutionTraceEntry): GateTransformationView | null {
+  const input = entry.inputs.in;
+  const control = entry.inputs.control;
+  const output = entry.outputs.out;
+  if (input?.type !== 'bits' || control?.type !== 'bits' || output?.type !== 'bits') {
+    return null;
+  }
+
+  const rows: GateTransformationRow[] = output.value.map((outputBit, index) => ({
+    index,
+    inputBit: input.value[index] ?? 0,
+    outputBit,
+  }));
+  const active = control.value.length === 1 && control.value[0] === 1;
+
+  return {
+    entry,
+    kind: 'gate',
+    title: 'Pulse Gate',
+    copy:
+      'Gate lets a bit signal through only when the control input is the active pulse [1]. Otherwise it outputs a zero-filled word of the same width.',
+    controlValue: control.value,
+    active,
+    rows,
+    summary: active
+      ? 'The control pulse is active, so the gate passes the incoming word through unchanged.'
+      : 'The control pulse is inactive, so the gate blocks the word and emits zeros instead.',
   };
 }
 

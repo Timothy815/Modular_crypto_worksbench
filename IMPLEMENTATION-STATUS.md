@@ -6,21 +6,27 @@ Last updated: March 24, 2026
 
 ## Current State
 
-The project has shipped through `v1.14.0` on `main`.
+The project has shipped through `v1.15.0` on `main`.
 
-Current `main` is now positioned beyond the first completed cryptographic-operators milestone.
+Current `main` is now positioned beyond the first completed control-primitives milestone.
 That milestone shipped:
-- boolean operators: `AND`, `OR`, `NOT`
-- fixed-width word arithmetic over `bits`:
-  - `AddMod`
-  - `SubMod`
-  - `Modulo`
-- explicit big-endian unsigned interpretation for arithmetic over bit words
-- width-aware validation for the new boolean / arithmetic family
-- first operator teaching surface:
-  - `Beyond XOR` demo workspace
-  - `Beyond XOR` tutorial
-  - `Repair the Word Mask` challenge
+- first bounded control vocabulary on `bits`:
+  - `Counter`
+  - `Equals`
+  - `AtLeast`
+  - `Gate`
+- explicit one-bit control semantics:
+  - active pulse is `[1]`
+  - inactive control is `[0]`
+- width-aware validation for control comparisons and counter params
+- first control teaching surface:
+  - `Counter Pulse Gate` demo workspace
+  - `Counters, Conditions, and Pulses` tutorial
+  - `Repair the Control Threshold` challenge
+- Analyze-tab transformation views for:
+  - `Equals`
+  - `AtLeast`
+  - `Gate`
 
 The next strategic direction is broader than rotor deepening:
 - treat MCW explicitly as a **cryptographic systems IDE**
@@ -28,7 +34,6 @@ The next strategic direction is broader than rotor deepening:
 - ship tutorials and challenges alongside each new vocabulary family
 
 The next most important missing vocabulary families are:
-- control / trigger primitives (`Counter`, compare/equality, pulses, gates)
 - block / framing primitives
 - stream-cipher control vocabulary
 - protocol-material primitives (`IV`, nonce, salt, counter sources)
@@ -122,6 +127,7 @@ The following decisions are reflected in shipped code:
 | `v1.12.0` | Tactile Primitive Authoring |
 | `v1.13.0` | Builder Workflow |
 | `v1.14.0` | Cryptographic Operators |
+| `v1.15.0` | Control Primitives |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -205,6 +211,19 @@ Post-`v1.13.0` work merged to `main`:
   - `Beyond XOR` tutorial
   - `Repair the Word Mask` challenge
 
+Post-`v1.14.0` work merged to `main`:
+- bounded control-primitives slice:
+  - `Counter`
+  - `Equals`
+  - `AtLeast`
+  - `Gate`
+  - explicit one-bit control semantics on `bits`
+  - width-aware validation for control comparisons and counter params
+  - `Counter Pulse Gate` demo workspace
+  - `Counters, Conditions, and Pulses` tutorial
+  - `Repair the Control Threshold` challenge
+  - Analyze-tab transformation views for `Equals`, `AtLeast`, and `Gate`
+
 ---
 
 ## Safe Next Tasks
@@ -248,7 +267,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed on the most recent builder-workflow slice.
+All three passed on the most recent control-primitives slice.
 
 ---
 
@@ -263,9 +282,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 ### Near-Term Roadmap
 
 1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
-2. **Continue the primitive-language roadmap with control primitives** — compare/equality, counters, pulses, gates, and mux-style control are now the clearest missing language family after shipped operators
-   Proposed contract sequence:
-   `CONTROL-PRIMITIVES-V1.md`
+2. **Continue the primitive-language roadmap beyond first control vocabulary** — the clearest remaining language families are block/framing, stream-control follow-ons, and protocol-material primitives
 3. **Keep advanced rotor realism on the docket as a bounded sub-line** — `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion remain important, but should not monopolize the roadmap
 4. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
 5. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
@@ -299,7 +316,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `COMPOSITE-UNZIP-V1.md` | Shipped in `v1.13.0` as bounded inverse-composition for one composite instance |
 | `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` | Active strategic roadmap for growing MCW into a fully expressive cryptographic systems IDE |
 | `CRYPTO-OPERATORS-V1.md` | Shipped in `v1.14.0` as bounded boolean and fixed-width word arithmetic expansion |
-| `CONTROL-PRIMITIVES-V1.md` | Proposed first bounded control/counter/trigger slice |
+| `CONTROL-PRIMITIVES-V1.md` | Shipped in `v1.15.0` as bounded counter/compare/gate control vocabulary |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
 | `SBOX-TRANSFORMATION-V1.md` | Shipped as the `v1.6.0` lookup/substitution visual family |

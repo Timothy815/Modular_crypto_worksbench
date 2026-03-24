@@ -11,19 +11,19 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.14.0`.
+The repository has shipped through `v1.15.0`.
 
-`main` now includes the completed first milestone of **cryptographic operators**:
-- boolean operators: `AND`, `OR`, `NOT`
-- fixed-width word arithmetic on `bits`:
-  - `ADD mod 2^n`
-  - `SUB mod 2^n`
-  - `Modulo`
-- explicit big-endian word interpretation for arithmetic over `bits`
-- width-aware validation for the new boolean / arithmetic family
-- `Beyond XOR` demo workspace
-- `Beyond XOR` tutorial
-- `Repair the Word Mask` challenge
+`main` now includes the completed first milestone of **control primitives**:
+- `Counter`
+- `Equals`
+- `AtLeast`
+- `Gate`
+- explicit one-bit control semantics on `bits`
+- width-aware validation for control comparisons and counter params
+- `Counter Pulse Gate` demo workspace
+- `Counters, Conditions, and Pulses` tutorial
+- `Repair the Control Threshold` challenge
+- Analyze transformation views for `Equals`, `AtLeast`, and `Gate`
 
 Implemented and shipped:
 - engine core types, graph validation, iterative topological executor
@@ -73,6 +73,12 @@ Implemented and shipped:
 - `v1.5.0` Modern Analysis milestone
 - `v1.6.0` Transformation Visualization Phase 1 milestone
 - `v1.7.0` Hashing V1 milestone
+- `v1.8.0` Hash Collision Challenge milestone
+- `v1.9.0` Sponge Collision Challenge milestone
+- `v1.10.0` Collision Interpretation Foundations milestone
+- `v1.11.0` Hash Autopsy milestone (Internal Divergence Helper)
+- `v1.14.0` Cryptographic Operators milestone
+- `v1.15.0` Control Primitives milestone
 - first bounded hash collision challenge:
   - seeded `Find A Hash Collision` challenge
   - same-digest / different-input success rule
@@ -133,7 +139,7 @@ Implemented and shipped:
 - `COMPOSITE-UNZIP-V1.md`: shipped bounded inverse-composition slice for expanding a composite instance back into editable modules
 - `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md`: active strategic roadmap for growing MCW into a fully expressive cryptographic systems IDE
 - `CRYPTO-OPERATORS-V1.md`: shipped first foundational operator-expansion slice for boolean and fixed-width word arithmetic
-- `CONTROL-PRIMITIVES-V1.md`: proposed first bounded counter/trigger/gate slice for condition-driven machines
+- `CONTROL-PRIMITIVES-V1.md`: shipped first bounded counter/compare/gate slice for condition-driven machines
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
 - `SBOX-TRANSFORMATION-V1.md`: shipped first lookup/substitution visual family contract
@@ -173,10 +179,8 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 ## Near-Term Roadmap
 
 1. Treat MCW explicitly as a **cryptographic systems IDE** and grow the primitive language toward full expressive coverage, not just isolated feature branches
-2. Continue the new primitive-language phase with **control vocabulary**:
-   compare/equals, counter, trigger/pulse, gate/mux
-   Immediate contract sequence:
-   `CONTROL-PRIMITIVES-V1.md`
+2. Continue the new primitive-language phase beyond first control vocabulary:
+   block/framing, stream-control follow-ons, and protocol-material primitives are the clearest remaining language families
 3. Keep advanced rotor realism on deck as one bounded sub-line inside that broader vocabulary roadmap:
    `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion
 4. Add one tutorial plus one demo/challenge whenever a major new primitive family ships so the language grows with teaching support

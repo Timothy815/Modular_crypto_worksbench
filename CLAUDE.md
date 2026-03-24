@@ -159,13 +159,18 @@ src/utils/     — Shared helpers
   - explicit big-endian fixed-width arithmetic on `bits`
   - width-aware validation for the new operator family
   - `Beyond XOR` demo/tutorial/challenge
+- `v1.15.0` is now the control-primitives milestone:
+  - `Counter`
+  - `Equals`
+  - `AtLeast`
+  - `Gate`
+  - explicit one-bit control semantics on `bits`
+  - `Counter Pulse Gate` demo/tutorial/challenge
+  - Analyze transformation views for `Equals`, `AtLeast`, and `Gate`
 - Current `main` should treat the next phase as **primitive-language expansion**
-  - control / trigger vocabulary
   - block/framing vocabulary
   - protocol-material primitives
   - advanced rotor realism as one bounded sub-line
-- The first proposed sequence inside that phase is:
-  - `CONTROL-PRIMITIVES-V1.md`
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -215,16 +220,14 @@ Key contracts to check before implementation:
 - `CUSTOM-SBOX-AUTHORING-V1.md` for the shipped substitution-table authoring slice
 - `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` for the new long-range language/roadmap framing
 - `CRYPTO-OPERATORS-V1.md` for the shipped first bounded operator-expansion line
-- `CONTROL-PRIMITIVES-V1.md` for the first bounded condition/trigger line
+- `CONTROL-PRIMITIVES-V1.md` for the shipped first bounded control/counter/gate line
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family
 
 Near-term follow-ups:
 - treat the next phase as expressive machine-language growth, not just the next isolated feature
-- start with operator/control vocabulary unless a stronger bounded contract supersedes it
-- current proposed sequence:
-  - `CONTROL-PRIMITIVES-V1.md`
+- continue from shipped operator/control foundations toward the next missing language family
 - keep advanced rotor realism explicitly on the future docket as one bounded sub-line:
   - `ringOffset` separate from `position`
   - notch / turnover behavior
