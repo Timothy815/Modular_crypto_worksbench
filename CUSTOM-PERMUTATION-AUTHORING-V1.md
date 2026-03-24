@@ -2,7 +2,7 @@
 
 Last updated: March 24, 2026
 
-Status: Proposed next bounded slice after the first `Custom S-Box Authoring` proof.
+Status: Shipped in `v1.12.0`.
 
 ## Purpose
 

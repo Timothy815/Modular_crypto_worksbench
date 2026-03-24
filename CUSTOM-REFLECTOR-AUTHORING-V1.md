@@ -2,7 +2,7 @@
 
 Last updated: March 24, 2026
 
-Status: Proposed bounded follow-on after tactile permutation authoring.
+Status: Shipped in `v1.12.0`.
 
 ## Purpose
 

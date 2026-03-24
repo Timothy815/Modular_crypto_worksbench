@@ -6,27 +6,23 @@ Last updated: March 24, 2026
 
 ## Current State
 
-The project has shipped through `v1.11.0` on `main`.
+The project has shipped through `v1.12.0` on `main`.
 
-Current `main` is now positioned beyond the first completed post-collision interpretation milestone.
+Current `main` is now positioned beyond the first completed tactile primitive authoring milestone.
 That milestone shipped:
-- post-success interpretation nudges in the collision challenge flow
-- side-by-side original vs colliding message comparison
-- an `analysisTrace`-based first internal-divergence helper
-- sponge hardening to remove the discovered paired-input shortcut
-- bundle/performance guardrails and pedagogical audit guardrails
+- bounded custom `SBox` authoring with grid editing and synced raw CSV
+- tactile `Permutation` wire authoring with synced raw CSV fallback
+- tactile `Reflector` socket-pair authoring with involution-safe editing
+- tactile `Rotor` wiring authoring with runtime-centered wire anchors and synced raw wiring
+- reflector-specific validation hardening
 
-The next likely product line is bounded custom primitive authoring:
-- `SBox` authoring first
-- tactile `Permutation` authoring next
-- tactile `Reflector` authoring after that
-- later rotor deepening should remain explicitly on deck:
+The next likely follow-on in this area is later rotor deepening:
   - `ringOffset` separate from `position`
   - turnover / notch behavior
   - double-step logic
   - reversible rotation direction
   - flipped rotor insertion for Fialka-style versatility
-The open interpretation question remains whether to deepen beyond the first-divergence helper or pause for classroom feedback.
+The open product question remains whether to deepen rotor realism next or switch to another bounded line after this authoring milestone.
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -113,6 +109,7 @@ The following decisions are reflected in shipped code:
 | `v1.9.0` | Sponge Collision Challenge |
 | `v1.10.0` | Collision Interpretation Foundations |
 | `v1.11.0` | Collision Interpretation Helper |
+| `v1.12.0` | Tactile Primitive Authoring |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -161,6 +158,17 @@ Post-`v1.10.0` work merged to `main`:
 - compact `Internal Divergence` card in the collision success flow
 - regression coverage for the new interpretation signal
 
+Post-`v1.11.0` work merged to `main`:
+- bounded tactile primitive authoring across four families:
+  - `SBox`
+  - `Permutation`
+  - `Reflector`
+  - `Rotor`
+- synced raw CSV / wiring fallbacks for all four editors
+- reflector-specific validation hardening for non-involutive and self-mapping wirings
+- runtime-measured rotor/permutation wire anchors with dotted endpoints
+- future rotor-realism line explicitly kept on the roadmap
+
 ---
 
 ## Safe Next Tasks
@@ -168,10 +176,10 @@ Post-`v1.10.0` work merged to `main`:
 ### Claude
 
 Safe to begin:
-- help pressure-test the first bounded custom `SBox` authoring slice
-- help decide whether the interpretation line should deepen beyond the shipped first-divergence helper
-- help assess whether collision/interpretation work should now pause for classroom feedback
-- help keep any follow-on hash weakness work bounded
+- help assess whether the tactile primitive authoring milestone is the right stopping point
+- help decide whether rotor realism should deepen next or remain deferred
+- help keep any follow-on rotor-realism work bounded
+- help pressure-test the shipped authoring surfaces as teaching tools
 
 Should avoid for now:
 - feedback loops / cycles in the graph
@@ -183,10 +191,10 @@ Should avoid for now:
 ### Gemini
 
 Safe to begin:
-- review whether custom `SBox` authoring is properly bounded as a teaching surface
-- review whether the shipped first interpretation milestone should deepen or pause
-- help keep hashing, modern analysis, and challenge workflows connected instead of fragmenting the product
-- help pressure-test future bounded challenge ideas against the shipped collision line
+- review whether the tactile primitive authoring milestone is properly bounded as a teaching surface
+- review whether rotor realism should deepen next or stay deferred
+- help keep the new authoring line connected to existing transformation and historical-teaching surfaces
+- help pressure-test future bounded rotor/reflector follow-ons against the shipped authoring line
 
 Best focus:
 - whether the collision/interpretation line should pause here or deepen interpretation next
@@ -202,7 +210,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed on the most recent collision-interpretation helper slice.
+All three passed on the most recent tactile primitive authoring slice.
 
 ---
 
@@ -216,12 +224,11 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 ### Near-Term Roadmap
 
-1. **Begin `Custom S-Box Authoring V1` as a bounded authoring surface** — safe table editing, not cryptanalytic scoring
-2. **Decide later whether post-collision interpretation should deepen beyond the shipped first-divergence helper or pause for classroom feedback**
+1. **Keep advanced rotor realism on the docket** — `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion should be treated as an important future rotor line, not forgotten polish
+2. **Decide whether rotor realism should deepen next or remain deferred after classroom feedback**
 3. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
 4. **Monitor challenge-induced project switching in classroom use** before adding warning dialogs
-5. **Keep advanced rotor realism on the docket** — `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion should be treated as an important future rotor line, not forgotten polish
-6. **Defer deeper transformation playback/animation** until classroom feedback justifies a second visualization slice
+5. **Defer deeper transformation playback/animation** until classroom feedback justifies a second visualization slice
 
 ### Key Contracts
 
@@ -242,9 +249,9 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `HASH-COLLISION-CHALLENGE-V1.md` | Shipped as the `v1.8.0` first bounded hash weakness challenge |
 | `SPONGE-COLLISION-CHALLENGE-V1.md` | Shipped as the `v1.9.0` sponge-collision follow-on |
 | `POST-COLLISION-INTERPRETATION-V1.md` | First milestone shipped in `v1.11.0` — nudges, message comparison, and first internal-divergence helper delivered |
-| `CUSTOM-SBOX-AUTHORING-V1.md` | Proposed bounded authoring slice for editable substitution tables |
-| `CUSTOM-PERMUTATION-AUTHORING-V1.md` | Proposed bounded tactile authoring slice for editable routing permutations |
-| `CUSTOM-REFLECTOR-AUTHORING-V1.md` | Proposed bounded tactile authoring slice for paired reflector wiring |
+| `CUSTOM-SBOX-AUTHORING-V1.md` | Shipped in `v1.12.0` as bounded substitution-table authoring |
+| `CUSTOM-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.12.0` as bounded tactile routing authoring |
+| `CUSTOM-REFLECTOR-AUTHORING-V1.md` | Shipped in `v1.12.0` as bounded paired reflector authoring |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
 | `SBOX-TRANSFORMATION-V1.md` | Shipped as the `v1.6.0` lookup/substitution visual family |

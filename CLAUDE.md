@@ -144,7 +144,8 @@ src/utils/     — Shared helpers
 - `v1.9.0` is already shipped
 - `v1.10.0` is already shipped
 - `v1.11.0` is already shipped
-- Current `main` is beyond the first completed interpretation milestone and should treat deeper internal-trace comparison as a new bounded decision, not assumed scope
+- `v1.12.0` is already shipped
+- Current `main` is beyond the first tactile primitive authoring milestone and should treat rotor realism as a new bounded decision, not assumed scope
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -173,6 +174,12 @@ What is shipped on `main`:
   - internal-divergence helper based on `analysisTrace`
   - sponge-hardening asymmetry fix removing the paired-step shortcut
   - bundle/performance guardrails and build-time chunk budget enforcement
+- first bounded tactile primitive authoring slice:
+  - `SBox` grid editor with synced raw CSV
+  - `Permutation` wire editor with synced raw CSV fallback
+  - `Reflector` socket-pair editor with involution-safe pairing
+  - `Rotor` wire editor with runtime-centered anchors and dotted endpoints
+  - reflector validation hardening
 
 Key contracts to check before implementation:
 - `ENGINE-V1-CONTRACT.md` for engine decisions
@@ -185,14 +192,13 @@ Key contracts to check before implementation:
 - `HASH-COLLISION-CHALLENGE-V1.md` for the first bounded post-hashing milestone challenge slice
 - `SPONGE-COLLISION-CHALLENGE-V1.md` for the shipped sponge-collision follow-on
 - `POST-COLLISION-INTERPRETATION-V1.md` for the shipped first interpretation milestone after the collision challenges
-- `CUSTOM-SBOX-AUTHORING-V1.md` for the next bounded substitution-table authoring slice
+- `CUSTOM-SBOX-AUTHORING-V1.md` for the shipped substitution-table authoring slice
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family
 
 Near-term follow-ups:
-- begin bounded custom `SBox` authoring without turning it into a cryptanalysis suite
-- decide whether post-collision interpretation should deepen beyond the shipped first-divergence helper or pause for classroom feedback
+- decide whether advanced rotor realism should deepen next or remain deferred after classroom feedback
 - keep advanced rotor realism explicitly on the future docket:
   - `ringOffset` separate from `position`
   - notch / turnover behavior

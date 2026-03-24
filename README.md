@@ -11,14 +11,14 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.11.0`.
+The repository has shipped through `v1.12.0`.
 
-`main` now includes the completed first milestone of **post-collision interpretation**:
-- side-by-side original vs colliding message comparison in the challenge flow
-- post-success nudges into `Analyze` and `Modern Cryptanalysis`
-- a first internal-divergence helper based on `analysisTrace`
-- a hardened toy sponge that avoids the discovered paired-input symmetry
-- bundle and audit guardrails to keep future teaching artifacts honest
+`main` now includes the completed first milestone of **tactile primitive authoring**:
+- custom `SBox` grid authoring with synced raw CSV
+- tactile `Permutation` wire authoring with synced raw CSV fallback
+- tactile `Reflector` socket-pair authoring with involution-safe editing
+- tactile `Rotor` wiring authoring with runtime-centered wire anchors and dotted endpoints
+- reflector validation hardening for malformed wiring
 
 Implemented and shipped:
 - engine core types, graph validation, iterative topological executor
@@ -85,6 +85,11 @@ Implemented and shipped:
   - internal-divergence helper showing the first internal trace split after the guided inputs
   - hardened sponge absorb path with asymmetric right-input preparation
   - sampled symmetry-regression tests for paired input shifts
+- tactile primitive authoring:
+  - `SBox` grid editor with reset helpers and synced raw CSV
+  - `Permutation` wire editor for simple one-to-one routing with synced raw CSV fallback
+  - `Reflector` socket-pair editor with shared pair styling and synced raw wiring
+  - `Rotor` wire editor with runtime-centered anchors and dotted endpoints
 - bundle/performance guardrails:
   - lazy-loaded secondary panels
   - React vendor chunk split
@@ -109,9 +114,9 @@ Implemented and shipped:
 - `HASH-COLLISION-CHALLENGE-V1.md`: shipped first bounded hash weakness challenge
 - `SPONGE-COLLISION-CHALLENGE-V1.md`: shipped sponge-collision follow-on and sponge-hash correction slice
 - `POST-COLLISION-INTERPRETATION-V1.md`: shipped first milestone for understanding why colliding messages still differ internally
-- `CUSTOM-SBOX-AUTHORING-V1.md`: proposed bounded authoring slice for editable substitution-table design inside the workbench
-- `CUSTOM-PERMUTATION-AUTHORING-V1.md`: proposed bounded tactile authoring slice for editable routing/permutation design inside the workbench
-- `CUSTOM-REFLECTOR-AUTHORING-V1.md`: proposed bounded tactile authoring slice for paired reflector wiring inside the workbench
+- `CUSTOM-SBOX-AUTHORING-V1.md`: shipped bounded authoring slice for editable substitution-table design inside the workbench
+- `CUSTOM-PERMUTATION-AUTHORING-V1.md`: shipped bounded tactile authoring slice for editable routing/permutation design inside the workbench
+- `CUSTOM-REFLECTOR-AUTHORING-V1.md`: shipped bounded tactile authoring slice for paired reflector wiring inside the workbench
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
 - `SBOX-TRANSFORMATION-V1.md`: shipped first lookup/substitution visual family contract
@@ -150,11 +155,9 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 
 ## Near-Term Roadmap
 
-1. Continue bounded tactile authoring with:
-   `SBox`, `Permutation`, then `Reflector`
-2. Decide later whether the post-collision interpretation line should deepen beyond the shipped first-divergence helper or pause for classroom feedback
-3. Keep performance/bundle size under watch now that build-time guardrails are in place
-4. Keep advanced rotor realism explicitly on deck:
+1. Keep advanced rotor realism explicitly on deck:
    `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion
-5. Monitor challenge-induced project switching in classroom use before adding warning dialogs
-6. Avoid scope creep into brute-force tooling, birthday-bound calculators, famous-hash comparisons, or KDF/Merkle-style structures before a new contract says otherwise
+2. Decide whether rotor realism should deepen next or remain deferred after classroom use
+3. Keep performance/bundle size under watch now that build-time guardrails are in place
+4. Monitor challenge-induced project switching in classroom use before adding warning dialogs
+5. Avoid scope creep into brute-force tooling, birthday-bound calculators, famous-hash comparisons, or KDF/Merkle-style structures before a new contract says otherwise
