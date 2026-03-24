@@ -157,6 +157,7 @@ Implemented and shipped:
 - `PROTOCOL-MATERIAL-V1.md`: shipped first bounded protocol-input slice for IV, nonce, and salt sources
 - `STREAM-CIPHER-V1.md`: shipped first bounded stream-machine slice for visible majority logic and irregular clocking
 - `STREAM-CIPHER-V2.md`: shipped second bounded stream-machine slice for visible selector/filter behavior via `Mux`
+- `STREAM-CIPHER-V3.md`: proposed third bounded stream-machine slice for visible routing/scheduling behavior via `Demux`
 - `ADVANCED-ROTOR-REALISM-V1.md`: shipped first bounded rotor-realism slice for ring setting, turnover, and double-step behavior
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
@@ -199,6 +200,8 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 1. Treat MCW explicitly as a **cryptographic systems IDE** and grow the primitive language toward full expressive coverage, not just isolated feature branches
 2. Continue the primitive-language phase beyond shipped stream and rotor foundations:
    the next bounded decision should stay within shared vocabulary growth rather than preset-building
+   Immediate contract:
+   `STREAM-CIPHER-V3.md`
 3. Keep future rotor follow-ons bounded:
    reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices rather than spilling into convenience presets
 4. Add one tutorial plus one demo/challenge whenever a major new primitive family ships so the language grows with teaching support

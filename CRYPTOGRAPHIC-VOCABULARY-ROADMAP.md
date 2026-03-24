@@ -390,7 +390,10 @@ It is:
 - keep future rotor follow-ons bounded rather than turning mechanized realism into hidden helpers
 - keep tutorials and challenges shipping alongside the new language
 
-The immediate next contract should be chosen from the next shared-language gap rather than from preset pressure.
+The immediate next contract should be:
+- `STREAM-CIPHER-V3.md`
+
+That keeps the stream line moving from visible voting and visible selection into visible routing/scheduling without collapsing into named-cipher presets.
 
 That is the path from:
 - strong teaching workbench
