@@ -315,6 +315,8 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
 2. **Continue the primitive-language roadmap beyond shipped stream foundations** — the clearest remaining language families are advanced rotor realism and deeper stream-combiner follow-ons
+   Immediate contract:
+   `ADVANCED-ROTOR-REALISM-V1.md`
 3. **Keep advanced rotor realism on the docket as a bounded sub-line** — `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion remain important, but should not monopolize the roadmap
 4. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
 5. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
@@ -352,6 +354,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `BLOCK-FRAMING-V1.md` | Shipped in `v1.16.0` as bounded block-framing vocabulary for visible splitting, rejoining, and padding |
 | `PROTOCOL-MATERIAL-V1.md` | Shipped in `v1.17.0` as bounded protocol-input vocabulary for IV, nonce, and salt sources |
 | `STREAM-CIPHER-V1.md` | Shipped in `v1.18.0` as bounded stream-machine slice for visible majority logic and irregular clocking |
+| `ADVANCED-ROTOR-REALISM-V1.md` | Proposed — first bounded rotor-realism slice for ring setting, turnover, and double-step behavior |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
 | `SBOX-TRANSFORMATION-V1.md` | Shipped as the `v1.6.0` lookup/substitution visual family |

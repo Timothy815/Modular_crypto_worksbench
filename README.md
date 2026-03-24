@@ -153,6 +153,7 @@ Implemented and shipped:
 - `BLOCK-FRAMING-V1.md`: shipped first post-Phase-1 framing slice for visible block boundaries, rejoining, and padding
 - `PROTOCOL-MATERIAL-V1.md`: shipped first bounded protocol-input slice for IV, nonce, and salt sources
 - `STREAM-CIPHER-V1.md`: shipped first bounded stream-machine slice for visible majority logic and irregular clocking
+- `ADVANCED-ROTOR-REALISM-V1.md`: proposed first bounded rotor-realism slice for ring setting, turnover, and double-step behavior
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
 - `SBOX-TRANSFORMATION-V1.md`: shipped first lookup/substitution visual family contract
@@ -194,6 +195,8 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 1. Treat MCW explicitly as a **cryptographic systems IDE** and grow the primitive language toward full expressive coverage, not just isolated feature branches
 2. Continue the primitive-language phase beyond shipped stream foundations:
    advanced rotor realism is now the clearest next bounded line, with deeper stream-combiner follow-ons after that
+   Immediate contract:
+   `ADVANCED-ROTOR-REALISM-V1.md`
 3. Keep advanced rotor realism on deck as one bounded sub-line inside that broader vocabulary roadmap:
    `ringOffset`, notch/turnover behavior, double-step logic, reversible rotation direction, and flipped insertion
 4. Add one tutorial plus one demo/challenge whenever a major new primitive family ships so the language grows with teaching support

@@ -369,6 +369,9 @@ It is:
 - keep protocol-material follow-ons bounded rather than jumping to mode presets
 - keep tutorials and challenges shipping alongside the new language
 
+The immediate next contract is:
+- `ADVANCED-ROTOR-REALISM-V1.md`
+
 That is the path from:
 - strong teaching workbench
 
