@@ -9,6 +9,7 @@ import { BitPad } from './modules/bit-pad';
 import { BitSource } from './modules/bit-source';
 import { BitSplit } from './modules/bit-split';
 import { Counter } from './modules/counter';
+import { Demux } from './modules/demux';
 import { Equals } from './modules/equals';
 import { Gate } from './modules/gate';
 import { HexSource } from './modules/hex-source';
@@ -94,6 +95,7 @@ const registry: ModuleRegistry = {
   [SBox.id]: SBox,
   [BitSplit.id]: BitSplit,
   [BitPad.id]: BitPad,
+  [Demux.id]: Demux,
 };
 
 describe('validateProject', () => {
@@ -469,6 +471,32 @@ describe('validateProject', () => {
       result.issues.some(
         (issue) =>
           issue.moduleId === 'mux' &&
+          issue.code === 'signal-width-mismatch' &&
+          issue.message.includes('requires 1-bit inputs'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects Demux when a statically known input is wider than one bit', () => {
+    const project: Project = {
+      modules: [
+        { id: 'select', defId: 'BitSource', params: { stream: [1] } },
+        { id: 'input', defId: 'BitSource', params: { stream: [1, 0] } },
+        { id: 'router', defId: 'Demux', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'select', port: 'out' }, to: { moduleId: 'router', port: 'select' } },
+        { from: { moduleId: 'input', port: 'out' }, to: { moduleId: 'router', port: 'in' } },
+      ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'router' &&
           issue.code === 'signal-width-mismatch' &&
           issue.message.includes('requires 1-bit inputs'),
       ),

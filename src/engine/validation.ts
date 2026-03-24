@@ -45,6 +45,7 @@ const EQUAL_WIDTH_BINARY_MODULE_IDS = new Set([
 
 const SINGLE_BIT_TERNARY_MODULE_IDS = new Set(['Majority']);
 const SINGLE_BIT_SELECTOR_MODULE_IDS = new Set(['Mux']);
+const SINGLE_BIT_ROUTER_MODULE_IDS = new Set(['Demux']);
 const CLOCK_PORT = 'clock';
 
 function findPort(def: ModuleDefinition, portName: string, direction: 'input' | 'output') {
@@ -486,6 +487,23 @@ function validateBitWidthConstraints(
         issues.push({
           code: 'signal-width-mismatch',
           message: `Module "${moduleInstance.id}" requires 1-bit inputs on ports select, a, and b.`,
+          moduleId: moduleInstance.id,
+        });
+      }
+    }
+
+    if (SINGLE_BIT_ROUTER_MODULE_IDS.has(def.id)) {
+      const inputPorts = ['select', 'in'] as const;
+      const knownWidths = inputPorts
+        .map((portName) => incomingConnections.get(`${moduleInstance.id}:${portName}`))
+        .filter((endpoint): endpoint is ConnectionEndpoint => endpoint !== undefined)
+        .map((endpoint) => getWidth(endpoint.moduleId))
+        .filter((width): width is number => width !== null);
+
+      if (knownWidths.some((width) => width !== 1)) {
+        issues.push({
+          code: 'signal-width-mismatch',
+          message: `Module "${moduleInstance.id}" requires 1-bit inputs on ports select and in.`,
           moduleId: moduleInstance.id,
         });
       }

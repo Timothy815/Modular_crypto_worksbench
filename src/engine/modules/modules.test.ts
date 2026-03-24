@@ -17,6 +17,7 @@ import { AddMod } from './add-mod';
 import { AND } from './and';
 import { AtLeast } from './at-least';
 import { Counter } from './counter';
+import { Demux } from './demux';
 import { Equals } from './equals';
 import { Gate } from './gate';
 import { Majority } from './majority';
@@ -216,6 +217,44 @@ describe('Mux', () => {
           select: { type: 'bits', value: [1] },
           a: { type: 'bits', value: [1, 0] },
           b: { type: 'bits', value: [0] },
+        },
+        {},
+      ),
+    ).toThrow(/1-bit word/i);
+  });
+});
+
+describe('Demux', () => {
+  it('routes the input bit to output a when select is 0', () => {
+    const result = Demux.evaluate(
+      {
+        select: { type: 'bits', value: [0] },
+        in: { type: 'bits', value: [1] },
+      },
+      {},
+    );
+    expect(result.a).toEqual({ type: 'bits', value: [1] });
+    expect(result.b).toEqual({ type: 'bits', value: [0] });
+  });
+
+  it('routes the input bit to output b when select is 1', () => {
+    const result = Demux.evaluate(
+      {
+        select: { type: 'bits', value: [1] },
+        in: { type: 'bits', value: [1] },
+      },
+      {},
+    );
+    expect(result.a).toEqual({ type: 'bits', value: [0] });
+    expect(result.b).toEqual({ type: 'bits', value: [1] });
+  });
+
+  it('throws when the routed input is wider than one bit', () => {
+    expect(() =>
+      Demux.evaluate(
+        {
+          select: { type: 'bits', value: [1] },
+          in: { type: 'bits', value: [1, 0] },
         },
         {},
       ),

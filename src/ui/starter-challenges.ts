@@ -27,6 +27,7 @@ const keystreamProject = demoProjects.find((project) => project.id === 'keystrea
 const gatedKeystreamProject = demoProjects.find((project) => project.id === 'gated-keystream');
 const majorityKeystreamProject = demoProjects.find((project) => project.id === 'majority-keystream');
 const filteredKeystreamProject = demoProjects.find((project) => project.id === 'filtered-keystream');
+const routedClockKeystreamProject = demoProjects.find((project) => project.id === 'routed-clock-keystream');
 const advancedRotorSteppingProject = demoProjects.find((project) => project.id === 'advanced-rotor-stepping');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
@@ -98,6 +99,9 @@ if (!majorityKeystreamProject) {
 if (!filteredKeystreamProject) {
   throw new Error('Expected filtered-keystream demo project to seed starter challenges.');
 }
+if (!routedClockKeystreamProject) {
+  throw new Error('Expected routed-clock-keystream demo project to seed starter challenges.');
+}
 if (!advancedRotorSteppingProject) {
   throw new Error('Expected advanced-rotor-stepping demo project to seed starter challenges.');
 }
@@ -155,6 +159,8 @@ const majorityKeystreamTarget = cloneProject(majorityKeystreamProject.project);
 const brokenMajorityKeystreamStart = cloneProject(majorityKeystreamProject.project);
 const filteredKeystreamTarget = cloneProject(filteredKeystreamProject.project);
 const brokenFilteredKeystreamStart = cloneProject(filteredKeystreamProject.project);
+const routedClockKeystreamTarget = cloneProject(routedClockKeystreamProject.project);
+const brokenRoutedClockKeystreamStart = cloneProject(routedClockKeystreamProject.project);
 const advancedRotorSteppingTarget = cloneProject(advancedRotorSteppingProject.project);
 const brokenAdvancedRotorSteppingStart = cloneProject(advancedRotorSteppingProject.project);
 const sequentialTarget = cloneProject(sequentialProject.project);
@@ -364,6 +370,14 @@ if (!brokenFilteredControl) {
   throw new Error('Expected filtered-keystream demo project to contain a control register.');
 }
 brokenFilteredControl.params.seed = [0];
+
+const brokenRoutedControl = brokenRoutedClockKeystreamStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'control',
+);
+if (!brokenRoutedControl) {
+  throw new Error('Expected routed-clock-keystream demo project to contain a control register.');
+}
+brokenRoutedControl.params.seed = [0];
 
 const brokenClockModule = brokenSequentialStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'clock',
@@ -887,6 +901,27 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'Both candidate data registers are already correct; the problem is in the select line.',
       'Mux does not vote and it does not gate time. It simply chooses input a or input b.',
       'If the selector bit flips, the machine keeps the same rhythm but chooses the wrong keystream source.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-routed-clock',
+    title: 'Repair the Routed Clock',
+    projectId: 'routed-clock-keystream',
+    group: 'Conditional Clocking',
+    difficulty: 'expert',
+    prompt:
+      'This routed-clock keystream machine still has the right plaintext, route wiring, and data registers, but the control register is sending the live pulse to the wrong destination on each tick. Repair the selector seed so the output stream matches the captured reference machine again.',
+    startingProject: brokenRoutedClockKeystreamStart,
+    startingLayout: cloneProject(routedClockKeystreamProject.layout),
+    targetProject: routedClockKeystreamTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Demux and both data registers are already wired correctly; the mistake is in the routing control stream.',
+      'This lab is about which register advances, not which output bit gets selected afterward.',
+      'If the routing bit flips, the machine keeps the same base clock but evolves the wrong downstream register.',
     ],
   },
   {

@@ -1026,6 +1026,40 @@ export function ParameterInspector({
                   ))}
                 </div>
               </>
+            ) : transformationView.kind === 'demux' ? (
+              <>
+                <div className="transformation-order">
+                  <span className="meta-label">Rule</span>
+                  <code>select = 0 {'->'} a · select = 1 {'->'} b</code>
+                </div>
+                <div className="transformation-order">
+                  <span className="meta-label">Chosen Output</span>
+                  <code>{transformationView.chosenOutput} receives {transformationView.inputBit}</code>
+                </div>
+                <div className="xor-grid">
+                  <div className="xor-grid-head">
+                    <span className="meta-label">Lane</span>
+                    <span className="meta-label">Bit</span>
+                    <span className="meta-label">State</span>
+                  </div>
+                  {[
+                    { label: 'select', bit: transformationView.selectBit, active: false, state: 'control' },
+                    { label: 'in', bit: transformationView.inputBit, active: false, state: 'source' },
+                    { label: 'a', bit: transformationView.outputABit, active: transformationView.chosenOutput === 'a', state: transformationView.chosenOutput === 'a' ? 'routed' : 'zeroed' },
+                    { label: 'b', bit: transformationView.outputBBit, active: transformationView.chosenOutput === 'b', state: transformationView.chosenOutput === 'b' ? 'routed' : 'zeroed' },
+                  ].map((row) => (
+                    <div key={`demux-${row.label}`} className="xor-grid-row">
+                      <span className="xor-grid-index">{row.label}</span>
+                      <span className={row.bit === 1 ? 'xor-grid-bit xor-grid-bit-active' : 'xor-grid-bit'}>
+                        {row.bit}
+                      </span>
+                      <span className={row.active ? 'xor-grid-compare xor-grid-compare-different' : 'xor-grid-compare'}>
+                        {row.state}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : transformationView.kind === 'split' ? (
               <>
                 <div className="transformation-order">
@@ -2722,6 +2756,19 @@ interface MuxTransformationView {
   summary: string;
 }
 
+interface DemuxTransformationView {
+  entry: ExecutionTraceEntry;
+  kind: 'demux';
+  title: string;
+  copy: string;
+  selectBit: number;
+  inputBit: number;
+  outputABit: number;
+  outputBBit: number;
+  chosenOutput: 'a' | 'b';
+  summary: string;
+}
+
 interface LookupTransformationChunk {
   index: number;
   inputBits: number[];
@@ -2778,6 +2825,7 @@ type TransformationView =
   | GateTransformationView
   | MajorityTransformationView
   | MuxTransformationView
+  | DemuxTransformationView
   | LookupTransformationView
   | SplitTransformationView
   | PadTransformationView;
@@ -2849,6 +2897,9 @@ function getTransformationView(
   }
   if (entry.defId === 'Mux') {
     return getMuxTransformation(entry);
+  }
+  if (entry.defId === 'Demux') {
+    return getDemuxTransformation(entry);
   }
   if (entry.defId === 'SBox') {
     return getSBoxTransformation(entry, project, registry);
@@ -3214,6 +3265,39 @@ function getMuxTransformation(entry: ExecutionTraceEntry): MuxTransformationView
       chosenInput === 'a'
         ? `Select is [0], so Mux forwards input a (${aBit}) and ignores input b (${bBit}).`
         : `Select is [1], so Mux forwards input b (${bBit}) and ignores input a (${aBit}).`,
+  };
+}
+
+function getDemuxTransformation(entry: ExecutionTraceEntry): DemuxTransformationView | null {
+  const select = entry.inputs.select;
+  const input = entry.inputs.in;
+  const outputA = entry.outputs.a;
+  const outputB = entry.outputs.b;
+  if (select?.type !== 'bits' || input?.type !== 'bits' || outputA?.type !== 'bits' || outputB?.type !== 'bits') {
+    return null;
+  }
+
+  const selectBit = select.value[0] ?? 0;
+  const inputBit = input.value[0] ?? 0;
+  const outputABit = outputA.value[0] ?? 0;
+  const outputBBit = outputB.value[0] ?? 0;
+  const chosenOutput = selectBit === 1 ? 'b' : 'a';
+
+  return {
+    entry,
+    kind: 'demux',
+    title: 'Bit Router',
+    copy:
+      'Demux reads one 1-bit select line and routes one 1-bit input into one of two outputs. It is visible routing, not pulse gating and not output selection.',
+    selectBit,
+    inputBit,
+    outputABit,
+    outputBBit,
+    chosenOutput,
+    summary:
+      chosenOutput === 'a'
+        ? `Select is [0], so Demux routes the input bit (${inputBit}) to output a and leaves output b at 0.`
+        : `Select is [1], so Demux routes the input bit (${inputBit}) to output b and leaves output a at 0.`,
   };
 }
 

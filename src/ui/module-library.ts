@@ -176,6 +176,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Useful for filtered keystream machines where one control bit chooses which candidate bit continues forward.',
     searchTerms: ['mux', 'select', 'selector', 'filter', 'stream', 'bits', 'operator'],
   },
+  Demux: {
+    sectionId: 'bit-domain',
+    purpose: 'Routes one 1-bit input into one of two visible outputs using a 1-bit control input.',
+    detail: 'Useful for routed-clock and scheduler-style stream machines where control decides which downstream path becomes active.',
+    searchTerms: ['demux', 'route', 'routing', 'scheduler', 'stream', 'clock', 'bits', 'operator'],
+  },
   Equals: {
     sectionId: 'bit-domain',
     purpose: 'Emits a one-bit control signal when two equal-width bit words match exactly.',
