@@ -283,6 +283,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'You are not trying to preserve the whole intermediate trace. Only the final digest has to match.',
       'At least one of the two HexSource values must change, or the challenge will not count as solved.',
       'A one-byte digest has only 256 possible outputs, so different 2-byte messages must eventually overlap.',
+      'If you want to understand why two different messages can still land on the same digest, open Analyze or Modern Cryptanalysis after you find one and compare the structures, not just the result.',
     ],
   },
   {

@@ -1010,6 +1010,11 @@ export function ParameterInspector({
                   );
                 }
 
+                const isHexSourceValueField =
+                  moduleDef.id === 'HexSource' &&
+                  field.key === 'value' &&
+                  field.kind === 'string';
+
                 return (
                   <label key={field.key} className="param-field">
                     <span>
@@ -1035,6 +1040,34 @@ export function ParameterInspector({
                         }
                       }}
                     />
+                    {isHexSourceValueField ? (
+                      <div className="param-stepper-row">
+                        <button
+                          type="button"
+                          className="mini-action-button"
+                          disabled={Boolean(fieldError)}
+                          onClick={() => {
+                            const nextValue = stepHexString(String(value ?? field.defaultValue ?? ''), -1);
+                            onParamDraftChange(moduleInstance.id, field.key, nextValue);
+                            onParamChange(moduleInstance.id, field.key, nextValue);
+                          }}
+                        >
+                          -1
+                        </button>
+                        <button
+                          type="button"
+                          className="mini-action-button"
+                          disabled={Boolean(fieldError)}
+                          onClick={() => {
+                            const nextValue = stepHexString(String(value ?? field.defaultValue ?? ''), 1);
+                            onParamDraftChange(moduleInstance.id, field.key, nextValue);
+                            onParamChange(moduleInstance.id, field.key, nextValue);
+                          }}
+                        >
+                          +1
+                        </button>
+                      </div>
+                    ) : null}
                     {fieldError ? <p className="field-error">{fieldError}</p> : null}
                   </label>
                 );
@@ -1406,6 +1439,21 @@ function getTransformationView(
     return getSBoxTransformation(entry, project, registry);
   }
   return null;
+}
+
+function stepHexString(value: string, delta: -1 | 1): string {
+  const normalized = value.trim().replace(/\s+/g, '').toUpperCase();
+  const width = Math.max(2, normalized.length || 0);
+  const modulus = 16 ** width;
+  const currentValue =
+    normalized.length === 0 ? 0 : Number.parseInt(normalized, 16);
+
+  if (!Number.isFinite(currentValue)) {
+    return '00';
+  }
+
+  const nextValue = (currentValue + delta + modulus) % modulus;
+  return nextValue.toString(16).toUpperCase().padStart(width, '0');
 }
 
 function getPermutationTransformation(

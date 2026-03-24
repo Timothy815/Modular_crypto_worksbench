@@ -1761,6 +1761,15 @@ body.dock-resizing {
   font-family: var(--mono);
 }
 
+.param-stepper-row {
+  display: flex;
+  gap: 8px;
+}
+
+.param-stepper-row .mini-action-button {
+  padding-inline: 14px;
+}
+
 .checkbox-field {
   display: flex;
   align-items: flex-start;

@@ -42,6 +42,8 @@ export function ChallengePanel({
   const revealedHintCount =
     hintState.challengeId === selectedChallengeId ? hintState.count : 0;
   const activeGroup = selectedChallenge?.group ?? 'Other';
+  const isCollisionChallenge =
+    selectedChallenge?.success.kind === 'output-match-target-with-module-difference';
 
   const visibleChallenges = challenges.filter(
     (challenge) => (challenge.group ?? 'Other') === activeGroup,
@@ -190,14 +192,18 @@ export function ChallengePanel({
                 <>
                   {evaluation.status === 'success' ? (
                     <div className="challenge-success-banner">
-                      Challenge solved. Your machine matches the target behavior.
+                      {isCollisionChallenge
+                        ? 'Challenge solved. You found a different message with the same digest.'
+                        : 'Challenge solved. Your machine matches the target behavior.'}
                     </div>
                   ) : null}
                   <p className="comparison-copy">
                     Status:{' '}
                     <strong>
                       {evaluation.status === 'success'
-                        ? 'Matched target'
+                        ? isCollisionChallenge
+                          ? 'Collision found'
+                          : 'Matched target'
                         : evaluation.status === 'failure'
                           ? evaluation.reason === 'matched-target-but-input-not-different'
                             ? 'Digest matched, but input is unchanged'
@@ -207,8 +213,10 @@ export function ChallengePanel({
                   </p>
                   {evaluation.comparison ? (
                     <p className="comparison-copy">
-                      Target output <strong>{evaluation.comparison.baselineOutput.formatted}</strong>{' '}
-                      vs current output <strong>{evaluation.comparison.variantOutput.formatted}</strong>.
+                      {isCollisionChallenge ? 'Target digest' : 'Target output'}{' '}
+                      <strong>{evaluation.comparison.baselineOutput.formatted}</strong> vs current{' '}
+                      {isCollisionChallenge ? 'digest' : 'output'}{' '}
+                      <strong>{evaluation.comparison.variantOutput.formatted}</strong>.
                     </p>
                   ) : null}
                   {evaluation.status === 'failure' ? (
@@ -236,7 +244,9 @@ export function ChallengePanel({
                     </p>
                   ) : evaluation.status === 'success' ? (
                     <p className="comparison-copy">
-                      No divergence detected against the target behavior.
+                      {isCollisionChallenge
+                        ? 'The digest matches the target even though the guided message input changed.'
+                        : 'No divergence detected against the target behavior.'}
                     </p>
                   ) : null}
                   {evaluation.status === 'blocked' ? (
