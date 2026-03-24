@@ -11,11 +11,12 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.10.0`.
+The repository has shipped through `v1.11.0`.
 
-`main` now includes the first bounded **post-collision interpretation** slice:
+`main` now includes the completed first milestone of **post-collision interpretation**:
 - side-by-side original vs colliding message comparison in the challenge flow
 - post-success nudges into `Analyze` and `Modern Cryptanalysis`
+- a first internal-divergence helper based on `analysisTrace`
 - a hardened toy sponge that avoids the discovered paired-input symmetry
 - bundle and audit guardrails to keep future teaching artifacts honest
 
@@ -81,6 +82,7 @@ Implemented and shipped:
 - first bounded post-collision interpretation follow-on:
   - side-by-side original vs current message comparison for hash collision challenges
   - post-success interpretation nudges into `Analyze` and `Modern Cryptanalysis`
+  - internal-divergence helper showing the first internal trace split after the guided inputs
   - hardened sponge absorb path with asymmetric right-input preparation
   - sampled symmetry-regression tests for paired input shifts
 - bundle/performance guardrails:
@@ -106,7 +108,7 @@ Implemented and shipped:
 - `HASHING-V1.md`: shipped first hashing milestone contract and scope boundary
 - `HASH-COLLISION-CHALLENGE-V1.md`: shipped first bounded hash weakness challenge
 - `SPONGE-COLLISION-CHALLENGE-V1.md`: shipped sponge-collision follow-on and sponge-hash correction slice
-- `POST-COLLISION-INTERPRETATION-V1.md`: partially shipped bounded follow-on for understanding why colliding messages still differ internally
+- `POST-COLLISION-INTERPRETATION-V1.md`: shipped first milestone for understanding why colliding messages still differ internally
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
 - `SBOX-TRANSFORMATION-V1.md`: shipped first lookup/substitution visual family contract
@@ -145,7 +147,7 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 
 ## Near-Term Roadmap
 
-1. Decide whether the post-collision interpretation line should deepen into internal trace divergence comparison or pause for classroom feedback
+1. Decide whether the post-collision interpretation line should deepen beyond the shipped first-divergence helper or pause for classroom feedback
 2. Keep performance/bundle size under watch now that build-time guardrails are in place
 3. Monitor challenge-induced project switching in classroom use before adding warning dialogs
 4. Defer deeper transformation playback/animation until classroom feedback justifies it

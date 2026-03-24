@@ -2,7 +2,7 @@
 
 Last updated: March 24, 2026
 
-Status: Partially shipped in `v1.10.0` — post-success nudges and side-by-side message comparison delivered; deeper internal-trace divergence comparison remains deferred.
+Status: First milestone shipped in `v1.11.0` — post-success nudges, side-by-side message comparison, and first internal-divergence helper delivered.
 
 ## Purpose
 
@@ -65,8 +65,7 @@ The first milestone includes:
   - `Toy Sponge Hash`
 
 Still deferred within this contract:
-- first or major internal divergence comparison
-- a more explicit internal-difference helper beyond nudges into existing surfaces
+- a more explicit internal-difference helper beyond the first-divergence card and nudges into existing surfaces
 
 Prefer lightweight reuse over new systems.
 
@@ -104,5 +103,7 @@ This slice is successful when a student can:
 - see that the messages differ while the digest matches
 - leave with a better intuition for why “same digest” is not the same as “same internal behavior”
 
-The remaining deferred goal is:
-- identify at least one place where the internal paths diverged before collapsing back to the same digest
+This first milestone is now satisfied.
+
+The remaining open question is:
+- whether interpretation should deepen beyond the first-divergence helper

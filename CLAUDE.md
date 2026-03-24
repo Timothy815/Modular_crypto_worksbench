@@ -142,7 +142,8 @@ src/utils/     — Shared helpers
 - `v1.8.0` is already shipped
 - `v1.9.0` is already shipped
 - `v1.10.0` is already shipped
-- Current `main` is beyond the first bounded interpretation follow-on and should treat deeper internal-trace comparison as deferred work, not assumed scope
+- `v1.11.0` is already shipped
+- Current `main` is beyond the first completed interpretation milestone and should treat deeper internal-trace comparison as a new bounded decision, not assumed scope
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -168,6 +169,7 @@ What is shipped on `main`:
 - first bounded post-collision interpretation slice:
   - side-by-side original vs colliding message comparison
   - post-success nudges into `Analyze` and `Modern Cryptanalysis`
+  - internal-divergence helper based on `analysisTrace`
   - sponge-hardening asymmetry fix removing the paired-step shortcut
   - bundle/performance guardrails and build-time chunk budget enforcement
 
@@ -181,13 +183,13 @@ Key contracts to check before implementation:
 - `HASHING-V1.md` for the current hashing line and scope boundary
 - `HASH-COLLISION-CHALLENGE-V1.md` for the first bounded post-hashing milestone challenge slice
 - `SPONGE-COLLISION-CHALLENGE-V1.md` for the shipped sponge-collision follow-on
-- `POST-COLLISION-INTERPRETATION-V1.md` for the partially shipped bounded follow-on after the collision challenges
+- `POST-COLLISION-INTERPRETATION-V1.md` for the shipped first interpretation milestone after the collision challenges
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family
 
 Near-term follow-ups:
-- decide whether post-collision interpretation should deepen into internal trace divergence comparison or pause for classroom feedback
+- decide whether post-collision interpretation should deepen beyond the shipped first-divergence helper or pause for classroom feedback
 - keep hashing connected to the modern-analysis and transformation-visualization surfaces
 - keep bundle growth inside the new guardrails
 - monitor challenge-induced project switching in classroom use before adding warnings

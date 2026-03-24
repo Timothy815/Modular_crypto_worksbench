@@ -6,16 +6,17 @@ Last updated: March 24, 2026
 
 ## Current State
 
-The project has shipped through `v1.10.0` on `main`.
+The project has shipped through `v1.11.0` on `main`.
 
-Current `main` is now positioned beyond the first bounded post-collision interpretation slice.
-That slice shipped:
+Current `main` is now positioned beyond the first completed post-collision interpretation milestone.
+That milestone shipped:
 - post-success interpretation nudges in the collision challenge flow
 - side-by-side original vs colliding message comparison
+- an `analysisTrace`-based first internal-divergence helper
 - sponge hardening to remove the discovered paired-input shortcut
 - bundle/performance guardrails and pedagogical audit guardrails
 
-The deeper internal-trace divergence comparison described by the interpretation contract remains deferred.
+The open interpretation question is now whether to deepen beyond the first-divergence helper or pause for classroom feedback.
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -101,6 +102,7 @@ The following decisions are reflected in shipped code:
 | `v1.8.0` | Hash Collision Challenge |
 | `v1.9.0` | Sponge Collision Challenge |
 | `v1.10.0` | Collision Interpretation Foundations |
+| `v1.11.0` | Collision Interpretation Helper |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -143,6 +145,12 @@ Post-`v1.9.0` work merged to `main`:
 - React vendor chunk split
 - build-time bundle-size guard
 
+Post-`v1.10.0` work merged to `main`:
+- first `analysisTrace`-based internal-divergence helper for hash collision challenges
+- guided source modules skipped when locating first internal divergence
+- compact `Internal Divergence` card in the collision success flow
+- regression coverage for the new interpretation signal
+
 ---
 
 ## Safe Next Tasks
@@ -150,7 +158,7 @@ Post-`v1.9.0` work merged to `main`:
 ### Claude
 
 Safe to begin:
-- help decide whether the interpretation line should deepen into internal trace divergence comparison
+- help decide whether the interpretation line should deepen beyond the shipped first-divergence helper
 - help assess whether collision/interpretation work should now pause for classroom feedback
 - help keep any follow-on hash weakness work bounded
 
@@ -164,7 +172,7 @@ Should avoid for now:
 ### Gemini
 
 Safe to begin:
-- review whether the partially shipped interpretation line should deepen or pause
+- review whether the shipped first interpretation milestone should deepen or pause
 - help keep hashing, modern analysis, and challenge workflows connected instead of fragmenting the product
 - help pressure-test future bounded challenge ideas against the shipped collision line
 
@@ -182,7 +190,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed on the most recent collision-interpretation / sponge-hardening slice.
+All three passed on the most recent collision-interpretation helper slice.
 
 ---
 
@@ -196,7 +204,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 ### Near-Term Roadmap
 
-1. **Decide whether post-collision interpretation should deepen into internal trace divergence comparison or pause for classroom feedback**
+1. **Decide whether post-collision interpretation should deepen beyond the shipped first-divergence helper or pause for classroom feedback**
 2. **Keep hashing connected to the shipped transformation views** — especially `SBox`, `BitShifter`, and `XOR`
 3. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
 4. **Monitor challenge-induced project switching in classroom use** before adding warning dialogs
@@ -220,7 +228,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `HASHING-V1.md` | Shipped as the `v1.7.0` first hashing milestone contract |
 | `HASH-COLLISION-CHALLENGE-V1.md` | Shipped as the `v1.8.0` first bounded hash weakness challenge |
 | `SPONGE-COLLISION-CHALLENGE-V1.md` | Shipped as the `v1.9.0` sponge-collision follow-on |
-| `POST-COLLISION-INTERPRETATION-V1.md` | Partially shipped in `v1.10.0` — nudges and message comparison delivered; deeper internal-trace comparison deferred |
+| `POST-COLLISION-INTERPRETATION-V1.md` | First milestone shipped in `v1.11.0` — nudges, message comparison, and first internal-divergence helper delivered |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
 | `SBOX-TRANSFORMATION-V1.md` | Shipped as the `v1.6.0` lookup/substitution visual family |
