@@ -356,7 +356,8 @@ The clearest next move is not “which algorithm next?”
 
 It is:
 - block/framing and first protocol-material vocabulary are now shipped
-- keep stream-control follow-ons and advanced rotor realism as the clearest remaining near-term lines
+- introduce a first bounded stream-cipher line for visible combiners and irregular clocking
+- keep advanced rotor realism as the next bounded sub-line after that shared vocabulary move
 - keep protocol-material follow-ons bounded rather than jumping to mode presets
 - keep tutorials and challenges shipping alongside the new language
 
