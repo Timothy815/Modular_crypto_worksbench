@@ -6,20 +6,18 @@ Last updated: March 24, 2026
 
 ## Current State
 
-The project has shipped through `v1.19.0` on `main`.
+The project has shipped through `v1.20.0` on `main`.
 
-Current `main` is now positioned beyond the first completed advanced-rotor milestone.
+Current `main` is now positioned beyond the second completed stream milestone.
 That milestone shipped:
-- first bounded rotor-realism vocabulary:
-  - `ringOffset`
-  - `notches`
-  - visible `turnover`
-- temporal `clock` handling for stateful-module advance edges
-- explicit turnover-driven double-step wiring using `Clock`, `OR`, and `Gate`
-- first rotor-realism teaching surface:
-  - `Advanced Rotor Stepping` demo workspace
-  - `Advanced Rotor Stepping` tutorial
-  - `Repair the Rotor Notch` challenge
+- second bounded stream-machine vocabulary:
+  - `Mux`
+- strict 1-bit selector validation for `select`, `a`, and `b`
+- Analyze-tab transformation view for `Mux`
+- first selector/filter teaching surface:
+  - `Filtered Keystream` demo workspace
+  - `The Filtered Keystream` tutorial
+  - `Repair the Filter Selector` challenge
 
 The already-shipped protocol-material and block-framing foundations remain in place:
 - protocol inputs:
@@ -35,7 +33,7 @@ The next strategic direction remains broader than any one subdomain:
 - ship tutorials and challenges alongside each new vocabulary family
 
 The next most important missing vocabulary families are:
-- deeper stream-combiner / filter-function follow-ons after the first majority slice
+- deeper stream-combiner / filter-function follow-ons after the shipped selector slice
 - symbol/message permutation and scheduler follow-ons after the shipped rotor-realism slice
 
 Established and shipped:
@@ -131,6 +129,7 @@ The following decisions are reflected in shipped code:
 | `v1.17.0` | Protocol Material |
 | `v1.18.0` | Stream Cipher Foundations |
 | `v1.19.0` | Advanced Rotor Realism |
+| `v1.20.0` | Stream Cipher Filtering |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -198,7 +197,7 @@ Post-`v1.12.0` work merged to `main`:
   - composite unzip with forwarded-param carry-through
   - dark-mode-safe reflector and plugboard pair rendering
 
-Strategic direction after `v1.13.0` (validated through `v1.19.0`):
+Strategic direction after `v1.13.0` (validated through `v1.20.0`):
 - `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` now frames MCW as a cryptographic systems IDE
 - the next roadmap focus is expressive primitive language growth rather than only choosing the next isolated feature line
 - Phase 1 foundations are now shipped through:
@@ -269,6 +268,15 @@ Post-`v1.18.0` work merged to `main`:
   - `Advanced Rotor Stepping` tutorial
   - `Repair the Rotor Notch` challenge
 
+Post-`v1.19.0` work merged to `main`:
+- bounded second stream-cipher slice:
+  - `Mux`
+  - strict 1-bit selector validation
+  - Analyze-tab transformation view for `Mux`
+  - `Filtered Keystream` demo workspace
+  - `The Filtered Keystream` tutorial
+  - `Repair the Filter Selector` challenge
+
 ---
 
 ## Safe Next Tasks
@@ -312,7 +320,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed on the most recent advanced-rotor slice.
+All three passed on the most recent second stream slice.
 
 ---
 
@@ -328,8 +336,6 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
 2. **Continue the primitive-language roadmap beyond shipped stream and rotor foundations** — the clearest remaining language families are deeper stream-combiner follow-ons, symbol/message permutation, and scheduler/key-routing work
-   Immediate contract:
-   `STREAM-CIPHER-V2.md`
 3. **Keep future rotor follow-ons bounded** — reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices, not convenience presets
 4. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
 5. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
@@ -367,7 +373,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `BLOCK-FRAMING-V1.md` | Shipped in `v1.16.0` as bounded block-framing vocabulary for visible splitting, rejoining, and padding |
 | `PROTOCOL-MATERIAL-V1.md` | Shipped in `v1.17.0` as bounded protocol-input vocabulary for IV, nonce, and salt sources |
 | `STREAM-CIPHER-V1.md` | Shipped in `v1.18.0` as bounded stream-machine slice for visible majority logic and irregular clocking |
-| `STREAM-CIPHER-V2.md` | Proposed — second bounded stream-machine slice for visible selector/filter behavior via `Mux` |
+| `STREAM-CIPHER-V2.md` | Shipped in `v1.20.0` as second bounded stream-machine slice for visible selector/filter behavior via `Mux` |
 | `ADVANCED-ROTOR-REALISM-V1.md` | Shipped in `v1.19.0` as bounded rotor-realism slice for ring setting, turnover, and double-step behavior |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |

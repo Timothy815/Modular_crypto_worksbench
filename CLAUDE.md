@@ -201,8 +201,15 @@ src/utils/     — Shared helpers
   - `Advanced Rotor Stepping` demo workspace
   - `Advanced Rotor Stepping` tutorial
   - `Repair the Rotor Notch` challenge
+- `v1.20.0` is now the second stream-cipher milestone:
+  - `Mux`
+  - strict 1-bit selector validation
+  - Analyze transformation view for `Mux`
+  - `Filtered Keystream` demo workspace
+  - `The Filtered Keystream` tutorial
+  - `Repair the Filter Selector` challenge
 - Current `main` should treat the next phase as **primitive-language expansion**
-  - deeper stream-combiner follow-ons after the first majority slice
+  - deeper stream-combiner follow-ons after the shipped selector slice
   - scheduler / permutation / bounded rotor follow-ons after the shipped realism slice
 
 What is shipped on `main`:
@@ -257,6 +264,11 @@ What is shipped on `main`:
   - temporal `clock` handling for stateful advance edges
   - explicit turnover-driven double-step wiring via `Clock`, `OR`, and `Gate`
   - `Advanced Rotor Stepping` demo/tutorial/challenge
+- second bounded stream-cipher vocabulary:
+  - `Mux`
+  - strict 1-bit selector validation
+  - `Filtered Keystream` demo, `The Filtered Keystream` tutorial, and `Repair the Filter Selector` challenge
+  - Analyze transformation view for `Mux`
 
 Key contracts to check before implementation:
 - `ENGINE-V1-CONTRACT.md` for engine decisions
@@ -276,6 +288,7 @@ Key contracts to check before implementation:
 - `BLOCK-FRAMING-V1.md` for the shipped first bounded block-framing vocabulary
 - `PROTOCOL-MATERIAL-V1.md` for the shipped first bounded protocol-input slice
 - `ADVANCED-ROTOR-REALISM-V1.md` for the shipped first bounded rotor-realism slice
+- `STREAM-CIPHER-V2.md` for the shipped second bounded stream-machine slice
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family

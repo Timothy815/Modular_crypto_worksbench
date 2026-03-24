@@ -2,7 +2,7 @@
 
 Last updated: March 24, 2026
 
-Status: Proposed.
+Status: Shipped in `v1.20.0`.
 
 ## Purpose
 
@@ -144,9 +144,7 @@ Avoid:
 - hiding selector behavior inside a composite while claiming the graph is explicit
 - teaching security folklore before the selection mechanics are clear
 
-## Suggested Teaching Additions
-
-The first milestone should likely ship with:
+## Shipped Teaching Additions
 
 ### Demo workspace
 
@@ -156,7 +154,8 @@ The first milestone should likely ship with:
 
 ### Tutorial
 
-One tutorial (4-6 steps) teaching:
+- `The Filtered Keystream`
+  - teaches:
 - what the selector bit means
 - how `Mux` differs from `Majority`
 - how `Mux` differs from `Gate`
@@ -164,9 +163,16 @@ One tutorial (4-6 steps) teaching:
 
 ### Challenge
 
-One bounded challenge such as:
-- a filtered keystream machine with the wrong selector seed or swapped `Mux` inputs
-- the student must restore the filtering behavior so the output stream matches a reference
+- `Repair the Filter Selector`
+  - repairs the selector seed so the machine chooses the right candidate stream on each tick
+
+## Shipped Notes
+
+`v1.20.0` delivered the second bounded stream slice by:
+- adding `Mux` as a visible 1-bit selector primitive
+- keeping selector behavior explicit in the existing `bits` domain
+- rejecting statically known non-1-bit selector inputs where possible
+- shipping a filtered-keystream demo/tutorial/challenge that contrasts selection with voting and gating
 
 ## Success Criteria
 
