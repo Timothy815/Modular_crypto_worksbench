@@ -68,6 +68,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when stateful modules should advance on explicit ticks instead of hidden timing.',
     searchTerms: ['clock', 'pulse', 'time', 'tick', 'timing'],
   },
+  Counter: {
+    sectionId: 'state-keystream',
+    purpose: 'Counts active clock pulses into a visible fixed-width bit word.',
+    detail: 'Use this when a machine should track explicit state over time instead of hiding it in prose or code.',
+    searchTerms: ['counter', 'count', 'state', 'clock', 'ticks', 'control'],
+  },
   Output: {
     sectionId: 'inputs-outputs',
     purpose: 'Collects the final signal at the end of a graph.',
@@ -139,6 +145,24 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Reduces one fixed-width bit word by an explicit modulus.',
     detail: 'Interprets the bit vector as an unsigned word and returns the remainder in the same width.',
     searchTerms: ['modulo', 'remainder', 'mod', 'word', 'bits', 'operator'],
+  },
+  Equals: {
+    sectionId: 'bit-domain',
+    purpose: 'Emits a one-bit control signal when two equal-width bit words match exactly.',
+    detail: 'Useful for exact-match pulses such as “fire when the counter reaches this word.”',
+    searchTerms: ['equals', 'compare', 'match', 'control', 'pulse', 'bits'],
+  },
+  AtLeast: {
+    sectionId: 'bit-domain',
+    purpose: 'Emits a one-bit control signal when one bit word reaches or exceeds another.',
+    detail: 'Useful for threshold-style level control once a visible count or word has crossed a boundary.',
+    searchTerms: ['at least', 'threshold', 'compare', 'control', 'bits'],
+  },
+  Gate: {
+    sectionId: 'bit-domain',
+    purpose: 'Passes a bit signal only when the control input receives an active pulse.',
+    detail: 'Useful for visible pulse gating, conditional clocking, and making state-dependent flow explicit.',
+    searchTerms: ['gate', 'pulse', 'control', 'clock', 'conditional', 'bits'],
   },
   Permutation: {
     sectionId: 'transforms',

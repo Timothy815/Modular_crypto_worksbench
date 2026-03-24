@@ -13,6 +13,14 @@ export default defineConfig({
             return 'react';
           }
 
+          if (
+            id.includes('/src/ui/demo-projects.ts') ||
+            id.includes('/src/ui/starter-tutorials.ts') ||
+            id.includes('/src/ui/starter-challenges.ts')
+          ) {
+            return 'guide-data';
+          }
+
           return undefined;
         },
       },

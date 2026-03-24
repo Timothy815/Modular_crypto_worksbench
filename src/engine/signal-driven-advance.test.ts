@@ -2,9 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { executeTickedProject } from './executor';
 import type { CompositeDef } from './composites';
 import type { ModuleRegistry, Project } from './types';
+import { AtLeast } from './modules/at-least';
+import { Counter } from './modules/counter';
 import { Clock } from './modules/clock';
+import { Gate } from './modules/gate';
+import { KeyInput } from './modules/key-input';
 import { LFSR } from './modules/lfsr';
 import { Rotor } from './modules/rotor';
+import { SymbolToBits } from './modules/symbol-to-bits';
 import { TextInput } from './modules/text-input';
 import { BitSource } from './modules/bit-source';
 import { BitsToSymbol } from './modules/bits-to-symbol';
@@ -353,6 +358,127 @@ describe('Signal-driven advance', () => {
       expect(rotorPositions[1]).toBe(1); // advanced
       expect(rotorPositions[2]).toBe(1); // same
       expect(rotorPositions[3]).toBe(2); // advanced
+    });
+  });
+
+  describe('counter-driven control', () => {
+    it('a counter threshold can gate a later stateful machine', () => {
+      const registry: ModuleRegistry = {
+        Clock,
+        Counter,
+        KeyInput,
+        SymbolToBits,
+        AtLeast,
+        Gate,
+        LFSR,
+      };
+
+      const project: Project = {
+        modules: [
+          {
+            id: 'clock',
+            defId: 'Clock',
+            params: { period: 1, offset: 0, length: 6 },
+          },
+          {
+            id: 'counter',
+            defId: 'Counter',
+            params: { width: 5, value: 0, step: 1 },
+          },
+          {
+            id: 'threshold',
+            defId: 'KeyInput',
+            params: { value: 'D' },
+          },
+          {
+            id: 'threshold-bits',
+            defId: 'SymbolToBits',
+            params: {},
+          },
+          {
+            id: 'atleast',
+            defId: 'AtLeast',
+            params: {},
+          },
+          {
+            id: 'gate',
+            defId: 'Gate',
+            params: {},
+          },
+          {
+            id: 'lfsr',
+            defId: 'LFSR',
+            params: { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 5 },
+          },
+        ],
+        connections: [
+          {
+            from: { moduleId: 'clock', port: 'pulse' },
+            to: { moduleId: 'counter', port: 'clock' },
+          },
+          {
+            from: { moduleId: 'counter', port: 'out' },
+            to: { moduleId: 'atleast', port: 'a' },
+          },
+          {
+            from: { moduleId: 'threshold', port: 'out' },
+            to: { moduleId: 'threshold-bits', port: 'in' },
+          },
+          {
+            from: { moduleId: 'threshold-bits', port: 'out' },
+            to: { moduleId: 'atleast', port: 'b' },
+          },
+          {
+            from: { moduleId: 'clock', port: 'pulse' },
+            to: { moduleId: 'gate', port: 'in' },
+          },
+          {
+            from: { moduleId: 'atleast', port: 'out' },
+            to: { moduleId: 'gate', port: 'control' },
+          },
+          {
+            from: { moduleId: 'gate', port: 'out' },
+            to: { moduleId: 'lfsr', port: 'clock' },
+          },
+        ],
+      };
+
+      const result = executeTickedProject(project, registry, 6);
+
+      const counters = result.ticks.map(
+        (tick) => tick.outputsByModuleId.counter.out.value,
+      );
+      const gates = result.ticks.map(
+        (tick) => tick.outputsByModuleId.gate.out.value,
+      );
+      const seeds = result.paramsByModuleByTick.lfsr.map(
+        (params) => params.seed as number[],
+      );
+
+      expect(counters).toEqual([
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1],
+        [0, 0, 0, 1, 0],
+        [0, 0, 0, 1, 1],
+        [0, 0, 1, 0, 0],
+        [0, 0, 1, 0, 1],
+      ]);
+
+      expect(gates).toEqual([
+        [0],
+        [0],
+        [0],
+        [1],
+        [1],
+        [1],
+      ]);
+
+      expect(seeds[0]).toEqual([1, 0, 0, 1, 1]);
+      expect(seeds[1]).toEqual([1, 0, 0, 1, 1]);
+      expect(seeds[2]).toEqual([1, 0, 0, 1, 1]);
+      expect(seeds[3]).toEqual([1, 0, 0, 1, 1]);
+      expect(seeds[4]).toEqual([1, 1, 0, 0, 1]);
+      expect(seeds[5]).toEqual([1, 1, 1, 0, 0]);
     });
   });
 

@@ -7,6 +7,7 @@ function cloneProject<T>(value: T): T {
 
 const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
 const beyondXorProject = demoProjects.find((project) => project.id === 'beyond-xor');
+const controlProject = demoProjects.find((project) => project.id === 'counter-pulse-gate');
 const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
 const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
 const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-lorenz');
@@ -30,6 +31,9 @@ if (!bridgeProject) {
 }
 if (!beyondXorProject) {
   throw new Error('Expected beyond-xor demo project to seed starter challenges.');
+}
+if (!controlProject) {
+  throw new Error('Expected counter-pulse-gate demo project to seed starter challenges.');
 }
 if (!baudotProject) {
   throw new Error('Expected baudot-bridge demo project to seed starter challenges.');
@@ -87,6 +91,8 @@ const fixedBridgeTarget = cloneProject(bridgeProject.project);
 const brokenBridgeStart = cloneProject(bridgeProject.project);
 const beyondXorTarget = cloneProject(beyondXorProject.project);
 const brokenBeyondXorStart = cloneProject(beyondXorProject.project);
+const controlTarget = cloneProject(controlProject.project);
+const brokenControlStart = cloneProject(controlProject.project);
 const baudotTarget = cloneProject(baudotProject.project);
 const brokenBaudotStart = cloneProject(baudotProject.project);
 const lorenzTarget = cloneProject(lorenzProject.project);
@@ -136,6 +142,14 @@ if (!brokenBeyondXorMask) {
   throw new Error('Expected beyond-xor demo project to contain a mask source.');
 }
 brokenBeyondXorMask.params.stream = [0, 0, 1, 1, 1, 1, 0, 0];
+
+const brokenControlThreshold = brokenControlStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'threshold',
+);
+if (!brokenControlThreshold) {
+  throw new Error('Expected counter-pulse-gate demo project to contain a threshold module.');
+}
+brokenControlThreshold.params.value = 'C';
 
 const brokenBaudotSource = brokenBaudotStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'source',
@@ -303,6 +317,27 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The ADD mod 2^n and rotate stages are already correct in this lab.',
       'Focus on the visible bit mask feeding the AND stage.',
       'A boolean operator is only as useful as the mask word it receives.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-control-threshold',
+    title: 'Repair the Control Threshold',
+    projectId: 'counter-pulse-gate',
+    group: 'Control Foundations',
+    difficulty: 'beginner',
+    prompt:
+      'This machine should keep its data register frozen for the first few ticks, then allow it to advance once the counter reaches the right threshold word. The gate and comparison are wired correctly, but the threshold symbol is wrong. Restore it so the output stream matches the reference machine again.',
+    startingProject: brokenControlStart,
+    startingLayout: cloneProject(controlProject.layout),
+    targetProject: controlTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The clock, counter, comparator, and gate are already connected correctly.',
+      'Focus on the symbol feeding SymbolToBits before the AtLeast comparison.',
+      'Step through ticks: the data register should stay still at first, then begin advancing only after the threshold is reached.',
     ],
   },
   {

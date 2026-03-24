@@ -3,8 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { AsciiSource } from './modules/ascii-source';
 import { AddMod } from './modules/add-mod';
 import { AND } from './modules/and';
+import { AtLeast } from './modules/at-least';
 import { BaudotSource } from './modules/baudot-source';
 import { BitSource } from './modules/bit-source';
+import { Counter } from './modules/counter';
+import { Equals } from './modules/equals';
+import { Gate } from './modules/gate';
 import { HexSource } from './modules/hex-source';
 import { Modulo } from './modules/modulo';
 import { NOT } from './modules/not';
@@ -63,6 +67,10 @@ const registry: ModuleRegistry = {
   [AND.id]: AND,
   [OR.id]: OR,
   [NOT.id]: NOT,
+  [Counter.id]: Counter,
+  [Equals.id]: Equals,
+  [AtLeast.id]: AtLeast,
+  [Gate.id]: Gate,
   [AddMod.id]: AddMod,
   [SubMod.id]: SubMod,
   [Modulo.id]: Modulo,
@@ -328,6 +336,24 @@ describe('validateProject', () => {
     ).toBe(true);
   });
 
+  it('rejects malformed counter params before execution', () => {
+    const project: Project = {
+      modules: [{ id: 'counter-1', defId: 'Counter', params: { width: 0, value: 0, step: 1 } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'counter-1' &&
+          issue.message.includes('positive integer'),
+      ),
+    ).toBe(true);
+  });
+
   it('rejects equal-width binary operators when static source widths differ', () => {
     const project: Project = {
       modules: [
@@ -338,6 +364,25 @@ describe('validateProject', () => {
       connections: [
         { from: { moduleId: 'left', port: 'out' }, to: { moduleId: 'add', port: 'a' } },
         { from: { moduleId: 'right', port: 'out' }, to: { moduleId: 'add', port: 'b' } },
+      ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'signal-width-mismatch')).toBe(true);
+  });
+
+  it('rejects comparator inputs when static source widths differ', () => {
+    const project: Project = {
+      modules: [
+        { id: 'left', defId: 'BitSource', params: { stream: [1, 0, 1, 0] } },
+        { id: 'right', defId: 'BitSource', params: { stream: [1, 0, 1] } },
+        { id: 'equals', defId: 'Equals', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'left', port: 'out' }, to: { moduleId: 'equals', port: 'a' } },
+        { from: { moduleId: 'right', port: 'out' }, to: { moduleId: 'equals', port: 'b' } },
       ],
     };
 

@@ -17,6 +17,10 @@ import { NOT } from './not';
 import { AddMod } from './add-mod';
 import { SubMod } from './sub-mod';
 import { Modulo } from './modulo';
+import { Counter } from './counter';
+import { Equals } from './equals';
+import { AtLeast } from './at-least';
+import { Gate } from './gate';
 import { Output } from './output';
 import { BitOutput } from './bit-output';
 import { Rotor } from './rotor';
@@ -48,6 +52,10 @@ export {
   AddMod,
   SubMod,
   Modulo,
+  Counter,
+  Equals,
+  AtLeast,
+  Gate,
   Output,
   BitOutput,
   Rotor,
@@ -80,6 +88,10 @@ export const V1_REGISTRY: ModuleRegistry = {
   [AddMod.id]: AddMod,
   [SubMod.id]: SubMod,
   [Modulo.id]: Modulo,
+  [Counter.id]: Counter,
+  [Equals.id]: Equals,
+  [AtLeast.id]: AtLeast,
+  [Gate.id]: Gate,
   [Output.id]: Output,
   [BitOutput.id]: BitOutput,
   [Rotor.id]: Rotor,

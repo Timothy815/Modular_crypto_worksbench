@@ -24,8 +24,16 @@ import { validatePlugboardWiringParam } from './modules/plugboard';
 import { validateReflectorWiringParam } from './modules/reflector';
 import { validateSBoxTableParam } from './modules/s-box';
 import { validateModuloParam } from './modules/modulo';
+import { validateCounterParam } from './modules/counter';
 
-const EQUAL_WIDTH_BINARY_MODULE_IDS = new Set(['AND', 'OR', 'AddMod', 'SubMod']);
+const EQUAL_WIDTH_BINARY_MODULE_IDS = new Set([
+  'AND',
+  'OR',
+  'AddMod',
+  'SubMod',
+  'Equals',
+  'AtLeast',
+]);
 
 function findPort(def: ModuleDefinition, portName: string, direction: 'input' | 'output') {
   const ports = direction === 'input' ? def.inputs : def.outputs;
@@ -148,6 +156,10 @@ function getModuleSpecificParamMessage(
     return validateModuloParam(value);
   }
 
+  if (def.id === 'Counter') {
+    return validateCounterParam(field.key, value);
+  }
+
   return null;
 }
 
@@ -260,6 +272,14 @@ function inferStaticBitWidth(
       width = typeof length === 'number' && Number.isInteger(length) && length >= 0 ? length : null;
       break;
     }
+    case 'Counter': {
+      const widthParam = instance.params.width;
+      width =
+        typeof widthParam === 'number' && Number.isInteger(widthParam) && widthParam > 0
+          ? widthParam
+          : null;
+      break;
+    }
     case 'LFSR': {
       const outputLength = instance.params.outputLength;
       width =
@@ -279,7 +299,12 @@ function inferStaticBitWidth(
     case 'BitShifter':
     case 'Modulo':
     case 'SBox':
+    case 'Gate':
       width = inferFromInput();
+      break;
+    case 'Equals':
+    case 'AtLeast':
+      width = 1;
       break;
     case 'Permutation': {
       const order = instance.params.order;

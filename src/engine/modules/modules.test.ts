@@ -12,6 +12,10 @@ import { BitsToSymbol } from './bits-to-symbol';
 import { BitsToHex } from './bits-to-hex';
 import { AddMod } from './add-mod';
 import { AND } from './and';
+import { AtLeast } from './at-least';
+import { Counter } from './counter';
+import { Equals } from './equals';
+import { Gate } from './gate';
 import { Modulo } from './modulo';
 import { NOT } from './not';
 import { OR } from './or';
@@ -465,6 +469,103 @@ describe('Word arithmetic operators', () => {
     expect(() =>
       Modulo.evaluate({ in: { type: 'bits', value: [1, 0, 1, 0] } }, { modulus: 32 }),
     ).toThrow('word range');
+  });
+});
+
+describe('Control primitives', () => {
+  it('Counter emits a big-endian fixed-width word and wraps on advance', () => {
+    expect(Counter.evaluate({}, { width: 3, value: 5, step: 2 }).out).toEqual({
+      type: 'bits',
+      value: [1, 0, 1],
+    });
+
+    expect(Counter.advance({ width: 3, value: 7, step: 2 }, 0)).toMatchObject({
+      value: 1,
+    });
+  });
+
+  it('Equals emits an active control bit only for exact word matches', () => {
+    expect(
+      Equals.evaluate(
+        {
+          a: { type: 'bits', value: [0, 1, 1] },
+          b: { type: 'bits', value: [0, 1, 1] },
+        },
+        {},
+      ).out,
+    ).toEqual({
+      type: 'bits',
+      value: [1],
+    });
+
+    expect(
+      Equals.evaluate(
+        {
+          a: { type: 'bits', value: [0, 1, 1] },
+          b: { type: 'bits', value: [1, 0, 0] },
+        },
+        {},
+      ).out,
+    ).toEqual({
+      type: 'bits',
+      value: [0],
+    });
+  });
+
+  it('AtLeast compares big-endian unsigned words', () => {
+    expect(
+      AtLeast.evaluate(
+        {
+          a: { type: 'bits', value: [1, 0, 0] },
+          b: { type: 'bits', value: [0, 1, 1] },
+        },
+        {},
+      ).out,
+    ).toEqual({
+      type: 'bits',
+      value: [1],
+    });
+
+    expect(
+      AtLeast.evaluate(
+        {
+          a: { type: 'bits', value: [0, 1, 0] },
+          b: { type: 'bits', value: [0, 1, 1] },
+        },
+        {},
+      ).out,
+    ).toEqual({
+      type: 'bits',
+      value: [0],
+    });
+  });
+
+  it('Gate passes bits only when the control input is the active pulse [1]', () => {
+    expect(
+      Gate.evaluate(
+        {
+          in: { type: 'bits', value: [1, 0, 1, 1] },
+          control: { type: 'bits', value: [1] },
+        },
+        {},
+      ).out,
+    ).toEqual({
+      type: 'bits',
+      value: [1, 0, 1, 1],
+    });
+
+    expect(
+      Gate.evaluate(
+        {
+          in: { type: 'bits', value: [1, 0, 1, 1] },
+          control: { type: 'bits', value: [0] },
+        },
+        {},
+      ).out,
+    ).toEqual({
+      type: 'bits',
+      value: [0, 0, 0, 0],
+    });
   });
 });
 

@@ -121,6 +121,7 @@ export interface ValidationIssue {
     | 'invalid-wiring'
     | 'duplicate-input-connection'
     | 'signal-type-mismatch'
+    | 'signal-width-mismatch'
     | 'cycle-detected'
     | 'invalid-composite-binding';
   message: string;
