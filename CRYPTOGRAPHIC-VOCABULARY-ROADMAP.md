@@ -181,6 +181,7 @@ Still open over time:
 - invert / reverse-permutation helpers where appropriate
 - copy-and-invert authoring helpers for reversible designs
 - broader message-level permutation patterns beyond one bounded reorder primitive
+- explicit contiguous symbol/message windowing after shipped whole-message permutation
 
 ### 6. Advanced Rotor Realism — *first milestone shipped in `v1.19.0`*
 
@@ -423,7 +424,7 @@ It is:
 - keep tutorials and challenges shipping alongside the new language
 
 The immediate next contract should be:
-- a bounded post-`BitWindow` vocabulary line that deepens shared machine language without collapsing into preset key schedules or hidden iterator magic
+- `SYMBOL-STRUCTURE-V1.md`
 
 That is the path from:
 - strong teaching workbench

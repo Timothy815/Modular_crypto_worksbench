@@ -369,9 +369,9 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 ### Near-Term Roadmap
 
 1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
-2. **Continue the primitive-language roadmap beyond shipped stream, rotor, symbol-permutation, and key-routing foundations** — the clearest remaining language families are deeper key-schedule follow-ons, deeper stream follow-ons, and post-permutation message structure
+2. **Continue the primitive-language roadmap beyond shipped stream, rotor, symbol-permutation, and key-routing foundations** — the clearest remaining language families are post-permutation message structure, deeper key-schedule follow-ons, and deeper stream follow-ons
    Immediate direction:
-   choose the next bounded post-`v1.23.0` vocabulary line without widening `BitWindow` into preset schedules
+   `SYMBOL-STRUCTURE-V1.md`
 3. **Keep future rotor follow-ons bounded** — reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices, not convenience presets
 4. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
 5. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
@@ -413,6 +413,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `STREAM-CIPHER-V3.md` | Shipped in `v1.21.0` as third bounded stream-machine slice for visible routing/scheduling behavior via `Demux` |
 | `SYMBOL-PERMUTATION-V1.md` | Shipped in `v1.22.0` as first bounded symbol/message permutation slice for visible symbol-order routing |
 | `KEY-SCHEDULE-V2.md` | Shipped in `v1.23.0` as first bounded post-groundwork key-routing slice for visible sub-key extraction from one key bus |
+| `SYMBOL-STRUCTURE-V1.md` | Proposed — first bounded post-permutation symbol/message-structure slice for visible contiguous submessage extraction |
 | `ADVANCED-ROTOR-REALISM-V1.md` | Shipped in `v1.19.0` as bounded rotor-realism slice for ring setting, turnover, and double-step behavior |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
