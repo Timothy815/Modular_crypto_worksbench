@@ -2,7 +2,7 @@
 
 Last updated: March 24, 2026
 
-Status: Proposed.
+Status: Shipped in `v1.22.0`.
 
 ## Purpose
 

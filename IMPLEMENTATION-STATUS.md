@@ -6,18 +6,18 @@ Last updated: March 24, 2026
 
 ## Current State
 
-The project has shipped through `v1.21.0` on `main`.
+The project has shipped through `v1.22.0` on `main`.
 
-Current `main` is now positioned beyond the third completed stream milestone.
+Current `main` is now positioned beyond the first completed symbol/message permutation milestone.
 That milestone shipped:
-- third bounded stream-machine vocabulary:
-  - `Demux`
-- strict 1-bit routing validation for `select` and `in`
-- Analyze-tab transformation view for `Demux`
-- first routing/scheduling teaching surface:
-  - `Routed Clock Keystream` demo workspace
-  - `The Routed Clock Keystream` tutorial
-  - `Repair the Routed Clock` challenge
+- first bounded symbol/message permutation vocabulary:
+  - `SymbolPermutation`
+- strict one-to-one symbol-order validation
+- Analyze-tab transformation view for `SymbolPermutation`
+- first symbol-permutation teaching surface:
+  - `Visible Symbol Scramble` demo workspace
+  - `Visible Symbol Scramble` tutorial
+  - `Repair the Symbol Order` challenge
 
 The already-shipped protocol-material and block-framing foundations remain in place:
 - protocol inputs:
@@ -131,6 +131,7 @@ The following decisions are reflected in shipped code:
 | `v1.19.0` | Advanced Rotor Realism |
 | `v1.20.0` | Stream Cipher Filtering |
 | `v1.21.0` | Stream Cipher Routing |
+| `v1.22.0` | Symbol Permutation |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -198,7 +199,7 @@ Post-`v1.12.0` work merged to `main`:
   - composite unzip with forwarded-param carry-through
   - dark-mode-safe reflector and plugboard pair rendering
 
-Strategic direction after `v1.13.0` (validated through `v1.21.0`):
+Strategic direction after `v1.13.0` (validated through `v1.22.0`):
 - `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` now frames MCW as a cryptographic systems IDE
 - the next roadmap focus is expressive primitive language growth rather than only choosing the next isolated feature line
 - Phase 1 foundations are now shipped through:
@@ -287,6 +288,15 @@ Post-`v1.20.0` work merged to `main`:
   - `The Routed Clock Keystream` tutorial
   - `Repair the Routed Clock` challenge
 
+Post-`v1.21.0` work merged to `main`:
+- bounded symbol-permutation slice:
+  - `SymbolPermutation`
+  - strict one-to-one symbol-order validation
+  - Analyze-tab transformation view for `SymbolPermutation`
+  - `Visible Symbol Scramble` demo workspace
+  - `Visible Symbol Scramble` tutorial
+  - `Repair the Symbol Order` challenge
+
 ---
 
 ## Safe Next Tasks
@@ -330,7 +340,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed on the most recent third stream slice.
+All three passed on the most recent symbol-permutation slice.
 
 ---
 
@@ -346,8 +356,8 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
 2. **Continue the primitive-language roadmap beyond shipped stream and rotor foundations** — the clearest remaining language families are deeper stream follow-ons, symbol/message permutation, and scheduler/key-routing work
-   Immediate contract:
-   `SYMBOL-PERMUTATION-V1.md`
+   Immediate question:
+   choose the next bounded follow-on after shipped symbol permutation
 3. **Keep future rotor follow-ons bounded** — reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices, not convenience presets
 4. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
 5. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
@@ -387,7 +397,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `STREAM-CIPHER-V1.md` | Shipped in `v1.18.0` as bounded stream-machine slice for visible majority logic and irregular clocking |
 | `STREAM-CIPHER-V2.md` | Shipped in `v1.20.0` as second bounded stream-machine slice for visible selector/filter behavior via `Mux` |
 | `STREAM-CIPHER-V3.md` | Shipped in `v1.21.0` as third bounded stream-machine slice for visible routing/scheduling behavior via `Demux` |
-| `SYMBOL-PERMUTATION-V1.md` | Proposed — first bounded symbol/message permutation slice for visible symbol-order routing |
+| `SYMBOL-PERMUTATION-V1.md` | Shipped in `v1.22.0` as first bounded symbol/message permutation slice for visible symbol-order routing |
 | `ADVANCED-ROTOR-REALISM-V1.md` | Shipped in `v1.19.0` as bounded rotor-realism slice for ring setting, turnover, and double-step behavior |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |

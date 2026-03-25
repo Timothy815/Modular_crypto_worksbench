@@ -1,6 +1,6 @@
 # MCW — Cryptographic Vocabulary Roadmap
 
-Status: Active strategic roadmap after `v1.21.0`.
+Status: Active strategic roadmap after `v1.22.0`.
 
 This document reframes MCW as a cryptographic systems IDE:
 - not a code generator
@@ -172,12 +172,15 @@ Still open over time:
 - explicit chaining helpers
 - message-boundary handling beyond single-vector framing
 
-### 5. Symbol- and Message-Level Permutation Vocabulary
+### 5. Symbol- and Message-Level Permutation Vocabulary — *first milestone shipped in `v1.22.0`*
 
-Needed additions likely include:
-- symbol permutation analogous to bit permutation
+Shipped:
+- `SymbolPermutation`
+
+Still open over time:
 - invert / reverse-permutation helpers where appropriate
 - copy-and-invert authoring helpers for reversible designs
+- broader message-level permutation patterns beyond one bounded reorder primitive
 
 ### 6. Advanced Rotor Realism — *first milestone shipped in `v1.19.0`*
 
@@ -292,7 +295,6 @@ Shipped in `v1.16.0`:
 - Analyze transformation views for `BitSplit` and `BitPad`
 
 Still open:
-- `SYMBOL-PERMUTATION-V1.md`
 - unpad semantics
 - message-level permutation / inverse-permutation authoring
 
@@ -385,7 +387,7 @@ The roadmap is now validated through shipped foundations across four phases:
 - Phase 3: `BLOCK-FRAMING-V1.md` (shipped in `v1.16.0`)
 - Phase 4: `PROTOCOL-MATERIAL-V1.md` first slice (shipped in `v1.17.0`)
 
-The next strategic direction after `v1.21.0` should be:
+The next strategic direction after `v1.22.0` should be:
 
 > keep expanding MCW into a fully expressive cryptographic machine language
 
@@ -398,10 +400,8 @@ It is:
 - keep future rotor follow-ons bounded rather than turning mechanized realism into hidden helpers
 - keep tutorials and challenges shipping alongside the new language
 
-The immediate next contract should be:
-- `SYMBOL-PERMUTATION-V1.md`
-
-That keeps the roadmap moving into a broadly useful message/symbol language family without reopening preset sprawl.
+The immediate next decision should be:
+- which bounded follow-on best deepens the now-shipped symbol/message permutation, stream, framing, and rotor foundations without collapsing into preset sprawl
 
 That is the path from:
 - strong teaching workbench

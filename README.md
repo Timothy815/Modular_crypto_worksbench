@@ -11,16 +11,16 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.21.0`.
+The repository has shipped through `v1.22.0`.
 
-`main` now includes the completed third milestone of **stream-cipher expressiveness**:
+`main` now includes the completed first milestone of **symbol/message permutation**:
 - new primitive:
-  - `Demux`
-- strict 1-bit routing validation for `select` and `in`
-- Analyze transformation view for `Demux`
-- `Routed Clock Keystream` demo workspace
-- `The Routed Clock Keystream` tutorial
-- `Repair the Routed Clock` challenge
+  - `SymbolPermutation`
+- strict one-to-one symbol-order validation
+- Analyze transformation view for `SymbolPermutation`
+- `Visible Symbol Scramble` demo workspace
+- `Visible Symbol Scramble` tutorial
+- `Repair the Symbol Order` challenge
 
 Shipped stream, rotor, and protocol/framing foundations remain in place:
 - stream-machine expressiveness:
@@ -94,6 +94,7 @@ Implemented and shipped:
 - `v1.19.0` Advanced Rotor Realism milestone
 - `v1.20.0` Stream Cipher Filtering milestone
 - `v1.21.0` Stream Cipher Routing milestone
+- `v1.22.0` Symbol Permutation milestone
 - first bounded hash collision challenge:
   - seeded `Find A Hash Collision` challenge
   - same-digest / different-input success rule
@@ -160,7 +161,7 @@ Implemented and shipped:
 - `STREAM-CIPHER-V1.md`: shipped first bounded stream-machine slice for visible majority logic and irregular clocking
 - `STREAM-CIPHER-V2.md`: shipped second bounded stream-machine slice for visible selector/filter behavior via `Mux`
 - `STREAM-CIPHER-V3.md`: shipped third bounded stream-machine slice for visible routing/scheduling behavior via `Demux`
-- `SYMBOL-PERMUTATION-V1.md`: proposed first bounded symbol/message permutation slice for visible symbol-order routing
+- `SYMBOL-PERMUTATION-V1.md`: shipped first bounded symbol/message permutation slice for visible symbol-order routing
 - `ADVANCED-ROTOR-REALISM-V1.md`: shipped first bounded rotor-realism slice for ring setting, turnover, and double-step behavior
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
@@ -204,7 +205,7 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 2. Continue the primitive-language phase beyond shipped stream and rotor foundations:
    the next bounded decision should stay within shared vocabulary growth rather than preset-building
    Immediate focus:
-   `SYMBOL-PERMUTATION-V1.md`
+   choose the next bounded follow-on after shipped symbol permutation
 3. Keep future rotor follow-ons bounded:
    reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices rather than spilling into convenience presets
 4. Add one tutorial plus one demo/challenge whenever a major new primitive family ships so the language grows with teaching support
