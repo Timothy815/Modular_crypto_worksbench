@@ -1,6 +1,6 @@
 # MCW — Cryptographic Vocabulary Roadmap
 
-Status: Active strategic roadmap after `v1.22.0`.
+Status: Active strategic roadmap after `v1.23.0`.
 
 This document reframes MCW as a cryptographic systems IDE:
 - not a code generator
@@ -206,17 +206,20 @@ Still open:
 - key-material shaping helpers
 - stronger protocol-context teaching lines after classroom use
 
-### 8. Key-Routing / Schedule Vocabulary
+### 8. Key-Routing / Schedule Vocabulary — *first milestone shipped in `v1.23.0`*
 
 Current groundwork exists:
 - `ITERATIVE-ROUNDS-AND-KEYSCHEDULES-V1.md`
 - `KEY-SCHEDULE-GROUNDWORK-V1.md`
 - explicit key-bus and keyed-round teaching artifacts
 
+Shipped so far:
+- `BitWindow` for visible contiguous sub-key extraction from one key bus
+
 Still needed over time:
-- visible sub-key extraction from one bus
 - explicit per-round key routing
 - later iterator-aware key distribution only if it stays inspectable
+- richer schedule-construction patterns beyond one bounded window primitive
 
 ### 9. Number-Theoretic / Asymmetric Foundations
 
@@ -310,7 +313,7 @@ Still open:
 - unpad semantics
 - message-level permutation / inverse-permutation authoring
 
-### Phase 4 — Scheduler, Key Routing, And Protocol Inputs
+### Phase 4 — Scheduler, Key Routing, And Protocol Inputs — *first slices shipped*
 
 Purpose:
 - support real multi-round architectures and protocol context
@@ -322,6 +325,13 @@ Likely bounded slices:
 Shipped in `v1.17.0`:
 - nonce / salt / IV sources
 - first protocol-material demo/tutorial/challenge line
+
+Shipped in `v1.23.0`:
+- `KEY-SCHEDULE-V2.md` first slice:
+  - `BitWindow`
+  - `Visible Sub-Key Bus` demo workspace
+  - `Visible Sub-Key Bus` tutorial
+  - `Repair the Key Window` challenge
 
 Still open:
 - more expressive key schedule construction
@@ -397,9 +407,9 @@ The roadmap is now validated through shipped foundations across four phases:
 - Phase 1: `CRYPTO-OPERATORS-V1.md` and `CONTROL-PRIMITIVES-V1.md` (shipped in `v1.14.0` / `v1.15.0`)
 - Phase 2: `STREAM-CIPHER-V1.md`, `STREAM-CIPHER-V2.md`, `STREAM-CIPHER-V3.md`, and `ADVANCED-ROTOR-REALISM-V1.md` shipped slices (`v1.18.0` / `v1.20.0` / `v1.21.0` / `v1.19.0`)
 - Phase 3: `BLOCK-FRAMING-V1.md` (shipped in `v1.16.0`)
-- Phase 4: `PROTOCOL-MATERIAL-V1.md` first slice (shipped in `v1.17.0`)
+- Phase 4: `PROTOCOL-MATERIAL-V1.md` and `KEY-SCHEDULE-V2.md` first slices (shipped in `v1.17.0` / `v1.23.0`)
 
-The next strategic direction after `v1.22.0` should be:
+The next strategic direction after `v1.23.0` should be:
 
 > keep expanding MCW into a fully expressive cryptographic machine language
 
@@ -413,9 +423,7 @@ It is:
 - keep tutorials and challenges shipping alongside the new language
 
 The immediate next contract should be:
-- `KEY-SCHEDULE-V2.md`
-
-That keeps the roadmap moving toward honest multi-round key routing without collapsing into preset key schedules or hidden iterator magic.
+- a bounded post-`BitWindow` vocabulary line that deepens shared machine language without collapsing into preset key schedules or hidden iterator magic
 
 That is the path from:
 - strong teaching workbench

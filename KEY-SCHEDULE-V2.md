@@ -2,7 +2,7 @@
 
 Last updated: March 24, 2026
 
-Status: Proposed.
+Status: Shipped in `v1.23.0`.
 
 ## Purpose
 
@@ -153,19 +153,19 @@ Avoid:
 - hiding key-window extraction inside a composite while claiming the graph is explicit
 - teaching famous algorithm schedules before the routing mechanics are clear
 
-## Suggested Teaching Additions
+## Shipped Teaching Additions
 
-The first milestone should likely ship with:
+The first milestone shipped with:
 
 ### Demo workspace
 
 - `Visible Sub-Key Bus`
-  - `BitSource(key bus) -> BitWindow(round 1) / BitWindow(round 2) -> keyed rounds -> output`
+  - `HexSource(key bus) -> BitWindow(round 1) / BitWindow(round 2) -> keyed rounds -> output`
   - makes it obvious that each round reads a different slice of the same visible key material
 
 ### Tutorial
 
-One tutorial (4-6 steps) teaching:
+One tutorial teaching:
 - what a visible key bus is
 - how `BitWindow` chooses one sub-key slice
 - how different rounds can consume different sub-keys without hidden scheduling
@@ -173,9 +173,9 @@ One tutorial (4-6 steps) teaching:
 
 ### Challenge
 
-One bounded challenge such as:
-- a two-round keyed machine with the wrong `start` value on one `BitWindow`
-- the student must restore the correct sub-key routing so the output matches a reference
+- `Repair the Key Window`
+  - a two-round keyed machine with the wrong `start` value on one `BitWindow`
+  - the student must restore the correct sub-key routing so the output matches a reference
 
 ## Success Criteria
 

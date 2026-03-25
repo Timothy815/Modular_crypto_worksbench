@@ -6,26 +6,29 @@ Last updated: March 24, 2026
 
 ## Current State
 
-The project has shipped through `v1.22.0` on `main`.
+The project has shipped through `v1.23.0` on `main`.
 
-Current `main` is now positioned beyond the first completed symbol/message permutation milestone.
+Current `main` is now positioned beyond the first completed key-routing / schedule milestone.
 That milestone shipped:
-- first bounded symbol/message permutation vocabulary:
-  - `SymbolPermutation`
-- strict one-to-one symbol-order validation
-- Analyze-tab transformation view for `SymbolPermutation`
-- first symbol-permutation teaching surface:
-  - `Visible Symbol Scramble` demo workspace
-  - `Visible Symbol Scramble` tutorial
-  - `Repair the Symbol Order` challenge
+- first bounded key-routing vocabulary:
+  - `BitWindow`
+- explicit `start` / `width` sub-key extraction from one visible key bus
+- static out-of-range key-window validation when upstream width is knowable
+- Analyze-tab transformation view for `BitWindow`
+- first key-routing teaching surface:
+  - `Visible Sub-Key Bus` demo workspace
+  - `Visible Sub-Key Bus` tutorial
+  - `Repair the Key Window` challenge
 
-The already-shipped protocol-material and block-framing foundations remain in place:
+The already-shipped protocol-material, block-framing, and symbol/message permutation foundations remain in place:
 - protocol inputs:
   - `IV`
   - `Nonce`
   - `Salt`
 - framing:
   - `BitSplit`, `BitPad`, and reuse of `BitJoin`
+- symbol/message permutation:
+  - `SymbolPermutation`
 
 The next strategic direction remains broader than any one subdomain:
 - treat MCW explicitly as a **cryptographic systems IDE**
@@ -33,7 +36,7 @@ The next strategic direction remains broader than any one subdomain:
 - ship tutorials and challenges alongside each new vocabulary family
 
 The next most important missing vocabulary families are:
-- key-routing / schedule vocabulary after the shipped stream, framing, and symbol-permutation foundations
+- deeper key-schedule follow-ons after the shipped stream, framing, symbol-permutation, and key-routing foundations
 - deeper stream follow-ons and scheduler work after the shipped routing trilogy
 
 Established and shipped:
@@ -132,6 +135,7 @@ The following decisions are reflected in shipped code:
 | `v1.20.0` | Stream Cipher Filtering |
 | `v1.21.0` | Stream Cipher Routing |
 | `v1.22.0` | Symbol Permutation |
+| `v1.23.0` | Key Routing |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -199,7 +203,7 @@ Post-`v1.12.0` work merged to `main`:
   - composite unzip with forwarded-param carry-through
   - dark-mode-safe reflector and plugboard pair rendering
 
-Strategic direction after `v1.13.0` (validated through `v1.22.0`):
+Strategic direction after `v1.13.0` (validated through `v1.23.0`):
 - `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` now frames MCW as a cryptographic systems IDE
 - the next roadmap focus is expressive primitive language growth rather than only choosing the next isolated feature line
 - Phase 1 foundations are now shipped through:
@@ -297,6 +301,16 @@ Post-`v1.21.0` work merged to `main`:
   - `Visible Symbol Scramble` tutorial
   - `Repair the Symbol Order` challenge
 
+Post-`v1.22.0` work merged to `main`:
+- bounded key-routing slice:
+  - `BitWindow`
+  - explicit `start` / `width` sub-key extraction from one visible key bus
+  - static out-of-range key-window validation
+  - Analyze-tab transformation view for `BitWindow`
+  - `Visible Sub-Key Bus` demo workspace
+  - `Visible Sub-Key Bus` tutorial
+  - `Repair the Key Window` challenge
+
 ---
 
 ## Safe Next Tasks
@@ -355,9 +369,9 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 ### Near-Term Roadmap
 
 1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
-2. **Continue the primitive-language roadmap beyond shipped stream and rotor foundations** — the clearest remaining language families are deeper stream follow-ons, symbol/message permutation, and scheduler/key-routing work
-   Immediate contract:
-   `KEY-SCHEDULE-V2.md`
+2. **Continue the primitive-language roadmap beyond shipped stream, rotor, symbol-permutation, and key-routing foundations** — the clearest remaining language families are deeper key-schedule follow-ons, deeper stream follow-ons, and post-permutation message structure
+   Immediate direction:
+   choose the next bounded post-`v1.23.0` vocabulary line without widening `BitWindow` into preset schedules
 3. **Keep future rotor follow-ons bounded** — reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices, not convenience presets
 4. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
 5. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
@@ -398,7 +412,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `STREAM-CIPHER-V2.md` | Shipped in `v1.20.0` as second bounded stream-machine slice for visible selector/filter behavior via `Mux` |
 | `STREAM-CIPHER-V3.md` | Shipped in `v1.21.0` as third bounded stream-machine slice for visible routing/scheduling behavior via `Demux` |
 | `SYMBOL-PERMUTATION-V1.md` | Shipped in `v1.22.0` as first bounded symbol/message permutation slice for visible symbol-order routing |
-| `KEY-SCHEDULE-V2.md` | Proposed — first bounded post-groundwork key-routing slice for visible sub-key extraction from one key bus |
+| `KEY-SCHEDULE-V2.md` | Shipped in `v1.23.0` as first bounded post-groundwork key-routing slice for visible sub-key extraction from one key bus |
 | `ADVANCED-ROTOR-REALISM-V1.md` | Shipped in `v1.19.0` as bounded rotor-realism slice for ring setting, turnover, and double-step behavior |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |
