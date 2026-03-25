@@ -139,18 +139,8 @@ src/utils/     — Shared helpers
 
 ## Current Resume Point
 
-- Resume from current `main`
-- `v1.1.0` and `v1.2.0` are already shipped
-- `v1.3.0` is already shipped
-- `v1.4.0` is already shipped
-- `v1.5.0` is already shipped
-- `v1.6.0` is already shipped
-- `v1.7.0` is already shipped
-- `v1.8.0` is already shipped
-- `v1.9.0` is already shipped
-- `v1.10.0` is already shipped
-- `v1.11.0` is already shipped
-- `v1.12.0` is already shipped
+- Resume from current `main` at `v1.24.0`
+- `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement
   - graph-aware `Tidy Layout`
@@ -231,7 +221,7 @@ src/utils/     — Shared helpers
   - `Visible Sub-Key Bus` demo workspace
   - `Visible Sub-Key Bus` tutorial
   - `Repair the Key Window` challenge
-- Current `main` now includes an unshipped symbol-structure checkpoint at `443072c`:
+- `v1.24.0` is now the symbol-structure milestone:
   - `SymbolWindow`
   - explicit `start` / `width` contiguous symbol-message extraction
   - static out-of-range window validation when input symbol length is knowable
@@ -239,9 +229,6 @@ src/utils/     — Shared helpers
   - `Visible Message Window` demo workspace
   - `Visible Message Window` tutorial
   - `Repair the Message Window` challenge
-- Current `main` should treat the next phase as **symbol/message structure review and release framing**
-  - review whether the `SymbolWindow` slice is coherent and bounded
-  - if clean, frame it as the core of `v1.24.0`
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -300,6 +287,11 @@ What is shipped on `main`:
   - strict 1-bit selector validation
   - `Filtered Keystream` demo, `The Filtered Keystream` tutorial, and `Repair the Filter Selector` challenge
   - Analyze transformation view for `Mux`
+- first bounded symbol/message-structure vocabulary:
+  - `SymbolWindow` for contiguous symbol-domain extraction
+  - static out-of-range window validation when input length is knowable
+  - `Visible Message Window` demo, tutorial, and `Repair the Message Window` challenge
+  - Analyze transformation view for `SymbolWindow`
 
 Key contracts to check before implementation:
 - `ENGINE-V1-CONTRACT.md` for engine decisions

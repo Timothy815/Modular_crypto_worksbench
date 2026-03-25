@@ -1,6 +1,6 @@
 # MCW — Cryptographic Vocabulary Roadmap
 
-Status: Active strategic roadmap after `v1.23.0`.
+Status: Active strategic roadmap after `v1.24.0`.
 
 This document reframes MCW as a cryptographic systems IDE:
 - not a code generator
@@ -172,16 +172,16 @@ Still open over time:
 - explicit chaining helpers
 - message-boundary handling beyond single-vector framing
 
-### 5. Symbol- and Message-Level Permutation Vocabulary — *first milestone shipped in `v1.22.0`*
+### 5. Symbol- and Message-Level Structure Vocabulary — *first milestone shipped in `v1.22.0`, second milestone shipped in `v1.24.0`*
 
 Shipped:
-- `SymbolPermutation`
+- `SymbolPermutation` (v1.22.0)
+- `SymbolWindow` (v1.24.0)
 
 Still open over time:
 - invert / reverse-permutation helpers where appropriate
 - copy-and-invert authoring helpers for reversible designs
 - broader message-level permutation patterns beyond one bounded reorder primitive
-- explicit contiguous symbol/message windowing after shipped whole-message permutation
 
 ### 6. Advanced Rotor Realism — *first milestone shipped in `v1.19.0`*
 
@@ -410,7 +410,7 @@ The roadmap is now validated through shipped foundations across four phases:
 - Phase 3: `BLOCK-FRAMING-V1.md` (shipped in `v1.16.0`)
 - Phase 4: `PROTOCOL-MATERIAL-V1.md` and `KEY-SCHEDULE-V2.md` first slices (shipped in `v1.17.0` / `v1.23.0`)
 
-The next strategic direction after `v1.23.0` should be:
+The next strategic direction after `v1.24.0` should be:
 
 > keep expanding MCW into a fully expressive cryptographic machine language
 
@@ -422,9 +422,6 @@ It is:
 - keep protocol-material follow-ons bounded rather than jumping to mode presets
 - keep future rotor follow-ons bounded rather than turning mechanized realism into hidden helpers
 - keep tutorials and challenges shipping alongside the new language
-
-The immediate next contract should be:
-- `SYMBOL-STRUCTURE-V1.md`
 
 That is the path from:
 - strong teaching workbench

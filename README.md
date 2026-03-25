@@ -11,23 +11,13 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.23.0`.
+The repository has shipped through `v1.24.0`.
 
-`main` now includes the completed first milestone of **key-routing / schedule vocabulary**:
-- new primitive:
-  - `BitWindow`
-- explicit `start` / `width` sub-key extraction from one visible key bus
-- static out-of-range window validation when upstream width is knowable
-- Analyze transformation view for `BitWindow`
-- `Visible Sub-Key Bus` demo workspace
-- `Visible Sub-Key Bus` tutorial
-- `Repair the Key Window` challenge
-
-Current unshipped checkpoint on `main`:
-- `443072c` — first bounded **symbol/message structure** slice
+`main` now includes the completed first milestone of **symbol/message structure vocabulary**:
 - new primitive:
   - `SymbolWindow`
 - explicit contiguous `symbol`-domain `start` / `width` extraction
+- static out-of-range symbol-window validation when input length is knowable
 - Analyze transformation view for `SymbolWindow`
 - `Visible Message Window` demo workspace
 - `Visible Message Window` tutorial
@@ -109,6 +99,7 @@ Implemented and shipped:
 - `v1.21.0` Stream Cipher Routing milestone
 - `v1.22.0` Symbol Permutation milestone
 - `v1.23.0` Key Routing milestone
+- `v1.24.0` Symbol Structure milestone
 - first bounded hash collision challenge:
   - seeded `Find A Hash Collision` challenge
   - same-digest / different-input success rule
@@ -177,7 +168,7 @@ Implemented and shipped:
 - `STREAM-CIPHER-V3.md`: shipped third bounded stream-machine slice for visible routing/scheduling behavior via `Demux`
 - `SYMBOL-PERMUTATION-V1.md`: shipped first bounded symbol/message permutation slice for visible symbol-order routing
 - `KEY-SCHEDULE-V2.md`: shipped first bounded post-groundwork key-routing slice for visible sub-key extraction from one key bus
-- `SYMBOL-STRUCTURE-V1.md`: proposed first bounded post-permutation symbol/message-structure slice for visible contiguous submessage extraction
+- `SYMBOL-STRUCTURE-V1.md`: shipped first bounded post-permutation symbol/message-structure slice for visible contiguous submessage extraction
 - `ADVANCED-ROTOR-REALISM-V1.md`: shipped first bounded rotor-realism slice for ring setting, turnover, and double-step behavior
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
@@ -218,10 +209,8 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 ## Near-Term Roadmap
 
 1. Treat MCW explicitly as a **cryptographic systems IDE** and grow the primitive language toward full expressive coverage, not just isolated feature branches
-2. Continue the primitive-language phase beyond shipped stream, rotor, symbol-permutation, and key-routing foundations:
+2. Continue the primitive-language phase beyond shipped stream, rotor, symbol-permutation, key-routing, and symbol-structure foundations:
    the next bounded decision should stay within shared vocabulary growth rather than preset-building
-   Immediate focus:
-   `SYMBOL-STRUCTURE-V1.md`
 3. Keep future rotor follow-ons bounded:
    reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices rather than spilling into convenience presets
 4. Add one tutorial plus one demo/challenge whenever a major new primitive family ships so the language grows with teaching support
