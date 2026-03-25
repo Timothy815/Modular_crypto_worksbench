@@ -434,6 +434,7 @@ It is:
 - keep deeper stream-combiner follow-ons bounded rather than turning the stream line into preset sprawl
 - keep protocol-material follow-ons bounded rather than jumping to mode presets
 - keep future rotor follow-ons bounded rather than turning mechanized realism into hidden helpers
+- keep usability/teaching helpers like bypass instance-local and honest rather than widening them into universal hidden rewiring
 - keep tutorials and challenges shipping alongside the new language
 
 That is the path from:

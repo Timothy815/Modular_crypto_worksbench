@@ -422,6 +422,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 6. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
 7. **Monitor challenge-induced project switching in classroom use** before adding warning dialogs
 8. **Defer deeper transformation playback/animation** until classroom feedback justifies a second visualization slice
+9. **If bypass lands, keep it bounded** — instance-local, visibly disabled, and limited to modules where identity pass-through is honest
 
 ### Key Contracts
 
@@ -462,6 +463,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `LEARNING-SEQUENCE-V1.md` | Active — suggested ordering contract for demos, tutorials, and challenges so the teaching surface reads as a logical progression |
 | `ARITHMETIC-EXPANSION-V1.md` | Shipped in `v1.25.0` as first bounded arithmetic-expansion slice for modular multiplication, strict comparison, and unpadding |
 | `NUMBER-THEORETIC-V1.md` | Shipped in `v1.26.0` as first bounded number-theoretic foundations slice for modular exponentiation and modular inverse |
+| `BYPASS-V1.md` | Proposed — bounded instance-level bypass contract for eligible one-in/one-out same-domain modules |
 | `ADVANCED-ROTOR-REALISM-V1.md` | Shipped in `v1.19.0` as bounded rotor-realism slice for ring setting, turnover, and double-step behavior |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |

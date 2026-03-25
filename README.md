@@ -174,6 +174,7 @@ Implemented and shipped:
 - `LEARNING-SEQUENCE-V1.md`: active contract for suggested ordering across demos, tutorials, and challenges
 - `ARITHMETIC-EXPANSION-V1.md`: shipped first bounded arithmetic-expansion slice for modular multiplication, strict comparison, and unpadding
 - `NUMBER-THEORETIC-V1.md`: shipped first bounded number-theoretic foundations slice for modular exponentiation and modular inverse
+- `BYPASS-V1.md`: proposed bounded usability slice for visible instance-level bypass on eligible one-in/one-out modules
 - `ADVANCED-ROTOR-REALISM-V1.md`: shipped first bounded rotor-realism slice for ring setting, turnover, and double-step behavior
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
@@ -224,3 +225,4 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 7. Monitor classroom use of workspace library and composite unzip before widening them into sharing, folders, or bulk-expansion tooling
 8. Monitor challenge-induced project switching in classroom use before adding warning dialogs
 9. Avoid scope creep into brute-force tooling, birthday-bound calculators, famous-hash comparisons, or premature asymmetric demos before the underlying vocabulary exists
+10. Keep the proposed bypass line bounded to honest one-in/one-out same-domain modules rather than widening it into universal mute/solo behavior
