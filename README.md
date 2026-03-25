@@ -11,7 +11,7 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.26.0`.
+The repository has shipped through `v1.27.0`.
 
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
@@ -101,6 +101,7 @@ Implemented and shipped:
 - `v1.24.0` Symbol Structure milestone
 - `v1.25.0` Arithmetic Expansion milestone
 - `v1.26.0` Number-Theoretic Foundations milestone
+- `v1.27.0` Transformation View Consolidation milestone
 - first bounded hash collision challenge:
   - seeded `Find A Hash Collision` challenge
   - same-digest / different-input success rule

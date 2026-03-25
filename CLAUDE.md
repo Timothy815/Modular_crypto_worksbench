@@ -141,7 +141,7 @@ src/utils/     — Shared helpers
 
 ## Current Resume Point
 
-- Resume from current `main` at `v1.26.0`
+- Resume from current `main` at `v1.27.0`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement
@@ -249,6 +249,11 @@ src/utils/     — Shared helpers
   - `Key Schedule Workshop` tutorial
   - `Repair the RSA Exponent` challenge
   - `Repair the Key Rotation` challenge
+- `v1.27.0` is now the transformation-view consolidation milestone:
+  - Analyze transformation views for `MulMod`, `ModExp`, `ModInverse`, and `BitUnpad`
+  - `arithmetic` view kind for number-word operations (shows expression, bit-level input/output grid)
+  - `unpad` view kind for strip operations (mirrors the existing `pad` view)
+  - `GreaterThan` compare view text corrected to show strict `A > B` semantics
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones

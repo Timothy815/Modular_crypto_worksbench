@@ -6,7 +6,7 @@ Last updated: March 24, 2026
 
 ## Current State
 
-The project has shipped through `v1.26.0` on `main`.
+The project has shipped through `v1.27.0` on `main`.
 
 Current `main` is now positioned beyond the first number-theoretic foundations milestone.
 That milestone shipped:
@@ -41,7 +41,7 @@ The next strategic direction remains broader than any one subdomain:
 The next most important missing vocabulary families are:
 - deeper key-schedule follow-ons after the shipped key-routing and key-schedule-workshop foundations
 - deeper stream follow-ons and scheduler work after the shipped routing trilogy
-- consolidation and transformation views for newly shipped number-theoretic primitives
+- consolidation of the shipped transformation-view surface (now covers all recent primitives)
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -143,6 +143,7 @@ The following decisions are reflected in shipped code:
 | `v1.24.0` | Symbol Structure |
 | `v1.25.0` | Arithmetic Expansion |
 | `v1.26.0` | Number-Theoretic Foundations |
+| `v1.27.0` | Transformation View Consolidation |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -350,6 +351,12 @@ Post-`v1.25.0` work merged to `main`:
   - `Repair the RSA Exponent` challenge
   - `Repair the Key Rotation` challenge
 
+Post-`v1.26.0` work merged to `main`:
+- transformation-view consolidation:
+  - Analyze-tab `arithmetic` view kind for `MulMod`, `ModExp`, and `ModInverse`
+  - Analyze-tab `unpad` view kind for `BitUnpad` (mirrors the existing `pad` view)
+  - `GreaterThan` compare view corrected from `A >= B` to strict `A > B` semantics
+
 ---
 
 ## Safe Next Tasks
@@ -393,7 +400,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed at `v1.26.0` framing.
+All three passed at `v1.27.0` framing.
 
 ---
 

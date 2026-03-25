@@ -1143,6 +1143,83 @@ export function ParameterInspector({
                   })}
                 </div>
               </>
+            ) : transformationView.kind === 'arithmetic' ? (
+              <>
+                <div className="transformation-order">
+                  <span className="meta-label">{transformationView.operationLabel}</span>
+                  <code>{transformationView.operationExpression}</code>
+                </div>
+                <div className="xor-grid">
+                  <div className="xor-grid-head">
+                    <span className="meta-label">Index</span>
+                    <span className="meta-label">Input</span>
+                    <span className="meta-label">Output</span>
+                  </div>
+                  {transformationView.outputBits.map((bit, index) => (
+                    <div key={`arith-${index}`} className="xor-grid-row">
+                      <span className="xor-grid-index">{index}</span>
+                      <span className="xor-grid-bit">
+                        {index < transformationView.inputBits.length ? transformationView.inputBits[index] : '-'}
+                      </span>
+                      <span
+                        className={
+                          index < transformationView.inputBits.length && bit !== transformationView.inputBits[index]
+                            ? 'xor-grid-bit xor-grid-bit-active'
+                            : 'xor-grid-bit'
+                        }
+                      >
+                        {bit}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : transformationView.kind === 'unpad' ? (
+              <>
+                <div className="transformation-order">
+                  <span className="meta-label">Original Width</span>
+                  <code>{transformationView.originalWidth} bits</code>
+                </div>
+                <div className="transformation-order">
+                  <span className="meta-label">Strip</span>
+                  <code>{transformationView.strippedCount} bit{transformationView.strippedCount === 1 ? '' : 's'} from {transformationView.side}</code>
+                </div>
+                <div className="xor-grid">
+                  <div className="xor-grid-head">
+                    <span className="meta-label">Index</span>
+                    <span className="meta-label">Input</span>
+                    <span className="meta-label">Source</span>
+                  </div>
+                  {transformationView.inputBits.map((bit, index) => {
+                    const isKept = transformationView.side === 'left'
+                      ? index >= transformationView.strippedCount
+                      : index < transformationView.outputBits.length;
+                    return (
+                      <div key={`unpad-${index}`} className="xor-grid-row">
+                        <span className="xor-grid-index">{index}</span>
+                        <span
+                          className={
+                            isKept
+                              ? 'xor-grid-bit xor-grid-bit-active'
+                              : 'xor-grid-bit'
+                          }
+                        >
+                          {bit}
+                        </span>
+                        <span
+                          className={
+                            isKept
+                              ? 'xor-grid-compare xor-grid-compare-different'
+                              : 'xor-grid-compare'
+                          }
+                        >
+                          {isKept ? 'kept' : 'stripped'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             ) : (
               <>
                 <div className="transformation-order">
@@ -2818,6 +2895,32 @@ interface PadTransformationView {
   summary: string;
 }
 
+interface ArithmeticTransformationView {
+  entry: ExecutionTraceEntry;
+  kind: 'arithmetic';
+  title: string;
+  copy: string;
+  operationLabel: string;
+  operationExpression: string;
+  resultValue: number;
+  inputBits: number[];
+  outputBits: number[];
+  summary: string;
+}
+
+interface UnpadTransformationView {
+  entry: ExecutionTraceEntry;
+  kind: 'unpad';
+  title: string;
+  copy: string;
+  inputBits: number[];
+  outputBits: number[];
+  originalWidth: number;
+  side: string;
+  strippedCount: number;
+  summary: string;
+}
+
 type TransformationView =
   | RoutingTransformationView
   | XorTransformationView
@@ -2828,7 +2931,9 @@ type TransformationView =
   | DemuxTransformationView
   | LookupTransformationView
   | SplitTransformationView
-  | PadTransformationView;
+  | PadTransformationView
+  | ArithmeticTransformationView
+  | UnpadTransformationView;
 
 const PERMUTATION_EDITOR_PORT_HEIGHT = 52;
 const PERMUTATION_EDITOR_PORT_GAP = 10;
@@ -2918,6 +3023,18 @@ function getTransformationView(
   }
   if (entry.defId === 'BitWindow') {
     return getBitWindowTransformation(entry, project, registry);
+  }
+  if (entry.defId === 'MulMod') {
+    return getMulModTransformation(entry);
+  }
+  if (entry.defId === 'ModExp') {
+    return getModExpTransformation(entry, project, registry);
+  }
+  if (entry.defId === 'ModInverse') {
+    return getModInverseTransformation(entry, project, registry);
+  }
+  if (entry.defId === 'BitUnpad') {
+    return getUnpadTransformation(entry, project, registry);
   }
   return null;
 }
@@ -3285,16 +3402,19 @@ function getCompareTransformation(entry: ExecutionTraceEntry): CompareTransforma
   const rightValue = bitsToNumber(inputB.value);
   const outputBit = output.value[0] ?? 0;
   const isEquality = entry.defId === 'Equals';
+  const isGreaterThan = entry.defId === 'GreaterThan';
 
   return {
     entry,
     kind: 'compare',
-    title: isEquality ? 'Equality Comparison' : 'Threshold Comparison',
+    title: isEquality ? 'Equality Comparison' : isGreaterThan ? 'Strict Comparison' : 'Threshold Comparison',
     copy: isEquality
       ? 'Equals checks whether two same-width bit words match exactly, then emits a one-bit control result.'
-      : 'AtLeast reads both inputs as fixed-width unsigned words, then emits a one-bit control result when the left word has reached or exceeded the right one.',
+      : isGreaterThan
+        ? 'GreaterThan reads both inputs as fixed-width unsigned words, then emits a one-bit control result when the left word is strictly greater than the right one.'
+        : 'AtLeast reads both inputs as fixed-width unsigned words, then emits a one-bit control result when the left word has reached or exceeded the right one.',
     ruleLabel: 'Rule',
-    ruleValue: isEquality ? 'A == B -> [1], else [0]' : 'A >= B -> [1], else [0]',
+    ruleValue: isEquality ? 'A == B -> [1], else [0]' : isGreaterThan ? 'A > B -> [1], else [0]' : 'A >= B -> [1], else [0]',
     leftValue,
     rightValue,
     outputBit,
@@ -3303,9 +3423,13 @@ function getCompareTransformation(entry: ExecutionTraceEntry): CompareTransforma
       ? outputBit === 1
         ? `The two ${length}-bit words match exactly, so the control output is active.`
         : `At least one bit differs, so the equality control output stays inactive.`
-      : outputBit === 1
-        ? `${leftValue} has reached or exceeded ${rightValue}, so the threshold output is active.`
-        : `${leftValue} is still below ${rightValue}, so the threshold output stays inactive.`,
+      : isGreaterThan
+        ? outputBit === 1
+          ? `${leftValue} is strictly greater than ${rightValue}, so the comparison output is active.`
+          : `${leftValue} is not greater than ${rightValue}, so the comparison output stays inactive.`
+        : outputBit === 1
+          ? `${leftValue} has reached or exceeded ${rightValue}, so the threshold output is active.`
+          : `${leftValue} is still below ${rightValue}, so the threshold output stays inactive.`,
   };
 }
 
@@ -3576,6 +3700,150 @@ function getPadTransformation(
     summary: padCount > 0
       ? `${padCount} ${padBit === 0 ? 'zero' : 'one'} bit${padCount === 1 ? '' : 's'} ${side === 'left' ? 'prepended' : 'appended'} to reach ${output.value.length} bits.`
       : `Input already meets the target width (${output.value.length} bits), so no padding was added.`,
+  };
+}
+
+function getMulModTransformation(entry: ExecutionTraceEntry): ArithmeticTransformationView | null {
+  const inputA = entry.inputs.a;
+  const inputB = entry.inputs.b;
+  const output = entry.outputs.out;
+  if (inputA?.type !== 'bits' || inputB?.type !== 'bits' || output?.type !== 'bits') {
+    return null;
+  }
+
+  const aValue = bitsToNumber(inputA.value);
+  const bValue = bitsToNumber(inputB.value);
+  const width = inputA.value.length;
+  const modulus = 2 ** width;
+  const resultValue = bitsToNumber(output.value);
+
+  return {
+    entry,
+    kind: 'arithmetic',
+    title: 'Modular Multiplication',
+    copy:
+      'MulMod multiplies two equal-width unsigned bit words and reduces the product modulo 2^n, where n is the shared input width. Overflow wraps.',
+    operationLabel: 'Operation',
+    operationExpression: `${aValue} × ${bValue} mod ${modulus} = ${resultValue}`,
+    resultValue,
+    inputBits: inputA.value,
+    outputBits: output.value,
+    summary: `${aValue} × ${bValue} = ${aValue * bValue}, reduced mod ${modulus} to ${resultValue} (${width}-bit result).`,
+  };
+}
+
+function getModExpTransformation(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): ArithmeticTransformationView | null {
+  const resolved = resolveTraceModuleInstance(entry.moduleId, project, registry);
+  if (!resolved) {
+    return null;
+  }
+
+  const base = entry.inputs.base;
+  const exp = entry.inputs.exp;
+  const output = entry.outputs.out;
+  if (base?.type !== 'bits' || exp?.type !== 'bits' || output?.type !== 'bits') {
+    return null;
+  }
+
+  const baseValue = bitsToNumber(base.value);
+  const expValue = bitsToNumber(exp.value);
+  const modulus = typeof resolved.instance.params.modulus === 'number'
+    ? resolved.instance.params.modulus
+    : 2;
+  const resultValue = bitsToNumber(output.value);
+
+  return {
+    entry,
+    kind: 'arithmetic',
+    title: 'Modular Exponentiation',
+    copy:
+      'ModExp raises the base to the exponent power modulo a chosen modulus using repeated squaring. The result fits inside the base input width.',
+    operationLabel: 'Operation',
+    operationExpression: `${baseValue}^${expValue} mod ${modulus} = ${resultValue}`,
+    resultValue,
+    inputBits: base.value,
+    outputBits: output.value,
+    summary: `${baseValue} raised to the ${expValue} power mod ${modulus} gives ${resultValue} (${base.value.length}-bit result).`,
+  };
+}
+
+function getModInverseTransformation(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): ArithmeticTransformationView | null {
+  const resolved = resolveTraceModuleInstance(entry.moduleId, project, registry);
+  if (!resolved) {
+    return null;
+  }
+
+  const input = entry.inputs.in;
+  const output = entry.outputs.out;
+  if (input?.type !== 'bits' || output?.type !== 'bits') {
+    return null;
+  }
+
+  const inputValue = bitsToNumber(input.value);
+  const modulus = typeof resolved.instance.params.modulus === 'number'
+    ? resolved.instance.params.modulus
+    : 2;
+  const resultValue = bitsToNumber(output.value);
+
+  return {
+    entry,
+    kind: 'arithmetic',
+    title: 'Modular Inverse',
+    copy:
+      'ModInverse finds the multiplicative inverse of the input modulo a chosen modulus using the extended Euclidean algorithm. The result satisfies input × result ≡ 1 (mod modulus).',
+    operationLabel: 'Operation',
+    operationExpression: `${inputValue}⁻¹ mod ${modulus} = ${resultValue}`,
+    resultValue,
+    inputBits: input.value,
+    outputBits: output.value,
+    summary: `The inverse of ${inputValue} mod ${modulus} is ${resultValue}. Verify: ${inputValue} × ${resultValue} = ${inputValue * resultValue}, and ${inputValue * resultValue} mod ${modulus} = ${(inputValue * resultValue) % modulus}.`,
+  };
+}
+
+function getUnpadTransformation(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): UnpadTransformationView | null {
+  const resolved = resolveTraceModuleInstance(entry.moduleId, project, registry);
+  if (!resolved) {
+    return null;
+  }
+
+  const input = entry.inputs.in;
+  const output = entry.outputs.out;
+  if (input?.type !== 'bits' || output?.type !== 'bits') {
+    return null;
+  }
+
+  const originalWidth = typeof resolved.instance.params.originalWidth === 'number'
+    ? resolved.instance.params.originalWidth
+    : output.value.length;
+  const side = resolved.instance.params.side === 'left' ? 'left' : 'right';
+  const strippedCount = Math.max(0, input.value.length - output.value.length);
+
+  return {
+    entry,
+    kind: 'unpad',
+    title: 'Block Unpad',
+    copy:
+      'BitUnpad strips padding bits from a signal to recover the original width. It is the inverse of BitPad.',
+    inputBits: input.value,
+    outputBits: output.value,
+    originalWidth,
+    side,
+    strippedCount,
+    summary: strippedCount > 0
+      ? `${strippedCount} bit${strippedCount === 1 ? '' : 's'} stripped from the ${side} to recover ${output.value.length}-bit original.`
+      : `Input already matches the original width (${output.value.length} bits), so nothing was stripped.`,
   };
 }
 
