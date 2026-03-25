@@ -29,6 +29,7 @@ const majorityKeystreamProject = demoProjects.find((project) => project.id === '
 const filteredKeystreamProject = demoProjects.find((project) => project.id === 'filtered-keystream');
 const routedClockKeystreamProject = demoProjects.find((project) => project.id === 'routed-clock-keystream');
 const advancedRotorSteppingProject = demoProjects.find((project) => project.id === 'advanced-rotor-stepping');
+const visibleSymbolScrambleProject = demoProjects.find((project) => project.id === 'visible-symbol-scramble');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
 const toySpongeHashProject = demoProjects.find((project) => project.id === 'toy-sponge-hash');
@@ -105,6 +106,9 @@ if (!routedClockKeystreamProject) {
 if (!advancedRotorSteppingProject) {
   throw new Error('Expected advanced-rotor-stepping demo project to seed starter challenges.');
 }
+if (!visibleSymbolScrambleProject) {
+  throw new Error('Expected visible-symbol-scramble demo project to seed starter challenges.');
+}
 if (!sequentialProject) {
   throw new Error('Expected sequential demo project to seed starter challenges.');
 }
@@ -163,6 +167,8 @@ const routedClockKeystreamTarget = cloneProject(routedClockKeystreamProject.proj
 const brokenRoutedClockKeystreamStart = cloneProject(routedClockKeystreamProject.project);
 const advancedRotorSteppingTarget = cloneProject(advancedRotorSteppingProject.project);
 const brokenAdvancedRotorSteppingStart = cloneProject(advancedRotorSteppingProject.project);
+const visibleSymbolScrambleTarget = cloneProject(visibleSymbolScrambleProject.project);
+const brokenVisibleSymbolScrambleStart = cloneProject(visibleSymbolScrambleProject.project);
 const sequentialTarget = cloneProject(sequentialProject.project);
 const brokenSequentialStart = cloneProject(sequentialProject.project);
 const brokenSequentialTapsStart = cloneProject(sequentialProject.project);
@@ -224,6 +230,14 @@ if (!brokenMiddleRotor) {
   throw new Error('Expected advanced-rotor-stepping demo project to contain a middle rotor.');
 }
 brokenMiddleRotor.params.notches = 'F';
+
+const brokenSymbolPermutation = brokenVisibleSymbolScrambleStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'permute',
+);
+if (!brokenSymbolPermutation) {
+  throw new Error('Expected visible-symbol-scramble demo project to contain a permutation module.');
+}
+brokenSymbolPermutation.params.order = '2,1,3,0';
 
 const brokenBaudotSource = brokenBaudotStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'source',
@@ -859,6 +873,27 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The first LFSR is not the mask itself; it controls when the second LFSR advances.',
       'Watch the gate register output bit on each tick and compare it against the target rhythm.',
       'A wrong gate seed can leave the second register frozen on the wrong ticks.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-symbol-order',
+    title: 'Repair the Symbol Order',
+    projectId: 'visible-symbol-scramble',
+    group: 'Symbol Permutation',
+    difficulty: 'beginner',
+    prompt:
+      'This symbol-scramble machine still has the right input word, but two output positions are reading the wrong input slots. Repair the symbol order so the output matches the captured reference again.',
+    startingProject: brokenVisibleSymbolScrambleStart,
+    startingLayout: cloneProject(visibleSymbolScrambleProject.layout),
+    targetProject: visibleSymbolScrambleTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The letters themselves are already correct; only their positions are wrong.',
+      'Focus on the SymbolPermutation order, not on changing the input word.',
+      'A permutation reorders existing symbols. It does not replace M with another letter.',
     ],
   },
   {

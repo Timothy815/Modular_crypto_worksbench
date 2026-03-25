@@ -33,6 +33,7 @@ import { Rotor } from './rotor';
 import { Reflector } from './reflector';
 import { Plugboard } from './plugboard';
 import { Permutation } from './permutation';
+import { SymbolPermutation } from './symbol-permutation';
 import { BitShifter } from './bit-shifter';
 import { BitJoin } from './bit-join';
 import { BitSplit } from './bit-split';
@@ -76,6 +77,7 @@ export {
   Reflector,
   Plugboard,
   Permutation,
+  SymbolPermutation,
   BitShifter,
   BitJoin,
   BitSplit,
@@ -120,6 +122,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [Reflector.id]: Reflector,
   [Plugboard.id]: Plugboard,
   [Permutation.id]: Permutation,
+  [SymbolPermutation.id]: SymbolPermutation,
   [BitShifter.id]: BitShifter,
   [BitJoin.id]: BitJoin,
   [BitSplit.id]: BitSplit,

@@ -3,6 +3,44 @@ import type { GuidedTutorial } from './tutorials';
 export const STARTER_TUTORIALS: GuidedTutorial[] = [
   {
     version: 1,
+    id: 'visible-symbol-scramble',
+    title: 'Visible Symbol Scramble',
+    group: 'Symbol Permutation',
+    summary: 'Learn how symbol permutation reorders positions without replacing the symbols themselves.',
+    projectId: 'visible-symbol-scramble',
+    steps: [
+      {
+        id: 'symbol-source',
+        title: 'Start With A Whole Symbol Sequence',
+        body: 'TextInput is feeding the full string MATH into the graph. Nothing about the symbols changes yet; the important part is that there are four visible positions to rearrange.',
+        focusModuleId: 'text',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'symbol-permutation',
+        title: 'Reorder Positions, Not Symbols',
+        body: 'SymbolPermutation is the new primitive here. Its order mapping says which input position each output slot should read. The same letters survive, but they appear in a different order.',
+        focusModuleId: 'permute',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'symbol-vs-substitution',
+        title: 'Contrast Permutation With Substitution',
+        body: 'A rotor or plugboard changes which letter appears at a position. SymbolPermutation does something different: it keeps the original letters and only changes where each one lands.',
+        focusModuleId: 'permute',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'symbol-output',
+        title: 'Read The Scrambled Result',
+        body: 'Output shows the reordered word. Open Analyze to see the route from each input position to each output position and verify that the symbol identities stayed intact while the order changed.',
+        focusModuleId: 'output',
+        targetStepIndex: 2,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'avalanche-effect',
     title: 'The Avalanche Effect',
     group: 'Cryptanalysis',

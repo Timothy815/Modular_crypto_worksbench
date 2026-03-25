@@ -33,6 +33,7 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   AtLeast: 'operator',
   Gate: 'operator',
   Permutation: 'operator',
+  SymbolPermutation: 'operator',
   BitShifter: 'operator',
   BitJoin: 'operator',
   BitSplit: 'operator',

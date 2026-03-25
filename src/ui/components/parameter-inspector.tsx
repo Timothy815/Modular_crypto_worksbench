@@ -250,7 +250,7 @@ export function ParameterInspector({
       ? transformationView.chunks.find((chunk) => chunk.index === effectiveLookupChunkIndex) ?? null
       : null;
   const editableSelectedPermutationOrder = useMemo(() => {
-    if (moduleDef?.id !== 'Permutation' || !moduleInstance) {
+    if ((moduleDef?.id !== 'Permutation' && moduleDef?.id !== 'SymbolPermutation') || !moduleInstance) {
       return null;
     }
 
@@ -749,7 +749,7 @@ export function ParameterInspector({
                       {transformationView.inputLane.map((row) => (
                         <div key={`input-${row.inputIndex}`} className="transformation-lane-cell">
                           <span className="transformation-index">{row.inputIndex}</span>
-                          <strong>{row.inputBit}</strong>
+                          <strong>{row.inputValue}</strong>
                         </div>
                       ))}
                     </div>
@@ -814,7 +814,7 @@ export function ParameterInspector({
                           }
                         >
                           <span className="transformation-index">{row.outputIndex}</span>
-                          <strong>{row.outputBit}</strong>
+                          <strong>{row.outputValue}</strong>
                         </div>
                       ))}
                     </div>
@@ -2096,7 +2096,7 @@ export function ParameterInspector({
                 }
 
                 const isPermutationOrderField =
-                  moduleDef.id === 'Permutation' &&
+                  (moduleDef.id === 'Permutation' || moduleDef.id === 'SymbolPermutation') &&
                   field.key === 'order' &&
                   field.kind === 'string';
 
@@ -2160,7 +2160,7 @@ export function ParameterInspector({
                             <span className="content-status-chip">
                               {canUseVisualPermutationEditor
                                 ? 'Drag an input wire onto an output slot to replug the routing'
-                                : 'Raw CSV remains available for non-bijective or repeated routing patterns'}
+                                : 'Raw CSV remains available until the permutation order parses again'}
                             </span>
                           </div>
                           {canUseVisualPermutationEditor ? (
@@ -2653,9 +2653,9 @@ export function ParameterInspector({
 
 interface RoutingTransformationRow {
   inputIndex: number;
-  inputBit: number;
+  inputValue: number | string;
   outputIndex: number;
-  outputBit: number;
+  outputValue: number | string;
   inputY: number;
   outputY: number;
   color: string;
@@ -2880,6 +2880,9 @@ function getTransformationView(
   if (entry.defId === 'Permutation' || entry.defId === 'PermutationBits') {
     return getPermutationTransformation(entry, project, registry);
   }
+  if (entry.defId === 'SymbolPermutation') {
+    return getSymbolPermutationTransformation(entry, project, registry);
+  }
   if (entry.defId === 'BitShifter') {
     return getBitShifterTransformation(entry, project, registry);
   }
@@ -2948,9 +2951,9 @@ function getPermutationTransformation(
 
   const rows = order.map((sourceIndex, outputIndex) => ({
     inputIndex: sourceIndex,
-    inputBit: inputSignal.value[sourceIndex] ?? 0,
+    inputValue: inputSignal.value[sourceIndex] ?? 0,
     outputIndex,
-    outputBit: outputSignal.value[outputIndex] ?? 0,
+    outputValue: outputSignal.value[outputIndex] ?? 0,
     kind: 'line' as const,
   }));
   const inputLane = [...rows].sort((left, right) => left.inputIndex - right.inputIndex);
@@ -2990,6 +2993,67 @@ function getPermutationTransformation(
   };
 }
 
+function getSymbolPermutationTransformation(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): RoutingTransformationView | null {
+  const resolved = resolveTraceModuleInstance(entry.moduleId, project, registry);
+  if (!resolved) {
+    return null;
+  }
+
+  const orderValue = resolved.instance.params.order;
+  const order = parsePermutationOrder(orderValue);
+  const inputSignal = entry.inputs.in;
+  const outputSignal = entry.outputs.out;
+  if (inputSignal?.type !== 'symbol' || outputSignal?.type !== 'symbol') {
+    return null;
+  }
+
+  const inputSymbols = Array.from(inputSignal.value);
+  const outputSymbols = Array.from(outputSignal.value);
+  const rows = order.map((sourceIndex, outputIndex) => ({
+    inputIndex: sourceIndex,
+    inputValue: inputSymbols[sourceIndex] ?? '',
+    outputIndex,
+    outputValue: outputSymbols[outputIndex] ?? '',
+    kind: 'line' as const,
+  }));
+  const inputLane = [...rows].sort((left, right) => left.inputIndex - right.inputIndex);
+  const outputLane = [...rows].sort((left, right) => left.outputIndex - right.outputIndex);
+  const laneHeight = 32;
+  const laneGap = 6;
+  const laneStep = laneHeight + laneGap;
+  const laneOffset = laneHeight / 2;
+  const svgHeight = Math.max(laneHeight, rows.length * laneHeight + Math.max(0, rows.length - 1) * laneGap);
+  const rowsWithPositions = rows.map((row) => ({
+    ...row,
+    inputY: laneOffset + inputLane.findIndex((candidate) => candidate.inputIndex === row.inputIndex) * laneStep,
+    outputY:
+      laneOffset + outputLane.findIndex((candidate) => candidate.outputIndex === row.outputIndex) * laneStep,
+    color: getPermutationWireColor(row.inputIndex),
+  }));
+
+  return {
+    entry,
+    kind: 'routing',
+    title: 'Symbol Permutation Mapping',
+    copy: 'This symbol permutation reorders whole symbol positions without changing the symbols themselves.',
+    configLabel: 'Order',
+    configValue: order.join(', '),
+    middleLabel: 'Route',
+    rows: rowsWithPositions,
+    inputLane: [...rowsWithPositions].sort((left, right) => left.inputIndex - right.inputIndex),
+    outputLane: [...rowsWithPositions].sort((left, right) => left.outputIndex - right.outputIndex),
+    svgHeight,
+    summary:
+      rows.length === 0
+        ? 'This symbol permutation has no visible positions to remap.'
+        : `Output position 0 reads input position ${rows[0]?.inputIndex}. The symbols stay the same; only their order changes.`,
+  };
+}
+
 function getBitShifterTransformation(
   entry: ExecutionTraceEntry,
   project: Project,
@@ -3024,9 +3088,9 @@ function getBitShifterTransformation(
     const sourceIndex = getBitShifterSourceIndex(outputIndex, inputSignal.value.length, amount, mode);
     rows.push({
       inputIndex: sourceIndex ?? outputIndex,
-      inputBit: sourceIndex === null ? 0 : inputSignal.value[sourceIndex] ?? 0,
+      inputValue: sourceIndex === null ? 0 : inputSignal.value[sourceIndex] ?? 0,
       outputIndex,
-      outputBit: outputSignal.value[outputIndex] ?? 0,
+      outputValue: outputSignal.value[outputIndex] ?? 0,
       inputY: 0,
       outputY: 0,
       color: sourceIndex === null ? 'var(--muted)' : getPermutationWireColor(sourceIndex),
@@ -3049,13 +3113,13 @@ function getBitShifterTransformation(
     outputY: laneOffset + row.outputIndex * laneStep,
   }));
 
-  const inputLane = inputSignal.value.map((inputBit, inputIndex) => {
+  const inputLane = inputSignal.value.map((inputValue, inputIndex) => {
     const row = rowsWithPositions.find((candidate) => candidate.inputIndex === inputIndex && candidate.kind === 'line');
     return {
       inputIndex,
-      inputBit,
+      inputValue,
       outputIndex: row?.outputIndex ?? inputIndex,
-      outputBit: row?.outputBit ?? 0,
+      outputValue: row?.outputValue ?? 0,
       inputY: laneOffset + inputIndex * laneStep,
       outputY: row?.outputY ?? laneOffset + inputIndex * laneStep,
       color: row?.color ?? getPermutationWireColor(inputIndex),

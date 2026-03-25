@@ -19,6 +19,29 @@ export interface DemoProject {
 
 export const demoProjects: DemoProject[] = [
   {
+    id: 'visible-symbol-scramble',
+    name: 'Visible Symbol Scramble',
+    group: 'Symbol Permutation',
+    summary: 'A direct symbol-order transform that rearranges positions while leaving the symbols themselves unchanged.',
+    pipeline: 'TextInput -> SymbolPermutation -> Output',
+    project: {
+      modules: [
+        { id: 'text', defId: 'TextInput', params: { value: 'MATH' } },
+        { id: 'permute', defId: 'SymbolPermutation', params: { order: '2,0,3,1' } },
+        { id: 'output', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'permute', port: 'in' } },
+        { from: { moduleId: 'permute', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      text: { x: 80, y: 156 },
+      permute: { x: 392, y: 156 },
+      output: { x: 704, y: 156 },
+    },
+  },
+  {
     id: 'baudot-bridge',
     name: 'Baudot Telegraph',
     group: 'Historical Bridges',

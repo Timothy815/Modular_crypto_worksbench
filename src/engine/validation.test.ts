@@ -26,7 +26,9 @@ import { Reflector } from './modules/reflector';
 import { Rotor } from './modules/rotor';
 import { Salt } from './modules/salt';
 import { SBox } from './modules/s-box';
+import { SymbolPermutation } from './modules/symbol-permutation';
 import { SubMod } from './modules/sub-mod';
+import { TextInput } from './modules/text-input';
 import { XOR } from './modules/xor';
 import type { ModuleRegistry, Project } from './types';
 import { validateProject } from './validation';
@@ -89,6 +91,7 @@ const registry: ModuleRegistry = {
   [SubMod.id]: SubMod,
   [Modulo.id]: Modulo,
   [Permutation.id]: Permutation,
+  [SymbolPermutation.id]: SymbolPermutation,
   [Rotor.id]: Rotor,
   [Plugboard.id]: Plugboard,
   [Reflector.id]: Reflector,
@@ -96,6 +99,7 @@ const registry: ModuleRegistry = {
   [BitSplit.id]: BitSplit,
   [BitPad.id]: BitPad,
   [Demux.id]: Demux,
+  [TextInput.id]: TextInput,
 };
 
 describe('validateProject', () => {
@@ -499,6 +503,44 @@ describe('validateProject', () => {
           issue.moduleId === 'router' &&
           issue.code === 'signal-width-mismatch' &&
           issue.message.includes('requires 1-bit inputs'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects a SymbolPermutation order that is not bijective', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text', defId: 'TextInput', params: { value: 'MATH' } },
+        { id: 'permute', defId: 'SymbolPermutation', params: { order: '0,0,2,3' } },
+      ],
+      connections: [{ from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'permute', port: 'in' } }],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) => issue.moduleId === 'permute' && issue.message.includes('exactly once'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects a SymbolPermutation order whose entry count does not match a known input symbol length', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text', defId: 'TextInput', params: { value: 'MATH' } },
+        { id: 'permute', defId: 'SymbolPermutation', params: { order: '0,1,2' } },
+      ],
+      connections: [{ from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'permute', port: 'in' } }],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) => issue.moduleId === 'permute' && issue.code === 'signal-width-mismatch',
       ),
     ).toBe(true);
   });

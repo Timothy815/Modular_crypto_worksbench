@@ -43,6 +43,7 @@ import {
 } from './rotor';
 import { pairReflectorLetters, Reflector } from './reflector';
 import { Permutation } from './permutation';
+import { SymbolPermutation } from './symbol-permutation';
 import { BitShifter } from './bit-shifter';
 import { BitJoin } from './bit-join';
 import { BitSplit } from './bit-split';
@@ -778,6 +779,51 @@ describe('Permutation', () => {
 
   it('serializes permutation orders back into the stored param format', () => {
     expect(serializePermutationOrder([2, 0, 4, 1, 3])).toBe('2,0,4,1,3');
+  });
+});
+
+describe('SymbolPermutation', () => {
+  it('reorders symbol positions without changing the symbols', () => {
+    const result = SymbolPermutation.evaluate(
+      { in: { type: 'symbol', value: 'MATH' } },
+      { order: '2,0,3,1' },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'TMHA' });
+  });
+
+  it('supports identity symbol order', () => {
+    const result = SymbolPermutation.evaluate(
+      { in: { type: 'symbol', value: 'CODE' } },
+      { order: '0,1,2,3' },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'CODE' });
+  });
+
+  it('throws when the input is not a symbol signal', () => {
+    expect(() =>
+      SymbolPermutation.evaluate(
+        { in: { type: 'bits', value: [1, 0, 1, 0] } },
+        { order: '0,1,2,3' },
+      ),
+    ).toThrow('SymbolPermutation expects a symbol signal');
+  });
+
+  it('throws when the order length does not match the input length', () => {
+    expect(() =>
+      SymbolPermutation.evaluate(
+        { in: { type: 'symbol', value: 'ABCD' } },
+        { order: '0,1,2' },
+      ),
+    ).toThrow('must match the input symbol length');
+  });
+
+  it('throws when the order is not a true permutation', () => {
+    expect(() =>
+      SymbolPermutation.evaluate(
+        { in: { type: 'symbol', value: 'ABCD' } },
+        { order: '0,0,2,3' },
+      ),
+    ).toThrow('must use each input index exactly once');
   });
 });
 

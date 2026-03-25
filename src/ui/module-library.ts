@@ -206,6 +206,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'A diffusion-style transform that shuffles bit positions without changing their values.',
     searchTerms: ['permutation', 'permute', 'reorder', 'shuffle', 'bits'],
   },
+  SymbolPermutation: {
+    sectionId: 'symbol-domain',
+    purpose: 'Reorders symbol positions according to a configured pattern.',
+    detail: 'A message-level transform that shuffles symbol order without changing the symbols themselves.',
+    searchTerms: ['symbol permutation', 'permute', 'reorder', 'shuffle', 'symbol', 'message', 'transposition'],
+  },
   BitShifter: {
     sectionId: 'transforms',
     purpose: 'Shifts or rotates bits left and right.',

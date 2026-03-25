@@ -33,6 +33,7 @@ import {
   validateProtocolMaterialParam,
   validateProtocolMaterialValueFitsWidth,
 } from './modules/protocol-material';
+import { validateSymbolPermutationOrderParam } from './modules/symbol-permutation';
 
 const EQUAL_WIDTH_BINARY_MODULE_IDS = new Set([
   'AND',
@@ -139,6 +140,10 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'Permutation' && field.key === 'order') {
     return validatePermutationOrderParam(value);
+  }
+
+  if (def.id === 'SymbolPermutation' && field.key === 'order') {
+    return validateSymbolPermutationOrderParam(value);
   }
 
   if (def.id === 'SBox' && field.key === 'table') {
@@ -508,6 +513,52 @@ function validateBitWidthConstraints(
         });
       }
     }
+
+    if (def.id === 'SymbolPermutation') {
+      const upstream = incomingConnections.get(`${moduleInstance.id}:in`);
+      const order = moduleInstance.params.order;
+      if (!upstream || typeof order !== 'string') {
+        continue;
+      }
+
+      const instance = instancesById.get(upstream.moduleId);
+      const upstreamDef = defsByInstanceId.get(upstream.moduleId);
+      if (!instance || !upstreamDef || isCompositeDefinition(upstreamDef) || isIteratorDefinition(upstreamDef)) {
+        continue;
+      }
+
+      const staticSymbolLength = inferStaticSymbolLength(instance);
+      if (staticSymbolLength === null) {
+        continue;
+      }
+
+      const entries = order
+        .split(',')
+        .map((part) => part.trim())
+        .filter((part) => part.length > 0);
+      if (entries.length > 0 && entries.length !== staticSymbolLength) {
+        issues.push({
+          code: 'signal-width-mismatch',
+          message: `Module "${moduleInstance.id}" requires a symbol permutation order with ${staticSymbolLength} entries to match the input symbol length.`,
+          moduleId: moduleInstance.id,
+        });
+      }
+    }
+  }
+}
+
+function inferStaticSymbolLength(instance: ModuleInstance): number | null {
+  switch (instance.defId) {
+    case 'TextInput':
+    case 'KeyInput': {
+      const value = instance.params.value;
+      return typeof value === 'string' ? Array.from(value).length : null;
+    }
+    case 'BitsToAscii': {
+      return null;
+    }
+    default:
+      return null;
   }
 }
 
