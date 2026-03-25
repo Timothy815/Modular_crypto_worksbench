@@ -446,6 +446,14 @@ function validateBitWidthConstraints(
 
   const getWidth = (moduleId: string) =>
     inferStaticBitWidth(moduleId, defsByInstanceId, instancesById, incomingConnections, memo, new Set());
+  const getControlWidth = (endpoint: ConnectionEndpoint) => {
+    const upstreamDef = defsByInstanceId.get(endpoint.moduleId);
+    if (upstreamDef?.id === 'Clock') {
+      return 1;
+    }
+
+    return getWidth(endpoint.moduleId);
+  };
 
   for (const moduleInstance of project.modules) {
     const def = defsByInstanceId.get(moduleInstance.id);
@@ -558,7 +566,7 @@ function validateBitWidthConstraints(
       const knownWidths = inputPorts
         .map((portName) => incomingConnections.get(`${moduleInstance.id}:${portName}`))
         .filter((endpoint): endpoint is ConnectionEndpoint => endpoint !== undefined)
-        .map((endpoint) => getWidth(endpoint.moduleId))
+        .map((endpoint) => getControlWidth(endpoint))
         .filter((width): width is number => width !== null);
 
       if (knownWidths.some((width) => width !== 1)) {
@@ -575,7 +583,7 @@ function validateBitWidthConstraints(
       const knownWidths = inputPorts
         .map((portName) => incomingConnections.get(`${moduleInstance.id}:${portName}`))
         .filter((endpoint): endpoint is ConnectionEndpoint => endpoint !== undefined)
-        .map((endpoint) => getWidth(endpoint.moduleId))
+        .map((endpoint) => getControlWidth(endpoint))
         .filter((width): width is number => width !== null);
 
       if (knownWidths.some((width) => width !== 1)) {
@@ -592,7 +600,7 @@ function validateBitWidthConstraints(
       const knownWidths = inputPorts
         .map((portName) => incomingConnections.get(`${moduleInstance.id}:${portName}`))
         .filter((endpoint): endpoint is ConnectionEndpoint => endpoint !== undefined)
-        .map((endpoint) => getWidth(endpoint.moduleId))
+        .map((endpoint) => getControlWidth(endpoint))
         .filter((width): width is number => width !== null);
 
       if (knownWidths.some((width) => width !== 1)) {
