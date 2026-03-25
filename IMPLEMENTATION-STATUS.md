@@ -33,8 +33,8 @@ The next strategic direction remains broader than any one subdomain:
 - ship tutorials and challenges alongside each new vocabulary family
 
 The next most important missing vocabulary families are:
-- deeper stream-combiner / filter-function follow-ons after the shipped selector slice
-- symbol/message permutation and scheduler follow-ons after the shipped rotor-realism slice
+- symbol/message permutation after the shipped stream-routing and rotor-realism foundations
+- deeper stream follow-ons and scheduler/key-routing work after the shipped routing trilogy
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -346,8 +346,8 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
 2. **Continue the primitive-language roadmap beyond shipped stream and rotor foundations** — the clearest remaining language families are deeper stream follow-ons, symbol/message permutation, and scheduler/key-routing work
-   Immediate question:
-   choose the next bounded follow-on after shipped stream routing and rotor realism
+   Immediate contract:
+   `SYMBOL-PERMUTATION-V1.md`
 3. **Keep future rotor follow-ons bounded** — reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices, not convenience presets
 4. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
 5. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
@@ -387,6 +387,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `STREAM-CIPHER-V1.md` | Shipped in `v1.18.0` as bounded stream-machine slice for visible majority logic and irregular clocking |
 | `STREAM-CIPHER-V2.md` | Shipped in `v1.20.0` as second bounded stream-machine slice for visible selector/filter behavior via `Mux` |
 | `STREAM-CIPHER-V3.md` | Shipped in `v1.21.0` as third bounded stream-machine slice for visible routing/scheduling behavior via `Demux` |
+| `SYMBOL-PERMUTATION-V1.md` | Proposed — first bounded symbol/message permutation slice for visible symbol-order routing |
 | `ADVANCED-ROTOR-REALISM-V1.md` | Shipped in `v1.19.0` as bounded rotor-realism slice for ring setting, turnover, and double-step behavior |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |

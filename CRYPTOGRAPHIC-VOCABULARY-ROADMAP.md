@@ -398,8 +398,10 @@ It is:
 - keep future rotor follow-ons bounded rather than turning mechanized realism into hidden helpers
 - keep tutorials and challenges shipping alongside the new language
 
-The immediate next decision should be:
-- which bounded follow-on best deepens the now-shipped stream routing/filtering foundation without collapsing into named-cipher presets or scheduler sprawl
+The immediate next contract should be:
+- `SYMBOL-PERMUTATION-V1.md`
+
+That keeps the roadmap moving into a broadly useful message/symbol language family without reopening preset sprawl.
 
 That is the path from:
 - strong teaching workbench
