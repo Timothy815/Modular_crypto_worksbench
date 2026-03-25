@@ -35,6 +35,26 @@ export function isBypassEligibleDefinition(def: ModuleDefinition): boolean {
   );
 }
 
+export function getBypassIneligibilityReason(def: ModuleDefinition): string {
+  if (isCompositeDefinition(def) || isIteratorDefinition(def)) {
+    return 'Bypass V1 does not apply to composite or iterator definitions.';
+  }
+
+  if (def.inputs.length !== 1 || def.outputs.length !== 1) {
+    return 'Bypass V1 is limited to modules with exactly one input and one output.';
+  }
+
+  if (def.inputs[0]?.type !== def.outputs[0]?.type) {
+    return 'Bypass V1 only applies when input and output stay in the same signal domain.';
+  }
+
+  if (!BYPASSABLE_MODULE_IDS.has(def.id)) {
+    return 'Bypass V1 is only enabled for the current explicit allow-list of eligible modules.';
+  }
+
+  return 'This module is not bypassable in V1.';
+}
+
 export function evaluateBypass(def: ModuleDefinition, inputs: ModuleInputs): ModuleOutputs {
   const inputPort = def.inputs[0];
   const outputPort = def.outputs[0];

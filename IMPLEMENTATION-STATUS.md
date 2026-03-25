@@ -6,10 +6,10 @@ Last updated: March 24, 2026
 
 ## Current State
 
-The project has shipped through `v1.27.0` on `main`.
+The project has shipped through `v1.29.0` on `main`.
 
-Current `main` is now positioned beyond the first number-theoretic foundations milestone.
-That milestone shipped:
+Current `main` is now positioned beyond three recent milestones.
+Those shipped:
 - first bounded number-theoretic vocabulary:
   - `ModExp` (modular exponentiation via repeated squaring)
   - `ModInverse` (modular multiplicative inverse via extended Euclidean algorithm)
@@ -22,6 +22,15 @@ That milestone shipped:
   - `Key Schedule Workshop` tutorial
   - `Repair the RSA Exponent` challenge
   - `Repair the Key Rotation` challenge
+- teaching pathfinding and hardening:
+  - seeded teaching-content audit test
+  - routed-clock width-validation fix for routed control demos
+  - first shipped learning-sequence UI with stage/core/best-after guidance
+- bounded bypass:
+  - instance-level bypass for an explicit allow-list of eligible one-input / one-output same-domain modules
+  - validation rejection for ineligible bypass attempts
+  - visible inspector toggle and canvas bypass badge
+  - `Bypass Workshop` demo/tutorial/challenge
 
 The already-shipped protocol-material, block-framing, and symbol/message permutation foundations remain in place:
 - protocol inputs:
@@ -144,6 +153,8 @@ The following decisions are reflected in shipped code:
 | `v1.25.0` | Arithmetic Expansion |
 | `v1.26.0` | Number-Theoretic Foundations |
 | `v1.27.0` | Transformation View Consolidation |
+| `v1.28.0` | Teaching Pathfinding And Hardening |
+| `v1.29.0` | Bounded Bypass |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -400,7 +411,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed at `v1.27.0` framing.
+All three passed at `v1.29.0` framing.
 
 ---
 
@@ -460,10 +471,10 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `SYMBOL-PERMUTATION-V1.md` | Shipped in `v1.22.0` as first bounded symbol/message permutation slice for visible symbol-order routing |
 | `KEY-SCHEDULE-V2.md` | Shipped in `v1.23.0` as first bounded post-groundwork key-routing slice for visible sub-key extraction from one key bus |
 | `SYMBOL-STRUCTURE-V1.md` | Shipped in `v1.24.0` as first bounded post-permutation symbol/message-structure slice for visible contiguous submessage extraction |
-| `LEARNING-SEQUENCE-V1.md` | Active — suggested ordering contract for demos, tutorials, and challenges so the teaching surface reads as a logical progression |
+| `LEARNING-SEQUENCE-V1.md` | First milestone shipped in `v1.28.0` — staged ordering contract now visible in demos, tutorials, and challenges |
 | `ARITHMETIC-EXPANSION-V1.md` | Shipped in `v1.25.0` as first bounded arithmetic-expansion slice for modular multiplication, strict comparison, and unpadding |
 | `NUMBER-THEORETIC-V1.md` | Shipped in `v1.26.0` as first bounded number-theoretic foundations slice for modular exponentiation and modular inverse |
-| `BYPASS-V1.md` | Proposed — bounded instance-level bypass contract for eligible one-in/one-out same-domain modules |
+| `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `ADVANCED-ROTOR-REALISM-V1.md` | Shipped in `v1.19.0` as bounded rotor-realism slice for ring setting, turnover, and double-step behavior |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |

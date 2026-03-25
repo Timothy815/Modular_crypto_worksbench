@@ -9,7 +9,7 @@ import {
 } from 'react';
 
 import { isCompositeDefinition } from '../../engine/composites';
-import { isBypassEligibleDefinition } from '../../engine/bypass';
+import { getBypassIneligibilityReason, isBypassEligibleDefinition } from '../../engine/bypass';
 import type {
   Connection,
   ExecutionResult,
@@ -252,6 +252,8 @@ export function ParameterInspector({
     ? getTransformationView(activeTransformationEntry, project, registry)
     : null;
   const canBypassSelectedModule = moduleDef ? isBypassEligibleDefinition(moduleDef) : false;
+  const bypassIneligibilityReason =
+    moduleDef && !canBypassSelectedModule ? getBypassIneligibilityReason(moduleDef) : null;
   const effectiveLookupChunkIndex =
     transformationView?.kind === 'lookup'
       ? transformationView.chunks[
@@ -1444,6 +1446,13 @@ export function ParameterInspector({
                   Eligible: one-input / one-output / same-domain
                 </span>
               </div>
+            </div>
+          ) : null}
+          {bypassIneligibilityReason ? (
+            <div className="content-selector-card">
+              <p className="comparison-copy">
+                Bypass unavailable: {bypassIneligibilityReason}
+              </p>
             </div>
           ) : null}
 

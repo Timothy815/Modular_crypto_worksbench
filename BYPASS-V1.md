@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed bounded usability and teaching slice after the learning-sequence pass.
+Shipped in `v1.29.0` as a bounded usability and teaching slice.
 
 ## Purpose
 
@@ -47,7 +47,6 @@ Only modules that satisfy all of the following:
 - exactly one input
 - exactly one output
 - same signal domain on input and output
-- no stateful ticked semantics that would make bypass ambiguous
 
 Typical eligible examples:
 - `Rotor`
@@ -63,6 +62,7 @@ Typical eligible examples:
 - `BitUnpad`
 
 Eligibility should be determined explicitly in the implementation, not guessed from loose heuristics.
+V1 now implements this as an explicit allow-list over modules that also satisfy the one-input / one-output / same-domain shape.
 
 ### V1 Behavior
 

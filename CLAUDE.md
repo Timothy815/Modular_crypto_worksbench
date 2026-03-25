@@ -143,7 +143,7 @@ src/utils/     — Shared helpers
 
 ## Current Resume Point
 
-- Resume from current `main` at `v1.27.0`
+- Resume from current `main` at `v1.29.0`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement
@@ -256,6 +256,19 @@ src/utils/     — Shared helpers
   - `arithmetic` view kind for number-word operations (shows expression, bit-level input/output grid)
   - `unpad` view kind for strip operations (mirrors the existing `pad` view)
   - `GreaterThan` compare view text corrected to show strict `A > B` semantics
+- `v1.28.0` is now the teaching-pathfinding and hardening milestone:
+  - seeded teaching-content audit coverage
+  - routed-clock width-validation correction for routed control demos/challenges
+  - first shipped learning-sequence UI:
+    - stage-aware ordering
+    - `Core Path` / `Optional`
+    - `Best after`
+    - `Recommended next`
+- `v1.29.0` is now the bounded bypass milestone:
+  - instance-level `bypass` on an explicit allow-list of eligible one-input / one-output same-domain modules
+  - validation rejection for ineligible bypass
+  - visible inspector toggle and canvas bypass badge
+  - `Bypass Workshop` demo/tutorial/challenge
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -350,7 +363,7 @@ Key contracts to check before implementation:
 - `STREAM-CIPHER-V2.md` for the shipped second bounded stream-machine slice
 - `ARITHMETIC-EXPANSION-V1.md` for the shipped first bounded arithmetic-expansion line
 - `NUMBER-THEORETIC-V1.md` for the shipped first bounded number-theoretic foundations
-- `BYPASS-V1.md` for the proposed bounded instance-level bypass line
+- `BYPASS-V1.md` for the shipped bounded instance-level bypass line
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family

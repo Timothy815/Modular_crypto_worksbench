@@ -11,7 +11,7 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.27.0`.
+The repository has shipped through `v1.29.0`.
 
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
@@ -21,6 +21,16 @@ The repository has shipped through `v1.27.0`.
 - `Key Schedule Workshop` demo workspace (two-round key derivation from one master key)
 - `Toy RSA Round-Trip` and `Key Schedule Workshop` tutorials
 - `Repair the RSA Exponent` and `Repair the Key Rotation` challenges
+
+Recent shipped follow-ons after `v1.27.0`:
+- `v1.28.0` Teaching Pathfinding And Hardening:
+  - seeded teaching-content audit coverage
+  - routed-clock validation fix
+  - first shipped learning-sequence UI with stage/core/best-after guidance
+- `v1.29.0` Bounded Bypass:
+  - instance-level bypass for an explicit allow-list of eligible one-input / one-output same-domain modules
+  - visible inspector toggle and canvas bypass badge
+  - `Bypass Workshop` demo/tutorial/challenge
 
 Shipped stream, rotor, protocol/framing, and symbol/message permutation foundations remain in place:
 - stream-machine expressiveness:
@@ -102,6 +112,8 @@ Implemented and shipped:
 - `v1.25.0` Arithmetic Expansion milestone
 - `v1.26.0` Number-Theoretic Foundations milestone
 - `v1.27.0` Transformation View Consolidation milestone
+- `v1.28.0` Teaching Pathfinding And Hardening milestone
+- `v1.29.0` Bounded Bypass milestone
 - first bounded hash collision challenge:
   - seeded `Find A Hash Collision` challenge
   - same-digest / different-input success rule
@@ -171,10 +183,10 @@ Implemented and shipped:
 - `SYMBOL-PERMUTATION-V1.md`: shipped first bounded symbol/message permutation slice for visible symbol-order routing
 - `KEY-SCHEDULE-V2.md`: shipped first bounded post-groundwork key-routing slice for visible sub-key extraction from one key bus
 - `SYMBOL-STRUCTURE-V1.md`: shipped first bounded post-permutation symbol/message-structure slice for visible contiguous submessage extraction
-- `LEARNING-SEQUENCE-V1.md`: active contract for suggested ordering across demos, tutorials, and challenges
+- `LEARNING-SEQUENCE-V1.md`: first shipped sequencing milestone for suggested ordering across demos, tutorials, and challenges
 - `ARITHMETIC-EXPANSION-V1.md`: shipped first bounded arithmetic-expansion slice for modular multiplication, strict comparison, and unpadding
 - `NUMBER-THEORETIC-V1.md`: shipped first bounded number-theoretic foundations slice for modular exponentiation and modular inverse
-- `BYPASS-V1.md`: proposed bounded usability slice for visible instance-level bypass on eligible one-in/one-out modules
+- `BYPASS-V1.md`: shipped bounded usability slice for visible instance-level bypass on eligible one-in/one-out modules
 - `ADVANCED-ROTOR-REALISM-V1.md`: shipped first bounded rotor-realism slice for ring setting, turnover, and double-step behavior
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
@@ -225,4 +237,4 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 7. Monitor classroom use of workspace library and composite unzip before widening them into sharing, folders, or bulk-expansion tooling
 8. Monitor challenge-induced project switching in classroom use before adding warning dialogs
 9. Avoid scope creep into brute-force tooling, birthday-bound calculators, famous-hash comparisons, or premature asymmetric demos before the underlying vocabulary exists
-10. Keep the proposed bypass line bounded to honest one-in/one-out same-domain modules rather than widening it into universal mute/solo behavior
+10. Keep the shipped bypass line bounded to honest one-in/one-out same-domain modules rather than widening it into universal mute/solo behavior
