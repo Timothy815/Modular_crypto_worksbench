@@ -33,6 +33,8 @@ const visibleSymbolScrambleProject = demoProjects.find((project) => project.id =
 const visibleSubkeyBusProject = demoProjects.find((project) => project.id === 'visible-subkey-bus');
 const multiplyCompareUnpadProject = demoProjects.find((project) => project.id === 'multiply-compare-unpad');
 const visibleMessageWindowProject = demoProjects.find((project) => project.id === 'visible-message-window');
+const toyRsaProject = demoProjects.find((project) => project.id === 'toy-rsa');
+const keyScheduleWorkshopProject = demoProjects.find((project) => project.id === 'key-schedule-workshop');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
 const toySpongeHashProject = demoProjects.find((project) => project.id === 'toy-sponge-hash');
@@ -130,6 +132,12 @@ if (!toyCompressionHashProject) {
 if (!toySpongeHashProject) {
   throw new Error('Expected toy-sponge-hash project to seed starter challenges.');
 }
+if (!toyRsaProject) {
+  throw new Error('Expected toy-rsa demo project to seed starter challenges.');
+}
+if (!keyScheduleWorkshopProject) {
+  throw new Error('Expected key-schedule-workshop demo project to seed starter challenges.');
+}
 
 const fixedBridgeTarget = cloneProject(bridgeProject.project);
 const brokenBridgeStart = cloneProject(bridgeProject.project);
@@ -194,6 +202,10 @@ const toyCompressionHashTarget = cloneProject(toyCompressionHashProject.project)
 const toyCompressionHashCollisionStart = cloneProject(toyCompressionHashProject.project);
 const toySpongeHashTarget = cloneProject(toySpongeHashProject.project);
 const toySpongeHashCollisionStart = cloneProject(toySpongeHashProject.project);
+const toyRsaTarget = cloneProject(toyRsaProject.project);
+const brokenToyRsaStart = cloneProject(toyRsaProject.project);
+const keyScheduleWorkshopTarget = cloneProject(keyScheduleWorkshopProject.project);
+const brokenKeyScheduleWorkshopStart = cloneProject(keyScheduleWorkshopProject.project);
 
 const brokenKeyModule = brokenBridgeStart.modules.find((moduleInstance) => moduleInstance.id === 'key');
 if (!brokenKeyModule) {
@@ -280,6 +292,22 @@ if (!brokenUnpadModule) {
   throw new Error('Expected multiply-compare-unpad demo project to contain unpad.');
 }
 brokenUnpadModule.params.originalWidth = 12;
+
+const brokenPrivExp = brokenToyRsaStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'priv-exp',
+);
+if (!brokenPrivExp) {
+  throw new Error('Expected toy-rsa demo project to contain a priv-exp module.');
+}
+brokenPrivExp.params.value = '02';
+
+const brokenRotate = brokenKeyScheduleWorkshopStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'rotate',
+);
+if (!brokenRotate) {
+  throw new Error('Expected key-schedule-workshop demo project to contain a rotate module.');
+}
+brokenRotate.params.amount = 5;
 
 const brokenBaudotSource = brokenBaudotStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'source',
@@ -1125,6 +1153,48 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The clock timing is already correct in this lab.',
       'The feedback path inside the LFSR determines which new bit gets shifted into the register.',
       'Compare the tap indexes against the expected repeating pattern in the output stream.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-rsa-exponent',
+    title: 'Repair the RSA Exponent',
+    projectId: 'toy-rsa',
+    group: 'Number Theory',
+    difficulty: 'intermediate',
+    prompt:
+      'The toy RSA round-trip no longer recovers the original message after decryption. The modulus and encryption exponent are correct, but the decryption side is wrong. Fix the private exponent so the output matches the plaintext again.',
+    startingProject: brokenToyRsaStart,
+    startingLayout: cloneProject(toyRsaProject.layout),
+    targetProject: toyRsaTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The modulus and encryption exponent are already correct.',
+      'The private exponent must satisfy e * d ≡ 1 (mod λ(n)). For n = 15, λ(15) = 4.',
+      'Try d = 3. Check: 3 * 3 = 9, and 9 mod 4 = 1.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-key-rotation',
+    title: 'Repair the Key Rotation',
+    projectId: 'key-schedule-workshop',
+    group: 'Key Schedule',
+    difficulty: 'beginner',
+    prompt:
+      'The key schedule workshop is producing the wrong round-2 ciphertext. The master key and round constant are correct, but the derivation step is rotating by the wrong amount. Fix the rotation so both round outputs match the reference.',
+    startingProject: brokenKeyScheduleWorkshopStart,
+    startingLayout: cloneProject(keyScheduleWorkshopProject.layout),
+    targetProject: keyScheduleWorkshopTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The XOR mixing and round constant are already correct.',
+      'Only the BitShifter rotation amount is wrong.',
+      'The correct rotation is a small left shift — try values between 1 and 4.',
     ],
   },
 ];

@@ -6,19 +6,22 @@ Last updated: March 24, 2026
 
 ## Current State
 
-The project has shipped through `v1.25.0` on `main`.
+The project has shipped through `v1.26.0` on `main`.
 
-Current `main` is now positioned beyond the first arithmetic-expansion milestone.
+Current `main` is now positioned beyond the first number-theoretic foundations milestone.
 That milestone shipped:
-- first bounded arithmetic-expansion vocabulary:
-  - `MulMod` (modular multiplication on equal-width bit words)
-  - `GreaterThan` (strict comparison emitting 1-bit control)
-  - `BitUnpad` (strip padding to recover original width)
-- Analyze-tab transformation view for `GreaterThan` (reuses compare view)
-- first arithmetic-expansion teaching surface:
-  - `Multiply Compare Unpad` demo workspace
-  - `Multiply Compare Unpad` tutorial
-  - `Repair the Unpad Width` challenge
+- first bounded number-theoretic vocabulary:
+  - `ModExp` (modular exponentiation via repeated squaring)
+  - `ModInverse` (modular multiplicative inverse via extended Euclidean algorithm)
+- first key-schedule demonstration using existing primitives:
+  - two-round key derivation from one master key via rotation and XOR
+- number-theoretic teaching surface:
+  - `Toy RSA` demo workspace
+  - `Key Schedule Workshop` demo workspace
+  - `Toy RSA Round-Trip` tutorial
+  - `Key Schedule Workshop` tutorial
+  - `Repair the RSA Exponent` challenge
+  - `Repair the Key Rotation` challenge
 
 The already-shipped protocol-material, block-framing, and symbol/message permutation foundations remain in place:
 - protocol inputs:
@@ -36,8 +39,9 @@ The next strategic direction remains broader than any one subdomain:
 - ship tutorials and challenges alongside each new vocabulary family
 
 The next most important missing vocabulary families are:
-- deeper key-schedule follow-ons after the shipped stream, framing, symbol-permutation, and key-routing foundations
+- deeper key-schedule follow-ons after the shipped key-routing and key-schedule-workshop foundations
 - deeper stream follow-ons and scheduler work after the shipped routing trilogy
+- consolidation and transformation views for newly shipped number-theoretic primitives
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -138,6 +142,7 @@ The following decisions are reflected in shipped code:
 | `v1.23.0` | Key Routing |
 | `v1.24.0` | Symbol Structure |
 | `v1.25.0` | Arithmetic Expansion |
+| `v1.26.0` | Number-Theoretic Foundations |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -205,7 +210,7 @@ Post-`v1.12.0` work merged to `main`:
   - composite unzip with forwarded-param carry-through
   - dark-mode-safe reflector and plugboard pair rendering
 
-Strategic direction after `v1.13.0` (validated through `v1.25.0`):
+Strategic direction after `v1.13.0` (validated through `v1.26.0`):
 - `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` now frames MCW as a cryptographic systems IDE
 - the next roadmap focus is expressive primitive language growth rather than only choosing the next isolated feature line
 - Phase 1 foundations are now shipped through:
@@ -333,6 +338,18 @@ Post-`v1.24.0` work merged to `main`:
   - `Multiply Compare Unpad` tutorial
   - `Repair the Unpad Width` challenge
 
+Post-`v1.25.0` work merged to `main`:
+- bounded number-theoretic foundations slice:
+  - `ModExp` (modular exponentiation via repeated squaring, explicit modulus param)
+  - `ModInverse` (modular multiplicative inverse via extended Euclidean algorithm, explicit modulus param)
+  - modulus-vs-width static validation for both modules
+  - `Toy RSA` demo workspace (visible encrypt/decrypt round-trip with toy key pair)
+  - `Key Schedule Workshop` demo workspace (two-round key derivation from one master key)
+  - `Toy RSA Round-Trip` tutorial
+  - `Key Schedule Workshop` tutorial
+  - `Repair the RSA Exponent` challenge
+  - `Repair the Key Rotation` challenge
+
 ---
 
 ## Safe Next Tasks
@@ -376,7 +393,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed at `v1.25.0` framing.
+All three passed at `v1.26.0` framing.
 
 ---
 
@@ -391,7 +408,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 ### Near-Term Roadmap
 
 1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
-2. **Continue the primitive-language roadmap beyond shipped stream, rotor, symbol-permutation, key-routing, and symbol-structure foundations** — the clearest remaining language families are deeper key-schedule follow-ons, deeper stream follow-ons, and number-theoretic foundations
+2. **Continue the primitive-language roadmap beyond shipped stream, rotor, symbol-permutation, key-routing, symbol-structure, arithmetic, and number-theoretic foundations** — the clearest remaining language families are deeper key-schedule follow-ons, deeper stream follow-ons, and consolidation of the newly shipped number-theoretic surface
 3. **Keep future rotor follow-ons bounded** — reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices, not convenience presets
 4. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
 5. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
@@ -435,6 +452,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `KEY-SCHEDULE-V2.md` | Shipped in `v1.23.0` as first bounded post-groundwork key-routing slice for visible sub-key extraction from one key bus |
 | `SYMBOL-STRUCTURE-V1.md` | Shipped in `v1.24.0` as first bounded post-permutation symbol/message-structure slice for visible contiguous submessage extraction |
 | `ARITHMETIC-EXPANSION-V1.md` | Shipped in `v1.25.0` as first bounded arithmetic-expansion slice for modular multiplication, strict comparison, and unpadding |
+| `NUMBER-THEORETIC-V1.md` | Shipped in `v1.26.0` as first bounded number-theoretic foundations slice for modular exponentiation and modular inverse |
 | `ADVANCED-ROTOR-REALISM-V1.md` | Shipped in `v1.19.0` as bounded rotor-realism slice for ring setting, turnover, and double-step behavior |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |

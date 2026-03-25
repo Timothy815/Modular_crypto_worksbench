@@ -20,6 +20,7 @@ Read BLOCK-FRAMING-V1.md before starting work on block splitting, padding, rejoi
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.
 Read ARITHMETIC-EXPANSION-V1.md before starting work on modular multiplication, strict comparison, unpadding, or number-theoretic follow-ons.
+Read NUMBER-THEORETIC-V1.md before starting work on modular exponentiation, modular inverse, or number-theoretic follow-ons.
 Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
 Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
 
@@ -140,7 +141,7 @@ src/utils/     — Shared helpers
 
 ## Current Resume Point
 
-- Resume from current `main` at `v1.24.0`
+- Resume from current `main` at `v1.26.0`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement
@@ -238,6 +239,16 @@ src/utils/     — Shared helpers
   - `Multiply Compare Unpad` demo workspace
   - `Multiply Compare Unpad` tutorial
   - `Repair the Unpad Width` challenge
+- `v1.26.0` is now the number-theoretic foundations milestone:
+  - `ModExp` (modular exponentiation via repeated squaring)
+  - `ModInverse` (modular multiplicative inverse via extended Euclidean algorithm)
+  - modulus-vs-width static validation for both modules
+  - `Toy RSA` demo workspace
+  - `Key Schedule Workshop` demo workspace
+  - `Toy RSA Round-Trip` tutorial
+  - `Key Schedule Workshop` tutorial
+  - `Repair the RSA Exponent` challenge
+  - `Repair the Key Rotation` challenge
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -306,6 +317,10 @@ What is shipped on `main`:
   - `GreaterThan` for strict comparison emitting 1-bit control
   - `BitUnpad` for stripping padding to recover original width
   - `Multiply Compare Unpad` demo, tutorial, and `Repair the Unpad Width` challenge
+- first bounded number-theoretic foundations vocabulary:
+  - `ModExp` for modular exponentiation via repeated squaring
+  - `ModInverse` for modular multiplicative inverse via extended Euclidean algorithm
+  - `Toy RSA` and `Key Schedule Workshop` demos, tutorials, and challenges
 
 Key contracts to check before implementation:
 - `ENGINE-V1-CONTRACT.md` for engine decisions
@@ -326,6 +341,8 @@ Key contracts to check before implementation:
 - `PROTOCOL-MATERIAL-V1.md` for the shipped first bounded protocol-input slice
 - `ADVANCED-ROTOR-REALISM-V1.md` for the shipped first bounded rotor-realism slice
 - `STREAM-CIPHER-V2.md` for the shipped second bounded stream-machine slice
+- `ARITHMETIC-EXPANSION-V1.md` for the shipped first bounded arithmetic-expansion line
+- `NUMBER-THEORETIC-V1.md` for the shipped first bounded number-theoretic foundations
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family

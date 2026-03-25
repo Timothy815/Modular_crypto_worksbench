@@ -158,6 +158,18 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Interprets each bit vector as a fixed-width unsigned word and wraps on underflow.',
     searchTerms: ['sub', 'subtract', 'mod', 'word', 'bits', 'operator'],
   },
+  ModExp: {
+    sectionId: 'bit-domain',
+    purpose: 'Raises a bit word to a power modulo a given modulus.',
+    detail: 'Computes base^exp mod modulus using repeated squaring. The first step toward public-key teaching: students can see exponentiation as an explicit graph operation.',
+    searchTerms: ['modexp', 'exponentiation', 'power', 'rsa', 'diffie-hellman', 'mod', 'bits', 'number theory'],
+  },
+  ModInverse: {
+    sectionId: 'bit-domain',
+    purpose: 'Computes the modular multiplicative inverse of a bit word.',
+    detail: 'Finds a^(-1) mod modulus using the extended Euclidean algorithm. Throws if no inverse exists. Essential for RSA key derivation.',
+    searchTerms: ['inverse', 'modinverse', 'extended euclidean', 'rsa', 'mod', 'bits', 'number theory'],
+  },
   Modulo: {
     sectionId: 'bit-domain',
     purpose: 'Reduces one fixed-width bit word by an explicit modulus.',

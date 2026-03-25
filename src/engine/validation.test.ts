@@ -18,6 +18,8 @@ import { Gate } from './modules/gate';
 import { HexSource } from './modules/hex-source';
 import { IV } from './modules/iv';
 import { Majority } from './modules/majority';
+import { ModExp } from './modules/mod-exp';
+import { ModInverse } from './modules/mod-inverse';
 import { Modulo } from './modules/modulo';
 import { MulMod } from './modules/mul-mod';
 import { Mux } from './modules/mux';
@@ -94,6 +96,8 @@ const registry: ModuleRegistry = {
   [Gate.id]: Gate,
   [AddMod.id]: AddMod,
   [SubMod.id]: SubMod,
+  [ModExp.id]: ModExp,
+  [ModInverse.id]: ModInverse,
   [Modulo.id]: Modulo,
   [MulMod.id]: MulMod,
   [Permutation.id]: Permutation,
@@ -824,6 +828,54 @@ describe('validateProject', () => {
 
     expect(result.ok).toBe(false);
     expect(result.issues.some((issue) => issue.code === 'signal-width-mismatch')).toBe(true);
+  });
+
+  it('rejects ModExp modulus that exceeds base word range', () => {
+    const project: Project = {
+      modules: [
+        { id: 'base', defId: 'BitSource', params: { stream: [1, 0, 1, 0] } },
+        { id: 'exp', defId: 'BitSource', params: { stream: [0, 0, 1, 0] } },
+        { id: 'mexp', defId: 'ModExp', params: { modulus: 32 } },
+      ],
+      connections: [
+        { from: { moduleId: 'base', port: 'out' }, to: { moduleId: 'mexp', port: 'base' } },
+        { from: { moduleId: 'exp', port: 'out' }, to: { moduleId: 'mexp', port: 'exp' } },
+      ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'mexp' &&
+          issue.message.includes('word range'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects ModInverse modulus that exceeds input word range', () => {
+    const project: Project = {
+      modules: [
+        { id: 'source', defId: 'BitSource', params: { stream: [0, 0, 1, 1] } },
+        { id: 'inv', defId: 'ModInverse', params: { modulus: 32 } },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'inv', port: 'in' } },
+      ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'inv' &&
+          issue.message.includes('word range'),
+      ),
+    ).toBe(true);
   });
 
   it('rejects GreaterThan when static source widths differ', () => {

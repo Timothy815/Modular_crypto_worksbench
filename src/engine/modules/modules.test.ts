@@ -52,6 +52,8 @@ import { BitPad } from './bit-pad';
 import { BitUnpad } from './bit-unpad';
 import { BitWindow } from './bit-window';
 import { GreaterThan } from './greater-than';
+import { ModExp } from './mod-exp';
+import { ModInverse } from './mod-inverse';
 import { MulMod } from './mul-mod';
 import { LFSR } from './lfsr';
 import {
@@ -1383,5 +1385,130 @@ describe('BitUnpad', () => {
     );
 
     expect(result.out).toEqual({ type: 'bits', value: [1, 1] });
+  });
+});
+
+describe('ModExp', () => {
+  it('computes base^exp mod modulus', () => {
+    // 3^5 mod 13 = 243 mod 13 = 9 = [0,0,0,0,1,0,0,1]
+    const result = ModExp.evaluate(
+      {
+        base: { type: 'bits', value: [0, 0, 0, 0, 0, 0, 1, 1] },
+        exp: { type: 'bits', value: [0, 0, 0, 0, 0, 1, 0, 1] },
+      },
+      { modulus: 13 },
+    );
+
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [0, 0, 0, 0, 1, 0, 0, 1],
+    });
+  });
+
+  it('handles exponent of zero (result is 1)', () => {
+    const result = ModExp.evaluate(
+      {
+        base: { type: 'bits', value: [0, 0, 0, 0, 0, 1, 1, 1] },
+        exp: { type: 'bits', value: [0, 0, 0, 0, 0, 0, 0, 0] },
+      },
+      { modulus: 13 },
+    );
+
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [0, 0, 0, 0, 0, 0, 0, 1],
+    });
+  });
+
+  it('supports toy RSA round-trip: encrypt then decrypt', () => {
+    // Toy RSA: p=3, q=5, n=15, phi=8, e=3, d=3 (since 3*3=9, 9 mod 8=1)
+    // Encrypt: 2^3 mod 15 = 8
+    const encrypted = ModExp.evaluate(
+      {
+        base: { type: 'bits', value: [0, 0, 1, 0] },
+        exp: { type: 'bits', value: [0, 0, 1, 1] },
+      },
+      { modulus: 15 },
+    );
+
+    expect(encrypted.out).toEqual({ type: 'bits', value: [1, 0, 0, 0] });
+
+    // Decrypt: 8^3 mod 15 = 512 mod 15 = 2
+    const decrypted = ModExp.evaluate(
+      {
+        base: encrypted.out as { type: 'bits'; value: number[] },
+        exp: { type: 'bits', value: [0, 0, 1, 1] },
+      },
+      { modulus: 15 },
+    );
+
+    expect(decrypted.out).toEqual({ type: 'bits', value: [0, 0, 1, 0] });
+  });
+
+  it('throws when modulus exceeds base word range', () => {
+    expect(() =>
+      ModExp.evaluate(
+        {
+          base: { type: 'bits', value: [1, 0, 1, 0] },
+          exp: { type: 'bits', value: [0, 0, 1, 0] },
+        },
+        { modulus: 32 },
+      ),
+    ).toThrow('word range');
+  });
+});
+
+describe('ModInverse', () => {
+  it('computes modular inverse', () => {
+    // 3^(-1) mod 7 = 5 (since 3*5=15, 15 mod 7=1)
+    const result = ModInverse.evaluate(
+      { in: { type: 'bits', value: [0, 0, 0, 0, 0, 0, 1, 1] } },
+      { modulus: 7 },
+    );
+
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [0, 0, 0, 0, 0, 1, 0, 1],
+    });
+  });
+
+  it('throws when no inverse exists', () => {
+    // 6 has no inverse mod 4 (GCD is 2)
+    expect(() =>
+      ModInverse.evaluate(
+        { in: { type: 'bits', value: [0, 1, 1, 0] } },
+        { modulus: 4 },
+      ),
+    ).toThrow('no inverse');
+  });
+
+  it('verifies round-trip: value * inverse ≡ 1 mod m', () => {
+    // 11^(-1) mod 13
+    const inverse = ModInverse.evaluate(
+      { in: { type: 'bits', value: [0, 0, 0, 0, 1, 0, 1, 1] } },
+      { modulus: 13 },
+    );
+
+    const invValue = (inverse.out as { type: 'bits'; value: number[] }).value;
+    // Verify: 11 * inverse mod 13 = 1
+    const product = MulMod.evaluate(
+      {
+        a: { type: 'bits', value: [0, 0, 0, 0, 1, 0, 1, 1] },
+        b: { type: 'bits', value: invValue },
+      },
+      {},
+    );
+
+    const productNum = (product.out as { type: 'bits'; value: number[] }).value;
+    // Take mod 13
+    const check = Modulo.evaluate(
+      { in: { type: 'bits', value: productNum } },
+      { modulus: 13 },
+    );
+
+    expect(check.out).toEqual({
+      type: 'bits',
+      value: [0, 0, 0, 0, 0, 0, 0, 1],
+    });
   });
 });

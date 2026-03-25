@@ -19,6 +19,8 @@ import { OR } from './or';
 import { NOT } from './not';
 import { AddMod } from './add-mod';
 import { SubMod } from './sub-mod';
+import { ModExp } from './mod-exp';
+import { ModInverse } from './mod-inverse';
 import { Modulo } from './modulo';
 import { MulMod } from './mul-mod';
 import { Majority } from './majority';
@@ -68,6 +70,8 @@ export {
   NOT,
   AddMod,
   SubMod,
+  ModExp,
+  ModInverse,
   Modulo,
   MulMod,
   Majority,
@@ -118,6 +122,8 @@ export const V1_REGISTRY: ModuleRegistry = {
   [NOT.id]: NOT,
   [AddMod.id]: AddMod,
   [SubMod.id]: SubMod,
+  [ModExp.id]: ModExp,
+  [ModInverse.id]: ModInverse,
   [Modulo.id]: Modulo,
   [MulMod.id]: MulMod,
   [Majority.id]: Majority,

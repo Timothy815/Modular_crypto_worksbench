@@ -11,17 +11,16 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.25.0`.
+The repository has shipped through `v1.26.0`.
 
-`main` now includes the completed first milestone of **arithmetic expansion vocabulary**:
+`main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
-  - `MulMod` (modular multiplication on equal-width bit words)
-  - `GreaterThan` (strict comparison emitting 1-bit control)
-  - `BitUnpad` (strip padding to recover original width)
-- Analyze transformation view for `GreaterThan`
-- `Multiply Compare Unpad` demo workspace
-- `Multiply Compare Unpad` tutorial
-- `Repair the Unpad Width` challenge
+  - `ModExp` (modular exponentiation via repeated squaring)
+  - `ModInverse` (modular multiplicative inverse via extended Euclidean algorithm)
+- `Toy RSA` demo workspace (visible encrypt/decrypt round-trip)
+- `Key Schedule Workshop` demo workspace (two-round key derivation from one master key)
+- `Toy RSA Round-Trip` and `Key Schedule Workshop` tutorials
+- `Repair the RSA Exponent` and `Repair the Key Rotation` challenges
 
 Shipped stream, rotor, protocol/framing, and symbol/message permutation foundations remain in place:
 - stream-machine expressiveness:
@@ -101,6 +100,7 @@ Implemented and shipped:
 - `v1.23.0` Key Routing milestone
 - `v1.24.0` Symbol Structure milestone
 - `v1.25.0` Arithmetic Expansion milestone
+- `v1.26.0` Number-Theoretic Foundations milestone
 - first bounded hash collision challenge:
   - seeded `Find A Hash Collision` challenge
   - same-digest / different-input success rule
@@ -171,6 +171,7 @@ Implemented and shipped:
 - `KEY-SCHEDULE-V2.md`: shipped first bounded post-groundwork key-routing slice for visible sub-key extraction from one key bus
 - `SYMBOL-STRUCTURE-V1.md`: shipped first bounded post-permutation symbol/message-structure slice for visible contiguous submessage extraction
 - `ARITHMETIC-EXPANSION-V1.md`: shipped first bounded arithmetic-expansion slice for modular multiplication, strict comparison, and unpadding
+- `NUMBER-THEORETIC-V1.md`: shipped first bounded number-theoretic foundations slice for modular exponentiation and modular inverse
 - `ADVANCED-ROTOR-REALISM-V1.md`: shipped first bounded rotor-realism slice for ring setting, turnover, and double-step behavior
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views

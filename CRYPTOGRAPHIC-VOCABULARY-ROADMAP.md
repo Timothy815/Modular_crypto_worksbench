@@ -1,6 +1,6 @@
 # MCW — Cryptographic Vocabulary Roadmap
 
-Status: Active strategic roadmap after `v1.25.0`.
+Status: Active strategic roadmap after `v1.26.0`.
 
 This document reframes MCW as a cryptographic systems IDE:
 - not a code generator
@@ -223,12 +223,15 @@ Still needed over time:
 - later iterator-aware key distribution only if it stays inspectable
 - richer schedule-construction patterns beyond one bounded window primitive
 
-### 9. Number-Theoretic / Asymmetric Foundations
+### 9. Number-Theoretic / Asymmetric Foundations — *first slice shipped*
 
-Longer-term family, but must remain legible as a future destination:
-- modular multiplication
-- modular exponentiation
-- inverse
+First slice shipped in `v1.25.0` and `v1.26.0`:
+- modular multiplication (`MulMod`) — shipped in `v1.25.0`
+- modular exponentiation (`ModExp`) — shipped in `v1.26.0`
+- modular inverse (`ModInverse`) — shipped in `v1.26.0`
+- `Toy RSA` and `Key Schedule Workshop` demos/tutorials/challenges
+
+Still open:
 - gcd / related arithmetic helpers
 - finite-field and group-operation families later
 
@@ -311,8 +314,11 @@ Shipped in `v1.16.0`:
 - `Repair the Split Width` and `Repair the Pad Width` challenges
 - Analyze transformation views for `BitSplit` and `BitPad`
 
+Shipped in `v1.25.0`:
+- `BitUnpad` (inverse of `BitPad`)
+- `Multiply Compare Unpad` demo/tutorial/challenge
+
 Still open:
-- unpad semantics
 - message-level permutation / inverse-permutation authoring
 
 ### Phase 4 — Scheduler, Key Routing, And Protocol Inputs — *first slices shipped*
@@ -343,22 +349,27 @@ Teaching additions:
 - round-key evolution tutorial
 - IV/nonce misuse teaching challenge
 
-### Phase 5 — Number Theory And Public-Key Foundations
+### Phase 5 — Number Theory And Public-Key Foundations — *first slice shipped*
 
 Purpose:
 - open the path toward asymmetric systems without abandoning explicit structure
 
-Likely bounded slices:
-- `NUMBER-THEORETIC-OPERATORS-V1.md`
-- `PUBLIC-KEY-FOUNDATIONS-V1.md`
+Shipped in `v1.25.0`:
+- `MulMod` — modular multiplication on equal-width bit words
+- `GreaterThan` — strict comparison emitting 1-bit control
 
-Likely deliverables:
-- modular arithmetic family
-- inverses / exponentiation groundwork
-- simple public-key teaching demos later
+Shipped in `v1.26.0`:
+- `ModExp` — modular exponentiation via repeated squaring
+- `ModInverse` — modular multiplicative inverse via extended Euclidean algorithm
+- `Toy RSA` demo/tutorial/challenge
+- `Key Schedule Workshop` demo/tutorial/challenge
+
+Still open:
+- gcd / related arithmetic helpers
+- finite-field and group-operation families later
+- simple public-key teaching demos beyond the toy RSA round-trip
 
 Teaching additions:
-- modular arithmetic tutorial
 - public-key intuition labs only after the operator family is stable
 
 ---
@@ -405,13 +416,14 @@ To protect the product identity, avoid:
 
 ## Current Conclusion
 
-The roadmap is now validated through shipped foundations across four phases:
+The roadmap is now validated through shipped foundations across all five phases:
 - Phase 1: `CRYPTO-OPERATORS-V1.md` and `CONTROL-PRIMITIVES-V1.md` (shipped in `v1.14.0` / `v1.15.0`)
 - Phase 2: `STREAM-CIPHER-V1.md`, `STREAM-CIPHER-V2.md`, `STREAM-CIPHER-V3.md`, and `ADVANCED-ROTOR-REALISM-V1.md` shipped slices (`v1.18.0` / `v1.20.0` / `v1.21.0` / `v1.19.0`)
-- Phase 3: `BLOCK-FRAMING-V1.md` (shipped in `v1.16.0`)
+- Phase 3: `BLOCK-FRAMING-V1.md` (shipped in `v1.16.0`) and `ARITHMETIC-EXPANSION-V1.md` (shipped in `v1.25.0`)
 - Phase 4: `PROTOCOL-MATERIAL-V1.md` and `KEY-SCHEDULE-V2.md` first slices (shipped in `v1.17.0` / `v1.23.0`)
+- Phase 5: `NUMBER-THEORETIC-V1.md` first slice (shipped in `v1.26.0`) — `ModExp`, `ModInverse`, toy RSA, key schedule workshop
 
-The next strategic direction after `v1.25.0` should be:
+The next strategic direction after `v1.26.0` should be:
 
 > keep expanding MCW into a fully expressive cryptographic machine language
 

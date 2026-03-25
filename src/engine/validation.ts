@@ -25,6 +25,8 @@ import { validatePlugboardWiringParam } from './modules/plugboard';
 import { validateReflectorWiringParam } from './modules/reflector';
 import { validateRotorParam } from './modules/rotor';
 import { validateSBoxTableParam } from './modules/s-box';
+import { validateModExpParam } from './modules/mod-exp';
+import { validateModInverseParam } from './modules/mod-inverse';
 import { validateModuloParam } from './modules/modulo';
 import { validateCounterParam } from './modules/counter';
 import { validateBitSplitParam } from './modules/bit-split';
@@ -189,6 +191,14 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'Modulo' && field.key === 'modulus') {
     return validateModuloParam(value);
+  }
+
+  if (def.id === 'ModExp') {
+    return validateModExpParam(field.key, value);
+  }
+
+  if (def.id === 'ModInverse') {
+    return validateModInverseParam(field.key, value);
   }
 
   if (def.id === 'Counter') {
@@ -360,9 +370,13 @@ function inferStaticBitWidth(
     case 'NOT':
     case 'BitShifter':
     case 'Modulo':
+    case 'ModInverse':
     case 'SBox':
     case 'Gate':
       width = inferFromInput();
+      break;
+    case 'ModExp':
+      width = inferFromInput('base');
       break;
     case 'Equals':
     case 'AtLeast':
@@ -457,7 +471,7 @@ function validateBitWidthConstraints(
       }
     }
 
-    if (def.id === 'Modulo') {
+    if (def.id === 'Modulo' || def.id === 'ModInverse') {
       const upstream = incomingConnections.get(`${moduleInstance.id}:in`);
       const modulus = moduleInstance.params.modulus;
       if (!upstream || typeof modulus !== 'number' || !Number.isInteger(modulus) || modulus <= 0) {
@@ -468,7 +482,24 @@ function validateBitWidthConstraints(
       if (inputWidth !== null && modulus > 2 ** inputWidth) {
         issues.push({
           code: 'invalid-param-type',
-          message: `Module "${moduleInstance.id}" parameter "modulus" is invalid. Modulo modulus must not exceed the input word range for a ${inputWidth}-bit input.`,
+          message: `Module "${moduleInstance.id}" parameter "modulus" is invalid. ${def.id} modulus must not exceed the input word range for a ${inputWidth}-bit input.`,
+          moduleId: moduleInstance.id,
+        });
+      }
+    }
+
+    if (def.id === 'ModExp') {
+      const upstream = incomingConnections.get(`${moduleInstance.id}:base`);
+      const modulus = moduleInstance.params.modulus;
+      if (!upstream || typeof modulus !== 'number' || !Number.isInteger(modulus) || modulus < 2) {
+        continue;
+      }
+
+      const baseWidth = getWidth(upstream.moduleId);
+      if (baseWidth !== null && modulus > 2 ** baseWidth) {
+        issues.push({
+          code: 'invalid-param-type',
+          message: `Module "${moduleInstance.id}" parameter "modulus" is invalid. ModExp modulus must not exceed the base word range for a ${baseWidth}-bit input.`,
           moduleId: moduleInstance.id,
         });
       }
