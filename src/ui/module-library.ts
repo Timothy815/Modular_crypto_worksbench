@@ -164,6 +164,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Interprets the bit vector as an unsigned word and returns the remainder in the same width.',
     searchTerms: ['modulo', 'remainder', 'mod', 'word', 'bits', 'operator'],
   },
+  MulMod: {
+    sectionId: 'bit-domain',
+    purpose: 'Multiplies two equal-width bit words modulo 2^n.',
+    detail: 'Interprets each bit vector as a fixed-width unsigned word and wraps on overflow. The first step toward number-theoretic expressiveness.',
+    searchTerms: ['mul', 'multiply', 'mod', 'multiplication', 'arx', 'word', 'bits', 'operator', 'number theory'],
+  },
   Majority: {
     sectionId: 'bit-domain',
     purpose: 'Emits a 1-bit result when at least two of three 1-bit inputs are active.',
@@ -181,6 +187,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Routes one 1-bit input into one of two visible outputs using a 1-bit control input.',
     detail: 'Useful for routed-clock and scheduler-style stream machines where control decides which downstream path becomes active.',
     searchTerms: ['demux', 'route', 'routing', 'scheduler', 'stream', 'clock', 'bits', 'operator'],
+  },
+  GreaterThan: {
+    sectionId: 'bit-domain',
+    purpose: 'Emits a one-bit control signal when the first bit word is strictly greater than the second.',
+    detail: 'Useful for strict-comparison pulses and asymmetric threshold logic where "at least" is not enough.',
+    searchTerms: ['greater than', 'compare', 'threshold', 'control', 'pulse', 'bits'],
   },
   Equals: {
     sectionId: 'bit-domain',
@@ -241,6 +253,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Pads a bit vector to a target width with zeros or ones.',
     detail: 'Use this when a short bit vector needs to reach a required block size before entering a fixed-width transform.',
     searchTerms: ['pad', 'padding', 'extend', 'fill', 'block', 'width', 'bits'],
+  },
+  BitUnpad: {
+    sectionId: 'transforms',
+    purpose: 'Strips padding from a bit vector to recover the original width.',
+    detail: 'Use this after a padded transform when you need to discard the added bits and return to the original signal width.',
+    searchTerms: ['unpad', 'strip', 'trim', 'remove', 'padding', 'block', 'width', 'bits'],
   },
   BitWindow: {
     sectionId: 'transforms',

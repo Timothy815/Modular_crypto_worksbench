@@ -6,9 +6,11 @@ import { AND } from './modules/and';
 import { AtLeast } from './modules/at-least';
 import { BaudotSource } from './modules/baudot-source';
 import { BitPad } from './modules/bit-pad';
+import { BitUnpad } from './modules/bit-unpad';
 import { BitSource } from './modules/bit-source';
 import { BitSplit } from './modules/bit-split';
 import { BitWindow } from './modules/bit-window';
+import { GreaterThan } from './modules/greater-than';
 import { Counter } from './modules/counter';
 import { Demux } from './modules/demux';
 import { Equals } from './modules/equals';
@@ -17,6 +19,7 @@ import { HexSource } from './modules/hex-source';
 import { IV } from './modules/iv';
 import { Majority } from './modules/majority';
 import { Modulo } from './modules/modulo';
+import { MulMod } from './modules/mul-mod';
 import { Mux } from './modules/mux';
 import { Nonce } from './modules/nonce';
 import { NOT } from './modules/not';
@@ -92,6 +95,7 @@ const registry: ModuleRegistry = {
   [AddMod.id]: AddMod,
   [SubMod.id]: SubMod,
   [Modulo.id]: Modulo,
+  [MulMod.id]: MulMod,
   [Permutation.id]: Permutation,
   [SymbolPermutation.id]: SymbolPermutation,
   [SymbolWindow.id]: SymbolWindow,
@@ -102,6 +106,8 @@ const registry: ModuleRegistry = {
   [BitSplit.id]: BitSplit,
   [BitWindow.id]: BitWindow,
   [BitPad.id]: BitPad,
+  [BitUnpad.id]: BitUnpad,
+  [GreaterThan.id]: GreaterThan,
   [Demux.id]: Demux,
   [TextInput.id]: TextInput,
 };
@@ -781,5 +787,61 @@ describe('validateProject', () => {
           issue.message.includes('targetWidth'),
       ),
     ).toBe(true);
+  });
+
+  it('rejects BitUnpad originalWidth that is not a positive integer', () => {
+    const project: Project = {
+      modules: [{ id: 'unpad', defId: 'BitUnpad', params: { originalWidth: 0 } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'unpad' &&
+          issue.message.includes('originalWidth'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects MulMod when static source widths differ', () => {
+    const project: Project = {
+      modules: [
+        { id: 'left', defId: 'BitSource', params: { stream: [1, 0, 1, 0] } },
+        { id: 'right', defId: 'BitSource', params: { stream: [1, 0, 1] } },
+        { id: 'mul', defId: 'MulMod', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'left', port: 'out' }, to: { moduleId: 'mul', port: 'a' } },
+        { from: { moduleId: 'right', port: 'out' }, to: { moduleId: 'mul', port: 'b' } },
+      ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'signal-width-mismatch')).toBe(true);
+  });
+
+  it('rejects GreaterThan when static source widths differ', () => {
+    const project: Project = {
+      modules: [
+        { id: 'left', defId: 'BitSource', params: { stream: [1, 0, 1, 0] } },
+        { id: 'right', defId: 'BitSource', params: { stream: [1, 0, 1] } },
+        { id: 'gt', defId: 'GreaterThan', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'left', port: 'out' }, to: { moduleId: 'gt', port: 'a' } },
+        { from: { moduleId: 'right', port: 'out' }, to: { moduleId: 'gt', port: 'b' } },
+      ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'signal-width-mismatch')).toBe(true);
   });
 });

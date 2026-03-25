@@ -29,6 +29,7 @@ import { validateModuloParam } from './modules/modulo';
 import { validateCounterParam } from './modules/counter';
 import { validateBitSplitParam } from './modules/bit-split';
 import { validateBitPadParam } from './modules/bit-pad';
+import { validateBitUnpadParam } from './modules/bit-unpad';
 import { validateBitWindowParam } from './modules/bit-window';
 import {
   validateProtocolMaterialParam,
@@ -42,8 +43,10 @@ const EQUAL_WIDTH_BINARY_MODULE_IDS = new Set([
   'OR',
   'AddMod',
   'SubMod',
+  'MulMod',
   'Equals',
   'AtLeast',
+  'GreaterThan',
 ]);
 
 const SINGLE_BIT_TERNARY_MODULE_IDS = new Set(['Majority']);
@@ -200,6 +203,10 @@ function getModuleSpecificParamMessage(
     return validateBitPadParam(field.key, value);
   }
 
+  if (def.id === 'BitUnpad') {
+    return validateBitUnpadParam(field.key, value);
+  }
+
   if (def.id === 'BitWindow') {
     return validateBitWindowParam(field.key, value);
   }
@@ -347,6 +354,7 @@ function inferStaticBitWidth(
     case 'OR':
     case 'AddMod':
     case 'SubMod':
+    case 'MulMod':
       width = inferBinaryWidth();
       break;
     case 'NOT':
@@ -358,6 +366,7 @@ function inferStaticBitWidth(
       break;
     case 'Equals':
     case 'AtLeast':
+    case 'GreaterThan':
     case 'Majority':
       width = 1;
       break;
@@ -387,6 +396,12 @@ function inferStaticBitWidth(
         const inputW = inferFromInput();
         width = inputW !== null && inputW >= tw ? inputW : tw;
       }
+      break;
+    }
+    case 'BitUnpad': {
+      const ow = instance.params.originalWidth;
+      width =
+        typeof ow === 'number' && Number.isInteger(ow) && ow >= 1 ? ow : null;
       break;
     }
     case 'BitWindow': {

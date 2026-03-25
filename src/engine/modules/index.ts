@@ -20,9 +20,11 @@ import { NOT } from './not';
 import { AddMod } from './add-mod';
 import { SubMod } from './sub-mod';
 import { Modulo } from './modulo';
+import { MulMod } from './mul-mod';
 import { Majority } from './majority';
 import { Mux } from './mux';
 import { Demux } from './demux';
+import { GreaterThan } from './greater-than';
 import { Counter } from './counter';
 import { Equals } from './equals';
 import { AtLeast } from './at-least';
@@ -39,6 +41,7 @@ import { BitShifter } from './bit-shifter';
 import { BitJoin } from './bit-join';
 import { BitSplit } from './bit-split';
 import { BitPad } from './bit-pad';
+import { BitUnpad } from './bit-unpad';
 import { BitWindow } from './bit-window';
 import { LFSR } from './lfsr';
 import { SBox } from './s-box';
@@ -66,9 +69,11 @@ export {
   AddMod,
   SubMod,
   Modulo,
+  MulMod,
   Majority,
   Mux,
   Demux,
+  GreaterThan,
   Counter,
   Equals,
   AtLeast,
@@ -85,6 +90,7 @@ export {
   BitJoin,
   BitSplit,
   BitPad,
+  BitUnpad,
   BitWindow,
   LFSR,
   SBox,
@@ -113,9 +119,11 @@ export const V1_REGISTRY: ModuleRegistry = {
   [AddMod.id]: AddMod,
   [SubMod.id]: SubMod,
   [Modulo.id]: Modulo,
+  [MulMod.id]: MulMod,
   [Majority.id]: Majority,
   [Mux.id]: Mux,
   [Demux.id]: Demux,
+  [GreaterThan.id]: GreaterThan,
   [Counter.id]: Counter,
   [Equals.id]: Equals,
   [AtLeast.id]: AtLeast,
@@ -132,6 +140,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [BitJoin.id]: BitJoin,
   [BitSplit.id]: BitSplit,
   [BitPad.id]: BitPad,
+  [BitUnpad.id]: BitUnpad,
   [BitWindow.id]: BitWindow,
   [LFSR.id]: LFSR,
   [SBox.id]: SBox,

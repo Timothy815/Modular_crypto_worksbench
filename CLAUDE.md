@@ -19,6 +19,7 @@ Read CONTROL-PRIMITIVES-V1.md before starting work on counters, triggers, gates,
 Read BLOCK-FRAMING-V1.md before starting work on block splitting, padding, rejoining, or framing follow-ons.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.
+Read ARITHMETIC-EXPANSION-V1.md before starting work on modular multiplication, strict comparison, unpadding, or number-theoretic follow-ons.
 Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
 Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
 
@@ -229,6 +230,14 @@ src/utils/     — Shared helpers
   - `Visible Message Window` demo workspace
   - `Visible Message Window` tutorial
   - `Repair the Message Window` challenge
+- `v1.25.0` is now the arithmetic-expansion milestone:
+  - `MulMod` (modular multiplication on equal-width bit words)
+  - `GreaterThan` (strict comparison emitting 1-bit control)
+  - `BitUnpad` (strip padding to recover original width)
+  - Analyze transformation view for `GreaterThan` (reuses compare view)
+  - `Multiply Compare Unpad` demo workspace
+  - `Multiply Compare Unpad` tutorial
+  - `Repair the Unpad Width` challenge
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -292,6 +301,11 @@ What is shipped on `main`:
   - static out-of-range window validation when input length is knowable
   - `Visible Message Window` demo, tutorial, and `Repair the Message Window` challenge
   - Analyze transformation view for `SymbolWindow`
+- first bounded arithmetic-expansion vocabulary:
+  - `MulMod` for modular multiplication on equal-width bit words
+  - `GreaterThan` for strict comparison emitting 1-bit control
+  - `BitUnpad` for stripping padding to recover original width
+  - `Multiply Compare Unpad` demo, tutorial, and `Repair the Unpad Width` challenge
 
 Key contracts to check before implementation:
 - `ENGINE-V1-CONTRACT.md` for engine decisions

@@ -1,6 +1,6 @@
 # MCW — Cryptographic Vocabulary Roadmap
 
-Status: Active strategic roadmap after `v1.24.0`.
+Status: Active strategic roadmap after `v1.25.0`.
 
 This document reframes MCW as a cryptographic systems IDE:
 - not a code generator
@@ -117,16 +117,17 @@ It is not yet fully expressive.
 
 The most important missing families are listed below. Families that have already shipped their first milestone are marked; remaining items within those families are still open.
 
-### 1. Operator Vocabulary — *first milestone shipped in `v1.14.0`*
+### 1. Operator Vocabulary — *first milestone shipped in `v1.14.0`, expanded in `v1.25.0`*
 
 Shipped:
 - `AND`, `OR`, `NOT`
 - `AddMod`, `SubMod`, `Modulo`
+- `MulMod` (v1.25.0)
 - `Equals`, `Gate`
+- `GreaterThan` (v1.25.0)
 
 Still open over time:
 - `Mux` / demux
-- `GreaterThan` / richer threshold-style checks
 - inversion helpers where structurally honest
 
 ### 2. Control / Trigger Vocabulary — *first milestone shipped in `v1.15.0`*
@@ -160,15 +161,15 @@ Still needed over time:
 - register-bank patterns
 - explicit keystream split/use patterns
 
-### 4. Block / Framing Vocabulary — *first milestone shipped in `v1.16.0`*
+### 4. Block / Framing Vocabulary — *first milestone shipped in `v1.16.0`, expanded in `v1.25.0`*
 
 Shipped:
 - `BitSplit` (split one bit vector into left/right halves)
 - `BitPad` (pad to target width)
+- `BitUnpad` (strip padding to recover original width) (v1.25.0)
 - reuse of existing `BitJoin` for rejoining
 
 Still open over time:
-- unpad
 - explicit chaining helpers
 - message-boundary handling beyond single-vector framing
 
@@ -410,7 +411,7 @@ The roadmap is now validated through shipped foundations across four phases:
 - Phase 3: `BLOCK-FRAMING-V1.md` (shipped in `v1.16.0`)
 - Phase 4: `PROTOCOL-MATERIAL-V1.md` and `KEY-SCHEDULE-V2.md` first slices (shipped in `v1.17.0` / `v1.23.0`)
 
-The next strategic direction after `v1.24.0` should be:
+The next strategic direction after `v1.25.0` should be:
 
 > keep expanding MCW into a fully expressive cryptographic machine language
 

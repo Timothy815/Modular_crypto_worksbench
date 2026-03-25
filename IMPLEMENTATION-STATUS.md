@@ -6,19 +6,19 @@ Last updated: March 24, 2026
 
 ## Current State
 
-The project has shipped through `v1.24.0` on `main`.
+The project has shipped through `v1.25.0` on `main`.
 
-Current `main` is now positioned beyond the first completed symbol/message-structure milestone.
+Current `main` is now positioned beyond the first arithmetic-expansion milestone.
 That milestone shipped:
-- first bounded post-permutation symbol/message-structure vocabulary:
-  - `SymbolWindow`
-- explicit contiguous `symbol`-domain `start` / `width` extraction
-- static out-of-range symbol-window validation when input length is knowable
-- Analyze-tab transformation view for `SymbolWindow`
-- first symbol-structure teaching surface:
-  - `Visible Message Window` demo workspace
-  - `Visible Message Window` tutorial
-  - `Repair the Message Window` challenge
+- first bounded arithmetic-expansion vocabulary:
+  - `MulMod` (modular multiplication on equal-width bit words)
+  - `GreaterThan` (strict comparison emitting 1-bit control)
+  - `BitUnpad` (strip padding to recover original width)
+- Analyze-tab transformation view for `GreaterThan` (reuses compare view)
+- first arithmetic-expansion teaching surface:
+  - `Multiply Compare Unpad` demo workspace
+  - `Multiply Compare Unpad` tutorial
+  - `Repair the Unpad Width` challenge
 
 The already-shipped protocol-material, block-framing, and symbol/message permutation foundations remain in place:
 - protocol inputs:
@@ -137,6 +137,7 @@ The following decisions are reflected in shipped code:
 | `v1.22.0` | Symbol Permutation |
 | `v1.23.0` | Key Routing |
 | `v1.24.0` | Symbol Structure |
+| `v1.25.0` | Arithmetic Expansion |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -204,7 +205,7 @@ Post-`v1.12.0` work merged to `main`:
   - composite unzip with forwarded-param carry-through
   - dark-mode-safe reflector and plugboard pair rendering
 
-Strategic direction after `v1.13.0` (validated through `v1.24.0`):
+Strategic direction after `v1.13.0` (validated through `v1.25.0`):
 - `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` now frames MCW as a cryptographic systems IDE
 - the next roadmap focus is expressive primitive language growth rather than only choosing the next isolated feature line
 - Phase 1 foundations are now shipped through:
@@ -322,6 +323,16 @@ Post-`v1.23.0` work merged to `main`:
   - `Visible Message Window` tutorial
   - `Repair the Message Window` challenge
 
+Post-`v1.24.0` work merged to `main`:
+- bounded arithmetic-expansion slice:
+  - `MulMod` (modular multiplication on equal-width bit words)
+  - `GreaterThan` (strict comparison emitting 1-bit control)
+  - `BitUnpad` (strip padding to recover original width)
+  - Analyze-tab transformation view for `GreaterThan` (reuses compare view)
+  - `Multiply Compare Unpad` demo workspace
+  - `Multiply Compare Unpad` tutorial
+  - `Repair the Unpad Width` challenge
+
 ---
 
 ## Safe Next Tasks
@@ -365,7 +376,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed at `v1.24.0` framing.
+All three passed at `v1.25.0` framing.
 
 ---
 
@@ -423,6 +434,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `SYMBOL-PERMUTATION-V1.md` | Shipped in `v1.22.0` as first bounded symbol/message permutation slice for visible symbol-order routing |
 | `KEY-SCHEDULE-V2.md` | Shipped in `v1.23.0` as first bounded post-groundwork key-routing slice for visible sub-key extraction from one key bus |
 | `SYMBOL-STRUCTURE-V1.md` | Shipped in `v1.24.0` as first bounded post-permutation symbol/message-structure slice for visible contiguous submessage extraction |
+| `ARITHMETIC-EXPANSION-V1.md` | Shipped in `v1.25.0` as first bounded arithmetic-expansion slice for modular multiplication, strict comparison, and unpadding |
 | `ADVANCED-ROTOR-REALISM-V1.md` | Shipped in `v1.19.0` as bounded rotor-realism slice for ring setting, turnover, and double-step behavior |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |

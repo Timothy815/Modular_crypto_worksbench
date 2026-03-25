@@ -31,6 +31,7 @@ const routedClockKeystreamProject = demoProjects.find((project) => project.id ==
 const advancedRotorSteppingProject = demoProjects.find((project) => project.id === 'advanced-rotor-stepping');
 const visibleSymbolScrambleProject = demoProjects.find((project) => project.id === 'visible-symbol-scramble');
 const visibleSubkeyBusProject = demoProjects.find((project) => project.id === 'visible-subkey-bus');
+const multiplyCompareUnpadProject = demoProjects.find((project) => project.id === 'multiply-compare-unpad');
 const visibleMessageWindowProject = demoProjects.find((project) => project.id === 'visible-message-window');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
@@ -114,6 +115,9 @@ if (!visibleSymbolScrambleProject) {
 if (!visibleSubkeyBusProject) {
   throw new Error('Expected visible-subkey-bus demo project to seed starter challenges.');
 }
+if (!multiplyCompareUnpadProject) {
+  throw new Error('Expected multiply-compare-unpad demo project to seed starter challenges.');
+}
 if (!visibleMessageWindowProject) {
   throw new Error('Expected visible-message-window demo project to seed starter challenges.');
 }
@@ -179,6 +183,8 @@ const visibleSymbolScrambleTarget = cloneProject(visibleSymbolScrambleProject.pr
 const brokenVisibleSymbolScrambleStart = cloneProject(visibleSymbolScrambleProject.project);
 const visibleSubkeyBusTarget = cloneProject(visibleSubkeyBusProject.project);
 const brokenVisibleSubkeyBusStart = cloneProject(visibleSubkeyBusProject.project);
+const multiplyCompareUnpadTarget = cloneProject(multiplyCompareUnpadProject.project);
+const brokenMultiplyCompareUnpadStart = cloneProject(multiplyCompareUnpadProject.project);
 const visibleMessageWindowTarget = cloneProject(visibleMessageWindowProject.project);
 const brokenVisibleMessageWindowStart = cloneProject(visibleMessageWindowProject.project);
 const sequentialTarget = cloneProject(sequentialProject.project);
@@ -266,6 +272,14 @@ if (!brokenSymbolWindowTwo) {
   throw new Error('Expected visible-message-window demo project to contain window-2.');
 }
 brokenSymbolWindowTwo.params.start = 1;
+
+const brokenUnpadModule = brokenMultiplyCompareUnpadStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'unpad',
+);
+if (!brokenUnpadModule) {
+  throw new Error('Expected multiply-compare-unpad demo project to contain unpad.');
+}
+brokenUnpadModule.params.originalWidth = 12;
 
 const brokenBaudotSource = brokenBaudotStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'source',
@@ -922,6 +936,27 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The letters themselves are already correct; only their positions are wrong.',
       'Focus on the SymbolPermutation order, not on changing the input word.',
       'A permutation reorders existing symbols. It does not replace M with another letter.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-unpad-width',
+    title: 'Repair the Unpad Width',
+    projectId: 'multiply-compare-unpad',
+    group: 'Arithmetic Expansion',
+    difficulty: 'beginner',
+    prompt:
+      'This machine multiplies two hex values and then round-trips the product through pad and unpad, but the unpad is stripping the wrong number of bits. Fix the originalWidth so the round-trip recovers the correct product.',
+    startingProject: brokenMultiplyCompareUnpadStart,
+    startingLayout: cloneProject(multiplyCompareUnpadProject.layout),
+    targetProject: multiplyCompareUnpadTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The MulMod and BitPad modules are already correct.',
+      'Focus on the originalWidth parameter of BitUnpad.',
+      'The input sources are 8-bit hex values, so the original width before padding was 8.',
     ],
   },
   {

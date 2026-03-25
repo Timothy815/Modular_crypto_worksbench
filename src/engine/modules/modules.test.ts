@@ -49,7 +49,10 @@ import { BitShifter } from './bit-shifter';
 import { BitJoin } from './bit-join';
 import { BitSplit } from './bit-split';
 import { BitPad } from './bit-pad';
+import { BitUnpad } from './bit-unpad';
 import { BitWindow } from './bit-window';
+import { GreaterThan } from './greater-than';
+import { MulMod } from './mul-mod';
 import { LFSR } from './lfsr';
 import {
   buildIdentitySBoxTable,
@@ -1262,5 +1265,123 @@ describe('BitWindow', () => {
         { start: 0, width: 2 },
       ),
     ).toThrow('BitWindow expects a bits signal');
+  });
+});
+
+describe('MulMod', () => {
+  it('multiplies two bit words modulo 2^n', () => {
+    // 3 * 5 = 15 in 8-bit: [0,0,0,0,1,1,1,1]
+    const result = MulMod.evaluate(
+      {
+        a: { type: 'bits', value: [0, 0, 0, 0, 0, 0, 1, 1] },
+        b: { type: 'bits', value: [0, 0, 0, 0, 0, 1, 0, 1] },
+      },
+      {},
+    );
+
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [0, 0, 0, 0, 1, 1, 1, 1],
+    });
+  });
+
+  it('wraps on overflow', () => {
+    // 200 * 2 = 400, mod 256 = 144 = [1,0,0,1,0,0,0,0]
+    const result = MulMod.evaluate(
+      {
+        a: { type: 'bits', value: [1, 1, 0, 0, 1, 0, 0, 0] },
+        b: { type: 'bits', value: [0, 0, 0, 0, 0, 0, 1, 0] },
+      },
+      {},
+    );
+
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [1, 0, 0, 1, 0, 0, 0, 0],
+    });
+  });
+
+  it('returns zero for empty inputs', () => {
+    const result = MulMod.evaluate(
+      { a: { type: 'bits', value: [] }, b: { type: 'bits', value: [] } },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [] });
+  });
+});
+
+describe('GreaterThan', () => {
+  it('emits 1 when a > b', () => {
+    const result = GreaterThan.evaluate(
+      {
+        a: { type: 'bits', value: [1, 0, 1, 0] },
+        b: { type: 'bits', value: [0, 1, 0, 1] },
+      },
+      {},
+    );
+
+    expect(result.out).toEqual({ type: 'bits', value: [1] });
+  });
+
+  it('emits 0 when a === b', () => {
+    const result = GreaterThan.evaluate(
+      {
+        a: { type: 'bits', value: [0, 1, 0, 1] },
+        b: { type: 'bits', value: [0, 1, 0, 1] },
+      },
+      {},
+    );
+
+    expect(result.out).toEqual({ type: 'bits', value: [0] });
+  });
+
+  it('emits 0 when a < b', () => {
+    const result = GreaterThan.evaluate(
+      {
+        a: { type: 'bits', value: [0, 0, 1, 0] },
+        b: { type: 'bits', value: [1, 0, 0, 0] },
+      },
+      {},
+    );
+
+    expect(result.out).toEqual({ type: 'bits', value: [0] });
+  });
+});
+
+describe('BitUnpad', () => {
+  it('strips right-side padding to recover the original width', () => {
+    const result = BitUnpad.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 0, 0, 0, 0, 0] } },
+      { originalWidth: 3, side: 'right' },
+    );
+
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1] });
+  });
+
+  it('strips left-side padding to recover the original width', () => {
+    const result = BitUnpad.evaluate(
+      { in: { type: 'bits', value: [0, 0, 0, 0, 0, 1, 0, 1] } },
+      { originalWidth: 3, side: 'left' },
+    );
+
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1] });
+  });
+
+  it('passes through unchanged when input is already at or below original width', () => {
+    const result = BitUnpad.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1] } },
+      { originalWidth: 4, side: 'right' },
+    );
+
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1] });
+  });
+
+  it('defaults to right-side stripping', () => {
+    const result = BitUnpad.evaluate(
+      { in: { type: 'bits', value: [1, 1, 0, 0, 0, 0] } },
+      { originalWidth: 2 },
+    );
+
+    expect(result.out).toEqual({ type: 'bits', value: [1, 1] });
   });
 });

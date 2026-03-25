@@ -3,6 +3,44 @@ import type { GuidedTutorial } from './tutorials';
 export const STARTER_TUTORIALS: GuidedTutorial[] = [
   {
     version: 1,
+    id: 'multiply-compare-unpad',
+    title: 'Multiply Compare Unpad',
+    group: 'Arithmetic Expansion',
+    summary: 'Learn how modular multiplication, strict comparison, and unpadding extend the arithmetic vocabulary beyond addition.',
+    projectId: 'multiply-compare-unpad',
+    steps: [
+      {
+        id: 'mul-inputs',
+        title: 'Two Hex Inputs Feed A Multiplication',
+        body: 'Two HexSource modules provide the operands. MulMod multiplies them modulo 2^n, just like AddMod adds them. The product stays at the same bit width as the inputs — overflow wraps.',
+        focusModuleId: 'mul',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'mul-compare',
+        title: 'Compare The Product Against A Threshold',
+        body: 'GreaterThan compares the multiplication result against a visible threshold. Unlike AtLeast (>=), GreaterThan emits 1 only when a is strictly greater than b. Try changing the threshold to see the control bit flip.',
+        focusModuleId: 'gt',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'pad-unpad',
+        title: 'Pad Then Unpad Round-Trips The Signal',
+        body: 'The parallel branch pads the multiplication result from 8 bits to 16, then BitUnpad strips it back to 8. The round-trip recovers the original value. This is the pattern for transforms that require a wider working width.',
+        focusModuleId: 'unpad',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'mul-output',
+        title: 'Read The Final Output',
+        body: 'BitsToHex converts the unpadded result back to hex. The value should match the raw MulMod output, confirming that pad-then-unpad is lossless when the original width is correct.',
+        focusModuleId: 'output',
+        targetStepIndex: 3,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'visible-message-window',
     title: 'Visible Message Window',
     group: 'Symbol Structure',

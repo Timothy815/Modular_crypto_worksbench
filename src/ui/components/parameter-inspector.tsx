@@ -2892,7 +2892,7 @@ function getTransformationView(
   if (entry.defId === 'XOR') {
     return getXorTransformation(entry);
   }
-  if (entry.defId === 'Equals' || entry.defId === 'AtLeast') {
+  if (entry.defId === 'Equals' || entry.defId === 'AtLeast' || entry.defId === 'GreaterThan') {
     return getCompareTransformation(entry);
   }
   if (entry.defId === 'Gate') {

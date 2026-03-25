@@ -11,17 +11,17 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.24.0`.
+The repository has shipped through `v1.25.0`.
 
-`main` now includes the completed first milestone of **symbol/message structure vocabulary**:
-- new primitive:
-  - `SymbolWindow`
-- explicit contiguous `symbol`-domain `start` / `width` extraction
-- static out-of-range symbol-window validation when input length is knowable
-- Analyze transformation view for `SymbolWindow`
-- `Visible Message Window` demo workspace
-- `Visible Message Window` tutorial
-- `Repair the Message Window` challenge
+`main` now includes the completed first milestone of **arithmetic expansion vocabulary**:
+- new primitives:
+  - `MulMod` (modular multiplication on equal-width bit words)
+  - `GreaterThan` (strict comparison emitting 1-bit control)
+  - `BitUnpad` (strip padding to recover original width)
+- Analyze transformation view for `GreaterThan`
+- `Multiply Compare Unpad` demo workspace
+- `Multiply Compare Unpad` tutorial
+- `Repair the Unpad Width` challenge
 
 Shipped stream, rotor, protocol/framing, and symbol/message permutation foundations remain in place:
 - stream-machine expressiveness:
@@ -100,6 +100,7 @@ Implemented and shipped:
 - `v1.22.0` Symbol Permutation milestone
 - `v1.23.0` Key Routing milestone
 - `v1.24.0` Symbol Structure milestone
+- `v1.25.0` Arithmetic Expansion milestone
 - first bounded hash collision challenge:
   - seeded `Find A Hash Collision` challenge
   - same-digest / different-input success rule
@@ -169,6 +170,7 @@ Implemented and shipped:
 - `SYMBOL-PERMUTATION-V1.md`: shipped first bounded symbol/message permutation slice for visible symbol-order routing
 - `KEY-SCHEDULE-V2.md`: shipped first bounded post-groundwork key-routing slice for visible sub-key extraction from one key bus
 - `SYMBOL-STRUCTURE-V1.md`: shipped first bounded post-permutation symbol/message-structure slice for visible contiguous submessage extraction
+- `ARITHMETIC-EXPANSION-V1.md`: shipped first bounded arithmetic-expansion slice for modular multiplication, strict comparison, and unpadding
 - `ADVANCED-ROTOR-REALISM-V1.md`: shipped first bounded rotor-realism slice for ring setting, turnover, and double-step behavior
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
