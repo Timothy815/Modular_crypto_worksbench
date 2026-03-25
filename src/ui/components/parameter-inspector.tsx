@@ -2285,6 +2285,7 @@ export function ParameterInspector({
                             <button
                               type="button"
                               className="mini-action-button"
+                              title="Build the permutation that undoes the current routing"
                               onClick={() => {
                                 const nextValue = serializePermutationOrder(
                                   buildInversePermutationOrder(editableOrder),

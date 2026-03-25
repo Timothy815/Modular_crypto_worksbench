@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented locally as a bounded post-`v1.29.0` authoring follow-on. Pending review/checkpoint framing.
+Shipped in `v1.30.0` as a bounded post-`v1.29.0` authoring follow-on.
 
 ## Purpose
 

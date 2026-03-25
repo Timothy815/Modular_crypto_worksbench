@@ -144,7 +144,7 @@ src/utils/     — Shared helpers
 
 ## Current Resume Point
 
-- Resume from current `main` at `v1.29.0`
+- Resume from current `main` at `v1.30.0`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement
@@ -270,6 +270,10 @@ src/utils/     — Shared helpers
   - validation rejection for ineligible bypass
   - visible inspector toggle and canvas bypass badge
   - `Bypass Workshop` demo/tutorial/challenge
+- `v1.30.0` is now the inverse-permutation authoring milestone:
+  - `Build Inverse` helper for `Permutation` and `SymbolPermutation`
+  - editor-side construction of the true inverse mapping, distinct from reverse order
+  - explanatory UI hint clarifying that inverse undoes the current routing
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -365,7 +369,7 @@ Key contracts to check before implementation:
 - `ARITHMETIC-EXPANSION-V1.md` for the shipped first bounded arithmetic-expansion line
 - `NUMBER-THEORETIC-V1.md` for the shipped first bounded number-theoretic foundations
 - `BYPASS-V1.md` for the shipped bounded instance-level bypass line
-- `INVERSE-PERMUTATION-AUTHORING-V1.md` for the active bounded inverse-permutation authoring follow-on
+- `INVERSE-PERMUTATION-AUTHORING-V1.md` for the shipped bounded inverse-permutation authoring slice
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family
