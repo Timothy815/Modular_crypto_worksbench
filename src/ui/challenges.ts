@@ -4,9 +4,10 @@ import { validateProject } from '../engine/validation';
 import type { ExecutionComparison, TraceDivergence } from './execution-compare';
 import { compareExecutionResults, findFirstAnalysisTraceDivergence } from './execution-compare';
 import type { ExecutionResult, ExecutionTraceEntry } from '../engine/types';
+import type { LearningSequenceMeta } from './learning-sequence';
 import type { WorkbenchPosition } from './workbench-document';
 
-export interface GuidedChallenge {
+export interface GuidedChallenge extends LearningSequenceMeta {
   version?: 1;
   id: string;
   title: string;

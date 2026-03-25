@@ -9,6 +9,14 @@ import type {
 } from '../../engine/types';
 import { validateProject } from '../../engine/validation';
 import type { DemoProject } from '../demo-projects';
+import {
+  compareLearningItems,
+  getLearningStageLabel,
+  getRecommendedAfterTitles,
+  getSortedLearningGroups,
+  inferLearningStage,
+  isCoreLearningItem,
+} from '../learning-sequence';
 import { getModuleCategory } from '../module-categories';
 import type { WorkbenchAnnotation } from '../workbench-document';
 import type { TutorialStep } from '../tutorials';
@@ -186,7 +194,7 @@ export function WorkbenchPanel({
     useState<PendingConnection | null>(null);
   const [connectionFeedback, setConnectionFeedback] = useState<string | null>(null);
   const projectGroups = useMemo(
-    () => [...new Set(projects.map((project) => project.group ?? 'Other'))],
+    () => getSortedLearningGroups(projects),
     [projects],
   );
   const activeProjectGroup = activeProject.group ?? 'Other';
@@ -201,8 +209,16 @@ export function WorkbenchPanel({
   );
 
   const visibleProjects = useMemo(
-    () => projects.filter((project) => (project.group ?? 'Other') === activeProjectGroup),
+    () =>
+      projects
+        .filter((project) => (project.group ?? 'Other') === activeProjectGroup)
+        .sort(compareLearningItems),
     [activeProjectGroup, projects],
+  );
+  const activeProjectStage = inferLearningStage(activeProject);
+  const activeProjectRecommendedAfter = useMemo(
+    () => getRecommendedAfterTitles(projects, activeProject),
+    [activeProject, projects],
   );
 
   useEffect(() => {
@@ -479,6 +495,17 @@ export function WorkbenchPanel({
             <strong>{activeProject.name}</strong>
             <p>{summary ?? activeProject.summary}</p>
             <code>{pipelineLabel ?? activeProject.pipeline}</code>
+            <div className="content-selector-meta">
+              <span className="content-status-chip">{getLearningStageLabel(activeProjectStage)}</span>
+              <span className="content-status-chip">
+                {isCoreLearningItem(activeProject) ? 'Core Path' : 'Optional'}
+              </span>
+            </div>
+            {activeProjectRecommendedAfter.length > 0 ? (
+              <p className="comparison-copy">
+                Best after: <strong>{activeProjectRecommendedAfter.join(', ')}</strong>
+              </p>
+            ) : null}
           </div>
         </div>
       ) : null}

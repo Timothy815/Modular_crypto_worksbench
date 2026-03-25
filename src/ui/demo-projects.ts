@@ -5,8 +5,9 @@ import type {
   ModuleRegistry,
   Project,
 } from '../engine/types';
+import type { LearningSequenceMeta } from './learning-sequence';
 
-export interface DemoProject {
+export interface DemoProject extends LearningSequenceMeta {
   id: string;
   name: string;
   group?: string;

@@ -1,5 +1,14 @@
 import { useMemo } from 'react';
 
+import {
+  compareLearningItems,
+  getLearningStageLabel,
+  getRecommendedAfterTitles,
+  getRecommendedNextItem,
+  getSortedLearningGroups,
+  inferLearningStage,
+  isCoreLearningItem,
+} from '../learning-sequence';
 import type { WorkspaceMode } from '../workspace-mode';
 import type { GuidedTutorial, TutorialStep } from '../tutorials';
 
@@ -41,9 +50,10 @@ export function TutorialPanel({
   onResetProgress,
 }: TutorialPanelProps) {
   const tutorialGroups = useMemo(
-    () => [...new Set(tutorials.map((tutorial) => tutorial.group ?? 'Other'))],
+    () => getSortedLearningGroups(tutorials),
     [tutorials],
   );
+  const sortedTutorials = useMemo(() => [...tutorials].sort(compareLearningItems), [tutorials]);
   const selectedTutorial =
     tutorials.find((tutorial) => tutorial.id === selectedTutorialId) ?? null;
 
@@ -52,9 +62,12 @@ export function TutorialPanel({
   }
 
   const activeGroup = selectedTutorial.group ?? 'Other';
-  const visibleTutorials = tutorials.filter(
+  const visibleTutorials = sortedTutorials.filter(
     (tutorial) => (tutorial.group ?? 'Other') === activeGroup,
   );
+  const selectedStage = inferLearningStage(selectedTutorial);
+  const recommendedNext = getRecommendedNextItem(sortedTutorials, selectedTutorial.id);
+  const recommendedAfterTitles = getRecommendedAfterTitles(sortedTutorials, selectedTutorial);
 
   const isTutorialProjectActive = selectedTutorial.projectId === currentProjectId;
   const totalSteps = selectedTutorial.steps.length;
@@ -148,6 +161,12 @@ export function TutorialPanel({
         <p className="comparison-copy">{selectedTutorial.summary}</p>
         <div className="content-selector-meta">
           <span className="content-status-chip">
+            {getLearningStageLabel(selectedStage)}
+          </span>
+          <span className="content-status-chip">
+            {isCoreLearningItem(selectedTutorial) ? 'Core Path' : 'Optional'}
+          </span>
+          <span className="content-status-chip">
             Project: <strong>{selectedTutorial.projectId}</strong>
           </span>
           {isCompleted ? (
@@ -158,6 +177,16 @@ export function TutorialPanel({
             </span>
           )}
         </div>
+        {recommendedNext ? (
+          <p className="comparison-copy">
+            Recommended next: <strong>{recommendedNext.title}</strong>
+          </p>
+        ) : null}
+        {recommendedAfterTitles.length > 0 ? (
+          <p className="comparison-copy">
+            Best after: <strong>{recommendedAfterTitles.join(', ')}</strong>
+          </p>
+        ) : null}
       </div>
 
       {isCompleted ? (

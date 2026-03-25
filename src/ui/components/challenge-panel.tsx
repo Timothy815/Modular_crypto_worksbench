@@ -1,5 +1,14 @@
 import { useMemo, useRef, useState } from 'react';
 import type { GuidedChallenge, ChallengeEvaluation } from '../challenges';
+import {
+  compareLearningItems,
+  getLearningStageLabel,
+  getRecommendedAfterTitles,
+  getRecommendedNextItem,
+  getSortedLearningGroups,
+  inferLearningStage,
+  isCoreLearningItem,
+} from '../learning-sequence';
 import type { Project } from '../../engine/types';
 
 interface ChallengePanelProps {
@@ -37,8 +46,9 @@ export function ChallengePanel({
   });
   const selectedChallenge =
     challenges.find((challenge) => challenge.id === selectedChallengeId) ?? null;
+  const sortedChallenges = useMemo(() => [...challenges].sort(compareLearningItems), [challenges]);
   const challengeGroups = useMemo(
-    () => [...new Set(challenges.map((challenge) => challenge.group ?? 'Other'))],
+    () => getSortedLearningGroups(challenges),
     [challenges],
   );
   const availableHints = selectedChallenge?.hints ?? [];
@@ -78,9 +88,16 @@ export function ChallengePanel({
     ? formatDivergenceSignals(evaluation.analysisDivergence)
     : null;
 
-  const visibleChallenges = challenges.filter(
+  const visibleChallenges = sortedChallenges.filter(
     (challenge) => (challenge.group ?? 'Other') === activeGroup,
   );
+  const selectedStage = selectedChallenge ? inferLearningStage(selectedChallenge) : null;
+  const recommendedNext = selectedChallenge
+    ? getRecommendedNextItem(sortedChallenges, selectedChallenge.id)
+    : null;
+  const recommendedAfterTitles = selectedChallenge
+    ? getRecommendedAfterTitles(sortedChallenges, selectedChallenge)
+    : [];
 
   return (
     <section
@@ -138,6 +155,12 @@ export function ChallengePanel({
           <div className="content-selector-card">
             <p className="comparison-copy">{selectedChallenge.prompt}</p>
             <div className="content-selector-meta">
+              {selectedStage ? (
+                <span className="content-status-chip">{getLearningStageLabel(selectedStage)}</span>
+              ) : null}
+              <span className="content-status-chip">
+                {isCoreLearningItem(selectedChallenge) ? 'Core Path' : 'Optional'}
+              </span>
               {selectedChallenge.difficulty ? (
                 <span className="content-status-chip">
                   Difficulty: <strong>{formatDifficultyLabel(selectedChallenge.difficulty)}</strong>
@@ -147,6 +170,16 @@ export function ChallengePanel({
                 Resetting restores the seeded starting machine
               </span>
             </div>
+            {recommendedNext ? (
+              <p className="comparison-copy">
+                Recommended next: <strong>{recommendedNext.title}</strong>
+              </p>
+            ) : null}
+            {recommendedAfterTitles.length > 0 ? (
+              <p className="comparison-copy">
+                Best after: <strong>{recommendedAfterTitles.join(', ')}</strong>
+              </p>
+            ) : null}
           </div>
 
           <div className="comparison-actions">

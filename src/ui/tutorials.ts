@@ -1,3 +1,5 @@
+import type { LearningSequenceMeta } from './learning-sequence';
+
 export interface TutorialStep {
   id: string;
   title: string;
@@ -6,7 +8,7 @@ export interface TutorialStep {
   targetStepIndex?: number;
 }
 
-export interface GuidedTutorial {
+export interface GuidedTutorial extends LearningSequenceMeta {
   version?: 1;
   id: string;
   title: string;
