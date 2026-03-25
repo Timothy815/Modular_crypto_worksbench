@@ -29,6 +29,7 @@ import type { ComparisonBaselineDocument } from '../workbench-document';
 import type { ExecutionComparison } from '../execution-compare';
 import { resolveTraceModuleInstance } from '../transformation-resolver';
 import {
+  buildInversePermutationOrder,
   buildIdentityPermutationOrder,
   buildReversePermutationOrder,
   serializePermutationOrder,
@@ -2280,6 +2281,19 @@ export function ParameterInspector({
                               }}
                             >
                               Reset To Reverse
+                            </button>
+                            <button
+                              type="button"
+                              className="mini-action-button"
+                              onClick={() => {
+                                const nextValue = serializePermutationOrder(
+                                  buildInversePermutationOrder(editableOrder),
+                                );
+                                onParamDraftChange(moduleInstance.id, field.key, nextValue);
+                                onParamChange(moduleInstance.id, field.key, nextValue);
+                              }}
+                            >
+                              Build Inverse
                             </button>
                           </div>
                           <div className="permutation-editor-meta">

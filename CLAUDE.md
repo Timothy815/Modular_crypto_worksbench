@@ -23,6 +23,7 @@ Read LEARNING-SEQUENCE-V1.md before restructuring the teaching library, adding s
 Read ARITHMETIC-EXPANSION-V1.md before starting work on modular multiplication, strict comparison, unpadding, or number-theoretic follow-ons.
 Read NUMBER-THEORETIC-V1.md before starting work on modular exponentiation, modular inverse, or number-theoretic follow-ons.
 Read BYPASS-V1.md before adding instance-level transform bypass, mute/solo behavior, or “turn this module off” controls.
+Read INVERSE-PERMUTATION-AUTHORING-V1.md before extending permutation-editor helpers, inverse mapping tools, or decrypt-path permutation authoring.
 Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
 Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
 
@@ -364,6 +365,7 @@ Key contracts to check before implementation:
 - `ARITHMETIC-EXPANSION-V1.md` for the shipped first bounded arithmetic-expansion line
 - `NUMBER-THEORETIC-V1.md` for the shipped first bounded number-theoretic foundations
 - `BYPASS-V1.md` for the shipped bounded instance-level bypass line
+- `INVERSE-PERMUTATION-AUTHORING-V1.md` for the active bounded inverse-permutation authoring follow-on
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family

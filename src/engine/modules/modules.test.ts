@@ -64,6 +64,7 @@ import {
   swapSBoxEntry,
 } from './s-box';
 import {
+  buildInversePermutationOrder,
   buildIdentityPermutationOrder,
   buildReversePermutationOrder,
   serializePermutationOrder,
@@ -786,6 +787,10 @@ describe('Permutation', () => {
 
   it('serializes permutation orders back into the stored param format', () => {
     expect(serializePermutationOrder([2, 0, 4, 1, 3])).toBe('2,0,4,1,3');
+  });
+
+  it('builds inverse routing for a one-to-one permutation order', () => {
+    expect(buildInversePermutationOrder([3, 0, 4, 1, 2])).toEqual([1, 3, 4, 0, 2]);
   });
 });
 

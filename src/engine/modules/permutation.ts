@@ -43,6 +43,25 @@ export function buildReversePermutationOrder(length: number): number[] {
   return Array.from({ length }, (_, index) => length - 1 - index);
 }
 
+export function buildInversePermutationOrder(order: number[]): number[] {
+  const inverse = new Array<number>(order.length);
+
+  for (let outputIndex = 0; outputIndex < order.length; outputIndex += 1) {
+    const inputIndex = order[outputIndex];
+    if (
+      !Number.isInteger(inputIndex) ||
+      inputIndex < 0 ||
+      inputIndex >= order.length ||
+      inverse[inputIndex] !== undefined
+    ) {
+      throw new Error('Permutation order must be a one-to-one mapping to build its inverse');
+    }
+    inverse[inputIndex] = outputIndex;
+  }
+
+  return inverse;
+}
+
 export function swapPermutationOrderPositions(order: number[], leftIndex: number, rightIndex: number): number[] {
   if (
     leftIndex < 0 ||
