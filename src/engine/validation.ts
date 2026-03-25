@@ -29,6 +29,7 @@ import { validateModuloParam } from './modules/modulo';
 import { validateCounterParam } from './modules/counter';
 import { validateBitSplitParam } from './modules/bit-split';
 import { validateBitPadParam } from './modules/bit-pad';
+import { validateBitWindowParam } from './modules/bit-window';
 import {
   validateProtocolMaterialParam,
   validateProtocolMaterialValueFitsWidth,
@@ -192,6 +193,10 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'BitPad') {
     return validateBitPadParam(field.key, value);
+  }
+
+  if (def.id === 'BitWindow') {
+    return validateBitWindowParam(field.key, value);
   }
 
   return null;
@@ -379,6 +384,14 @@ function inferStaticBitWidth(
       }
       break;
     }
+    case 'BitWindow': {
+      const windowWidth = instance.params.width;
+      width =
+        typeof windowWidth === 'number' && Number.isInteger(windowWidth) && windowWidth >= 1
+          ? windowWidth
+          : null;
+      break;
+    }
     default:
       width = null;
   }
@@ -458,6 +471,32 @@ function validateBitWidthConstraints(
         issues.push({
           code: 'invalid-param-type',
           message: `Module "${moduleInstance.id}" parameter "leftWidth" is invalid. BitSplit leftWidth must be less than the input width (${inputWidth}).`,
+          moduleId: moduleInstance.id,
+        });
+      }
+    }
+
+    if (def.id === 'BitWindow') {
+      const upstream = incomingConnections.get(`${moduleInstance.id}:in`);
+      const start = moduleInstance.params.start;
+      const width = moduleInstance.params.width;
+      if (
+        !upstream ||
+        typeof start !== 'number' ||
+        !Number.isInteger(start) ||
+        start < 0 ||
+        typeof width !== 'number' ||
+        !Number.isInteger(width) ||
+        width < 1
+      ) {
+        continue;
+      }
+
+      const inputWidth = getWidth(upstream.moduleId);
+      if (inputWidth !== null && start + width > inputWidth) {
+        issues.push({
+          code: 'invalid-param-type',
+          message: `Module "${moduleInstance.id}" parameters "start" and "width" are invalid. BitWindow range must fit within the input width (${inputWidth}).`,
           moduleId: moduleInstance.id,
         });
       }

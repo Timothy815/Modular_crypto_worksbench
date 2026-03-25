@@ -38,6 +38,7 @@ import { BitShifter } from './bit-shifter';
 import { BitJoin } from './bit-join';
 import { BitSplit } from './bit-split';
 import { BitPad } from './bit-pad';
+import { BitWindow } from './bit-window';
 import { LFSR } from './lfsr';
 import { SBox } from './s-box';
 import { Clock } from './clock';
@@ -82,6 +83,7 @@ export {
   BitJoin,
   BitSplit,
   BitPad,
+  BitWindow,
   LFSR,
   SBox,
   Clock,
@@ -127,6 +129,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [BitJoin.id]: BitJoin,
   [BitSplit.id]: BitSplit,
   [BitPad.id]: BitPad,
+  [BitWindow.id]: BitWindow,
   [LFSR.id]: LFSR,
   [SBox.id]: SBox,
   [Clock.id]: Clock,

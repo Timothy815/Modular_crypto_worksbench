@@ -38,6 +38,7 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   BitJoin: 'operator',
   BitSplit: 'operator',
   BitPad: 'operator',
+  BitWindow: 'operator',
   SBox: 'operator',
   SymbolToBits: 'bridge',
   BitsToAscii: 'bridge',

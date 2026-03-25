@@ -30,6 +30,7 @@ const filteredKeystreamProject = demoProjects.find((project) => project.id === '
 const routedClockKeystreamProject = demoProjects.find((project) => project.id === 'routed-clock-keystream');
 const advancedRotorSteppingProject = demoProjects.find((project) => project.id === 'advanced-rotor-stepping');
 const visibleSymbolScrambleProject = demoProjects.find((project) => project.id === 'visible-symbol-scramble');
+const visibleSubkeyBusProject = demoProjects.find((project) => project.id === 'visible-subkey-bus');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
 const toySpongeHashProject = demoProjects.find((project) => project.id === 'toy-sponge-hash');
@@ -109,6 +110,9 @@ if (!advancedRotorSteppingProject) {
 if (!visibleSymbolScrambleProject) {
   throw new Error('Expected visible-symbol-scramble demo project to seed starter challenges.');
 }
+if (!visibleSubkeyBusProject) {
+  throw new Error('Expected visible-subkey-bus demo project to seed starter challenges.');
+}
 if (!sequentialProject) {
   throw new Error('Expected sequential demo project to seed starter challenges.');
 }
@@ -169,6 +173,8 @@ const advancedRotorSteppingTarget = cloneProject(advancedRotorSteppingProject.pr
 const brokenAdvancedRotorSteppingStart = cloneProject(advancedRotorSteppingProject.project);
 const visibleSymbolScrambleTarget = cloneProject(visibleSymbolScrambleProject.project);
 const brokenVisibleSymbolScrambleStart = cloneProject(visibleSymbolScrambleProject.project);
+const visibleSubkeyBusTarget = cloneProject(visibleSubkeyBusProject.project);
+const brokenVisibleSubkeyBusStart = cloneProject(visibleSubkeyBusProject.project);
 const sequentialTarget = cloneProject(sequentialProject.project);
 const brokenSequentialStart = cloneProject(sequentialProject.project);
 const brokenSequentialTapsStart = cloneProject(sequentialProject.project);
@@ -238,6 +244,14 @@ if (!brokenSymbolPermutation) {
   throw new Error('Expected visible-symbol-scramble demo project to contain a permutation module.');
 }
 brokenSymbolPermutation.params.order = '2,1,3,0';
+
+const brokenWindowTwo = brokenVisibleSubkeyBusStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'window-2',
+);
+if (!brokenWindowTwo) {
+  throw new Error('Expected visible-subkey-bus demo project to contain window-2.');
+}
+brokenWindowTwo.params.start = 4;
 
 const brokenBaudotSource = brokenBaudotStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'source',
@@ -894,6 +908,27 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The letters themselves are already correct; only their positions are wrong.',
       'Focus on the SymbolPermutation order, not on changing the input word.',
       'A permutation reorders existing symbols. It does not replace M with another letter.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-key-window',
+    title: 'Repair the Key Window',
+    projectId: 'visible-subkey-bus',
+    group: 'Modern Rounds',
+    difficulty: 'intermediate',
+    prompt:
+      'This two-round keyed machine still has the right data path and key bus, but the second sub-key window is reading the wrong slice. Restore the correct window so the final byte matches the captured reference again.',
+    startingProject: brokenVisibleSubkeyBusStart,
+    startingLayout: cloneProject(visibleSubkeyBusProject.layout),
+    targetProject: visibleSubkeyBusTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The key bus itself is already correct in this lab.',
+      'Only one BitWindow is wrong; compare the first and second window starts.',
+      'Changing the second window changes only the sub-key entering round 2.',
     ],
   },
   {

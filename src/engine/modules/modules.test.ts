@@ -48,6 +48,7 @@ import { BitShifter } from './bit-shifter';
 import { BitJoin } from './bit-join';
 import { BitSplit } from './bit-split';
 import { BitPad } from './bit-pad';
+import { BitWindow } from './bit-window';
 import { LFSR } from './lfsr';
 import {
   buildIdentitySBoxTable,
@@ -1184,5 +1185,43 @@ describe('BitPad', () => {
         { targetWidth: 8 },
       ),
     ).toThrow('bits');
+  });
+});
+
+describe('BitWindow', () => {
+  it('extracts a contiguous visible window from a bit bus', () => {
+    const result = BitWindow.evaluate(
+      { in: { type: 'bits', value: [1, 1, 0, 0, 1, 0, 1, 1] } },
+      { start: 2, width: 4 },
+    );
+
+    expect(result.out).toEqual({ type: 'bits', value: [0, 0, 1, 0] });
+  });
+
+  it('extracts the leading window when start is zero', () => {
+    const result = BitWindow.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 1, 0, 0, 1, 0] } },
+      { start: 0, width: 3 },
+    );
+
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1] });
+  });
+
+  it('throws when the requested window exceeds input length', () => {
+    expect(() =>
+      BitWindow.evaluate(
+        { in: { type: 'bits', value: [1, 0, 1, 1] } },
+        { start: 2, width: 4 },
+      ),
+    ).toThrow('exceeds input length');
+  });
+
+  it('throws when the input is not a bits signal', () => {
+    expect(() =>
+      BitWindow.evaluate(
+        { in: { type: 'symbol', value: 'ABCD' } },
+        { start: 0, width: 2 },
+      ),
+    ).toThrow('BitWindow expects a bits signal');
   });
 });

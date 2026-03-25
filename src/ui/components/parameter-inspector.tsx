@@ -2913,6 +2913,9 @@ function getTransformationView(
   if (entry.defId === 'BitPad') {
     return getPadTransformation(entry, project, registry);
   }
+  if (entry.defId === 'BitWindow') {
+    return getBitWindowTransformation(entry, project, registry);
+  }
   return null;
 }
 
@@ -3501,6 +3504,73 @@ function getPadTransformation(
     summary: padCount > 0
       ? `${padCount} ${padBit === 0 ? 'zero' : 'one'} bit${padCount === 1 ? '' : 's'} ${side === 'left' ? 'prepended' : 'appended'} to reach ${output.value.length} bits.`
       : `Input already meets the target width (${output.value.length} bits), so no padding was added.`,
+  };
+}
+
+function getBitWindowTransformation(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): RoutingTransformationView | null {
+  const resolved = resolveTraceModuleInstance(entry.moduleId, project, registry);
+  if (!resolved) {
+    return null;
+  }
+
+  const input = entry.inputs.in;
+  const output = entry.outputs.out;
+  if (input?.type !== 'bits' || output?.type !== 'bits') {
+    return null;
+  }
+
+  const start =
+    typeof resolved.instance.params.start === 'number' && Number.isInteger(resolved.instance.params.start)
+      ? resolved.instance.params.start
+      : 0;
+  const width =
+    typeof resolved.instance.params.width === 'number' && Number.isInteger(resolved.instance.params.width)
+      ? resolved.instance.params.width
+      : output.value.length;
+
+  const rows = output.value.map((outputValue, outputIndex) => {
+    const inputIndex = start + outputIndex;
+    return {
+      inputIndex,
+      inputValue: input.value[inputIndex] ?? 0,
+      outputIndex,
+      outputValue,
+      kind: 'line' as const,
+    };
+  });
+  const laneHeight = 32;
+  const laneGap = 6;
+  const laneStep = laneHeight + laneGap;
+  const laneOffset = laneHeight / 2;
+  const svgHeight = Math.max(laneHeight, rows.length * laneHeight + Math.max(0, rows.length - 1) * laneGap);
+  const rowsWithPositions = rows.map((row, laneIndex) => ({
+    ...row,
+    inputY: laneOffset + laneIndex * laneStep,
+    outputY: laneOffset + laneIndex * laneStep,
+    color: getPermutationWireColor(row.inputIndex),
+  }));
+
+  return {
+    entry,
+    kind: 'routing',
+    title: 'Bit Window Mapping',
+    copy:
+      'BitWindow extracts one contiguous slice from a larger bit bus. It does not derive a new key; it shows exactly which visible positions the downstream round receives.',
+    configLabel: 'Start / Width',
+    configValue: `${start} / ${width}`,
+    middleLabel: 'Slice',
+    rows: rowsWithPositions,
+    inputLane: rowsWithPositions,
+    outputLane: rowsWithPositions,
+    svgHeight,
+    summary:
+      rows.length === 0
+        ? 'This BitWindow has no visible output bits.'
+        : `The output reads input positions ${start} through ${start + rows.length - 1} from the visible bus.`,
   };
 }
 

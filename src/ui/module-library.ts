@@ -236,6 +236,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when a short bit vector needs to reach a required block size before entering a fixed-width transform.',
     searchTerms: ['pad', 'padding', 'extend', 'fill', 'block', 'width', 'bits'],
   },
+  BitWindow: {
+    sectionId: 'transforms',
+    purpose: 'Extracts one contiguous bit window from a larger key bus or bit vector.',
+    detail: 'Use this when one visible key bus should feed different sub-keys into different rounds without hiding the routing in iterator magic.',
+    searchTerms: ['window', 'slice', 'sub-key', 'key bus', 'extract', 'bits', 'schedule'],
+  },
   SBox: {
     sectionId: 'transforms',
     purpose: 'Substitutes each fixed-width bit chunk through a lookup table.',

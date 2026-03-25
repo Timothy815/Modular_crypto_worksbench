@@ -206,7 +206,19 @@ Still open:
 - key-material shaping helpers
 - stronger protocol-context teaching lines after classroom use
 
-### 8. Number-Theoretic / Asymmetric Foundations
+### 8. Key-Routing / Schedule Vocabulary
+
+Current groundwork exists:
+- `ITERATIVE-ROUNDS-AND-KEYSCHEDULES-V1.md`
+- `KEY-SCHEDULE-GROUNDWORK-V1.md`
+- explicit key-bus and keyed-round teaching artifacts
+
+Still needed over time:
+- visible sub-key extraction from one bus
+- explicit per-round key routing
+- later iterator-aware key distribution only if it stays inspectable
+
+### 9. Number-Theoretic / Asymmetric Foundations
 
 Longer-term family, but must remain legible as a future destination:
 - modular multiplication
@@ -298,7 +310,7 @@ Still open:
 - unpad semantics
 - message-level permutation / inverse-permutation authoring
 
-### Phase 4 — Scheduler And Protocol Inputs
+### Phase 4 — Scheduler, Key Routing, And Protocol Inputs
 
 Purpose:
 - support real multi-round architectures and protocol context
@@ -400,8 +412,10 @@ It is:
 - keep future rotor follow-ons bounded rather than turning mechanized realism into hidden helpers
 - keep tutorials and challenges shipping alongside the new language
 
-The immediate next decision should be:
-- which bounded follow-on best deepens the now-shipped symbol/message permutation, stream, framing, and rotor foundations without collapsing into preset sprawl
+The immediate next contract should be:
+- `KEY-SCHEDULE-V2.md`
+
+That keeps the roadmap moving toward honest multi-round key routing without collapsing into preset key schedules or hidden iterator magic.
 
 That is the path from:
 - strong teaching workbench

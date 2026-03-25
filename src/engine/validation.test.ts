@@ -8,6 +8,7 @@ import { BaudotSource } from './modules/baudot-source';
 import { BitPad } from './modules/bit-pad';
 import { BitSource } from './modules/bit-source';
 import { BitSplit } from './modules/bit-split';
+import { BitWindow } from './modules/bit-window';
 import { Counter } from './modules/counter';
 import { Demux } from './modules/demux';
 import { Equals } from './modules/equals';
@@ -97,6 +98,7 @@ const registry: ModuleRegistry = {
   [Reflector.id]: Reflector,
   [SBox.id]: SBox,
   [BitSplit.id]: BitSplit,
+  [BitWindow.id]: BitWindow,
   [BitPad.id]: BitPad,
   [Demux.id]: Demux,
   [TextInput.id]: TextInput,
@@ -541,6 +543,25 @@ describe('validateProject', () => {
     expect(
       result.issues.some(
         (issue) => issue.moduleId === 'permute' && issue.code === 'signal-width-mismatch',
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects BitWindow when the requested range exceeds a statically known input width', () => {
+    const project: Project = {
+      modules: [
+        { id: 'source', defId: 'BitSource', params: { stream: [1, 0, 1, 1] } },
+        { id: 'window', defId: 'BitWindow', params: { start: 2, width: 3 } },
+      ],
+      connections: [{ from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'window', port: 'in' } }],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) => issue.moduleId === 'window' && issue.message.includes('must fit within the input width'),
       ),
     ).toBe(true);
   });
