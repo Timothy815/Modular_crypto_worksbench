@@ -19,6 +19,7 @@ Read CONTROL-PRIMITIVES-V1.md before starting work on counters, triggers, gates,
 Read BLOCK-FRAMING-V1.md before starting work on block splitting, padding, rejoining, or framing follow-ons.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.
+Read LEARNING-SEQUENCE-V1.md before restructuring the teaching library, adding staged progression, or changing how demos/tutorials/challenges are ordered.
 Read ARITHMETIC-EXPANSION-V1.md before starting work on modular multiplication, strict comparison, unpadding, or number-theoretic follow-ons.
 Read NUMBER-THEORETIC-V1.md before starting work on modular exponentiation, modular inverse, or number-theoretic follow-ons.
 Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.

@@ -171,6 +171,7 @@ Implemented and shipped:
 - `SYMBOL-PERMUTATION-V1.md`: shipped first bounded symbol/message permutation slice for visible symbol-order routing
 - `KEY-SCHEDULE-V2.md`: shipped first bounded post-groundwork key-routing slice for visible sub-key extraction from one key bus
 - `SYMBOL-STRUCTURE-V1.md`: shipped first bounded post-permutation symbol/message-structure slice for visible contiguous submessage extraction
+- `LEARNING-SEQUENCE-V1.md`: active contract for suggested ordering across demos, tutorials, and challenges
 - `ARITHMETIC-EXPANSION-V1.md`: shipped first bounded arithmetic-expansion slice for modular multiplication, strict comparison, and unpadding
 - `NUMBER-THEORETIC-V1.md`: shipped first bounded number-theoretic foundations slice for modular exponentiation and modular inverse
 - `ADVANCED-ROTOR-REALISM-V1.md`: shipped first bounded rotor-realism slice for ring setting, turnover, and double-step behavior
@@ -218,7 +219,8 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 3. Keep future rotor follow-ons bounded:
    reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices rather than spilling into convenience presets
 4. Add one tutorial plus one demo/challenge whenever a major new primitive family ships so the language grows with teaching support
-5. Keep performance/bundle size under watch now that builder workflow and tactile editors both sit behind the guardrails
-6. Monitor classroom use of workspace library and composite unzip before widening them into sharing, folders, or bulk-expansion tooling
-7. Monitor challenge-induced project switching in classroom use before adding warning dialogs
-8. Avoid scope creep into brute-force tooling, birthday-bound calculators, famous-hash comparisons, or premature asymmetric demos before the underlying vocabulary exists
+5. Add each new teaching artifact to a visible suggested learning stage so the library feels ordered rather than flat
+6. Keep performance/bundle size under watch now that builder workflow and tactile editors both sit behind the guardrails
+7. Monitor classroom use of workspace library and composite unzip before widening them into sharing, folders, or bulk-expansion tooling
+8. Monitor challenge-induced project switching in classroom use before adding warning dialogs
+9. Avoid scope creep into brute-force tooling, birthday-bound calculators, famous-hash comparisons, or premature asymmetric demos before the underlying vocabulary exists

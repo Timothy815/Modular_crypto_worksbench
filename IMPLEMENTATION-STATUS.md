@@ -417,10 +417,11 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
 2. **Continue the primitive-language roadmap beyond shipped stream, rotor, symbol-permutation, key-routing, symbol-structure, arithmetic, and number-theoretic foundations** — the clearest remaining language families are deeper key-schedule follow-ons, deeper stream follow-ons, and consolidation of the newly shipped number-theoretic surface
 3. **Keep future rotor follow-ons bounded** — reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices, not convenience presets
-4. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
-5. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
-6. **Monitor challenge-induced project switching in classroom use** before adding warning dialogs
-7. **Defer deeper transformation playback/animation** until classroom feedback justifies a second visualization slice
+4. **Establish a suggested learning path across demos/tutorials/challenges** — future teaching content should fit a visible stage/order spine rather than accumulating as a flat library
+5. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
+6. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
+7. **Monitor challenge-induced project switching in classroom use** before adding warning dialogs
+8. **Defer deeper transformation playback/animation** until classroom feedback justifies a second visualization slice
 
 ### Key Contracts
 
@@ -458,6 +459,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `SYMBOL-PERMUTATION-V1.md` | Shipped in `v1.22.0` as first bounded symbol/message permutation slice for visible symbol-order routing |
 | `KEY-SCHEDULE-V2.md` | Shipped in `v1.23.0` as first bounded post-groundwork key-routing slice for visible sub-key extraction from one key bus |
 | `SYMBOL-STRUCTURE-V1.md` | Shipped in `v1.24.0` as first bounded post-permutation symbol/message-structure slice for visible contiguous submessage extraction |
+| `LEARNING-SEQUENCE-V1.md` | Active — suggested ordering contract for demos, tutorials, and challenges so the teaching surface reads as a logical progression |
 | `ARITHMETIC-EXPANSION-V1.md` | Shipped in `v1.25.0` as first bounded arithmetic-expansion slice for modular multiplication, strict comparison, and unpadding |
 | `NUMBER-THEORETIC-V1.md` | Shipped in `v1.26.0` as first bounded number-theoretic foundations slice for modular exponentiation and modular inverse |
 | `ADVANCED-ROTOR-REALISM-V1.md` | Shipped in `v1.19.0` as bounded rotor-realism slice for ring setting, turnover, and double-step behavior |
