@@ -23,6 +23,16 @@ The repository has shipped through `v1.23.0`.
 - `Visible Sub-Key Bus` tutorial
 - `Repair the Key Window` challenge
 
+Current unshipped checkpoint on `main`:
+- `443072c` — first bounded **symbol/message structure** slice
+- new primitive:
+  - `SymbolWindow`
+- explicit contiguous `symbol`-domain `start` / `width` extraction
+- Analyze transformation view for `SymbolWindow`
+- `Visible Message Window` demo workspace
+- `Visible Message Window` tutorial
+- `Repair the Message Window` challenge
+
 Shipped stream, rotor, protocol/framing, and symbol/message permutation foundations remain in place:
 - stream-machine expressiveness:
   - `Majority`

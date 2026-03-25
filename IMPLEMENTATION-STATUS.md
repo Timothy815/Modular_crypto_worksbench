@@ -35,6 +35,18 @@ The next strategic direction remains broader than any one subdomain:
 - expand the machine language so it can express more of cryptography honestly
 - ship tutorials and challenges alongside each new vocabulary family
 
+Current unshipped checkpoint on `main`:
+- `443072c` — `Begin symbol structure slice`
+- first bounded post-permutation symbol/message-structure vocabulary:
+  - `SymbolWindow`
+- explicit contiguous `symbol`-domain `start` / `width` extraction
+- static out-of-range symbol-window validation when input length is knowable
+- Analyze-tab transformation view for `SymbolWindow`
+- first symbol-structure teaching surface:
+  - `Visible Message Window` demo workspace
+  - `Visible Message Window` tutorial
+  - `Repair the Message Window` challenge
+
 The next most important missing vocabulary families are:
 - deeper key-schedule follow-ons after the shipped stream, framing, symbol-permutation, and key-routing foundations
 - deeper stream follow-ons and scheduler work after the shipped routing trilogy
@@ -354,7 +366,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed on the most recent symbol-permutation slice.
+All three passed on the most recent symbol-structure slice (`443072c`).
 
 ---
 
@@ -371,7 +383,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
 2. **Continue the primitive-language roadmap beyond shipped stream, rotor, symbol-permutation, and key-routing foundations** — the clearest remaining language families are post-permutation message structure, deeper key-schedule follow-ons, and deeper stream follow-ons
    Immediate direction:
-   `SYMBOL-STRUCTURE-V1.md`
+   review and frame the shipped-on-`main` `SymbolWindow` slice against `SYMBOL-STRUCTURE-V1.md`
 3. **Keep future rotor follow-ons bounded** — reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices, not convenience presets
 4. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
 5. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise

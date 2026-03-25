@@ -18,6 +18,7 @@ Read CRYPTO-OPERATORS-V1.md before starting work on the first post-`v1.13.0` ope
 Read CONTROL-PRIMITIVES-V1.md before starting work on counters, triggers, gates, or explicit conditional machine behavior.
 Read BLOCK-FRAMING-V1.md before starting work on block splitting, padding, rejoining, or framing follow-ons.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
+Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.
 Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
 Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
 
@@ -208,9 +209,39 @@ src/utils/     — Shared helpers
   - `Filtered Keystream` demo workspace
   - `The Filtered Keystream` tutorial
   - `Repair the Filter Selector` challenge
-- Current `main` should treat the next phase as **primitive-language expansion**
-  - deeper stream-combiner follow-ons after the shipped selector slice
-  - scheduler / permutation / bounded rotor follow-ons after the shipped realism slice
+- `v1.21.0` is now the third stream-cipher milestone:
+  - `Demux`
+  - strict 1-bit routing validation
+  - Analyze transformation view for `Demux`
+  - `Routed Clock Keystream` demo workspace
+  - `The Routed Clock Keystream` tutorial
+  - `Repair the Routed Clock` challenge
+- `v1.22.0` is now the symbol-permutation milestone:
+  - `SymbolPermutation`
+  - strict one-to-one symbol-order validation
+  - Analyze transformation view for `SymbolPermutation`
+  - `Visible Symbol Scramble` demo workspace
+  - `Visible Symbol Scramble` tutorial
+  - `Repair the Symbol Order` challenge
+- `v1.23.0` is now the key-routing milestone:
+  - `BitWindow`
+  - explicit `start` / `width` sub-key extraction from one visible key bus
+  - static out-of-range window validation when upstream width is knowable
+  - Analyze transformation view for `BitWindow`
+  - `Visible Sub-Key Bus` demo workspace
+  - `Visible Sub-Key Bus` tutorial
+  - `Repair the Key Window` challenge
+- Current `main` now includes an unshipped symbol-structure checkpoint at `443072c`:
+  - `SymbolWindow`
+  - explicit `start` / `width` contiguous symbol-message extraction
+  - static out-of-range window validation when input symbol length is knowable
+  - Analyze transformation view for `SymbolWindow`
+  - `Visible Message Window` demo workspace
+  - `Visible Message Window` tutorial
+  - `Repair the Message Window` challenge
+- Current `main` should treat the next phase as **symbol/message structure review and release framing**
+  - review whether the `SymbolWindow` slice is coherent and bounded
+  - if clean, frame it as the core of `v1.24.0`
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
