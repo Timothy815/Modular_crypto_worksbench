@@ -35,6 +35,7 @@ import {
   validateProtocolMaterialValueFitsWidth,
 } from './modules/protocol-material';
 import { validateSymbolPermutationOrderParam } from './modules/symbol-permutation';
+import { validateSymbolWindowParam } from './modules/symbol-window';
 
 const EQUAL_WIDTH_BINARY_MODULE_IDS = new Set([
   'AND',
@@ -145,6 +146,10 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'SymbolPermutation' && field.key === 'order') {
     return validateSymbolPermutationOrderParam(value);
+  }
+
+  if (def.id === 'SymbolWindow') {
+    return validateSymbolWindowParam(field.key, value);
   }
 
   if (def.id === 'SBox' && field.key === 'table') {
@@ -583,6 +588,42 @@ function validateBitWidthConstraints(
         });
       }
     }
+
+    if (def.id === 'SymbolWindow') {
+      const upstream = incomingConnections.get(`${moduleInstance.id}:in`);
+      const start = moduleInstance.params.start;
+      const width = moduleInstance.params.width;
+      if (
+        !upstream ||
+        typeof start !== 'number' ||
+        !Number.isInteger(start) ||
+        start < 0 ||
+        typeof width !== 'number' ||
+        !Number.isInteger(width) ||
+        width < 1
+      ) {
+        continue;
+      }
+
+      const instance = instancesById.get(upstream.moduleId);
+      const upstreamDef = defsByInstanceId.get(upstream.moduleId);
+      if (!instance || !upstreamDef || isCompositeDefinition(upstreamDef) || isIteratorDefinition(upstreamDef)) {
+        continue;
+      }
+
+      const staticSymbolLength = inferStaticSymbolLength(instance);
+      if (staticSymbolLength === null) {
+        continue;
+      }
+
+      if (start + width > staticSymbolLength) {
+        issues.push({
+          code: 'signal-width-mismatch',
+          message: `Module "${moduleInstance.id}" requires a symbol window that fits within the input symbol length (${staticSymbolLength}).`,
+          moduleId: moduleInstance.id,
+        });
+      }
+    }
   }
 }
 
@@ -592,6 +633,10 @@ function inferStaticSymbolLength(instance: ModuleInstance): number | null {
     case 'KeyInput': {
       const value = instance.params.value;
       return typeof value === 'string' ? Array.from(value).length : null;
+    }
+    case 'SymbolWindow': {
+      const width = instance.params.width;
+      return typeof width === 'number' && Number.isInteger(width) && width >= 1 ? width : null;
     }
     case 'BitsToAscii': {
       return null;

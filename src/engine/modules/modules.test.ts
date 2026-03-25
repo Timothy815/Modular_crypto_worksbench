@@ -44,6 +44,7 @@ import {
 import { pairReflectorLetters, Reflector } from './reflector';
 import { Permutation } from './permutation';
 import { SymbolPermutation } from './symbol-permutation';
+import { SymbolWindow } from './symbol-window';
 import { BitShifter } from './bit-shifter';
 import { BitJoin } from './bit-join';
 import { BitSplit } from './bit-split';
@@ -825,6 +826,44 @@ describe('SymbolPermutation', () => {
         { order: '0,0,2,3' },
       ),
     ).toThrow('must use each input index exactly once');
+  });
+});
+
+describe('SymbolWindow', () => {
+  it('extracts a contiguous symbol window', () => {
+    const result = SymbolWindow.evaluate(
+      { in: { type: 'symbol', value: 'MATH' } },
+      { start: 1, width: 2 },
+    );
+
+    expect(result.out).toEqual({ type: 'symbol', value: 'AT' });
+  });
+
+  it('extracts a leading symbol window', () => {
+    const result = SymbolWindow.evaluate(
+      { in: { type: 'symbol', value: 'MATH' } },
+      { start: 0, width: 3 },
+    );
+
+    expect(result.out).toEqual({ type: 'symbol', value: 'MAT' });
+  });
+
+  it('throws when the window exceeds the input length', () => {
+    expect(() =>
+      SymbolWindow.evaluate(
+        { in: { type: 'symbol', value: 'MATH' } },
+        { start: 3, width: 2 },
+      ),
+    ).toThrow(/exceeds input length/i);
+  });
+
+  it('throws on non-symbol input', () => {
+    expect(() =>
+      SymbolWindow.evaluate(
+        { in: { type: 'bits', value: [1, 0, 1, 0] } as never },
+        { start: 0, width: 2 },
+      ),
+    ).toThrow(/expects a symbol signal/i);
   });
 });
 

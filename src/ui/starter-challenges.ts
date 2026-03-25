@@ -31,6 +31,7 @@ const routedClockKeystreamProject = demoProjects.find((project) => project.id ==
 const advancedRotorSteppingProject = demoProjects.find((project) => project.id === 'advanced-rotor-stepping');
 const visibleSymbolScrambleProject = demoProjects.find((project) => project.id === 'visible-symbol-scramble');
 const visibleSubkeyBusProject = demoProjects.find((project) => project.id === 'visible-subkey-bus');
+const visibleMessageWindowProject = demoProjects.find((project) => project.id === 'visible-message-window');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
 const toySpongeHashProject = demoProjects.find((project) => project.id === 'toy-sponge-hash');
@@ -113,6 +114,9 @@ if (!visibleSymbolScrambleProject) {
 if (!visibleSubkeyBusProject) {
   throw new Error('Expected visible-subkey-bus demo project to seed starter challenges.');
 }
+if (!visibleMessageWindowProject) {
+  throw new Error('Expected visible-message-window demo project to seed starter challenges.');
+}
 if (!sequentialProject) {
   throw new Error('Expected sequential demo project to seed starter challenges.');
 }
@@ -175,6 +179,8 @@ const visibleSymbolScrambleTarget = cloneProject(visibleSymbolScrambleProject.pr
 const brokenVisibleSymbolScrambleStart = cloneProject(visibleSymbolScrambleProject.project);
 const visibleSubkeyBusTarget = cloneProject(visibleSubkeyBusProject.project);
 const brokenVisibleSubkeyBusStart = cloneProject(visibleSubkeyBusProject.project);
+const visibleMessageWindowTarget = cloneProject(visibleMessageWindowProject.project);
+const brokenVisibleMessageWindowStart = cloneProject(visibleMessageWindowProject.project);
 const sequentialTarget = cloneProject(sequentialProject.project);
 const brokenSequentialStart = cloneProject(sequentialProject.project);
 const brokenSequentialTapsStart = cloneProject(sequentialProject.project);
@@ -252,6 +258,14 @@ if (!brokenWindowTwo) {
   throw new Error('Expected visible-subkey-bus demo project to contain window-2.');
 }
 brokenWindowTwo.params.start = 4;
+
+const brokenSymbolWindowTwo = brokenVisibleMessageWindowStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'window-2',
+);
+if (!brokenSymbolWindowTwo) {
+  throw new Error('Expected visible-message-window demo project to contain window-2.');
+}
+brokenSymbolWindowTwo.params.start = 1;
 
 const brokenBaudotSource = brokenBaudotStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'source',
@@ -908,6 +922,27 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The letters themselves are already correct; only their positions are wrong.',
       'Focus on the SymbolPermutation order, not on changing the input word.',
       'A permutation reorders existing symbols. It does not replace M with another letter.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-message-window',
+    title: 'Repair the Message Window',
+    projectId: 'visible-message-window',
+    group: 'Symbol Structure',
+    difficulty: 'beginner',
+    prompt:
+      'This machine should split one visible message into two contiguous symbol windows, but the second branch is reading the wrong part of the word. Restore the wrong SymbolWindow so both outputs match the captured reference machine again.',
+    startingProject: brokenVisibleMessageWindowStart,
+    startingLayout: cloneProject(visibleMessageWindowProject.layout),
+    targetProject: visibleMessageWindowTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The first SymbolWindow is already correct in this lab.',
+      'Focus on the start value of window-2, not the TextInput message.',
+      'The target machine splits MATH into MA on the upper branch and TH on the lower branch.',
     ],
   },
   {

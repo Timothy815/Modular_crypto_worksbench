@@ -34,6 +34,7 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   Gate: 'operator',
   Permutation: 'operator',
   SymbolPermutation: 'operator',
+  SymbolWindow: 'operator',
   BitShifter: 'operator',
   BitJoin: 'operator',
   BitSplit: 'operator',

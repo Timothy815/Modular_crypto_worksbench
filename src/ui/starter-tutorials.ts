@@ -3,6 +3,44 @@ import type { GuidedTutorial } from './tutorials';
 export const STARTER_TUTORIALS: GuidedTutorial[] = [
   {
     version: 1,
+    id: 'visible-message-window',
+    title: 'Visible Message Window',
+    group: 'Symbol Structure',
+    summary: 'Learn how one visible symbol message can feed different contiguous submessages into different branches.',
+    projectId: 'visible-message-window',
+    steps: [
+      {
+        id: 'message-source',
+        title: 'Start With One Visible Message',
+        body: 'TextInput is feeding the full string MATH into the graph. The important point is that both downstream branches read from the same visible message rather than from duplicated hidden sources.',
+        focusModuleId: 'text',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'message-window-1',
+        title: 'Choose The First Contiguous Window',
+        body: 'The first SymbolWindow takes start 0 and width 2, so this branch reads the leading submessage MA. Nothing is permuted or substituted here; the branch simply reads a bounded visible region of the message.',
+        focusModuleId: 'window-1',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'message-window-2',
+        title: 'Choose A Different Region For The Second Branch',
+        body: 'The second SymbolWindow takes start 2 and width 2, so it reads TH. This is the key lesson of the slice: two branches can consume different contiguous regions of one message without any hidden chunking helper.',
+        focusModuleId: 'window-2',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'message-analyze',
+        title: 'Read The Windows In Analyze',
+        body: 'Open Analyze on either SymbolWindow to see exactly which input positions feed the branch output. A wrong start value changes the visible submessage immediately, which is why windowing belongs in the machine graph.',
+        focusModuleId: 'window-2',
+        targetStepIndex: 2,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'visible-symbol-scramble',
     title: 'Visible Symbol Scramble',
     group: 'Symbol Permutation',

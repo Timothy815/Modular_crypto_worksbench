@@ -28,6 +28,7 @@ import { Rotor } from './modules/rotor';
 import { Salt } from './modules/salt';
 import { SBox } from './modules/s-box';
 import { SymbolPermutation } from './modules/symbol-permutation';
+import { SymbolWindow } from './modules/symbol-window';
 import { SubMod } from './modules/sub-mod';
 import { TextInput } from './modules/text-input';
 import { XOR } from './modules/xor';
@@ -93,6 +94,7 @@ const registry: ModuleRegistry = {
   [Modulo.id]: Modulo,
   [Permutation.id]: Permutation,
   [SymbolPermutation.id]: SymbolPermutation,
+  [SymbolWindow.id]: SymbolWindow,
   [Rotor.id]: Rotor,
   [Plugboard.id]: Plugboard,
   [Reflector.id]: Reflector,
@@ -543,6 +545,33 @@ describe('validateProject', () => {
     expect(
       result.issues.some(
         (issue) => issue.moduleId === 'permute' && issue.code === 'signal-width-mismatch',
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects a SymbolWindow range that exceeds a known input symbol length', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text', defId: 'TextInput', params: { value: 'MATH' } },
+        { id: 'window', defId: 'SymbolWindow', params: { start: 2, width: 3 } },
+      ],
+      connections: [
+        {
+          from: { moduleId: 'text', port: 'out' },
+          to: { moduleId: 'window', port: 'in' },
+        },
+      ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'window' &&
+          issue.message.includes('symbol window') &&
+          issue.message.includes('input symbol length'),
       ),
     ).toBe(true);
   });

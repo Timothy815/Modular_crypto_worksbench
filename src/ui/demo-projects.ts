@@ -19,6 +19,35 @@ export interface DemoProject {
 
 export const demoProjects: DemoProject[] = [
   {
+    id: 'visible-message-window',
+    name: 'Visible Message Window',
+    group: 'Symbol Structure',
+    summary: 'One visible message feeds two contiguous symbol windows so downstream branches can read different submessages without hidden chunking.',
+    pipeline: 'TextInput -> SymbolWindow / SymbolWindow -> Output comparison',
+    project: {
+      modules: [
+        { id: 'text', defId: 'TextInput', params: { value: 'MATH' } },
+        { id: 'window-1', defId: 'SymbolWindow', params: { start: 0, width: 2 } },
+        { id: 'window-2', defId: 'SymbolWindow', params: { start: 2, width: 2 } },
+        { id: 'out-1', defId: 'Output', params: {} },
+        { id: 'out-2', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'window-1', port: 'in' } },
+        { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'window-2', port: 'in' } },
+        { from: { moduleId: 'window-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+        { from: { moduleId: 'window-2', port: 'out' }, to: { moduleId: 'out-2', port: 'in' } },
+      ],
+    },
+    layout: {
+      text: { x: 72, y: 172 },
+      'window-1': { x: 372, y: 88 },
+      'window-2': { x: 372, y: 256 },
+      'out-1': { x: 680, y: 88 },
+      'out-2': { x: 680, y: 256 },
+    },
+  },
+  {
     id: 'visible-symbol-scramble',
     name: 'Visible Symbol Scramble',
     group: 'Symbol Permutation',

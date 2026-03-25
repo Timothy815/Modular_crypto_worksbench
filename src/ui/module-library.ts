@@ -212,6 +212,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'A message-level transform that shuffles symbol order without changing the symbols themselves.',
     searchTerms: ['symbol permutation', 'permute', 'reorder', 'shuffle', 'symbol', 'message', 'transposition'],
   },
+  SymbolWindow: {
+    sectionId: 'symbol-domain',
+    purpose: 'Extracts one contiguous symbol window from a larger visible message.',
+    detail: 'Use this when one visible symbol message should feed different submessages into different branches without hidden chunking logic.',
+    searchTerms: ['symbol window', 'message window', 'slice', 'submessage', 'extract', 'symbol', 'message'],
+  },
   BitShifter: {
     sectionId: 'transforms',
     purpose: 'Shifts or rotates bits left and right.',

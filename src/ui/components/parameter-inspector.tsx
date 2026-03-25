@@ -2883,6 +2883,9 @@ function getTransformationView(
   if (entry.defId === 'SymbolPermutation') {
     return getSymbolPermutationTransformation(entry, project, registry);
   }
+  if (entry.defId === 'SymbolWindow') {
+    return getSymbolWindowTransformation(entry, project, registry);
+  }
   if (entry.defId === 'BitShifter') {
     return getBitShifterTransformation(entry, project, registry);
   }
@@ -3054,6 +3057,75 @@ function getSymbolPermutationTransformation(
       rows.length === 0
         ? 'This symbol permutation has no visible positions to remap.'
         : `Output position 0 reads input position ${rows[0]?.inputIndex}. The symbols stay the same; only their order changes.`,
+  };
+}
+
+function getSymbolWindowTransformation(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): RoutingTransformationView | null {
+  const resolved = resolveTraceModuleInstance(entry.moduleId, project, registry);
+  if (!resolved) {
+    return null;
+  }
+
+  const input = entry.inputs.in;
+  const output = entry.outputs.out;
+  if (input?.type !== 'symbol' || output?.type !== 'symbol') {
+    return null;
+  }
+
+  const inputSymbols = Array.from(input.value);
+  const outputSymbols = Array.from(output.value);
+  const start =
+    typeof resolved.instance.params.start === 'number' && Number.isInteger(resolved.instance.params.start)
+      ? resolved.instance.params.start
+      : 0;
+  const width =
+    typeof resolved.instance.params.width === 'number' && Number.isInteger(resolved.instance.params.width)
+      ? resolved.instance.params.width
+      : outputSymbols.length;
+
+  const rows = outputSymbols.map((outputValue, outputIndex) => {
+    const inputIndex = start + outputIndex;
+    return {
+      inputIndex,
+      inputValue: inputSymbols[inputIndex] ?? '',
+      outputIndex,
+      outputValue,
+      kind: 'line' as const,
+    };
+  });
+  const laneHeight = 32;
+  const laneGap = 6;
+  const laneStep = laneHeight + laneGap;
+  const laneOffset = laneHeight / 2;
+  const svgHeight = Math.max(laneHeight, rows.length * laneHeight + Math.max(0, rows.length - 1) * laneGap);
+  const rowsWithPositions = rows.map((row, laneIndex) => ({
+    ...row,
+    inputY: laneOffset + laneIndex * laneStep,
+    outputY: laneOffset + laneIndex * laneStep,
+    color: getPermutationWireColor(row.inputIndex),
+  }));
+
+  return {
+    entry,
+    kind: 'routing',
+    title: 'Symbol Window Mapping',
+    copy:
+      'SymbolWindow extracts one contiguous slice from a larger visible symbol message. It does not permute or substitute symbols; it shows exactly which positions a downstream branch receives.',
+    configLabel: 'Start / Width',
+    configValue: `${start} / ${width}`,
+    middleLabel: 'Slice',
+    rows: rowsWithPositions,
+    inputLane: rowsWithPositions,
+    outputLane: rowsWithPositions,
+    svgHeight,
+    summary:
+      rows.length === 0
+        ? 'This SymbolWindow has no visible output symbols.'
+        : `The output reads symbol positions ${start} through ${start + rows.length - 1} from the visible message.`,
   };
 }
 
