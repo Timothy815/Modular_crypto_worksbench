@@ -820,6 +820,7 @@ export function WorkbenchPanel({
                 key={moduleInstance.id}
                 className={
                   `graph-node graph-node-${category}` +
+                  (moduleInstance.bypass ? ' graph-node-bypassed' : '') +
                   (selectedModuleIds.includes(moduleInstance.id) ? ' graph-node-selected' : '') +
                   (moduleInstance.id === selectedModuleId ? ' graph-node-primary-selected' : '') +
                   (moduleInstance.id === hoveredTraceModuleId ? ' graph-node-trace-hovered' : '') +
@@ -875,6 +876,9 @@ export function WorkbenchPanel({
                   <strong>{moduleInstance.id}</strong>
                   {moduleInstance.id === tutorialStep?.focusModuleId ? (
                     <span className="graph-node-tutorial-badge">Tutorial</span>
+                  ) : null}
+                  {moduleInstance.bypass ? (
+                    <span className="graph-node-bypass-badge">Bypass</span>
                   ) : null}
                   {(moduleIssueCountById[moduleInstance.id] ?? 0) > 0 ? (
                     <span className="graph-node-issue-badge">

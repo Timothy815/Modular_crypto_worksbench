@@ -520,6 +520,32 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'bypass-workshop',
+    name: 'Bypass Workshop',
+    group: 'Modern Rounds',
+    summary: 'A visible shift stage can be turned off without deleting it from the chain, making it easy to compare one machine with and without that transform.',
+    pipeline: 'HexSource -> BitShifter -> BitsToHex -> Output',
+    project: {
+      modules: [
+        { id: 'source', defId: 'HexSource', params: { value: 'A3' } },
+        { id: 'shift', defId: 'BitShifter', params: { amount: 2, mode: 'rotate-left' } },
+        { id: 'encode', defId: 'BitsToHex', params: {} },
+        { id: 'output', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'shift', port: 'in' } },
+        { from: { moduleId: 'shift', port: 'out' }, to: { moduleId: 'encode', port: 'in' } },
+        { from: { moduleId: 'encode', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      source: { x: 72, y: 156 },
+      shift: { x: 360, y: 156 },
+      encode: { x: 648, y: 156 },
+      output: { x: 936, y: 156 },
+    },
+  },
+  {
     id: 'split-transform-rejoin',
     name: 'Split Transform Rejoin',
     group: 'Block Framing',

@@ -18,6 +18,7 @@ import {
   type CompositeDef,
   type IteratorDef,
 } from './composites';
+import { evaluateBypass, isBypassEligibleDefinition } from './bypass';
 
 const CLOCK_PORT = 'clock';
 
@@ -174,6 +175,7 @@ export function executeProject(
       inputs,
       moduleInstance.params,
       registry,
+      Boolean(moduleInstance.bypass),
     );
     traceEntry.outputs = outputs;
 
@@ -196,7 +198,15 @@ function evaluateDefinition(
   inputs: ModuleInputs,
   params: ModuleParams,
   registry: ModuleRegistry,
+  bypass = false,
 ): EvaluatedDefinitionResult {
+  if (bypass && isBypassEligibleDefinition(def)) {
+    return {
+      outputs: evaluateBypass(def, inputs),
+      hoistedTrace: [],
+    };
+  }
+
   if (isCompositeDefinition(def)) {
     return evaluateComposite(moduleId, def, inputs, params, registry);
   }
@@ -573,10 +583,13 @@ function executeTickedGraph(
             runtimeState.iteratorStateByModuleId[moduleId],
         )
       : {
-          outputs: def.evaluate(
-            inputs,
-            isTickSliceable(def) ? def.tickSlice(currentParams, tick) : { ...currentParams },
-          ),
+          outputs:
+            moduleInstance.bypass && isBypassEligibleDefinition(def)
+              ? evaluateBypass(def, inputs)
+              : def.evaluate(
+                  inputs,
+                  isTickSliceable(def) ? def.tickSlice(currentParams, tick) : { ...currentParams },
+                ),
           hoistedTrace: [],
         };
     traceEntry.outputs = outputs;

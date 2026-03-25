@@ -896,4 +896,27 @@ describe('validateProject', () => {
     expect(result.ok).toBe(false);
     expect(result.issues.some((issue) => issue.code === 'signal-width-mismatch')).toBe(true);
   });
+
+  it('rejects bypass on an ineligible multi-input module', () => {
+    const project: Project = {
+      modules: [
+        { id: 'left', defId: 'BitSource', params: { stream: [1, 0, 1, 0] } },
+        { id: 'right', defId: 'BitSource', params: { stream: [0, 1, 0, 1] } },
+        { id: 'xor', defId: 'XOR', params: {}, bypass: true },
+      ],
+      connections: [
+        { from: { moduleId: 'left', port: 'out' }, to: { moduleId: 'xor', port: 'a' } },
+        { from: { moduleId: 'right', port: 'out' }, to: { moduleId: 'xor', port: 'b' } },
+      ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) => issue.code === 'invalid-bypass' && issue.moduleId === 'xor',
+      ),
+    ).toBe(true);
+  });
 });

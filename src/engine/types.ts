@@ -88,6 +88,7 @@ export interface ModuleInstance {
   id: string;
   defId: string;
   params: ModuleParams;
+  bypass?: boolean;
 }
 
 export interface ConnectionEndpoint {
@@ -123,7 +124,8 @@ export interface ValidationIssue {
     | 'signal-type-mismatch'
     | 'signal-width-mismatch'
     | 'cycle-detected'
-    | 'invalid-composite-binding';
+    | 'invalid-composite-binding'
+    | 'invalid-bypass';
   message: string;
   moduleId?: string;
   connection?: Connection;

@@ -9,6 +9,7 @@ import {
 } from 'react';
 
 import { isCompositeDefinition } from '../../engine/composites';
+import { isBypassEligibleDefinition } from '../../engine/bypass';
 import type {
   Connection,
   ExecutionResult,
@@ -77,6 +78,7 @@ interface ParameterInspectorProps {
   getParamDraft: (moduleId: string, key: string) => string | undefined;
   onParamDraftChange: (moduleId: string, key: string, rawValue: string) => void;
   onParamChange: (moduleId: string, key: string, value: unknown) => void;
+  onSetModuleBypass: (moduleId: string, bypass: boolean) => void;
   onDeleteModule: (moduleId: string) => void;
   onUnzipComposite?: (moduleId: string) => void;
   onSelectIssueTarget: (moduleId: string) => void;
@@ -116,6 +118,7 @@ export function ParameterInspector({
   getParamDraft,
   onParamDraftChange,
   onParamChange,
+  onSetModuleBypass,
   onDeleteModule,
   onUnzipComposite,
   onSelectIssueTarget,
@@ -248,6 +251,7 @@ export function ParameterInspector({
   const transformationView = activeTransformationEntry
     ? getTransformationView(activeTransformationEntry, project, registry)
     : null;
+  const canBypassSelectedModule = moduleDef ? isBypassEligibleDefinition(moduleDef) : false;
   const effectiveLookupChunkIndex =
     transformationView?.kind === 'lookup'
       ? transformationView.chunks[
@@ -1400,6 +1404,15 @@ export function ParameterInspector({
             ) : null
           ) : null}
           <div className="selected-module-actions">
+            {canBypassSelectedModule ? (
+              <button
+                type="button"
+                className={moduleInstance.bypass ? 'mini-action-button' : 'mini-action-button'}
+                onClick={() => onSetModuleBypass(moduleInstance.id, !moduleInstance.bypass)}
+              >
+                {moduleInstance.bypass ? 'Disable Bypass' : 'Enable Bypass'}
+              </button>
+            ) : null}
             {isCompositeDefinition(moduleDef) && onUnzipComposite ? (
               <button
                 type="button"
@@ -1417,6 +1430,22 @@ export function ParameterInspector({
               Delete Module
             </button>
           </div>
+
+          {canBypassSelectedModule ? (
+            <div className="content-selector-card">
+              <p className="comparison-copy">
+                Bypass keeps this module in the graph but passes its single input straight through unchanged.
+              </p>
+              <div className="content-selector-meta">
+                <span className="content-status-chip">
+                  {moduleInstance.bypass ? 'Bypass Active' : 'Bypass Off'}
+                </span>
+                <span className="content-status-chip">
+                  Eligible: one-input / one-output / same-domain
+                </span>
+              </div>
+            </div>
+          ) : null}
 
           <div className="param-list">
             {Object.values(moduleDef.paramSchema).length === 0 ? (

@@ -1545,6 +1545,11 @@ body.dock-resizing {
   box-shadow: 0 0 0 2px var(--danger-text);
 }
 
+.graph-node-bypassed {
+  opacity: 0.82;
+  border-style: dashed;
+}
+
 .graph-node-type {
   display: block;
   margin-bottom: 6px;
@@ -1598,6 +1603,21 @@ body.dock-resizing {
   font-size: 0.7rem;
   font-weight: 800;
   text-align: center;
+}
+
+.graph-node-bypass-badge {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  min-width: 3.6rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-panel) 75%, white);
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-align: center;
+  border: 1px dashed var(--line-strong);
 }
 
 .tutorial-canvas-callout {

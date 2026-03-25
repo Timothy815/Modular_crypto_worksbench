@@ -1524,6 +1524,14 @@ function App() {
                     value,
                   })
                 }
+                onSetModuleBypass={(moduleId, bypass) =>
+                  dispatch({
+                    type: 'setModuleBypass',
+                    projectId: activeProjectDefinition.id,
+                    moduleId,
+                    bypass,
+                  })
+                }
                 onDeleteModule={(moduleId) =>
                   state.compositeEditor && activeCompositeEntry && isCompositeBoundaryModule(activeCompositeEntry, moduleId)
                     ? dispatch({

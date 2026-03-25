@@ -110,6 +110,7 @@ export type UiAction =
     }
   | { type: 'removeConnection'; projectId: string; connectionIndex: number }
   | { type: 'updateParam'; projectId: string; moduleId: string; key: string; value: unknown }
+  | { type: 'setModuleBypass'; projectId: string; moduleId: string; bypass: boolean }
   | { type: 'setParamDraft'; projectId: string; moduleId: string; key: string; rawValue: string }
   | { type: 'clearParamDraft'; projectId: string; moduleId: string; key: string }
   | { type: 'loadDocument'; projectId: string; document: WorkbenchDocument }
@@ -1114,6 +1115,36 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
         paramDrafts: nextDrafts,
       };
     }
+    case 'setModuleBypass': {
+      if (state.compositeEditor) {
+        return {
+          ...state,
+          compositeEditor: updateCompositeEditorBypass(
+            state.compositeEditor,
+            action.moduleId,
+            action.bypass,
+          ),
+        };
+      }
+
+      const currentProject = state.projectStates[action.projectId];
+      if (!currentProject) {
+        return state;
+      }
+
+      const nextProject = updateModule(currentProject, action.moduleId, (moduleInstance) => ({
+        ...moduleInstance,
+        bypass: action.bypass,
+      }));
+
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: nextProject,
+        },
+      };
+    }
     case 'setParamDraft':
       return state.compositeEditor
         ? {
@@ -1946,6 +1977,21 @@ function updateCompositeEditorParam(
       },
     })),
     paramDrafts: omitDraftKey(editor.paramDrafts, `${moduleId}:${key}`),
+    saveError: null,
+  };
+}
+
+function updateCompositeEditorBypass(
+  editor: CompositeEditorState,
+  moduleId: string,
+  bypass: boolean,
+): CompositeEditorState {
+  return {
+    ...editor,
+    project: updateModule(editor.project, moduleId, (moduleInstance) => ({
+      ...moduleInstance,
+      bypass,
+    })),
     saveError: null,
   };
 }

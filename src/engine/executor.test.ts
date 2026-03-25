@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { CompositeDef, IteratorDef } from './composites';
 import { executeProject } from './executor';
 import type { ModuleRegistry, Project } from './types';
+import { BitShifter } from './modules/bit-shifter';
 
 const registry: ModuleRegistry = {
   TextSource: {
@@ -46,6 +47,7 @@ const registry: ModuleRegistry = {
     paramSchema: {},
     evaluate: (inputs) => ({ out: inputs.in }),
   },
+  [BitShifter.id]: BitShifter,
   SymbolSink: {
     id: 'SymbolSink',
     name: 'SymbolSink',
@@ -589,5 +591,30 @@ describe('executeProject', () => {
     expect(nestedEntry?.outputs.out).toEqual({ type: 'bits', value: [1, 1, 1, 0] });
     expect(nestedEntry?.scopeModuleId).toBe('permute');
     expect(nestedEntry?.depth).toBe(1);
+  });
+
+  it('passes an eligible module input straight through when bypass is enabled', () => {
+    const project: Project = {
+      modules: [
+        {
+          id: 'shift',
+          defId: 'BitShifter',
+          params: { amount: 2, mode: 'rotate-left' },
+          bypass: true,
+        },
+      ],
+      connections: [],
+    };
+
+    const result = executeProject(project, registry, {
+      shift: {
+        in: { type: 'bits', value: [1, 0, 1, 1] },
+      },
+    });
+
+    expect(result.outputsByModuleId.shift.out).toEqual({
+      type: 'bits',
+      value: [1, 0, 1, 1],
+    });
   });
 });

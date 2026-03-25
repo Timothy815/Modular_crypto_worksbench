@@ -8,6 +8,7 @@ function cloneProject<T>(value: T): T {
 const bridgeProject = demoProjects.find((project) => project.id === 'bridge');
 const beyondXorProject = demoProjects.find((project) => project.id === 'beyond-xor');
 const controlProject = demoProjects.find((project) => project.id === 'counter-pulse-gate');
+const bypassWorkshopProject = demoProjects.find((project) => project.id === 'bypass-workshop');
 const splitTransformProject = demoProjects.find((project) => project.id === 'split-transform-rejoin');
 const padAndSplitProject = demoProjects.find((project) => project.id === 'pad-and-split');
 const protocolMaterialProject = demoProjects.find((project) => project.id === 'protocol-material-mixer');
@@ -47,6 +48,9 @@ if (!beyondXorProject) {
 }
 if (!controlProject) {
   throw new Error('Expected counter-pulse-gate demo project to seed starter challenges.');
+}
+if (!bypassWorkshopProject) {
+  throw new Error('Expected bypass-workshop demo project to seed starter challenges.');
 }
 if (!splitTransformProject) {
   throw new Error('Expected split-transform-rejoin demo project to seed starter challenges.');
@@ -145,6 +149,8 @@ const beyondXorTarget = cloneProject(beyondXorProject.project);
 const brokenBeyondXorStart = cloneProject(beyondXorProject.project);
 const controlTarget = cloneProject(controlProject.project);
 const brokenControlStart = cloneProject(controlProject.project);
+const bypassWorkshopTarget = cloneProject(bypassWorkshopProject.project);
+const brokenBypassWorkshopStart = cloneProject(bypassWorkshopProject.project);
 const splitTransformTarget = cloneProject(splitTransformProject.project);
 const brokenSplitTransformStart = cloneProject(splitTransformProject.project);
 const padAndSplitTarget = cloneProject(padAndSplitProject.project);
@@ -244,6 +250,14 @@ if (!brokenControlThreshold) {
   throw new Error('Expected counter-pulse-gate demo project to contain a threshold module.');
 }
 brokenControlThreshold.params.value = 'C';
+
+const brokenBypassShift = brokenBypassWorkshopStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'shift',
+);
+if (!brokenBypassShift) {
+  throw new Error('Expected bypass-workshop demo project to contain a shift module.');
+}
+brokenBypassShift.bypass = true;
 
 const brokenProtocolIv = brokenProtocolMaterialStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'iv',
@@ -649,6 +663,27 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     hints: [
       'The problem is on the bit-domain side of the bridge pipeline, not the text input side.',
       'Compare the BitSource stream against the target behavior and follow it through XOR.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'restore-the-shift-stage',
+    title: 'Restore the Shift Stage',
+    projectId: 'bypass-workshop',
+    group: 'Modern Rounds',
+    difficulty: 'beginner',
+    prompt:
+      'The shift stage is still wired into the machine, but it was bypassed. Restore the original transformed output without deleting anything from the chain.',
+    startingProject: brokenBypassWorkshopStart,
+    startingLayout: cloneProject(bypassWorkshopProject.layout),
+    targetProject: bypassWorkshopTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The graph topology is already correct in this lab.',
+      'Select the BitShifter and inspect its module controls instead of editing the connections.',
+      'Bypass is useful for comparison, but this challenge wants the transform active again.',
     ],
   },
   {

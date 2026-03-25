@@ -33,6 +33,7 @@ import { validateBitSplitParam } from './modules/bit-split';
 import { validateBitPadParam } from './modules/bit-pad';
 import { validateBitUnpadParam } from './modules/bit-unpad';
 import { validateBitWindowParam } from './modules/bit-window';
+import { isBypassEligibleDefinition } from './bypass';
 import {
   validateProtocolMaterialParam,
   validateProtocolMaterialValueFitsWidth,
@@ -776,6 +777,14 @@ function validateParams(
 
   if (isCompositeDefinition(def) && def.forwardedParams?.length) {
     validateForwardedParamValues(moduleInstance, def, registry, issues);
+  }
+
+  if (moduleInstance.bypass && !isBypassEligibleDefinition(def)) {
+    issues.push({
+      code: 'invalid-bypass',
+      message: `Module "${moduleInstance.id}" cannot be bypassed in V1. Only explicit one-input / one-output same-domain modules are eligible.`,
+      moduleId: moduleInstance.id,
+    });
   }
 }
 
