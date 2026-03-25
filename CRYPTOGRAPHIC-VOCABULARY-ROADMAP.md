@@ -1,6 +1,6 @@
 # MCW — Cryptographic Vocabulary Roadmap
 
-Status: Active strategic roadmap after `v1.20.0`.
+Status: Active strategic roadmap after `v1.21.0`.
 
 This document reframes MCW as a cryptographic systems IDE:
 - not a code generator
@@ -153,6 +153,7 @@ Current groundwork exists:
 Shipped so far:
 - `Majority` for visible voting / irregular clocking
 - `Mux` for visible selector / filter behavior
+- `Demux` for visible routing / scheduling behavior
 
 Still needed over time:
 - richer combiner functions
@@ -255,6 +256,13 @@ Shipped in `v1.20.0`:
   - `The Filtered Keystream` tutorial
   - `Repair the Filter Selector` challenge
 
+Shipped in `v1.21.0`:
+- `STREAM-CIPHER-V3.md` third slice:
+  - `Demux`
+  - `Routed Clock Keystream` demo workspace
+  - `The Routed Clock Keystream` tutorial
+  - `Repair the Routed Clock` challenge
+
 Shipped in `v1.19.0`:
 - `ADVANCED-ROTOR-REALISM-V1.md` first slice:
   - `ringOffset`
@@ -267,7 +275,7 @@ Shipped in `v1.19.0`:
 Still open:
 - richer stream combiners / filter functions
 - rotor direction control / flipped insertion follow-ons
-- better keystream machine examples beyond the first majority-clocking loop
+- better keystream machine examples beyond the first routing/filtering loops
 
 Teaching additions:
 - rotor stepping tutorial
@@ -373,11 +381,11 @@ To protect the product identity, avoid:
 
 The roadmap is now validated through shipped foundations across four phases:
 - Phase 1: `CRYPTO-OPERATORS-V1.md` and `CONTROL-PRIMITIVES-V1.md` (shipped in `v1.14.0` / `v1.15.0`)
-- Phase 2: `STREAM-CIPHER-V1.md`, `STREAM-CIPHER-V2.md`, and `ADVANCED-ROTOR-REALISM-V1.md` shipped slices (`v1.18.0` / `v1.20.0` / `v1.19.0`)
+- Phase 2: `STREAM-CIPHER-V1.md`, `STREAM-CIPHER-V2.md`, `STREAM-CIPHER-V3.md`, and `ADVANCED-ROTOR-REALISM-V1.md` shipped slices (`v1.18.0` / `v1.20.0` / `v1.21.0` / `v1.19.0`)
 - Phase 3: `BLOCK-FRAMING-V1.md` (shipped in `v1.16.0`)
 - Phase 4: `PROTOCOL-MATERIAL-V1.md` first slice (shipped in `v1.17.0`)
 
-The next strategic direction after `v1.20.0` should be:
+The next strategic direction after `v1.21.0` should be:
 
 > keep expanding MCW into a fully expressive cryptographic machine language
 
@@ -390,10 +398,8 @@ It is:
 - keep future rotor follow-ons bounded rather than turning mechanized realism into hidden helpers
 - keep tutorials and challenges shipping alongside the new language
 
-The immediate next contract should be:
-- `STREAM-CIPHER-V3.md`
-
-That keeps the stream line moving from visible voting and visible selection into visible routing/scheduling without collapsing into named-cipher presets.
+The immediate next decision should be:
+- which bounded follow-on best deepens the now-shipped stream routing/filtering foundation without collapsing into named-cipher presets or scheduler sprawl
 
 That is the path from:
 - strong teaching workbench

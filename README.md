@@ -11,21 +11,22 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.20.0`.
+The repository has shipped through `v1.21.0`.
 
-`main` now includes the completed second milestone of **stream-cipher expressiveness**:
+`main` now includes the completed third milestone of **stream-cipher expressiveness**:
 - new primitive:
-  - `Mux`
-- strict 1-bit selector validation for `select`, `a`, and `b`
-- Analyze transformation view for `Mux`
-- `Filtered Keystream` demo workspace
-- `The Filtered Keystream` tutorial
-- `Repair the Filter Selector` challenge
+  - `Demux`
+- strict 1-bit routing validation for `select` and `in`
+- Analyze transformation view for `Demux`
+- `Routed Clock Keystream` demo workspace
+- `The Routed Clock Keystream` tutorial
+- `Repair the Routed Clock` challenge
 
 Shipped stream, rotor, and protocol/framing foundations remain in place:
 - stream-machine expressiveness:
   - `Majority`
   - `Mux`
+  - `Demux`
 - advanced rotor realism:
   - `ringOffset`, `notches`, visible `turnover`
 - protocol inputs:
@@ -92,6 +93,7 @@ Implemented and shipped:
 - `v1.18.0` Stream Cipher Foundations milestone
 - `v1.19.0` Advanced Rotor Realism milestone
 - `v1.20.0` Stream Cipher Filtering milestone
+- `v1.21.0` Stream Cipher Routing milestone
 - first bounded hash collision challenge:
   - seeded `Find A Hash Collision` challenge
   - same-digest / different-input success rule
@@ -157,7 +159,7 @@ Implemented and shipped:
 - `PROTOCOL-MATERIAL-V1.md`: shipped first bounded protocol-input slice for IV, nonce, and salt sources
 - `STREAM-CIPHER-V1.md`: shipped first bounded stream-machine slice for visible majority logic and irregular clocking
 - `STREAM-CIPHER-V2.md`: shipped second bounded stream-machine slice for visible selector/filter behavior via `Mux`
-- `STREAM-CIPHER-V3.md`: proposed third bounded stream-machine slice for visible routing/scheduling behavior via `Demux`
+- `STREAM-CIPHER-V3.md`: shipped third bounded stream-machine slice for visible routing/scheduling behavior via `Demux`
 - `ADVANCED-ROTOR-REALISM-V1.md`: shipped first bounded rotor-realism slice for ring setting, turnover, and double-step behavior
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
@@ -200,8 +202,8 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 1. Treat MCW explicitly as a **cryptographic systems IDE** and grow the primitive language toward full expressive coverage, not just isolated feature branches
 2. Continue the primitive-language phase beyond shipped stream and rotor foundations:
    the next bounded decision should stay within shared vocabulary growth rather than preset-building
-   Immediate contract:
-   `STREAM-CIPHER-V3.md`
+   Immediate focus:
+   choose the next bounded follow-on after shipped stream routing and rotor realism
 3. Keep future rotor follow-ons bounded:
    reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices rather than spilling into convenience presets
 4. Add one tutorial plus one demo/challenge whenever a major new primitive family ships so the language grows with teaching support
