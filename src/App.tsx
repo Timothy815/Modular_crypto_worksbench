@@ -1567,6 +1567,7 @@ function App() {
                 tickCount={effectiveTickCount}
                 tickedParamsByModule={tickedExecution?.paramsByModuleByTick ?? null}
                 tickHistoryByModule={tickHistoryByModule}
+                collectedOutput={collectedOutput}
                 onToggleProbe={(moduleId) =>
                   dispatch({
                     type: 'toggleProbe',

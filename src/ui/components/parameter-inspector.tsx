@@ -91,6 +91,7 @@ interface ParameterInspectorProps {
   tickCount?: number;
   tickedParamsByModule?: Record<string, Record<string, unknown>[]> | null;
   tickHistoryByModule?: Record<string, string[]> | null;
+  collectedOutput?: string | null;
   onToggleProbe: (moduleId: string) => void;
   onClearProbes: () => void;
 }
@@ -129,6 +130,7 @@ export function ParameterInspector({
   tickCount = 0,
   tickedParamsByModule = null,
   tickHistoryByModule = null,
+  collectedOutput = null,
   onToggleProbe,
   onClearProbes,
 }: ParameterInspectorProps) {
@@ -166,7 +168,17 @@ export function ParameterInspector({
     [execution],
   );
   const tutorialTraceRef = useRef<HTMLLIElement | null>(null);
-  const outputTrace = execution?.trace.at(-1);
+  const outputTrace = useMemo(() => {
+    if (!execution) return undefined;
+    const outputModuleId = project.modules.find(
+      (m) => m.defId === 'Output' || m.defId === 'BitOutput',
+    )?.id;
+    if (outputModuleId) {
+      const found = execution.trace.find((entry) => entry.moduleId === outputModuleId);
+      if (found) return found;
+    }
+    return execution.trace.at(-1);
+  }, [execution, project.modules]);
   const selectedTrace = execution?.trace.find(
     (entry) => entry.moduleId === moduleInstance?.id,
   );
@@ -401,8 +413,8 @@ export function ParameterInspector({
       </label>
 
       <div className="trace-summary">
-        <span className="meta-label">Final Input To Output</span>
-        <strong>{formatSignal(outputTrace?.inputs.in)}</strong>
+        <span className="meta-label">{isTickedMode ? 'Collected Output' : 'Output'}</span>
+        <strong>{isTickedMode && collectedOutput !== null ? collectedOutput : formatSignal(outputTrace?.inputs.in)}</strong>
         <p className="trace-summary-subtitle">
           {validationIssues.length > 0
             ? `${validationIssues.length} validation issue${validationIssues.length === 1 ? '' : 's'} blocking execution`
