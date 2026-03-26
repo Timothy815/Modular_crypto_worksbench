@@ -1533,6 +1533,14 @@ function App() {
                     bypass,
                   })
                 }
+                onRenameModuleInstance={(moduleId, nextModuleId) =>
+                  dispatch({
+                    type: 'renameModuleInstance',
+                    projectId: activeProjectDefinition.id,
+                    moduleId,
+                    nextModuleId,
+                  })
+                }
                 onDeleteModule={(moduleId) =>
                   state.compositeEditor && activeCompositeEntry && isCompositeBoundaryModule(activeCompositeEntry, moduleId)
                     ? dispatch({
@@ -1546,6 +1554,7 @@ function App() {
                         moduleId,
                       })
                 }
+                canRenameModuleIds={!state.compositeEditor}
                 onUnzipComposite={(moduleId) => handleUnzipComposite(moduleId)}
                 onSelectIssueTarget={(moduleId) =>
                   dispatch({

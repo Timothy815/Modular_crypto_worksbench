@@ -4,6 +4,100 @@ import { demoProjects } from './demo-projects';
 import { createInitialUiState, uiReducer } from './store';
 
 describe('uiReducer', () => {
+  it('renames a module instance and updates workspace-local references atomically', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const project = initialState.projectStates[projectId];
+    const moduleId = project.modules[0]?.id;
+    const connectedModuleId = project.connections.find(
+      (connection) => connection.from.moduleId === moduleId,
+    )?.to.moduleId;
+
+    if (!moduleId || !connectedModuleId) {
+      throw new Error('Expected a connected module in the sequential demo.');
+    }
+
+    const stateWithReferences = uiReducer(
+      uiReducer(
+        uiReducer(initialState, {
+          type: 'selectModule',
+          projectId,
+          moduleId,
+        }),
+        {
+          type: 'toggleProbe',
+          projectId,
+          moduleId,
+        },
+      ),
+      {
+        type: 'setParamDraft',
+        projectId,
+        moduleId,
+        key: 'seed',
+        rawValue: '1010101',
+      },
+    );
+
+    const nextState = uiReducer(stateWithReferences, {
+      type: 'renameModuleInstance',
+      projectId,
+      moduleId,
+      nextModuleId: 'round_1-source',
+    });
+
+    expect(
+      nextState.projectStates[projectId]?.modules.some((entry) => entry.id === 'round_1-source'),
+    ).toBe(true);
+    expect(nextState.projectStates[projectId]?.modules.some((entry) => entry.id === moduleId)).toBe(
+      false,
+    );
+    expect(
+      nextState.projectStates[projectId]?.connections.some(
+        (connection) =>
+          connection.from.moduleId === 'round_1-source' &&
+          connection.to.moduleId === connectedModuleId,
+      ),
+    ).toBe(true);
+    expect(nextState.layoutByProject[projectId]?.['round_1-source']).toEqual(
+      initialState.layoutByProject[projectId]?.[moduleId],
+    );
+    expect(nextState.layoutByProject[projectId]?.[moduleId]).toBeUndefined();
+    expect(nextState.selectedModuleIdByProject[projectId]).toBe('round_1-source');
+    expect(nextState.selectedModuleIdsByProject[projectId]).toContain('round_1-source');
+    expect(nextState.probedModuleIdsByProject[projectId]).toContain('round_1-source');
+    expect(nextState.paramDrafts[`${projectId}:round_1-source:seed`]).toBe('1010101');
+    expect(nextState.paramDrafts[`${projectId}:${moduleId}:seed`]).toBeUndefined();
+  });
+
+  it('rejects invalid or duplicate module instance IDs', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const project = initialState.projectStates[projectId];
+    const firstModuleId = project.modules[0]?.id;
+    const secondModuleId = project.modules[1]?.id;
+
+    if (!firstModuleId || !secondModuleId) {
+      throw new Error('Expected at least two modules in the sequential demo.');
+    }
+
+    const duplicateRenameState = uiReducer(initialState, {
+      type: 'renameModuleInstance',
+      projectId,
+      moduleId: firstModuleId,
+      nextModuleId: secondModuleId,
+    });
+    const invalidRenameState = uiReducer(initialState, {
+      type: 'renameModuleInstance',
+      projectId,
+      moduleId: firstModuleId,
+      nextModuleId: 'round 1 source',
+    });
+
+    expect(duplicateRenameState).toEqual(initialState);
+    expect(invalidRenameState).toEqual(initialState);
+  });
+
   it('resets tick position and playback when loading a document', () => {
     const initialState = createInitialUiState(demoProjects);
     const projectId = 'sequential';

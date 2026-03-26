@@ -28,6 +28,10 @@ import {
   getSinkRepresentationOptions,
   type SinkRepresentation,
 } from '../sink-representations';
+import {
+  getModuleInstanceIdValidationError,
+  normalizeModuleInstanceIdCandidate,
+} from '../module-instance-id';
 import type { TutorialStep } from '../tutorials';
 import { ComparisonPanel } from './comparison-panel';
 import type { ComparisonBaselineDocument } from '../workbench-document';
@@ -87,7 +91,9 @@ interface ParameterInspectorProps {
   onParamDraftChange: (moduleId: string, key: string, rawValue: string) => void;
   onParamChange: (moduleId: string, key: string, value: unknown) => void;
   onSetModuleBypass: (moduleId: string, bypass: boolean) => void;
+  onRenameModuleInstance?: (moduleId: string, nextModuleId: string) => void;
   onDeleteModule: (moduleId: string) => void;
+  canRenameModuleIds?: boolean;
   onUnzipComposite?: (moduleId: string) => void;
   onSelectIssueTarget: (moduleId: string) => void;
   onTraceHover: (moduleId: string | null) => void;
@@ -127,7 +133,9 @@ export function ParameterInspector({
   onParamDraftChange,
   onParamChange,
   onSetModuleBypass,
+  onRenameModuleInstance,
   onDeleteModule,
+  canRenameModuleIds = true,
   onUnzipComposite,
   onSelectIssueTarget,
   onTraceHover,
@@ -161,6 +169,15 @@ export function ParameterInspector({
     text: string;
   } | null>(null);
   const [requestedSBoxEditIndex, setRequestedSBoxEditIndex] = useState(0);
+  const [renameState, setRenameState] = useState<{
+    moduleId: string | null;
+    draft: string;
+    error: string | null;
+  }>({
+    moduleId: null,
+    draft: '',
+    error: null,
+  });
   const permutationInputLaneRef = useRef<HTMLDivElement | null>(null);
   const permutationOutputLaneRef = useRef<HTMLDivElement | null>(null);
   const permutationInputRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -220,6 +237,23 @@ export function ParameterInspector({
   const globalIssues = moduleInstance
     ? validationIssues.filter((issue) => !selectedIssues.includes(issue))
     : validationIssues;
+  const effectiveRenameDraft =
+    moduleInstance && renameState.moduleId === moduleInstance.id
+      ? renameState.draft
+      : moduleInstance?.id ?? '';
+  const effectiveRenameError =
+    moduleInstance && renameState.moduleId === moduleInstance.id ? renameState.error : null;
+  const renameValidationError = useMemo(() => {
+    if (!moduleInstance) {
+      return null;
+    }
+
+    return getModuleInstanceIdValidationError(
+      effectiveRenameDraft,
+      project.modules.map((projectModule) => projectModule.id),
+      moduleInstance.id,
+    );
+  }, [effectiveRenameDraft, moduleInstance, project.modules]);
   const groupedSelectedIssues = groupIssuesByTarget(selectedIssues);
   const groupedGlobalIssues = groupIssuesByTarget(globalIssues);
 
@@ -1457,7 +1491,70 @@ export function ParameterInspector({
               </p>
             ) : null
           ) : null}
+          <div className="param-field selected-module-rename-field">
+            <span>Module ID</span>
+            <input
+              type="text"
+              value={effectiveRenameDraft}
+              onChange={(event) => {
+                setRenameState({
+                  moduleId: moduleInstance.id,
+                  draft: event.target.value,
+                  error: null,
+                });
+              }}
+              placeholder="round-1-mixer"
+              spellCheck={false}
+              disabled={!canRenameModuleIds || !onRenameModuleInstance}
+            />
+            <p className="comparison-copy">
+              Workspace-local ID. Use letters, numbers, hyphens, or underscores.
+            </p>
+            {effectiveRenameError || renameValidationError ? (
+              <p className="field-error">{effectiveRenameError ?? renameValidationError}</p>
+            ) : null}
+            {!canRenameModuleIds ? (
+              <p className="comparison-copy">
+                Rename is unavailable while editing a reusable composite definition.
+              </p>
+            ) : null}
+          </div>
           <div className="selected-module-actions">
+            {canRenameModuleIds && onRenameModuleInstance ? (
+              <button
+                type="button"
+                className="mini-action-button"
+                disabled={
+                  normalizeModuleInstanceIdCandidate(effectiveRenameDraft) === moduleInstance.id ||
+                  Boolean(renameValidationError)
+                }
+                onClick={() => {
+                  const nextModuleId = normalizeModuleInstanceIdCandidate(effectiveRenameDraft);
+                  const validationError = getModuleInstanceIdValidationError(
+                    nextModuleId,
+                    project.modules.map((projectModule) => projectModule.id),
+                    moduleInstance.id,
+                  );
+                  if (validationError) {
+                    setRenameState({
+                      moduleId: moduleInstance.id,
+                      draft: effectiveRenameDraft,
+                      error: validationError,
+                    });
+                    return;
+                  }
+
+                  onRenameModuleInstance(moduleInstance.id, nextModuleId);
+                  setRenameState({
+                    moduleId: nextModuleId,
+                    draft: nextModuleId,
+                    error: null,
+                  });
+                }}
+              >
+                Rename Module
+              </button>
+            ) : null}
             {canBypassSelectedModule ? (
               <button
                 type="button"

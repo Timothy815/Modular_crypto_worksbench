@@ -20,6 +20,10 @@ import type {
   WorkbenchAnnotation,
   WorkbenchDocument,
 } from './workbench-document';
+import {
+  getModuleInstanceIdValidationError,
+  normalizeModuleInstanceIdCandidate,
+} from './module-instance-id';
 
 export interface UiState {
   activeProjectId: string;
@@ -99,6 +103,12 @@ export type UiAction =
   | { type: 'updateAnnotationText'; projectId: string; annotationId: string; text: string }
   | { type: 'removeAnnotation'; projectId: string; annotationId: string }
   | { type: 'addModule'; projectId: string; moduleDef: ModuleDefinition }
+  | {
+      type: 'renameModuleInstance';
+      projectId: string;
+      moduleId: string;
+      nextModuleId: string;
+    }
   | { type: 'removeModule'; projectId: string; moduleId: string }
   | {
       type: 'addConnection';
@@ -195,6 +205,64 @@ function createAnnotationId(annotations: WorkbenchAnnotation[]) {
   }
 
   return candidate;
+}
+
+function renameDraftKeys(
+  drafts: Record<string, string>,
+  projectId: string,
+  moduleId: string,
+  nextModuleId: string,
+) {
+  return Object.fromEntries(
+    Object.entries(drafts).map(([key, value]) => {
+      const prefix = `${projectId}:${moduleId}:`;
+      if (!key.startsWith(prefix)) {
+        return [key, value];
+      }
+
+      return [`${projectId}:${nextModuleId}:${key.slice(prefix.length)}`, value];
+    }),
+  );
+}
+
+function renameModuleReferencesInProject(
+  project: Project,
+  moduleId: string,
+  nextModuleId: string,
+): Project {
+  return {
+    modules: project.modules.map((moduleInstance) =>
+      moduleInstance.id === moduleId ? { ...moduleInstance, id: nextModuleId } : moduleInstance,
+    ),
+    connections: project.connections.map((connection) => ({
+      from: {
+        ...connection.from,
+        moduleId: connection.from.moduleId === moduleId ? nextModuleId : connection.from.moduleId,
+      },
+      to: {
+        ...connection.to,
+        moduleId: connection.to.moduleId === moduleId ? nextModuleId : connection.to.moduleId,
+      },
+    })),
+  };
+}
+
+function renameModuleLayoutEntry(
+  layout: Record<string, { x: number; y: number }>,
+  moduleId: string,
+  nextModuleId: string,
+) {
+  if (!(moduleId in layout)) {
+    return layout;
+  }
+
+  const nextLayout = { ...layout, [nextModuleId]: layout[moduleId] };
+  delete nextLayout[moduleId];
+  return nextLayout;
+}
+
+function renameModuleSelection(selectedIds: string[], moduleId: string, nextModuleId: string) {
+  return selectedIds.map((id) => (id === moduleId ? nextModuleId : id));
 }
 
 function updateModule(
@@ -906,6 +974,84 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           ...state.selectedModuleIdsByProject,
           [action.projectId]: [nextModuleId],
         },
+      };
+    }
+    case 'renameModuleInstance': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentProject = state.projectStates[action.projectId];
+      const currentLayout = state.layoutByProject[action.projectId];
+      if (!currentProject || !currentLayout) {
+        return state;
+      }
+
+      const nextModuleId = normalizeModuleInstanceIdCandidate(action.nextModuleId);
+      if (nextModuleId === action.moduleId) {
+        return state;
+      }
+
+      if (!currentProject.modules.some((moduleInstance) => moduleInstance.id === action.moduleId)) {
+        return state;
+      }
+
+      const validationError = getModuleInstanceIdValidationError(
+        nextModuleId,
+        currentProject.modules.map((moduleInstance) => moduleInstance.id),
+        action.moduleId,
+      );
+      if (validationError) {
+        return state;
+      }
+
+      const nextProject = renameModuleReferencesInProject(
+        currentProject,
+        action.moduleId,
+        nextModuleId,
+      );
+      const nextLayout = renameModuleLayoutEntry(currentLayout, action.moduleId, nextModuleId);
+      const nextSelectedModuleId =
+        state.selectedModuleIdByProject[action.projectId] === action.moduleId
+          ? nextModuleId
+          : state.selectedModuleIdByProject[action.projectId] ?? null;
+
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: nextProject,
+        },
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: nextLayout,
+        },
+        selectedModuleIdByProject: {
+          ...state.selectedModuleIdByProject,
+          [action.projectId]: nextSelectedModuleId,
+        },
+        selectedModuleIdsByProject: {
+          ...state.selectedModuleIdsByProject,
+          [action.projectId]: renameModuleSelection(
+            state.selectedModuleIdsByProject[action.projectId] ?? [],
+            action.moduleId,
+            nextModuleId,
+          ),
+        },
+        probedModuleIdsByProject: {
+          ...state.probedModuleIdsByProject,
+          [action.projectId]: renameModuleSelection(
+            state.probedModuleIdsByProject[action.projectId] ?? [],
+            action.moduleId,
+            nextModuleId,
+          ),
+        },
+        paramDrafts: renameDraftKeys(
+          state.paramDrafts,
+          action.projectId,
+          action.moduleId,
+          nextModuleId,
+        ),
       };
     }
     case 'removeModule': {

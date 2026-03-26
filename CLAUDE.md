@@ -146,7 +146,7 @@ src/utils/     — Shared helpers
 
 ## Current Resume Point
 
-- Resume from current `main` at `v1.32.0`
+- Resume from current `main` at `v1.33.0`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement
@@ -284,6 +284,17 @@ src/utils/     — Shared helpers
   - `AsciiToHex` bridge (symbol → symbol, 7-bit ASCII to uppercase hex)
   - sink-only output representation views for `Output` and `BitOutput`
   - Bits / Bytes / Hex / ASCII tabs with strict availability rules and explanation messaging
+- `v1.33.0` is now the reversible-authoring milestone:
+  - `Normalize Reciprocal Pairs` helper for `Plugboard`
+  - `Normalize Reciprocal Pairs` helper for `Reflector`
+  - exact reciprocal/involutive normalization helpers in the engine layer
+  - editor-side teaching copy clarifying that these mappings already undo themselves
+
+Active proposed next line:
+- `WORKSPACE-RENAME-V1.md`
+  - rename module instance IDs inside a single workspace
+  - workspace-local only
+  - primary goal: clean unzip/composite residue without breaking connections, layout, selection, drafts, or probes
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones

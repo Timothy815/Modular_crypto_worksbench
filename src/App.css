@@ -625,6 +625,10 @@ body.dock-resizing {
   margin-bottom: 14px;
 }
 
+.selected-module-rename-field {
+  margin-bottom: 14px;
+}
+
 .selected-module-actions .delete-module-button {
   margin-bottom: 0;
 }
