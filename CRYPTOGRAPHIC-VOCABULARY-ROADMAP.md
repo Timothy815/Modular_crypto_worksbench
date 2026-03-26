@@ -172,6 +172,7 @@ Shipped:
 Still open over time:
 - explicit chaining helpers
 - message-boundary handling beyond single-vector framing
+- `Visible Block Chaining` demo, `Why The Next Block Depends On The Last` tutorial, and `Repair the Chaining Path` challenge — framed in `v1.39.0`
 
 ### 5. Symbol- and Message-Level Structure Vocabulary — *first milestone shipped in `v1.22.0`, second milestone shipped in `v1.24.0`*
 

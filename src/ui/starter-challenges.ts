@@ -38,6 +38,7 @@ const toyRsaProject = demoProjects.find((project) => project.id === 'toy-rsa');
 const diffieHellmanProject = demoProjects.find((project) => project.id === 'diffie-hellman-key-exchange');
 const keyScheduleWorkshopProject = demoProjects.find((project) => project.id === 'key-schedule-workshop');
 const recursiveKeyScheduleProject = demoProjects.find((project) => project.id === 'recursive-key-schedule');
+const visibleBlockChainingProject = demoProjects.find((project) => project.id === 'visible-block-chaining');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
 const toySpongeHashProject = demoProjects.find((project) => project.id === 'toy-sponge-hash');
@@ -150,6 +151,9 @@ if (!keyScheduleWorkshopProject) {
 if (!recursiveKeyScheduleProject) {
   throw new Error('Expected recursive-key-schedule demo project to seed starter challenges.');
 }
+if (!visibleBlockChainingProject) {
+  throw new Error('Expected visible-block-chaining demo project to seed starter challenges.');
+}
 
 const fixedBridgeTarget = cloneProject(bridgeProject.project);
 const brokenBridgeStart = cloneProject(bridgeProject.project);
@@ -224,6 +228,8 @@ const keyScheduleWorkshopTarget = cloneProject(keyScheduleWorkshopProject.projec
 const brokenKeyScheduleWorkshopStart = cloneProject(keyScheduleWorkshopProject.project);
 const recursiveKeyScheduleTarget = cloneProject(recursiveKeyScheduleProject.project);
 const brokenRecursiveKeyScheduleStart = cloneProject(recursiveKeyScheduleProject.project);
+const visibleBlockChainingTarget = cloneProject(visibleBlockChainingProject.project);
+const brokenVisibleBlockChainingStart = cloneProject(visibleBlockChainingProject.project);
 
 const brokenKeyModule = brokenBridgeStart.modules.find((moduleInstance) => moduleInstance.id === 'key');
 if (!brokenKeyModule) {
@@ -350,6 +356,18 @@ if (!brokenRecursiveRoundConst) {
   throw new Error('Expected recursive-key-schedule demo project to contain round-const-3.');
 }
 brokenRecursiveRoundConst.params.value = '00';
+
+const brokenVisibleBlockChainingConnections = brokenVisibleBlockChainingStart.connections;
+const chainTwoSourceIndex = brokenVisibleBlockChainingConnections.findIndex(
+  (connection) => connection.to.moduleId === 'chain-2' && connection.to.port === 'a',
+);
+if (chainTwoSourceIndex < 0) {
+  throw new Error('Expected visible-block-chaining demo project to contain a chaining edge into chain-2.');
+}
+brokenVisibleBlockChainingConnections[chainTwoSourceIndex] = {
+  from: { moduleId: 'iv', port: 'out' },
+  to: { moduleId: 'chain-2', port: 'a' },
+};
 
 const brokenBaudotSource = brokenBaudotStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'source',
@@ -1306,6 +1324,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The keyed iterator already has the correct round count and key width.',
       'The master key and the first round constant are already correct.',
       'Focus on the visible constant entering the final XOR derivation step.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-chaining-path',
+    title: 'Repair the Chaining Path',
+    projectId: 'visible-block-chaining',
+    group: 'Framing',
+    stage: 'framing-and-protocol-context',
+    order: 135,
+    recommendedAfter: ['recursive-key-schedule'],
+    difficulty: 'intermediate',
+    prompt:
+      'This chained two-block machine is producing the wrong later-block ciphertext. The block split, IV, and first block path are correct, but the second chaining mix is wired to the wrong source. Restore the visible chaining edge so block 2 depends on block 1 again.',
+    startingProject: brokenVisibleBlockChainingStart,
+    startingLayout: cloneProject(visibleBlockChainingProject.layout),
+    targetProject: visibleBlockChainingTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The IV should only seed the first block.',
+      'The first block ciphertext is already being computed correctly.',
+      'Follow the input into the second XOR and reconnect it to the earlier processed block.',
     ],
   },
 ];

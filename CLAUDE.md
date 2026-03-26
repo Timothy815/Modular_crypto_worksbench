@@ -17,6 +17,7 @@ Read CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md before starting work on new primitive-l
 Read CRYPTO-OPERATORS-V1.md before starting work on the first post-`v1.13.0` operator-expansion slice.
 Read CONTROL-PRIMITIVES-V1.md before starting work on counters, triggers, gates, or explicit conditional machine behavior.
 Read BLOCK-FRAMING-V1.md before starting work on block splitting, padding, rejoining, or framing follow-ons.
+Read BLOCK-CHAINING-V1.md before starting work on visible multi-block dependence, chaining, or mode-teaching follow-ons.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.
 Read LEARNING-SEQUENCE-V1.md before restructuring the teaching library, adding staged progression, or changing how demos/tutorials/challenges are ordered.
@@ -146,7 +147,7 @@ src/utils/     — Shared helpers
 
 ## Current Resume Point
 
-- Resume from current `main` at `v1.38.0`
+- Resume from current `main` at `v1.39.0`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement
@@ -310,9 +311,10 @@ src/utils/     — Shared helpers
   - visible `Recursive Key Schedule` demo with a three-step key ladder feeding the shipped keyed iterator
   - `One Round Key Becomes The Next` tutorial placed after `Key Schedule Workshop`
   - `Repair the Next Round Key` challenge for restoring a later-round derivation step
-
-Active proposed next line:
-- next bounded follow-on to be decided after `v1.38.0` review
+- `v1.39.0` is now the block-chaining milestone:
+  - visible `Visible Block Chaining` demo with explicit IV seeding and block-to-block dependence
+  - `Why The Next Block Depends On The Last` tutorial placed after `Recursive Key Schedule`
+  - `Repair the Chaining Path` challenge for restoring the visible chaining edge into block 2
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -409,6 +411,7 @@ Key contracts to check before implementation:
 - `NUMBER-THEORETIC-V1.md` for the shipped first bounded number-theoretic foundations
 - `DIFFIE-HELLMAN-V1.md` for the shipped second asymmetric teaching scenario built from visible `ModExp` paths
 - `KEY-SCHEDULE-DEPTH-V1.md` for the shipped symmetric-construction follow-on after key-bus groundwork
+- `BLOCK-CHAINING-V1.md` for the framed bounded multi-block dependence slice after framing, protocol material, and key-schedule depth
 - `BYPASS-V1.md` for the shipped bounded instance-level bypass line
 - `INVERSE-PERMUTATION-AUTHORING-V1.md` for the shipped bounded inverse-permutation authoring slice
 - `BRIDGE-ERGONOMICS-V1.md` for the shipped bounded bridge/usability slice
