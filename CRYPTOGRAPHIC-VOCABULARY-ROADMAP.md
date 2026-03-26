@@ -238,13 +238,14 @@ Still needed over time:
 - later iterator-aware key distribution only if it stays inspectable
 - richer schedule-construction patterns beyond one bounded window primitive
 
-### 9. Number-Theoretic / Asymmetric Foundations — *first slice shipped*
+### 9. Number-Theoretic / Asymmetric Foundations — *first slice shipped, second asymmetric teaching slice framed*
 
 First slice shipped in `v1.25.0` and `v1.26.0`:
 - modular multiplication (`MulMod`) — shipped in `v1.25.0`
 - modular exponentiation (`ModExp`) — shipped in `v1.26.0`
 - modular inverse (`ModInverse`) — shipped in `v1.26.0`
 - `Toy RSA` and `Key Schedule Workshop` demos/tutorials/challenges
+- `Diffie-Hellman Key Exchange` demo, `Visible Shared Secret` tutorial, and `Repair the Shared Secret` challenge — framed for `v1.37.0`
 
 Still open:
 - gcd / related arithmetic helpers

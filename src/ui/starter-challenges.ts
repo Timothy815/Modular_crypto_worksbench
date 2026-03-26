@@ -1236,7 +1236,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     recommendedAfter: ['toy-rsa'],
     difficulty: 'intermediate',
     prompt:
-      'This visible Diffie-Hellman exchange no longer ends with both sides agreeing on the same secret. The shared generator and modulus are still correct, but Bob’s private exponent is wrong. Restore it so the two secret paths match again.',
+      'This visible Diffie-Hellman exchange is producing the wrong shared secret. The shared generator and modulus are still correct, but Bob’s private exponent is wrong. Restore it so the exchange matches the reference values again.',
     startingProject: brokenDiffieHellmanStart,
     startingLayout: cloneProject(diffieHellmanProject.layout),
     targetProject: diffieHellmanTarget,
