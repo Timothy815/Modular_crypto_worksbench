@@ -407,8 +407,8 @@ Key contracts to check before implementation:
 - `STREAM-CIPHER-V2.md` for the shipped second bounded stream-machine slice
 - `ARITHMETIC-EXPANSION-V1.md` for the shipped first bounded arithmetic-expansion line
 - `NUMBER-THEORETIC-V1.md` for the shipped first bounded number-theoretic foundations
-- `DIFFIE-HELLMAN-V1.md` for the framed second asymmetric teaching scenario built from visible `ModExp` paths
-- `KEY-SCHEDULE-DEPTH-V1.md` for the framed symmetric-construction follow-on after key-bus groundwork
+- `DIFFIE-HELLMAN-V1.md` for the shipped second asymmetric teaching scenario built from visible `ModExp` paths
+- `KEY-SCHEDULE-DEPTH-V1.md` for the shipped symmetric-construction follow-on after key-bus groundwork
 - `BYPASS-V1.md` for the shipped bounded instance-level bypass line
 - `INVERSE-PERMUTATION-AUTHORING-V1.md` for the shipped bounded inverse-permutation authoring slice
 - `BRIDGE-ERGONOMICS-V1.md` for the shipped bounded bridge/usability slice

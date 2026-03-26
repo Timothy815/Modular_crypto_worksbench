@@ -217,6 +217,7 @@ Current groundwork exists:
 
 Shipped so far:
 - `BitWindow` for visible contiguous sub-key extraction from one key bus
+- `Recursive Key Schedule` demo, `One Round Key Becomes The Next` tutorial, and `Repair the Next Round Key` challenge — shipped in `v1.38.0`
 
 ### 9. Bridge Ergonomics / Encoding Boundaries
 
@@ -234,9 +235,8 @@ Still needed over time:
 - tighter authoring ergonomics before opening a broader UTF-8-specific slice
 
 Still needed over time:
-- explicit per-round key routing
 - later iterator-aware key distribution only if it stays inspectable
-- richer schedule-construction patterns beyond one bounded window primitive
+- richer schedule-construction patterns beyond the shipped recursive three-key ladder
 
 ### 10. Number-Theoretic / Asymmetric Foundations — *first slice shipped, second asymmetric teaching slice shipped*
 

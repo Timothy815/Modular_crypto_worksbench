@@ -225,7 +225,8 @@ Implemented and shipped:
 - `LEARNING-SEQUENCE-V1.md`: first shipped sequencing milestone for suggested ordering across demos, tutorials, and challenges
 - `ARITHMETIC-EXPANSION-V1.md`: shipped first bounded arithmetic-expansion slice for modular multiplication, strict comparison, and unpadding
 - `NUMBER-THEORETIC-V1.md`: shipped first bounded number-theoretic foundations slice for modular exponentiation and modular inverse
-- `DIFFIE-HELLMAN-V1.md`: framed bounded number-theoretic follow-on for visible shared-secret agreement
+- `DIFFIE-HELLMAN-V1.md`: shipped bounded number-theoretic follow-on for visible shared-secret agreement
+- `KEY-SCHEDULE-DEPTH-V1.md`: shipped bounded symmetric-construction follow-on for visible recursive round-key derivation
 - `BYPASS-V1.md`: shipped bounded usability slice for visible instance-level bypass on eligible one-in/one-out modules
 - `INVERSE-PERMUTATION-AUTHORING-V1.md`: shipped bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors
 - `BRIDGE-ERGONOMICS-V1.md`: shipped bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior

@@ -531,7 +531,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `ARITHMETIC-EXPANSION-V1.md` | Shipped in `v1.25.0` as first bounded arithmetic-expansion slice for modular multiplication, strict comparison, and unpadding |
 | `NUMBER-THEORETIC-V1.md` | Shipped in `v1.26.0` as first bounded number-theoretic foundations slice for modular exponentiation and modular inverse |
 | `DIFFIE-HELLMAN-V1.md` | Shipped in `v1.37.0` as bounded number-theoretic follow-on for visible shared-secret agreement |
-| `KEY-SCHEDULE-DEPTH-V1.md` | Framed for `v1.38.0` as bounded iterative/recursive round-key derivation depth |
+| `KEY-SCHEDULE-DEPTH-V1.md` | Shipped in `v1.38.0` as bounded iterative/recursive round-key derivation depth |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
 | `BRIDGE-ERGONOMICS-V1.md` | Shipped in `v1.31.0` — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |
