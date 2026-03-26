@@ -2336,6 +2336,54 @@ body.dock-resizing {
   color: var(--muted);
 }
 
+.sink-representation {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.sink-rep-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.sink-rep-tab {
+  padding: 4px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.sink-rep-tab:hover:not(:disabled) {
+  background: var(--surface-soft);
+}
+
+.sink-rep-tab.active {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+
+.sink-rep-tab.unavailable {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sink-rep-value {
+  padding: 8px 10px;
+  background: var(--surface-soft);
+  border-radius: 10px;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
 .analysis-section {
   margin-top: 16px;
   display: grid;

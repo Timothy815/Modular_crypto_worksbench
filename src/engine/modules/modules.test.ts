@@ -14,6 +14,7 @@ import { BitsToBaudot } from './bits-to-baudot';
 import { BitsToSymbol } from './bits-to-symbol';
 import { BitsToHex } from './bits-to-hex';
 import { HexToAscii } from './hex-to-ascii';
+import { AsciiToHex } from './ascii-to-hex';
 import { AddMod } from './add-mod';
 import { AND } from './and';
 import { AtLeast } from './at-least';
@@ -458,6 +459,48 @@ describe('HexToAscii', () => {
 
   it('throws on non-ascii byte values', () => {
     expect(() => HexToAscii.evaluate({ in: { type: 'symbol', value: '80' } }, {})).toThrow();
+  });
+});
+
+describe('AsciiToHex', () => {
+  it('encodes ASCII text into uppercase hex bytes', () => {
+    const result = AsciiToHex.evaluate(
+      { in: { type: 'symbol', value: 'AB' } },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: '4142' });
+  });
+
+  it('encodes single character', () => {
+    const result = AsciiToHex.evaluate(
+      { in: { type: 'symbol', value: 'A' } },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: '41' });
+  });
+
+  it('encodes empty string', () => {
+    const result = AsciiToHex.evaluate(
+      { in: { type: 'symbol', value: '' } },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: '' });
+  });
+
+  it('round-trips with HexToAscii', () => {
+    const hex = AsciiToHex.evaluate(
+      { in: { type: 'symbol', value: 'HELLO' } },
+      {},
+    );
+    const ascii = HexToAscii.evaluate(
+      { in: hex.out! },
+      {},
+    );
+    expect(ascii.out).toEqual({ type: 'symbol', value: 'HELLO' });
+  });
+
+  it('throws on non-ASCII characters', () => {
+    expect(() => AsciiToHex.evaluate({ in: { type: 'symbol', value: '\x80' } }, {})).toThrow();
   });
 });
 

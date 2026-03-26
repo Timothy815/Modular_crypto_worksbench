@@ -326,6 +326,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when readable ASCII already exists as hex bytes and you want the decoded text without routing through Hex Source and Bits → ASCII. Only 7-bit ASCII byte values (`00`-`7F`) are accepted.',
     searchTerms: ['bridge', 'hex', 'ascii', 'decode', 'bytes', 'text'],
   },
+  AsciiToHex: {
+    sectionId: 'bridges',
+    purpose: 'Encodes ASCII text into uppercase hexadecimal byte text.',
+    detail: 'Use this when an ASCII string should be represented as hex bytes for inspection or further processing. Only 7-bit ASCII characters are accepted. For example, AB becomes 4142.',
+    searchTerms: ['bridge', 'ascii', 'hex', 'encode', 'bytes', 'text'],
+  },
 };
 
 export const MODULE_LIBRARY_SECTIONS: ModuleLibrarySection[] = [

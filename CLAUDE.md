@@ -145,7 +145,7 @@ src/utils/     — Shared helpers
 
 ## Current Resume Point
 
-- Resume from current `main` at `v1.31.0`
+- Resume from current `main` at `v1.32.0`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement
@@ -279,6 +279,10 @@ src/utils/     — Shared helpers
   - permissive raw `BitSource` entry for continuous, spaced, or bracketed `0/1` text
   - grouped bit preview in the structured bits editor
   - direct `HexToAscii` bridge for readable 7-bit ASCII byte decoding from hex text
+- `v1.32.0` is now the bridge-ergonomics-v2 milestone:
+  - `AsciiToHex` bridge (symbol → symbol, 7-bit ASCII to uppercase hex)
+  - sink-only output representation views for `Output` and `BitOutput`
+  - Bits / Bytes / Hex / ASCII tabs with strict availability rules and explanation messaging
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -376,6 +380,7 @@ Key contracts to check before implementation:
 - `BYPASS-V1.md` for the shipped bounded instance-level bypass line
 - `INVERSE-PERMUTATION-AUTHORING-V1.md` for the shipped bounded inverse-permutation authoring slice
 - `BRIDGE-ERGONOMICS-V1.md` for the shipped bounded bridge/usability slice
+- `BRIDGE-ERGONOMICS-V2.md` for the shipped second bridge/representation slice
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family

@@ -11,7 +11,7 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.31.0`.
+The repository has shipped through `v1.32.0`.
 
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
@@ -39,6 +39,10 @@ Recent shipped follow-ons after `v1.27.0`:
   - permissive raw `BitSource` entry for continuous, spaced, or bracketed `0/1` text
   - grouped bit preview in the structured bits editor
   - direct `HexToAscii` bridge for readable 7-bit ASCII byte decoding from hex text
+- `v1.32.0` Bridge Ergonomics V2:
+  - `AsciiToHex` bridge (symbol → symbol, 7-bit ASCII to uppercase hex)
+  - sink-only output representation views for `Output` and `BitOutput`
+  - Bits / Bytes / Hex / ASCII tabs with strict availability rules and explanation messaging
 
 Shipped stream, rotor, protocol/framing, and symbol/message permutation foundations remain in place:
 - stream-machine expressiveness:

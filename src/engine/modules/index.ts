@@ -14,6 +14,7 @@ import { BitsToBaudot } from './bits-to-baudot';
 import { BitsToSymbol } from './bits-to-symbol';
 import { BitsToHex } from './bits-to-hex';
 import { HexToAscii } from './hex-to-ascii';
+import { AsciiToHex } from './ascii-to-hex';
 import { XOR } from './xor';
 import { AND } from './and';
 import { OR } from './or';
@@ -66,6 +67,7 @@ export {
   BitsToSymbol,
   BitsToHex,
   HexToAscii,
+  AsciiToHex,
   XOR,
   AND,
   OR,
@@ -119,6 +121,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [BitsToSymbol.id]: BitsToSymbol,
   [BitsToHex.id]: BitsToHex,
   [HexToAscii.id]: HexToAscii,
+  [AsciiToHex.id]: AsciiToHex,
   [XOR.id]: XOR,
   [AND.id]: AND,
   [OR.id]: OR,

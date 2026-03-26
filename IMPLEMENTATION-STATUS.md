@@ -1,12 +1,12 @@
 # MCW — Implementation Status
 
-Last updated: March 25, 2026
+Last updated: March 26, 2026
 
 ---
 
 ## Current State
 
-The project has shipped through `v1.31.0` on `main`.
+The project has shipped through `v1.32.0` on `main`.
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -39,6 +39,10 @@ Those shipped:
   - permissive raw `BitSource` entry for continuous, spaced, or bracketed `0/1` text
   - grouped bit preview in the structured bits editor
   - direct `HexToAscii` bridge for readable 7-bit ASCII byte decoding from hex text
+- bridge ergonomics V2:
+  - `AsciiToHex` bridge (symbol → symbol, 7-bit ASCII to uppercase hex)
+  - sink-only output representation views for `Output` and `BitOutput`
+  - Bits / Bytes / Hex / ASCII tabs with strict availability rules and explanation messaging
 
 The already-shipped protocol-material, block-framing, and symbol/message permutation foundations remain in place:
 - protocol inputs:
