@@ -11,7 +11,7 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.34.0`.
+The repository has shipped through `v1.35.0`.
 
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
@@ -51,6 +51,10 @@ Recent shipped follow-ons after `v1.27.0`:
   - workspace-local module instance renaming with atomic reference updates
   - `Duplicate Workspace` for independent local copies with reset session state
   - conservative module-ID validation and unzip-cleanup support
+- `v1.35.0` Composite Port Hints:
+  - contextual composite/iterator port hints on hover
+  - target-module-only input hints during live connection drag
+  - no always-on labels, no primitive-wide rollout, no interface mutation
 
 Shipped stream, rotor, protocol/framing, and symbol/message permutation foundations remain in place:
 - stream-machine expressiveness:
@@ -193,6 +197,7 @@ Implemented and shipped:
 - `WORKSPACE-LIBRARY-V1.md`: shipped bounded workspace-management slice for blank build spaces and saved personal collections
 - `WORKSPACE-RENAME-V1.md`: shipped bounded housekeeping slice for workspace-local module instance renaming
 - `WORKSPACE-DUPLICATE-V1.md`: shipped bounded housekeeping slice for whole-workspace duplication
+- `COMPOSITE-PORT-HINTS-V1.md`: shipped bounded UI slice for contextual composite boundary port hints
 - `COMPOSITE-UNZIP-V1.md`: shipped bounded inverse-composition slice for expanding a composite instance back into editable modules
 - `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md`: active strategic roadmap for growing MCW into a fully expressive cryptographic systems IDE
 - `CRYPTO-OPERATORS-V1.md`: shipped first foundational operator-expansion slice for boolean and fixed-width word arithmetic

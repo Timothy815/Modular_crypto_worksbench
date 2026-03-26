@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed housekeeping follow-on after `v1.34.0`.
+Shipped in `v1.35.0`.
 
 ## Purpose
 

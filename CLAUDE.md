@@ -146,7 +146,7 @@ src/utils/     — Shared helpers
 
 ## Current Resume Point
 
-- Resume from current `main` at `v1.34.0`
+- Resume from current `main` at `v1.35.0`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement
@@ -294,11 +294,13 @@ src/utils/     — Shared helpers
   - `Duplicate Workspace` for independent local copies
   - reset tutorial/challenge/tick session state on duplicate
   - conservative module-ID validation and unzip cleanup support
+- `v1.35.0` is now the composite-port-hints milestone:
+  - contextual composite/iterator boundary hints on hover
+  - target-module-only input hints during live connection drag
+  - quiet canvas at rest with no always-on labels or interface mutation
 
 Active proposed next line:
-- `COMPOSITE-PORT-LABELS-V1` or equivalent bounded follow-on
-  - make composite inputs/outputs easier to distinguish at the boundary
-  - reduce input-order mistakes without widening into cross-workspace clipboard
+- next bounded follow-on to be decided after `v1.35.0`
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones

@@ -10,7 +10,10 @@ import type {
 } from '../../engine/types';
 import { isOutputSinkDefId } from '../../engine/output-sinks';
 import { validateProject } from '../../engine/validation';
-import { shouldShowCompositePortHint } from '../composite-port-hints';
+import {
+  isCompositePortHintEligible,
+  shouldShowCompositePortHint,
+} from '../composite-port-hints';
 import type { DemoProject } from '../demo-projects';
 import {
   compareLearningItems,
@@ -1058,7 +1061,9 @@ export function WorkbenchPanel({
                         targetPortStates[`${moduleInstance.id}:${port.name}`],
                       )}
                       style={{ top: `${PORT_START_Y + index * PORT_GAP}px` }}
-                      title={`${port.name}: ${port.type}`}
+                      title={
+                        isCompositePortHintEligible(def) ? undefined : `${port.name}: ${port.type}`
+                      }
                       onMouseEnter={() => setHoveredPortHintKey(`${moduleInstance.id}:in:${port.name}`)}
                       onMouseLeave={() =>
                         setHoveredPortHintKey((current) =>
@@ -1093,7 +1098,9 @@ export function WorkbenchPanel({
                           : 'graph-port-anchor graph-port-anchor-out'
                       }
                       style={{ top: `${PORT_START_Y + index * PORT_GAP}px` }}
-                      title={`${port.name}: ${port.type}`}
+                      title={
+                        isCompositePortHintEligible(def) ? undefined : `${port.name}: ${port.type}`
+                      }
                       onMouseEnter={() => setHoveredPortHintKey(`${moduleInstance.id}:out:${port.name}`)}
                       onMouseLeave={() =>
                         setHoveredPortHintKey((current) =>
