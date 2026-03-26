@@ -6,7 +6,7 @@ Last updated: March 26, 2026
 
 ## Current State
 
-The project has shipped through `v1.33.0` on `main`.
+The project has shipped through `v1.34.0` on `main`.
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -47,6 +47,10 @@ Those shipped:
   - `Normalize Reciprocal Pairs` helper for `Plugboard` and `Reflector`
   - exact reciprocal/involutive normalization helpers in the engine layer
   - editor-side reciprocity guidance for reciprocal symbolic wirings
+- workspace housekeeping:
+  - workspace-local module instance renaming with atomic updates for graph/layout/selection/drafts/probes
+  - `Duplicate Workspace` for independent local copies with reset tutorial/challenge/tick session state
+  - predictable copy naming and conservative module-ID validation
 
 The already-shipped protocol-material, block-framing, and symbol/message permutation foundations remain in place:
 - protocol inputs:
@@ -175,6 +179,7 @@ The following decisions are reflected in shipped code:
 | `v1.31.0` | Bridge Ergonomics |
 | `v1.32.0` | Bridge Ergonomics V2 |
 | `v1.33.0` | Reversible Authoring |
+| `v1.34.0` | Workspace Housekeeping |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing

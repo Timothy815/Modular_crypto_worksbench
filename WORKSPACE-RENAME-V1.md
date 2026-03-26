@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed housekeeping follow-on before the next major vocabulary expansion.
+Shipped in `v1.34.0`.
 
 ## Purpose
 

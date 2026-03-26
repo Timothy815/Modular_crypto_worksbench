@@ -146,7 +146,7 @@ src/utils/     — Shared helpers
 
 ## Current Resume Point
 
-- Resume from current `main` at `v1.33.0`
+- Resume from current `main` at `v1.34.0`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement
@@ -289,12 +289,16 @@ src/utils/     — Shared helpers
   - `Normalize Reciprocal Pairs` helper for `Reflector`
   - exact reciprocal/involutive normalization helpers in the engine layer
   - editor-side teaching copy clarifying that these mappings already undo themselves
+- `v1.34.0` is now the workspace-housekeeping milestone:
+  - workspace-local module instance renaming with atomic reference updates
+  - `Duplicate Workspace` for independent local copies
+  - reset tutorial/challenge/tick session state on duplicate
+  - conservative module-ID validation and unzip cleanup support
 
 Active proposed next line:
-- `WORKSPACE-RENAME-V1.md`
-  - rename module instance IDs inside a single workspace
-  - workspace-local only
-  - primary goal: clean unzip/composite residue without breaking connections, layout, selection, drafts, or probes
+- `COMPOSITE-PORT-LABELS-V1` or equivalent bounded follow-on
+  - make composite inputs/outputs easier to distinguish at the boundary
+  - reduce input-order mistakes without widening into cross-workspace clipboard
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones

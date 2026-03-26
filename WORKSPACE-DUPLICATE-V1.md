@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed housekeeping follow-on after `WORKSPACE-RENAME-V1`.
+Shipped in `v1.34.0`.
 
 ## Purpose
 

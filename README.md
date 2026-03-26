@@ -11,7 +11,7 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.33.0`.
+The repository has shipped through `v1.34.0`.
 
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
@@ -47,6 +47,10 @@ Recent shipped follow-ons after `v1.27.0`:
   - `Normalize Reciprocal Pairs` helper for `Plugboard` and `Reflector`
   - exact reciprocal/involutive normalization helpers in the engine layer
   - editor-side reciprocity teaching copy clarifying that these mappings already undo themselves
+- `v1.34.0` Workspace Housekeeping:
+  - workspace-local module instance renaming with atomic reference updates
+  - `Duplicate Workspace` for independent local copies with reset session state
+  - conservative module-ID validation and unzip-cleanup support
 
 Shipped stream, rotor, protocol/framing, and symbol/message permutation foundations remain in place:
 - stream-machine expressiveness:
@@ -187,6 +191,8 @@ Implemented and shipped:
 - `CUSTOM-REFLECTOR-AUTHORING-V1.md`: shipped bounded tactile authoring slice for paired reflector wiring inside the workbench
 - `WORKBENCH-ERGONOMICS-V1.md`: shipped bounded workbench-usability slice for multi-select, group movement, and one-click cleanup
 - `WORKSPACE-LIBRARY-V1.md`: shipped bounded workspace-management slice for blank build spaces and saved personal collections
+- `WORKSPACE-RENAME-V1.md`: shipped bounded housekeeping slice for workspace-local module instance renaming
+- `WORKSPACE-DUPLICATE-V1.md`: shipped bounded housekeeping slice for whole-workspace duplication
 - `COMPOSITE-UNZIP-V1.md`: shipped bounded inverse-composition slice for expanding a composite instance back into editable modules
 - `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md`: active strategic roadmap for growing MCW into a fully expressive cryptographic systems IDE
 - `CRYPTO-OPERATORS-V1.md`: shipped first foundational operator-expansion slice for boolean and fixed-width word arithmetic

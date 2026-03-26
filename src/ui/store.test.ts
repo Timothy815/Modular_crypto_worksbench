@@ -376,6 +376,49 @@ describe('uiReducer', () => {
     );
   });
 
+  it('deep-clones annotations when duplicating a workspace', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const sourceProjectId = 'sequential';
+    const annotatedState = uiReducer(
+      uiReducer(initialState, {
+        type: 'addAnnotation',
+        projectId: sourceProjectId,
+      }),
+      {
+        type: 'updateAnnotationText',
+        projectId: sourceProjectId,
+        annotationId: 'note-1',
+        text: 'Original workspace note',
+      },
+    );
+
+    const duplicateState = uiReducer(annotatedState, {
+      type: 'saveWorkspaceAs',
+      sourceProjectId,
+      workspaceId: 'sequential-copy',
+      name: 'Sequential Copy',
+      summary: 'A duplicated workspace.',
+      pipeline: 'Clock -> LFSR -> BitsToSymbol -> Output',
+      defaultTickedMode: false,
+    });
+    const editedDuplicateState = uiReducer(duplicateState, {
+      type: 'updateAnnotationText',
+      projectId: 'sequential-copy',
+      annotationId: 'note-1',
+      text: 'Copied workspace note',
+    });
+
+    expect(duplicateState.annotationsByProject['sequential-copy']).toEqual(
+      annotatedState.annotationsByProject[sourceProjectId],
+    );
+    expect(editedDuplicateState.annotationsByProject[sourceProjectId]?.[0]?.text).toBe(
+      'Original workspace note',
+    );
+    expect(editedDuplicateState.annotationsByProject['sequential-copy']?.[0]?.text).toBe(
+      'Copied workspace note',
+    );
+  });
+
   it('removes a personal workspace and falls back to a demo project', () => {
     const initialState = createInitialUiState(demoProjects);
     const stateWithWorkspace = uiReducer(initialState, {
