@@ -94,9 +94,27 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
   },
   Output: {
     sectionId: 'inputs-outputs',
-    purpose: 'Collects the final signal at the end of a graph.',
-    detail: 'Place this at the end of a pipeline when you want a result to count as the output.',
+    purpose: 'Collects a generic symbol result at the end of a graph.',
+    detail: 'Compatibility sink for symbol results when you do not want to declare a more specific endpoint format.',
     searchTerms: ['output', 'sink', 'result', 'final'],
+  },
+  TextOutput: {
+    sectionId: 'inputs-outputs',
+    purpose: 'Collects final text output with text-first inspection semantics.',
+    detail: 'Use this when a symbolic pipeline should end as readable text while still allowing byte-oriented inspection lenses in Analyze.',
+    searchTerms: ['text output', 'output', 'sink', 'text', 'ascii', 'final'],
+  },
+  HexOutput: {
+    sectionId: 'inputs-outputs',
+    purpose: 'Collects final hexadecimal text with hex-first inspection semantics.',
+    detail: 'Use this when a symbolic pipeline should end as hex text and the inspector should treat that result as bytes instead of plain prose.',
+    searchTerms: ['hex output', 'output', 'sink', 'hex', 'bytes', 'final'],
+  },
+  BaudotOutput: {
+    sectionId: 'inputs-outputs',
+    purpose: 'Collects final Baudot text with teleprinter-aware inspection semantics.',
+    detail: 'Use this when a historical 5-bit pipeline should end as Baudot text rather than generic symbols.',
+    searchTerms: ['baudot output', 'output', 'sink', 'teleprinter', 'ita2', 'final'],
   },
   BitOutput: {
     sectionId: 'inputs-outputs',

@@ -1,4 +1,5 @@
 import { deriveTickCount, executeProject, executeTickedProject } from '../engine/executor';
+import { isOutputSinkDefId } from '../engine/output-sinks';
 import { isStatefulModule, type ModuleRegistry, type Project, type ValidationIssue } from '../engine/types';
 import { validateProject } from '../engine/validation';
 import type { ExecutionComparison, TraceDivergence } from './execution-compare';
@@ -231,7 +232,7 @@ function collectTickedOutput(result: ReturnType<typeof executeTickedProject>): s
   return result.ticks
     .map((tick) => {
       const outputModule = tick.trace.find(
-        (entry) => entry.defId === 'Output' || entry.defId === 'BitOutput',
+        (entry) => isOutputSinkDefId(entry.defId),
       );
       const signal =
         outputModule?.outputs.out ??
@@ -306,7 +307,7 @@ function getOutputTraceEntry(result: ExecutionResult | null): ExecutionTraceEntr
   }
 
   return (
-    result.trace.find((entry) => entry.defId === 'Output' || entry.defId === 'BitOutput') ??
+    result.trace.find((entry) => isOutputSinkDefId(entry.defId)) ??
     result.trace.at(-1) ??
     null
   );

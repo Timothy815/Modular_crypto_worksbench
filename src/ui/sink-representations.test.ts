@@ -106,8 +106,8 @@ describe('formatBitsAs', () => {
 });
 
 describe('getSinkRepresentationOptions', () => {
-  it('returns bit-oriented options for bits signals', () => {
-    const options = getSinkRepresentationOptions({
+  it('returns bit-oriented options for bit outputs', () => {
+    const options = getSinkRepresentationOptions('BitOutput', {
       type: 'bits',
       value: [0, 1, 0, 0, 0, 0, 0, 1],
     });
@@ -115,36 +115,46 @@ describe('getSinkRepresentationOptions', () => {
     expect(options.find((option) => option.id === 'ascii')?.value).toBe('A');
   });
 
-  it('returns ascii-derived options for ascii text', () => {
-    const options = getSinkRepresentationOptions({
+  it('returns text-first options for text outputs', () => {
+    const options = getSinkRepresentationOptions('TextOutput', {
       type: 'symbol',
       value: 'AB',
     });
-    expect(options.map((option) => option.id)).toEqual([
-      'text',
-      'asciiBits',
-      'asciiHex',
-      'hexBits',
-      'baudotBits',
-    ]);
-    expect(options.find((option) => option.id === 'asciiHex')?.value).toBe('4142');
+    expect(options.map((option) => option.id)).toEqual(['text', 'bits', 'bytes', 'hex']);
+    expect(options.find((option) => option.id === 'hex')?.value).toBe('4142');
   });
 
-  it('returns hex-derived options for hex text', () => {
-    const options = getSinkRepresentationOptions({
+  it('returns hex-first options for hex outputs', () => {
+    const options = getSinkRepresentationOptions('HexOutput', {
       type: 'symbol',
-      value: '4142',
+      value: '3A',
     });
-    expect(options.map((option) => option.id)).toContain('hexBits');
-    expect(options.find((option) => option.id === 'hexBits')?.value).toBe('0100 0001 0100 0010');
+    expect(options.map((option) => option.id)).toEqual(['hex', 'bits', 'bytes', 'ascii']);
+    expect(options.find((option) => option.id === 'bits')?.value).toBe('00111010');
+    expect(options.find((option) => option.id === 'ascii')?.value).toBe(':');
   });
 
-  it('returns symbol bits for a single alphabet symbol', () => {
-    const options = getSinkRepresentationOptions({
+  it('returns baudot-first options for baudot outputs', () => {
+    const options = getSinkRepresentationOptions('BaudotOutput', {
       type: 'symbol',
-      value: 'A',
+      value: 'ABC',
     });
-    expect(options.map((option) => option.id)).toContain('symbolBits');
-    expect(options.find((option) => option.id === 'symbolBits')?.value).toBe('00000');
+    expect(options.map((option) => option.id)).toEqual(['text', 'bits', 'hex']);
+    expect(options.find((option) => option.id === 'bits')?.value).toContain(' ');
+    expect(options.find((option) => option.id === 'hex')?.available).toBe(false);
+  });
+
+  it('keeps generic output text-first instead of guessing hex semantics', () => {
+    const options = getSinkRepresentationOptions('Output', {
+      type: 'symbol',
+      value: '3A',
+    });
+    expect(options.map((option) => option.id)).toEqual(['text', 'bits', 'bytes', 'hex']);
+    expect(options.find((option) => option.id === 'hex')?.value).toBe('3341');
+  });
+
+  it('returns no options for missing or mismatched sink signals', () => {
+    expect(getSinkRepresentationOptions(undefined, undefined)).toEqual([]);
+    expect(getSinkRepresentationOptions('BitOutput', { type: 'symbol', value: 'A' })).toEqual([]);
   });
 });

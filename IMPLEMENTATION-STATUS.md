@@ -8,6 +8,20 @@ Last updated: March 26, 2026
 
 The project has shipped through `v1.32.0` on `main`.
 
+Current local `main` is now positioned beyond `v1.32.0` with the first explicit output-sink semantics slice from [OUTPUT-SINKS-V1.md](/Users/timothykoerner/Desktop/modular_cryptography/OUTPUT-SINKS-V1.md):
+- new sink modules:
+  - `TextOutput`
+  - `HexOutput`
+  - `BaudotOutput`
+- shared sink detection so final-output handling is no longer hard-coded only to `Output` / `BitOutput`
+- sink-aware inspector views:
+  - generic `Output` remains text-first for compatibility
+  - `HexOutput` is hex-first
+  - `BaudotOutput` is baudot-first
+  - `BitOutput` remains bit-first
+
+This slice is implemented locally and verified, but not yet framed as a shipped release.
+
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
 - first bounded number-theoretic vocabulary:

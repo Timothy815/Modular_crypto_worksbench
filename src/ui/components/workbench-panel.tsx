@@ -7,6 +7,7 @@ import type {
   Project,
   ValidationIssue,
 } from '../../engine/types';
+import { isOutputSinkDefId } from '../../engine/output-sinks';
 import { validateProject } from '../../engine/validation';
 import type { DemoProject } from '../demo-projects';
 import {
@@ -935,7 +936,7 @@ export function WorkbenchPanel({
                       </span>
                     );
                   })() : null}
-                  {isTickedMode && (moduleInstance.defId === 'Output' || moduleInstance.defId === 'BitOutput') ? (() => {
+                  {isTickedMode && isOutputSinkDefId(moduleInstance.defId) ? (() => {
                     const signal = executionSignalByModuleId[moduleInstance.id];
                     if (!signal) return null;
                     const value = signal.type === 'symbol' ? signal.value : `[${signal.value.join(',')}]`;

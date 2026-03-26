@@ -10,6 +10,7 @@ import {
 
 import { isCompositeDefinition } from '../../engine/composites';
 import { getBypassIneligibilityReason, isBypassEligibleDefinition } from '../../engine/bypass';
+import { isOutputSinkDefId } from '../../engine/output-sinks';
 import type {
   Connection,
   ExecutionResult,
@@ -180,7 +181,7 @@ export function ParameterInspector({
   const outputTrace = useMemo(() => {
     if (!execution) return undefined;
     const outputModuleId = project.modules.find(
-      (m) => m.defId === 'Output' || m.defId === 'BitOutput',
+      (m) => isOutputSinkDefId(m.defId),
     )?.id;
     if (outputModuleId) {
       const found = execution.trace.find((entry) => entry.moduleId === outputModuleId);
@@ -189,9 +190,11 @@ export function ParameterInspector({
     return execution.trace.at(-1);
   }, [execution, project.modules]);
   const outputSignal = outputTrace?.inputs.in;
+  const outputSinkDefId =
+    outputTrace && isOutputSinkDefId(outputTrace.defId) ? outputTrace.defId : undefined;
   const outputRepresentationOptions = useMemo(
-    () => getSinkRepresentationOptions(outputSignal),
-    [outputSignal],
+    () => getSinkRepresentationOptions(outputSinkDefId, outputSignal),
+    [outputSignal, outputSinkDefId],
   );
   const effectiveOutputRepresentation =
     outputRepresentationOptions.some((option) => option.id === sinkRepresentation && option.available)

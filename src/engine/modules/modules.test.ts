@@ -73,6 +73,9 @@ import {
   swapPermutationOrderPositions,
 } from './permutation';
 import { BitOutput } from './bit-output';
+import { TextOutput } from './text-output';
+import { HexOutput } from './hex-output';
+import { BaudotOutput } from './baudot-output';
 import type { Signal } from '../types';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -808,6 +811,27 @@ describe('BitOutput', () => {
       { in: { type: 'bits', value: [1, 0, 1, 0, 1, 1, 0, 0] } },
       {},
     );
+    expect(result).toEqual({});
+  });
+});
+
+describe('TextOutput', () => {
+  it('accepts a symbol signal and produces no outputs', () => {
+    const result = TextOutput.evaluate({ in: { type: 'symbol', value: 'HELLO' } }, {});
+    expect(result).toEqual({});
+  });
+});
+
+describe('HexOutput', () => {
+  it('accepts a symbol signal and produces no outputs', () => {
+    const result = HexOutput.evaluate({ in: { type: 'symbol', value: '4142' } }, {});
+    expect(result).toEqual({});
+  });
+});
+
+describe('BaudotOutput', () => {
+  it('accepts a symbol signal and produces no outputs', () => {
+    const result = BaudotOutput.evaluate({ in: { type: 'symbol', value: 'ABC' } }, {});
     expect(result).toEqual({});
   });
 });

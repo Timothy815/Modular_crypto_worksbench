@@ -34,6 +34,9 @@ import { Equals } from './equals';
 import { AtLeast } from './at-least';
 import { Gate } from './gate';
 import { Output } from './output';
+import { TextOutput } from './text-output';
+import { HexOutput } from './hex-output';
+import { BaudotOutput } from './baudot-output';
 import { BitOutput } from './bit-output';
 import { Rotor } from './rotor';
 import { Reflector } from './reflector';
@@ -87,6 +90,9 @@ export {
   AtLeast,
   Gate,
   Output,
+  TextOutput,
+  HexOutput,
+  BaudotOutput,
   BitOutput,
   Rotor,
   Reflector,
@@ -141,6 +147,9 @@ export const V1_REGISTRY: ModuleRegistry = {
   [AtLeast.id]: AtLeast,
   [Gate.id]: Gate,
   [Output.id]: Output,
+  [TextOutput.id]: TextOutput,
+  [HexOutput.id]: HexOutput,
+  [BaudotOutput.id]: BaudotOutput,
   [BitOutput.id]: BitOutput,
   [Rotor.id]: Rotor,
   [Reflector.id]: Reflector,

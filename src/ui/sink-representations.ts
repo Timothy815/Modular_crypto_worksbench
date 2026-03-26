@@ -1,19 +1,10 @@
+import type { OutputSinkDefId } from '../engine/output-sinks';
 import type { Signal } from '../engine/types';
 import { validateAsciiSourceValue } from '../engine/modules/ascii-source';
 import { validateHexSourceValue } from '../engine/modules/hex-source';
-import { validateBaudotText, encodeBaudotText } from '../engine/modules/baudot-codec';
+import { encodeBaudotText, validateBaudotText } from '../engine/modules/baudot-codec';
 
-export type SinkRepresentation =
-  | 'bits'
-  | 'bytes'
-  | 'hex'
-  | 'ascii'
-  | 'text'
-  | 'asciiBits'
-  | 'asciiHex'
-  | 'hexBits'
-  | 'baudotBits'
-  | 'symbolBits';
+export type SinkRepresentation = 'text' | 'bits' | 'bytes' | 'hex' | 'ascii';
 
 export interface RepresentationAvailability {
   bits: true;
@@ -30,7 +21,6 @@ export interface SinkRepresentationOption {
   reason: string | null;
 }
 
-/** Determine which representations are available for a given bit array. */
 export function getRepresentationAvailability(bits: number[]): RepresentationAvailability {
   const len = bits.length;
   const canBytes = len > 0 && len % 8 === 0;
@@ -39,7 +29,9 @@ export function getRepresentationAvailability(bits: number[]): RepresentationAva
   if (canAscii) {
     for (let i = 0; i < len; i += 8) {
       let byte = 0;
-      for (let b = 0; b < 8; b += 1) byte = (byte << 1) | bits[i + b];
+      for (let b = 0; b < 8; b += 1) {
+        byte = (byte << 1) | bits[i + b];
+      }
       if (byte > 0x7f) {
         canAscii = false;
         break;
@@ -49,67 +41,102 @@ export function getRepresentationAvailability(bits: number[]): RepresentationAva
   return { bits: true, bytes: canBytes, hex: canHex, ascii: canAscii };
 }
 
-/** Explain why a representation is unavailable. Returns null if available. */
 export function getUnavailableReason(
   rep: 'bits' | 'bytes' | 'hex' | 'ascii',
   bits: number[],
   availability: RepresentationAvailability,
 ): string | null {
-  if (availability[rep]) return null;
-  const len = bits.length;
-  if (rep === 'bytes') return `Width ${len} is not divisible by 8`;
-  if (rep === 'hex') return `Width ${len} is not divisible by 4`;
-  if (rep === 'ascii') {
-    if (len === 0 || len % 8 !== 0) return `Width ${len} is not divisible by 8`;
-    return 'Contains non-ASCII bytes (> 0x7F)';
+  if (availability[rep]) {
+    return null;
   }
-  return null;
+  const len = bits.length;
+  if (rep === 'bytes') {
+    return `Width ${len} is not divisible by 8`;
+  }
+  if (rep === 'hex') {
+    return `Width ${len} is not divisible by 4`;
+  }
+  if (len === 0 || len % 8 !== 0) {
+    return `Width ${len} is not divisible by 8`;
+  }
+  return 'Contains non-ASCII bytes (> 0x7F)';
 }
 
-/** Format a bit array into the given representation string. */
 export function formatBitsAs(bits: number[], rep: 'bits' | 'bytes' | 'hex' | 'ascii'): string {
   const len = bits.length;
-  if (rep === 'bits') return bits.join('');
+  if (rep === 'bits') {
+    return bits.join('');
+  }
   if (rep === 'bytes') {
     return groupBits(bits, 8);
   }
   if (rep === 'hex') {
     const nibbles: string[] = [];
     for (let i = 0; i < len; i += 4) {
-      let nib = 0;
-      for (let b = 0; b < 4; b += 1) nib = (nib << 1) | bits[i + b];
-      nibbles.push(nib.toString(16).toUpperCase());
+      let nibble = 0;
+      for (let b = 0; b < 4; b += 1) {
+        nibble = (nibble << 1) | bits[i + b];
+      }
+      nibbles.push(nibble.toString(16).toUpperCase());
     }
     return nibbles.join('');
   }
+
   const chars: string[] = [];
   for (let i = 0; i < len; i += 8) {
     let byte = 0;
-    for (let b = 0; b < 8; b += 1) byte = (byte << 1) | bits[i + b];
+    for (let b = 0; b < 8; b += 1) {
+      byte = (byte << 1) | bits[i + b];
+    }
     chars.push(String.fromCharCode(byte));
   }
   return chars.join('');
 }
 
-export function getSinkRepresentationOptions(signal: Signal | undefined): SinkRepresentationOption[] {
-  if (!signal) {
+export function getSinkRepresentationOptions(
+  sinkDefId: OutputSinkDefId | undefined,
+  signal: Signal | undefined,
+): SinkRepresentationOption[] {
+  if (!sinkDefId || !signal) {
     return [];
   }
 
-  if (signal.type === 'bits') {
-    const bits = signal.value;
-    const availability = getRepresentationAvailability(bits);
-    return (['bits', 'bytes', 'hex', 'ascii'] as const).map((rep) => ({
-      id: rep,
-      label: rep.charAt(0).toUpperCase() + rep.slice(1),
-      value: availability[rep] ? formatBitsAs(bits, rep) : '',
-      available: availability[rep],
-      reason: getUnavailableReason(rep, bits, availability),
-    }));
+  if (sinkDefId === 'BitOutput') {
+    return signal.type === 'bits' ? buildBitOptions(signal.value) : [];
   }
 
-  const text = signal.value;
-  const options: SinkRepresentationOption[] = [
+  if (signal.type !== 'symbol') {
+    return [];
+  }
+
+  if (sinkDefId === 'HexOutput') {
+    return buildHexOutputOptions(signal.value);
+  }
+
+  if (sinkDefId === 'BaudotOutput') {
+    return buildBaudotOutputOptions(signal.value);
+  }
+
+  return buildTextOutputOptions(signal.value);
+}
+
+function buildBitOptions(bits: number[]): SinkRepresentationOption[] {
+  const availability = getRepresentationAvailability(bits);
+  return (['bits', 'bytes', 'hex', 'ascii'] as const).map((rep) => ({
+    id: rep,
+    label: rep.charAt(0).toUpperCase() + rep.slice(1),
+    value: availability[rep] ? formatBitsAs(bits, rep) : '',
+    available: availability[rep],
+    reason: getUnavailableReason(rep, bits, availability),
+  }));
+}
+
+function buildTextOutputOptions(text: string): SinkRepresentationOption[] {
+  const asciiError = validateAsciiSourceValue(text);
+  const bits = asciiError === null ? encodeAsciiText(text) : [];
+  const availability = asciiError === null ? getRepresentationAvailability(bits) : null;
+
+  return [
     {
       id: 'text',
       label: 'Text',
@@ -117,58 +144,110 @@ export function getSinkRepresentationOptions(signal: Signal | undefined): SinkRe
       available: true,
       reason: null,
     },
+    {
+      id: 'bits',
+      label: 'Bits',
+      value: asciiError === null ? formatBitsAs(bits, 'bits') : '',
+      available: asciiError === null,
+      reason: asciiError === null ? null : 'Requires 7-bit ASCII text',
+    },
+    {
+      id: 'bytes',
+      label: 'Bytes',
+      value: asciiError === null && availability?.bytes ? formatBitsAs(bits, 'bytes') : '',
+      available: asciiError === null && Boolean(availability?.bytes),
+      reason:
+        asciiError === null
+          ? getUnavailableReason('bytes', bits, availability ?? getRepresentationAvailability([]))
+          : 'Requires 7-bit ASCII text',
+    },
+    {
+      id: 'hex',
+      label: 'Hex',
+      value: asciiError === null && availability?.hex ? formatBitsAs(bits, 'hex') : '',
+      available: asciiError === null && Boolean(availability?.hex),
+      reason:
+        asciiError === null
+          ? getUnavailableReason('hex', bits, availability ?? getRepresentationAvailability([]))
+          : 'Requires 7-bit ASCII text',
+    },
   ];
+}
 
-  if (validateAsciiSourceValue(text) === null) {
-    const asciiBits = encodeAsciiText(text);
-    options.push({
-      id: 'asciiBits',
-      label: 'ASCII Bits',
-      value: groupBits(asciiBits, 8),
+function buildHexOutputOptions(text: string): SinkRepresentationOption[] {
+  const hexError = validateHexSourceValue(text);
+  const bits = hexError === null ? hexToBits(normalizeHex(text)) : [];
+  const availability = hexError === null ? getRepresentationAvailability(bits) : null;
+
+  return [
+    {
+      id: 'hex',
+      label: 'Hex',
+      value: normalizeHex(text),
       available: true,
       reason: null,
-    });
-    options.push({
-      id: 'asciiHex',
-      label: 'ASCII Hex',
-      value: encodeAsciiHex(text),
+    },
+    {
+      id: 'bits',
+      label: 'Bits',
+      value: hexError === null ? formatBitsAs(bits, 'bits') : '',
+      available: hexError === null,
+      reason: hexError === null ? null : 'Requires a valid even-length hexadecimal string',
+    },
+    {
+      id: 'bytes',
+      label: 'Bytes',
+      value: hexError === null && availability?.bytes ? formatBitsAs(bits, 'bytes') : '',
+      available: hexError === null && Boolean(availability?.bytes),
+      reason:
+        hexError === null
+          ? getUnavailableReason('bytes', bits, availability ?? getRepresentationAvailability([]))
+          : 'Requires a valid even-length hexadecimal string',
+    },
+    {
+      id: 'ascii',
+      label: 'ASCII',
+      value: hexError === null && availability?.ascii ? formatBitsAs(bits, 'ascii') : '',
+      available: hexError === null && Boolean(availability?.ascii),
+      reason:
+        hexError === null
+          ? getUnavailableReason('ascii', bits, availability ?? getRepresentationAvailability([]))
+          : 'Requires a valid even-length hexadecimal string',
+    },
+  ];
+}
+
+function buildBaudotOutputOptions(text: string): SinkRepresentationOption[] {
+  const baudotError = validateBaudotText(text);
+  const bits = baudotError === null ? encodeBaudotText(text) : [];
+  const availability = baudotError === null ? getRepresentationAvailability(bits) : null;
+
+  return [
+    {
+      id: 'text',
+      label: 'Text',
+      value: text,
       available: true,
       reason: null,
-    });
-  }
-
-  if (validateHexSourceValue(text) === null) {
-    const normalizedHex = normalizeHex(text);
-    options.push({
-      id: 'hexBits',
-      label: 'Hex Bits',
-      value: groupBits(hexToBits(normalizedHex), 4),
-      available: true,
-      reason: null,
-    });
-  }
-
-  if (validateBaudotText(text) === null) {
-    options.push({
-      id: 'baudotBits',
-      label: 'Baudot Bits',
-      value: groupBits(encodeBaudotText(text), 5),
-      available: true,
-      reason: null,
-    });
-  }
-
-  if (/^[A-Z]$/i.test(text)) {
-    options.push({
-      id: 'symbolBits',
-      label: 'Symbol Bits',
-      value: encodeAlphabetSymbolBits(text.toUpperCase()).join(''),
-      available: true,
-      reason: null,
-    });
-  }
-
-  return options;
+    },
+    {
+      id: 'bits',
+      label: 'Bits',
+      value: baudotError === null ? groupBits(bits, 5) : '',
+      available: baudotError === null,
+      reason: baudotError === null ? null : 'Requires valid Baudot letters-mode text',
+    },
+    {
+      id: 'hex',
+      label: 'Hex',
+      value: baudotError === null && availability?.hex ? formatBitsAs(bits, 'hex') : '',
+      available: baudotError === null && Boolean(availability?.hex),
+      reason:
+        baudotError === null
+          ? getUnavailableReason('hex', bits, availability ?? getRepresentationAvailability([]))
+          : 'Requires valid Baudot letters-mode text',
+    },
+  ];
 }
 
 function groupBits(bits: number[], width: number): string {
@@ -186,13 +265,6 @@ function encodeAsciiText(value: string): number[] {
   });
 }
 
-function encodeAsciiHex(value: string): string {
-  return value
-    .split('')
-    .map((char) => char.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0'))
-    .join('');
-}
-
 function normalizeHex(value: string): string {
   return value.trim().replace(/\s+/g, '').toUpperCase();
 }
@@ -202,9 +274,4 @@ function hexToBits(value: string): number[] {
     const nibble = Number.parseInt(digit, 16);
     return [3, 2, 1, 0].map((shift) => (nibble >> shift) & 1);
   });
-}
-
-function encodeAlphabetSymbolBits(char: string): number[] {
-  const index = char.charCodeAt(0) - 65;
-  return [4, 3, 2, 1, 0].map((shift) => (index >> shift) & 1);
 }

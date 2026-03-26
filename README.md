@@ -13,6 +13,20 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 The repository has shipped through `v1.32.0`.
 
+Current local `main` is now positioned beyond `v1.32.0` with the first explicit output-sink semantics slice:
+- new sink modules:
+  - `TextOutput`
+  - `HexOutput`
+  - `BaudotOutput`
+- shared sink identification so terminal-output handling is no longer hard-coded only to `Output` / `BitOutput`
+- sink-aware inspector views:
+  - generic `Output` stays text-first for compatibility
+  - `HexOutput` interprets its symbol result as hex first
+  - `BaudotOutput` interprets its symbol result as Baudot first
+  - `BitOutput` keeps bit-first inspection
+
+This local slice is governed by [OUTPUT-SINKS-V1.md](/Users/timothykoerner/Desktop/modular_cryptography/OUTPUT-SINKS-V1.md) and is not yet framed as a shipped release.
+
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
   - `ModExp` (modular exponentiation via repeated squaring)

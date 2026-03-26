@@ -25,6 +25,7 @@ Read NUMBER-THEORETIC-V1.md before starting work on modular exponentiation, modu
 Read BYPASS-V1.md before adding instance-level transform bypass, mute/solo behavior, or “turn this module off” controls.
 Read INVERSE-PERMUTATION-AUTHORING-V1.md before extending permutation-editor helpers, inverse mapping tools, or decrypt-path permutation authoring.
 Read BRIDGE-ERGONOMICS-V1.md before changing raw bit entry, byte-oriented bridges, or reversible/lossy bridge guidance.
+Read OUTPUT-SINKS-V1.md before changing sink semantics, adding sink-specific outputs, or broadening output interpretation rules.
 Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
 Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
 

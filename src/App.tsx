@@ -5,6 +5,7 @@ import { isCompositeDefinition, type CompositeLibraryEntry } from './engine/comp
 import { V1_REGISTRY } from './engine/modules';
 import type { ExecutionResult, ExecutionTraceEntry, Project, TickedExecutionResult } from './engine/types';
 import { deriveTickCount, executeTickedProject } from './engine/executor';
+import { isOutputSinkDefId } from './engine/output-sinks';
 import { validateCompositeDef, validateProject } from './engine/validation';
 import {
   createCompositeFromSelection,
@@ -494,7 +495,7 @@ function App() {
     ? tickedExecution.ticks
         .map((tick) => {
           const outputModule = activeProjectState.modules.find(
-            (m) => m.defId === 'Output' || m.defId === 'BitOutput',
+            (m) => isOutputSinkDefId(m.defId),
           );
           if (!outputModule) return '';
           const outputTraceEntry = tick.trace.find(
