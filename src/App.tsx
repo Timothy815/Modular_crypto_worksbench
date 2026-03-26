@@ -83,6 +83,19 @@ function createUniqueWorkspaceId(name: string, usedIds: Set<string>) {
   return nextId;
 }
 
+function createDuplicateWorkspaceName(sourceName: string, existingNames: Set<string>) {
+  const baseName = `${sourceName} Copy`;
+  let candidate = baseName;
+  let suffix = 2;
+
+  while (existingNames.has(candidate)) {
+    candidate = `${baseName} ${suffix}`;
+    suffix += 1;
+  }
+
+  return candidate;
+}
+
 function describeWorkspacePipeline(project: Project) {
   return project.modules.length > 0
     ? project.modules.map((moduleInstance) => moduleInstance.defId).join(' -> ')
@@ -842,6 +855,35 @@ function App() {
     });
   }
 
+  function handleDuplicateCurrentWorkspace() {
+    const existingNames = new Set(
+      state.userWorkspaceLibrary.map((workspace) => workspace.name),
+    );
+    const sourceName =
+      state.userWorkspaceLibrary.find((workspace) => workspace.id === activeProjectDefinition.id)?.name ??
+      activeProjectDefinition.name;
+    const suggestedName = createDuplicateWorkspaceName(sourceName, existingNames);
+    const proposedName = window.prompt('Duplicate workspace as:', suggestedName);
+    const name = proposedName?.trim();
+    if (!name) {
+      return;
+    }
+
+    const workspaceId = createUniqueWorkspaceId(
+      name,
+      new Set(availableProjects.map((project) => project.id)),
+    );
+    dispatch({
+      type: 'saveWorkspaceAs',
+      sourceProjectId: activeProjectDefinition.id,
+      workspaceId,
+      name,
+      summary: `A duplicated workspace based on ${sourceName}.`,
+      pipeline: describeWorkspacePipeline(activeProjectState),
+      defaultTickedMode: state.tickedModeByProject[activeProjectDefinition.id] ?? false,
+    });
+  }
+
   function handleDeleteCurrentWorkspace() {
     const existingWorkspace = state.userWorkspaceLibrary.find(
       (workspace) => workspace.id === activeProjectDefinition.id,
@@ -1023,6 +1065,8 @@ function App() {
                   });
                 } else if (value === 'new-blank-workspace') {
                   handleCreateBlankWorkspace();
+                } else if (value === 'duplicate-current-workspace') {
+                  handleDuplicateCurrentWorkspace();
                 } else if (value === 'save-current-workspace') {
                   handleSaveCurrentWorkspace();
                 } else if (value === 'delete-current-workspace') {
@@ -1032,6 +1076,7 @@ function App() {
             >
               <option value="">Actions…</option>
               <option value="new-blank-workspace">New Blank Workspace</option>
+              <option value="duplicate-current-workspace">Duplicate Workspace</option>
               <option value="save-current-workspace">Save Current Workspace</option>
               {state.userWorkspaceLibrary.some(
                 (workspace) => workspace.id === activeProjectDefinition.id,

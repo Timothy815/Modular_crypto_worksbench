@@ -314,6 +314,68 @@ describe('uiReducer', () => {
     expect(nextState.activeChallengeIdByProject['sequential-copy']).toBeNull();
   });
 
+  it('duplicates a workspace as an independent copy with reset session state', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const sourceProjectId = 'sequential';
+    const preparedState = uiReducer(
+      uiReducer(
+        uiReducer(initialState, {
+          type: 'selectTutorial',
+          projectId: sourceProjectId,
+          tutorialId: initialState.tutorialLibrary.find(
+            (tutorial) => tutorial.projectId === sourceProjectId,
+          )?.id ?? null,
+        }),
+        {
+          type: 'setTutorialStep',
+          projectId: sourceProjectId,
+          stepIndex: 2,
+        },
+      ),
+      {
+        type: 'setCurrentTick',
+        projectId: sourceProjectId,
+        tick: 4,
+      },
+    );
+
+    const duplicateState = uiReducer(preparedState, {
+      type: 'saveWorkspaceAs',
+      sourceProjectId,
+      workspaceId: 'sequential-copy',
+      name: 'Sequential Copy',
+      summary: 'A duplicated workspace.',
+      pipeline: 'Clock -> LFSR -> BitsToSymbol -> Output',
+      defaultTickedMode: true,
+    });
+
+    const renamedDuplicateState = uiReducer(duplicateState, {
+      type: 'renameModuleInstance',
+      projectId: 'sequential-copy',
+      moduleId: duplicateState.projectStates['sequential-copy']?.modules[0]?.id ?? '',
+      nextModuleId: 'copied-clock',
+    });
+
+    expect(duplicateState.activeProjectId).toBe('sequential-copy');
+    expect(duplicateState.projectStates['sequential-copy']).toEqual(
+      preparedState.projectStates[sourceProjectId],
+    );
+    expect(duplicateState.layoutByProject['sequential-copy']).toEqual(
+      preparedState.layoutByProject[sourceProjectId],
+    );
+    expect(duplicateState.activeTutorialIdByProject['sequential-copy']).toBeNull();
+    expect(duplicateState.activeTutorialStepByProject['sequential-copy']).toBe(0);
+    expect(duplicateState.activeChallengeIdByProject['sequential-copy']).toBeNull();
+    expect(duplicateState.currentTickByProject['sequential-copy']).toBe(0);
+    expect(duplicateState.isTickPlaybackActiveByProject['sequential-copy']).toBe(false);
+    expect(renamedDuplicateState.projectStates[sourceProjectId]?.modules[0]?.id).not.toBe(
+      'copied-clock',
+    );
+    expect(renamedDuplicateState.projectStates['sequential-copy']?.modules[0]?.id).toBe(
+      'copied-clock',
+    );
+  });
+
   it('removes a personal workspace and falls back to a demo project', () => {
     const initialState = createInitialUiState(demoProjects);
     const stateWithWorkspace = uiReducer(initialState, {
