@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   formatBitsAs,
   getRepresentationAvailability,
+  getSinkRepresentationOptions,
   getUnavailableReason,
 } from './sink-representations';
 
@@ -80,8 +81,8 @@ describe('formatBitsAs', () => {
   });
 
   it('formats as bytes', () => {
-    expect(formatBitsAs(aBits, 'bytes')).toBe('[65]');
-    expect(formatBitsAs(abBits, 'bytes')).toBe('[65, 66]');
+    expect(formatBitsAs(aBits, 'bytes')).toBe('01000001');
+    expect(formatBitsAs(abBits, 'bytes')).toBe('01000001 01000010');
   });
 
   it('formats as hex', () => {
@@ -101,5 +102,49 @@ describe('formatBitsAs', () => {
   it('formats 4-bit nibble as hex', () => {
     expect(formatBitsAs([1, 1, 1, 1], 'hex')).toBe('F');
     expect(formatBitsAs([0, 0, 0, 0], 'hex')).toBe('0');
+  });
+});
+
+describe('getSinkRepresentationOptions', () => {
+  it('returns bit-oriented options for bits signals', () => {
+    const options = getSinkRepresentationOptions({
+      type: 'bits',
+      value: [0, 1, 0, 0, 0, 0, 0, 1],
+    });
+    expect(options.map((option) => option.id)).toEqual(['bits', 'bytes', 'hex', 'ascii']);
+    expect(options.find((option) => option.id === 'ascii')?.value).toBe('A');
+  });
+
+  it('returns ascii-derived options for ascii text', () => {
+    const options = getSinkRepresentationOptions({
+      type: 'symbol',
+      value: 'AB',
+    });
+    expect(options.map((option) => option.id)).toEqual([
+      'text',
+      'asciiBits',
+      'asciiHex',
+      'hexBits',
+      'baudotBits',
+    ]);
+    expect(options.find((option) => option.id === 'asciiHex')?.value).toBe('4142');
+  });
+
+  it('returns hex-derived options for hex text', () => {
+    const options = getSinkRepresentationOptions({
+      type: 'symbol',
+      value: '4142',
+    });
+    expect(options.map((option) => option.id)).toContain('hexBits');
+    expect(options.find((option) => option.id === 'hexBits')?.value).toBe('0100 0001 0100 0010');
+  });
+
+  it('returns symbol bits for a single alphabet symbol', () => {
+    const options = getSinkRepresentationOptions({
+      type: 'symbol',
+      value: 'A',
+    });
+    expect(options.map((option) => option.id)).toContain('symbolBits');
+    expect(options.find((option) => option.id === 'symbolBits')?.value).toBe('00000');
   });
 });

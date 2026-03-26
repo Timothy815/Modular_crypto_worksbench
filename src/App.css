@@ -2348,6 +2348,12 @@ body.dock-resizing {
   margin: 8px 0;
 }
 
+.sink-rep-note {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
 .sink-rep-tab {
   padding: 4px 10px;
   border-radius: 10px;

@@ -24,9 +24,8 @@ import { BitsEditor } from './editors/bits-editor';
 import { WiringEditor } from './editors/wiring-editor';
 import { formatParamValue, formatSignal, parseParamValue } from '../formatters';
 import {
-  formatBitsAs,
-  getRepresentationAvailability,
-  getUnavailableReason,
+  getSinkRepresentationOptions,
+  type SinkRepresentation,
 } from '../sink-representations';
 import type { TutorialStep } from '../tutorials';
 import { ComparisonPanel } from './comparison-panel';
@@ -149,7 +148,7 @@ export function ParameterInspector({
   const [requestedStepperMode, setRequestedStepperMode] = useState<'top-level' | 'nested'>('top-level');
   const [requestedNestedStepIndex, setRequestedNestedStepIndex] = useState<number | null>(null);
   const [requestedLookupChunkIndex, setRequestedLookupChunkIndex] = useState(0);
-  const [sinkRepresentation, setSinkRepresentation] = useState<'bits' | 'bytes' | 'hex' | 'ascii'>('bits');
+  const [sinkRepresentation, setSinkRepresentation] = useState<SinkRepresentation>('bits');
   const [draggedPermutationInputIndex, setDraggedPermutationInputIndex] = useState<number | null>(null);
   const [draggedRotorInputIndex, setDraggedRotorInputIndex] = useState<number | null>(null);
   const [selectedPlugboardLetter, setSelectedPlugboardLetter] = useState<string | null>(null);
@@ -189,6 +188,17 @@ export function ParameterInspector({
     }
     return execution.trace.at(-1);
   }, [execution, project.modules]);
+  const outputSignal = outputTrace?.inputs.in;
+  const outputRepresentationOptions = useMemo(
+    () => getSinkRepresentationOptions(outputSignal),
+    [outputSignal],
+  );
+  const effectiveOutputRepresentation =
+    outputRepresentationOptions.some((option) => option.id === sinkRepresentation && option.available)
+      ? sinkRepresentation
+      : outputRepresentationOptions[0]?.id ?? 'bits';
+  const effectiveOutputRepresentationOption =
+    outputRepresentationOptions.find((option) => option.id === effectiveOutputRepresentation) ?? null;
   const selectedTrace = execution?.trace.find(
     (entry) => entry.moduleId === moduleInstance?.id,
   );
@@ -435,6 +445,31 @@ export function ParameterInspector({
               ? `${execution.trace.length} module${execution.trace.length === 1 ? '' : 's'} executed`
               : 'Execution is waiting for a valid graph'}
         </p>
+        {effectiveOutputRepresentationOption ? (
+          <div className="sink-representation">
+            <span className="meta-label">Interpret Output As</span>
+            <p className="sink-rep-note">Observational views only. These do not change the graph.</p>
+            <div className="sink-rep-tabs">
+              {outputRepresentationOptions.map((option) => {
+                return (
+                  <button
+                    key={`output-summary-${option.id}`}
+                    type="button"
+                    className={`sink-rep-tab${effectiveOutputRepresentation === option.id ? ' active' : ''}${!option.available ? ' unavailable' : ''}`}
+                    onClick={() => option.available && setSinkRepresentation(option.id)}
+                    disabled={!option.available}
+                    title={option.reason ?? option.label}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="sink-rep-value">
+              <code>{effectiveOutputRepresentationOption.value}</code>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {inspectorTab === 'analyze' && isTickedMode && tickCount > 0 && moduleInstance ? (
@@ -2614,39 +2649,6 @@ export function ParameterInspector({
               .map(([, signal]) => formatSignal(signal))
               .join(' | ') || 'none'}
           </p>
-          {(() => {
-            const isSink = moduleInstance?.defId === 'Output' || moduleInstance?.defId === 'BitOutput';
-            const inputSignal = selectedTrace.inputs.in;
-            if (!isSink || !inputSignal || inputSignal.type !== 'bits') return null;
-            const bits = inputSignal.value;
-            const availability = getRepresentationAvailability(bits);
-            const effectiveRep = availability[sinkRepresentation] ? sinkRepresentation : 'bits';
-            return (
-              <div className="sink-representation">
-                <span className="meta-label">Output Representation</span>
-                <div className="sink-rep-tabs">
-                  {(['bits', 'bytes', 'hex', 'ascii'] as const).map((rep) => {
-                    const available = availability[rep];
-                    const reason = getUnavailableReason(rep, bits, availability);
-                    return (
-                      <button
-                        key={rep}
-                        className={`sink-rep-tab${effectiveRep === rep ? ' active' : ''}${!available ? ' unavailable' : ''}`}
-                        onClick={() => available && setSinkRepresentation(rep)}
-                        disabled={!available}
-                        title={reason ?? rep}
-                      >
-                        {rep.charAt(0).toUpperCase() + rep.slice(1)}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="sink-rep-value">
-                  <code>{formatBitsAs(bits, effectiveRep)}</code>
-                </div>
-              </div>
-            );
-          })()}
         </div>
       ) : null}
 
