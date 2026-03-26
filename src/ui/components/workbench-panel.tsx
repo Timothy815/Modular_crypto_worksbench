@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
+import type { ModuleDefinition } from '../../engine/types';
 import type {
   ExecutionResult,
   ExecutionTraceEntry,
@@ -9,6 +10,7 @@ import type {
 } from '../../engine/types';
 import { isOutputSinkDefId } from '../../engine/output-sinks';
 import { validateProject } from '../../engine/validation';
+import { shouldShowCompositePortHint } from '../composite-port-hints';
 import type { DemoProject } from '../demo-projects';
 import {
   compareLearningItems,
@@ -194,6 +196,10 @@ export function WorkbenchPanel({
   const [pendingConnection, setPendingConnection] =
     useState<PendingConnection | null>(null);
   const [connectionFeedback, setConnectionFeedback] = useState<string | null>(null);
+  const [hoveredCompositeHintModuleId, setHoveredCompositeHintModuleId] = useState<string | null>(
+    null,
+  );
+  const [hoveredPortHintKey, setHoveredPortHintKey] = useState<string | null>(null);
   const projectGroups = useMemo(
     () => getSortedLearningGroups(projects),
     [projects],
@@ -325,6 +331,7 @@ export function WorkbenchPanel({
 
     function handleConnectionUp() {
       setPendingConnection(null);
+      setHoveredCompositeHintModuleId(null);
     }
 
     window.addEventListener('mousemove', handleConnectionMove);
@@ -335,6 +342,46 @@ export function WorkbenchPanel({
       window.removeEventListener('mouseup', handleConnectionUp);
     };
   }, [pendingConnection]);
+
+  function renderCompositePortHint({
+    definition,
+    moduleId,
+    direction,
+    portName,
+    portType,
+  }: {
+    definition: ModuleDefinition | undefined;
+    moduleId: string;
+    direction: 'in' | 'out';
+    portName: string;
+    portType: string;
+  }) {
+    if (
+      !shouldShowCompositePortHint({
+        definition,
+        direction,
+        pendingConnection: Boolean(pendingConnection),
+        hoveredHintModuleId: hoveredCompositeHintModuleId,
+        hoveredPortHintKey,
+        moduleId,
+        portName,
+      })
+    ) {
+      return null;
+    }
+
+    return (
+      <span
+        className={
+          direction === 'in'
+            ? 'graph-port-hint graph-port-hint-in'
+            : 'graph-port-hint graph-port-hint-out'
+        }
+      >
+        {portName}: {portType}
+      </span>
+    );
+  }
 
   const targetPortStates = useMemo(() => {
     if (!pendingConnection) {
@@ -838,6 +885,16 @@ export function WorkbenchPanel({
               >
                 <div
                   className="graph-node-body"
+                  onMouseEnter={() => {
+                    if (pendingConnection && def) {
+                      setHoveredCompositeHintModuleId(moduleInstance.id);
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredCompositeHintModuleId((current) =>
+                      current === moduleInstance.id ? null : current,
+                    );
+                  }}
                   onMouseDown={(event) => {
                     event.preventDefault();
                     const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
@@ -1002,10 +1059,23 @@ export function WorkbenchPanel({
                       )}
                       style={{ top: `${PORT_START_Y + index * PORT_GAP}px` }}
                       title={`${port.name}: ${port.type}`}
+                      onMouseEnter={() => setHoveredPortHintKey(`${moduleInstance.id}:in:${port.name}`)}
+                      onMouseLeave={() =>
+                        setHoveredPortHintKey((current) =>
+                          current === `${moduleInstance.id}:in:${port.name}` ? null : current,
+                        )
+                      }
                       onMouseUp={() =>
                         completeConnectionOnInput(moduleInstance.id, port.name)
                       }
                     >
+                      {renderCompositePortHint({
+                        definition: def,
+                        moduleId: moduleInstance.id,
+                        direction: 'in',
+                        portName: port.name,
+                        portType: port.type,
+                      })}
                       <span className="graph-port-dot" />
                       <span className="graph-port-label">IN</span>
                     </span>
@@ -1024,6 +1094,12 @@ export function WorkbenchPanel({
                       }
                       style={{ top: `${PORT_START_Y + index * PORT_GAP}px` }}
                       title={`${port.name}: ${port.type}`}
+                      onMouseEnter={() => setHoveredPortHintKey(`${moduleInstance.id}:out:${port.name}`)}
+                      onMouseLeave={() =>
+                        setHoveredPortHintKey((current) =>
+                          current === `${moduleInstance.id}:out:${port.name}` ? null : current,
+                        )
+                      }
                       onMouseDown={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
@@ -1036,6 +1112,13 @@ export function WorkbenchPanel({
                     >
                       <span className="graph-port-label">OUT</span>
                       <span className="graph-port-dot" />
+                      {renderCompositePortHint({
+                        definition: def,
+                        moduleId: moduleInstance.id,
+                        direction: 'out',
+                        portName: port.name,
+                        portType: port.type,
+                      })}
                     </span>
                   ))}
                 </div>

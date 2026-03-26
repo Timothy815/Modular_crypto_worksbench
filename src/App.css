@@ -1822,6 +1822,33 @@ body.dock-resizing {
   white-space: nowrap;
 }
 
+.graph-port-hint {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  padding: 4px 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-panel) 92%, white);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.graph-port-hint-in {
+  left: 18px;
+  transform: translateY(-50%);
+}
+
+.graph-port-hint-out {
+  right: 18px;
+  transform: translateY(-50%);
+}
+
 .graph-meta {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
