@@ -146,7 +146,7 @@ src/utils/     — Shared helpers
 
 ## Current Resume Point
 
-- Resume from current `main` at `v1.35.0`
+- Resume from current `main` at `v1.36.0`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement
@@ -298,9 +298,13 @@ src/utils/     — Shared helpers
   - contextual composite/iterator boundary hints on hover
   - target-module-only input hints during live connection drag
   - quiet canvas at rest with no always-on labels or interface mutation
+- `v1.36.0` is now the cross-workspace-clipboard milestone:
+  - `Copy Selected Cluster` and `Paste Selected Cluster` for local workspace-to-workspace fragment reuse
+  - selected modules only, internal-only connections, and relative layout preservation
+  - fresh pasted IDs with immediate local divergence and no linked/library/system-clipboard semantics
 
 Active proposed next line:
-- next bounded follow-on to be decided after `v1.35.0`
+- broader product review and sanity pass after `v1.36.0`
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -399,6 +403,7 @@ Key contracts to check before implementation:
 - `INVERSE-PERMUTATION-AUTHORING-V1.md` for the shipped bounded inverse-permutation authoring slice
 - `BRIDGE-ERGONOMICS-V1.md` for the shipped bounded bridge/usability slice
 - `BRIDGE-ERGONOMICS-V2.md` for the shipped second bridge/representation slice
+- `CROSS-WORKSPACE-CLIPBOARD-V1.md` for the shipped local fragment-reuse builder slice
 - `PARAM-FORWARDING-V1.md` for explicit exposed-internal controls on composites and iterators
 - `TRANSFORMATION-VISUALIZATION-V1.md` for the shipped first primitive transformation milestone
 - `SBOX-TRANSFORMATION-V1.md` for the shipped first lookup/substitution visual family

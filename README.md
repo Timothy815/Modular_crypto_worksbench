@@ -11,7 +11,7 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.35.0`.
+The repository has shipped through `v1.36.0`.
 
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
@@ -55,6 +55,10 @@ Recent shipped follow-ons after `v1.27.0`:
   - contextual composite/iterator port hints on hover
   - target-module-only input hints during live connection drag
   - no always-on labels, no primitive-wide rollout, no interface mutation
+- `v1.36.0` Cross-Workspace Clipboard:
+  - `Copy Selected Cluster` and `Paste Selected Cluster` for local workspace-to-workspace fragment reuse
+  - selected modules only, internal-only connections, and relative layout preservation
+  - fresh pasted IDs, immediate local divergence, and no linked/library/system-clipboard semantics
 
 Shipped stream, rotor, protocol/framing, and symbol/message permutation foundations remain in place:
 - stream-machine expressiveness:

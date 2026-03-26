@@ -6,7 +6,7 @@ Last updated: March 26, 2026
 
 ## Current State
 
-The project has shipped through `v1.35.0` on `main`.
+The project has shipped through `v1.36.0` on `main`.
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -55,6 +55,10 @@ Those shipped:
   - contextual composite/iterator boundary hints on hover
   - target-module-only input hints during live connection drag
   - quiet canvas at rest with no always-on labels or interface mutation
+- cross-workspace clipboard:
+  - `Copy Selected Cluster` and `Paste Selected Cluster` for local fragment reuse across workspaces
+  - selected modules only, internal-only connections, and relative layout preservation
+  - fresh pasted IDs with immediate local divergence and no linked/library/system-clipboard semantics
 
 The already-shipped protocol-material, block-framing, and symbol/message permutation foundations remain in place:
 - protocol inputs:
@@ -185,6 +189,7 @@ The following decisions are reflected in shipped code:
 | `v1.33.0` | Reversible Authoring |
 | `v1.34.0` | Workspace Housekeeping |
 | `v1.35.0` | Composite Port Hints |
+| `v1.36.0` | Cross-Workspace Clipboard |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing

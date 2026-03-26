@@ -37,6 +37,11 @@ import {
   getSelectedModuleIds,
   uiReducer,
 } from './ui/store';
+import {
+  buildWorkspaceClipboardSnapshot,
+  pasteWorkspaceClipboardSnapshot,
+  type WorkspaceClipboardSnapshot,
+} from './ui/workspace-clipboard';
 
 const MIN_LEFT_DOCK_WIDTH = 220;
 const MAX_LEFT_DOCK_WIDTH = 520;
@@ -391,6 +396,8 @@ function App() {
   const [activeAnalysisTraceEntry, setActiveAnalysisTraceEntry] =
     useState<ExecutionTraceEntry | null>(null);
   const [paletteViewMode, setPaletteViewMode] = useState<'compact' | 'expanded'>('expanded');
+  const [workspaceClipboardSnapshot, setWorkspaceClipboardSnapshot] =
+    useState<WorkspaceClipboardSnapshot | null>(null);
 
   const availableProjects = [
     ...demoProjects,
@@ -884,6 +891,73 @@ function App() {
     });
   }
 
+  function handleCopySelectedCluster() {
+    if (state.compositeEditor) {
+      return;
+    }
+
+    const snapshot = buildWorkspaceClipboardSnapshot({
+      project: activeProjectState,
+      layout: activeLayout,
+      selectedModuleIds: effectiveSelectedModuleIds,
+    });
+    if (!snapshot) {
+      window.alert('Select one or more modules before copying.');
+      return;
+    }
+
+    setWorkspaceClipboardSnapshot(snapshot);
+    setImportError(null);
+  }
+
+  function handlePasteSelectedCluster() {
+    if (state.compositeEditor) {
+      return;
+    }
+
+    if (!workspaceClipboardSnapshot) {
+      window.alert('Copy a module cluster before pasting.');
+      return;
+    }
+
+    const pasted = pasteWorkspaceClipboardSnapshot({
+      targetProject: activeProjectState,
+      targetLayout: activeLayout,
+      snapshot: workspaceClipboardSnapshot,
+    });
+
+    dispatch({
+      type: 'loadDocument',
+      projectId: activeProjectDefinition.id,
+      document: {
+        version: 1,
+        project: pasted.project,
+        ui: {
+          layout: pasted.layout,
+          annotations: activeAnnotations,
+        },
+      },
+    });
+    setImportError(null);
+
+    const [firstModuleId, ...restModuleIds] = pasted.pastedModuleIds;
+    if (firstModuleId) {
+      dispatch({
+        type: 'selectModule',
+        projectId: activeProjectDefinition.id,
+        moduleId: firstModuleId,
+      });
+      for (const selectedModuleId of restModuleIds) {
+        dispatch({
+          type: 'selectModule',
+          projectId: activeProjectDefinition.id,
+          moduleId: selectedModuleId,
+          additive: true,
+        });
+      }
+    }
+  }
+
   function handleDeleteCurrentWorkspace() {
     const existingWorkspace = state.userWorkspaceLibrary.find(
       (workspace) => workspace.id === activeProjectDefinition.id,
@@ -1067,6 +1141,10 @@ function App() {
                   handleCreateBlankWorkspace();
                 } else if (value === 'duplicate-current-workspace') {
                   handleDuplicateCurrentWorkspace();
+                } else if (value === 'copy-selected-cluster') {
+                  handleCopySelectedCluster();
+                } else if (value === 'paste-selected-cluster') {
+                  handlePasteSelectedCluster();
                 } else if (value === 'save-current-workspace') {
                   handleSaveCurrentWorkspace();
                 } else if (value === 'delete-current-workspace') {
@@ -1077,6 +1155,8 @@ function App() {
               <option value="">Actions…</option>
               <option value="new-blank-workspace">New Blank Workspace</option>
               <option value="duplicate-current-workspace">Duplicate Workspace</option>
+              <option value="copy-selected-cluster">Copy Selected Cluster</option>
+              <option value="paste-selected-cluster">Paste Selected Cluster</option>
               <option value="save-current-workspace">Save Current Workspace</option>
               {state.userWorkspaceLibrary.some(
                 (workspace) => workspace.id === activeProjectDefinition.id,
