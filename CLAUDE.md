@@ -146,7 +146,7 @@ src/utils/     — Shared helpers
 
 ## Current Resume Point
 
-- Resume from current `main` at `v1.36.0`
+- Resume from current `main` at `v1.37.0`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement
@@ -302,9 +302,13 @@ src/utils/     — Shared helpers
   - `Copy Selected Cluster` and `Paste Selected Cluster` for local workspace-to-workspace fragment reuse
   - selected modules only, internal-only connections, and relative layout preservation
   - fresh pasted IDs with immediate local divergence and no linked/library/system-clipboard semantics
+- `v1.37.0` is now the diffie-hellman milestone:
+  - visible `Diffie-Hellman Key Exchange` demo built from explicit `ModExp` paths
+  - `Visible Shared Secret` tutorial placed after `Toy RSA Round-Trip`
+  - `Repair the Shared Secret` challenge for restoring a matching shared-secret derivation
 
 Active proposed next line:
-- broader product review and sanity pass after `v1.36.0`
+- broader product review and sanity pass after `v1.37.0`
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -399,6 +403,7 @@ Key contracts to check before implementation:
 - `STREAM-CIPHER-V2.md` for the shipped second bounded stream-machine slice
 - `ARITHMETIC-EXPANSION-V1.md` for the shipped first bounded arithmetic-expansion line
 - `NUMBER-THEORETIC-V1.md` for the shipped first bounded number-theoretic foundations
+- `DIFFIE-HELLMAN-V1.md` for the framed second asymmetric teaching scenario built from visible `ModExp` paths
 - `BYPASS-V1.md` for the shipped bounded instance-level bypass line
 - `INVERSE-PERMUTATION-AUTHORING-V1.md` for the shipped bounded inverse-permutation authoring slice
 - `BRIDGE-ERGONOMICS-V1.md` for the shipped bounded bridge/usability slice

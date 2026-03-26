@@ -11,7 +11,7 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.36.0`.
+The repository has shipped through `v1.37.0`.
 
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
@@ -59,6 +59,10 @@ Recent shipped follow-ons after `v1.27.0`:
   - `Copy Selected Cluster` and `Paste Selected Cluster` for local workspace-to-workspace fragment reuse
   - selected modules only, internal-only connections, and relative layout preservation
   - fresh pasted IDs, immediate local divergence, and no linked/library/system-clipboard semantics
+- `v1.37.0` Diffie-Hellman:
+  - visible `Diffie-Hellman Key Exchange` demo built from explicit `ModExp` paths
+  - `Visible Shared Secret` tutorial placed after `Toy RSA Round-Trip`
+  - `Repair the Shared Secret` challenge for matching shared-secret derivation
 
 Shipped stream, rotor, protocol/framing, and symbol/message permutation foundations remain in place:
 - stream-machine expressiveness:
@@ -217,6 +221,7 @@ Implemented and shipped:
 - `LEARNING-SEQUENCE-V1.md`: first shipped sequencing milestone for suggested ordering across demos, tutorials, and challenges
 - `ARITHMETIC-EXPANSION-V1.md`: shipped first bounded arithmetic-expansion slice for modular multiplication, strict comparison, and unpadding
 - `NUMBER-THEORETIC-V1.md`: shipped first bounded number-theoretic foundations slice for modular exponentiation and modular inverse
+- `DIFFIE-HELLMAN-V1.md`: framed bounded number-theoretic follow-on for visible shared-secret agreement
 - `BYPASS-V1.md`: shipped bounded usability slice for visible instance-level bypass on eligible one-in/one-out modules
 - `INVERSE-PERMUTATION-AUTHORING-V1.md`: shipped bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors
 - `BRIDGE-ERGONOMICS-V1.md`: shipped bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior

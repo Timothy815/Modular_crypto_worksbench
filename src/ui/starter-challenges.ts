@@ -35,6 +35,7 @@ const visibleSubkeyBusProject = demoProjects.find((project) => project.id === 'v
 const multiplyCompareUnpadProject = demoProjects.find((project) => project.id === 'multiply-compare-unpad');
 const visibleMessageWindowProject = demoProjects.find((project) => project.id === 'visible-message-window');
 const toyRsaProject = demoProjects.find((project) => project.id === 'toy-rsa');
+const diffieHellmanProject = demoProjects.find((project) => project.id === 'diffie-hellman-key-exchange');
 const keyScheduleWorkshopProject = demoProjects.find((project) => project.id === 'key-schedule-workshop');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
@@ -139,6 +140,9 @@ if (!toySpongeHashProject) {
 if (!toyRsaProject) {
   throw new Error('Expected toy-rsa demo project to seed starter challenges.');
 }
+if (!diffieHellmanProject) {
+  throw new Error('Expected diffie-hellman-key-exchange demo project to seed starter challenges.');
+}
 if (!keyScheduleWorkshopProject) {
   throw new Error('Expected key-schedule-workshop demo project to seed starter challenges.');
 }
@@ -210,6 +214,8 @@ const toySpongeHashTarget = cloneProject(toySpongeHashProject.project);
 const toySpongeHashCollisionStart = cloneProject(toySpongeHashProject.project);
 const toyRsaTarget = cloneProject(toyRsaProject.project);
 const brokenToyRsaStart = cloneProject(toyRsaProject.project);
+const diffieHellmanTarget = cloneProject(diffieHellmanProject.project);
+const brokenDiffieHellmanStart = cloneProject(diffieHellmanProject.project);
 const keyScheduleWorkshopTarget = cloneProject(keyScheduleWorkshopProject.project);
 const brokenKeyScheduleWorkshopStart = cloneProject(keyScheduleWorkshopProject.project);
 
@@ -314,6 +320,14 @@ if (!brokenPrivExp) {
   throw new Error('Expected toy-rsa demo project to contain a priv-exp module.');
 }
 brokenPrivExp.params.value = '02';
+
+const brokenBobPrivateExp = brokenDiffieHellmanStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'bob-private',
+);
+if (!brokenBobPrivateExp) {
+  throw new Error('Expected diffie-hellman-key-exchange demo project to contain bob-private.');
+}
+brokenBobPrivateExp.params.value = '0E';
 
 const brokenRotate = brokenKeyScheduleWorkshopStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'rotate',
@@ -1209,6 +1223,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The modulus and encryption exponent are already correct.',
       'The private exponent must satisfy e * d ≡ 1 (mod λ(n)). For n = 15, λ(15) = 4.',
       'Try d = 3. Check: 3 * 3 = 9, and 9 mod 4 = 1.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-shared-secret',
+    title: 'Repair the Shared Secret',
+    projectId: 'diffie-hellman-key-exchange',
+    group: 'Number Theory',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 225,
+    recommendedAfter: ['toy-rsa'],
+    difficulty: 'intermediate',
+    prompt:
+      'This visible Diffie-Hellman exchange no longer ends with both sides agreeing on the same secret. The shared generator and modulus are still correct, but Bob’s private exponent is wrong. Restore it so the two secret paths match again.',
+    startingProject: brokenDiffieHellmanStart,
+    startingLayout: cloneProject(diffieHellmanProject.layout),
+    targetProject: diffieHellmanTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The generator g and the shared modulus p are already correct on every ModExp.',
+      'Only Bob’s private exponent source is wrong.',
+      'The correct exponent is one hex word larger than 0E.',
     ],
   },
   {

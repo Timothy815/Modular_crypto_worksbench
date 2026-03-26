@@ -6,7 +6,7 @@ Last updated: March 26, 2026
 
 ## Current State
 
-The project has shipped through `v1.36.0` on `main`.
+The project has shipped through `v1.37.0` on `main`.
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -59,6 +59,10 @@ Those shipped:
   - `Copy Selected Cluster` and `Paste Selected Cluster` for local fragment reuse across workspaces
   - selected modules only, internal-only connections, and relative layout preservation
   - fresh pasted IDs with immediate local divergence and no linked/library/system-clipboard semantics
+- Diffie-Hellman teaching follow-on:
+  - `Diffie-Hellman Key Exchange` demo built from explicit `ModExp` public/secret derivation paths
+  - `Visible Shared Secret` tutorial staged after `Toy RSA Round-Trip`
+  - `Repair the Shared Secret` challenge for restoring a matching shared-secret derivation
 
 The already-shipped protocol-material, block-framing, and symbol/message permutation foundations remain in place:
 - protocol inputs:
@@ -190,6 +194,7 @@ The following decisions are reflected in shipped code:
 | `v1.34.0` | Workspace Housekeeping |
 | `v1.35.0` | Composite Port Hints |
 | `v1.36.0` | Cross-Workspace Clipboard |
+| `v1.37.0` | Diffie-Hellman |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -510,6 +515,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `LEARNING-SEQUENCE-V1.md` | First milestone shipped in `v1.28.0` — staged ordering contract now visible in demos, tutorials, and challenges |
 | `ARITHMETIC-EXPANSION-V1.md` | Shipped in `v1.25.0` as first bounded arithmetic-expansion slice for modular multiplication, strict comparison, and unpadding |
 | `NUMBER-THEORETIC-V1.md` | Shipped in `v1.26.0` as first bounded number-theoretic foundations slice for modular exponentiation and modular inverse |
+| `DIFFIE-HELLMAN-V1.md` | Framed for `v1.37.0` as bounded number-theoretic follow-on for visible shared-secret agreement |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
 | `BRIDGE-ERGONOMICS-V1.md` | Shipped in `v1.31.0` — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |
