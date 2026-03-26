@@ -44,6 +44,10 @@ export function serializeReflectorWiring(wiring: string[]): string {
   return wiring.join(', ');
 }
 
+export function normalizeReflectorReciprocalWiring(wiring: string[]): string[] {
+  return [...parseReflectorWiring(wiring)];
+}
+
 export function pairReflectorLetters(wiring: string[], left: string, right: string): string[] {
   const normalizedLeft = left.toUpperCase();
   const normalizedRight = right.toUpperCase();

@@ -31,6 +31,7 @@ import { SubMod } from './sub-mod';
 import { XOR } from './xor';
 import {
   buildIdentityPlugboardWiring,
+  normalizePlugboardReciprocalWiring,
   pairPlugboardLetters,
   Plugboard,
   serializePlugboardWiring,
@@ -43,7 +44,11 @@ import {
   serializeRotorWiring,
   swapRotorWiringTargets,
 } from './rotor';
-import { pairReflectorLetters, Reflector } from './reflector';
+import {
+  normalizeReflectorReciprocalWiring,
+  pairReflectorLetters,
+  Reflector,
+} from './reflector';
 import { Permutation } from './permutation';
 import { SymbolPermutation } from './symbol-permutation';
 import { SymbolWindow } from './symbol-window';
@@ -570,6 +575,11 @@ describe('Plugboard', () => {
   it('serializes plugboard wiring for raw editing', () => {
     const wiring = pairPlugboardLetters(buildIdentityPlugboardWiring(), 'A', 'Z');
     expect(serializePlugboardWiring(wiring)).toContain('Z');
+  });
+
+  it('normalizes valid reciprocal plugboard wiring without changing its mapping', () => {
+    const wiring = pairPlugboardLetters(buildIdentityPlugboardWiring(), 'A', 'Z');
+    expect(normalizePlugboardReciprocalWiring(wiring)).toEqual(wiring);
   });
 });
 
@@ -1224,6 +1234,10 @@ describe('Reflector', () => {
     expect(rewired[1]).toBe('A');
     expect(rewired[24]).toBe('Z');
     expect(rewired[25]).toBe('Y');
+  });
+
+  it('normalizes valid involutive reflector wiring without changing its mapping', () => {
+    expect(normalizeReflectorReciprocalWiring(reverseWiring)).toEqual(reverseWiring);
   });
 });
 

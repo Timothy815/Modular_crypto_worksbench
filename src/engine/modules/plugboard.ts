@@ -40,6 +40,10 @@ export function serializePlugboardWiring(wiring: string[]): string {
   return wiring.join(', ');
 }
 
+export function normalizePlugboardReciprocalWiring(wiring: string[]): string[] {
+  return [...parsePlugboardWiring(wiring)];
+}
+
 export function buildIdentityPlugboardWiring(): string[] {
   return ALPHABET.split('');
 }

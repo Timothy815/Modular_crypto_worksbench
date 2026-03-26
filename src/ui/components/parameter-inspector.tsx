@@ -42,12 +42,14 @@ import {
 } from '../../engine/modules/permutation';
 import {
   buildIdentityPlugboardWiring,
+  normalizePlugboardReciprocalWiring,
   pairPlugboardLetters,
   parsePlugboardWiring,
   serializePlugboardWiring,
   unpairPlugboardLetter,
 } from '../../engine/modules/plugboard';
 import {
+  normalizeReflectorReciprocalWiring,
   pairReflectorLetters,
   parseReflectorWiring,
   serializeReflectorWiring,
@@ -154,6 +156,10 @@ export function ParameterInspector({
   const [draggedRotorInputIndex, setDraggedRotorInputIndex] = useState<number | null>(null);
   const [selectedPlugboardLetter, setSelectedPlugboardLetter] = useState<string | null>(null);
   const [selectedReflectorLetter, setSelectedReflectorLetter] = useState<string | null>(null);
+  const [reciprocityNote, setReciprocityNote] = useState<{
+    moduleId: string;
+    text: string;
+  } | null>(null);
   const [requestedSBoxEditIndex, setRequestedSBoxEditIndex] = useState(0);
   const permutationInputLaneRef = useRef<HTMLDivElement | null>(null);
   const permutationOutputLaneRef = useRef<HTMLDivElement | null>(null);
@@ -216,6 +222,7 @@ export function ParameterInspector({
     : validationIssues;
   const groupedSelectedIssues = groupIssuesByTarget(selectedIssues);
   const groupedGlobalIssues = groupIssuesByTarget(globalIssues);
+
   const effectiveTraceMode = selectedTrace ? traceMode : 'full';
   const roundFocusOptions = useMemo(
     () =>
@@ -1825,6 +1832,10 @@ export function ParameterInspector({
                                 Selected: {selectedPlugboardLetter ?? 'none'}
                               </span>
                             </div>
+                            <p className="comparison-copy">
+                              Plugboard is reciprocal: every valid swap already undoes itself. The helper below confirms
+                              and normalizes that reciprocal structure.
+                            </p>
                             <div className="permutation-editor-actions">
                               <button
                                 type="button"
@@ -1838,6 +1849,24 @@ export function ParameterInspector({
                                 }}
                               >
                                 Reset To Identity
+                              </button>
+                              <button
+                                type="button"
+                                className="mini-action-button"
+                                onClick={() => {
+                                  const nextWiring = normalizePlugboardReciprocalWiring(plugboardWiring);
+                                  const serialized = serializePlugboardWiring(nextWiring);
+                                  setSelectedPlugboardLetter(null);
+                                  setReciprocityNote({
+                                    moduleId: moduleInstance.id,
+                                    text:
+                                      'Plugboard is self-reciprocal: the reciprocal mapping is identical to the current valid pairing.',
+                                  });
+                                  onParamDraftChange(moduleInstance.id, field.key, serialized);
+                                  onParamChange(moduleInstance.id, field.key, nextWiring);
+                                }}
+                              >
+                                Normalize Reciprocal Pairs
                               </button>
                               <button
                                 type="button"
@@ -1861,6 +1890,9 @@ export function ParameterInspector({
                                 Unpair Selected
                               </button>
                             </div>
+                            {reciprocityNote?.moduleId === moduleInstance.id && moduleDef.id === 'Plugboard' ? (
+                              <p className="comparison-copy">{reciprocityNote.text}</p>
+                            ) : null}
                             <div className="reflector-editor-grid">
                               {alphabet.map((letter, index) => {
                                 const partner = plugboardWiring[index];
@@ -1990,6 +2022,33 @@ export function ParameterInspector({
                                 Selected: {selectedReflectorLetter ?? 'none'}
                               </span>
                             </div>
+                            <p className="comparison-copy">
+                              Reflector is involutive: every valid pair already maps back to itself. The helper below
+                              confirms and normalizes that reciprocal wiring.
+                            </p>
+                            <div className="permutation-editor-actions">
+                              <button
+                                type="button"
+                                className="mini-action-button"
+                                onClick={() => {
+                                  const nextWiring = normalizeReflectorReciprocalWiring(reflectorWiring);
+                                  const serialized = serializeReflectorWiring(nextWiring);
+                                  setSelectedReflectorLetter(null);
+                                  setReciprocityNote({
+                                    moduleId: moduleInstance.id,
+                                    text:
+                                      'Reflector is self-reciprocal: the reciprocal mapping is identical to the current valid pairing.',
+                                  });
+                                  onParamDraftChange(moduleInstance.id, field.key, serialized);
+                                  onParamChange(moduleInstance.id, field.key, nextWiring);
+                                }}
+                              >
+                                Normalize Reciprocal Pairs
+                              </button>
+                            </div>
+                            {reciprocityNote?.moduleId === moduleInstance.id && moduleDef.id === 'Reflector' ? (
+                              <p className="comparison-copy">{reciprocityNote.text}</p>
+                            ) : null}
                             <div className="reflector-editor-grid">
                               {alphabet.map((letter, index) => (
                                 <button
