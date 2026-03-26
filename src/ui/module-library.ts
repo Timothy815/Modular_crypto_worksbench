@@ -138,13 +138,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
   Plugboard: {
     sectionId: 'symbol-domain',
     purpose: 'Swaps selected letter pairs while leaving unpaired letters unchanged.',
-    detail: 'A reciprocal entry/exit mapping layer for rotor-style machines. Unpaired letters pass straight through.',
+    detail: 'A self-reciprocal entry/exit mapping layer for rotor-style machines. Unpaired letters pass straight through, and every valid pair already undoes itself.',
     searchTerms: ['plugboard', 'pairing', 'swap', 'letter', 'symbol', 'steckerbrett'],
   },
   Reflector: {
     sectionId: 'symbol-domain',
     purpose: 'Reflects a letter back through a paired symbolic wiring.',
-    detail: 'A classical paired mapping used to bounce a symbol back through a symbolic path.',
+    detail: 'A self-reciprocal paired mapping used to bounce a symbol back through a symbolic path. Every valid pair already maps back to itself.',
     searchTerms: ['reflector', 'reflection', 'letter', 'symbol', 'enigma'],
   },
   XOR: {

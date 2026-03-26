@@ -11,21 +11,7 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.32.0`.
-
-Current local `main` is now positioned beyond `v1.32.0` with the first explicit output-sink semantics slice:
-- new sink modules:
-  - `TextOutput`
-  - `HexOutput`
-  - `BaudotOutput`
-- shared sink identification so terminal-output handling is no longer hard-coded only to `Output` / `BitOutput`
-- sink-aware inspector views:
-  - generic `Output` stays text-first for compatibility
-  - `HexOutput` interprets its symbol result as hex first
-  - `BaudotOutput` interprets its symbol result as Baudot first
-  - `BitOutput` keeps bit-first inspection
-
-This local slice is governed by [OUTPUT-SINKS-V1.md](/Users/timothykoerner/Desktop/modular_cryptography/OUTPUT-SINKS-V1.md) and is not yet framed as a shipped release.
+The repository has shipped through `v1.33.0`.
 
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
@@ -57,6 +43,10 @@ Recent shipped follow-ons after `v1.27.0`:
   - `AsciiToHex` bridge (symbol → symbol, 7-bit ASCII to uppercase hex)
   - sink-only output representation views for `Output` and `BitOutput`
   - Bits / Bytes / Hex / ASCII tabs with strict availability rules and explanation messaging
+- `v1.33.0` Reversible Authoring:
+  - `Normalize Reciprocal Pairs` helper for `Plugboard` and `Reflector`
+  - exact reciprocal/involutive normalization helpers in the engine layer
+  - editor-side reciprocity teaching copy clarifying that these mappings already undo themselves
 
 Shipped stream, rotor, protocol/framing, and symbol/message permutation foundations remain in place:
 - stream-machine expressiveness:

@@ -6,21 +6,7 @@ Last updated: March 26, 2026
 
 ## Current State
 
-The project has shipped through `v1.32.0` on `main`.
-
-Current local `main` is now positioned beyond `v1.32.0` with the first explicit output-sink semantics slice from [OUTPUT-SINKS-V1.md](/Users/timothykoerner/Desktop/modular_cryptography/OUTPUT-SINKS-V1.md):
-- new sink modules:
-  - `TextOutput`
-  - `HexOutput`
-  - `BaudotOutput`
-- shared sink detection so final-output handling is no longer hard-coded only to `Output` / `BitOutput`
-- sink-aware inspector views:
-  - generic `Output` remains text-first for compatibility
-  - `HexOutput` is hex-first
-  - `BaudotOutput` is baudot-first
-  - `BitOutput` remains bit-first
-
-This slice is implemented locally and verified, but not yet framed as a shipped release.
+The project has shipped through `v1.33.0` on `main`.
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -57,6 +43,10 @@ Those shipped:
   - `AsciiToHex` bridge (symbol → symbol, 7-bit ASCII to uppercase hex)
   - sink-only output representation views for `Output` and `BitOutput`
   - Bits / Bytes / Hex / ASCII tabs with strict availability rules and explanation messaging
+- reversible authoring:
+  - `Normalize Reciprocal Pairs` helper for `Plugboard` and `Reflector`
+  - exact reciprocal/involutive normalization helpers in the engine layer
+  - editor-side reciprocity guidance for reciprocal symbolic wirings
 
 The already-shipped protocol-material, block-framing, and symbol/message permutation foundations remain in place:
 - protocol inputs:
@@ -183,6 +173,8 @@ The following decisions are reflected in shipped code:
 | `v1.29.0` | Bounded Bypass |
 | `v1.30.0` | Inverse Permutation Authoring |
 | `v1.31.0` | Bridge Ergonomics |
+| `v1.32.0` | Bridge Ergonomics V2 |
+| `v1.33.0` | Reversible Authoring |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing

@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed bounded follow-on after the shipped bridge-ergonomics and output-sinks work.
+Shipped in `v1.33.0` as the first bounded reciprocity-authoring milestone.
 
 ## Purpose
 
