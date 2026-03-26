@@ -470,7 +470,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed at `v1.38.0` implementation framing before the final doc-only release polish.
+All three passed at `v1.39.0` release framing.
 
 ---
 
