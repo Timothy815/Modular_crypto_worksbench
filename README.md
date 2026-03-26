@@ -11,7 +11,7 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.30.0`.
+The repository has shipped through `v1.31.0`.
 
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
@@ -35,6 +35,10 @@ Recent shipped follow-ons after `v1.27.0`:
   - `Build Inverse` helper for `Permutation` and `SymbolPermutation`
   - editor-side construction of the true inverse mapping, distinct from reverse order
   - explanatory UI hint clarifying that inverse undoes the current routing
+- `v1.31.0` Bridge Ergonomics:
+  - permissive raw `BitSource` entry for continuous, spaced, or bracketed `0/1` text
+  - grouped bit preview in the structured bits editor
+  - direct `HexToAscii` bridge for readable 7-bit ASCII byte decoding from hex text
 
 Shipped stream, rotor, protocol/framing, and symbol/message permutation foundations remain in place:
 - stream-machine expressiveness:
@@ -192,7 +196,7 @@ Implemented and shipped:
 - `NUMBER-THEORETIC-V1.md`: shipped first bounded number-theoretic foundations slice for modular exponentiation and modular inverse
 - `BYPASS-V1.md`: shipped bounded usability slice for visible instance-level bypass on eligible one-in/one-out modules
 - `INVERSE-PERMUTATION-AUTHORING-V1.md`: shipped bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors
-- `BRIDGE-ERGONOMICS-V1.md`: active bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior
+- `BRIDGE-ERGONOMICS-V1.md`: shipped bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior
 - `ADVANCED-ROTOR-REALISM-V1.md`: shipped first bounded rotor-realism slice for ring setting, turnover, and double-step behavior
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views

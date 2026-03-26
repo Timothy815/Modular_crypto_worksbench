@@ -323,7 +323,7 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
   HexToAscii: {
     sectionId: 'bridges',
     purpose: 'Decodes hexadecimal byte text directly into ASCII.',
-    detail: 'Use this when readable ASCII already exists as hex bytes and you want the decoded text without routing through Hex Source and Bits → ASCII.',
+    detail: 'Use this when readable ASCII already exists as hex bytes and you want the decoded text without routing through Hex Source and Bits → ASCII. Only 7-bit ASCII byte values (`00`-`7F`) are accepted.',
     searchTerms: ['bridge', 'hex', 'ascii', 'decode', 'bytes', 'text'],
   },
 };

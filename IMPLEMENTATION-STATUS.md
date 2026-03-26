@@ -6,7 +6,7 @@ Last updated: March 25, 2026
 
 ## Current State
 
-The project has shipped through `v1.30.0` on `main`.
+The project has shipped through `v1.31.0` on `main`.
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -35,6 +35,10 @@ Those shipped:
   - `Build Inverse` helper for `Permutation` and `SymbolPermutation`
   - editor-side construction of the true inverse mapping, distinct from reverse order
   - explanatory UI hint clarifying that inverse undoes the current routing
+- bridge ergonomics:
+  - permissive raw `BitSource` entry for continuous, spaced, or bracketed `0/1` text
+  - grouped bit preview in the structured bits editor
+  - direct `HexToAscii` bridge for readable 7-bit ASCII byte decoding from hex text
 
 The already-shipped protocol-material, block-framing, and symbol/message permutation foundations remain in place:
 - protocol inputs:
@@ -160,6 +164,7 @@ The following decisions are reflected in shipped code:
 | `v1.28.0` | Teaching Pathfinding And Hardening |
 | `v1.29.0` | Bounded Bypass |
 | `v1.30.0` | Inverse Permutation Authoring |
+| `v1.31.0` | Bridge Ergonomics |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -416,7 +421,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed at `v1.30.0` framing.
+All three passed at `v1.31.0` framing.
 
 ---
 
@@ -482,7 +487,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `NUMBER-THEORETIC-V1.md` | Shipped in `v1.26.0` as first bounded number-theoretic foundations slice for modular exponentiation and modular inverse |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
-| `BRIDGE-ERGONOMICS-V1.md` | Active — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |
+| `BRIDGE-ERGONOMICS-V1.md` | Shipped in `v1.31.0` — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |
 | `ADVANCED-ROTOR-REALISM-V1.md` | Shipped in `v1.19.0` as bounded rotor-realism slice for ring setting, turnover, and double-step behavior |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |

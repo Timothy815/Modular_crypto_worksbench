@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed as the next bounded bridge/usability follow-on after `v1.30.0`.
+Shipped in `v1.31.0` as a bounded bridge/usability follow-on after `v1.30.0`.
 
 ## Purpose
 
