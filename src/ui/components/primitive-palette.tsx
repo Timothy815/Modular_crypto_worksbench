@@ -72,12 +72,14 @@ export function PrimitivePalette({
         <p className="panel-label">Palette</p>
         <h2>Module Library</h2>
         <label className="palette-filter">
-          <span className="meta-label">Domain</span>
+          <span className="meta-label">Filter</span>
           <select value={activeTab} onChange={(event) => setActiveTab(event.target.value as ModuleLibraryDomainTab)}>
             <option value="all">All Primitives</option>
+            <option value="inputs">Inputs</option>
+            <option value="outputs">Outputs</option>
             <option value="symbol">Symbol</option>
             <option value="bit">Bit</option>
-            <option value="bridge">Bridge</option>
+            <option value="bridge">Bridges</option>
             <option value="composites">Composites</option>
           </select>
         </label>

@@ -16,7 +16,14 @@ export interface ModuleLibrarySection {
   description: string;
 }
 
-export type ModuleLibraryDomainTab = 'all' | 'symbol' | 'bit' | 'bridge' | 'composites';
+export type ModuleLibraryDomainTab =
+  | 'all'
+  | 'inputs'
+  | 'outputs'
+  | 'symbol'
+  | 'bit'
+  | 'bridge'
+  | 'composites';
 
 interface PrimitiveLibraryMeta {
   sectionId: Exclude<ModuleLibrarySectionId, 'composites'>;
@@ -465,6 +472,27 @@ export function matchesModuleDomainTab(
   const sectionId = getModuleLibrarySectionId(definition);
 
   switch (tab) {
+    case 'inputs':
+      return [
+        'TextInput',
+        'KeyInput',
+        'BitSource',
+        'AsciiSource',
+        'BaudotSource',
+        'HexSource',
+        'IV',
+        'Nonce',
+        'Salt',
+        'Clock',
+      ].includes(definition.id);
+    case 'outputs':
+      return [
+        'Output',
+        'TextOutput',
+        'HexOutput',
+        'BaudotOutput',
+        'BitOutput',
+      ].includes(definition.id);
     case 'symbol':
       return sectionId === 'symbol-domain' || definition.id === 'TextInput' || definition.id === 'KeyInput';
     case 'bit':

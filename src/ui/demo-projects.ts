@@ -24,7 +24,7 @@ export const demoProjects: DemoProject[] = [
     name: 'Toy RSA',
     group: 'Number Theory',
     summary: 'A visible RSA round-trip: encrypt a message with one exponent, decrypt with the inverse exponent, all modulo the same n.',
-    pipeline: 'HexSource -> ModExp(encrypt) -> ModExp(decrypt) -> BitsToHex -> Output',
+    pipeline: 'HexSource -> ModExp(encrypt) -> ModExp(decrypt) -> BitsToHex -> HexOutput',
     project: {
       modules: [
         { id: 'message', defId: 'HexSource', params: { value: '02' } },
@@ -33,7 +33,7 @@ export const demoProjects: DemoProject[] = [
         { id: 'encrypt', defId: 'ModExp', params: { modulus: 15 } },
         { id: 'decrypt', defId: 'ModExp', params: { modulus: 15 } },
         { id: 'hex-out', defId: 'BitsToHex', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'message', port: 'out' }, to: { moduleId: 'encrypt', port: 'base' } },
@@ -71,8 +71,8 @@ export const demoProjects: DemoProject[] = [
         { id: 'round2-xor', defId: 'XOR', params: {} },
         { id: 'out1-hex', defId: 'BitsToHex', params: {} },
         { id: 'out2-hex', defId: 'BitsToHex', params: {} },
-        { id: 'out1', defId: 'Output', params: {} },
-        { id: 'out2', defId: 'Output', params: {} },
+        { id: 'out1', defId: 'HexOutput', params: {} },
+        { id: 'out2', defId: 'HexOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'master-key', port: 'out' }, to: { moduleId: 'round1-xor', port: 'a' } },
@@ -119,7 +119,7 @@ export const demoProjects: DemoProject[] = [
         { id: 'pad', defId: 'BitPad', params: { targetWidth: 16 } },
         { id: 'unpad', defId: 'BitUnpad', params: { originalWidth: 8 } },
         { id: 'unpad-out', defId: 'BitsToHex', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'a', port: 'out' }, to: { moduleId: 'mul', port: 'a' } },
@@ -151,14 +151,14 @@ export const demoProjects: DemoProject[] = [
     name: 'Visible Message Window',
     group: 'Symbol Structure',
     summary: 'One visible message feeds two contiguous symbol windows so downstream branches can read different submessages without hidden chunking.',
-    pipeline: 'TextInput -> SymbolWindow / SymbolWindow -> Output comparison',
+    pipeline: 'TextInput -> SymbolWindow / SymbolWindow -> TextOutput comparison',
     project: {
       modules: [
         { id: 'text', defId: 'TextInput', params: { value: 'MATH' } },
         { id: 'window-1', defId: 'SymbolWindow', params: { start: 0, width: 2 } },
         { id: 'window-2', defId: 'SymbolWindow', params: { start: 2, width: 2 } },
-        { id: 'out-1', defId: 'Output', params: {} },
-        { id: 'out-2', defId: 'Output', params: {} },
+        { id: 'out-1', defId: 'TextOutput', params: {} },
+        { id: 'out-2', defId: 'TextOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'window-1', port: 'in' } },
@@ -180,12 +180,12 @@ export const demoProjects: DemoProject[] = [
     name: 'Visible Symbol Scramble',
     group: 'Symbol Permutation',
     summary: 'A direct symbol-order transform that rearranges positions while leaving the symbols themselves unchanged.',
-    pipeline: 'TextInput -> SymbolPermutation -> Output',
+    pipeline: 'TextInput -> SymbolPermutation -> TextOutput',
     project: {
       modules: [
         { id: 'text', defId: 'TextInput', params: { value: 'MATH' } },
         { id: 'permute', defId: 'SymbolPermutation', params: { order: '2,0,3,1' } },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'TextOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'permute', port: 'in' } },
@@ -203,12 +203,12 @@ export const demoProjects: DemoProject[] = [
     name: 'Baudot Telegraph',
     group: 'Historical Bridges',
     summary: 'A teleprinter-era 5-bit bridge that begins in Baudot, stays explicit in bits, and returns to readable text.',
-    pipeline: 'BaudotSource -> BitsToBaudot -> Output',
+    pipeline: 'BaudotSource -> BitsToBaudot -> BaudotOutput',
     project: {
       modules: [
         { id: 'source', defId: 'BaudotSource', params: { value: 'TEST' } },
         { id: 'decode', defId: 'BitsToBaudot', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'BaudotOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'decode', port: 'in' } },
@@ -226,7 +226,7 @@ export const demoProjects: DemoProject[] = [
     name: 'Lorenz SZ42 Foundation',
     group: 'Historical Bridges',
     summary: 'A clocked teleprinter-style keystream machine that unmasks one Baudot codeword per tick before decoding it back into text.',
-    pipeline: 'Clock -> BaudotSource -> XOR <- LFSR -> BitsToBaudot -> Output',
+    pipeline: 'Clock -> BaudotSource -> XOR <- LFSR -> BitsToBaudot -> BaudotOutput',
     defaultTickedMode: true,
     project: {
       modules: [
@@ -239,7 +239,7 @@ export const demoProjects: DemoProject[] = [
         },
         { id: 'xor', defId: 'XOR', params: {} },
         { id: 'decode', defId: 'BitsToBaudot', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'BaudotOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'lfsr', port: 'clock' } },
@@ -263,7 +263,7 @@ export const demoProjects: DemoProject[] = [
     name: 'Gated Lorenz Wheels',
     group: 'Historical Bridges',
     summary: 'One clocked wheel stream gates a second 5-bit keystream register before each Baudot codeword is unmixed and decoded.',
-    pipeline: 'Clock -> Gate LFSR -> Data LFSR -> XOR(BaudotSource) -> BitsToBaudot -> Output',
+    pipeline: 'Clock -> Gate LFSR -> Data LFSR -> XOR(BaudotSource) -> BitsToBaudot -> BaudotOutput',
     defaultTickedMode: true,
     project: {
       modules: [
@@ -281,7 +281,7 @@ export const demoProjects: DemoProject[] = [
         },
         { id: 'xor', defId: 'XOR', params: {} },
         { id: 'decode', defId: 'BitsToBaudot', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'BaudotOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'gate', port: 'clock' } },
@@ -307,7 +307,7 @@ export const demoProjects: DemoProject[] = [
     name: 'Paired Lorenz Wheels',
     group: 'Historical Bridges',
     summary: 'Two 5-bit wheel streams combine into one teleprinter keystream before each Baudot codeword is unmixed and decoded.',
-    pipeline: 'Clock -> Wheel A LFSR + Wheel B LFSR -> XOR -> XOR(BaudotSource) -> BitsToBaudot -> Output',
+    pipeline: 'Clock -> Wheel A LFSR + Wheel B LFSR -> XOR -> XOR(BaudotSource) -> BitsToBaudot -> BaudotOutput',
     defaultTickedMode: true,
     project: {
       modules: [
@@ -326,7 +326,7 @@ export const demoProjects: DemoProject[] = [
         { id: 'mix', defId: 'XOR', params: {} },
         { id: 'xor', defId: 'XOR', params: {} },
         { id: 'decode', defId: 'BitsToBaudot', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'BaudotOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'wheel-a', port: 'clock' } },
@@ -355,7 +355,7 @@ export const demoProjects: DemoProject[] = [
     name: 'Banked Lorenz Control',
     group: 'Historical Bridges',
     summary: 'Two control wheels combine into one explicit gate signal that decides when the 5-bit data wheel is allowed to advance.',
-    pipeline: 'Clock -> Control Wheels -> XOR Gate -> Data LFSR -> XOR(BaudotSource) -> BitsToBaudot -> Output',
+    pipeline: 'Clock -> Control Wheels -> XOR Gate -> Data LFSR -> XOR(BaudotSource) -> BitsToBaudot -> BaudotOutput',
     defaultTickedMode: true,
     project: {
       modules: [
@@ -379,7 +379,7 @@ export const demoProjects: DemoProject[] = [
         { id: 'gate-mix', defId: 'XOR', params: {} },
         { id: 'xor', defId: 'XOR', params: {} },
         { id: 'decode', defId: 'BitsToBaudot', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'BaudotOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'control-a', port: 'clock' } },
@@ -410,7 +410,7 @@ export const demoProjects: DemoProject[] = [
     name: 'Bridge Pipeline',
     group: 'Foundations',
     summary: 'A minimal symbol-to-bits-to-symbol run that proves the engine/UI bridge.',
-    pipeline: 'TextInput -> SymbolToBits -> XOR -> BitsToSymbol -> Output',
+    pipeline: 'TextInput -> SymbolToBits -> XOR -> BitsToSymbol -> TextOutput',
     project: {
       modules: [
         { id: 'text', defId: 'TextInput', params: { value: 'M' } },
@@ -418,7 +418,7 @@ export const demoProjects: DemoProject[] = [
         { id: 'encode', defId: 'SymbolToBits', params: {} },
         { id: 'xor', defId: 'XOR', params: {} },
         { id: 'decode', defId: 'BitsToSymbol', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'TextOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'encode', port: 'in' } },
@@ -442,7 +442,7 @@ export const demoProjects: DemoProject[] = [
     name: 'Modern Toy Round',
     group: 'Foundations',
     summary: 'A small bit-domain toy round using permutation and shifting before XOR.',
-    pipeline: 'TextInput -> SymbolToBits -> Permutation -> BitShifter -> XOR -> BitsToSymbol -> Output',
+    pipeline: 'TextInput -> SymbolToBits -> Permutation -> BitShifter -> XOR -> BitsToSymbol -> TextOutput',
     project: {
       modules: [
         { id: 'text', defId: 'TextInput', params: { value: 'C' } },
@@ -452,7 +452,7 @@ export const demoProjects: DemoProject[] = [
         { id: 'key', defId: 'BitSource', params: { stream: [1, 0, 1, 0, 1] } },
         { id: 'xor', defId: 'XOR', params: {} },
         { id: 'decode', defId: 'BitsToSymbol', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'TextOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'encode', port: 'in' } },
@@ -480,7 +480,7 @@ export const demoProjects: DemoProject[] = [
     name: 'Beyond XOR',
     group: 'Foundations',
     summary: 'A visible word-mixing machine that uses modular addition, rotation, masking, and XOR instead of relying on XOR alone.',
-    pipeline: 'HexSource + HexSource -> ADD mod 2^n -> BitShifter -> AND(mask) -> XOR(key) -> BitsToHex -> Output',
+    pipeline: 'HexSource + HexSource -> ADD mod 2^n -> BitShifter -> AND(mask) -> XOR(key) -> BitsToHex -> HexOutput',
     project: {
       modules: [
         { id: 'left', defId: 'HexSource', params: { value: 'A3' } },
@@ -492,7 +492,7 @@ export const demoProjects: DemoProject[] = [
         { id: 'key', defId: 'BitSource', params: { stream: [0, 1, 0, 1, 1, 0, 1, 0] } },
         { id: 'xor', defId: 'XOR', params: {} },
         { id: 'encode', defId: 'BitsToHex', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'left', port: 'out' }, to: { moduleId: 'add', port: 'a' } },
@@ -524,13 +524,13 @@ export const demoProjects: DemoProject[] = [
     name: 'Bypass Workshop',
     group: 'Modern Rounds',
     summary: 'A visible shift stage can be turned off without deleting it from the chain, making it easy to compare one machine with and without that transform.',
-    pipeline: 'HexSource -> BitShifter -> BitsToHex -> Output',
+    pipeline: 'HexSource -> BitShifter -> BitsToHex -> HexOutput',
     project: {
       modules: [
         { id: 'source', defId: 'HexSource', params: { value: 'A3' } },
         { id: 'shift', defId: 'BitShifter', params: { amount: 2, mode: 'rotate-left' } },
         { id: 'encode', defId: 'BitsToHex', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'shift', port: 'in' } },
@@ -550,7 +550,7 @@ export const demoProjects: DemoProject[] = [
     name: 'Split Transform Rejoin',
     group: 'Block Framing',
     summary: 'A 16-bit hex input is split into two 8-bit halves, each is transformed independently, and the halves are rejoined into one visible output.',
-    pipeline: 'HexSource -> BitSplit -> XOR(left key) + XOR(right key) -> BitJoin -> BitsToHex -> Output',
+    pipeline: 'HexSource -> BitSplit -> XOR(left key) + XOR(right key) -> BitJoin -> BitsToHex -> HexOutput',
     project: {
       modules: [
         { id: 'source', defId: 'HexSource', params: { value: 'A3F1' } },
@@ -561,7 +561,7 @@ export const demoProjects: DemoProject[] = [
         { id: 'right-xor', defId: 'XOR', params: {} },
         { id: 'join', defId: 'BitJoin', params: {} },
         { id: 'encode', defId: 'BitsToHex', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'split', port: 'in' } },
@@ -592,7 +592,7 @@ export const demoProjects: DemoProject[] = [
     name: 'Pad and Split',
     group: 'Block Framing',
     summary: 'A short 8-bit input is padded to 16 bits, then split into two halves for independent processing — showing how padding prepares undersized messages for fixed-width block pipelines.',
-    pipeline: 'HexSource -> BitPad(16) -> BitSplit(8) -> XOR(left key) + XOR(right key) -> BitJoin -> BitsToHex -> Output',
+    pipeline: 'HexSource -> BitPad(16) -> BitSplit(8) -> XOR(left key) + XOR(right key) -> BitJoin -> BitsToHex -> HexOutput',
     project: {
       modules: [
         { id: 'source', defId: 'HexSource', params: { value: 'C7' } },
@@ -604,7 +604,7 @@ export const demoProjects: DemoProject[] = [
         { id: 'right-xor', defId: 'XOR', params: {} },
         { id: 'join', defId: 'BitJoin', params: {} },
         { id: 'encode', defId: 'BitsToHex', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'pad', port: 'in' } },
@@ -637,7 +637,7 @@ export const demoProjects: DemoProject[] = [
     name: 'Counter Pulse Gate',
     group: 'Control Foundations',
     summary: 'A visible counter is compared against a fixed threshold word, and that comparison decides when a downstream keystream register is allowed to advance.',
-    pipeline: 'Clock -> Counter -> AtLeast(threshold) -> Gate(clock pulse) -> LFSR -> BitsToSymbol -> Output',
+    pipeline: 'Clock -> Counter -> AtLeast(threshold) -> Gate(clock pulse) -> LFSR -> BitsToSymbol -> TextOutput',
     defaultTickedMode: true,
     project: {
       modules: [
@@ -653,7 +653,7 @@ export const demoProjects: DemoProject[] = [
           params: { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 5 },
         },
         { id: 'decode', defId: 'BitsToSymbol', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'TextOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'counter', port: 'clock' } },
@@ -684,13 +684,13 @@ export const demoProjects: DemoProject[] = [
     name: 'Packaged Iterated Rounds',
     group: 'Modern Rounds',
     summary: 'A two-round byte machine packaged as one reusable composite so repeated round structure stays explicit but compact.',
-    pipeline: 'HexSource -> IteratedByteRoundsComposite -> BitsToHex -> Output',
+    pipeline: 'HexSource -> IteratedByteRoundsComposite -> BitsToHex -> HexOutput',
     project: {
       modules: [
         { id: 'source', defId: 'HexSource', params: { value: 'A3' } },
         { id: 'rounds', defId: 'ByteRoundIterator', params: {} },
         { id: 'encode', defId: 'BitsToHex', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'rounds', port: 'in' } },
@@ -710,14 +710,14 @@ export const demoProjects: DemoProject[] = [
     name: 'Iterated Byte Rounds',
     group: 'Modern Rounds',
     summary: 'A byte-oriented machine that reuses the same round composite twice instead of hand-wiring each round from scratch.',
-    pipeline: 'HexSource -> ByteRoundComposite -> ByteRoundComposite -> BitsToHex -> Output',
+    pipeline: 'HexSource -> ByteRoundComposite -> ByteRoundComposite -> BitsToHex -> HexOutput',
     project: {
       modules: [
         { id: 'source', defId: 'HexSource', params: { value: 'A3' } },
         { id: 'round-1', defId: 'ByteRoundComposite', params: {} },
         { id: 'round-2', defId: 'ByteRoundComposite', params: {} },
         { id: 'encode', defId: 'BitsToHex', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'round-1', port: 'in' } },
@@ -739,7 +739,7 @@ export const demoProjects: DemoProject[] = [
     name: 'Scheduled Byte Rounds',
     group: 'Modern Rounds',
     summary: 'Two visible sub-keys feed two keyed byte rounds so repeated-round structure stays explicit before any iterator-aware key schedule exists.',
-    pipeline: 'HexSource + Round Keys -> KeyedByteRound -> KeyedByteRound -> BitsToHex -> Output',
+    pipeline: 'HexSource + Round Keys -> KeyedByteRound -> KeyedByteRound -> BitsToHex -> HexOutput',
     project: {
       modules: [
         { id: 'source', defId: 'HexSource', params: { value: 'A3' } },
@@ -748,7 +748,7 @@ export const demoProjects: DemoProject[] = [
         { id: 'round-1', defId: 'KeyedByteRoundComposite', params: {} },
         { id: 'round-2', defId: 'KeyedByteRoundComposite', params: {} },
         { id: 'encode', defId: 'BitsToHex', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'round-1', port: 'in' } },
@@ -774,7 +774,7 @@ export const demoProjects: DemoProject[] = [
     name: 'Visible Sub-Key Bus',
     group: 'Modern Rounds',
     summary: 'One visible key bus is sliced into two explicit sub-keys so each keyed round can read a different window without iterator magic.',
-    pipeline: 'HexSource + Key Bus -> BitWindow -> KeyedByteRound -> BitWindow -> KeyedByteRound -> BitsToHex -> Output',
+    pipeline: 'HexSource + Key Bus -> BitWindow -> KeyedByteRound -> BitWindow -> KeyedByteRound -> BitsToHex -> HexOutput',
     project: {
       modules: [
         { id: 'source', defId: 'HexSource', params: { value: 'A3' } },
@@ -784,7 +784,7 @@ export const demoProjects: DemoProject[] = [
         { id: 'round-1', defId: 'KeyedByteRoundComposite', params: {} },
         { id: 'round-2', defId: 'KeyedByteRoundComposite', params: {} },
         { id: 'encode', defId: 'BitsToHex', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'round-1', port: 'in' } },
@@ -813,14 +813,14 @@ export const demoProjects: DemoProject[] = [
     name: 'Scheduled Byte Iterator',
     group: 'Modern Rounds',
     summary: 'A bounded keyed iterator splits one visible key bus into round-sized sub-keys and feeds them across the unrolled round chain.',
-    pipeline: 'HexSource + Key Bus -> KeyedByteRoundIterator -> BitsToHex -> Output',
+    pipeline: 'HexSource + Key Bus -> KeyedByteRoundIterator -> BitsToHex -> HexOutput',
     project: {
       modules: [
         { id: 'source', defId: 'HexSource', params: { value: 'A3' } },
         { id: 'keybus', defId: 'HexSource', params: { value: '1CE7' } },
         { id: 'rounds', defId: 'KeyedByteRoundIterator', params: {} },
         { id: 'encode', defId: 'BitsToHex', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'rounds', port: 'in' } },
@@ -842,14 +842,14 @@ export const demoProjects: DemoProject[] = [
     name: 'Feistel Network',
     group: 'Modern Rounds',
     summary: 'A small keyed Feistel network that splits a byte into left and right halves, transforms the right half, recombines the result, and iterates that structure visibly.',
-    pipeline: 'HexSource + Key Bus -> FeistelRoundIterator -> BitsToHex -> Output',
+    pipeline: 'HexSource + Key Bus -> FeistelRoundIterator -> BitsToHex -> HexOutput',
     project: {
       modules: [
         { id: 'source', defId: 'HexSource', params: { value: 'A3' } },
         { id: 'keybus', defId: 'HexSource', params: { value: '1C' } },
         { id: 'rounds', defId: 'FeistelRoundIterator', params: { iterationCount: 2 } },
         { id: 'encode', defId: 'BitsToHex', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'rounds', port: 'in' } },
@@ -871,7 +871,7 @@ export const demoProjects: DemoProject[] = [
     name: 'Protocol Material Mixer',
     group: 'Protocol Materials',
     summary: 'A framed byte-sized message is padded, split, then mixed with an explicit IV on one branch and a visible key on the other so context stays legible on the graph.',
-    pipeline: 'HexSource -> BitPad -> BitSplit -> XOR(IV) + XOR(Key) -> BitJoin -> BitsToHex -> Output',
+    pipeline: 'HexSource -> BitPad -> BitSplit -> XOR(IV) + XOR(Key) -> BitJoin -> BitsToHex -> HexOutput',
     project: {
       modules: [
         { id: 'message', defId: 'HexSource', params: { value: 'A3' } },
@@ -883,7 +883,7 @@ export const demoProjects: DemoProject[] = [
         { id: 'right-xor', defId: 'XOR', params: {} },
         { id: 'join', defId: 'BitJoin', params: {} },
         { id: 'encode', defId: 'BitsToHex', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'message', port: 'out' }, to: { moduleId: 'pad', port: 'in' } },
@@ -948,7 +948,7 @@ export const demoProjects: DemoProject[] = [
     name: 'Hex Byte Round',
     group: 'Bridge Rounds',
     summary: 'A byte-oriented round that starts from hex, stays in bits for substitution/permutation, and returns to hex.',
-    pipeline: 'HexSource -> SBox(256) -> Permutation -> BitsToHex -> Output',
+    pipeline: 'HexSource -> SBox(256) -> Permutation -> BitsToHex -> HexOutput',
     project: {
       modules: [
         { id: 'source', defId: 'HexSource', params: { value: 'A3' } },
@@ -961,7 +961,7 @@ export const demoProjects: DemoProject[] = [
         },
         { id: 'permute', defId: 'Permutation', params: { order: '7,6,5,4,3,2,1,0' } },
         { id: 'encode', defId: 'BitsToHex', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'sbox', port: 'in' } },
@@ -983,7 +983,7 @@ export const demoProjects: DemoProject[] = [
     name: 'ASCII Byte Round',
     group: 'Bridge Rounds',
     summary: 'A byte-oriented round that begins with ASCII text, transforms it in bits, and returns to ASCII.',
-    pipeline: 'AsciiSource -> SBox(256) -> Permutation -> BitsToAscii -> Output',
+    pipeline: 'AsciiSource -> SBox(256) -> Permutation -> BitsToAscii -> TextOutput',
     project: {
       modules: [
         { id: 'source', defId: 'AsciiSource', params: { value: 'A' } },
@@ -996,7 +996,7 @@ export const demoProjects: DemoProject[] = [
         },
         { id: 'permute', defId: 'Permutation', params: { order: '7,6,5,4,3,2,1,0' } },
         { id: 'encode', defId: 'BitsToAscii', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'TextOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'sbox', port: 'in' } },
@@ -1018,14 +1018,14 @@ export const demoProjects: DemoProject[] = [
     name: 'Toy Compression Hash',
     group: 'Hash Foundations',
     summary: 'Two visible message bytes are mixed separately, XOR-compressed into one digest byte, and then diffused through repeated digest rounds.',
-    pipeline: 'HexSource + HexSource -> ToyCompressionHashComposite -> BitsToHex -> Output',
+    pipeline: 'HexSource + HexSource -> ToyCompressionHashComposite -> BitsToHex -> HexOutput',
     project: {
       modules: [
         { id: 'left-source', defId: 'HexSource', params: { value: 'A3' } },
         { id: 'right-source', defId: 'HexSource', params: { value: '6F' } },
         { id: 'hash', defId: 'ToyCompressionHashComposite', params: {} },
         { id: 'encode', defId: 'BitsToHex', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'left-source', port: 'out' }, to: { moduleId: 'hash', port: 'left' } },
@@ -1047,13 +1047,13 @@ export const demoProjects: DemoProject[] = [
     name: 'Hash Digest Round',
     group: 'Hash Foundations',
     summary: 'A single digest round that substitutes, rotates, and constant-mixes one byte so students can hear the effect of mode changes before stacking rounds.',
-    pipeline: 'HexSource -> HashDigestRoundComposite -> BitsToHex -> Output',
+    pipeline: 'HexSource -> HashDigestRoundComposite -> BitsToHex -> HexOutput',
     project: {
       modules: [
         { id: 'source', defId: 'HexSource', params: { value: 'A3' } },
         { id: 'digest', defId: 'HashDigestRoundComposite', params: {} },
         { id: 'encode', defId: 'BitsToHex', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'digest', port: 'in' } },
@@ -1073,14 +1073,14 @@ export const demoProjects: DemoProject[] = [
     name: 'Toy Sponge Hash',
     group: 'Hash Foundations',
     summary: 'Two visible message bytes are absorbed one at a time into a 16-bit sponge state, mixed after each absorb, and then squeezed back down to one digest byte.',
-    pipeline: 'HexSource + HexSource -> ToySpongeHashComposite -> BitsToHex -> Output',
+    pipeline: 'HexSource + HexSource -> ToySpongeHashComposite -> BitsToHex -> HexOutput',
     project: {
       modules: [
         { id: 'left-source', defId: 'HexSource', params: { value: 'AA' } },
         { id: 'right-source', defId: 'HexSource', params: { value: 'BB' } },
         { id: 'sponge', defId: 'ToySpongeHashComposite', params: {} },
         { id: 'encode', defId: 'BitsToHex', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'left-source', port: 'out' }, to: { moduleId: 'sponge', port: 'left' } },
@@ -1102,7 +1102,7 @@ export const demoProjects: DemoProject[] = [
     name: 'Sequential Heart',
     group: 'Sequential',
     summary: 'A clocked keystream pipeline that turns state changes into a symbol stream over time.',
-    pipeline: 'Clock -> LFSR -> BitsToSymbol -> Output',
+    pipeline: 'Clock -> LFSR -> BitsToSymbol -> TextOutput',
     defaultTickedMode: true,
     project: {
       modules: [
@@ -1113,7 +1113,7 @@ export const demoProjects: DemoProject[] = [
           params: { seed: [1, 0, 1, 1, 0], taps: '0,2', outputLength: 5 },
         },
         { id: 'decode', defId: 'BitsToSymbol', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'TextOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'lfsr', port: 'clock' } },
@@ -1378,7 +1378,7 @@ export const demoProjects: DemoProject[] = [
     id: 'hybrid',
     name: 'Hybrid Reference',
     summary: 'The V1 hybrid machine crossing classical and modern domains.',
-    pipeline: 'TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol -> Output',
+    pipeline: 'TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol -> TextOutput',
     project: {
       modules: [
         { id: 'text', defId: 'TextInput', params: { value: 'A' } },
@@ -1401,7 +1401,7 @@ export const demoProjects: DemoProject[] = [
         { id: 'key', defId: 'BitSource', params: { stream: [1, 0, 1, 1, 0] } },
         { id: 'xor', defId: 'XOR', params: {} },
         { id: 'decode', defId: 'BitsToSymbol', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'TextOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'rotor-fwd', port: 'in' } },
@@ -1430,7 +1430,7 @@ export const demoProjects: DemoProject[] = [
     id: 'advanced-rotor-stepping',
     name: 'Advanced Rotor Stepping',
     summary: 'A bounded three-rotor machine with explicit turnover wiring, ring setting, and visible double-step control.',
-    pipeline: 'TextInput -> Rotor -> Rotor -> Rotor -> Output, with Clock -> Gate/OR control wiring for turnover and double-step',
+    pipeline: 'TextInput -> Rotor -> Rotor -> Rotor -> TextOutput, with Clock -> Gate/OR control wiring for turnover and double-step',
     project: {
       modules: [
         { id: 'text', defId: 'TextInput', params: { value: 'AAAA' } },
@@ -1468,7 +1468,7 @@ export const demoProjects: DemoProject[] = [
         { id: 'middle-vote', defId: 'OR', params: {} },
         { id: 'middle-gate', defId: 'Gate', params: {} },
         { id: 'left-gate', defId: 'Gate', params: {} },
-        { id: 'output', defId: 'Output', params: {} },
+        { id: 'output', defId: 'TextOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'right', port: 'in' } },
