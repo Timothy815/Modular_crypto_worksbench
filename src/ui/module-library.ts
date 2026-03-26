@@ -273,6 +273,18 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this to move bit positions or perform circular rotations within a bit vector.',
     searchTerms: ['shift', 'rotate', 'bits', 'circular', 'left', 'right'],
   },
+  ByteRotate: {
+    sectionId: 'transforms',
+    purpose: 'Rotates whole-byte groups left or right within one bit word.',
+    detail: 'Use this when a machine should rotate at byte granularity with strict multiple-of-8 width expectations instead of a raw bit-count rotation.',
+    searchTerms: ['byte rotate', 'word rotate', 'rotate', 'bytes', 'word', 'endianness'],
+  },
+  ByteSwap: {
+    sectionId: 'transforms',
+    purpose: 'Reverses the byte order within one bit word.',
+    detail: 'Use this when a machine should make byte order explicit instead of manually splitting and rejoining byte lanes in reverse order.',
+    searchTerms: ['byte swap', 'endianness', 'bytes', 'reverse', 'word', 'byte order'],
+  },
   BitJoin: {
     sectionId: 'transforms',
     purpose: 'Concatenates two bit signals into one longer bit vector.',

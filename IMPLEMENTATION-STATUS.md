@@ -6,7 +6,7 @@ Last updated: March 26, 2026
 
 ## Current State
 
-The project has shipped through `v1.39.0` on `main`.
+The project has shipped through `v1.40.0` on `main`.
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -71,6 +71,11 @@ Those shipped:
   - `Visible Block Chaining` demo with explicit IV seeding and block-to-block dependence
   - `Why The Next Block Depends On The Last` tutorial staged after `Recursive Key Schedule`
   - `Repair the Chaining Path` challenge for restoring the visible chaining edge into block 2
+- byte-oriented modern-construction follow-on:
+  - `ByteRotate` and `ByteSwap` helpers with strict multiple-of-8 width validation
+  - `Visible Byte Order` demo comparing byte-order reversal and byte-granularity rotation
+  - `When Bits Become Bytes` tutorial staged after `Visible Block Chaining`
+  - `Repair the Byte Order` challenge for restoring the explicit byte-order branch
 
 The already-shipped protocol-material, block-framing, and symbol/message permutation foundations remain in place:
 - protocol inputs:
@@ -88,8 +93,7 @@ The next strategic direction remains broader than any one subdomain:
 - ship tutorials and challenges alongside each new vocabulary family
 
 The next most important missing vocabulary families are:
-- block-to-block chaining / mode vocabulary after the shipped framing, protocol-material, and key-schedule-depth foundations
-- integrity/authentication teaching lines after chaining and schedule depth are stronger
+- integrity/authentication teaching lines after chaining and modern byte/word handling are stronger
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -204,6 +208,7 @@ The following decisions are reflected in shipped code:
 | `v1.37.0` | Diffie-Hellman |
 | `v1.38.0` | Key Schedule Depth |
 | `v1.39.0` | Block Chaining |
+| `v1.40.0` | Byte-Oriented Primitives |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -436,8 +441,8 @@ Post-`v1.26.0` work merged to `main`:
 ### Claude
 
 Safe to begin:
-- help shape the next bounded block-chaining contract after the shipped framing, protocol-material, and key-schedule-depth groundwork
-- help pressure-test chaining and mode vocabulary against product scope without widening into a preset mode library
+- help shape the next bounded byte/word-oriented contract after the shipped block-chaining slice
+- help pressure-test whether the first byte/word helper set should stop at rotation/swap or include one bounded lane helper
 - help review future tutorial/challenge additions that accompany deeper symmetric-construction lines
 - help keep the roadmap honest about what is still missing versus what is now shipped
 
@@ -451,15 +456,15 @@ Should avoid for now:
 ### Gemini
 
 Safe to begin:
-- review whether block-to-block chaining, byte/word-oriented helpers, or integrity/authentication should follow the shipped `v1.38.0` key-schedule-depth slice
-- help pressure-test the roadmap sequence from chaining into integrity or modern word-level vocabulary
+- review whether byte/word-oriented helpers or integrity/authentication should follow the shipped `v1.39.0` block-chaining slice
+- help pressure-test the roadmap sequence from byte/word helpers into integrity or richer modern-round vocabulary
 - review what tutorial/challenge support should accompany the next symmetric-construction family
 - help keep the post-builder product direction tied to expressive machine language rather than generic tooling
 
 Best focus:
-- whether visible block-to-block dependence is the sharpest remaining symmetric-construction gap
-- whether byte/word-oriented helpers are prerequisites or follow-ons to bounded block-chaining work
-- how to keep future chaining/mode work explicit and inspectable
+- whether byte/word-oriented helpers are now the sharpest remaining modern-construction gap
+- whether integrity/authentication should wait until modern word-level handling is more comfortable
+- how to keep future modern-round work explicit and inspectable
 
 ---
 
@@ -470,7 +475,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed at `v1.39.0` release framing.
+All three passed at `v1.40.0` implementation framing before the final doc-only release polish.
 
 ---
 
@@ -485,7 +490,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 ### Near-Term Roadmap
 
 1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
-2. **Continue the primitive-language roadmap beyond shipped stream, rotor, symbol-permutation, key-routing, symbol-structure, arithmetic, and number-theoretic foundations** — the clearest remaining language families are block-to-block chaining vocabulary, integrity/authentication teaching lines, and bounded byte/word-oriented helpers if the chaining line proves they are needed
+2. **Continue the primitive-language roadmap beyond shipped stream, rotor, symbol-permutation, key-routing, symbol-structure, arithmetic, and number-theoretic foundations** — the clearest remaining language families are integrity/authentication teaching lines and any later modern-round or byte-lane follow-ons only if they still prove necessary
 3. **Keep future rotor follow-ons bounded** — reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices, not convenience presets
 4. **Establish a suggested learning path across demos/tutorials/challenges** — future teaching content should fit a visible stage/order spine rather than accumulating as a flat library
 5. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
@@ -537,6 +542,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `DIFFIE-HELLMAN-V1.md` | Shipped in `v1.37.0` as bounded number-theoretic follow-on for visible shared-secret agreement |
 | `KEY-SCHEDULE-DEPTH-V1.md` | Shipped in `v1.38.0` as bounded iterative/recursive round-key derivation depth |
 | `BLOCK-CHAINING-V1.md` | Framed for `v1.39.0` as the bounded framing/symmetric-construction follow-on for visible block-to-block dependence |
+| `BYTE-ORIENTED-PRIMITIVES-V1.md` | Framed for `v1.40.0` as the bounded modern-construction follow-on for explicit byte/word structure helpers |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
 | `BRIDGE-ERGONOMICS-V1.md` | Shipped in `v1.31.0` — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |

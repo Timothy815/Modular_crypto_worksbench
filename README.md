@@ -11,7 +11,7 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.39.0`.
+The repository has shipped through `v1.40.0`.
 
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
@@ -71,6 +71,10 @@ Recent shipped follow-ons after `v1.27.0`:
   - visible `Visible Block Chaining` demo with explicit IV seeding and block-to-block dependence
   - `Why The Next Block Depends On The Last` tutorial placed after `Recursive Key Schedule`
   - `Repair the Chaining Path` challenge for restoring the visible chaining edge into block 2
+- `v1.40.0` Byte-Oriented Primitives:
+  - new `ByteRotate` and `ByteSwap` helpers with strict multiple-of-8 validation
+  - `Visible Byte Order` demo comparing byte-order reversal and byte-granularity rotation against raw bit rotation
+  - `When Bits Become Bytes` tutorial and `Repair the Byte Order` challenge
 
 Shipped stream, rotor, protocol/framing, and symbol/message permutation foundations remain in place:
 - stream-machine expressiveness:
@@ -232,6 +236,7 @@ Implemented and shipped:
 - `DIFFIE-HELLMAN-V1.md`: shipped bounded number-theoretic follow-on for visible shared-secret agreement
 - `KEY-SCHEDULE-DEPTH-V1.md`: shipped bounded symmetric-construction follow-on for visible recursive round-key derivation
 - `BLOCK-CHAINING-V1.md`: framed bounded `v1.39.0` follow-on for visible block-to-block dependence
+- `BYTE-ORIENTED-PRIMITIVES-V1.md`: framed bounded `v1.40.0` follow-on for explicit byte/word structure helpers
 - `BYPASS-V1.md`: shipped bounded usability slice for visible instance-level bypass on eligible one-in/one-out modules
 - `INVERSE-PERMUTATION-AUTHORING-V1.md`: shipped bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors
 - `BRIDGE-ERGONOMICS-V1.md`: shipped bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior

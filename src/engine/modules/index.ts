@@ -45,6 +45,8 @@ import { Permutation } from './permutation';
 import { SymbolPermutation } from './symbol-permutation';
 import { SymbolWindow } from './symbol-window';
 import { BitShifter } from './bit-shifter';
+import { ByteRotate } from './byte-rotate';
+import { ByteSwap } from './byte-swap';
 import { BitJoin } from './bit-join';
 import { BitSplit } from './bit-split';
 import { BitPad } from './bit-pad';
@@ -101,6 +103,8 @@ export {
   SymbolPermutation,
   SymbolWindow,
   BitShifter,
+  ByteRotate,
+  ByteSwap,
   BitJoin,
   BitSplit,
   BitPad,
@@ -158,6 +162,8 @@ export const V1_REGISTRY: ModuleRegistry = {
   [SymbolPermutation.id]: SymbolPermutation,
   [SymbolWindow.id]: SymbolWindow,
   [BitShifter.id]: BitShifter,
+  [ByteRotate.id]: ByteRotate,
+  [ByteSwap.id]: ByteSwap,
   [BitJoin.id]: BitJoin,
   [BitSplit.id]: BitSplit,
   [BitPad.id]: BitPad,

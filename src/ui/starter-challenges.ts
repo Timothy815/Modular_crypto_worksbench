@@ -39,6 +39,7 @@ const diffieHellmanProject = demoProjects.find((project) => project.id === 'diff
 const keyScheduleWorkshopProject = demoProjects.find((project) => project.id === 'key-schedule-workshop');
 const recursiveKeyScheduleProject = demoProjects.find((project) => project.id === 'recursive-key-schedule');
 const visibleBlockChainingProject = demoProjects.find((project) => project.id === 'visible-block-chaining');
+const visibleByteOrderProject = demoProjects.find((project) => project.id === 'visible-byte-order');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
 const toySpongeHashProject = demoProjects.find((project) => project.id === 'toy-sponge-hash');
@@ -154,6 +155,9 @@ if (!recursiveKeyScheduleProject) {
 if (!visibleBlockChainingProject) {
   throw new Error('Expected visible-block-chaining demo project to seed starter challenges.');
 }
+if (!visibleByteOrderProject) {
+  throw new Error('Expected visible-byte-order demo project to seed starter challenges.');
+}
 
 const fixedBridgeTarget = cloneProject(bridgeProject.project);
 const brokenBridgeStart = cloneProject(bridgeProject.project);
@@ -230,6 +234,8 @@ const recursiveKeyScheduleTarget = cloneProject(recursiveKeyScheduleProject.proj
 const brokenRecursiveKeyScheduleStart = cloneProject(recursiveKeyScheduleProject.project);
 const visibleBlockChainingTarget = cloneProject(visibleBlockChainingProject.project);
 const brokenVisibleBlockChainingStart = cloneProject(visibleBlockChainingProject.project);
+const visibleByteOrderTarget = cloneProject(visibleByteOrderProject.project);
+const brokenVisibleByteOrderStart = cloneProject(visibleByteOrderProject.project);
 
 const brokenKeyModule = brokenBridgeStart.modules.find((moduleInstance) => moduleInstance.id === 'key');
 if (!brokenKeyModule) {
@@ -367,6 +373,18 @@ if (chainTwoSourceIndex < 0) {
 brokenVisibleBlockChainingConnections[chainTwoSourceIndex] = {
   from: { moduleId: 'iv', port: 'out' },
   to: { moduleId: 'chain-2', port: 'a' },
+};
+
+const brokenVisibleByteOrderConnections = brokenVisibleByteOrderStart.connections;
+const swapSourceIndex = brokenVisibleByteOrderConnections.findIndex(
+  (connection) => connection.to.moduleId === 'swap-hex' && connection.to.port === 'in',
+);
+if (swapSourceIndex < 0) {
+  throw new Error('Expected visible-byte-order demo project to contain a swap output connection.');
+}
+brokenVisibleByteOrderConnections[swapSourceIndex] = {
+  from: { moduleId: 'word', port: 'out' },
+  to: { moduleId: 'swap-hex', port: 'in' },
 };
 
 const brokenBaudotSource = brokenBaudotStart.modules.find(
@@ -1348,6 +1366,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The IV should only seed the first block.',
       'The first block ciphertext is already being computed correctly.',
       'Follow the input into the second XOR and reconnect it to the earlier processed block.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-byte-order',
+    title: 'Repair the Byte Order',
+    projectId: 'visible-byte-order',
+    group: 'Modern Rounds',
+    stage: 'framing-and-protocol-context',
+    order: 145,
+    recommendedAfter: ['visible-block-chaining'],
+    difficulty: 'intermediate',
+    prompt:
+      'This byte-order demo is no longer showing the swapped word correctly. The source, ByteRotate branch, and BitShifter comparison are fine, but the swap branch is bypassing the real byte-order transform. Restore the visible byte-swap path so the outputs match the reference machine again.',
+    startingProject: brokenVisibleByteOrderStart,
+    startingLayout: cloneProject(visibleByteOrderProject.layout),
+    targetProject: visibleByteOrderTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Only the swap branch is wrong.',
+      'The output sink is currently reading straight from the source word instead of the byte-order transform.',
+      'Reconnect the swap output back into the hex bridge.',
     ],
   },
 ];

@@ -53,6 +53,8 @@ import { Permutation } from './permutation';
 import { SymbolPermutation } from './symbol-permutation';
 import { SymbolWindow } from './symbol-window';
 import { BitShifter } from './bit-shifter';
+import { ByteRotate } from './byte-rotate';
+import { ByteSwap } from './byte-swap';
 import { BitJoin } from './bit-join';
 import { BitSplit } from './bit-split';
 import { BitPad } from './bit-pad';
@@ -1007,6 +1009,68 @@ describe('BitShifter', () => {
   it('returns zeros when a logical shift exceeds the input width', () => {
     const result = BitShifter.evaluate({ in: bitsSignal }, { amount: 7, mode: 'left' });
     expect(result.out).toEqual({ type: 'bits', value: [0, 0, 0, 0, 0] });
+  });
+});
+
+describe('ByteRotate', () => {
+  it('rotates bytes left by one byte', () => {
+    const result = ByteRotate.evaluate(
+      { in: { type: 'bits', value: [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0] } },
+      { amount: 1, direction: 'left' },
+    );
+
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    });
+  });
+
+  it('rotates bytes right by one byte', () => {
+    const result = ByteRotate.evaluate(
+      { in: { type: 'bits', value: [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0] } },
+      { amount: 1, direction: 'right' },
+    );
+
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    });
+  });
+
+  it('matches BitShifter rotate-left by 8 bits', () => {
+    const input = { type: 'bits', value: [0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0] } as Signal;
+    const byteRotated = ByteRotate.evaluate({ in: input }, { amount: 1, direction: 'left' });
+    const bitRotated = BitShifter.evaluate({ in: input }, { amount: 8, mode: 'rotate-left' });
+    expect(byteRotated.out).toEqual(bitRotated.out);
+  });
+
+  it('throws when input width is not divisible by 8', () => {
+    expect(() =>
+      ByteRotate.evaluate(
+        { in: { type: 'bits', value: [1, 0, 1, 0] } },
+        { amount: 1, direction: 'left' },
+      ),
+    ).toThrow(/divisible by 8/i);
+  });
+});
+
+describe('ByteSwap', () => {
+  it('reverses byte order in a 16-bit word', () => {
+    const result = ByteSwap.evaluate(
+      { in: { type: 'bits', value: [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0] } },
+      {},
+    );
+
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    });
+  });
+
+  it('throws when input width is not divisible by 8', () => {
+    expect(() =>
+      ByteSwap.evaluate({ in: { type: 'bits', value: [1, 0, 1, 0] } }, {}),
+    ).toThrow(/divisible by 8/i);
   });
 });
 

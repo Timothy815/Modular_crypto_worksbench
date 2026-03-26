@@ -10,6 +10,8 @@ import { BitUnpad } from './modules/bit-unpad';
 import { BitSource } from './modules/bit-source';
 import { BitSplit } from './modules/bit-split';
 import { BitWindow } from './modules/bit-window';
+import { ByteRotate } from './modules/byte-rotate';
+import { ByteSwap } from './modules/byte-swap';
 import { GreaterThan } from './modules/greater-than';
 import { Counter } from './modules/counter';
 import { Demux } from './modules/demux';
@@ -109,6 +111,8 @@ const registry: ModuleRegistry = {
   [SBox.id]: SBox,
   [BitSplit.id]: BitSplit,
   [BitWindow.id]: BitWindow,
+  [ByteRotate.id]: ByteRotate,
+  [ByteSwap.id]: ByteSwap,
   [BitPad.id]: BitPad,
   [BitUnpad.id]: BitUnpad,
   [GreaterThan.id]: GreaterThan,
@@ -768,6 +772,53 @@ describe('validateProject', () => {
       connections: [
         { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'split', port: 'in' } },
       ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('rejects ByteRotate amount that is not a positive integer', () => {
+    const project: Project = {
+      modules: [{ id: 'rotate', defId: 'ByteRotate', params: { amount: 0, direction: 'left' } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.moduleId === 'rotate' && issue.message.includes('amount'))).toBe(
+      true,
+    );
+  });
+
+  it('rejects byte-oriented transforms when static input width is not divisible by 8', () => {
+    const project: Project = {
+      modules: [
+        { id: 'source', defId: 'BitSource', params: { stream: [1, 0, 1, 0] } },
+        { id: 'swap', defId: 'ByteSwap', params: {} },
+      ],
+      connections: [{ from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'swap', port: 'in' } }],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) => issue.moduleId === 'swap' && issue.message.includes('divisible by 8'),
+      ),
+    ).toBe(true);
+  });
+
+  it('accepts byte-oriented transforms when static input width is divisible by 8', () => {
+    const project: Project = {
+      modules: [
+        { id: 'source', defId: 'BitSource', params: { stream: [1, 0, 1, 0, 1, 0, 1, 0] } },
+        { id: 'rotate', defId: 'ByteRotate', params: { amount: 1, direction: 'left' } },
+      ],
+      connections: [{ from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'rotate', port: 'in' } }],
     };
 
     const result = validateProject(project, registry);

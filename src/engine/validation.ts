@@ -33,6 +33,7 @@ import { validateBitSplitParam } from './modules/bit-split';
 import { validateBitPadParam } from './modules/bit-pad';
 import { validateBitUnpadParam } from './modules/bit-unpad';
 import { validateBitWindowParam } from './modules/bit-window';
+import { validateByteRotateParam } from './modules/byte-rotate';
 import { isBypassEligibleDefinition } from './bypass';
 import {
   validateProtocolMaterialParam,
@@ -222,6 +223,10 @@ function getModuleSpecificParamMessage(
     return validateBitWindowParam(field.key, value);
   }
 
+  if (def.id === 'ByteRotate') {
+    return validateByteRotateParam(field.key, value);
+  }
+
   return null;
 }
 
@@ -370,6 +375,8 @@ function inferStaticBitWidth(
       break;
     case 'NOT':
     case 'BitShifter':
+    case 'ByteRotate':
+    case 'ByteSwap':
     case 'Modulo':
     case 'ModInverse':
     case 'SBox':
@@ -557,6 +564,22 @@ function validateBitWidthConstraints(
         issues.push({
           code: 'invalid-param-type',
           message: `Module "${moduleInstance.id}" parameters "start" and "width" are invalid. BitWindow range must fit within the input width (${inputWidth}).`,
+          moduleId: moduleInstance.id,
+        });
+      }
+    }
+
+    if (def.id === 'ByteRotate' || def.id === 'ByteSwap') {
+      const upstream = incomingConnections.get(`${moduleInstance.id}:in`);
+      if (!upstream) {
+        continue;
+      }
+
+      const inputWidth = getWidth(upstream.moduleId);
+      if (inputWidth !== null && inputWidth % 8 !== 0) {
+        issues.push({
+          code: 'signal-width-mismatch',
+          message: `Module "${moduleInstance.id}" requires an input width divisible by 8.`,
           moduleId: moduleInstance.id,
         });
       }

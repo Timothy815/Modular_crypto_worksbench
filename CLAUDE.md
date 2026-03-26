@@ -18,6 +18,7 @@ Read CRYPTO-OPERATORS-V1.md before starting work on the first post-`v1.13.0` ope
 Read CONTROL-PRIMITIVES-V1.md before starting work on counters, triggers, gates, or explicit conditional machine behavior.
 Read BLOCK-FRAMING-V1.md before starting work on block splitting, padding, rejoining, or framing follow-ons.
 Read BLOCK-CHAINING-V1.md before starting work on visible multi-block dependence, chaining, or mode-teaching follow-ons.
+Read BYTE-ORIENTED-PRIMITIVES-V1.md before starting work on byte/word structure helpers, endianness transforms, or modern word-level follow-ons.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.
 Read LEARNING-SEQUENCE-V1.md before restructuring the teaching library, adding staged progression, or changing how demos/tutorials/challenges are ordered.
@@ -147,7 +148,7 @@ src/utils/     — Shared helpers
 
 ## Current Resume Point
 
-- Resume from current `main` at `v1.39.0`
+- Resume from current `main` at `v1.40.0`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement
@@ -315,6 +316,11 @@ src/utils/     — Shared helpers
   - visible `Visible Block Chaining` demo with explicit IV seeding and block-to-block dependence
   - `Why The Next Block Depends On The Last` tutorial placed after `Recursive Key Schedule`
   - `Repair the Chaining Path` challenge for restoring the visible chaining edge into block 2
+- `v1.40.0` is now the byte-oriented-primitives milestone:
+  - `ByteRotate` and `ByteSwap` helpers with strict multiple-of-8 width validation
+  - `Visible Byte Order` demo comparing byte-order reversal and byte-granularity rotation against `BitShifter`
+  - `When Bits Become Bytes` tutorial placed after `Visible Block Chaining`
+  - `Repair the Byte Order` challenge for restoring the explicit byte-order branch
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -412,6 +418,7 @@ Key contracts to check before implementation:
 - `DIFFIE-HELLMAN-V1.md` for the shipped second asymmetric teaching scenario built from visible `ModExp` paths
 - `KEY-SCHEDULE-DEPTH-V1.md` for the shipped symmetric-construction follow-on after key-bus groundwork
 - `BLOCK-CHAINING-V1.md` for the framed bounded multi-block dependence slice after framing, protocol material, and key-schedule depth
+- `BYTE-ORIENTED-PRIMITIVES-V1.md` for the framed bounded modern-construction slice after visible block chaining
 - `BYPASS-V1.md` for the shipped bounded instance-level bypass line
 - `INVERSE-PERMUTATION-AUTHORING-V1.md` for the shipped bounded inverse-permutation authoring slice
 - `BRIDGE-ERGONOMICS-V1.md` for the shipped bounded bridge/usability slice
