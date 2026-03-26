@@ -439,6 +439,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 7. **Monitor challenge-induced project switching in classroom use** before adding warning dialogs
 8. **Defer deeper transformation playback/animation** until classroom feedback justifies a second visualization slice
 9. **If bypass lands, keep it bounded** — instance-local, visibly disabled, and limited to modules where identity pass-through is honest
+10. **Tighten bridge ergonomics before adding broad new encodings** — make raw bit entry and byte-oriented bridges feel natural before opening a UTF-8 follow-on
 
 ### Key Contracts
 
@@ -481,6 +482,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `NUMBER-THEORETIC-V1.md` | Shipped in `v1.26.0` as first bounded number-theoretic foundations slice for modular exponentiation and modular inverse |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
+| `BRIDGE-ERGONOMICS-V1.md` | Active — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |
 | `ADVANCED-ROTOR-REALISM-V1.md` | Shipped in `v1.19.0` as bounded rotor-realism slice for ring setting, turnover, and double-step behavior |
 | `PARAM-FORWARDING-V1.md` | Active, implemented as first exposed-internal control slice |
 | `TRANSFORMATION-VISUALIZATION-V1.md` | Shipped as the `v1.6.0` first primitive legibility slice |

@@ -218,6 +218,21 @@ Current groundwork exists:
 Shipped so far:
 - `BitWindow` for visible contiguous sub-key extraction from one key bus
 
+### 9. Bridge Ergonomics / Encoding Boundaries
+
+Current groundwork exists:
+- `BitSource`
+- `BitsToAscii` / `AsciiSource`
+- `BitsToHex` / `HexSource`
+- `BitsToBaudot` / `BaudotSource`
+- symbol-domain bridges
+
+Still needed over time:
+- easier arbitrary-width raw-bit entry
+- clearer byte grouping expectations for ASCII workflows
+- clearer distinction between reversible byte/codeword bridges and lossy alphabet bridges
+- tighter authoring ergonomics before opening a broader UTF-8-specific slice
+
 Still needed over time:
 - explicit per-round key routing
 - later iterator-aware key distribution only if it stays inspectable

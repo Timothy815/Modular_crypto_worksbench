@@ -47,9 +47,22 @@ export function parseParamValue(rawValue: string, field: ParamFieldDef): ParsedP
     case 'boolean':
       return { ok: true, value: rawValue === 'true' };
     case 'bits': {
-      const parts = rawValue.split(/[\s,]+/).filter(Boolean);
+      const normalized = rawValue
+        .trim()
+        .replace(/^\[/, '')
+        .replace(/\]$/, '')
+        .trim();
+      if (normalized === '') {
+        return { ok: false, error: 'Enter bits as 0/1 values or a continuous bit string.' };
+      }
+
+      const compactBinary = normalized.replace(/[\s,]+/g, '');
+      const parts =
+        compactBinary.length > 0 && /^[01]+$/.test(compactBinary)
+          ? compactBinary.split('')
+          : normalized.split(/[\s,]+/).filter(Boolean);
       if (parts.length === 0) {
-        return { ok: false, error: 'Enter bits as comma-separated 0 or 1 values.' };
+        return { ok: false, error: 'Enter bits as 0/1 values or a continuous bit string.' };
       }
 
       const parsed = parts.map((part) => Number(part));

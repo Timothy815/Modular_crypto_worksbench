@@ -13,6 +13,7 @@ import { BitsToAscii } from './bits-to-ascii';
 import { BitsToBaudot } from './bits-to-baudot';
 import { BitsToSymbol } from './bits-to-symbol';
 import { BitsToHex } from './bits-to-hex';
+import { HexToAscii } from './hex-to-ascii';
 import { AddMod } from './add-mod';
 import { AND } from './and';
 import { AtLeast } from './at-least';
@@ -431,6 +432,32 @@ describe('BitsToAscii', () => {
         {},
       ),
     ).toThrow();
+  });
+});
+
+describe('HexToAscii', () => {
+  it('decodes hexadecimal bytes into ASCII text', () => {
+    const result = HexToAscii.evaluate(
+      { in: { type: 'symbol', value: '4142' } },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'AB' });
+  });
+
+  it('ignores whitespace in hex input', () => {
+    const result = HexToAscii.evaluate(
+      { in: { type: 'symbol', value: '41 42' } },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'AB' });
+  });
+
+  it('throws on odd-length hex input', () => {
+    expect(() => HexToAscii.evaluate({ in: { type: 'symbol', value: '414' } }, {})).toThrow();
+  });
+
+  it('throws on non-ascii byte values', () => {
+    expect(() => HexToAscii.evaluate({ in: { type: 'symbol', value: '80' } }, {})).toThrow();
   });
 });
 

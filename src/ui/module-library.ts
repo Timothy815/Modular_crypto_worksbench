@@ -41,7 +41,7 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
   BitSource: {
     sectionId: 'inputs-outputs',
     purpose: 'Emits a fixed bit pattern for testing or simple round keys.',
-    detail: 'Use this as a simple round key or fixed mask when experimenting in the bit domain.',
+    detail: 'Use this as a simple round key or fixed mask when experimenting in the bit domain. Raw bit text like 01000001 01000010 is accepted directly, without forcing manual byte separators.',
     searchTerms: ['bit', 'source', 'key', 'stream', 'bits'],
   },
   AsciiSource: {
@@ -319,6 +319,12 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Converts a bit signal into hexadecimal text.',
     detail: 'Use this when a bit-domain machine should end as hex so students can compare byte-oriented results directly.',
     searchTerms: ['bridge', 'hex', 'encode', 'bits', 'byte', 'output'],
+  },
+  HexToAscii: {
+    sectionId: 'bridges',
+    purpose: 'Decodes hexadecimal byte text directly into ASCII.',
+    detail: 'Use this when readable ASCII already exists as hex bytes and you want the decoded text without routing through Hex Source and Bits → ASCII.',
+    searchTerms: ['bridge', 'hex', 'ascii', 'decode', 'bytes', 'text'],
   },
 };
 

@@ -12,7 +12,7 @@ export const BitSource: TickSliceableModuleDef = {
       kind: 'bits',
       defaultValue: [0, 0, 0, 0, 0],
       required: true,
-      description: 'Static or repeating bit pattern',
+      description: 'Static or repeating bit pattern. Accepts raw 0/1 text such as 01000001 01000010.',
     },
   },
   evaluate: (_inputs, params) => {

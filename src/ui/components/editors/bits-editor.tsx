@@ -19,9 +19,27 @@ export function BitsEditor({
   onParamChange,
 }: BitsEditorProps) {
   const bits = getBitsEditorValue(renderedValue, value);
+  const groupedPreview = formatBitsPreview(bits);
 
   return (
     <div className="bits-editor">
+      <label className="structured-param-text-input">
+        <span className="meta-label">Raw Bits</span>
+        <input
+          type="text"
+          value={renderedValue}
+          spellCheck={false}
+          onChange={(event) => {
+            const rawValue = event.target.value;
+            onParamDraftChange(moduleId, field.key, rawValue);
+            const parsed = parseParamValue(rawValue, field);
+            if (parsed.ok) {
+              onParamChange(moduleId, field.key, parsed.value);
+            }
+          }}
+          placeholder="01000001 01000010"
+        />
+      </label>
       <div className="bits-chip-list">
         {bits.map((bit, index) => (
           <button
@@ -82,7 +100,7 @@ export function BitsEditor({
           Remove Last
         </button>
       </div>
-      <p className="structured-param-preview">{bits.join(' ')}</p>
+      <p className="structured-param-preview">{groupedPreview}</p>
     </div>
   );
 }
@@ -118,4 +136,21 @@ function getBitsEditorValue(renderedValue: string, value: unknown): number[] {
   }
 
   return [0];
+}
+
+function formatBitsPreview(bits: number[]): string {
+  const joined = bits.join('');
+  if (joined.length === 0) {
+    return '';
+  }
+
+  if (joined.length % 8 === 0) {
+    return joined.match(/.{1,8}/g)?.join(' ') ?? joined;
+  }
+
+  if (joined.length % 4 === 0) {
+    return joined.match(/.{1,4}/g)?.join(' ') ?? joined;
+  }
+
+  return bits.join(' ');
 }
