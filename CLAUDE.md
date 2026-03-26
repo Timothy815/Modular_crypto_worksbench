@@ -146,7 +146,7 @@ src/utils/     — Shared helpers
 
 ## Current Resume Point
 
-- Resume from current `main` at `v1.37.0`
+- Resume from current `main` at `v1.38.0`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement
@@ -306,9 +306,13 @@ src/utils/     — Shared helpers
   - visible `Diffie-Hellman Key Exchange` demo built from explicit `ModExp` paths
   - `Visible Shared Secret` tutorial placed after `Toy RSA Round-Trip`
   - `Repair the Shared Secret` challenge for restoring a matching shared-secret derivation
+- `v1.38.0` is now the key-schedule-depth milestone:
+  - visible `Recursive Key Schedule` demo with a three-step key ladder feeding the shipped keyed iterator
+  - `One Round Key Becomes The Next` tutorial placed after `Key Schedule Workshop`
+  - `Repair the Next Round Key` challenge for restoring a later-round derivation step
 
 Active proposed next line:
-- broader product review and sanity pass after `v1.37.0`
+- next bounded follow-on to be decided after `v1.38.0` review
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -404,6 +408,7 @@ Key contracts to check before implementation:
 - `ARITHMETIC-EXPANSION-V1.md` for the shipped first bounded arithmetic-expansion line
 - `NUMBER-THEORETIC-V1.md` for the shipped first bounded number-theoretic foundations
 - `DIFFIE-HELLMAN-V1.md` for the framed second asymmetric teaching scenario built from visible `ModExp` paths
+- `KEY-SCHEDULE-DEPTH-V1.md` for the framed symmetric-construction follow-on after key-bus groundwork
 - `BYPASS-V1.md` for the shipped bounded instance-level bypass line
 - `INVERSE-PERMUTATION-AUTHORING-V1.md` for the shipped bounded inverse-permutation authoring slice
 - `BRIDGE-ERGONOMICS-V1.md` for the shipped bounded bridge/usability slice

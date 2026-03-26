@@ -11,7 +11,7 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.37.0`.
+The repository has shipped through `v1.38.0`.
 
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
@@ -63,6 +63,10 @@ Recent shipped follow-ons after `v1.27.0`:
   - visible `Diffie-Hellman Key Exchange` demo built from explicit `ModExp` paths
   - `Visible Shared Secret` tutorial placed after `Toy RSA Round-Trip`
   - `Repair the Shared Secret` challenge for matching shared-secret derivation
+- `v1.38.0` Key Schedule Depth:
+  - visible `Recursive Key Schedule` demo with a three-step key ladder
+  - `One Round Key Becomes The Next` tutorial placed after `Key Schedule Workshop`
+  - `Repair the Next Round Key` challenge for restoring a later-round derivation step
 
 Shipped stream, rotor, protocol/framing, and symbol/message permutation foundations remain in place:
 - stream-machine expressiveness:

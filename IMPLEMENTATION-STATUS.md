@@ -6,7 +6,7 @@ Last updated: March 26, 2026
 
 ## Current State
 
-The project has shipped through `v1.37.0` on `main`.
+The project has shipped through `v1.38.0` on `main`.
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -63,6 +63,10 @@ Those shipped:
   - `Diffie-Hellman Key Exchange` demo built from explicit `ModExp` public/secret derivation paths
   - `Visible Shared Secret` tutorial staged after `Toy RSA Round-Trip`
   - `Repair the Shared Secret` challenge for restoring a matching shared-secret derivation
+- key-schedule depth follow-on:
+  - `Recursive Key Schedule` demo with visible recursive key derivation feeding a keyed iterator
+  - `One Round Key Becomes The Next` tutorial staged after `Key Schedule Workshop`
+  - `Repair the Next Round Key` challenge for restoring a later-round derivation step
 
 The already-shipped protocol-material, block-framing, and symbol/message permutation foundations remain in place:
 - protocol inputs:
@@ -80,9 +84,9 @@ The next strategic direction remains broader than any one subdomain:
 - ship tutorials and challenges alongside each new vocabulary family
 
 The next most important missing vocabulary families are:
-- deeper key-schedule follow-ons after the shipped key-routing and key-schedule-workshop foundations
-- deeper stream follow-ons and scheduler work after the shipped routing trilogy
-- consolidation of the shipped transformation-view surface (now covers all recent primitives)
+- deeper key-schedule depth after the shipped iterator, key-bus, and key-schedule-workshop foundations
+- block-to-block chaining / mode vocabulary after key-schedule depth is clearer
+- integrity/authentication teaching lines after chaining and schedule depth are stronger
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -195,6 +199,7 @@ The following decisions are reflected in shipped code:
 | `v1.35.0` | Composite Port Hints |
 | `v1.36.0` | Cross-Workspace Clipboard |
 | `v1.37.0` | Diffie-Hellman |
+| `v1.38.0` | Key Schedule Depth |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -407,6 +412,18 @@ Post-`v1.26.0` work merged to `main`:
   - Analyze-tab `arithmetic` view kind for `MulMod`, `ModExp`, and `ModInverse`
   - Analyze-tab `unpad` view kind for `BitUnpad` (mirrors the existing `pad` view)
   - `GreaterThan` compare view corrected from `A >= B` to strict `A > B` semantics
+- builder and teaching-surface hardening:
+  - staged learning-sequence ordering
+  - bounded instance-level bypass
+  - inverse-permutation authoring
+  - bridge ergonomics follow-ons
+  - reversible authoring helpers
+  - workspace rename / duplicate / clipboard
+  - composite port hints
+- second asymmetric validation surface:
+  - `Diffie-Hellman Key Exchange`
+  - `Visible Shared Secret`
+  - `Repair the Shared Secret`
 
 ---
 
@@ -415,11 +432,10 @@ Post-`v1.26.0` work merged to `main`:
 ### Claude
 
 Safe to begin:
-- help assess whether the primitive language is missing a foundational family
-- help pressure-test the operator/control roadmap against product scope
-- help keep rotor realism as one bounded sub-line inside the broader vocabulary roadmap
-- help pressure-test the shipped builder workflow as a daily-use construction surface
-- help review future tutorial/challenge additions that accompany new vocabulary lines
+- help shape the next bounded key-schedule-depth contract after the shipped iterator/key-bus groundwork
+- help pressure-test chaining and mode vocabulary against product scope once schedule depth is clearer
+- help review future tutorial/challenge additions that accompany deeper symmetric-construction lines
+- help keep the roadmap honest about what is still missing versus what is now shipped
 
 Should avoid for now:
 - feedback loops / cycles in the graph
@@ -431,16 +447,15 @@ Should avoid for now:
 ### Gemini
 
 Safe to begin:
-- review whether the vocabulary roadmap is coherent and well-sequenced
-- review what should follow the now-shipped operator/control/framing/protocol-material foundation
-- help keep the new builder workflow connected to future language growth
-- help pressure-test future bounded rotor/reflector follow-ons against the broader vocabulary plan
-- review what tutorial/challenge support should accompany each new primitive family
+- review whether deeper key-schedule vocabulary or byte/word-oriented primitives should come first after `v1.37.0`
+- help pressure-test the roadmap sequence from key-schedule depth into chaining, integrity, or modern word-level vocabulary
+- review what tutorial/challenge support should accompany the next symmetric-construction family
+- help keep the post-builder product direction tied to expressive machine language rather than generic tooling
 
 Best focus:
-- which language family should follow the shipped protocol-material foundation
-- whether advanced rotor realism or a second stream-combiner slice should come next
-- whether advanced rotor realism should wait until the broader vocabulary is stronger
+- whether iterative/recursive key derivation is the sharpest expressiveness gap
+- whether byte/word-oriented helpers are prerequisites or follow-ons to deeper key-schedule vocabulary
+- how to keep future chaining/mode work explicit and inspectable
 
 ---
 
@@ -451,7 +466,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed at `v1.31.0` framing.
+All three passed at `v1.37.0` release framing.
 
 ---
 
@@ -466,7 +481,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 ### Near-Term Roadmap
 
 1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
-2. **Continue the primitive-language roadmap beyond shipped stream, rotor, symbol-permutation, key-routing, symbol-structure, arithmetic, and number-theoretic foundations** — the clearest remaining language families are deeper key-schedule follow-ons, deeper stream follow-ons, and consolidation of the newly shipped number-theoretic surface
+2. **Continue the primitive-language roadmap beyond shipped stream, rotor, symbol-permutation, key-routing, symbol-structure, arithmetic, and number-theoretic foundations** — the clearest remaining language families are deeper key-schedule depth, block-to-block chaining vocabulary, and integrity/authentication teaching lines
 3. **Keep future rotor follow-ons bounded** — reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices, not convenience presets
 4. **Establish a suggested learning path across demos/tutorials/challenges** — future teaching content should fit a visible stage/order spine rather than accumulating as a flat library
 5. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
@@ -515,7 +530,8 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `LEARNING-SEQUENCE-V1.md` | First milestone shipped in `v1.28.0` — staged ordering contract now visible in demos, tutorials, and challenges |
 | `ARITHMETIC-EXPANSION-V1.md` | Shipped in `v1.25.0` as first bounded arithmetic-expansion slice for modular multiplication, strict comparison, and unpadding |
 | `NUMBER-THEORETIC-V1.md` | Shipped in `v1.26.0` as first bounded number-theoretic foundations slice for modular exponentiation and modular inverse |
-| `DIFFIE-HELLMAN-V1.md` | Framed for `v1.37.0` as bounded number-theoretic follow-on for visible shared-secret agreement |
+| `DIFFIE-HELLMAN-V1.md` | Shipped in `v1.37.0` as bounded number-theoretic follow-on for visible shared-secret agreement |
+| `KEY-SCHEDULE-DEPTH-V1.md` | Framed for `v1.38.0` as bounded iterative/recursive round-key derivation depth |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
 | `BRIDGE-ERGONOMICS-V1.md` | Shipped in `v1.31.0` — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |

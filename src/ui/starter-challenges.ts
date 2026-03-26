@@ -37,6 +37,7 @@ const visibleMessageWindowProject = demoProjects.find((project) => project.id ==
 const toyRsaProject = demoProjects.find((project) => project.id === 'toy-rsa');
 const diffieHellmanProject = demoProjects.find((project) => project.id === 'diffie-hellman-key-exchange');
 const keyScheduleWorkshopProject = demoProjects.find((project) => project.id === 'key-schedule-workshop');
+const recursiveKeyScheduleProject = demoProjects.find((project) => project.id === 'recursive-key-schedule');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
 const toySpongeHashProject = demoProjects.find((project) => project.id === 'toy-sponge-hash');
@@ -146,6 +147,9 @@ if (!diffieHellmanProject) {
 if (!keyScheduleWorkshopProject) {
   throw new Error('Expected key-schedule-workshop demo project to seed starter challenges.');
 }
+if (!recursiveKeyScheduleProject) {
+  throw new Error('Expected recursive-key-schedule demo project to seed starter challenges.');
+}
 
 const fixedBridgeTarget = cloneProject(bridgeProject.project);
 const brokenBridgeStart = cloneProject(bridgeProject.project);
@@ -218,6 +222,8 @@ const diffieHellmanTarget = cloneProject(diffieHellmanProject.project);
 const brokenDiffieHellmanStart = cloneProject(diffieHellmanProject.project);
 const keyScheduleWorkshopTarget = cloneProject(keyScheduleWorkshopProject.project);
 const brokenKeyScheduleWorkshopStart = cloneProject(keyScheduleWorkshopProject.project);
+const recursiveKeyScheduleTarget = cloneProject(recursiveKeyScheduleProject.project);
+const brokenRecursiveKeyScheduleStart = cloneProject(recursiveKeyScheduleProject.project);
 
 const brokenKeyModule = brokenBridgeStart.modules.find((moduleInstance) => moduleInstance.id === 'key');
 if (!brokenKeyModule) {
@@ -336,6 +342,14 @@ if (!brokenRotate) {
   throw new Error('Expected key-schedule-workshop demo project to contain a rotate module.');
 }
 brokenRotate.params.amount = 5;
+
+const brokenRecursiveRoundConst = brokenRecursiveKeyScheduleStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'round-const-3',
+);
+if (!brokenRecursiveRoundConst) {
+  throw new Error('Expected recursive-key-schedule demo project to contain round-const-3.');
+}
+brokenRecursiveRoundConst.params.value = '00';
 
 const brokenBaudotSource = brokenBaudotStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'source',
@@ -1268,6 +1282,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The XOR mixing and round constant are already correct.',
       'Only the BitShifter rotation amount is wrong.',
       'The correct rotation is a small left shift — try values between 1 and 4.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-next-round-key',
+    title: 'Repair the Next Round Key',
+    projectId: 'recursive-key-schedule',
+    group: 'Key Schedule',
+    stage: 'framing-and-protocol-context',
+    order: 125,
+    recommendedAfter: ['key-schedule-workshop'],
+    difficulty: 'intermediate',
+    prompt:
+      'This recursive key schedule is producing the wrong later-round output. The master key, iterator, and first derivation step are correct, but the final round-constant mix is wrong. Restore it so the visible key ladder and final ciphertext match the reference machine again.',
+    startingProject: brokenRecursiveKeyScheduleStart,
+    startingLayout: cloneProject(recursiveKeyScheduleProject.layout),
+    targetProject: recursiveKeyScheduleTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The keyed iterator already has the correct round count and key width.',
+      'The master key and the first round constant are already correct.',
+      'Focus on the visible constant entering the final XOR derivation step.',
     ],
   },
 ];
