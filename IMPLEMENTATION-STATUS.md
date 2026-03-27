@@ -28,6 +28,7 @@ Current development now carries:
   - `WORKSPACE-VISIBILITY-NAVIGATION-V1.md`
   - `CONNECTION-AUTHORING-ERGONOMICS-V1.md`
   - `PARAMETER-AUTHORING-ERGONOMICS-V1.md`
+  - `PARAMETER-COMPARISON-ERGONOMICS-V1.md`
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -160,6 +161,11 @@ The current parameter-authoring follow-on after that is:
 - apply that param set to other explicitly selected same-definition modules
 - clear conflicting drafts on affected targets
 - keep one bulk-apply action as one undo/redo step
+
+The current parameter-comparison follow-on after that is:
+- compare the current inspector target against explicitly selected same-definition siblings
+- show aligned vs divergent fields inline in the inspector
+- keep the selected module as the comparison anchor
 
 Established and shipped:
 - implementation contract and AI coordination protocol

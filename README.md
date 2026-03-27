@@ -49,6 +49,11 @@ The current parameter-authoring follow-on after that is:
 - explicit skip reporting for incompatible selections
 - one-step undo/redo for bulk parameter application
 
+The current parameter-comparison follow-on after that is:
+- compare the current inspector target against selected same-definition siblings
+- show aligned vs divergent fields inline in the inspector
+- keep the selected module as the comparison anchor
+
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
   - `ModExp` (modular exponentiation via repeated squaring)

@@ -2220,6 +2220,19 @@ body.dock-resizing {
   gap: 8px;
 }
 
+.param-field-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.param-field-label-text {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
 .param-field span {
   font-size: 0.92rem;
   font-weight: 700;
@@ -2251,6 +2264,30 @@ body.dock-resizing {
   font-size: 0.78rem;
   font-weight: 700;
   color: var(--muted);
+}
+
+.parameter-comparison-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.85rem;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.parameter-comparison-chip-aligned {
+  border-color: color-mix(in srgb, var(--success-text) 35%, var(--line));
+  background: color-mix(in srgb, var(--success-bg) 74%, white);
+  color: var(--success-text);
+}
+
+.parameter-comparison-chip-divergent {
+  border-color: color-mix(in srgb, var(--danger-text) 32%, var(--line));
+  background: color-mix(in srgb, var(--danger-bg) 86%, white);
+  color: var(--danger-text);
 }
 
 .param-field input,

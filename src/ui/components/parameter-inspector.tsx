@@ -32,6 +32,11 @@ import {
   getModuleInstanceIdValidationError,
   normalizeModuleInstanceIdCandidate,
 } from '../module-instance-id';
+import {
+  areParameterValuesEqual,
+  buildParameterComparisonSummary,
+  type ParameterComparisonFieldStatus,
+} from '../parameter-comparison';
 import type { TutorialStep } from '../tutorials';
 import { ComparisonPanel } from './comparison-panel';
 import type { ComparisonBaselineDocument } from '../workbench-document';
@@ -304,6 +309,16 @@ export function ParameterInspector({
     const nonSourceSelectionCount = selectedModuleIds.filter((moduleId) => moduleId !== moduleInstance.id).length;
     return Math.max(0, nonSourceSelectionCount - compatibleParamApplyTargetIds.length);
   }, [compatibleParamApplyTargetIds.length, moduleDef, moduleInstance, selectedModuleIds]);
+  const parameterComparisonSummary = useMemo(
+    () =>
+      buildParameterComparisonSummary({
+        project,
+        moduleDef,
+        moduleInstance,
+        selectedModuleIds,
+      }),
+    [moduleDef, moduleInstance, project, selectedModuleIds],
+  );
   const groupedSelectedIssues = groupIssuesByTarget(selectedIssues);
   const groupedGlobalIssues = groupIssuesByTarget(globalIssues);
 
@@ -507,6 +522,37 @@ export function ParameterInspector({
     steppedAnalysisEntry,
     steppedTrace,
   ]);
+
+  const renderParameterComparisonChip = (fieldKey: string) => {
+    const fieldComparison = parameterComparisonSummary?.fieldsByKey[fieldKey];
+    if (!fieldComparison) {
+      return null;
+    }
+
+    return (
+      <span
+        className={
+          fieldComparison.status === 'aligned'
+            ? 'parameter-comparison-chip parameter-comparison-chip-aligned'
+            : 'parameter-comparison-chip parameter-comparison-chip-divergent'
+        }
+      >
+        {formatParameterComparisonChipLabel(fieldComparison)}
+      </span>
+    );
+  };
+
+  const renderParamFieldLabel = (
+    fieldLabel: string,
+    fieldKey: string,
+    isForwardedParam: boolean,
+  ) => (
+    <span className="param-field-label">
+      <span className="param-field-label-text">{fieldLabel}</span>
+      {isForwardedParam ? <span className="forwarded-param-chip">Forwarded</span> : null}
+      {renderParameterComparisonChip(fieldKey)}
+    </span>
+  );
 
   return (
     <aside className="panel inspector-panel">
@@ -1701,6 +1747,39 @@ export function ParameterInspector({
               </p>
             </div>
           ) : null}
+          {parameterComparisonSummary ? (
+            <div className="content-selector-card parameter-comparison-summary-card">
+              <p className="comparison-copy">
+                Selected sibling comparison anchored to <strong>{moduleInstance.id}</strong>.
+              </p>
+              <div className="content-selector-meta">
+                <span className="content-status-chip">
+                  {parameterComparisonSummary.siblingModuleIds.length} same-definition sibling
+                  {parameterComparisonSummary.siblingModuleIds.length === 1 ? '' : 's'}
+                </span>
+                <span className="content-status-chip">
+                  {parameterComparisonSummary.alignedFieldCount} aligned field
+                  {parameterComparisonSummary.alignedFieldCount === 1 ? '' : 's'}
+                </span>
+                <span className="content-status-chip">
+                  {parameterComparisonSummary.divergentFieldCount} divergent field
+                  {parameterComparisonSummary.divergentFieldCount === 1 ? '' : 's'}
+                </span>
+              </div>
+              {parameterComparisonSummary.siblingModuleIds.length > 0 ? (
+                <p className="comparison-copy">
+                  Comparing against <strong>{parameterComparisonSummary.siblingModuleIds.join(', ')}</strong>.
+                </p>
+              ) : null}
+              {parameterComparisonSummary.incompatibleSelectedCount > 0 ? (
+                <p className="comparison-copy">
+                  {parameterComparisonSummary.incompatibleSelectedCount} selected module
+                  {parameterComparisonSummary.incompatibleSelectedCount === 1 ? '' : 's'} skipped because
+                  they are not {moduleDef.id} instances.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="param-list">
             {Object.values(moduleDef.paramSchema).length === 0 ? (
@@ -1726,13 +1805,8 @@ export function ParameterInspector({
                 if (field.kind === 'boolean') {
                   return (
                     <label key={field.key} className="param-field">
-                      <span>
-                        {field.label}
-                        {isForwardedParam ? (
-                          <span className="forwarded-param-chip">Forwarded</span>
-                        ) : null}
-                      </span>
-                      {!areParamValuesEqual(value, baselineValue) ? (
+                      {renderParamFieldLabel(field.label, field.key, isForwardedParam)}
+                      {!areParameterValuesEqual(value, baselineValue) ? (
                         <span className="baseline-chip">
                           Baseline: {formatParamValue(baselineValue, field)}
                         </span>
@@ -1751,13 +1825,8 @@ export function ParameterInspector({
                 if (field.kind === 'select') {
                   return (
                     <label key={field.key} className="param-field">
-                      <span>
-                        {field.label}
-                        {isForwardedParam ? (
-                          <span className="forwarded-param-chip">Forwarded</span>
-                        ) : null}
-                      </span>
-                      {!areParamValuesEqual(value, baselineValue) ? (
+                      {renderParamFieldLabel(field.label, field.key, isForwardedParam)}
+                      {!areParameterValuesEqual(value, baselineValue) ? (
                         <span className="baseline-chip">
                           Baseline: {formatParamValue(baselineValue, field)}
                         </span>
@@ -1781,13 +1850,8 @@ export function ParameterInspector({
                 if (field.kind === 'bits') {
                   return (
                     <label key={field.key} className="param-field">
-                      <span>
-                        {field.label}
-                        {isForwardedParam ? (
-                          <span className="forwarded-param-chip">Forwarded</span>
-                        ) : null}
-                      </span>
-                      {!areParamValuesEqual(value, baselineValue) ? (
+                      {renderParamFieldLabel(field.label, field.key, isForwardedParam)}
+                      {!areParameterValuesEqual(value, baselineValue) ? (
                         <span className="baseline-chip">
                           Baseline: {formatParamValue(baselineValue, field)}
                         </span>
@@ -1826,13 +1890,8 @@ export function ParameterInspector({
 
                     return (
                       <label key={field.key} className="param-field">
-                        <span>
-                          {field.label}
-                          {isForwardedParam ? (
-                            <span className="forwarded-param-chip">Forwarded</span>
-                          ) : null}
-                        </span>
-                        {baselineRotorWiring && !areParamValuesEqual(value, baselineValue) ? (
+                        {renderParamFieldLabel(field.label, field.key, isForwardedParam)}
+                        {baselineRotorWiring && !areParameterValuesEqual(value, baselineValue) ? (
                           <span className="baseline-chip">
                             Baseline: {serializeRotorWiring(baselineRotorWiring)}
                           </span>
@@ -2002,13 +2061,8 @@ export function ParameterInspector({
 
                     return (
                       <label key={field.key} className="param-field">
-                        <span>
-                          {field.label}
-                          {isForwardedParam ? (
-                            <span className="forwarded-param-chip">Forwarded</span>
-                          ) : null}
-                        </span>
-                        {baselinePlugboardWiring && !areParamValuesEqual(value, baselineValue) ? (
+                        {renderParamFieldLabel(field.label, field.key, isForwardedParam)}
+                        {baselinePlugboardWiring && !areParameterValuesEqual(value, baselineValue) ? (
                           <span className="baseline-chip">
                             Baseline: {serializePlugboardWiring(baselinePlugboardWiring)}
                           </span>
@@ -2195,13 +2249,8 @@ export function ParameterInspector({
 
                     return (
                       <label key={field.key} className="param-field">
-                        <span>
-                          {field.label}
-                          {isForwardedParam ? (
-                            <span className="forwarded-param-chip">Forwarded</span>
-                          ) : null}
-                        </span>
-                        {baselineReflectorWiring && !areParamValuesEqual(value, baselineValue) ? (
+                        {renderParamFieldLabel(field.label, field.key, isForwardedParam)}
+                        {baselineReflectorWiring && !areParameterValuesEqual(value, baselineValue) ? (
                           <span className="baseline-chip">
                             Baseline: {serializeReflectorWiring(baselineReflectorWiring)}
                           </span>
@@ -2322,13 +2371,8 @@ export function ParameterInspector({
 
                   return (
                     <label key={field.key} className="param-field">
-                      <span>
-                        {field.label}
-                        {isForwardedParam ? (
-                          <span className="forwarded-param-chip">Forwarded</span>
-                        ) : null}
-                      </span>
-                      {!areParamValuesEqual(value, baselineValue) ? (
+                      {renderParamFieldLabel(field.label, field.key, isForwardedParam)}
+                      {!areParameterValuesEqual(value, baselineValue) ? (
                         <span className="baseline-chip">
                           Baseline: {formatParamValue(baselineValue, field)}
                         </span>
@@ -2364,13 +2408,8 @@ export function ParameterInspector({
 
                   return (
                     <label key={field.key} className="param-field">
-                      <span>
-                        {field.label}
-                        {isForwardedParam ? (
-                          <span className="forwarded-param-chip">Forwarded</span>
-                        ) : null}
-                      </span>
-                      {baselineTable && !areParamValuesEqual(value, baselineValue) ? (
+                      {renderParamFieldLabel(field.label, field.key, isForwardedParam)}
+                      {baselineTable && !areParameterValuesEqual(value, baselineValue) ? (
                         <span className="baseline-chip">
                           Baseline: {baselineTable.length} entries
                         </span>
@@ -2539,13 +2578,8 @@ export function ParameterInspector({
 
                   return (
                     <label key={field.key} className="param-field">
-                      <span>
-                        {field.label}
-                        {isForwardedParam ? (
-                          <span className="forwarded-param-chip">Forwarded</span>
-                        ) : null}
-                      </span>
-                      {baselineOrder && !areParamValuesEqual(value, baselineValue) ? (
+                      {renderParamFieldLabel(field.label, field.key, isForwardedParam)}
+                      {baselineOrder && !areParameterValuesEqual(value, baselineValue) ? (
                         <span className="baseline-chip">
                           Baseline: {serializePermutationOrder(baselineOrder)}
                         </span>
@@ -2757,13 +2791,8 @@ export function ParameterInspector({
 
                 return (
                   <label key={field.key} className="param-field">
-                    <span>
-                      {field.label}
-                      {isForwardedParam ? (
-                        <span className="forwarded-param-chip">Forwarded</span>
-                      ) : null}
-                    </span>
-                    {!areParamValuesEqual(value, baselineValue) ? (
+                    {renderParamFieldLabel(field.label, field.key, isForwardedParam)}
+                    {!areParameterValuesEqual(value, baselineValue) ? (
                       <span className="baseline-chip">
                         Baseline: {formatParamValue(baselineValue, field)}
                       </span>
@@ -4663,6 +4692,14 @@ function groupIssuesByTarget(issues: ValidationIssue[]) {
   return [...groups.values()];
 }
 
-function areParamValuesEqual(left: unknown, right: unknown) {
-  return JSON.stringify(left) === JSON.stringify(right);
+function formatParameterComparisonChipLabel(fieldComparison: ParameterComparisonFieldStatus) {
+  if (fieldComparison.status === 'aligned') {
+    return fieldComparison.totalSiblingCount === 1
+      ? 'Aligned'
+      : `Aligned ${fieldComparison.alignedSiblingCount}/${fieldComparison.totalSiblingCount}`;
+  }
+
+  return fieldComparison.totalSiblingCount === 1
+    ? 'Divergent'
+    : `Divergent ${fieldComparison.divergentSiblingCount}/${fieldComparison.totalSiblingCount}`;
 }
