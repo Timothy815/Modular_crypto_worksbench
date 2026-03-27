@@ -18,6 +18,40 @@ import { Output } from './modules/output';
 import { XOR } from './modules/xor';
 import { BitOutput } from './modules/bit-output';
 
+const RotorDoubleStepControl: CompositeDef = {
+  id: 'RotorDoubleStepControl',
+  name: 'Rotor Double-Step Control',
+  kind: 'composite',
+  version: 1,
+  inputs: [
+    { name: 'pulse', type: 'bits' },
+    { name: 'turnoverA', type: 'bits' },
+    { name: 'turnoverB', type: 'bits' },
+  ],
+  outputs: [{ name: 'step', type: 'bits' }],
+  paramSchema: {},
+  project: {
+    modules: [
+      { id: 'turnover-vote', defId: 'OR', params: {} },
+      { id: 'step-gate', defId: 'Gate', params: {} },
+    ],
+    connections: [
+      {
+        from: { moduleId: 'turnover-vote', port: 'out' },
+        to: { moduleId: 'step-gate', port: 'control' },
+      },
+    ],
+  },
+  inputBindings: [
+    { externalPort: 'pulse', internalModuleId: 'step-gate', internalPort: 'in' },
+    { externalPort: 'turnoverA', internalModuleId: 'turnover-vote', internalPort: 'a' },
+    { externalPort: 'turnoverB', internalModuleId: 'turnover-vote', internalPort: 'b' },
+  ],
+  outputBindings: [
+    { externalPort: 'step', internalModuleId: 'step-gate', internalPort: 'out' },
+  ],
+};
+
 describe('Signal-driven advance', () => {
   // LFSR advance trace with seed [1,0,0,1,1], taps "0,2":
   //   [1,0,0,1,1] → fb=1^0=1, pop 1, unshift 1 → [1,1,0,0,1]
@@ -144,7 +178,14 @@ describe('Signal-driven advance', () => {
     });
 
     it('uses explicit turnover wiring to produce the middle-rotor double-step pattern', () => {
-      const registry: ModuleRegistry = { Clock, Gate, OR, Rotor, Output };
+      const registry: ModuleRegistry = {
+        Clock,
+        Gate,
+        OR,
+        Rotor,
+        Output,
+        RotorDoubleStepControl,
+      };
 
       const project: Project = {
         modules: [
@@ -179,18 +220,16 @@ describe('Signal-driven advance', () => {
               notches: 'Q',
             },
           },
-          { id: 'middle-vote', defId: 'OR', params: {} },
-          { id: 'middle-gate', defId: 'Gate', params: {} },
+          { id: 'middle-step-control', defId: 'RotorDoubleStepControl', params: {} },
           { id: 'left-gate', defId: 'Gate', params: {} },
           { id: 'out', defId: 'Output', params: {} },
         ],
         connections: [
           { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'right', port: 'clock' } },
-          { from: { moduleId: 'right', port: 'turnover' }, to: { moduleId: 'middle-vote', port: 'a' } },
-          { from: { moduleId: 'middle', port: 'turnover' }, to: { moduleId: 'middle-vote', port: 'b' } },
-          { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'middle-gate', port: 'in' } },
-          { from: { moduleId: 'middle-vote', port: 'out' }, to: { moduleId: 'middle-gate', port: 'control' } },
-          { from: { moduleId: 'middle-gate', port: 'out' }, to: { moduleId: 'middle', port: 'clock' } },
+          { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'middle-step-control', port: 'pulse' } },
+          { from: { moduleId: 'right', port: 'turnover' }, to: { moduleId: 'middle-step-control', port: 'turnoverA' } },
+          { from: { moduleId: 'middle', port: 'turnover' }, to: { moduleId: 'middle-step-control', port: 'turnoverB' } },
+          { from: { moduleId: 'middle-step-control', port: 'step' }, to: { moduleId: 'middle', port: 'clock' } },
           { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'left-gate', port: 'in' } },
           { from: { moduleId: 'middle', port: 'turnover' }, to: { moduleId: 'left-gate', port: 'control' } },
           { from: { moduleId: 'left-gate', port: 'out' }, to: { moduleId: 'left', port: 'clock' } },

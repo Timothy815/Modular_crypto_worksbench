@@ -2,7 +2,7 @@
 
 Last updated: March 27, 2026
 
-Status: Tightened future contract
+Status: Implemented on `feature/rotor-driven-stepping`
 
 ---
 
@@ -181,3 +181,17 @@ Not:
 - a broad rotor-systems overhaul
 - not “SIGABA support” as a giant umbrella
 - not a new execution architecture
+
+---
+
+## Implemented Outcome
+
+V1 shipped as one built-in reusable composite:
+- `RotorDoubleStepControl`
+
+It packages one explicit pulse pattern:
+- `turnoverA OR turnoverB`
+- gated against the base `pulse`
+- emitted as one visible `step` pulse
+
+This was applied to the `Advanced Rotor Stepping` demo/tutorial as the reusable middle-rotor double-step control path, while keeping the left rotor's single-turnover gate explicit.

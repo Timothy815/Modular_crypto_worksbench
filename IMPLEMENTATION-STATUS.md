@@ -235,9 +235,11 @@ The current linked-rotor follow-on after that is:
 - only the forward rotor owns stepping state; linked reverse faces do not advance independently
 - rotor-realism demos and micro demos now use the linked model honestly
 
-The current next advanced-rotor item after that is:
-- one bounded reusable rotor-control pattern built from explicit pulse flow, closer to SIGABA-style control than simple rotor stepping
-- explicitly separate from generic control-flow or executor redesign
+The current shipped rotor-driven-stepping follow-on after that is:
+- one bounded reusable rotor-control pattern built from explicit pulse flow
+- shipped as built-in `RotorDoubleStepControl`
+- applied to the `Advanced Rotor Stepping` teaching surface as reusable middle-rotor double-step logic
+- explicitly kept separate from generic control-flow or executor redesign
 
 The current near-future strategic export item after that is:
 - bounded Python export foundations for turning a workspace into standalone executable code

@@ -237,8 +237,8 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       {
         id: 'rotor-turnover-logic',
         title: 'Turnover Is Just Graph Logic',
-        body: 'The middle OR node combines the right rotor turnover with the middle rotor turnover. That single visible vote explains the famous double-step: the middle rotor can move because the right rotor reached its notch, or because the middle rotor itself is sitting at its own turnover position.',
-        focusModuleId: 'middle-vote',
+        body: 'Rotor Double-Step Control packages one bounded control pattern: combine the right rotor turnover with the middle rotor turnover, then gate the base pulse. The double-step is still visible graph logic, just reusable now instead of ad hoc.',
+        focusModuleId: 'middle-step-control',
         targetStepIndex: 4,
       },
       {

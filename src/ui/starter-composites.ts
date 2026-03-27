@@ -2,6 +2,65 @@ import type { CompositeLibraryEntry } from '../engine/composites';
 
 export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
   {
+    id: 'RotorDoubleStepControl',
+    name: 'Rotor Double-Step Control',
+    version: 1,
+    source: 'built-in',
+    definition: {
+      id: 'RotorDoubleStepControl',
+      name: 'Rotor Double-Step Control',
+      kind: 'composite',
+      version: 1,
+      inputs: [
+        { name: 'pulse', type: 'bits' },
+        { name: 'turnoverA', type: 'bits' },
+        { name: 'turnoverB', type: 'bits' },
+      ],
+      outputs: [{ name: 'step', type: 'bits' }],
+      paramSchema: {},
+      project: {
+        modules: [
+          { id: 'turnover-vote', defId: 'OR', params: {} },
+          { id: 'step-gate', defId: 'Gate', params: {} },
+        ],
+        connections: [
+          {
+            from: { moduleId: 'turnover-vote', port: 'out' },
+            to: { moduleId: 'step-gate', port: 'control' },
+          },
+        ],
+      },
+      inputBindings: [
+        {
+          externalPort: 'pulse',
+          internalModuleId: 'step-gate',
+          internalPort: 'in',
+        },
+        {
+          externalPort: 'turnoverA',
+          internalModuleId: 'turnover-vote',
+          internalPort: 'a',
+        },
+        {
+          externalPort: 'turnoverB',
+          internalModuleId: 'turnover-vote',
+          internalPort: 'b',
+        },
+      ],
+      outputBindings: [
+        {
+          externalPort: 'step',
+          internalModuleId: 'step-gate',
+          internalPort: 'out',
+        },
+      ],
+      layout: {
+        'turnover-vote': { x: 48, y: 48 },
+        'step-gate': { x: 256, y: 48 },
+      },
+    },
+  },
+  {
     id: 'FeistelRoundComposite',
     name: 'Feistel Round',
     version: 1,

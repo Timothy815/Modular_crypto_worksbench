@@ -107,8 +107,10 @@ The current linked-rotor follow-on after that is:
 - linked reverse traversal mirrors the forward rotor's live state instead of requiring manual synchronization
 - only the forward rotor owns stepping state; linked reverse faces do not advance independently
 
-The current next advanced-rotor item after that is:
+The current shipped rotor-driven-stepping follow-on after that is:
 - one bounded reusable rotor-control pattern built from explicit pulse flow
+- shipped as built-in `RotorDoubleStepControl`
+- used to package reusable middle-rotor double-step behavior without hiding the graph logic
 - kept separate from generic control-flow or executor redesign
 
 The current near-future strategic export item after that is:
