@@ -128,8 +128,8 @@ export const demoProjects: DemoProject[] = [
   {
     id: 'visible-signature-verification',
     name: 'Visible Signature Verification',
-    group: 'Number Theory',
-    stage: 'advanced-arithmetic-and-number-theory',
+    group: 'Asymmetric Verification',
+    stage: 'asymmetric-verification-and-systems-composition',
     order: 245,
     recommendedAfter: ['visible-authenticated-encryption'],
     summary: 'A visible message is signed, then verified.',
@@ -167,8 +167,8 @@ export const demoProjects: DemoProject[] = [
   {
     id: 'visible-secure-handshake',
     name: 'Visible Secure Handshake',
-    group: 'Number Theory',
-    stage: 'advanced-arithmetic-and-number-theory',
+    group: 'Systems Composition',
+    stage: 'asymmetric-verification-and-systems-composition',
     order: 255,
     recommendedAfter: ['visible-signature-verification'],
     summary: 'A compact handshake exchanges public values, verifies one of them, derives a shared key, and uses it to protect one later message.',

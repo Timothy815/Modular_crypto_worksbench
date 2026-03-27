@@ -7,7 +7,10 @@ Last updated: March 26, 2026
 ## Current State
 
 The latest shipped tag is `v1.44.0`.
-Local `main` now carries a proposed post-`v1.44.0` `v2.0` sanity-pass contract.
+Local `main` now carries:
+- the proposed post-`v1.44.0` `v2.0` sanity-pass contract
+- the completed `v2.0` sanity audit deliverable
+- one implemented bounded follow-on pass: `LEARNING-SEQUENCE-V2.md`
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -110,7 +113,7 @@ The next strategic direction remains broader than any one subdomain:
 - ship tutorials and challenges alongside each new vocabulary family
 
 The next most important product-level task is:
-- a `v2.0` sanity / framing pass that closes the gap between the now-complete teaching-surface expansion arc and the next classroom-validated deepening decision
+- validate the revised late-stage pathfinding in real use before choosing any further bounded `v2.0` follow-on
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -570,6 +573,8 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `DIGITAL-SIGNATURE-FOUNDATIONS-V1.md` | Framed for `v1.43.0` as the bounded asymmetric-authentication follow-on for visible signing and verification |
 | `PROTOCOL-HANDSHAKES-V1.md` | Framed for `v1.44.0` as the bounded systems-level follow-on for visible handshake / transcript composition |
 | `MCW-V2-SANITY-PASS.md` | Proposed post-`v1.44.0` as the next product-level cohesion pass after the completed systems-composition checkpoint |
+| `MCW-V2-SANITY-AUDIT.md` | Completed audit deliverable: the product still holds, but the late library/pathfinding model now needs one bounded follow-on |
+| `LEARNING-SEQUENCE-V2.md` | Implemented on local `main` as the bounded late-stage pathfinding and library-reorganization follow-on after the sanity audit |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
 | `BRIDGE-ERGONOMICS-V1.md` | Shipped in `v1.31.0` — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |

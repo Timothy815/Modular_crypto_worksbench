@@ -51,6 +51,36 @@ describe('learning-sequence helpers', () => {
     ]);
   });
 
+  it('places integrity before asymmetric verification and systems composition in the late path', () => {
+    const items: SequencedLearningItem[] = [
+      { id: 'visible-secure-handshake', title: 'Visible Secure Handshake', group: 'Systems Composition' },
+      { id: 'visible-tamper-check', title: 'Visible Tamper Check', group: 'Integrity' },
+      { id: 'visible-signature-verification', title: 'Visible Signature Verification', group: 'Asymmetric Verification' },
+      { id: 'toy-rsa', title: 'Toy RSA', group: 'Number Theory' },
+    ];
+
+    expect(items.map(inferLearningStage)).toEqual([
+      'asymmetric-verification-and-systems-composition',
+      'integrity-and-authentication',
+      'asymmetric-verification-and-systems-composition',
+      'advanced-arithmetic-and-number-theory',
+    ]);
+
+    expect([...items].sort(compareLearningItems).map((item) => item.id)).toEqual([
+      'toy-rsa',
+      'visible-tamper-check',
+      'visible-signature-verification',
+      'visible-secure-handshake',
+    ]);
+
+    expect(getSortedLearningGroups(items)).toEqual([
+      'Number Theory',
+      'Integrity',
+      'Asymmetric Verification',
+      'Systems Composition',
+    ]);
+  });
+
   it('resolves best-after titles from shared id hints', () => {
     const items: SequencedLearningItem[] = [
       { id: 'visible-symbol-scramble', title: 'Visible Symbol Scramble', group: 'Symbol Permutation' },

@@ -7,7 +7,9 @@ export type LearningStage =
   | 'streams-and-scheduling'
   | 'rotor-realism-and-mechanized-systems'
   | 'message-structure-and-composition'
-  | 'advanced-arithmetic-and-number-theory';
+  | 'advanced-arithmetic-and-number-theory'
+  | 'integrity-and-authentication'
+  | 'asymmetric-verification-and-systems-composition';
 
 export interface LearningSequenceMeta {
   stage?: LearningStage;
@@ -34,6 +36,9 @@ const STAGE_LABELS: Record<LearningStage, string> = {
   'rotor-realism-and-mechanized-systems': 'Stage 7 · Rotor Realism',
   'message-structure-and-composition': 'Stage 8 · Message Structure',
   'advanced-arithmetic-and-number-theory': 'Stage 9 · Advanced Arithmetic',
+  'integrity-and-authentication': 'Stage 10 · Integrity And Authentication',
+  'asymmetric-verification-and-systems-composition':
+    'Stage 11 · Asymmetric Verification And Systems Composition',
 };
 
 const STAGE_ORDER: Record<LearningStage, number> = {
@@ -46,6 +51,8 @@ const STAGE_ORDER: Record<LearningStage, number> = {
   'rotor-realism-and-mechanized-systems': 7,
   'message-structure-and-composition': 8,
   'advanced-arithmetic-and-number-theory': 9,
+  'integrity-and-authentication': 10,
+  'asymmetric-verification-and-systems-composition': 11,
 };
 
 const GROUP_STAGE_MAP: Record<string, LearningStage> = {
@@ -54,6 +61,7 @@ const GROUP_STAGE_MAP: Record<string, LearningStage> = {
   'Modern Rounds': 'modern-bit-machines',
   'Control Foundations': 'state-and-control',
   'Block Framing': 'framing-and-protocol-context',
+  Framing: 'framing-and-protocol-context',
   'Protocol Materials': 'framing-and-protocol-context',
   'Key Schedule': 'framing-and-protocol-context',
   'Conditional Clocking': 'streams-and-scheduling',
@@ -63,6 +71,9 @@ const GROUP_STAGE_MAP: Record<string, LearningStage> = {
   'Symbol Structure': 'message-structure-and-composition',
   'Arithmetic Expansion': 'advanced-arithmetic-and-number-theory',
   'Number Theory': 'advanced-arithmetic-and-number-theory',
+  Integrity: 'integrity-and-authentication',
+  'Asymmetric Verification': 'asymmetric-verification-and-systems-composition',
+  'Systems Composition': 'asymmetric-verification-and-systems-composition',
   'Hash Foundations': 'advanced-arithmetic-and-number-theory',
   Cryptanalysis: 'advanced-arithmetic-and-number-theory',
 };
@@ -75,6 +86,7 @@ const GROUP_ORDER_HINTS: Record<string, number> = {
   'Modern Rounds': 30,
   'Control Foundations': 40,
   'Block Framing': 50,
+  Framing: 55,
   'Protocol Materials': 60,
   'Key Schedule': 70,
   'Conditional Clocking': 80,
@@ -84,8 +96,11 @@ const GROUP_ORDER_HINTS: Record<string, number> = {
   'Symbol Structure': 120,
   'Arithmetic Expansion': 130,
   'Number Theory': 140,
-  'Hash Foundations': 150,
-  Cryptanalysis: 160,
+  Integrity: 150,
+  'Asymmetric Verification': 160,
+  'Systems Composition': 170,
+  'Hash Foundations': 180,
+  Cryptanalysis: 190,
 };
 
 const ITEM_ORDER_HINTS: Record<string, number> = {

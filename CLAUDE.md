@@ -24,6 +24,8 @@ Read AEAD-FOUNDATIONS-V1.md before starting work on authenticated-encryption com
 Read DIGITAL-SIGNATURE-FOUNDATIONS-V1.md before starting work on visible signing, asymmetric authentication, or signature/verification follow-ons.
 Read PROTOCOL-HANDSHAKES-V1.md before starting work on visible transcript composition, handshake teaching, or post-signature systems-level follow-ons.
 Read MCW-V2-SANITY-PASS.md before starting work on post-`v1.44.0` product framing, library reorganization, or large-workspace cohesion follow-ons.
+Read MCW-V2-SANITY-AUDIT.md before deciding what post-`v1.44.0` cohesion issue is actually highest leverage.
+Read LEARNING-SEQUENCE-V2.md before extending the late learning spine or reorganizing the post-number-theory teaching surface.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.
 Read LEARNING-SEQUENCE-V1.md before restructuring the teaching library, adding staged progression, or changing how demos/tutorials/challenges are ordered.
