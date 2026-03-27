@@ -60,6 +60,7 @@ Read ROTOR-CONTROL-BANK-V1.md before proposing visible control-bank rotor patter
 Read PYTHON-EXPORT-V1.md before proposing workspace-to-code export, standalone Python generation, or implementation-oriented codegen lines.
 Read PYTHON-EXPORT-FOUNDATIONS-V1.md before extending the shipped stateless Python export slice, broadening the supported module subset, or changing export compatibility/parity behavior.
 Read V2.1-NEXT-DOCKET.md before reordering the current near-future priorities across builder power, Python export expansion, UI refactoring, or multi-window workspace support.
+Read STAGE-ASSEMBLY-ERGONOMICS-V1.md before changing selected stage-row / stage-column layout actions or broader stage-oriented builder-power assembly helpers.
 Read MULTI-WINDOW-WORKSPACE-V1.md before proposing detachable panels, multi-tab workspace surfaces, or multi-window synchronized editing.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.

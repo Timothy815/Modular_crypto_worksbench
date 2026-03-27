@@ -119,6 +119,11 @@ export type UiAction =
       positions: Record<string, { x: number; y: number }>;
     }
   | { type: 'tidyLayout'; projectId: string }
+  | {
+      type: 'arrangeSelectedModules';
+      projectId: string;
+      mode: 'stage-row' | 'stage-column';
+    }
   | { type: 'addAnnotation'; projectId: string }
   | { type: 'moveAnnotation'; projectId: string; annotationId: string; x: number; y: number }
   | { type: 'updateAnnotationText'; projectId: string; annotationId: string; text: string }
@@ -354,6 +359,7 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'moveModule',
   'moveModules',
   'tidyLayout',
+  'arrangeSelectedModules',
   'restoreWorkspaceVersion',
 ]);
 
@@ -375,6 +381,83 @@ function cloneWorkspaceHistorySnapshot(snapshot: WorkspaceHistorySnapshot): Work
     currentTick: snapshot.currentTick,
     isTickPlaybackActive: snapshot.isTickPlaybackActive,
   };
+}
+
+const STAGE_ROW_GAP = 244;
+const STAGE_COLUMN_GAP = 148;
+
+function arrangeSelectedLayoutPositions(
+  layout: Record<string, { x: number; y: number }>,
+  selectedModuleIds: string[],
+  anchorModuleId: string | null,
+  mode: 'stage-row' | 'stage-column',
+) {
+  if (selectedModuleIds.length < 2) {
+    return layout;
+  }
+
+  const anchorId =
+    (anchorModuleId && selectedModuleIds.includes(anchorModuleId) ? anchorModuleId : null)
+    ?? selectedModuleIds[0]
+    ?? null;
+  if (!anchorId) {
+    return layout;
+  }
+
+  const anchorPosition = layout[anchorId];
+  if (!anchorPosition) {
+    return layout;
+  }
+
+  const sortableIds = selectedModuleIds.filter((moduleId) => layout[moduleId]);
+  if (sortableIds.length < 2) {
+    return layout;
+  }
+
+  const orderedIds = [...sortableIds].sort((leftId, rightId) => {
+    const leftPosition = layout[leftId] ?? { x: 0, y: 0 };
+    const rightPosition = layout[rightId] ?? { x: 0, y: 0 };
+
+    if (mode === 'stage-row') {
+      if (leftPosition.x !== rightPosition.x) {
+        return leftPosition.x - rightPosition.x;
+      }
+      if (leftPosition.y !== rightPosition.y) {
+        return leftPosition.y - rightPosition.y;
+      }
+    } else {
+      if (leftPosition.y !== rightPosition.y) {
+        return leftPosition.y - rightPosition.y;
+      }
+      if (leftPosition.x !== rightPosition.x) {
+        return leftPosition.x - rightPosition.x;
+      }
+    }
+
+    return leftId.localeCompare(rightId);
+  });
+
+  const anchorIndex = orderedIds.indexOf(anchorId);
+  if (anchorIndex === -1) {
+    return layout;
+  }
+
+  const nextLayout = { ...layout };
+  for (const [index, moduleId] of orderedIds.entries()) {
+    const offset = index - anchorIndex;
+    nextLayout[moduleId] =
+      mode === 'stage-row'
+        ? {
+            x: anchorPosition.x + offset * STAGE_ROW_GAP,
+            y: anchorPosition.y,
+          }
+        : {
+            x: anchorPosition.x,
+            y: anchorPosition.y + offset * STAGE_COLUMN_GAP,
+          };
+  }
+
+  return nextLayout;
 }
 
 function buildWorkspaceHistorySnapshot(state: UiState, projectId: string): WorkspaceHistorySnapshot | null {
@@ -1088,6 +1171,54 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         layoutByProject: {
           ...state.layoutByProject,
           [action.projectId]: createTidiedLayout(currentProject, currentLayout),
+        },
+      };
+    }
+    case 'arrangeSelectedModules': {
+      if (state.compositeEditor) {
+        const nextLayout = arrangeSelectedLayoutPositions(
+          state.compositeEditor.layout,
+          state.compositeEditor.selectedModuleIds,
+          state.compositeEditor.selectedModuleId,
+          action.mode,
+        );
+
+        if (nextLayout === state.compositeEditor.layout) {
+          return state;
+        }
+
+        return {
+          ...state,
+          compositeEditor: {
+            ...state.compositeEditor,
+            layout: nextLayout,
+          },
+        };
+      }
+
+      const currentLayout = state.layoutByProject[action.projectId];
+      const selectedModuleIds = state.selectedModuleIdsByProject[action.projectId] ?? [];
+      const selectedModuleId = state.selectedModuleIdByProject[action.projectId] ?? null;
+      if (!currentLayout || selectedModuleIds.length < 2) {
+        return state;
+      }
+
+      const nextLayout = arrangeSelectedLayoutPositions(
+        currentLayout,
+        selectedModuleIds,
+        selectedModuleId,
+        action.mode,
+      );
+
+      if (nextLayout === currentLayout) {
+        return state;
+      }
+
+      return {
+        ...state,
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: nextLayout,
         },
       };
     }

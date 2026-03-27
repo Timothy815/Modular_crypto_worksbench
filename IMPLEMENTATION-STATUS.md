@@ -45,6 +45,7 @@ Current development now carries:
   - `PYTHON-EXPORT-V1.md`
   - `PYTHON-EXPORT-FOUNDATIONS-V1.md`
   - `V2.1-NEXT-DOCKET.md`
+  - `STAGE-ASSEMBLY-ERGONOMICS-V1.md`
   - `MULTI-WINDOW-WORKSPACE-V1.md`
 
 Current `main` now also includes:
@@ -53,6 +54,10 @@ Current `main` now also includes:
   - stateless primitive-only compatibility gating
   - one standalone `.py` artifact with embedded helper runtime and topological `run()`
   - parity coverage against `executeProject()` for supported workspaces
+- stage assembly ergonomics:
+  - `Arrange Selected Stage Row` for horizontal staged fragments
+  - `Stack Selected Stage Column` for vertical bank / ladder fragments
+  - selection-scoped, reducer-backed layout reshaping with one-step undo/redo
 
 Current near-future sequencing is now explicit:
 - continue the `v2.1` builder-power line first

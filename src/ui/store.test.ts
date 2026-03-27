@@ -262,6 +262,106 @@ describe('uiReducer', () => {
     expect(additiveState.selectedModuleIdByProject[projectId]).toBe(thirdModuleId);
   });
 
+  it('arranges the selected modules into a stage row anchored on the lead selection', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const [firstModuleId, secondModuleId, thirdModuleId] =
+      initialState.projectStates[projectId].modules.map((moduleInstance) => moduleInstance.id);
+
+    if (!firstModuleId || !secondModuleId || !thirdModuleId) {
+      throw new Error('Expected at least three modules in the sequential demo.');
+    }
+
+    const selectedState = uiReducer(
+      uiReducer(
+        uiReducer(initialState, {
+          type: 'selectModule',
+          projectId,
+          moduleId: firstModuleId,
+        }),
+        {
+          type: 'selectModule',
+          projectId,
+          moduleId: secondModuleId,
+          additive: true,
+        },
+      ),
+      {
+        type: 'selectModule',
+        projectId,
+        moduleId: thirdModuleId,
+        additive: true,
+      },
+    );
+
+    const anchorPosition = selectedState.layoutByProject[projectId]?.[thirdModuleId];
+    if (!anchorPosition) {
+      throw new Error('Expected the lead selection to have a layout position.');
+    }
+
+    const nextState = uiReducer(selectedState, {
+      type: 'arrangeSelectedModules',
+      projectId,
+      mode: 'stage-row',
+    });
+
+    expect(nextState.layoutByProject[projectId]?.[thirdModuleId]).toEqual(anchorPosition);
+    expect(nextState.layoutByProject[projectId]?.[firstModuleId]?.y).toBe(anchorPosition.y);
+    expect(nextState.layoutByProject[projectId]?.[secondModuleId]?.y).toBe(anchorPosition.y);
+    expect(nextState.layoutByProject[projectId]?.[firstModuleId]?.x).toBe(anchorPosition.x - 488);
+    expect(nextState.layoutByProject[projectId]?.[secondModuleId]?.x).toBe(anchorPosition.x - 244);
+  });
+
+  it('stacks the selected modules into a stage column anchored on the lead selection', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const [firstModuleId, secondModuleId, thirdModuleId] =
+      initialState.projectStates[projectId].modules.map((moduleInstance) => moduleInstance.id);
+
+    if (!firstModuleId || !secondModuleId || !thirdModuleId) {
+      throw new Error('Expected at least three modules in the sequential demo.');
+    }
+
+    const selectedState = uiReducer(
+      uiReducer(
+        uiReducer(initialState, {
+          type: 'selectModule',
+          projectId,
+          moduleId: firstModuleId,
+        }),
+        {
+          type: 'selectModule',
+          projectId,
+          moduleId: secondModuleId,
+          additive: true,
+        },
+      ),
+      {
+        type: 'selectModule',
+        projectId,
+        moduleId: thirdModuleId,
+        additive: true,
+      },
+    );
+
+    const anchorPosition = selectedState.layoutByProject[projectId]?.[thirdModuleId];
+    if (!anchorPosition) {
+      throw new Error('Expected the lead selection to have a layout position.');
+    }
+
+    const nextState = uiReducer(selectedState, {
+      type: 'arrangeSelectedModules',
+      projectId,
+      mode: 'stage-column',
+    });
+
+    expect(nextState.layoutByProject[projectId]?.[thirdModuleId]).toEqual(anchorPosition);
+    expect(nextState.layoutByProject[projectId]?.[firstModuleId]?.x).toBe(anchorPosition.x);
+    expect(nextState.layoutByProject[projectId]?.[secondModuleId]?.x).toBe(anchorPosition.x);
+    expect(nextState.layoutByProject[projectId]?.[firstModuleId]?.y).toBe(anchorPosition.y - 296);
+    expect(nextState.layoutByProject[projectId]?.[secondModuleId]?.y).toBe(anchorPosition.y - 148);
+  });
+
   it('deletes the selected cluster and cleans related workspace state', () => {
     const initialState = createInitialUiState(demoProjects);
     const projectId = 'sequential';

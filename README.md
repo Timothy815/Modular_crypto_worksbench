@@ -146,6 +146,11 @@ The current ranked near-future order is:
 3. refactor the largest UI surfaces, especially the inspector
 4. then take the first bounded `MULTI-WINDOW-WORKSPACE-V1` slice
 
+The current builder-power follow-on now also includes:
+- `Arrange Selected Stage Row`
+- `Stack Selected Stage Column`
+- selection-scoped stage assembly tools for repeated rounds, banks, and visible multi-stage fragments
+
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
   - `ModExp` (modular exponentiation via repeated squaring)

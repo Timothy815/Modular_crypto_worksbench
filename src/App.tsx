@@ -1354,6 +1354,18 @@ function App() {
                   handleDuplicateSelectedCluster();
                 } else if (value === 'delete-selected-cluster') {
                   handleDeleteSelectedCluster();
+                } else if (value === 'arrange-selected-stage-row') {
+                  dispatch({
+                    type: 'arrangeSelectedModules',
+                    projectId: activeProjectDefinition.id,
+                    mode: 'stage-row',
+                  });
+                } else if (value === 'stack-selected-stage-column') {
+                  dispatch({
+                    type: 'arrangeSelectedModules',
+                    projectId: activeProjectDefinition.id,
+                    mode: 'stage-column',
+                  });
                 } else if (value === 'undo-workspace-history') {
                   handleUndoWorkspaceHistory();
                 } else if (value === 'redo-workspace-history') {
@@ -1378,6 +1390,8 @@ function App() {
               </option>
               <option value="duplicate-selected-cluster">Duplicate Selected Cluster</option>
               <option value="delete-selected-cluster">Delete Selected Cluster</option>
+              <option value="arrange-selected-stage-row">Arrange Selected Stage Row</option>
+              <option value="stack-selected-stage-column">Stack Selected Stage Column</option>
               <option value="copy-selected-cluster">Copy Selected Cluster</option>
               <option value="paste-selected-cluster">Paste Selected Cluster</option>
               <option value="save-current-workspace">Save Current Workspace</option>
