@@ -1,6 +1,6 @@
 # MCW — Cryptographic Vocabulary Roadmap
 
-Status: Active strategic roadmap after `v1.43.0`.
+Status: Active strategic roadmap after `v1.44.0`.
 
 This document reframes MCW as a cryptographic systems IDE:
 - not a code generator
@@ -396,7 +396,7 @@ Framed in `v1.43.0`:
 Still open:
 - gcd / related arithmetic helpers
 - finite-field and group-operation families later
-- bounded protocol-handshake / transcript teaching that composes the now-shipped symmetric and asymmetric surfaces
+- certificate / trust-chain teaching after standalone signatures and first handshake composition are individually clear
 
 Teaching additions:
 - public-key intuition labs only after the operator family is stable
@@ -445,31 +445,32 @@ To protect the product identity, avoid:
 
 ## Current Conclusion
 
-The roadmap is now validated through shipped foundations across all five phases, through a completed modern symmetric-composition arc, and through a completed asymmetric-foundations arc:
+The roadmap is now validated through shipped foundations across all five phases, through a completed modern symmetric-composition arc, through a completed asymmetric-foundations arc, and through a first systems-composition checkpoint:
 - Phase 1: `CRYPTO-OPERATORS-V1.md` and `CONTROL-PRIMITIVES-V1.md` (shipped in `v1.14.0` / `v1.15.0`)
 - Phase 2: `STREAM-CIPHER-V1.md`, `STREAM-CIPHER-V2.md`, `STREAM-CIPHER-V3.md`, and `ADVANCED-ROTOR-REALISM-V1.md` shipped slices (`v1.18.0` / `v1.20.0` / `v1.21.0` / `v1.19.0`)
 - Phase 3: `BLOCK-FRAMING-V1.md` (shipped in `v1.16.0`) and `ARITHMETIC-EXPANSION-V1.md` (shipped in `v1.25.0`)
 - Phase 4: `PROTOCOL-MATERIAL-V1.md` and `KEY-SCHEDULE-V2.md` first slices (shipped in `v1.17.0` / `v1.23.0`)
 - Phase 5: `NUMBER-THEORETIC-V1.md` first slice (`v1.26.0`), `DIFFIE-HELLMAN-V1.md` (`v1.37.0`), and `DIGITAL-SIGNATURE-FOUNDATIONS-V1.md` (`v1.43.0`) now cover asymmetric confidentiality, agreement, and authentication
 - Modern symmetric composition: block chaining, byte/word structure, integrity/authentication, and AEAD-style composition (`v1.39.0` / `v1.40.0` / `v1.41.0` / `v1.42.0`)
+- Systems composition: `PROTOCOL-HANDSHAKES-V1.md` (`v1.44.0`) shows one compact handshake-to-message transcript built from shipped parts
 
-The next strategic direction after `v1.43.0` should be:
+The next strategic direction after `v1.44.0` should be:
 
 > keep expanding MCW into a fully expressive cryptographic machine language
 
-The clearest next move is no longer another standalone primitive or auth property.
-It is the next missing systems-level concept that the product cannot yet teach honestly:
+The clearest next move is no longer another missing concept family.
+It is a product-level sanity pass that protects the usability and coherence of what has already been built:
 
-- visible protocol handshakes / transcript composition
+- a `v2.0` framing / cohesion checkpoint
 
 From there, later follow-ons can stay bounded:
 - certificate / trust-chain teaching only after standalone signatures and first handshake composition are individually clear
-- a `v2.0` sanity/framing pass only after the next systems-level direction has been proven coherent
+- later trust/auth infrastructure only if classroom use proves the need
 - stronger symmetric/auth refinements only if classroom use proves the need
 
-The next proposed bounded contract for that step is:
+The immediate next bounded contract should therefore be organizational rather than cryptographic:
 
-- `PROTOCOL-HANDSHAKES-V1.md`
+- `MCW-V2-SANITY-PASS.md`
 
 The discipline should remain the same:
 - block/framing, protocol-material, stream vocabulary, rotor-realism, modern symmetric composition, and first asymmetric foundations are now shipped

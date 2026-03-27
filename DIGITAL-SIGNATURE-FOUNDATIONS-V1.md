@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed after `v1.42.0`.
+Framed for `v1.43.0`.
 
 ## Purpose
 

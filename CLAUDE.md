@@ -152,7 +152,7 @@ src/utils/     — Shared helpers
 
 ## Current Resume Point
 
-- Resume from current `main` at `v1.43.0`
+- Resume from current `main` at `v1.44.0`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement
@@ -337,6 +337,10 @@ src/utils/     — Shared helpers
   - visible `Visible Signature Verification` demo with private signing, public verification, and explicit pass/fail comparison
   - `Signing Is Not Encrypting` tutorial placed after `Encrypting Is Not Enough`
   - `Repair the Signature` challenge for restoring the public verification exponent
+- `v1.44.0` is now the protocol-handshakes milestone:
+  - visible `Visible Secure Handshake` demo with compact public exchange, signature verification, shared-key derivation, and one later protected message
+  - `From Handshake To Protected Message` tutorial placed after `Signing Is Not Encrypting`
+  - `Repair the Handshake` challenge for restoring the derived-key routing into the protection step
 
 What is shipped on `main`:
 - all V1 engine, UI, and workflow milestones
@@ -438,7 +442,7 @@ Key contracts to check before implementation:
 - `INTEGRITY-AUTHENTICATION-V1.md` for the framed bounded teaching slice after hashing, chaining, and byte/word structure
 - `AEAD-FOUNDATIONS-V1.md` for the framed bounded composition slice after standalone integrity/authentication
 - `DIGITAL-SIGNATURE-FOUNDATIONS-V1.md` for the framed bounded asymmetric-authentication slice after AEAD foundations
-- `PROTOCOL-HANDSHAKES-V1.md` for the next proposed bounded systems-level slice after the completed asymmetric-foundations phase
+- `PROTOCOL-HANDSHAKES-V1.md` for the framed bounded systems-level slice after the completed asymmetric-foundations phase
 - `BYPASS-V1.md` for the shipped bounded instance-level bypass line
 - `INVERSE-PERMUTATION-AUTHORING-V1.md` for the shipped bounded inverse-permutation authoring slice
 - `BRIDGE-ERGONOMICS-V1.md` for the shipped bounded bridge/usability slice
@@ -451,7 +455,7 @@ Key contracts to check before implementation:
 Near-term follow-ups:
 - treat the next phase as expressive machine-language growth, not just the next isolated feature
 - continue from shipped primitive and auth foundations toward the next bounded systems-level language family
-- treat a `v2.0` sanity/framing pass as a later checkpoint after the next systems-level direction is clearer, not as the immediate next move after `v1.43.0`
+- treat a `v2.0` sanity/framing pass as the next product-level checkpoint after the first systems-composition milestone, not as a replacement for it
 - keep future rotor follow-ons bounded:
   - reversible rotation direction
   - flipped insertion
