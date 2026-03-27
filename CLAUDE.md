@@ -22,6 +22,7 @@ Read BYTE-ORIENTED-PRIMITIVES-V1.md before starting work on byte/word structure 
 Read INTEGRITY-AUTHENTICATION-V1.md before starting work on visible tamper detection, MAC-style teaching, or authentication follow-ons.
 Read AEAD-FOUNDATIONS-V1.md before starting work on authenticated-encryption composition, associated-data teaching, or combined confidentiality+integrity follow-ons.
 Read DIGITAL-SIGNATURE-FOUNDATIONS-V1.md before starting work on visible signing, asymmetric authentication, or signature/verification follow-ons.
+Read PROTOCOL-HANDSHAKES-V1.md before starting work on visible transcript composition, handshake teaching, or post-signature systems-level follow-ons.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.
 Read LEARNING-SEQUENCE-V1.md before restructuring the teaching library, adding staged progression, or changing how demos/tutorials/challenges are ordered.
@@ -437,6 +438,7 @@ Key contracts to check before implementation:
 - `INTEGRITY-AUTHENTICATION-V1.md` for the framed bounded teaching slice after hashing, chaining, and byte/word structure
 - `AEAD-FOUNDATIONS-V1.md` for the framed bounded composition slice after standalone integrity/authentication
 - `DIGITAL-SIGNATURE-FOUNDATIONS-V1.md` for the framed bounded asymmetric-authentication slice after AEAD foundations
+- `PROTOCOL-HANDSHAKES-V1.md` for the next proposed bounded systems-level slice after the completed asymmetric-foundations phase
 - `BYPASS-V1.md` for the shipped bounded instance-level bypass line
 - `INVERSE-PERMUTATION-AUTHORING-V1.md` for the shipped bounded inverse-permutation authoring slice
 - `BRIDGE-ERGONOMICS-V1.md` for the shipped bounded bridge/usability slice

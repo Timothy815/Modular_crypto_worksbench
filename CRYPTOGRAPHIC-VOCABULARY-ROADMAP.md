@@ -467,6 +467,10 @@ From there, later follow-ons can stay bounded:
 - a `v2.0` sanity/framing pass only after the next systems-level direction has been proven coherent
 - stronger symmetric/auth refinements only if classroom use proves the need
 
+The next proposed bounded contract for that step is:
+
+- `PROTOCOL-HANDSHAKES-V1.md`
+
 The discipline should remain the same:
 - block/framing, protocol-material, stream vocabulary, rotor-realism, modern symmetric composition, and first asymmetric foundations are now shipped
 - keep deeper stream-combiner follow-ons bounded rather than turning the stream line into preset sprawl

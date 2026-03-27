@@ -39,6 +39,9 @@ const diffieHellmanProject = demoProjects.find((project) => project.id === 'diff
 const visibleSignatureVerificationProject = demoProjects.find(
   (project) => project.id === 'visible-signature-verification',
 );
+const visibleSecureHandshakeProject = demoProjects.find(
+  (project) => project.id === 'visible-secure-handshake',
+);
 const keyScheduleWorkshopProject = demoProjects.find((project) => project.id === 'key-schedule-workshop');
 const recursiveKeyScheduleProject = demoProjects.find((project) => project.id === 'recursive-key-schedule');
 const visibleBlockChainingProject = demoProjects.find((project) => project.id === 'visible-block-chaining');
@@ -156,6 +159,9 @@ if (!diffieHellmanProject) {
 if (!visibleSignatureVerificationProject) {
   throw new Error('Expected visible-signature-verification demo project to seed starter challenges.');
 }
+if (!visibleSecureHandshakeProject) {
+  throw new Error('Expected visible-secure-handshake demo project to seed starter challenges.');
+}
 if (!keyScheduleWorkshopProject) {
   throw new Error('Expected key-schedule-workshop demo project to seed starter challenges.');
 }
@@ -248,6 +254,8 @@ const visibleSignatureVerificationTarget = cloneProject(visibleSignatureVerifica
 const brokenVisibleSignatureVerificationStart = cloneProject(
   visibleSignatureVerificationProject.project,
 );
+const visibleSecureHandshakeTarget = cloneProject(visibleSecureHandshakeProject.project);
+const brokenVisibleSecureHandshakeStart = cloneProject(visibleSecureHandshakeProject.project);
 const keyScheduleWorkshopTarget = cloneProject(keyScheduleWorkshopProject.project);
 const brokenKeyScheduleWorkshopStart = cloneProject(keyScheduleWorkshopProject.project);
 const recursiveKeyScheduleTarget = cloneProject(recursiveKeyScheduleProject.project);
@@ -380,6 +388,22 @@ if (!brokenSignatureVerifyExp) {
   throw new Error('Expected visible-signature-verification demo project to contain public-exp.');
 }
 brokenSignatureVerifyExp.params.value = '02';
+
+const brokenVisibleSecureHandshakeConnections = brokenVisibleSecureHandshakeStart.connections;
+const brokenHandshakeKeySourceIndex = brokenVisibleSecureHandshakeConnections.findIndex(
+  (connection) =>
+    connection.from.moduleId === 'sender-session' &&
+    connection.from.port === 'out' &&
+    connection.to.moduleId === 'encrypt' &&
+    connection.to.port === 'b',
+);
+if (brokenHandshakeKeySourceIndex === -1) {
+  throw new Error('Expected visible-secure-handshake demo project to contain the derived-key link into encrypt.');
+}
+brokenVisibleSecureHandshakeConnections[brokenHandshakeKeySourceIndex] = {
+  from: { moduleId: 'sender-public', port: 'out' },
+  to: { moduleId: 'encrypt', port: 'b' },
+};
 
 const brokenRotate = brokenKeyScheduleWorkshopStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'rotate',
@@ -1375,6 +1399,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     },
     hints: [
       'The correct exponent is one larger than 02.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-handshake',
+    title: 'Repair the Handshake',
+    projectId: 'visible-secure-handshake',
+    group: 'Number Theory',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 255,
+    recommendedAfter: ['visible-signature-verification'],
+    difficulty: 'intermediate',
+    prompt:
+      'This handshake reaches the protection step, but the later message no longer depends on the derived shared key. Restore the derived-key link so the final verification bit matches the reference machine again.',
+    startingProject: brokenVisibleSecureHandshakeStart,
+    startingLayout: cloneProject(visibleSecureHandshakeProject.layout),
+    targetProject: visibleSecureHandshakeTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The public exchange and signature check are already correct.',
+      'Only the key input into the encrypt step is wrong.',
+      'Reconnect encrypt to the derived shared-secret branch, not to a public value.',
     ],
   },
   {
