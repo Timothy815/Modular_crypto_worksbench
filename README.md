@@ -140,6 +140,12 @@ The current near-future workspace-layout ergonomics item after that is:
 - likely `Inspector` and `Palette` first
 - treated as a synchronization-heavy product line, not a casual pane tweak
 
+The current ranked near-future order is:
+1. continue the `v2.1` builder-power line
+2. expand Python export carefully
+3. refactor the largest UI surfaces, especially the inspector
+4. then take the first bounded `MULTI-WINDOW-WORKSPACE-V1` slice
+
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
   - `ModExp` (modular exponentiation via repeated squaring)

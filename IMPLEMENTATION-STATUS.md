@@ -44,6 +44,7 @@ Current development now carries:
   - `ROTOR-CONTROL-BANK-V1.md`
   - `PYTHON-EXPORT-V1.md`
   - `PYTHON-EXPORT-FOUNDATIONS-V1.md`
+  - `V2.1-NEXT-DOCKET.md`
   - `MULTI-WINDOW-WORKSPACE-V1.md`
 
 Current `main` now also includes:
@@ -52,6 +53,12 @@ Current `main` now also includes:
   - stateless primitive-only compatibility gating
   - one standalone `.py` artifact with embedded helper runtime and topological `run()`
   - parity coverage against `executeProject()` for supported workspaces
+
+Current near-future sequencing is now explicit:
+- continue the `v2.1` builder-power line first
+- expand Python export carefully second
+- refactor the largest UI surfaces third
+- keep multi-window workspace support as a deliberate next-tier priority after those lines
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
