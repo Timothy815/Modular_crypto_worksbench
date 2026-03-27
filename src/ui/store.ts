@@ -92,6 +92,7 @@ export type UiAction =
     }
   | { type: 'removeWorkspace'; workspaceId: string; fallbackProjectId: string }
   | { type: 'selectModule'; projectId: string; moduleId: string; additive?: boolean }
+  | { type: 'selectModules'; projectId: string; moduleIds: string[]; additive?: boolean }
   | { type: 'moveModule'; projectId: string; moduleId: string; x: number; y: number }
   | {
       type: 'moveModules';
@@ -111,6 +112,7 @@ export type UiAction =
       nextModuleId: string;
     }
   | { type: 'duplicateSelectedCluster'; projectId: string }
+  | { type: 'deleteSelectedCluster'; projectId: string }
   | { type: 'removeModule'; projectId: string; moduleId: string }
   | {
       type: 'addConnection';
@@ -748,6 +750,22 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
             action.moduleId,
             action.additive ?? false,
           );
+    case 'selectModules':
+      return state.compositeEditor
+        ? {
+            ...state,
+            compositeEditor: applyCompositeEditorMultiSelection(
+              state.compositeEditor,
+              action.moduleIds,
+              action.additive ?? false,
+            ),
+          }
+        : applyModuleMultiSelection(
+            state,
+            action.projectId,
+            action.moduleIds,
+            action.additive ?? false,
+          );
     case 'moveModule': {
       if (state.compositeEditor) {
         return {
@@ -1105,6 +1123,81 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           ...state.isTickPlaybackActiveByProject,
           [action.projectId]: false,
         },
+      };
+    }
+    case 'deleteSelectedCluster': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentProject = state.projectStates[action.projectId];
+      const currentLayout = state.layoutByProject[action.projectId];
+      const selectedModuleIds = state.selectedModuleIdsByProject[action.projectId] ?? [];
+      if (!currentProject || !currentLayout || selectedModuleIds.length === 0) {
+        return state;
+      }
+
+      const selectedSet = new Set(selectedModuleIds);
+      const nextProject: Project = {
+        modules: currentProject.modules
+          .filter((moduleInstance) => !selectedSet.has(moduleInstance.id))
+          .map((moduleInstance) => ({
+            ...moduleInstance,
+            params: { ...moduleInstance.params },
+          })),
+        connections: currentProject.connections
+          .filter(
+            (connection) =>
+              !selectedSet.has(connection.from.moduleId) && !selectedSet.has(connection.to.moduleId),
+          )
+          .map((connection) => ({
+            from: { ...connection.from },
+            to: { ...connection.to },
+          })),
+      };
+      const nextLayout = Object.fromEntries(
+        Object.entries(currentLayout).filter(([moduleId]) => !selectedSet.has(moduleId)),
+      );
+      const nextSelectedModuleId = nextProject.modules[0]?.id ?? null;
+      const nextDrafts = Object.fromEntries(
+        Object.entries(state.paramDrafts).filter(([key]) => {
+          return !selectedModuleIds.some((moduleId) => key.startsWith(`${action.projectId}:${moduleId}:`));
+        }),
+      );
+
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: nextProject,
+        },
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: nextLayout,
+        },
+        selectedModuleIdByProject: {
+          ...state.selectedModuleIdByProject,
+          [action.projectId]: nextSelectedModuleId,
+        },
+        selectedModuleIdsByProject: {
+          ...state.selectedModuleIdsByProject,
+          [action.projectId]: nextSelectedModuleId ? [nextSelectedModuleId] : [],
+        },
+        probedModuleIdsByProject: {
+          ...state.probedModuleIdsByProject,
+          [action.projectId]: (state.probedModuleIdsByProject[action.projectId] ?? []).filter(
+            (moduleId) => !selectedSet.has(moduleId),
+          ),
+        },
+        currentTickByProject: {
+          ...state.currentTickByProject,
+          [action.projectId]: 0,
+        },
+        isTickPlaybackActiveByProject: {
+          ...state.isTickPlaybackActiveByProject,
+          [action.projectId]: false,
+        },
+        paramDrafts: nextDrafts,
       };
     }
     case 'removeModule': {
@@ -1878,6 +1971,47 @@ function applyModuleSelection(
   };
 }
 
+function applyModuleMultiSelection(
+  state: UiState,
+  projectId: string,
+  moduleIds: string[],
+  additive: boolean,
+): UiState {
+  const normalizedModuleIds = Array.from(new Set(moduleIds));
+
+  if (!additive) {
+    return {
+      ...state,
+      selectedModuleIdByProject: {
+        ...state.selectedModuleIdByProject,
+        [projectId]: normalizedModuleIds[0] ?? null,
+      },
+      selectedModuleIdsByProject: {
+        ...state.selectedModuleIdsByProject,
+        [projectId]: normalizedModuleIds,
+      },
+    };
+  }
+
+  const currentSelection = state.selectedModuleIdsByProject[projectId] ?? [];
+  const nextSelection = Array.from(new Set([...currentSelection, ...normalizedModuleIds]));
+
+  return {
+    ...state,
+    selectedModuleIdByProject: {
+      ...state.selectedModuleIdByProject,
+      [projectId]:
+        normalizedModuleIds[0] ??
+        state.selectedModuleIdByProject[projectId] ??
+        null,
+    },
+    selectedModuleIdsByProject: {
+      ...state.selectedModuleIdsByProject,
+      [projectId]: nextSelection,
+    },
+  };
+}
+
 function cloneLayout(
   layout: Record<string, CompositeLayoutPosition>,
 ): Record<string, CompositeLayoutPosition> {
@@ -2045,6 +2179,32 @@ function applyCompositeEditorSelection(
       nextSelectedModuleIds[nextSelectedModuleIds.length - 1] ?? editor.selectedModuleId,
     selectedModuleIds: nextSelectedModuleIds,
     saveError: null,
+  };
+}
+
+function applyCompositeEditorMultiSelection(
+  editor: CompositeEditorState,
+  moduleIds: string[],
+  additive: boolean,
+): CompositeEditorState {
+  const normalizedModuleIds = Array.from(new Set(moduleIds));
+
+  if (!additive) {
+    return {
+      ...editor,
+      selectedModuleId: normalizedModuleIds[0] ?? null,
+      selectedModuleIds: normalizedModuleIds,
+    };
+  }
+
+  const nextSelectedModuleIds = Array.from(
+    new Set([...editor.selectedModuleIds, ...normalizedModuleIds]),
+  );
+
+  return {
+    ...editor,
+    selectedModuleId: normalizedModuleIds[0] ?? editor.selectedModuleId,
+    selectedModuleIds: nextSelectedModuleIds,
   };
 }
 

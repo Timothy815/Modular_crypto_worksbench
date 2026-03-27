@@ -1388,6 +1388,7 @@ body.dock-resizing {
   position: relative;
   width: var(--canvas-width);
   min-height: var(--canvas-height);
+  user-select: none;
 }
 
 .graph-connections {
@@ -1443,6 +1444,15 @@ body.dock-resizing {
   width: 132px;
   text-align: left;
   overflow: visible;
+}
+
+.graph-selection-box {
+  position: absolute;
+  border: 1.5px solid color-mix(in srgb, var(--role-bridge-strong) 78%, white);
+  background: color-mix(in srgb, var(--role-bridge-bg) 28%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--role-bridge-strong) 24%, transparent);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .canvas-annotation {

@@ -36,6 +36,7 @@ Read V2.0-RELEASE-CONTRACT.md before reframing the project’s major-version bou
 Read V2.0-RELEASE-NOTES.md for the official meaning of `v2.0.0`.
 Read V2.1-AUTHORING-POWER-PLAN.md before proposing the first post-`v2.0.0` builder-power line.
 Read REPEATED-STRUCTURE-AUTHORING-V1.md before changing same-workspace cluster duplication, repeated-structure authoring, or first-wave `v2.1` builder acceleration.
+Read SELECTED-CLUSTER-OPERATIONS-V1.md before changing drag-box selection, selected-cluster deletion, or the second bounded `v2.1` authoring-power slice.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.
 Read LEARNING-SEQUENCE-V1.md before restructuring the teaching library, adding staged progression, or changing how demos/tutorials/challenges are ordered.
@@ -167,6 +168,7 @@ src/utils/     — Shared helpers
 
 - Resume from current `main` at `v2.0.0`, with the next active line being `v2.1` authoring power
 - The first bounded post-`v2.0` contract is `REPEATED-STRUCTURE-AUTHORING-V1.md`
+- The next bounded follow-on after that is `SELECTED-CLUSTER-OPERATIONS-V1.md`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement

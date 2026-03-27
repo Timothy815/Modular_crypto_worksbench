@@ -209,6 +209,105 @@ describe('uiReducer', () => {
     expect(nextState.isTickPlaybackActiveByProject[projectId]).toBe(false);
   });
 
+  it('selects multiple modules directly while preserving additive behavior', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const [firstModuleId, secondModuleId, thirdModuleId] =
+      initialState.projectStates[projectId].modules.map((moduleInstance) => moduleInstance.id);
+
+    if (!firstModuleId || !secondModuleId || !thirdModuleId) {
+      throw new Error('Expected at least three modules in the sequential demo.');
+    }
+
+    const selectedState = uiReducer(initialState, {
+      type: 'selectModules',
+      projectId,
+      moduleIds: [firstModuleId, secondModuleId],
+    });
+    const additiveState = uiReducer(selectedState, {
+      type: 'selectModules',
+      projectId,
+      moduleIds: [thirdModuleId],
+      additive: true,
+    });
+
+    expect(selectedState.selectedModuleIdsByProject[projectId]).toEqual([
+      firstModuleId,
+      secondModuleId,
+    ]);
+    expect(additiveState.selectedModuleIdsByProject[projectId]).toEqual([
+      firstModuleId,
+      secondModuleId,
+      thirdModuleId,
+    ]);
+    expect(additiveState.selectedModuleIdByProject[projectId]).toBe(thirdModuleId);
+  });
+
+  it('deletes the selected cluster and cleans related workspace state', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const project = initialState.projectStates[projectId];
+    const firstModuleId = project.modules[0]?.id;
+    const secondModuleId = project.modules[1]?.id;
+
+    if (!firstModuleId || !secondModuleId) {
+      throw new Error('Expected at least two modules in the sequential demo.');
+    }
+
+    const preparedState = uiReducer(
+      uiReducer(
+        uiReducer(
+          uiReducer(initialState, {
+            type: 'selectModules',
+            projectId,
+            moduleIds: [firstModuleId, secondModuleId],
+          }),
+          {
+            type: 'toggleProbe',
+            projectId,
+            moduleId: firstModuleId,
+          },
+        ),
+        {
+          type: 'setParamDraft',
+          projectId,
+          moduleId: firstModuleId,
+          key: 'seed',
+          rawValue: '1010',
+        },
+      ),
+      {
+        type: 'setTickPlaybackActive',
+        projectId,
+        active: true,
+      },
+    );
+
+    const nextState = uiReducer(preparedState, {
+      type: 'deleteSelectedCluster',
+      projectId,
+    });
+
+    expect(
+      nextState.projectStates[projectId].modules.some(
+        (moduleInstance) => moduleInstance.id === firstModuleId || moduleInstance.id === secondModuleId,
+      ),
+    ).toBe(false);
+    expect(
+      nextState.projectStates[projectId].connections.some(
+        (connection) =>
+          connection.from.moduleId === firstModuleId ||
+          connection.to.moduleId === firstModuleId ||
+          connection.from.moduleId === secondModuleId ||
+          connection.to.moduleId === secondModuleId,
+      ),
+    ).toBe(false);
+    expect(nextState.probedModuleIdsByProject[projectId]).not.toContain(firstModuleId);
+    expect(nextState.paramDrafts[`${projectId}:${firstModuleId}:seed`]).toBeUndefined();
+    expect(nextState.isTickPlaybackActiveByProject[projectId]).toBe(false);
+    expect(nextState.currentTickByProject[projectId]).toBe(0);
+  });
+
   it('does not remove built-in architecture entries from the library', () => {
     const initialState = createInitialUiState(demoProjects);
     const builtInEntry = initialState.compositeLibrary.find((entry) => entry.source === 'built-in');

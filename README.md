@@ -20,6 +20,11 @@ The first bounded `v2.1` target is:
 - preserve internal topology and params
 - keep the duplicate fully local, explicit, and immediately editable
 
+The next bounded follow-on after that is:
+- cluster operations
+- drag-box selection on empty canvas
+- explicit delete-selected-cluster workflow
+
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
   - `ModExp` (modular exponentiation via repeated squaring)

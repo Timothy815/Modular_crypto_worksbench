@@ -27,6 +27,11 @@ import {
 } from '../learning-sequence';
 import { getModuleCategory } from '../module-categories';
 import {
+  getModulesInSelectionBox,
+  normalizeSelectionBoxRect,
+  CANVAS_NODE_WIDTH,
+} from '../canvas-selection';
+import {
   deriveWorkspaceLandmarks,
   isLargeWorkspace,
   type WorkspaceLandmark,
@@ -34,7 +39,7 @@ import {
 import type { WorkbenchAnnotation } from '../workbench-document';
 import type { TutorialStep } from '../tutorials';
 
-const NODE_WIDTH = 132;
+const NODE_WIDTH = CANVAS_NODE_WIDTH;
 const PORT_GAP = 18;
 const PORT_START_Y = 34;
 
@@ -111,8 +116,10 @@ interface WorkbenchPanelProps {
   onUpdateAnnotationText: (annotationId: string, text: string) => void;
   onRemoveAnnotation: (annotationId: string) => void;
   onSelectModule: (moduleId: string, additive?: boolean) => void;
+  onSelectModules: (moduleIds: string[], additive?: boolean) => void;
   onRequestCreateComposite: () => void;
   onRequestDuplicateSelection: () => void;
+  onRequestDeleteSelection: () => void;
   onSwitchProject: (projectId: string) => void;
   onAddConnection: (
     fromModuleId: string,
@@ -177,8 +184,10 @@ export function WorkbenchPanel({
   onUpdateAnnotationText,
   onRemoveAnnotation,
   onSelectModule,
+  onSelectModules,
   onRequestCreateComposite,
   onRequestDuplicateSelection,
+  onRequestDeleteSelection,
   onSwitchProject,
   onAddConnection,
   onRemoveConnection,
@@ -208,6 +217,13 @@ export function WorkbenchPanel({
   const [pendingConnection, setPendingConnection] =
     useState<PendingConnection | null>(null);
   const [connectionFeedback, setConnectionFeedback] = useState<string | null>(null);
+  const [selectionBox, setSelectionBox] = useState<{
+    startX: number;
+    startY: number;
+    currentX: number;
+    currentY: number;
+    additive: boolean;
+  } | null>(null);
   const [hoveredCompositeHintModuleId, setHoveredCompositeHintModuleId] = useState<string | null>(
     null,
   );
@@ -265,7 +281,7 @@ export function WorkbenchPanel({
   );
 
   useEffect(() => {
-    if (!dragState && !annotationDragState) {
+    if (!dragState && !annotationDragState && !selectionBox) {
       return undefined;
     }
 
@@ -324,11 +340,32 @@ export function WorkbenchPanel({
         );
         onMoveAnnotation(annotationDragState.annotationId, nextX, nextY);
       }
+
+      if (selectionBox) {
+        setSelectionBox((prev) =>
+          prev
+            ? {
+                ...prev,
+                currentX: event.clientX - canvasRect.left + canvasSurface.scrollLeft,
+                currentY: event.clientY - canvasRect.top + canvasSurface.scrollTop,
+              }
+            : null,
+        );
+      }
     }
 
     function handlePointerUp() {
+      if (selectionBox) {
+        const selectedModuleIds = getModulesInSelectionBox({
+          moduleIds: activeProjectState.modules.map((moduleInstance) => moduleInstance.id),
+          layout,
+          box: normalizeSelectionBoxRect(selectionBox),
+        });
+        onSelectModules(selectedModuleIds, selectionBox.additive);
+      }
       setDragState(null);
       setAnnotationDragState(null);
+      setSelectionBox(null);
     }
 
     window.addEventListener('mousemove', handlePointerMove);
@@ -338,7 +375,17 @@ export function WorkbenchPanel({
       window.removeEventListener('mousemove', handlePointerMove);
       window.removeEventListener('mouseup', handlePointerUp);
     };
-  }, [annotationDragState, dragState, onMoveAnnotation, onMoveModule, onMoveModules]);
+  }, [
+    activeProjectState.modules,
+    annotationDragState,
+    dragState,
+    layout,
+    onMoveAnnotation,
+    onMoveModule,
+    onMoveModules,
+    onSelectModules,
+    selectionBox,
+  ]);
 
   useEffect(() => {
     if (!pendingConnection) {
@@ -685,6 +732,14 @@ export function WorkbenchPanel({
             <button
               type="button"
               className="mini-action-button"
+              onClick={onRequestDeleteSelection}
+              disabled={selectedModuleIds.length === 0}
+            >
+              Delete Cluster
+            </button>
+            <button
+              type="button"
+              className="mini-action-button"
               onClick={() => importInputRef.current?.click()}
             >
               Import JSON
@@ -773,8 +828,8 @@ export function WorkbenchPanel({
       {selectedModuleIds.length > 0 ? (
         <p className="selection-status">
           Selected modules: <strong>{selectedModuleIds.length}</strong>. Use
-          <strong> Shift-click</strong> or <strong> Cmd/Ctrl-click</strong> to
-          build a composite selection, then drag any selected module to move the group.
+          <strong> Shift-click</strong>, <strong> Cmd/Ctrl-click</strong>, or drag on empty canvas
+          to build a composite selection, then drag any selected module to move the group.
         </p>
       ) : null}
       {pendingConnection ? (
@@ -874,6 +929,26 @@ export function WorkbenchPanel({
               '--canvas-height': `${canvasHeight}px`,
             } as CSSProperties
           }
+          onMouseDown={(event) => {
+            if (isCompositeEditor || pendingConnection || event.target !== event.currentTarget) {
+              return;
+            }
+
+            const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
+            const canvasSurface = canvasSurfaceRef.current;
+            if (!canvasRect || !canvasSurface) {
+              return;
+            }
+
+            event.preventDefault();
+            setSelectionBox({
+              startX: event.clientX - canvasRect.left + canvasSurface.scrollLeft,
+              startY: event.clientY - canvasRect.top + canvasSurface.scrollTop,
+              currentX: event.clientX - canvasRect.left + canvasSurface.scrollLeft,
+              currentY: event.clientY - canvasRect.top + canvasSurface.scrollTop,
+              additive: event.shiftKey || event.metaKey || event.ctrlKey,
+            });
+          }}
         >
           <svg
             className="graph-connections"
@@ -1229,6 +1304,21 @@ export function WorkbenchPanel({
               </div>
             );
           })}
+
+          {selectionBox ? (() => {
+            const box = normalizeSelectionBoxRect(selectionBox);
+            return (
+              <div
+                className="graph-selection-box"
+                style={{
+                  left: `${box.left}px`,
+                  top: `${box.top}px`,
+                  width: `${Math.max(1, box.right - box.left)}px`,
+                  height: `${Math.max(1, box.bottom - box.top)}px`,
+                }}
+              />
+            );
+          })() : null}
 
           {tutorialStep?.focusModuleId && layout[tutorialStep.focusModuleId] ? (() => {
             const focusPos = layout[tutorialStep.focusModuleId];

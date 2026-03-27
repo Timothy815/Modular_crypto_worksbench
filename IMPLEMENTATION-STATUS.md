@@ -22,6 +22,7 @@ Current development now carries:
 - post-`v2.0.0` authoring-power planning:
   - `V2.1-AUTHORING-POWER-PLAN.md`
   - `REPEATED-STRUCTURE-AUTHORING-V1.md`
+  - `SELECTED-CLUSTER-OPERATIONS-V1.md`
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -126,6 +127,11 @@ The next strategic direction remains broader than any one subdomain:
 The next most important product-level task is:
 - ship the first bounded `v2.1` builder-power slice:
   - same-workspace repeated-structure authoring / cluster duplication
+
+The next bounded follow-on after that is:
+- cluster operations:
+  - drag-box selection on empty canvas
+  - explicit selected-cluster deletion
 
 Established and shipped:
 - implementation contract and AI coordination protocol

@@ -995,6 +995,23 @@ function App() {
     });
   }
 
+  function handleDeleteSelectedCluster() {
+    if (state.compositeEditor) {
+      return;
+    }
+
+    if (effectiveSelectedModuleIds.length === 0) {
+      window.alert('Select one or more modules before deleting.');
+      return;
+    }
+
+    dispatch({
+      type: 'deleteSelectedCluster',
+      projectId: activeProjectDefinition.id,
+    });
+    setImportError(null);
+  }
+
   function handleUnzipComposite(moduleId: string) {
     if (!selectedModule || selectedModule.id !== moduleId) {
       return;
@@ -1164,6 +1181,8 @@ function App() {
                   handlePasteSelectedCluster();
                 } else if (value === 'duplicate-selected-cluster') {
                   handleDuplicateSelectedCluster();
+                } else if (value === 'delete-selected-cluster') {
+                  handleDeleteSelectedCluster();
                 } else if (value === 'save-current-workspace') {
                   handleSaveCurrentWorkspace();
                 } else if (value === 'delete-current-workspace') {
@@ -1175,6 +1194,7 @@ function App() {
               <option value="new-blank-workspace">New Blank Workspace</option>
               <option value="duplicate-current-workspace">Duplicate Workspace</option>
               <option value="duplicate-selected-cluster">Duplicate Selected Cluster</option>
+              <option value="delete-selected-cluster">Delete Selected Cluster</option>
               <option value="copy-selected-cluster">Copy Selected Cluster</option>
               <option value="paste-selected-cluster">Paste Selected Cluster</option>
               <option value="save-current-workspace">Save Current Workspace</option>
@@ -1362,6 +1382,14 @@ function App() {
                 additive,
               })
             }
+            onSelectModules={(moduleIds, additive) =>
+              dispatch({
+                type: 'selectModules',
+                projectId: activeProjectDefinition.id,
+                moduleIds,
+                additive,
+              })
+            }
             onRequestCreateComposite={() => {
               setCompositeName('');
               setCompositeId('');
@@ -1370,6 +1398,7 @@ function App() {
               setIsCompositeDialogOpen(true);
             }}
             onRequestDuplicateSelection={handleDuplicateSelectedCluster}
+            onRequestDeleteSelection={handleDeleteSelectedCluster}
             onAddConnection={(fromModuleId, fromPort, toModuleId, toPort) =>
               dispatch({
                 type: 'addConnection',
