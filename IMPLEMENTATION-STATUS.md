@@ -87,6 +87,10 @@ Current `main` now also includes:
   - one explicit exported tick loop with parity against `executeTickedProject()`
   - per-tick sink output lines in stable `tick <n> | <module_id>: <value>` form
   - intended as the proving ground for readable temporal Python export before rotor or LFSR support
+- next careful stateful export follow-on:
+  - `PYTHON-EXPORT-STATEFUL-EXPANSION-V1.md`
+  - add `LFSR` as the first cryptographically meaningful temporal export primitive beyond `Clock` and `Counter`
+  - keep rotor-family export out of scope until after this bridge slice proves cleanly
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments

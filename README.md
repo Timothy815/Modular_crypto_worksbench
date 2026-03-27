@@ -161,6 +161,11 @@ The first bounded stateful export frontier is now shipped:
 - stable per-tick sink output lines in `tick <n> | <module_id>: <value>` form
 - deliberately kept separate from rotor, LFSR, and broader temporal runtime expansion
 
+The next careful stateful export follow-on is now explicitly recorded as:
+- `PYTHON-EXPORT-STATEFUL-EXPANSION-V1.md`
+- add `LFSR` as the first cryptographically meaningful temporal export primitive beyond `Clock` and `Counter`
+- keep rotor-family export out of scope until after this bridge slice proves cleanly
+
 The current near-future workspace-layout ergonomics item after that is:
 - bounded multi-window / multi-tab support for selected surfaces
 - likely `Inspector` and `Palette` first
