@@ -69,6 +69,14 @@ The current near-future primitive-expansion item after that is:
 - first slice scoped to a multi-way router (`1 -> N`) for visible case-switch / staged routing
 - not yet the next immediate implementation step
 
+The current near-future advanced-rotor items after that are:
+- explicit reverse traversal through rotor wiring for historically faithful rotor-machine signal paths
+- separate rotor-driven stepping as a later state/control architecture line
+
+The current near-future strategic export item after that is:
+- bounded Python export foundations for turning a workspace into standalone executable code
+- treated as a major future product line, not just a utility add-on
+
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
   - `ModExp` (modular exponentiation via repeated squaring)

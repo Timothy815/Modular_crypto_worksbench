@@ -32,6 +32,9 @@ Current development now carries:
   - `PRIMITIVE-MICRO-DEMOS-V1.md`
   - `PRIMITIVE-MICRO-DEMOS-V2.md`
   - `MULTIWAY-ROUTING-V1.md`
+  - `ROTOR-REVERSE-PATH-V1.md`
+  - `ROTOR-DRIVEN-STEPPING-V1.md`
+  - `PYTHON-EXPORT-V1.md`
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -184,6 +187,14 @@ The current near-future primitive-expansion item after that is:
 - explicit multi-way routing as a bounded future family
 - first slice scoped to a multi-way router (`1 -> N`) rather than a full multi-way selector pair
 - intended for visible case-switch / counter-driven staged routing without hidden control flow
+
+The current near-future advanced-rotor items after that are:
+- explicit reverse traversal through rotor wiring for historically faithful forward / reflect / reverse signal paths
+- separate rotor-driven stepping as a later state/control architecture line, closer to SIGABA-style control than simple rotor stepping
+
+The current near-future strategic export item after that is:
+- bounded Python export foundations for turning a workspace into standalone executable code
+- explicitly treated as a major future product line rather than a casual utility feature
 
 Established and shipped:
 - implementation contract and AI coordination protocol

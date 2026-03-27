@@ -46,6 +46,9 @@ Read PARAMETER-COMPARISON-ERGONOMICS-V1.md before changing selected-sibling para
 Read PRIMITIVE-MICRO-DEMOS-V1.md before changing primitive-local `Try Demo` actions, micro-demo registry behavior, or palette-local seeded examples.
 Read PRIMITIVE-MICRO-DEMOS-V2.md before extending primitive-local micro demos into timing, state, or framing examples.
 Read MULTIWAY-ROUTING-V1.md before proposing multi-way case-switch routing, indexed output selection, or multi-output control-flow primitives.
+Read ROTOR-REVERSE-PATH-V1.md before proposing reverse rotor traversal, inverse rotor signal paths, or historically faithful forward / reflect / reverse rotor behavior.
+Read ROTOR-DRIVEN-STEPPING-V1.md before proposing rotor-driven stepping, rotor-control submachines, or SIGABA-style stepping behavior.
+Read PYTHON-EXPORT-V1.md before proposing workspace-to-code export, standalone Python generation, or implementation-oriented codegen lines.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.
 Read LEARNING-SEQUENCE-V1.md before restructuring the teaching library, adding staged progression, or changing how demos/tutorials/challenges are ordered.
