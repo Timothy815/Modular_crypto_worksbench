@@ -243,11 +243,16 @@ export function WorkbenchPanel({
     anchorStartY: number;
     moduleIds: string[];
     initialPositions: Record<string, { x: number; y: number }>;
+    currentPositions: Record<string, { x: number; y: number }>;
   } | null>(null);
   const [annotationDragState, setAnnotationDragState] = useState<{
     annotationId: string;
     pointerOffsetX: number;
     pointerOffsetY: number;
+    initialX: number;
+    initialY: number;
+    currentX: number;
+    currentY: number;
   } | null>(null);
   const [pendingConnection, setPendingConnection] =
     useState<PendingConnection | null>(null);
@@ -301,9 +306,16 @@ export function WorkbenchPanel({
     () => getRecommendedAfterTitles(projects, activeProject),
     [activeProject, projects],
   );
+  const effectiveLayout = useMemo(
+    () => ({
+      ...layout,
+      ...(dragState?.currentPositions ?? {}),
+    }),
+    [dragState?.currentPositions, layout],
+  );
   const workspaceLandmarks = useMemo(
-    () => deriveWorkspaceLandmarks(activeProjectState, registry, layout),
-    [activeProjectState, layout, registry],
+    () => deriveWorkspaceLandmarks(activeProjectState, registry, effectiveLayout),
+    [activeProjectState, effectiveLayout, registry],
   );
   const incomingConnectionIndexByInputKey = useMemo(
     () =>
@@ -391,23 +403,37 @@ export function WorkbenchPanel({
         const nextX = Math.max(16, pointer.x - dragState.pointerOffsetX);
         const nextY = Math.max(16, pointer.y - dragState.pointerOffsetY);
         if (dragState.moduleIds.length <= 1) {
-          onMoveModule(dragState.moduleId, nextX, nextY);
+          setDragState((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  currentPositions: {
+                    [prev.moduleId]: { x: nextX, y: nextY },
+                  },
+                }
+              : null,
+          );
         } else {
           const deltaX = nextX - dragState.anchorStartX;
           const deltaY = nextY - dragState.anchorStartY;
-          onMoveModules(
-            Object.fromEntries(
-              dragState.moduleIds.map((moduleId) => {
-                const initialPosition = dragState.initialPositions[moduleId];
-                return [
-                  moduleId,
-                  {
-                    x: Math.max(16, initialPosition.x + deltaX),
-                    y: Math.max(16, initialPosition.y + deltaY),
-                  },
-                ];
-              }),
-            ),
+          setDragState((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  currentPositions: Object.fromEntries(
+                    prev.moduleIds.map((moduleId) => {
+                      const initialPosition = prev.initialPositions[moduleId];
+                      return [
+                        moduleId,
+                        {
+                          x: Math.max(16, initialPosition.x + deltaX),
+                          y: Math.max(16, initialPosition.y + deltaY),
+                        },
+                      ];
+                    }),
+                  ),
+                }
+              : null,
           );
         }
       }
@@ -424,7 +450,15 @@ export function WorkbenchPanel({
         });
         const nextX = Math.max(16, pointer.x - annotationDragState.pointerOffsetX);
         const nextY = Math.max(16, pointer.y - annotationDragState.pointerOffsetY);
-        onMoveAnnotation(annotationDragState.annotationId, nextX, nextY);
+        setAnnotationDragState((prev) =>
+          prev
+            ? {
+                ...prev,
+                currentX: nextX,
+                currentY: nextY,
+              }
+            : null,
+        );
       }
 
       if (selectionBox) {
@@ -450,10 +484,48 @@ export function WorkbenchPanel({
     }
 
     function handlePointerUp() {
+      if (dragState) {
+        const nextPositions = dragState.currentPositions;
+        if (dragState.moduleIds.length <= 1) {
+          const nextPosition = nextPositions[dragState.moduleId];
+          const initialPosition = dragState.initialPositions[dragState.moduleId];
+          if (
+            nextPosition &&
+            initialPosition &&
+            (nextPosition.x !== initialPosition.x || nextPosition.y !== initialPosition.y)
+          ) {
+            onMoveModule(dragState.moduleId, nextPosition.x, nextPosition.y);
+          }
+        } else if (
+          Object.entries(nextPositions).some(([moduleId, position]) => {
+            const initialPosition = dragState.initialPositions[moduleId];
+            return (
+              initialPosition &&
+              (position.x !== initialPosition.x || position.y !== initialPosition.y)
+            );
+          })
+        ) {
+          onMoveModules(nextPositions);
+        }
+      }
+
+      if (annotationDragState) {
+        if (
+          annotationDragState.currentX !== annotationDragState.initialX ||
+          annotationDragState.currentY !== annotationDragState.initialY
+        ) {
+          onMoveAnnotation(
+            annotationDragState.annotationId,
+            annotationDragState.currentX,
+            annotationDragState.currentY,
+          );
+        }
+      }
+
       if (selectionBox) {
         const selectedModuleIds = getModulesInSelectionBox({
           moduleIds: activeProjectState.modules.map((moduleInstance) => moduleInstance.id),
-          layout,
+          layout: effectiveLayout,
           box: normalizeSelectionBoxRect(selectionBox),
         });
         onSelectModules(selectedModuleIds, selectionBox.additive);
@@ -474,6 +546,7 @@ export function WorkbenchPanel({
     activeProjectState.modules,
     annotationDragState,
     dragState,
+    effectiveLayout,
     layout,
     onMoveAnnotation,
     onMoveModule,
@@ -731,7 +804,7 @@ export function WorkbenchPanel({
   }
 
   function jumpToModule(moduleId: string) {
-    const position = layout[moduleId];
+    const position = effectiveLayout[moduleId];
     const canvasSurface = canvasSurfaceRef.current;
     if (!position || !canvasSurface) {
       return;
@@ -760,7 +833,7 @@ export function WorkbenchPanel({
       return;
     }
 
-    const position = layout[requestedFocusModuleId];
+    const position = effectiveLayout[requestedFocusModuleId];
     const canvasSurface = canvasSurfaceRef.current;
     if (!position || !canvasSurface) {
       return;
@@ -783,7 +856,7 @@ export function WorkbenchPanel({
     });
     onSelectModule(requestedFocusModuleId, false);
     onWorkspaceFocusHandled?.();
-  }, [layout, onSelectModule, onWorkspaceFocusHandled, requestedFocusModuleId, workspaceZoom]);
+  }, [effectiveLayout, onSelectModule, onWorkspaceFocusHandled, requestedFocusModuleId, workspaceZoom]);
 
   function renderLandmarkGroup(title: string, landmarks: WorkspaceLandmark[]) {
     if (landmarks.length === 0) {
@@ -1235,8 +1308,8 @@ export function WorkbenchPanel({
             preserveAspectRatio="none"
           >
             {activeProjectState.connections.map((connection, connectionIndex) => {
-              const from = layout[connection.from.moduleId];
-              const to = layout[connection.to.moduleId];
+              const from = effectiveLayout[connection.from.moduleId];
+              const to = effectiveLayout[connection.to.moduleId];
               const sourceDef = registry[
                 activeProjectState.modules.find(
                   (moduleInstance) => moduleInstance.id === connection.from.moduleId,
@@ -1313,7 +1386,7 @@ export function WorkbenchPanel({
           </svg>
 
           {activeProjectState.modules.map((moduleInstance) => {
-            const position = layout[moduleInstance.id] ?? { x: 24, y: 24 };
+            const position = effectiveLayout[moduleInstance.id] ?? { x: 24, y: 24 };
             const def = registry[moduleInstance.defId];
             const category = def ? getModuleCategory(def) : getModuleCategory(moduleInstance.defId);
 
@@ -1375,6 +1448,12 @@ export function WorkbenchPanel({
                       anchorStartY: position.y,
                       moduleIds: draggedModuleIds,
                       initialPositions: Object.fromEntries(
+                        draggedModuleIds.map((draggedModuleId) => [
+                          draggedModuleId,
+                          layout[draggedModuleId] ?? { x: 24, y: 24 },
+                        ]),
+                      ),
+                      currentPositions: Object.fromEntries(
                         draggedModuleIds.map((draggedModuleId) => [
                           draggedModuleId,
                           layout[draggedModuleId] ?? { x: 24, y: 24 },
@@ -1618,8 +1697,8 @@ export function WorkbenchPanel({
             );
           })() : null}
 
-          {tutorialStep?.focusModuleId && layout[tutorialStep.focusModuleId] ? (() => {
-            const focusPos = layout[tutorialStep.focusModuleId];
+          {tutorialStep?.focusModuleId && effectiveLayout[tutorialStep.focusModuleId] ? (() => {
+            const focusPos = effectiveLayout[tutorialStep.focusModuleId];
             const CALLOUT_WIDTH = 240;
             const placeRight = focusPos.x + NODE_WIDTH + 18 + CALLOUT_WIDTH < canvasWidth;
             const placeBelow = focusPos.y < canvasHeight / 2;
@@ -1646,10 +1725,21 @@ export function WorkbenchPanel({
           })() : null}
 
           {annotations.map((annotation) => (
+            (() => {
+              const annotationX =
+                annotationDragState?.annotationId === annotation.id
+                  ? annotationDragState.currentX
+                  : annotation.x;
+              const annotationY =
+                annotationDragState?.annotationId === annotation.id
+                  ? annotationDragState.currentY
+                  : annotation.y;
+
+              return (
             <div
               key={annotation.id}
               className="canvas-annotation"
-              style={{ left: `${annotation.x}px`, top: `${annotation.y}px` }}
+              style={{ left: `${annotationX}px`, top: `${annotationY}px` }}
             >
               <div
                 className="canvas-annotation-handle"
@@ -1665,6 +1755,10 @@ export function WorkbenchPanel({
                     annotationId: annotation.id,
                     pointerOffsetX: pointer.x - annotation.x,
                     pointerOffsetY: pointer.y - annotation.y,
+                    initialX: annotation.x,
+                    initialY: annotation.y,
+                    currentX: annotation.x,
+                    currentY: annotation.y,
                   });
                 }}
               >
@@ -1687,6 +1781,8 @@ export function WorkbenchPanel({
                 }
               />
             </div>
+              );
+            })()
           ))}
         </div>
         </div>
