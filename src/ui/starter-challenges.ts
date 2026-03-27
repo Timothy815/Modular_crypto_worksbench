@@ -41,6 +41,9 @@ const recursiveKeyScheduleProject = demoProjects.find((project) => project.id ==
 const visibleBlockChainingProject = demoProjects.find((project) => project.id === 'visible-block-chaining');
 const visibleByteOrderProject = demoProjects.find((project) => project.id === 'visible-byte-order');
 const visibleTamperCheckProject = demoProjects.find((project) => project.id === 'visible-tamper-check');
+const visibleAuthenticatedEncryptionProject = demoProjects.find(
+  (project) => project.id === 'visible-authenticated-encryption',
+);
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
 const toySpongeHashProject = demoProjects.find((project) => project.id === 'toy-sponge-hash');
@@ -162,6 +165,9 @@ if (!visibleByteOrderProject) {
 if (!visibleTamperCheckProject) {
   throw new Error('Expected visible-tamper-check demo project to seed starter challenges.');
 }
+if (!visibleAuthenticatedEncryptionProject) {
+  throw new Error('Expected visible-authenticated-encryption demo project to seed starter challenges.');
+}
 
 const fixedBridgeTarget = cloneProject(bridgeProject.project);
 const brokenBridgeStart = cloneProject(bridgeProject.project);
@@ -242,6 +248,10 @@ const visibleByteOrderTarget = cloneProject(visibleByteOrderProject.project);
 const brokenVisibleByteOrderStart = cloneProject(visibleByteOrderProject.project);
 const visibleTamperCheckTarget = cloneProject(visibleTamperCheckProject.project);
 const brokenVisibleTamperCheckStart = cloneProject(visibleTamperCheckProject.project);
+const visibleAuthenticatedEncryptionTarget = cloneProject(visibleAuthenticatedEncryptionProject.project);
+const brokenVisibleAuthenticatedEncryptionStart = cloneProject(
+  visibleAuthenticatedEncryptionProject.project,
+);
 
 const brokenKeyModule = brokenBridgeStart.modules.find((moduleInstance) => moduleInstance.id === 'key');
 if (!brokenKeyModule) {
@@ -400,6 +410,21 @@ if (!brokenReceiverKey) {
   throw new Error('Expected visible-tamper-check demo project to contain receiver-key.');
 }
 brokenReceiverKey.params.value = '0F00';
+
+const brokenVisibleAuthenticatedEncryptionConnections =
+  brokenVisibleAuthenticatedEncryptionStart.connections;
+const verifyCipherSourceIndex = brokenVisibleAuthenticatedEncryptionConnections.findIndex(
+  (connection) => connection.to.moduleId === 'verify-mix' && connection.to.port === 'a',
+);
+if (verifyCipherSourceIndex < 0) {
+  throw new Error(
+    'Expected visible-authenticated-encryption demo project to authenticate ciphertext at verify-mix.',
+  );
+}
+brokenVisibleAuthenticatedEncryptionConnections[verifyCipherSourceIndex] = {
+  from: { moduleId: 'plain-join', port: 'out' },
+  to: { moduleId: 'verify-mix', port: 'a' },
+};
 
 const brokenBaudotSource = brokenBaudotStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'source',
@@ -1428,6 +1453,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'Both readable message paths are already correct.',
       'The sender tag path is already producing the reference tag.',
       'Focus on the receiver-side key feeding the second XOR before the receiver hash.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-protected-message',
+    title: 'Repair the Protected Message',
+    projectId: 'visible-authenticated-encryption',
+    group: 'Integrity',
+    stage: 'framing-and-protocol-context',
+    order: 165,
+    recommendedAfter: ['visible-tamper-check'],
+    difficulty: 'expert',
+    prompt:
+      'This authenticated-encryption teaching machine is protecting the message with the right ciphertext and decrypting it correctly, but the receiver is authenticating the wrong data. Restore the verification path so the tag covers the ciphertext again and the pass/fail bit matches the reference.',
+    startingProject: brokenVisibleAuthenticatedEncryptionStart,
+    startingLayout: cloneProject(visibleAuthenticatedEncryptionProject.layout),
+    targetProject: visibleAuthenticatedEncryptionTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The encryption and decryption branches are already correct.',
+      'Encrypt-then-MAC means the receiver should recompute the tag from ciphertext, not from recovered plaintext.',
+      'Follow the input into the receiver-side XOR that feeds the verification hash and reconnect it to the protected message branch.',
     ],
   },
 ];

@@ -11,7 +11,7 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.41.0`.
+The repository has shipped through `v1.42.0`.
 
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
@@ -79,6 +79,10 @@ Recent shipped follow-ons after `v1.27.0`:
   - visible `Visible Tamper Check` demo with readable sender/receiver message paths and explicit keyed tag recomputation
   - `Why Integrity Is Not Secrecy` tutorial placed after `Visible Byte Order`
   - `Repair the Tamper Check` challenge for restoring the receiver-side verification context
+- `v1.42.0` AEAD Foundations:
+  - visible `Visible Authenticated Encryption` demo with minimal encryption, explicit Encrypt-then-MAC tagging, receiver-side verification, and recovered plaintext
+  - `Encrypting Is Not Enough` tutorial placed after `Visible Tamper Check`
+  - `Repair the Protected Message` challenge for restoring authentication of the ciphertext path
 
 Shipped stream, rotor, protocol/framing, and symbol/message permutation foundations remain in place:
 - stream-machine expressiveness:
@@ -242,6 +246,7 @@ Implemented and shipped:
 - `BLOCK-CHAINING-V1.md`: framed bounded `v1.39.0` follow-on for visible block-to-block dependence
 - `BYTE-ORIENTED-PRIMITIVES-V1.md`: framed bounded `v1.40.0` follow-on for explicit byte/word structure helpers
 - `INTEGRITY-AUTHENTICATION-V1.md`: framed bounded `v1.41.0` follow-on for visible tamper detection and authenticator comparison
+- `AEAD-FOUNDATIONS-V1.md`: framed bounded `v1.42.0` follow-on for visible authenticated-encryption-style composition
 - `BYPASS-V1.md`: shipped bounded usability slice for visible instance-level bypass on eligible one-in/one-out modules
 - `INVERSE-PERMUTATION-AUTHORING-V1.md`: shipped bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors
 - `BRIDGE-ERGONOMICS-V1.md`: shipped bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior
