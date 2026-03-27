@@ -151,6 +151,10 @@ The current ranked near-future order is:
 3. refactor the largest UI surfaces, especially the inspector
 4. then take the first bounded `MULTI-WINDOW-WORKSPACE-V1` slice
 
+That inspector-maintenance line is now underway on `main`:
+- the first bounded inspector refactor extracted pure analysis logic into `src/ui/inspector-analysis.ts`
+- `parameter-inspector.tsx` now carries less non-rendering responsibility without changing behavior
+
 The current builder-power follow-on now also includes:
 - `Arrange Selected Stage Row`
 - `Stack Selected Stage Column`

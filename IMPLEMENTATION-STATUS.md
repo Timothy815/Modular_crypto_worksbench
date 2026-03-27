@@ -72,6 +72,11 @@ Current near-future sequencing is now explicit:
 - refactor the largest UI surfaces third
 - keep multi-window workspace support as a deliberate next-tier priority after those lines
 
+Current `main` now also includes the first inspector-maintenance slice:
+- `INSPECTOR-REFACTOR-V1.md`
+- extracted pure analysis helpers in `src/ui/inspector-analysis.ts`
+- reduced non-rendering responsibility inside `src/ui/components/parameter-inspector.tsx`
+
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
 - first bounded number-theoretic vocabulary:
