@@ -239,4 +239,62 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.status).toBe(0);
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
   });
+
+  it('matches executeProject for a control and arithmetic workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'bit-a', defId: 'BitSource', params: { stream: [1] } },
+        { id: 'bit-b', defId: 'BitSource', params: { stream: [0] } },
+        { id: 'bit-c', defId: 'BitSource', params: { stream: [1] } },
+        { id: 'majority-1', defId: 'Majority', params: {} },
+        { id: 'left-word', defId: 'BitSource', params: { stream: [1, 0, 1, 1] } },
+        { id: 'right-word', defId: 'BitSource', params: { stream: [0, 1, 1, 0] } },
+        { id: 'mul-1', defId: 'MulMod', params: {} },
+        { id: 'gt-1', defId: 'GreaterThan', params: {} },
+        { id: 'decision-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'bit-a', port: 'out' }, to: { moduleId: 'majority-1', port: 'a' } },
+        { from: { moduleId: 'bit-b', port: 'out' }, to: { moduleId: 'majority-1', port: 'b' } },
+        { from: { moduleId: 'bit-c', port: 'out' }, to: { moduleId: 'majority-1', port: 'c' } },
+        { from: { moduleId: 'left-word', port: 'out' }, to: { moduleId: 'mul-1', port: 'a' } },
+        { from: { moduleId: 'right-word', port: 'out' }, to: { moduleId: 'mul-1', port: 'b' } },
+        { from: { moduleId: 'mul-1', port: 'out' }, to: { moduleId: 'gt-1', port: 'a' } },
+        { from: { moduleId: 'left-word', port: 'out' }, to: { moduleId: 'gt-1', port: 'b' } },
+        { from: { moduleId: 'gt-1', port: 'out' }, to: { moduleId: 'decision-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeProject for a byte-structure workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'payload', defId: 'HexSource', params: { value: '12345678' } },
+        { id: 'rotate-1', defId: 'ByteRotate', params: { amount: 1, direction: 'left' } },
+        { id: 'swap-1', defId: 'ByteSwap', params: {} },
+        { id: 'unpad-1', defId: 'BitUnpad', params: { originalWidth: 16, side: 'right' } },
+        { id: 'hex-1', defId: 'BitsToHex', params: {} },
+        { id: 'hex-out', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'payload', port: 'out' }, to: { moduleId: 'rotate-1', port: 'in' } },
+        { from: { moduleId: 'rotate-1', port: 'out' }, to: { moduleId: 'swap-1', port: 'in' } },
+        { from: { moduleId: 'swap-1', port: 'out' }, to: { moduleId: 'unpad-1', port: 'in' } },
+        { from: { moduleId: 'unpad-1', port: 'out' }, to: { moduleId: 'hex-1', port: 'in' } },
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'hex-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
 });

@@ -61,6 +61,14 @@ Current `main` now also includes:
   - `SubMod`
   - `Modulo`
   - parity-tested substitution and modular-arithmetic export paths
+- Python export expansion v2:
+  - `Majority`
+  - `GreaterThan`
+  - `MulMod`
+  - `ByteRotate`
+  - `ByteSwap`
+  - `BitUnpad`
+  - parity-tested control/arithmetic and byte-structure export paths
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments

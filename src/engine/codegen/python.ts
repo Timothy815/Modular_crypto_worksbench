@@ -38,10 +38,16 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'AddMod',
   'SubMod',
   'Modulo',
+  'MulMod',
+  'Majority',
+  'GreaterThan',
   'Permutation',
+  'ByteRotate',
+  'ByteSwap',
   'BitJoin',
   'BitSplit',
   'BitPad',
+  'BitUnpad',
   'BitWindow',
   'BitShifter',
 ]);
@@ -253,6 +259,20 @@ def at_least_bits(a, b):
     return {"out": _single_bit_control(_bits_to_unsigned_number(left) >= _bits_to_unsigned_number(right))}
 
 
+def majority_bits(a, b, c):
+    left = _expect_single_bit_word(_expect_bits(a, "Majority"), "input a", "Majority")
+    middle = _expect_single_bit_word(_expect_bits(b, "Majority"), "input b", "Majority")
+    right = _expect_single_bit_word(_expect_bits(c, "Majority"), "input c", "Majority")
+    return {"out": _single_bit_control((left + middle + right) >= 2)}
+
+
+def greater_than_bits(a, b):
+    left = _expect_bits(a, "GreaterThan")
+    right = _expect_bits(b, "GreaterThan")
+    _require_equal_bit_widths(left, right, "GreaterThan")
+    return {"out": _single_bit_control(_bits_to_unsigned_number(left) > _bits_to_unsigned_number(right))}
+
+
 def mux_bit(select, a, b):
     select_bit = _expect_single_bit_word(_expect_bits(select, "Mux"), "select", "Mux")
     a_bit = _expect_single_bit_word(_expect_bits(a, "Mux"), "input a", "Mux")
@@ -365,6 +385,17 @@ def modulo_bits(signal, modulus):
     return {"out": _unsigned_number_to_bits(_bits_to_unsigned_number(bits) % modulus, len(bits))}
 
 
+def mul_mod(a, b):
+    left = _expect_bits(a, "MUL mod 2^n")
+    right = _expect_bits(b, "MUL mod 2^n")
+    width = _require_equal_bit_widths(left, right, "MUL mod 2^n")
+    if width == 0:
+        return {"out": []}
+    modulus = 2 ** width
+    result = (_bits_to_unsigned_number(left) * _bits_to_unsigned_number(right)) % modulus
+    return {"out": _unsigned_number_to_bits(result, width)}
+
+
 def permute_bits(signal, order):
     bits = _expect_bits(signal, "Permutation")
     parts = [part.strip() for part in str(order).split(",") if part.strip()]
@@ -414,6 +445,17 @@ def bit_pad(signal, target_width, side, pad_bit):
     return {"out": padding + bits if side == "left" else bits + padding}
 
 
+def bit_unpad(signal, original_width, side):
+    bits = _expect_bits(signal, "BitUnpad")
+    original_width = int(original_width)
+    if original_width < 1:
+        raise ValueError("BitUnpad originalWidth must be a positive integer.")
+    if len(bits) <= original_width:
+        return {"out": bits[:]}
+    side = "left" if side == "left" else "right"
+    return {"out": bits[len(bits) - original_width:] if side == "left" else bits[:original_width]}
+
+
 def bit_window(signal, start, width):
     bits = _expect_bits(signal, "BitWindow")
     start = int(start)
@@ -450,6 +492,46 @@ def bit_shift(signal, amount, mode):
             return {"out": bits[:]}
         return {"out": bits[len(bits) - offset:] + bits[:len(bits) - offset]}
     raise ValueError(f'Unsupported BitShifter mode "{mode}"')
+
+
+def byte_rotate(signal, amount, direction):
+    bits = _expect_bits(signal, "ByteRotate")
+    if not bits:
+        return {"out": []}
+    if len(bits) % 8 != 0:
+        raise ValueError("ByteRotate expects an input width divisible by 8")
+    amount = int(amount)
+    if amount < 1:
+        raise ValueError("ByteRotate amount must be a positive integer.")
+    direction = "right" if direction == "right" else "left"
+    byte_count = len(bits) // 8
+    offset = amount % byte_count
+    if offset == 0:
+        return {"out": bits[:]}
+    bytes_out = [bits[index:index + 8] for index in range(0, len(bits), 8)]
+    rotated = (
+        bytes_out[offset:] + bytes_out[:offset]
+        if direction == "left"
+        else bytes_out[byte_count - offset:] + bytes_out[:byte_count - offset]
+    )
+    flattened = []
+    for byte in rotated:
+        flattened.extend(byte)
+    return {"out": flattened}
+
+
+def byte_swap(signal):
+    bits = _expect_bits(signal, "ByteSwap")
+    if not bits:
+        return {"out": []}
+    if len(bits) % 8 != 0:
+        raise ValueError("ByteSwap expects an input width divisible by 8")
+    bytes_out = [bits[index:index + 8] for index in range(0, len(bits), 8)]
+    bytes_out.reverse()
+    flattened = []
+    for byte in bytes_out:
+        flattened.extend(byte)
+    return {"out": flattened}
 
 
 def format_symbol_sink(value):
@@ -669,6 +751,10 @@ function buildModuleExpression(
       return `equals_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
     case 'AtLeast':
       return `at_least_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
+    case 'Majority':
+      return `majority_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'c')})`;
+    case 'GreaterThan':
+      return `greater_than_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
     case 'Mux':
       return `mux_bit(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'select')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
     case 'Demux':
@@ -683,14 +769,22 @@ function buildModuleExpression(
       return `sub_mod(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
     case 'Modulo':
       return `modulo_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'modulus'))})`;
+    case 'MulMod':
+      return `mul_mod(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
     case 'Permutation':
       return `permute_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'order'))})`;
+    case 'ByteRotate':
+      return `byte_rotate(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'amount'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'direction'))})`;
+    case 'ByteSwap':
+      return `byte_swap(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
     case 'BitJoin':
       return `bit_join(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
     case 'BitSplit':
       return `bit_split(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'leftWidth'))})`;
     case 'BitPad':
       return `bit_pad(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'targetWidth'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'side'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'padBit'))})`;
+    case 'BitUnpad':
+      return `bit_unpad(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'originalWidth'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'side'))})`;
     case 'BitWindow':
       return `bit_window(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'start'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'width'))})`;
     case 'BitShifter':

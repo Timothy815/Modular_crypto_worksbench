@@ -140,6 +140,11 @@ The first careful Python export expansion is now also shipped:
 - `AddMod`, `SubMod`, and `Modulo` export support
 - parity-tested substitution and modular-arithmetic export paths
 
+The second careful Python export expansion is now also shipped:
+- `Majority`, `GreaterThan`, and `MulMod` export support
+- `ByteRotate`, `ByteSwap`, and `BitUnpad` export support
+- parity-tested control/arithmetic and byte-structure export paths
+
 The current near-future workspace-layout ergonomics item after that is:
 - bounded multi-window / multi-tab support for selected surfaces
 - likely `Inspector` and `Palette` first
