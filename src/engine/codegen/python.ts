@@ -61,9 +61,10 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'BitShifter',
   'Clock',
   'Counter',
+  'LFSR',
 ]);
 
-const SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS = new Set(['Clock', 'Counter']);
+const SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS = new Set(['Clock', 'Counter', 'LFSR']);
 const SUPPORTED_STATEFUL_PYTHON_EXPORT_COMPANION_DEF_IDS = new Set([
   'BitSource',
   'BitOutput',
@@ -737,6 +738,57 @@ def counter_advance(state):
     state["value"] = (state["value"] + state["step"]) % modulus
 
 
+def _parse_lfsr_taps(taps_value):
+    if not isinstance(taps_value, str):
+        raise ValueError("LFSR taps must be a comma-separated index list")
+    parts = [part.strip() for part in taps_value.split(",") if part.strip()]
+    if not parts:
+        raise ValueError("LFSR taps cannot be empty")
+    taps = [int(part) for part in parts]
+    if any(index < 0 for index in taps):
+        raise ValueError("LFSR taps must contain only non-negative integers")
+    if len(set(taps)) != len(taps):
+        raise ValueError("LFSR taps must not repeat indexes")
+    return taps
+
+
+def _lfsr_shift(register, taps):
+    output_bit = register[-1]
+    feedback = 0
+    for tap in taps:
+        feedback ^= register[tap]
+    return output_bit, [feedback] + register[:-1]
+
+
+def lfsr_init(seed, taps, output_length):
+    register = _expect_bits(seed, "LFSR")
+    if len(register) == 0:
+        raise ValueError("LFSR seed cannot be empty")
+    taps_parsed = _parse_lfsr_taps(taps)
+    if any(index >= len(register) for index in taps_parsed):
+        raise ValueError("LFSR tap index is out of range for the seed width")
+    output_length = max(0, int(output_length))
+    return {
+        "seed": register[:],
+        "taps": taps_parsed,
+        "outputLength": output_length,
+    }
+
+
+def lfsr_eval(state):
+    register = state["seed"][:]
+    result = []
+    for _ in range(state["outputLength"]):
+        output_bit, register = _lfsr_shift(register, state["taps"])
+        result.append(output_bit)
+    return {"out": result}
+
+
+def lfsr_advance(state):
+    _, next_register = _lfsr_shift(state["seed"], state["taps"])
+    state["seed"] = next_register
+
+
 def format_ticked_sink_line(tick, module_id, value):
     return f"tick {tick} | {module_id}: {value}"
 `;
@@ -1235,6 +1287,17 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
       bodyLines.push(
         `    ${variableName}_state = counter_init(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'width'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'step'))})`,
       );
+      continue;
+    }
+
+    if (def.id === 'LFSR') {
+      const variableName = variablesByModuleId.get(moduleInstance.id);
+      if (!variableName) {
+        throw new Error(`Python export could not resolve a variable for "${moduleInstance.id}".`);
+      }
+      bodyLines.push(
+        `    ${variableName}_state = lfsr_init(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'seed'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'taps'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'outputLength'))})`,
+      );
     }
   }
 
@@ -1280,6 +1343,11 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
       continue;
     }
 
+    if (def.id === 'LFSR') {
+      bodyLines.push(`        ${variableName} = lfsr_eval(${variableName}_state)`);
+      continue;
+    }
+
     if (def.id === 'BitSource') {
       bodyLines.push(
         `        ${variableName} = bit_source_tick(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'stream'))}, tick)`,
@@ -1294,7 +1362,7 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
 
   for (const moduleInstance of project.modules) {
     const def = registry[moduleInstance.defId];
-    if (!def || def.id !== 'Counter') {
+    if (!def || (def.id !== 'Counter' && def.id !== 'LFSR')) {
       continue;
     }
 
@@ -1305,7 +1373,7 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
 
     const clockConnection = clockConnectionsByModuleId.get(moduleInstance.id);
     if (!clockConnection) {
-      bodyLines.push(`        counter_advance(${variableName}_state)`);
+      bodyLines.push(`        ${def.id === 'Counter' ? 'counter_advance' : 'lfsr_advance'}(${variableName}_state)`);
       continue;
     }
 
@@ -1316,7 +1384,7 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
 
     bodyLines.push(
       `        if _is_active_control_pulse(${upstreamVariable}[${JSON.stringify(clockConnection.port)}]):`,
-      `            counter_advance(${variableName}_state)`,
+      `            ${def.id === 'Counter' ? 'counter_advance' : 'lfsr_advance'}(${variableName}_state)`,
     );
   }
 

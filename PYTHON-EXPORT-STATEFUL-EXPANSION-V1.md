@@ -2,7 +2,7 @@
 
 Last updated: March 27, 2026
 
-Status: Proposed next export line
+Status: Implemented on `main`
 
 ---
 
@@ -107,6 +107,8 @@ For supported workspaces, generated Python must mirror MCW’s current `LFSR` be
 - `advance()` shifts the register once at tick end
 - if `clock` is connected, advance happens only on an active `[1]` pulse
 - if `clock` is unconnected, advance happens every tick
+- `taps` are parsed exactly as the current MCW engine parses them
+- `outputLength` determines how many bits each tick emits from the current register snapshot
 
 This slice must follow MCW’s current `LFSR` implementation, not a rewritten or “cleaned up” interpretation.
 

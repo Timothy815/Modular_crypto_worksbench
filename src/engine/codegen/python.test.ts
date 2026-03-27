@@ -92,7 +92,7 @@ describe('getPythonExportCompatibility', () => {
   it('rejects unsupported stateful modules and bypassed modules', () => {
     const incompatibleProject: Project = {
       modules: [
-        { id: 'lfsr-1', defId: 'LFSR', params: { width: 4, taps: '0,1', value: '1,0,0,1' } },
+        { id: 'rotor-1', defId: 'Rotor', params: { wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ', position: 'A', ringOffset: 0, notches: 'Q', turnover: true } },
         { id: 'bits-1', defId: 'BitSource', params: { stream: [1, 0, 1, 0] }, bypass: true },
       ],
       connections: [],
@@ -103,8 +103,8 @@ describe('getPythonExportCompatibility', () => {
     expect(compatibility.ok).toBe(false);
     expect(compatibility.issues).toEqual([
       {
-        moduleId: 'lfsr-1',
-        defId: 'LFSR',
+        moduleId: 'rotor-1',
+        defId: 'Rotor',
         reason: 'This stateful or ticked primitive is outside the Python export stateful supported subset.',
       },
       {
@@ -426,6 +426,50 @@ parityDescribe('generatePythonExport', () => {
         { from: { moduleId: 'counter-2', port: 'out' }, to: { moduleId: 'gt-1', port: 'b' } },
         { from: { moduleId: 'counter-1', port: 'out' }, to: { moduleId: 'gate-1', port: 'in' } },
         { from: { moduleId: 'gt-1', port: 'out' }, to: { moduleId: 'gate-1', port: 'control' } },
+        { from: { moduleId: 'gate-1', port: 'out' }, to: { moduleId: 'bits-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeTickedProject for a clocked lfsr workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'clock-1', defId: 'Clock', params: { period: 1, offset: 0, length: 5 } },
+        { id: 'lfsr-1', defId: 'LFSR', params: { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 5 } },
+        { id: 'bits-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'lfsr-1', port: 'clock' } },
+        { from: { moduleId: 'lfsr-1', port: 'out' }, to: { moduleId: 'bits-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeTickedProject for an lfsr-controlled gating workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'clock-1', defId: 'Clock', params: { period: 1, offset: 0, length: 4 } },
+        { id: 'lfsr-1', defId: 'LFSR', params: { seed: [1, 0, 1], taps: '0,1', outputLength: 1 } },
+        { id: 'payload', defId: 'BitSource', params: { stream: [1, 1, 0, 1] } },
+        { id: 'gate-1', defId: 'Gate', params: {} },
+        { id: 'bits-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'lfsr-1', port: 'clock' } },
+        { from: { moduleId: 'payload', port: 'out' }, to: { moduleId: 'gate-1', port: 'in' } },
+        { from: { moduleId: 'lfsr-1', port: 'out' }, to: { moduleId: 'gate-1', port: 'control' } },
         { from: { moduleId: 'gate-1', port: 'out' }, to: { moduleId: 'bits-out', port: 'in' } },
       ],
     };

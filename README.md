@@ -166,6 +166,11 @@ The next careful stateful export follow-on is now explicitly recorded as:
 - add `LFSR` as the first cryptographically meaningful temporal export primitive beyond `Clock` and `Counter`
 - keep rotor-family export out of scope until after this bridge slice proves cleanly
 
+That `LFSR` stateful export bridge is now also shipped:
+- exported temporal Python now supports `LFSR`
+- parity-tested for direct keystream emission and logic-influencing ticked use
+- still deliberately below rotor-family temporal runtime complexity
+
 The current near-future workspace-layout ergonomics item after that is:
 - bounded multi-window / multi-tab support for selected surfaces
 - likely `Inspector` and `Palette` first

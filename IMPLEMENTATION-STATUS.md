@@ -89,8 +89,9 @@ Current `main` now also includes:
   - intended as the proving ground for readable temporal Python export before rotor or LFSR support
 - next careful stateful export follow-on:
   - `PYTHON-EXPORT-STATEFUL-EXPANSION-V1.md`
-  - add `LFSR` as the first cryptographically meaningful temporal export primitive beyond `Clock` and `Counter`
-  - keep rotor-family export out of scope until after this bridge slice proves cleanly
+  - shipped `LFSR` as the first cryptographically meaningful temporal export primitive beyond `Clock` and `Counter`
+  - parity-tested for direct keystream emission and logic-influencing ticked use
+  - still keeps rotor-family export out of scope after this bridge slice
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments
