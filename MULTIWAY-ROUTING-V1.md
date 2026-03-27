@@ -6,12 +6,11 @@ Last updated: March 27, 2026
 
 ## Purpose
 
-Define a bounded future primitive-expansion line for explicit multi-way routing.
+Define a bounded primitive-expansion line for explicit multi-way routing.
 
 This line is meant to increase MCW's visible control-flow expressiveness without collapsing into hidden branching, symbolic scripting, or a general-purpose programming model.
 
-It is not the current active implementation path.
-It is a future docket item to revisit after the current ergonomics / authorship line justifies a new primitive family.
+It is now the active primitive-expansion path after the current ergonomics / authorship line.
 
 ---
 
@@ -71,27 +70,44 @@ This is the direct multi-way generalization of `Mux`.
 
 ## Recommended First Slice
 
-If this family is implemented, the first slice should focus on the **Multi-Way Router** only.
+The first slice focuses on the **Multi-Way Router** only.
 
 Reason:
 - it directly matches the user's described case-switch / staged-routing need
 - it keeps the first slice smaller
 - it builds naturally on the already-shipped `Demux`, `Gate`, `Counter`, and state/timing vocabulary
 
-The multi-way selector variant should be treated as a follow-on unless implementation reveals that both are truly inseparable.
+The multi-way selector variant stays a follow-on.
 
 ---
 
 ## Desired V1 Behavior
 
 For the first multi-way router slice:
-- one `bits` input carries the routed data
-- one `bits` input carries the control word
-- the number of outputs is parameterized as a bounded small set, likely `2`, `4`, or `8`
-- control width must match the number of outputs exactly (`1`, `2`, or `3` bits respectively)
-- exactly one output is active for any valid control value
-- inactive outputs emit zero-valued words of the same width as the routed input
+- the primitive is named `MultiRouter`
+- it has one `bits` data input named `in`
+- it has one `bits` control input named `select`
+- it exposes fixed visible outputs `out0` through `out7`
+- it uses a bounded `routeCount` param with exact allowed values `2`, `4`, or `8`
+- only the first `routeCount` outputs are considered active routing destinations
+- control width must match `routeCount` exactly:
+  - `2` routes requires `1` control bit
+  - `4` routes requires `2` control bits
+  - `8` routes requires `3` control bits
+- the routed input is an arbitrary-width `bits` word
+- exactly one active destination receives the routed input for any valid control value
+- every inactive output emits a zero-valued word of the same width as the routed input
+- outputs beyond the active `routeCount` also emit zero-valued words of that same width
 - routing behavior is deterministic and fully explicit
+
+### Static Port Constraint
+
+MCW module ports are currently static, not parameterized per instance.
+
+Because of that, V1 does **not** attempt a dynamically sized output port set.
+Instead, `MultiRouter` always exposes `out0` through `out7`, and `routeCount` determines how many of those visible ports participate in the active routing domain.
+
+This is an intentional V1 adaptation to the current engine architecture, not a temporary hack to be hidden from users.
 
 This should read like a visible indexed case switch, not like hidden procedural branching.
 
@@ -107,7 +123,10 @@ This line should explicitly avoid the following in its first slice:
 - implicit width conversion
 - control-word coercion
 - generalized finite-state-machine infrastructure
-- many-input / one-output selector support in the same first slice unless absolutely necessary
+- many-input / one-output selector support in the same first slice
+- dynamic per-instance port creation
+- rename or redesign of existing `Mux` / `Demux` behavior
+- broad conditional-composition semantics
 
 ---
 
@@ -124,21 +143,26 @@ That makes it a plausible future addition to MCW as a cryptographic systems IDE,
 
 ---
 
-## Recommendation
+## Teaching Surface
 
-Keep this on the near-future menu, but do not treat it as the next immediate implementation step.
+V1 should ship with one bounded teaching surface:
+- one palette-local micro demo
+- focused on a counter-driven visible route progression
+- not a second demo-library expansion and not a new tutorial/challenge line
 
-The right posture is:
-- record it now
-- keep the scope narrow
-- revisit it after the current ergonomics / workspace-legibility line justifies another primitive-family expansion
+The micro demo should show:
+- a `Counter`
+- one `MultiRouter`
+- one visible data input
+- a small set of visible outputs so the active route progression is obvious
 
 ---
 
 ## Exit Condition
 
 This contract is complete when:
-- the future primitive-family shape is named clearly
-- the first slice is bounded to a multi-way router
+- the primitive-family shape is named clearly
+- the first slice is bounded to one `MultiRouter`
 - the non-goals prevent the feature from becoming hidden control flow or programming-language drift
-- the project can safely revisit the idea later without re-litigating the problem definition
+- the static-port adaptation is explicit
+- the project can safely implement the primitive without re-litigating the problem definition

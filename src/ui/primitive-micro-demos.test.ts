@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { getPrimitiveMicroDemo, PRIMITIVE_MICRO_DEMOS } from './primitive-micro-demos';
 
 describe('primitive micro demos', () => {
-  it('is bounded to the locked V1 and V2 primitive sets', () => {
+  it('is bounded to the locked primitive demo sets plus active primitive expansions', () => {
     expect(PRIMITIVE_MICRO_DEMOS.map((entry) => entry.defId)).toEqual([
       'Mux',
       'Demux',
@@ -17,6 +17,7 @@ describe('primitive micro demos', () => {
       'BitPad',
       'BitJoin',
       'LFSR',
+      'MultiRouter',
     ]);
   });
 
@@ -25,6 +26,7 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('Demux')?.name).toBe('Demux Micro Demo');
     expect(getPrimitiveMicroDemo('Counter')?.name).toBe('Counter Micro Demo');
     expect(getPrimitiveMicroDemo('LFSR')?.name).toBe('LFSR Micro Demo');
+    expect(getPrimitiveMicroDemo('MultiRouter')?.name).toBe('Multi Router Micro Demo');
     expect(getPrimitiveMicroDemo('XOR')).toBeNull();
   });
 
@@ -38,6 +40,7 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('Clock')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('Counter')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('LFSR')?.defaultTickedMode).toBe(true);
+    expect(getPrimitiveMicroDemo('MultiRouter')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('BitSplit')?.defaultTickedMode).toBeUndefined();
     expect(getPrimitiveMicroDemo('BitPad')?.defaultTickedMode).toBeUndefined();
     expect(getPrimitiveMicroDemo('BitJoin')?.defaultTickedMode).toBeUndefined();

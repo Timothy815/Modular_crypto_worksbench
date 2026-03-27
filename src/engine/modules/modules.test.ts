@@ -25,6 +25,7 @@ import { Gate } from './gate';
 import { Majority } from './majority';
 import { Mux } from './mux';
 import { Modulo } from './modulo';
+import { MultiRouter } from './multi-router';
 import { NOT } from './not';
 import { OR } from './or';
 import { SubMod } from './sub-mod';
@@ -280,6 +281,51 @@ describe('Demux', () => {
         {},
       ),
     ).toThrow(/1-bit word/i);
+  });
+});
+
+describe('MultiRouter', () => {
+  it('routes the input word to the selected output for four routes', () => {
+    const result = MultiRouter.evaluate(
+      {
+        select: { type: 'bits', value: [1, 0] },
+        in: { type: 'bits', value: [1, 0, 1, 1] },
+      },
+      { routeCount: '4' },
+    );
+
+    expect(result.out0).toEqual({ type: 'bits', value: [0, 0, 0, 0] });
+    expect(result.out1).toEqual({ type: 'bits', value: [0, 0, 0, 0] });
+    expect(result.out2).toEqual({ type: 'bits', value: [1, 0, 1, 1] });
+    expect(result.out3).toEqual({ type: 'bits', value: [0, 0, 0, 0] });
+    expect(result.out4).toEqual({ type: 'bits', value: [0, 0, 0, 0] });
+    expect(result.out7).toEqual({ type: 'bits', value: [0, 0, 0, 0] });
+  });
+
+  it('supports eight-route counter-style routing', () => {
+    const result = MultiRouter.evaluate(
+      {
+        select: { type: 'bits', value: [1, 1, 0] },
+        in: { type: 'bits', value: [1] },
+      },
+      { routeCount: '8' },
+    );
+
+    expect(result.out6).toEqual({ type: 'bits', value: [1] });
+    expect(result.out0).toEqual({ type: 'bits', value: [0] });
+    expect(result.out7).toEqual({ type: 'bits', value: [0] });
+  });
+
+  it('throws when the select width does not match route count', () => {
+    expect(() =>
+      MultiRouter.evaluate(
+        {
+          select: { type: 'bits', value: [1] },
+          in: { type: 'bits', value: [1, 0, 1, 1] },
+        },
+        { routeCount: '4' },
+      ),
+    ).toThrow(/2-bit word/i);
   });
 });
 

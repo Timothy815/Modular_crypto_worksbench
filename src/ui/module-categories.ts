@@ -32,6 +32,7 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   Majority: 'operator',
   Mux: 'operator',
   Demux: 'operator',
+  MultiRouter: 'operator',
   GreaterThan: 'operator',
   Equals: 'operator',
   AtLeast: 'operator',

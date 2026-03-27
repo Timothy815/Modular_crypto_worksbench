@@ -390,6 +390,51 @@ const LFSR_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const MULTI_ROUTER_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'MultiRouter',
+  name: 'Multi Router Micro Demo',
+  summary: 'Minimal visible case routing: a counter drives a multi-way router so one destination lane is active at a time.',
+  pipeline: 'Clock -> Counter -> MultiRouter -> BitOutput(out0..out3)',
+  defaultTickedMode: true,
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'router', defId: 'MultiRouter', params: { routeCount: '4' } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 8 } },
+        { id: 'counter', defId: 'Counter', params: { width: 2, value: 0, step: 1 } },
+        { id: 'source', defId: 'BitSource', params: { stream: [1, 0, 1, 1] } },
+        { id: 'out0', defId: 'BitOutput', params: {} },
+        { id: 'out1', defId: 'BitOutput', params: {} },
+        { id: 'out2', defId: 'BitOutput', params: {} },
+        { id: 'out3', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'counter', port: 'clock' } },
+        { from: { moduleId: 'counter', port: 'out' }, to: { moduleId: 'router', port: 'select' } },
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'router', port: 'in' } },
+        { from: { moduleId: 'router', port: 'out0' }, to: { moduleId: 'out0', port: 'in' } },
+        { from: { moduleId: 'router', port: 'out1' }, to: { moduleId: 'out1', port: 'in' } },
+        { from: { moduleId: 'router', port: 'out2' }, to: { moduleId: 'out2', port: 'in' } },
+        { from: { moduleId: 'router', port: 'out3' }, to: { moduleId: 'out3', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        clock: { x: 40, y: 48 },
+        counter: { x: 260, y: 48 },
+        source: { x: 40, y: 240 },
+        router: { x: 500, y: 176 },
+        out0: { x: 820, y: 24 },
+        out1: { x: 820, y: 124 },
+        out2: { x: 820, y: 224 },
+        out3: { x: 820, y: 324 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   MUX_MICRO_DEMO,
   DEMUX_MICRO_DEMO,
@@ -403,6 +448,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   BIT_PAD_MICRO_DEMO,
   BIT_JOIN_MICRO_DEMO,
   LFSR_MICRO_DEMO,
+  MULTI_ROUTER_MICRO_DEMO,
 ];
 
 const PRIMITIVE_MICRO_DEMO_BY_DEF_ID = Object.fromEntries(

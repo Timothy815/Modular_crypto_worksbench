@@ -211,10 +211,11 @@ The current final comparison-oriented ergonomics slice after that is:
 - structural comparison only: modules and connections
 - added / removed / unchanged structure surfaced in the live workspace and summary card
 
-The current near-future primitive-expansion item after that is:
-- explicit multi-way routing as a bounded future family
-- first slice scoped to a multi-way router (`1 -> N`) rather than a full multi-way selector pair
-- intended for visible case-switch / counter-driven staged routing without hidden control flow
+The current shipped primitive-expansion follow-on after that is:
+- `MultiRouter` as a bounded `1 -> N` indexed routing primitive
+- fixed visible outputs `out0` through `out7` with bounded `routeCount` (`2`, `4`, or `8`)
+- palette-local counter-driven micro demo for visible staged routing
+- visible case-switch / counter-driven staged routing without hidden control flow
 
 The current near-future control-structure items after that are:
 - bounded conditional composition for explicit finite branch structure

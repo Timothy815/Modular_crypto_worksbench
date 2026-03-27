@@ -261,6 +261,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Useful for routed-clock and scheduler-style stream machines where control decides which downstream path becomes active.',
     searchTerms: ['demux', 'route', 'routing', 'scheduler', 'stream', 'clock', 'bits', 'operator', 'logic'],
   },
+  MultiRouter: {
+    sectionId: 'framing-routing',
+    sortOrder: 60,
+    purpose: 'Routes one bit word into one of several visible outputs using an indexed control word.',
+    detail: 'Use this when a graph should show an explicit finite switch/case style route decision instead of composing multiple binary routing layers by hand.',
+    searchTerms: ['multi router', 'router', 'switch', 'case', 'routing', 'scheduler', 'counter', 'demux', 'bits', 'routing'],
+  },
   GreaterThan: {
     sectionId: 'bit-logic',
     sortOrder: 100,

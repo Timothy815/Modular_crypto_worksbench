@@ -196,6 +196,7 @@ src/utils/     — Shared helpers
 - The current parameter-comparison slice after that is `PARAMETER-COMPARISON-ERGONOMICS-V1.md`
 - The current primitive-legibility slice after that is `PRIMITIVE-MICRO-DEMOS-V1.md`
 - The current primitive-legibility expansion after that is `PRIMITIVE-MICRO-DEMOS-V2.md`
+- The current shipped primitive-expansion slice after that is `MULTIWAY-ROUTING-V1.md`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement
