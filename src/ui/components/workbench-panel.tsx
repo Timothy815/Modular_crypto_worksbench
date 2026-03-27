@@ -17,6 +17,7 @@ import {
 import type { DemoProject } from '../demo-projects';
 import {
   compareLearningItems,
+  getLearningGroupLabel,
   getLearningStageLabel,
   getRecommendedAfterTitles,
   getSortedLearningGroups,
@@ -206,6 +207,16 @@ export function WorkbenchPanel({
   const projectGroups = useMemo(
     () => getSortedLearningGroups(projects),
     [projects],
+  );
+  const projectCountByGroup = useMemo(
+    () =>
+      Object.fromEntries(
+        projectGroups.map((group) => [
+          group,
+          projects.filter((project) => (project.group ?? 'Other') === group).length,
+        ]),
+      ),
+    [projectGroups, projects],
   );
   const activeProjectGroup = activeProject.group ?? 'Other';
 
@@ -523,7 +534,7 @@ export function WorkbenchPanel({
               >
                 {projectGroups.map((group) => (
                   <option key={group} value={group}>
-                    {group}
+                    {getLearningGroupLabel(group, projectCountByGroup[group])}
                   </option>
                 ))}
               </select>
@@ -548,6 +559,9 @@ export function WorkbenchPanel({
             <code>{pipelineLabel ?? activeProject.pipeline}</code>
             <div className="content-selector-meta">
               <span className="content-status-chip">{getLearningStageLabel(activeProjectStage)}</span>
+              <span className="content-status-chip">
+                Group: <strong>{activeProjectGroup}</strong>
+              </span>
               <span className="content-status-chip">
                 {isCoreLearningItem(activeProject) ? 'Core Path' : 'Optional'}
               </span>

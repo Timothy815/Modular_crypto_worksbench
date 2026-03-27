@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   compareLearningItems,
+  getLearningGroupLabel,
   getRecommendedAfterTitles,
   getSortedLearningGroups,
   inferLearningStage,
@@ -98,5 +99,14 @@ describe('learning-sequence helpers', () => {
     };
 
     expect(isCoreLearningItem(item)).toBe(false);
+  });
+
+  it('builds stage-aware group labels for selector surfaces', () => {
+    expect(getLearningGroupLabel('Integrity', 2)).toBe(
+      'Stage 10 · Integrity And Authentication — Integrity (2 items)',
+    );
+    expect(getLearningGroupLabel('Systems Composition', 1)).toBe(
+      'Stage 11 · Asymmetric Verification And Systems Composition — Systems Composition (1 item)',
+    );
   });
 });

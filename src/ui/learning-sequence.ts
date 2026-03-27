@@ -235,6 +235,17 @@ export function getLearningStageLabel(stage: LearningStage): string {
   return STAGE_LABELS[stage];
 }
 
+export function getLearningGroupStage(group: string): LearningStage {
+  return GROUP_STAGE_MAP[group] ?? 'foundations';
+}
+
+export function getLearningGroupLabel(group: string, itemCount?: number): string {
+  const stageLabel = getLearningStageLabel(getLearningGroupStage(group));
+  const countLabel =
+    typeof itemCount === 'number' ? ` (${itemCount} ${itemCount === 1 ? 'item' : 'items'})` : '';
+  return `${stageLabel} — ${group}${countLabel}`;
+}
+
 export function isCoreLearningItem(item: SequencedLearningItem): boolean {
   if (typeof item.core === 'boolean') {
     return item.core;

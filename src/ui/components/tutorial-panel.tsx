@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 
 import {
   compareLearningItems,
+  getLearningGroupLabel,
   getLearningStageLabel,
   getRecommendedAfterTitles,
   getRecommendedNextItem,
@@ -52,6 +53,16 @@ export function TutorialPanel({
   const tutorialGroups = useMemo(
     () => getSortedLearningGroups(tutorials),
     [tutorials],
+  );
+  const tutorialCountByGroup = useMemo(
+    () =>
+      Object.fromEntries(
+        tutorialGroups.map((group) => [
+          group,
+          tutorials.filter((tutorial) => (tutorial.group ?? 'Other') === group).length,
+        ]),
+      ),
+    [tutorialGroups, tutorials],
   );
   const sortedTutorials = useMemo(() => [...tutorials].sort(compareLearningItems), [tutorials]);
   const selectedTutorial =
@@ -136,7 +147,7 @@ export function TutorialPanel({
           >
             {tutorialGroups.map((group) => (
               <option key={group} value={group}>
-                {group}
+                {getLearningGroupLabel(group, tutorialCountByGroup[group])}
               </option>
             ))}
           </select>
@@ -162,6 +173,9 @@ export function TutorialPanel({
         <div className="content-selector-meta">
           <span className="content-status-chip">
             {getLearningStageLabel(selectedStage)}
+          </span>
+          <span className="content-status-chip">
+            Group: <strong>{activeGroup}</strong>
           </span>
           <span className="content-status-chip">
             {isCoreLearningItem(selectedTutorial) ? 'Core Path' : 'Optional'}

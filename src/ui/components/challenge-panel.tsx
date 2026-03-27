@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import type { GuidedChallenge, ChallengeEvaluation } from '../challenges';
 import {
   compareLearningItems,
+  getLearningGroupLabel,
   getLearningStageLabel,
   getRecommendedAfterTitles,
   getRecommendedNextItem,
@@ -50,6 +51,16 @@ export function ChallengePanel({
   const challengeGroups = useMemo(
     () => getSortedLearningGroups(challenges),
     [challenges],
+  );
+  const challengeCountByGroup = useMemo(
+    () =>
+      Object.fromEntries(
+        challengeGroups.map((group) => [
+          group,
+          challenges.filter((challenge) => (challenge.group ?? 'Other') === group).length,
+        ]),
+      ),
+    [challengeGroups, challenges],
   );
   const availableHints = selectedChallenge?.hints ?? [];
   const revealedHintCount =
@@ -129,7 +140,7 @@ export function ChallengePanel({
           >
             {challengeGroups.map((group) => (
               <option key={group} value={group}>
-                {group}
+                {getLearningGroupLabel(group, challengeCountByGroup[group])}
               </option>
             ))}
           </select>
@@ -158,6 +169,9 @@ export function ChallengePanel({
               {selectedStage ? (
                 <span className="content-status-chip">{getLearningStageLabel(selectedStage)}</span>
               ) : null}
+              <span className="content-status-chip">
+                Group: <strong>{activeGroup}</strong>
+              </span>
               <span className="content-status-chip">
                 {isCoreLearningItem(selectedChallenge) ? 'Core Path' : 'Optional'}
               </span>
