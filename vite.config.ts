@@ -13,11 +13,11 @@ export default defineConfig({
             return 'react';
           }
 
-          if (
-            id.includes('/src/ui/demo-projects.ts') ||
-            id.includes('/src/ui/starter-tutorials.ts') ||
-            id.includes('/src/ui/starter-challenges.ts')
-          ) {
+          if (id.includes('/src/ui/demo-projects.ts')) {
+            return 'demo-data';
+          }
+
+          if (id.includes('/src/ui/starter-tutorials.ts') || id.includes('/src/ui/starter-challenges.ts')) {
             return 'guide-data';
           }
 

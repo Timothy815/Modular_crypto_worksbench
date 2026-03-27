@@ -93,7 +93,7 @@ The next strategic direction remains broader than any one subdomain:
 - ship tutorials and challenges alongside each new vocabulary family
 
 The next most important missing vocabulary families are:
-- integrity/authentication teaching lines after chaining and modern byte/word handling are stronger
+- asymmetric authentication / signature teaching after the completed modern symmetric-composition phase
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -443,8 +443,8 @@ Post-`v1.26.0` work merged to `main`:
 ### Claude
 
 Safe to begin:
-- help shape the next bounded AEAD-style composition contract after standalone integrity
-- help pressure-test whether MCW should deepen modern symmetric teaching through auth+encryption composition before any asymmetric-auth line
+- help shape the next bounded digital-signature / asymmetric-authentication contract after the completed symmetric-composition phase
+- help pressure-test whether MCW should cross from symmetric protection into visible trust/authorship before any protocol-handshake line
 - help review future tutorial/challenge additions that accompany deeper symmetric-construction lines
 - help keep the roadmap honest about what is still missing versus what is now shipped
 
@@ -458,14 +458,14 @@ Should avoid for now:
 ### Gemini
 
 Safe to begin:
-- review whether a bounded AEAD-style composition slice should follow the shipped `v1.41.0` integrity/authentication milestone
-- help pressure-test the roadmap sequence from standalone tamper detection into later auth+encryption composition or signature-adjacent lines
+- review whether a bounded digital-signature / asymmetric-authentication slice should follow the framed `v1.42.0` AEAD foundations milestone
+- help pressure-test the roadmap sequence from symmetric composition into later signature, trust, or handshake-adjacent lines
 - review what tutorial/challenge support should accompany any later auth-family follow-ons
 - help keep the post-builder product direction tied to expressive machine language rather than generic tooling
 
 Best focus:
-- whether the next auth-family move should stay bounded and visibly compositional
-- whether future auth work should stay comparison-centered instead of branded HMAC/AEAD
+- whether the next auth-family move should stay bounded and visibly asymmetric
+- whether future trust/auth work should stay structure-centered instead of collapsing into wrappers or PKI bundles
 - how to keep later auth follow-ons explicit and inspectable
 
 ---
@@ -547,6 +547,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `BYTE-ORIENTED-PRIMITIVES-V1.md` | Framed for `v1.40.0` as the bounded modern-construction follow-on for explicit byte/word structure helpers |
 | `INTEGRITY-AUTHENTICATION-V1.md` | Framed for `v1.41.0` as the bounded modern-teaching follow-on for visible tamper detection and authenticator comparison |
 | `AEAD-FOUNDATIONS-V1.md` | Framed for `v1.42.0` as the bounded composition follow-on for visible authenticated-encryption-style structure |
+| `DIGITAL-SIGNATURE-FOUNDATIONS-V1.md` | Proposed post-`v1.42.0` as the next bounded asymmetric-authentication follow-on for visible signing and verification |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
 | `BRIDGE-ERGONOMICS-V1.md` | Shipped in `v1.31.0` — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |

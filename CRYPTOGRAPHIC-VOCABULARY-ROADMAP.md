@@ -170,12 +170,11 @@ Shipped:
 - reuse of existing `BitJoin` for rejoining
 
 Still open over time:
-- explicit chaining helpers
-- message-boundary handling beyond single-vector framing
 - `Visible Block Chaining` demo, `Why The Next Block Depends On The Last` tutorial, and `Repair the Chaining Path` challenge — framed in `v1.39.0`
 - `ByteRotate`, `ByteSwap`, `Visible Byte Order`, `When Bits Become Bytes`, and `Repair the Byte Order` — framed in `v1.40.0`
 - `Visible Tamper Check`, `Why Integrity Is Not Secrecy`, and `Repair the Tamper Check` — framed in `v1.41.0`
 - `Visible Authenticated Encryption`, `Encrypting Is Not Enough`, and `Repair the Protected Message` — framed in `v1.42.0`
+- the modern symmetric-composition arc from chaining through AEAD is now coherently shipped across `v1.39.0`–`v1.42.0`
 
 ### 5. Symbol- and Message-Level Structure Vocabulary — *first milestone shipped in `v1.22.0`, second milestone shipped in `v1.24.0`*
 
@@ -436,24 +435,34 @@ To protect the product identity, avoid:
 
 ## Current Conclusion
 
-The roadmap is now validated through shipped foundations across all five phases:
+The roadmap is now validated through shipped foundations across all five phases and through a completed modern symmetric-composition arc:
 - Phase 1: `CRYPTO-OPERATORS-V1.md` and `CONTROL-PRIMITIVES-V1.md` (shipped in `v1.14.0` / `v1.15.0`)
 - Phase 2: `STREAM-CIPHER-V1.md`, `STREAM-CIPHER-V2.md`, `STREAM-CIPHER-V3.md`, and `ADVANCED-ROTOR-REALISM-V1.md` shipped slices (`v1.18.0` / `v1.20.0` / `v1.21.0` / `v1.19.0`)
 - Phase 3: `BLOCK-FRAMING-V1.md` (shipped in `v1.16.0`) and `ARITHMETIC-EXPANSION-V1.md` (shipped in `v1.25.0`)
 - Phase 4: `PROTOCOL-MATERIAL-V1.md` and `KEY-SCHEDULE-V2.md` first slices (shipped in `v1.17.0` / `v1.23.0`)
 - Phase 5: `NUMBER-THEORETIC-V1.md` first slice (shipped in `v1.26.0`) — `ModExp`, `ModInverse`, toy RSA, key schedule workshop
+- Modern symmetric composition: block chaining, byte/word structure, integrity/authentication, and AEAD-style composition (`v1.39.0` / `v1.40.0` / `v1.41.0` / `v1.42.0`)
 
-The next strategic direction after `v1.26.0` should be:
+The next strategic direction after `v1.42.0` should be:
 
 > keep expanding MCW into a fully expressive cryptographic machine language
 
-The clearest next move is not “which algorithm next?”
+The clearest next move is no longer additional symmetric composition detail.
+It is the next missing trust/authentication concept that the product cannot yet teach honestly:
 
-It is:
-- block/framing, protocol-material, first and second stream vocabulary, and first rotor-realism vocabulary are now shipped
+- visible digital signatures / asymmetric authentication
+
+From there, later follow-ons can stay bounded:
+- certificate / trust-chain teaching only after standalone signatures are individually clear
+- protocol-handshake teaching only if it stays visible and inspectable
+- stronger symmetric/auth refinements only if classroom use proves the need
+
+The discipline should remain the same:
+- block/framing, protocol-material, stream vocabulary, rotor-realism, modern symmetric composition, and first asymmetric foundations are now shipped
 - keep deeper stream-combiner follow-ons bounded rather than turning the stream line into preset sprawl
 - keep protocol-material follow-ons bounded rather than jumping to mode presets
 - keep future rotor follow-ons bounded rather than turning mechanized realism into hidden helpers
+- keep post-AEAD trust/authentication work bounded rather than jumping straight to protocol suites
 - keep usability/teaching helpers like bypass instance-local and honest rather than widening them into universal hidden rewiring
 - keep tutorials and challenges shipping alongside the new language
 

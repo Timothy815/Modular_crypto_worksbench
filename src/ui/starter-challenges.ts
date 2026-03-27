@@ -36,6 +36,9 @@ const multiplyCompareUnpadProject = demoProjects.find((project) => project.id ==
 const visibleMessageWindowProject = demoProjects.find((project) => project.id === 'visible-message-window');
 const toyRsaProject = demoProjects.find((project) => project.id === 'toy-rsa');
 const diffieHellmanProject = demoProjects.find((project) => project.id === 'diffie-hellman-key-exchange');
+const visibleSignatureVerificationProject = demoProjects.find(
+  (project) => project.id === 'visible-signature-verification',
+);
 const keyScheduleWorkshopProject = demoProjects.find((project) => project.id === 'key-schedule-workshop');
 const recursiveKeyScheduleProject = demoProjects.find((project) => project.id === 'recursive-key-schedule');
 const visibleBlockChainingProject = demoProjects.find((project) => project.id === 'visible-block-chaining');
@@ -150,6 +153,9 @@ if (!toyRsaProject) {
 if (!diffieHellmanProject) {
   throw new Error('Expected diffie-hellman-key-exchange demo project to seed starter challenges.');
 }
+if (!visibleSignatureVerificationProject) {
+  throw new Error('Expected visible-signature-verification demo project to seed starter challenges.');
+}
 if (!keyScheduleWorkshopProject) {
   throw new Error('Expected key-schedule-workshop demo project to seed starter challenges.');
 }
@@ -238,6 +244,10 @@ const toyRsaTarget = cloneProject(toyRsaProject.project);
 const brokenToyRsaStart = cloneProject(toyRsaProject.project);
 const diffieHellmanTarget = cloneProject(diffieHellmanProject.project);
 const brokenDiffieHellmanStart = cloneProject(diffieHellmanProject.project);
+const visibleSignatureVerificationTarget = cloneProject(visibleSignatureVerificationProject.project);
+const brokenVisibleSignatureVerificationStart = cloneProject(
+  visibleSignatureVerificationProject.project,
+);
 const keyScheduleWorkshopTarget = cloneProject(keyScheduleWorkshopProject.project);
 const brokenKeyScheduleWorkshopStart = cloneProject(keyScheduleWorkshopProject.project);
 const recursiveKeyScheduleTarget = cloneProject(recursiveKeyScheduleProject.project);
@@ -362,6 +372,14 @@ if (!brokenBobPrivateExp) {
   throw new Error('Expected diffie-hellman-key-exchange demo project to contain bob-private.');
 }
 brokenBobPrivateExp.params.value = '0E';
+
+const brokenSignatureVerifyExp = brokenVisibleSignatureVerificationStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'public-exp',
+);
+if (!brokenSignatureVerifyExp) {
+  throw new Error('Expected visible-signature-verification demo project to contain public-exp.');
+}
+brokenSignatureVerifyExp.params.value = '02';
 
 const brokenRotate = brokenKeyScheduleWorkshopStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'rotate',
@@ -1336,6 +1354,27 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The generator g and the shared modulus p are already correct on every ModExp.',
       'Only Bob’s private exponent source is wrong.',
       'The correct exponent is one hex word larger than 0E.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-signature',
+    title: 'Repair the Signature',
+    projectId: 'visible-signature-verification',
+    group: 'Number Theory',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 245,
+    recommendedAfter: ['encrypting-is-not-enough'],
+    difficulty: 'intermediate',
+    prompt: 'This signature machine is failing at public verification. Restore the public exponent.',
+    startingProject: brokenVisibleSignatureVerificationStart,
+    startingLayout: cloneProject(visibleSignatureVerificationProject.layout),
+    targetProject: visibleSignatureVerificationTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The correct exponent is one larger than 02.',
     ],
   },
   {

@@ -247,6 +247,7 @@ Implemented and shipped:
 - `BYTE-ORIENTED-PRIMITIVES-V1.md`: framed bounded `v1.40.0` follow-on for explicit byte/word structure helpers
 - `INTEGRITY-AUTHENTICATION-V1.md`: framed bounded `v1.41.0` follow-on for visible tamper detection and authenticator comparison
 - `AEAD-FOUNDATIONS-V1.md`: framed bounded `v1.42.0` follow-on for visible authenticated-encryption-style composition
+- `DIGITAL-SIGNATURE-FOUNDATIONS-V1.md`: proposed bounded post-`v1.42.0` follow-on for visible signing and verification
 - `BYPASS-V1.md`: shipped bounded usability slice for visible instance-level bypass on eligible one-in/one-out modules
 - `INVERSE-PERMUTATION-AUTHORING-V1.md`: shipped bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors
 - `BRIDGE-ERGONOMICS-V1.md`: shipped bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior
