@@ -71,6 +71,7 @@ Read WORKBENCH-REFACTOR-V1.md before restructuring `workbench-panel.tsx`, moving
 Read STAGE-ASSEMBLY-ERGONOMICS-V1.md before changing selected stage-row / stage-column layout actions or broader stage-oriented builder-power assembly helpers.
 Read CLUSTER-BOUNDARY-PORT-AUTHORING-V1.md before changing inferred composite boundary-port capture, adding capture-time boundary controls, or expanding composite-boundary authoring behavior.
 Read MULTI-WINDOW-WORKSPACE-V1.md before extending the shipped detachable `Palette` / `Inspector` windows, broadening multi-tab workspace surfaces, or changing the host-authoritative synchronization model.
+Read MULTI-WINDOW-WORKSPACE-V2.md before extending the shipped detachable `Learning` window, splitting tutorials and challenges apart, or broadening the detached learning surface toward cryptanalysis or other panes.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.
 Read LEARNING-SEQUENCE-V1.md before restructuring the teaching library, adding staged progression, or changing how demos/tutorials/challenges are ordered.

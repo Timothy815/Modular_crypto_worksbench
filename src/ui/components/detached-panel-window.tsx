@@ -6,6 +6,7 @@ import { getEffectiveRegistry } from '../store';
 import type { UiAction } from '../store';
 import type {
   DetachedInspectorSnapshot,
+  DetachedLearningSnapshot,
   DetachedPanelCommand,
   DetachedPanelKind,
   DetachedPanelMessage,
@@ -17,6 +18,16 @@ import type {
 const ParameterInspector = lazy(() =>
   import('./parameter-inspector').then((module) => ({
     default: module.ParameterInspector,
+  })),
+);
+const TutorialPanel = lazy(() =>
+  import('./tutorial-panel').then((module) => ({
+    default: module.TutorialPanel,
+  })),
+);
+const ChallengePanel = lazy(() =>
+  import('./challenge-panel').then((module) => ({
+    default: module.ChallengePanel,
   })),
 );
 
@@ -111,11 +122,17 @@ export function DetachedPanelWindow({
 
     const theme: ThemeMode = snapshot?.payload.theme ?? 'light';
     document.documentElement.dataset.theme = theme;
-    document.title = kind === 'palette' ? 'MCW Tool Palette' : 'MCW Inspector';
+    document.title =
+      kind === 'palette'
+        ? 'MCW Tool Palette'
+        : kind === 'inspector'
+          ? 'MCW Inspector'
+          : 'MCW Learning';
   }, [kind, snapshot]);
 
   const registry = useMemo(() => {
-    const compositeLibrary = snapshot?.payload.compositeLibrary ?? [];
+    const compositeLibrary =
+      snapshot && 'compositeLibrary' in snapshot.payload ? snapshot.payload.compositeLibrary : [];
     return getEffectiveRegistry(V1_REGISTRY, compositeLibrary);
   }, [snapshot]);
 
@@ -170,12 +187,19 @@ export function DetachedPanelWindow({
             })
           }
         />
-      ) : (
+      ) : kind === 'inspector' ? (
         <Suspense fallback={<LazyPanelFallback label="Analyze" title="Loading inspector…" />}>
           <DetachedInspectorView
             snapshot={snapshot.payload as DetachedInspectorSnapshot}
             registry={registry}
             onDispatchAction={postAction}
+            onSendCommand={sendCommand}
+          />
+        </Suspense>
+      ) : (
+        <Suspense fallback={<LazyPanelFallback label="Learning" title="Loading learning surface…" />}>
+          <DetachedLearningView
+            snapshot={snapshot.payload as DetachedLearningSnapshot}
             onSendCommand={sendCommand}
           />
         </Suspense>
@@ -335,4 +359,91 @@ function postDetachedAction(
   };
   channel.postMessage(message);
   channel.close();
+}
+
+function DetachedLearningView({
+  snapshot,
+  onSendCommand,
+}: {
+  snapshot: DetachedLearningSnapshot;
+  onSendCommand: (command: DetachedPanelCommand) => void;
+}) {
+  return (
+    <section className="learning-dock detached-learning-dock">
+      <div className="learning-dock-tabs" role="tablist" aria-label="Learning panel">
+        {snapshot.hasTutorialPanel ? (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={snapshot.learningPanelTab === 'tutorial'}
+            className={
+              snapshot.learningPanelTab === 'tutorial'
+                ? 'learning-dock-tab active'
+                : 'learning-dock-tab'
+            }
+            onClick={() => onSendCommand({ type: 'setLearningTab', tab: 'tutorial' })}
+          >
+            Tutorial
+          </button>
+        ) : null}
+        {snapshot.hasChallengePanel ? (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={snapshot.learningPanelTab === 'challenge'}
+            className={
+              snapshot.learningPanelTab === 'challenge'
+                ? 'learning-dock-tab active'
+                : 'learning-dock-tab'
+            }
+            onClick={() => onSendCommand({ type: 'setLearningTab', tab: 'challenge' })}
+          >
+            Challenge
+          </button>
+        ) : null}
+      </div>
+
+      {snapshot.learningPanelTab === 'challenge' && snapshot.selectedChallengeId ? (
+        <ChallengePanel
+          challenges={snapshot.challenges}
+          selectedChallengeId={snapshot.selectedChallengeId}
+          evaluation={snapshot.challengeEvaluation}
+          currentProject={snapshot.currentProject}
+          canCaptureChallenge={snapshot.canCaptureChallenge}
+          onSelectChallenge={(challengeId) => onSendCommand({ type: 'selectChallenge', challengeId })}
+          onLoadChallengeStart={() => onSendCommand({ type: 'loadChallengeStart' })}
+          onExportChallenge={() => onSendCommand({ type: 'exportChallenge' })}
+          onImportChallenge={(file) => {
+            void file.text().then((rawValue) => {
+              onSendCommand({ type: 'importChallengeRaw', rawValue });
+            });
+          }}
+          onCaptureChallenge={() => onSendCommand({ type: 'captureChallenge' })}
+        />
+      ) : null}
+
+      {snapshot.learningPanelTab === 'tutorial' && snapshot.selectedTutorialId ? (
+        <TutorialPanel
+          tutorials={snapshot.tutorials}
+          selectedTutorialId={snapshot.selectedTutorialId}
+          currentProjectId={snapshot.currentProjectId}
+          stepIndex={snapshot.tutorialStepIndex}
+          activeStep={snapshot.selectedTutorialStep}
+          completedTutorialIds={snapshot.completedTutorialIds}
+          isCompleted={snapshot.isTutorialCompleted}
+          workspaceMode={snapshot.workspaceMode}
+          tutorialNotesVisible={snapshot.tutorialNotesVisible}
+          onSetWorkspaceMode={(mode) => onSendCommand({ type: 'setWorkspaceMode', mode })}
+          onSetTutorialNotesVisible={(visible) =>
+            onSendCommand({ type: 'setTutorialNotesVisible', visible })
+          }
+          onSelectTutorial={(tutorialId) => onSendCommand({ type: 'selectTutorial', tutorialId })}
+          onSetStep={(stepIndex) => onSendCommand({ type: 'setTutorialStep', stepIndex })}
+          onSwitchProject={(projectId) => onSendCommand({ type: 'switchProject', projectId })}
+          onFocusStepModule={(moduleId) => onSendCommand({ type: 'focusStepModule', moduleId })}
+          onResetProgress={() => onSendCommand({ type: 'resetTutorialProgress' })}
+        />
+      ) : null}
+    </section>
+  );
 }

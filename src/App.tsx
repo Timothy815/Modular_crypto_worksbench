@@ -52,6 +52,7 @@ import {
   DETACHED_PANEL_QUERY_KEY,
   DETACHED_PANEL_WINDOW_QUERY_KEY,
   type DetachedInspectorSnapshot,
+  type DetachedLearningSnapshot,
   type DetachedPanelKind,
   type DetachedPanelMessage,
   type DetachedPanelStateSnapshot,
@@ -276,6 +277,7 @@ function MainApp() {
   const [detachedPanels, setDetachedPanels] = useState<Record<DetachedPanelKind, boolean>>({
     palette: false,
     inspector: false,
+    learning: false,
   });
   const [state, dispatch] = useReducer(
     uiReducer,
@@ -921,11 +923,55 @@ function MainApp() {
       validationIssues,
     ],
   );
-  const completedTutorialIds =
-    state.completedTutorialsByProject[activeProjectDefinition.id] ?? [];
+  const completedTutorialIds = useMemo(
+    () => state.completedTutorialsByProject[activeProjectDefinition.id] ?? [],
+    [activeProjectDefinition.id, state.completedTutorialsByProject],
+  );
   const isTutorialCompleted = selectedTutorial
     ? completedTutorialIds.includes(selectedTutorial.id)
     : false;
+  const detachedLearningSnapshot = useMemo<DetachedLearningSnapshot>(
+    () => ({
+      theme,
+      learningPanelTab: activeLearningPanelTab,
+      hasTutorialPanel,
+      hasChallengePanel,
+      tutorials: state.tutorialLibrary,
+      challenges: state.challengeLibrary,
+      selectedTutorialId: selectedTutorial?.id ?? null,
+      selectedChallengeId: selectedChallenge?.id ?? null,
+      currentProjectId: activeProjectDefinition.id,
+      currentProject: activeProjectState,
+      tutorialStepIndex,
+      selectedTutorialStep,
+      completedTutorialIds,
+      isTutorialCompleted,
+      workspaceMode,
+      tutorialNotesVisible,
+      challengeEvaluation,
+      canCaptureChallenge,
+    }),
+    [
+      activeLearningPanelTab,
+      activeProjectDefinition.id,
+      activeProjectState,
+      canCaptureChallenge,
+      challengeEvaluation,
+      completedTutorialIds,
+      hasChallengePanel,
+      hasTutorialPanel,
+      isTutorialCompleted,
+      selectedChallenge,
+      selectedTutorial,
+      selectedTutorialStep,
+      state.challengeLibrary,
+      state.tutorialLibrary,
+      theme,
+      tutorialNotesVisible,
+      tutorialStepIndex,
+      workspaceMode,
+    ],
+  );
   const syncTutorialStepFromTrace = useCallback(
     (nextIndex: number | null) => {
       setStepIndex(nextIndex);
@@ -1478,7 +1524,12 @@ function MainApp() {
         hostId: hostWindowIdRef.current,
         panelWindowId,
         kind,
-        payload: kind === 'palette' ? detachedPaletteSnapshot : detachedInspectorSnapshot,
+        payload:
+          kind === 'palette'
+            ? detachedPaletteSnapshot
+            : kind === 'inspector'
+              ? detachedInspectorSnapshot
+              : detachedLearningSnapshot,
       };
       const message: DetachedPanelMessage = {
         type: 'snapshot',
@@ -1633,6 +1684,130 @@ function MainApp() {
           case 'unzipComposite':
             handleUnzipComposite(message.command.moduleId);
             return;
+          case 'setLearningTab':
+            setLearningPanelTab(message.command.tab);
+            return;
+          case 'selectChallenge': {
+            const { challengeId } = message.command;
+            const nextChallenge =
+              state.challengeLibrary.find((challenge) => challenge.id === challengeId) ??
+              null;
+            const challengeProjectId = nextChallenge?.projectId ?? activeProjectDefinition.id;
+            setLearningPanelTab('challenge');
+            if (challengeProjectId !== activeProjectDefinition.id) {
+              dispatch({ type: 'switchProject', projectId: challengeProjectId });
+            }
+            dispatch({
+              type: 'selectChallenge',
+              projectId: challengeProjectId,
+              challengeId,
+            });
+            return;
+          }
+          case 'loadChallengeStart':
+            setLearningPanelTab('challenge');
+            setIsChallengeResetConfirmOpen(true);
+            return;
+          case 'exportChallenge':
+            if (selectedChallenge) {
+              downloadGuidedChallengeDocument(selectedChallenge);
+            }
+            return;
+          case 'importChallengeRaw': {
+            const challengeDocument = parseGuidedChallengeDocument(message.command.rawValue);
+            if (!challengeDocument) {
+              setImportError('The selected file is not a valid MCW guided challenge document.');
+              return;
+            }
+            dispatch({ type: 'upsertChallenge', challenge: challengeDocument });
+            const challengeProjectId = challengeDocument.projectId ?? activeProjectDefinition.id;
+            setLearningPanelTab('challenge');
+            if (challengeProjectId !== activeProjectDefinition.id) {
+              dispatch({ type: 'switchProject', projectId: challengeProjectId });
+            }
+            dispatch({
+              type: 'selectChallenge',
+              projectId: challengeProjectId,
+              challengeId: challengeDocument.id,
+            });
+            setImportError(null);
+            return;
+          }
+          case 'captureChallenge':
+            setLearningPanelTab('challenge');
+            {
+              const defaultTitle = `${activeProjectDefinition.name} Guided Lab`;
+              setChallengeCaptureTitle(defaultTitle);
+              setChallengeCaptureId(createChallengeIdCandidate(defaultTitle));
+              if (activeProjectDefinition.id === 'sequential') {
+                setChallengeCaptureDifficulty('intermediate');
+                setChallengeCapturePrompt(
+                  `Repair or complete the ${activeProjectDefinition.name} machine until its running output stream matches the captured reference behavior.`,
+                );
+                setChallengeCaptureHints(
+                  'The clock period controls when the machine advances.\nUse the tick bar and probes to find the first wrong moment.',
+                );
+              } else {
+                setChallengeCaptureDifficulty('beginner');
+                setChallengeCapturePrompt(
+                  `Repair or complete the ${activeProjectDefinition.name} machine until its output matches the captured reference behavior.`,
+                );
+                setChallengeCaptureHints('');
+              }
+              setChallengeCaptureShouldExport(true);
+              setChallengeCaptureError(null);
+              setIsChallengeCaptureOpen(true);
+            }
+            return;
+          case 'selectTutorial': {
+            const { tutorialId } = message.command;
+            const nextTutorial =
+              state.tutorialLibrary.find((tutorial) => tutorial.id === tutorialId) ?? null;
+            setLearningPanelTab('tutorial');
+            setStepIndex(nextTutorial?.steps[0]?.targetStepIndex ?? null);
+            dispatch({
+              type: 'selectTutorial',
+              projectId: activeProjectDefinition.id,
+              tutorialId,
+            });
+            return;
+          }
+          case 'setTutorialStep':
+            setStepIndex(selectedTutorial?.steps[message.command.stepIndex]?.targetStepIndex ?? null);
+            dispatch({
+              type: 'setTutorialStep',
+              projectId: activeProjectDefinition.id,
+              stepIndex: message.command.stepIndex,
+            });
+            return;
+          case 'switchProject':
+            dispatch({ type: 'switchProject', projectId: message.command.projectId });
+            return;
+          case 'setWorkspaceMode':
+            dispatch({
+              type: 'setWorkspaceMode',
+              projectId: activeProjectDefinition.id,
+              mode: message.command.mode,
+            });
+            return;
+          case 'setTutorialNotesVisible':
+            dispatch({
+              type: 'setTutorialNotesVisible',
+              projectId: activeProjectDefinition.id,
+              visible: message.command.visible,
+            });
+            return;
+          case 'focusStepModule':
+            setRequestedWorkspaceFocusModuleId(message.command.moduleId);
+            return;
+          case 'resetTutorialProgress':
+            if (selectedTutorial) {
+              dispatch({
+                type: 'resetTutorialProgress',
+                projectId: activeProjectDefinition.id,
+              });
+            }
+            return;
         }
       }
 
@@ -1651,16 +1826,22 @@ function MainApp() {
   }, [
     activeCompositeEntry,
     activeProjectDefinition.id,
+    activeProjectDefinition.name,
     detachedInspectorSnapshot,
+    detachedLearningSnapshot,
     detachedPaletteSnapshot,
     effectiveRegistry,
     handleOpenPrimitiveMicroDemo,
     handleUnzipComposite,
+    selectedChallenge,
     selectedModule,
     selectedModuleDef,
     selectedModuleParamKeys,
+    selectedTutorial,
     state.compositeEditor,
+    state.challengeLibrary,
     state.compositeLibrary,
+    state.tutorialLibrary,
     syncTutorialStepFromTrace,
   ]);
 
@@ -1697,11 +1878,25 @@ function MainApp() {
         },
       } satisfies DetachedPanelMessage);
     }
+    if (detachedPanels.learning) {
+      const learningWindow = detachedPanelWindowsRef.current.learning;
+      const learningWindowId = learningWindow?.name.split('mcw-learning-')[1] ?? createWindowSessionId();
+      channel.postMessage({
+        type: 'snapshot',
+        snapshot: {
+          hostId: hostWindowIdRef.current,
+          panelWindowId: learningWindowId,
+          kind: 'learning',
+          payload: detachedLearningSnapshot,
+        },
+      } satisfies DetachedPanelMessage);
+    }
     channel.close();
-  }, [detachedInspectorSnapshot, detachedPaletteSnapshot, detachedPanels]);
+  }, [detachedInspectorSnapshot, detachedLearningSnapshot, detachedPaletteSnapshot, detachedPanels]);
 
   const showPaletteInMain = state.showPalette && !detachedPanels.palette;
   const showInspectorInMain = state.showInspector && !detachedPanels.inspector;
+  const showLearningInMain = !detachedPanels.learning;
 
   return (
     <main className="app-shell">
@@ -1806,6 +2001,10 @@ function MainApp() {
                   openDetachedPanel('inspector');
                 } else if (value === 'return-inspector-window') {
                   returnDetachedPanelToMain('inspector');
+                } else if (value === 'open-learning-window') {
+                  openDetachedPanel('learning');
+                } else if (value === 'return-learning-window') {
+                  returnDetachedPanelToMain('learning');
                 } else if (value === 'toggle-step-notes') {
                   dispatch({
                     type: 'setTutorialNotesVisible',
@@ -1894,6 +2093,13 @@ function MainApp() {
                 {detachedPanels.inspector
                   ? 'Return Inspector To Main Window'
                   : 'Open Inspector In Window'}
+              </option>
+              <option
+                value={detachedPanels.learning ? 'return-learning-window' : 'open-learning-window'}
+              >
+                {detachedPanels.learning
+                  ? 'Return Learning To Main Window'
+                  : 'Open Learning In Window'}
               </option>
               <option value="toggle-step-notes">
                 {tutorialNotesVisible ? 'Hide Step Notes' : 'Show Step Notes'}
@@ -2643,7 +2849,7 @@ function MainApp() {
                 }
               />
             </Suspense>
-          ) : hasChallengePanel || hasTutorialPanel ? (
+          ) : showLearningInMain && (hasChallengePanel || hasTutorialPanel) ? (
             <section className="learning-dock">
               <div className="learning-dock-tabs" role="tablist" aria-label="Learning panel">
                 {hasTutorialPanel ? (

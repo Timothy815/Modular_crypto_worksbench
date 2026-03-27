@@ -177,6 +177,12 @@ That bounded multi-window workspace slice is now also shipped:
 - host-authoritative live synchronization across windows
 - docked copies hidden in the main window while detached copies are active
 
+The first follow-on for that line is now also shipped:
+- `MULTI-WINDOW-WORKSPACE-V2.md`
+- one detachable `Learning` window
+- tutorials and challenges kept together as the existing tabbed learning surface
+- host-authoritative live synchronization preserved for tutorial/challenge interactions
+
 The current ranked near-future order is:
 1. continue the `v2.1` builder-power line
 2. expand Python export carefully

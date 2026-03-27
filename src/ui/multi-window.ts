@@ -2,11 +2,14 @@ import type { CompositeLibraryEntry } from '../engine/composites';
 import type { ExecutionResult, ExecutionTraceEntry, Project, ValidationIssue } from '../engine/types';
 import type { UiAction } from './store';
 import type { TutorialStep } from './tutorials';
+import type { GuidedTutorial } from './tutorials';
+import type { GuidedChallenge, ChallengeEvaluation } from './challenges';
 import type { ComparisonBaselineDocument } from './workbench-document';
 import type { ExecutionComparison } from './execution-compare';
 import type { WorkbenchAnnotation } from './workbench-document';
+import type { WorkspaceMode } from './workspace-mode';
 
-export type DetachedPanelKind = 'palette' | 'inspector';
+export type DetachedPanelKind = 'palette' | 'inspector' | 'learning';
 export type ThemeMode = 'light' | 'dark';
 
 export const DETACHED_PANEL_CHANNEL_NAME = 'mcw-detached-panel-v1';
@@ -60,11 +63,32 @@ export interface DetachedInspectorSnapshot {
   canRenameModuleIds: boolean;
 }
 
+export interface DetachedLearningSnapshot {
+  theme: ThemeMode;
+  learningPanelTab: 'tutorial' | 'challenge';
+  hasTutorialPanel: boolean;
+  hasChallengePanel: boolean;
+  tutorials: GuidedTutorial[];
+  challenges: GuidedChallenge[];
+  selectedTutorialId: string | null;
+  selectedChallengeId: string | null;
+  currentProjectId: string;
+  currentProject: Project;
+  tutorialStepIndex: number;
+  selectedTutorialStep: TutorialStep | null;
+  completedTutorialIds: string[];
+  isTutorialCompleted: boolean;
+  workspaceMode: WorkspaceMode;
+  tutorialNotesVisible: boolean;
+  challengeEvaluation: ChallengeEvaluation | null;
+  canCaptureChallenge: boolean;
+}
+
 export interface DetachedPanelStateSnapshot {
   hostId: string;
   panelWindowId: string;
   kind: DetachedPanelKind;
-  payload: DetachedPaletteSnapshot | DetachedInspectorSnapshot;
+  payload: DetachedPaletteSnapshot | DetachedInspectorSnapshot | DetachedLearningSnapshot;
 }
 
 export type DetachedPanelCommand =
@@ -91,7 +115,20 @@ export type DetachedPanelCommand =
   | { type: 'requestFocusModule'; moduleId: string }
   | { type: 'captureBaseline' }
   | { type: 'clearBaseline' }
-  | { type: 'unzipComposite'; moduleId: string };
+  | { type: 'unzipComposite'; moduleId: string }
+  | { type: 'setLearningTab'; tab: 'tutorial' | 'challenge' }
+  | { type: 'selectChallenge'; challengeId: string }
+  | { type: 'loadChallengeStart' }
+  | { type: 'exportChallenge' }
+  | { type: 'importChallengeRaw'; rawValue: string }
+  | { type: 'captureChallenge' }
+  | { type: 'selectTutorial'; tutorialId: string }
+  | { type: 'setTutorialStep'; stepIndex: number }
+  | { type: 'switchProject'; projectId: string }
+  | { type: 'setWorkspaceMode'; mode: WorkspaceMode }
+  | { type: 'setTutorialNotesVisible'; visible: boolean }
+  | { type: 'focusStepModule'; moduleId: string }
+  | { type: 'resetTutorialProgress' };
 
 export type DetachedPanelMessage =
   | {
@@ -125,7 +162,7 @@ export type DetachedPanelMessage =
     };
 
 export function isDetachedPanelKind(value: string | null): value is DetachedPanelKind {
-  return value === 'palette' || value === 'inspector';
+  return value === 'palette' || value === 'inspector' || value === 'learning';
 }
 
 export function createDetachedPanelUrl(

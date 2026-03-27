@@ -109,6 +109,12 @@ Current `main` now also includes the first bounded multi-window slice:
 - host-authoritative live synchronization over a bounded window bridge
 - docked copies hidden in the main window while detached copies are active
 
+Current `main` now also includes the first multi-window follow-on:
+- `MULTI-WINDOW-WORKSPACE-V2.md`
+- one detachable `Learning` window
+- tutorials and challenges kept together as the existing tabbed learning surface
+- host-authoritative synchronization preserved for tutorial/challenge interactions
+
 The next recommended builder-power follow-on is now shipped:
 - `CLUSTER-BOUNDARY-PORT-AUTHORING-V1.md`
 - explicit include/exclude control over inferred composite boundary ports during capture
@@ -339,9 +345,9 @@ The current implementation-ready export follow-on after that is:
 - one standalone `.py` artifact
 - explicit compatibility rejection for unsupported modules
 
-The next follow-on for this line, if revisited later, should stay separate from the shipped first slice:
+The next follow-on for this line, if revisited later, should stay separate from the shipped first two slices:
 - broader multi-window / multi-tab support for additional surfaces
-- likely tutorials, challenges, or cryptanalysis only after the host-synchronization model proves durable
+- likely cryptanalysis or other later surfaces only after the host-synchronization model proves durable
 
 Established and shipped:
 - implementation contract and AI coordination protocol
