@@ -120,6 +120,10 @@ interface WorkbenchPanelProps {
   onRequestCreateComposite: () => void;
   onRequestDuplicateSelection: () => void;
   onRequestDeleteSelection: () => void;
+  onRequestUndo: () => void;
+  onRequestRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
   onSwitchProject: (projectId: string) => void;
   onAddConnection: (
     fromModuleId: string,
@@ -188,6 +192,10 @@ export function WorkbenchPanel({
   onRequestCreateComposite,
   onRequestDuplicateSelection,
   onRequestDeleteSelection,
+  onRequestUndo,
+  onRequestRedo,
+  canUndo,
+  canRedo,
   onSwitchProject,
   onAddConnection,
   onRemoveConnection,
@@ -720,6 +728,22 @@ export function WorkbenchPanel({
               onClick={onTidyLayout}
             >
               Tidy Layout
+            </button>
+            <button
+              type="button"
+              className="mini-action-button"
+              onClick={onRequestUndo}
+              disabled={!canUndo}
+            >
+              Undo
+            </button>
+            <button
+              type="button"
+              className="mini-action-button"
+              onClick={onRequestRedo}
+              disabled={!canRedo}
+            >
+              Redo
             </button>
             <button
               type="button"

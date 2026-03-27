@@ -23,6 +23,8 @@ Current development now carries:
   - `V2.1-AUTHORING-POWER-PLAN.md`
   - `REPEATED-STRUCTURE-AUTHORING-V1.md`
   - `SELECTED-CLUSTER-OPERATIONS-V1.md`
+  - `WORKSPACE-HISTORY-V1.md`
+  - `WORKSPACE-VERSIONING-V1.md`
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -132,6 +134,12 @@ The next bounded follow-on after that is:
 - cluster operations:
   - drag-box selection on empty canvas
   - explicit selected-cluster deletion
+
+The current active authoring-safety slice after cluster operations is:
+- workspace-local undo / redo history
+
+The next checkpointing follow-on after that is:
+- named workspace versions / restore points
 
 Established and shipped:
 - implementation contract and AI coordination protocol

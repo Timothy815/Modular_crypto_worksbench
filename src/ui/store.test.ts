@@ -308,6 +308,155 @@ describe('uiReducer', () => {
     expect(nextState.currentTickByProject[projectId]).toBe(0);
   });
 
+  it('undoes and redoes recent workspace authoring actions', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const firstModuleId = initialState.projectStates[projectId].modules[0]?.id;
+
+    if (!firstModuleId) {
+      throw new Error('Expected a module in the sequential demo.');
+    }
+
+    const renamedState = uiReducer(initialState, {
+      type: 'renameModuleInstance',
+      projectId,
+      moduleId: firstModuleId,
+      nextModuleId: 'history-source',
+    });
+    const undoneState = uiReducer(renamedState, {
+      type: 'undoWorkspaceHistory',
+      projectId,
+    });
+    const redoneState = uiReducer(undoneState, {
+      type: 'redoWorkspaceHistory',
+      projectId,
+    });
+
+    expect(
+      renamedState.projectStates[projectId].modules.some(
+        (moduleInstance) => moduleInstance.id === 'history-source',
+      ),
+    ).toBe(true);
+    expect(
+      undoneState.projectStates[projectId].modules.some(
+        (moduleInstance) => moduleInstance.id === firstModuleId,
+      ),
+    ).toBe(true);
+    expect(
+      undoneState.projectStates[projectId].modules.some(
+        (moduleInstance) => moduleInstance.id === 'history-source',
+      ),
+    ).toBe(false);
+    expect(
+      redoneState.projectStates[projectId].modules.some(
+        (moduleInstance) => moduleInstance.id === 'history-source',
+      ),
+    ).toBe(true);
+  });
+
+  it('clears redo history after a new authoring action', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const firstModuleId = initialState.projectStates[projectId].modules[0]?.id;
+
+    if (!firstModuleId) {
+      throw new Error('Expected a module in the sequential demo.');
+    }
+
+    const renamedState = uiReducer(initialState, {
+      type: 'renameModuleInstance',
+      projectId,
+      moduleId: firstModuleId,
+      nextModuleId: 'history-source',
+    });
+    const undoneState = uiReducer(renamedState, {
+      type: 'undoWorkspaceHistory',
+      projectId,
+    });
+    const branchedState = uiReducer(undoneState, {
+      type: 'moveModule',
+      projectId,
+      moduleId: firstModuleId,
+      x: 480,
+      y: 240,
+    });
+
+    expect(branchedState.workspaceHistoryByProject[projectId]?.future).toEqual([]);
+  });
+
+  it('keeps workspace history isolated per project', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const otherProjectId = 'toy-rsa';
+    const firstModuleId = initialState.projectStates[projectId].modules[0]?.id;
+
+    if (!firstModuleId) {
+      throw new Error('Expected a module in the sequential demo.');
+    }
+
+    const nextState = uiReducer(initialState, {
+      type: 'renameModuleInstance',
+      projectId,
+      moduleId: firstModuleId,
+      nextModuleId: 'history-source',
+    });
+
+    expect(nextState.workspaceHistoryByProject[projectId]?.past.length).toBe(1);
+    expect(nextState.workspaceHistoryByProject[otherProjectId]?.past.length ?? 0).toBe(0);
+  });
+
+  it('restores annotation state through undo history', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+
+    const annotatedState = uiReducer(initialState, {
+      type: 'addAnnotation',
+      projectId,
+    });
+    const annotationId = annotatedState.annotationsByProject[projectId]?.[0]?.id;
+
+    if (!annotationId) {
+      throw new Error('Expected an annotation to be created.');
+    }
+
+    const editedState = uiReducer(annotatedState, {
+      type: 'updateAnnotationText',
+      projectId,
+      annotationId,
+      text: 'History note',
+    });
+    const undoneState = uiReducer(editedState, {
+      type: 'undoWorkspaceHistory',
+      projectId,
+    });
+
+    expect(editedState.annotationsByProject[projectId]?.[0]?.text).toBe('History note');
+    expect(undoneState.annotationsByProject[projectId]?.[0]?.text).toBe('Add note...');
+  });
+
+  it('bounds workspace history depth deterministically', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const moduleId = initialState.projectStates[projectId].modules[0]?.id;
+
+    if (!moduleId) {
+      throw new Error('Expected a module in the sequential demo.');
+    }
+
+    let nextState = initialState;
+    for (let index = 0; index < 45; index += 1) {
+      nextState = uiReducer(nextState, {
+        type: 'moveModule',
+        projectId,
+        moduleId,
+        x: 120 + index * 8,
+        y: 140 + index * 4,
+      });
+    }
+
+    expect(nextState.workspaceHistoryByProject[projectId]?.past.length).toBe(40);
+  });
+
   it('does not remove built-in architecture entries from the library', () => {
     const initialState = createInitialUiState(demoProjects);
     const builtInEntry = initialState.compositeLibrary.find((entry) => entry.source === 'built-in');

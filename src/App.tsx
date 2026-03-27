@@ -462,6 +462,10 @@ function App() {
     state.isTickPlaybackActiveByProject[activeProjectDefinition.id] ?? false;
   const tickPlaybackSpeedMs =
     state.tickPlaybackSpeedMsByProject[activeProjectDefinition.id] ?? 500;
+  const activeWorkspaceHistory =
+    state.workspaceHistoryByProject[activeProjectDefinition.id] ?? { past: [], future: [] };
+  const canUndoWorkspaceHistory = !state.compositeEditor && activeWorkspaceHistory.past.length > 0;
+  const canRedoWorkspaceHistory = !state.compositeEditor && activeWorkspaceHistory.future.length > 0;
 
   let execution: ExecutionResult | null = null;
   let executionError: string | null = null;
@@ -1012,6 +1016,30 @@ function App() {
     setImportError(null);
   }
 
+  function handleUndoWorkspaceHistory() {
+    if (state.compositeEditor || !canUndoWorkspaceHistory) {
+      return;
+    }
+
+    dispatch({
+      type: 'undoWorkspaceHistory',
+      projectId: activeProjectDefinition.id,
+    });
+    setImportError(null);
+  }
+
+  function handleRedoWorkspaceHistory() {
+    if (state.compositeEditor || !canRedoWorkspaceHistory) {
+      return;
+    }
+
+    dispatch({
+      type: 'redoWorkspaceHistory',
+      projectId: activeProjectDefinition.id,
+    });
+    setImportError(null);
+  }
+
   function handleUnzipComposite(moduleId: string) {
     if (!selectedModule || selectedModule.id !== moduleId) {
       return;
@@ -1183,6 +1211,10 @@ function App() {
                   handleDuplicateSelectedCluster();
                 } else if (value === 'delete-selected-cluster') {
                   handleDeleteSelectedCluster();
+                } else if (value === 'undo-workspace-history') {
+                  handleUndoWorkspaceHistory();
+                } else if (value === 'redo-workspace-history') {
+                  handleRedoWorkspaceHistory();
                 } else if (value === 'save-current-workspace') {
                   handleSaveCurrentWorkspace();
                 } else if (value === 'delete-current-workspace') {
@@ -1193,6 +1225,12 @@ function App() {
               <option value="">Actions…</option>
               <option value="new-blank-workspace">New Blank Workspace</option>
               <option value="duplicate-current-workspace">Duplicate Workspace</option>
+              <option value="undo-workspace-history" disabled={!canUndoWorkspaceHistory}>
+                Undo
+              </option>
+              <option value="redo-workspace-history" disabled={!canRedoWorkspaceHistory}>
+                Redo
+              </option>
               <option value="duplicate-selected-cluster">Duplicate Selected Cluster</option>
               <option value="delete-selected-cluster">Delete Selected Cluster</option>
               <option value="copy-selected-cluster">Copy Selected Cluster</option>
@@ -1399,6 +1437,10 @@ function App() {
             }}
             onRequestDuplicateSelection={handleDuplicateSelectedCluster}
             onRequestDeleteSelection={handleDeleteSelectedCluster}
+            onRequestUndo={handleUndoWorkspaceHistory}
+            onRequestRedo={handleRedoWorkspaceHistory}
+            canUndo={canUndoWorkspaceHistory}
+            canRedo={canRedoWorkspaceHistory}
             onAddConnection={(fromModuleId, fromPort, toModuleId, toPort) =>
               dispatch({
                 type: 'addConnection',
