@@ -346,3 +346,11 @@ export function getRecommendedNextItem<T extends SequencedLearningItem>(
 
   return null;
 }
+
+export function getFirstLearningItemInGroup<T extends SequencedLearningItem>(
+  items: T[],
+  group: string,
+): T | null {
+  const sorted = [...items].sort(compareLearningItems);
+  return sorted.find((item) => (item.group ?? 'Other') === group) ?? null;
+}

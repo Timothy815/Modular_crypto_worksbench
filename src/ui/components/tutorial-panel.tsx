@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 
 import {
   compareLearningItems,
+  getFirstLearningItemInGroup,
   getLearningGroupLabel,
   getLearningStageLabel,
   getRecommendedAfterTitles,
@@ -137,9 +138,7 @@ export function TutorialPanel({
             value={activeGroup}
             onChange={(event) => {
               const nextGroup = event.target.value;
-              const nextTutorial = tutorials.find(
-                (tutorial) => (tutorial.group ?? 'Other') === nextGroup,
-              );
+              const nextTutorial = getFirstLearningItemInGroup(tutorials, nextGroup);
               if (nextTutorial && nextTutorial.id !== selectedTutorialId) {
                 onSelectTutorial(nextTutorial.id);
               }

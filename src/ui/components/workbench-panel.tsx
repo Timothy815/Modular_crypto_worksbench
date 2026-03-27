@@ -17,6 +17,7 @@ import {
 import type { DemoProject } from '../demo-projects';
 import {
   compareLearningItems,
+  getFirstLearningItemInGroup,
   getLearningGroupLabel,
   getLearningStageLabel,
   getRecommendedAfterTitles,
@@ -524,9 +525,7 @@ export function WorkbenchPanel({
                 value={activeProjectGroup}
                 onChange={(event) => {
                   const nextGroup = event.target.value;
-                  const firstProject = projects.find(
-                    (project) => (project.group ?? 'Other') === nextGroup,
-                  );
+                  const firstProject = getFirstLearningItemInGroup(projects, nextGroup);
                   if (firstProject && firstProject.id !== activeProject.id) {
                     onSwitchProject(firstProject.id);
                   }

@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import type { GuidedChallenge, ChallengeEvaluation } from '../challenges';
 import {
   compareLearningItems,
+  getFirstLearningItemInGroup,
   getLearningGroupLabel,
   getLearningStageLabel,
   getRecommendedAfterTitles,
@@ -130,9 +131,7 @@ export function ChallengePanel({
             value={activeGroup}
             onChange={(event) => {
               const nextGroup = event.target.value;
-              const nextChallenge = challenges.find(
-                (challenge) => (challenge.group ?? 'Other') === nextGroup,
-              );
+              const nextChallenge = getFirstLearningItemInGroup(challenges, nextGroup);
               if (nextChallenge && nextChallenge.id !== selectedChallengeId) {
                 onSelectChallenge(nextChallenge.id);
               }

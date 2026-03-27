@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   compareLearningItems,
+  getFirstLearningItemInGroup,
   getLearningGroupLabel,
   getRecommendedAfterTitles,
   getSortedLearningGroups,
@@ -107,6 +108,27 @@ describe('learning-sequence helpers', () => {
     );
     expect(getLearningGroupLabel('Systems Composition', 1)).toBe(
       'Stage 11 · Asymmetric Verification And Systems Composition — Systems Composition (1 item)',
+    );
+  });
+
+  it('chooses the first group item by suggested learning order instead of source order', () => {
+    const items: SequencedLearningItem[] = [
+      {
+        id: 'visible-secure-handshake',
+        title: 'Visible Secure Handshake',
+        group: 'Systems Composition',
+        order: 255,
+      },
+      {
+        id: 'visible-signature-verification',
+        title: 'Visible Signature Verification',
+        group: 'Systems Composition',
+        order: 245,
+      },
+    ];
+
+    expect(getFirstLearningItemInGroup(items, 'Systems Composition')?.id).toBe(
+      'visible-signature-verification',
     );
   });
 });
