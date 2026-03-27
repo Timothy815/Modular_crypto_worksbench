@@ -76,9 +76,12 @@ V1 supports only stateless primitive modules from these families:
 
 ### Sources / Sinks
 - `TextInput`
+- `AsciiSource`
 - `BitSource`
 - `HexSource`
 - `Output`
+- `TextOutput`
+- `BitsToAscii`
 - `BitOutput`
 - `HexOutput`
 
@@ -110,6 +113,7 @@ V1 supports only stateless primitive modules from these families:
 - `BitShifter`
 
 This list is intentionally narrow.
+It is a curated V1 subset, not a promise that every stateless primitive is included.
 
 ---
 
@@ -159,6 +163,12 @@ For supported workspaces, the generated Python program must produce output equiv
 
 The first slice should prefer exact output equivalence over clever Python style.
 
+Export requires:
+- normal MCW graph validation to pass
+- compatibility checking for the supported export subset to pass
+
+If graph validation fails, V1 must report validation issues first rather than attempting compatibility-only export.
+
 ---
 
 ## Artifact Shape
@@ -180,6 +190,11 @@ V1 should not generate:
 
 Python stdlib only.
 
+V1 should target:
+- Python `3.8+`
+
+The generated code must avoid newer syntax that would unnecessarily narrow compatibility.
+
 ---
 
 ## Readability Requirement
@@ -192,6 +207,15 @@ Generated Python should be structurally readable:
 - no encoded blobs
 
 The generated code should look like a direct executable rendering of the workspace, not a compressed serialization payload.
+
+### Identifier Sanitization
+
+Module instance IDs and any derived variable names must be sanitized into valid Python identifiers:
+- replace non-alphanumeric characters with `_`
+- collapse repeated `_` where practical
+- prefix with `m_` if the identifier would otherwise start with a digit
+
+Exported file names should be sanitized similarly, then suffixed with `.py`.
 
 ---
 
@@ -207,6 +231,18 @@ User flow:
 2. compatibility check runs
 3. if compatible, download one `.py` file
 4. if incompatible, show a clear report and do not emit code
+
+### Sink Output Format
+
+V1 should print sink outputs in a stable text format:
+- symbol sinks print plain string values
+- bit sinks print space-free binary strings such as `10110001`
+- hex sinks print uppercase hex strings
+
+Each sink should print on its own line using:
+- `<module_id>: <value>`
+
+The printed `<module_id>` should use the original MCW module instance ID, not the sanitized Python identifier.
 
 ---
 
@@ -225,6 +261,8 @@ V1 must not generate placeholders that appear valid.
 
 Failure should be clear and blocking.
 
+The compatibility check may later gain warning tiers, but V1 should treat unsupported modules or unsupported features as blocking failures.
+
 ---
 
 ## Test Strategy
@@ -242,6 +280,11 @@ At least one test should cover:
 
 The point of V1 is not just file generation.
 It is faithful external execution for the supported subset.
+
+Parity tests should:
+- spawn a `python3` subprocess
+- skip gracefully if `python3` is unavailable on the test machine
+- compare parsed sink outputs against `executeProject()` sink outputs for the same workspace
 
 ---
 
@@ -272,6 +315,35 @@ This slice should explicitly avoid:
 - generating Python that hides the original graph structure
 - broad build-system integration
 - packaging MCW as a full compiler toolchain
+
+---
+
+## Generated Code Sketch
+
+For a simple pipeline such as:
+- `BitSource -> XOR -> BitOutput`
+
+the generated code should look structurally like:
+
+```python
+def xor_bits(a, b):
+    return [left ^ right for left, right in zip(a, b)]
+
+def run():
+    m_source = [1, 0, 1, 1]
+    m_mask = [0, 1, 0, 1]
+    m_xor = xor_bits(m_source, m_mask)
+    return {"out": m_xor}
+
+def main():
+    outputs = run()
+    print("out: " + "".join(str(bit) for bit in outputs["out"]))
+
+if __name__ == "__main__":
+    main()
+```
+
+The final implementation does not need to match this sketch exactly, but it should stay comparably readable and topological.
 
 ---
 
