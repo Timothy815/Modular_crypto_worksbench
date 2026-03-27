@@ -11,8 +11,8 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The latest shipped tag is `v1.46.0`.
-Current development is now focused on the next bounded follow-on, `PALETTE-COHERENCE-V1.md`, after the post-`v1.44.0` sanity-pass and learning-path consolidation work.
+The latest shipped tag is `v1.47.0`.
+Current development is now focused on the next bounded follow-on, `LARGE-WORKSPACE-UX-TRIAGE-V1.md`, after the post-`v1.44.0` sanity-pass, learning-path consolidation work, and palette-coherence pass.
 
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:

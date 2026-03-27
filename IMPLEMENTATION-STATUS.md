@@ -6,14 +6,18 @@ Last updated: March 27, 2026
 
 ## Current State
 
-The latest shipped tag is `v1.46.0`.
-Current feature work now lives on `feature/palette-coherence` and carries:
+The latest shipped tag is `v1.47.0`.
+Current development now carries:
 - the proposed post-`v1.44.0` `v2.0` sanity-pass contract
 - the completed `v2.0` sanity audit deliverable
 - implemented bounded follow-on passes:
   - `LEARNING-SEQUENCE-V2.md`
   - selector/pathfinding polish on `main`
-  - `PALETTE-COHERENCE-V1.md` on the active feature branch
+  - `PALETTE-COHERENCE-V1.md`
+- current bounded follow-on ready to merge:
+  - `LARGE-WORKSPACE-UX-TRIAGE-V1.md`
+  - `LARGE-WORKSPACE-UX-AUDIT.md`
+  - one implemented orientation aid: workspace landmarks for larger graphs
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -116,7 +120,7 @@ The next strategic direction remains broader than any one subdomain:
 - ship tutorials and challenges alongside each new vocabulary family
 
 The next most important product-level task is:
-- merge and ship `PALETTE-COHERENCE-V1.md` as the next bounded palette-library coherence milestone
+- merge and ship `LARGE-WORKSPACE-UX-TRIAGE-V1.md` as the next bounded large-workspace orientation milestone
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -236,6 +240,9 @@ The following decisions are reflected in shipped code:
 | `v1.42.0` | AEAD Foundations |
 | `v1.43.0` | Digital Signature Foundations |
 | `v1.44.0` | Protocol Handshakes |
+| `v1.45.0` | Learning Sequence V2 |
+| `v1.46.0` | Learning Path Selector Polish |
+| `v1.47.0` | Palette Coherence V1 |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing

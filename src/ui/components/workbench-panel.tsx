@@ -26,6 +26,11 @@ import {
   isCoreLearningItem,
 } from '../learning-sequence';
 import { getModuleCategory } from '../module-categories';
+import {
+  deriveWorkspaceLandmarks,
+  isLargeWorkspace,
+  type WorkspaceLandmark,
+} from '../workspace-landmarks';
 import type { WorkbenchAnnotation } from '../workbench-document';
 import type { TutorialStep } from '../tutorials';
 
@@ -241,6 +246,20 @@ export function WorkbenchPanel({
   const activeProjectRecommendedAfter = useMemo(
     () => getRecommendedAfterTitles(projects, activeProject),
     [activeProject, projects],
+  );
+  const workspaceLandmarks = useMemo(
+    () => deriveWorkspaceLandmarks(activeProjectState, registry, layout),
+    [activeProjectState, layout, registry],
+  );
+  const showWorkspaceLandmarks = useMemo(
+    () =>
+      isLargeWorkspace(activeProjectState)
+      && (
+        workspaceLandmarks.context.length > 0
+        || workspaceLandmarks.sources.length > 0
+        || workspaceLandmarks.outputs.length > 0
+      ),
+    [activeProjectState, workspaceLandmarks],
   );
 
   useEffect(() => {
@@ -509,6 +528,49 @@ export function WorkbenchPanel({
     setPendingConnection(null);
   }
 
+  function jumpToModule(moduleId: string) {
+    const position = layout[moduleId];
+    const canvasSurface = canvasSurfaceRef.current;
+    if (!position || !canvasSurface) {
+      return;
+    }
+
+    const targetLeft = Math.max(0, position.x - Math.max(48, canvasSurface.clientWidth / 2 - NODE_WIDTH / 2));
+    const targetTop = Math.max(0, position.y - Math.max(32, canvasSurface.clientHeight / 2 - 72));
+
+    canvasSurface.scrollTo({
+      left: targetLeft,
+      top: targetTop,
+      behavior: 'smooth',
+    });
+    onSelectModule(moduleId, false);
+  }
+
+  function renderLandmarkGroup(title: string, landmarks: WorkspaceLandmark[]) {
+    if (landmarks.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="workspace-landmark-group">
+        <span className="meta-label">{title}</span>
+        <div className="workspace-landmark-list">
+          {landmarks.map((landmark) => (
+            <button
+              key={landmark.moduleId}
+              type="button"
+              className="workspace-landmark-button"
+              onClick={() => jumpToModule(landmark.moduleId)}
+              title={`${landmark.moduleId} (${landmark.defId})`}
+            >
+              {landmark.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <section className={challengeSolved ? 'panel canvas-panel canvas-panel-success' : 'panel canvas-panel'}>
       <div className="panel-head">
@@ -569,6 +631,18 @@ export function WorkbenchPanel({
               <p className="comparison-copy">
                 Best after: <strong>{activeProjectRecommendedAfter.join(', ')}</strong>
               </p>
+            ) : null}
+            {showWorkspaceLandmarks ? (
+              <div className="workspace-landmarks-card">
+                <strong>Workspace Landmarks</strong>
+                <p>
+                  Large graphs can start off-screen. Jump directly to visible sources, protocol context,
+                  and outputs.
+                </p>
+                {renderLandmarkGroup('Protocol & Timing', workspaceLandmarks.context)}
+                {renderLandmarkGroup('Sources', workspaceLandmarks.sources)}
+                {renderLandmarkGroup('Outputs', workspaceLandmarks.outputs)}
+              </div>
             ) : null}
           </div>
         </div>
