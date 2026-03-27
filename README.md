@@ -11,7 +11,8 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The repository has shipped through `v1.42.0`.
+The latest shipped tag is `v1.41.0`.
+Local `main` is framed through `v1.43.0`.
 
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
@@ -83,6 +84,10 @@ Recent shipped follow-ons after `v1.27.0`:
   - visible `Visible Authenticated Encryption` demo with minimal encryption, explicit Encrypt-then-MAC tagging, receiver-side verification, and recovered plaintext
   - `Encrypting Is Not Enough` tutorial placed after `Visible Tamper Check`
   - `Repair the Protected Message` challenge for restoring authentication of the ciphertext path
+- `v1.43.0` Digital Signature Foundations:
+  - visible `Visible Signature Verification` demo with private-key signing, public verification, and explicit pass/fail comparison
+  - `Signing Is Not Encrypting` tutorial placed after `Encrypting Is Not Enough`
+  - `Repair the Signature` challenge for restoring the public verification exponent
 
 Shipped stream, rotor, protocol/framing, and symbol/message permutation foundations remain in place:
 - stream-machine expressiveness:
@@ -247,7 +252,7 @@ Implemented and shipped:
 - `BYTE-ORIENTED-PRIMITIVES-V1.md`: framed bounded `v1.40.0` follow-on for explicit byte/word structure helpers
 - `INTEGRITY-AUTHENTICATION-V1.md`: framed bounded `v1.41.0` follow-on for visible tamper detection and authenticator comparison
 - `AEAD-FOUNDATIONS-V1.md`: framed bounded `v1.42.0` follow-on for visible authenticated-encryption-style composition
-- `DIGITAL-SIGNATURE-FOUNDATIONS-V1.md`: proposed bounded post-`v1.42.0` follow-on for visible signing and verification
+- `DIGITAL-SIGNATURE-FOUNDATIONS-V1.md`: framed bounded `v1.43.0` follow-on for visible signing and verification
 - `BYPASS-V1.md`: shipped bounded usability slice for visible instance-level bypass on eligible one-in/one-out modules
 - `INVERSE-PERMUTATION-AUTHORING-V1.md`: shipped bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors
 - `BRIDGE-ERGONOMICS-V1.md`: shipped bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior
@@ -303,3 +308,4 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 9. Avoid scope creep into brute-force tooling, birthday-bound calculators, famous-hash comparisons, or premature asymmetric demos before the underlying vocabulary exists
 10. Keep the shipped bypass line bounded to honest one-in/one-out same-domain modules rather than widening it into universal mute/solo behavior
 11. Tighten bridge ergonomics before opening a broad new encoding family — make raw bit entry and byte-oriented bridges feel natural before considering UTF-8 follow-ons
+12. Treat a `v2.0` sanity/framing pass as a deliberate later checkpoint after the next systems-level direction is clearer, not as a replacement for the immediate post-`v1.43.0` close-out and handshake-shaping work

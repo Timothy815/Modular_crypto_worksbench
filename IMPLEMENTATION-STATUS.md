@@ -6,7 +6,8 @@ Last updated: March 26, 2026
 
 ## Current State
 
-The project has shipped through `v1.42.0` on `main`.
+The latest shipped tag is `v1.41.0`.
+Local `main` is framed through `v1.43.0`.
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -76,6 +77,18 @@ Those shipped:
   - `Visible Byte Order` demo comparing byte-order reversal and byte-granularity rotation
   - `When Bits Become Bytes` tutorial staged after `Visible Block Chaining`
   - `Repair the Byte Order` challenge for restoring the explicit byte-order branch
+- integrity / authentication follow-on:
+  - `Visible Tamper Check` demo with explicit keyed tag recomputation and `Equals` verification
+  - `Why Integrity Is Not Secrecy` tutorial
+  - `Repair the Tamper Check` challenge
+- authenticated-encryption composition follow-on:
+  - `Visible Authenticated Encryption` demo with visible Encrypt-then-MAC structure and receiver-side verification
+  - `Encrypting Is Not Enough` tutorial
+  - `Repair the Protected Message` challenge
+- asymmetric-authentication follow-on:
+  - `Visible Signature Verification` demo with private signing and public verification
+  - `Signing Is Not Encrypting` tutorial
+  - `Repair the Signature` challenge
 
 The already-shipped protocol-material, block-framing, and symbol/message permutation foundations remain in place:
 - protocol inputs:
@@ -92,8 +105,8 @@ The next strategic direction remains broader than any one subdomain:
 - expand the machine language so it can express more of cryptography honestly
 - ship tutorials and challenges alongside each new vocabulary family
 
-The next most important missing vocabulary families are:
-- asymmetric authentication / signature teaching after the completed modern symmetric-composition phase
+The next most important missing systems-level teaching line is:
+- visible protocol-handshake / transcript teaching that composes the now-shipped symmetric and asymmetric foundations without collapsing into a protocol-suite black box
 
 Established and shipped:
 - implementation contract and AI coordination protocol
@@ -211,6 +224,7 @@ The following decisions are reflected in shipped code:
 | `v1.40.0` | Byte-Oriented Primitives |
 | `v1.41.0` | Integrity / Authentication |
 | `v1.42.0` | AEAD Foundations |
+| `v1.43.0` | Digital Signature Foundations |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -443,10 +457,11 @@ Post-`v1.26.0` work merged to `main`:
 ### Claude
 
 Safe to begin:
-- help shape the next bounded digital-signature / asymmetric-authentication contract after the completed symmetric-composition phase
-- help pressure-test whether MCW should cross from symmetric protection into visible trust/authorship before any protocol-handshake line
-- help review future tutorial/challenge additions that accompany deeper symmetric-construction lines
+- help shape the next bounded protocol-handshake / transcript contract after the completed asymmetric-foundations phase
+- help pressure-test whether the next systems-level slice can stay visible and bounded instead of drifting into protocol-suite choreography
+- help review future tutorial/challenge additions that accompany handshake or transcript teaching
 - help keep the roadmap honest about what is still missing versus what is now shipped
+- help identify where a later `v2.0` sanity/framing pass should sit once the next systems-level direction is clearer
 
 Should avoid for now:
 - feedback loops / cycles in the graph
@@ -458,15 +473,15 @@ Should avoid for now:
 ### Gemini
 
 Safe to begin:
-- review whether a bounded digital-signature / asymmetric-authentication slice should follow the framed `v1.42.0` AEAD foundations milestone
-- help pressure-test the roadmap sequence from symmetric composition into later signature, trust, or handshake-adjacent lines
-- review what tutorial/challenge support should accompany any later auth-family follow-ons
+- review whether a bounded protocol-handshake / transcript slice should follow the framed `v1.43.0` digital-signature milestone
+- help pressure-test the roadmap sequence from standalone asymmetric authentication into handshake, trust, or transcript-adjacent lines
+- review what tutorial/challenge support should accompany later systems-level teaching surfaces
 - help keep the post-builder product direction tied to expressive machine language rather than generic tooling
 
 Best focus:
-- whether the next auth-family move should stay bounded and visibly asymmetric
-- whether future trust/auth work should stay structure-centered instead of collapsing into wrappers or PKI bundles
-- how to keep later auth follow-ons explicit and inspectable
+- whether the next systems-level move should stay bounded and transcript-visible
+- whether future trust/auth work should stay structure-centered instead of collapsing into wrappers, PKI bundles, or protocol presets
+- how to place a later `v2.0` sanity/framing pass after one more systems-level checkpoint rather than using it as a momentum break now
 
 ---
 
@@ -477,7 +492,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed at `v1.42.0` implementation framing before the final doc-only release polish.
+All three passed at `v1.43.0` implementation framing.
 
 ---
 
@@ -492,7 +507,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 ### Near-Term Roadmap
 
 1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
-2. **Continue the primitive-language roadmap beyond shipped stream, rotor, symbol-permutation, key-routing, symbol-structure, arithmetic, and number-theoretic foundations** — the clearest remaining language families are bounded auth+encryption composition and any later signature follow-ons only if the symmetric composition slice proves the need
+2. **Continue the roadmap into bounded systems-level composition** — the clearest remaining teaching line is visible handshake / transcript structure built from the now-shipped symmetric and asymmetric foundations
 3. **Keep future rotor follow-ons bounded** — reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices, not convenience presets
 4. **Establish a suggested learning path across demos/tutorials/challenges** — future teaching content should fit a visible stage/order spine rather than accumulating as a flat library
 5. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
@@ -547,7 +562,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `BYTE-ORIENTED-PRIMITIVES-V1.md` | Framed for `v1.40.0` as the bounded modern-construction follow-on for explicit byte/word structure helpers |
 | `INTEGRITY-AUTHENTICATION-V1.md` | Framed for `v1.41.0` as the bounded modern-teaching follow-on for visible tamper detection and authenticator comparison |
 | `AEAD-FOUNDATIONS-V1.md` | Framed for `v1.42.0` as the bounded composition follow-on for visible authenticated-encryption-style structure |
-| `DIGITAL-SIGNATURE-FOUNDATIONS-V1.md` | Proposed post-`v1.42.0` as the next bounded asymmetric-authentication follow-on for visible signing and verification |
+| `DIGITAL-SIGNATURE-FOUNDATIONS-V1.md` | Framed for `v1.43.0` as the bounded asymmetric-authentication follow-on for visible signing and verification |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
 | `BRIDGE-ERGONOMICS-V1.md` | Shipped in `v1.31.0` — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |
