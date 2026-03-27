@@ -162,7 +162,7 @@ The current builder-power follow-on now also includes:
 - `Stack Selected Stage Column`
 - selection-scoped stage assembly tools for repeated rounds, banks, and visible multi-stage fragments
 
-The next recommended builder-power slice is now:
+The builder-power line now also includes:
 - `CLUSTER-BOUNDARY-PORT-AUTHORING-V1.md`
 - explicit include/exclude control over inferred composite boundary ports during capture
 - a tighter path from visible selected fragment to clean reusable composite shell

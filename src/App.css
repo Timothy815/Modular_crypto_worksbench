@@ -2398,6 +2398,22 @@ body.dock-resizing {
   color: var(--ink);
 }
 
+.port-toggle-field {
+  margin-top: 0;
+  align-items: center;
+}
+
+.port-toggle-field span {
+  display: grid;
+  gap: 2px;
+}
+
+.port-toggle-field em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--muted);
+}
+
 .bits-editor,
 .wiring-editor {
   display: grid;

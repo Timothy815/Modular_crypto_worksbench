@@ -98,6 +98,26 @@ describe('createCompositeFromSelection', () => {
       internalConnectionCount: 1,
       inputs: [{ name: 'encode_in', type: 'symbol' }],
       outputs: [{ name: 'decode_out', type: 'symbol' }],
+      inputCandidates: [
+        {
+          key: 'input:encode:in',
+          name: 'encode_in',
+          type: 'symbol',
+          internalModuleId: 'encode',
+          internalPort: 'in',
+          included: true,
+        },
+      ],
+      outputCandidates: [
+        {
+          key: 'output:decode:out',
+          name: 'decode_out',
+          type: 'symbol',
+          internalModuleId: 'decode',
+          internalPort: 'out',
+          included: true,
+        },
+      ],
     });
   });
 
@@ -117,6 +137,84 @@ describe('createCompositeFromSelection', () => {
     expect(preview.error).toContain('boundary port');
     expect(preview.moduleCount).toBe(1);
     expect(preview.internalConnectionCount).toBe(0);
+    expect(preview.inputCandidates).toEqual([]);
+    expect(preview.outputCandidates).toEqual([]);
+  });
+
+  it('respects excluded inferred boundary ports in the preview and capture result', () => {
+    const expandedProject: Project = {
+      modules: [
+        { id: 'text-a', defId: 'TextInput', params: { value: 'A' } },
+        { id: 'text-b', defId: 'TextInput', params: { value: 'B' } },
+        { id: 'encode-a', defId: 'SymbolToBits', params: {} },
+        { id: 'encode-b', defId: 'SymbolToBits', params: {} },
+        { id: 'decode-a', defId: 'BitsToSymbol', params: {} },
+        { id: 'decode-b', defId: 'BitsToSymbol', params: {} },
+        { id: 'output-a', defId: 'Output', params: {} },
+        { id: 'output-b', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-a', port: 'out' }, to: { moduleId: 'encode-a', port: 'in' } },
+        { from: { moduleId: 'text-b', port: 'out' }, to: { moduleId: 'encode-b', port: 'in' } },
+        { from: { moduleId: 'encode-a', port: 'out' }, to: { moduleId: 'decode-a', port: 'in' } },
+        { from: { moduleId: 'encode-b', port: 'out' }, to: { moduleId: 'decode-b', port: 'in' } },
+        { from: { moduleId: 'decode-a', port: 'out' }, to: { moduleId: 'output-a', port: 'in' } },
+        { from: { moduleId: 'decode-b', port: 'out' }, to: { moduleId: 'output-b', port: 'in' } },
+      ],
+    };
+
+    const preview = previewCompositeSelection({
+      project: expandedProject,
+      registry,
+      selectedModuleIds: ['encode-a', 'encode-b', 'decode-a', 'decode-b'],
+      excludedBoundaryPortKeys: ['output:decode-b:out'],
+    });
+
+    expect(preview.ok).toBe(true);
+    expect(preview.outputs).toEqual([{ name: 'decode_a_out', type: 'symbol' }]);
+    expect(preview.outputCandidates).toEqual([
+      {
+        key: 'output:decode-a:out',
+        name: 'decode_a_out',
+        type: 'symbol',
+        internalModuleId: 'decode-a',
+        internalPort: 'out',
+        included: true,
+      },
+      {
+        key: 'output:decode-b:out',
+        name: 'decode_b_out',
+        type: 'symbol',
+        internalModuleId: 'decode-b',
+        internalPort: 'out',
+        included: false,
+      },
+    ]);
+
+    const result = createCompositeFromSelection({
+      project: expandedProject,
+      registry,
+      name: 'Dual Round Trip',
+      id: 'DualRoundTrip',
+      selectedModuleIds: ['encode-a', 'encode-b', 'decode-a', 'decode-b'],
+      excludedBoundaryPortKeys: ['output:decode-b:out'],
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.entry?.definition.outputs).toEqual([
+      { name: 'decode_a_out', type: 'symbol' },
+    ]);
+    expect(result.entry && isCompositeDefinition(result.entry.definition)).toBe(true);
+    if (!result.entry || !isCompositeDefinition(result.entry.definition)) {
+      throw new Error('Expected a composite definition.');
+    }
+    expect(result.entry.definition.outputBindings).toEqual([
+      {
+        externalPort: 'decode_a_out',
+        internalModuleId: 'decode-a',
+        internalPort: 'out',
+      },
+    ]);
   });
 
   it('captures a selected subgraph into a reusable composite definition', () => {

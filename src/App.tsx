@@ -419,6 +419,7 @@ function App() {
   const [compositeName, setCompositeName] = useState('');
   const [compositeId, setCompositeId] = useState('');
   const [compositeDialogError, setCompositeDialogError] = useState<string | null>(null);
+  const [excludedCompositeBoundaryPortKeys, setExcludedCompositeBoundaryPortKeys] = useState<string[]>([]);
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
   const [isChallengeResetConfirmOpen, setIsChallengeResetConfirmOpen] = useState(false);
   const [isChallengeCaptureOpen, setIsChallengeCaptureOpen] = useState(false);
@@ -518,8 +519,9 @@ function App() {
         project: activeProjectState,
         registry: effectiveRegistry,
         selectedModuleIds: effectiveSelectedModuleIds,
+        excludedBoundaryPortKeys: excludedCompositeBoundaryPortKeys,
       }),
-    [activeProjectState, effectiveRegistry, effectiveSelectedModuleIds],
+    [activeProjectState, effectiveRegistry, effectiveSelectedModuleIds, excludedCompositeBoundaryPortKeys],
   );
 
   let execution: ExecutionResult | null = null;
@@ -1593,6 +1595,7 @@ function App() {
               setCompositeName('');
               setCompositeId('');
               setCompositeDialogError(null);
+              setExcludedCompositeBoundaryPortKeys([]);
               setReplaceSelectionAfterCreate(!state.compositeEditor);
               setIsCompositeDialogOpen(true);
             }}
@@ -2365,6 +2368,7 @@ function App() {
           onClick={() => {
             setIsCompositeDialogOpen(false);
             setCompositeDialogError(null);
+            setExcludedCompositeBoundaryPortKeys([]);
           }}
         >
           <div
@@ -2384,51 +2388,86 @@ function App() {
             </p>
             <div className="dialog-composite-preview">
               <span className="meta-label">Captured Structure</span>
-              {compositeSelectionPreview.ok ? (
-                <>
-                  <p className="dialog-composite-preview-copy">
-                    {compositeSelectionPreview.moduleCount} module
-                    {compositeSelectionPreview.moduleCount === 1 ? '' : 's'} and{' '}
-                    {compositeSelectionPreview.internalConnectionCount} internal connection
-                    {compositeSelectionPreview.internalConnectionCount === 1 ? '' : 's'} will be
-                    captured.
-                  </p>
-                  <div className="selected-ports dialog-selected-ports">
-                    <div className="port-group">
-                      <span className="meta-label">Inputs</span>
-                      {compositeSelectionPreview.inputs.length === 0 ? (
-                        <p className="empty-state">No input boundary ports</p>
-                      ) : (
-                        <ul className="port-list">
-                          {compositeSelectionPreview.inputs.map((port: { name: string; type: 'symbol' | 'bits' }) => (
-                            <li key={port.name}>
-                              <strong>{port.name}</strong>
-                              <span>{port.type}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                    <div className="port-group">
-                      <span className="meta-label">Outputs</span>
-                      {compositeSelectionPreview.outputs.length === 0 ? (
-                        <p className="empty-state">No output boundary ports</p>
-                      ) : (
-                        <ul className="port-list">
-                          {compositeSelectionPreview.outputs.map((port: { name: string; type: 'symbol' | 'bits' }) => (
-                            <li key={port.name}>
-                              <strong>{port.name}</strong>
-                              <span>{port.type}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </div>
-                </>
-              ) : (
+              <p className="dialog-composite-preview-copy">
+                {compositeSelectionPreview.moduleCount} module
+                {compositeSelectionPreview.moduleCount === 1 ? '' : 's'} and{' '}
+                {compositeSelectionPreview.internalConnectionCount} internal connection
+                {compositeSelectionPreview.internalConnectionCount === 1 ? '' : 's'} will be
+                captured.
+              </p>
+              {compositeSelectionPreview.error ? (
                 <p className="field-error">{compositeSelectionPreview.error}</p>
-              )}
+              ) : null}
+              <div className="selected-ports dialog-selected-ports">
+                <div className="port-group">
+                  <span className="meta-label">Inputs</span>
+                  {compositeSelectionPreview.inputCandidates.length === 0 ? (
+                    <p className="empty-state">No input boundary ports</p>
+                  ) : (
+                    <ul className="port-list">
+                      {compositeSelectionPreview.inputCandidates.map((port) => (
+                        <li key={port.key}>
+                          <label className="checkbox-field port-toggle-field">
+                            <input
+                              type="checkbox"
+                              checked={port.included}
+                              onChange={(event) => {
+                                setExcludedCompositeBoundaryPortKeys((currentKeys) => {
+                                  if (event.target.checked) {
+                                    return currentKeys.filter((key) => key !== port.key);
+                                  }
+                                  if (currentKeys.includes(port.key)) {
+                                    return currentKeys;
+                                  }
+                                  return [...currentKeys, port.key];
+                                });
+                              }}
+                            />
+                            <span>
+                              <strong>{port.name}</strong> <em>{port.internalModuleId}.{port.internalPort}</em>
+                            </span>
+                          </label>
+                          <span>{port.type}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <div className="port-group">
+                  <span className="meta-label">Outputs</span>
+                  {compositeSelectionPreview.outputCandidates.length === 0 ? (
+                    <p className="empty-state">No output boundary ports</p>
+                  ) : (
+                    <ul className="port-list">
+                      {compositeSelectionPreview.outputCandidates.map((port) => (
+                        <li key={port.key}>
+                          <label className="checkbox-field port-toggle-field">
+                            <input
+                              type="checkbox"
+                              checked={port.included}
+                              onChange={(event) => {
+                                setExcludedCompositeBoundaryPortKeys((currentKeys) => {
+                                  if (event.target.checked) {
+                                    return currentKeys.filter((key) => key !== port.key);
+                                  }
+                                  if (currentKeys.includes(port.key)) {
+                                    return currentKeys;
+                                  }
+                                  return [...currentKeys, port.key];
+                                });
+                              }}
+                            />
+                            <span>
+                              <strong>{port.name}</strong> <em>{port.internalModuleId}.{port.internalPort}</em>
+                            </span>
+                          </label>
+                          <span>{port.type}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
             </div>
 
             <label className="param-field">
@@ -2483,6 +2522,7 @@ function App() {
                 onClick={() => {
                   setIsCompositeDialogOpen(false);
                   setCompositeDialogError(null);
+                  setExcludedCompositeBoundaryPortKeys([]);
                 }}
               >
                 Cancel
@@ -2497,6 +2537,7 @@ function App() {
                     name: compositeName,
                     id: compositeId,
                     selectedModuleIds: effectiveSelectedModuleIds,
+                    excludedBoundaryPortKeys: excludedCompositeBoundaryPortKeys,
                   });
 
                   if (!result.ok || !result.entry) {
@@ -2540,6 +2581,7 @@ function App() {
 
                   setIsCompositeDialogOpen(false);
                   setCompositeDialogError(null);
+                  setExcludedCompositeBoundaryPortKeys([]);
                 }}
               >
                 Create Composite

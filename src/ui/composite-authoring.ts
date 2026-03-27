@@ -13,6 +13,7 @@ interface CreateCompositeFromSelectionArgs {
   name: string;
   id: string;
   selectedModuleIds: string[];
+  excludedBoundaryPortKeys?: string[];
 }
 
 interface ReplaceSelectionWithCompositeArgs {
@@ -42,7 +43,18 @@ export interface CompositeSelectionPreview {
   internalConnectionCount: number;
   inputs: Array<{ name: string; type: 'symbol' | 'bits' }>;
   outputs: Array<{ name: string; type: 'symbol' | 'bits' }>;
+  inputCandidates: CompositeBoundaryPortPreview[];
+  outputCandidates: CompositeBoundaryPortPreview[];
   error?: string;
+}
+
+export interface CompositeBoundaryPortPreview {
+  key: string;
+  name: string;
+  type: 'symbol' | 'bits';
+  internalModuleId: string;
+  internalPort: string;
+  included: boolean;
 }
 
 export interface ReplaceSelectionResult {
@@ -67,6 +79,7 @@ export function createCompositeFromSelection({
   name,
   id,
   selectedModuleIds,
+  excludedBoundaryPortKeys = [],
 }: CreateCompositeFromSelectionArgs): CreateCompositeResult {
   const trimmedName = name.trim();
   const trimmedId = id.trim();
@@ -97,6 +110,7 @@ export function createCompositeFromSelection({
     project,
     registry,
     selectedModuleIds,
+    excludedBoundaryPortKeys,
   });
 
   if (!selection.ok || !selection.selectedModules || !selection.internalConnections) {
@@ -146,11 +160,16 @@ export function previewCompositeSelection({
   project,
   registry,
   selectedModuleIds,
-}: Pick<CreateCompositeFromSelectionArgs, 'project' | 'registry' | 'selectedModuleIds'>): CompositeSelectionPreview {
+  excludedBoundaryPortKeys = [],
+}: Pick<
+  CreateCompositeFromSelectionArgs,
+  'project' | 'registry' | 'selectedModuleIds' | 'excludedBoundaryPortKeys'
+>): CompositeSelectionPreview {
   const selection = deriveCompositeSelection({
     project,
     registry,
     selectedModuleIds,
+    excludedBoundaryPortKeys,
   });
 
   return {
@@ -159,6 +178,8 @@ export function previewCompositeSelection({
     internalConnectionCount: selection.internalConnections?.length ?? 0,
     inputs: selection.inputs,
     outputs: selection.outputs,
+    inputCandidates: selection.inputCandidates,
+    outputCandidates: selection.outputCandidates,
     error: selection.error,
   };
 }
@@ -416,7 +437,9 @@ function buildBoundaryPorts(
   registry: ModuleRegistry,
   direction: 'input' | 'output',
   bindings: CompositePortBinding[],
+  candidates: CompositeBoundaryPortPreview[],
   selectedModules: Project['modules'],
+  excludedBoundaryPortKeys: Set<string>,
 ) {
   const ports: Array<{ name: string; type: 'symbol' | 'bits' }> = [];
   const usedNames = new Set<string>();
@@ -428,6 +451,7 @@ function buildBoundaryPorts(
     const targetPortName =
       direction === 'input' ? connection.to.port : connection.from.port;
     const internalKey = `${targetModuleId}:${targetPortName}`;
+    const boundaryPortKey = `${direction}:${internalKey}`;
 
     if (seenInternalPorts.has(internalKey)) {
       continue;
@@ -453,6 +477,20 @@ function buildBoundaryPorts(
       `${moduleInstance.id}_${targetPortName}`,
       usedNames,
     );
+
+    const included = !excludedBoundaryPortKeys.has(boundaryPortKey);
+    candidates.push({
+      key: boundaryPortKey,
+      name: externalPort,
+      type: portDef.type,
+      internalModuleId: targetModuleId,
+      internalPort: targetPortName,
+      included,
+    });
+
+    if (!included) {
+      continue;
+    }
 
     ports.push({
       name: externalPort,
@@ -496,7 +534,11 @@ function deriveCompositeSelection({
   project,
   registry,
   selectedModuleIds,
-}: Pick<CreateCompositeFromSelectionArgs, 'project' | 'registry' | 'selectedModuleIds'>): {
+  excludedBoundaryPortKeys = [],
+}: Pick<
+  CreateCompositeFromSelectionArgs,
+  'project' | 'registry' | 'selectedModuleIds' | 'excludedBoundaryPortKeys'
+>): {
   ok: boolean;
   selectedModules?: Project['modules'];
   internalConnections?: Project['connections'];
@@ -504,8 +546,11 @@ function deriveCompositeSelection({
   outputBindings: CompositePortBinding[];
   inputs: Array<{ name: string; type: 'symbol' | 'bits' }>;
   outputs: Array<{ name: string; type: 'symbol' | 'bits' }>;
+  inputCandidates: CompositeBoundaryPortPreview[];
+  outputCandidates: CompositeBoundaryPortPreview[];
   error?: string;
 } {
+  const excludedBoundaryPortKeySet = new Set(excludedBoundaryPortKeys);
   const selectedIdSet = new Set(selectedModuleIds);
   if (selectedIdSet.size === 0) {
     return {
@@ -514,6 +559,8 @@ function deriveCompositeSelection({
       outputBindings: [],
       inputs: [],
       outputs: [],
+      inputCandidates: [],
+      outputCandidates: [],
       error: 'Select at least one module to create a composite.',
     };
   }
@@ -532,6 +579,8 @@ function deriveCompositeSelection({
       outputBindings: [],
       inputs: [],
       outputs: [],
+      inputCandidates: [],
+      outputCandidates: [],
       error: 'Selected modules were not found in the current project.',
     };
   }
@@ -557,19 +606,25 @@ function deriveCompositeSelection({
 
   const inputBindings: CompositePortBinding[] = [];
   const outputBindings: CompositePortBinding[] = [];
+  const inputCandidates: CompositeBoundaryPortPreview[] = [];
+  const outputCandidates: CompositeBoundaryPortPreview[] = [];
   const inputs = buildBoundaryPorts(
     incomingBoundaryConnections,
     registry,
     'input',
     inputBindings,
+    inputCandidates,
     selectedModules,
+    excludedBoundaryPortKeySet,
   );
   const outputs = buildBoundaryPorts(
     outgoingBoundaryConnections,
     registry,
     'output',
     outputBindings,
+    outputCandidates,
     selectedModules,
+    excludedBoundaryPortKeySet,
   );
 
   if (inputs.length === 0 && outputs.length === 0) {
@@ -581,7 +636,9 @@ function deriveCompositeSelection({
       outputBindings,
       inputs,
       outputs,
-      error: 'Selection must expose at least one boundary port to become a reusable composite.',
+      inputCandidates,
+      outputCandidates,
+      error: 'Selection must include at least one boundary port to become a reusable composite.',
     };
   }
 
@@ -593,6 +650,8 @@ function deriveCompositeSelection({
     outputBindings,
     inputs,
     outputs,
+    inputCandidates,
+    outputCandidates,
   };
 }
 

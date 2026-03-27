@@ -2,7 +2,7 @@
 
 Last updated: March 27, 2026
 
-Status: Proposed next builder-power slice
+Status: Implemented on `main`
 
 ---
 
@@ -119,15 +119,15 @@ If MCW is going to keep growing into a serious machine-building environment, pro
 
 ---
 
-## Recommendation
+## Implementation Result
 
-Treat this as the next active builder-power contract.
+This slice is now implemented on `main`.
 
-It is a disciplined follow-on to:
-- `COMPOSITE-REUSE-ERGONOMICS-V1.md`
-- `STAGE-ASSEMBLY-ERGONOMICS-V1.md`
-
-It improves throughput without hiding structure.
+Shipped behavior:
+- inferred input and output boundary ports are listed inside the existing composite creation dialog
+- each inferred boundary port can be explicitly included or excluded before capture
+- the preview updates immediately as those choices change
+- created composites respect the chosen boundary set while keeping normal unzip/edit behavior
 
 ---
 
