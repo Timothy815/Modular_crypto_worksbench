@@ -108,7 +108,8 @@ The current linked-rotor follow-on after that is:
 - only the forward rotor owns stepping state; linked reverse faces do not advance independently
 
 The current next advanced-rotor item after that is:
-- separate rotor-driven stepping as a later state/control architecture line
+- one bounded reusable rotor-control pattern built from explicit pulse flow
+- kept separate from generic control-flow or executor redesign
 
 The current near-future strategic export item after that is:
 - bounded Python export foundations for turning a workspace into standalone executable code

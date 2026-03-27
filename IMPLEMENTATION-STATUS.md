@@ -236,7 +236,8 @@ The current linked-rotor follow-on after that is:
 - rotor-realism demos and micro demos now use the linked model honestly
 
 The current next advanced-rotor item after that is:
-- separate rotor-driven stepping as a later state/control architecture line, closer to SIGABA-style control than simple rotor stepping
+- one bounded reusable rotor-control pattern built from explicit pulse flow, closer to SIGABA-style control than simple rotor stepping
+- explicitly separate from generic control-flow or executor redesign
 
 The current near-future strategic export item after that is:
 - bounded Python export foundations for turning a workspace into standalone executable code

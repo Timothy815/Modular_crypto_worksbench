@@ -2,100 +2,182 @@
 
 Last updated: March 27, 2026
 
+Status: Tightened future contract
+
 ---
 
 ## Purpose
 
-Define a bounded future control / state architecture line for rotor-driven stepping behavior.
+Define the first bounded follow-on after linked rotor pairing for rotor-control behavior driven by visible machine logic.
 
-This line is meant to support machines where one rotor family or control path determines the stepping amount, sequence, or cadence of another rotor family, closer to SIGABA-style control than simple Enigma stepping.
+This slice is meant to deepen rotor realism beyond:
+- simple per-tick stepping
+- explicit turnover outputs
+- manually wired Enigma-style double-step behavior
 
-It is not the current active implementation path.
+It is not meant to introduce a generic state-machine runtime or hidden historical presets.
 
 ---
 
 ## Problem
 
-MCW already supports visible stepped execution and rotor stepping.
+MCW already supports:
+- explicit rotor stepping from `clock`
+- visible `turnover` output
+- manually wired gate / OR control paths
+- one bounded three-rotor double-step teaching surface
 
 What it does not yet support cleanly is:
-- stepping behavior derived from other rotor outputs or rotor state
-- explicit rotor-control submachines that influence how another rotor bank advances
+- reusable rotor-control submachines
+- bounded rotor-driven stepping patterns where one rotor bank visibly determines the cadence of another
+- a cleaner authoring surface for historically richer machines such as SIGABA-like control banks
 
-That limits more advanced historical and systems-level rotor machines.
-
-This is not just a new primitive. It touches state coupling, control semantics, and tick behavior.
+Right now the idea exists in spirit, but only as ad hoc graph wiring. There is not yet a first-class bounded control shape for it.
 
 ---
 
 ## Strategic Position
 
-This is a meaningful future line, but it is larger and riskier than reverse rotor traversal.
+This is the next deeper rotor-mechanics line after:
+1. `ROTOR-REVERSE-PATH-V1`
+2. `LINKED-ROTOR-PAIRING-V1`
 
-It should not be bundled into `ROTOR-REVERSE-PATH-V1`.
-It deserves its own contract because it may affect execution semantics and control architecture more deeply.
+It should remain clearly separate from:
+- generic conditional composition
+- iterator control
+- broad FSM / scripting behavior
+
+This is a rotor-control slice, not a general programming model.
 
 ---
 
-## Desired Shape
+## Core Question
 
-The first slice should eventually support:
-- explicit control paths that influence stepping
-- rotor-driven or state-driven advancement of other rotor structures
-- visible control semantics rather than hidden machine-specific magic
+What is the smallest reusable rotor-control pattern that makes rotor-driven stepping easier to author without hiding the control structure?
 
-Any implementation must preserve MCW's explicit-machine philosophy.
+---
+
+## Recommended V1 Product Shape
+
+V1 should stay narrow and focus on one explicit control pattern:
+- a visible rotor-control bank that emits step pulses for a separate rotor bank
+
+The first slice should prefer:
+- explicit `bits` step pulses
+- explicit visible control paths
+- explicit bounded rotor-bank wiring
+
+It should not try to encode every historical stepping scheme.
 
 ---
 
 ## Recommended First Slice
 
-When this line is revisited, the first slice should stay narrow:
-- one bounded rotor-control pattern
-- explicit visible control inputs and stepping outputs
-- no attempt to model every historical stepping scheme at once
+The first slice should support one bounded authoring model:
+- designate one rotor family as the control bank
+- let its visible outputs contribute to a step pulse for another rotor family
+- make that pattern easier to build, inspect, and teach than today's manual ad hoc wiring
 
-The first question later will be whether this is best represented by:
-- new control primitives
-- rotor-specific stateful modules
-- or a hybrid of existing control primitives plus a bounded rotor extension
+The likely V1 shape is **not** a new executor model.
 
-This contract does not resolve that yet.
+It is more likely one of:
+- one new bounded rotor-control helper primitive
+- one bounded composite/starter pattern built from existing `Clock`, `Gate`, `OR`, `Rotor`, and linked rotor pairs
+- or one small rotor-specific helper plus existing control primitives
+
+The key requirement is that the resulting stepping logic stays graph-visible.
+
+---
+
+## Scope
+
+Include:
+- one bounded rotor-driven stepping pattern
+- explicit visible pulse flow into rotor `clock` inputs
+- one updated rotor-control demo / tutorial surface
+- engine and validation support only if strictly required by the bounded pattern
+
+Exclude:
+- SIGABA as a full preset machine
+- arbitrary rotor-bank schedulers
+- hidden stepping scripts
+- changes to the DAG execution model
+- general finite-state-machine abstractions
+- bundling multi-way routing / conditionals / iterators into the same milestone
 
 ---
 
 ## Non-Goals
 
-This line should explicitly avoid the following in its first slice:
-- a general finite-state-machine overhaul
-- hidden stepping scripts
-- machine-specific special cases hardcoded into the executor
-- bundling reverse traversal and control stepping into one oversized milestone
+This slice should explicitly avoid:
+- machine-specific hardcoding in the executor
+- hidden state coupling between unrelated rotors
+- symbolic control languages
+- recursive or unbounded control flow
 - broad timing-model redesign
+- pretending this is “historical machine support” in general
 
 ---
 
-## Product Fit
+## Existing Proven Ground
 
-This family would support:
-- more advanced rotor-machine realism
-- control-driven stepping patterns
-- historically richer machines such as SIGABA-like constructions
-- visible machine-scheduling behavior inside the graph
+The current codebase already proves the following pieces:
+- `Rotor.turnover` as explicit one-bit control output
+- signal-driven advancement via `clock`
+- shared clocks across stateful modules
+- gate-controlled dependent clocking
+- visible OR-composed rotor double-step logic
+
+That means V1 should build on proven explicit pulse semantics, not invent a second control model.
+
+---
+
+## Desired V1 Behavior
+
+For the first slice:
+- control rotors or control paths should visibly generate the step pulses
+- target rotors should still advance only through normal `clock` inputs
+- users should be able to inspect the stepping logic in the graph without hidden scheduler rules
+- the stepping pattern should be teachable as machine structure, not folklore
+
+In product terms:
+- visible control bank
+- visible pulse routing
+- visible driven rotor bank
+
+---
+
+## Teaching Surface
+
+V1 should update or add one bounded teaching surface, likely derived from the current `Advanced Rotor Stepping` line.
+
+The teaching surface should show:
+- where the base pulse begins
+- how rotor/control state modifies that pulse
+- which rotor bank receives the final stepping signal
+
+It should not attempt to explain every historical variant at once.
+
+---
+
+## Success Criteria
+
+This slice is successful when:
+- rotor-driven stepping is easier to author than today's ad hoc wiring
+- the stepping logic remains graph-visible
+- the product gains one bounded reusable rotor-control pattern
+- the slice stays clearly separate from generic control-flow expansion
 
 ---
 
 ## Recommendation
 
-Keep this on the docket, but behind `ROTOR-REVERSE-PATH-V1`.
+This is the right next rotor-mechanics line after linked pairing, but only if kept narrow.
 
-It should be discussed fairly soon, but only after the project is ready to take on a deeper state/control slice.
+The correct V1 target is:
+- **one bounded reusable rotor-control pattern**
 
----
-
-## Exit Condition
-
-This contract is complete when:
-- the rotor-driven stepping idea is preserved cleanly
-- it is kept distinct from simpler reverse traversal work
-- the project can revisit this later without accidentally collapsing it into a vague rotor wishlist
+Not:
+- a broad rotor-systems overhaul
+- not “SIGABA support” as a giant umbrella
+- not a new execution architecture
