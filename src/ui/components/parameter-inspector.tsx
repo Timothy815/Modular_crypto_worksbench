@@ -2934,11 +2934,15 @@ export function ParameterInspector({
             style={{ marginLeft: `${Math.max(0, (entry.depth ?? 0) * 14)}px` }}
             onMouseEnter={() => onTraceHover(topLevelModuleId)}
             onMouseLeave={() => onTraceHover(null)}
-            onClick={() =>
-              effectiveStepperMode === 'nested'
-                ? setRequestedNestedStepIndex(analysisIndex)
-                : onStepChange(topLevelIndex >= 0 ? topLevelIndex : null)
-            }
+            onClick={() => {
+              if (effectiveStepperMode === 'nested') {
+                setRequestedNestedStepIndex(analysisIndex);
+              } else {
+                onStepChange(topLevelIndex >= 0 ? topLevelIndex : null);
+              }
+
+              onRequestFocusModule?.(topLevelModuleId);
+            }}
           >
             <div className="trace-head">
               <div className="trace-head-labels">
