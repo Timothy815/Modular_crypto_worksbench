@@ -64,6 +64,12 @@ The current primitive-legibility expansion after that is:
 - ticked-mode defaults only for the timing/state subset
 - the same palette-local `Try Demo` flow introduced in V1
 
+The current workspace-legibility follow-on after that is:
+- direct single-wire selection in the workspace
+- one-hop connection emphasis for the selected node
+- de-emphasis of unrelated wires to make dense local structure easier to read
+- explicit `Delete Wire` action instead of destructive wire-click removal
+
 The current near-future primitive-expansion item after that is:
 - explicit multi-way routing as a bounded future family
 - first slice scoped to a multi-way router (`1 -> N`) for visible case-switch / staged routing

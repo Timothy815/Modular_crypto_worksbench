@@ -1480,6 +1480,21 @@ body.dock-resizing {
   stroke-width: 3.5;
 }
 
+.connection-group-selected path:not(.connection-hit-area) {
+  stroke: color-mix(in srgb, var(--accent) 72%, white);
+  stroke-width: 4.4;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 24%, transparent));
+}
+
+.connection-group-emphasized path:not(.connection-hit-area) {
+  stroke: color-mix(in srgb, var(--accent) 48%, var(--connection-stroke));
+  stroke-width: 3.6;
+}
+
+.connection-group-dimmed path:not(.connection-hit-area) {
+  opacity: 0.22;
+}
+
 .connection-group-invalid path:not(.connection-hit-area) {
   stroke: var(--danger-text);
   stroke-width: 3.2;

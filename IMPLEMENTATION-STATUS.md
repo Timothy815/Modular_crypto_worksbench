@@ -31,6 +31,7 @@ Current development now carries:
   - `PARAMETER-COMPARISON-ERGONOMICS-V1.md`
   - `PRIMITIVE-MICRO-DEMOS-V1.md`
   - `PRIMITIVE-MICRO-DEMOS-V2.md`
+  - `WIRE-LEGIBILITY-ERGONOMICS-V1.md`
   - `MULTIWAY-ROUTING-V1.md`
   - `CONDITIONAL-COMPOSITION-V1.md`
   - `ITERATOR-CONTROL-V1.md`
@@ -184,6 +185,12 @@ The current primitive-legibility expansion after that is:
 - timing, state, and framing micro demos for `Clock`, `Counter`, `BitSplit`, `BitPad`, `BitJoin`, and `LFSR`
 - ticked-mode defaults only for the timing/state subset
 - the same palette-local `Try Demo` flow introduced in V1
+
+The current workspace-legibility follow-on after that is:
+- direct single-wire selection in the workspace
+- one-hop connection emphasis for the selected node
+- de-emphasis of unrelated wires to make dense local structure easier to read
+- explicit `Delete Wire` action instead of destructive wire-click removal
 
 The current near-future primitive-expansion item after that is:
 - explicit multi-way routing as a bounded future family

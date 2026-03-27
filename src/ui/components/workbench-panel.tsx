@@ -36,6 +36,7 @@ import {
   getTargetPortState,
   type TargetPortState,
 } from '../connection-authoring';
+import { deriveConnectionLegibilityState } from '../wire-legibility';
 import {
   deriveWorkspaceLandmarks,
   isLargeWorkspace,
@@ -257,6 +258,7 @@ export function WorkbenchPanel({
   const [pendingConnection, setPendingConnection] =
     useState<PendingConnection | null>(null);
   const [connectionFeedback, setConnectionFeedback] = useState<string | null>(null);
+  const [selectedConnectionIndex, setSelectedConnectionIndex] = useState<number | null>(null);
   const [selectionBox, setSelectionBox] = useState<{
     startX: number;
     startY: number;
@@ -337,6 +339,12 @@ export function WorkbenchPanel({
       ),
     [activeProjectState, workspaceLandmarks],
   );
+  const effectiveSelectedConnectionIndex =
+    selectedConnectionIndex !== null &&
+    selectedConnectionIndex >= 0 &&
+    selectedConnectionIndex < activeProjectState.connections.length
+      ? selectedConnectionIndex
+      : null;
 
   const formatVersionTimestamp = (savedAt: string) => {
     const date = new Date(savedAt);
@@ -723,6 +731,7 @@ export function WorkbenchPanel({
     portName: string,
     portIndex: number,
   ) {
+    setSelectedConnectionIndex(null);
     const pos = layout[moduleId];
     if (!pos) return;
     const anchor = getAnchorPosition(pos.x, pos.y, 'right', portIndex);
@@ -738,6 +747,7 @@ export function WorkbenchPanel({
   }
 
   function startConnectionRewireFromInput(moduleId: string, portName: string) {
+    setSelectedConnectionIndex(null);
     const connectionIndex = findIncomingConnectionIndex(activeProjectState, moduleId, portName);
     if (connectionIndex < 0) {
       return;
@@ -801,6 +811,7 @@ export function WorkbenchPanel({
     }
     setConnectionFeedback(null);
     setPendingConnection(null);
+    setSelectedConnectionIndex(null);
   }
 
   function jumpToModule(moduleId: string) {
@@ -825,6 +836,7 @@ export function WorkbenchPanel({
       top: target.top,
       behavior: 'smooth',
     });
+    setSelectedConnectionIndex(null);
     onSelectModule(moduleId, false);
   }
 
@@ -1084,6 +1096,19 @@ export function WorkbenchPanel({
             <button
               type="button"
               className="mini-action-button"
+              onClick={() => {
+                if (effectiveSelectedConnectionIndex !== null) {
+                  onRemoveConnection(effectiveSelectedConnectionIndex);
+                  setSelectedConnectionIndex(null);
+                }
+              }}
+              disabled={effectiveSelectedConnectionIndex === null}
+            >
+              Delete Wire
+            </button>
+            <button
+              type="button"
+              className="mini-action-button"
               onClick={() => importInputRef.current?.click()}
             >
               Import JSON
@@ -1184,6 +1209,21 @@ export function WorkbenchPanel({
         </p>
       ) : connectionFeedback ? (
         <p className="connection-status connection-status-warning">{connectionFeedback}</p>
+      ) : effectiveSelectedConnectionIndex !== null &&
+        activeProjectState.connections[effectiveSelectedConnectionIndex] ? (
+        <p className="selection-status">
+          Selected wire:{' '}
+          <strong>
+            {activeProjectState.connections[effectiveSelectedConnectionIndex].from.moduleId}.
+            {activeProjectState.connections[effectiveSelectedConnectionIndex].from.port}
+          </strong>{' '}
+          -&gt;{' '}
+          <strong>
+            {activeProjectState.connections[effectiveSelectedConnectionIndex].to.moduleId}.
+            {activeProjectState.connections[effectiveSelectedConnectionIndex].to.port}
+          </strong>
+          . Use <strong>Delete Wire</strong> to remove it.
+        </p>
       ) : null}
 
       {!isCompositeEditor ? (
@@ -1293,6 +1333,7 @@ export function WorkbenchPanel({
             }
 
             event.preventDefault();
+            setSelectedConnectionIndex(null);
             setSelectionBox({
               startX: pointer.x,
               startY: pointer.y,
@@ -1346,11 +1387,18 @@ export function WorkbenchPanel({
                 targetSide === 'left' ? targetAnchor.x - bend : targetAnchor.x + bend;
 
               const pathD = `M ${sourceAnchor.x} ${sourceAnchor.y} C ${sourceControlX} ${sourceAnchor.y}, ${targetControlX} ${targetAnchor.y}, ${targetAnchor.x} ${targetAnchor.y}`;
+              const legibilityState = deriveConnectionLegibilityState({
+                connection,
+                connectionIndex,
+                selectedConnectionIndex: effectiveSelectedConnectionIndex,
+                focusedModuleId: selectedModuleId,
+              });
 
               return (
                 <g
                   key={`${connection.from.moduleId}:${connection.from.port}-${connection.to.moduleId}:${connection.to.port}`}
-                  className={
+                  className={[
+                    'connection-group',
                     validationIssues.some(
                       (issue) =>
                         issue.connection?.from.moduleId === connection.from.moduleId &&
@@ -1358,14 +1406,24 @@ export function WorkbenchPanel({
                         issue.connection?.to.moduleId === connection.to.moduleId &&
                         issue.connection?.to.port === connection.to.port,
                     )
-                      ? 'connection-group connection-group-invalid'
-                      : 'connection-group'
-                  }
+                      ? 'connection-group-invalid'
+                      : '',
+                    legibilityState.selected ? 'connection-group-selected' : '',
+                    legibilityState.emphasized ? 'connection-group-emphasized' : '',
+                    legibilityState.dimmed ? 'connection-group-dimmed' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
                 >
                   <path
                     className="connection-hit-area"
                     d={pathD}
-                    onClick={() => onRemoveConnection(connectionIndex)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setSelectedConnectionIndex((current) =>
+                        current === connectionIndex ? null : connectionIndex,
+                      );
+                    }}
                   />
                   <path d={pathD} />
                 </g>
@@ -1428,6 +1486,7 @@ export function WorkbenchPanel({
                     if (!pointer) return;
                     const isAdditiveSelection = event.shiftKey || event.metaKey || event.ctrlKey;
                     if (isAdditiveSelection) {
+                      setSelectedConnectionIndex(null);
                       onSelectModule(moduleInstance.id, true);
                       return;
                     }
@@ -1438,6 +1497,7 @@ export function WorkbenchPanel({
                       ? selectedModuleIds
                       : [moduleInstance.id];
                     if (!isDraggingExistingSelection) {
+                      setSelectedConnectionIndex(null);
                       onSelectModule(moduleInstance.id, false);
                     }
                     setDragState({
@@ -1496,6 +1556,7 @@ export function WorkbenchPanel({
                       onMouseDown={(event) => event.stopPropagation()}
                       onClick={(event) => {
                         event.stopPropagation();
+                        setSelectedConnectionIndex(null);
                         onToggleProbe(moduleInstance.id);
                       }}
                     >
