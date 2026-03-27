@@ -47,12 +47,14 @@ Read PRIMITIVE-MICRO-DEMOS-V1.md before changing primitive-local `Try Demo` acti
 Read PRIMITIVE-MICRO-DEMOS-V2.md before extending primitive-local micro demos into timing, state, or framing examples.
 Read WIRE-LEGIBILITY-ERGONOMICS-V1.md before changing wire selection, one-hop connection emphasis, or workspace-level path legibility behavior.
 Read TRACE-WORKSPACE-BRIDGING-V1.md before changing active trace emphasis in the workspace, one-hop step-context highlighting, or trace/workspace visual bridging behavior.
+Read COMPOSITE-REUSE-ERGONOMICS-V1.md before changing composite promotion clarity, composite boundary workflow, or composite-reuse ergonomics.
 Read MULTIWAY-ROUTING-V1.md before proposing multi-way case-switch routing, indexed output selection, or multi-output control-flow primitives.
 Read CONDITIONAL-COMPOSITION-V1.md before proposing explicit finite branch composition, if/else style graph behavior, or bounded conditional graph structure.
 Read ITERATOR-CONTROL-V1.md before proposing stronger iterator control, bounded repeated-condition behavior, or iterator-level control-flow extensions.
 Read ROTOR-REVERSE-PATH-V1.md before proposing reverse rotor traversal, inverse rotor signal paths, or historically faithful forward / reflect / reverse rotor behavior.
 Read ROTOR-DRIVEN-STEPPING-V1.md before proposing rotor-driven stepping, rotor-control submachines, or SIGABA-style stepping behavior.
 Read PYTHON-EXPORT-V1.md before proposing workspace-to-code export, standalone Python generation, or implementation-oriented codegen lines.
+Read MULTI-WINDOW-WORKSPACE-V1.md before proposing detachable panels, multi-tab workspace surfaces, or multi-window synchronized editing.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.
 Read LEARNING-SEQUENCE-V1.md before restructuring the teaching library, adding staged progression, or changing how demos/tutorials/challenges are ordered.

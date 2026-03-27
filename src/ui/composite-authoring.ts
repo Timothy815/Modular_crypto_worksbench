@@ -36,6 +36,15 @@ export interface CreateCompositeResult {
   error?: string;
 }
 
+export interface CompositeSelectionPreview {
+  ok: boolean;
+  moduleCount: number;
+  internalConnectionCount: number;
+  inputs: Array<{ name: string; type: 'symbol' | 'bits' }>;
+  outputs: Array<{ name: string; type: 'symbol' | 'bits' }>;
+  error?: string;
+}
+
 export interface ReplaceSelectionResult {
   ok: boolean;
   project?: Project;
@@ -84,63 +93,14 @@ export function createCompositeFromSelection({
     };
   }
 
-  const selectedIdSet = new Set(selectedModuleIds);
-  if (selectedIdSet.size === 0) {
-    return { ok: false, error: 'Select at least one module to create a composite.' };
-  }
-
-  const selectedModules = project.modules
-    .filter((moduleInstance) => selectedIdSet.has(moduleInstance.id))
-    .map((moduleInstance) => ({
-      ...moduleInstance,
-      params: { ...moduleInstance.params },
-    }));
-
-  if (selectedModules.length === 0) {
-    return { ok: false, error: 'Selected modules were not found in the current project.' };
-  }
-
-  const internalConnections = project.connections
-    .filter(
-      (connection) =>
-        selectedIdSet.has(connection.from.moduleId) &&
-        selectedIdSet.has(connection.to.moduleId),
-    )
-    .map(cloneConnection);
-
-  const incomingBoundaryConnections = project.connections.filter(
-    (connection) =>
-      !selectedIdSet.has(connection.from.moduleId) &&
-      selectedIdSet.has(connection.to.moduleId),
-  );
-  const outgoingBoundaryConnections = project.connections.filter(
-    (connection) =>
-      selectedIdSet.has(connection.from.moduleId) &&
-      !selectedIdSet.has(connection.to.moduleId),
-  );
-
-  const inputBindings: CompositePortBinding[] = [];
-  const outputBindings: CompositePortBinding[] = [];
-  const inputs = buildBoundaryPorts(
-    incomingBoundaryConnections,
+  const selection = deriveCompositeSelection({
+    project,
     registry,
-    'input',
-    inputBindings,
-    selectedModules,
-  );
-  const outputs = buildBoundaryPorts(
-    outgoingBoundaryConnections,
-    registry,
-    'output',
-    outputBindings,
-    selectedModules,
-  );
+    selectedModuleIds,
+  });
 
-  if (inputs.length === 0 && outputs.length === 0) {
-    return {
-      ok: false,
-      error: 'Selection must expose at least one boundary port to become a reusable composite.',
-    };
+  if (!selection.ok || !selection.selectedModules || !selection.internalConnections) {
+    return { ok: false, error: selection.error };
   }
 
   const definition: CompositeDef = {
@@ -148,15 +108,15 @@ export function createCompositeFromSelection({
     name: trimmedName,
     kind: 'composite',
     version: 1,
-    inputs,
-    outputs,
+    inputs: selection.inputs,
+    outputs: selection.outputs,
     paramSchema: {},
     project: {
-      modules: selectedModules,
-      connections: internalConnections,
+      modules: selection.selectedModules,
+      connections: selection.internalConnections,
     },
-    inputBindings,
-    outputBindings,
+    inputBindings: selection.inputBindings,
+    outputBindings: selection.outputBindings,
   };
 
   const entry: CompositeLibraryEntry = {
@@ -180,6 +140,27 @@ export function createCompositeFromSelection({
   }
 
   return { ok: true, entry };
+}
+
+export function previewCompositeSelection({
+  project,
+  registry,
+  selectedModuleIds,
+}: Pick<CreateCompositeFromSelectionArgs, 'project' | 'registry' | 'selectedModuleIds'>): CompositeSelectionPreview {
+  const selection = deriveCompositeSelection({
+    project,
+    registry,
+    selectedModuleIds,
+  });
+
+  return {
+    ok: selection.ok,
+    moduleCount: selection.selectedModules?.length ?? 0,
+    internalConnectionCount: selection.internalConnections?.length ?? 0,
+    inputs: selection.inputs,
+    outputs: selection.outputs,
+    error: selection.error,
+  };
 }
 
 export function replaceSelectionWithComposite({
@@ -508,6 +489,110 @@ function cloneConnection(connection: Connection): Connection {
   return {
     from: { ...connection.from },
     to: { ...connection.to },
+  };
+}
+
+function deriveCompositeSelection({
+  project,
+  registry,
+  selectedModuleIds,
+}: Pick<CreateCompositeFromSelectionArgs, 'project' | 'registry' | 'selectedModuleIds'>): {
+  ok: boolean;
+  selectedModules?: Project['modules'];
+  internalConnections?: Project['connections'];
+  inputBindings: CompositePortBinding[];
+  outputBindings: CompositePortBinding[];
+  inputs: Array<{ name: string; type: 'symbol' | 'bits' }>;
+  outputs: Array<{ name: string; type: 'symbol' | 'bits' }>;
+  error?: string;
+} {
+  const selectedIdSet = new Set(selectedModuleIds);
+  if (selectedIdSet.size === 0) {
+    return {
+      ok: false,
+      inputBindings: [],
+      outputBindings: [],
+      inputs: [],
+      outputs: [],
+      error: 'Select at least one module to create a composite.',
+    };
+  }
+
+  const selectedModules = project.modules
+    .filter((moduleInstance) => selectedIdSet.has(moduleInstance.id))
+    .map((moduleInstance) => ({
+      ...moduleInstance,
+      params: { ...moduleInstance.params },
+    }));
+
+  if (selectedModules.length === 0) {
+    return {
+      ok: false,
+      inputBindings: [],
+      outputBindings: [],
+      inputs: [],
+      outputs: [],
+      error: 'Selected modules were not found in the current project.',
+    };
+  }
+
+  const internalConnections = project.connections
+    .filter(
+      (connection) =>
+        selectedIdSet.has(connection.from.moduleId) &&
+        selectedIdSet.has(connection.to.moduleId),
+    )
+    .map(cloneConnection);
+
+  const incomingBoundaryConnections = project.connections.filter(
+    (connection) =>
+      !selectedIdSet.has(connection.from.moduleId) &&
+      selectedIdSet.has(connection.to.moduleId),
+  );
+  const outgoingBoundaryConnections = project.connections.filter(
+    (connection) =>
+      selectedIdSet.has(connection.from.moduleId) &&
+      !selectedIdSet.has(connection.to.moduleId),
+  );
+
+  const inputBindings: CompositePortBinding[] = [];
+  const outputBindings: CompositePortBinding[] = [];
+  const inputs = buildBoundaryPorts(
+    incomingBoundaryConnections,
+    registry,
+    'input',
+    inputBindings,
+    selectedModules,
+  );
+  const outputs = buildBoundaryPorts(
+    outgoingBoundaryConnections,
+    registry,
+    'output',
+    outputBindings,
+    selectedModules,
+  );
+
+  if (inputs.length === 0 && outputs.length === 0) {
+    return {
+      ok: false,
+      selectedModules,
+      internalConnections,
+      inputBindings,
+      outputBindings,
+      inputs,
+      outputs,
+      error: 'Selection must expose at least one boundary port to become a reusable composite.',
+    };
+  }
+
+  return {
+    ok: true,
+    selectedModules,
+    internalConnections,
+    inputBindings,
+    outputBindings,
+    inputs,
+    outputs,
   };
 }
 

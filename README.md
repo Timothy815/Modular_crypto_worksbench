@@ -75,6 +75,11 @@ The current trace/workspace bridging follow-on after that is:
 - one-hop incoming / outgoing wire emphasis for the active step context
 - trace emphasis kept distinct from direct wire selection and node-selection legibility
 
+The current next ergonomics slice after that is:
+- composite creation / reuse workflow clarity
+- real pre-create preview of inferred composite boundary ports in the create dialog
+- clearer reusable composite / iterator summaries in the palette library flow
+
 The current near-future primitive-expansion item after that is:
 - explicit multi-way routing as a bounded future family
 - first slice scoped to a multi-way router (`1 -> N`) for visible case-switch / staged routing
@@ -92,6 +97,11 @@ The current near-future advanced-rotor items after that are:
 The current near-future strategic export item after that is:
 - bounded Python export foundations for turning a workspace into standalone executable code
 - treated as a major future product line, not just a utility add-on
+
+The current near-future workspace-layout ergonomics item after that is:
+- bounded multi-window / multi-tab support for selected surfaces
+- likely `Inspector` and `Palette` first
+- treated as a synchronization-heavy product line, not a casual pane tweak
 
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:

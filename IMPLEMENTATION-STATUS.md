@@ -33,12 +33,14 @@ Current development now carries:
   - `PRIMITIVE-MICRO-DEMOS-V2.md`
   - `WIRE-LEGIBILITY-ERGONOMICS-V1.md`
   - `TRACE-WORKSPACE-BRIDGING-V1.md`
+  - `COMPOSITE-REUSE-ERGONOMICS-V1.md`
   - `MULTIWAY-ROUTING-V1.md`
   - `CONDITIONAL-COMPOSITION-V1.md`
   - `ITERATOR-CONTROL-V1.md`
   - `ROTOR-REVERSE-PATH-V1.md`
   - `ROTOR-DRIVEN-STEPPING-V1.md`
   - `PYTHON-EXPORT-V1.md`
+  - `MULTI-WINDOW-WORKSPACE-V1.md`
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -198,6 +200,11 @@ The current trace/workspace bridging follow-on after that is:
 - one-hop incoming / outgoing wire emphasis for the active step context
 - trace emphasis kept distinct from direct wire selection and node-selection legibility
 
+The current next ergonomics slice after that is:
+- composite creation / reuse workflow clarity
+- real pre-create preview of inferred composite boundary ports in the create dialog
+- clearer reusable composite / iterator summaries in the palette library flow
+
 The current near-future primitive-expansion item after that is:
 - explicit multi-way routing as a bounded future family
 - first slice scoped to a multi-way router (`1 -> N`) rather than a full multi-way selector pair
@@ -215,6 +222,11 @@ The current near-future advanced-rotor items after that are:
 The current near-future strategic export item after that is:
 - bounded Python export foundations for turning a workspace into standalone executable code
 - explicitly treated as a major future product line rather than a casual utility feature
+
+The current near-future workspace-layout ergonomics item after that is:
+- bounded multi-window / multi-tab support for selected surfaces
+- likely `Inspector` and `Palette` first
+- explicitly treated as a synchronization-heavy product line, not a casual pane tweak
 
 Established and shipped:
 - implementation contract and AI coordination protocol

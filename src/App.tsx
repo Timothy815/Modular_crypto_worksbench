@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useReducer, useState, type CSSProperties } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useReducer, useState, type CSSProperties } from 'react';
 
 import './App.css';
 import { isCompositeDefinition, type CompositeLibraryEntry } from './engine/composites';
@@ -9,6 +9,7 @@ import { isOutputSinkDefId } from './engine/output-sinks';
 import { validateCompositeDef, validateProject } from './engine/validation';
 import {
   createCompositeFromSelection,
+  previewCompositeSelection,
   replaceSelectionWithComposite,
   unzipCompositeInstance,
 } from './ui/composite-authoring';
@@ -504,6 +505,15 @@ function App() {
     state.workspaceVersionsByProject[activeProjectDefinition.id] ?? [];
   const canUndoWorkspaceHistory = !state.compositeEditor && activeWorkspaceHistory.past.length > 0;
   const canRedoWorkspaceHistory = !state.compositeEditor && activeWorkspaceHistory.future.length > 0;
+  const compositeSelectionPreview = useMemo(
+    () =>
+      previewCompositeSelection({
+        project: activeProjectState,
+        registry: effectiveRegistry,
+        selectedModuleIds: effectiveSelectedModuleIds,
+      }),
+    [activeProjectState, effectiveRegistry, effectiveSelectedModuleIds],
+  );
 
   let execution: ExecutionResult | null = null;
   let executionError: string | null = null;
@@ -2321,6 +2331,54 @@ function App() {
             <p className="dialog-selection-summary">
               Selected modules: <strong>{effectiveSelectedModuleIds.length}</strong>
             </p>
+            <div className="dialog-composite-preview">
+              <span className="meta-label">Captured Structure</span>
+              {compositeSelectionPreview.ok ? (
+                <>
+                  <p className="dialog-composite-preview-copy">
+                    {compositeSelectionPreview.moduleCount} module
+                    {compositeSelectionPreview.moduleCount === 1 ? '' : 's'} and{' '}
+                    {compositeSelectionPreview.internalConnectionCount} internal connection
+                    {compositeSelectionPreview.internalConnectionCount === 1 ? '' : 's'} will be
+                    captured.
+                  </p>
+                  <div className="selected-ports dialog-selected-ports">
+                    <div className="port-group">
+                      <span className="meta-label">Inputs</span>
+                      {compositeSelectionPreview.inputs.length === 0 ? (
+                        <p className="empty-state">No input boundary ports</p>
+                      ) : (
+                        <ul className="port-list">
+                          {compositeSelectionPreview.inputs.map((port: { name: string; type: 'symbol' | 'bits' }) => (
+                            <li key={port.name}>
+                              <strong>{port.name}</strong>
+                              <span>{port.type}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <div className="port-group">
+                      <span className="meta-label">Outputs</span>
+                      {compositeSelectionPreview.outputs.length === 0 ? (
+                        <p className="empty-state">No output boundary ports</p>
+                      ) : (
+                        <ul className="port-list">
+                          {compositeSelectionPreview.outputs.map((port: { name: string; type: 'symbol' | 'bits' }) => (
+                            <li key={port.name}>
+                              <strong>{port.name}</strong>
+                              <span>{port.type}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="field-error">{compositeSelectionPreview.error}</p>
+              )}
+            </div>
 
             <label className="param-field">
               <span>Display Name</span>

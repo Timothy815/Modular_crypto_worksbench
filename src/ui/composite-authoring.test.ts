@@ -4,6 +4,7 @@ import type { ModuleRegistry, Project } from '../engine/types';
 import { isCompositeDefinition } from '../engine/composites';
 import {
   createCompositeFromSelection,
+  previewCompositeSelection,
   replaceSelectionWithComposite,
   unzipCompositeInstance,
 } from './composite-authoring';
@@ -84,6 +85,40 @@ const project: Project = {
 };
 
 describe('createCompositeFromSelection', () => {
+  it('previews inferred composite boundary ports before creation', () => {
+    const preview = previewCompositeSelection({
+      project,
+      registry,
+      selectedModuleIds: ['encode', 'decode'],
+    });
+
+    expect(preview).toEqual({
+      ok: true,
+      moduleCount: 2,
+      internalConnectionCount: 1,
+      inputs: [{ name: 'encode_in', type: 'symbol' }],
+      outputs: [{ name: 'decode_out', type: 'symbol' }],
+    });
+  });
+
+  it('reports when a selection has no reusable composite boundary', () => {
+    const isolatedProject: Project = {
+      modules: [{ id: 'encode', defId: 'SymbolToBits', params: {} }],
+      connections: [],
+    };
+
+    const preview = previewCompositeSelection({
+      project: isolatedProject,
+      registry,
+      selectedModuleIds: ['encode'],
+    });
+
+    expect(preview.ok).toBe(false);
+    expect(preview.error).toContain('boundary port');
+    expect(preview.moduleCount).toBe(1);
+    expect(preview.internalConnectionCount).toBe(0);
+  });
+
   it('captures a selected subgraph into a reusable composite definition', () => {
     const result = createCompositeFromSelection({
       project,

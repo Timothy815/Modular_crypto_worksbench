@@ -290,6 +290,12 @@ function ModuleLibraryCard({
                 {isBuiltInReusable ? 'Architecture' : isComposite ? 'Composite' : 'Iterator'}
               </span>
             ) : null}
+            {isReusable ? (
+              <p className="primitive-reuse-summary">
+                {def.inputs.length} in / {def.outputs.length} out
+                {usageCount > 0 ? ` · In use ${usageCount} time${usageCount === 1 ? '' : 's'}` : ''}
+              </p>
+            ) : null}
           </div>
           <div className="primitive-compact-actions">
             <button
@@ -451,6 +457,15 @@ function ModuleLibraryCard({
                 : isComposite
                   ? 'Reusable composite'
                   : 'Reusable iterator chain'}
+            </p>
+          ) : null}
+          {isReusable ? (
+            <p className="primitive-reuse-summary">
+              Inputs:{' '}
+              <strong>{def.inputs.map((port) => `${port.name}:${port.type}`).join(', ') || 'none'}</strong>
+              {' · '}
+              Outputs:{' '}
+              <strong>{def.outputs.map((port) => `${port.name}:${port.type}`).join(', ') || 'none'}</strong>
             </p>
           ) : null}
         </div>
