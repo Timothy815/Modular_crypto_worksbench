@@ -6,8 +6,8 @@ Last updated: March 26, 2026
 
 ## Current State
 
-The latest shipped tag is `v1.41.0`.
-Local `main` is framed through `v1.44.0`.
+The latest shipped tag is `v1.44.0`.
+Local `main` now carries a proposed post-`v1.44.0` `v2.0` sanity-pass contract.
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -569,6 +569,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `AEAD-FOUNDATIONS-V1.md` | Framed for `v1.42.0` as the bounded composition follow-on for visible authenticated-encryption-style structure |
 | `DIGITAL-SIGNATURE-FOUNDATIONS-V1.md` | Framed for `v1.43.0` as the bounded asymmetric-authentication follow-on for visible signing and verification |
 | `PROTOCOL-HANDSHAKES-V1.md` | Framed for `v1.44.0` as the bounded systems-level follow-on for visible handshake / transcript composition |
+| `MCW-V2-SANITY-PASS.md` | Proposed post-`v1.44.0` as the next product-level cohesion pass after the completed systems-composition checkpoint |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
 | `BRIDGE-ERGONOMICS-V1.md` | Shipped in `v1.31.0` — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |

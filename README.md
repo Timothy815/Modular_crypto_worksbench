@@ -11,8 +11,8 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The latest shipped tag is `v1.41.0`.
-Local `main` is framed through `v1.44.0`.
+The latest shipped tag is `v1.44.0`.
+Local `main` now carries a proposed post-`v1.44.0` `v2.0` sanity-pass contract.
 
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
@@ -258,6 +258,7 @@ Implemented and shipped:
 - `AEAD-FOUNDATIONS-V1.md`: framed bounded `v1.42.0` follow-on for visible authenticated-encryption-style composition
 - `DIGITAL-SIGNATURE-FOUNDATIONS-V1.md`: framed bounded `v1.43.0` follow-on for visible signing and verification
 - `PROTOCOL-HANDSHAKES-V1.md`: framed bounded `v1.44.0` follow-on for visible handshake / transcript composition
+- `MCW-V2-SANITY-PASS.md`: proposed post-`v1.44.0` product-level cohesion pass for library organization, scale management, and curriculum framing
 - `BYPASS-V1.md`: shipped bounded usability slice for visible instance-level bypass on eligible one-in/one-out modules
 - `INVERSE-PERMUTATION-AUTHORING-V1.md`: shipped bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors
 - `BRIDGE-ERGONOMICS-V1.md`: shipped bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior
