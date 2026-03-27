@@ -41,6 +41,7 @@ Current development now carries:
   - `ROTOR-REVERSE-PATH-V1.md`
   - `LINKED-ROTOR-PAIRING-V1.md`
   - `ROTOR-DRIVEN-STEPPING-V1.md`
+  - `ROTOR-CONTROL-BANK-V1.md`
   - `PYTHON-EXPORT-V1.md`
   - `MULTI-WINDOW-WORKSPACE-V1.md`
 
@@ -240,6 +241,11 @@ The current shipped rotor-driven-stepping follow-on after that is:
 - shipped as built-in `RotorDoubleStepControl`
 - applied to the `Advanced Rotor Stepping` teaching surface as reusable middle-rotor double-step logic
 - explicitly kept separate from generic control-flow or executor redesign
+
+The current next rotor-control follow-on after that is:
+- one bounded visible control-bank pattern where one rotor bank contributes stepping pulses for another
+- intended as the first SIGABA-like authored direction without claiming full historical fidelity
+- explicitly separate from hidden scheduling and executor redesign
 
 The current near-future strategic export item after that is:
 - bounded Python export foundations for turning a workspace into standalone executable code
