@@ -40,6 +40,7 @@ const keyScheduleWorkshopProject = demoProjects.find((project) => project.id ===
 const recursiveKeyScheduleProject = demoProjects.find((project) => project.id === 'recursive-key-schedule');
 const visibleBlockChainingProject = demoProjects.find((project) => project.id === 'visible-block-chaining');
 const visibleByteOrderProject = demoProjects.find((project) => project.id === 'visible-byte-order');
+const visibleTamperCheckProject = demoProjects.find((project) => project.id === 'visible-tamper-check');
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
 const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
 const toySpongeHashProject = demoProjects.find((project) => project.id === 'toy-sponge-hash');
@@ -158,6 +159,9 @@ if (!visibleBlockChainingProject) {
 if (!visibleByteOrderProject) {
   throw new Error('Expected visible-byte-order demo project to seed starter challenges.');
 }
+if (!visibleTamperCheckProject) {
+  throw new Error('Expected visible-tamper-check demo project to seed starter challenges.');
+}
 
 const fixedBridgeTarget = cloneProject(bridgeProject.project);
 const brokenBridgeStart = cloneProject(bridgeProject.project);
@@ -236,6 +240,8 @@ const visibleBlockChainingTarget = cloneProject(visibleBlockChainingProject.proj
 const brokenVisibleBlockChainingStart = cloneProject(visibleBlockChainingProject.project);
 const visibleByteOrderTarget = cloneProject(visibleByteOrderProject.project);
 const brokenVisibleByteOrderStart = cloneProject(visibleByteOrderProject.project);
+const visibleTamperCheckTarget = cloneProject(visibleTamperCheckProject.project);
+const brokenVisibleTamperCheckStart = cloneProject(visibleTamperCheckProject.project);
 
 const brokenKeyModule = brokenBridgeStart.modules.find((moduleInstance) => moduleInstance.id === 'key');
 if (!brokenKeyModule) {
@@ -386,6 +392,14 @@ brokenVisibleByteOrderConnections[swapSourceIndex] = {
   from: { moduleId: 'word', port: 'out' },
   to: { moduleId: 'swap-hex', port: 'in' },
 };
+
+const brokenReceiverKey = brokenVisibleTamperCheckStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'receiver-key',
+);
+if (!brokenReceiverKey) {
+  throw new Error('Expected visible-tamper-check demo project to contain receiver-key.');
+}
+brokenReceiverKey.params.value = '0F00';
 
 const brokenBaudotSource = brokenBaudotStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'source',
@@ -1390,6 +1404,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'Only the swap branch is wrong.',
       'The output sink is currently reading straight from the source word instead of the byte-order transform.',
       'Reconnect the swap output back into the hex bridge.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-tamper-check',
+    title: 'Repair the Tamper Check',
+    projectId: 'visible-tamper-check',
+    group: 'Integrity',
+    stage: 'framing-and-protocol-context',
+    order: 155,
+    recommendedAfter: ['visible-byte-order'],
+    difficulty: 'intermediate',
+    prompt:
+      'This visible tamper-check machine is failing verification even though the sender message, received message, and transmitted tag path are correct. The receiver-side key/context is wrong. Restore the shared key so the recomputed tag matches the transmitted one again.',
+    startingProject: brokenVisibleTamperCheckStart,
+    startingLayout: cloneProject(visibleTamperCheckProject.layout),
+    targetProject: visibleTamperCheckTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Both readable message paths are already correct.',
+      'The sender tag path is already producing the reference tag.',
+      'Focus on the receiver-side key feeding the second XOR before the receiver hash.',
     ],
   },
 ];

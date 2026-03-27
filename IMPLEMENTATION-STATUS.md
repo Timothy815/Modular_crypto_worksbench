@@ -6,7 +6,7 @@ Last updated: March 26, 2026
 
 ## Current State
 
-The project has shipped through `v1.40.0` on `main`.
+The project has shipped through `v1.41.0` on `main`.
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -209,6 +209,7 @@ The following decisions are reflected in shipped code:
 | `v1.38.0` | Key Schedule Depth |
 | `v1.39.0` | Block Chaining |
 | `v1.40.0` | Byte-Oriented Primitives |
+| `v1.41.0` | Integrity / Authentication |
 
 Post-`v1.4.0` work merged to `main`:
 - Modern Analysis contract framing
@@ -443,6 +444,7 @@ Post-`v1.26.0` work merged to `main`:
 Safe to begin:
 - help shape the next bounded byte/word-oriented contract after the shipped block-chaining slice
 - help pressure-test whether the first byte/word helper set should stop at rotation/swap or include one bounded lane helper
+- help shape the next bounded integrity/authentication contract after the shipped hashing, chaining, and byte/word slices
 - help review future tutorial/challenge additions that accompany deeper symmetric-construction lines
 - help keep the roadmap honest about what is still missing versus what is now shipped
 
@@ -456,15 +458,15 @@ Should avoid for now:
 ### Gemini
 
 Safe to begin:
-- review whether byte/word-oriented helpers or integrity/authentication should follow the shipped `v1.39.0` block-chaining slice
-- help pressure-test the roadmap sequence from byte/word helpers into integrity or richer modern-round vocabulary
-- review what tutorial/challenge support should accompany the next symmetric-construction family
+- review whether the framed integrity/authentication slice is the right stopping point before release
+- help pressure-test the roadmap sequence from standalone tamper detection into later AEAD or signature-adjacent lines
+- review what tutorial/challenge support should accompany any later auth-family follow-ons
 - help keep the post-builder product direction tied to expressive machine language rather than generic tooling
 
 Best focus:
-- whether byte/word-oriented helpers are now the sharpest remaining modern-construction gap
-- whether integrity/authentication should wait until modern word-level handling is more comfortable
-- how to keep future modern-round work explicit and inspectable
+- whether the first integrity/authentication slice is bounded enough to ship as-is
+- whether future auth work should stay comparison-centered instead of branded HMAC/AEAD
+- how to keep later auth follow-ons explicit and inspectable
 
 ---
 
@@ -475,7 +477,7 @@ Available checks:
 - `npm run lint`
 - `npm run build`
 
-All three passed at `v1.40.0` implementation framing before the final doc-only release polish.
+All three passed at `v1.41.0` implementation framing before the final doc-only release polish.
 
 ---
 
@@ -490,7 +492,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 ### Near-Term Roadmap
 
 1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
-2. **Continue the primitive-language roadmap beyond shipped stream, rotor, symbol-permutation, key-routing, symbol-structure, arithmetic, and number-theoretic foundations** — the clearest remaining language families are integrity/authentication teaching lines and any later modern-round or byte-lane follow-ons only if they still prove necessary
+2. **Continue the primitive-language roadmap beyond shipped stream, rotor, symbol-permutation, key-routing, symbol-structure, arithmetic, and number-theoretic foundations** — the clearest remaining language families are integrity/authentication teaching lines and any later AEAD/signature follow-ons only if the first auth slice proves the need
 3. **Keep future rotor follow-ons bounded** — reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices, not convenience presets
 4. **Establish a suggested learning path across demos/tutorials/challenges** — future teaching content should fit a visible stage/order spine rather than accumulating as a flat library
 5. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
@@ -543,6 +545,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `KEY-SCHEDULE-DEPTH-V1.md` | Shipped in `v1.38.0` as bounded iterative/recursive round-key derivation depth |
 | `BLOCK-CHAINING-V1.md` | Framed for `v1.39.0` as the bounded framing/symmetric-construction follow-on for visible block-to-block dependence |
 | `BYTE-ORIENTED-PRIMITIVES-V1.md` | Framed for `v1.40.0` as the bounded modern-construction follow-on for explicit byte/word structure helpers |
+| `INTEGRITY-AUTHENTICATION-V1.md` | Framed for `v1.41.0` as the bounded modern-teaching follow-on for visible tamper detection and authenticator comparison |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
 | `BRIDGE-ERGONOMICS-V1.md` | Shipped in `v1.31.0` — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |
