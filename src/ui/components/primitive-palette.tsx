@@ -6,6 +6,7 @@ import {
   type ModuleLibraryDomainTab,
   getModuleDetail,
   getModuleLibrarySectionId,
+  getModuleLibrarySortOrder,
   getModulePurpose,
   matchesModuleDomainTab,
   matchesModuleSearch,
@@ -45,6 +46,18 @@ export function PrimitivePalette({
     const rightIsComposite = 'kind' in right && right.kind === 'composite';
 
     if (leftIsComposite === rightIsComposite) {
+      if (!leftIsComposite && !rightIsComposite) {
+        const sectionComparison = getModuleLibrarySectionId(left).localeCompare(getModuleLibrarySectionId(right));
+        if (sectionComparison !== 0) {
+          return sectionComparison;
+        }
+
+        const sortComparison = getModuleLibrarySortOrder(left) - getModuleLibrarySortOrder(right);
+        if (sortComparison !== 0) {
+          return sortComparison;
+        }
+      }
+
       return left.name.localeCompare(right.name);
     }
 

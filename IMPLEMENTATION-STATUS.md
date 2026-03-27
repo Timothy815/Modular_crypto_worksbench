@@ -1,16 +1,19 @@
 # MCW — Implementation Status
 
-Last updated: March 26, 2026
+Last updated: March 27, 2026
 
 ---
 
 ## Current State
 
-The latest shipped tag is `v1.44.0`.
-Local `main` now carries:
+The latest shipped tag is `v1.46.0`.
+Current feature work now lives on `feature/palette-coherence` and carries:
 - the proposed post-`v1.44.0` `v2.0` sanity-pass contract
 - the completed `v2.0` sanity audit deliverable
-- one implemented bounded follow-on pass: `LEARNING-SEQUENCE-V2.md`
+- implemented bounded follow-on passes:
+  - `LEARNING-SEQUENCE-V2.md`
+  - selector/pathfinding polish on `main`
+  - `PALETTE-COHERENCE-V1.md` on the active feature branch
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -113,7 +116,7 @@ The next strategic direction remains broader than any one subdomain:
 - ship tutorials and challenges alongside each new vocabulary family
 
 The next most important product-level task is:
-- validate the revised late-stage pathfinding in real use before choosing any further bounded `v2.0` follow-on
+- merge and ship `PALETTE-COHERENCE-V1.md` as the next bounded palette-library coherence milestone
 
 Established and shipped:
 - implementation contract and AI coordination protocol

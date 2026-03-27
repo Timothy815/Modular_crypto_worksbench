@@ -1,8 +1,8 @@
 # Palette Coherence V1
 
-Last updated: March 26, 2026
+Last updated: March 27, 2026
 
-Status: Proposed next bounded follow-on after `LEARNING-SEQUENCE-V2` and the subsequent pathfinding-selector polish.
+Status: Implemented on `feature/palette-coherence`; ready to merge as the `v1.47.0` palette-library coherence slice.
 
 ## Purpose
 

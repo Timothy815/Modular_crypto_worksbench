@@ -26,6 +26,7 @@ Read PROTOCOL-HANDSHAKES-V1.md before starting work on visible transcript compos
 Read MCW-V2-SANITY-PASS.md before starting work on post-`v1.44.0` product framing, library reorganization, or large-workspace cohesion follow-ons.
 Read MCW-V2-SANITY-AUDIT.md before deciding what post-`v1.44.0` cohesion issue is actually highest leverage.
 Read LEARNING-SEQUENCE-V2.md before extending the late learning spine or reorganizing the post-number-theory teaching surface.
+Read PALETTE-COHERENCE-V1.md before reorganizing the primitive palette, module-library sections, or palette-facing domain-tab coherence.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.
 Read LEARNING-SEQUENCE-V1.md before restructuring the teaching library, adding staged progression, or changing how demos/tutorials/challenges are ordered.
@@ -155,7 +156,7 @@ src/utils/     — Shared helpers
 
 ## Current Resume Point
 
-- Resume from current `main` at `v1.44.0`
+- Resume from current `main` at `v1.46.0`, with `feature/palette-coherence` carrying the in-progress `PALETTE-COHERENCE-V1` implementation
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement
