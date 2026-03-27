@@ -19,6 +19,7 @@ import type {
   UserWorkspaceMetadata,
   WorkbenchAnnotation,
   WorkbenchDocument,
+  WorkspaceVersionDocument,
 } from './workbench-document';
 
 const STORAGE_KEY = 'mcw:workspace:v1';
@@ -121,6 +122,34 @@ function cloneUserWorkspaceMetadata(
   workspace: UserWorkspaceMetadata,
 ): UserWorkspaceMetadata {
   return { ...workspace };
+}
+
+function cloneWorkspaceDocument(document: WorkbenchDocument): WorkbenchDocument {
+  return {
+    version: 1,
+    project: cloneProject(document.project),
+    ui: {
+      layout: Object.fromEntries(
+        Object.entries(document.ui.layout).map(([moduleId, position]) => [
+          moduleId,
+          { ...position },
+        ]),
+      ),
+      annotations: cloneAnnotations(document.ui.annotations),
+    },
+  };
+}
+
+function cloneWorkspaceVersion(
+  version: WorkspaceVersionDocument,
+): WorkspaceVersionDocument {
+  return {
+    id: version.id,
+    name: version.name,
+    savedAt: version.savedAt,
+    tickedMode: version.tickedMode,
+    document: cloneWorkspaceDocument(version.document),
+  };
 }
 
 function buildDefaultDocument(project: DemoProject): WorkbenchDocument {
@@ -255,6 +284,12 @@ export function buildPersistedWorkspace(state: UiState): PersistedWorkspaceDocum
         state.tickPlaybackSpeedMsByProject[projectId] ?? 500,
       ]),
     ),
+    workspaceVersionsByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        (state.workspaceVersionsByProject[projectId] ?? []).map(cloneWorkspaceVersion),
+      ]),
+    ),
     challengeLibrary: state.challengeLibrary.map(cloneChallenge),
     tutorialLibrary: state.tutorialLibrary.map(cloneTutorial),
     compositeLibrary: {
@@ -303,6 +338,16 @@ export function loadWorkspaceFromStorage(
       !Array.isArray(parsed.tutorialLibrary) ||
       !parsed.tutorialLibrary.every(isGuidedTutorialDocument) ||
       !isCompositeLibraryDocument(parsed.compositeLibrary) ||
+      !(
+        parsed.workspaceVersionsByProjectId === undefined ||
+        (typeof parsed.workspaceVersionsByProjectId === 'object' &&
+          parsed.workspaceVersionsByProjectId !== null &&
+          Object.values(parsed.workspaceVersionsByProjectId).every(
+            (versions) =>
+              Array.isArray(versions) &&
+              versions.every(isWorkspaceVersionDocument),
+          ))
+      ) ||
       !(
         parsed.userWorkspaceLibrary === undefined ||
         (Array.isArray(parsed.userWorkspaceLibrary) &&
@@ -433,6 +478,17 @@ export function loadWorkspaceFromStorage(
             Number.isFinite(speedMs),
         ),
       ),
+      workspaceVersionsByProjectId: Object.fromEntries(
+        Object.entries(parsed.workspaceVersionsByProjectId ?? {}).filter(
+          ([projectId, versions]) =>
+            allowedProjectIds.has(projectId) &&
+            Array.isArray(versions) &&
+            versions.every(isWorkspaceVersionDocument),
+        ).map(([projectId, versions]) => [
+          projectId,
+          versions.map(cloneWorkspaceVersion),
+        ]),
+      ),
       challengeLibrary: parsed.challengeLibrary.map(cloneChallenge),
       tutorialLibrary: parsed.tutorialLibrary.map(cloneTutorial),
       userWorkspaceLibrary: (parsed.userWorkspaceLibrary ?? []).map(
@@ -458,6 +514,21 @@ function isUserWorkspaceMetadata(value: unknown): value is UserWorkspaceMetadata
     typeof workspace.pipeline === 'string' &&
     (workspace.defaultTickedMode === undefined ||
       typeof workspace.defaultTickedMode === 'boolean')
+  );
+}
+
+function isWorkspaceVersionDocument(value: unknown): value is WorkspaceVersionDocument {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const version = value as Partial<WorkspaceVersionDocument>;
+  return (
+    typeof version.id === 'string' &&
+    typeof version.name === 'string' &&
+    typeof version.savedAt === 'string' &&
+    typeof version.tickedMode === 'boolean' &&
+    isWorkbenchDocument(version.document)
   );
 }
 

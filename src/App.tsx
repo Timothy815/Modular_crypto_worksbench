@@ -101,6 +101,10 @@ function createDuplicateWorkspaceName(sourceName: string, existingNames: Set<str
   return candidate;
 }
 
+function createWorkspaceVersionId(projectId: string, timestamp: string) {
+  return `${projectId}-version-${timestamp.replace(/[^0-9]/g, '')}`;
+}
+
 function describeWorkspacePipeline(project: Project) {
   return project.modules.length > 0
     ? project.modules.map((moduleInstance) => moduleInstance.defId).join(' -> ')
@@ -372,6 +376,12 @@ function App() {
               : [],
           ]),
         ),
+        workspaceVersionsByProject: Object.fromEntries(
+          allProjects.map((project) => [
+            project.id,
+            persistedWorkspace.workspaceVersionsByProjectId?.[project.id] ?? [],
+          ]),
+        ),
       };
     },
   );
@@ -464,6 +474,8 @@ function App() {
     state.tickPlaybackSpeedMsByProject[activeProjectDefinition.id] ?? 500;
   const activeWorkspaceHistory =
     state.workspaceHistoryByProject[activeProjectDefinition.id] ?? { past: [], future: [] };
+  const activeWorkspaceVersions =
+    state.workspaceVersionsByProject[activeProjectDefinition.id] ?? [];
   const canUndoWorkspaceHistory = !state.compositeEditor && activeWorkspaceHistory.past.length > 0;
   const canRedoWorkspaceHistory = !state.compositeEditor && activeWorkspaceHistory.future.length > 0;
 
@@ -1040,6 +1052,56 @@ function App() {
     setImportError(null);
   }
 
+  function handleSaveWorkspaceVersion() {
+    if (state.compositeEditor) {
+      return;
+    }
+
+    const proposedName = window.prompt(
+      'Save version as:',
+      `${activeProjectDefinition.name} Checkpoint ${activeWorkspaceVersions.length + 1}`,
+    );
+    const name = proposedName?.trim();
+    if (!name) {
+      return;
+    }
+
+    const savedAt = new Date().toISOString();
+    dispatch({
+      type: 'saveWorkspaceVersion',
+      projectId: activeProjectDefinition.id,
+      versionId: createWorkspaceVersionId(activeProjectDefinition.id, savedAt),
+      name,
+      savedAt,
+    });
+    setImportError(null);
+  }
+
+  function handleRestoreWorkspaceVersion(versionId: string) {
+    if (state.compositeEditor) {
+      return;
+    }
+
+    const version = activeWorkspaceVersions.find((entry) => entry.id === versionId);
+    if (!version) {
+      return;
+    }
+
+    const shouldRestore = window.confirm(
+      `Restore version "${version.name}"? This replaces the current live workspace state.`,
+    );
+    if (!shouldRestore) {
+      return;
+    }
+
+    dispatch({
+      type: 'restoreWorkspaceVersion',
+      projectId: activeProjectDefinition.id,
+      versionId,
+    });
+    setImportError(null);
+  }
+
   function handleUnzipComposite(moduleId: string) {
     if (!selectedModule || selectedModule.id !== moduleId) {
       return;
@@ -1217,6 +1279,8 @@ function App() {
                   handleRedoWorkspaceHistory();
                 } else if (value === 'save-current-workspace') {
                   handleSaveCurrentWorkspace();
+                } else if (value === 'save-workspace-version') {
+                  handleSaveWorkspaceVersion();
                 } else if (value === 'delete-current-workspace') {
                   handleDeleteCurrentWorkspace();
                 }
@@ -1236,6 +1300,7 @@ function App() {
               <option value="copy-selected-cluster">Copy Selected Cluster</option>
               <option value="paste-selected-cluster">Paste Selected Cluster</option>
               <option value="save-current-workspace">Save Current Workspace</option>
+              <option value="save-workspace-version">Save Version</option>
               {state.userWorkspaceLibrary.some(
                 (workspace) => workspace.id === activeProjectDefinition.id,
               ) ? (
@@ -1441,6 +1506,9 @@ function App() {
             onRequestRedo={handleRedoWorkspaceHistory}
             canUndo={canUndoWorkspaceHistory}
             canRedo={canRedoWorkspaceHistory}
+            workspaceVersions={activeWorkspaceVersions}
+            onRequestSaveVersion={handleSaveWorkspaceVersion}
+            onRequestRestoreVersion={handleRestoreWorkspaceVersion}
             onAddConnection={(fromModuleId, fromPort, toModuleId, toPort) =>
               dispatch({
                 type: 'addConnection',

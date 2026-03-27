@@ -19,6 +19,7 @@ import type {
   UserWorkspaceMetadata,
   WorkbenchAnnotation,
   WorkbenchDocument,
+  WorkspaceVersionDocument,
 } from './workbench-document';
 import {
   getModuleInstanceIdValidationError,
@@ -56,6 +57,7 @@ export interface UiState {
   selectedModuleIdByProject: Record<string, string | null>;
   selectedModuleIdsByProject: Record<string, string[]>;
   workspaceHistoryByProject: Record<string, WorkspaceHistoryState>;
+  workspaceVersionsByProject: Record<string, WorkspaceVersionDocument[]>;
   paramDrafts: Record<string, string>;
   showPalette: boolean;
   showInspector: boolean;
@@ -176,7 +178,9 @@ export type UiAction =
   | { type: 'togglePalette' }
   | { type: 'toggleInspector' }
   | { type: 'undoWorkspaceHistory'; projectId: string }
-  | { type: 'redoWorkspaceHistory'; projectId: string };
+  | { type: 'redoWorkspaceHistory'; projectId: string }
+  | { type: 'saveWorkspaceVersion'; projectId: string; versionId: string; name: string; savedAt: string }
+  | { type: 'restoreWorkspaceVersion'; projectId: string; versionId: string };
 
 export function cloneProject(project: Project): Project {
   return {
@@ -320,6 +324,7 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'moveModule',
   'moveModules',
   'tidyLayout',
+  'restoreWorkspaceVersion',
 ]);
 
 function createEmptyWorkspaceHistoryState(): WorkspaceHistoryState {
@@ -409,6 +414,33 @@ function applyWorkspaceHistorySnapshot(
         Object.entries(state.paramDrafts).filter(([key]) => !key.startsWith(`${projectId}:`)),
       ),
       ...snapshot.paramDrafts,
+    },
+  };
+}
+
+function buildWorkspaceVersionDocument(
+  state: UiState,
+  projectId: string,
+  details: { versionId: string; name: string; savedAt: string },
+): WorkspaceVersionDocument | null {
+  const project = state.projectStates[projectId];
+  const layout = state.layoutByProject[projectId];
+  if (!project || !layout) {
+    return null;
+  }
+
+  return {
+    id: details.versionId,
+    name: details.name,
+    savedAt: details.savedAt,
+    tickedMode: state.tickedModeByProject[projectId] ?? false,
+    document: {
+      version: 1,
+      project: cloneProject(project),
+      ui: {
+        layout: cloneLayout(layout),
+        annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
+      },
     },
   };
 }
@@ -528,6 +560,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     ),
     workspaceHistoryByProject: Object.fromEntries(
       projects.map((project) => [project.id, createEmptyWorkspaceHistoryState()]),
+    ),
+    workspaceVersionsByProject: Object.fromEntries(
+      projects.map((project) => [project.id, []]),
     ),
     paramDrafts: {},
     showPalette: true,
@@ -674,6 +709,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.workspaceHistoryByProject,
           [action.workspaceId]: createEmptyWorkspaceHistoryState(),
         },
+        workspaceVersionsByProject: {
+          ...state.workspaceVersionsByProject,
+          [action.workspaceId]: [],
+        },
       };
     }
     case 'saveWorkspaceAs': {
@@ -787,6 +826,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.workspaceHistoryByProject,
           [action.workspaceId]: createEmptyWorkspaceHistoryState(),
         },
+        workspaceVersionsByProject: {
+          ...state.workspaceVersionsByProject,
+          [action.workspaceId]: [],
+        },
       };
     }
     case 'removeWorkspace': {
@@ -877,6 +920,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         ),
         workspaceHistoryByProject: removeProjectEntry(
           state.workspaceHistoryByProject,
+          action.workspaceId,
+        ),
+        workspaceVersionsByProject: removeProjectEntry(
+          state.workspaceVersionsByProject,
           action.workspaceId,
         ),
         paramDrafts: Object.fromEntries(
@@ -2057,6 +2104,90 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
             future: history.future.slice(1).map(cloneWorkspaceHistorySnapshot),
           },
         },
+      };
+    }
+    case 'saveWorkspaceVersion': {
+      const nextVersion = buildWorkspaceVersionDocument(state, action.projectId, {
+        versionId: action.versionId,
+        name: action.name,
+        savedAt: action.savedAt,
+      });
+      if (!nextVersion) {
+        return state;
+      }
+
+      return {
+        ...state,
+        workspaceVersionsByProject: {
+          ...state.workspaceVersionsByProject,
+          [action.projectId]: [
+            ...(state.workspaceVersionsByProject[action.projectId] ?? []).filter(
+              (version) => version.id !== action.versionId,
+            ),
+            nextVersion,
+          ],
+        },
+      };
+    }
+    case 'restoreWorkspaceVersion': {
+      const version = (state.workspaceVersionsByProject[action.projectId] ?? []).find(
+        (candidate) => candidate.id === action.versionId,
+      );
+      if (!version) {
+        return state;
+      }
+
+      const nextDrafts = Object.fromEntries(
+        Object.entries(state.paramDrafts).filter(
+          ([key]) => !key.startsWith(`${action.projectId}:`),
+        ),
+      );
+
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: cloneProject(version.document.project),
+        },
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: cloneLayout(version.document.ui.layout),
+        },
+        annotationsByProject: {
+          ...state.annotationsByProject,
+          [action.projectId]: cloneAnnotations(version.document.ui.annotations),
+        },
+        comparisonBaselinesByProject: {
+          ...state.comparisonBaselinesByProject,
+          [action.projectId]: null,
+        },
+        selectedModuleIdByProject: {
+          ...state.selectedModuleIdByProject,
+          [action.projectId]: version.document.project.modules[0]?.id ?? null,
+        },
+        selectedModuleIdsByProject: {
+          ...state.selectedModuleIdsByProject,
+          [action.projectId]: version.document.project.modules[0]?.id
+            ? [version.document.project.modules[0].id]
+            : [],
+        },
+        probedModuleIdsByProject: {
+          ...state.probedModuleIdsByProject,
+          [action.projectId]: [],
+        },
+        tickedModeByProject: {
+          ...state.tickedModeByProject,
+          [action.projectId]: version.tickedMode,
+        },
+        currentTickByProject: {
+          ...state.currentTickByProject,
+          [action.projectId]: 0,
+        },
+        isTickPlaybackActiveByProject: {
+          ...state.isTickPlaybackActiveByProject,
+          [action.projectId]: false,
+        },
+        paramDrafts: nextDrafts,
       };
     }
     case 'togglePalette':

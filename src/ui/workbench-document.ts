@@ -28,6 +28,14 @@ export interface WorkbenchDocument {
   ui: WorkbenchUiMetadata;
 }
 
+export interface WorkspaceVersionDocument {
+  id: string;
+  name: string;
+  savedAt: string;
+  tickedMode: boolean;
+  document: WorkbenchDocument;
+}
+
 export interface ComparisonBaselineDocument {
   project: Project;
   capturedAt: string;
@@ -68,6 +76,7 @@ export interface PersistedWorkspaceDocument {
   tickedModeByProjectId?: Record<string, boolean>;
   currentTickByProjectId?: Record<string, number>;
   tickPlaybackSpeedMsByProjectId?: Record<string, number>;
+  workspaceVersionsByProjectId?: Record<string, WorkspaceVersionDocument[]>;
   challengeLibrary: GuidedChallenge[];
   tutorialLibrary: GuidedTutorial[];
   compositeLibrary: CompositeLibraryDocument;

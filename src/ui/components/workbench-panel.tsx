@@ -36,7 +36,7 @@ import {
   isLargeWorkspace,
   type WorkspaceLandmark,
 } from '../workspace-landmarks';
-import type { WorkbenchAnnotation } from '../workbench-document';
+import type { WorkbenchAnnotation, WorkspaceVersionDocument } from '../workbench-document';
 import type { TutorialStep } from '../tutorials';
 
 const NODE_WIDTH = CANVAS_NODE_WIDTH;
@@ -124,6 +124,9 @@ interface WorkbenchPanelProps {
   onRequestRedo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  workspaceVersions: WorkspaceVersionDocument[];
+  onRequestSaveVersion: () => void;
+  onRequestRestoreVersion: (versionId: string) => void;
   onSwitchProject: (projectId: string) => void;
   onAddConnection: (
     fromModuleId: string,
@@ -196,6 +199,9 @@ export function WorkbenchPanel({
   onRequestRedo,
   canUndo,
   canRedo,
+  workspaceVersions,
+  onRequestSaveVersion,
+  onRequestRestoreVersion,
   onSwitchProject,
   onAddConnection,
   onRemoveConnection,
@@ -287,6 +293,11 @@ export function WorkbenchPanel({
       ),
     [activeProjectState, workspaceLandmarks],
   );
+
+  const formatVersionTimestamp = (savedAt: string) => {
+    const date = new Date(savedAt);
+    return Number.isNaN(date.getTime()) ? savedAt : date.toLocaleString();
+  };
 
   useEffect(() => {
     if (!dragState && !annotationDragState && !selectionBox) {
@@ -701,6 +712,33 @@ export function WorkbenchPanel({
                 {renderLandmarkGroup('Outputs', workspaceLandmarks.outputs)}
               </div>
             ) : null}
+            {workspaceVersions.length > 0 ? (
+              <div className="workspace-versions-card">
+                <strong>Saved Versions</strong>
+                <p>
+                  Restore an intentional workspace checkpoint without replacing undo/redo.
+                </p>
+                <div className="workspace-version-list">
+                  {[...workspaceVersions]
+                    .sort((left, right) => right.savedAt.localeCompare(left.savedAt))
+                    .map((version) => (
+                      <div key={version.id} className="workspace-version-item">
+                        <div>
+                          <strong>{version.name}</strong>
+                          <p>{formatVersionTimestamp(version.savedAt)}</p>
+                        </div>
+                        <button
+                          type="button"
+                          className="workspace-version-button"
+                          onClick={() => onRequestRestoreVersion(version.id)}
+                        >
+                          Restore
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -744,6 +782,13 @@ export function WorkbenchPanel({
               disabled={!canRedo}
             >
               Redo
+            </button>
+            <button
+              type="button"
+              className="mini-action-button"
+              onClick={onRequestSaveVersion}
+            >
+              Save Version
             </button>
             <button
               type="button"

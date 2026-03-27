@@ -457,6 +457,83 @@ describe('uiReducer', () => {
     expect(nextState.workspaceHistoryByProject[projectId]?.past.length).toBe(40);
   });
 
+  it('saves named workspace versions per project without leaking across workspaces', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const otherProjectId = 'toy-rsa';
+
+    const nextState = uiReducer(initialState, {
+      type: 'saveWorkspaceVersion',
+      projectId,
+      versionId: 'sequential-v1',
+      name: 'Sequential Checkpoint',
+      savedAt: '2026-03-27T12:00:00.000Z',
+    });
+
+    expect(nextState.workspaceVersionsByProject[projectId]).toHaveLength(1);
+    expect(nextState.workspaceVersionsByProject[projectId]?.[0]?.name).toBe(
+      'Sequential Checkpoint',
+    );
+    expect(nextState.workspaceVersionsByProject[otherProjectId] ?? []).toEqual([]);
+  });
+
+  it('restores a saved workspace version and resets transient editor state', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const firstModuleId = initialState.projectStates[projectId].modules[0]?.id;
+
+    if (!firstModuleId) {
+      throw new Error('Expected a module in the sequential demo.');
+    }
+
+    const savedState = uiReducer(initialState, {
+      type: 'saveWorkspaceVersion',
+      projectId,
+      versionId: 'sequential-v1',
+      name: 'Sequential Checkpoint',
+      savedAt: '2026-03-27T12:00:00.000Z',
+    });
+    const editedState = uiReducer(
+      uiReducer(
+        uiReducer(savedState, {
+          type: 'moveModule',
+          projectId,
+          moduleId: firstModuleId,
+          x: 640,
+          y: 260,
+        }),
+        {
+          type: 'toggleProbe',
+          projectId,
+          moduleId: firstModuleId,
+        },
+      ),
+      {
+        type: 'setParamDraft',
+        projectId,
+        moduleId: firstModuleId,
+        key: 'seed',
+        rawValue: '10110011',
+      },
+    );
+    const restoredState = uiReducer(editedState, {
+      type: 'restoreWorkspaceVersion',
+      projectId,
+      versionId: 'sequential-v1',
+    });
+
+    expect(restoredState.layoutByProject[projectId]?.[firstModuleId]).toEqual(
+      initialState.layoutByProject[projectId]?.[firstModuleId],
+    );
+    expect(restoredState.annotationsByProject[projectId]).toEqual(
+      initialState.annotationsByProject[projectId],
+    );
+    expect(restoredState.probedModuleIdsByProject[projectId]).toEqual([]);
+    expect(restoredState.paramDrafts[`${projectId}:${firstModuleId}:seed`]).toBeUndefined();
+    expect(restoredState.currentTickByProject[projectId]).toBe(0);
+    expect(restoredState.isTickPlaybackActiveByProject[projectId]).toBe(false);
+  });
+
   it('does not remove built-in architecture entries from the library', () => {
     const initialState = createInitialUiState(demoProjects);
     const builtInEntry = initialState.compositeLibrary.find((entry) => entry.source === 'built-in');

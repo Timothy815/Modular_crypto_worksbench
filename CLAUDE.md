@@ -172,7 +172,7 @@ src/utils/     — Shared helpers
 - The first bounded post-`v2.0` contract is `REPEATED-STRUCTURE-AUTHORING-V1.md`
 - The next bounded follow-on after that is `SELECTED-CLUSTER-OPERATIONS-V1.md`
 - The current active safety slice after cluster operations is `WORKSPACE-HISTORY-V1.md`
-- The next proposed checkpointing slice after that is `WORKSPACE-VERSIONING-V1.md`
+- The current checkpointing slice after that is `WORKSPACE-VERSIONING-V1.md`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement

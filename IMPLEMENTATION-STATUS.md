@@ -138,8 +138,9 @@ The next bounded follow-on after that is:
 The current active authoring-safety slice after cluster operations is:
 - workspace-local undo / redo history
 
-The next checkpointing follow-on after that is:
+The current checkpointing follow-on after that is:
 - named workspace versions / restore points
+- explicit save/list/restore workflow per workspace
 
 Established and shipped:
 - implementation contract and AI coordination protocol

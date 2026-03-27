@@ -733,6 +733,52 @@ body.dock-resizing {
   border-top: 1px solid var(--line);
 }
 
+.workspace-versions-card {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.workspace-version-list {
+  display: grid;
+  gap: 8px;
+}
+
+.workspace-version-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-panel);
+}
+
+.workspace-version-item p {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+}
+
+.workspace-version-button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-button);
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.workspace-version-button:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-panel));
+}
+
 .workspace-landmarks-card strong {
   margin-bottom: 0;
 }

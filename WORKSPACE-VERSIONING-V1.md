@@ -2,7 +2,7 @@
 
 Last updated: March 27, 2026
 
-Status: Proposed next bounded follow-on after `WORKSPACE-HISTORY-V1`.
+Status: Implemented on the `feature/workspace-versioning` line.
 
 ## Purpose
 

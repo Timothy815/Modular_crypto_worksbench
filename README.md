@@ -28,8 +28,9 @@ The next bounded follow-on after that is:
 The current active safety slice after that is:
 - workspace-local undo / redo
 
-The next checkpointing follow-on after that is:
+The current checkpointing follow-on after that is:
 - named workspace versions / restore points
+- explicit `Save Version` and `Restore` workflow per workspace
 
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:

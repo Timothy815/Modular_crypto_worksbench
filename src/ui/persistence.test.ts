@@ -141,4 +141,30 @@ describe('workspace persistence', () => {
       connections: [],
     });
   });
+
+  it('round-trips named workspace versions through storage', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const stateWithVersion = uiReducer(initialState, {
+      type: 'saveWorkspaceVersion',
+      projectId: 'sequential',
+      versionId: 'sequential-v1',
+      name: 'Sequential Checkpoint',
+      savedAt: '2026-03-27T12:00:00.000Z',
+    });
+    const storage = new MemoryStorage();
+
+    saveWorkspaceToStorage(stateWithVersion, storage);
+    const restored = loadWorkspaceFromStorage(demoProjects, storage);
+
+    expect(restored?.workspaceVersionsByProjectId?.['sequential']).toHaveLength(1);
+    expect(restored?.workspaceVersionsByProjectId?.['sequential']?.[0]).toMatchObject({
+      id: 'sequential-v1',
+      name: 'Sequential Checkpoint',
+      savedAt: '2026-03-27T12:00:00.000Z',
+      tickedMode: true,
+    });
+    expect(
+      restored?.workspaceVersionsByProjectId?.['sequential']?.[0]?.document.project,
+    ).toEqual(initialState.projectStates['sequential']);
+  });
 });
