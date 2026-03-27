@@ -137,6 +137,78 @@ describe('uiReducer', () => {
     expect(nextState.isTickPlaybackActiveByProject[projectId]).toBe(false);
   });
 
+  it('duplicates the selected cluster as an independent local fragment and selects it', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const project = initialState.projectStates[projectId];
+    const firstModuleId = project.modules[0]?.id;
+    const secondModuleId = project.modules[1]?.id;
+
+    if (!firstModuleId || !secondModuleId) {
+      throw new Error('Expected at least two modules in the sequential demo.');
+    }
+
+    const selectedState = uiReducer(
+      uiReducer(initialState, {
+        type: 'selectModule',
+        projectId,
+        moduleId: firstModuleId,
+      }),
+      {
+        type: 'selectModule',
+        projectId,
+        moduleId: secondModuleId,
+        additive: true,
+      },
+    );
+
+    const nextState = uiReducer(selectedState, {
+      type: 'duplicateSelectedCluster',
+      projectId,
+    });
+
+    const nextProject = nextState.projectStates[projectId];
+    const duplicatedIds = nextState.selectedModuleIdsByProject[projectId] ?? [];
+
+    expect(duplicatedIds.length).toBe(2);
+    expect(duplicatedIds.every((moduleId) => moduleId !== firstModuleId && moduleId !== secondModuleId)).toBe(
+      true,
+    );
+    expect(nextState.selectedModuleIdByProject[projectId]).toBe(duplicatedIds[0]);
+    expect(nextProject.modules.some((moduleInstance) => moduleInstance.id === firstModuleId)).toBe(true);
+    expect(nextProject.modules.some((moduleInstance) => moduleInstance.id === secondModuleId)).toBe(true);
+
+    const sourceConnection = project.connections.find(
+      (connection) =>
+        connection.from.moduleId === firstModuleId && connection.to.moduleId === secondModuleId,
+    );
+    if (!sourceConnection) {
+      throw new Error('Expected the selected modules to have an internal connection.');
+    }
+
+    expect(
+      nextProject.connections.some(
+        (connection) =>
+          connection.from.moduleId === duplicatedIds[0] &&
+          connection.to.moduleId === duplicatedIds[1] &&
+          connection.from.port === sourceConnection.from.port &&
+          connection.to.port === sourceConnection.to.port,
+      ),
+    ).toBe(true);
+
+    const sourceFirstPosition = initialState.layoutByProject[projectId]?.[firstModuleId];
+    const sourceSecondPosition = initialState.layoutByProject[projectId]?.[secondModuleId];
+    const duplicatedFirstPosition = nextState.layoutByProject[projectId]?.[duplicatedIds[0]];
+    const duplicatedSecondPosition = nextState.layoutByProject[projectId]?.[duplicatedIds[1]];
+
+    expect(Boolean(sourceFirstPosition && sourceSecondPosition && duplicatedFirstPosition && duplicatedSecondPosition)).toBe(true);
+    expect(duplicatedFirstPosition?.x).toBeGreaterThan(sourceSecondPosition?.x ?? 0);
+    expect(duplicatedFirstPosition?.y).toBe(sourceFirstPosition?.y);
+    expect(duplicatedSecondPosition?.y).toBe(sourceSecondPosition?.y);
+    expect(nextState.currentTickByProject[projectId]).toBe(0);
+    expect(nextState.isTickPlaybackActiveByProject[projectId]).toBe(false);
+  });
+
   it('does not remove built-in architecture entries from the library', () => {
     const initialState = createInitialUiState(demoProjects);
     const builtInEntry = initialState.compositeLibrary.find((entry) => entry.source === 'built-in');

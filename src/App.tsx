@@ -958,6 +958,23 @@ function App() {
     }
   }
 
+  function handleDuplicateSelectedCluster() {
+    if (state.compositeEditor) {
+      return;
+    }
+
+    if (effectiveSelectedModuleIds.length === 0) {
+      window.alert('Select one or more modules before duplicating.');
+      return;
+    }
+
+    dispatch({
+      type: 'duplicateSelectedCluster',
+      projectId: activeProjectDefinition.id,
+    });
+    setImportError(null);
+  }
+
   function handleDeleteCurrentWorkspace() {
     const existingWorkspace = state.userWorkspaceLibrary.find(
       (workspace) => workspace.id === activeProjectDefinition.id,
@@ -1145,6 +1162,8 @@ function App() {
                   handleCopySelectedCluster();
                 } else if (value === 'paste-selected-cluster') {
                   handlePasteSelectedCluster();
+                } else if (value === 'duplicate-selected-cluster') {
+                  handleDuplicateSelectedCluster();
                 } else if (value === 'save-current-workspace') {
                   handleSaveCurrentWorkspace();
                 } else if (value === 'delete-current-workspace') {
@@ -1155,6 +1174,7 @@ function App() {
               <option value="">Actions…</option>
               <option value="new-blank-workspace">New Blank Workspace</option>
               <option value="duplicate-current-workspace">Duplicate Workspace</option>
+              <option value="duplicate-selected-cluster">Duplicate Selected Cluster</option>
               <option value="copy-selected-cluster">Copy Selected Cluster</option>
               <option value="paste-selected-cluster">Paste Selected Cluster</option>
               <option value="save-current-workspace">Save Current Workspace</option>
@@ -1349,6 +1369,7 @@ function App() {
               setReplaceSelectionAfterCreate(!state.compositeEditor);
               setIsCompositeDialogOpen(true);
             }}
+            onRequestDuplicateSelection={handleDuplicateSelectedCluster}
             onAddConnection={(fromModuleId, fromPort, toModuleId, toPort) =>
               dispatch({
                 type: 'addConnection',

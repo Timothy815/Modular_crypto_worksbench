@@ -19,6 +19,9 @@ Current development now carries:
   - `V2.0-READINESS-AUDIT.md`
   - `V2.0-RELEASE-CONTRACT.md`
   - `V2.0-RELEASE-NOTES.md`
+- post-`v2.0.0` authoring-power planning:
+  - `V2.1-AUTHORING-POWER-PLAN.md`
+  - `REPEATED-STRUCTURE-AUTHORING-V1.md`
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -121,7 +124,8 @@ The next strategic direction remains broader than any one subdomain:
 - ship tutorials and challenges alongside each new vocabulary family
 
 The next most important product-level task is:
-- identify the first bounded post-`v2.0.0` milestone on the road to `v2.1`
+- ship the first bounded `v2.1` builder-power slice:
+  - same-workspace repeated-structure authoring / cluster duplication
 
 Established and shipped:
 - implementation contract and AI coordination protocol

@@ -24,6 +24,7 @@ import {
   getModuleInstanceIdValidationError,
   normalizeModuleInstanceIdCandidate,
 } from './module-instance-id';
+import { duplicateWorkspaceSelection } from './workspace-clipboard';
 
 export interface UiState {
   activeProjectId: string;
@@ -109,6 +110,7 @@ export type UiAction =
       moduleId: string;
       nextModuleId: string;
     }
+  | { type: 'duplicateSelectedCluster'; projectId: string }
   | { type: 'removeModule'; projectId: string; moduleId: string }
   | {
       type: 'addConnection';
@@ -1052,6 +1054,57 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
           action.moduleId,
           nextModuleId,
         ),
+      };
+    }
+    case 'duplicateSelectedCluster': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentProject = state.projectStates[action.projectId];
+      const currentLayout = state.layoutByProject[action.projectId];
+      const selectedModuleIds = state.selectedModuleIdsByProject[action.projectId] ?? [];
+      if (!currentProject || !currentLayout || selectedModuleIds.length === 0) {
+        return state;
+      }
+
+      const duplicated = duplicateWorkspaceSelection({
+        project: currentProject,
+        layout: currentLayout,
+        selectedModuleIds,
+      });
+      if (!duplicated) {
+        return state;
+      }
+
+      const [selectedModuleId] = duplicated.pastedModuleIds;
+
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: duplicated.project,
+        },
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: duplicated.layout,
+        },
+        selectedModuleIdByProject: {
+          ...state.selectedModuleIdByProject,
+          [action.projectId]: selectedModuleId ?? null,
+        },
+        selectedModuleIdsByProject: {
+          ...state.selectedModuleIdsByProject,
+          [action.projectId]: duplicated.pastedModuleIds,
+        },
+        currentTickByProject: {
+          ...state.currentTickByProject,
+          [action.projectId]: 0,
+        },
+        isTickPlaybackActiveByProject: {
+          ...state.isTickPlaybackActiveByProject,
+          [action.projectId]: false,
+        },
       };
     }
     case 'removeModule': {

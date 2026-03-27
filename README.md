@@ -12,7 +12,13 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 ## Current State
 
 The latest shipped tag is `v2.0.0`.
-Current development now begins from the `v2.0.0` product boundary, with the next task being to identify the first bounded `v2.1` milestone.
+Current development now begins from the `v2.0.0` product boundary, with the active `v2.1` line focused on authoring power.
+
+The first bounded `v2.1` target is:
+- same-workspace repeated-structure authoring
+- duplicate a selected visible cluster nearby
+- preserve internal topology and params
+- keep the duplicate fully local, explicit, and immediately editable
 
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:

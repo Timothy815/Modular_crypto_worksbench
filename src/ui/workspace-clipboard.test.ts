@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { Project } from '../engine/types';
 import {
   buildWorkspaceClipboardSnapshot,
+  duplicateWorkspaceSelection,
   pasteWorkspaceClipboardSnapshot,
 } from './workspace-clipboard';
 
@@ -89,5 +90,86 @@ describe('pasteWorkspaceClipboardSnapshot', () => {
     ]);
     expect(pasted.layout['xor-2']).toEqual({ x: 260, y: 48 });
     expect(pasted.layout['bitshifter-1']).toEqual({ x: 420, y: 88 });
+  });
+
+  it('uses an explicit anchor when provided', () => {
+    const snapshot = buildWorkspaceClipboardSnapshot({
+      project: {
+        modules: [{ id: 'left', defId: 'XOR', params: {} }],
+        connections: [],
+      },
+      layout: {
+        left: { x: 100, y: 100 },
+      },
+      selectedModuleIds: ['left'],
+    });
+
+    if (!snapshot) {
+      throw new Error('Expected clipboard snapshot.');
+    }
+
+    const pasted = pasteWorkspaceClipboardSnapshot({
+      targetProject: {
+        modules: [],
+        connections: [],
+      },
+      targetLayout: {},
+      snapshot,
+      anchor: { x: 640, y: 180 },
+    });
+
+    expect(pasted.layout['xor-1']).toEqual({ x: 640, y: 180 });
+  });
+});
+
+describe('duplicateWorkspaceSelection', () => {
+  it('duplicates a selected cluster to the right with preserved internal topology', () => {
+    const duplicated = duplicateWorkspaceSelection({
+      project: {
+        modules: [
+          { id: 'round-1-left', defId: 'XOR', params: { mode: 'xor' } },
+          { id: 'round-1-right', defId: 'BitShifter', params: { amount: 2 } },
+          { id: 'out', defId: 'Output', params: {} },
+        ],
+        connections: [
+          {
+            from: { moduleId: 'round-1-left', port: 'out' },
+            to: { moduleId: 'round-1-right', port: 'in' },
+          },
+          {
+            from: { moduleId: 'round-1-right', port: 'out' },
+            to: { moduleId: 'out', port: 'in' },
+          },
+        ],
+      },
+      layout: {
+        'round-1-left': { x: 120, y: 160 },
+        'round-1-right': { x: 320, y: 220 },
+        out: { x: 560, y: 220 },
+      },
+      selectedModuleIds: ['round-1-left', 'round-1-right'],
+    });
+
+    if (!duplicated) {
+      throw new Error('Expected duplicated selection.');
+    }
+
+    expect(duplicated.pastedModuleIds).toEqual(['xor-1', 'bitshifter-1']);
+    expect(duplicated.project.connections).toEqual([
+      {
+        from: { moduleId: 'round-1-left', port: 'out' },
+        to: { moduleId: 'round-1-right', port: 'in' },
+      },
+      {
+        from: { moduleId: 'round-1-right', port: 'out' },
+        to: { moduleId: 'out', port: 'in' },
+      },
+      {
+        from: { moduleId: 'xor-1', port: 'out' },
+        to: { moduleId: 'bitshifter-1', port: 'in' },
+      },
+    ]);
+    expect(duplicated.layout['xor-1']).toEqual({ x: 540, y: 160 });
+    expect(duplicated.layout['bitshifter-1']).toEqual({ x: 740, y: 220 });
   });
 });

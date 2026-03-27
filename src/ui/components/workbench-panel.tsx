@@ -112,6 +112,7 @@ interface WorkbenchPanelProps {
   onRemoveAnnotation: (annotationId: string) => void;
   onSelectModule: (moduleId: string, additive?: boolean) => void;
   onRequestCreateComposite: () => void;
+  onRequestDuplicateSelection: () => void;
   onSwitchProject: (projectId: string) => void;
   onAddConnection: (
     fromModuleId: string,
@@ -177,6 +178,7 @@ export function WorkbenchPanel({
   onRemoveAnnotation,
   onSelectModule,
   onRequestCreateComposite,
+  onRequestDuplicateSelection,
   onSwitchProject,
   onAddConnection,
   onRemoveConnection,
@@ -671,6 +673,14 @@ export function WorkbenchPanel({
               onClick={onTidyLayout}
             >
               Tidy Layout
+            </button>
+            <button
+              type="button"
+              className="mini-action-button"
+              onClick={onRequestDuplicateSelection}
+              disabled={selectedModuleIds.length === 0}
+            >
+              Duplicate Cluster
             </button>
             <button
               type="button"

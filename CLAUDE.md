@@ -34,6 +34,8 @@ Read V2.0-READINESS.md before debating whether MCW should still be treated as a 
 Read V2.0-READINESS-AUDIT.md before proposing extra pre-`v2.0` blocker work.
 Read V2.0-RELEASE-CONTRACT.md before reframing the project’s major-version boundary.
 Read V2.0-RELEASE-NOTES.md for the official meaning of `v2.0.0`.
+Read V2.1-AUTHORING-POWER-PLAN.md before proposing the first post-`v2.0.0` builder-power line.
+Read REPEATED-STRUCTURE-AUTHORING-V1.md before changing same-workspace cluster duplication, repeated-structure authoring, or first-wave `v2.1` builder acceleration.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.
 Read LEARNING-SEQUENCE-V1.md before restructuring the teaching library, adding staged progression, or changing how demos/tutorials/challenges are ordered.
@@ -163,7 +165,8 @@ src/utils/     — Shared helpers
 
 ## Current Resume Point
 
-- Resume from current `main` at `v2.0.0`, with the next decision being the first bounded post-`v2.0` milestone toward `v2.1`
+- Resume from current `main` at `v2.0.0`, with the next active line being `v2.1` authoring power
+- The first bounded post-`v2.0` contract is `REPEATED-STRUCTURE-AUTHORING-V1.md`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement

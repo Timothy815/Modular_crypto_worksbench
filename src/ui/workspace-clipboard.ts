@@ -6,6 +6,9 @@ export interface WorkspaceClipboardSnapshot {
   relativeLayout: Record<string, { x: number; y: number }>;
 }
 
+const DEFAULT_PASTE_GAP_X = 180;
+const DEFAULT_DUPLICATE_GAP_X = 220;
+
 function cloneModuleInstance(moduleInstance: ModuleInstance): ModuleInstance {
   return {
     ...moduleInstance,
@@ -40,8 +43,29 @@ function getPasteAnchor(layout: Record<string, { x: number; y: number }>) {
   }
 
   return {
-    x: Math.max(...positions.map((position) => position.x)) + 180,
+    x: Math.max(...positions.map((position) => position.x)) + DEFAULT_PASTE_GAP_X,
     y: 48,
+  };
+}
+
+function getSelectionAnchor({
+  layout,
+  selectedModuleIds,
+}: {
+  layout: Record<string, { x: number; y: number }>;
+  selectedModuleIds: string[];
+}) {
+  const selectedPositions = selectedModuleIds
+    .map((moduleId) => layout[moduleId])
+    .filter((position): position is { x: number; y: number } => Boolean(position));
+
+  if (selectedPositions.length === 0) {
+    return { x: 48, y: 48 };
+  }
+
+  return {
+    x: Math.max(...selectedPositions.map((position) => position.x)) + DEFAULT_DUPLICATE_GAP_X,
+    y: Math.min(...selectedPositions.map((position) => position.y)),
   };
 }
 
@@ -101,17 +125,18 @@ export function pasteWorkspaceClipboardSnapshot({
   targetProject,
   targetLayout,
   snapshot,
+  anchor = getPasteAnchor(targetLayout),
 }: {
   targetProject: Project;
   targetLayout: Record<string, { x: number; y: number }>;
   snapshot: WorkspaceClipboardSnapshot;
+  anchor?: { x: number; y: number };
 }) {
   const nextProject: Project = {
     modules: targetProject.modules.map(cloneModuleInstance),
     connections: targetProject.connections.map(cloneConnection),
   };
   const nextLayout = { ...targetLayout };
-  const anchor = getPasteAnchor(targetLayout);
   const idMap = new Map<string, string>();
 
   for (const sourceModule of snapshot.modules) {
@@ -148,4 +173,34 @@ export function pasteWorkspaceClipboardSnapshot({
       .map((moduleInstance) => idMap.get(moduleInstance.id))
       .filter((moduleId): moduleId is string => Boolean(moduleId)),
   };
+}
+
+export function duplicateWorkspaceSelection({
+  project,
+  layout,
+  selectedModuleIds,
+}: {
+  project: Project;
+  layout: Record<string, { x: number; y: number }>;
+  selectedModuleIds: string[];
+}) {
+  const snapshot = buildWorkspaceClipboardSnapshot({
+    project,
+    layout,
+    selectedModuleIds,
+  });
+
+  if (!snapshot) {
+    return null;
+  }
+
+  return pasteWorkspaceClipboardSnapshot({
+    targetProject: project,
+    targetLayout: layout,
+    snapshot,
+    anchor: getSelectionAnchor({
+      layout,
+      selectedModuleIds,
+    }),
+  });
 }
