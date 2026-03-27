@@ -53,6 +53,7 @@ Primary user story:
 - one bounded audit of palette/category clarity where scale now causes confusion
 - one bounded audit of system-level demo usability and navigation
 - one visible product framing pass that clarifies what MCW now is after `v1.44.0`
+- one written audit deliverable describing what holds up, what does not, and whether one bounded implementation fix is justified
 - one resulting contract or implementation slice only if the audit identifies a concrete, bounded fix
 
 ## Explicitly Excluded
