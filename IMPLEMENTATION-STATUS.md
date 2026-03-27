@@ -442,9 +442,8 @@ Post-`v1.26.0` work merged to `main`:
 ### Claude
 
 Safe to begin:
-- help shape the next bounded byte/word-oriented contract after the shipped block-chaining slice
-- help pressure-test whether the first byte/word helper set should stop at rotation/swap or include one bounded lane helper
-- help shape the next bounded integrity/authentication contract after the shipped hashing, chaining, and byte/word slices
+- help review whether a bounded AEAD or stronger MAC-style follow-on is now the right next move after standalone integrity
+- help pressure-test whether MCW should deepen modern symmetric teaching through auth+encryption composition before any asymmetric-auth line
 - help review future tutorial/challenge additions that accompany deeper symmetric-construction lines
 - help keep the roadmap honest about what is still missing versus what is now shipped
 
@@ -458,13 +457,13 @@ Should avoid for now:
 ### Gemini
 
 Safe to begin:
-- review whether the framed integrity/authentication slice is the right stopping point before release
-- help pressure-test the roadmap sequence from standalone tamper detection into later AEAD or signature-adjacent lines
+- review whether a bounded AEAD-style or stronger MAC-style slice should follow the shipped `v1.41.0` integrity/authentication milestone
+- help pressure-test the roadmap sequence from standalone tamper detection into later auth+encryption composition or signature-adjacent lines
 - review what tutorial/challenge support should accompany any later auth-family follow-ons
 - help keep the post-builder product direction tied to expressive machine language rather than generic tooling
 
 Best focus:
-- whether the first integrity/authentication slice is bounded enough to ship as-is
+- whether the next auth-family move should still stay bounded and comparison-centered
 - whether future auth work should stay comparison-centered instead of branded HMAC/AEAD
 - how to keep later auth follow-ons explicit and inspectable
 
