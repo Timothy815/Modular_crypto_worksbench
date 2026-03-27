@@ -59,6 +59,11 @@ The current primitive-legibility follow-on after that is:
 - minimal seeded examples opened as new local editable workspaces
 - no second demo library
 
+The current primitive-legibility expansion after that is:
+- timing, state, and framing micro demos for `Clock`, `Counter`, `BitSplit`, `BitPad`, `BitJoin`, and `LFSR`
+- ticked-mode defaults only for the timing/state subset
+- the same palette-local `Try Demo` flow introduced in V1
+
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
   - `ModExp` (modular exponentiation via repeated squaring)

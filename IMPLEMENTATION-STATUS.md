@@ -30,6 +30,7 @@ Current development now carries:
   - `PARAMETER-AUTHORING-ERGONOMICS-V1.md`
   - `PARAMETER-COMPARISON-ERGONOMICS-V1.md`
   - `PRIMITIVE-MICRO-DEMOS-V1.md`
+  - `PRIMITIVE-MICRO-DEMOS-V2.md`
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -172,6 +173,11 @@ The current primitive-legibility follow-on after that is:
 - palette-local `Try Demo` actions for a bounded set of opaque primitives
 - minimal seeded examples opened as new local editable workspaces
 - no second demo library and no tutorial/challenge duplication
+
+The current primitive-legibility expansion after that is:
+- timing, state, and framing micro demos for `Clock`, `Counter`, `BitSplit`, `BitPad`, `BitJoin`, and `LFSR`
+- ticked-mode defaults only for the timing/state subset
+- the same palette-local `Try Demo` flow introduced in V1
 
 Established and shipped:
 - implementation contract and AI coordination protocol

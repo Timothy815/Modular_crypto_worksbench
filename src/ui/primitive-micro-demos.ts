@@ -210,6 +210,186 @@ const MAJORITY_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const CLOCK_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'Clock',
+  name: 'Clock Micro Demo',
+  summary: 'Minimal visible pulse source: the clock emits a one-bit pulse stream over ticks.',
+  pipeline: 'Clock -> BitOutput',
+  defaultTickedMode: true,
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'clock', defId: 'Clock', params: { period: 2, offset: 0, length: 8 } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        clock: { x: 180, y: 176 },
+        out: { x: 456, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const COUNTER_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'Counter',
+  name: 'Counter Micro Demo',
+  summary: 'Minimal visible counter: clock pulses advance a fixed-width word that wraps modulo 2^width.',
+  pipeline: 'Clock -> Counter -> BitOutput',
+  defaultTickedMode: true,
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'counter', defId: 'Counter', params: { width: 3, value: 0, step: 1 } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 8 } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'counter', port: 'clock' } },
+        { from: { moduleId: 'counter', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        counter: { x: 360, y: 176 },
+        clock: { x: 76, y: 176 },
+        out: { x: 620, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const BIT_SPLIT_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'BitSplit',
+  name: 'Bit Split Micro Demo',
+  summary: 'Minimal visible framing: one input word is split into left and right outputs at the configured width.',
+  pipeline: 'BitSource -> BitSplit -> BitOutput(left,right)',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'split', defId: 'BitSplit', params: { leftWidth: 4 } },
+        { id: 'source', defId: 'BitSource', params: { stream: [1, 0, 1, 1, 0, 1, 0, 0] } },
+        { id: 'left-out', defId: 'BitOutput', params: {} },
+        { id: 'right-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'split', port: 'in' } },
+        { from: { moduleId: 'split', port: 'left' }, to: { moduleId: 'left-out', port: 'in' } },
+        { from: { moduleId: 'split', port: 'right' }, to: { moduleId: 'right-out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        split: { x: 360, y: 176 },
+        source: { x: 76, y: 176 },
+        'left-out': { x: 620, y: 116 },
+        'right-out': { x: 620, y: 252 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const BIT_PAD_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'BitPad',
+  name: 'Bit Pad Micro Demo',
+  summary: 'Minimal visible padding: one input word is extended to a target width on the chosen side.',
+  pipeline: 'BitSource -> BitPad -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'pad', defId: 'BitPad', params: { targetWidth: 8, side: 'left', padBit: '0' } },
+        { id: 'source', defId: 'BitSource', params: { stream: [1, 0, 1, 1] } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'pad', port: 'in' } },
+        { from: { moduleId: 'pad', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        pad: { x: 360, y: 176 },
+        source: { x: 76, y: 176 },
+        out: { x: 620, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const BIT_JOIN_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'BitJoin',
+  name: 'Bit Join Micro Demo',
+  summary: 'Minimal visible rejoin: two explicit bit inputs are concatenated into one output word.',
+  pipeline: 'BitSource(a,b) -> BitJoin -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'join', defId: 'BitJoin', params: {} },
+        { id: 'left', defId: 'BitSource', params: { stream: [1, 0, 1, 1] } },
+        { id: 'right', defId: 'BitSource', params: { stream: [0, 1, 0, 0] } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'left', port: 'out' }, to: { moduleId: 'join', port: 'a' } },
+        { from: { moduleId: 'right', port: 'out' }, to: { moduleId: 'join', port: 'b' } },
+        { from: { moduleId: 'join', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        join: { x: 360, y: 176 },
+        left: { x: 76, y: 116 },
+        right: { x: 76, y: 252 },
+        out: { x: 620, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const LFSR_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'LFSR',
+  name: 'LFSR Micro Demo',
+  summary: 'Minimal visible keystream source: a clocked linear-feedback shift register emits a stateful output over ticks.',
+  pipeline: 'Clock -> LFSR -> BitOutput',
+  defaultTickedMode: true,
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'lfsr', defId: 'LFSR', params: { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 5 } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 8 } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'lfsr', port: 'clock' } },
+        { from: { moduleId: 'lfsr', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        lfsr: { x: 360, y: 176 },
+        clock: { x: 76, y: 176 },
+        out: { x: 620, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   MUX_MICRO_DEMO,
   DEMUX_MICRO_DEMO,
@@ -217,6 +397,12 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   EQUALS_MICRO_DEMO,
   AT_LEAST_MICRO_DEMO,
   MAJORITY_MICRO_DEMO,
+  CLOCK_MICRO_DEMO,
+  COUNTER_MICRO_DEMO,
+  BIT_SPLIT_MICRO_DEMO,
+  BIT_PAD_MICRO_DEMO,
+  BIT_JOIN_MICRO_DEMO,
+  LFSR_MICRO_DEMO,
 ];
 
 const PRIMITIVE_MICRO_DEMO_BY_DEF_ID = Object.fromEntries(
