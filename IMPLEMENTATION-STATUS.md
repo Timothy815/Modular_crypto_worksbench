@@ -32,6 +32,8 @@ Current development now carries:
   - `PRIMITIVE-MICRO-DEMOS-V1.md`
   - `PRIMITIVE-MICRO-DEMOS-V2.md`
   - `MULTIWAY-ROUTING-V1.md`
+  - `CONDITIONAL-COMPOSITION-V1.md`
+  - `ITERATOR-CONTROL-V1.md`
   - `ROTOR-REVERSE-PATH-V1.md`
   - `ROTOR-DRIVEN-STEPPING-V1.md`
   - `PYTHON-EXPORT-V1.md`
@@ -187,6 +189,11 @@ The current near-future primitive-expansion item after that is:
 - explicit multi-way routing as a bounded future family
 - first slice scoped to a multi-way router (`1 -> N`) rather than a full multi-way selector pair
 - intended for visible case-switch / counter-driven staged routing without hidden control flow
+
+The current near-future control-structure items after that are:
+- bounded conditional composition for explicit finite branch structure
+- stronger iterator control as a later bounded repetition/control line
+- both explicitly kept separate from general programming-language drift
 
 The current near-future advanced-rotor items after that are:
 - explicit reverse traversal through rotor wiring for historically faithful forward / reflect / reverse signal paths

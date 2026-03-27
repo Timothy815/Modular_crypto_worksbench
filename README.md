@@ -69,6 +69,11 @@ The current near-future primitive-expansion item after that is:
 - first slice scoped to a multi-way router (`1 -> N`) for visible case-switch / staged routing
 - not yet the next immediate implementation step
 
+The current near-future control-structure items after that are:
+- bounded conditional composition for explicit finite branch structure
+- stronger iterator control as a later bounded repetition/control line
+- both explicitly separated from general programming-language behavior
+
 The current near-future advanced-rotor items after that are:
 - explicit reverse traversal through rotor wiring for historically faithful rotor-machine signal paths
 - separate rotor-driven stepping as a later state/control architecture line
