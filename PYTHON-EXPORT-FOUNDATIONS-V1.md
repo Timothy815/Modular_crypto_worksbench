@@ -115,6 +115,9 @@ V1 supports only stateless primitive modules from these families:
 This list is intentionally narrow.
 It is a curated V1 subset, not a promise that every stateless primitive is included.
 
+Later stateless subset growth after this foundations slice is tracked in:
+- `PYTHON-EXPORT-EXPANSION-V1.md`
+
 ---
 
 ## Explicit V1 Exclusions

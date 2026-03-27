@@ -44,6 +44,7 @@ Current development now carries:
   - `ROTOR-CONTROL-BANK-V1.md`
   - `PYTHON-EXPORT-V1.md`
   - `PYTHON-EXPORT-FOUNDATIONS-V1.md`
+  - `PYTHON-EXPORT-EXPANSION-V1.md`
   - `V2.1-NEXT-DOCKET.md`
   - `STAGE-ASSEMBLY-ERGONOMICS-V1.md`
   - `MULTI-WINDOW-WORKSPACE-V1.md`
@@ -54,6 +55,12 @@ Current `main` now also includes:
   - stateless primitive-only compatibility gating
   - one standalone `.py` artifact with embedded helper runtime and topological `run()`
   - parity coverage against `executeProject()` for supported workspaces
+- Python export expansion:
+  - `SBox`
+  - `AddMod`
+  - `SubMod`
+  - `Modulo`
+  - parity-tested substitution and modular-arithmetic export paths
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments

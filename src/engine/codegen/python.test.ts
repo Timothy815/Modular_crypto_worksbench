@@ -168,4 +168,75 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.status).toBe(0);
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
   });
+
+  it('matches executeProject for an s-box workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'nibble-src', defId: 'BitSource', params: { stream: [1, 0, 1, 1] } },
+        { id: 'sbox-1', defId: 'SBox', params: { table: '14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7' } },
+        { id: 'bits-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        {
+          from: { moduleId: 'nibble-src', port: 'out' },
+          to: { moduleId: 'sbox-1', port: 'in' },
+        },
+        {
+          from: { moduleId: 'sbox-1', port: 'out' },
+          to: { moduleId: 'bits-out', port: 'in' },
+        },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeProject for a modular arithmetic workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'left-word', defId: 'BitSource', params: { stream: [1, 1, 0, 1] } },
+        { id: 'right-word', defId: 'BitSource', params: { stream: [0, 1, 1, 0] } },
+        { id: 'add-1', defId: 'AddMod', params: {} },
+        { id: 'sub-1', defId: 'SubMod', params: {} },
+        { id: 'mod-1', defId: 'Modulo', params: { modulus: 7 } },
+        { id: 'bits-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        {
+          from: { moduleId: 'left-word', port: 'out' },
+          to: { moduleId: 'add-1', port: 'a' },
+        },
+        {
+          from: { moduleId: 'right-word', port: 'out' },
+          to: { moduleId: 'add-1', port: 'b' },
+        },
+        {
+          from: { moduleId: 'add-1', port: 'out' },
+          to: { moduleId: 'sub-1', port: 'a' },
+        },
+        {
+          from: { moduleId: 'right-word', port: 'out' },
+          to: { moduleId: 'sub-1', port: 'b' },
+        },
+        {
+          from: { moduleId: 'sub-1', port: 'out' },
+          to: { moduleId: 'mod-1', port: 'in' },
+        },
+        {
+          from: { moduleId: 'mod-1', port: 'out' },
+          to: { moduleId: 'bits-out', port: 'in' },
+        },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
 });

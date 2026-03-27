@@ -34,6 +34,10 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'Mux',
   'Demux',
   'MultiRouter',
+  'SBox',
+  'AddMod',
+  'SubMod',
+  'Modulo',
   'Permutation',
   'BitJoin',
   'BitSplit',
@@ -68,6 +72,13 @@ def _bits_to_unsigned_number(bits):
     for bit in bits:
         value = (value << 1) | bit
     return value
+
+
+def _unsigned_number_to_bits(value, width):
+    bits = []
+    for shift in range(width - 1, -1, -1):
+        bits.append((int(value) >> shift) & 1)
+    return bits
 
 
 def _expect_single_bit_word(bits, label, module_name):
@@ -279,6 +290,79 @@ def multi_router(select, signal, route_count):
         else:
             outputs[key] = zero_word[:]
     return outputs
+
+
+def _parse_s_box_table(table_value):
+    parts = [part.strip() for part in str(table_value).split(",") if part.strip()]
+    if not parts:
+        raise ValueError("SBox table cannot be empty")
+    entry_count = len(parts)
+    width = 0
+    remaining = entry_count
+    while remaining > 1 and remaining % 2 == 0:
+        remaining //= 2
+        width += 1
+    if remaining != 1 or width < 1:
+        raise ValueError("SBox table length must be a power of two")
+    max_entry = (1 << width) - 1
+    entries = []
+    for part in parts:
+        entry = int(part)
+        if entry < 0 or entry > max_entry:
+            raise ValueError(f"SBox entries must be integers between 0 and {max_entry}")
+        entries.append(entry)
+    if len(set(entries)) != len(entries):
+        raise ValueError("SBox table must be a permutation with no duplicates")
+    return entries, width
+
+
+def s_box(signal, table):
+    bits = _expect_bits(signal, "SBox")
+    if not bits:
+        return {"out": []}
+    entries, width = _parse_s_box_table(table)
+    if len(bits) % width != 0:
+        raise ValueError(f"SBox input width must be a multiple of {width} bits")
+    output = []
+    for index in range(0, len(bits), width):
+        chunk = bits[index:index + width]
+        output.extend(_unsigned_number_to_bits(entries[_bits_to_unsigned_number(chunk)], width))
+    return {"out": output}
+
+
+def add_mod(a, b):
+    left = _expect_bits(a, "ADD mod 2^n")
+    right = _expect_bits(b, "ADD mod 2^n")
+    width = _require_equal_bit_widths(left, right, "ADD mod 2^n")
+    if width == 0:
+        return {"out": []}
+    modulus = 2 ** width
+    result = (_bits_to_unsigned_number(left) + _bits_to_unsigned_number(right)) % modulus
+    return {"out": _unsigned_number_to_bits(result, width)}
+
+
+def sub_mod(a, b):
+    left = _expect_bits(a, "SUB mod 2^n")
+    right = _expect_bits(b, "SUB mod 2^n")
+    width = _require_equal_bit_widths(left, right, "SUB mod 2^n")
+    if width == 0:
+        return {"out": []}
+    modulus = 2 ** width
+    result = (_bits_to_unsigned_number(left) - _bits_to_unsigned_number(right) + modulus) % modulus
+    return {"out": _unsigned_number_to_bits(result, width)}
+
+
+def modulo_bits(signal, modulus):
+    bits = _expect_bits(signal, "Modulo")
+    modulus = int(modulus)
+    if modulus <= 0:
+        raise ValueError("Modulo requires a positive integer modulus")
+    if not bits:
+        return {"out": []}
+    max_value = 2 ** len(bits)
+    if modulus > max_value:
+        raise ValueError("Modulo requires a modulus no larger than the input word range")
+    return {"out": _unsigned_number_to_bits(_bits_to_unsigned_number(bits) % modulus, len(bits))}
 
 
 def permute_bits(signal, order):
@@ -591,6 +675,14 @@ function buildModuleExpression(
       return `demux_bit(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'select')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
     case 'MultiRouter':
       return `multi_router(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'select')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'routeCount'))})`;
+    case 'SBox':
+      return `s_box(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'table'))})`;
+    case 'AddMod':
+      return `add_mod(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
+    case 'SubMod':
+      return `sub_mod(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
+    case 'Modulo':
+      return `modulo_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'modulus'))})`;
     case 'Permutation':
       return `permute_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'order'))})`;
     case 'BitJoin':

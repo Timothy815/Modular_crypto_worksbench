@@ -135,6 +135,11 @@ That export foundations slice is now shipped on `main`:
 - one standalone `.py` artifact with embedded helper runtime and topological execution
 - parity-tested against MCW `executeProject()` for the supported subset
 
+The first careful Python export expansion is now also shipped:
+- `SBox` export support
+- `AddMod`, `SubMod`, and `Modulo` export support
+- parity-tested substitution and modular-arithmetic export paths
+
 The current near-future workspace-layout ergonomics item after that is:
 - bounded multi-window / multi-tab support for selected surfaces
 - likely `Inspector` and `Palette` first
