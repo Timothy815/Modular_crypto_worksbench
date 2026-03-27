@@ -77,6 +77,13 @@ Current `main` now also includes the first inspector-maintenance slice:
 - extracted pure analysis helpers in `src/ui/inspector-analysis.ts`
 - reduced non-rendering responsibility inside `src/ui/components/parameter-inspector.tsx`
 
+Current `main` now also includes the first workbench-maintenance slice:
+- `WORKBENCH-REFACTOR-V1.md`
+- extracted project/context rendering in `src/ui/components/workbench-project-context.tsx`
+- extracted workspace action rendering in `src/ui/components/workbench-actions.tsx`
+- extracted pure workbench helpers in `src/ui/workbench-support.ts`
+- reduced top-surface and helper responsibility inside `src/ui/components/workbench-panel.tsx`
+
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
 - first bounded number-theoretic vocabulary:

@@ -16,13 +16,9 @@ import {
 import type { DemoProject } from '../demo-projects';
 import {
   compareLearningItems,
-  getFirstLearningItemInGroup,
-  getLearningGroupLabel,
-  getLearningStageLabel,
   getRecommendedAfterTitles,
   getSortedLearningGroups,
   inferLearningStage,
-  isCoreLearningItem,
 } from '../learning-sequence';
 import { getModuleCategory } from '../module-categories';
 import {
@@ -41,7 +37,6 @@ import { compareWorkspaceToVersion, getConnectionComparisonKey } from '../worksp
 import {
   deriveWorkspaceLandmarks,
   isLargeWorkspace,
-  type WorkspaceLandmark,
 } from '../workspace-landmarks';
 import {
   DEFAULT_WORKSPACE_ZOOM,
@@ -52,23 +47,22 @@ import {
 } from '../workspace-viewport';
 import type { WorkbenchAnnotation, WorkspaceVersionDocument } from '../workbench-document';
 import type { TutorialStep } from '../tutorials';
+import {
+  buildActiveAnalysisSignalByModuleId,
+  buildExecutionSignalByModuleId,
+  buildIncomingConnectionIndexByInputKey,
+  buildModuleIssueCountById,
+  formatVersionTimestamp,
+  getAnchorPosition,
+  getInputAnchorClassName,
+} from '../workbench-support';
+import { WorkbenchActions } from './workbench-actions';
+import { WorkbenchProjectContext } from './workbench-project-context';
 
 const NODE_WIDTH = CANVAS_NODE_WIDTH;
 const NODE_HEIGHT = CANVAS_NODE_HEIGHT;
 const PORT_GAP = 18;
 const PORT_START_Y = 34;
-
-function getAnchorPosition(
-  x: number,
-  y: number,
-  side: 'left' | 'right',
-  portIndex: number,
-) {
-  return {
-    x: side === 'left' ? x : x + NODE_WIDTH,
-    y: y + PORT_START_Y + portIndex * PORT_GAP,
-  };
-}
 
 interface PendingConnection {
   fromModuleId: string;
@@ -331,13 +325,7 @@ export function WorkbenchPanel({
     [activeProjectState, effectiveLayout, registry],
   );
   const incomingConnectionIndexByInputKey = useMemo(
-    () =>
-      Object.fromEntries(
-        activeProjectState.connections.map((connection, index) => [
-          `${connection.to.moduleId}:${connection.to.port}`,
-          index,
-        ]),
-      ) as Record<string, number>,
+    () => buildIncomingConnectionIndexByInputKey(activeProjectState.connections),
     [activeProjectState.connections],
   );
   const workspaceComparison = useMemo(
@@ -363,11 +351,6 @@ export function WorkbenchPanel({
     selectedConnectionIndex < activeProjectState.connections.length
       ? selectedConnectionIndex
       : null;
-
-  const formatVersionTimestamp = (savedAt: string) => {
-    const date = new Date(savedAt);
-    return Number.isNaN(date.getTime()) ? savedAt : date.toLocaleString();
-  };
 
   function getCanvasPointerFromClient(clientX: number, clientY: number) {
     const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
@@ -697,52 +680,14 @@ export function WorkbenchPanel({
     return nextStates;
   }, [activeProjectState, pendingConnection, registry]);
 
-  const moduleIssueCountById = useMemo(() => {
-    const counts: Record<string, number> = {};
+  const moduleIssueCountById = useMemo(() => buildModuleIssueCountById(validationIssues), [validationIssues]);
 
-    for (const issue of validationIssues) {
-      if (issue.moduleId) {
-        counts[issue.moduleId] = (counts[issue.moduleId] ?? 0) + 1;
-      }
-      if (issue.connection) {
-        counts[issue.connection.from.moduleId] =
-          (counts[issue.connection.from.moduleId] ?? 0) + 1;
-        counts[issue.connection.to.moduleId] =
-          (counts[issue.connection.to.moduleId] ?? 0) + 1;
-      }
-    }
+  const executionSignalByModuleId = useMemo(() => buildExecutionSignalByModuleId(execution), [execution]);
 
-    return counts;
-  }, [validationIssues]);
-
-  const executionSignalByModuleId = useMemo(() => {
-    if (!execution) {
-      return {};
-    }
-
-    return Object.fromEntries(
-      execution.trace.map((entry) => {
-        const primaryOutput = Object.values(entry.outputs)[0] ?? null;
-        return [entry.moduleId, primaryOutput ?? entry.inputs.in ?? null];
-      }),
-    ) as Record<string, ExecutionResult['trace'][number]['inputs'][string] | null>;
-  }, [execution]);
-
-  const activeAnalysisSignalByModuleId = useMemo(() => {
-    if (!activeAnalysisTraceEntry || !activeAnalysisOwnerModuleId) {
-      return {};
-    }
-
-    const primaryOutput = Object.values(activeAnalysisTraceEntry.outputs)[0] ?? null;
-    const signal = primaryOutput ?? activeAnalysisTraceEntry.inputs.in ?? null;
-    if (!signal) {
-      return {};
-    }
-
-    return {
-      [activeAnalysisOwnerModuleId]: signal,
-    } as Record<string, ExecutionTraceEntry['inputs'][string] | null>;
-  }, [activeAnalysisOwnerModuleId, activeAnalysisTraceEntry]);
+  const activeAnalysisSignalByModuleId = useMemo(
+    () => buildActiveAnalysisSignalByModuleId(activeAnalysisTraceEntry, activeAnalysisOwnerModuleId),
+    [activeAnalysisOwnerModuleId, activeAnalysisTraceEntry],
+  );
   const traceFocusedModuleId = activeAnalysisOwnerModuleId ?? steppedModuleId ?? null;
 
   function startConnectionFromOutput(
@@ -753,7 +698,7 @@ export function WorkbenchPanel({
     setSelectedConnectionIndex(null);
     const pos = layout[moduleId];
     if (!pos) return;
-    const anchor = getAnchorPosition(pos.x, pos.y, 'right', portIndex);
+    const anchor = getAnchorPosition(pos.x, pos.y, 'right', portIndex, NODE_WIDTH, PORT_START_Y, PORT_GAP);
     setConnectionFeedback(null);
     setPendingConnection({
       fromModuleId: moduleId,
@@ -786,7 +731,15 @@ export function WorkbenchPanel({
       return;
     }
 
-    const sourceAnchor = getAnchorPosition(sourcePosition.x, sourcePosition.y, 'right', sourcePortIndex);
+    const sourceAnchor = getAnchorPosition(
+      sourcePosition.x,
+      sourcePosition.y,
+      'right',
+      sourcePortIndex,
+      NODE_WIDTH,
+      PORT_START_Y,
+      PORT_GAP,
+    );
 
     setConnectionFeedback(null);
     setPendingConnection({
@@ -889,31 +842,6 @@ export function WorkbenchPanel({
     onWorkspaceFocusHandled?.();
   }, [effectiveLayout, onSelectModule, onWorkspaceFocusHandled, requestedFocusModuleId, workspaceZoom]);
 
-  function renderLandmarkGroup(title: string, landmarks: WorkspaceLandmark[]) {
-    if (landmarks.length === 0) {
-      return null;
-    }
-
-    return (
-      <div className="workspace-landmark-group">
-        <span className="meta-label">{title}</span>
-        <div className="workspace-landmark-list">
-          {landmarks.map((landmark) => (
-            <button
-              key={landmark.moduleId}
-              type="button"
-              className="workspace-landmark-button"
-              onClick={() => jumpToModule(landmark.moduleId)}
-              title={`${landmark.moduleId} (${landmark.defId})`}
-            >
-              {landmark.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <section className={challengeSolved ? 'panel canvas-panel canvas-panel-success' : 'panel canvas-panel'}>
       <div className="panel-head">
@@ -921,307 +849,78 @@ export function WorkbenchPanel({
         <h2>{title ?? 'Demo Graphs'}</h2>
       </div>
 
-      {!isCompositeEditor ? (
-        <div className="project-selector-stack">
-          <div className="content-filter-row project-selector-row">
-            <label className="project-selector">
-              <span className="meta-label">Group</span>
-              <select
-                value={activeProjectGroup}
-                onChange={(event) => {
-                  const nextGroup = event.target.value;
-                  const firstProject = getFirstLearningItemInGroup(projects, nextGroup);
-                  if (firstProject && firstProject.id !== activeProject.id) {
-                    onSwitchProject(firstProject.id);
-                  }
-                }}
-              >
-                {projectGroups.map((group) => (
-                  <option key={group} value={group}>
-                    {getLearningGroupLabel(group, projectCountByGroup[group])}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="project-selector">
-              <span className="meta-label">Workspace</span>
-              <select
-                value={activeProject.id}
-                onChange={(event) => onSwitchProject(event.target.value)}
-              >
-                {visibleProjects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <div className="project-context-card project-context-card-wide">
-            <strong>{activeProject.name}</strong>
-            <p>{summary ?? activeProject.summary}</p>
-            <code>{pipelineLabel ?? activeProject.pipeline}</code>
-            <div className="content-selector-meta">
-              <span className="content-status-chip">{getLearningStageLabel(activeProjectStage)}</span>
-              <span className="content-status-chip">
-                Group: <strong>{activeProjectGroup}</strong>
-              </span>
-              <span className="content-status-chip">
-                {isCoreLearningItem(activeProject) ? 'Core Path' : 'Optional'}
-              </span>
-            </div>
-            {activeProjectRecommendedAfter.length > 0 ? (
-              <p className="comparison-copy">
-                Best after: <strong>{activeProjectRecommendedAfter.join(', ')}</strong>
-              </p>
-            ) : null}
-            {showWorkspaceLandmarks ? (
-              <div className="workspace-landmarks-card">
-                <strong>Workspace Landmarks</strong>
-                <p>
-                  Large graphs can start off-screen. Jump directly to visible sources, protocol context,
-                  and outputs.
-                </p>
-                {renderLandmarkGroup('Protocol & Timing', workspaceLandmarks.context)}
-                {renderLandmarkGroup('Sources', workspaceLandmarks.sources)}
-                {renderLandmarkGroup('Outputs', workspaceLandmarks.outputs)}
-              </div>
-            ) : null}
-            {workspaceVersions.length > 0 ? (
-              <div className="workspace-versions-card">
-                <strong>Saved Versions</strong>
-                <p>
-                  Restore an intentional workspace checkpoint without replacing undo/redo.
-                </p>
-                <div className="workspace-version-list">
-                  {[...workspaceVersions]
-                    .sort((left, right) => right.savedAt.localeCompare(left.savedAt))
-                    .map((version) => (
-                      <div key={version.id} className="workspace-version-item">
-                        <div>
-                          <strong>{version.name}</strong>
-                          <p>{formatVersionTimestamp(version.savedAt)}</p>
-                        </div>
-                        <button
-                          type="button"
-                          className="workspace-version-button"
-                          onClick={() => onRequestRestoreVersion(version.id)}
-                        >
-                          Restore
-                        </button>
-                        <button
-                          type="button"
-                          className="workspace-version-button"
-                          onClick={() =>
-                            setComparisonVersionId((current) =>
-                              current === version.id ? null : version.id,
-                            )
-                          }
-                        >
-                          {comparisonVersionId === version.id ? 'Stop Compare' : 'Compare'}
-                        </button>
-                      </div>
-                    ))}
-                </div>
-                {workspaceComparison && activeComparisonVersion ? (
-                  <div className="workspace-comparison-card">
-                    <strong>Comparing To {activeComparisonVersion.name}</strong>
-                    <p>
-                      Added modules: <strong>{workspaceComparison.addedModules.length}</strong> ·
-                      Removed modules: <strong>{workspaceComparison.removedModules.length}</strong> ·
-                      Added wires: <strong>{workspaceComparison.addedConnections.length}</strong> ·
-                      Removed wires: <strong>{workspaceComparison.removedConnections.length}</strong>
-                    </p>
-                    {workspaceComparison.removedModules.length > 0 ? (
-                      <div className="workspace-comparison-list">
-                        <span className="meta-label">Removed Modules</span>
-                        <ul className="port-list">
-                          {workspaceComparison.removedModules.map((moduleInstance) => (
-                            <li key={`${moduleInstance.id}:${moduleInstance.defId}`}>
-                              <strong>{moduleInstance.id}</strong>
-                              <span>{moduleInstance.defId}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                    {workspaceComparison.removedConnections.length > 0 ? (
-                      <div className="workspace-comparison-list">
-                        <span className="meta-label">Removed Wires</span>
-                        <ul className="port-list">
-                          {workspaceComparison.removedConnections.map((connection) => (
-                            <li key={getConnectionComparisonKey(connection)}>
-                              <strong>{connection.from.moduleId}.{connection.from.port}</strong>
-                              <span>
-                                -&gt; {connection.to.moduleId}.{connection.to.port}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
+      <WorkbenchProjectContext
+        isCompositeEditor={isCompositeEditor}
+        activeProject={activeProject}
+        activeProjectGroup={activeProjectGroup}
+        activeProjectStage={activeProjectStage}
+        activeProjectRecommendedAfter={activeProjectRecommendedAfter}
+        projects={projects}
+        projectGroups={projectGroups}
+        projectCountByGroup={projectCountByGroup}
+        visibleProjects={visibleProjects}
+        summary={summary}
+        pipelineLabel={pipelineLabel}
+        showWorkspaceLandmarks={showWorkspaceLandmarks}
+        workspaceLandmarks={workspaceLandmarks}
+        workspaceVersions={workspaceVersions}
+        workspaceComparison={workspaceComparison}
+        activeComparisonVersion={activeComparisonVersion}
+        comparisonVersionId={comparisonVersionId}
+        onSwitchProject={onSwitchProject}
+        onJumpToModule={jumpToModule}
+        onRequestRestoreVersion={onRequestRestoreVersion}
+        onSetComparisonVersionId={setComparisonVersionId}
+        formatVersionTimestamp={formatVersionTimestamp}
+      />
 
-      <div className="project-actions">
-        {!isCompositeEditor ? (
-          <>
-            <button
-              type="button"
-              className="mini-action-button"
-              onClick={onAddAnnotation}
-            >
-              Add Note
-            </button>
-            <button
-              type="button"
-              className="mini-action-button"
-              onClick={onExportDocument}
-            >
-              Export JSON
-            </button>
-            <button
-              type="button"
-              className="mini-action-button"
-              onClick={onExportPython}
-            >
-              Export Python
-            </button>
-            <button
-              type="button"
-              className="mini-action-button"
-              onClick={onTidyLayout}
-            >
-              Tidy Layout
-            </button>
-            <button
-              type="button"
-              className="mini-action-button"
-              onClick={onRequestUndo}
-              disabled={!canUndo}
-            >
-              Undo
-            </button>
-            <button
-              type="button"
-              className="mini-action-button"
-              onClick={onRequestRedo}
-              disabled={!canRedo}
-            >
-              Redo
-            </button>
-            <button
-              type="button"
-              className="mini-action-button"
-              onClick={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'out'))}
-            >
-              Zoom Out
-            </button>
-            <button
-              type="button"
-              className="mini-action-button"
-              onClick={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'in'))}
-            >
-              Zoom In
-            </button>
-            <button
-              type="button"
-              className="mini-action-button"
-              onClick={() => {
-                setWorkspaceZoom(DEFAULT_WORKSPACE_ZOOM);
-                canvasSurfaceRef.current?.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
-              }}
-            >
-              Reset View
-            </button>
-            <button
-              type="button"
-              className="mini-action-button"
-              onClick={fitWorkspaceView}
-            >
-              Fit View
-            </button>
-            <button
-              type="button"
-              className="mini-action-button"
-              onClick={onRequestSaveVersion}
-            >
-              Save Version
-            </button>
-            <button
-              type="button"
-              className="mini-action-button"
-              onClick={onRequestDuplicateSelection}
-              disabled={selectedModuleIds.length === 0}
-            >
-              Duplicate Cluster
-            </button>
-            <button
-              type="button"
-              className="mini-action-button"
-              onClick={onRequestDeleteSelection}
-              disabled={selectedModuleIds.length === 0}
-            >
-              Delete Cluster
-            </button>
-            <button
-              type="button"
-              className="mini-action-button"
-              onClick={() => {
-                if (effectiveSelectedConnectionIndex !== null) {
-                  onRemoveConnection(effectiveSelectedConnectionIndex);
-                  setSelectedConnectionIndex(null);
-                }
-              }}
-              disabled={effectiveSelectedConnectionIndex === null}
-            >
-              Delete Wire
-            </button>
-            <button
-              type="button"
-              className="mini-action-button"
-              onClick={() => importInputRef.current?.click()}
-            >
-              Import JSON
-            </button>
-          </>
-        ) : null}
-        <button
-          type="button"
-          className="mini-action-button"
-          onClick={onRequestCreateComposite}
-          disabled={selectedModuleIds.length === 0}
-        >
-          Create Composite
-        </button>
-        {showTutorialToggle ? (
-          <button
-            type="button"
-            className="mini-action-button"
-            onClick={() => onSetTutorialNotesVisible?.(!tutorialNotesVisible)}
-          >
-            {tutorialNotesVisible ? 'Hide Step Notes' : 'Show Step Notes'}
-          </button>
-        ) : null}
-        <input
-          ref={importInputRef}
-          type="file"
-          accept="application/json,.json"
-          className="hidden-file-input"
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (file) {
-              onImportDocument(file);
-            }
-            event.target.value = '';
-          }}
-        />
-      </div>
+      <WorkbenchActions
+        isCompositeEditor={isCompositeEditor}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        selectedModuleIds={selectedModuleIds}
+        effectiveSelectedConnectionIndex={effectiveSelectedConnectionIndex}
+        showTutorialToggle={showTutorialToggle}
+        tutorialNotesVisible={tutorialNotesVisible}
+        onAddAnnotation={onAddAnnotation}
+        onExportDocument={onExportDocument}
+        onExportPython={onExportPython}
+        onTidyLayout={onTidyLayout}
+        onRequestUndo={onRequestUndo}
+        onRequestRedo={onRequestRedo}
+        onZoomOut={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'out'))}
+        onZoomIn={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'in'))}
+        onResetView={() => {
+          setWorkspaceZoom(DEFAULT_WORKSPACE_ZOOM);
+          canvasSurfaceRef.current?.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+        }}
+        onFitView={fitWorkspaceView}
+        onRequestSaveVersion={onRequestSaveVersion}
+        onRequestDuplicateSelection={onRequestDuplicateSelection}
+        onRequestDeleteSelection={onRequestDeleteSelection}
+        onRequestDeleteWire={() => {
+          if (effectiveSelectedConnectionIndex !== null) {
+            onRemoveConnection(effectiveSelectedConnectionIndex);
+            setSelectedConnectionIndex(null);
+          }
+        }}
+        onRequestImport={() => importInputRef.current?.click()}
+        onRequestCreateComposite={onRequestCreateComposite}
+        onToggleTutorialNotes={onSetTutorialNotesVisible}
+      />
+      <input
+        ref={importInputRef}
+        type="file"
+        accept="application/json,.json"
+        className="hidden-file-input"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) {
+            onImportDocument(file);
+          }
+          event.target.value = '';
+        }}
+      />
 
       {tutorialStep ? (
         <div className="tutorial-step-banner">
@@ -1453,8 +1152,24 @@ export function WorkbenchPanel({
 
               const sourceSide = from.x <= to.x ? 'right' : 'left';
               const targetSide = from.x <= to.x ? 'left' : 'right';
-              const sourceAnchor = getAnchorPosition(from.x, from.y, sourceSide, sourceIndex);
-              const targetAnchor = getAnchorPosition(to.x, to.y, targetSide, targetIndex);
+              const sourceAnchor = getAnchorPosition(
+                from.x,
+                from.y,
+                sourceSide,
+                sourceIndex,
+                NODE_WIDTH,
+                PORT_START_Y,
+                PORT_GAP,
+              );
+              const targetAnchor = getAnchorPosition(
+                to.x,
+                to.y,
+                targetSide,
+                targetIndex,
+                NODE_WIDTH,
+                PORT_START_Y,
+                PORT_GAP,
+              );
               const horizontalDistance = Math.abs(targetAnchor.x - sourceAnchor.x);
               const bend = Math.max(56, horizontalDistance * 0.42);
               const sourceControlX =
@@ -1975,24 +1690,4 @@ export function WorkbenchPanel({
       </div>
     </section>
   );
-}
-
-function getInputAnchorClassName(
-  pendingConnection: PendingConnection | null,
-  targetState: TargetPortState | undefined,
-  hasIncomingConnection: boolean,
-) {
-  if (!pendingConnection) {
-    return hasIncomingConnection
-      ? 'graph-port-anchor graph-port-anchor-in graph-port-anchor-occupied'
-      : 'graph-port-anchor graph-port-anchor-in';
-  }
-
-  if (targetState?.valid) {
-    return targetState.mode === 'replace'
-      ? 'graph-port-anchor graph-port-anchor-in graph-port-droppable graph-port-replace'
-      : 'graph-port-anchor graph-port-anchor-in graph-port-droppable graph-port-valid';
-  }
-
-  return 'graph-port-anchor graph-port-anchor-in graph-port-droppable graph-port-invalid';
 }
