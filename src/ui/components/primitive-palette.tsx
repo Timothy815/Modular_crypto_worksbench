@@ -12,6 +12,7 @@ import {
   matchesModuleSearch,
   MODULE_LIBRARY_SECTIONS,
 } from '../module-library';
+import { getPrimitiveMicroDemo } from '../primitive-micro-demos';
 
 interface PrimitivePaletteProps {
   registry: ModuleRegistry;
@@ -20,6 +21,7 @@ interface PrimitivePaletteProps {
   onAddModule: (defId: string) => void;
   onOpenComposite: (defId: string) => void;
   onDuplicateReusable: (defId: string) => void;
+  onOpenPrimitiveMicroDemo: (defId: string) => void;
   onExportCompositeLibrary: () => void;
   onRemoveComposite: (defId: string) => void;
   compositeUsageCountById: Record<string, number>;
@@ -33,6 +35,7 @@ export function PrimitivePalette({
   onAddModule,
   onOpenComposite,
   onDuplicateReusable,
+  onOpenPrimitiveMicroDemo,
   onExportCompositeLibrary,
   onRemoveComposite,
   compositeUsageCountById,
@@ -163,6 +166,7 @@ export function PrimitivePalette({
                     onAddModule={onAddModule}
                     onOpenComposite={onOpenComposite}
                     onDuplicateReusable={onDuplicateReusable}
+                    onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                     onRemoveComposite={onRemoveComposite}
                   />
                 ))}
@@ -226,6 +230,7 @@ export function PrimitivePalette({
                       onAddModule={onAddModule}
                       onOpenComposite={onOpenComposite}
                       onDuplicateReusable={onDuplicateReusable}
+                      onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                       onRemoveComposite={onRemoveComposite}
                     />
                   ))}
@@ -253,6 +258,7 @@ interface ModuleLibraryCardProps {
   onAddModule: (defId: string) => void;
   onOpenComposite: (defId: string) => void;
   onDuplicateReusable: (defId: string) => void;
+  onOpenPrimitiveMicroDemo: (defId: string) => void;
   onRemoveComposite: (defId: string) => void;
 }
 
@@ -264,12 +270,14 @@ function ModuleLibraryCard({
   onAddModule,
   onOpenComposite,
   onDuplicateReusable,
+  onOpenPrimitiveMicroDemo,
   onRemoveComposite,
 }: ModuleLibraryCardProps) {
   const isComposite = 'kind' in def && def.kind === 'composite';
   const isIterator = 'kind' in def && def.kind === 'iterator';
   const isReusable = isComposite || isIterator;
   const [showHelp, setShowHelp] = useState(false);
+  const primitiveMicroDemo = getPrimitiveMicroDemo(def.id);
 
   if (viewMode === 'compact') {
     return (
@@ -302,6 +310,17 @@ function ModuleLibraryCard({
                 aria-label={`Duplicate ${def.name} into My Reusables`}
               >
                 ⧉
+              </button>
+            ) : null}
+            {primitiveMicroDemo ? (
+              <button
+                type="button"
+                className="primitive-action-button"
+                onClick={() => onOpenPrimitiveMicroDemo(def.id)}
+                title={`Try ${def.name} in a minimal example`}
+                aria-label={`Try ${def.name} in a minimal example`}
+              >
+                ▶
               </button>
             ) : null}
             {isComposite && !isBuiltInReusable ? (
@@ -375,6 +394,17 @@ function ModuleLibraryCard({
                 ⧉
               </button>
             ) : null}
+            {primitiveMicroDemo ? (
+              <button
+                type="button"
+                className="primitive-action-button"
+                onClick={() => onOpenPrimitiveMicroDemo(def.id)}
+                title={`Try ${def.name} in a minimal example`}
+                aria-label={`Try ${def.name} in a minimal example`}
+              >
+                ▶
+              </button>
+            ) : null}
             {isComposite && !isBuiltInReusable ? (
               <button
                 type="button"
@@ -429,6 +459,11 @@ function ModuleLibraryCard({
         <div className="primitive-help-card">
           <span className="meta-label">What It Does</span>
           <p>{getModuleDetail(def)}</p>
+          {primitiveMicroDemo ? (
+            <p className="comparison-copy">
+              <strong>Try Demo:</strong> Loads a tiny editable example focused on this primitive.
+            </p>
+          ) : null}
           <p className="primitive-help-ports">
             Inputs: <strong>{def.inputs.map((port) => `${port.name}:${port.type}`).join(', ') || 'none'}</strong>
           </p>

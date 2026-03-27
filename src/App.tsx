@@ -42,6 +42,7 @@ import {
   pasteWorkspaceClipboardSnapshot,
   type WorkspaceClipboardSnapshot,
 } from './ui/workspace-clipboard';
+import { getPrimitiveMicroDemo } from './ui/primitive-micro-demos';
 
 const MIN_LEFT_DOCK_WIDTH = 220;
 const MAX_LEFT_DOCK_WIDTH = 520;
@@ -103,6 +104,18 @@ function createDuplicateWorkspaceName(sourceName: string, existingNames: Set<str
 
 function createWorkspaceVersionId(projectId: string, timestamp: string) {
   return `${projectId}-version-${timestamp.replace(/[^0-9]/g, '')}`;
+}
+
+function createWorkspaceNameFromBase(baseName: string, existingNames: Set<string>) {
+  let candidate = baseName;
+  let suffix = 2;
+
+  while (existingNames.has(candidate)) {
+    candidate = `${baseName} ${suffix}`;
+    suffix += 1;
+  }
+
+  return candidate;
 }
 
 interface ParameterClipboardState {
@@ -918,6 +931,44 @@ function App() {
       pipeline: describeWorkspacePipeline(activeProjectState),
       defaultTickedMode: state.tickedModeByProject[activeProjectDefinition.id] ?? false,
     });
+  }
+
+  function handleOpenPrimitiveMicroDemo(defId: string) {
+    if (state.compositeEditor) {
+      window.alert('Primitive micro demos are unavailable while editing a reusable composite.');
+      return;
+    }
+
+    const microDemo = getPrimitiveMicroDemo(defId);
+    if (!microDemo) {
+      return;
+    }
+
+    const existingWorkspaceNames = new Set(state.userWorkspaceLibrary.map((workspace) => workspace.name));
+    const workspaceName = createWorkspaceNameFromBase(microDemo.name, existingWorkspaceNames);
+    const workspaceId = createUniqueWorkspaceId(
+      workspaceName,
+      new Set(availableProjects.map((project) => project.id)),
+    );
+
+    dispatch({
+      type: 'createBlankWorkspace',
+      workspaceId,
+      name: workspaceName,
+      summary: microDemo.summary,
+      pipeline: microDemo.pipeline,
+    });
+    dispatch({
+      type: 'loadDocument',
+      projectId: workspaceId,
+      document: microDemo.document,
+    });
+    dispatch({
+      type: 'setTickedMode',
+      projectId: workspaceId,
+      enabled: microDemo.defaultTickedMode ?? false,
+    });
+    setImportError(null);
   }
 
   function handleCopySelectedCluster() {
@@ -1771,6 +1822,7 @@ function App() {
                   });
                 }
               }}
+              onOpenPrimitiveMicroDemo={handleOpenPrimitiveMicroDemo}
               onRemoveComposite={(defId) =>
                 dispatch({
                   type: 'removeCompositeFromLibrary',

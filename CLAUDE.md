@@ -43,6 +43,7 @@ Read WORKSPACE-VISIBILITY-NAVIGATION-V1.md before changing zoom, fit/reset view,
 Read CONNECTION-AUTHORING-ERGONOMICS-V1.md before changing direct rewiring, input-connection replacement, or first-wave wire-editing ergonomics.
 Read PARAMETER-AUTHORING-ERGONOMICS-V1.md before changing bulk parameter application, parameter clipboard behavior, or first-wave inspector tuning ergonomics.
 Read PARAMETER-COMPARISON-ERGONOMICS-V1.md before changing selected-sibling parameter comparison, inline divergence chips, or inspector-local comparison summaries.
+Read PRIMITIVE-MICRO-DEMOS-V1.md before changing primitive-local `Try Demo` actions, micro-demo registry behavior, or palette-local seeded examples.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.
 Read LEARNING-SEQUENCE-V1.md before restructuring the teaching library, adding staged progression, or changing how demos/tutorials/challenges are ordered.
@@ -181,6 +182,7 @@ src/utils/     — Shared helpers
 - The current connection-authoring slice after that is `CONNECTION-AUTHORING-ERGONOMICS-V1.md`
 - The current parameter-authoring slice after that is `PARAMETER-AUTHORING-ERGONOMICS-V1.md`
 - The current parameter-comparison slice after that is `PARAMETER-COMPARISON-ERGONOMICS-V1.md`
+- The current primitive-legibility slice after that is `PRIMITIVE-MICRO-DEMOS-V1.md`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement

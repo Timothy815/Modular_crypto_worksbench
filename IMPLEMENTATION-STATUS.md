@@ -29,6 +29,7 @@ Current development now carries:
   - `CONNECTION-AUTHORING-ERGONOMICS-V1.md`
   - `PARAMETER-AUTHORING-ERGONOMICS-V1.md`
   - `PARAMETER-COMPARISON-ERGONOMICS-V1.md`
+  - `PRIMITIVE-MICRO-DEMOS-V1.md`
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -166,6 +167,11 @@ The current parameter-comparison follow-on after that is:
 - compare the current inspector target against explicitly selected same-definition siblings
 - show aligned vs divergent fields inline in the inspector
 - keep the selected module as the comparison anchor
+
+The current primitive-legibility follow-on after that is:
+- palette-local `Try Demo` actions for a bounded set of opaque primitives
+- minimal seeded examples opened as new local editable workspaces
+- no second demo library and no tutorial/challenge duplication
 
 Established and shipped:
 - implementation contract and AI coordination protocol

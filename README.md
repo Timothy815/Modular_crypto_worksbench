@@ -54,6 +54,11 @@ The current parameter-comparison follow-on after that is:
 - show aligned vs divergent fields inline in the inspector
 - keep the selected module as the comparison anchor
 
+The current primitive-legibility follow-on after that is:
+- palette-local `Try Demo` actions for a bounded set of opaque primitives
+- minimal seeded examples opened as new local editable workspaces
+- no second demo library
+
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
   - `ModExp` (modular exponentiation via repeated squaring)
