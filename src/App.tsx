@@ -408,6 +408,8 @@ function App() {
   const [paletteViewMode, setPaletteViewMode] = useState<'compact' | 'expanded'>('expanded');
   const [workspaceClipboardSnapshot, setWorkspaceClipboardSnapshot] =
     useState<WorkspaceClipboardSnapshot | null>(null);
+  const [requestedWorkspaceFocusModuleId, setRequestedWorkspaceFocusModuleId] =
+    useState<string | null>(null);
 
   const availableProjects = [
     ...demoProjects,
@@ -1346,6 +1348,7 @@ function App() {
           }
         >
           <WorkbenchPanel
+            key={`${state.compositeEditor ? 'composite' : 'workspace'}:${activeProjectDefinition.id}`}
             activeProject={activeProjectDefinition}
             title={activeCompositeEntry ? `${activeCompositeEntry.name} Internals` : undefined}
             summary={
@@ -1509,6 +1512,8 @@ function App() {
             workspaceVersions={activeWorkspaceVersions}
             onRequestSaveVersion={handleSaveWorkspaceVersion}
             onRequestRestoreVersion={handleRestoreWorkspaceVersion}
+            requestedFocusModuleId={requestedWorkspaceFocusModuleId}
+            onWorkspaceFocusHandled={() => setRequestedWorkspaceFocusModuleId(null)}
             onAddConnection={(fromModuleId, fromPort, toModuleId, toPort) =>
               dispatch({
                 type: 'addConnection',
@@ -1851,6 +1856,7 @@ function App() {
                 onTraceHover={setHoveredTraceModuleId}
                 onStepChange={syncTutorialStepFromTrace}
                 onActiveAnalysisTraceChange={setActiveAnalysisTraceEntry}
+                onRequestFocusModule={setRequestedWorkspaceFocusModuleId}
                 onCaptureBaseline={() =>
                   dispatch({
                     type: 'captureComparisonBaseline',

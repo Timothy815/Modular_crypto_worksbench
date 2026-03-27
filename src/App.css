@@ -1424,10 +1424,15 @@ body.dock-resizing {
 .canvas-surface {
   margin: 18px 0 20px;
   overflow-x: auto;
+  overflow-y: auto;
   border-radius: 22px;
   background: var(--canvas-background);
   background-size: 28px 28px, 28px 28px, auto;
   border: 1px solid var(--line);
+}
+
+.graph-viewport {
+  position: relative;
 }
 
 .graph-canvas {
@@ -1435,6 +1440,8 @@ body.dock-resizing {
   width: var(--canvas-width);
   min-height: var(--canvas-height);
   user-select: none;
+  transform: scale(var(--workspace-zoom, 1));
+  transform-origin: top left;
 }
 
 .graph-connections {
@@ -2076,6 +2083,29 @@ body.dock-resizing {
   font-family: var(--mono);
   font-size: 0.82rem;
   color: var(--muted);
+}
+
+.trace-head-actions {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+}
+
+.trace-focus-button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-panel);
+  padding: 5px 10px;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.trace-focus-button:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-panel));
 }
 
 .trace-card {

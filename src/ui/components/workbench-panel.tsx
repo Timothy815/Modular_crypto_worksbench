@@ -29,6 +29,7 @@ import { getModuleCategory } from '../module-categories';
 import {
   getModulesInSelectionBox,
   normalizeSelectionBoxRect,
+  CANVAS_NODE_HEIGHT,
   CANVAS_NODE_WIDTH,
 } from '../canvas-selection';
 import {
@@ -36,10 +37,18 @@ import {
   isLargeWorkspace,
   type WorkspaceLandmark,
 } from '../workspace-landmarks';
+import {
+  DEFAULT_WORKSPACE_ZOOM,
+  getCanvasViewportPoint,
+  getFitWorkspaceZoom,
+  getModuleFocusScrollPosition,
+  getNextWorkspaceZoom,
+} from '../workspace-viewport';
 import type { WorkbenchAnnotation, WorkspaceVersionDocument } from '../workbench-document';
 import type { TutorialStep } from '../tutorials';
 
 const NODE_WIDTH = CANVAS_NODE_WIDTH;
+const NODE_HEIGHT = CANVAS_NODE_HEIGHT;
 const PORT_GAP = 18;
 const PORT_START_Y = 34;
 
@@ -127,6 +136,8 @@ interface WorkbenchPanelProps {
   workspaceVersions: WorkspaceVersionDocument[];
   onRequestSaveVersion: () => void;
   onRequestRestoreVersion: (versionId: string) => void;
+  requestedFocusModuleId?: string | null;
+  onWorkspaceFocusHandled?: () => void;
   onSwitchProject: (projectId: string) => void;
   onAddConnection: (
     fromModuleId: string,
@@ -202,6 +213,8 @@ export function WorkbenchPanel({
   workspaceVersions,
   onRequestSaveVersion,
   onRequestRestoreVersion,
+  requestedFocusModuleId = null,
+  onWorkspaceFocusHandled,
   onSwitchProject,
   onAddConnection,
   onRemoveConnection,
@@ -242,6 +255,7 @@ export function WorkbenchPanel({
     null,
   );
   const [hoveredPortHintKey, setHoveredPortHintKey] = useState<string | null>(null);
+  const [workspaceZoom, setWorkspaceZoom] = useState(DEFAULT_WORKSPACE_ZOOM);
   const projectGroups = useMemo(
     () => getSortedLearningGroups(projects),
     [projects],
@@ -299,6 +313,41 @@ export function WorkbenchPanel({
     return Number.isNaN(date.getTime()) ? savedAt : date.toLocaleString();
   };
 
+  function getCanvasPointerFromClient(clientX: number, clientY: number) {
+    const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
+    const canvasSurface = canvasSurfaceRef.current;
+    if (!canvasRect || !canvasSurface) {
+      return null;
+    }
+
+    return getCanvasViewportPoint({
+      clientX,
+      clientY,
+      canvasLeft: canvasRect.left,
+      canvasTop: canvasRect.top,
+      scrollLeft: canvasSurface.scrollLeft,
+      scrollTop: canvasSurface.scrollTop,
+      zoom: workspaceZoom,
+    });
+  }
+
+  function fitWorkspaceView() {
+    const canvasSurface = canvasSurfaceRef.current;
+    if (!canvasSurface) {
+      return;
+    }
+
+    setWorkspaceZoom(
+      getFitWorkspaceZoom({
+        viewportWidth: canvasSurface.clientWidth,
+        viewportHeight: canvasSurface.clientHeight,
+        canvasWidth,
+        canvasHeight,
+      }),
+    );
+    canvasSurface.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+  }
+
   useEffect(() => {
     if (!dragState && !annotationDragState && !selectionBox) {
       return undefined;
@@ -312,14 +361,17 @@ export function WorkbenchPanel({
       }
 
       if (dragState) {
-        const nextX = Math.max(
-          16,
-          event.clientX - canvasRect.left + canvasSurface.scrollLeft - dragState.pointerOffsetX,
-        );
-        const nextY = Math.max(
-          16,
-          event.clientY - canvasRect.top + canvasSurface.scrollTop - dragState.pointerOffsetY,
-        );
+        const pointer = getCanvasViewportPoint({
+          clientX: event.clientX,
+          clientY: event.clientY,
+          canvasLeft: canvasRect.left,
+          canvasTop: canvasRect.top,
+          scrollLeft: canvasSurface.scrollLeft,
+          scrollTop: canvasSurface.scrollTop,
+          zoom: workspaceZoom,
+        });
+        const nextX = Math.max(16, pointer.x - dragState.pointerOffsetX);
+        const nextY = Math.max(16, pointer.y - dragState.pointerOffsetY);
         if (dragState.moduleIds.length <= 1) {
           onMoveModule(dragState.moduleId, nextX, nextY);
         } else {
@@ -343,30 +395,36 @@ export function WorkbenchPanel({
       }
 
       if (annotationDragState) {
-        const nextX = Math.max(
-          16,
-          event.clientX -
-            canvasRect.left +
-            canvasSurface.scrollLeft -
-            annotationDragState.pointerOffsetX,
-        );
-        const nextY = Math.max(
-          16,
-          event.clientY -
-            canvasRect.top +
-            canvasSurface.scrollTop -
-            annotationDragState.pointerOffsetY,
-        );
+        const pointer = getCanvasViewportPoint({
+          clientX: event.clientX,
+          clientY: event.clientY,
+          canvasLeft: canvasRect.left,
+          canvasTop: canvasRect.top,
+          scrollLeft: canvasSurface.scrollLeft,
+          scrollTop: canvasSurface.scrollTop,
+          zoom: workspaceZoom,
+        });
+        const nextX = Math.max(16, pointer.x - annotationDragState.pointerOffsetX);
+        const nextY = Math.max(16, pointer.y - annotationDragState.pointerOffsetY);
         onMoveAnnotation(annotationDragState.annotationId, nextX, nextY);
       }
 
       if (selectionBox) {
+        const pointer = getCanvasViewportPoint({
+          clientX: event.clientX,
+          clientY: event.clientY,
+          canvasLeft: canvasRect.left,
+          canvasTop: canvasRect.top,
+          scrollLeft: canvasSurface.scrollLeft,
+          scrollTop: canvasSurface.scrollTop,
+          zoom: workspaceZoom,
+        });
         setSelectionBox((prev) =>
           prev
             ? {
                 ...prev,
-                currentX: event.clientX - canvasRect.left + canvasSurface.scrollLeft,
-                currentY: event.clientY - canvasRect.top + canvasSurface.scrollTop,
+                currentX: pointer.x,
+                currentY: pointer.y,
               }
             : null,
         );
@@ -404,6 +462,7 @@ export function WorkbenchPanel({
     onMoveModules,
     onSelectModules,
     selectionBox,
+    workspaceZoom,
   ]);
 
   useEffect(() => {
@@ -417,15 +476,22 @@ export function WorkbenchPanel({
       if (!canvasRect || !canvasSurface) {
         return;
       }
+      const pointer = getCanvasViewportPoint({
+        clientX: event.clientX,
+        clientY: event.clientY,
+        canvasLeft: canvasRect.left,
+        canvasTop: canvasRect.top,
+        scrollLeft: canvasSurface.scrollLeft,
+        scrollTop: canvasSurface.scrollTop,
+        zoom: workspaceZoom,
+      });
 
       setPendingConnection((prev) =>
         prev
           ? {
               ...prev,
-              mouseX:
-                event.clientX - canvasRect.left + canvasSurface.scrollLeft,
-              mouseY:
-                event.clientY - canvasRect.top + canvasSurface.scrollTop,
+              mouseX: pointer.x,
+              mouseY: pointer.y,
             }
           : null,
       );
@@ -443,7 +509,7 @@ export function WorkbenchPanel({
       window.removeEventListener('mousemove', handleConnectionMove);
       window.removeEventListener('mouseup', handleConnectionUp);
     };
-  }, [pendingConnection]);
+  }, [pendingConnection, workspaceZoom]);
 
   function renderCompositePortHint({
     definition,
@@ -603,16 +669,53 @@ export function WorkbenchPanel({
       return;
     }
 
-    const targetLeft = Math.max(0, position.x - Math.max(48, canvasSurface.clientWidth / 2 - NODE_WIDTH / 2));
-    const targetTop = Math.max(0, position.y - Math.max(32, canvasSurface.clientHeight / 2 - 72));
+    const target = getModuleFocusScrollPosition({
+      moduleX: position.x,
+      moduleY: position.y,
+      viewportWidth: canvasSurface.clientWidth,
+      viewportHeight: canvasSurface.clientHeight,
+      zoom: workspaceZoom,
+      nodeWidth: NODE_WIDTH,
+      nodeHeight: NODE_HEIGHT,
+    });
 
     canvasSurface.scrollTo({
-      left: targetLeft,
-      top: targetTop,
+      left: target.left,
+      top: target.top,
       behavior: 'smooth',
     });
     onSelectModule(moduleId, false);
   }
+
+  useEffect(() => {
+    if (!requestedFocusModuleId) {
+      return;
+    }
+
+    const position = layout[requestedFocusModuleId];
+    const canvasSurface = canvasSurfaceRef.current;
+    if (!position || !canvasSurface) {
+      return;
+    }
+
+    const target = getModuleFocusScrollPosition({
+      moduleX: position.x,
+      moduleY: position.y,
+      viewportWidth: canvasSurface.clientWidth,
+      viewportHeight: canvasSurface.clientHeight,
+      zoom: workspaceZoom,
+      nodeWidth: NODE_WIDTH,
+      nodeHeight: NODE_HEIGHT,
+    });
+
+    canvasSurface.scrollTo({
+      left: target.left,
+      top: target.top,
+      behavior: 'smooth',
+    });
+    onSelectModule(requestedFocusModuleId, false);
+    onWorkspaceFocusHandled?.();
+  }, [layout, onSelectModule, onWorkspaceFocusHandled, requestedFocusModuleId, workspaceZoom]);
 
   function renderLandmarkGroup(title: string, landmarks: WorkspaceLandmark[]) {
     if (landmarks.length === 0) {
@@ -782,6 +885,37 @@ export function WorkbenchPanel({
               disabled={!canRedo}
             >
               Redo
+            </button>
+            <button
+              type="button"
+              className="mini-action-button"
+              onClick={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'out'))}
+            >
+              Zoom Out
+            </button>
+            <button
+              type="button"
+              className="mini-action-button"
+              onClick={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'in'))}
+            >
+              Zoom In
+            </button>
+            <button
+              type="button"
+              className="mini-action-button"
+              onClick={() => {
+                setWorkspaceZoom(DEFAULT_WORKSPACE_ZOOM);
+                canvasSurfaceRef.current?.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+              }}
+            >
+              Reset View
+            </button>
+            <button
+              type="button"
+              className="mini-action-button"
+              onClick={fitWorkspaceView}
+            >
+              Fit View
             </button>
             <button
               type="button"
@@ -991,11 +1125,19 @@ export function WorkbenchPanel({
 
       <div ref={canvasSurfaceRef} className="canvas-surface">
         <div
+          className="graph-viewport"
+          style={{
+            width: `${canvasWidth * workspaceZoom}px`,
+            height: `${canvasHeight * workspaceZoom}px`,
+          }}
+        >
+        <div
           className="graph-canvas"
           style={
             {
               '--canvas-width': `${canvasWidth}px`,
               '--canvas-height': `${canvasHeight}px`,
+              '--workspace-zoom': workspaceZoom,
             } as CSSProperties
           }
           onMouseDown={(event) => {
@@ -1003,18 +1145,17 @@ export function WorkbenchPanel({
               return;
             }
 
-            const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
-            const canvasSurface = canvasSurfaceRef.current;
-            if (!canvasRect || !canvasSurface) {
+            const pointer = getCanvasPointerFromClient(event.clientX, event.clientY);
+            if (!pointer) {
               return;
             }
 
             event.preventDefault();
             setSelectionBox({
-              startX: event.clientX - canvasRect.left + canvasSurface.scrollLeft,
-              startY: event.clientY - canvasRect.top + canvasSurface.scrollTop,
-              currentX: event.clientX - canvasRect.left + canvasSurface.scrollLeft,
-              currentY: event.clientY - canvasRect.top + canvasSurface.scrollTop,
+              startX: pointer.x,
+              startY: pointer.y,
+              currentX: pointer.x,
+              currentY: pointer.y,
               additive: event.shiftKey || event.metaKey || event.ctrlKey,
             });
           }}
@@ -1141,9 +1282,8 @@ export function WorkbenchPanel({
                   }}
                   onMouseDown={(event) => {
                     event.preventDefault();
-                    const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
-                    const canvasSurface = canvasSurfaceRef.current;
-                    if (!canvasRect || !canvasSurface) return;
+                    const pointer = getCanvasPointerFromClient(event.clientX, event.clientY);
+                    if (!pointer) return;
                     const isAdditiveSelection = event.shiftKey || event.metaKey || event.ctrlKey;
                     if (isAdditiveSelection) {
                       onSelectModule(moduleInstance.id, true);
@@ -1160,8 +1300,8 @@ export function WorkbenchPanel({
                     }
                     setDragState({
                       moduleId: moduleInstance.id,
-                      pointerOffsetX: event.clientX - canvasRect.left + canvasSurface.scrollLeft - position.x,
-                      pointerOffsetY: event.clientY - canvasRect.top + canvasSurface.scrollTop - position.y,
+                      pointerOffsetX: pointer.x - position.x,
+                      pointerOffsetY: pointer.y - position.y,
                       anchorStartX: position.x,
                       anchorStartY: position.y,
                       moduleIds: draggedModuleIds,
@@ -1427,18 +1567,15 @@ export function WorkbenchPanel({
                 onMouseDown={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
-                  const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
-                  const canvasSurface = canvasSurfaceRef.current;
-                  if (!canvasRect || !canvasSurface) {
+                  const pointer = getCanvasPointerFromClient(event.clientX, event.clientY);
+                  if (!pointer) {
                     return;
                   }
 
                   setAnnotationDragState({
                     annotationId: annotation.id,
-                    pointerOffsetX:
-                      event.clientX - canvasRect.left + canvasSurface.scrollLeft - annotation.x,
-                    pointerOffsetY:
-                      event.clientY - canvasRect.top + canvasSurface.scrollTop - annotation.y,
+                    pointerOffsetX: pointer.x - annotation.x,
+                    pointerOffsetY: pointer.y - annotation.y,
                   });
                 }}
               >
@@ -1462,6 +1599,7 @@ export function WorkbenchPanel({
               />
             </div>
           ))}
+        </div>
         </div>
       </div>
 

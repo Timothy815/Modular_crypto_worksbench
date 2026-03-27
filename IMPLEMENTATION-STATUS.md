@@ -142,6 +142,11 @@ The current checkpointing follow-on after that is:
 - named workspace versions / restore points
 - explicit save/list/restore workflow per workspace
 
+The current workspace-visibility follow-on after that is:
+- bounded zoom controls
+- reset / fit view
+- explicit execution-trace focus jumps into the live workspace
+
 Established and shipped:
 - implementation contract and AI coordination protocol
 - engine core type definitions, graph validation, param validation

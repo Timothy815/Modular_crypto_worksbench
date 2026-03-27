@@ -99,6 +99,7 @@ interface ParameterInspectorProps {
   onTraceHover: (moduleId: string | null) => void;
   onStepChange: (nextIndex: number | null) => void;
   onActiveAnalysisTraceChange?: (entry: ExecutionTraceEntry | null) => void;
+  onRequestFocusModule?: (moduleId: string) => void;
   onCaptureBaseline: () => void;
   onClearBaseline: () => void;
   probedModuleIds: string[];
@@ -141,6 +142,7 @@ export function ParameterInspector({
   onTraceHover,
   onStepChange,
   onActiveAnalysisTraceChange,
+  onRequestFocusModule,
   onCaptureBaseline,
   onClearBaseline,
   probedModuleIds,
@@ -2950,9 +2952,21 @@ export function ParameterInspector({
                   ) : null}
                 </div>
               </div>
-              <span>
-                #{traceIndex >= 0 ? traceIndex + 1 : analysisIndex + 1} {entry.defId}
-              </span>
+              <div className="trace-head-actions">
+                <span>
+                  #{traceIndex >= 0 ? traceIndex + 1 : analysisIndex + 1} {entry.defId}
+                </span>
+                <button
+                  type="button"
+                  className="trace-focus-button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onRequestFocusModule?.(topLevelModuleId);
+                  }}
+                >
+                  Focus In Workspace
+                </button>
+              </div>
             </div>
             {nestedPath ? <p className="trace-nested-path">{nestedPath}</p> : null}
             <p>

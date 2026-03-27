@@ -32,6 +32,11 @@ The current checkpointing follow-on after that is:
 - named workspace versions / restore points
 - explicit `Save Version` and `Restore` workflow per workspace
 
+The current workspace-navigation follow-on after that is:
+- bounded zoom in / zoom out
+- reset / fit view recovery
+- trace-driven focus jumps back into the visible workspace
+
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
   - `ModExp` (modular exponentiation via repeated squaring)
