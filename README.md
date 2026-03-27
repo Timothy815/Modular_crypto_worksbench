@@ -123,6 +123,12 @@ The current near-future strategic export item after that is:
 - bounded Python export foundations for turning a workspace into standalone executable code
 - treated as a major future product line, not just a utility add-on
 
+The current implementation-ready export follow-on after that is:
+- stateless-only Python export foundations
+- primitive-only supported subset
+- one standalone `.py` artifact
+- explicit compatibility rejection for unsupported modules
+
 The current near-future workspace-layout ergonomics item after that is:
 - bounded multi-window / multi-tab support for selected surfaces
 - likely `Inspector` and `Palette` first

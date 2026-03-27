@@ -43,6 +43,7 @@ Current development now carries:
   - `ROTOR-DRIVEN-STEPPING-V1.md`
   - `ROTOR-CONTROL-BANK-V1.md`
   - `PYTHON-EXPORT-V1.md`
+  - `PYTHON-EXPORT-FOUNDATIONS-V1.md`
   - `MULTI-WINDOW-WORKSPACE-V1.md`
 
 Current `main` is now positioned beyond three recent milestones.
@@ -251,6 +252,12 @@ The current shipped rotor-control follow-on after that is:
 The current near-future strategic export item after that is:
 - bounded Python export foundations for turning a workspace into standalone executable code
 - explicitly treated as a major future product line rather than a casual utility feature
+
+The current implementation-ready export follow-on after that is:
+- stateless-only Python export foundations
+- primitive-only supported subset
+- one standalone `.py` artifact
+- explicit compatibility rejection for unsupported modules
 
 The current near-future workspace-layout ergonomics item after that is:
 - bounded multi-window / multi-tab support for selected surfaces
