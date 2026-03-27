@@ -34,6 +34,7 @@ Current development now carries:
   - `WIRE-LEGIBILITY-ERGONOMICS-V1.md`
   - `TRACE-WORKSPACE-BRIDGING-V1.md`
   - `COMPOSITE-REUSE-ERGONOMICS-V1.md`
+  - `WORKSPACE-COMPARISON-ERGONOMICS-V1.md`
   - `MULTIWAY-ROUTING-V1.md`
   - `CONDITIONAL-COMPOSITION-V1.md`
   - `ITERATOR-CONTROL-V1.md`
@@ -204,6 +205,11 @@ The current next ergonomics slice after that is:
 - composite creation / reuse workflow clarity
 - real pre-create preview of inferred composite boundary ports in the create dialog
 - clearer reusable composite / iterator summaries in the palette library flow
+
+The current final comparison-oriented ergonomics slice after that is:
+- compare the current workspace against one saved version baseline
+- structural comparison only: modules and connections
+- added / removed / unchanged structure surfaced in the live workspace and summary card
 
 The current near-future primitive-expansion item after that is:
 - explicit multi-way routing as a bounded future family

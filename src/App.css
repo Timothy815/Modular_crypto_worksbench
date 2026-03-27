@@ -1502,6 +1502,14 @@ body.dock-resizing {
   stroke-width: 3.4;
 }
 
+.connection-group-compare-added path:not(.connection-hit-area) {
+  stroke: color-mix(in srgb, #1c9d62 72%, var(--connection-stroke));
+}
+
+.connection-group-compare-unchanged path:not(.connection-hit-area) {
+  stroke: color-mix(in srgb, var(--connection-stroke) 76%, white);
+}
+
 .connection-group-dimmed path:not(.connection-hit-area) {
   opacity: 0.22;
 }
@@ -1676,6 +1684,16 @@ body.dock-resizing {
 
 .graph-node-invalid {
   box-shadow: 0 0 0 2px var(--danger-text);
+}
+
+.graph-node-compare-added {
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, #1c9d62 70%, white),
+    0 10px 24px color-mix(in srgb, #1c9d62 18%, transparent);
+}
+
+.graph-node-compare-unchanged {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--line) 72%, white);
 }
 
 .graph-node-bypassed {
@@ -2440,6 +2458,22 @@ body.dock-resizing {
 
 .dialog-selected-ports {
   margin-top: 0;
+}
+
+.workspace-comparison-card {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface-soft);
+}
+
+.workspace-comparison-card p {
+  margin: 8px 0 0;
+}
+
+.workspace-comparison-list {
+  margin-top: 12px;
 }
 
 .dialog-actions {

@@ -48,6 +48,7 @@ Read PRIMITIVE-MICRO-DEMOS-V2.md before extending primitive-local micro demos in
 Read WIRE-LEGIBILITY-ERGONOMICS-V1.md before changing wire selection, one-hop connection emphasis, or workspace-level path legibility behavior.
 Read TRACE-WORKSPACE-BRIDGING-V1.md before changing active trace emphasis in the workspace, one-hop step-context highlighting, or trace/workspace visual bridging behavior.
 Read COMPOSITE-REUSE-ERGONOMICS-V1.md before changing composite promotion clarity, composite boundary workflow, or composite-reuse ergonomics.
+Read WORKSPACE-COMPARISON-ERGONOMICS-V1.md before changing saved-version workspace comparison, structural diff overlays, or current-vs-baseline comparison behavior.
 Read MULTIWAY-ROUTING-V1.md before proposing multi-way case-switch routing, indexed output selection, or multi-output control-flow primitives.
 Read CONDITIONAL-COMPOSITION-V1.md before proposing explicit finite branch composition, if/else style graph behavior, or bounded conditional graph structure.
 Read ITERATOR-CONTROL-V1.md before proposing stronger iterator control, bounded repeated-condition behavior, or iterator-level control-flow extensions.

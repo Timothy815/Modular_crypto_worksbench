@@ -80,6 +80,11 @@ The current next ergonomics slice after that is:
 - real pre-create preview of inferred composite boundary ports in the create dialog
 - clearer reusable composite / iterator summaries in the palette library flow
 
+The current final comparison-oriented ergonomics slice after that is:
+- compare the current workspace against one saved version baseline
+- structural comparison only: modules and connections
+- added / removed / unchanged structure surfaced in the live workspace and summary card
+
 The current near-future primitive-expansion item after that is:
 - explicit multi-way routing as a bounded future family
 - first slice scoped to a multi-way router (`1 -> N`) for visible case-switch / staged routing

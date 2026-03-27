@@ -37,6 +37,7 @@ import {
   type TargetPortState,
 } from '../connection-authoring';
 import { deriveConnectionLegibilityState } from '../wire-legibility';
+import { compareWorkspaceToVersion, getConnectionComparisonKey } from '../workspace-comparison';
 import {
   deriveWorkspaceLandmarks,
   isLargeWorkspace,
@@ -271,6 +272,7 @@ export function WorkbenchPanel({
   );
   const [hoveredPortHintKey, setHoveredPortHintKey] = useState<string | null>(null);
   const [workspaceZoom, setWorkspaceZoom] = useState(DEFAULT_WORKSPACE_ZOOM);
+  const [comparisonVersionId, setComparisonVersionId] = useState<string | null>(null);
   const projectGroups = useMemo(
     () => getSortedLearningGroups(projects),
     [projects],
@@ -286,6 +288,13 @@ export function WorkbenchPanel({
     [projectGroups, projects],
   );
   const activeProjectGroup = activeProject.group ?? 'Other';
+  const activeComparisonVersion = useMemo(
+    () =>
+      comparisonVersionId
+        ? workspaceVersions.find((version) => version.id === comparisonVersionId) ?? null
+        : null,
+    [comparisonVersionId, workspaceVersions],
+  );
 
   const canvasWidth = Math.max(
     980,
@@ -328,6 +337,13 @@ export function WorkbenchPanel({
         ]),
       ) as Record<string, number>,
     [activeProjectState.connections],
+  );
+  const workspaceComparison = useMemo(
+    () =>
+      activeComparisonVersion
+        ? compareWorkspaceToVersion(activeProjectState, activeComparisonVersion)
+        : null,
+    [activeComparisonVersion, activeProjectState],
   );
   const showWorkspaceLandmarks = useMemo(
     () =>
@@ -991,9 +1007,59 @@ export function WorkbenchPanel({
                         >
                           Restore
                         </button>
+                        <button
+                          type="button"
+                          className="workspace-version-button"
+                          onClick={() =>
+                            setComparisonVersionId((current) =>
+                              current === version.id ? null : version.id,
+                            )
+                          }
+                        >
+                          {comparisonVersionId === version.id ? 'Stop Compare' : 'Compare'}
+                        </button>
                       </div>
                     ))}
                 </div>
+                {workspaceComparison && activeComparisonVersion ? (
+                  <div className="workspace-comparison-card">
+                    <strong>Comparing To {activeComparisonVersion.name}</strong>
+                    <p>
+                      Added modules: <strong>{workspaceComparison.addedModules.length}</strong> ·
+                      Removed modules: <strong>{workspaceComparison.removedModules.length}</strong> ·
+                      Added wires: <strong>{workspaceComparison.addedConnections.length}</strong> ·
+                      Removed wires: <strong>{workspaceComparison.removedConnections.length}</strong>
+                    </p>
+                    {workspaceComparison.removedModules.length > 0 ? (
+                      <div className="workspace-comparison-list">
+                        <span className="meta-label">Removed Modules</span>
+                        <ul className="port-list">
+                          {workspaceComparison.removedModules.map((moduleInstance) => (
+                            <li key={`${moduleInstance.id}:${moduleInstance.defId}`}>
+                              <strong>{moduleInstance.id}</strong>
+                              <span>{moduleInstance.defId}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                    {workspaceComparison.removedConnections.length > 0 ? (
+                      <div className="workspace-comparison-list">
+                        <span className="meta-label">Removed Wires</span>
+                        <ul className="port-list">
+                          {workspaceComparison.removedConnections.map((connection) => (
+                            <li key={getConnectionComparisonKey(connection)}>
+                              <strong>{connection.from.moduleId}.{connection.from.port}</strong>
+                              <span>
+                                -&gt; {connection.to.moduleId}.{connection.to.port}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -1414,6 +1480,11 @@ export function WorkbenchPanel({
                     legibilityState.emphasized ? 'connection-group-emphasized' : '',
                     legibilityState.traceEmphasized ? 'connection-group-trace' : '',
                     legibilityState.dimmed ? 'connection-group-dimmed' : '',
+                    workspaceComparison
+                      ? workspaceComparison.currentConnectionStatusByKey[getConnectionComparisonKey(connection)] === 'added'
+                        ? 'connection-group-compare-added'
+                        : 'connection-group-compare-unchanged'
+                      : '',
                   ]
                     .filter(Boolean)
                     .join(' ')}
@@ -1467,7 +1538,12 @@ export function WorkbenchPanel({
                   (moduleInstance.id === divergenceModuleId ? ' graph-node-divergence' : '') +
                   (moduleInstance.id === tutorialStep?.focusModuleId ? ' graph-node-tutorial-focus' : '') +
                   (probedModuleIds.includes(moduleInstance.id) ? ' graph-node-probed' : '') +
-                  ((moduleIssueCountById[moduleInstance.id] ?? 0) > 0 ? ' graph-node-invalid' : '')
+                  ((moduleIssueCountById[moduleInstance.id] ?? 0) > 0 ? ' graph-node-invalid' : '') +
+                  (workspaceComparison
+                    ? workspaceComparison.currentModuleStatusById[moduleInstance.id] === 'added'
+                      ? ' graph-node-compare-added'
+                      : ' graph-node-compare-unchanged'
+                    : '')
                 }
                 style={{ left: `${position.x}px`, top: `${position.y}px` }}
               >
