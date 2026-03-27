@@ -43,6 +43,12 @@ The current connection-authoring follow-on after that is:
 - clear replacement vs blocked target feedback
 - undo/redo-safe one-wire retargeting
 
+The current parameter-authoring follow-on after that is:
+- `Copy Params` from the current inspector target
+- `Apply Params To Selected` for same-definition sibling modules
+- explicit skip reporting for incompatible selections
+- one-step undo/redo for bulk parameter application
+
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
   - `ModExp` (modular exponentiation via repeated squaring)

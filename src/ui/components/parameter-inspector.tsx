@@ -87,7 +87,22 @@ interface ParameterInspectorProps {
   baselineModuleInstance: ModuleInstance | null;
   moduleDef: ModuleDefinition | null;
   moduleInstance: ModuleInstance | null;
+  selectedModuleIds: string[];
+  parameterClipboard: {
+    sourceModuleId: string;
+    sourceDefId: string;
+    params: Record<string, unknown>;
+    paramKeys: string[];
+  } | null;
   getParamDraft: (moduleId: string, key: string) => string | undefined;
+  onCopyParams: (moduleId: string) => void;
+  onApplyCopiedParams: (
+    sourceModuleId: string,
+    sourceDefId: string,
+    targetModuleIds: string[],
+    params: Record<string, unknown>,
+    paramKeys: string[],
+  ) => void;
   onParamDraftChange: (moduleId: string, key: string, rawValue: string) => void;
   onParamChange: (moduleId: string, key: string, value: unknown) => void;
   onSetModuleBypass: (moduleId: string, bypass: boolean) => void;
@@ -130,7 +145,11 @@ export function ParameterInspector({
   baselineModuleInstance,
   moduleDef,
   moduleInstance,
+  selectedModuleIds,
+  parameterClipboard,
   getParamDraft,
+  onCopyParams,
+  onApplyCopiedParams,
   onParamDraftChange,
   onParamChange,
   onSetModuleBypass,
@@ -256,6 +275,35 @@ export function ParameterInspector({
       moduleInstance.id,
     );
   }, [effectiveRenameDraft, moduleInstance, project.modules]);
+  const compatibleParamApplyTargetIds = useMemo(() => {
+    if (!moduleInstance || !moduleDef || !parameterClipboard) {
+      return [];
+    }
+
+    if (
+      parameterClipboard.sourceModuleId !== moduleInstance.id ||
+      parameterClipboard.sourceDefId !== moduleDef.id
+    ) {
+      return [];
+    }
+
+    return selectedModuleIds.filter((moduleId) => {
+      if (moduleId === moduleInstance.id) {
+        return false;
+      }
+
+      const targetModule = project.modules.find((projectModule) => projectModule.id === moduleId);
+      return targetModule?.defId === moduleDef.id;
+    });
+  }, [moduleDef, moduleInstance, parameterClipboard, project.modules, selectedModuleIds]);
+  const selectedIncompatibleParamTargetCount = useMemo(() => {
+    if (!moduleInstance || !moduleDef || compatibleParamApplyTargetIds.length === 0) {
+      return 0;
+    }
+
+    const nonSourceSelectionCount = selectedModuleIds.filter((moduleId) => moduleId !== moduleInstance.id).length;
+    return Math.max(0, nonSourceSelectionCount - compatibleParamApplyTargetIds.length);
+  }, [compatibleParamApplyTargetIds.length, moduleDef, moduleInstance, selectedModuleIds]);
   const groupedSelectedIssues = groupIssuesByTarget(selectedIssues);
   const groupedGlobalIssues = groupIssuesByTarget(globalIssues);
 
@@ -1522,6 +1570,35 @@ export function ParameterInspector({
             ) : null}
           </div>
           <div className="selected-module-actions">
+            {Object.values(moduleDef.paramSchema).length > 0 ? (
+              <button
+                type="button"
+                className="mini-action-button"
+                onClick={() => onCopyParams(moduleInstance.id)}
+              >
+                Copy Params
+              </button>
+            ) : null}
+            {parameterClipboard &&
+            parameterClipboard.sourceModuleId === moduleInstance.id &&
+            parameterClipboard.sourceDefId === moduleDef.id ? (
+              <button
+                type="button"
+                className="mini-action-button"
+                disabled={compatibleParamApplyTargetIds.length === 0}
+                onClick={() =>
+                  onApplyCopiedParams(
+                    parameterClipboard.sourceModuleId,
+                    parameterClipboard.sourceDefId,
+                    compatibleParamApplyTargetIds,
+                    parameterClipboard.params,
+                    parameterClipboard.paramKeys,
+                  )
+                }
+              >
+                Apply Params To Selected
+              </button>
+            ) : null}
             {canRenameModuleIds && onRenameModuleInstance ? (
               <button
                 type="button"
@@ -1583,6 +1660,24 @@ export function ParameterInspector({
               Delete Module
             </button>
           </div>
+          {parameterClipboard &&
+          parameterClipboard.sourceModuleId === moduleInstance.id &&
+          parameterClipboard.sourceDefId === moduleDef.id ? (
+            <div className="content-selector-card">
+              <p className="comparison-copy">
+                Copied parameter set from <strong>{moduleInstance.id}</strong>. Apply will target{' '}
+                <strong>{compatibleParamApplyTargetIds.length}</strong> selected {moduleDef.id}{' '}
+                module{compatibleParamApplyTargetIds.length === 1 ? '' : 's'}.
+              </p>
+              {selectedIncompatibleParamTargetCount > 0 ? (
+                <p className="comparison-copy">
+                  {selectedIncompatibleParamTargetCount} selected module
+                  {selectedIncompatibleParamTargetCount === 1 ? '' : 's'} will be skipped because
+                  they are not {moduleDef.id} instances.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
 
           {canBypassSelectedModule ? (
             <div className="content-selector-card">

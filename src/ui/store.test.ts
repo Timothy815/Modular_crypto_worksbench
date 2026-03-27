@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { V1_REGISTRY } from '../engine/modules';
 import { demoProjects } from './demo-projects';
 import { createInitialUiState, uiReducer } from './store';
 
@@ -362,6 +363,144 @@ describe('uiReducer', () => {
     });
 
     expect(undoneState.projectStates[projectId]).toEqual(initialState.projectStates[projectId]);
+  });
+
+  it('applies copied params only to same-definition selected targets and clears their drafts', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const lfsrDef = V1_REGISTRY.LFSR;
+    if (!lfsrDef) {
+      throw new Error('Expected LFSR definition.');
+    }
+
+    const seededState = uiReducer(
+      uiReducer(initialState, {
+        type: 'loadDocument',
+        projectId,
+        document: {
+          version: 1,
+          project: {
+            modules: [
+              {
+                id: 'lfsr-a',
+                defId: 'LFSR',
+                params: { seed: [1, 0, 1, 1, 0], taps: '0,2', outputLength: 5 },
+              },
+              {
+                id: 'lfsr-b',
+                defId: 'LFSR',
+                params: { seed: [0, 0, 0, 0, 1], taps: '1,3', outputLength: 3 },
+              },
+              {
+                id: 'sink',
+                defId: 'BitOutput',
+                params: {},
+              },
+            ],
+            connections: [
+              { from: { moduleId: 'lfsr-a', port: 'out' }, to: { moduleId: 'sink', port: 'in' } },
+            ],
+          },
+          ui: {
+            layout: {
+              'lfsr-a': { x: 40, y: 40 },
+              'lfsr-b': { x: 260, y: 40 },
+              sink: { x: 480, y: 40 },
+            },
+            annotations: [],
+          },
+        },
+      }),
+      {
+        type: 'setParamDraft',
+        projectId,
+        moduleId: 'lfsr-b',
+        key: 'taps',
+        rawValue: 'stale-draft',
+      },
+    );
+
+    const nextState = uiReducer(seededState, {
+      type: 'applyCopiedParams',
+      projectId,
+      sourceModuleId: 'lfsr-a',
+      sourceDefId: lfsrDef.id,
+      targetModuleIds: ['lfsr-b', 'sink'],
+      params: {
+        seed: [1, 0, 1, 1, 0],
+        taps: '0,2',
+        outputLength: 5,
+      },
+      paramKeys: ['seed', 'taps', 'outputLength'],
+    });
+
+    const targetModule = nextState.projectStates[projectId]?.modules.find(
+      (moduleInstance) => moduleInstance.id === 'lfsr-b',
+    );
+    const sinkModule = nextState.projectStates[projectId]?.modules.find(
+      (moduleInstance) => moduleInstance.id === 'sink',
+    );
+
+    expect(targetModule?.params.seed).toEqual([1, 0, 1, 1, 0]);
+    expect(targetModule?.params.taps).toBe('0,2');
+    expect(targetModule?.params.outputLength).toBe(5);
+    expect(sinkModule?.params).toEqual({});
+    expect(nextState.paramDrafts[`${projectId}:lfsr-b:taps`]).toBeUndefined();
+  });
+
+  it('undos copied param application in one history step', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const loadedState = uiReducer(initialState, {
+      type: 'loadDocument',
+      projectId,
+      document: {
+        version: 1,
+        project: {
+          modules: [
+            {
+              id: 'lfsr-a',
+              defId: 'LFSR',
+              params: { seed: [1, 0, 1, 1, 0], taps: '0,2', outputLength: 5 },
+            },
+            {
+              id: 'lfsr-b',
+              defId: 'LFSR',
+              params: { seed: [0, 0, 0, 0, 1], taps: '1,3', outputLength: 3 },
+            },
+          ],
+          connections: [],
+        },
+        ui: {
+          layout: {
+            'lfsr-a': { x: 40, y: 40 },
+            'lfsr-b': { x: 260, y: 40 },
+          },
+          annotations: [],
+        },
+      },
+    });
+
+    const appliedState = uiReducer(loadedState, {
+      type: 'applyCopiedParams',
+      projectId,
+      sourceModuleId: 'lfsr-a',
+      sourceDefId: 'LFSR',
+      targetModuleIds: ['lfsr-b'],
+      params: {
+        seed: [1, 0, 1, 1, 0],
+        taps: '0,2',
+        outputLength: 5,
+      },
+      paramKeys: ['seed', 'taps', 'outputLength'],
+    });
+
+    const undoneState = uiReducer(appliedState, {
+      type: 'undoWorkspaceHistory',
+      projectId,
+    });
+
+    expect(undoneState.projectStates[projectId]).toEqual(loadedState.projectStates[projectId]);
   });
 
   it('undoes and redoes recent workspace authoring actions', () => {

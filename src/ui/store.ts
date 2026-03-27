@@ -151,6 +151,15 @@ export type UiAction =
       toModuleId: string;
       toPort: string;
     }
+  | {
+      type: 'applyCopiedParams';
+      projectId: string;
+      sourceModuleId: string;
+      sourceDefId: string;
+      targetModuleIds: string[];
+      params: Record<string, unknown>;
+      paramKeys: string[];
+    }
   | { type: 'updateParam'; projectId: string; moduleId: string; key: string; value: unknown }
   | { type: 'setModuleBypass'; projectId: string; moduleId: string; bypass: boolean }
   | { type: 'setParamDraft'; projectId: string; moduleId: string; key: string; rawValue: string }
@@ -328,6 +337,7 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'addConnection',
   'removeConnection',
   'replaceConnection',
+  'applyCopiedParams',
   'updateParam',
   'setModuleBypass',
   'loadDocument',
@@ -1642,6 +1652,63 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         },
       };
     }
+    case 'applyCopiedParams': {
+      if (state.compositeEditor) {
+        return {
+          ...state,
+          compositeEditor: applyCopiedParamsToCompositeEditor(state.compositeEditor, action),
+        };
+      }
+
+      const currentProject = state.projectStates[action.projectId];
+      if (!currentProject || action.paramKeys.length === 0) {
+        return state;
+      }
+
+      const targetSet = new Set(action.targetModuleIds);
+      let changed = false;
+      const nextProject = cloneProject(currentProject);
+      nextProject.modules = nextProject.modules.map((moduleInstance) => {
+        if (
+          moduleInstance.id === action.sourceModuleId ||
+          !targetSet.has(moduleInstance.id) ||
+          moduleInstance.defId !== action.sourceDefId
+        ) {
+          return moduleInstance;
+        }
+
+        changed = true;
+        return {
+          ...moduleInstance,
+          params: {
+            ...moduleInstance.params,
+            ...Object.fromEntries(
+              action.paramKeys.map((key) => [key, action.params[key]]),
+            ),
+          },
+        };
+      });
+
+      if (!changed) {
+        return state;
+      }
+
+      const nextDrafts = { ...state.paramDrafts };
+      for (const moduleId of action.targetModuleIds) {
+        for (const key of action.paramKeys) {
+          delete nextDrafts[getDraftKey(action.projectId, moduleId, key)];
+        }
+      }
+
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: nextProject,
+        },
+        paramDrafts: nextDrafts,
+      };
+    }
     case 'updateParam': {
       if (state.compositeEditor) {
         return {
@@ -2789,6 +2856,55 @@ function replaceConnectionInCompositeEditor(
         },
       ],
     },
+    saveError: null,
+  };
+}
+
+function applyCopiedParamsToCompositeEditor(
+  editor: CompositeEditorState,
+  action: Extract<UiAction, { type: 'applyCopiedParams' }>,
+): CompositeEditorState {
+  if (action.paramKeys.length === 0) {
+    return editor;
+  }
+
+  const targetSet = new Set(action.targetModuleIds);
+  let changed = false;
+  const nextProject = cloneProject(editor.project);
+  nextProject.modules = nextProject.modules.map((moduleInstance) => {
+    if (
+      moduleInstance.id === action.sourceModuleId ||
+      !targetSet.has(moduleInstance.id) ||
+      moduleInstance.defId !== action.sourceDefId
+    ) {
+      return moduleInstance;
+    }
+
+    changed = true;
+    return {
+      ...moduleInstance,
+      params: {
+        ...moduleInstance.params,
+        ...Object.fromEntries(action.paramKeys.map((key) => [key, action.params[key]])),
+      },
+    };
+  });
+
+  if (!changed) {
+    return editor;
+  }
+
+  const nextDrafts = { ...editor.paramDrafts };
+  for (const moduleId of action.targetModuleIds) {
+    for (const key of action.paramKeys) {
+      delete nextDrafts[`${moduleId}:${key}`];
+    }
+  }
+
+  return {
+    ...editor,
+    project: nextProject,
+    paramDrafts: nextDrafts,
     saveError: null,
   };
 }

@@ -27,6 +27,7 @@ Current development now carries:
   - `WORKSPACE-VERSIONING-V1.md`
   - `WORKSPACE-VISIBILITY-NAVIGATION-V1.md`
   - `CONNECTION-AUTHORING-ERGONOMICS-V1.md`
+  - `PARAMETER-AUTHORING-ERGONOMICS-V1.md`
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -153,6 +154,12 @@ The current connection-authoring follow-on after that is:
 - drag from occupied inputs to rewire existing single-input connections
 - atomic replace/retarget behavior with undo/redo-safe history
 - explicit replacement vs blocked-target feedback during live connection drag
+
+The current parameter-authoring follow-on after that is:
+- copy the current module’s resolved params from the inspector
+- apply that param set to other explicitly selected same-definition modules
+- clear conflicting drafts on affected targets
+- keep one bulk-apply action as one undo/redo step
 
 Established and shipped:
 - implementation contract and AI coordination protocol

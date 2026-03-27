@@ -105,6 +105,13 @@ function createWorkspaceVersionId(projectId: string, timestamp: string) {
   return `${projectId}-version-${timestamp.replace(/[^0-9]/g, '')}`;
 }
 
+interface ParameterClipboardState {
+  sourceModuleId: string;
+  sourceDefId: string;
+  params: Record<string, unknown>;
+  paramKeys: string[];
+}
+
 function describeWorkspacePipeline(project: Project) {
   return project.modules.length > 0
     ? project.modules.map((moduleInstance) => moduleInstance.defId).join(' -> ')
@@ -174,6 +181,7 @@ function App() {
     const savedTheme = window.localStorage.getItem('mcw:theme');
     return savedTheme === 'dark' ? 'dark' : 'light';
   });
+  const [parameterClipboard, setParameterClipboard] = useState<ParameterClipboardState | null>(null);
   const [state, dispatch] = useReducer(
     uiReducer,
     demoProjects,
@@ -453,6 +461,9 @@ function App() {
   const selectedModuleDef = selectedModule
     ? (effectiveRegistry[selectedModule.defId] ?? null)
     : null;
+  const selectedModuleParamKeys = selectedModuleDef
+    ? Object.values(selectedModuleDef.paramSchema).map((field) => field.key)
+    : [];
   const compositeUsageCountById = Object.values(state.projectStates).reduce<Record<string, number>>(
     (counts, project) => {
       for (const moduleInstance of project.modules) {
@@ -1810,10 +1821,40 @@ function App() {
                 baselineExecutionError={baselineExecutionError}
                 moduleDef={selectedModuleDef}
                 moduleInstance={selectedModule}
+                selectedModuleIds={effectiveSelectedModuleIds}
+                parameterClipboard={parameterClipboard}
                 getParamDraft={(moduleId, key) =>
                   getDraftValue(state, activeProjectDefinition.id, moduleId, key)
                 }
                 baselineModuleInstance={baselineSelectedModule}
+                onCopyParams={(moduleId) => {
+                  if (!selectedModule || !selectedModuleDef || selectedModule.id !== moduleId) {
+                    return;
+                  }
+
+                  setParameterClipboard({
+                    sourceModuleId: selectedModule.id,
+                    sourceDefId: selectedModuleDef.id,
+                    params: Object.fromEntries(
+                      selectedModuleParamKeys.map((key) => [
+                        key,
+                        selectedModule.params[key] ?? selectedModuleDef.paramSchema[key]?.defaultValue,
+                      ]),
+                    ),
+                    paramKeys: selectedModuleParamKeys,
+                  });
+                }}
+                onApplyCopiedParams={(sourceModuleId, sourceDefId, targetModuleIds, params, paramKeys) =>
+                  dispatch({
+                    type: 'applyCopiedParams',
+                    projectId: activeProjectDefinition.id,
+                    sourceModuleId,
+                    sourceDefId,
+                    targetModuleIds,
+                    params,
+                    paramKeys,
+                  })
+                }
                 onParamDraftChange={(moduleId, key, rawValue) =>
                   dispatch({
                     type: 'setParamDraft',
