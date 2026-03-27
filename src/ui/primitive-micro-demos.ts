@@ -19,9 +19,9 @@ const MUX_MICRO_DEMO: PrimitiveMicroDemo = {
     project: {
       modules: [
         { id: 'mux', defId: 'Mux', params: {} },
-        { id: 'select', defId: 'BitSource', params: { bits: [1] } },
-        { id: 'input-a', defId: 'BitSource', params: { bits: [0] } },
-        { id: 'input-b', defId: 'BitSource', params: { bits: [1] } },
+        { id: 'select', defId: 'BitSource', params: { stream: [1] } },
+        { id: 'input-a', defId: 'BitSource', params: { stream: [0] } },
+        { id: 'input-b', defId: 'BitSource', params: { stream: [1] } },
         { id: 'out', defId: 'BitOutput', params: {} },
       ],
       connections: [
@@ -54,8 +54,8 @@ const DEMUX_MICRO_DEMO: PrimitiveMicroDemo = {
     project: {
       modules: [
         { id: 'demux', defId: 'Demux', params: {} },
-        { id: 'select', defId: 'BitSource', params: { bits: [1] } },
-        { id: 'input', defId: 'BitSource', params: { bits: [1] } },
+        { id: 'select', defId: 'BitSource', params: { stream: [1] } },
+        { id: 'input', defId: 'BitSource', params: { stream: [1] } },
         { id: 'out-a', defId: 'BitOutput', params: {} },
         { id: 'out-b', defId: 'BitOutput', params: {} },
       ],
@@ -89,8 +89,8 @@ const GATE_MICRO_DEMO: PrimitiveMicroDemo = {
     project: {
       modules: [
         { id: 'gate', defId: 'Gate', params: {} },
-        { id: 'signal', defId: 'BitSource', params: { bits: [1, 0, 1, 1] } },
-        { id: 'control', defId: 'BitSource', params: { bits: [1] } },
+        { id: 'signal', defId: 'BitSource', params: { stream: [1, 0, 1, 1] } },
+        { id: 'control', defId: 'BitSource', params: { stream: [1] } },
         { id: 'out', defId: 'BitOutput', params: {} },
       ],
       connections: [
@@ -121,8 +121,8 @@ const EQUALS_MICRO_DEMO: PrimitiveMicroDemo = {
     project: {
       modules: [
         { id: 'equals', defId: 'Equals', params: {} },
-        { id: 'left', defId: 'BitSource', params: { bits: [1, 0, 1, 0] } },
-        { id: 'right', defId: 'BitSource', params: { bits: [1, 0, 1, 0] } },
+        { id: 'left', defId: 'BitSource', params: { stream: [1, 0, 1, 0] } },
+        { id: 'right', defId: 'BitSource', params: { stream: [1, 0, 1, 0] } },
         { id: 'out', defId: 'BitOutput', params: {} },
       ],
       connections: [
@@ -153,8 +153,8 @@ const AT_LEAST_MICRO_DEMO: PrimitiveMicroDemo = {
     project: {
       modules: [
         { id: 'at-least', defId: 'AtLeast', params: {} },
-        { id: 'left', defId: 'BitSource', params: { bits: [1, 1, 0, 0] } },
-        { id: 'right', defId: 'BitSource', params: { bits: [1, 0, 1, 1] } },
+        { id: 'left', defId: 'BitSource', params: { stream: [1, 1, 0, 0] } },
+        { id: 'right', defId: 'BitSource', params: { stream: [1, 0, 1, 1] } },
         { id: 'out', defId: 'BitOutput', params: {} },
       ],
       connections: [
@@ -185,9 +185,9 @@ const MAJORITY_MICRO_DEMO: PrimitiveMicroDemo = {
     project: {
       modules: [
         { id: 'majority', defId: 'Majority', params: {} },
-        { id: 'input-a', defId: 'BitSource', params: { bits: [1] } },
-        { id: 'input-b', defId: 'BitSource', params: { bits: [0] } },
-        { id: 'input-c', defId: 'BitSource', params: { bits: [1] } },
+        { id: 'input-a', defId: 'BitSource', params: { stream: [1] } },
+        { id: 'input-b', defId: 'BitSource', params: { stream: [0] } },
+        { id: 'input-c', defId: 'BitSource', params: { stream: [1] } },
         { id: 'out', defId: 'BitOutput', params: {} },
       ],
       connections: [
@@ -226,4 +226,3 @@ const PRIMITIVE_MICRO_DEMO_BY_DEF_ID = Object.fromEntries(
 export function getPrimitiveMicroDemo(defId: string): PrimitiveMicroDemo | null {
   return PRIMITIVE_MICRO_DEMO_BY_DEF_ID[defId] ?? null;
 }
-
