@@ -1,4 +1,5 @@
 import { isCompositeDefinition, isIteratorDefinition } from '../composites';
+import { deriveTickCount } from '../executor';
 import type {
   ConnectionEndpoint,
   ModuleDefinition,
@@ -56,6 +57,28 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'BitSplit',
   'BitPad',
   'BitUnpad',
+  'BitWindow',
+  'BitShifter',
+  'Clock',
+  'Counter',
+]);
+
+const SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS = new Set(['Clock', 'Counter']);
+const SUPPORTED_STATEFUL_PYTHON_EXPORT_COMPANION_DEF_IDS = new Set([
+  'BitSource',
+  'BitOutput',
+  'HexOutput',
+  'BitsToHex',
+  'Equals',
+  'AtLeast',
+  'GreaterThan',
+  'Gate',
+  'Mux',
+  'Demux',
+  'MultiRouter',
+  'BitJoin',
+  'BitSplit',
+  'BitPad',
   'BitWindow',
   'BitShifter',
 ]);
@@ -135,6 +158,11 @@ def ascii_source(value):
 
 def bit_source(stream):
     return {"out": _expect_bits(stream, "BitSource")}
+
+
+def bit_source_tick(stream, tick):
+    bits = _expect_bits(stream, "BitSource")
+    return {"out": [bits[tick]] if tick < len(bits) else []}
 
 
 def hex_source(value):
@@ -669,6 +697,48 @@ def format_bit_sink(value):
 
 def format_hex_sink(value):
     return str(value).upper()
+
+
+def clock_tick(period, offset, length, tick):
+    period = max(1, int(period))
+    offset = max(0, int(offset))
+    length = max(0, int(length))
+    if tick >= length:
+        return {"pulse": []}
+    adjusted = tick - offset
+    active = adjusted >= 0 and adjusted % period == 0
+    return {"pulse": [1 if active else 0]}
+
+
+def counter_init(width, value, step):
+    width = int(width)
+    step = int(step)
+    value = int(value)
+    if width <= 0:
+        raise ValueError('Counter requires "width" to be a positive integer')
+    if step <= 0:
+        raise ValueError('Counter requires "step" to be a positive integer')
+    if value < 0:
+        raise ValueError('Counter requires "value" to be a non-negative integer')
+    modulus = 2 ** width
+    return {
+        "width": width,
+        "value": value % modulus,
+        "step": step,
+    }
+
+
+def counter_eval(state):
+    return {"out": _unsigned_number_to_bits(state["value"], state["width"])}
+
+
+def counter_advance(state):
+    modulus = 2 ** state["width"]
+    state["value"] = (state["value"] + state["step"]) % modulus
+
+
+def format_ticked_sink_line(tick, module_id, value):
+    return f"tick {tick} | {module_id}: {value}"
 `;
 
 export interface PythonExportCompatibilityIssue {
@@ -729,7 +799,7 @@ function buildPythonVariableMap(project: Project) {
   return variables;
 }
 
-function buildTopologicalOrder(project: Project): string[] {
+function buildTopologicalOrder(project: Project, registry: ModuleRegistry): string[] {
   const adjacency = new Map<string, string[]>();
   const indegree = new Map<string, number>();
 
@@ -739,6 +809,11 @@ function buildTopologicalOrder(project: Project): string[] {
   }
 
   for (const connection of project.connections) {
+    const targetInstance = project.modules.find((moduleInstance) => moduleInstance.id === connection.to.moduleId);
+    const targetDef = targetInstance ? registry[targetInstance.defId] : null;
+    if (connection.to.port === 'clock' && targetDef && isStatefulModule(targetDef)) {
+      continue;
+    }
     adjacency.get(connection.from.moduleId)?.push(connection.to.moduleId);
     indegree.set(connection.to.moduleId, (indegree.get(connection.to.moduleId) ?? 0) + 1);
   }
@@ -769,6 +844,20 @@ function buildTopologicalOrder(project: Project): string[] {
   }
 
   return order;
+}
+
+function getClockConnectionMap(project: Project, registry: ModuleRegistry) {
+  const clockConnections = new Map<string, ConnectionEndpoint>();
+
+  for (const connection of project.connections) {
+    const targetInstance = project.modules.find((moduleInstance) => moduleInstance.id === connection.to.moduleId);
+    const targetDef = targetInstance ? registry[targetInstance.defId] : null;
+    if (connection.to.port === 'clock' && targetDef && isStatefulModule(targetDef)) {
+      clockConnections.set(connection.to.moduleId, connection.from);
+    }
+  }
+
+  return clockConnections;
 }
 
 function getResolvedParamValue(moduleInstance: ModuleInstance, def: ModuleDefinition, key: string) {
@@ -965,6 +1054,10 @@ export function getPythonExportCompatibility(
   registry: ModuleRegistry,
 ): PythonExportCompatibilityResult {
   const issues: PythonExportCompatibilityIssue[] = [];
+  const hasStatefulSupportCandidate = project.modules.some((moduleInstance) => {
+    const def = registry[moduleInstance.defId];
+    return def && SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS.has(def.id);
+  });
 
   for (const moduleInstance of project.modules) {
     const def = registry[moduleInstance.defId];
@@ -1004,11 +1097,11 @@ export function getPythonExportCompatibility(
       continue;
     }
 
-    if (isStatefulModule(def) || (isTickSliceable(def) && !SUPPORTED_PYTHON_EXPORT_DEF_IDS.has(def.id))) {
+    if (isStatefulModule(def) && !SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS.has(def.id)) {
       issues.push({
         moduleId: moduleInstance.id,
         defId: moduleInstance.defId,
-        reason: 'Stateful or ticked execution is not exportable in V1.',
+        reason: 'This stateful or ticked primitive is outside the Python export stateful supported subset.',
       });
       continue;
     }
@@ -1019,7 +1112,29 @@ export function getPythonExportCompatibility(
         defId: moduleInstance.defId,
         reason: 'This primitive is outside the Python export V1 supported subset.',
       });
+      continue;
     }
+
+    if (
+      hasStatefulSupportCandidate &&
+      isTickSliceable(def) &&
+      !SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS.has(def.id) &&
+      !SUPPORTED_STATEFUL_PYTHON_EXPORT_COMPANION_DEF_IDS.has(def.id)
+    ) {
+      issues.push({
+        moduleId: moduleInstance.id,
+        defId: moduleInstance.defId,
+        reason: 'This tick-sliceable primitive is outside the Python export stateful companion subset.',
+      });
+    }
+  }
+
+  if (hasStatefulSupportCandidate && deriveTickCount(project, registry) === null) {
+    issues.push({
+      moduleId: 'project',
+      defId: 'TickLoop',
+      reason: 'Stateful Python export requires at least one tick-sliceable source to derive tick count.',
+    });
   }
 
   return {
@@ -1047,7 +1162,16 @@ export function generatePythonExport(project: Project, registry: ModuleRegistry)
     throw new Error(formatPythonExportCompatibilityIssues(compatibility.issues));
   }
 
-  const order = buildTopologicalOrder(project);
+  const hasStatefulModules = project.modules.some((moduleInstance) => {
+    const def = registry[moduleInstance.defId];
+    return def && SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS.has(def.id);
+  });
+
+  if (hasStatefulModules) {
+    return generateStatefulPythonExport(project, registry);
+  }
+
+  const order = buildTopologicalOrder(project, registry);
   const instancesById = getModuleInstanceMap(project);
   const variablesByModuleId = buildPythonVariableMap(project);
   const connectionsByTarget = getInputConnectionMap(project);
@@ -1080,6 +1204,123 @@ export function generatePythonExport(project: Project, registry: ModuleRegistry)
   }
 
   bodyLines.push('    return sink_outputs', '', 'def main():', '    for module_id, value in run():', '        print(f"{module_id}: {value}")', '', 'if __name__ == "__main__":', '    main()');
+
+  return `${PYTHON_RUNTIME}\n\n${bodyLines.join('\n')}\n`;
+}
+
+function generateStatefulPythonExport(project: Project, registry: ModuleRegistry) {
+  const tickCount = deriveTickCount(project, registry);
+  if (tickCount === null) {
+    throw new Error('Stateful Python export requires at least one tick-sliceable source.');
+  }
+
+  const order = buildTopologicalOrder(project, registry);
+  const instancesById = getModuleInstanceMap(project);
+  const variablesByModuleId = buildPythonVariableMap(project);
+  const connectionsByTarget = getInputConnectionMap(project);
+  const clockConnectionsByModuleId = getClockConnectionMap(project, registry);
+  const bodyLines: string[] = ['def run_ticks():', `    tick_count = ${tickCount}`, '    sink_output_lines = []'];
+
+  for (const moduleInstance of project.modules) {
+    const def = registry[moduleInstance.defId];
+    if (!def || isCompositeDefinition(def) || isIteratorDefinition(def)) {
+      continue;
+    }
+
+    if (def.id === 'Counter') {
+      const variableName = variablesByModuleId.get(moduleInstance.id);
+      if (!variableName) {
+        throw new Error(`Python export could not resolve a variable for "${moduleInstance.id}".`);
+      }
+      bodyLines.push(
+        `    ${variableName}_state = counter_init(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'width'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'step'))})`,
+      );
+    }
+  }
+
+  bodyLines.push('', '    for tick in range(tick_count):');
+
+  for (const moduleId of order) {
+    const moduleInstance = instancesById.get(moduleId);
+    if (!moduleInstance) {
+      throw new Error(`Python export could not resolve module "${moduleId}".`);
+    }
+
+    const def = registry[moduleInstance.defId];
+    if (!def || isCompositeDefinition(def) || isIteratorDefinition(def)) {
+      throw new Error(`Python export encountered unsupported definition "${moduleInstance.defId}".`);
+    }
+
+    if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id)) {
+      const inputExpression = getInputExpression(connectionsByTarget, variablesByModuleId, moduleInstance.id, 'in');
+      if (SYMBOL_SINK_DEF_IDS.has(def.id)) {
+        bodyLines.push(`        sink_output_lines.append(format_ticked_sink_line(tick, ${JSON.stringify(moduleInstance.id)}, format_symbol_sink(${inputExpression})))`);
+      } else if (BIT_SINK_DEF_IDS.has(def.id)) {
+        bodyLines.push(`        sink_output_lines.append(format_ticked_sink_line(tick, ${JSON.stringify(moduleInstance.id)}, format_bit_sink(${inputExpression})))`);
+      } else {
+        bodyLines.push(`        sink_output_lines.append(format_ticked_sink_line(tick, ${JSON.stringify(moduleInstance.id)}, format_hex_sink(${inputExpression})))`);
+      }
+      continue;
+    }
+
+    const variableName = variablesByModuleId.get(moduleId);
+    if (!variableName) {
+      throw new Error(`Python export could not resolve a variable for "${moduleId}".`);
+    }
+
+    if (def.id === 'Clock') {
+      bodyLines.push(
+        `        ${variableName} = clock_tick(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'period'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'offset'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'length'))}, tick)`,
+      );
+      continue;
+    }
+
+    if (def.id === 'Counter') {
+      bodyLines.push(`        ${variableName} = counter_eval(${variableName}_state)`);
+      continue;
+    }
+
+    if (def.id === 'BitSource') {
+      bodyLines.push(
+        `        ${variableName} = bit_source_tick(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'stream'))}, tick)`,
+      );
+      continue;
+    }
+
+    bodyLines.push(
+      `        ${variableName} = ${buildModuleExpression(moduleInstance, def, connectionsByTarget, variablesByModuleId)}`,
+    );
+  }
+
+  for (const moduleInstance of project.modules) {
+    const def = registry[moduleInstance.defId];
+    if (!def || def.id !== 'Counter') {
+      continue;
+    }
+
+    const variableName = variablesByModuleId.get(moduleInstance.id);
+    if (!variableName) {
+      throw new Error(`Python export could not resolve a variable for "${moduleInstance.id}".`);
+    }
+
+    const clockConnection = clockConnectionsByModuleId.get(moduleInstance.id);
+    if (!clockConnection) {
+      bodyLines.push(`        counter_advance(${variableName}_state)`);
+      continue;
+    }
+
+    const upstreamVariable = variablesByModuleId.get(clockConnection.moduleId);
+    if (!upstreamVariable) {
+      throw new Error(`Python export could not resolve module "${clockConnection.moduleId}".`);
+    }
+
+    bodyLines.push(
+      `        if _is_active_control_pulse(${upstreamVariable}[${JSON.stringify(clockConnection.port)}]):`,
+      `            counter_advance(${variableName}_state)`,
+    );
+  }
+
+  bodyLines.push('', '    return sink_output_lines', '', 'def main():', '    for line in run_ticks():', '        print(line)', '', 'if __name__ == "__main__":', '    main()');
 
   return `${PYTHON_RUNTIME}\n\n${bodyLines.join('\n')}\n`;
 }

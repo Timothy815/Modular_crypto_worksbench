@@ -154,9 +154,11 @@ The fourth careful Python export expansion is now also shipped:
 - `BitsToBaudot` and `BaudotOutput` export support
 - parity-tested stateless Baudot decoding export path
 
-The next export frontier is now explicitly documented as:
+The first bounded stateful export frontier is now shipped:
 - `PYTHON-EXPORT-STATEFUL-FOUNDATIONS-V1.md`
 - a first bounded ticked export slice for `Clock` and `Counter`
+- one explicit exported tick loop with parity against `executeTickedProject()`
+- stable per-tick sink output lines in `tick <n> | <module_id>: <value>` form
 - deliberately kept separate from rotor, LFSR, and broader temporal runtime expansion
 
 The current near-future workspace-layout ergonomics item after that is:

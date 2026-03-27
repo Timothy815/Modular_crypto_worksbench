@@ -2,7 +2,7 @@
 
 Last updated: March 27, 2026
 
-Status: Proposed next export line
+Status: Implemented
 
 ---
 
@@ -67,7 +67,7 @@ The generated file must:
 - contain the runtime helpers it needs
 - contain a `run_ticks()` function or equivalent explicit tick loop
 - preserve visible tick-to-tick state changes in readable Python
-- print sink outputs using the existing sink formatting rules
+- print sink outputs using the existing sink formatting rules, one sink line per tick
 
 The output should remain readable, topological, and explicit rather than optimized.
 
@@ -141,6 +141,13 @@ V1 parity target is:
 
 For supported workspaces, generated Python must produce sink outputs equivalent to MCW’s ticked execution for the same project, params, and tick count.
 
+The first stateful slice must mirror MCW tick semantics exactly for the supported subset:
+- `Clock` output is computed per tick using the same tick-slice behavior as MCW
+- `Counter` evaluates its current value before any tick-end advance
+- `Counter` advances at the end of a tick
+- if a `Counter.clock` input is connected, advance happens only on an active `[1]` pulse
+- if a `Counter.clock` input is unconnected, advance happens every tick
+
 Export requires:
 - normal MCW graph validation to pass
 - compatibility checking for the supported stateful export subset to pass
@@ -161,6 +168,9 @@ That file should contain:
 4. one `run_ticks()` function that executes the workspace for a declared number of ticks
 5. one `main()` function that invokes `run_ticks()` and prints sink outputs
 
+Sink lines must print in stable per-tick form:
+- `tick <n> | <module_id>: <value>`
+
 Python stdlib only.
 Target Python `3.8+`.
 
@@ -176,7 +186,7 @@ The first stateful slice must keep state representation simple and visible:
 
 The generated code should read like:
 - initialize module state
-- for each tick: advance, evaluate, capture sinks
+- for each tick: evaluate, capture sinks, then advance
 
 not like a generic opaque interpreter.
 
@@ -207,6 +217,9 @@ V1 should not attempt:
 - exported runtime controls
 
 The export should embed or derive one concrete tick count exactly as MCW does for the supported subset.
+
+For V1, export must derive tick count using the same minimum tick-sliceable-source rule as MCW.
+If no tick-sliceable source is present, stateful export must fail clearly.
 
 ---
 

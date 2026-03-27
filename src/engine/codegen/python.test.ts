@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 
 import { describe, expect, it } from 'vitest';
 
-import { executeProject } from '../executor';
+import { deriveTickCount, executeProject, executeTickedProject } from '../executor';
 import { V1_REGISTRY } from '../modules';
 import { generatePythonExport, getPythonExportCompatibility } from './python';
 import type { ModuleRegistry, Project, Signal } from '../types';
@@ -48,6 +48,31 @@ function getExpectedSinkLines(project: Project, registry: ModuleRegistry) {
     });
 }
 
+function getExpectedTickedSinkLines(project: Project, registry: ModuleRegistry) {
+  const tickCount = deriveTickCount(project, registry);
+  if (tickCount === null) {
+    throw new Error('Expected a derived tick count for a ticked parity workspace');
+  }
+
+  const result = executeTickedProject(project, registry, tickCount);
+
+  return result.ticks.flatMap((tickResult, tickIndex) => {
+    const traceByModuleId = new Map(tickResult.trace.map((entry) => [entry.moduleId, entry]));
+
+    return project.modules
+      .filter((moduleInstance) =>
+        ['Output', 'TextOutput', 'BaudotOutput', 'BitOutput', 'HexOutput'].includes(moduleInstance.defId),
+      )
+      .map((moduleInstance) => {
+        const traceEntry = traceByModuleId.get(moduleInstance.id);
+        if (!traceEntry?.inputs.in) {
+          throw new Error(`Missing sink input for ${moduleInstance.id} at tick ${tickIndex}`);
+        }
+        return `tick ${tickIndex} | ${moduleInstance.id}: ${formatExpectedSinkValue(moduleInstance.defId, traceEntry.inputs.in)}`;
+      });
+  });
+}
+
 function executeGeneratedPython(source: string) {
   const tempFilePath = path.join(
     os.tmpdir(),
@@ -67,7 +92,7 @@ describe('getPythonExportCompatibility', () => {
   it('rejects unsupported stateful modules and bypassed modules', () => {
     const incompatibleProject: Project = {
       modules: [
-        { id: 'clock-1', defId: 'Clock', params: {} },
+        { id: 'lfsr-1', defId: 'LFSR', params: { width: 4, taps: '0,1', value: '1,0,0,1' } },
         { id: 'bits-1', defId: 'BitSource', params: { stream: [1, 0, 1, 0] }, bypass: true },
       ],
       connections: [],
@@ -78,9 +103,9 @@ describe('getPythonExportCompatibility', () => {
     expect(compatibility.ok).toBe(false);
     expect(compatibility.issues).toEqual([
       {
-        moduleId: 'clock-1',
-        defId: 'Clock',
-        reason: 'Stateful or ticked execution is not exportable in V1.',
+        moduleId: 'lfsr-1',
+        defId: 'LFSR',
+        reason: 'This stateful or ticked primitive is outside the Python export stateful supported subset.',
       },
       {
         moduleId: 'bits-1',
@@ -362,5 +387,53 @@ parityDescribe('generatePythonExport', () => {
 
     expect(execution.status).toBe(0);
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeTickedProject for a clocked counter workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'clock-1', defId: 'Clock', params: { period: 1, offset: 0, length: 4 } },
+        { id: 'counter-1', defId: 'Counter', params: { width: 3, value: 0, step: 1 } },
+        { id: 'bits-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'counter-1', port: 'clock' } },
+        { from: { moduleId: 'counter-1', port: 'out' }, to: { moduleId: 'bits-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeTickedProject for a gated counter workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'clock-1', defId: 'Clock', params: { period: 1, offset: 0, length: 6 } },
+        { id: 'counter-1', defId: 'Counter', params: { width: 3, value: 0, step: 1 } },
+        { id: 'counter-2', defId: 'Counter', params: { width: 3, value: 0, step: 2 } },
+        { id: 'gt-1', defId: 'GreaterThan', params: {} },
+        { id: 'gate-1', defId: 'Gate', params: {} },
+        { id: 'bits-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'counter-1', port: 'clock' } },
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'counter-2', port: 'clock' } },
+        { from: { moduleId: 'counter-1', port: 'out' }, to: { moduleId: 'gt-1', port: 'a' } },
+        { from: { moduleId: 'counter-2', port: 'out' }, to: { moduleId: 'gt-1', port: 'b' } },
+        { from: { moduleId: 'counter-1', port: 'out' }, to: { moduleId: 'gate-1', port: 'in' } },
+        { from: { moduleId: 'gt-1', port: 'out' }, to: { moduleId: 'gate-1', port: 'control' } },
+        { from: { moduleId: 'gate-1', port: 'out' }, to: { moduleId: 'bits-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, V1_REGISTRY));
   });
 });
