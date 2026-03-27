@@ -154,6 +154,11 @@ The fourth careful Python export expansion is now also shipped:
 - `BitsToBaudot` and `BaudotOutput` export support
 - parity-tested stateless Baudot decoding export path
 
+The next export frontier is now explicitly documented as:
+- `PYTHON-EXPORT-STATEFUL-FOUNDATIONS-V1.md`
+- a first bounded ticked export slice for `Clock` and `Counter`
+- deliberately kept separate from rotor, LFSR, and broader temporal runtime expansion
+
 The current near-future workspace-layout ergonomics item after that is:
 - bounded multi-window / multi-tab support for selected surfaces
 - likely `Inspector` and `Palette` first

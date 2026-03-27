@@ -81,6 +81,10 @@ Current `main` now also includes:
   - `BitsToBaudot`
   - `BaudotOutput`
   - parity-tested stateless Baudot decoding export path
+- next export frontier:
+  - `PYTHON-EXPORT-STATEFUL-FOUNDATIONS-V1.md`
+  - first bounded ticked export slice proposed for `Clock` and `Counter`
+  - intended as the proving ground for readable temporal Python export before rotor or LFSR support
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments
