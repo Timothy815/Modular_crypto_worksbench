@@ -5,6 +5,7 @@ import type { ModuleRegistry, Project } from './types';
 import { AtLeast } from './modules/at-least';
 import { Counter } from './modules/counter';
 import { Clock } from './modules/clock';
+import { Demux } from './modules/demux';
 import { Gate } from './modules/gate';
 import { KeyInput } from './modules/key-input';
 import { LFSR } from './modules/lfsr';
@@ -49,6 +50,44 @@ const RotorDoubleStepControl: CompositeDef = {
   ],
   outputBindings: [
     { externalPort: 'step', internalModuleId: 'step-gate', internalPort: 'out' },
+  ],
+};
+
+const RotorControlBankRouter: CompositeDef = {
+  id: 'RotorControlBankRouter',
+  name: 'Rotor Control Bank Router',
+  kind: 'composite',
+  version: 1,
+  inputs: [
+    { name: 'pulse', type: 'bits' },
+    { name: 'enable', type: 'bits' },
+    { name: 'select', type: 'bits' },
+  ],
+  outputs: [
+    { name: 'stepA', type: 'bits' },
+    { name: 'stepB', type: 'bits' },
+  ],
+  paramSchema: {},
+  project: {
+    modules: [
+      { id: 'enable-gate', defId: 'Gate', params: {} },
+      { id: 'step-demux', defId: 'Demux', params: {} },
+    ],
+    connections: [
+      {
+        from: { moduleId: 'enable-gate', port: 'out' },
+        to: { moduleId: 'step-demux', port: 'in' },
+      },
+    ],
+  },
+  inputBindings: [
+    { externalPort: 'pulse', internalModuleId: 'enable-gate', internalPort: 'in' },
+    { externalPort: 'enable', internalModuleId: 'enable-gate', internalPort: 'control' },
+    { externalPort: 'select', internalModuleId: 'step-demux', internalPort: 'select' },
+  ],
+  outputBindings: [
+    { externalPort: 'stepA', internalModuleId: 'step-demux', internalPort: 'a' },
+    { externalPort: 'stepB', internalModuleId: 'step-demux', internalPort: 'b' },
   ],
 };
 
@@ -251,6 +290,93 @@ describe('Signal-driven advance', () => {
 
       expect(result.ticks[0].outputsByModuleId.middle.turnover.value).toEqual([1]);
       expect(result.ticks[1].outputsByModuleId.right.turnover.value).toEqual([1]);
+    });
+
+    it('lets one visible rotor bank route step pulses into a separate driven bank', () => {
+      const registry: ModuleRegistry = {
+        Clock,
+        Demux,
+        Gate,
+        Rotor,
+        TextInput,
+        Output,
+        RotorControlBankRouter,
+      };
+
+      const project: Project = {
+        modules: [
+          { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 4 } },
+          { id: 'text', defId: 'TextInput', params: { value: 'AAAA' } },
+          {
+            id: 'control-enable',
+            defId: 'Rotor',
+            params: {
+              wiring: 'BDFHJLCPRTXVZNYEIWGAKMUSQO'.split(''),
+              position: 0,
+              ringOffset: 0,
+              notches: 'A,C',
+            },
+          },
+          {
+            id: 'control-select',
+            defId: 'Rotor',
+            params: {
+              wiring: 'AJDKSIRUXBLHWTMCQGZNPYFVOE'.split(''),
+              position: 0,
+              ringOffset: 0,
+              notches: 'A',
+            },
+          },
+          {
+            id: 'driven-left',
+            defId: 'Rotor',
+            params: {
+              wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''),
+              position: 0,
+              ringOffset: 0,
+              notches: '',
+            },
+          },
+          {
+            id: 'driven-right',
+            defId: 'Rotor',
+            params: {
+              wiring: 'BDFHJLCPRTXVZNYEIWGAKMUSQO'.split(''),
+              position: 0,
+              ringOffset: 0,
+              notches: '',
+            },
+          },
+          { id: 'control-router', defId: 'RotorControlBankRouter', params: {} },
+          { id: 'out', defId: 'Output', params: {} },
+        ],
+        connections: [
+          { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'control-enable', port: 'in' } },
+          { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'control-select', port: 'in' } },
+          { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'driven-right', port: 'in' } },
+          { from: { moduleId: 'driven-right', port: 'out' }, to: { moduleId: 'driven-left', port: 'in' } },
+          { from: { moduleId: 'driven-left', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+          { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'control-enable', port: 'clock' } },
+          { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'control-select', port: 'clock' } },
+          { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'control-router', port: 'pulse' } },
+          { from: { moduleId: 'control-enable', port: 'turnover' }, to: { moduleId: 'control-router', port: 'enable' } },
+          { from: { moduleId: 'control-select', port: 'turnover' }, to: { moduleId: 'control-router', port: 'select' } },
+          { from: { moduleId: 'control-router', port: 'stepA' }, to: { moduleId: 'driven-left', port: 'clock' } },
+          { from: { moduleId: 'control-router', port: 'stepB' }, to: { moduleId: 'driven-right', port: 'clock' } },
+        ],
+      };
+
+      const result = executeTickedProject(project, registry, 4);
+
+      expect(result.paramsByModuleByTick['control-enable'].map((params) => params.position)).toEqual([0, 1, 2, 3]);
+      expect(result.paramsByModuleByTick['control-select'].map((params) => params.position)).toEqual([0, 1, 2, 3]);
+      expect(result.paramsByModuleByTick['driven-right'].map((params) => params.position)).toEqual([0, 1, 1, 1]);
+      expect(result.paramsByModuleByTick['driven-left'].map((params) => params.position)).toEqual([0, 0, 0, 1]);
+
+      expect(result.ticks[0].outputsByModuleId['control-router'].stepA.value).toEqual([0]);
+      expect(result.ticks[0].outputsByModuleId['control-router'].stepB.value).toEqual([1]);
+      expect(result.ticks[2].outputsByModuleId['control-router'].stepA.value).toEqual([1]);
+      expect(result.ticks[2].outputsByModuleId['control-router'].stepB.value).toEqual([0]);
     });
 
     it('rotor without clock advances every tick', () => {

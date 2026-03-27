@@ -2,7 +2,7 @@
 
 Last updated: March 27, 2026
 
-Status: Draft future contract
+Status: Implemented on `feature/rotor-control-bank`
 
 ---
 
@@ -189,3 +189,22 @@ Not:
 - full SIGABA support
 - not a hidden rotor scheduler
 - not a broad control-language overhaul
+
+---
+
+## Implemented Outcome
+
+V1 shipped as one built-in reusable composite:
+- `RotorControlBankRouter`
+
+It packages one explicit control-bank pulse pattern:
+- gate the base `pulse` with an `enable` bit
+- route the surviving pulse between two outputs with a one-bit `select`
+- emit visible `stepA` / `stepB` pulses for a separate driven rotor bank
+
+This was applied to a new `Rotor Control Bank` demo/tutorial where:
+- one visible control rotor emits the enable bit
+- one visible control rotor emits the select bit
+- one visible pulse-routing layer decides which driven rotor advances
+
+The slice remains explicitly SIGABA-like in spirit only. It does not claim full historical fidelity.

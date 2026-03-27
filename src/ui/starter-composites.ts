@@ -61,6 +61,73 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
     },
   },
   {
+    id: 'RotorControlBankRouter',
+    name: 'Rotor Control Bank Router',
+    version: 1,
+    source: 'built-in',
+    definition: {
+      id: 'RotorControlBankRouter',
+      name: 'Rotor Control Bank Router',
+      kind: 'composite',
+      version: 1,
+      inputs: [
+        { name: 'pulse', type: 'bits' },
+        { name: 'enable', type: 'bits' },
+        { name: 'select', type: 'bits' },
+      ],
+      outputs: [
+        { name: 'stepA', type: 'bits' },
+        { name: 'stepB', type: 'bits' },
+      ],
+      paramSchema: {},
+      project: {
+        modules: [
+          { id: 'enable-gate', defId: 'Gate', params: {} },
+          { id: 'step-demux', defId: 'Demux', params: {} },
+        ],
+        connections: [
+          {
+            from: { moduleId: 'enable-gate', port: 'out' },
+            to: { moduleId: 'step-demux', port: 'in' },
+          },
+        ],
+      },
+      inputBindings: [
+        {
+          externalPort: 'pulse',
+          internalModuleId: 'enable-gate',
+          internalPort: 'in',
+        },
+        {
+          externalPort: 'enable',
+          internalModuleId: 'enable-gate',
+          internalPort: 'control',
+        },
+        {
+          externalPort: 'select',
+          internalModuleId: 'step-demux',
+          internalPort: 'select',
+        },
+      ],
+      outputBindings: [
+        {
+          externalPort: 'stepA',
+          internalModuleId: 'step-demux',
+          internalPort: 'a',
+        },
+        {
+          externalPort: 'stepB',
+          internalModuleId: 'step-demux',
+          internalPort: 'b',
+        },
+      ],
+      layout: {
+        'enable-gate': { x: 48, y: 48 },
+        'step-demux': { x: 256, y: 48 },
+      },
+    },
+  },
+  {
     id: 'FeistelRoundComposite',
     name: 'Feistel Round',
     version: 1,

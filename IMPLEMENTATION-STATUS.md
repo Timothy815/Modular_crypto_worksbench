@@ -242,10 +242,11 @@ The current shipped rotor-driven-stepping follow-on after that is:
 - applied to the `Advanced Rotor Stepping` teaching surface as reusable middle-rotor double-step logic
 - explicitly kept separate from generic control-flow or executor redesign
 
-The current next rotor-control follow-on after that is:
+The current shipped rotor-control follow-on after that is:
 - one bounded visible control-bank pattern where one rotor bank contributes stepping pulses for another
-- intended as the first SIGABA-like authored direction without claiming full historical fidelity
-- explicitly separate from hidden scheduling and executor redesign
+- shipped as built-in `RotorControlBankRouter`
+- demonstrated in the `Rotor Control Bank` teaching surface
+- explicitly SIGABA-like in spirit only, and still separate from hidden scheduling or executor redesign
 
 The current near-future strategic export item after that is:
 - bounded Python export foundations for turning a workspace into standalone executable code
