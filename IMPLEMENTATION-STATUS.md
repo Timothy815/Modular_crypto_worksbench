@@ -72,6 +72,11 @@ Current near-future sequencing is now explicit:
 - refactor the largest UI surfaces third
 - keep multi-window workspace support as a deliberate next-tier priority after those lines
 
+The next recommended builder-power follow-on is now documented:
+- `CLUSTER-BOUNDARY-PORT-AUTHORING-V1.md`
+- explicit include/exclude control over inferred composite boundary ports during capture
+- intended as the next structural throughput improvement after stage assembly and composite reuse ergonomics
+
 Current `main` now also includes the first inspector-maintenance slice:
 - `INSPECTOR-REFACTOR-V1.md`
 - extracted pure analysis helpers in `src/ui/inspector-analysis.ts`

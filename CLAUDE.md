@@ -64,6 +64,7 @@ Read V2.1-NEXT-DOCKET.md before reordering the current near-future priorities ac
 Read INSPECTOR-REFACTOR-V1.md before restructuring `parameter-inspector.tsx`, moving more inspector logic into helper modules, or beginning a larger inspector decomposition pass.
 Read WORKBENCH-REFACTOR-V1.md before restructuring `workbench-panel.tsx`, moving more workbench helper logic into extracted modules, or beginning a larger workbench decomposition pass.
 Read STAGE-ASSEMBLY-ERGONOMICS-V1.md before changing selected stage-row / stage-column layout actions or broader stage-oriented builder-power assembly helpers.
+Read CLUSTER-BOUNDARY-PORT-AUTHORING-V1.md before changing inferred composite boundary-port capture, adding capture-time boundary controls, or expanding composite-boundary authoring behavior.
 Read MULTI-WINDOW-WORKSPACE-V1.md before proposing detachable panels, multi-tab workspace surfaces, or multi-window synchronized editing.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.
