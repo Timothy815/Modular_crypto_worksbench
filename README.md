@@ -70,6 +70,11 @@ The current workspace-legibility follow-on after that is:
 - de-emphasis of unrelated wires to make dense local structure easier to read
 - explicit `Delete Wire` action instead of destructive wire-click removal
 
+The current trace/workspace bridging follow-on after that is:
+- one active trace node at a time emphasized in the workspace
+- one-hop incoming / outgoing wire emphasis for the active step context
+- trace emphasis kept distinct from direct wire selection and node-selection legibility
+
 The current near-future primitive-expansion item after that is:
 - explicit multi-way routing as a bounded future family
 - first slice scoped to a multi-way router (`1 -> N`) for visible case-switch / staged routing

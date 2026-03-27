@@ -725,6 +725,7 @@ export function WorkbenchPanel({
       [activeAnalysisOwnerModuleId]: signal,
     } as Record<string, ExecutionTraceEntry['inputs'][string] | null>;
   }, [activeAnalysisOwnerModuleId, activeAnalysisTraceEntry]);
+  const traceFocusedModuleId = activeAnalysisOwnerModuleId ?? steppedModuleId ?? null;
 
   function startConnectionFromOutput(
     moduleId: string,
@@ -1392,6 +1393,7 @@ export function WorkbenchPanel({
                 connectionIndex,
                 selectedConnectionIndex: effectiveSelectedConnectionIndex,
                 focusedModuleId: selectedModuleId,
+                traceFocusedModuleId,
               });
 
               return (
@@ -1410,6 +1412,7 @@ export function WorkbenchPanel({
                       : '',
                     legibilityState.selected ? 'connection-group-selected' : '',
                     legibilityState.emphasized ? 'connection-group-emphasized' : '',
+                    legibilityState.traceEmphasized ? 'connection-group-trace' : '',
                     legibilityState.dimmed ? 'connection-group-dimmed' : '',
                   ]
                     .filter(Boolean)

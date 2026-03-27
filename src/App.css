@@ -1491,6 +1491,11 @@ body.dock-resizing {
   stroke-width: 3.6;
 }
 
+.connection-group-trace path:not(.connection-hit-area) {
+  stroke: color-mix(in srgb, var(--link-primary-bg) 56%, var(--connection-stroke));
+  stroke-width: 3.4;
+}
+
 .connection-group-dimmed path:not(.connection-hit-area) {
   opacity: 0.22;
 }

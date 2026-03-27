@@ -32,6 +32,7 @@ Current development now carries:
   - `PRIMITIVE-MICRO-DEMOS-V1.md`
   - `PRIMITIVE-MICRO-DEMOS-V2.md`
   - `WIRE-LEGIBILITY-ERGONOMICS-V1.md`
+  - `TRACE-WORKSPACE-BRIDGING-V1.md`
   - `MULTIWAY-ROUTING-V1.md`
   - `CONDITIONAL-COMPOSITION-V1.md`
   - `ITERATOR-CONTROL-V1.md`
@@ -191,6 +192,11 @@ The current workspace-legibility follow-on after that is:
 - one-hop connection emphasis for the selected node
 - de-emphasis of unrelated wires to make dense local structure easier to read
 - explicit `Delete Wire` action instead of destructive wire-click removal
+
+The current trace/workspace bridging follow-on after that is:
+- one active trace node at a time emphasized in the workspace
+- one-hop incoming / outgoing wire emphasis for the active step context
+- trace emphasis kept distinct from direct wire selection and node-selection legibility
 
 The current near-future primitive-expansion item after that is:
 - explicit multi-way routing as a bounded future family
