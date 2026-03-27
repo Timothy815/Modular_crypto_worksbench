@@ -77,6 +77,10 @@ Current `main` now also includes:
   - `SymbolPermutation`
   - `SymbolWindow`
   - parity-tested protocol-material and symbol-structure export paths
+- Python export expansion v4:
+  - `BitsToBaudot`
+  - `BaudotOutput`
+  - parity-tested stateless Baudot decoding export path
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments

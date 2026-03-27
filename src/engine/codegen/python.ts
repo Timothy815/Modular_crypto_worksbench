@@ -21,8 +21,10 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'Output',
   'TextOutput',
   'BitsToAscii',
+  'BitsToBaudot',
   'BitOutput',
   'HexOutput',
+  'BaudotOutput',
   'SymbolPermutation',
   'SymbolWindow',
   'SymbolToBits',
@@ -58,7 +60,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'BitShifter',
 ]);
 
-const SYMBOL_SINK_DEF_IDS = new Set(['Output', 'TextOutput']);
+const SYMBOL_SINK_DEF_IDS = new Set(['Output', 'TextOutput', 'BaudotOutput']);
 const BIT_SINK_DEF_IDS = new Set(['BitOutput']);
 const HEX_SINK_DEF_IDS = new Set(['HexOutput']);
 
@@ -200,6 +202,54 @@ def bits_to_ascii(signal):
             raise ValueError("BitsToAscii can only decode 7-bit ASCII byte values (0-127)")
         chars.append(chr(value))
     return {"out": "".join(chars)}
+
+
+def bits_to_baudot(signal):
+    bits = _expect_bits(signal, "BitsToBaudot")
+    if len(bits) % 5 != 0:
+        raise ValueError("BitsToBaudot expects a bit signal whose width is divisible by 5")
+    table = [
+        "",
+        "E",
+        "\\n",
+        "A",
+        " ",
+        "S",
+        "I",
+        "U",
+        "\\r",
+        "D",
+        "R",
+        "J",
+        "N",
+        "F",
+        "C",
+        "K",
+        "T",
+        "Z",
+        "L",
+        "W",
+        "H",
+        "Y",
+        "P",
+        "Q",
+        "O",
+        "B",
+        "G",
+        "",
+        "M",
+        "X",
+        "V",
+        "",
+    ]
+    output = []
+    for index in range(0, len(bits), 5):
+        chunk = bits[index:index + 5]
+        code = 0
+        for bit in chunk:
+            code = (code << 1) | bit
+        output.append(table[code] if table[code] else "?")
+    return {"out": "".join(output)}
 
 
 def bits_to_hex(signal):
@@ -817,6 +867,8 @@ function buildModuleExpression(
       return `bits_to_symbol(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
     case 'BitsToAscii':
       return `bits_to_ascii(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
+    case 'BitsToBaudot':
+      return `bits_to_baudot(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
     case 'BitsToHex':
       return `bits_to_hex(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
     case 'HexToAscii':

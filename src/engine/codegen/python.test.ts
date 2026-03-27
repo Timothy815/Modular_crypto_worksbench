@@ -13,7 +13,7 @@ import { generatePythonExport, getPythonExportCompatibility } from './python';
 import type { ModuleRegistry, Project, Signal } from '../types';
 
 function formatExpectedSinkValue(defId: string, signal: Signal) {
-  if (defId === 'Output' || defId === 'TextOutput') {
+  if (defId === 'Output' || defId === 'TextOutput' || defId === 'BaudotOutput') {
     return String(signal.value);
   }
 
@@ -37,7 +37,7 @@ function getExpectedSinkLines(project: Project, registry: ModuleRegistry) {
 
   return project.modules
     .filter((moduleInstance) =>
-      ['Output', 'TextOutput', 'BitOutput', 'HexOutput'].includes(moduleInstance.defId),
+      ['Output', 'TextOutput', 'BaudotOutput', 'BitOutput', 'HexOutput'].includes(moduleInstance.defId),
     )
     .map((moduleInstance) => {
       const traceEntry = traceByModuleId.get(moduleInstance.id);
@@ -334,6 +334,26 @@ parityDescribe('generatePythonExport', () => {
         { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'permute-1', port: 'in' } },
         { from: { moduleId: 'permute-1', port: 'out' }, to: { moduleId: 'window-1', port: 'in' } },
         { from: { moduleId: 'window-1', port: 'out' }, to: { moduleId: 'text-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeProject for a stateless baudot decoding workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'baudot-bits', defId: 'BitSource', params: { stream: [0, 0, 0, 1, 1, 1, 0, 0, 0, 0] } },
+        { id: 'decode-1', defId: 'BitsToBaudot', params: {} },
+        { id: 'baudot-out', defId: 'BaudotOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'baudot-bits', port: 'out' }, to: { moduleId: 'decode-1', port: 'in' } },
+        { from: { moduleId: 'decode-1', port: 'out' }, to: { moduleId: 'baudot-out', port: 'in' } },
       ],
     };
 

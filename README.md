@@ -150,6 +150,10 @@ The third careful Python export expansion is now also shipped:
 - `SymbolPermutation` and `SymbolWindow` export support
 - parity-tested protocol-material and symbol-structure export paths
 
+The fourth careful Python export expansion is now also shipped:
+- `BitsToBaudot` and `BaudotOutput` export support
+- parity-tested stateless Baudot decoding export path
+
 The current near-future workspace-layout ergonomics item after that is:
 - bounded multi-window / multi-tab support for selected surfaces
 - likely `Inspector` and `Palette` first

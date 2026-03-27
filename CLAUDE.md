@@ -62,6 +62,7 @@ Read PYTHON-EXPORT-FOUNDATIONS-V1.md before extending the shipped stateless Pyth
 Read PYTHON-EXPORT-EXPANSION-V1.md before extending Python export support beyond the foundations subset toward stateless modern-construction primitives such as `SBox`, `AddMod`, `SubMod`, and `Modulo`.
 Read PYTHON-EXPORT-EXPANSION-V2.md before extending Python export support further across stateless arithmetic, control, or byte-structure primitives such as `Majority`, `GreaterThan`, `MulMod`, `ByteRotate`, `ByteSwap`, or `BitUnpad`.
 Read PYTHON-EXPORT-EXPANSION-V3.md before extending Python export support further across stateless protocol-material or symbol-structure primitives such as `KeyInput`, `IV`, `Nonce`, `Salt`, `SymbolPermutation`, or `SymbolWindow`.
+Read PYTHON-EXPORT-EXPANSION-V4.md before extending Python export support further across stateless Baudot bridge/sink support such as `BitsToBaudot` or `BaudotOutput`, or before beginning the transition to stateful export.
 Read V2.1-NEXT-DOCKET.md before reordering the current near-future priorities across builder power, Python export expansion, UI refactoring, or multi-window workspace support.
 Read INSPECTOR-REFACTOR-V1.md before restructuring `parameter-inspector.tsx`, moving more inspector logic into helper modules, or beginning a larger inspector decomposition pass.
 Read WORKBENCH-REFACTOR-V1.md before restructuring `workbench-panel.tsx`, moving more workbench helper logic into extracted modules, or beginning a larger workbench decomposition pass.
