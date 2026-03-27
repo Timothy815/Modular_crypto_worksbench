@@ -171,7 +171,10 @@ function getModuleSpecificParamMessage(
     return validatePlugboardWiringParam(value);
   }
 
-  if (def.id === 'Rotor' && (field.key === 'position' || field.key === 'ringOffset' || field.key === 'notches')) {
+  if (
+    (def.id === 'Rotor' || def.id === 'RotorReverse') &&
+    (field.key === 'wiring' || field.key === 'position' || field.key === 'ringOffset' || field.key === 'notches')
+  ) {
     return validateRotorParam(field.key, value);
   }
 

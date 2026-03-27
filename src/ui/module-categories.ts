@@ -17,6 +17,7 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   Clock: 'source',
   Counter: 'source',
   Rotor: 'operator',
+  RotorReverse: 'operator',
   Reflector: 'operator',
   Plugboard: 'operator',
   XOR: 'operator',

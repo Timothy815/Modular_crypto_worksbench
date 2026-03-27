@@ -32,6 +32,7 @@ import { Permutation } from './modules/permutation';
 import { Plugboard } from './modules/plugboard';
 import { Reflector } from './modules/reflector';
 import { Rotor } from './modules/rotor';
+import { RotorReverse } from './modules/rotor-reverse';
 import { Salt } from './modules/salt';
 import { SBox } from './modules/s-box';
 import { SymbolPermutation } from './modules/symbol-permutation';
@@ -106,6 +107,7 @@ const registry: ModuleRegistry = {
   [SymbolPermutation.id]: SymbolPermutation,
   [SymbolWindow.id]: SymbolWindow,
   [Rotor.id]: Rotor,
+  [RotorReverse.id]: RotorReverse,
   [Plugboard.id]: Plugboard,
   [Reflector.id]: Reflector,
   [SBox.id]: SBox,

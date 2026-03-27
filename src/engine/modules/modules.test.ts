@@ -41,10 +41,13 @@ import {
 import {
   Rotor,
   isRotorTurnoverActive,
+  parseRotorWiring,
   parseRotorNotches,
   serializeRotorWiring,
   swapRotorWiringTargets,
+  traverseRotor,
 } from './rotor';
+import { RotorReverse } from './rotor-reverse';
 import {
   normalizeReflectorReciprocalWiring,
   pairReflectorLetters,
@@ -1301,6 +1304,26 @@ describe('Rotor', () => {
 
   it('serializes rotor wiring back into the raw editable form', () => {
     expect(serializeRotorWiring(shiftedWiring)).toBe('B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A');
+  });
+
+  it('parses rotor wiring as a full permutation', () => {
+    expect(parseRotorWiring(enigmaWiring)).toEqual(enigmaWiring);
+  });
+
+  it('computes reverse traversal through the active rotor wiring', () => {
+    expect(traverseRotor('Q', enigmaWiring, 0, 0, 'reverse')).toBe('H');
+  });
+});
+
+describe('RotorReverse', () => {
+  it('maps through the inverse rotor path while keeping turnover semantics', () => {
+    const result = RotorReverse.evaluate(
+      { in: { type: 'symbol', value: 'Q' } },
+      { wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''), position: 0, ringOffset: 0, notches: '' },
+    );
+
+    expect(result.out).toEqual({ type: 'symbol', value: 'H' });
+    expect(result.turnover).toEqual({ type: 'bits', value: [0] });
   });
 });
 

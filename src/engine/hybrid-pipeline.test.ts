@@ -4,7 +4,7 @@ import { V1_REGISTRY } from './modules';
 import type { Project } from './types';
 
 // Reference hybrid pipeline from ENGINE-V1-CONTRACT.md:
-// TextInput → Rotor → Reflector → Rotor → SymbolToBits → XOR → BitsToSymbol → Output
+// TextInput → Rotor → Reflector → RotorReverse → SymbolToBits → XOR → BitsToSymbol → Output
 
 describe('Hybrid Pipeline (reference integration test)', () => {
   // Rotor I wiring (historical Enigma Rotor I)
@@ -18,7 +18,7 @@ describe('Hybrid Pipeline (reference integration test)', () => {
       { id: 'text', defId: 'TextInput', params: { value: 'A' } },
       { id: 'rotor-fwd', defId: 'Rotor', params: { wiring: rotorWiring, position: 0 } },
       { id: 'reflector', defId: 'Reflector', params: { wiring: reflectorWiring } },
-      { id: 'rotor-rev', defId: 'Rotor', params: { wiring: rotorWiring, position: 0 } },
+      { id: 'rotor-rev', defId: 'RotorReverse', params: { wiring: rotorWiring, position: 0 } },
       { id: 'encoder', defId: 'SymbolToBits', params: {} },
       { id: 'key', defId: 'BitSource', params: { stream: keyStream } },
       { id: 'xor', defId: 'XOR', params: {} },
@@ -68,22 +68,22 @@ describe('Hybrid Pipeline (reference integration test)', () => {
     const afterReflector = result.outputsByModuleId.reflector.out;
     expect(afterReflector).toEqual({ type: 'symbol', value: 'Q' });
 
-    // Reverse rotor uses the same Rotor primitive in V1, so with the current
-    // semantics Q(16) → wiring[16] = X.
+    // Reverse rotor traverses the inverse of the active rotor wiring:
+    // Q(16) → inverse wiring index 7 → H.
     const afterRotorRev = result.outputsByModuleId['rotor-rev'].out;
-    expect(afterRotorRev).toEqual({ type: 'symbol', value: 'X' });
+    expect(afterRotorRev).toEqual({ type: 'symbol', value: 'H' });
 
-    // Encoder: X(23) → 10111
+    // Encoder: H(7) → 00111
     const afterEncoder = result.outputsByModuleId.encoder.out;
-    expect(afterEncoder).toEqual({ type: 'bits', value: [1, 0, 1, 1, 1] });
+    expect(afterEncoder).toEqual({ type: 'bits', value: [0, 0, 1, 1, 1] });
 
-    // XOR with keystream [1,0,1,1,0] → 00001
+    // XOR with keystream [1,0,1,1,0] → 10001
     const afterXor = result.outputsByModuleId.xor.out;
-    expect(afterXor).toEqual({ type: 'bits', value: [0, 0, 0, 0, 1] });
+    expect(afterXor).toEqual({ type: 'bits', value: [1, 0, 0, 0, 1] });
 
-    // Decoder: 00001 → B
+    // Decoder: 10001 → R
     const finalSymbol = result.outputsByModuleId.decoder.out;
-    expect(finalSymbol).toEqual({ type: 'symbol', value: 'B' });
+    expect(finalSymbol).toEqual({ type: 'symbol', value: 'R' });
 
     // Determinism still matters; rerunning must preserve the same known answer.
     const firstRun = executeProject(project, V1_REGISTRY);
@@ -92,7 +92,7 @@ describe('Hybrid Pipeline (reference integration test)', () => {
     expect(secondRun.outputsByModuleId.decoder.out).toEqual(
       firstRun.outputsByModuleId.decoder.out,
     );
-    expect(firstRun.outputsByModuleId.decoder.out).toEqual({ type: 'symbol', value: 'B' });
+    expect(firstRun.outputsByModuleId.decoder.out).toEqual({ type: 'symbol', value: 'R' });
   });
 
   it('crosses signal domains correctly (symbol → bits → symbol)', () => {

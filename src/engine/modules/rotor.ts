@@ -2,9 +2,26 @@ import type { StatefulModuleDef } from '../types';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const ROTOR_SIZE = ALPHABET.length;
+const ROTOR_WIRING_DEFAULT = ALPHABET.split('');
 
 function normalizeRotorOffset(value: number): number {
   return ((value % ROTOR_SIZE) + ROTOR_SIZE) % ROTOR_SIZE;
+}
+
+function isUppercaseLetter(value: unknown): value is string {
+  return typeof value === 'string' && /^[A-Z]$/.test(value);
+}
+
+export function parseRotorWiring(value: unknown): string[] {
+  if (!Array.isArray(value) || value.length !== ROTOR_SIZE || !value.every(isUppercaseLetter)) {
+    throw new Error('Rotor wiring must be an array of 26 uppercase letters.');
+  }
+
+  if (new Set(value).size !== ROTOR_SIZE) {
+    throw new Error('Rotor wiring must be a permutation with no duplicates.');
+  }
+
+  return value;
 }
 
 export function parseRotorNotches(value: unknown): number[] {
@@ -30,6 +47,15 @@ export function parseRotorNotches(value: unknown): number[] {
 }
 
 export function validateRotorParam(fieldKey: string, value: unknown): string | null {
+  if (fieldKey === 'wiring') {
+    try {
+      parseRotorWiring(value);
+      return null;
+    } catch (error) {
+      return error instanceof Error ? error.message : 'Rotor wiring is invalid.';
+    }
+  }
+
   if (fieldKey === 'position' || fieldKey === 'ringOffset') {
     return typeof value === 'number' &&
       Number.isInteger(value) &&
@@ -63,6 +89,62 @@ export function validateRotorParam(fieldKey: string, value: unknown): string | n
   }
 
   return null;
+}
+
+export type RotorTraversalDirection = 'forward' | 'reverse';
+
+export function traverseRotor(
+  inputSymbol: string,
+  wiring: string[],
+  position: number,
+  ringOffset: number,
+  direction: RotorTraversalDirection,
+): string {
+  const inputIndex = ALPHABET.indexOf(inputSymbol.toUpperCase());
+  if (inputIndex === -1) {
+    throw new Error(`Rotor: "${inputSymbol}" is not in the alphabet`);
+  }
+
+  const effectiveShift = normalizeRotorOffset(position - ringOffset);
+  const shiftedIndex = normalizeRotorOffset(inputIndex + effectiveShift);
+
+  if (direction === 'forward') {
+    const mappedIndex = ALPHABET.indexOf(wiring[shiftedIndex]);
+    const unshifted = normalizeRotorOffset(mappedIndex - effectiveShift);
+    return ALPHABET[unshifted];
+  }
+
+  const targetLetter = ALPHABET[shiftedIndex];
+  const inverseIndex = wiring.indexOf(targetLetter);
+  const unshifted = normalizeRotorOffset(inverseIndex - effectiveShift);
+  return ALPHABET[unshifted];
+}
+
+export function advanceRotorParams(params: Record<string, unknown>): Record<string, unknown> {
+  return {
+    ...params,
+    position: normalizeRotorOffset(((params.position as number) ?? 0) + 1),
+  };
+}
+
+export function buildRotorOutputs(
+  inputSymbol: string,
+  params: Record<string, unknown>,
+  direction: RotorTraversalDirection,
+) {
+  const wiring = parseRotorWiring(params.wiring);
+  const position = normalizeRotorOffset((params.position as number) ?? 0);
+  const ringOffset = normalizeRotorOffset((params.ringOffset as number) ?? 0);
+  const notches = parseRotorNotches(params.notches);
+  const turnoverActive = isRotorTurnoverActive(position, ringOffset, notches);
+
+  return {
+    out: {
+      type: 'symbol' as const,
+      value: traverseRotor(inputSymbol, wiring, position, ringOffset, direction),
+    },
+    turnover: { type: 'bits' as const, value: [turnoverActive ? 1 : 0] },
+  };
 }
 
 export function isRotorTurnoverActive(
@@ -119,7 +201,7 @@ export const Rotor: StatefulModuleDef = {
       key: 'wiring',
       label: 'Wiring',
       kind: 'wiring',
-      defaultValue: ALPHABET.split(''),
+      defaultValue: ROTOR_WIRING_DEFAULT,
       required: true,
       description: 'Permutation mapping: wiring[i] is the output letter for input index i',
     },
@@ -151,31 +233,7 @@ export const Rotor: StatefulModuleDef = {
     if (signal.type !== 'symbol') {
       throw new Error('Rotor expects a symbol signal');
     }
-
-    const wiring = params.wiring as string[];
-    const position = normalizeRotorOffset((params.position as number) ?? 0);
-    const ringOffset = normalizeRotorOffset((params.ringOffset as number) ?? 0);
-    const notches = parseRotorNotches(params.notches);
-
-    const index = ALPHABET.indexOf(signal.value.toUpperCase());
-    if (index === -1) {
-      throw new Error(`Rotor: "${signal.value}" is not in the alphabet`);
-    }
-
-    // Ring offset shifts the wiring core separately from the visible position.
-    const effectiveShift = normalizeRotorOffset(position - ringOffset);
-    const shifted = normalizeRotorOffset(index + effectiveShift);
-    const mapped = ALPHABET.indexOf(wiring[shifted]);
-    const unshifted = normalizeRotorOffset(mapped - effectiveShift);
-    const turnoverActive = isRotorTurnoverActive(position, ringOffset, notches);
-
-    return {
-      out: { type: 'symbol', value: ALPHABET[unshifted] },
-      turnover: { type: 'bits', value: [turnoverActive ? 1 : 0] },
-    };
+    return buildRotorOutputs(signal.value, params, 'forward');
   },
-  advance: (params) => ({
-    ...params,
-    position: normalizeRotorOffset(((params.position as number) ?? 0) + 1),
-  }),
+  advance: advanceRotorParams,
 };

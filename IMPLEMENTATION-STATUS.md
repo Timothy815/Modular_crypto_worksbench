@@ -222,8 +222,12 @@ The current near-future control-structure items after that are:
 - stronger iterator control as a later bounded repetition/control line
 - both explicitly kept separate from general programming-language drift
 
-The current near-future advanced-rotor items after that are:
-- explicit reverse traversal through rotor wiring for historically faithful forward / reflect / reverse signal paths
+The current shipped advanced-rotor follow-on after that is:
+- explicit reverse traversal through rotor wiring via `RotorReverse`
+- historically faithful visible `Rotor -> Reflector -> RotorReverse` signal paths
+- `Rotor Return Path` demo/tutorial as the first bounded reverse-traversal teaching surface
+
+The current next advanced-rotor item after that is:
 - separate rotor-driven stepping as a later state/control architecture line, closer to SIGABA-style control than simple rotor stepping
 
 The current near-future strategic export item after that is:

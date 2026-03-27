@@ -438,6 +438,10 @@ What is shipped on `main`:
   - temporal `clock` handling for stateful advance edges
   - explicit turnover-driven double-step wiring via `Clock`, `OR`, and `Gate`
   - `Advanced Rotor Stepping` demo/tutorial/challenge
+- shipped advanced-rotor reverse-path follow-on:
+  - `RotorReverse` for explicit inverse traversal through the active rotor wiring
+  - historically faithful `Rotor -> Reflector -> RotorReverse` graph structure
+  - `Rotor Return Path` demo/tutorial
 - second bounded stream-cipher vocabulary:
   - `Mux`
   - strict 1-bit selector validation

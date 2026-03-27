@@ -404,7 +404,7 @@ export function ParameterInspector({
     );
   }, [moduleDef, moduleInstance]);
   const editableSelectedRotorWiring = useMemo(() => {
-    if (moduleDef?.id !== 'Rotor' || !moduleInstance) {
+    if ((moduleDef?.id !== 'Rotor' && moduleDef?.id !== 'RotorReverse') || !moduleInstance) {
       return null;
     }
 
@@ -1871,7 +1871,7 @@ export function ParameterInspector({
 
                 if (field.kind === 'wiring') {
                   const isRotorWiringField =
-                    moduleDef.id === 'Rotor' && field.key === 'wiring';
+                    (moduleDef.id === 'Rotor' || moduleDef.id === 'RotorReverse') && field.key === 'wiring';
                   const isPlugboardWiringField =
                     moduleDef.id === 'Plugboard' && field.key === 'wiring';
                   const isReflectorWiringField =

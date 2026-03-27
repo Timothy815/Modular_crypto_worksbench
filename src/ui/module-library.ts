@@ -156,6 +156,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'A classical substitution component whose mapping changes with position while exposing turnover as visible machine logic.',
     searchTerms: ['rotor', 'enigma', 'letter', 'symbol', 'substitution', 'ring setting', 'notch', 'turnover'],
   },
+  RotorReverse: {
+    sectionId: 'symbol-domain',
+    sortOrder: 15,
+    purpose: 'Traverses the inverse of a rotor’s active wiring while keeping the same visible rotor state model.',
+    detail: 'Use this after a reflector when a machine should show the historical reverse leg explicitly instead of faking it with a second forward rotor.',
+    searchTerms: ['rotor reverse', 'reverse rotor', 'enigma', 'inverse traversal', 'return path', 'symbol', 'turnover'],
+  },
   Plugboard: {
     sectionId: 'symbol-domain',
     sortOrder: 20,

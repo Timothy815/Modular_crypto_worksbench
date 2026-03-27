@@ -2006,7 +2006,7 @@ export const demoProjects: DemoProject[] = [
     id: 'hybrid',
     name: 'Hybrid Reference',
     summary: 'The V1 hybrid machine crossing classical and modern domains.',
-    pipeline: 'TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol -> TextOutput',
+    pipeline: 'TextInput -> Rotor -> Reflector -> RotorReverse -> SymbolToBits -> XOR -> BitsToSymbol -> TextOutput',
     project: {
       modules: [
         { id: 'text', defId: 'TextInput', params: { value: 'A' } },
@@ -2022,7 +2022,7 @@ export const demoProjects: DemoProject[] = [
         },
         {
           id: 'rotor-rev',
-          defId: 'Rotor',
+          defId: 'RotorReverse',
           params: { wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''), position: 0 },
         },
         { id: 'encode', defId: 'SymbolToBits', params: {} },
@@ -2052,6 +2052,60 @@ export const demoProjects: DemoProject[] = [
       xor: { x: 824, y: 218 },
       decode: { x: 984, y: 132 },
       output: { x: 1144, y: 132 },
+    },
+  },
+  {
+    id: 'rotor-return-path',
+    name: 'Rotor Return Path',
+    group: 'Rotor Realism',
+    stage: 'rotor-realism-and-mechanized-systems',
+    order: 110,
+    recommendedAfter: ['advanced-rotor-stepping'],
+    summary: 'A minimal Enigma-style path showing why the signal must return through the inverse rotor mapping after reflection.',
+    pipeline: 'TextInput -> Rotor -> Reflector -> RotorReverse -> TextOutput',
+    project: {
+      modules: [
+        { id: 'text', defId: 'TextInput', params: { value: 'A' } },
+        {
+          id: 'rotor-fwd',
+          defId: 'Rotor',
+          params: {
+            wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''),
+            position: 0,
+            ringOffset: 0,
+            notches: '',
+          },
+        },
+        {
+          id: 'reflector',
+          defId: 'Reflector',
+          params: { wiring: 'YRUHQSLDPXNGOKMIEBFZCWVJAT'.split('') },
+        },
+        {
+          id: 'rotor-rev',
+          defId: 'RotorReverse',
+          params: {
+            wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''),
+            position: 0,
+            ringOffset: 0,
+            notches: '',
+          },
+        },
+        { id: 'output', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'rotor-fwd', port: 'in' } },
+        { from: { moduleId: 'rotor-fwd', port: 'out' }, to: { moduleId: 'reflector', port: 'in' } },
+        { from: { moduleId: 'reflector', port: 'out' }, to: { moduleId: 'rotor-rev', port: 'in' } },
+        { from: { moduleId: 'rotor-rev', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      text: { x: 48, y: 176 },
+      'rotor-fwd': { x: 288, y: 176 },
+      reflector: { x: 544, y: 176 },
+      'rotor-rev': { x: 800, y: 176 },
+      output: { x: 1056, y: 176 },
     },
   },
   {

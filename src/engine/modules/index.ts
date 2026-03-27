@@ -40,6 +40,7 @@ import { HexOutput } from './hex-output';
 import { BaudotOutput } from './baudot-output';
 import { BitOutput } from './bit-output';
 import { Rotor } from './rotor';
+import { RotorReverse } from './rotor-reverse';
 import { Reflector } from './reflector';
 import { Plugboard } from './plugboard';
 import { Permutation } from './permutation';
@@ -99,6 +100,7 @@ export {
   BaudotOutput,
   BitOutput,
   Rotor,
+  RotorReverse,
   Reflector,
   Plugboard,
   Permutation,
@@ -159,6 +161,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [BaudotOutput.id]: BaudotOutput,
   [BitOutput.id]: BitOutput,
   [Rotor.id]: Rotor,
+  [RotorReverse.id]: RotorReverse,
   [Reflector.id]: Reflector,
   [Plugboard.id]: Plugboard,
   [Permutation.id]: Permutation,
