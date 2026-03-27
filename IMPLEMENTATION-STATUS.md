@@ -31,6 +31,7 @@ Current development now carries:
   - `PARAMETER-COMPARISON-ERGONOMICS-V1.md`
   - `PRIMITIVE-MICRO-DEMOS-V1.md`
   - `PRIMITIVE-MICRO-DEMOS-V2.md`
+  - `MULTIWAY-ROUTING-V1.md`
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -178,6 +179,11 @@ The current primitive-legibility expansion after that is:
 - timing, state, and framing micro demos for `Clock`, `Counter`, `BitSplit`, `BitPad`, `BitJoin`, and `LFSR`
 - ticked-mode defaults only for the timing/state subset
 - the same palette-local `Try Demo` flow introduced in V1
+
+The current near-future primitive-expansion item after that is:
+- explicit multi-way routing as a bounded future family
+- first slice scoped to a multi-way router (`1 -> N`) rather than a full multi-way selector pair
+- intended for visible case-switch / counter-driven staged routing without hidden control flow
 
 Established and shipped:
 - implementation contract and AI coordination protocol

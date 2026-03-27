@@ -64,6 +64,11 @@ The current primitive-legibility expansion after that is:
 - ticked-mode defaults only for the timing/state subset
 - the same palette-local `Try Demo` flow introduced in V1
 
+The current near-future primitive-expansion item after that is:
+- explicit multi-way routing as a bounded future family
+- first slice scoped to a multi-way router (`1 -> N`) for visible case-switch / staged routing
+- not yet the next immediate implementation step
+
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
   - `ModExp` (modular exponentiation via repeated squaring)
