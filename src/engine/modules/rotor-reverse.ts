@@ -13,6 +13,13 @@ export const RotorReverse: StatefulModuleDef = {
     { name: 'turnover', type: 'bits' },
   ],
   paramSchema: {
+    linkedRotorId: {
+      key: 'linkedRotorId',
+      label: 'Linked Rotor',
+      kind: 'string',
+      defaultValue: '',
+      description: 'Optional forward Rotor instance id to mirror as a shared mechanical rotor state',
+    },
     wiring: {
       key: 'wiring',
       label: 'Wiring',

@@ -21,6 +21,8 @@ import {
 import { evaluateBypass, isBypassEligibleDefinition } from './bypass';
 
 const CLOCK_PORT = 'clock';
+const ROTOR_LINK_PARAM = 'linkedRotorId';
+const ROTOR_SHARED_PARAM_KEYS = ['wiring', 'position', 'ringOffset', 'notches'] as const;
 
 interface EvaluatedDefinitionResult {
   outputs: ModuleOutputs;
@@ -31,6 +33,44 @@ interface TickedRuntimeState {
   paramsByModuleId: Record<string, ModuleParams>;
   compositeStateByModuleId: Record<string, TickedRuntimeState | undefined>;
   iteratorStateByModuleId: Record<string, TickedRuntimeState | undefined>;
+}
+
+function getLinkedRotorId(params: ModuleParams): string | null {
+  const linkedRotorId = params[ROTOR_LINK_PARAM];
+  if (typeof linkedRotorId !== 'string') {
+    return null;
+  }
+
+  const trimmed = linkedRotorId.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function resolveLinkedRotorParams(
+  def: ModuleDefinition | undefined,
+  params: ModuleParams,
+  resolveParamsByModuleId: (moduleId: string) => ModuleParams | undefined,
+): ModuleParams {
+  if (!def || def.id !== 'RotorReverse') {
+    return { ...params };
+  }
+
+  const linkedRotorId = getLinkedRotorId(params);
+  if (!linkedRotorId) {
+    return { ...params };
+  }
+
+  const linkedParams = resolveParamsByModuleId(linkedRotorId);
+  if (!linkedParams) {
+    return { ...params };
+  }
+
+  const nextParams: ModuleParams = { ...params };
+  for (const key of ROTOR_SHARED_PARAM_KEYS) {
+    const value = linkedParams[key];
+    nextParams[key] = Array.isArray(value) ? [...value] : value;
+  }
+
+  return nextParams;
 }
 
 export class ProjectValidationError extends Error {
@@ -161,6 +201,11 @@ export function executeProject(
     }
 
     const inputs = collectInputs(moduleId, project, registry, outputsByModuleId, inputOverrides);
+    const effectiveParams = resolveLinkedRotorParams(
+      def,
+      moduleInstance.params,
+      (linkedModuleId) => instancesById.get(linkedModuleId)?.params,
+    );
     const traceEntry: ExecutionTraceEntry = {
       moduleId,
       defId: def.id,
@@ -173,7 +218,7 @@ export function executeProject(
       moduleId,
       def,
       inputs,
-      moduleInstance.params,
+      effectiveParams,
       registry,
       Boolean(moduleInstance.bypass),
     );
@@ -554,6 +599,11 @@ function executeTickedGraph(
 
     const inputs = collectInputs(moduleId, project, registry, outputsByModuleId, inputOverrides);
     const currentParams = runtimeState.paramsByModuleId[moduleId] ?? {};
+    const effectiveParams = resolveLinkedRotorParams(
+      def,
+      currentParams,
+      (linkedModuleId) => runtimeState.paramsByModuleId[linkedModuleId],
+    );
     const traceEntry: ExecutionTraceEntry = {
       moduleId,
       defId: def.id,
@@ -588,7 +638,7 @@ function executeTickedGraph(
               ? evaluateBypass(def, inputs)
               : def.evaluate(
                   inputs,
-                  isTickSliceable(def) ? def.tickSlice(currentParams, tick) : { ...currentParams },
+                  isTickSliceable(def) ? def.tickSlice(effectiveParams, tick) : effectiveParams,
                 ),
           hoistedTrace: [],
         };
@@ -602,6 +652,9 @@ function executeTickedGraph(
   for (const moduleInstance of project.modules) {
     const def = registry[moduleInstance.defId];
     if (def && isStatefulModule(def)) {
+      if (def.id === 'RotorReverse' && getLinkedRotorId(runtimeState.paramsByModuleId[moduleInstance.id] ?? {})) {
+        continue;
+      }
       const clockPulse = getClockPulse(
         moduleInstance.id,
         project,
@@ -745,8 +798,14 @@ export function executeTickedProject(
 
   for (let tick = 0; tick < tickCount; tick++) {
     for (const moduleInstance of project.modules) {
+      const def = registry[moduleInstance.defId];
+      const currentParams = runtimeState.paramsByModuleId[moduleInstance.id];
       paramsByModuleByTick[moduleInstance.id].push({
-        ...runtimeState.paramsByModuleId[moduleInstance.id],
+        ...resolveLinkedRotorParams(
+          def,
+          currentParams,
+          (linkedModuleId) => runtimeState.paramsByModuleId[linkedModuleId],
+        ),
       });
     }
 

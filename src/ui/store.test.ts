@@ -99,6 +99,24 @@ describe('uiReducer', () => {
     expect(invalidRenameState).toEqual(initialState);
   });
 
+  it('renames linkedRotorId references when a forward rotor is renamed', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'rotor-return-path';
+
+    const nextState = uiReducer(initialState, {
+      type: 'renameModuleInstance',
+      projectId,
+      moduleId: 'rotor-fwd',
+      nextModuleId: 'rotor-alpha',
+    });
+
+    const reverseRotor = nextState.projectStates[projectId]?.modules.find(
+      (moduleInstance) => moduleInstance.id === 'rotor-rev',
+    );
+
+    expect(reverseRotor?.params.linkedRotorId).toBe('rotor-alpha');
+  });
+
   it('resets tick position and playback when loading a document', () => {
     const initialState = createInitialUiState(demoProjects);
     const projectId = 'sequential';

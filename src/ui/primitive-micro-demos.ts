@@ -486,6 +486,7 @@ const ROTOR_REVERSE_MICRO_DEMO: PrimitiveMicroDemo = {
           id: 'rotor-reverse',
           defId: 'RotorReverse',
           params: {
+            linkedRotorId: 'rotor-forward',
             wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''),
             position: 0,
             ringOffset: 0,

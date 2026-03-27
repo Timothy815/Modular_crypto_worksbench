@@ -102,6 +102,11 @@ The current shipped advanced-rotor follow-on after that is:
 - `Rotor Return Path` demo/tutorial as the first bounded reverse-traversal teaching surface
 - palette-local rotor micro demos for `Rotor` and `RotorReverse`
 
+The current linked-rotor follow-on after that is:
+- `RotorReverse` can link to one forward `Rotor` via `linkedRotorId`
+- linked reverse traversal mirrors the forward rotor's live state instead of requiring manual synchronization
+- only the forward rotor owns stepping state; linked reverse faces do not advance independently
+
 The current next advanced-rotor item after that is:
 - separate rotor-driven stepping as a later state/control architecture line
 

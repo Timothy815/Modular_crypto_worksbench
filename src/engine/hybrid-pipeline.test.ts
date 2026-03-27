@@ -18,7 +18,11 @@ describe('Hybrid Pipeline (reference integration test)', () => {
       { id: 'text', defId: 'TextInput', params: { value: 'A' } },
       { id: 'rotor-fwd', defId: 'Rotor', params: { wiring: rotorWiring, position: 0 } },
       { id: 'reflector', defId: 'Reflector', params: { wiring: reflectorWiring } },
-      { id: 'rotor-rev', defId: 'RotorReverse', params: { wiring: rotorWiring, position: 0 } },
+      {
+        id: 'rotor-rev',
+        defId: 'RotorReverse',
+        params: { linkedRotorId: 'rotor-fwd', wiring: rotorWiring, position: 19 },
+      },
       { id: 'encoder', defId: 'SymbolToBits', params: {} },
       { id: 'key', defId: 'BitSource', params: { stream: keyStream } },
       { id: 'xor', defId: 'XOR', params: {} },

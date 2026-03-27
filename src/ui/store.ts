@@ -276,9 +276,19 @@ function renameModuleReferencesInProject(
   nextModuleId: string,
 ): Project {
   return {
-    modules: project.modules.map((moduleInstance) =>
-      moduleInstance.id === moduleId ? { ...moduleInstance, id: nextModuleId } : moduleInstance,
-    ),
+    modules: project.modules.map((moduleInstance) => {
+      const nextParams =
+        moduleInstance.params.linkedRotorId === moduleId
+          ? {
+              ...moduleInstance.params,
+              linkedRotorId: nextModuleId,
+            }
+          : { ...moduleInstance.params };
+
+      return moduleInstance.id === moduleId
+        ? { ...moduleInstance, id: nextModuleId, params: nextParams }
+        : { ...moduleInstance, params: nextParams };
+    }),
     connections: project.connections.map((connection) => ({
       from: {
         ...connection.from,

@@ -2023,7 +2023,11 @@ export const demoProjects: DemoProject[] = [
         {
           id: 'rotor-rev',
           defId: 'RotorReverse',
-          params: { wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''), position: 0 },
+          params: {
+            linkedRotorId: 'rotor-fwd',
+            wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''),
+            position: 0,
+          },
         },
         { id: 'encode', defId: 'SymbolToBits', params: {} },
         { id: 'key', defId: 'BitSource', params: { stream: [1, 0, 1, 1, 0] } },
@@ -2085,6 +2089,7 @@ export const demoProjects: DemoProject[] = [
           id: 'rotor-rev',
           defId: 'RotorReverse',
           params: {
+            linkedRotorId: 'rotor-fwd',
             wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''),
             position: 0,
             ringOffset: 0,

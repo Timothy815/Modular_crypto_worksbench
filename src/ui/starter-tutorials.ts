@@ -282,7 +282,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       {
         id: 'return-reverse-leg',
         title: 'Use The Inverse Rotor Path',
-        body: 'RotorReverse is the new primitive here. It uses the same wiring, position, and ring setting as the forward rotor, but it traverses the inverse of the active mapping. That is what makes an Enigma-style return path mechanically honest.',
+        body: 'RotorReverse is the visible return face of the same mechanical rotor. In the linked model it mirrors the forward rotor state automatically, then traverses the inverse of that active mapping. That is what makes an Enigma-style return path mechanically honest.',
         focusModuleId: 'rotor-rev',
         targetStepIndex: 3,
       },

@@ -380,6 +380,63 @@ describe('validateProject', () => {
     ).toBe(true);
   });
 
+  it('rejects RotorReverse links to unknown modules', () => {
+    const project: Project = {
+      modules: [
+        {
+          id: 'rotor-rev-1',
+          defId: 'RotorReverse',
+          params: {
+            linkedRotorId: 'missing-rotor',
+            wiring: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+            position: 0,
+          },
+        },
+      ],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'rotor-rev-1' &&
+          issue.message.includes('references unknown module "missing-rotor"'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects RotorReverse links to non-rotor modules', () => {
+    const project: Project = {
+      modules: [
+        { id: 'source-1', defId: 'Source', params: {} },
+        {
+          id: 'rotor-rev-1',
+          defId: 'RotorReverse',
+          params: {
+            linkedRotorId: 'source-1',
+            wiring: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+            position: 0,
+          },
+        },
+      ],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'rotor-rev-1' &&
+          issue.message.includes('must reference a forward Rotor'),
+      ),
+    ).toBe(true);
+  });
+
   it('rejects malformed hex source params before execution', () => {
     const project: Project = {
       modules: [{ id: 'hex-1', defId: 'HexSource', params: { value: 'G1' } }],

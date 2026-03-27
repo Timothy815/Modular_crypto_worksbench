@@ -39,6 +39,7 @@ Current development now carries:
   - `CONDITIONAL-COMPOSITION-V1.md`
   - `ITERATOR-CONTROL-V1.md`
   - `ROTOR-REVERSE-PATH-V1.md`
+  - `LINKED-ROTOR-PAIRING-V1.md`
   - `ROTOR-DRIVEN-STEPPING-V1.md`
   - `PYTHON-EXPORT-V1.md`
   - `MULTI-WINDOW-WORKSPACE-V1.md`
@@ -227,6 +228,12 @@ The current shipped advanced-rotor follow-on after that is:
 - historically faithful visible `Rotor -> Reflector -> RotorReverse` signal paths
 - `Rotor Return Path` demo/tutorial as the first bounded reverse-traversal teaching surface
 - palette-local rotor micro demos for `Rotor` and `RotorReverse`
+
+The current linked-rotor follow-on after that is:
+- `RotorReverse` can link to one forward `Rotor` via `linkedRotorId`
+- linked reverse traversal mirrors the forward rotor's live `wiring`, `position`, `ringOffset`, and `notches`
+- only the forward rotor owns stepping state; linked reverse faces do not advance independently
+- rotor-realism demos and micro demos now use the linked model honestly
 
 The current next advanced-rotor item after that is:
 - separate rotor-driven stepping as a later state/control architecture line, closer to SIGABA-style control than simple rotor stepping

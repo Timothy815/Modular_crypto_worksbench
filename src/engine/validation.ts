@@ -814,6 +814,54 @@ function validateParams(
   }
 }
 
+function validateLinkedRotorPairings(
+  project: Project,
+  defsByInstanceId: Map<string, ModuleDefinition>,
+  instancesById: Map<string, ModuleInstance>,
+  issues: ValidationIssue[],
+) {
+  for (const moduleInstance of project.modules) {
+    const def = defsByInstanceId.get(moduleInstance.id);
+    if (!def || isCompositeDefinition(def) || isIteratorDefinition(def) || def.id !== 'RotorReverse') {
+      continue;
+    }
+
+    const linkedRotorId = moduleInstance.params.linkedRotorId;
+    if (typeof linkedRotorId !== 'string' || linkedRotorId.trim().length === 0) {
+      continue;
+    }
+
+    const trimmedLinkedRotorId = linkedRotorId.trim();
+    if (trimmedLinkedRotorId === moduleInstance.id) {
+      issues.push({
+        code: 'invalid-param-type',
+        message: `Module "${moduleInstance.id}" parameter "linkedRotorId" cannot reference itself.`,
+        moduleId: moduleInstance.id,
+      });
+      continue;
+    }
+
+    const linkedInstance = instancesById.get(trimmedLinkedRotorId);
+    if (!linkedInstance) {
+      issues.push({
+        code: 'invalid-param-type',
+        message: `Module "${moduleInstance.id}" parameter "linkedRotorId" references unknown module "${trimmedLinkedRotorId}".`,
+        moduleId: moduleInstance.id,
+      });
+      continue;
+    }
+
+    const linkedDef = defsByInstanceId.get(trimmedLinkedRotorId);
+    if (!linkedDef || isCompositeDefinition(linkedDef) || isIteratorDefinition(linkedDef) || linkedDef.id !== 'Rotor') {
+      issues.push({
+        code: 'invalid-param-type',
+        message: `Module "${moduleInstance.id}" parameter "linkedRotorId" must reference a forward Rotor, not "${linkedInstance.defId}".`,
+        moduleId: moduleInstance.id,
+      });
+    }
+  }
+}
+
 export function validateProject(project: Project, registry: ModuleRegistry): ValidationResult {
   const { defsByInstanceId, instancesById, issues } = buildModuleMaps(project, registry);
   const inboundEdgeKeys = new Set<string>();
@@ -938,6 +986,7 @@ export function validateProject(project: Project, registry: ModuleRegistry): Val
     });
   }
 
+  validateLinkedRotorPairings(project, defsByInstanceId, instancesById, issues);
   validateBitWidthConstraints(project, defsByInstanceId, instancesById, issues);
 
   return {

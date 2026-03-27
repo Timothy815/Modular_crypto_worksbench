@@ -254,6 +254,22 @@ export function ParameterInspector({
   const selectedTrace = execution?.trace.find(
     (entry) => entry.moduleId === moduleInstance?.id,
   );
+  const linkedRotorSourceInstance = useMemo(() => {
+    if (moduleDef?.id !== 'RotorReverse' || !moduleInstance) {
+      return null;
+    }
+
+    const linkedRotorId = moduleInstance.params.linkedRotorId;
+    if (typeof linkedRotorId !== 'string' || linkedRotorId.trim().length === 0) {
+      return null;
+    }
+
+    return (
+      project.modules.find(
+        (candidate) => candidate.id === linkedRotorId && candidate.defId === 'Rotor',
+      ) ?? null
+    );
+  }, [moduleDef?.id, moduleInstance, project.modules]);
   const selectedTraceOrder = selectedTrace
     ? (execution?.order.findIndex((moduleId) => moduleId === selectedTrace.moduleId) ?? -1) + 1
     : null;
@@ -1786,8 +1802,16 @@ export function ParameterInspector({
               <p className="empty-state">This module has no configurable parameters.</p>
             ) : (
               Object.values(moduleDef.paramSchema).map((field) => {
-                const value =
-                  moduleInstance.params[field.key] ?? field.defaultValue;
+                const isReadOnlyLinkedRotorField =
+                  moduleDef.id === 'RotorReverse' &&
+                  Boolean(linkedRotorSourceInstance) &&
+                  (field.key === 'wiring' ||
+                    field.key === 'position' ||
+                    field.key === 'ringOffset' ||
+                    field.key === 'notches');
+                const value = isReadOnlyLinkedRotorField
+                  ? linkedRotorSourceInstance?.params[field.key] ?? field.defaultValue
+                  : moduleInstance.params[field.key] ?? field.defaultValue;
                 const baselineValue =
                   baselineModuleInstance?.params[field.key] ?? field.defaultValue;
                 const draftValue = getParamDraft(moduleInstance.id, field.key);
@@ -1801,6 +1825,65 @@ export function ParameterInspector({
                   (moduleDef.forwardedParams ?? []).some(
                     (binding) => binding.externalParam === field.key,
                   );
+
+                if (moduleDef.id === 'RotorReverse' && field.key === 'linkedRotorId') {
+                  const rotorOptions = project.modules.filter((candidate) => candidate.defId === 'Rotor');
+
+                  return (
+                    <label key={field.key} className="param-field">
+                      {renderParamFieldLabel(field.label, field.key, isForwardedParam)}
+                      <select
+                        value={String(moduleInstance.params[field.key] ?? '')}
+                        onChange={(event) =>
+                          onParamChange(moduleInstance.id, field.key, event.target.value)
+                        }
+                      >
+                        <option value="">Unlinked</option>
+                        {rotorOptions.map((candidate) => (
+                          <option key={candidate.id} value={candidate.id}>
+                            {candidate.id}
+                          </option>
+                        ))}
+                      </select>
+                      {linkedRotorSourceInstance ? (
+                        <div className="param-stepper-row">
+                          <span className="content-status-chip">
+                            Mirroring rotor state from {linkedRotorSourceInstance.id}
+                          </span>
+                          {onRequestFocusModule ? (
+                            <button
+                              type="button"
+                              className="mini-action-button"
+                              onClick={() => onRequestFocusModule(linkedRotorSourceInstance.id)}
+                            >
+                              Go To Linked Rotor
+                            </button>
+                          ) : null}
+                        </div>
+                      ) : null}
+                      {fieldError ? <p className="field-error">{fieldError}</p> : null}
+                    </label>
+                  );
+                }
+
+                if (isReadOnlyLinkedRotorField) {
+                  return (
+                    <label key={field.key} className="param-field">
+                      {renderParamFieldLabel(field.label, field.key, isForwardedParam)}
+                      {!areParameterValuesEqual(value, baselineValue) ? (
+                        <span className="baseline-chip">
+                          Baseline: {formatParamValue(baselineValue, field)}
+                        </span>
+                      ) : null}
+                      <div className="readonly-param-value">
+                        {formatLinkedRotorFieldValue(field.key, value)}
+                      </div>
+                      <p className="meta-copy">
+                        Mirrored from the linked forward rotor. Edit the forward rotor to change this value.
+                      </p>
+                    </label>
+                  );
+                }
 
                 if (field.kind === 'boolean') {
                   return (
@@ -4702,4 +4785,18 @@ function formatParameterComparisonChipLabel(fieldComparison: ParameterComparison
   return fieldComparison.totalSiblingCount === 1
     ? 'Divergent'
     : `Divergent ${fieldComparison.divergentSiblingCount}/${fieldComparison.totalSiblingCount}`;
+}
+
+function formatLinkedRotorFieldValue(fieldKey: string, value: unknown) {
+  if (fieldKey === 'wiring') {
+    const rotorWiring = getEditableRotorWiring(value);
+    return rotorWiring ? serializeRotorWiring(rotorWiring) : 'Unavailable';
+  }
+
+  if (fieldKey === 'notches') {
+    const text = typeof value === 'string' ? value.trim() : '';
+    return text.length > 0 ? text : 'None';
+  }
+
+  return String(value ?? '');
 }

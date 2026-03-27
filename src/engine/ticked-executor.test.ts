@@ -10,9 +10,11 @@ import type {
 } from './types';
 import { isStatefulModule, isTickSliceable } from './types';
 import { Rotor } from './modules/rotor';
+import { RotorReverse } from './modules/rotor-reverse';
 import { TextInput } from './modules/text-input';
 import { BitSource } from './modules/bit-source';
 import { Reflector } from './modules/reflector';
+import { Clock } from './modules/clock';
 import { Output } from './modules/output';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -143,6 +145,10 @@ describe('executeTickedProject', () => {
     PassThroughIterator,
     ForwardedRotorComposite,
     Rotor,
+    RotorReverse,
+    TextInput,
+    Reflector,
+    Clock,
   };
 
   it('produces one ExecutionResult per tick', () => {
@@ -436,6 +442,39 @@ describe('executeTickedProject', () => {
       );
       expect(sinkOutputs).toHaveLength(3);
       expect(new Set(sinkOutputs).size).toBe(3);
+    });
+
+    it('keeps linked RotorReverse synchronized without independent stepping', () => {
+      const reflectorWiring = 'YRUHQSLDPXNGOKMIEBFZCWVJAT'.split('');
+      const project: Project = {
+        modules: [
+          { id: 'text', defId: 'TextInput', params: { value: 'AAA' } },
+          { id: 'rotor-fwd', defId: 'Rotor', params: { wiring: enigmaWiring, position: 0 } },
+          {
+            id: 'rotor-rev',
+            defId: 'RotorReverse',
+            params: {
+              linkedRotorId: 'rotor-fwd',
+              wiring: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+              position: 19,
+            },
+          },
+          { id: 'reflector', defId: 'Reflector', params: { wiring: reflectorWiring } },
+          { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 3 } },
+        ],
+        connections: [
+          { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'rotor-fwd', port: 'in' } },
+          { from: { moduleId: 'rotor-fwd', port: 'out' }, to: { moduleId: 'reflector', port: 'in' } },
+          { from: { moduleId: 'reflector', port: 'out' }, to: { moduleId: 'rotor-rev', port: 'in' } },
+          { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'rotor-fwd', port: 'clock' } },
+          { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'rotor-rev', port: 'clock' } },
+        ],
+      };
+
+      const result = executeTickedProject(project, registry, 3);
+
+      expect(result.paramsByModuleByTick['rotor-fwd'].map((params) => params.position)).toEqual([0, 1, 2]);
+      expect(result.paramsByModuleByTick['rotor-rev'].map((params) => params.position)).toEqual([0, 1, 2]);
     });
   });
 });

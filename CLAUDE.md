@@ -54,6 +54,7 @@ Read MULTIWAY-ROUTING-V1.md before proposing multi-way case-switch routing, inde
 Read CONDITIONAL-COMPOSITION-V1.md before proposing explicit finite branch composition, if/else style graph behavior, or bounded conditional graph structure.
 Read ITERATOR-CONTROL-V1.md before proposing stronger iterator control, bounded repeated-condition behavior, or iterator-level control-flow extensions.
 Read ROTOR-REVERSE-PATH-V1.md before proposing reverse rotor traversal, inverse rotor signal paths, or historically faithful forward / reflect / reverse rotor behavior.
+Read LINKED-ROTOR-PAIRING-V1.md before changing how `Rotor` and `RotorReverse` share state, stepping ownership, or linked forward/reverse rotor behavior.
 Read ROTOR-DRIVEN-STEPPING-V1.md before proposing rotor-driven stepping, rotor-control submachines, or SIGABA-style stepping behavior.
 Read PYTHON-EXPORT-V1.md before proposing workspace-to-code export, standalone Python generation, or implementation-oriented codegen lines.
 Read MULTI-WINDOW-WORKSPACE-V1.md before proposing detachable panels, multi-tab workspace surfaces, or multi-window synchronized editing.
