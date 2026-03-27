@@ -1,5 +1,6 @@
 # MCW — Claude Code Context
 
+Read AI-COLLABORATION-CONTINUITY.md first for the standing team roles, reviewer workflow, and restart expectations.
 Read PROJECT.md for full project specification.
 Read ENGINE-V1-CONTRACT.md for locked implementation decisions.
 Read ITERATIVE-ROUNDS-AND-KEYSCHEDULES-V1.md before starting work on iterative-round abstractions or key-schedule groundwork.
