@@ -142,6 +142,15 @@ export type UiAction =
       toPort: string;
     }
   | { type: 'removeConnection'; projectId: string; connectionIndex: number }
+  | {
+      type: 'replaceConnection';
+      projectId: string;
+      removeConnectionIndices: number[];
+      fromModuleId: string;
+      fromPort: string;
+      toModuleId: string;
+      toPort: string;
+    }
   | { type: 'updateParam'; projectId: string; moduleId: string; key: string; value: unknown }
   | { type: 'setModuleBypass'; projectId: string; moduleId: string; bypass: boolean }
   | { type: 'setParamDraft'; projectId: string; moduleId: string; key: string; rawValue: string }
@@ -318,6 +327,7 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'removeModule',
   'addConnection',
   'removeConnection',
+  'replaceConnection',
   'updateParam',
   'setModuleBypass',
   'loadDocument',
@@ -1570,6 +1580,68 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         },
       };
     }
+    case 'replaceConnection': {
+      if (state.compositeEditor) {
+        const activeCompositeEntry = state.compositeLibrary.find(
+          (entry) => entry.id === state.compositeEditor?.entryId,
+        );
+        if (
+          activeCompositeEntry &&
+          replacementTouchesProtectedBoundaryPort(activeCompositeEntry, state.compositeEditor.project, action)
+        ) {
+          return {
+            ...state,
+            compositeEditor: {
+              ...state.compositeEditor,
+              saveError:
+                'This rewire touches the exposed composite boundary. Boundary editing will come in a later slice.',
+            },
+          };
+        }
+
+        return {
+          ...state,
+          compositeEditor: replaceConnectionInCompositeEditor(state.compositeEditor, action),
+        };
+      }
+
+      const currentProject = state.projectStates[action.projectId];
+      if (!currentProject) {
+        return state;
+      }
+
+      const uniqueRemovals = [...new Set(action.removeConnectionIndices)].sort((a, b) => a - b);
+      const nextConnections = currentProject.connections.filter(
+        (_, index) => !uniqueRemovals.includes(index),
+      );
+      const alreadyExists = nextConnections.some(
+        (connection) =>
+          connection.from.moduleId === action.fromModuleId &&
+          connection.from.port === action.fromPort &&
+          connection.to.moduleId === action.toModuleId &&
+          connection.to.port === action.toPort,
+      );
+      if (alreadyExists) {
+        return state;
+      }
+
+      const nextProject = cloneProject(currentProject);
+      nextProject.connections = [
+        ...nextConnections,
+        {
+          from: { moduleId: action.fromModuleId, port: action.fromPort },
+          to: { moduleId: action.toModuleId, port: action.toPort },
+        },
+      ];
+
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: nextProject,
+        },
+      };
+    }
     case 'updateParam': {
       if (state.compositeEditor) {
         return {
@@ -2686,6 +2758,41 @@ function removeConnectionFromCompositeEditor(
   };
 }
 
+function replaceConnectionInCompositeEditor(
+  editor: CompositeEditorState,
+  action: Extract<UiAction, { type: 'replaceConnection' }>,
+): CompositeEditorState {
+  const uniqueRemovals = [...new Set(action.removeConnectionIndices)].sort((a, b) => a - b);
+  const nextConnections = editor.project.connections.filter(
+    (_, index) => !uniqueRemovals.includes(index),
+  );
+  const alreadyExists = nextConnections.some(
+    (connection) =>
+      connection.from.moduleId === action.fromModuleId &&
+      connection.from.port === action.fromPort &&
+      connection.to.moduleId === action.toModuleId &&
+      connection.to.port === action.toPort,
+  );
+  if (alreadyExists) {
+    return editor;
+  }
+
+  return {
+    ...editor,
+    project: {
+      ...cloneProject(editor.project),
+      connections: [
+        ...nextConnections,
+        {
+          from: { moduleId: action.fromModuleId, port: action.fromPort },
+          to: { moduleId: action.toModuleId, port: action.toPort },
+        },
+      ],
+    },
+    saveError: null,
+  };
+}
+
 function updateCompositeEditorParam(
   editor: CompositeEditorState,
   moduleId: string,
@@ -2729,7 +2836,12 @@ function omitDraftKey(drafts: Record<string, string>, key: string) {
 
 function connectionTouchesProtectedBoundaryPort(
   entry: CompositeLibraryEntry,
-  action: Extract<UiAction, { type: 'addConnection' }>,
+  action: {
+    fromModuleId: string;
+    fromPort: string;
+    toModuleId: string;
+    toPort: string;
+  },
 ) {
   if (!isCompositeDefinition(entry.definition)) {
     return false;
@@ -2771,6 +2883,19 @@ function connectionIndexTouchesProtectedBoundaryPort(
       (binding) =>
         binding.internalModuleId === connection.from.moduleId &&
         binding.internalPort === connection.from.port,
+    )
+  );
+}
+
+function replacementTouchesProtectedBoundaryPort(
+  entry: CompositeLibraryEntry,
+  project: Project,
+  action: Extract<UiAction, { type: 'replaceConnection' }>,
+) {
+  return (
+    connectionTouchesProtectedBoundaryPort(entry, action) ||
+    action.removeConnectionIndices.some((connectionIndex) =>
+      connectionIndexTouchesProtectedBoundaryPort(entry, project, connectionIndex),
     )
   );
 }

@@ -1524,6 +1524,23 @@ function App() {
                 toPort,
               })
             }
+            onReplaceConnection={(
+              removeConnectionIndices,
+              fromModuleId,
+              fromPort,
+              toModuleId,
+              toPort,
+            ) =>
+              dispatch({
+                type: 'replaceConnection',
+                projectId: activeProjectDefinition.id,
+                removeConnectionIndices,
+                fromModuleId,
+                fromPort,
+                toModuleId,
+                toPort,
+              })
+            }
             onRemoveConnection={(connectionIndex) =>
               dispatch({
                 type: 'removeConnection',

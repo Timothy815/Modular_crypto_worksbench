@@ -37,6 +37,12 @@ The current workspace-navigation follow-on after that is:
 - reset / fit view recovery
 - trace-driven focus jumps back into the visible workspace
 
+The current connection-authoring follow-on after that is:
+- direct rewiring from occupied inputs
+- atomic replacement of single-input wires
+- clear replacement vs blocked target feedback
+- undo/redo-safe one-wire retargeting
+
 `main` now includes the completed first milestone of **number-theoretic foundations**:
 - new primitives:
   - `ModExp` (modular exponentiation via repeated squaring)

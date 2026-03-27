@@ -308,6 +308,62 @@ describe('uiReducer', () => {
     expect(nextState.currentTickByProject[projectId]).toBe(0);
   });
 
+  it('replaces a connection atomically and restores it in one undo step', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'keystream';
+    const project = initialState.projectStates[projectId];
+    const firstModuleId = 'plain';
+    const secondModuleId = 'xor';
+    const thirdModuleId = 'clock';
+
+    if (!firstModuleId || !secondModuleId || !thirdModuleId) {
+      throw new Error('Expected at least three modules in the sequential demo.');
+    }
+
+    const incomingIndex = project.connections.findIndex(
+      (connection) =>
+        connection.to.moduleId === secondModuleId && connection.to.port === 'a',
+    );
+
+    if (incomingIndex < 0) {
+      throw new Error('Expected a connection feeding the second module.');
+    }
+
+    const replacedState = uiReducer(initialState, {
+      type: 'replaceConnection',
+      projectId,
+      removeConnectionIndices: [incomingIndex],
+      fromModuleId: thirdModuleId,
+      fromPort: 'pulse',
+      toModuleId: secondModuleId,
+      toPort: 'a',
+    });
+
+    expect(
+      replacedState.projectStates[projectId]?.connections.some(
+        (connection) =>
+          connection.from.moduleId === thirdModuleId &&
+          connection.from.port === 'pulse' &&
+          connection.to.moduleId === secondModuleId &&
+          connection.to.port === 'a',
+      ),
+    ).toBe(true);
+    expect(
+      replacedState.projectStates[projectId]?.connections.some(
+        (connection) =>
+          connection.from.moduleId === firstModuleId &&
+          connection.to.moduleId === secondModuleId,
+      ),
+    ).toBe(false);
+
+    const undoneState = uiReducer(replacedState, {
+      type: 'undoWorkspaceHistory',
+      projectId,
+    });
+
+    expect(undoneState.projectStates[projectId]).toEqual(initialState.projectStates[projectId]);
+  });
+
   it('undoes and redoes recent workspace authoring actions', () => {
     const initialState = createInitialUiState(demoProjects);
     const projectId = 'sequential';

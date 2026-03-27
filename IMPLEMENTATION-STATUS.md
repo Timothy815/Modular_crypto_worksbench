@@ -25,6 +25,8 @@ Current development now carries:
   - `SELECTED-CLUSTER-OPERATIONS-V1.md`
   - `WORKSPACE-HISTORY-V1.md`
   - `WORKSPACE-VERSIONING-V1.md`
+  - `WORKSPACE-VISIBILITY-NAVIGATION-V1.md`
+  - `CONNECTION-AUTHORING-ERGONOMICS-V1.md`
 
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
@@ -146,6 +148,11 @@ The current workspace-visibility follow-on after that is:
 - bounded zoom controls
 - reset / fit view
 - explicit execution-trace focus jumps into the live workspace
+
+The current connection-authoring follow-on after that is:
+- drag from occupied inputs to rewire existing single-input connections
+- atomic replace/retarget behavior with undo/redo-safe history
+- explicit replacement vs blocked-target feedback during live connection drag
 
 Established and shipped:
 - implementation contract and AI coordination protocol

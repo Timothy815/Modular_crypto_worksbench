@@ -1886,6 +1886,14 @@ body.dock-resizing {
   transform: scale(1.04);
 }
 
+.graph-port-anchor-occupied {
+  color: color-mix(in srgb, var(--accent) 72%, var(--muted));
+}
+
+.graph-port-anchor-occupied .graph-port-dot {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
 .graph-port-droppable .graph-port-dot {
   box-shadow: 0 0 0 3px var(--danger-bg-strong);
 }
@@ -1906,6 +1914,15 @@ body.dock-resizing {
 .graph-port-invalid .graph-port-dot {
   background: var(--danger-text);
   box-shadow: 0 0 0 4px var(--danger-bg-strong);
+}
+
+.graph-port-replace {
+  color: #9b6a11;
+}
+
+.graph-port-replace .graph-port-dot {
+  background: #9b6a11;
+  box-shadow: 0 0 0 4px color-mix(in srgb, #d6b14d 38%, transparent);
 }
 
 .graph-port-dot {

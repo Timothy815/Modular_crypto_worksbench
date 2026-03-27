@@ -40,6 +40,7 @@ Read SELECTED-CLUSTER-OPERATIONS-V1.md before changing drag-box selection, selec
 Read WORKSPACE-HISTORY-V1.md before changing workspace-local undo/redo, reducer history, or bounded authoring safety nets.
 Read WORKSPACE-VERSIONING-V1.md before changing named workspace checkpoints, restore points, or longer-horizon workspace recovery.
 Read WORKSPACE-VISIBILITY-NAVIGATION-V1.md before changing zoom, fit/reset view, or trace-driven workspace focus recovery.
+Read CONNECTION-AUTHORING-ERGONOMICS-V1.md before changing direct rewiring, input-connection replacement, or first-wave wire-editing ergonomics.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.
 Read LEARNING-SEQUENCE-V1.md before restructuring the teaching library, adding staged progression, or changing how demos/tutorials/challenges are ordered.
@@ -175,6 +176,7 @@ src/utils/     — Shared helpers
 - The current active safety slice after cluster operations is `WORKSPACE-HISTORY-V1.md`
 - The current checkpointing slice after that is `WORKSPACE-VERSIONING-V1.md`
 - The current workspace-visibility slice after that is `WORKSPACE-VISIBILITY-NAVIGATION-V1.md`
+- The current connection-authoring slice after that is `CONNECTION-AUTHORING-ERGONOMICS-V1.md`
 - `v1.1.0` through `v1.12.0` are already shipped
 - `v1.13.0` is now the builder-workflow milestone:
   - multi-select group movement
