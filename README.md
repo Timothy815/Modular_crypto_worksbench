@@ -100,6 +100,7 @@ The current shipped advanced-rotor follow-on after that is:
 - explicit reverse traversal through rotor wiring via `RotorReverse`
 - historically faithful visible `Rotor -> Reflector -> RotorReverse` signal paths
 - `Rotor Return Path` demo/tutorial as the first bounded reverse-traversal teaching surface
+- palette-local rotor micro demos for `Rotor` and `RotorReverse`
 
 The current next advanced-rotor item after that is:
 - separate rotor-driven stepping as a later state/control architecture line

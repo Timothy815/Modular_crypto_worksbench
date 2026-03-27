@@ -435,6 +435,101 @@ const MULTI_ROUTER_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const ROTOR_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'Rotor',
+  name: 'Rotor Micro Demo',
+  summary: 'Minimal visible forward traversal: one letter enters a rotor and exits through its active wiring.',
+  pipeline: 'TextInput -> Rotor -> TextOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        {
+          id: 'rotor',
+          defId: 'Rotor',
+          params: {
+            wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''),
+            position: 0,
+            ringOffset: 0,
+            notches: '',
+          },
+        },
+        { id: 'text', defId: 'TextInput', params: { value: 'A' } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'rotor', port: 'in' } },
+        { from: { moduleId: 'rotor', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        rotor: { x: 356, y: 176 },
+        text: { x: 76, y: 176 },
+        out: { x: 620, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const ROTOR_REVERSE_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'RotorReverse',
+  name: 'Rotor Reverse Micro Demo',
+  summary: 'Minimal visible return path: a letter passes through a rotor, reflects, then comes back through RotorReverse.',
+  pipeline: 'TextInput -> Rotor -> Reflector -> RotorReverse -> TextOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        {
+          id: 'rotor-reverse',
+          defId: 'RotorReverse',
+          params: {
+            wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''),
+            position: 0,
+            ringOffset: 0,
+            notches: '',
+          },
+        },
+        { id: 'text', defId: 'TextInput', params: { value: 'A' } },
+        {
+          id: 'rotor-forward',
+          defId: 'Rotor',
+          params: {
+            wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''),
+            position: 0,
+            ringOffset: 0,
+            notches: '',
+          },
+        },
+        {
+          id: 'reflector',
+          defId: 'Reflector',
+          params: { wiring: 'YRUHQSLDPXNGOKMIEBFZCWVJAT'.split('') },
+        },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'rotor-forward', port: 'in' } },
+        { from: { moduleId: 'rotor-forward', port: 'out' }, to: { moduleId: 'reflector', port: 'in' } },
+        { from: { moduleId: 'reflector', port: 'out' }, to: { moduleId: 'rotor-reverse', port: 'in' } },
+        { from: { moduleId: 'rotor-reverse', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        'rotor-reverse': { x: 812, y: 176 },
+        text: { x: 48, y: 176 },
+        'rotor-forward': { x: 300, y: 176 },
+        reflector: { x: 556, y: 176 },
+        out: { x: 1068, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   MUX_MICRO_DEMO,
   DEMUX_MICRO_DEMO,
@@ -449,6 +544,8 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   BIT_JOIN_MICRO_DEMO,
   LFSR_MICRO_DEMO,
   MULTI_ROUTER_MICRO_DEMO,
+  ROTOR_MICRO_DEMO,
+  ROTOR_REVERSE_MICRO_DEMO,
 ];
 
 const PRIMITIVE_MICRO_DEMO_BY_DEF_ID = Object.fromEntries(

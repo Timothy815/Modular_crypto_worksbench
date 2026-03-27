@@ -18,6 +18,8 @@ describe('primitive micro demos', () => {
       'BitJoin',
       'LFSR',
       'MultiRouter',
+      'Rotor',
+      'RotorReverse',
     ]);
   });
 
@@ -27,6 +29,8 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('Counter')?.name).toBe('Counter Micro Demo');
     expect(getPrimitiveMicroDemo('LFSR')?.name).toBe('LFSR Micro Demo');
     expect(getPrimitiveMicroDemo('MultiRouter')?.name).toBe('Multi Router Micro Demo');
+    expect(getPrimitiveMicroDemo('Rotor')?.name).toBe('Rotor Micro Demo');
+    expect(getPrimitiveMicroDemo('RotorReverse')?.name).toBe('Rotor Reverse Micro Demo');
     expect(getPrimitiveMicroDemo('XOR')).toBeNull();
   });
 
@@ -44,5 +48,18 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('BitSplit')?.defaultTickedMode).toBeUndefined();
     expect(getPrimitiveMicroDemo('BitPad')?.defaultTickedMode).toBeUndefined();
     expect(getPrimitiveMicroDemo('BitJoin')?.defaultTickedMode).toBeUndefined();
+    expect(getPrimitiveMicroDemo('Rotor')?.defaultTickedMode).toBeUndefined();
+    expect(getPrimitiveMicroDemo('RotorReverse')?.defaultTickedMode).toBeUndefined();
+  });
+
+  it('keeps the rotor reverse example structurally honest', () => {
+    const rotorReverse = getPrimitiveMicroDemo('RotorReverse');
+    expect(rotorReverse?.document.project.modules.map((module) => module.defId)).toEqual([
+      'RotorReverse',
+      'TextInput',
+      'Rotor',
+      'Reflector',
+      'TextOutput',
+    ]);
   });
 });
