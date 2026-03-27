@@ -297,4 +297,50 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.status).toBe(0);
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
   });
+
+  it('matches executeProject for a protocol-material workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'iv-1', defId: 'IV', params: { value: '1C', width: 8 } },
+        { id: 'nonce-1', defId: 'Nonce', params: { value: 'A', width: 8 } },
+        { id: 'join-1', defId: 'BitJoin', params: {} },
+        { id: 'hex-1', defId: 'BitsToHex', params: {} },
+        { id: 'hex-out', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'iv-1', port: 'out' }, to: { moduleId: 'join-1', port: 'a' } },
+        { from: { moduleId: 'nonce-1', port: 'out' }, to: { moduleId: 'join-1', port: 'b' } },
+        { from: { moduleId: 'join-1', port: 'out' }, to: { moduleId: 'hex-1', port: 'in' } },
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'hex-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeProject for a symbol-structure workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'MATH' } },
+        { id: 'permute-1', defId: 'SymbolPermutation', params: { order: '2,0,3,1' } },
+        { id: 'window-1', defId: 'SymbolWindow', params: { start: 1, width: 2 } },
+        { id: 'text-out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'permute-1', port: 'in' } },
+        { from: { moduleId: 'permute-1', port: 'out' }, to: { moduleId: 'window-1', port: 'in' } },
+        { from: { moduleId: 'window-1', port: 'out' }, to: { moduleId: 'text-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
 });

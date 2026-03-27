@@ -11,14 +11,20 @@ import { validateProject } from '../validation';
 
 const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'TextInput',
+  'KeyInput',
   'AsciiSource',
   'BitSource',
   'HexSource',
+  'IV',
+  'Nonce',
+  'Salt',
   'Output',
   'TextOutput',
   'BitsToAscii',
   'BitOutput',
   'HexOutput',
+  'SymbolPermutation',
+  'SymbolWindow',
   'SymbolToBits',
   'BitsToSymbol',
   'BitsToHex',
@@ -109,6 +115,10 @@ def text_input(value):
     return {"out": str(value)}
 
 
+def key_input(value):
+    return {"out": str(value)}
+
+
 def ascii_source(value):
     text = str(value)
     bits = []
@@ -135,6 +145,25 @@ def hex_source(value):
         for shift in (3, 2, 1, 0):
             bits.append((nibble >> shift) & 1)
     return {"out": bits}
+
+
+def protocol_material_source(value, width, module_name):
+    normalized = str(value).strip().replace(" ", "").upper()
+    if normalized and any(char not in "0123456789ABCDEF" for char in normalized):
+        raise ValueError(f"{module_name} accepts only hexadecimal characters 0-9 and A-F")
+    width = int(width)
+    if width <= 0:
+        raise ValueError("Protocol-material width must be a positive integer")
+    if width % 4 != 0:
+        raise ValueError("Protocol-material width must be a multiple of 4 bits")
+    bits = []
+    for digit in normalized:
+        nibble = int(digit, 16)
+        for shift in (3, 2, 1, 0):
+            bits.append((nibble >> shift) & 1)
+    if len(bits) > width:
+        raise ValueError(f"{module_name} value exceeds declared width")
+    return {"out": bits + [0 for _ in range(width - len(bits))]}
 
 
 def symbol_to_bits(signal):
@@ -207,6 +236,51 @@ def ascii_to_hex(signal):
             raise ValueError("AsciiToHex can only encode 7-bit ASCII characters (code points 0-127)")
         bytes_out.append(format(code, "02X"))
     return {"out": "".join(bytes_out)}
+
+
+def _parse_symbol_permutation(order_value):
+    parts = [part.strip() for part in str(order_value).split(",") if part.strip()]
+    if not parts:
+        raise ValueError("Symbol permutation order cannot be empty")
+    order = []
+    for part in parts:
+        index = int(part)
+        if index < 0:
+            raise ValueError("Permutation order must contain only non-negative integers")
+        order.append(index)
+    if len(set(order)) != len(order):
+        raise ValueError("Symbol permutation order must use each input index exactly once")
+    max_index = len(order) - 1
+    if any(index > max_index for index in order):
+        raise ValueError(f"Symbol permutation order must stay within 0-{max_index}")
+    return order
+
+
+def symbol_permutation(signal, order_value):
+    symbol = str(signal)
+    order = _parse_symbol_permutation(order_value)
+    characters = list(symbol)
+    if len(characters) != len(order):
+        raise ValueError(
+            f"SymbolPermutation order length ({len(order)}) must match the input symbol length ({len(characters)})"
+        )
+    return {"out": "".join(characters[index] for index in order)}
+
+
+def symbol_window(signal, start, width):
+    symbol = str(signal)
+    characters = list(symbol)
+    start = int(start)
+    width = int(width)
+    if start < 0:
+        raise ValueError("SymbolWindow start must be a non-negative integer.")
+    if width < 1:
+        raise ValueError("SymbolWindow width must be a positive integer.")
+    if start + width > len(characters):
+        raise ValueError(
+            f"SymbolWindow range ({start}-{start + width - 1}) exceeds input length ({len(characters)})"
+        )
+    return {"out": "".join(characters[start:start + width])}
 
 
 def xor_bits(a, b):
@@ -719,14 +793,26 @@ function buildModuleExpression(
   switch (def.id) {
     case 'TextInput':
       return `text_input(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))})`;
+    case 'KeyInput':
+      return `key_input(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))})`;
     case 'AsciiSource':
       return `ascii_source(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))})`;
     case 'BitSource':
       return `bit_source(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'stream'))})`;
     case 'HexSource':
       return `hex_source(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))})`;
+    case 'IV':
+      return `protocol_material_source(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'width'))}, "IV")`;
+    case 'Nonce':
+      return `protocol_material_source(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'width'))}, "Nonce")`;
+    case 'Salt':
+      return `protocol_material_source(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'width'))}, "Salt")`;
     case 'SymbolToBits':
       return `symbol_to_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
+    case 'SymbolPermutation':
+      return `symbol_permutation(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'order'))})`;
+    case 'SymbolWindow':
+      return `symbol_window(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'start'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'width'))})`;
     case 'BitsToSymbol':
       return `bits_to_symbol(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
     case 'BitsToAscii':

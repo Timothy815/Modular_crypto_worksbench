@@ -69,6 +69,14 @@ Current `main` now also includes:
   - `ByteSwap`
   - `BitUnpad`
   - parity-tested control/arithmetic and byte-structure export paths
+- Python export expansion v3:
+  - `KeyInput`
+  - `IV`
+  - `Nonce`
+  - `Salt`
+  - `SymbolPermutation`
+  - `SymbolWindow`
+  - parity-tested protocol-material and symbol-structure export paths
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments

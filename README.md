@@ -145,6 +145,11 @@ The second careful Python export expansion is now also shipped:
 - `ByteRotate`, `ByteSwap`, and `BitUnpad` export support
 - parity-tested control/arithmetic and byte-structure export paths
 
+The third careful Python export expansion is now also shipped:
+- `KeyInput`, `IV`, `Nonce`, and `Salt` export support
+- `SymbolPermutation` and `SymbolWindow` export support
+- parity-tested protocol-material and symbol-structure export paths
+
 The current near-future workspace-layout ergonomics item after that is:
 - bounded multi-window / multi-tab support for selected surfaces
 - likely `Inspector` and `Palette` first
