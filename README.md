@@ -171,10 +171,11 @@ That `LFSR` stateful export bridge is now also shipped:
 - parity-tested for direct keystream emission and logic-influencing ticked use
 - still deliberately below rotor-family temporal runtime complexity
 
-The current near-future workspace-layout ergonomics item after that is:
-- bounded multi-window / multi-tab support for selected surfaces
-- likely `Inspector` and `Palette` first
-- treated as a synchronization-heavy product line, not a casual pane tweak
+That bounded multi-window workspace slice is now also shipped:
+- `MULTI-WINDOW-WORKSPACE-V1.md`
+- detachable `Palette` and `Inspector` windows
+- host-authoritative live synchronization across windows
+- docked copies hidden in the main window while detached copies are active
 
 The current ranked near-future order is:
 1. continue the `v2.1` builder-power line

@@ -103,6 +103,12 @@ Current near-future sequencing is now explicit:
 - refactor the largest UI surfaces third
 - keep multi-window workspace support as a deliberate next-tier priority after those lines
 
+Current `main` now also includes the first bounded multi-window slice:
+- `MULTI-WINDOW-WORKSPACE-V1.md`
+- detachable `Palette` and `Inspector` windows
+- host-authoritative live synchronization over a bounded window bridge
+- docked copies hidden in the main window while detached copies are active
+
 The next recommended builder-power follow-on is now shipped:
 - `CLUSTER-BOUNDARY-PORT-AUTHORING-V1.md`
 - explicit include/exclude control over inferred composite boundary ports during capture
@@ -333,10 +339,9 @@ The current implementation-ready export follow-on after that is:
 - one standalone `.py` artifact
 - explicit compatibility rejection for unsupported modules
 
-The current near-future workspace-layout ergonomics item after that is:
-- bounded multi-window / multi-tab support for selected surfaces
-- likely `Inspector` and `Palette` first
-- explicitly treated as a synchronization-heavy product line, not a casual pane tweak
+The next follow-on for this line, if revisited later, should stay separate from the shipped first slice:
+- broader multi-window / multi-tab support for additional surfaces
+- likely tutorials, challenges, or cryptanalysis only after the host-synchronization model proves durable
 
 Established and shipped:
 - implementation contract and AI coordination protocol

@@ -1,4 +1,14 @@
-import { lazy, Suspense, useEffect, useMemo, useReducer, useState, type CSSProperties } from 'react';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 
 import './App.css';
 import { isCompositeDefinition, type CompositeLibraryEntry } from './engine/composites';
@@ -37,6 +47,20 @@ import {
   saveWorkspaceToStorage,
 } from './ui/persistence';
 import {
+  DETACHED_PANEL_CHANNEL_NAME,
+  DETACHED_PANEL_HOST_QUERY_KEY,
+  DETACHED_PANEL_QUERY_KEY,
+  DETACHED_PANEL_WINDOW_QUERY_KEY,
+  type DetachedInspectorSnapshot,
+  type DetachedPanelKind,
+  type DetachedPanelMessage,
+  type DetachedPanelStateSnapshot,
+  type DetachedPaletteSnapshot,
+  createDetachedPanelUrl,
+  createDetachedPanelWindowName,
+  isDetachedPanelKind,
+} from './ui/multi-window';
+import {
   cloneProject,
   createInitialUiState,
   getEffectiveRegistry,
@@ -63,6 +87,11 @@ const ChallengePanel = lazy(() =>
 const CryptanalysisPanel = lazy(() =>
   import('./ui/components/cryptanalysis-panel').then((module) => ({
     default: module.CryptanalysisPanel,
+  })),
+);
+const DetachedPanelWindow = lazy(() =>
+  import('./ui/components/detached-panel-window').then((module) => ({
+    default: module.DetachedPanelWindow,
   })),
 );
 const ParameterInspector = lazy(() =>
@@ -156,7 +185,46 @@ function LazyPanelFallback({
   );
 }
 
+function getDetachedPanelConfig() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const url = new URL(window.location.href);
+  const kind = url.searchParams.get(DETACHED_PANEL_QUERY_KEY);
+  const hostId = url.searchParams.get(DETACHED_PANEL_HOST_QUERY_KEY);
+  const panelWindowId = url.searchParams.get(DETACHED_PANEL_WINDOW_QUERY_KEY);
+
+  if (!isDetachedPanelKind(kind) || !hostId || !panelWindowId) {
+    return null;
+  }
+
+  return { kind, hostId, panelWindowId };
+}
+
+function createWindowSessionId() {
+  return `window-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function App() {
+  const detachedPanelConfig = getDetachedPanelConfig();
+  if (detachedPanelConfig) {
+    return (
+      <Suspense fallback={<LazyPanelFallback label="Window" title="Preparing detached panel…" />}>
+        <DetachedPanelWindow
+          channelName={DETACHED_PANEL_CHANNEL_NAME}
+          hostId={detachedPanelConfig.hostId}
+          panelWindowId={detachedPanelConfig.panelWindowId}
+          kind={detachedPanelConfig.kind}
+        />
+      </Suspense>
+    );
+  }
+
+  return <MainApp />;
+}
+
+function MainApp() {
   const [headerResourceAction, setHeaderResourceAction] = useState('');
   const [headerWorkspaceAction, setHeaderWorkspaceAction] = useState('');
   const [learningPanelTab, setLearningPanelTab] = useState<'tutorial' | 'challenge'>('tutorial');
@@ -203,6 +271,12 @@ function App() {
     return savedTheme === 'dark' ? 'dark' : 'light';
   });
   const [parameterClipboard, setParameterClipboard] = useState<ParameterClipboardState | null>(null);
+  const hostWindowIdRef = useRef(createWindowSessionId());
+  const detachedPanelWindowsRef = useRef<Partial<Record<DetachedPanelKind, Window | null>>>({});
+  const [detachedPanels, setDetachedPanels] = useState<Record<DetachedPanelKind, boolean>>({
+    palette: false,
+    inspector: false,
+  });
   const [state, dispatch] = useReducer(
     uiReducer,
     demoProjects,
@@ -441,19 +515,22 @@ function App() {
   const [requestedWorkspaceFocusModuleId, setRequestedWorkspaceFocusModuleId] =
     useState<string | null>(null);
 
-  const availableProjects = [
-    ...demoProjects,
-    ...state.userWorkspaceLibrary.map((workspace) => ({
-      id: workspace.id,
-      name: workspace.name,
-      group: workspace.group ?? 'My Workspaces',
-      summary: workspace.summary,
-      pipeline: workspace.pipeline,
-      defaultTickedMode: workspace.defaultTickedMode,
-      project: state.projectStates[workspace.id] ?? { modules: [], connections: [] },
-      layout: state.layoutByProject[workspace.id] ?? {},
-    })),
-  ];
+  const availableProjects = useMemo(
+    () => [
+      ...demoProjects,
+      ...state.userWorkspaceLibrary.map((workspace) => ({
+        id: workspace.id,
+        name: workspace.name,
+        group: workspace.group ?? 'My Workspaces',
+        summary: workspace.summary,
+        pipeline: workspace.pipeline,
+        defaultTickedMode: workspace.defaultTickedMode,
+        project: state.projectStates[workspace.id] ?? { modules: [], connections: [] },
+        layout: state.layoutByProject[workspace.id] ?? {},
+      })),
+    ],
+    [state.layoutByProject, state.projectStates, state.userWorkspaceLibrary],
+  );
   const activeProjectDefinition =
     availableProjects.find((project) => project.id === state.activeProjectId) ??
     availableProjects[0];
@@ -483,9 +560,13 @@ function App() {
   const selectedModuleDef = selectedModule
     ? (effectiveRegistry[selectedModule.defId] ?? null)
     : null;
-  const selectedModuleParamKeys = selectedModuleDef
-    ? Object.values(selectedModuleDef.paramSchema).map((field) => field.key)
-    : [];
+  const selectedModuleParamKeys = useMemo(
+    () =>
+      selectedModuleDef
+        ? Object.values(selectedModuleDef.paramSchema).map((field) => field.key)
+        : [],
+    [selectedModuleDef],
+  );
   const compositeUsageCountById = Object.values(state.projectStates).reduce<Record<string, number>>(
     (counts, project) => {
       for (const moduleInstance of project.modules) {
@@ -500,6 +581,9 @@ function App() {
     },
     {},
   );
+  const builtInReusableIds = state.compositeLibrary
+    .filter((entry) => entry.source === 'built-in')
+    .map((entry) => entry.id);
 
   const isTickedMode = !state.compositeEditor && (state.tickedModeByProject[activeProjectDefinition.id] ?? false);
   const currentTick = state.currentTickByProject[activeProjectDefinition.id] ?? 0;
@@ -756,43 +840,134 @@ function App() {
     selectedTutorial?.projectId === activeProjectDefinition.id
       ? selectedTutorialStep
       : null;
+  const detachedPaletteSnapshot = useMemo<DetachedPaletteSnapshot>(
+    () => ({
+      theme,
+      paletteViewMode,
+      compositeLibrary: state.compositeLibrary,
+      compositeUsageCountById,
+      builtInReusableIds,
+    }),
+    [builtInReusableIds, compositeUsageCountById, paletteViewMode, state.compositeLibrary, theme],
+  );
+  const detachedInspectorSnapshot = useMemo<DetachedInspectorSnapshot>(
+    () => ({
+      theme,
+      projectId: activeProjectDefinition.id,
+      execution,
+      executionError,
+      validationIssues,
+      stepIndex: effectiveStepIndex,
+      project: activeProjectState,
+      tutorialStep: activeTutorialStep,
+      projectName: activeProjectDefinition.name,
+      comparisonBaseline,
+      executionComparison,
+      baselineOutput: baselineExecution ? executionComparison?.baselineOutput.formatted ?? 'n/a' : 'blocked',
+      variantOutput: execution ? executionComparison?.variantOutput.formatted ?? 'n/a' : 'blocked',
+      baselineExecutionError,
+      baselineModuleId: baselineSelectedModule?.id ?? null,
+      selectedModuleId: selectedModule?.id ?? null,
+      selectedModuleIds: effectiveSelectedModuleIds,
+      parameterClipboard,
+      paramDrafts: state.compositeEditor
+        ? { ...state.compositeEditor.paramDrafts }
+        : Object.fromEntries(
+            Object.entries(state.paramDrafts)
+              .filter(([key]) => key.startsWith(`${activeProjectDefinition.id}:`))
+              .map(([key, value]) => [key.slice(activeProjectDefinition.id.length + 1), value]),
+          ),
+      compositeLibrary: state.compositeLibrary,
+      probedModuleIds: state.probedModuleIdsByProject[activeProjectDefinition.id] ?? [],
+      isTickedMode,
+      currentTick: effectiveCurrentTick,
+      tickCount: effectiveTickCount,
+      tickedParamsByModule: tickedExecution?.paramsByModuleByTick ?? null,
+      tickHistoryByModule,
+      collectedOutput,
+      activeAnalysisTraceEntry,
+      requestedWorkspaceFocusModuleId,
+      canRenameModuleIds: !state.compositeEditor,
+    }),
+    [
+      activeAnalysisTraceEntry,
+      activeProjectDefinition.id,
+      activeProjectDefinition.name,
+      activeProjectState,
+      activeTutorialStep,
+      baselineExecution,
+      baselineExecutionError,
+      baselineSelectedModule,
+      collectedOutput,
+      comparisonBaseline,
+      effectiveCurrentTick,
+      effectiveSelectedModuleIds,
+      effectiveStepIndex,
+      effectiveTickCount,
+      execution,
+      executionComparison,
+      executionError,
+      isTickedMode,
+      parameterClipboard,
+      requestedWorkspaceFocusModuleId,
+      selectedModule,
+      state.compositeEditor,
+      state.compositeLibrary,
+      state.paramDrafts,
+      state.probedModuleIdsByProject,
+      theme,
+      tickHistoryByModule,
+      tickedExecution,
+      validationIssues,
+    ],
+  );
   const completedTutorialIds =
     state.completedTutorialsByProject[activeProjectDefinition.id] ?? [];
   const isTutorialCompleted = selectedTutorial
     ? completedTutorialIds.includes(selectedTutorial.id)
     : false;
-  const syncTutorialStepFromTrace = (nextIndex: number | null) => {
-    setStepIndex(nextIndex);
+  const syncTutorialStepFromTrace = useCallback(
+    (nextIndex: number | null) => {
+      setStepIndex(nextIndex);
 
-    if (
-      nextIndex === null ||
-      workspaceMode !== 'guide' ||
-      !selectedTutorial ||
-      state.compositeEditor ||
-      selectedTutorial.projectId !== activeProjectDefinition.id ||
-      !execution
-    ) {
-      return;
-    }
+      if (
+        nextIndex === null ||
+        workspaceMode !== 'guide' ||
+        !selectedTutorial ||
+        state.compositeEditor ||
+        selectedTutorial.projectId !== activeProjectDefinition.id ||
+        !execution
+      ) {
+        return;
+      }
 
-    const nextTrace = execution.trace[nextIndex] ?? null;
-    if (!nextTrace) {
-      return;
-    }
+      const nextTrace = execution.trace[nextIndex] ?? null;
+      if (!nextTrace) {
+        return;
+      }
 
-    const tutorialStepMatchIndex = selectedTutorial.steps.findIndex(
-      (step) =>
-        step.targetStepIndex === nextIndex ||
-        (step.focusModuleId !== undefined && step.focusModuleId === nextTrace.moduleId),
-    );
-    if (tutorialStepMatchIndex >= 0 && tutorialStepMatchIndex !== tutorialStepIndex) {
-      dispatch({
-        type: 'setTutorialStep',
-        projectId: activeProjectDefinition.id,
-        stepIndex: tutorialStepMatchIndex,
-      });
-    }
-  };
+      const tutorialStepMatchIndex = selectedTutorial.steps.findIndex(
+        (step) =>
+          step.targetStepIndex === nextIndex ||
+          (step.focusModuleId !== undefined && step.focusModuleId === nextTrace.moduleId),
+      );
+      if (tutorialStepMatchIndex >= 0 && tutorialStepMatchIndex !== tutorialStepIndex) {
+        dispatch({
+          type: 'setTutorialStep',
+          projectId: activeProjectDefinition.id,
+          stepIndex: tutorialStepMatchIndex,
+        });
+      }
+    },
+    [
+      activeProjectDefinition.id,
+      execution,
+      selectedTutorial,
+      state.compositeEditor,
+      tutorialStepIndex,
+      workspaceMode,
+    ],
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -952,43 +1127,48 @@ function App() {
     });
   }
 
-  function handleOpenPrimitiveMicroDemo(defId: string) {
-    if (state.compositeEditor) {
-      window.alert('Primitive micro demos are unavailable while editing a reusable composite.');
-      return;
-    }
+  const handleOpenPrimitiveMicroDemo = useCallback(
+    (defId: string) => {
+      if (state.compositeEditor) {
+        window.alert('Primitive micro demos are unavailable while editing a reusable composite.');
+        return;
+      }
 
-    const microDemo = getPrimitiveMicroDemo(defId);
-    if (!microDemo) {
-      return;
-    }
+      const microDemo = getPrimitiveMicroDemo(defId);
+      if (!microDemo) {
+        return;
+      }
 
-    const existingWorkspaceNames = new Set(state.userWorkspaceLibrary.map((workspace) => workspace.name));
-    const workspaceName = createWorkspaceNameFromBase(microDemo.name, existingWorkspaceNames);
-    const workspaceId = createUniqueWorkspaceId(
-      workspaceName,
-      new Set(availableProjects.map((project) => project.id)),
-    );
+      const existingWorkspaceNames = new Set(
+        state.userWorkspaceLibrary.map((workspace) => workspace.name),
+      );
+      const workspaceName = createWorkspaceNameFromBase(microDemo.name, existingWorkspaceNames);
+      const workspaceId = createUniqueWorkspaceId(
+        workspaceName,
+        new Set(availableProjects.map((project) => project.id)),
+      );
 
-    dispatch({
-      type: 'createBlankWorkspace',
-      workspaceId,
-      name: workspaceName,
-      summary: microDemo.summary,
-      pipeline: microDemo.pipeline,
-    });
-    dispatch({
-      type: 'loadDocument',
-      projectId: workspaceId,
-      document: microDemo.document,
-    });
-    dispatch({
-      type: 'setTickedMode',
-      projectId: workspaceId,
-      enabled: microDemo.defaultTickedMode ?? false,
-    });
-    setImportError(null);
-  }
+      dispatch({
+        type: 'createBlankWorkspace',
+        workspaceId,
+        name: workspaceName,
+        summary: microDemo.summary,
+        pipeline: microDemo.pipeline,
+      });
+      dispatch({
+        type: 'loadDocument',
+        projectId: workspaceId,
+        document: microDemo.document,
+      });
+      dispatch({
+        type: 'setTickedMode',
+        projectId: workspaceId,
+        enabled: microDemo.defaultTickedMode ?? false,
+      });
+      setImportError(null);
+    },
+    [availableProjects, state.compositeEditor, state.userWorkspaceLibrary],
+  );
 
   function handleCopySelectedCluster() {
     if (state.compositeEditor) {
@@ -1185,63 +1365,343 @@ function App() {
     setImportError(null);
   }
 
-  function handleUnzipComposite(moduleId: string) {
-    if (!selectedModule || selectedModule.id !== moduleId) {
-      return;
-    }
-    const compositeEntry = state.compositeLibrary.find(
-      (entry) => entry.id === selectedModule.defId,
-    );
-    if (!compositeEntry) {
-      return;
-    }
+  const handleUnzipComposite = useCallback(
+    (moduleId: string) => {
+      if (!selectedModule || selectedModule.id !== moduleId) {
+        return;
+      }
+      const compositeEntry = state.compositeLibrary.find(
+        (entry) => entry.id === selectedModule.defId,
+      );
+      if (!compositeEntry) {
+        return;
+      }
 
-    const unzipped = unzipCompositeInstance({
-      project: activeProjectState,
-      layout: activeLayout,
-      entry: compositeEntry,
-      moduleId,
-      moduleParams: selectedModule.params,
-    });
-
-    if (!unzipped.ok || !unzipped.project || !unzipped.layout) {
-      setImportError(unzipped.error ?? 'Unable to unzip the selected composite.');
-      return;
-    }
-
-    dispatch({
-      type: 'loadDocument',
-      projectId: activeProjectDefinition.id,
-      document: {
-        version: 1,
-        project: unzipped.project,
-        ui: {
-          layout: unzipped.layout,
-          annotations: state.compositeEditor
-            ? []
-            : state.annotationsByProject[activeProjectDefinition.id] ?? [],
-        },
-      },
-    });
-    setImportError(null);
-
-    const [firstModuleId, ...restModuleIds] = unzipped.selectedModuleIds ?? [];
-    if (firstModuleId) {
-      dispatch({
-        type: 'selectModule',
-        projectId: activeProjectDefinition.id,
-        moduleId: firstModuleId,
+      const unzipped = unzipCompositeInstance({
+        project: activeProjectState,
+        layout: activeLayout,
+        entry: compositeEntry,
+        moduleId,
+        moduleParams: selectedModule.params,
       });
-      for (const selectedModuleId of restModuleIds) {
+
+      if (!unzipped.ok || !unzipped.project || !unzipped.layout) {
+        setImportError(unzipped.error ?? 'Unable to unzip the selected composite.');
+        return;
+      }
+
+      dispatch({
+        type: 'loadDocument',
+        projectId: activeProjectDefinition.id,
+        document: {
+          version: 1,
+          project: unzipped.project,
+          ui: {
+            layout: unzipped.layout,
+            annotations: state.compositeEditor
+              ? []
+              : state.annotationsByProject[activeProjectDefinition.id] ?? [],
+          },
+        },
+      });
+      setImportError(null);
+
+      const [firstModuleId, ...restModuleIds] = unzipped.selectedModuleIds ?? [];
+      if (firstModuleId) {
         dispatch({
           type: 'selectModule',
           projectId: activeProjectDefinition.id,
-          moduleId: selectedModuleId,
-          additive: true,
+          moduleId: firstModuleId,
         });
+        for (const selectedModuleId of restModuleIds) {
+          dispatch({
+            type: 'selectModule',
+            projectId: activeProjectDefinition.id,
+            moduleId: selectedModuleId,
+            additive: true,
+          });
+        }
       }
+    },
+    [
+      activeLayout,
+      activeProjectDefinition.id,
+      activeProjectState,
+      selectedModule,
+      state.annotationsByProject,
+      state.compositeEditor,
+      state.compositeLibrary,
+    ],
+  );
+
+  function openDetachedPanel(kind: DetachedPanelKind) {
+    if (typeof window === 'undefined') {
+      return;
     }
+
+    const panelWindowId = createWindowSessionId();
+    const detachedWindow = window.open(
+      createDetachedPanelUrl(
+        window.location.href,
+        kind,
+        hostWindowIdRef.current,
+        panelWindowId,
+      ),
+      createDetachedPanelWindowName(kind, panelWindowId),
+      'popup=yes,width=520,height=980,resizable=yes,scrollbars=yes',
+    );
+
+    if (!detachedWindow) {
+      setImportError(`Unable to open the ${kind} window.`);
+      return;
+    }
+
+    detachedPanelWindowsRef.current[kind] = detachedWindow;
+    setDetachedPanels((current) => ({ ...current, [kind]: true }));
   }
+
+  function returnDetachedPanelToMain(kind: DetachedPanelKind) {
+    detachedPanelWindowsRef.current[kind]?.close();
+    detachedPanelWindowsRef.current[kind] = null;
+    setDetachedPanels((current) => ({ ...current, [kind]: false }));
+  }
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof BroadcastChannel === 'undefined') {
+      return;
+    }
+
+    const channel = new BroadcastChannel(DETACHED_PANEL_CHANNEL_NAME);
+
+    const postSnapshot = (kind: DetachedPanelKind, panelWindowId: string) => {
+      const snapshot: DetachedPanelStateSnapshot = {
+        hostId: hostWindowIdRef.current,
+        panelWindowId,
+        kind,
+        payload: kind === 'palette' ? detachedPaletteSnapshot : detachedInspectorSnapshot,
+      };
+      const message: DetachedPanelMessage = {
+        type: 'snapshot',
+        snapshot,
+      };
+      channel.postMessage(message);
+    };
+
+    const handleMessage = (event: MessageEvent<DetachedPanelMessage>) => {
+      const message = event.data;
+
+      if ('hostId' in message && message.hostId !== hostWindowIdRef.current) {
+        return;
+      }
+
+      if (message.type === 'requestSnapshot') {
+        postSnapshot(message.kind, message.panelWindowId);
+        return;
+      }
+
+      if (message.type === 'dispatchAction') {
+        dispatch(message.action);
+        return;
+      }
+
+      if (message.type === 'command') {
+        switch (message.command.type) {
+          case 'togglePaletteViewMode':
+            setPaletteViewMode((currentMode) =>
+              currentMode === 'expanded' ? 'compact' : 'expanded',
+            );
+            return;
+          case 'addModule': {
+            const moduleDef = effectiveRegistry[message.command.defId] ?? null;
+            if (!moduleDef) {
+              return;
+            }
+            dispatch({
+              type: 'addModule',
+              projectId: activeProjectDefinition.id,
+              moduleDef,
+            });
+            return;
+          }
+          case 'openComposite':
+            dispatch({
+              type: 'openCompositeEditor',
+              entryId: message.command.defId,
+            });
+            return;
+          case 'duplicateReusable': {
+            const { defId } = message.command;
+            const entry = state.compositeLibrary.find(
+              (candidate) => candidate.id === defId,
+            );
+            if (!entry) {
+              return;
+            }
+            const nextEntry = createUserOwnedReusableDuplicate(entry, state.compositeLibrary);
+            dispatch({ type: 'addCompositeToLibrary', entry: nextEntry });
+            if (isCompositeDefinition(nextEntry.definition)) {
+              dispatch({ type: 'openCompositeEditor', entryId: nextEntry.id });
+            }
+            return;
+          }
+          case 'openPrimitiveMicroDemo':
+            handleOpenPrimitiveMicroDemo(message.command.defId);
+            return;
+          case 'exportCompositeLibrary':
+            downloadCompositeLibraryDocument({
+              version: 1,
+              entries: state.compositeLibrary,
+            });
+            return;
+          case 'removeComposite':
+            dispatch({
+              type: 'removeCompositeFromLibrary',
+              compositeId: message.command.defId,
+            });
+            return;
+          case 'copyParams':
+            if (!selectedModule || !selectedModuleDef || selectedModule.id !== message.command.moduleId) {
+              return;
+            }
+            setParameterClipboard({
+              sourceModuleId: selectedModule.id,
+              sourceDefId: selectedModuleDef.id,
+              params: Object.fromEntries(
+                selectedModuleParamKeys.map((key) => [
+                  key,
+                  selectedModule.params[key] ?? selectedModuleDef.paramSchema[key]?.defaultValue,
+                ]),
+              ),
+              paramKeys: selectedModuleParamKeys,
+            });
+            return;
+          case 'applyCopiedParams':
+            dispatch({
+              type: 'applyCopiedParams',
+              projectId: activeProjectDefinition.id,
+              sourceModuleId: message.command.sourceModuleId,
+              sourceDefId: message.command.sourceDefId,
+              targetModuleIds: message.command.targetModuleIds,
+              params: message.command.params,
+              paramKeys: message.command.paramKeys,
+            });
+            return;
+          case 'deleteModule':
+            if (
+              state.compositeEditor &&
+              activeCompositeEntry &&
+              isCompositeBoundaryModule(activeCompositeEntry, message.command.moduleId)
+            ) {
+              dispatch({
+                type: 'setCompositeEditorSaveError',
+                message:
+                  'This module is bound to an exposed composite port. Boundary editing will come in a later slice.',
+              });
+              return;
+            }
+            dispatch({
+              type: 'removeModule',
+              projectId: activeProjectDefinition.id,
+              moduleId: message.command.moduleId,
+            });
+            return;
+          case 'traceHover':
+            setHoveredTraceModuleId(message.command.moduleId);
+            return;
+          case 'stepChange':
+            syncTutorialStepFromTrace(message.command.nextIndex);
+            return;
+          case 'activeAnalysisTraceChange':
+            setActiveAnalysisTraceEntry(message.command.entry);
+            return;
+          case 'requestFocusModule':
+            setRequestedWorkspaceFocusModuleId(message.command.moduleId);
+            return;
+          case 'captureBaseline':
+            dispatch({
+              type: 'captureComparisonBaseline',
+              projectId: activeProjectDefinition.id,
+              capturedAt: new Date().toISOString(),
+            });
+            return;
+          case 'clearBaseline':
+            dispatch({
+              type: 'clearComparisonBaseline',
+              projectId: activeProjectDefinition.id,
+            });
+            return;
+          case 'unzipComposite':
+            handleUnzipComposite(message.command.moduleId);
+            return;
+        }
+      }
+
+      if (message.type === 'panelClosed') {
+        detachedPanelWindowsRef.current[message.kind] = null;
+        setDetachedPanels((current) => ({ ...current, [message.kind]: false }));
+      }
+    };
+
+    channel.addEventListener('message', handleMessage);
+
+    return () => {
+      channel.removeEventListener('message', handleMessage);
+      channel.close();
+    };
+  }, [
+    activeCompositeEntry,
+    activeProjectDefinition.id,
+    detachedInspectorSnapshot,
+    detachedPaletteSnapshot,
+    effectiveRegistry,
+    handleOpenPrimitiveMicroDemo,
+    handleUnzipComposite,
+    selectedModule,
+    selectedModuleDef,
+    selectedModuleParamKeys,
+    state.compositeEditor,
+    state.compositeLibrary,
+    syncTutorialStepFromTrace,
+  ]);
+
+  useEffect(() => {
+    if (typeof BroadcastChannel === 'undefined') {
+      return;
+    }
+
+    const channel = new BroadcastChannel(DETACHED_PANEL_CHANNEL_NAME);
+    if (detachedPanels.palette) {
+      const paletteWindow = detachedPanelWindowsRef.current.palette;
+      const paletteWindowId = paletteWindow?.name.split('mcw-palette-')[1] ?? createWindowSessionId();
+      channel.postMessage({
+        type: 'snapshot',
+        snapshot: {
+          hostId: hostWindowIdRef.current,
+          panelWindowId: paletteWindowId,
+          kind: 'palette',
+          payload: detachedPaletteSnapshot,
+        },
+      } satisfies DetachedPanelMessage);
+    }
+    if (detachedPanels.inspector) {
+      const inspectorWindow = detachedPanelWindowsRef.current.inspector;
+      const inspectorWindowId =
+        inspectorWindow?.name.split('mcw-inspector-')[1] ?? createWindowSessionId();
+      channel.postMessage({
+        type: 'snapshot',
+        snapshot: {
+          hostId: hostWindowIdRef.current,
+          panelWindowId: inspectorWindowId,
+          kind: 'inspector',
+          payload: detachedInspectorSnapshot,
+        },
+      } satisfies DetachedPanelMessage);
+    }
+    channel.close();
+  }, [detachedInspectorSnapshot, detachedPaletteSnapshot, detachedPanels]);
+
+  const showPaletteInMain = state.showPalette && !detachedPanels.palette;
+  const showInspectorInMain = state.showInspector && !detachedPanels.inspector;
 
   return (
     <main className="app-shell">
@@ -1338,6 +1798,14 @@ function App() {
                   );
                 } else if (value === 'toggle-inspector') {
                   dispatch({ type: 'toggleInspector' });
+                } else if (value === 'open-palette-window') {
+                  openDetachedPanel('palette');
+                } else if (value === 'return-palette-window') {
+                  returnDetachedPanelToMain('palette');
+                } else if (value === 'open-inspector-window') {
+                  openDetachedPanel('inspector');
+                } else if (value === 'return-inspector-window') {
+                  returnDetachedPanelToMain('inspector');
                 } else if (value === 'toggle-step-notes') {
                   dispatch({
                     type: 'setTutorialNotesVisible',
@@ -1409,6 +1877,9 @@ function App() {
               <option value="toggle-palette">
                 {state.showPalette ? 'Hide Tools' : 'Show Tools'}
               </option>
+              <option value={detachedPanels.palette ? 'return-palette-window' : 'open-palette-window'}>
+                {detachedPanels.palette ? 'Return Tools To Main Window' : 'Open Tools In Window'}
+              </option>
               {state.showPalette ? (
                 <option value="toggle-palette-view">
                   {paletteViewMode === 'expanded' ? 'Compact Tools' : 'Expand Tools'}
@@ -1416,6 +1887,13 @@ function App() {
               ) : null}
               <option value="toggle-inspector">
                 {state.showInspector ? 'Hide Inspector' : 'Show Inspector'}
+              </option>
+              <option
+                value={detachedPanels.inspector ? 'return-inspector-window' : 'open-inspector-window'}
+              >
+                {detachedPanels.inspector
+                  ? 'Return Inspector To Main Window'
+                  : 'Open Inspector In Window'}
               </option>
               <option value="toggle-step-notes">
                 {tutorialNotesVisible ? 'Hide Step Notes' : 'Show Step Notes'}
@@ -1437,9 +1915,9 @@ function App() {
         <div
           className={
             'workbench-stage' +
-            (state.showPalette ? ' workbench-stage-has-left' : '') +
-            (state.showInspector ? ' workbench-stage-has-right' : '') +
-            (state.showPalette && paletteViewMode === 'compact' ? ' workbench-stage-tools-compact' : '')
+            (showPaletteInMain ? ' workbench-stage-has-left' : '') +
+            (showInspectorInMain ? ' workbench-stage-has-right' : '') +
+            (showPaletteInMain && paletteViewMode === 'compact' ? ' workbench-stage-tools-compact' : '')
           }
         >
           <WorkbenchPanel
@@ -1823,7 +2301,7 @@ function App() {
             </div>
           ) : null}
         </div>
-        {state.showPalette ? (
+        {showPaletteInMain ? (
           <div
             className={paletteViewMode === 'compact' ? 'workbench-dock workbench-dock-left workbench-dock-compact' : 'workbench-dock workbench-dock-left'}
           >
@@ -1836,9 +2314,7 @@ function App() {
                 )
               }
               compositeUsageCountById={compositeUsageCountById}
-              builtInReusableIds={state.compositeLibrary
-                .filter((entry) => entry.source === 'built-in')
-                .map((entry) => entry.id)}
+              builtInReusableIds={builtInReusableIds}
               onAddModule={(defId) => {
                 const moduleDef = effectiveRegistry[defId] ?? null;
                 if (!moduleDef) {
@@ -1910,7 +2386,7 @@ function App() {
             />
           </div>
         ) : null}
-        {state.showInspector ? (
+        {showInspectorInMain ? (
           <div className="workbench-dock workbench-dock-right">
             <Suspense fallback={<LazyPanelFallback label="Analyze" title="Loading inspector…" />}>
               <ParameterInspector
