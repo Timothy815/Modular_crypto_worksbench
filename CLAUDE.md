@@ -58,7 +58,7 @@ Read LINKED-ROTOR-PAIRING-V1.md before changing how `Rotor` and `RotorReverse` s
 Read ROTOR-DRIVEN-STEPPING-V1.md before proposing rotor-driven stepping, rotor-control submachines, or SIGABA-style stepping behavior.
 Read ROTOR-CONTROL-BANK-V1.md before proposing visible control-bank rotor patterns, SIGABA-like authored stepping, or one-bank-drives-another rotor mechanics.
 Read PYTHON-EXPORT-V1.md before proposing workspace-to-code export, standalone Python generation, or implementation-oriented codegen lines.
-Read PYTHON-EXPORT-FOUNDATIONS-V1.md before implementing the first stateless Python export slice, defining the supported module subset, or adding export compatibility checks.
+Read PYTHON-EXPORT-FOUNDATIONS-V1.md before extending the shipped stateless Python export slice, broadening the supported module subset, or changing export compatibility/parity behavior.
 Read MULTI-WINDOW-WORKSPACE-V1.md before proposing detachable panels, multi-tab workspace surfaces, or multi-window synchronized editing.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
 Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.

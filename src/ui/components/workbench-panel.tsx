@@ -156,6 +156,7 @@ interface WorkbenchPanelProps {
   ) => void;
   onRemoveConnection: (connectionIndex: number) => void;
   onExportDocument: () => void;
+  onExportPython: () => void;
   onImportDocument: (file: File) => void;
   onTidyLayout: () => void;
   onSetTutorialStep?: (stepIndex: number) => void;
@@ -229,6 +230,7 @@ export function WorkbenchPanel({
   onReplaceConnection,
   onRemoveConnection,
   onExportDocument,
+  onExportPython,
   onImportDocument,
   onTidyLayout,
   onSetTutorialStep,
@@ -1082,6 +1084,13 @@ export function WorkbenchPanel({
               onClick={onExportDocument}
             >
               Export JSON
+            </button>
+            <button
+              type="button"
+              className="mini-action-button"
+              onClick={onExportPython}
+            >
+              Export Python
             </button>
             <button
               type="button"

@@ -129,6 +129,12 @@ The current implementation-ready export follow-on after that is:
 - one standalone `.py` artifact
 - explicit compatibility rejection for unsupported modules
 
+That export foundations slice is now shipped on `main`:
+- one `Export Python` action in the workspace actions area
+- stateless primitive-only compatibility checking before download
+- one standalone `.py` artifact with embedded helper runtime and topological execution
+- parity-tested against MCW `executeProject()` for the supported subset
+
 The current near-future workspace-layout ergonomics item after that is:
 - bounded multi-window / multi-tab support for selected surfaces
 - likely `Inspector` and `Palette` first

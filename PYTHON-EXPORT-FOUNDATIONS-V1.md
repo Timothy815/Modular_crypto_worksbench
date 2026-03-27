@@ -2,7 +2,7 @@
 
 Last updated: March 27, 2026
 
-Status: Draft implementation contract
+Status: Implemented on `main`
 
 ---
 
@@ -258,6 +258,26 @@ The compatibility report should identify:
 V1 must not do partial export.
 V1 must not silently skip modules.
 V1 must not generate placeholders that appear valid.
+
+---
+
+## Implementation Result
+
+This slice is now implemented on `main`.
+
+Shipped behavior:
+- one `Export Python` action in the workspace actions area
+- explicit graph validation before export
+- explicit compatibility rejection for unsupported modules, composites, iterators, bypass, and stateful/ticked behavior
+- one standalone `.py` download with embedded helpers and topological `run()` execution
+- sink printing in the locked `<module_id>: <value>` format
+- parity coverage against `executeProject()` via Python subprocess tests when `python3` is available
+
+Implemented engine surface:
+- `src/engine/codegen/python.ts`
+
+Implemented UI surface:
+- workspace-local `Export Python` download action near JSON export
 
 Failure should be clear and blocking.
 

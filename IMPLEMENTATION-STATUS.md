@@ -46,6 +46,13 @@ Current development now carries:
   - `PYTHON-EXPORT-FOUNDATIONS-V1.md`
   - `MULTI-WINDOW-WORKSPACE-V1.md`
 
+Current `main` now also includes:
+- Python export foundations:
+  - one workspace-local `Export Python` action beside JSON export
+  - stateless primitive-only compatibility gating
+  - one standalone `.py` artifact with embedded helper runtime and topological `run()`
+  - parity coverage against `executeProject()` for supported workspaces
+
 Current `main` is now positioned beyond three recent milestones.
 Those shipped:
 - first bounded number-theoretic vocabulary:

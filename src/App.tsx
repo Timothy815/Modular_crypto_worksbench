@@ -2,6 +2,12 @@ import { lazy, Suspense, useEffect, useMemo, useReducer, useState, type CSSPrope
 
 import './App.css';
 import { isCompositeDefinition, type CompositeLibraryEntry } from './engine/composites';
+import {
+  formatPythonExportCompatibilityIssues,
+  generatePythonExport,
+  getPythonExportCompatibility,
+  getPythonExportFileName,
+} from './engine/codegen/python';
 import { V1_REGISTRY } from './engine/modules';
 import type { ExecutionResult, ExecutionTraceEntry, Project, TickedExecutionResult } from './engine/types';
 import { deriveTickCount, executeTickedProject } from './engine/executor';
@@ -21,6 +27,7 @@ import { compareExecutionResults } from './ui/execution-compare';
 import { clampTutorialStepIndex, getTutorialStep } from './ui/tutorials';
 import {
   downloadDocument,
+  downloadPythonDocument,
   downloadCompositeLibraryDocument,
   downloadGuidedChallengeDocument,
   loadWorkspaceFromStorage,
@@ -1631,6 +1638,36 @@ function App() {
                     : state.annotationsByProject[activeProjectDefinition.id] ?? [],
                 },
               });
+              setImportError(null);
+            }}
+            onExportPython={() => {
+              const exportValidation = validateProject(activeProjectState, effectiveRegistry);
+              if (!exportValidation.ok) {
+                setImportError(exportValidation.issues.map((issue) => issue.message).join('\n'));
+                return;
+              }
+
+              const compatibility = getPythonExportCompatibility(
+                activeProjectState,
+                effectiveRegistry,
+              );
+              if (!compatibility.ok) {
+                setImportError(formatPythonExportCompatibilityIssues(compatibility.issues));
+                return;
+              }
+
+              try {
+                const pythonSource = generatePythonExport(activeProjectState, effectiveRegistry);
+                downloadPythonDocument(
+                  getPythonExportFileName(activeProjectDefinition.name),
+                  pythonSource,
+                );
+                setImportError(null);
+              } catch (error) {
+                setImportError(
+                  error instanceof Error ? error.message : 'Python export failed.',
+                );
+              }
             }}
             onImportDocument={async (file) => {
               const rawValue = await file.text();

@@ -2437,6 +2437,7 @@ body.dock-resizing {
   border-radius: 14px;
   background: rgba(200, 85, 61, 0.12);
   color: #8c3020;
+  white-space: pre-line;
 }
 
 .dialog-backdrop {
