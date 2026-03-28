@@ -200,6 +200,12 @@ That rotor-control export slice is now also shipped:
 - generated Python now records explicit step flags during evaluation and applies advances in a final tick-end pass
 - parity-tested for direct turnover stepping, gated turnover stepping, and a double-step-style three-rotor path
 
+The next structured-machine export frontier is now explicitly recorded as:
+- `PYTHON-EXPORT-COMPOSITE-FOUNDATIONS-V1.md`
+- begin first-class composite export as the next strategic step after flat primitive and rotor-control export
+- preserve authored submachine boundaries in generated Python rather than flattening them away or introducing a hidden interpreter
+- keep iterators and broader structured export out of scope for the first slice
+
 That bounded multi-window workspace slice is now also shipped:
 - `MULTI-WINDOW-WORKSPACE-V1.md`
 - detachable `Palette` and `Inspector` windows
