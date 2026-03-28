@@ -74,6 +74,7 @@ Read PYTHON-EXPORT-STRUCTURED-COMPATIBILITY-V1.md before loosening the current s
 Read PYTHON-EXPORT-FULL-COVERAGE-AUDIT-V1.md before claiming near-complete Python export coverage, choosing the next export-completeness milestone, or broadening the export line without an explicit gap audit.
 Read PYTHON-EXPORT-COVERAGE-MAP-V1.md before choosing the next Python export implementation target after the audit, especially when deciding between remaining primitive/runtime gaps and broader recursive structured export.
 Read PYTHON-EXPORT-PLUGBOARD-V1.md before extending Python export into `Plugboard`, changing the remaining Enigma-class primitive export gap, or widening the historical-machine export line beyond the current bounded target.
+Read PYTHON-EXPORT-NESTED-COMPOSITES-V1.md before extending Python export into nested composite helper generation, recursive composite structure, or broader mixed recursive structure export.
 Read PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md before changing Python export from the current self-contained one-file artifact into a reusable runtime-library plus generated-workspace split.
 Read V2.1-NEXT-DOCKET.md before reordering the current near-future priorities across builder power, Python export expansion, UI refactoring, or multi-window workspace support.
 Read INSPECTOR-REFACTOR-V1.md before restructuring `parameter-inspector.tsx`, moving more inspector logic into helper modules, or beginning a larger inspector decomposition pass.

@@ -161,6 +161,10 @@ Current `main` now also includes:
   - now shipped as the final primitive/runtime gap in the current registry line
   - exported Python now supports bounded modular-inverse parity
   - the primitive registry line is now fully covered by Python export
+- next structural export frontier:
+  - `PYTHON-EXPORT-NESTED-COMPOSITES-V1.md`
+  - records nested composites as the first bounded recursive-structure export slice
+  - keeps iterator-containing composites and generalized mixed recursive structure out of scope for the first recursive step
 - future Python export architecture note:
   - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
   - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file

@@ -278,6 +278,11 @@ That `ModInverse` export slice is now also shipped:
 - the primitive registry line is now fully covered by Python export
 - the next export frontier is now structural rather than primitive/runtime completion
 
+The next structural export frontier is now explicitly recorded as:
+- `PYTHON-EXPORT-NESTED-COMPOSITES-V1.md`
+- the first bounded recursive-structure slice is nested composite export
+- keep iterator-containing composites and generalized mixed recursive structure out of scope in the first recursive step
+
 The future Python export architecture note after that is now explicitly recorded as:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
 - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file
