@@ -301,6 +301,11 @@ That nested iterator export slice is now also shipped:
 - generated Python now includes definition-level nested iterator helpers, explicit nested iterator state routing, and parity-tested stateless, keyed, and temporal nested iterator workspaces
 - generalized recursive mixed export remains out of scope beyond this slice
 
+The next structural export frontier is now explicitly recorded as:
+- `PYTHON-EXPORT-GENERALIZED-MIXED-RECURSION-V1.md`
+- the next bounded structural slice is the remaining helper-expressible mixed recursive structure across composites and iterators
+- runtime-library splitting remains a later productization step, not the next completeness slice
+
 The future Python export architecture note after that is now explicitly recorded as:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
 - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file

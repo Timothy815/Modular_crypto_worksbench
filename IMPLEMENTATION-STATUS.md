@@ -181,6 +181,10 @@ Current `main` now also includes:
   - generated Python now includes definition-level iterator helpers, explicit nested iterator state routing, and recursive compatibility checks for iterator-definition cycles
   - parity-tested for user-authored, keyed, and temporal nested iterator workspaces
   - keeps generalized recursive mixed export out of scope beyond this slice
+- next structural completeness frontier:
+  - `PYTHON-EXPORT-GENERALIZED-MIXED-RECURSION-V1.md`
+  - records the remaining helper-expressible mixed recursive structure across composites and iterators as the next bounded export slice
+  - keeps runtime-library splitting as a later productization step rather than the next completeness target
 - future Python export architecture note:
   - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
   - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file
