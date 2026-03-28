@@ -33,7 +33,7 @@ import { compareExecutionResults } from './ui/execution-compare';
 import { clampTutorialStepIndex, getTutorialStep } from './ui/tutorials';
 import {
   downloadDocument,
-  downloadPythonDocument,
+  downloadPythonExportBundle,
   downloadCompositeLibraryDocument,
   downloadGuidedChallengeDocument,
   loadWorkspaceFromStorage,
@@ -2350,14 +2350,7 @@ function MainApp() {
                   effectiveRegistry,
                   activeProjectDefinition.name,
                 );
-                downloadPythonDocument(
-                  pythonExport.runtimeFileName,
-                  pythonExport.runtimeSource,
-                );
-                downloadPythonDocument(
-                  pythonExport.workspaceFileName,
-                  pythonExport.workspaceSource,
-                );
+                downloadPythonExportBundle(activeProjectDefinition.name, pythonExport);
                 setImportError(null);
               } catch (error) {
                 setImportError(

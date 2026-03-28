@@ -208,8 +208,9 @@ Current `main` now also includes:
   - adds explicit runtime `__all__` surface and clearer generated workspace dependency/version headers
 - next Python export delivery/productization slice:
   - `PYTHON-EXPORT-DELIVERY-UX-V1.md`
-  - activates the first bounded delivery-UX follow-on for the two-file Python export handoff
+  - shipped the first bounded delivery-UX follow-on for the two-file Python export handoff
   - keeps artifact contents unchanged while refining how the runtime and workspace are delivered together
+  - now hands off one flat ZIP archive containing the runtime and workspace files at the root level
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments

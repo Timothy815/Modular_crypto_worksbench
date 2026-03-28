@@ -23,6 +23,17 @@ import type {
 } from './workbench-document';
 
 const STORAGE_KEY = 'mcw:workspace:v1';
+const CRC32_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for (let index = 0; index < 256; index += 1) {
+    let value = index;
+    for (let bit = 0; bit < 8; bit += 1) {
+      value = (value & 1) !== 0 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
+    }
+    table[index] = value >>> 0;
+  }
+  return table;
+})();
 const STARTER_CHALLENGE_GROUP_BY_ID = Object.fromEntries(
   STARTER_CHALLENGES.map((challenge) => [challenge.id, challenge.group]),
 );
@@ -552,6 +563,135 @@ export function downloadPythonDocument(fileName: string, source: string): void {
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = fileName;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+interface FlatArchiveEntry {
+  fileName: string;
+  contents: string;
+}
+
+function writeUint16LE(buffer: Uint8Array, offset: number, value: number) {
+  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  view.setUint16(offset, value, true);
+}
+
+function writeUint32LE(buffer: Uint8Array, offset: number, value: number) {
+  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  view.setUint32(offset, value, true);
+}
+
+function buildCrc32(bytes: Uint8Array) {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc = CRC32_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function toBlobArrayBuffer(bytes: Uint8Array) {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
+
+export function buildFlatZipArchive(
+  entries: FlatArchiveEntry[],
+): Blob {
+  const encoder = new TextEncoder();
+  const localFileParts: Uint8Array[] = [];
+  const centralDirectoryParts: Uint8Array[] = [];
+  let offset = 0;
+
+  for (const entry of entries) {
+    const fileNameBytes = encoder.encode(entry.fileName);
+    const contentBytes = encoder.encode(entry.contents);
+    const crc32 = buildCrc32(contentBytes);
+
+    const localHeader = new Uint8Array(30 + fileNameBytes.length);
+    writeUint32LE(localHeader, 0, 0x04034b50);
+    writeUint16LE(localHeader, 4, 20);
+    writeUint16LE(localHeader, 6, 0);
+    writeUint16LE(localHeader, 8, 0);
+    writeUint16LE(localHeader, 10, 0);
+    writeUint16LE(localHeader, 12, 0);
+    writeUint32LE(localHeader, 14, crc32);
+    writeUint32LE(localHeader, 18, contentBytes.length);
+    writeUint32LE(localHeader, 22, contentBytes.length);
+    writeUint16LE(localHeader, 26, fileNameBytes.length);
+    writeUint16LE(localHeader, 28, 0);
+    localHeader.set(fileNameBytes, 30);
+
+    localFileParts.push(localHeader, contentBytes);
+
+    const centralHeader = new Uint8Array(46 + fileNameBytes.length);
+    writeUint32LE(centralHeader, 0, 0x02014b50);
+    writeUint16LE(centralHeader, 4, 20);
+    writeUint16LE(centralHeader, 6, 20);
+    writeUint16LE(centralHeader, 8, 0);
+    writeUint16LE(centralHeader, 10, 0);
+    writeUint16LE(centralHeader, 12, 0);
+    writeUint16LE(centralHeader, 14, 0);
+    writeUint32LE(centralHeader, 16, crc32);
+    writeUint32LE(centralHeader, 20, contentBytes.length);
+    writeUint32LE(centralHeader, 24, contentBytes.length);
+    writeUint16LE(centralHeader, 28, fileNameBytes.length);
+    writeUint16LE(centralHeader, 30, 0);
+    writeUint16LE(centralHeader, 32, 0);
+    writeUint16LE(centralHeader, 34, 0);
+    writeUint16LE(centralHeader, 36, 0);
+    writeUint32LE(centralHeader, 38, 0);
+    writeUint32LE(centralHeader, 42, offset);
+    centralHeader.set(fileNameBytes, 46);
+
+    centralDirectoryParts.push(centralHeader);
+    offset += localHeader.length + contentBytes.length;
+  }
+
+  const centralDirectorySize = centralDirectoryParts.reduce(
+    (total, part) => total + part.length,
+    0,
+  );
+  const endOfCentralDirectory = new Uint8Array(22);
+  writeUint32LE(endOfCentralDirectory, 0, 0x06054b50);
+  writeUint16LE(endOfCentralDirectory, 4, 0);
+  writeUint16LE(endOfCentralDirectory, 6, 0);
+  writeUint16LE(endOfCentralDirectory, 8, entries.length);
+  writeUint16LE(endOfCentralDirectory, 10, entries.length);
+  writeUint32LE(endOfCentralDirectory, 12, centralDirectorySize);
+  writeUint32LE(endOfCentralDirectory, 16, offset);
+  writeUint16LE(endOfCentralDirectory, 20, 0);
+
+  return new Blob(
+    [
+      ...localFileParts.map(toBlobArrayBuffer),
+      ...centralDirectoryParts.map(toBlobArrayBuffer),
+      toBlobArrayBuffer(endOfCentralDirectory),
+    ],
+    { type: 'application/zip' },
+  );
+}
+
+export function downloadPythonExportBundle(
+  workspaceName: string,
+  files: { runtimeFileName: string; runtimeSource: string; workspaceFileName: string; workspaceSource: string },
+): void {
+  const archiveStem = workspaceName
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'workspace';
+  const archiveName = `${archiveStem}_python_export.zip`;
+  const archiveBlob = buildFlatZipArchive([
+    { fileName: files.runtimeFileName, contents: files.runtimeSource },
+    { fileName: files.workspaceFileName, contents: files.workspaceSource },
+  ]);
+  const url = URL.createObjectURL(archiveBlob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = archiveName;
   anchor.click();
   URL.revokeObjectURL(url);
 }

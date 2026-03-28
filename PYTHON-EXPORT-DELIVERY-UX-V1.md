@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Proposed
+Status: Implemented
 
 ---
 
@@ -131,3 +131,13 @@ This slice is successful when:
 - the delivered artifact keeps the runtime/workspace relationship obvious
 - two-file parity remains intact
 - MCW’s Python export feels less like “two separate downloads” and more like one coherent export handoff
+
+---
+
+## Outcome
+
+Shipped in the first bounded delivery-UX refinement slice:
+- Python export now hands off one flat ZIP archive instead of two separate browser downloads
+- the archive contains exactly `mcw_runtime.py` plus the generated workspace file at the root level
+- the runtime/workspace relationship stays explicit without introducing packaging or installation work
+- parity remains intact because the Python artifact contents are unchanged apart from delivery format

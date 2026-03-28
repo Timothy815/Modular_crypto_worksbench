@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { demoProjects } from './demo-projects';
-import { loadWorkspaceFromStorage, parseCompositeLibraryDocument, parseGuidedChallengeDocument, saveWorkspaceToStorage } from './persistence';
+import {
+  buildFlatZipArchive,
+  loadWorkspaceFromStorage,
+  parseCompositeLibraryDocument,
+  parseGuidedChallengeDocument,
+  saveWorkspaceToStorage,
+} from './persistence';
 import { createInitialUiState, uiReducer } from './store';
 import type { CompositeLibraryDocument } from './workbench-document';
 
@@ -166,5 +172,32 @@ describe('workspace persistence', () => {
     expect(
       restored?.workspaceVersionsByProjectId?.['sequential']?.[0]?.document.project,
     ).toEqual(initialState.projectStates['sequential']);
+  });
+});
+
+describe('buildFlatZipArchive', () => {
+  it('builds a flat utf-8 zip archive containing only the provided files', async () => {
+    const archive = buildFlatZipArchive([
+      { fileName: 'mcw_runtime.py', contents: '# runtime\n__version__ = "1.0.0"\n' },
+      { fileName: 'demo-workspace.py', contents: '# workspace\nimport mcw_runtime\n' },
+    ]);
+
+    expect(archive.type).toBe('application/zip');
+
+    const bytes = new Uint8Array(await archive.arrayBuffer());
+    const decoder = new TextDecoder();
+    const archiveText = decoder.decode(bytes);
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+    expect(view.getUint32(0, true)).toBe(0x04034b50);
+    expect(archiveText).toContain('mcw_runtime.py');
+    expect(archiveText).toContain('demo-workspace.py');
+    expect(archiveText).not.toContain('.mcw_meta');
+    expect(archiveText).not.toContain('README.md');
+
+    const endOfCentralDirectoryOffset = bytes.length - 22;
+    expect(view.getUint32(endOfCentralDirectoryOffset, true)).toBe(0x06054b50);
+    expect(view.getUint16(endOfCentralDirectoryOffset + 8, true)).toBe(2);
+    expect(view.getUint16(endOfCentralDirectoryOffset + 10, true)).toBe(2);
   });
 });
