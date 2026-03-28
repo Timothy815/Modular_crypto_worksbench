@@ -121,6 +121,10 @@ Current `main` now also includes:
   - preserves visible round boundaries, explicit round chaining, key-bus slicing, and iteration-count override behavior in generated Python
   - parity-tested for shipped iterators, keyed iterators, and temporal iterators with supported round definitions
   - keeps nested iterators and iterator-containing composites out of scope for the first slice
+- next structured-machine export follow-on:
+  - `PYTHON-EXPORT-ITERATOR-EXPANSION-V1.md`
+  - records broader iterator export coverage across higher-value shipped iterator families such as `FeistelRoundIterator`, `HashDigestRoundIterator`, and `SpongeMixRoundIterator`
+  - keeps nested iterators, iterator-containing composites, and generalized recursive structured export out of scope
 - future Python export architecture note:
   - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
   - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file
