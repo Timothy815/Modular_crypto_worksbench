@@ -306,6 +306,17 @@ The next structural export frontier is now explicitly recorded as:
 - the next bounded structural slice is the remaining helper-expressible mixed recursive structure across composites and iterators
 - runtime-library splitting remains a later productization step, not the next completeness slice
 
+That generalized mixed-recursion export slice is now also shipped:
+- `PYTHON-EXPORT-GENERALIZED-MIXED-RECURSION-V1.md`
+- exported Python now supports the remaining helper-expressible mixed recursive structure across composites and iterators
+- parity now holds for newly unlocked mixed recursive stateless and temporal workspaces without introducing a hidden interpreter
+- the Python export leg is now structurally complete for common authored machine shapes
+
+The next Python export frontier is now productization:
+- `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
+- the next deliberate step is the reusable `mcw_runtime.py` split plus separate generated workspace implementation file
+- this is now a productization move, not a remaining coverage blocker
+
 The future Python export architecture note after that is now explicitly recorded as:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
 - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file

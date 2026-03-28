@@ -183,13 +183,15 @@ Current `main` now also includes:
   - keeps generalized recursive mixed export out of scope beyond this slice
 - next structural completeness frontier:
   - `PYTHON-EXPORT-GENERALIZED-MIXED-RECURSION-V1.md`
-  - records the remaining helper-expressible mixed recursive structure across composites and iterators as the next bounded export slice
-  - keeps runtime-library splitting as a later productization step rather than the next completeness target
+  - now shipped as the final structural-completeness slice for the current Python export leg
+  - exported Python now supports the remaining helper-expressible mixed recursive structure across composites and iterators
+  - parity-tested for newly unlocked mixed recursive stateless and temporal workspaces
+  - completes common authored machine coverage without introducing a hidden interpreter
 - future Python export architecture note:
   - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
+  - now represents the next Python export frontier as a productization step rather than a coverage blocker
   - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file
   - keeps the current self-contained one-file export as the correct bounded foundations architecture for now
-  - positions the runtime/library split as a later deliberate productization step after the current export-completeness line
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments

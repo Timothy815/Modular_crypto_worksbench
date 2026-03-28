@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Proposed
+Status: Implemented
 
 ---
 
@@ -75,12 +75,15 @@ This slice must:
 - preserve Python stdlib-only output
 - preserve helper-function structured export
 - allow already-export-compatible composites and iterators to recurse into one another within the authored-definition DAG
+- preserve global helper deduplication so each reachable helper shape is emitted exactly once
 - preserve globally unique helper names across all generated composite and iterator helpers
+- preserve unique helper naming when iterator override profiles materially change generated behavior
 - preserve deterministic dependency ordering across mixed recursive helper layers
 - preserve explicit local scoping inside each generated helper
 - preserve explicit forwarded-param drilling through mixed recursive helper calls
 - preserve explicit key-bus slicing and `iterationCount` override parity through mixed recursive helper layers
 - preserve explicit `_init_state` / `_tick` routing through mixed recursive state trees
+- preserve atomic tick-end advance behavior through nested helper layers
 - preserve compatibility rejection for any remaining unsupported stateful/runtime forms
 - preserve parity against MCW execution for the supported subset
 
@@ -120,7 +123,9 @@ Generated Python must mirror MCW behavior exactly for:
 - mixed nested key-bus slicing
 - mixed nested `iterationCount` override handling
 - mixed nested `_init_state` / `_tick` state routing
+- stable key-based state access through every mixed recursive helper layer
 - temporal behavior inside the supported mixed recursive subset
+- atomic tick-end advance behavior inside the supported mixed recursive subset
 
 Parity must come from explicit helper composition, not from introducing a project interpreter.
 
@@ -154,7 +159,7 @@ It must not read like:
 
 The compatibility check should now:
 - allow the remaining helper-expressible mixed recursive structure across composites and iterators
-- reject definition cycles across both composite and iterator layers
+- reject definition cycles across the full authored composite/iterator recursion graph
 - continue to reject any remaining unsupported stateful/runtime forms
 - continue to reject any structure that would require a hidden interpreter or runtime model change
 

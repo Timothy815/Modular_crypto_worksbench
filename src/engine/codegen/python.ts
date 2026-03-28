@@ -1746,7 +1746,7 @@ function collectPythonExportCompatibilityIssues(
         `${scopedModuleId}/round-def`,
         1,
         [...compositeDefinitionPath, roundDef.id],
-        false,
+        true,
       );
     }
 
