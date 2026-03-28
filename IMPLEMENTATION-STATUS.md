@@ -121,6 +121,11 @@ Current `main` now also includes:
   - preserves visible round boundaries, explicit round chaining, key-bus slicing, and iteration-count override behavior in generated Python
   - parity-tested for shipped iterators, keyed iterators, and temporal iterators with supported round definitions
   - keeps nested iterators and iterator-containing composites out of scope for the first slice
+- future Python export architecture note:
+  - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
+  - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file
+  - keeps the current self-contained one-file export as the correct bounded foundations architecture for now
+  - positions the runtime/library split as a later deliberate productization step after the current export-completeness line
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments

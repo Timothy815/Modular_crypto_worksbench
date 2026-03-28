@@ -217,6 +217,12 @@ That iterator export foundations slice is now also shipped:
 - iterator helpers preserve visible round boundaries, explicit round chaining, key-bus slicing, and instance-level iteration-count override parity
 - parity-tested for shipped iterators, keyed iterators, and temporal iterators with supported round definitions
 
+The future Python export architecture note after that is now explicitly recorded as:
+- `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
+- records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file
+- keeps the current single-file exporter as the correct bounded foundations architecture for now
+- treats the runtime/library split as a future deliberate productization step, not an ad hoc exporter rewrite
+
 That bounded multi-window workspace slice is now also shipped:
 - `MULTI-WINDOW-WORKSPACE-V1.md`
 - detachable `Palette` and `Inspector` windows
