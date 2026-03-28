@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Proposed
+Status: Implemented
 
 ---
 
@@ -69,9 +69,15 @@ This slice must:
 - preserve Python stdlib-only output
 - preserve helper-function composite export
 - allow nested composite bodies beyond depth 1 when every nested internal definition is itself export-compatible
+- emit composite helper definitions in deterministic leaf-first dependency order
 - preserve explicit local scoping inside each generated helper
+- preserve isolated variable maps per generated helper scope
 - preserve explicit forwarded-param injection through nested composite calls
+- preserve multi-level forwarded-param drilling through nested composite calls
+- preserve normal Python identifier sanitization rules across nested scopes
 - preserve parity against MCW execution for the supported subset
+
+The compatibility and generation walk must also enforce that the composite-definition hierarchy is a DAG.
 
 It must not redesign the exporter into a serialized project interpreter.
 
@@ -141,6 +147,7 @@ It must not read like:
 
 The compatibility check should now:
 - allow nested composites when every nested internal definition is export-compatible under this slice
+- reject composite-definition cycles before generation begins
 - continue to reject iterators inside composites
 - continue to reject nested iterators
 - continue to reject iterator round definitions that are themselves iterators
@@ -156,6 +163,7 @@ This slice must add parity tests for at least:
 - one user-authored nested composite workspace
 - one temporal nested composite workspace if a compatible temporal case is available
 - one workspace proving that nested helper composition remains visible in emitted Python
+- one workspace proving that composite-definition cycles are rejected before generation
 
 Tests must:
 - generate Python

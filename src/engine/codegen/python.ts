@@ -1130,6 +1130,11 @@ interface CompositeExportDefinition {
   forwardedArgNames: Map<string, string>;
 }
 
+interface CompositeCollectionContext {
+  orderedDefs: CompositeDef[];
+  definitionsById: Map<string, CompositeExportDefinition>;
+}
+
 interface IteratorExportDefinition {
   moduleInstance: ModuleInstance;
   def: IteratorDef;
@@ -1577,7 +1582,7 @@ function applyForwardedCompositeParamsForExport(
 function projectHasStatefulExportCandidate(
   project: Project,
   registry: ModuleRegistry,
-  compositeDepth = 0,
+  compositeDefinitionStack = new Set<string>(),
 ): boolean {
   for (const moduleInstance of project.modules) {
     const def = registry[moduleInstance.defId];
@@ -1586,11 +1591,13 @@ function projectHasStatefulExportCandidate(
     }
 
     if (isCompositeDefinition(def)) {
-      if (compositeDepth >= 1) {
+      if (compositeDefinitionStack.has(def.id)) {
         continue;
       }
       const internalProject = applyForwardedCompositeParamsForExport(def, moduleInstance.params);
-      if (projectHasStatefulExportCandidate(internalProject, registry, compositeDepth + 1)) {
+      const nextStack = new Set(compositeDefinitionStack);
+      nextStack.add(def.id);
+      if (projectHasStatefulExportCandidate(internalProject, registry, nextStack)) {
         return true;
       }
       continue;
@@ -1599,7 +1606,8 @@ function projectHasStatefulExportCandidate(
     if (isIteratorDefinition(def)) {
       const roundDef = registry[def.roundDefId];
       if (roundDef && isCompositeDefinition(roundDef)) {
-        if (projectHasStatefulExportCandidate(roundDef.project, registry, 1)) {
+        const nextStack = new Set<string>([roundDef.id]);
+        if (projectHasStatefulExportCandidate(roundDef.project, registry, nextStack)) {
           return true;
         }
         continue;
@@ -1625,21 +1633,23 @@ function projectHasStatefulExportCandidate(
 function derivePythonExportTickCount(
   project: Project,
   registry: ModuleRegistry,
-  compositeDepth = 0,
+  compositeDefinitionStack = new Set<string>(),
 ): number | null {
   let minLength = deriveTickCount(project, registry);
 
   for (const moduleInstance of project.modules) {
     const def = registry[moduleInstance.defId];
-    if (!def || !isCompositeDefinition(def) || compositeDepth >= 1) {
+    if (!def || !isCompositeDefinition(def) || compositeDefinitionStack.has(def.id)) {
       continue;
     }
 
     const internalProject = applyForwardedCompositeParamsForExport(def, moduleInstance.params);
+    const nextStack = new Set(compositeDefinitionStack);
+    nextStack.add(def.id);
     const internalTickCount = derivePythonExportTickCount(
       internalProject,
       registry,
-      compositeDepth + 1,
+      nextStack,
     );
     if (internalTickCount === null) {
       continue;
@@ -1657,12 +1667,13 @@ function collectPythonExportCompatibilityIssues(
   registry: ModuleRegistry,
   scopePrefix = '',
   compositeDepth = 0,
+  compositeDefinitionPath: string[] = [],
 ): PythonExportCompatibilityIssue[] {
   const issues: PythonExportCompatibilityIssue[] = [];
   const hasStatefulSupportCandidate = projectHasStatefulExportCandidate(
     project,
     registry,
-    compositeDepth,
+    new Set(compositeDefinitionPath),
   );
 
   for (const moduleInstance of project.modules) {
@@ -1687,21 +1698,23 @@ function collectPythonExportCompatibilityIssues(
     }
 
     if (isCompositeDefinition(def)) {
-      if (compositeDepth >= 1) {
+      if (compositeDefinitionPath.includes(def.id)) {
         issues.push({
           moduleId: scopedModuleId,
           defId: moduleInstance.defId,
-          reason: 'Nested composite definitions are not exportable in V1.',
+          reason: 'Composite definition cycles are not exportable in V1.',
         });
         continue;
       }
       const internalProject = applyForwardedCompositeParamsForExport(def, moduleInstance.params);
+      const nextDefinitionPath = [...compositeDefinitionPath, def.id];
       issues.push(
         ...collectPythonExportCompatibilityIssues(
           internalProject,
           registry,
           scopedModuleId,
           compositeDepth + 1,
+          nextDefinitionPath,
         ),
       );
       continue;
@@ -1750,12 +1763,14 @@ function collectPythonExportCompatibilityIssues(
 
       if (isCompositeDefinition(roundDef)) {
         const internalProject = applyForwardedCompositeParamsForExport(roundDef, {});
+        const nextDefinitionPath = [...compositeDefinitionPath, roundDef.id];
         issues.push(
           ...collectPythonExportCompatibilityIssues(
             internalProject,
             registry,
             `${scopedModuleId}/round-def`,
             1,
+            nextDefinitionPath,
           ),
         );
         continue;
@@ -1839,7 +1854,7 @@ function collectPythonExportCompatibilityIssues(
   if (
     compositeDepth === 0 &&
     hasStatefulSupportCandidate &&
-    derivePythonExportTickCount(project, registry, compositeDepth) === null
+    derivePythonExportTickCount(project, registry, new Set(compositeDefinitionPath)) === null
   ) {
     issues.push({
       moduleId: scopePrefix || 'project',
@@ -1855,29 +1870,60 @@ function collectCompositeExportDefinitions(
   project: Project,
   registry: ModuleRegistry,
 ): CompositeExportDefinition[] {
-  const definitions = new Map<string, CompositeExportDefinition>();
+  const context: CompositeCollectionContext = {
+    orderedDefs: [],
+    definitionsById: new Map(),
+  };
+  const visiting = new Set<string>();
 
   const registerCompositeDefinition = (def: CompositeDef) => {
-    if (definitions.has(def.id)) {
+    if (context.definitionsById.has(def.id)) {
       return;
     }
+    if (visiting.has(def.id)) {
+      throw new Error(`Python export detected a composite definition cycle at "${def.id}".`);
+    }
+    visiting.add(def.id);
 
-    const inputArgNames = buildPythonNameMap(
-      def.inputs.map((input) => input.name),
-      'input',
-    );
-    const forwardedArgNames = buildPythonNameMap(
-      getCompositeForwardedParamKeys(def),
-      'param',
-    );
+    try {
+      const childCompositeIds = Array.from(
+        new Set(
+          def.project.modules
+            .map((moduleInstance) => registry[moduleInstance.defId])
+            .filter((candidate): candidate is CompositeDef => Boolean(candidate && isCompositeDefinition(candidate)))
+            .map((candidate) => candidate.id),
+        ),
+      ).sort((left, right) => left.localeCompare(right));
 
-    definitions.set(def.id, {
-      def,
-      functionName: `composite_${sanitizeIdentifierPart(def.id)}`,
-      stateful: projectHasStatefulExportCandidate(def.project, registry, 1),
-      inputArgNames,
-      forwardedArgNames,
-    });
+      for (const childCompositeId of childCompositeIds) {
+        const childDef = registry[childCompositeId];
+        if (childDef && isCompositeDefinition(childDef)) {
+          registerCompositeDefinition(childDef);
+        }
+      }
+
+      const inputArgNames = buildPythonNameMap(
+        def.inputs.map((input) => input.name),
+        'input',
+      );
+      const forwardedArgNames = buildPythonNameMap(
+        getCompositeForwardedParamKeys(def),
+        'param',
+      );
+
+      const definition: CompositeExportDefinition = {
+        def,
+        functionName: `composite_${sanitizeIdentifierPart(def.id)}`,
+        stateful: projectHasStatefulExportCandidate(def.project, registry, new Set([def.id])),
+        inputArgNames,
+        forwardedArgNames,
+      };
+
+      context.definitionsById.set(def.id, definition);
+      context.orderedDefs.push(def);
+    } finally {
+      visiting.delete(def.id);
+    }
   };
 
   for (const moduleInstance of project.modules) {
@@ -1899,7 +1945,13 @@ function collectCompositeExportDefinitions(
     }
   }
 
-  return Array.from(definitions.values()).sort((left, right) => left.def.id.localeCompare(right.def.id));
+  return context.orderedDefs.map((def) => {
+    const definition = context.definitionsById.get(def.id);
+    if (!definition) {
+      throw new Error(`Python export could not resolve composite definition "${def.id}".`);
+    }
+    return definition;
+  });
 }
 
 function buildCompositeInputExpressionOverrides(
@@ -1963,9 +2015,7 @@ function buildCompositeCallArguments(
   }
 
   for (const forwardedParamKey of getCompositeForwardedParamKeys(compositeDefinition.def)) {
-    args.push(
-      getDefaultParamExpression(moduleInstance, compositeDefinition.def, forwardedParamKey),
-    );
+    args.push(expressionContext.getParamExpression(moduleInstance, compositeDefinition.def, forwardedParamKey));
   }
 
   return args;
@@ -1992,6 +2042,9 @@ function buildCompositeHelperDefinitions(
   registry: ModuleRegistry,
 ) {
   const helperBlocks: string[] = [];
+  const compositeDefinitionsById = new Map(
+    compositeDefinitions.map((definition) => [definition.def.id, definition]),
+  );
 
   for (const compositeDefinition of compositeDefinitions) {
     const internalProject = compositeDefinition.def.project;
@@ -2021,8 +2074,13 @@ function buildCompositeHelperDefinitions(
           throw new Error(`Python export could not resolve composite module "${moduleId}".`);
         }
         const def = registry[moduleInstance.defId];
-        if (!def || isCompositeDefinition(def) || isIteratorDefinition(def)) {
+        if (!def || isIteratorDefinition(def)) {
           throw new Error(`Python export encountered unsupported composite definition "${moduleInstance.defId}".`);
+        }
+
+        const variableName = variablesByModuleId.get(moduleId);
+        if (!variableName) {
+          throw new Error(`Python export could not resolve composite variable for "${moduleId}".`);
         }
 
         if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id)) {
@@ -2031,9 +2089,21 @@ function buildCompositeHelperDefinitions(
           continue;
         }
 
-        const variableName = variablesByModuleId.get(moduleId);
-        if (!variableName) {
-          throw new Error(`Python export could not resolve composite variable for "${moduleId}".`);
+        if (isCompositeDefinition(def)) {
+          const childDefinition = compositeDefinitionsById.get(def.id);
+          if (!childDefinition) {
+            throw new Error(`Python export could not resolve nested composite helper for "${def.id}".`);
+          }
+          const callArguments = buildCompositeCallArguments(
+            moduleInstance,
+            childDefinition,
+            expressionContext,
+          );
+          bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+          bodyLines.push(
+            `    ${variableName} = ${childDefinition.functionName}(${callArguments.join(', ')})`,
+          );
+          continue;
         }
 
         bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
@@ -2055,7 +2125,7 @@ function buildCompositeHelperDefinitions(
 
     for (const moduleInstance of internalProject.modules) {
       const def = registry[moduleInstance.defId];
-      if (!def || isCompositeDefinition(def) || isIteratorDefinition(def)) {
+      if (!def || isIteratorDefinition(def)) {
         continue;
       }
       const variableName = variablesByModuleId.get(moduleInstance.id);
@@ -2063,7 +2133,18 @@ function buildCompositeHelperDefinitions(
         throw new Error(`Python export could not resolve composite state variable for "${moduleInstance.id}".`);
       }
 
-      if (def.id === 'Counter') {
+      if (isCompositeDefinition(def)) {
+        const childDefinition = compositeDefinitionsById.get(def.id);
+        if (childDefinition?.stateful) {
+          const forwardedArgs = getCompositeForwardedParamKeys(def).map((paramKey) =>
+            expressionContext.getParamExpression(moduleInstance, def, paramKey),
+          );
+          initLines.push(
+            buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+            `    state[${JSON.stringify(variableName)}] = ${childDefinition.functionName}_init_state(${forwardedArgs.join(', ')})`,
+          );
+        }
+      } else if (def.id === 'Counter') {
         initLines.push(
           buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
           `    state[${JSON.stringify(variableName)}] = counter_init(${expressionContext.getParamExpression(moduleInstance, def, 'width')}, ${expressionContext.getParamExpression(moduleInstance, def, 'value')}, ${expressionContext.getParamExpression(moduleInstance, def, 'step')})`,
@@ -2094,7 +2175,7 @@ function buildCompositeHelperDefinitions(
         throw new Error(`Python export could not resolve composite module "${moduleId}".`);
       }
       const def = registry[moduleInstance.defId];
-      if (!def || isCompositeDefinition(def) || isIteratorDefinition(def)) {
+      if (!def || isIteratorDefinition(def)) {
         throw new Error(`Python export encountered unsupported composite definition "${moduleInstance.defId}".`);
       }
 
@@ -2106,6 +2187,29 @@ function buildCompositeHelperDefinitions(
       if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id)) {
         tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    ', 'Sink'));
         tickLines.push(`    ${variableName} = {}`);
+        continue;
+      }
+
+      if (isCompositeDefinition(def)) {
+        const childDefinition = compositeDefinitionsById.get(def.id);
+        if (!childDefinition) {
+          throw new Error(`Python export could not resolve nested composite helper for "${def.id}".`);
+        }
+        const callArguments = buildCompositeCallArguments(
+          moduleInstance,
+          childDefinition,
+          expressionContext,
+        );
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        if (childDefinition.stateful) {
+          tickLines.push(
+            `    ${variableName} = ${childDefinition.functionName}_tick(state[${JSON.stringify(variableName)}], tick${callArguments.length > 0 ? `, ${callArguments.join(', ')}` : ''})`,
+          );
+        } else {
+          tickLines.push(
+            `    ${variableName} = ${childDefinition.functionName}(${callArguments.join(', ')})`,
+          );
+        }
         continue;
       }
 
@@ -2274,7 +2378,7 @@ function collectIteratorExportDefinitions(
       functionName: `iterator_${sanitizeIdentifierPart(moduleInstance.id)}`,
       resolvedIterationCount: getResolvedIteratorIterationCount(def, moduleInstance.params),
       stateful: isCompositeDefinition(roundDef)
-        ? projectHasStatefulExportCandidate(roundDef.project, registry, 1)
+        ? projectHasStatefulExportCandidate(roundDef.project, registry, new Set([roundDef.id]))
         : SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS.has(roundDef.id),
       inputArgNames: buildPythonNameMap(
         def.inputs.map((input) => input.name),

@@ -251,6 +251,70 @@ const nestedComposite: CompositeDef = {
   outputBindings: [{ externalPort: 'out', internalModuleId: 'inner', internalPort: 'out' }],
 };
 
+const nestedForwardedComposite: CompositeDef = {
+  id: 'NestedForwardedComposite',
+  name: 'Nested Forwarded Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [
+    { name: 'in', type: 'bits' },
+    { name: 'mask', type: 'bits' },
+  ],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {
+    rotateMode: {
+      key: 'rotateMode',
+      label: 'Rotate Mode',
+      kind: 'select',
+      defaultValue: 'rotate-left',
+      options: [
+        { label: 'Rotate Left', value: 'rotate-left' },
+        { label: 'Rotate Right', value: 'rotate-right' },
+      ],
+    },
+  },
+  project: {
+    modules: [{ id: 'inner', defId: 'ForwardedShiftComposite', params: {} }],
+    connections: [],
+  },
+  inputBindings: [
+    { externalPort: 'in', internalModuleId: 'inner', internalPort: 'in' },
+    { externalPort: 'mask', internalModuleId: 'inner', internalPort: 'mask' },
+  ],
+  outputBindings: [{ externalPort: 'out', internalModuleId: 'inner', internalPort: 'out' }],
+  forwardedParams: [
+    { externalParam: 'rotateMode', internalModuleId: 'inner', internalParamKey: 'rotateMode' },
+  ],
+};
+
+const nestedClockedRotorComposite: CompositeDef = {
+  id: 'NestedClockedRotorComposite',
+  name: 'Nested Clocked Rotor Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [
+    { name: 'in', type: 'symbol' },
+    { name: 'clock', type: 'bits' },
+  ],
+  outputs: [
+    { name: 'out', type: 'symbol' },
+    { name: 'turnover', type: 'bits' },
+  ],
+  paramSchema: {},
+  project: {
+    modules: [{ id: 'inner', defId: 'ClockedRotorComposite', params: {} }],
+    connections: [],
+  },
+  inputBindings: [
+    { externalPort: 'in', internalModuleId: 'inner', internalPort: 'in' },
+    { externalPort: 'clock', internalModuleId: 'inner', internalPort: 'clock' },
+  ],
+  outputBindings: [
+    { externalPort: 'out', internalModuleId: 'inner', internalPort: 'out' },
+    { externalPort: 'turnover', internalModuleId: 'inner', internalPort: 'turnover' },
+  ],
+};
+
 const compositeContainingIterator: CompositeDef = {
   id: 'CompositeContainingIterator',
   name: 'Composite Containing Iterator',
@@ -348,21 +412,51 @@ describe('getPythonExportCompatibility', () => {
     });
   });
 
-  it('rejects nested composite export in v1', () => {
+  it('rejects composite definition cycles in v1', () => {
+    const cyclicCompositeA: CompositeDef = {
+      id: 'CyclicCompositeA',
+      name: 'Cyclic Composite A',
+      kind: 'composite',
+      version: 1,
+      inputs: [{ name: 'in', type: 'symbol' }],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {},
+      project: {
+        modules: [{ id: 'inner', defId: 'CyclicCompositeB', params: {} }],
+        connections: [],
+      },
+      inputBindings: [{ externalPort: 'in', internalModuleId: 'inner', internalPort: 'in' }],
+      outputBindings: [{ externalPort: 'out', internalModuleId: 'inner', internalPort: 'out' }],
+    };
+    const cyclicCompositeB: CompositeDef = {
+      id: 'CyclicCompositeB',
+      name: 'Cyclic Composite B',
+      kind: 'composite',
+      version: 1,
+      inputs: [{ name: 'in', type: 'symbol' }],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {},
+      project: {
+        modules: [{ id: 'inner', defId: 'CyclicCompositeA', params: {} }],
+        connections: [],
+      },
+      inputBindings: [{ externalPort: 'in', internalModuleId: 'inner', internalPort: 'in' }],
+      outputBindings: [{ externalPort: 'out', internalModuleId: 'inner', internalPort: 'out' }],
+    };
     const compositeRegistry: ModuleRegistry = {
       ...V1_REGISTRY,
-      SymbolRoundTripComposite: symbolRoundTripComposite,
-      NestedComposite: nestedComposite,
+      CyclicCompositeA: cyclicCompositeA,
+      CyclicCompositeB: cyclicCompositeB,
     };
     const incompatibleProject: Project = {
       modules: [
         { id: 'text-1', defId: 'TextInput', params: { value: 'A' } },
-        { id: 'nested-1', defId: 'NestedComposite', params: {} },
+        { id: 'cycle-1', defId: 'CyclicCompositeA', params: {} },
         { id: 'out-1', defId: 'Output', params: {} },
       ],
       connections: [
-        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'nested-1', port: 'in' } },
-        { from: { moduleId: 'nested-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'cycle-1', port: 'in' } },
+        { from: { moduleId: 'cycle-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
       ],
     };
 
@@ -370,9 +464,9 @@ describe('getPythonExportCompatibility', () => {
 
     expect(compatibility.ok).toBe(false);
     expect(compatibility.issues).toContainEqual({
-      moduleId: 'nested-1/inner',
-      defId: 'SymbolRoundTripComposite',
-      reason: 'Nested composite definitions are not exportable in V1.',
+      moduleId: 'cycle-1/inner/inner',
+      defId: 'CyclicCompositeA',
+      reason: 'Composite definition cycles are not exportable in V1.',
     });
   });
 
@@ -485,6 +579,9 @@ parityDescribe('generatePythonExport', () => {
     SymbolRoundTripComposite: symbolRoundTripComposite,
     ForwardedShiftComposite: forwardedShiftComposite,
     ClockedRotorComposite: clockedRotorComposite,
+    NestedComposite: nestedComposite,
+    NestedForwardedComposite: nestedForwardedComposite,
+    NestedClockedRotorComposite: nestedClockedRotorComposite,
     SteppingRotorComposite: steppingRotorComposite,
     SteppingRotorIterator: steppingRotorIterator,
   };
@@ -669,6 +766,59 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, compositeRegistry));
   });
 
+  it('matches executeProject for a shipped nested composite workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'A' } },
+        { id: 'nested-1', defId: 'NestedComposite', params: {} },
+        { id: 'out-1', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'nested-1', port: 'in' } },
+        { from: { moduleId: 'nested-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('def composite_SymbolRoundTripComposite');
+    expect(pythonSource).toContain('def composite_NestedComposite');
+    expect(pythonSource.indexOf('def composite_SymbolRoundTripComposite')).toBeLessThan(
+      pythonSource.indexOf('def composite_NestedComposite'),
+    );
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, compositeRegistry));
+  });
+
+  it('matches executeProject for a user-authored nested forwarded composite workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'bits-1', defId: 'BitSource', params: { stream: [1, 0, 1, 1] } },
+        { id: 'mask-1', defId: 'BitSource', params: { stream: [0, 1, 0, 0] } },
+        {
+          id: 'comp-1',
+          defId: 'NestedForwardedComposite',
+          params: { rotateMode: 'rotate-right' },
+        },
+        { id: 'out-1', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'bits-1', port: 'out' }, to: { moduleId: 'comp-1', port: 'in' } },
+        { from: { moduleId: 'mask-1', port: 'out' }, to: { moduleId: 'comp-1', port: 'mask' } },
+        { from: { moduleId: 'comp-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('def composite_ForwardedShiftComposite');
+    expect(pythonSource).toContain('def composite_NestedForwardedComposite');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, compositeRegistry));
+  });
+
   it('matches executeTickedProject for a temporal composite workspace', () => {
     const project: Project = {
       modules: [
@@ -690,6 +840,33 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.status).toBe(0);
     expect(pythonSource).toContain('def composite_ClockedRotorComposite_init_state');
     expect(pythonSource).toContain('def composite_ClockedRotorComposite_tick');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, compositeRegistry));
+  });
+
+  it('matches executeTickedProject for a temporal nested composite workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'AAAA' } },
+        { id: 'clock-1', defId: 'Clock', params: { period: 1, offset: 0, length: 4 } },
+        { id: 'comp-1', defId: 'NestedClockedRotorComposite', params: {} },
+        { id: 'out-1', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'comp-1', port: 'in' } },
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'comp-1', port: 'clock' } },
+        { from: { moduleId: 'comp-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('def composite_ClockedRotorComposite_init_state');
+    expect(pythonSource).toContain('def composite_NestedClockedRotorComposite_init_state');
+    expect(pythonSource.indexOf('def composite_ClockedRotorComposite_init_state')).toBeLessThan(
+      pythonSource.indexOf('def composite_NestedClockedRotorComposite_init_state'),
+    );
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, compositeRegistry));
   });
 

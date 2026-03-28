@@ -278,10 +278,11 @@ That `ModInverse` export slice is now also shipped:
 - the primitive registry line is now fully covered by Python export
 - the next export frontier is now structural rather than primitive/runtime completion
 
-The next structural export frontier is now explicitly recorded as:
+That nested composite export slice is now also shipped:
 - `PYTHON-EXPORT-NESTED-COMPOSITES-V1.md`
-- the first bounded recursive-structure slice is nested composite export
-- keep iterator-containing composites and generalized mixed recursive structure out of scope in the first recursive step
+- exported Python now supports bounded nested composite helper generation
+- helper definitions are emitted leaf-first, preserve local scope isolation, and drill forwarded params through nested composite calls
+- iterator-containing composites and generalized mixed recursive structure remain out of scope in this slice
 
 The future Python export architecture note after that is now explicitly recorded as:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`

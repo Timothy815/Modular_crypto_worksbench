@@ -163,7 +163,9 @@ Current `main` now also includes:
   - the primitive registry line is now fully covered by Python export
 - next structural export frontier:
   - `PYTHON-EXPORT-NESTED-COMPOSITES-V1.md`
-  - records nested composites as the first bounded recursive-structure export slice
+  - now shipped as the first bounded recursive-structure export slice
+  - exported Python now supports bounded nested composite helper generation with leaf-first helper ordering and multi-level forwarded-param drilling
+  - parity-tested for shipped, user-authored, and temporal nested composite workspaces
   - keeps iterator-containing composites and generalized mixed recursive structure out of scope for the first recursive step
 - future Python export architecture note:
   - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
