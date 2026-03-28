@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Proposed
+Status: Shipped
 
 ---
 
@@ -93,3 +93,13 @@ This slice is successful when:
 - detached window labels and titles better communicate grouped context
 - no new pane families or layout systems are introduced
 - the multi-window line ends this pass in a visibly more polished state without changing its architectural boundary
+
+---
+
+## Shipped Notes
+
+Current `main` now includes:
+- stable detached window labels in the `Windows` surface using window ordinals plus grouped contents
+- dynamic detached browser titles that lead with the active tab and preserve grouped context
+- clearer detached shell identity inside the window itself
+- continued no-op suppression for move / return actions so the `Windows` surface stays contextual rather than noisy

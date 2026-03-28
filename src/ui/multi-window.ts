@@ -331,6 +331,39 @@ export function formatDetachedPanelKindLabel(kind: DetachedPanelKind) {
   }
 }
 
+export function getDetachedPanelGroupOrdinal(
+  groups: DetachedPanelWindowGroup[],
+  panelWindowId: string,
+) {
+  const index = groups.findIndex((group) => group.panelWindowId === panelWindowId);
+  return index >= 0 ? index + 1 : null;
+}
+
+export function formatDetachedPanelTabList(kinds: DetachedPanelKind[]) {
+  return kinds.map((kind) => formatDetachedPanelKindLabel(kind)).join(' + ');
+}
+
 export function formatDetachedPanelGroupLabel(group: DetachedPanelWindowGroup) {
-  return group.tabs.map((kind) => formatDetachedPanelKindLabel(kind)).join(' + ');
+  return formatDetachedPanelTabList(group.tabs);
+}
+
+export function formatDetachedPanelWindowLabel(
+  groups: DetachedPanelWindowGroup[],
+  group: DetachedPanelWindowGroup,
+) {
+  const ordinal = getDetachedPanelGroupOrdinal(groups, group.panelWindowId);
+  const prefix = ordinal === null ? 'Window' : `Window ${ordinal}`;
+  return `${prefix} (${formatDetachedPanelGroupLabel(group)})`;
+}
+
+export function formatDetachedPanelDocumentTitle(
+  tabs: DetachedPanelKind[],
+  activeKind: DetachedPanelKind,
+) {
+  const activeLabel = formatDetachedPanelKindLabel(activeKind);
+  if (tabs.length <= 1) {
+    return `${activeLabel} — MCW`;
+  }
+
+  return `${activeLabel} — ${formatDetachedPanelTabList(tabs)} — MCW`;
 }

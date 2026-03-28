@@ -48,8 +48,8 @@ import {
   DETACHED_PANEL_HOST_QUERY_KEY,
   DETACHED_PANEL_QUERY_KEY,
   DETACHED_PANEL_WINDOW_QUERY_KEY,
-  formatDetachedPanelGroupLabel,
   formatDetachedPanelKindLabel,
+  formatDetachedPanelWindowLabel,
   type DetachedInspectorSnapshot,
   type DetachedLearningSnapshot,
   type DetachedPanelKind,
@@ -1948,7 +1948,7 @@ function MainApp() {
     () =>
       detachedPanelGroups.map((group) => ({
         panelWindowId: group.panelWindowId,
-        label: formatDetachedPanelGroupLabel(group),
+        label: formatDetachedPanelWindowLabel(detachedPanelGroups, group),
         tabs: group.tabs,
       })),
     [detachedPanelGroups],

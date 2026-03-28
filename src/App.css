@@ -263,6 +263,28 @@ body.dock-resizing {
   border-radius: 18px;
 }
 
+.detached-window-tabs-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.detached-window-meta {
+  margin-bottom: 0;
+}
+
+.detached-window-group-label {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.detached-window-group-note {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
 .detached-window-tabs {
   display: flex;
   flex-wrap: wrap;

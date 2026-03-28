@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   createDetachedPanelGroup,
+  formatDetachedPanelDocumentTitle,
   formatDetachedPanelGroupLabel,
+  formatDetachedPanelWindowLabel,
   getDetachedPanelGroupByKind,
   moveDetachedPanelKindToGroup,
   removeDetachedPanelKind,
@@ -80,5 +82,26 @@ describe('multi-window helpers', () => {
         activeKind: 'palette',
       }),
     ).toBe('Tools + Inspector + Learning');
+  });
+
+  it('formats detached window labels with stable ordinals for the windows menu', () => {
+    const groups: DetachedPanelWindowGroup[] = [
+      { panelWindowId: 'window-a', tabs: ['palette', 'inspector'], activeKind: 'palette' },
+      { panelWindowId: 'window-b', tabs: ['learning'], activeKind: 'learning' },
+    ];
+
+    expect(formatDetachedPanelWindowLabel(groups, groups[0])).toBe(
+      'Window 1 (Tools + Inspector)',
+    );
+    expect(formatDetachedPanelWindowLabel(groups, groups[1])).toBe(
+      'Window 2 (Learning)',
+    );
+  });
+
+  it('formats detached browser titles from the active tab and grouped context', () => {
+    expect(formatDetachedPanelDocumentTitle(['palette'], 'palette')).toBe('Tools — MCW');
+    expect(formatDetachedPanelDocumentTitle(['palette', 'inspector'], 'inspector')).toBe(
+      'Inspector — Tools + Inspector — MCW',
+    );
   });
 });

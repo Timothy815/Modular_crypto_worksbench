@@ -15,6 +15,8 @@ import type {
   ThemeMode,
 } from '../multi-window';
 import { formatDetachedPanelKindLabel } from '../multi-window';
+import { formatDetachedPanelDocumentTitle } from '../multi-window';
+import { formatDetachedPanelGroupLabel } from '../multi-window';
 
 const ParameterInspector = lazy(() =>
   import('./parameter-inspector').then((module) => ({
@@ -122,12 +124,7 @@ export function DetachedPanelWindow({
     const activePayload = getDetachedPayload(snapshot, activeKind);
     const theme: ThemeMode = activePayload?.theme ?? 'light';
     document.documentElement.dataset.theme = theme;
-    document.title =
-      activeKind === 'palette'
-        ? 'MCW Tool Palette'
-        : activeKind === 'inspector'
-          ? 'MCW Inspector'
-          : 'MCW Learning';
+    document.title = formatDetachedPanelDocumentTitle(snapshot?.tabs ?? [activeKind], activeKind);
   }, [kind, snapshot]);
 
   const registry = useMemo(() => {
@@ -169,23 +166,34 @@ export function DetachedPanelWindow({
       ) : (
         <>
           <section className="panel detached-window-tabs-panel">
-            <div className="detached-window-tabs" role="tablist" aria-label="Detached window tabs">
-              {snapshot.tabs.map((tabKind) => (
-                <button
-                  key={tabKind}
-                  type="button"
-                  role="tab"
-                  aria-selected={snapshot.activeKind === tabKind}
-                  className={
-                    snapshot.activeKind === tabKind
-                      ? 'detached-window-tab active'
-                      : 'detached-window-tab'
-                  }
-                  onClick={() => sendCommand(tabKind, { type: 'setActiveDetachedTab', kind: tabKind })}
-                >
-                  {formatDetachedPanelKindLabel(tabKind)}
-                </button>
-              ))}
+            <div className="detached-window-tabs-copy">
+              <p className="meta-label detached-window-meta">Detached Window</p>
+              <p className="detached-window-group-label">
+                {formatDetachedPanelGroupLabel({
+                  panelWindowId,
+                  tabs: snapshot.tabs,
+                  activeKind: snapshot.activeKind,
+                })}
+              </p>
+              <p className="detached-window-group-note">Host-synced tab group</p>
+              <div className="detached-window-tabs" role="tablist" aria-label="Detached window tabs">
+                {snapshot.tabs.map((tabKind) => (
+                  <button
+                    key={tabKind}
+                    type="button"
+                    role="tab"
+                    aria-selected={snapshot.activeKind === tabKind}
+                    className={
+                      snapshot.activeKind === tabKind
+                        ? 'detached-window-tab active'
+                        : 'detached-window-tab'
+                    }
+                    onClick={() => sendCommand(tabKind, { type: 'setActiveDetachedTab', kind: tabKind })}
+                  >
+                    {formatDetachedPanelKindLabel(tabKind)}
+                  </button>
+                ))}
+              </div>
             </div>
             <button
               type="button"

@@ -240,10 +240,11 @@ Current `main` now also includes the next bounded multi-window refinement slice:
 - allows tabs to return individually to the main window while preserving the rest of the detached group
 - moves detached-window actions onto a clearer dedicated `Windows` control surface
 
-Next multi-window follow-on is now recorded:
+Current `main` now also includes that detached-window polish slice:
 - `MULTI-WINDOW-DETACHED-POLISH-V1.md`
-- refines the shipped detached tab-group experience without widening the supported pane set
-- focuses on labels, titles, command clarity, and better grouped-window ergonomics
+- adds clearer window labels and grouped naming in the `Windows` surface
+- updates detached browser titles to track active tab plus grouped context
+- keeps the multi-window line inside polish and product-surface refinement rather than broader expansion
 
 Current `main` now also includes the first App-shell maintenance slice:
 - `APP-SHELL-REFACTOR-V1.md`
