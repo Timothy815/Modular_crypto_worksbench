@@ -92,6 +92,11 @@ Current `main` now also includes:
   - shipped `LFSR` as the first cryptographically meaningful temporal export primitive beyond `Clock` and `Counter`
   - parity-tested for direct keystream emission and logic-influencing ticked use
   - still keeps rotor-family export out of scope after this bridge slice
+- next careful rotor-family export frontier:
+  - `PYTHON-EXPORT-ROTOR-FOUNDATIONS-V1.md`
+  - records bounded forward `Rotor` export as the next temporal runtime target
+  - keeps `RotorReverse`, linked pairing, reflector return paths, and control-bank scheduling out of scope
+  - treats rotor export as the next serious move toward eventual MCW execution parity in Python
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments

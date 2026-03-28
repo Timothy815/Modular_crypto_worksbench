@@ -171,6 +171,12 @@ That `LFSR` stateful export bridge is now also shipped:
 - parity-tested for direct keystream emission and logic-influencing ticked use
 - still deliberately below rotor-family temporal runtime complexity
 
+The next careful stateful export frontier is now explicitly recorded as:
+- `PYTHON-EXPORT-ROTOR-FOUNDATIONS-V1.md`
+- add bounded forward `Rotor` export as the first rotor-family temporal runtime slice
+- keep `RotorReverse`, linked rotor pairing, reflector return paths, and control-bank scheduling out of scope
+- treat this as the next major step toward eventual MCW-to-Python execution parity
+
 That bounded multi-window workspace slice is now also shipped:
 - `MULTI-WINDOW-WORKSPACE-V1.md`
 - detachable `Palette` and `Inspector` windows
