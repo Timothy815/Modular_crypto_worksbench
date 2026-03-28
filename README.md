@@ -316,6 +316,10 @@ The next Python export frontier is now productization:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
 - the next deliberate step is the reusable `mcw_runtime.py` split plus separate generated workspace implementation file
 - this is now a productization move, not a remaining coverage blocker
+- `PYTHON-EXPORT-V1-COMPLETE.md`
+- records that the current self-contained one-file Python export leg has reached its first real completeness milestone
+- `PYTHON-EXPORT-RUNTIME-LIBRARY-FOUNDATIONS-V1.md`
+- activates the first bounded two-file runtime-library productization slice
 
 The future Python export architecture note after that is now explicitly recorded as:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`

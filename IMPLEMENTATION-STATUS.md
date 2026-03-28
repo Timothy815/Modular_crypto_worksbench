@@ -192,6 +192,14 @@ Current `main` now also includes:
   - now represents the next Python export frontier as a productization step rather than a coverage blocker
   - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file
   - keeps the current self-contained one-file export as the correct bounded foundations architecture for now
+- Python export completion checkpoint:
+  - `PYTHON-EXPORT-V1-COMPLETE.md`
+  - records that the current self-contained Python export leg reached its first real completeness milestone
+  - frames the remaining export work as productization rather than ordinary coverage
+- next Python export productization slice:
+  - `PYTHON-EXPORT-RUNTIME-LIBRARY-FOUNDATIONS-V1.md`
+  - activates the first bounded two-file runtime-library export contract
+  - keeps parity and helper-based generation as the non-negotiable constraints
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments
