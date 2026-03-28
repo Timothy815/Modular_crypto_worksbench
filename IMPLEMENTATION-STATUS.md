@@ -104,6 +104,12 @@ Current `main` now also includes:
   - records bounded `Reflector` + `RotorReverse` export as the next honest historical-machine slice
   - keeps rotor control-bank scheduling and broader multi-rotor export out of scope
   - preserves explicit linked forward/reverse rotor behavior in generated Python rather than collapsing it into a hidden machine object
+  - now shipped with parity coverage for plain return-path output, stepped return-path output, and linked reverse turnover used downstream
+- next careful rotor-control export frontier:
+  - `PYTHON-EXPORT-ROTOR-CONTROL-V1.md`
+  - records bounded turnover-driven multi-rotor stepping export as the next historical-machine slice
+  - keeps control-bank scheduler sprawl, full rotor-bank export, and structured-machine export out of scope
+  - preserves explicit graph-derived rotor control logic in generated Python rather than introducing a hidden machine scheduler
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments

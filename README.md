@@ -189,6 +189,17 @@ The next careful rotor export frontier is now explicitly recorded as:
 - keep rotor control-bank scheduling and broader multi-rotor export out of scope
 - preserve visible linked forward/reverse rotor behavior in generated Python instead of collapsing it into a hidden machine object
 
+That rotor return-path export slice is now also shipped:
+- exported temporal Python now supports bounded `Reflector` + `RotorReverse`
+- linked reverse traversal reads the live forward rotor state object directly
+- parity-tested for plain return-path output, stepped return-path output, and linked reverse turnover used downstream
+
+The next careful rotor-control export frontier is now explicitly recorded as:
+- `PYTHON-EXPORT-ROTOR-CONTROL-V1.md`
+- add bounded turnover-driven multi-rotor stepping export as the next historical-machine slice
+- keep control-bank scheduler sprawl, full rotor-bank export, and structured-machine export out of scope
+- preserve explicit graph-derived control logic in generated Python rather than introducing a hidden machine scheduler
+
 That bounded multi-window workspace slice is now also shipped:
 - `MULTI-WINDOW-WORKSPACE-V1.md`
 - detachable `Palette` and `Inspector` windows
