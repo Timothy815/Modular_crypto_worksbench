@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Proposed
+Status: Implemented
 
 ---
 
@@ -130,3 +130,13 @@ This slice is successful when:
 - generated workspace files are visibly cleaner than the current one-file artifact
 - parity remains intact
 - the runtime/library split is established as a real product surface, not just a planning note
+
+---
+
+## Outcome
+
+Shipped in the first bounded two-file runtime-library productization slice:
+- exported Python now emits `mcw_runtime.py` plus `<workspace>.py`
+- generated workspace files import `mcw_runtime` explicitly and keep helper-based machine structure
+- parity is proven for stateless, temporal, and structured workspaces against MCW execution
+- the original one-file exporter remains available as the legacy self-contained path

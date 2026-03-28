@@ -2331,9 +2331,8 @@ function MainApp() {
 
               const {
                 formatPythonExportCompatibilityIssues,
-                generatePythonExport,
+                generatePythonExportFiles,
                 getPythonExportCompatibility,
-                getPythonExportFileName,
               } = await import('./engine/codegen/python');
 
               const compatibility = getPythonExportCompatibility(
@@ -2346,10 +2345,18 @@ function MainApp() {
               }
 
               try {
-                const pythonSource = generatePythonExport(activeProjectState, effectiveRegistry);
+                const pythonExport = generatePythonExportFiles(
+                  activeProjectState,
+                  effectiveRegistry,
+                  activeProjectDefinition.name,
+                );
                 downloadPythonDocument(
-                  getPythonExportFileName(activeProjectDefinition.name),
-                  pythonSource,
+                  pythonExport.runtimeFileName,
+                  pythonExport.runtimeSource,
+                );
+                downloadPythonDocument(
+                  pythonExport.workspaceFileName,
+                  pythonExport.workspaceSource,
                 );
                 setImportError(null);
               } catch (error) {

@@ -198,7 +198,8 @@ Current `main` now also includes:
   - frames the remaining export work as productization rather than ordinary coverage
 - next Python export productization slice:
   - `PYTHON-EXPORT-RUNTIME-LIBRARY-FOUNDATIONS-V1.md`
-  - activates the first bounded two-file runtime-library export contract
+  - shipped the first bounded two-file runtime-library export contract
+  - exported Python now emits `mcw_runtime.py` plus a separate generated workspace file
   - keeps parity and helper-based generation as the non-negotiable constraints
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
