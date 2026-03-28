@@ -183,6 +183,12 @@ That rotor export foundations slice is now also shipped:
 - generated Python now includes short systematic comments naming each exported module block
 - `RotorReverse`, linked rotor pairing, reflector return paths, and rotor control-bank scheduling remain deferred
 
+The next careful rotor export frontier is now explicitly recorded as:
+- `PYTHON-EXPORT-ROTOR-RETURN-PATH-V1.md`
+- add bounded `Reflector` and `RotorReverse` export as the first honest return-path historical-machine slice
+- keep rotor control-bank scheduling and broader multi-rotor export out of scope
+- preserve visible linked forward/reverse rotor behavior in generated Python instead of collapsing it into a hidden machine object
+
 That bounded multi-window workspace slice is now also shipped:
 - `MULTI-WINDOW-WORKSPACE-V1.md`
 - detachable `Palette` and `Inspector` windows
