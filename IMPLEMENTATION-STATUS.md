@@ -129,6 +129,10 @@ Current `main` now also includes:
     - `SpongeMixRoundIterator`
   - parity-proven within the existing helper-function iterator export architecture
   - keeps nested iterators, iterator-containing composites, and generalized recursive structured export out of scope
+- structured export compatibility tightening:
+  - `PYTHON-EXPORT-STRUCTURED-COMPATIBILITY-V1.md`
+  - shipped explicit compatibility rejection for iterator-containing composites and remaining unsupported structured recursion
+  - aligns the code-level compatibility walk with the documented structured export boundary
 - future Python export architecture note:
   - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
   - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file

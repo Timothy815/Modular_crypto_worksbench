@@ -251,6 +251,34 @@ const nestedComposite: CompositeDef = {
   outputBindings: [{ externalPort: 'out', internalModuleId: 'inner', internalPort: 'out' }],
 };
 
+const compositeContainingIterator: CompositeDef = {
+  id: 'CompositeContainingIterator',
+  name: 'Composite Containing Iterator',
+  kind: 'composite',
+  version: 1,
+  inputs: [{ name: 'in', type: 'bits' }],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {},
+  project: {
+    modules: [{ id: 'iter', defId: 'ByteRoundIterator', params: {} }],
+    connections: [],
+  },
+  inputBindings: [{ externalPort: 'in', internalModuleId: 'iter', internalPort: 'in' }],
+  outputBindings: [{ externalPort: 'out', internalModuleId: 'iter', internalPort: 'out' }],
+};
+
+const iteratorWithCompositeIteratorRound: IteratorDef = {
+  id: 'IteratorWithCompositeIteratorRound',
+  name: 'Iterator With Composite Iterator Round',
+  kind: 'iterator',
+  version: 1,
+  inputs: [{ name: 'in', type: 'bits' }],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {},
+  roundDefId: 'CompositeContainingIterator',
+  iterationCount: 2,
+};
+
 const steppingRotorIterator: IteratorDef = {
   id: 'SteppingRotorIterator',
   name: 'Stepping Rotor Iterator',
@@ -388,6 +416,65 @@ describe('getPythonExportCompatibility', () => {
       moduleId: 'iter-1',
       defId: 'InvalidIterator',
       reason: 'Iterator iterationCount overrides must resolve to a positive integer.',
+    });
+  });
+
+  it('rejects composites containing iterators in v1', () => {
+    const compatibilityRegistry: ModuleRegistry = {
+      ...starterDefinitionRegistry,
+      CompositeContainingIterator: compositeContainingIterator,
+    };
+    const incompatibleProject: Project = {
+      modules: [
+        { id: 'bits-1', defId: 'HexSource', params: { value: '3C' } },
+        { id: 'comp-1', defId: 'CompositeContainingIterator', params: {} },
+        { id: 'hex-1', defId: 'BitsToHex', params: {} },
+        { id: 'out-1', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'bits-1', port: 'out' }, to: { moduleId: 'comp-1', port: 'in' } },
+        { from: { moduleId: 'comp-1', port: 'out' }, to: { moduleId: 'hex-1', port: 'in' } },
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const compatibility = getPythonExportCompatibility(incompatibleProject, compatibilityRegistry);
+
+    expect(compatibility.ok).toBe(false);
+    expect(compatibility.issues).toContainEqual({
+      moduleId: 'comp-1/iter',
+      defId: 'ByteRoundIterator',
+      reason: 'Iterators inside composites are not exportable in V1.',
+    });
+  });
+
+  it('rejects iterator round definitions whose composite body contains an iterator in v1', () => {
+    const compatibilityRegistry: ModuleRegistry = {
+      ...starterDefinitionRegistry,
+      CompositeContainingIterator: compositeContainingIterator,
+      IteratorWithCompositeIteratorRound: iteratorWithCompositeIteratorRound,
+    };
+    const incompatibleProject: Project = {
+      modules: [
+        { id: 'bits-1', defId: 'HexSource', params: { value: '3C' } },
+        { id: 'iter-1', defId: 'IteratorWithCompositeIteratorRound', params: {} },
+        { id: 'hex-1', defId: 'BitsToHex', params: {} },
+        { id: 'out-1', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'bits-1', port: 'out' }, to: { moduleId: 'iter-1', port: 'in' } },
+        { from: { moduleId: 'iter-1', port: 'out' }, to: { moduleId: 'hex-1', port: 'in' } },
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const compatibility = getPythonExportCompatibility(incompatibleProject, compatibilityRegistry);
+
+    expect(compatibility.ok).toBe(false);
+    expect(compatibility.issues).toContainEqual({
+      moduleId: 'iter-1/round-def/iter',
+      defId: 'ByteRoundIterator',
+      reason: 'Iterators inside composites are not exportable in V1.',
     });
   });
 });

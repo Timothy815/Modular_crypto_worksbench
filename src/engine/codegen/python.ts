@@ -1543,6 +1543,15 @@ function collectPythonExportCompatibilityIssues(
     }
 
     if (isIteratorDefinition(def)) {
+      if (compositeDepth > 0) {
+        issues.push({
+          moduleId: scopedModuleId,
+          defId: moduleInstance.defId,
+          reason: 'Iterators inside composites are not exportable in V1.',
+        });
+        continue;
+      }
+
       const explicitOverride = moduleInstance.params.iterationCount;
       if (
         explicitOverride !== undefined &&
