@@ -345,10 +345,12 @@ The first follow-on for that line is now also shipped:
 - one detachable `Learning` window
 - tutorials and challenges kept together as the existing tabbed learning surface
 - host-authoritative live synchronization preserved for tutorial/challenge interactions
+
+The next bounded multi-window refinement is now also shipped:
 - `MULTI-WINDOW-TABBED-WINDOWS-V1.md`
-- activates the next bounded multi-window refinement slice
-- detached windows can grow into tab groups for `Palette`, `Inspector`, and `Learning`
-- folds window-action menu cleanup into the same bounded slice
+- detached windows can now grow into tab groups for `Palette`, `Inspector`, and `Learning`
+- tabs can return individually to the main window without disturbing the rest of the detached group
+- window-management actions now live on a clearer dedicated `Windows` surface instead of being mixed into the crowded workspace dropdown
 
 The next maintenance follow-on is now also shipped:
 - `APP-SHELL-REFACTOR-V1.md`

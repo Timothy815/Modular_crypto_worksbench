@@ -48,15 +48,26 @@ import {
   DETACHED_PANEL_HOST_QUERY_KEY,
   DETACHED_PANEL_QUERY_KEY,
   DETACHED_PANEL_WINDOW_QUERY_KEY,
+  formatDetachedPanelGroupLabel,
+  formatDetachedPanelKindLabel,
   type DetachedInspectorSnapshot,
   type DetachedLearningSnapshot,
   type DetachedPanelKind,
   type DetachedPanelMessage,
   type DetachedPanelStateSnapshot,
   type DetachedPaletteSnapshot,
+  type DetachedPanelPayloadByKind,
+  type DetachedPanelWindowGroup,
   createDetachedPanelUrl,
   createDetachedPanelWindowName,
+  createDetachedPanelGroup,
+  getDetachedPanelGroupByKind,
+  isDetachedPanelKindActive,
   isDetachedPanelKind,
+  moveDetachedPanelKindToGroup,
+  removeDetachedPanelGroup,
+  removeDetachedPanelKind,
+  setDetachedPanelGroupActiveKind,
 } from './ui/multi-window';
 import {
   createInitialUiState,
@@ -218,6 +229,7 @@ function App() {
 function MainApp() {
   const [headerResourceAction, setHeaderResourceAction] = useState('');
   const [headerWorkspaceAction, setHeaderWorkspaceAction] = useState('');
+  const [headerWindowAction, setHeaderWindowAction] = useState('');
   const [learningPanelTab, setLearningPanelTab] = useState<'tutorial' | 'challenge'>('tutorial');
   const [leftDockWidth, setLeftDockWidth] = useState(() => {
     if (typeof window === 'undefined') {
@@ -263,12 +275,8 @@ function MainApp() {
   });
   const [parameterClipboard, setParameterClipboard] = useState<ParameterClipboardState | null>(null);
   const hostWindowIdRef = useRef(createWindowSessionId());
-  const detachedPanelWindowsRef = useRef<Partial<Record<DetachedPanelKind, Window | null>>>({});
-  const [detachedPanels, setDetachedPanels] = useState<Record<DetachedPanelKind, boolean>>({
-    palette: false,
-    inspector: false,
-    learning: false,
-  });
+  const detachedPanelWindowsRef = useRef<Record<string, Window | null>>({});
+  const [detachedPanelGroups, setDetachedPanelGroups] = useState<DetachedPanelWindowGroup[]>([]);
   const [state, dispatch] = useReducer(
     uiReducer,
     demoProjects,
@@ -962,6 +970,23 @@ function MainApp() {
       workspaceMode,
     ],
   );
+  const detachedPayloadByKind = useMemo<DetachedPanelPayloadByKind>(
+    () => ({
+      palette: detachedPaletteSnapshot,
+      inspector: detachedInspectorSnapshot,
+      learning: detachedLearningSnapshot,
+    }),
+    [detachedInspectorSnapshot, detachedLearningSnapshot, detachedPaletteSnapshot],
+  );
+  const detachedPanelWindowIdByKind = useMemo(
+    () =>
+      Object.fromEntries(
+        detachedPanelGroups.flatMap((group) =>
+          group.tabs.map((kind) => [kind, group.panelWindowId] as const),
+        ),
+      ) as Partial<Record<DetachedPanelKind, string>>,
+    [detachedPanelGroups],
+  );
   const syncTutorialStepFromTrace = useCallback(
     (nextIndex: number | null) => {
       setStepIndex(nextIndex);
@@ -1470,11 +1495,12 @@ function MainApp() {
     ],
   );
 
-  function openDetachedPanel(kind: DetachedPanelKind) {
+  function openDetachedPanelInNewWindow(kind: DetachedPanelKind) {
     if (typeof window === 'undefined') {
       return;
     }
 
+    const previousGroup = getDetachedPanelGroupByKind(detachedPanelGroups, kind);
     const panelWindowId = createWindowSessionId();
     const detachedWindow = window.open(
       createDetachedPanelUrl(
@@ -1492,14 +1518,46 @@ function MainApp() {
       return;
     }
 
-    detachedPanelWindowsRef.current[kind] = detachedWindow;
-    setDetachedPanels((current) => ({ ...current, [kind]: true }));
+    detachedPanelWindowsRef.current[panelWindowId] = detachedWindow;
+    setDetachedPanelGroups((current) =>
+      createDetachedPanelGroup(current, panelWindowId, kind),
+    );
+    if (previousGroup) {
+      const remainingTabs = previousGroup.tabs.filter((tab) => tab !== kind);
+      if (remainingTabs.length === 0) {
+        detachedPanelWindowsRef.current[previousGroup.panelWindowId]?.close();
+        delete detachedPanelWindowsRef.current[previousGroup.panelWindowId];
+      }
+    }
+  }
+
+  function openDetachedPanelInExistingWindow(kind: DetachedPanelKind, panelWindowId: string) {
+    const previousGroup = getDetachedPanelGroupByKind(detachedPanelGroups, kind);
+    setDetachedPanelGroups((current) =>
+      moveDetachedPanelKindToGroup(current, kind, panelWindowId),
+    );
+    if (previousGroup && previousGroup.panelWindowId !== panelWindowId) {
+      const remainingTabs = previousGroup.tabs.filter((tab) => tab !== kind);
+      if (remainingTabs.length === 0) {
+        detachedPanelWindowsRef.current[previousGroup.panelWindowId]?.close();
+        delete detachedPanelWindowsRef.current[previousGroup.panelWindowId];
+      }
+    }
+    detachedPanelWindowsRef.current[panelWindowId]?.focus();
   }
 
   function returnDetachedPanelToMain(kind: DetachedPanelKind) {
-    detachedPanelWindowsRef.current[kind]?.close();
-    detachedPanelWindowsRef.current[kind] = null;
-    setDetachedPanels((current) => ({ ...current, [kind]: false }));
+    const targetGroup = getDetachedPanelGroupByKind(detachedPanelGroups, kind);
+    if (!targetGroup) {
+      return;
+    }
+
+    const nextGroups = removeDetachedPanelKind(detachedPanelGroups, kind);
+    setDetachedPanelGroups(nextGroups);
+    if (!nextGroups.some((group) => group.panelWindowId === targetGroup.panelWindowId)) {
+      detachedPanelWindowsRef.current[targetGroup.panelWindowId]?.close();
+      delete detachedPanelWindowsRef.current[targetGroup.panelWindowId];
+    }
   }
 
   useEffect(() => {
@@ -1509,17 +1567,23 @@ function MainApp() {
 
     const channel = new BroadcastChannel(DETACHED_PANEL_CHANNEL_NAME);
 
-    const postSnapshot = (kind: DetachedPanelKind, panelWindowId: string) => {
+    const postSnapshot = (panelWindowId: string) => {
+      const group = detachedPanelGroups.find(
+        (candidate) => candidate.panelWindowId === panelWindowId,
+      );
+      if (!group) {
+        return;
+      }
+
+      const payloadByKind = Object.fromEntries(
+        group.tabs.map((kind) => [kind, detachedPayloadByKind[kind]]),
+      ) as Partial<DetachedPanelPayloadByKind>;
       const snapshot: DetachedPanelStateSnapshot = {
         hostId: hostWindowIdRef.current,
         panelWindowId,
-        kind,
-        payload:
-          kind === 'palette'
-            ? detachedPaletteSnapshot
-            : kind === 'inspector'
-              ? detachedInspectorSnapshot
-              : detachedLearningSnapshot,
+        tabs: group.tabs,
+        activeKind: group.activeKind,
+        payloadByKind,
       };
       const message: DetachedPanelMessage = {
         type: 'snapshot',
@@ -1536,7 +1600,7 @@ function MainApp() {
       }
 
       if (message.type === 'requestSnapshot') {
-        postSnapshot(message.kind, message.panelWindowId);
+        postSnapshot(message.panelWindowId);
         return;
       }
 
@@ -1789,12 +1853,39 @@ function MainApp() {
               });
             }
             return;
+          case 'setActiveDetachedTab':
+            {
+              const nextKind = message.command.kind;
+            setDetachedPanelGroups((current) =>
+              setDetachedPanelGroupActiveKind(
+                current,
+                message.panelWindowId,
+                nextKind,
+              ),
+            );
+            return;
+            }
+          case 'returnDetachedTabToMain': {
+            const nextKind = message.command.kind;
+            const nextGroups = removeDetachedPanelKind(
+              detachedPanelGroups,
+              nextKind,
+            );
+            setDetachedPanelGroups(nextGroups);
+            if (!nextGroups.some((group) => group.panelWindowId === message.panelWindowId)) {
+              detachedPanelWindowsRef.current[message.panelWindowId]?.close();
+              delete detachedPanelWindowsRef.current[message.panelWindowId];
+            }
+            return;
+          }
         }
       }
 
       if (message.type === 'panelClosed') {
-        detachedPanelWindowsRef.current[message.kind] = null;
-        setDetachedPanels((current) => ({ ...current, [message.kind]: false }));
+        delete detachedPanelWindowsRef.current[message.panelWindowId];
+        setDetachedPanelGroups((current) =>
+          removeDetachedPanelGroup(current, message.panelWindowId),
+        );
       }
     };
 
@@ -1808,9 +1899,8 @@ function MainApp() {
     activeCompositeEntry,
     activeProjectDefinition.id,
     activeProjectDefinition.name,
-    detachedInspectorSnapshot,
-    detachedLearningSnapshot,
-    detachedPaletteSnapshot,
+    detachedPanelGroups,
+    detachedPayloadByKind,
     effectiveRegistry,
     handleOpenPrimitiveMicroDemo,
     handleUnzipComposite,
@@ -1832,52 +1922,37 @@ function MainApp() {
     }
 
     const channel = new BroadcastChannel(DETACHED_PANEL_CHANNEL_NAME);
-    if (detachedPanels.palette) {
-      const paletteWindow = detachedPanelWindowsRef.current.palette;
-      const paletteWindowId = paletteWindow?.name.split('mcw-palette-')[1] ?? createWindowSessionId();
+    for (const group of detachedPanelGroups) {
+      const payloadByKind = Object.fromEntries(
+        group.tabs.map((kind) => [kind, detachedPayloadByKind[kind]]),
+      ) as Partial<DetachedPanelPayloadByKind>;
       channel.postMessage({
         type: 'snapshot',
         snapshot: {
           hostId: hostWindowIdRef.current,
-          panelWindowId: paletteWindowId,
-          kind: 'palette',
-          payload: detachedPaletteSnapshot,
-        },
-      } satisfies DetachedPanelMessage);
-    }
-    if (detachedPanels.inspector) {
-      const inspectorWindow = detachedPanelWindowsRef.current.inspector;
-      const inspectorWindowId =
-        inspectorWindow?.name.split('mcw-inspector-')[1] ?? createWindowSessionId();
-      channel.postMessage({
-        type: 'snapshot',
-        snapshot: {
-          hostId: hostWindowIdRef.current,
-          panelWindowId: inspectorWindowId,
-          kind: 'inspector',
-          payload: detachedInspectorSnapshot,
-        },
-      } satisfies DetachedPanelMessage);
-    }
-    if (detachedPanels.learning) {
-      const learningWindow = detachedPanelWindowsRef.current.learning;
-      const learningWindowId = learningWindow?.name.split('mcw-learning-')[1] ?? createWindowSessionId();
-      channel.postMessage({
-        type: 'snapshot',
-        snapshot: {
-          hostId: hostWindowIdRef.current,
-          panelWindowId: learningWindowId,
-          kind: 'learning',
-          payload: detachedLearningSnapshot,
+          panelWindowId: group.panelWindowId,
+          tabs: group.tabs,
+          activeKind: group.activeKind,
+          payloadByKind,
         },
       } satisfies DetachedPanelMessage);
     }
     channel.close();
-  }, [detachedInspectorSnapshot, detachedLearningSnapshot, detachedPaletteSnapshot, detachedPanels]);
+  }, [detachedPanelGroups, detachedPayloadByKind]);
 
-  const showPaletteInMain = state.showPalette && !detachedPanels.palette;
-  const showInspectorInMain = state.showInspector && !detachedPanels.inspector;
-  const showLearningInMain = !detachedPanels.learning;
+  const showPaletteInMain = state.showPalette && !isDetachedPanelKindActive(detachedPanelGroups, 'palette');
+  const showInspectorInMain =
+    state.showInspector && !isDetachedPanelKindActive(detachedPanelGroups, 'inspector');
+  const showLearningInMain = !isDetachedPanelKindActive(detachedPanelGroups, 'learning');
+  const detachedWindowTargets = useMemo(
+    () =>
+      detachedPanelGroups.map((group) => ({
+        panelWindowId: group.panelWindowId,
+        label: formatDetachedPanelGroupLabel(group),
+        tabs: group.tabs,
+      })),
+    [detachedPanelGroups],
+  );
 
   return (
     <main className="app-shell">
@@ -1974,18 +2049,6 @@ function MainApp() {
                   );
                 } else if (value === 'toggle-inspector') {
                   dispatch({ type: 'toggleInspector' });
-                } else if (value === 'open-palette-window') {
-                  openDetachedPanel('palette');
-                } else if (value === 'return-palette-window') {
-                  returnDetachedPanelToMain('palette');
-                } else if (value === 'open-inspector-window') {
-                  openDetachedPanel('inspector');
-                } else if (value === 'return-inspector-window') {
-                  returnDetachedPanelToMain('inspector');
-                } else if (value === 'open-learning-window') {
-                  openDetachedPanel('learning');
-                } else if (value === 'return-learning-window') {
-                  returnDetachedPanelToMain('learning');
                 } else if (value === 'toggle-step-notes') {
                   dispatch({
                     type: 'setTutorialNotesVisible',
@@ -2057,9 +2120,6 @@ function MainApp() {
               <option value="toggle-palette">
                 {state.showPalette ? 'Hide Tools' : 'Show Tools'}
               </option>
-              <option value={detachedPanels.palette ? 'return-palette-window' : 'open-palette-window'}>
-                {detachedPanels.palette ? 'Return Tools To Main Window' : 'Open Tools In Window'}
-              </option>
               {state.showPalette ? (
                 <option value="toggle-palette-view">
                   {paletteViewMode === 'expanded' ? 'Compact Tools' : 'Expand Tools'}
@@ -2068,23 +2128,65 @@ function MainApp() {
               <option value="toggle-inspector">
                 {state.showInspector ? 'Hide Inspector' : 'Show Inspector'}
               </option>
-              <option
-                value={detachedPanels.inspector ? 'return-inspector-window' : 'open-inspector-window'}
-              >
-                {detachedPanels.inspector
-                  ? 'Return Inspector To Main Window'
-                  : 'Open Inspector In Window'}
-              </option>
-              <option
-                value={detachedPanels.learning ? 'return-learning-window' : 'open-learning-window'}
-              >
-                {detachedPanels.learning
-                  ? 'Return Learning To Main Window'
-                  : 'Open Learning In Window'}
-              </option>
               <option value="toggle-step-notes">
                 {tutorialNotesVisible ? 'Hide Step Notes' : 'Show Step Notes'}
               </option>
+            </select>
+          </label>
+          <label className="header-menu-select">
+            <span className="meta-label">Windows</span>
+            <select
+              value={headerWindowAction}
+              onChange={(event) => {
+                const value = event.target.value;
+                setHeaderWindowAction('');
+                if (!value) {
+                  return;
+                }
+
+                if (value.startsWith('new:')) {
+                  openDetachedPanelInNewWindow(value.slice(4) as DetachedPanelKind);
+                  return;
+                }
+
+                if (value.startsWith('return:')) {
+                  returnDetachedPanelToMain(value.slice(7) as DetachedPanelKind);
+                  return;
+                }
+
+                if (value.startsWith('move:')) {
+                  const [, kind, panelWindowId] = value.split(':');
+                  if (kind && panelWindowId) {
+                    openDetachedPanelInExistingWindow(kind as DetachedPanelKind, panelWindowId);
+                  }
+                }
+              }}
+            >
+              <option value="">Manage…</option>
+              {(['palette', 'inspector', 'learning'] as DetachedPanelKind[]).map((kind) => {
+                const currentWindowId = detachedPanelWindowIdByKind[kind] ?? null;
+                const kindLabel = formatDetachedPanelKindLabel(kind);
+                const moveTargets = detachedWindowTargets.filter(
+                  (target) => target.panelWindowId !== currentWindowId && !target.tabs.includes(kind),
+                );
+
+                return (
+                  <optgroup key={kind} label={kindLabel}>
+                    <option value={`new:${kind}`}>Open {kindLabel} In New Window</option>
+                    {currentWindowId ? (
+                      <option value={`return:${kind}`}>Return {kindLabel} To Main</option>
+                    ) : null}
+                    {moveTargets.map((target) => (
+                      <option
+                        key={`${kind}:${target.panelWindowId}`}
+                        value={`move:${kind}:${target.panelWindowId}`}
+                      >
+                        {currentWindowId ? 'Move' : 'Add'} {kindLabel} To {target.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                );
+              })}
             </select>
           </label>
         </nav>

@@ -84,11 +84,24 @@ export interface DetachedLearningSnapshot {
   canCaptureChallenge: boolean;
 }
 
+export interface DetachedPanelPayloadByKind {
+  palette: DetachedPaletteSnapshot;
+  inspector: DetachedInspectorSnapshot;
+  learning: DetachedLearningSnapshot;
+}
+
 export interface DetachedPanelStateSnapshot {
   hostId: string;
   panelWindowId: string;
-  kind: DetachedPanelKind;
-  payload: DetachedPaletteSnapshot | DetachedInspectorSnapshot | DetachedLearningSnapshot;
+  tabs: DetachedPanelKind[];
+  activeKind: DetachedPanelKind;
+  payloadByKind: Partial<DetachedPanelPayloadByKind>;
+}
+
+export interface DetachedPanelWindowGroup {
+  panelWindowId: string;
+  tabs: DetachedPanelKind[];
+  activeKind: DetachedPanelKind;
 }
 
 export type DetachedPanelCommand =
@@ -128,14 +141,15 @@ export type DetachedPanelCommand =
   | { type: 'setWorkspaceMode'; mode: WorkspaceMode }
   | { type: 'setTutorialNotesVisible'; visible: boolean }
   | { type: 'focusStepModule'; moduleId: string }
-  | { type: 'resetTutorialProgress' };
+  | { type: 'resetTutorialProgress' }
+  | { type: 'setActiveDetachedTab'; kind: DetachedPanelKind }
+  | { type: 'returnDetachedTabToMain'; kind: DetachedPanelKind };
 
 export type DetachedPanelMessage =
   | {
       type: 'requestSnapshot';
       hostId: string;
       panelWindowId: string;
-      kind: DetachedPanelKind;
     }
   | {
       type: 'snapshot';
@@ -158,7 +172,6 @@ export type DetachedPanelMessage =
       type: 'panelClosed';
       hostId: string;
       panelWindowId: string;
-      kind: DetachedPanelKind;
     };
 
 export function isDetachedPanelKind(value: string | null): value is DetachedPanelKind {
@@ -167,12 +180,12 @@ export function isDetachedPanelKind(value: string | null): value is DetachedPane
 
 export function createDetachedPanelUrl(
   currentHref: string,
-  kind: DetachedPanelKind,
+  initialKind: DetachedPanelKind,
   hostId: string,
   panelWindowId: string,
 ) {
   const url = new URL(currentHref);
-  url.searchParams.set(DETACHED_PANEL_QUERY_KEY, kind);
+  url.searchParams.set(DETACHED_PANEL_QUERY_KEY, initialKind);
   url.searchParams.set(DETACHED_PANEL_HOST_QUERY_KEY, hostId);
   url.searchParams.set(DETACHED_PANEL_WINDOW_QUERY_KEY, panelWindowId);
   return url.toString();
@@ -184,4 +197,140 @@ export function createDetachedPanelWindowName(kind: DetachedPanelKind, panelWind
 
 export function cloneAnnotations(annotations: WorkbenchAnnotation[]) {
   return annotations.map((annotation) => ({ ...annotation }));
+}
+
+export function getDetachedPanelGroupByKind(
+  groups: DetachedPanelWindowGroup[],
+  kind: DetachedPanelKind,
+) {
+  return groups.find((group) => group.tabs.includes(kind)) ?? null;
+}
+
+export function isDetachedPanelKindActive(
+  groups: DetachedPanelWindowGroup[],
+  kind: DetachedPanelKind,
+) {
+  return getDetachedPanelGroupByKind(groups, kind) !== null;
+}
+
+export function createDetachedPanelGroup(
+  groups: DetachedPanelWindowGroup[],
+  panelWindowId: string,
+  kind: DetachedPanelKind,
+) {
+  const withoutKind = removeDetachedPanelKind(groups, kind);
+  return [
+    ...withoutKind,
+    {
+      panelWindowId,
+      tabs: [kind],
+      activeKind: kind,
+    },
+  ];
+}
+
+export function moveDetachedPanelKindToGroup(
+  groups: DetachedPanelWindowGroup[],
+  kind: DetachedPanelKind,
+  targetPanelWindowId: string,
+) {
+  const withoutKind = removeDetachedPanelKind(groups, kind);
+  let didAttach = false;
+  const nextGroups = withoutKind.map((group) => {
+    if (group.panelWindowId !== targetPanelWindowId) {
+      return group;
+    }
+
+    didAttach = true;
+    if (group.tabs.includes(kind)) {
+      return { ...group, activeKind: kind };
+    }
+
+    return {
+      ...group,
+      tabs: [...group.tabs, kind],
+      activeKind: kind,
+    };
+  });
+
+  if (didAttach) {
+    return nextGroups;
+  }
+
+  return [
+    ...nextGroups,
+    {
+      panelWindowId: targetPanelWindowId,
+      tabs: [kind],
+      activeKind: kind,
+    },
+  ];
+}
+
+export function setDetachedPanelGroupActiveKind(
+  groups: DetachedPanelWindowGroup[],
+  panelWindowId: string,
+  kind: DetachedPanelKind,
+) {
+  return groups.map((group) =>
+    group.panelWindowId === panelWindowId && group.tabs.includes(kind)
+      ? { ...group, activeKind: kind }
+      : group,
+  );
+}
+
+export function removeDetachedPanelKind(
+  groups: DetachedPanelWindowGroup[],
+  kind: DetachedPanelKind,
+) {
+  return groups.flatMap((group) => {
+    if (!group.tabs.includes(kind)) {
+      return [group];
+    }
+
+    const nextTabs = group.tabs.filter((tab) => tab !== kind);
+    if (nextTabs.length === 0) {
+      return [];
+    }
+
+    return [
+      {
+        ...group,
+        tabs: nextTabs,
+        activeKind:
+          group.activeKind === kind
+            ? nextTabs[nextTabs.length - 1]
+            : group.activeKind,
+      },
+    ];
+  });
+}
+
+export function removeDetachedPanelGroup(
+  groups: DetachedPanelWindowGroup[],
+  panelWindowId: string,
+) {
+  return groups.filter((group) => group.panelWindowId !== panelWindowId);
+}
+
+export function getDetachedPanelKindsByWindowId(
+  groups: DetachedPanelWindowGroup[],
+  panelWindowId: string,
+) {
+  return groups.find((group) => group.panelWindowId === panelWindowId)?.tabs ?? [];
+}
+
+export function formatDetachedPanelKindLabel(kind: DetachedPanelKind) {
+  switch (kind) {
+    case 'palette':
+      return 'Tools';
+    case 'inspector':
+      return 'Inspector';
+    case 'learning':
+      return 'Learning';
+  }
+}
+
+export function formatDetachedPanelGroupLabel(group: DetachedPanelWindowGroup) {
+  return group.tabs.map((kind) => formatDetachedPanelKindLabel(kind)).join(' + ');
 }

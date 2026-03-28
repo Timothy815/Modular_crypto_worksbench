@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Proposed
+Status: Shipped
 
 ---
 
@@ -143,3 +143,14 @@ This slice is successful when:
 - the window-management surface is clearer and less crowded than the current mixed workspace controls
 - host-authoritative synchronization remains intact
 - MCW gains materially better multi-monitor ergonomics without turning into a generalized docking framework
+
+---
+
+## Shipped Notes
+
+Current `main` now includes:
+- a dedicated `Windows` control surface separate from the more crowded workspace actions
+- detached tab groups across `Palette`, `Inspector`, and `Learning`
+- per-window active-tab preservation
+- per-tab return-to-main behavior without tearing down unrelated tabs
+- automatic detached-window cleanup when the final tab returns to the main window

@@ -234,10 +234,11 @@ Current `main` now also includes the first multi-window follow-on:
 - tutorials and challenges kept together as the existing tabbed learning surface
 - host-authoritative synchronization preserved for tutorial/challenge interactions
 
-Next bounded multi-window refinement slice is now recorded:
+Current `main` now also includes the next bounded multi-window refinement slice:
 - `MULTI-WINDOW-TABBED-WINDOWS-V1.md`
 - activates tabbed detached windows for `Palette`, `Inspector`, and `Learning`
-- folds detached-window menu cleanup into the same host-authoritative refinement line
+- allows tabs to return individually to the main window while preserving the rest of the detached group
+- moves detached-window actions onto a clearer dedicated `Windows` control surface
 
 Current `main` now also includes the first App-shell maintenance slice:
 - `APP-SHELL-REFACTOR-V1.md`

@@ -90,7 +90,7 @@ Read STAGE-ASSEMBLY-ERGONOMICS-V1.md before changing selected stage-row / stage-
 Read CLUSTER-BOUNDARY-PORT-AUTHORING-V1.md before changing inferred composite boundary-port capture, adding capture-time boundary controls, or expanding composite-boundary authoring behavior.
 Read MULTI-WINDOW-WORKSPACE-V1.md before extending the shipped detachable `Palette` / `Inspector` windows, broadening multi-tab workspace surfaces, or changing the host-authoritative synchronization model.
 Read MULTI-WINDOW-WORKSPACE-V2.md before extending the shipped detachable `Learning` window, splitting tutorials and challenges apart, or broadening the detached learning surface toward cryptanalysis or other panes.
-Read MULTI-WINDOW-TABBED-WINDOWS-V1.md before adding tabbed detached-window groupings, reorganizing window-management actions away from the crowded workspace controls, or allowing `Palette`, `Inspector`, and `Learning` to combine inside one detached window.
+Read MULTI-WINDOW-TABBED-WINDOWS-V1.md before extending the shipped tabbed detached-window groupings, broadening the `Windows` control surface, or allowing detached combinations beyond `Palette`, `Inspector`, and `Learning`.
 Read APP-SHELL-REFACTOR-V1.md before extracting more `App.tsx` panel-routing or challenge-capture logic, or beginning a larger App-shell decomposition pass.
 Read STORE-REFACTOR-V1.md before restructuring `src/ui/store.ts`, moving more workspace-history/versioning behavior into helper modules, or beginning a larger reducer decomposition pass.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.

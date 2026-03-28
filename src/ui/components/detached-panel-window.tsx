@@ -14,6 +14,7 @@ import type {
   DetachedPaletteSnapshot,
   ThemeMode,
 } from '../multi-window';
+import { formatDetachedPanelKindLabel } from '../multi-window';
 
 const ParameterInspector = lazy(() =>
   import('./parameter-inspector').then((module) => ({
@@ -73,7 +74,6 @@ export function DetachedPanelWindow({
       type: 'requestSnapshot',
       hostId,
       panelWindowId,
-      kind,
     };
 
     const handleMessage = (event: MessageEvent<DetachedPanelMessage>) => {
@@ -84,8 +84,7 @@ export function DetachedPanelWindow({
 
       if (
         message.snapshot.hostId !== hostId ||
-        message.snapshot.panelWindowId !== panelWindowId ||
-        message.snapshot.kind !== kind
+        message.snapshot.panelWindowId !== panelWindowId
       ) {
         return;
       }
@@ -101,7 +100,6 @@ export function DetachedPanelWindow({
         type: 'panelClosed',
         hostId,
         panelWindowId,
-        kind,
       };
       channel.postMessage(closedMessage);
     };
@@ -120,23 +118,30 @@ export function DetachedPanelWindow({
       return;
     }
 
-    const theme: ThemeMode = snapshot?.payload.theme ?? 'light';
+    const activeKind = snapshot?.activeKind ?? kind;
+    const activePayload = getDetachedPayload(snapshot, activeKind);
+    const theme: ThemeMode = activePayload?.theme ?? 'light';
     document.documentElement.dataset.theme = theme;
     document.title =
-      kind === 'palette'
+      activeKind === 'palette'
         ? 'MCW Tool Palette'
-        : kind === 'inspector'
+        : activeKind === 'inspector'
           ? 'MCW Inspector'
           : 'MCW Learning';
   }, [kind, snapshot]);
 
   const registry = useMemo(() => {
     const compositeLibrary =
-      snapshot && 'compositeLibrary' in snapshot.payload ? snapshot.payload.compositeLibrary : [];
+      snapshot?.payloadByKind.palette?.compositeLibrary ??
+      snapshot?.payloadByKind.inspector?.compositeLibrary ??
+      [];
     return getEffectiveRegistry(V1_REGISTRY, compositeLibrary);
   }, [snapshot]);
 
-  const sendCommand = (command: DetachedPanelCommand) => {
+  const activeKind = snapshot?.activeKind ?? kind;
+  const activePayload = snapshot ? getDetachedPayload(snapshot, activeKind) : null;
+
+  const sendCommand = (targetKind: DetachedPanelKind, command: DetachedPanelCommand) => {
     if (typeof BroadcastChannel === 'undefined') {
       return;
     }
@@ -146,7 +151,7 @@ export function DetachedPanelWindow({
       type: 'command',
       hostId,
       panelWindowId,
-      kind,
+      kind: targetKind,
       command,
     };
     channel.postMessage(message);
@@ -161,51 +166,94 @@ export function DetachedPanelWindow({
     <main className="app-shell detached-panel-shell">
       {!snapshot ? (
         <LazyPanelFallback label="Window" title="Syncing detached panel…" />
-      ) : kind === 'palette' ? (
-        <PrimitivePalette
-          registry={registry}
-          viewMode={(snapshot.payload as DetachedPaletteSnapshot).paletteViewMode}
-          onToggleViewMode={() => sendCommand({ type: 'togglePaletteViewMode' })}
-          compositeUsageCountById={(snapshot.payload as DetachedPaletteSnapshot).compositeUsageCountById}
-          builtInReusableIds={(snapshot.payload as DetachedPaletteSnapshot).builtInReusableIds}
-          onAddModule={(defId) => sendCommand({ type: 'addModule', defId })}
-          onExportCompositeLibrary={() => sendCommand({ type: 'exportCompositeLibrary' })}
-          onOpenComposite={(defId) =>
-            postAction({
-              type: 'openCompositeEditor',
-              entryId: defId,
-            })
-          }
-          onDuplicateReusable={(defId) => sendCommand({ type: 'duplicateReusable', defId })}
-          onOpenPrimitiveMicroDemo={(defId) =>
-            sendCommand({ type: 'openPrimitiveMicroDemo', defId })
-          }
-          onRemoveComposite={(defId) =>
-            postAction({
-              type: 'removeCompositeFromLibrary',
-              compositeId: defId,
-            })
-          }
-        />
-      ) : kind === 'inspector' ? (
-        <Suspense fallback={<LazyPanelFallback label="Analyze" title="Loading inspector…" />}>
-          <DetachedInspectorView
-            snapshot={snapshot.payload as DetachedInspectorSnapshot}
-            registry={registry}
-            onDispatchAction={postAction}
-            onSendCommand={sendCommand}
-          />
-        </Suspense>
       ) : (
-        <Suspense fallback={<LazyPanelFallback label="Learning" title="Loading learning surface…" />}>
-          <DetachedLearningView
-            snapshot={snapshot.payload as DetachedLearningSnapshot}
-            onSendCommand={sendCommand}
-          />
-        </Suspense>
+        <>
+          <section className="panel detached-window-tabs-panel">
+            <div className="detached-window-tabs" role="tablist" aria-label="Detached window tabs">
+              {snapshot.tabs.map((tabKind) => (
+                <button
+                  key={tabKind}
+                  type="button"
+                  role="tab"
+                  aria-selected={snapshot.activeKind === tabKind}
+                  className={
+                    snapshot.activeKind === tabKind
+                      ? 'detached-window-tab active'
+                      : 'detached-window-tab'
+                  }
+                  onClick={() => sendCommand(tabKind, { type: 'setActiveDetachedTab', kind: tabKind })}
+                >
+                  {formatDetachedPanelKindLabel(tabKind)}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="button button-ghost detached-window-return-button"
+              onClick={() =>
+                sendCommand(activeKind, { type: 'returnDetachedTabToMain', kind: activeKind })
+              }
+            >
+              Return {formatDetachedPanelKindLabel(activeKind)} To Main
+            </button>
+          </section>
+          {activeKind === 'palette' && activePayload ? (
+            <PrimitivePalette
+              registry={registry}
+              viewMode={(activePayload as DetachedPaletteSnapshot).paletteViewMode}
+              onToggleViewMode={() => sendCommand('palette', { type: 'togglePaletteViewMode' })}
+              compositeUsageCountById={(activePayload as DetachedPaletteSnapshot).compositeUsageCountById}
+              builtInReusableIds={(activePayload as DetachedPaletteSnapshot).builtInReusableIds}
+              onAddModule={(defId) => sendCommand('palette', { type: 'addModule', defId })}
+              onExportCompositeLibrary={() => sendCommand('palette', { type: 'exportCompositeLibrary' })}
+              onOpenComposite={(defId) =>
+                postAction({
+                  type: 'openCompositeEditor',
+                  entryId: defId,
+                })
+              }
+              onDuplicateReusable={(defId) => sendCommand('palette', { type: 'duplicateReusable', defId })}
+              onOpenPrimitiveMicroDemo={(defId) =>
+                sendCommand('palette', { type: 'openPrimitiveMicroDemo', defId })
+              }
+              onRemoveComposite={(defId) =>
+                postAction({
+                  type: 'removeCompositeFromLibrary',
+                  compositeId: defId,
+                })
+              }
+            />
+          ) : null}
+          {activeKind === 'inspector' && activePayload ? (
+            <Suspense fallback={<LazyPanelFallback label="Analyze" title="Loading inspector…" />}>
+              <DetachedInspectorView
+                snapshot={activePayload as DetachedInspectorSnapshot}
+                registry={registry}
+                onDispatchAction={postAction}
+                onSendCommand={(command) => sendCommand('inspector', command)}
+              />
+            </Suspense>
+          ) : null}
+          {activeKind === 'learning' && activePayload ? (
+            <Suspense fallback={<LazyPanelFallback label="Learning" title="Loading learning surface…" />}>
+              <DetachedLearningView
+                snapshot={activePayload as DetachedLearningSnapshot}
+                onSendCommand={(command) => sendCommand('learning', command)}
+              />
+            </Suspense>
+          ) : null}
+        </>
       )}
     </main>
   );
+}
+
+function getDetachedPayload(snapshot: DetachedPanelStateSnapshot | null, kind: DetachedPanelKind) {
+  if (!snapshot) {
+    return null;
+  }
+
+  return snapshot.payloadByKind[kind] ?? null;
 }
 
 function DetachedInspectorView({

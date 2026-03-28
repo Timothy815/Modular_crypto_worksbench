@@ -56,7 +56,7 @@
 .app-header-nav {
   flex: 0 1 620px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(180px, 220px));
+  grid-template-columns: repeat(3, minmax(180px, 220px));
   justify-content: end;
   align-items: start;
   gap: 12px;
@@ -252,11 +252,53 @@ body.dock-resizing {
   color: var(--accent);
 }
 
+.detached-window-tabs-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 14px 18px;
+  border-radius: 18px;
+}
+
+.detached-window-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.detached-window-tab {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-button);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  padding: 9px 14px;
+}
+
+.detached-window-tab.active {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-button));
+}
+
+.detached-window-return-button {
+  white-space: nowrap;
+}
+
 .primitive-list,
 .trace-list {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+@media (max-width: 1160px) {
+  .app-header-nav {
+    grid-template-columns: repeat(2, minmax(180px, 220px));
+  }
 }
 
 .primitive-card,
