@@ -2148,6 +2148,16 @@ function buildIteratorRoundExpression(
       throw new Error(`Python export does not support iterator round input "${input.name}" for "${iteratorDefinition.def.id}".`);
     });
 
+    for (const forwardedParamKey of getCompositeForwardedParamKeys(roundDef)) {
+      args.push(
+        getDefaultParamExpression(
+          { id: roundModuleId, defId: roundDef.id, params: {} },
+          roundDef,
+          forwardedParamKey,
+        ),
+      );
+    }
+
     return `${compositeDefinition.functionName}(${args.join(', ')})`;
   }
 
@@ -2308,6 +2318,15 @@ function buildIteratorHelperDefinitions(
           }
           throw new Error(`Python export does not support iterator round input "${input.name}" for "${iteratorDefinition.def.id}".`);
         });
+        for (const forwardedParamKey of getCompositeForwardedParamKeys(roundDef)) {
+          roundArgs.push(
+            getDefaultParamExpression(
+              { id: `round-${roundNumber}`, defId: roundDef.id, params: {} },
+              roundDef,
+              forwardedParamKey,
+            ),
+          );
+        }
         tickLines.push(
           `    # Round ${roundNumber}: ${iteratorDefinition.def.roundDefId}`,
           `    ${roundVariableName} = ${compositeDefinition.functionName}_tick(state[${JSON.stringify(roundStateKey)}], tick${roundArgs.length > 0 ? `, ${roundArgs.join(', ')}` : ''})`,

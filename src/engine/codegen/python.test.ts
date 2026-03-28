@@ -630,6 +630,80 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, compositeRegistry));
   });
 
+  it('matches executeProject for a feistel iterator workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'hex-1', defId: 'HexSource', params: { value: '3C' } },
+        { id: 'key-1', defId: 'HexSource', params: { value: 'AB' } },
+        { id: 'iter-1', defId: 'FeistelRoundIterator', params: { iterationCount: 2 } },
+        { id: 'hex-2', defId: 'BitsToHex', params: {} },
+        { id: 'out-1', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'iter-1', port: 'in' } },
+        { from: { moduleId: 'key-1', port: 'out' }, to: { moduleId: 'iter-1', port: 'key' } },
+        { from: { moduleId: 'iter-1', port: 'out' }, to: { moduleId: 'hex-2', port: 'in' } },
+        { from: { moduleId: 'hex-2', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('# Iterator helper: FeistelRoundIterator [iter-1]');
+    expect(pythonSource).toContain('# Round 2: FeistelRoundComposite');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, compositeRegistry));
+  });
+
+  it('matches executeProject for a hash-digest iterator workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'hex-1', defId: 'HexSource', params: { value: '3C' } },
+        { id: 'iter-1', defId: 'HashDigestRoundIterator', params: { iterationCount: 4 } },
+        { id: 'hex-2', defId: 'BitsToHex', params: {} },
+        { id: 'out-1', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'iter-1', port: 'in' } },
+        { from: { moduleId: 'iter-1', port: 'out' }, to: { moduleId: 'hex-2', port: 'in' } },
+        { from: { moduleId: 'hex-2', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('# Iterator helper: HashDigestRoundIterator [iter-1]');
+    expect(pythonSource).toContain('# Round 4: HashDigestRoundComposite');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, compositeRegistry));
+  });
+
+  it('matches executeProject for a sponge-mix iterator workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'hex-1', defId: 'HexSource', params: { value: '1234' } },
+        { id: 'iter-1', defId: 'SpongeMixRoundIterator', params: { iterationCount: 2 } },
+        { id: 'hex-2', defId: 'BitsToHex', params: {} },
+        { id: 'out-1', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'iter-1', port: 'in' } },
+        { from: { moduleId: 'iter-1', port: 'out' }, to: { moduleId: 'hex-2', port: 'in' } },
+        { from: { moduleId: 'hex-2', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('# Iterator helper: SpongeMixRoundIterator [iter-1]');
+    expect(pythonSource).toContain('# Round 2: SpongeMixRoundComposite');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, compositeRegistry));
+  });
+
   it('matches executeTickedProject for a temporal iterator workspace', () => {
     const project: Project = {
       modules: [

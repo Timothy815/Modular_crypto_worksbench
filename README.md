@@ -217,10 +217,13 @@ That iterator export foundations slice is now also shipped:
 - iterator helpers preserve visible round boundaries, explicit round chaining, key-bus slicing, and instance-level iteration-count override parity
 - parity-tested for shipped iterators, keyed iterators, and temporal iterators with supported round definitions
 
-The next structured-machine export follow-on is now explicitly recorded as:
+The next structured-machine export follow-on is now also shipped:
 - `PYTHON-EXPORT-ITERATOR-EXPANSION-V1.md`
-- broaden iterator export coverage across higher-value shipped iterator families such as `FeistelRoundIterator`, `HashDigestRoundIterator`, and `SpongeMixRoundIterator`
-- keep nested iterators, iterator-containing composites, and generalized recursive structured export out of scope
+- broader iterator export coverage now explicitly parity-proven across higher-value shipped iterator families:
+  - `FeistelRoundIterator`
+  - `HashDigestRoundIterator`
+  - `SpongeMixRoundIterator`
+- nested iterators, iterator-containing composites, and generalized recursive structured export remain out of scope
 
 The future Python export architecture note after that is now explicitly recorded as:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`

@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Proposed
+Status: Implemented on `main`
 
 ---
 
@@ -78,9 +78,9 @@ It must not redesign iterator export representation.
 
 ---
 
-## Recommended Coverage
+## Shipped Coverage
 
-The recommended V1 targets are:
+The shipped V1 targets are:
 - `FeistelRoundIterator`
 - `HashDigestRoundIterator`
 - `SpongeMixRoundIterator`
@@ -93,7 +93,7 @@ Reason:
   - repeated digest structure
   - repeated sponge-style state-mixing structure
 
-This slice may also include:
+This slice also continues to rely on:
 - stronger parity coverage for shipped `ByteRoundIterator` and `KeyedByteRoundIterator`
 
 This slice does not need to support:

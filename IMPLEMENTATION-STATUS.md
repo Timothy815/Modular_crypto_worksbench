@@ -123,7 +123,11 @@ Current `main` now also includes:
   - keeps nested iterators and iterator-containing composites out of scope for the first slice
 - next structured-machine export follow-on:
   - `PYTHON-EXPORT-ITERATOR-EXPANSION-V1.md`
-  - records broader iterator export coverage across higher-value shipped iterator families such as `FeistelRoundIterator`, `HashDigestRoundIterator`, and `SpongeMixRoundIterator`
+  - shipped broader iterator export coverage across higher-value shipped iterator families:
+    - `FeistelRoundIterator`
+    - `HashDigestRoundIterator`
+    - `SpongeMixRoundIterator`
+  - parity-proven within the existing helper-function iterator export architecture
   - keeps nested iterators, iterator-containing composites, and generalized recursive structured export out of scope
 - future Python export architecture note:
   - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
