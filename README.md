@@ -206,6 +206,17 @@ That structured-machine export slice is now also shipped:
 - shipped and user-authored composites now preserve authored submachine boundaries in generated Python
 - parity-tested for stateless shipped composites, user-authored forwarded-param composites, and temporal composites with supported internals
 
+The next structured-machine export frontier is now explicitly recorded as:
+- `PYTHON-EXPORT-ITERATOR-FOUNDATIONS-V1.md`
+- add first-class helper-function iterator export for bounded repeated-round machines
+- preserve visible round boundaries, key-bus slicing, and iteration-count override behavior in generated Python
+- keep nested iterators and iterator-containing composites out of scope for the first slice
+
+That iterator export foundations slice is now also shipped:
+- exported Python now supports first-class helper-function iterator export for bounded repeated-round machines
+- iterator helpers preserve visible round boundaries, explicit round chaining, key-bus slicing, and instance-level iteration-count override parity
+- parity-tested for shipped iterators, keyed iterators, and temporal iterators with supported round definitions
+
 That bounded multi-window workspace slice is now also shipped:
 - `MULTI-WINDOW-WORKSPACE-V1.md`
 - detachable `Palette` and `Inspector` windows

@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { deriveTickCount, executeProject, executeTickedProject } from '../executor';
 import { V1_REGISTRY } from '../modules';
 import { generatePythonExport, getPythonExportCompatibility } from './python';
-import type { CompositeDef } from '../composites';
+import type { CompositeDef, IteratorDef } from '../composites';
 import type { ModuleRegistry, Project, Signal } from '../types';
 import { STARTER_COMPOSITE_LIBRARY } from '../../ui/starter-composites';
 
@@ -94,8 +94,32 @@ const symbolRoundTripComposite = STARTER_COMPOSITE_LIBRARY.find(
   (entry) => entry.id === 'SymbolRoundTripComposite',
 )?.definition;
 
+const byteRoundIterator = STARTER_COMPOSITE_LIBRARY.find(
+  (entry) => entry.id === 'ByteRoundIterator',
+)?.definition;
+
+const keyedByteRoundIterator = STARTER_COMPOSITE_LIBRARY.find(
+  (entry) => entry.id === 'KeyedByteRoundIterator',
+)?.definition;
+
+const starterDefinitionRegistry = STARTER_COMPOSITE_LIBRARY.reduce<ModuleRegistry>(
+  (accumulator, entry) => {
+    accumulator[entry.id] = entry.definition;
+    return accumulator;
+  },
+  { ...V1_REGISTRY },
+);
+
 if (!symbolRoundTripComposite || symbolRoundTripComposite.kind !== 'composite') {
   throw new Error('Expected SymbolRoundTripComposite to exist in the starter composite library.');
+}
+
+if (!byteRoundIterator || byteRoundIterator.kind !== 'iterator') {
+  throw new Error('Expected ByteRoundIterator to exist in the starter composite library.');
+}
+
+if (!keyedByteRoundIterator || keyedByteRoundIterator.kind !== 'iterator') {
+  throw new Error('Expected KeyedByteRoundIterator to exist in the starter composite library.');
 }
 
 const forwardedShiftComposite: CompositeDef = {
@@ -180,6 +204,37 @@ const clockedRotorComposite: CompositeDef = {
   ],
 };
 
+const steppingRotorComposite: CompositeDef = {
+  id: 'SteppingRotorComposite',
+  name: 'Stepping Rotor Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [{ name: 'in', type: 'symbol' }],
+  outputs: [{ name: 'out', type: 'symbol' }],
+  paramSchema: {},
+  project: {
+    modules: [
+      {
+        id: 'rotor-1',
+        defId: 'Rotor',
+        params: {
+          wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''),
+          position: 0,
+          ringOffset: 0,
+          notches: 'Q',
+        },
+      },
+    ],
+    connections: [],
+  },
+  inputBindings: [
+    { externalPort: 'in', internalModuleId: 'rotor-1', internalPort: 'in' },
+  ],
+  outputBindings: [
+    { externalPort: 'out', internalModuleId: 'rotor-1', internalPort: 'out' },
+  ],
+};
+
 const nestedComposite: CompositeDef = {
   id: 'NestedComposite',
   name: 'Nested Composite',
@@ -194,6 +249,25 @@ const nestedComposite: CompositeDef = {
   },
   inputBindings: [{ externalPort: 'in', internalModuleId: 'inner', internalPort: 'in' }],
   outputBindings: [{ externalPort: 'out', internalModuleId: 'inner', internalPort: 'out' }],
+};
+
+const steppingRotorIterator: IteratorDef = {
+  id: 'SteppingRotorIterator',
+  name: 'Stepping Rotor Iterator',
+  kind: 'iterator',
+  version: 1,
+  inputs: [{ name: 'in', type: 'symbol' }],
+  outputs: [{ name: 'out', type: 'symbol' }],
+  paramSchema: {
+    iterationCount: {
+      key: 'iterationCount',
+      label: 'Round Count',
+      kind: 'number',
+      defaultValue: 2,
+    },
+  },
+  roundDefId: 'SteppingRotorComposite',
+  iterationCount: 2,
 };
 
 describe('getPythonExportCompatibility', () => {
@@ -273,14 +347,59 @@ describe('getPythonExportCompatibility', () => {
       reason: 'Nested composite definitions are not exportable in V1.',
     });
   });
+
+  it('rejects invalid iterator round-count overrides in v1', () => {
+    const invalidIterator: IteratorDef = {
+      id: 'InvalidIterator',
+      name: 'Invalid Iterator',
+      kind: 'iterator',
+      version: 1,
+      inputs: [{ name: 'in', type: 'bits' }],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {},
+      roundDefId: 'ByteRoundComposite',
+      iterationCount: 2,
+    };
+    const iteratorRegistry: ModuleRegistry = {
+      ...starterDefinitionRegistry,
+      SymbolRoundTripComposite: symbolRoundTripComposite,
+      ForwardedShiftComposite: forwardedShiftComposite,
+      ClockedRotorComposite: clockedRotorComposite,
+      InvalidIterator: invalidIterator,
+    };
+    const incompatibleProject: Project = {
+      modules: [
+        { id: 'bits-1', defId: 'HexSource', params: { value: '3C' } },
+        { id: 'iter-1', defId: 'InvalidIterator', params: { iterationCount: 0 } },
+        { id: 'hex-1', defId: 'BitsToHex', params: {} },
+        { id: 'out-1', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'bits-1', port: 'out' }, to: { moduleId: 'iter-1', port: 'in' } },
+        { from: { moduleId: 'iter-1', port: 'out' }, to: { moduleId: 'hex-1', port: 'in' } },
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const compatibility = getPythonExportCompatibility(incompatibleProject, iteratorRegistry);
+
+    expect(compatibility.ok).toBe(false);
+    expect(compatibility.issues).toContainEqual({
+      moduleId: 'iter-1',
+      defId: 'InvalidIterator',
+      reason: 'Iterator iterationCount overrides must resolve to a positive integer.',
+    });
+  });
 });
 
 parityDescribe('generatePythonExport', () => {
   const compositeRegistry: ModuleRegistry = {
-    ...V1_REGISTRY,
+    ...starterDefinitionRegistry,
     SymbolRoundTripComposite: symbolRoundTripComposite,
     ForwardedShiftComposite: forwardedShiftComposite,
     ClockedRotorComposite: clockedRotorComposite,
+    SteppingRotorComposite: steppingRotorComposite,
+    SteppingRotorIterator: steppingRotorIterator,
   };
 
   it('matches executeProject for a bridge-heavy stateless workspace', () => {
@@ -457,6 +576,80 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.status).toBe(0);
     expect(pythonSource).toContain('def composite_ClockedRotorComposite_init_state');
     expect(pythonSource).toContain('def composite_ClockedRotorComposite_tick');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, compositeRegistry));
+  });
+
+  it('matches executeProject for a shipped iterator workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'hex-1', defId: 'HexSource', params: { value: '3C' } },
+        { id: 'iter-1', defId: 'ByteRoundIterator', params: { iterationCount: 2 } },
+        { id: 'hex-2', defId: 'BitsToHex', params: {} },
+        { id: 'out-1', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'iter-1', port: 'in' } },
+        { from: { moduleId: 'iter-1', port: 'out' }, to: { moduleId: 'hex-2', port: 'in' } },
+        { from: { moduleId: 'hex-2', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('def iterator_iter_1');
+    expect(pythonSource).toContain('# Iterator helper: ByteRoundIterator [iter-1]');
+    expect(pythonSource).toContain('# Round 1: ByteRoundComposite');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, compositeRegistry));
+  });
+
+  it('matches executeProject for a keyed iterator workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'hex-1', defId: 'HexSource', params: { value: '3C' } },
+        { id: 'key-1', defId: 'HexSource', params: { value: 'A55A' } },
+        { id: 'iter-1', defId: 'KeyedByteRoundIterator', params: { iterationCount: 2 } },
+        { id: 'hex-2', defId: 'BitsToHex', params: {} },
+        { id: 'out-1', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'iter-1', port: 'in' } },
+        { from: { moduleId: 'key-1', port: 'out' }, to: { moduleId: 'iter-1', port: 'key' } },
+        { from: { moduleId: 'iter-1', port: 'out' }, to: { moduleId: 'hex-2', port: 'in' } },
+        { from: { moduleId: 'hex-2', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('requires a key bus of exactly 16 bits');
+    expect(pythonSource).toContain('# Round 2: KeyedByteRoundComposite');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, compositeRegistry));
+  });
+
+  it('matches executeTickedProject for a temporal iterator workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'AAAA' } },
+        { id: 'iter-1', defId: 'SteppingRotorIterator', params: { iterationCount: 2 } },
+        { id: 'out-1', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'iter-1', port: 'in' } },
+        { from: { moduleId: 'iter-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('def iterator_iter_1_init_state');
+    expect(pythonSource).toContain('def iterator_iter_1_tick');
+    expect(pythonSource).toContain('# Round 2: SteppingRotorComposite');
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, compositeRegistry));
   });
 

@@ -115,6 +115,12 @@ Current `main` now also includes:
   - shipped first-class helper-function composite export for depth-1 composite bodies
   - preserves authored submachine boundaries in generated Python instead of flattening them away
   - parity-tested for stateless shipped composites, user-authored forwarded-param composites, and temporal composites with supported internals
+- next structured-machine export frontier:
+  - `PYTHON-EXPORT-ITERATOR-FOUNDATIONS-V1.md`
+  - shipped first-class helper-function iterator export for bounded repeated-round machines
+  - preserves visible round boundaries, explicit round chaining, key-bus slicing, and iteration-count override behavior in generated Python
+  - parity-tested for shipped iterators, keyed iterators, and temporal iterators with supported round definitions
+  - keeps nested iterators and iterator-containing composites out of scope for the first slice
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments
