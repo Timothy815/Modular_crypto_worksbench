@@ -30,7 +30,9 @@ import {
   unzipCompositeInstance,
 } from './ui/composite-authoring';
 import { evaluateChallengeAttempt } from './ui/challenges';
+import { createChallengeCaptureDraft, createChallengeIdCandidate } from './ui/challenge-capture';
 import { PrimitivePalette } from './ui/components/primitive-palette';
+import { LearningDock } from './ui/components/learning-dock';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
 import { demoProjects, runDemoProject } from './ui/demo-projects';
 import { compareExecutionResults } from './ui/execution-compare';
@@ -82,9 +84,6 @@ const MAX_LEFT_DOCK_WIDTH = 520;
 const MIN_RIGHT_DOCK_WIDTH = 280;
 const MAX_RIGHT_DOCK_WIDTH = 680;
 
-const ChallengePanel = lazy(() =>
-  import('./ui/components/challenge-panel').then((module) => ({ default: module.ChallengePanel })),
-);
 const CryptanalysisPanel = lazy(() =>
   import('./ui/components/cryptanalysis-panel').then((module) => ({
     default: module.CryptanalysisPanel,
@@ -99,9 +98,6 @@ const ParameterInspector = lazy(() =>
   import('./ui/components/parameter-inspector').then((module) => ({
     default: module.ParameterInspector,
   })),
-);
-const TutorialPanel = lazy(() =>
-  import('./ui/components/tutorial-panel').then((module) => ({ default: module.TutorialPanel })),
 );
 
 function clampDockWidth(value: number, min: number, max: number) {
@@ -1736,24 +1732,15 @@ function MainApp() {
           case 'captureChallenge':
             setLearningPanelTab('challenge');
             {
-              const defaultTitle = `${activeProjectDefinition.name} Guided Lab`;
-              setChallengeCaptureTitle(defaultTitle);
-              setChallengeCaptureId(createChallengeIdCandidate(defaultTitle));
-              if (activeProjectDefinition.id === 'sequential') {
-                setChallengeCaptureDifficulty('intermediate');
-                setChallengeCapturePrompt(
-                  `Repair or complete the ${activeProjectDefinition.name} machine until its running output stream matches the captured reference behavior.`,
-                );
-                setChallengeCaptureHints(
-                  'The clock period controls when the machine advances.\nUse the tick bar and probes to find the first wrong moment.',
-                );
-              } else {
-                setChallengeCaptureDifficulty('beginner');
-                setChallengeCapturePrompt(
-                  `Repair or complete the ${activeProjectDefinition.name} machine until its output matches the captured reference behavior.`,
-                );
-                setChallengeCaptureHints('');
-              }
+              const draft = createChallengeCaptureDraft(
+                activeProjectDefinition.id,
+                activeProjectDefinition.name,
+              );
+              setChallengeCaptureTitle(draft.title);
+              setChallengeCaptureId(draft.id);
+              setChallengeCaptureDifficulty(draft.difficulty);
+              setChallengeCapturePrompt(draft.prompt);
+              setChallengeCaptureHints(draft.hints);
               setChallengeCaptureShouldExport(true);
               setChallengeCaptureError(null);
               setIsChallengeCaptureOpen(true);
@@ -2849,196 +2836,147 @@ function MainApp() {
                 }
               />
             </Suspense>
-          ) : showLearningInMain && (hasChallengePanel || hasTutorialPanel) ? (
-            <section className="learning-dock">
-              <div className="learning-dock-tabs" role="tablist" aria-label="Learning panel">
-                {hasTutorialPanel ? (
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={activeLearningPanelTab === 'tutorial'}
-                    className={
-                      activeLearningPanelTab === 'tutorial'
-                        ? 'learning-dock-tab active'
-                        : 'learning-dock-tab'
-                    }
-                    onClick={() => setLearningPanelTab('tutorial')}
-                  >
-                    Tutorial
-                  </button>
-                ) : null}
-                {hasChallengePanel ? (
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={activeLearningPanelTab === 'challenge'}
-                    className={
-                      activeLearningPanelTab === 'challenge'
-                        ? 'learning-dock-tab active'
-                        : 'learning-dock-tab'
-                    }
-                    onClick={() => setLearningPanelTab('challenge')}
-                  >
-                    Challenge
-                  </button>
-                ) : null}
-              </div>
+          ) : showLearningInMain ? (
+            <LearningDock
+              hasTutorialPanel={hasTutorialPanel}
+              hasChallengePanel={hasChallengePanel}
+              activeLearningPanelTab={activeLearningPanelTab}
+              onSetLearningPanelTab={setLearningPanelTab}
+              selectedChallenge={selectedChallenge}
+              challenges={state.challengeLibrary}
+              challengeEvaluation={challengeEvaluation}
+              currentProject={activeProjectState}
+              canCaptureChallenge={canCaptureChallenge}
+              onSelectChallenge={(challengeId) => {
+                const nextChallenge =
+                  state.challengeLibrary.find((challenge) => challenge.id === challengeId) ?? null;
+                const challengeProjectId = nextChallenge?.projectId ?? activeProjectDefinition.id;
+                setLearningPanelTab('challenge');
+                if (challengeProjectId !== activeProjectDefinition.id) {
+                  dispatch({
+                    type: 'switchProject',
+                    projectId: challengeProjectId,
+                  });
+                }
+                dispatch({
+                  type: 'selectChallenge',
+                  projectId: challengeProjectId,
+                  challengeId,
+                });
+              }}
+              onLoadChallengeStart={() => {
+                setLearningPanelTab('challenge');
+                setIsChallengeResetConfirmOpen(true);
+              }}
+              onExportChallenge={() => {
+                if (selectedChallenge) {
+                  downloadGuidedChallengeDocument(selectedChallenge);
+                }
+              }}
+              onImportChallenge={async (file) => {
+                const rawValue = await file.text();
+                const challengeDocument = parseGuidedChallengeDocument(rawValue);
+                if (!challengeDocument) {
+                  setImportError('The selected file is not a valid MCW guided challenge document.');
+                  return;
+                }
 
-              {activeLearningPanelTab === 'challenge' && selectedChallenge ? (
-                <Suspense fallback={<LazyPanelFallback label="Challenge" title="Loading challenge…" />}>
-                <ChallengePanel
-                  challenges={state.challengeLibrary}
-                  selectedChallengeId={selectedChallenge.id}
-                  evaluation={challengeEvaluation}
-                  currentProject={activeProjectState}
-                  canCaptureChallenge={canCaptureChallenge}
-                  onSelectChallenge={(challengeId) =>
-                      {
-                        const nextChallenge =
-                          state.challengeLibrary.find((challenge) => challenge.id === challengeId) ?? null;
-                        const challengeProjectId = nextChallenge?.projectId ?? activeProjectDefinition.id;
-                        setLearningPanelTab('challenge');
-                        if (challengeProjectId !== activeProjectDefinition.id) {
-                          dispatch({
-                            type: 'switchProject',
-                            projectId: challengeProjectId,
-                          });
-                        }
-                        dispatch({
-                          type: 'selectChallenge',
-                          projectId: challengeProjectId,
-                          challengeId,
-                        });
-                      }
-                    }
-                    onLoadChallengeStart={() => {
-                      setLearningPanelTab('challenge');
-                      setIsChallengeResetConfirmOpen(true);
-                    }}
-                    onExportChallenge={() => downloadGuidedChallengeDocument(selectedChallenge)}
-                    onCaptureChallenge={() => {
-                      setLearningPanelTab('challenge');
-                      const defaultTitle = `${activeProjectDefinition.name} Guided Lab`;
-                      setChallengeCaptureTitle(defaultTitle);
-                      setChallengeCaptureId(createChallengeIdCandidate(defaultTitle));
-                      if (activeProjectDefinition.id === 'sequential') {
-                        setChallengeCaptureDifficulty('intermediate');
-                        setChallengeCapturePrompt(
-                          `Repair or complete the ${activeProjectDefinition.name} machine until its running output stream matches the captured reference behavior.`,
-                        );
-                        setChallengeCaptureHints(
-                          'The clock period controls when the machine advances.\nUse the tick bar and probes to find the first wrong moment.',
-                        );
-                      } else {
-                        setChallengeCaptureDifficulty('beginner');
-                        setChallengeCapturePrompt(
-                          `Repair or complete the ${activeProjectDefinition.name} machine until its output matches the captured reference behavior.`,
-                        );
-                        setChallengeCaptureHints('');
-                      }
-                      setChallengeCaptureShouldExport(true);
-                      setChallengeCaptureError(null);
-                      setIsChallengeCaptureOpen(true);
-                    }}
-                    onImportChallenge={async (file) => {
-                      const rawValue = await file.text();
-                      const challengeDocument = parseGuidedChallengeDocument(rawValue);
-                      if (!challengeDocument) {
-                        setImportError('The selected file is not a valid MCW guided challenge document.');
-                        return;
-                      }
-
-                      dispatch({
-                        type: 'upsertChallenge',
-                        challenge: challengeDocument,
-                      });
-                      const challengeProjectId = challengeDocument.projectId ?? activeProjectDefinition.id;
-                      setLearningPanelTab('challenge');
-                      if (challengeProjectId !== activeProjectDefinition.id) {
-                        dispatch({
-                          type: 'switchProject',
-                          projectId: challengeProjectId,
-                        });
-                      }
-                      dispatch({
-                        type: 'selectChallenge',
-                        projectId: challengeProjectId,
-                        challengeId: challengeDocument.id,
-                      });
-                      setImportError(null);
-                    }}
-                  />
-                </Suspense>
-              ) : null}
-
-              {activeLearningPanelTab === 'tutorial' && selectedTutorial ? (
-                <Suspense fallback={<LazyPanelFallback label="Tutorial" title="Loading tutorial…" />}>
-                  <TutorialPanel
-                    tutorials={state.tutorialLibrary}
-                    selectedTutorialId={selectedTutorial.id}
-                    currentProjectId={activeProjectDefinition.id}
-                    stepIndex={tutorialStepIndex}
-                    activeStep={selectedTutorialStep}
-                    completedTutorialIds={completedTutorialIds}
-                    isCompleted={isTutorialCompleted}
-                    workspaceMode={workspaceMode}
-                    tutorialNotesVisible={tutorialNotesVisible}
-                    onSetWorkspaceMode={(mode) =>
-                      dispatch({
-                        type: 'setWorkspaceMode',
-                        projectId: activeProjectDefinition.id,
-                        mode,
-                      })
-                    }
-                    onSetTutorialNotesVisible={(visible) =>
-                      dispatch({
-                        type: 'setTutorialNotesVisible',
-                        projectId: activeProjectDefinition.id,
-                        visible,
-                      })
-                    }
-                    onSelectTutorial={(tutorialId) => {
-                      const nextTutorial =
-                        state.tutorialLibrary.find((tutorial) => tutorial.id === tutorialId) ?? null;
-                      setLearningPanelTab('tutorial');
-                      setStepIndex(nextTutorial?.steps[0]?.targetStepIndex ?? null);
-                      dispatch({
-                        type: 'selectTutorial',
-                        projectId: activeProjectDefinition.id,
-                        tutorialId,
-                      });
-                    }}
-                    onSetStep={(stepValue) => {
-                      setStepIndex(selectedTutorial?.steps[stepValue]?.targetStepIndex ?? null);
-                      dispatch({
-                        type: 'setTutorialStep',
-                        projectId: activeProjectDefinition.id,
-                        stepIndex: stepValue,
-                      });
-                    }}
-                    onSwitchProject={(projectId) =>
-                      dispatch({
-                        type: 'switchProject',
-                        projectId,
-                      })
-                    }
-                    onFocusStepModule={(moduleId) =>
-                      dispatch({
-                        type: 'selectModule',
-                        projectId: activeProjectDefinition.id,
-                        moduleId,
-                      })
-                    }
-                    onResetProgress={() =>
-                      dispatch({
-                        type: 'resetTutorialProgress',
-                        projectId: activeProjectDefinition.id,
-                      })
-                    }
-                  />
-                </Suspense>
-              ) : null}
-            </section>
+                dispatch({
+                  type: 'upsertChallenge',
+                  challenge: challengeDocument,
+                });
+                const challengeProjectId = challengeDocument.projectId ?? activeProjectDefinition.id;
+                setLearningPanelTab('challenge');
+                if (challengeProjectId !== activeProjectDefinition.id) {
+                  dispatch({
+                    type: 'switchProject',
+                    projectId: challengeProjectId,
+                  });
+                }
+                dispatch({
+                  type: 'selectChallenge',
+                  projectId: challengeProjectId,
+                  challengeId: challengeDocument.id,
+                });
+                setImportError(null);
+              }}
+              onCaptureChallenge={() => {
+                setLearningPanelTab('challenge');
+                const draft = createChallengeCaptureDraft(
+                  activeProjectDefinition.id,
+                  activeProjectDefinition.name,
+                );
+                setChallengeCaptureTitle(draft.title);
+                setChallengeCaptureId(draft.id);
+                setChallengeCaptureDifficulty(draft.difficulty);
+                setChallengeCapturePrompt(draft.prompt);
+                setChallengeCaptureHints(draft.hints);
+                setChallengeCaptureShouldExport(true);
+                setChallengeCaptureError(null);
+                setIsChallengeCaptureOpen(true);
+              }}
+              selectedTutorial={selectedTutorial}
+              tutorials={state.tutorialLibrary}
+              currentProjectId={activeProjectDefinition.id}
+              tutorialStepIndex={tutorialStepIndex}
+              selectedTutorialStep={selectedTutorialStep}
+              completedTutorialIds={completedTutorialIds}
+              isTutorialCompleted={isTutorialCompleted}
+              workspaceMode={workspaceMode}
+              tutorialNotesVisible={tutorialNotesVisible}
+              onSetWorkspaceMode={(mode) =>
+                dispatch({
+                  type: 'setWorkspaceMode',
+                  projectId: activeProjectDefinition.id,
+                  mode,
+                })
+              }
+              onSetTutorialNotesVisible={(visible) =>
+                dispatch({
+                  type: 'setTutorialNotesVisible',
+                  projectId: activeProjectDefinition.id,
+                  visible,
+                })
+              }
+              onSelectTutorial={(tutorialId) => {
+                const nextTutorial =
+                  state.tutorialLibrary.find((tutorial) => tutorial.id === tutorialId) ?? null;
+                setLearningPanelTab('tutorial');
+                setStepIndex(nextTutorial?.steps[0]?.targetStepIndex ?? null);
+                dispatch({
+                  type: 'selectTutorial',
+                  projectId: activeProjectDefinition.id,
+                  tutorialId,
+                });
+              }}
+              onSetTutorialStep={(stepValue) => {
+                setStepIndex(selectedTutorial?.steps[stepValue]?.targetStepIndex ?? null);
+                dispatch({
+                  type: 'setTutorialStep',
+                  projectId: activeProjectDefinition.id,
+                  stepIndex: stepValue,
+                });
+              }}
+              onSwitchProject={(projectId) =>
+                dispatch({
+                  type: 'switchProject',
+                  projectId,
+                })
+              }
+              onFocusStepModule={(moduleId) =>
+                dispatch({
+                  type: 'selectModule',
+                  projectId: activeProjectDefinition.id,
+                  moduleId,
+                })
+              }
+              onResetTutorialProgress={() =>
+                dispatch({
+                  type: 'resetTutorialProgress',
+                  projectId: activeProjectDefinition.id,
+                })
+              }
+            />
           ) : null}
 
         </>
@@ -3563,13 +3501,6 @@ function createCompositeIdCandidate(name: string) {
   return words
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join('');
-}
-
-function createChallengeIdCandidate(name: string) {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
 }
 
 function cloneLayout<T extends Record<string, { x: number; y: number }>>(layout: T): T {

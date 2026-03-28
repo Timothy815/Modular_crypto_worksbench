@@ -115,6 +115,11 @@ Current `main` now also includes the first multi-window follow-on:
 - tutorials and challenges kept together as the existing tabbed learning surface
 - host-authoritative synchronization preserved for tutorial/challenge interactions
 
+Current `main` now also includes the first App-shell maintenance slice:
+- `APP-SHELL-REFACTOR-V1.md`
+- extracted the main tutorial/challenge rendering surface into `src/ui/components/learning-dock.tsx`
+- extracted challenge-capture draft defaults into `src/ui/challenge-capture.ts`
+
 The next recommended builder-power follow-on is now shipped:
 - `CLUSTER-BOUNDARY-PORT-AUTHORING-V1.md`
 - explicit include/exclude control over inferred composite boundary ports during capture
