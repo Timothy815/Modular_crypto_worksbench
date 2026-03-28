@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Drafted on `main`
+Status: Implemented on `main`
 
 ---
 
@@ -72,9 +72,11 @@ This slice must:
 - preserve one standalone `.py` file
 - preserve one explicit `run_ticks()` loop
 - preserve evaluate-before-advance ordering for the whole tick
+- preserve one final non-topological advance pass after all evaluation and sink capture
 - preserve stable per-tick sink output formatting
 - preserve systematic generated module comments
 - add only the bounded runtime/codegen needed to support turnover-driven stepping across multiple exported rotors
+- record stepping decisions as explicit intermediate flags during evaluation, then apply advances from those flags at tick end
 
 It must not redesign the existing export runtime shape.
 
@@ -93,11 +95,12 @@ It should continue relying on already-shipped export support for:
 - `Gate`
 - `Equals`
 - `Mux`
-- `Or`
-- `And`
+- `OR`
+- `AND`
 
 The key boundary is:
 - turnover-driven step control
+- arbitrary graph-visible bit logic between `turnover` and `clock` so long as it stays inside the already-supported exported module subset
 - explicit signal wiring
 - no hidden machine scheduler
 
@@ -117,11 +120,13 @@ For supported workspaces, generated Python must mirror MCW behavior exactly for:
 The generated Python must continue to model rotor stepping the MCW way:
 - module evaluation first
 - sink capture second
+- advance-flag recording next
 - state advance last
 
 It must not:
 - precompute a machine schedule
 - hide stepping behind a single opaque `machine.step()` helper
+- introduce implicit clocks or hardcoded stepping rules outside visible graph connections
 
 ---
 
@@ -134,7 +139,8 @@ That file should now contain:
 1. the shipped stateless and temporal helper layer
 2. explicit rotor state initialization for each exported rotor
 3. explicit turnover-driven control evaluation inside `run_ticks()`
-4. explicit rotor advance calls at tick end for only those rotors whose clock/control path is active
+4. explicit step-flag variables for stateful modules whose advance depends on graph-visible clock/control input
+5. explicit rotor advance calls at tick end for only those rotors whose clock/control path is active
 5. one `main()` that prints stable per-tick sink lines
 
 Python stdlib only.
@@ -153,6 +159,7 @@ This slice does not need to support every rotor teaching surface.
 It only needs to support:
 - explicit graph-wired rotor control using already-supported exported modules
 - bounded multi-rotor temporal parity
+- visible control logic between `turnover` and `clock`, including direct wiring, gating, and simple boolean composition using already-supported exported modules
 
 ---
 
@@ -190,6 +197,7 @@ This slice must add parity tests for at least:
 - one workspace where a forward rotor `turnover` output drives downstream logic that steps another rotor
 - one workspace where gated turnover control prevents a downstream rotor from advancing every tick
 - one workspace where the controlled rotor participates in a visible sink path, proving that stepping behavior changed the exported output
+- one sustained multi-rotor stepping trace that proves a double-step-style exported path stays in parity across multiple ticks
 
 Tests must:
 - generate Python

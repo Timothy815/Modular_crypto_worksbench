@@ -712,4 +712,142 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.status).toBe(0);
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, V1_REGISTRY));
   });
+
+  it('matches executeTickedProject when one rotor turnover steps a second rotor', () => {
+    const rotorWiringA = ['E', 'K', 'M', 'F', 'L', 'G', 'D', 'Q', 'V', 'Z', 'N', 'T', 'O', 'W', 'Y', 'H', 'X', 'U', 'S', 'P', 'A', 'I', 'B', 'R', 'C', 'J'];
+    const rotorWiringB = ['A', 'J', 'D', 'K', 'S', 'I', 'R', 'U', 'X', 'B', 'L', 'H', 'W', 'T', 'M', 'C', 'Q', 'G', 'Z', 'N', 'P', 'Y', 'F', 'V', 'O', 'E'];
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'AAAAAA' } },
+        { id: 'clock-1', defId: 'Clock', params: { period: 1, offset: 0, length: 6 } },
+        {
+          id: 'rotor-a',
+          defId: 'Rotor',
+          params: { wiring: rotorWiringA, position: 0, ringOffset: 0, notches: 'A,B' },
+        },
+        {
+          id: 'rotor-b',
+          defId: 'Rotor',
+          params: { wiring: rotorWiringB, position: 0, ringOffset: 0, notches: 'E' },
+        },
+        { id: 'text-out', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'rotor-a', port: 'in' } },
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'rotor-a', port: 'clock' } },
+        { from: { moduleId: 'rotor-a', port: 'turnover' }, to: { moduleId: 'rotor-b', port: 'clock' } },
+        { from: { moduleId: 'rotor-a', port: 'out' }, to: { moduleId: 'rotor-b', port: 'in' } },
+        { from: { moduleId: 'rotor-b', port: 'out' }, to: { moduleId: 'text-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('step_m_rotor_b = _is_active_control_pulse(m_rotor_a["turnover"])');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeTickedProject when gated turnover prevents a downstream rotor from advancing every tick', () => {
+    const rotorWiringA = ['E', 'K', 'M', 'F', 'L', 'G', 'D', 'Q', 'V', 'Z', 'N', 'T', 'O', 'W', 'Y', 'H', 'X', 'U', 'S', 'P', 'A', 'I', 'B', 'R', 'C', 'J'];
+    const rotorWiringB = ['A', 'J', 'D', 'K', 'S', 'I', 'R', 'U', 'X', 'B', 'L', 'H', 'W', 'T', 'M', 'C', 'Q', 'G', 'Z', 'N', 'P', 'Y', 'F', 'V', 'O', 'E'];
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'AAAAAA' } },
+        { id: 'clock-1', defId: 'Clock', params: { period: 1, offset: 0, length: 6 } },
+        { id: 'enable-1', defId: 'BitSource', params: { stream: [0, 1, 0, 1, 1, 0] } },
+        {
+          id: 'rotor-a',
+          defId: 'Rotor',
+          params: { wiring: rotorWiringA, position: 0, ringOffset: 0, notches: 'A,B' },
+        },
+        { id: 'gate-1', defId: 'Gate', params: {} },
+        {
+          id: 'rotor-b',
+          defId: 'Rotor',
+          params: { wiring: rotorWiringB, position: 0, ringOffset: 0, notches: 'E' },
+        },
+        { id: 'text-out', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'rotor-a', port: 'in' } },
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'rotor-a', port: 'clock' } },
+        { from: { moduleId: 'enable-1', port: 'out' }, to: { moduleId: 'gate-1', port: 'in' } },
+        { from: { moduleId: 'rotor-a', port: 'turnover' }, to: { moduleId: 'gate-1', port: 'control' } },
+        { from: { moduleId: 'gate-1', port: 'out' }, to: { moduleId: 'rotor-b', port: 'clock' } },
+        { from: { moduleId: 'rotor-a', port: 'out' }, to: { moduleId: 'rotor-b', port: 'in' } },
+        { from: { moduleId: 'rotor-b', port: 'out' }, to: { moduleId: 'text-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeTickedProject for a double-step-style three-rotor stepping path', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'AAAA' } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 4 } },
+        {
+          id: 'left',
+          defId: 'Rotor',
+          params: {
+            wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''),
+            position: 0,
+            ringOffset: 2,
+            notches: 'Q',
+          },
+        },
+        {
+          id: 'middle',
+          defId: 'Rotor',
+          params: {
+            wiring: 'AJDKSIRUXBLHWTMCQGZNPYFVOE'.split(''),
+            position: 4,
+            ringOffset: 0,
+            notches: 'E',
+          },
+        },
+        {
+          id: 'right',
+          defId: 'Rotor',
+          params: {
+            wiring: 'BDFHJLCPRTXVZNYEIWGAKMUSQO'.split(''),
+            position: 15,
+            ringOffset: 0,
+            notches: 'Q',
+          },
+        },
+        { id: 'middle-step-or', defId: 'OR', params: {} },
+        { id: 'left-gate', defId: 'Gate', params: {} },
+        { id: 'out', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'right', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'right', port: 'clock' } },
+        { from: { moduleId: 'right', port: 'turnover' }, to: { moduleId: 'middle-step-or', port: 'a' } },
+        { from: { moduleId: 'middle', port: 'turnover' }, to: { moduleId: 'middle-step-or', port: 'b' } },
+        { from: { moduleId: 'middle-step-or', port: 'out' }, to: { moduleId: 'middle', port: 'clock' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'left-gate', port: 'in' } },
+        { from: { moduleId: 'middle', port: 'turnover' }, to: { moduleId: 'left-gate', port: 'control' } },
+        { from: { moduleId: 'left-gate', port: 'out' }, to: { moduleId: 'left', port: 'clock' } },
+        { from: { moduleId: 'right', port: 'out' }, to: { moduleId: 'middle', port: 'in' } },
+        { from: { moduleId: 'middle', port: 'out' }, to: { moduleId: 'left', port: 'in' } },
+        { from: { moduleId: 'left', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('step_m_middle = _is_active_control_pulse(m_middle_step_or["out"])');
+    expect(pythonSource).toContain('step_m_left = _is_active_control_pulse(m_left_gate["out"])');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, V1_REGISTRY));
+  });
 });

@@ -194,11 +194,11 @@ That rotor return-path export slice is now also shipped:
 - linked reverse traversal reads the live forward rotor state object directly
 - parity-tested for plain return-path output, stepped return-path output, and linked reverse turnover used downstream
 
-The next careful rotor-control export frontier is now explicitly recorded as:
+That rotor-control export slice is now also shipped:
 - `PYTHON-EXPORT-ROTOR-CONTROL-V1.md`
-- add bounded turnover-driven multi-rotor stepping export as the next historical-machine slice
-- keep control-bank scheduler sprawl, full rotor-bank export, and structured-machine export out of scope
-- preserve explicit graph-derived control logic in generated Python rather than introducing a hidden machine scheduler
+- exported temporal Python now supports bounded turnover-driven multi-rotor stepping parity
+- generated Python now records explicit step flags during evaluation and applies advances in a final tick-end pass
+- parity-tested for direct turnover stepping, gated turnover stepping, and a double-step-style three-rotor path
 
 That bounded multi-window workspace slice is now also shipped:
 - `MULTI-WINDOW-WORKSPACE-V1.md`

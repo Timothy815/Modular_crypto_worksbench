@@ -1616,12 +1616,11 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
       throw new Error(`Python export could not resolve a variable for "${moduleInstance.id}".`);
     }
 
+    const stepFlagName = `step_${variableName}`;
     const clockConnection = clockConnectionsByModuleId.get(moduleInstance.id);
+    bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        ', 'Advance flag'));
     if (!clockConnection) {
-      bodyLines.push(
-        buildGeneratedModuleComment(moduleInstance, def, '        ', 'Advance'),
-        `        ${def.id === 'Counter' ? 'counter_advance' : def.id === 'LFSR' ? 'lfsr_advance' : 'rotor_advance'}(${variableName}_state)`,
-      );
+      bodyLines.push(`        ${stepFlagName} = True`);
       continue;
     }
 
@@ -1631,8 +1630,25 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
     }
 
     bodyLines.push(
+      `        ${stepFlagName} = _is_active_control_pulse(${upstreamVariable}[${JSON.stringify(clockConnection.port)}])`,
+    );
+  }
+
+  for (const moduleInstance of project.modules) {
+    const def = registry[moduleInstance.defId];
+    if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor')) {
+      continue;
+    }
+
+    const variableName = variablesByModuleId.get(moduleInstance.id);
+    if (!variableName) {
+      throw new Error(`Python export could not resolve a variable for "${moduleInstance.id}".`);
+    }
+
+    const stepFlagName = `step_${variableName}`;
+    bodyLines.push(
       buildGeneratedModuleComment(moduleInstance, def, '        ', 'Advance'),
-      `        if _is_active_control_pulse(${upstreamVariable}[${JSON.stringify(clockConnection.port)}]):`,
+      `        if ${stepFlagName}:`,
       `            ${def.id === 'Counter' ? 'counter_advance' : def.id === 'LFSR' ? 'lfsr_advance' : 'rotor_advance'}(${variableName}_state)`,
     );
   }
