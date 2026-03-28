@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Drafted on `main`
+Status: Implemented on `main`
 
 ---
 
@@ -71,6 +71,8 @@ This slice must:
 - preserve one explicit `run_ticks()` loop
 - preserve stable per-tick sink output lines
 - add only the bounded runtime needed for one forward rotor path
+- preserve evaluate-before-advance loop integrity for all stateful modules in the exported tick loop
+- include systematic generated comments so each exported module remains recognizable as a teaching surface
 
 It must not redesign the existing export runtime shape.
 
@@ -86,7 +88,9 @@ And continue relying on already-supported companions as needed, including:
 - `Counter`
 - `LFSR`
 - `TextInput`
+- `KeyInput`
 - `Output`
+- `TextOutput`
 - `SymbolToBits`
 - `BitsToSymbol`
 - `BitSource`
@@ -119,6 +123,8 @@ For supported workspaces, generated Python must mirror MCW `Rotor` behavior exac
 - current stepping/advance timing
 - current `turnover` / `notches` behavior exactly as implemented
 - conditional stepping only when the rotor’s visible clock path activates it
+- turnover signals must be computed from rotor position at the start of the tick, before any tick-end advance
+- the generated Python traversal helper must stay structurally parallel to `traverseRotor()` in `src/engine/modules/rotor.ts`
 
 This slice must follow MCW’s existing rotor implementation, not a cleaned-up reinterpretation.
 
@@ -140,6 +146,15 @@ That file should now contain:
 Python stdlib only.
 Target Python `3.8+`.
 
+Symbol sinks in ticked export must print their raw symbol string in the existing stable per-tick form:
+- `tick <n> | <module_id>: <value>`
+
+Rotor wiring must be embedded as an explicit 26-element Python list of single-character strings.
+Notches must be parsed in Python exactly as `parseRotorNotches()` does today:
+- invalid entries skipped
+- duplicates deduplicated
+- resulting turnover indices kept explicit
+
 ---
 
 ## State Model Requirement
@@ -150,11 +165,13 @@ The exported rotor state must stay explicit and readable:
 - ring offset is stored as a plain integer
 - notch/turnover data is explicit
 - evaluate and advance remain line-by-line understandable
+- the runtime must include an explicit rotor-offset normalization helper that mirrors `((value % 26) + 26) % 26`
 
 The generated code should read like:
 - initialize rotor state
 - evaluate current symbol transformation
 - conditionally advance at tick end
+- annotate each generated module block with a short systematic comment naming the source MCW module instance and definition
 
 It must not become:
 - a generic opaque machine interpreter
@@ -194,8 +211,9 @@ It should still fail cleanly rather than partially exporting a rotor workspace.
 ## Parity Tests
 
 This slice must add parity tests for at least:
-- one `Clock -> Rotor -> Output` style workspace
-- one workspace where rotor stepping changes visible output across ticks
+- one `TextInput -> Rotor -> Output` workspace where stepping changes the output symbol across ticks
+- one workspace where the rotor `turnover` output drives visible downstream behavior
+- one workspace where the rotor `clock` input is conditionally gated so stepping does not happen every tick
 
 Tests must:
 - generate Python
@@ -226,3 +244,15 @@ This slice is successful when:
 - the generated Python remains readable and explicit
 - the temporal runtime still looks like authored code, not an opaque engine dump
 - the export line meaningfully advances toward full MCW execution parity without jumping straight into the full rotor ecosystem
+
+---
+
+## Implementation Result
+
+This slice is now implemented on `main`.
+
+Shipped behavior:
+- bounded forward `Rotor` export is now part of the temporal Python runtime
+- ticked symbol output, turnover output, and clock-gated stepping all maintain parity with MCW
+- generated Python now includes short systematic comments that name each exported module block
+- `RotorReverse`, linked rotor pairing, reflector return paths, and rotor control-bank scheduling remain out of scope

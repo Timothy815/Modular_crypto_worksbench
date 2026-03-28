@@ -177,6 +177,12 @@ The next careful stateful export frontier is now explicitly recorded as:
 - keep `RotorReverse`, linked rotor pairing, reflector return paths, and control-bank scheduling out of scope
 - treat this as the next major step toward eventual MCW-to-Python execution parity
 
+That rotor export foundations slice is now also shipped:
+- exported temporal Python now supports bounded forward `Rotor`
+- parity-tested for stepping symbol output, turnover-driven downstream behavior, and clock-gated stepping
+- generated Python now includes short systematic comments naming each exported module block
+- `RotorReverse`, linked rotor pairing, reflector return paths, and rotor control-bank scheduling remain deferred
+
 That bounded multi-window workspace slice is now also shipped:
 - `MULTI-WINDOW-WORKSPACE-V1.md`
 - detachable `Palette` and `Inspector` windows

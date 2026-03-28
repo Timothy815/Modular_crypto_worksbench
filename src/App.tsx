@@ -12,12 +12,6 @@ import {
 
 import './App.css';
 import { isCompositeDefinition, type CompositeLibraryEntry } from './engine/composites';
-import {
-  formatPythonExportCompatibilityIssues,
-  generatePythonExport,
-  getPythonExportCompatibility,
-  getPythonExportFileName,
-} from './engine/codegen/python';
 import { V1_REGISTRY } from './engine/modules';
 import type { ExecutionResult, ExecutionTraceEntry, Project, TickedExecutionResult } from './engine/types';
 import { deriveTickCount, executeTickedProject } from './engine/executor';
@@ -2328,12 +2322,19 @@ function MainApp() {
               });
               setImportError(null);
             }}
-            onExportPython={() => {
+            onExportPython={async () => {
               const exportValidation = validateProject(activeProjectState, effectiveRegistry);
               if (!exportValidation.ok) {
                 setImportError(exportValidation.issues.map((issue) => issue.message).join('\n'));
                 return;
               }
+
+              const {
+                formatPythonExportCompatibilityIssues,
+                generatePythonExport,
+                getPythonExportCompatibility,
+                getPythonExportFileName,
+              } = await import('./engine/codegen/python');
 
               const compatibility = getPythonExportCompatibility(
                 activeProjectState,

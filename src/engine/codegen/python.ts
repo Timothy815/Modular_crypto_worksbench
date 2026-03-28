@@ -62,14 +62,19 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'Clock',
   'Counter',
   'LFSR',
+  'Rotor',
 ]);
 
-const SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS = new Set(['Clock', 'Counter', 'LFSR']);
+const SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS = new Set(['Clock', 'Counter', 'LFSR', 'Rotor']);
 const SUPPORTED_STATEFUL_PYTHON_EXPORT_COMPANION_DEF_IDS = new Set([
+  'TextInput',
   'BitSource',
   'BitOutput',
+  'Output',
+  'TextOutput',
   'HexOutput',
   'BitsToHex',
+  'KeyInput',
   'Equals',
   'AtLeast',
   'GreaterThan',
@@ -88,7 +93,11 @@ const SYMBOL_SINK_DEF_IDS = new Set(['Output', 'TextOutput', 'BaudotOutput']);
 const BIT_SINK_DEF_IDS = new Set(['BitOutput']);
 const HEX_SINK_DEF_IDS = new Set(['HexOutput']);
 
-const PYTHON_RUNTIME = `def _expect_bits(signal, module_name):
+const PYTHON_RUNTIME = `ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+ROTOR_SIZE = len(ALPHABET)
+
+
+def _expect_bits(signal, module_name):
     if not isinstance(signal, list):
         raise ValueError(f"{module_name} expects a bits signal")
     bits = []
@@ -139,6 +148,11 @@ def _single_bit_control(active):
 
 def text_input(value):
     return {"out": str(value)}
+
+
+def text_input_tick(value, tick):
+    text = str(value)
+    return {"out": text[tick] if tick < len(text) else ""}
 
 
 def key_input(value):
@@ -789,6 +803,86 @@ def lfsr_advance(state):
     state["seed"] = next_register
 
 
+def _normalize_rotor_offset(value):
+    return ((int(value) % ROTOR_SIZE) + ROTOR_SIZE) % ROTOR_SIZE
+
+
+def _expect_rotor_symbol(signal):
+    symbol = str(signal)
+    if len(symbol) != 1:
+        raise ValueError(f'Rotor expects exactly one symbol, received "{symbol}"')
+    if ALPHABET.find(symbol.upper()) == -1:
+        raise ValueError(f'Rotor: "{symbol}" is not in the alphabet')
+    return symbol.upper()
+
+
+def _parse_rotor_wiring(wiring_value):
+    if not isinstance(wiring_value, list) or len(wiring_value) != ROTOR_SIZE:
+        raise ValueError("Rotor wiring must be an array of 26 uppercase letters.")
+    wiring = []
+    for entry in wiring_value:
+        if not isinstance(entry, str) or len(entry) != 1 or ALPHABET.find(entry.upper()) == -1:
+            raise ValueError("Rotor wiring must be an array of 26 uppercase letters.")
+        wiring.append(entry.upper())
+    if len(set(wiring)) != ROTOR_SIZE:
+        raise ValueError("Rotor wiring must be a permutation with no duplicates.")
+    return wiring
+
+
+def _parse_rotor_notches(notches_value):
+    if not isinstance(notches_value, str) or len(notches_value.strip()) == 0:
+        return []
+    entries = [entry.strip().upper() for entry in notches_value.split(",") if entry.strip()]
+    unique = []
+    for entry in entries:
+        if len(entry) != 1 or ALPHABET.find(entry) == -1:
+            continue
+        index = ALPHABET.index(entry)
+        if index not in unique:
+            unique.append(index)
+    return unique
+
+
+def _is_rotor_turnover_active(position, ring_offset, notches):
+    normalized_position = _normalize_rotor_offset(position)
+    normalized_ring_offset = _normalize_rotor_offset(ring_offset)
+    for notch_index in notches:
+        if normalized_position == _normalize_rotor_offset(notch_index - normalized_ring_offset):
+            return True
+    return False
+
+
+def rotor_init(wiring, position, ring_offset, notches):
+    return {
+        "wiring": _parse_rotor_wiring(wiring),
+        "position": _normalize_rotor_offset(position),
+        "ringOffset": _normalize_rotor_offset(ring_offset),
+        "notches": _parse_rotor_notches(notches),
+    }
+
+
+def rotor_traverse(signal, state):
+    input_symbol = _expect_rotor_symbol(signal)
+    input_index = ALPHABET.index(input_symbol)
+    effective_shift = _normalize_rotor_offset(state["position"] - state["ringOffset"])
+    shifted_index = _normalize_rotor_offset(input_index + effective_shift)
+    mapped_index = ALPHABET.index(state["wiring"][shifted_index])
+    unshifted_index = _normalize_rotor_offset(mapped_index - effective_shift)
+    return ALPHABET[unshifted_index]
+
+
+def rotor_eval(signal, state):
+    turnover_active = _is_rotor_turnover_active(state["position"], state["ringOffset"], state["notches"])
+    return {
+        "out": rotor_traverse(signal, state),
+        "turnover": [1 if turnover_active else 0],
+    }
+
+
+def rotor_advance(state):
+    state["position"] = _normalize_rotor_offset(state["position"] + 1)
+
+
 def format_ticked_sink_line(tick, module_id, value):
     return f"tick {tick} | {module_id}: {value}"
 `;
@@ -1101,6 +1195,15 @@ function buildSinkCaptureLine(
   throw new Error(`Python export does not support sink "${def.id}".`);
 }
 
+function buildGeneratedModuleComment(
+  moduleInstance: ModuleInstance,
+  def: ModuleDefinition,
+  indent: string,
+  label = 'Module',
+) {
+  return `${indent}# ${label}: ${moduleInstance.id} [${def.id}]`;
+}
+
 export function getPythonExportCompatibility(
   project: Project,
   registry: ModuleRegistry,
@@ -1241,6 +1344,7 @@ export function generatePythonExport(project: Project, registry: ModuleRegistry)
     }
 
     if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id)) {
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    ', 'Sink'));
       bodyLines.push(buildSinkCaptureLine(moduleInstance, def, connectionsByTarget, variablesByModuleId));
       continue;
     }
@@ -1250,6 +1354,7 @@ export function generatePythonExport(project: Project, registry: ModuleRegistry)
       throw new Error(`Python export could not resolve a variable for "${moduleId}".`);
     }
 
+    bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
     bodyLines.push(
       `    ${variableName} = ${buildModuleExpression(moduleInstance, def, connectionsByTarget, variablesByModuleId)}`,
     );
@@ -1285,6 +1390,7 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
         throw new Error(`Python export could not resolve a variable for "${moduleInstance.id}".`);
       }
       bodyLines.push(
+        buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
         `    ${variableName}_state = counter_init(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'width'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'step'))})`,
       );
       continue;
@@ -1296,7 +1402,20 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
         throw new Error(`Python export could not resolve a variable for "${moduleInstance.id}".`);
       }
       bodyLines.push(
+        buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
         `    ${variableName}_state = lfsr_init(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'seed'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'taps'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'outputLength'))})`,
+      );
+      continue;
+    }
+
+    if (def.id === 'Rotor') {
+      const variableName = variablesByModuleId.get(moduleInstance.id);
+      if (!variableName) {
+        throw new Error(`Python export could not resolve a variable for "${moduleInstance.id}".`);
+      }
+      bodyLines.push(
+        buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+        `    ${variableName}_state = rotor_init(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'wiring'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'position'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'ringOffset'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'notches'))})`,
       );
     }
   }
@@ -1316,6 +1435,7 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
 
     if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id)) {
       const inputExpression = getInputExpression(connectionsByTarget, variablesByModuleId, moduleInstance.id, 'in');
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        ', 'Sink'));
       if (SYMBOL_SINK_DEF_IDS.has(def.id)) {
         bodyLines.push(`        sink_output_lines.append(format_ticked_sink_line(tick, ${JSON.stringify(moduleInstance.id)}, format_symbol_sink(${inputExpression})))`);
       } else if (BIT_SINK_DEF_IDS.has(def.id)) {
@@ -1332,6 +1452,7 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
     }
 
     if (def.id === 'Clock') {
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
       bodyLines.push(
         `        ${variableName} = clock_tick(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'period'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'offset'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'length'))}, tick)`,
       );
@@ -1339,22 +1460,42 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
     }
 
     if (def.id === 'Counter') {
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
       bodyLines.push(`        ${variableName} = counter_eval(${variableName}_state)`);
       continue;
     }
 
     if (def.id === 'LFSR') {
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
       bodyLines.push(`        ${variableName} = lfsr_eval(${variableName}_state)`);
       continue;
     }
 
+    if (def.id === 'Rotor') {
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
+      bodyLines.push(
+        `        ${variableName} = rotor_eval(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${variableName}_state)`,
+      );
+      continue;
+    }
+
     if (def.id === 'BitSource') {
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
       bodyLines.push(
         `        ${variableName} = bit_source_tick(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'stream'))}, tick)`,
       );
       continue;
     }
 
+    if (def.id === 'TextInput') {
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
+      bodyLines.push(
+        `        ${variableName} = text_input_tick(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))}, tick)`,
+      );
+      continue;
+    }
+
+    bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
     bodyLines.push(
       `        ${variableName} = ${buildModuleExpression(moduleInstance, def, connectionsByTarget, variablesByModuleId)}`,
     );
@@ -1362,7 +1503,7 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
 
   for (const moduleInstance of project.modules) {
     const def = registry[moduleInstance.defId];
-    if (!def || (def.id !== 'Counter' && def.id !== 'LFSR')) {
+    if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor')) {
       continue;
     }
 
@@ -1373,7 +1514,10 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
 
     const clockConnection = clockConnectionsByModuleId.get(moduleInstance.id);
     if (!clockConnection) {
-      bodyLines.push(`        ${def.id === 'Counter' ? 'counter_advance' : 'lfsr_advance'}(${variableName}_state)`);
+      bodyLines.push(
+        buildGeneratedModuleComment(moduleInstance, def, '        ', 'Advance'),
+        `        ${def.id === 'Counter' ? 'counter_advance' : def.id === 'LFSR' ? 'lfsr_advance' : 'rotor_advance'}(${variableName}_state)`,
+      );
       continue;
     }
 
@@ -1383,8 +1527,9 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
     }
 
     bodyLines.push(
+      buildGeneratedModuleComment(moduleInstance, def, '        ', 'Advance'),
       `        if _is_active_control_pulse(${upstreamVariable}[${JSON.stringify(clockConnection.port)}]):`,
-      `            ${def.id === 'Counter' ? 'counter_advance' : 'lfsr_advance'}(${variableName}_state)`,
+      `            ${def.id === 'Counter' ? 'counter_advance' : def.id === 'LFSR' ? 'lfsr_advance' : 'rotor_advance'}(${variableName}_state)`,
     );
   }
 

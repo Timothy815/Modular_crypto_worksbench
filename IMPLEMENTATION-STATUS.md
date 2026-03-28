@@ -97,6 +97,8 @@ Current `main` now also includes:
   - records bounded forward `Rotor` export as the next temporal runtime target
   - keeps `RotorReverse`, linked pairing, reflector return paths, and control-bank scheduling out of scope
   - treats rotor export as the next serious move toward eventual MCW execution parity in Python
+  - now shipped with parity coverage for stepping symbol output, turnover-driven downstream behavior, and clock-gated stepping
+  - generated Python now includes short systematic comments naming each exported module block
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments

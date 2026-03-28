@@ -92,7 +92,7 @@ describe('getPythonExportCompatibility', () => {
   it('rejects unsupported stateful modules and bypassed modules', () => {
     const incompatibleProject: Project = {
       modules: [
-        { id: 'rotor-1', defId: 'Rotor', params: { wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ', position: 'A', ringOffset: 0, notches: 'Q', turnover: true } },
+        { id: 'rotor-rev-1', defId: 'RotorReverse', params: { linkedRotorId: 'rotor-fwd' } },
         { id: 'bits-1', defId: 'BitSource', params: { stream: [1, 0, 1, 0] }, bypass: true },
       ],
       connections: [],
@@ -103,8 +103,8 @@ describe('getPythonExportCompatibility', () => {
     expect(compatibility.ok).toBe(false);
     expect(compatibility.issues).toEqual([
       {
-        moduleId: 'rotor-1',
-        defId: 'Rotor',
+        moduleId: 'rotor-rev-1',
+        defId: 'RotorReverse',
         reason: 'This stateful or ticked primitive is outside the Python export stateful supported subset.',
       },
       {
@@ -471,6 +471,102 @@ parityDescribe('generatePythonExport', () => {
         { from: { moduleId: 'payload', port: 'out' }, to: { moduleId: 'gate-1', port: 'in' } },
         { from: { moduleId: 'lfsr-1', port: 'out' }, to: { moduleId: 'gate-1', port: 'control' } },
         { from: { moduleId: 'gate-1', port: 'out' }, to: { moduleId: 'bits-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeTickedProject for a stepping rotor workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'AAAA' } },
+        {
+          id: 'rotor-1',
+          defId: 'Rotor',
+          params: {
+            wiring: ['E', 'K', 'M', 'F', 'L', 'G', 'D', 'Q', 'V', 'Z', 'N', 'T', 'O', 'W', 'Y', 'H', 'X', 'U', 'S', 'P', 'A', 'I', 'B', 'R', 'C', 'J'],
+            position: 0,
+            ringOffset: 0,
+            notches: 'Q',
+          },
+        },
+        { id: 'text-out', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'rotor-1', port: 'in' } },
+        { from: { moduleId: 'rotor-1', port: 'out' }, to: { moduleId: 'text-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('# Module: rotor-1 [Rotor]');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeTickedProject for a rotor turnover workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'AAA' } },
+        {
+          id: 'rotor-1',
+          defId: 'Rotor',
+          params: {
+            wiring: ['E', 'K', 'M', 'F', 'L', 'G', 'D', 'Q', 'V', 'Z', 'N', 'T', 'O', 'W', 'Y', 'H', 'X', 'U', 'S', 'P', 'A', 'I', 'B', 'R', 'C', 'J'],
+            position: 0,
+            ringOffset: 0,
+            notches: 'A',
+          },
+        },
+        { id: 'payload', defId: 'BitSource', params: { stream: [1, 1, 1] } },
+        { id: 'gate-1', defId: 'Gate', params: {} },
+        { id: 'text-out', defId: 'Output', params: {} },
+        { id: 'bits-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'rotor-1', port: 'in' } },
+        { from: { moduleId: 'rotor-1', port: 'out' }, to: { moduleId: 'text-out', port: 'in' } },
+        { from: { moduleId: 'payload', port: 'out' }, to: { moduleId: 'gate-1', port: 'in' } },
+        { from: { moduleId: 'rotor-1', port: 'turnover' }, to: { moduleId: 'gate-1', port: 'control' } },
+        { from: { moduleId: 'gate-1', port: 'out' }, to: { moduleId: 'bits-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeTickedProject for a clock-gated rotor workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'AAAA' } },
+        { id: 'clock-1', defId: 'Clock', params: { period: 2, offset: 0, length: 4 } },
+        {
+          id: 'rotor-1',
+          defId: 'Rotor',
+          params: {
+            wiring: ['E', 'K', 'M', 'F', 'L', 'G', 'D', 'Q', 'V', 'Z', 'N', 'T', 'O', 'W', 'Y', 'H', 'X', 'U', 'S', 'P', 'A', 'I', 'B', 'R', 'C', 'J'],
+            position: 0,
+            ringOffset: 0,
+            notches: 'Q',
+          },
+        },
+        { id: 'text-out', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'rotor-1', port: 'in' } },
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'rotor-1', port: 'clock' } },
+        { from: { moduleId: 'rotor-1', port: 'out' }, to: { moduleId: 'text-out', port: 'in' } },
       ],
     };
 
