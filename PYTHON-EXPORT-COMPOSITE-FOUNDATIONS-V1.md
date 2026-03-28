@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Drafted on `main`
+Status: Implemented on `main`
 
 ---
 
@@ -73,6 +73,8 @@ This slice must:
 - add bounded support for composite definitions whose internals are themselves export-compatible
 - preserve explicit readable generated comments
 - preserve authored composite boundaries in a visible way inside the generated Python
+- preserve helper-local variable scoping for every internal module
+- pass forwarded composite params into generated helpers as explicit helper arguments
 
 It must not redesign the entire export runtime into a generic object framework.
 
@@ -83,17 +85,19 @@ It must not redesign the entire export runtime into a generic object framework.
 This slice should support:
 - shipped composites whose internals are already composed only of export-supported primitives/stateful modules
 - user-authored composites whose internals are already composed only of export-supported primitives/stateful modules
-- composites nested one level deep only if that falls out naturally from the chosen approach and remains readable
+- composites with internal primitive/stateful-module bodies only
 
 The recommended V1 boundary is:
 - exported composites become explicit generated helper functions
 - each helper has explicit typed input parameters and explicit returned output map entries
 - the top-level workspace still exports as one readable file
+- helper-local variables represent all internal modules to avoid namespace collisions
+- helper arguments carry any forwarded composite params explicitly
 
 This slice does not need to support:
 - iterators
 - composite families with unsupported internal modules
-- arbitrary recursive depth if it harms readability
+- nested composites of any depth
 
 ---
 
@@ -106,6 +110,7 @@ Parity target remains:
 Generated Python must mirror MCW behavior exactly for:
 - composite input binding behavior
 - composite output binding behavior
+- forwarded param injection behavior
 - internal topological execution of the composite body
 - ticked behavior inside composites if the composite internals are already within the shipped temporal subset
 
@@ -128,6 +133,8 @@ That file should now contain:
 4. the top-level `run()` or `run_ticks()` entry using those composite helpers
 5. one `main()` that prints stable sink output lines
 
+Composite helpers should return explicit Python dicts keyed by external output port name.
+
 The generated code should read like:
 - helper functions for reusable submachines
 - top-level orchestration of those helpers
@@ -142,9 +149,10 @@ It must not read like:
 
 The compatibility check should now:
 - allow composites whose internal project graph is itself fully export-compatible
+- allow forwarded params when they target already-export-compatible internal params
 - reject composites containing unsupported internals
 - reject iterators inside composites for this slice
-- reject composite export if the chosen readability boundary would be violated by unsupported nesting
+- reject nested composites for this slice
 
 This slice should extend the existing compatibility architecture rather than replacing it.
 
@@ -155,7 +163,7 @@ This slice should extend the existing compatibility architecture rather than rep
 This slice must still exclude:
 - iterators
 - iterator-containing composites
-- arbitrary recursive structured export if it harms readability
+- nested composites
 - hidden project interpreters
 - external runtime packages
 

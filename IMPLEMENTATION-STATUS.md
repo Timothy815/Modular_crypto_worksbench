@@ -110,11 +110,11 @@ Current `main` now also includes:
   - shipped bounded turnover-driven multi-rotor stepping export as the next historical-machine slice
   - generated Python now records explicit step flags during evaluation and applies advances in a final tick-end pass
   - parity-tested for direct turnover stepping, gated turnover stepping, and a double-step-style three-rotor path
-- next structured-machine export frontier:
+- structured-machine export:
   - `PYTHON-EXPORT-COMPOSITE-FOUNDATIONS-V1.md`
-  - records first-class composite export as the next strategic step after flat primitive and rotor-control export
-  - preserves authored submachine boundaries in generated Python rather than flattening them away or introducing a hidden interpreter
-  - keeps iterators and broader structured export out of scope for the first slice
+  - shipped first-class helper-function composite export for depth-1 composite bodies
+  - preserves authored submachine boundaries in generated Python instead of flattening them away
+  - parity-tested for stateless shipped composites, user-authored forwarded-param composites, and temporal composites with supported internals
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments

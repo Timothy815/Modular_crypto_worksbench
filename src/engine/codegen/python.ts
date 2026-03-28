@@ -1,4 +1,8 @@
-import { isCompositeDefinition, isIteratorDefinition } from '../composites';
+import {
+  isCompositeDefinition,
+  isIteratorDefinition,
+  type CompositeDef,
+} from '../composites';
 import { deriveTickCount } from '../executor';
 import type {
   ConnectionEndpoint,
@@ -951,8 +955,44 @@ export interface PythonExportCompatibilityResult {
   issues: PythonExportCompatibilityIssue[];
 }
 
+interface PythonExpressionContext {
+  getInputExpression: (moduleId: string, portName: string) => string;
+  getParamExpression: (
+    moduleInstance: ModuleInstance,
+    def: ModuleDefinition,
+    key: string,
+  ) => string;
+}
+
+interface CompositeExportDefinition {
+  def: CompositeDef;
+  functionName: string;
+  stateful: boolean;
+  inputArgNames: Map<string, string>;
+  forwardedArgNames: Map<string, string>;
+}
+
 function getModuleInstanceMap(project: Project) {
   return new Map(project.modules.map((moduleInstance) => [moduleInstance.id, moduleInstance]));
+}
+
+function buildPythonVariableMapForModules(modules: ModuleInstance[]) {
+  const used = new Set<string>();
+  const variables = new Map<string, string>();
+
+  for (const moduleInstance of modules) {
+    const base = sanitizeIdentifierPart(moduleInstance.id);
+    let candidate = `m_${base}`;
+    let suffix = 2;
+    while (used.has(candidate)) {
+      candidate = `m_${base}_${suffix}`;
+      suffix += 1;
+    }
+    used.add(candidate);
+    variables.set(moduleInstance.id, candidate);
+  }
+
+  return variables;
 }
 
 function sanitizeIdentifierPart(value: string) {
@@ -980,22 +1020,7 @@ export function getPythonExportFileName(workspaceName: string) {
 }
 
 function buildPythonVariableMap(project: Project) {
-  const used = new Set<string>();
-  const variables = new Map<string, string>();
-
-  for (const moduleInstance of project.modules) {
-    const base = sanitizeIdentifierPart(moduleInstance.id);
-    let candidate = `m_${base}`;
-    let suffix = 2;
-    while (used.has(candidate)) {
-      candidate = `m_${base}_${suffix}`;
-      suffix += 1;
-    }
-    used.add(candidate);
-    variables.set(moduleInstance.id, candidate);
-  }
-
-  return variables;
+  return buildPythonVariableMapForModules(project.modules);
 }
 
 function buildTopologicalOrder(project: Project, registry: ModuleRegistry): string[] {
@@ -1101,12 +1126,18 @@ function getInputConnectionMap(project: Project) {
   );
 }
 
-function getInputExpression(
+function resolveInputExpression(
   connectionsByTarget: Map<string, ConnectionEndpoint>,
   variablesByModuleId: Map<string, string>,
+  inputExpressionOverrides: Map<string, string>,
   moduleId: string,
   portName: string,
 ) {
+  const override = inputExpressionOverrides.get(`${moduleId}:${portName}`);
+  if (override) {
+    return override;
+  }
+
   const source = connectionsByTarget.get(`${moduleId}:${portName}`);
   if (!source) {
     throw new Error(`Python export could not resolve input "${moduleId}.${portName}".`);
@@ -1120,103 +1151,131 @@ function getInputExpression(
   return `${variableName}[${JSON.stringify(source.port)}]`;
 }
 
+function getDefaultParamExpression(
+  moduleInstance: ModuleInstance,
+  def: ModuleDefinition,
+  key: string,
+) {
+  return toPythonLiteral(getResolvedParamValue(moduleInstance, def, key));
+}
+
+function createPythonExpressionContext(
+  connectionsByTarget: Map<string, ConnectionEndpoint>,
+  variablesByModuleId: Map<string, string>,
+  inputExpressionOverrides = new Map<string, string>(),
+  paramExpressionOverrides = new Map<string, string>(),
+): PythonExpressionContext {
+  return {
+    getInputExpression: (moduleId, portName) =>
+      resolveInputExpression(
+        connectionsByTarget,
+        variablesByModuleId,
+        inputExpressionOverrides,
+        moduleId,
+        portName,
+      ),
+    getParamExpression: (moduleInstance, def, key) =>
+      paramExpressionOverrides.get(`${moduleInstance.id}:${key}`)
+      ?? getDefaultParamExpression(moduleInstance, def, key),
+  };
+}
+
 function buildModuleExpression(
   moduleInstance: ModuleInstance,
   def: ModuleDefinition,
-  connectionsByTarget: Map<string, ConnectionEndpoint>,
-  variablesByModuleId: Map<string, string>,
+  expressionContext: PythonExpressionContext,
 ) {
   const moduleId = moduleInstance.id;
 
   switch (def.id) {
     case 'TextInput':
-      return `text_input(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))})`;
+      return `text_input(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
     case 'KeyInput':
-      return `key_input(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))})`;
+      return `key_input(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
     case 'AsciiSource':
-      return `ascii_source(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))})`;
+      return `ascii_source(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
     case 'BitSource':
-      return `bit_source(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'stream'))})`;
+      return `bit_source(${expressionContext.getParamExpression(moduleInstance, def, 'stream')})`;
     case 'HexSource':
-      return `hex_source(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))})`;
+      return `hex_source(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
     case 'IV':
-      return `protocol_material_source(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'width'))}, "IV")`;
+      return `protocol_material_source(${expressionContext.getParamExpression(moduleInstance, def, 'value')}, ${expressionContext.getParamExpression(moduleInstance, def, 'width')}, "IV")`;
     case 'Nonce':
-      return `protocol_material_source(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'width'))}, "Nonce")`;
+      return `protocol_material_source(${expressionContext.getParamExpression(moduleInstance, def, 'value')}, ${expressionContext.getParamExpression(moduleInstance, def, 'width')}, "Nonce")`;
     case 'Salt':
-      return `protocol_material_source(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'width'))}, "Salt")`;
+      return `protocol_material_source(${expressionContext.getParamExpression(moduleInstance, def, 'value')}, ${expressionContext.getParamExpression(moduleInstance, def, 'width')}, "Salt")`;
     case 'SymbolToBits':
-      return `symbol_to_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
+      return `symbol_to_bits(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'SymbolPermutation':
-      return `symbol_permutation(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'order'))})`;
+      return `symbol_permutation(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'order')})`;
     case 'SymbolWindow':
-      return `symbol_window(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'start'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'width'))})`;
+      return `symbol_window(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'start')}, ${expressionContext.getParamExpression(moduleInstance, def, 'width')})`;
     case 'Reflector':
-      return `{"out": reflector_traverse(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, _parse_reflector_wiring(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'wiring'))}))}`;
+      return `{"out": reflector_traverse(${expressionContext.getInputExpression(moduleId, 'in')}, _parse_reflector_wiring(${expressionContext.getParamExpression(moduleInstance, def, 'wiring')}))}`;
     case 'BitsToSymbol':
-      return `bits_to_symbol(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
+      return `bits_to_symbol(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'BitsToAscii':
-      return `bits_to_ascii(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
+      return `bits_to_ascii(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'BitsToBaudot':
-      return `bits_to_baudot(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
+      return `bits_to_baudot(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'BitsToHex':
-      return `bits_to_hex(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
+      return `bits_to_hex(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'HexToAscii':
-      return `hex_to_ascii(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
+      return `hex_to_ascii(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'AsciiToHex':
-      return `ascii_to_hex(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
+      return `ascii_to_hex(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'XOR':
-      return `xor_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
+      return `xor_bits(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
     case 'AND':
-      return `and_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
+      return `and_bits(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
     case 'OR':
-      return `or_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
+      return `or_bits(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
     case 'NOT':
-      return `not_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
+      return `not_bits(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'Gate':
-      return `gate_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'control')})`;
+      return `gate_bits(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'control')})`;
     case 'Equals':
-      return `equals_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
+      return `equals_bits(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
     case 'AtLeast':
-      return `at_least_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
+      return `at_least_bits(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
     case 'Majority':
-      return `majority_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'c')})`;
+      return `majority_bits(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')}, ${expressionContext.getInputExpression(moduleId, 'c')})`;
     case 'GreaterThan':
-      return `greater_than_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
+      return `greater_than_bits(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
     case 'Mux':
-      return `mux_bit(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'select')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
+      return `mux_bit(${expressionContext.getInputExpression(moduleId, 'select')}, ${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
     case 'Demux':
-      return `demux_bit(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'select')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
+      return `demux_bit(${expressionContext.getInputExpression(moduleId, 'select')}, ${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'MultiRouter':
-      return `multi_router(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'select')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'routeCount'))})`;
+      return `multi_router(${expressionContext.getInputExpression(moduleId, 'select')}, ${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'routeCount')})`;
     case 'SBox':
-      return `s_box(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'table'))})`;
+      return `s_box(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'table')})`;
     case 'AddMod':
-      return `add_mod(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
+      return `add_mod(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
     case 'SubMod':
-      return `sub_mod(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
+      return `sub_mod(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
     case 'Modulo':
-      return `modulo_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'modulus'))})`;
+      return `modulo_bits(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
     case 'MulMod':
-      return `mul_mod(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
+      return `mul_mod(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
     case 'Permutation':
-      return `permute_bits(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'order'))})`;
+      return `permute_bits(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'order')})`;
     case 'ByteRotate':
-      return `byte_rotate(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'amount'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'direction'))})`;
+      return `byte_rotate(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'amount')}, ${expressionContext.getParamExpression(moduleInstance, def, 'direction')})`;
     case 'ByteSwap':
-      return `byte_swap(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
+      return `byte_swap(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'BitJoin':
-      return `bit_join(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'a')}, ${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'b')})`;
+      return `bit_join(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
     case 'BitSplit':
-      return `bit_split(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'leftWidth'))})`;
+      return `bit_split(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'leftWidth')})`;
     case 'BitPad':
-      return `bit_pad(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'targetWidth'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'side'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'padBit'))})`;
+      return `bit_pad(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetWidth')}, ${expressionContext.getParamExpression(moduleInstance, def, 'side')}, ${expressionContext.getParamExpression(moduleInstance, def, 'padBit')})`;
     case 'BitUnpad':
-      return `bit_unpad(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'originalWidth'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'side'))})`;
+      return `bit_unpad(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'originalWidth')}, ${expressionContext.getParamExpression(moduleInstance, def, 'side')})`;
     case 'BitWindow':
-      return `bit_window(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'start'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'width'))})`;
+      return `bit_window(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'start')}, ${expressionContext.getParamExpression(moduleInstance, def, 'width')})`;
     case 'BitShifter':
-      return `bit_shift(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'amount'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'mode'))})`;
+      return `bit_shift(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'amount')}, ${expressionContext.getParamExpression(moduleInstance, def, 'mode')})`;
     default:
       throw new Error(`Python export does not support module "${def.id}".`);
   }
@@ -1225,26 +1284,21 @@ function buildModuleExpression(
 function buildSinkCaptureLine(
   moduleInstance: ModuleInstance,
   def: ModuleDefinition,
-  connectionsByTarget: Map<string, ConnectionEndpoint>,
-  variablesByModuleId: Map<string, string>,
+  expressionContext: PythonExpressionContext,
+  indent = '    ',
 ) {
-  const inputExpression = getInputExpression(
-    connectionsByTarget,
-    variablesByModuleId,
-    moduleInstance.id,
-    'in',
-  );
+  const inputExpression = expressionContext.getInputExpression(moduleInstance.id, 'in');
 
   if (SYMBOL_SINK_DEF_IDS.has(def.id)) {
-    return `    sink_outputs.append((${JSON.stringify(moduleInstance.id)}, format_symbol_sink(${inputExpression})))`;
+    return `${indent}sink_outputs.append((${JSON.stringify(moduleInstance.id)}, format_symbol_sink(${inputExpression})))`;
   }
 
   if (BIT_SINK_DEF_IDS.has(def.id)) {
-    return `    sink_outputs.append((${JSON.stringify(moduleInstance.id)}, format_bit_sink(${inputExpression})))`;
+    return `${indent}sink_outputs.append((${JSON.stringify(moduleInstance.id)}, format_bit_sink(${inputExpression})))`;
   }
 
   if (HEX_SINK_DEF_IDS.has(def.id)) {
-    return `    sink_outputs.append((${JSON.stringify(moduleInstance.id)}, format_hex_sink(${inputExpression})))`;
+    return `${indent}sink_outputs.append((${JSON.stringify(moduleInstance.id)}, format_hex_sink(${inputExpression})))`;
   }
 
   throw new Error(`Python export does not support sink "${def.id}".`);
@@ -1259,21 +1313,158 @@ function buildGeneratedModuleComment(
   return `${indent}# ${label}: ${moduleInstance.id} [${def.id}]`;
 }
 
-export function getPythonExportCompatibility(
+function buildPythonNameMap(values: string[], prefix: string) {
+  const used = new Set<string>();
+  const mapping = new Map<string, string>();
+
+  for (const value of values) {
+    const base = sanitizeIdentifierPart(value);
+    let candidate = `${prefix}_${base}`;
+    let suffix = 2;
+    while (used.has(candidate)) {
+      candidate = `${prefix}_${base}_${suffix}`;
+      suffix += 1;
+    }
+    used.add(candidate);
+    mapping.set(value, candidate);
+  }
+
+  return mapping;
+}
+
+function getCompositeForwardedParamKeys(def: CompositeDef) {
+  const keys: string[] = [];
+  const seen = new Set<string>();
+
+  for (const binding of def.forwardedParams ?? []) {
+    if (seen.has(binding.externalParam)) {
+      continue;
+    }
+    seen.add(binding.externalParam);
+    keys.push(binding.externalParam);
+  }
+
+  return keys;
+}
+
+function applyForwardedCompositeParamsForExport(
+  def: CompositeDef,
+  params: Record<string, unknown>,
+): Project {
+  if (!def.forwardedParams?.length) {
+    return def.project;
+  }
+
+  const forwardedByModuleId = new Map<string, Record<string, unknown>>();
+  for (const binding of def.forwardedParams) {
+    const value = params[binding.externalParam];
+    if (value === undefined) {
+      continue;
+    }
+
+    forwardedByModuleId.set(binding.internalModuleId, {
+      ...(forwardedByModuleId.get(binding.internalModuleId) ?? {}),
+      [binding.internalParamKey]: value,
+    });
+  }
+
+  if (forwardedByModuleId.size === 0) {
+    return def.project;
+  }
+
+  return {
+    modules: def.project.modules.map((moduleInstance) => ({
+      ...moduleInstance,
+      params: forwardedByModuleId.has(moduleInstance.id)
+        ? {
+            ...moduleInstance.params,
+            ...forwardedByModuleId.get(moduleInstance.id),
+          }
+        : moduleInstance.params,
+    })),
+    connections: def.project.connections,
+  };
+}
+
+function projectHasStatefulExportCandidate(
   project: Project,
   registry: ModuleRegistry,
-): PythonExportCompatibilityResult {
-  const issues: PythonExportCompatibilityIssue[] = [];
-  const hasStatefulSupportCandidate = project.modules.some((moduleInstance) => {
-    const def = registry[moduleInstance.defId];
-    return def && SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS.has(def.id);
-  });
-
+  compositeDepth = 0,
+): boolean {
   for (const moduleInstance of project.modules) {
     const def = registry[moduleInstance.defId];
     if (!def) {
+      continue;
+    }
+
+    if (isCompositeDefinition(def)) {
+      if (compositeDepth >= 1) {
+        continue;
+      }
+      const internalProject = applyForwardedCompositeParamsForExport(def, moduleInstance.params);
+      if (projectHasStatefulExportCandidate(internalProject, registry, compositeDepth + 1)) {
+        return true;
+      }
+      continue;
+    }
+
+    if (SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS.has(def.id)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function derivePythonExportTickCount(
+  project: Project,
+  registry: ModuleRegistry,
+  compositeDepth = 0,
+): number | null {
+  let minLength = deriveTickCount(project, registry);
+
+  for (const moduleInstance of project.modules) {
+    const def = registry[moduleInstance.defId];
+    if (!def || !isCompositeDefinition(def) || compositeDepth >= 1) {
+      continue;
+    }
+
+    const internalProject = applyForwardedCompositeParamsForExport(def, moduleInstance.params);
+    const internalTickCount = derivePythonExportTickCount(
+      internalProject,
+      registry,
+      compositeDepth + 1,
+    );
+    if (internalTickCount === null) {
+      continue;
+    }
+    if (minLength === null || internalTickCount < minLength) {
+      minLength = internalTickCount;
+    }
+  }
+
+  return minLength;
+}
+
+function collectPythonExportCompatibilityIssues(
+  project: Project,
+  registry: ModuleRegistry,
+  scopePrefix = '',
+  compositeDepth = 0,
+): PythonExportCompatibilityIssue[] {
+  const issues: PythonExportCompatibilityIssue[] = [];
+  const hasStatefulSupportCandidate = projectHasStatefulExportCandidate(
+    project,
+    registry,
+    compositeDepth,
+  );
+
+  for (const moduleInstance of project.modules) {
+    const scopedModuleId = scopePrefix ? `${scopePrefix}/${moduleInstance.id}` : moduleInstance.id;
+    const def = registry[moduleInstance.defId];
+    if (!def) {
       issues.push({
-        moduleId: moduleInstance.id,
+        moduleId: scopedModuleId,
         defId: moduleInstance.defId,
         reason: 'Unknown module definition.',
       });
@@ -1282,7 +1473,7 @@ export function getPythonExportCompatibility(
 
     if (moduleInstance.bypass) {
       issues.push({
-        moduleId: moduleInstance.id,
+        moduleId: scopedModuleId,
         defId: moduleInstance.defId,
         reason: 'Bypass behavior is not exportable in V1.',
       });
@@ -1290,17 +1481,29 @@ export function getPythonExportCompatibility(
     }
 
     if (isCompositeDefinition(def)) {
-      issues.push({
-        moduleId: moduleInstance.id,
-        defId: moduleInstance.defId,
-        reason: 'Composite definitions are not exportable in V1.',
-      });
+      if (compositeDepth >= 1) {
+        issues.push({
+          moduleId: scopedModuleId,
+          defId: moduleInstance.defId,
+          reason: 'Nested composite definitions are not exportable in V1.',
+        });
+        continue;
+      }
+      const internalProject = applyForwardedCompositeParamsForExport(def, moduleInstance.params);
+      issues.push(
+        ...collectPythonExportCompatibilityIssues(
+          internalProject,
+          registry,
+          scopedModuleId,
+          compositeDepth + 1,
+        ),
+      );
       continue;
     }
 
     if (isIteratorDefinition(def)) {
       issues.push({
-        moduleId: moduleInstance.id,
+        moduleId: scopedModuleId,
         defId: moduleInstance.defId,
         reason: 'Iterator definitions are not exportable in V1.',
       });
@@ -1309,7 +1512,7 @@ export function getPythonExportCompatibility(
 
     if (isStatefulModule(def) && !SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS.has(def.id)) {
       issues.push({
-        moduleId: moduleInstance.id,
+        moduleId: scopedModuleId,
         defId: moduleInstance.defId,
         reason: 'This stateful or ticked primitive is outside the Python export stateful supported subset.',
       });
@@ -1318,7 +1521,7 @@ export function getPythonExportCompatibility(
 
     if (!SUPPORTED_PYTHON_EXPORT_DEF_IDS.has(def.id)) {
       issues.push({
-        moduleId: moduleInstance.id,
+        moduleId: scopedModuleId,
         defId: moduleInstance.defId,
         reason: 'This primitive is outside the Python export V1 supported subset.',
       });
@@ -1332,7 +1535,7 @@ export function getPythonExportCompatibility(
       !SUPPORTED_STATEFUL_PYTHON_EXPORT_COMPANION_DEF_IDS.has(def.id)
     ) {
       issues.push({
-        moduleId: moduleInstance.id,
+        moduleId: scopedModuleId,
         defId: moduleInstance.defId,
         reason: 'This tick-sliceable primitive is outside the Python export stateful companion subset.',
       });
@@ -1345,7 +1548,7 @@ export function getPythonExportCompatibility(
           : '';
       if (!linkedRotorId) {
         issues.push({
-          moduleId: moduleInstance.id,
+          moduleId: scopedModuleId,
           defId: moduleInstance.defId,
           reason: 'RotorReverse requires a linked forward Rotor for Python export.',
         });
@@ -1355,7 +1558,7 @@ export function getPythonExportCompatibility(
       const linkedModule = project.modules.find((candidate) => candidate.id === linkedRotorId);
       if (!linkedModule || linkedModule.defId !== 'Rotor') {
         issues.push({
-          moduleId: moduleInstance.id,
+          moduleId: scopedModuleId,
           defId: moduleInstance.defId,
           reason: `RotorReverse linkedRotorId must reference an exported forward Rotor, not "${linkedRotorId}".`,
         });
@@ -1363,13 +1566,395 @@ export function getPythonExportCompatibility(
     }
   }
 
-  if (hasStatefulSupportCandidate && deriveTickCount(project, registry) === null) {
+  if (
+    compositeDepth === 0 &&
+    hasStatefulSupportCandidate &&
+    derivePythonExportTickCount(project, registry, compositeDepth) === null
+  ) {
     issues.push({
-      moduleId: 'project',
+      moduleId: scopePrefix || 'project',
       defId: 'TickLoop',
       reason: 'Stateful Python export requires at least one tick-sliceable source to derive tick count.',
     });
   }
+
+  return issues;
+}
+
+function collectCompositeExportDefinitions(
+  project: Project,
+  registry: ModuleRegistry,
+): CompositeExportDefinition[] {
+  const definitions = new Map<string, CompositeExportDefinition>();
+
+  for (const moduleInstance of project.modules) {
+    const def = registry[moduleInstance.defId];
+    if (!def || !isCompositeDefinition(def)) {
+      continue;
+    }
+
+    if (definitions.has(def.id)) {
+      continue;
+    }
+
+    const inputArgNames = buildPythonNameMap(
+      def.inputs.map((input) => input.name),
+      'input',
+    );
+    const forwardedArgNames = buildPythonNameMap(
+      getCompositeForwardedParamKeys(def),
+      'param',
+    );
+
+    definitions.set(def.id, {
+      def,
+      functionName: `composite_${sanitizeIdentifierPart(def.id)}`,
+      stateful: projectHasStatefulExportCandidate(def.project, registry, 1),
+      inputArgNames,
+      forwardedArgNames,
+    });
+  }
+
+  return Array.from(definitions.values()).sort((left, right) => left.def.id.localeCompare(right.def.id));
+}
+
+function buildCompositeInputExpressionOverrides(
+  compositeDefinition: CompositeExportDefinition,
+) {
+  const overrides = new Map<string, string>();
+
+  for (const binding of compositeDefinition.def.inputBindings) {
+    const argumentName = compositeDefinition.inputArgNames.get(binding.externalPort);
+    if (!argumentName) {
+      throw new Error(`Python export could not resolve composite input "${binding.externalPort}".`);
+    }
+    overrides.set(`${binding.internalModuleId}:${binding.internalPort}`, argumentName);
+  }
+
+  return overrides;
+}
+
+function buildCompositeParamExpressionOverrides(
+  compositeDefinition: CompositeExportDefinition,
+) {
+  const overrides = new Map<string, string>();
+
+  for (const binding of compositeDefinition.def.forwardedParams ?? []) {
+    const argumentName = compositeDefinition.forwardedArgNames.get(binding.externalParam);
+    if (!argumentName) {
+      throw new Error(`Python export could not resolve composite forwarded param "${binding.externalParam}".`);
+    }
+    overrides.set(`${binding.internalModuleId}:${binding.internalParamKey}`, argumentName);
+  }
+
+  return overrides;
+}
+
+function buildCompositeFunctionArgumentList(
+  compositeDefinition: CompositeExportDefinition,
+) {
+  const inputArgs = compositeDefinition.def.inputs.map(
+    (input) => compositeDefinition.inputArgNames.get(input.name) ?? sanitizeIdentifierPart(input.name),
+  );
+  const forwardedArgs = getCompositeForwardedParamKeys(compositeDefinition.def).map(
+    (paramKey) => compositeDefinition.forwardedArgNames.get(paramKey) ?? sanitizeIdentifierPart(paramKey),
+  );
+
+  return {
+    inputArgs,
+    forwardedArgs,
+    allArgs: [...inputArgs, ...forwardedArgs],
+  };
+}
+
+function buildCompositeCallArguments(
+  moduleInstance: ModuleInstance,
+  compositeDefinition: CompositeExportDefinition,
+  expressionContext: PythonExpressionContext,
+) {
+  const args: string[] = [];
+
+  for (const input of compositeDefinition.def.inputs) {
+    args.push(expressionContext.getInputExpression(moduleInstance.id, input.name));
+  }
+
+  for (const forwardedParamKey of getCompositeForwardedParamKeys(compositeDefinition.def)) {
+    args.push(
+      getDefaultParamExpression(moduleInstance, compositeDefinition.def, forwardedParamKey),
+    );
+  }
+
+  return args;
+}
+
+function buildCompositeOutputReturnLine(
+  compositeDefinition: CompositeExportDefinition,
+  variablesByModuleId: Map<string, string>,
+  indent: string,
+) {
+  const outputEntries = compositeDefinition.def.outputBindings.map((binding) => {
+    const variableName = variablesByModuleId.get(binding.internalModuleId);
+    if (!variableName) {
+      throw new Error(`Python export could not resolve composite output module "${binding.internalModuleId}".`);
+    }
+    return `${JSON.stringify(binding.externalPort)}: ${variableName}[${JSON.stringify(binding.internalPort)}]`;
+  });
+
+  return `${indent}return {${outputEntries.join(', ')}}`;
+}
+
+function buildCompositeHelperDefinitions(
+  compositeDefinitions: CompositeExportDefinition[],
+  registry: ModuleRegistry,
+) {
+  const helperBlocks: string[] = [];
+
+  for (const compositeDefinition of compositeDefinitions) {
+    const internalProject = compositeDefinition.def.project;
+    const order = buildTopologicalOrder(internalProject, registry);
+    const instancesById = getModuleInstanceMap(internalProject);
+    const variablesByModuleId = buildPythonVariableMap(internalProject);
+    const connectionsByTarget = getInputConnectionMap(internalProject);
+    const inputOverrides = buildCompositeInputExpressionOverrides(compositeDefinition);
+    const paramOverrides = buildCompositeParamExpressionOverrides(compositeDefinition);
+    const expressionContext = createPythonExpressionContext(
+      connectionsByTarget,
+      variablesByModuleId,
+      inputOverrides,
+      paramOverrides,
+    );
+    const args = buildCompositeFunctionArgumentList(compositeDefinition);
+
+    if (!compositeDefinition.stateful) {
+      const bodyLines: string[] = [
+        `def ${compositeDefinition.functionName}(${args.allArgs.join(', ')}):`,
+        `    # Composite helper: ${compositeDefinition.def.id}`,
+      ];
+
+      for (const moduleId of order) {
+        const moduleInstance = instancesById.get(moduleId);
+        if (!moduleInstance) {
+          throw new Error(`Python export could not resolve composite module "${moduleId}".`);
+        }
+        const def = registry[moduleInstance.defId];
+        if (!def || isCompositeDefinition(def) || isIteratorDefinition(def)) {
+          throw new Error(`Python export encountered unsupported composite definition "${moduleInstance.defId}".`);
+        }
+
+        if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id)) {
+          bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    ', 'Sink'));
+          bodyLines.push('    pass');
+          continue;
+        }
+
+        const variableName = variablesByModuleId.get(moduleId);
+        if (!variableName) {
+          throw new Error(`Python export could not resolve composite variable for "${moduleId}".`);
+        }
+
+        bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        bodyLines.push(
+          `    ${variableName} = ${buildModuleExpression(moduleInstance, def, expressionContext)}`,
+        );
+      }
+
+      bodyLines.push(buildCompositeOutputReturnLine(compositeDefinition, variablesByModuleId, '    '));
+      helperBlocks.push(bodyLines.join('\n'));
+      continue;
+    }
+
+    const initLines: string[] = [
+      `def ${compositeDefinition.functionName}_init_state(${args.forwardedArgs.join(', ')}):`,
+      `    # Composite state init: ${compositeDefinition.def.id}`,
+      '    state = {}',
+    ];
+
+    for (const moduleInstance of internalProject.modules) {
+      const def = registry[moduleInstance.defId];
+      if (!def || isCompositeDefinition(def) || isIteratorDefinition(def)) {
+        continue;
+      }
+      const variableName = variablesByModuleId.get(moduleInstance.id);
+      if (!variableName) {
+        throw new Error(`Python export could not resolve composite state variable for "${moduleInstance.id}".`);
+      }
+
+      if (def.id === 'Counter') {
+        initLines.push(
+          buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+          `    state[${JSON.stringify(variableName)}] = counter_init(${expressionContext.getParamExpression(moduleInstance, def, 'width')}, ${expressionContext.getParamExpression(moduleInstance, def, 'value')}, ${expressionContext.getParamExpression(moduleInstance, def, 'step')})`,
+        );
+      } else if (def.id === 'LFSR') {
+        initLines.push(
+          buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+          `    state[${JSON.stringify(variableName)}] = lfsr_init(${expressionContext.getParamExpression(moduleInstance, def, 'seed')}, ${expressionContext.getParamExpression(moduleInstance, def, 'taps')}, ${expressionContext.getParamExpression(moduleInstance, def, 'outputLength')})`,
+        );
+      } else if (def.id === 'Rotor') {
+        initLines.push(
+          buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+          `    state[${JSON.stringify(variableName)}] = rotor_init(${expressionContext.getParamExpression(moduleInstance, def, 'wiring')}, ${expressionContext.getParamExpression(moduleInstance, def, 'position')}, ${expressionContext.getParamExpression(moduleInstance, def, 'ringOffset')}, ${expressionContext.getParamExpression(moduleInstance, def, 'notches')})`,
+        );
+      }
+    }
+
+    initLines.push('    return state');
+
+    const tickLines: string[] = [
+      `def ${compositeDefinition.functionName}_tick(state, tick${args.allArgs.length > 0 ? `, ${args.allArgs.join(', ')}` : ''}):`,
+      `    # Composite helper: ${compositeDefinition.def.id}`,
+    ];
+
+    for (const moduleId of order) {
+      const moduleInstance = instancesById.get(moduleId);
+      if (!moduleInstance) {
+        throw new Error(`Python export could not resolve composite module "${moduleId}".`);
+      }
+      const def = registry[moduleInstance.defId];
+      if (!def || isCompositeDefinition(def) || isIteratorDefinition(def)) {
+        throw new Error(`Python export encountered unsupported composite definition "${moduleInstance.defId}".`);
+      }
+
+      const variableName = variablesByModuleId.get(moduleId);
+      if (!variableName) {
+        throw new Error(`Python export could not resolve composite variable for "${moduleId}".`);
+      }
+
+      if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id)) {
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    ', 'Sink'));
+        tickLines.push(`    ${variableName} = {}`);
+        continue;
+      }
+
+      if (def.id === 'Clock') {
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        tickLines.push(
+          `    ${variableName} = clock_tick(${expressionContext.getParamExpression(moduleInstance, def, 'period')}, ${expressionContext.getParamExpression(moduleInstance, def, 'offset')}, ${expressionContext.getParamExpression(moduleInstance, def, 'length')}, tick)`,
+        );
+        continue;
+      }
+
+      if (def.id === 'Counter') {
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        tickLines.push(`    ${variableName} = counter_eval(state[${JSON.stringify(variableName)}])`);
+        continue;
+      }
+
+      if (def.id === 'LFSR') {
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        tickLines.push(`    ${variableName} = lfsr_eval(state[${JSON.stringify(variableName)}])`);
+        continue;
+      }
+
+      if (def.id === 'Rotor') {
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        tickLines.push(
+          `    ${variableName} = rotor_eval(${expressionContext.getInputExpression(moduleId, 'in')}, state[${JSON.stringify(variableName)}])`,
+        );
+        continue;
+      }
+
+      if (def.id === 'RotorReverse') {
+        const linkedRotorId =
+          typeof moduleInstance.params.linkedRotorId === 'string'
+            ? moduleInstance.params.linkedRotorId.trim()
+            : '';
+        const linkedVariableName = variablesByModuleId.get(linkedRotorId);
+        if (!linkedVariableName) {
+          throw new Error(`Python export could not resolve linked forward rotor "${linkedRotorId}" for "${moduleInstance.id}".`);
+        }
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        tickLines.push(
+          `    ${variableName} = rotor_reverse_eval(${expressionContext.getInputExpression(moduleId, 'in')}, state[${JSON.stringify(linkedVariableName)}])`,
+        );
+        continue;
+      }
+
+      if (def.id === 'Reflector') {
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        tickLines.push(
+          `    ${variableName} = {"out": reflector_traverse(${expressionContext.getInputExpression(moduleId, 'in')}, _parse_reflector_wiring(${expressionContext.getParamExpression(moduleInstance, def, 'wiring')}))}`,
+        );
+        continue;
+      }
+
+      if (def.id === 'BitSource') {
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        tickLines.push(
+          `    ${variableName} = bit_source_tick(${expressionContext.getParamExpression(moduleInstance, def, 'stream')}, tick)`,
+        );
+        continue;
+      }
+
+      if (def.id === 'TextInput') {
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        tickLines.push(
+          `    ${variableName} = text_input_tick(${expressionContext.getParamExpression(moduleInstance, def, 'value')}, tick)`,
+        );
+        continue;
+      }
+
+      tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+      tickLines.push(
+        `    ${variableName} = ${buildModuleExpression(moduleInstance, def, expressionContext)}`,
+      );
+    }
+
+    for (const moduleInstance of internalProject.modules) {
+      const def = registry[moduleInstance.defId];
+      if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor')) {
+        continue;
+      }
+
+      const variableName = variablesByModuleId.get(moduleInstance.id);
+      if (!variableName) {
+        throw new Error(`Python export could not resolve composite state variable for "${moduleInstance.id}".`);
+      }
+
+      const stepFlagName = `step_${variableName}`;
+      const clockConnection = connectionsByTarget.get(`${moduleInstance.id}:clock`);
+      tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    ', 'Advance flag'));
+      if (!clockConnection) {
+        tickLines.push(`    ${stepFlagName} = True`);
+        continue;
+      }
+
+      tickLines.push(
+        `    ${stepFlagName} = _is_active_control_pulse(${expressionContext.getInputExpression(moduleInstance.id, 'clock')})`,
+      );
+    }
+
+    for (const moduleInstance of internalProject.modules) {
+      const def = registry[moduleInstance.defId];
+      if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor')) {
+        continue;
+      }
+
+      const variableName = variablesByModuleId.get(moduleInstance.id);
+      if (!variableName) {
+        throw new Error(`Python export could not resolve composite state variable for "${moduleInstance.id}".`);
+      }
+
+      const stepFlagName = `step_${variableName}`;
+      tickLines.push(
+        buildGeneratedModuleComment(moduleInstance, def, '    ', 'Advance'),
+        `    if ${stepFlagName}:`,
+        `        ${def.id === 'Counter' ? 'counter_advance' : def.id === 'LFSR' ? 'lfsr_advance' : 'rotor_advance'}(state[${JSON.stringify(variableName)}])`,
+      );
+    }
+
+    tickLines.push(buildCompositeOutputReturnLine(compositeDefinition, variablesByModuleId, '    '));
+    helperBlocks.push(initLines.join('\n'));
+    helperBlocks.push(tickLines.join('\n'));
+  }
+
+  return helperBlocks;
+}
+
+export function getPythonExportCompatibility(
+  project: Project,
+  registry: ModuleRegistry,
+): PythonExportCompatibilityResult {
+  const issues = collectPythonExportCompatibilityIssues(project, registry);
 
   return {
     ok: issues.length === 0,
@@ -1396,19 +1981,30 @@ export function generatePythonExport(project: Project, registry: ModuleRegistry)
     throw new Error(formatPythonExportCompatibilityIssues(compatibility.issues));
   }
 
-  const hasStatefulModules = project.modules.some((moduleInstance) => {
-    const def = registry[moduleInstance.defId];
-    return def && SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS.has(def.id);
-  });
+  const compositeDefinitions = collectCompositeExportDefinitions(project, registry);
+  const compositeDefinitionsById = new Map(
+    compositeDefinitions.map((definition) => [definition.def.id, definition]),
+  );
+  const helperBlocks = buildCompositeHelperDefinitions(compositeDefinitions, registry);
+  const hasStatefulModules = projectHasStatefulExportCandidate(project, registry);
 
   if (hasStatefulModules) {
-    return generateStatefulPythonExport(project, registry);
+    return generateStatefulPythonExport(
+      project,
+      registry,
+      compositeDefinitionsById,
+      helperBlocks,
+    );
   }
 
   const order = buildTopologicalOrder(project, registry);
   const instancesById = getModuleInstanceMap(project);
   const variablesByModuleId = buildPythonVariableMap(project);
   const connectionsByTarget = getInputConnectionMap(project);
+  const expressionContext = createPythonExpressionContext(
+    connectionsByTarget,
+    variablesByModuleId,
+  );
   const bodyLines: string[] = ['def run():', '    sink_outputs = []'];
 
   for (const moduleId of order) {
@@ -1418,13 +2014,13 @@ export function generatePythonExport(project: Project, registry: ModuleRegistry)
     }
 
     const def = registry[moduleInstance.defId];
-    if (!def || isCompositeDefinition(def) || isIteratorDefinition(def)) {
+    if (!def || isIteratorDefinition(def)) {
       throw new Error(`Python export encountered unsupported definition "${moduleInstance.defId}".`);
     }
 
     if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id)) {
       bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    ', 'Sink'));
-      bodyLines.push(buildSinkCaptureLine(moduleInstance, def, connectionsByTarget, variablesByModuleId));
+      bodyLines.push(buildSinkCaptureLine(moduleInstance, def, expressionContext));
       continue;
     }
 
@@ -1433,19 +2029,43 @@ export function generatePythonExport(project: Project, registry: ModuleRegistry)
       throw new Error(`Python export could not resolve a variable for "${moduleId}".`);
     }
 
+    if (isCompositeDefinition(def)) {
+      const compositeDefinition = compositeDefinitionsById.get(def.id);
+      if (!compositeDefinition) {
+        throw new Error(`Python export could not resolve composite helper for "${def.id}".`);
+      }
+      const callArguments = buildCompositeCallArguments(
+        moduleInstance,
+        compositeDefinition,
+        expressionContext,
+      );
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+      bodyLines.push(
+        `    ${variableName} = ${compositeDefinition.functionName}(${callArguments.join(', ')})`,
+      );
+      continue;
+    }
+
     bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
     bodyLines.push(
-      `    ${variableName} = ${buildModuleExpression(moduleInstance, def, connectionsByTarget, variablesByModuleId)}`,
+      `    ${variableName} = ${buildModuleExpression(moduleInstance, def, expressionContext)}`,
     );
   }
 
   bodyLines.push('    return sink_outputs', '', 'def main():', '    for module_id, value in run():', '        print(f"{module_id}: {value}")', '', 'if __name__ == "__main__":', '    main()');
 
-  return `${PYTHON_RUNTIME}\n\n${bodyLines.join('\n')}\n`;
+  const helperPrefix = helperBlocks.length > 0 ? `${helperBlocks.join('\n\n')}\n\n` : '';
+
+  return `${PYTHON_RUNTIME}\n\n${helperPrefix}${bodyLines.join('\n')}\n`;
 }
 
-function generateStatefulPythonExport(project: Project, registry: ModuleRegistry) {
-  const tickCount = deriveTickCount(project, registry);
+function generateStatefulPythonExport(
+  project: Project,
+  registry: ModuleRegistry,
+  compositeDefinitionsById: Map<string, CompositeExportDefinition>,
+  helperBlocks: string[],
+) {
+  const tickCount = derivePythonExportTickCount(project, registry);
   if (tickCount === null) {
     throw new Error('Stateful Python export requires at least one tick-sliceable source.');
   }
@@ -1455,11 +2075,34 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
   const variablesByModuleId = buildPythonVariableMap(project);
   const connectionsByTarget = getInputConnectionMap(project);
   const clockConnectionsByModuleId = getClockConnectionMap(project, registry);
+  const expressionContext = createPythonExpressionContext(
+    connectionsByTarget,
+    variablesByModuleId,
+  );
   const bodyLines: string[] = ['def run_ticks():', `    tick_count = ${tickCount}`, '    sink_output_lines = []'];
 
   for (const moduleInstance of project.modules) {
     const def = registry[moduleInstance.defId];
-    if (!def || isCompositeDefinition(def) || isIteratorDefinition(def)) {
+    if (!def || isIteratorDefinition(def)) {
+      continue;
+    }
+
+    if (isCompositeDefinition(def)) {
+      const compositeDefinition = compositeDefinitionsById.get(def.id);
+      if (!compositeDefinition || !compositeDefinition.stateful) {
+        continue;
+      }
+      const variableName = variablesByModuleId.get(moduleInstance.id);
+      if (!variableName) {
+        throw new Error(`Python export could not resolve a variable for "${moduleInstance.id}".`);
+      }
+      const forwardedArgs = getCompositeForwardedParamKeys(def).map((paramKey) =>
+        getDefaultParamExpression(moduleInstance, def, paramKey),
+      );
+      bodyLines.push(
+        buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+        `    ${variableName}_state = ${compositeDefinition.functionName}_init_state(${forwardedArgs.join(', ')})`,
+      );
       continue;
     }
 
@@ -1509,12 +2152,12 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
     }
 
     const def = registry[moduleInstance.defId];
-    if (!def || isCompositeDefinition(def) || isIteratorDefinition(def)) {
+    if (!def || isIteratorDefinition(def)) {
       throw new Error(`Python export encountered unsupported definition "${moduleInstance.defId}".`);
     }
 
     if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id)) {
-      const inputExpression = getInputExpression(connectionsByTarget, variablesByModuleId, moduleInstance.id, 'in');
+      const inputExpression = expressionContext.getInputExpression(moduleInstance.id, 'in');
       bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        ', 'Sink'));
       if (SYMBOL_SINK_DEF_IDS.has(def.id)) {
         bodyLines.push(`        sink_output_lines.append(format_ticked_sink_line(tick, ${JSON.stringify(moduleInstance.id)}, format_symbol_sink(${inputExpression})))`);
@@ -1531,10 +2174,33 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
       throw new Error(`Python export could not resolve a variable for "${moduleId}".`);
     }
 
+    if (isCompositeDefinition(def)) {
+      const compositeDefinition = compositeDefinitionsById.get(def.id);
+      if (!compositeDefinition) {
+        throw new Error(`Python export could not resolve composite helper for "${def.id}".`);
+      }
+      const callArguments = buildCompositeCallArguments(
+        moduleInstance,
+        compositeDefinition,
+        expressionContext,
+      );
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
+      if (compositeDefinition.stateful) {
+        bodyLines.push(
+          `        ${variableName} = ${compositeDefinition.functionName}_tick(${variableName}_state, tick${callArguments.length > 0 ? `, ${callArguments.join(', ')}` : ''})`,
+        );
+      } else {
+        bodyLines.push(
+          `        ${variableName} = ${compositeDefinition.functionName}(${callArguments.join(', ')})`,
+        );
+      }
+      continue;
+    }
+
     if (def.id === 'Clock') {
       bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
       bodyLines.push(
-        `        ${variableName} = clock_tick(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'period'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'offset'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'length'))}, tick)`,
+        `        ${variableName} = clock_tick(${expressionContext.getParamExpression(moduleInstance, def, 'period')}, ${expressionContext.getParamExpression(moduleInstance, def, 'offset')}, ${expressionContext.getParamExpression(moduleInstance, def, 'length')}, tick)`,
       );
       continue;
     }
@@ -1554,7 +2220,7 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
     if (def.id === 'Rotor') {
       bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
       bodyLines.push(
-        `        ${variableName} = rotor_eval(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${variableName}_state)`,
+        `        ${variableName} = rotor_eval(${expressionContext.getInputExpression(moduleId, 'in')}, ${variableName}_state)`,
       );
       continue;
     }
@@ -1570,7 +2236,7 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
       }
       bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
       bodyLines.push(
-        `        ${variableName} = rotor_reverse_eval(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${linkedVariableName}_state)`,
+        `        ${variableName} = rotor_reverse_eval(${expressionContext.getInputExpression(moduleId, 'in')}, ${linkedVariableName}_state)`,
       );
       continue;
     }
@@ -1578,7 +2244,7 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
     if (def.id === 'Reflector') {
       bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
       bodyLines.push(
-        `        ${variableName} = {"out": reflector_traverse(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, _parse_reflector_wiring(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'wiring'))}))}`,
+        `        ${variableName} = {"out": reflector_traverse(${expressionContext.getInputExpression(moduleId, 'in')}, _parse_reflector_wiring(${expressionContext.getParamExpression(moduleInstance, def, 'wiring')}))}`,
       );
       continue;
     }
@@ -1586,7 +2252,7 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
     if (def.id === 'BitSource') {
       bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
       bodyLines.push(
-        `        ${variableName} = bit_source_tick(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'stream'))}, tick)`,
+        `        ${variableName} = bit_source_tick(${expressionContext.getParamExpression(moduleInstance, def, 'stream')}, tick)`,
       );
       continue;
     }
@@ -1594,14 +2260,14 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
     if (def.id === 'TextInput') {
       bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
       bodyLines.push(
-        `        ${variableName} = text_input_tick(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'value'))}, tick)`,
+        `        ${variableName} = text_input_tick(${expressionContext.getParamExpression(moduleInstance, def, 'value')}, tick)`,
       );
       continue;
     }
 
     bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
     bodyLines.push(
-      `        ${variableName} = ${buildModuleExpression(moduleInstance, def, connectionsByTarget, variablesByModuleId)}`,
+      `        ${variableName} = ${buildModuleExpression(moduleInstance, def, expressionContext)}`,
     );
   }
 
@@ -1655,5 +2321,7 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
 
   bodyLines.push('', '    return sink_output_lines', '', 'def main():', '    for line in run_ticks():', '        print(line)', '', 'if __name__ == "__main__":', '    main()');
 
-  return `${PYTHON_RUNTIME}\n\n${bodyLines.join('\n')}\n`;
+  const helperPrefix = helperBlocks.length > 0 ? `${helperBlocks.join('\n\n')}\n\n` : '';
+
+  return `${PYTHON_RUNTIME}\n\n${helperPrefix}${bodyLines.join('\n')}\n`;
 }

@@ -10,7 +10,9 @@ import { describe, expect, it } from 'vitest';
 import { deriveTickCount, executeProject, executeTickedProject } from '../executor';
 import { V1_REGISTRY } from '../modules';
 import { generatePythonExport, getPythonExportCompatibility } from './python';
+import type { CompositeDef } from '../composites';
 import type { ModuleRegistry, Project, Signal } from '../types';
+import { STARTER_COMPOSITE_LIBRARY } from '../../ui/starter-composites';
 
 function formatExpectedSinkValue(defId: string, signal: Signal) {
   if (defId === 'Output' || defId === 'TextOutput' || defId === 'BaudotOutput') {
@@ -88,6 +90,112 @@ const pythonAvailability = spawnSync('python3', ['--version'], { encoding: 'utf8
 const hasPython3 = pythonAvailability.status === 0;
 const parityDescribe = hasPython3 ? describe : describe.skip;
 
+const symbolRoundTripComposite = STARTER_COMPOSITE_LIBRARY.find(
+  (entry) => entry.id === 'SymbolRoundTripComposite',
+)?.definition;
+
+if (!symbolRoundTripComposite || symbolRoundTripComposite.kind !== 'composite') {
+  throw new Error('Expected SymbolRoundTripComposite to exist in the starter composite library.');
+}
+
+const forwardedShiftComposite: CompositeDef = {
+  id: 'ForwardedShiftComposite',
+  name: 'Forwarded Shift Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [
+    { name: 'in', type: 'bits' },
+    { name: 'mask', type: 'bits' },
+  ],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {
+    rotateMode: {
+      key: 'rotateMode',
+      label: 'Rotate Mode',
+      kind: 'select',
+      defaultValue: 'rotate-left',
+      options: [
+        { label: 'Rotate Left', value: 'rotate-left' },
+        { label: 'Rotate Right', value: 'rotate-right' },
+      ],
+    },
+  },
+  project: {
+    modules: [
+      { id: 'shift-1', defId: 'BitShifter', params: { amount: 1, mode: 'rotate-left' } },
+      { id: 'mix-1', defId: 'XOR', params: {} },
+    ],
+    connections: [
+      { from: { moduleId: 'shift-1', port: 'out' }, to: { moduleId: 'mix-1', port: 'a' } },
+    ],
+  },
+  inputBindings: [
+    { externalPort: 'in', internalModuleId: 'shift-1', internalPort: 'in' },
+    { externalPort: 'mask', internalModuleId: 'mix-1', internalPort: 'b' },
+  ],
+  outputBindings: [
+    { externalPort: 'out', internalModuleId: 'mix-1', internalPort: 'out' },
+  ],
+  forwardedParams: [
+    { externalParam: 'rotateMode', internalModuleId: 'shift-1', internalParamKey: 'mode' },
+  ],
+};
+
+const clockedRotorComposite: CompositeDef = {
+  id: 'ClockedRotorComposite',
+  name: 'Clocked Rotor Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [
+    { name: 'in', type: 'symbol' },
+    { name: 'clock', type: 'bits' },
+  ],
+  outputs: [
+    { name: 'out', type: 'symbol' },
+    { name: 'turnover', type: 'bits' },
+  ],
+  paramSchema: {},
+  project: {
+    modules: [
+      {
+        id: 'rotor-1',
+        defId: 'Rotor',
+        params: {
+          wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''),
+          position: 0,
+          ringOffset: 0,
+          notches: 'Q',
+        },
+      },
+    ],
+    connections: [],
+  },
+  inputBindings: [
+    { externalPort: 'in', internalModuleId: 'rotor-1', internalPort: 'in' },
+    { externalPort: 'clock', internalModuleId: 'rotor-1', internalPort: 'clock' },
+  ],
+  outputBindings: [
+    { externalPort: 'out', internalModuleId: 'rotor-1', internalPort: 'out' },
+    { externalPort: 'turnover', internalModuleId: 'rotor-1', internalPort: 'turnover' },
+  ],
+};
+
+const nestedComposite: CompositeDef = {
+  id: 'NestedComposite',
+  name: 'Nested Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [{ name: 'in', type: 'symbol' }],
+  outputs: [{ name: 'out', type: 'symbol' }],
+  paramSchema: {},
+  project: {
+    modules: [{ id: 'inner', defId: 'SymbolRoundTripComposite', params: {} }],
+    connections: [],
+  },
+  inputBindings: [{ externalPort: 'in', internalModuleId: 'inner', internalPort: 'in' }],
+  outputBindings: [{ externalPort: 'out', internalModuleId: 'inner', internalPort: 'out' }],
+};
+
 describe('getPythonExportCompatibility', () => {
   it('rejects invalid linked reverse rotors and bypassed modules', () => {
     const incompatibleProject: Project = {
@@ -137,9 +245,44 @@ describe('getPythonExportCompatibility', () => {
       reason: 'RotorReverse requires a linked forward Rotor for Python export.',
     });
   });
+
+  it('rejects nested composite export in v1', () => {
+    const compositeRegistry: ModuleRegistry = {
+      ...V1_REGISTRY,
+      SymbolRoundTripComposite: symbolRoundTripComposite,
+      NestedComposite: nestedComposite,
+    };
+    const incompatibleProject: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'A' } },
+        { id: 'nested-1', defId: 'NestedComposite', params: {} },
+        { id: 'out-1', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'nested-1', port: 'in' } },
+        { from: { moduleId: 'nested-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const compatibility = getPythonExportCompatibility(incompatibleProject, compositeRegistry);
+
+    expect(compatibility.ok).toBe(false);
+    expect(compatibility.issues).toContainEqual({
+      moduleId: 'nested-1/inner',
+      defId: 'SymbolRoundTripComposite',
+      reason: 'Nested composite definitions are not exportable in V1.',
+    });
+  });
 });
 
 parityDescribe('generatePythonExport', () => {
+  const compositeRegistry: ModuleRegistry = {
+    ...V1_REGISTRY,
+    SymbolRoundTripComposite: symbolRoundTripComposite,
+    ForwardedShiftComposite: forwardedShiftComposite,
+    ClockedRotorComposite: clockedRotorComposite,
+  };
+
   it('matches executeProject for a bridge-heavy stateless workspace', () => {
     const project: Project = {
       modules: [
@@ -241,6 +384,80 @@ parityDescribe('generatePythonExport', () => {
 
     expect(execution.status).toBe(0);
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeProject for a shipped composite workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'A' } },
+        { id: 'roundtrip-1', defId: 'SymbolRoundTripComposite', params: {} },
+        { id: 'out-1', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'roundtrip-1', port: 'in' } },
+        { from: { moduleId: 'roundtrip-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('def composite_SymbolRoundTripComposite');
+    expect(pythonSource).toContain('# Composite helper: SymbolRoundTripComposite');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, compositeRegistry));
+  });
+
+  it('matches executeProject for a user-authored forwarded composite workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'bits-1', defId: 'BitSource', params: { stream: [1, 0, 1, 1] } },
+        { id: 'mask-1', defId: 'BitSource', params: { stream: [0, 1, 0, 0] } },
+        {
+          id: 'comp-1',
+          defId: 'ForwardedShiftComposite',
+          params: { rotateMode: 'rotate-right' },
+        },
+        { id: 'out-1', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'bits-1', port: 'out' }, to: { moduleId: 'comp-1', port: 'in' } },
+        { from: { moduleId: 'mask-1', port: 'out' }, to: { moduleId: 'comp-1', port: 'mask' } },
+        { from: { moduleId: 'comp-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('# Composite helper: ForwardedShiftComposite');
+    expect(pythonSource).toContain('param_rotateMode');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, compositeRegistry));
+  });
+
+  it('matches executeTickedProject for a temporal composite workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'AAAA' } },
+        { id: 'clock-1', defId: 'Clock', params: { period: 1, offset: 0, length: 4 } },
+        { id: 'comp-1', defId: 'ClockedRotorComposite', params: {} },
+        { id: 'out-1', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'comp-1', port: 'in' } },
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'comp-1', port: 'clock' } },
+        { from: { moduleId: 'comp-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('def composite_ClockedRotorComposite_init_state');
+    expect(pythonSource).toContain('def composite_ClockedRotorComposite_tick');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, compositeRegistry));
   });
 
   it('matches executeProject for a modular arithmetic workspace', () => {
