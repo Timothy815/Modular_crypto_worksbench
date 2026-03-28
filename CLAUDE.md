@@ -82,6 +82,7 @@ Read PYTHON-EXPORT-V1-COMPLETE.md before describing the current Python export le
 Read PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md before changing Python export from the current self-contained one-file artifact into a reusable runtime-library plus generated-workspace split.
 Read PYTHON-EXPORT-RUNTIME-LIBRARY-FOUNDATIONS-V1.md before implementing the first two-file runtime-library export slice, changing emitted artifact layout, or moving reusable helper/runtime code out of the generated workspace file.
 Read PYTHON-EXPORT-RUNTIME-SURFACE-V1.md before reshaping the public surface of `mcw_runtime.py`, changing workspace/runtime provenance headers, or tightening the intended stable API boundary of the two-file Python export.
+Read PYTHON-EXPORT-DELIVERY-UX-V1.md before changing how two-file Python exports are handed off to the user, bundling runtime/workspace artifacts together, or refining the delivery UX of the split runtime export.
 Read V2.1-NEXT-DOCKET.md before reordering the current near-future priorities across builder power, Python export expansion, UI refactoring, or multi-window workspace support.
 Read INSPECTOR-REFACTOR-V1.md before restructuring `parameter-inspector.tsx`, moving more inspector logic into helper modules, or beginning a larger inspector decomposition pass.
 Read WORKBENCH-REFACTOR-V1.md before restructuring `workbench-panel.tsx`, moving more workbench helper logic into extracted modules, or beginning a larger workbench decomposition pass.

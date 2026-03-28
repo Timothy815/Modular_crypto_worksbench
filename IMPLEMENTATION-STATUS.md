@@ -206,6 +206,10 @@ Current `main` now also includes:
   - shipped the first bounded runtime-surface/API-shaping follow-on for `mcw_runtime.py`
   - keeps machine coverage and artifact count unchanged while refining public surface and provenance
   - adds explicit runtime `__all__` surface and clearer generated workspace dependency/version headers
+- next Python export delivery/productization slice:
+  - `PYTHON-EXPORT-DELIVERY-UX-V1.md`
+  - activates the first bounded delivery-UX follow-on for the two-file Python export handoff
+  - keeps artifact contents unchanged while refining how the runtime and workspace are delivered together
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments
