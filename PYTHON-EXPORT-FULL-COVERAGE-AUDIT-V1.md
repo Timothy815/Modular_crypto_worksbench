@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Proposed
+Status: Implemented on `main`
 
 ---
 
@@ -61,6 +61,7 @@ What exactly still separates the shipped Python export line from the long-term g
 
 This slice must:
 - inspect the current shipped module/export surface against the actual MCW registry and structured definition forms
+- use `src/engine/modules/index.ts` as the definitive primitive-module baseline
 - classify every remaining unsupported case
 - distinguish between:
   - unsupported primitive/stateful families
@@ -68,12 +69,14 @@ This slice must:
   - explicit contract exclusions
   - implementation gaps
 - identify the smallest next completeness milestone after the audit
+- produce a ranked gap-priority list after the inventory is complete
 
 This slice must not:
 - add new runtime helpers
 - broaden compatibility
 - change generated Python
 - silently fold into implementation work
+- perform opportunistic implementation “while auditing”
 
 ---
 
@@ -86,6 +89,7 @@ The audit should produce one explicit recorded artifact that answers:
 4. Which structured forms are still unsupported?
 5. Which unsupported cases are intentional contract boundaries?
 6. Which unsupported cases are now the highest-value next implementation targets?
+7. Which cases appear implemented but still need stronger parity verification?
 
 The output should be specific enough to guide the next implementation slice without re-auditing from scratch.
 
@@ -98,6 +102,7 @@ Every unsupported case should be classified into one of these categories:
 - `missing-runtime-support`
 - `missing-structured-support`
 - `shared-state-or-recursive-semantics`
+- `needs-verification-only`
 - `future-productization`
 
 The audit should not collapse all remaining gaps into one vague “not yet supported” bucket.
@@ -109,6 +114,7 @@ The audit should not collapse all remaining gaps into one vague “not yet suppo
 The audit should examine at least:
 - remaining unsupported primitive/stateful module definitions in the registry
 - remaining unsupported shipped composite and iterator shapes
+- supported cases that may still lack strong parity coverage
 - any remaining rotor-family/control-bank gaps
 - broader structured recursion gaps
 - the relationship between current one-file export and the future runtime-library split
@@ -130,4 +136,5 @@ This slice must not:
 This slice is successful when:
 - Python export has one explicit coverage map grounded in the current codebase
 - the remaining gaps are classified clearly
+- the gap-priority order is explicit
 - the next implementation milestone after the audit is obvious instead of speculative

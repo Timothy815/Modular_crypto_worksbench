@@ -135,8 +135,14 @@ Current `main` now also includes:
   - aligns the code-level compatibility walk with the documented structured export boundary
 - next Python export milestone:
   - `PYTHON-EXPORT-FULL-COVERAGE-AUDIT-V1.md`
-  - record one explicit coverage map for what MCW can already export versus what remains unsupported
-  - classify the remaining export gaps before choosing the next completeness implementation slice
+  - now shipped as documentation-only audit work
+  - records one explicit coverage map for what MCW can already export versus what remains unsupported
+  - classifies the remaining export gaps before choosing the next completeness implementation slice
+- Python export coverage map:
+  - `PYTHON-EXPORT-COVERAGE-MAP-V1.md`
+  - uses `src/engine/modules/index.ts` as the primitive baseline
+  - identifies remaining primitive gaps as `BaudotSource`, `ModExp`, `ModInverse`, and `Plugboard`
+  - identifies recursive structured export as the primary remaining structural frontier
 - future Python export architecture note:
   - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
   - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file

@@ -235,6 +235,16 @@ The next Python export milestone is now explicitly recorded as:
 - audit the remaining gap between what MCW can execute and what Python export can emit
 - classify unsupported cases by real blocker type before choosing the next completeness slice
 
+That audit is now also shipped:
+- `PYTHON-EXPORT-COVERAGE-MAP-V1.md`
+- the primitive registry baseline is now mapped explicitly against current Python export support
+- the remaining primitive gaps are now identified as:
+  - `BaudotSource`
+  - `ModExp`
+  - `ModInverse`
+  - `Plugboard`
+- the remaining structured gaps are now identified primarily as recursive/nested structured export rather than broad primitive deficiency
+
 The future Python export architecture note after that is now explicitly recorded as:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
 - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file
