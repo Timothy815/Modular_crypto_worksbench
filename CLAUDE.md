@@ -71,6 +71,7 @@ Read PYTHON-EXPORT-ROTOR-CONTROL-V1.md before extending Python export toward tur
 Read PYTHON-EXPORT-COMPOSITE-FOUNDATIONS-V1.md before extending Python export into first-class composite helpers, structured-machine export, or broader export support that preserves authored submachine boundaries rather than flattening them away.
 Read PYTHON-EXPORT-ITERATOR-FOUNDATIONS-V1.md before extending Python export into first-class iterator helpers, bounded repeated-round machine export, or broader structured export that preserves iterator round boundaries and key-bus slicing behavior.
 Read PYTHON-EXPORT-STRUCTURED-COMPATIBILITY-V1.md before loosening the current structured export boundary, allowing iterator-containing composites, or changing Python export compatibility behavior for nested/recursive structured cases.
+Read PYTHON-EXPORT-FULL-COVERAGE-AUDIT-V1.md before claiming near-complete Python export coverage, choosing the next export-completeness milestone, or broadening the export line without an explicit gap audit.
 Read PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md before changing Python export from the current self-contained one-file artifact into a reusable runtime-library plus generated-workspace split.
 Read V2.1-NEXT-DOCKET.md before reordering the current near-future priorities across builder power, Python export expansion, UI refactoring, or multi-window workspace support.
 Read INSPECTOR-REFACTOR-V1.md before restructuring `parameter-inspector.tsx`, moving more inspector logic into helper modules, or beginning a larger inspector decomposition pass.

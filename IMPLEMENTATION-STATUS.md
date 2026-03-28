@@ -133,6 +133,10 @@ Current `main` now also includes:
   - `PYTHON-EXPORT-STRUCTURED-COMPATIBILITY-V1.md`
   - shipped explicit compatibility rejection for iterator-containing composites and remaining unsupported structured recursion
   - aligns the code-level compatibility walk with the documented structured export boundary
+- next Python export milestone:
+  - `PYTHON-EXPORT-FULL-COVERAGE-AUDIT-V1.md`
+  - record one explicit coverage map for what MCW can already export versus what remains unsupported
+  - classify the remaining export gaps before choosing the next completeness implementation slice
 - future Python export architecture note:
   - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
   - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file
