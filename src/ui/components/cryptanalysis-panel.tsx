@@ -20,7 +20,7 @@ import { runDemoProject } from '../demo-projects';
 import type { GuidedTutorial, TutorialStep } from '../tutorials';
 import { validateProject } from '../../engine/validation';
 import type { ExecutionResult, ModuleRegistry, Project } from '../../engine/types';
-import { cloneProject } from '../store';
+import { cloneProject } from '../project-clone';
 import type { WorkspaceMode } from '../workspace-mode';
 
 interface CryptanalysisPanelProps {

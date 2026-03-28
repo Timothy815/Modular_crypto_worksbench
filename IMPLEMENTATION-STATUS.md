@@ -120,6 +120,11 @@ Current `main` now also includes the first App-shell maintenance slice:
 - extracted the main tutorial/challenge rendering surface into `src/ui/components/learning-dock.tsx`
 - extracted challenge-capture draft defaults into `src/ui/challenge-capture.ts`
 
+Current `main` now also includes the first reducer-maintenance slice:
+- `STORE-REFACTOR-V1.md`
+- extracted pure workspace history/versioning helpers into `src/ui/workspace-state-support.ts`
+- reduced inline snapshot/versioning responsibility inside `src/ui/store.ts`
+
 The next recommended builder-power follow-on is now shipped:
 - `CLUSTER-BOUNDARY-PORT-AUTHORING-V1.md`
 - explicit include/exclude control over inferred composite boundary ports during capture

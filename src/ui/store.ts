@@ -25,6 +25,19 @@ import {
   getModuleInstanceIdValidationError,
   normalizeModuleInstanceIdCandidate,
 } from './module-instance-id';
+import { cloneProject } from './project-clone';
+import {
+  applyRedoWorkspaceHistory,
+  applyRestoreWorkspaceVersion,
+  applySaveWorkspaceVersion,
+  applyUndoWorkspaceHistory,
+  buildWorkspaceHistorySnapshot,
+  cloneAnnotations,
+  cloneLayout,
+  createEmptyWorkspaceHistoryState,
+  recordWorkspaceHistoryTransition,
+  type WorkspaceHistoryState,
+} from './workspace-state-support';
 import { duplicateWorkspaceSelection } from './workspace-clipboard';
 
 export interface UiState {
@@ -61,22 +74,6 @@ export interface UiState {
   paramDrafts: Record<string, string>;
   showPalette: boolean;
   showInspector: boolean;
-}
-
-export interface WorkspaceHistorySnapshot {
-  project: Project;
-  layout: Record<string, { x: number; y: number }>;
-  annotations: WorkbenchAnnotation[];
-  selectedModuleIds: string[];
-  probedModuleIds: string[];
-  paramDrafts: Record<string, string>;
-  currentTick: number;
-  isTickPlaybackActive: boolean;
-}
-
-export interface WorkspaceHistoryState {
-  past: WorkspaceHistorySnapshot[];
-  future: WorkspaceHistorySnapshot[];
 }
 
 export interface CompositeEditorState {
@@ -204,23 +201,6 @@ export type UiAction =
   | { type: 'redoWorkspaceHistory'; projectId: string }
   | { type: 'saveWorkspaceVersion'; projectId: string; versionId: string; name: string; savedAt: string }
   | { type: 'restoreWorkspaceVersion'; projectId: string; versionId: string };
-
-export function cloneProject(project: Project): Project {
-  return {
-    modules: project.modules.map((moduleInstance) => ({
-      ...moduleInstance,
-      params: { ...moduleInstance.params },
-    })),
-    connections: project.connections.map((connection) => ({
-      from: { ...connection.from },
-      to: { ...connection.to },
-    })),
-  };
-}
-
-function cloneAnnotations(annotations: WorkbenchAnnotation[]): WorkbenchAnnotation[] {
-  return annotations.map((annotation) => ({ ...annotation }));
-}
 
 function getDraftKey(projectId: string, moduleId: string, key: string): string {
   return `${projectId}:${moduleId}:${key}`;
@@ -363,26 +343,6 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'restoreWorkspaceVersion',
 ]);
 
-function createEmptyWorkspaceHistoryState(): WorkspaceHistoryState {
-  return {
-    past: [],
-    future: [],
-  };
-}
-
-function cloneWorkspaceHistorySnapshot(snapshot: WorkspaceHistorySnapshot): WorkspaceHistorySnapshot {
-  return {
-    project: cloneProject(snapshot.project),
-    layout: cloneLayout(snapshot.layout),
-    annotations: cloneAnnotations(snapshot.annotations),
-    selectedModuleIds: [...snapshot.selectedModuleIds],
-    probedModuleIds: [...snapshot.probedModuleIds],
-    paramDrafts: { ...snapshot.paramDrafts },
-    currentTick: snapshot.currentTick,
-    isTickPlaybackActive: snapshot.isTickPlaybackActive,
-  };
-}
-
 const STAGE_ROW_GAP = 244;
 const STAGE_COLUMN_GAP = 148;
 
@@ -458,104 +418,6 @@ function arrangeSelectedLayoutPositions(
   }
 
   return nextLayout;
-}
-
-function buildWorkspaceHistorySnapshot(state: UiState, projectId: string): WorkspaceHistorySnapshot | null {
-  const project = state.projectStates[projectId];
-  const layout = state.layoutByProject[projectId];
-  if (!project || !layout) {
-    return null;
-  }
-
-  return {
-    project: cloneProject(project),
-    layout: cloneLayout(layout),
-    annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
-    selectedModuleIds: [...(state.selectedModuleIdsByProject[projectId] ?? [])],
-    probedModuleIds: [...(state.probedModuleIdsByProject[projectId] ?? [])],
-    paramDrafts: Object.fromEntries(
-      Object.entries(state.paramDrafts)
-        .filter(([key]) => key.startsWith(`${projectId}:`))
-        .map(([key, value]) => [key, value]),
-    ),
-    currentTick: state.currentTickByProject[projectId] ?? 0,
-    isTickPlaybackActive: state.isTickPlaybackActiveByProject[projectId] ?? false,
-  };
-}
-
-function applyWorkspaceHistorySnapshot(
-  state: UiState,
-  projectId: string,
-  snapshot: WorkspaceHistorySnapshot,
-): UiState {
-  return {
-    ...state,
-    projectStates: {
-      ...state.projectStates,
-      [projectId]: cloneProject(snapshot.project),
-    },
-    layoutByProject: {
-      ...state.layoutByProject,
-      [projectId]: cloneLayout(snapshot.layout),
-    },
-    annotationsByProject: {
-      ...state.annotationsByProject,
-      [projectId]: cloneAnnotations(snapshot.annotations),
-    },
-    selectedModuleIdByProject: {
-      ...state.selectedModuleIdByProject,
-      [projectId]: snapshot.selectedModuleIds[0] ?? null,
-    },
-    selectedModuleIdsByProject: {
-      ...state.selectedModuleIdsByProject,
-      [projectId]: [...snapshot.selectedModuleIds],
-    },
-    probedModuleIdsByProject: {
-      ...state.probedModuleIdsByProject,
-      [projectId]: [...snapshot.probedModuleIds],
-    },
-    currentTickByProject: {
-      ...state.currentTickByProject,
-      [projectId]: snapshot.currentTick,
-    },
-    isTickPlaybackActiveByProject: {
-      ...state.isTickPlaybackActiveByProject,
-      [projectId]: snapshot.isTickPlaybackActive,
-    },
-    paramDrafts: {
-      ...Object.fromEntries(
-        Object.entries(state.paramDrafts).filter(([key]) => !key.startsWith(`${projectId}:`)),
-      ),
-      ...snapshot.paramDrafts,
-    },
-  };
-}
-
-function buildWorkspaceVersionDocument(
-  state: UiState,
-  projectId: string,
-  details: { versionId: string; name: string; savedAt: string },
-): WorkspaceVersionDocument | null {
-  const project = state.projectStates[projectId];
-  const layout = state.layoutByProject[projectId];
-  if (!project || !layout) {
-    return null;
-  }
-
-  return {
-    id: details.versionId,
-    name: details.name,
-    savedAt: details.savedAt,
-    tickedMode: state.tickedModeByProject[projectId] ?? false,
-    document: {
-      version: 1,
-      project: cloneProject(project),
-      ui: {
-        layout: cloneLayout(layout),
-        annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
-      },
-    },
-  };
 }
 
 function getHistoryProjectId(action: UiAction): string | null {
@@ -2337,139 +2199,28 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           state.compositeEditor?.entryId === action.compositeId ? null : state.compositeEditor,
       };
     case 'undoWorkspaceHistory': {
-      const history = state.workspaceHistoryByProject[action.projectId];
-      const previousSnapshot = history?.past.at(-1);
-      const currentSnapshot = buildWorkspaceHistorySnapshot(state, action.projectId);
-      if (!history || !previousSnapshot || !currentSnapshot) {
-        return state;
-      }
-
-      const restoredState = applyWorkspaceHistorySnapshot(
+      return applyUndoWorkspaceHistory(
         state,
         action.projectId,
-        previousSnapshot,
+        WORKSPACE_HISTORY_LIMIT,
       );
-
-      return {
-        ...restoredState,
-        workspaceHistoryByProject: {
-          ...restoredState.workspaceHistoryByProject,
-          [action.projectId]: {
-            past: history.past.slice(0, -1).map(cloneWorkspaceHistorySnapshot),
-            future: [cloneWorkspaceHistorySnapshot(currentSnapshot), ...history.future.map(cloneWorkspaceHistorySnapshot)],
-          },
-        },
-      };
     }
     case 'redoWorkspaceHistory': {
-      const history = state.workspaceHistoryByProject[action.projectId];
-      const nextSnapshot = history?.future[0];
-      const currentSnapshot = buildWorkspaceHistorySnapshot(state, action.projectId);
-      if (!history || !nextSnapshot || !currentSnapshot) {
-        return state;
-      }
-
-      const restoredState = applyWorkspaceHistorySnapshot(
+      return applyRedoWorkspaceHistory(
         state,
         action.projectId,
-        nextSnapshot,
+        WORKSPACE_HISTORY_LIMIT,
       );
-
-      return {
-        ...restoredState,
-        workspaceHistoryByProject: {
-          ...restoredState.workspaceHistoryByProject,
-          [action.projectId]: {
-            past: [...history.past.map(cloneWorkspaceHistorySnapshot), cloneWorkspaceHistorySnapshot(currentSnapshot)].slice(-WORKSPACE_HISTORY_LIMIT),
-            future: history.future.slice(1).map(cloneWorkspaceHistorySnapshot),
-          },
-        },
-      };
     }
     case 'saveWorkspaceVersion': {
-      const nextVersion = buildWorkspaceVersionDocument(state, action.projectId, {
+      return applySaveWorkspaceVersion(state, action.projectId, {
         versionId: action.versionId,
         name: action.name,
         savedAt: action.savedAt,
       });
-      if (!nextVersion) {
-        return state;
-      }
-
-      return {
-        ...state,
-        workspaceVersionsByProject: {
-          ...state.workspaceVersionsByProject,
-          [action.projectId]: [
-            ...(state.workspaceVersionsByProject[action.projectId] ?? []).filter(
-              (version) => version.id !== action.versionId,
-            ),
-            nextVersion,
-          ],
-        },
-      };
     }
-    case 'restoreWorkspaceVersion': {
-      const version = (state.workspaceVersionsByProject[action.projectId] ?? []).find(
-        (candidate) => candidate.id === action.versionId,
-      );
-      if (!version) {
-        return state;
-      }
-
-      const nextDrafts = Object.fromEntries(
-        Object.entries(state.paramDrafts).filter(
-          ([key]) => !key.startsWith(`${action.projectId}:`),
-        ),
-      );
-
-      return {
-        ...state,
-        projectStates: {
-          ...state.projectStates,
-          [action.projectId]: cloneProject(version.document.project),
-        },
-        layoutByProject: {
-          ...state.layoutByProject,
-          [action.projectId]: cloneLayout(version.document.ui.layout),
-        },
-        annotationsByProject: {
-          ...state.annotationsByProject,
-          [action.projectId]: cloneAnnotations(version.document.ui.annotations),
-        },
-        comparisonBaselinesByProject: {
-          ...state.comparisonBaselinesByProject,
-          [action.projectId]: null,
-        },
-        selectedModuleIdByProject: {
-          ...state.selectedModuleIdByProject,
-          [action.projectId]: version.document.project.modules[0]?.id ?? null,
-        },
-        selectedModuleIdsByProject: {
-          ...state.selectedModuleIdsByProject,
-          [action.projectId]: version.document.project.modules[0]?.id
-            ? [version.document.project.modules[0].id]
-            : [],
-        },
-        probedModuleIdsByProject: {
-          ...state.probedModuleIdsByProject,
-          [action.projectId]: [],
-        },
-        tickedModeByProject: {
-          ...state.tickedModeByProject,
-          [action.projectId]: version.tickedMode,
-        },
-        currentTickByProject: {
-          ...state.currentTickByProject,
-          [action.projectId]: 0,
-        },
-        isTickPlaybackActiveByProject: {
-          ...state.isTickPlaybackActiveByProject,
-          [action.projectId]: false,
-        },
-        paramDrafts: nextDrafts,
-      };
-    }
+    case 'restoreWorkspaceVersion':
+      return applyRestoreWorkspaceVersion(state, action.projectId, action.versionId);
     case 'togglePalette':
       return {
         ...state,
@@ -2502,18 +2253,12 @@ export function uiReducer(state: UiState, action: UiAction): UiState {
     return nextState;
   }
 
-  const nextHistory = nextState.workspaceHistoryByProject[projectId] ?? createEmptyWorkspaceHistoryState();
-
-  return {
-    ...nextState,
-    workspaceHistoryByProject: {
-      ...nextState.workspaceHistoryByProject,
-      [projectId]: {
-        past: [...nextHistory.past.map(cloneWorkspaceHistorySnapshot), cloneWorkspaceHistorySnapshot(beforeSnapshot)].slice(-WORKSPACE_HISTORY_LIMIT),
-        future: [],
-      },
-    },
-  };
+  return recordWorkspaceHistoryTransition(
+    nextState,
+    projectId,
+    beforeSnapshot,
+    WORKSPACE_HISTORY_LIMIT,
+  );
 }
 
 export function getSelectedModuleId(state: UiState, projectId: string, project: Project): string | null {
@@ -2656,14 +2401,6 @@ function applyModuleMultiSelection(
       [projectId]: nextSelection,
     },
   };
-}
-
-function cloneLayout(
-  layout: Record<string, CompositeLayoutPosition>,
-): Record<string, CompositeLayoutPosition> {
-  return Object.fromEntries(
-    Object.entries(layout).map(([moduleId, position]) => [moduleId, { ...position }]),
-  );
 }
 
 function removeProjectEntry<T>(

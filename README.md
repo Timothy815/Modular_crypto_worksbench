@@ -188,6 +188,11 @@ The next maintenance follow-on is now also shipped:
 - extracted the main tutorial/challenge surface into `src/ui/components/learning-dock.tsx`
 - extracted challenge-capture draft defaults into `src/ui/challenge-capture.ts`
 
+The next reducer-maintenance follow-on is now also shipped:
+- `STORE-REFACTOR-V1.md`
+- extracted pure workspace history/versioning helpers into `src/ui/workspace-state-support.ts`
+- reduced inline snapshot/version burden inside `src/ui/store.ts`
+
 The current ranked near-future order is:
 1. continue the `v2.1` builder-power line
 2. expand Python export carefully

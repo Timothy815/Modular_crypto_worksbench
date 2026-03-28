@@ -48,6 +48,7 @@ import {
   parseWorkbenchDocument,
   saveWorkspaceToStorage,
 } from './ui/persistence';
+import { cloneProject } from './ui/project-clone';
 import {
   DETACHED_PANEL_CHANNEL_NAME,
   DETACHED_PANEL_HOST_QUERY_KEY,
@@ -64,7 +65,6 @@ import {
   isDetachedPanelKind,
 } from './ui/multi-window';
 import {
-  cloneProject,
   createInitialUiState,
   getEffectiveRegistry,
   getDraftValue,
