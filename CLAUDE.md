@@ -91,6 +91,7 @@ Read CLUSTER-BOUNDARY-PORT-AUTHORING-V1.md before changing inferred composite bo
 Read MULTI-WINDOW-WORKSPACE-V1.md before extending the shipped detachable `Palette` / `Inspector` windows, broadening multi-tab workspace surfaces, or changing the host-authoritative synchronization model.
 Read MULTI-WINDOW-WORKSPACE-V2.md before extending the shipped detachable `Learning` window, splitting tutorials and challenges apart, or broadening the detached learning surface toward cryptanalysis or other panes.
 Read MULTI-WINDOW-TABBED-WINDOWS-V1.md before extending the shipped tabbed detached-window groupings, broadening the `Windows` control surface, or allowing detached combinations beyond `Palette`, `Inspector`, and `Learning`.
+Read MULTI-WINDOW-DETACHED-POLISH-V1.md before polishing detached tab-group labels/titles/commands, changing grouped-window naming, or refining detached-window transition ergonomics after the shipped tabbed-window slice.
 Read APP-SHELL-REFACTOR-V1.md before extracting more `App.tsx` panel-routing or challenge-capture logic, or beginning a larger App-shell decomposition pass.
 Read STORE-REFACTOR-V1.md before restructuring `src/ui/store.ts`, moving more workspace-history/versioning behavior into helper modules, or beginning a larger reducer decomposition pass.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.

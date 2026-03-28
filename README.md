@@ -352,6 +352,11 @@ The next bounded multi-window refinement is now also shipped:
 - tabs can return individually to the main window without disturbing the rest of the detached group
 - window-management actions now live on a clearer dedicated `Windows` surface instead of being mixed into the crowded workspace dropdown
 
+The next multi-window follow-on is now recorded:
+- `MULTI-WINDOW-DETACHED-POLISH-V1.md`
+- keeps the current tabbed detached-window model but improves labels, titles, command clarity, and transition ergonomics
+- stays strictly inside polish and product-surface refinement, not new pane families or layout persistence
+
 The next maintenance follow-on is now also shipped:
 - `APP-SHELL-REFACTOR-V1.md`
 - extracted the main tutorial/challenge surface into `src/ui/components/learning-dock.tsx`

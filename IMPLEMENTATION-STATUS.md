@@ -240,6 +240,11 @@ Current `main` now also includes the next bounded multi-window refinement slice:
 - allows tabs to return individually to the main window while preserving the rest of the detached group
 - moves detached-window actions onto a clearer dedicated `Windows` control surface
 
+Next multi-window follow-on is now recorded:
+- `MULTI-WINDOW-DETACHED-POLISH-V1.md`
+- refines the shipped detached tab-group experience without widening the supported pane set
+- focuses on labels, titles, command clarity, and better grouped-window ergonomics
+
 Current `main` now also includes the first App-shell maintenance slice:
 - `APP-SHELL-REFACTOR-V1.md`
 - extracted the main tutorial/challenge rendering surface into `src/ui/components/learning-dock.tsx`
