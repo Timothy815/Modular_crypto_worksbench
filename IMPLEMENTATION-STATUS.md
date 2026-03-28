@@ -201,6 +201,11 @@ Current `main` now also includes:
   - shipped the first bounded two-file runtime-library export contract
   - exported Python now emits `mcw_runtime.py` plus a separate generated workspace file
   - keeps parity and helper-based generation as the non-negotiable constraints
+- next Python export product-surface refinement slice:
+  - `PYTHON-EXPORT-RUNTIME-SURFACE-V1.md`
+  - shipped the first bounded runtime-surface/API-shaping follow-on for `mcw_runtime.py`
+  - keeps machine coverage and artifact count unchanged while refining public surface and provenance
+  - adds explicit runtime `__all__` surface and clearer generated workspace dependency/version headers
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments

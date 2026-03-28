@@ -321,6 +321,9 @@ The next Python export frontier is now productization:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-FOUNDATIONS-V1.md`
 - now ships the first bounded two-file runtime-library productization slice
 - exported Python now emits `mcw_runtime.py` plus a separate generated workspace file while preserving parity
+- `PYTHON-EXPORT-RUNTIME-SURFACE-V1.md`
+- now ships the next bounded product-surface refinement slice for `mcw_runtime.py` and generated workspace headers/import expectations
+- exported Python now declares a deliberate runtime public surface and clearer workspace provenance/runtime dependency headers
 
 The future Python export architecture note after that is now explicitly recorded as:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
