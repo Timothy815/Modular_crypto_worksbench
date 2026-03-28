@@ -156,6 +156,11 @@ Current `main` now also includes:
   - `PYTHON-EXPORT-MODEXP-V1.md`
   - now shipped as the next audit-ranked primitive/runtime gap
   - exported Python now supports bounded modular-exponentiation parity
+- next Python export implementation slice after that:
+  - `PYTHON-EXPORT-MODINVERSE-V1.md`
+  - now shipped as the final primitive/runtime gap in the current registry line
+  - exported Python now supports bounded modular-inverse parity
+  - the primitive registry line is now fully covered by Python export
 - future Python export architecture note:
   - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
   - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file

@@ -31,9 +31,9 @@ The definitive primitive-module baseline for this audit is:
 
 Primitive modules currently present in the registry: `59`
 
-Primitive modules currently export-compatible: `58`
+Primitive modules currently export-compatible: `59`
 
-Primitive modules currently unsupported: `1`
+Primitive modules currently unsupported: `0`
 
 ---
 
@@ -71,6 +71,7 @@ Current Python export supports these primitive modules:
   - `AddMod`
   - `SubMod`
   - `ModExp`
+  - `ModInverse`
   - `Modulo`
   - `MulMod`
   - `Majority`
@@ -106,12 +107,7 @@ Current Python export supports these primitive modules:
 
 ## Unsupported Primitive Modules
 
-These primitive modules are still not export-compatible:
-
-1. `ModInverse`
-- classification: `missing-runtime-support`
-- reason: no emitted Python helper or parity line yet
-- likely difficulty: low to medium
+There are currently no remaining unsupported primitive modules in [src/engine/modules/index.ts](/Users/timothykoerner/Desktop/modular_cryptography/src/engine/modules/index.ts).
 
 ---
 
@@ -226,15 +222,11 @@ It is a test-strengthening note.
 
 The highest-value remaining gaps are:
 
-1. `ModInverse`
-- why: closes the final remaining primitive/runtime gap in the current registry
-- category: `missing-runtime-support`
-
-2. nested/recursive structured export
+1. nested/recursive structured export
 - why: this is the largest remaining structural blocker between “strong export line” and “anything MCW can run should eventually export”
 - category: `shared-state-or-recursive-semantics`
 
-3. runtime-library split
+2. runtime-library split
 - why: productization and long-term code organization
 - category: `future-productization`
 
@@ -246,7 +238,7 @@ Based on the shipped codebase, the most likely next export frontier is:
 - finish the remaining unsupported primitive/runtime helpers first
 
 Recommended immediate implementation order:
-1. `ModInverse`
+1. broader recursive structured export analysis / bounded next slice selection
 
 After that, the next true frontier becomes:
 - broader recursive structured export

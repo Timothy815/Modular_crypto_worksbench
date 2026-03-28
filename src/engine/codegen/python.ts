@@ -47,6 +47,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'Equals',
   'AtLeast',
   'ModExp',
+  'ModInverse',
   'Mux',
   'Demux',
   'MultiRouter',
@@ -665,6 +666,41 @@ def mod_exp(base, exp, modulus):
             result = (result * factor) % modulus
         exponent = exponent // 2
         factor = (factor * factor) % modulus
+    return {"out": _unsigned_number_to_bits(result, width)}
+
+
+def _extended_gcd(a, b):
+    old_r = a
+    r = b
+    old_s = 1
+    s = 0
+    while r != 0:
+        q = old_r // r
+        temp_r = r
+        r = old_r - q * r
+        old_r = temp_r
+        temp_s = s
+        s = old_s - q * s
+        old_s = temp_s
+    return {"gcd": old_r, "x": old_s}
+
+
+def mod_inverse(signal, modulus):
+    bits = _expect_bits(signal, "ModInverse")
+    modulus = int(modulus)
+    if modulus < 2:
+        raise ValueError("ModInverse requires a modulus of at least 2")
+    width = len(bits)
+    if width == 0:
+        return {"out": []}
+    max_value = 2 ** width
+    if modulus > max_value:
+        raise ValueError("ModInverse modulus must not exceed the input word range")
+    value = _bits_to_unsigned_number(bits)
+    egcd = _extended_gcd(value, modulus)
+    if egcd["gcd"] != 1:
+        raise ValueError(f'ModInverse: {value} has no inverse mod {modulus} (GCD is {egcd["gcd"]})')
+    result = ((egcd["x"] % modulus) + modulus) % modulus
     return {"out": _unsigned_number_to_bits(result, width)}
 
 
@@ -1392,6 +1428,8 @@ function buildModuleExpression(
       return `sub_mod(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
     case 'ModExp':
       return `mod_exp(${expressionContext.getInputExpression(moduleId, 'base')}, ${expressionContext.getInputExpression(moduleId, 'exp')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
+    case 'ModInverse':
+      return `mod_inverse(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
     case 'Modulo':
       return `modulo_bits(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
     case 'MulMod':

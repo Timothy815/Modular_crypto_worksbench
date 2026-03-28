@@ -1053,6 +1053,28 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
   });
 
+  it('matches executeProject for a direct mod-inverse workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'bits-1', defId: 'BitSource', params: { stream: [0, 0, 1, 1] } },
+        { id: 'inv-1', defId: 'ModInverse', params: { modulus: 11 } },
+        { id: 'hex-1', defId: 'BitsToHex', params: {} },
+        { id: 'out-1', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'bits-1', port: 'out' }, to: { moduleId: 'inv-1', port: 'in' } },
+        { from: { moduleId: 'inv-1', port: 'out' }, to: { moduleId: 'hex-1', port: 'in' } },
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
   it('matches executeTickedProject for a clocked counter workspace', () => {
     const project: Project = {
       modules: [

@@ -272,6 +272,12 @@ That `ModExp` export slice is now also shipped:
 - the remaining primitive gap is now:
   - `ModInverse`
 
+That `ModInverse` export slice is now also shipped:
+- `PYTHON-EXPORT-MODINVERSE-V1.md`
+- exported Python now supports bounded modular-inverse parity
+- the primitive registry line is now fully covered by Python export
+- the next export frontier is now structural rather than primitive/runtime completion
+
 The future Python export architecture note after that is now explicitly recorded as:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
 - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file
