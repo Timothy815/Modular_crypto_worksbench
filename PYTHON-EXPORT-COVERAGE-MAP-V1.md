@@ -31,9 +31,9 @@ The definitive primitive-module baseline for this audit is:
 
 Primitive modules currently present in the registry: `59`
 
-Primitive modules currently export-compatible: `57`
+Primitive modules currently export-compatible: `58`
 
-Primitive modules currently unsupported: `2`
+Primitive modules currently unsupported: `1`
 
 ---
 
@@ -70,6 +70,7 @@ Current Python export supports these primitive modules:
   - `NOT`
   - `AddMod`
   - `SubMod`
+  - `ModExp`
   - `Modulo`
   - `MulMod`
   - `Majority`
@@ -107,12 +108,7 @@ Current Python export supports these primitive modules:
 
 These primitive modules are still not export-compatible:
 
-1. `ModExp`
-- classification: `missing-runtime-support`
-- reason: no emitted Python helper or parity line yet
-- likely difficulty: low to medium
-
-2. `ModInverse`
+1. `ModInverse`
 - classification: `missing-runtime-support`
 - reason: no emitted Python helper or parity line yet
 - likely difficulty: low to medium
@@ -230,8 +226,8 @@ It is a test-strengthening note.
 
 The highest-value remaining gaps are:
 
-1. `ModExp` and `ModInverse`
-- why: completes the remaining major number-theoretic primitive gap
+1. `ModInverse`
+- why: closes the final remaining primitive/runtime gap in the current registry
 - category: `missing-runtime-support`
 
 2. nested/recursive structured export
@@ -250,8 +246,7 @@ Based on the shipped codebase, the most likely next export frontier is:
 - finish the remaining unsupported primitive/runtime helpers first
 
 Recommended immediate implementation order:
-1. `ModExp`
-2. `ModInverse`
+1. `ModInverse`
 
 After that, the next true frontier becomes:
 - broader recursive structured export

@@ -266,6 +266,12 @@ That `BaudotSource` export slice is now also shipped:
   - `ModExp`
   - `ModInverse`
 
+That `ModExp` export slice is now also shipped:
+- `PYTHON-EXPORT-MODEXP-V1.md`
+- exported Python now supports bounded modular-exponentiation parity
+- the remaining primitive gap is now:
+  - `ModInverse`
+
 The future Python export architecture note after that is now explicitly recorded as:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
 - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file

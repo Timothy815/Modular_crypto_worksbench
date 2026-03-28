@@ -46,6 +46,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'Gate',
   'Equals',
   'AtLeast',
+  'ModExp',
   'Mux',
   'Demux',
   'MultiRouter',
@@ -637,6 +638,33 @@ def mul_mod(a, b):
         return {"out": []}
     modulus = 2 ** width
     result = (_bits_to_unsigned_number(left) * _bits_to_unsigned_number(right)) % modulus
+    return {"out": _unsigned_number_to_bits(result, width)}
+
+
+def mod_exp(base, exp, modulus):
+    base_bits = _expect_bits(base, "ModExp")
+    exp_bits = _expect_bits(exp, "ModExp")
+    modulus = int(modulus)
+    if modulus < 2:
+        raise ValueError("ModExp requires a modulus of at least 2")
+    width = len(base_bits)
+    if width == 0:
+        return {"out": []}
+    max_value = 2 ** width
+    if modulus > max_value:
+        raise ValueError("ModExp modulus must not exceed the base word range")
+    base_value = _bits_to_unsigned_number(base_bits)
+    exp_value = _bits_to_unsigned_number(exp_bits)
+    if modulus == 1:
+        return {"out": _unsigned_number_to_bits(0, width)}
+    result = 1
+    factor = base_value % modulus
+    exponent = exp_value
+    while exponent > 0:
+        if exponent % 2 == 1:
+            result = (result * factor) % modulus
+        exponent = exponent // 2
+        factor = (factor * factor) % modulus
     return {"out": _unsigned_number_to_bits(result, width)}
 
 
@@ -1362,6 +1390,8 @@ function buildModuleExpression(
       return `add_mod(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
     case 'SubMod':
       return `sub_mod(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
+    case 'ModExp':
+      return `mod_exp(${expressionContext.getInputExpression(moduleId, 'base')}, ${expressionContext.getInputExpression(moduleId, 'exp')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
     case 'Modulo':
       return `modulo_bits(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
     case 'MulMod':

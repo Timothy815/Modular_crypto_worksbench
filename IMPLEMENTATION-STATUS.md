@@ -152,6 +152,10 @@ Current `main` now also includes:
   - `PYTHON-EXPORT-BAUDOT-SOURCE-V1.md`
   - now shipped as the next audit-ranked primitive/runtime gap
   - exported Python now supports stateless and tick-sliced `BaudotSource` parity
+- next Python export implementation slice after that:
+  - `PYTHON-EXPORT-MODEXP-V1.md`
+  - now shipped as the next audit-ranked primitive/runtime gap
+  - exported Python now supports bounded modular-exponentiation parity
 - future Python export architecture note:
   - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
   - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file
