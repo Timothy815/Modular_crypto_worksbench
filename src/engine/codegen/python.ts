@@ -165,6 +165,12 @@ def _single_bit_control(active):
     return [1 if active else 0]
 
 
+def _require_positive_int(value, label, module_name):
+    if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+        raise ValueError(f"{module_name} expects {label} to be a positive integer")
+    return value
+
+
 def text_input(value):
     return {"out": str(value)}
 
@@ -1136,6 +1142,7 @@ interface CompositeCollectionContext {
 }
 
 interface IteratorExportDefinition {
+  lookupKey: string;
   moduleInstance: ModuleInstance;
   def: IteratorDef;
   roundDef: ModuleDefinition;
@@ -1143,6 +1150,8 @@ interface IteratorExportDefinition {
   resolvedIterationCount: number;
   stateful: boolean;
   inputArgNames: Map<string, string>;
+  ownerCompositeDefId?: string;
+  iterationCountArgName?: string;
 }
 
 function getModuleInstanceMap(project: Project) {
@@ -1668,6 +1677,7 @@ function collectPythonExportCompatibilityIssues(
   scopePrefix = '',
   compositeDepth = 0,
   compositeDefinitionPath: string[] = [],
+  allowIteratorsInCompositeBodies = compositeDepth === 0,
 ): PythonExportCompatibilityIssue[] {
   const issues: PythonExportCompatibilityIssue[] = [];
   const hasStatefulSupportCandidate = projectHasStatefulExportCandidate(
@@ -1715,13 +1725,14 @@ function collectPythonExportCompatibilityIssues(
           scopedModuleId,
           compositeDepth + 1,
           nextDefinitionPath,
+          allowIteratorsInCompositeBodies,
         ),
       );
       continue;
     }
 
     if (isIteratorDefinition(def)) {
-      if (compositeDepth > 0) {
+      if (compositeDepth > 0 && !allowIteratorsInCompositeBodies) {
         issues.push({
           moduleId: scopedModuleId,
           defId: moduleInstance.defId,
@@ -1771,6 +1782,7 @@ function collectPythonExportCompatibilityIssues(
             `${scopedModuleId}/round-def`,
             1,
             nextDefinitionPath,
+            false,
           ),
         );
         continue;
@@ -1889,8 +1901,19 @@ function collectCompositeExportDefinitions(
       const childCompositeIds = Array.from(
         new Set(
           def.project.modules
-            .map((moduleInstance) => registry[moduleInstance.defId])
-            .filter((candidate): candidate is CompositeDef => Boolean(candidate && isCompositeDefinition(candidate)))
+            .flatMap((moduleInstance) => {
+              const candidate = registry[moduleInstance.defId];
+              if (candidate && isCompositeDefinition(candidate)) {
+                return [candidate];
+              }
+              if (candidate && isIteratorDefinition(candidate)) {
+                const roundDef = registry[candidate.roundDefId];
+                if (roundDef && isCompositeDefinition(roundDef)) {
+                  return [roundDef];
+                }
+              }
+              return [];
+            })
             .map((candidate) => candidate.id),
         ),
       ).sort((left, right) => left.localeCompare(right));
@@ -2021,6 +2044,13 @@ function buildCompositeCallArguments(
   return args;
 }
 
+function buildIteratorLookupKey(
+  moduleInstanceId: string,
+  ownerCompositeDefId?: string,
+) {
+  return ownerCompositeDefId ? `${ownerCompositeDefId}:${moduleInstanceId}` : moduleInstanceId;
+}
+
 function buildCompositeOutputReturnLine(
   compositeDefinition: CompositeExportDefinition,
   variablesByModuleId: Map<string, string>,
@@ -2040,6 +2070,7 @@ function buildCompositeOutputReturnLine(
 function buildCompositeHelperDefinitions(
   compositeDefinitions: CompositeExportDefinition[],
   registry: ModuleRegistry,
+  iteratorDefinitionsByLookupKey: Map<string, IteratorExportDefinition>,
 ) {
   const helperBlocks: string[] = [];
   const compositeDefinitionsById = new Map(
@@ -2074,7 +2105,7 @@ function buildCompositeHelperDefinitions(
           throw new Error(`Python export could not resolve composite module "${moduleId}".`);
         }
         const def = registry[moduleInstance.defId];
-        if (!def || isIteratorDefinition(def)) {
+        if (!def) {
           throw new Error(`Python export encountered unsupported composite definition "${moduleInstance.defId}".`);
         }
 
@@ -2106,6 +2137,25 @@ function buildCompositeHelperDefinitions(
           continue;
         }
 
+        if (isIteratorDefinition(def)) {
+          const iteratorDefinition = iteratorDefinitionsByLookupKey.get(
+            buildIteratorLookupKey(moduleInstance.id, compositeDefinition.def.id),
+          );
+          if (!iteratorDefinition) {
+            throw new Error(`Python export could not resolve nested iterator helper for "${moduleInstance.id}".`);
+          }
+          const callArguments = buildIteratorCallArguments(
+            iteratorDefinition,
+            expressionContext,
+            moduleInstance,
+          );
+          bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+          bodyLines.push(
+            `    ${variableName} = ${iteratorDefinition.functionName}(${callArguments.join(', ')})`,
+          );
+          continue;
+        }
+
         bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
         bodyLines.push(
           `    ${variableName} = ${buildModuleExpression(moduleInstance, def, expressionContext)}`,
@@ -2125,7 +2175,7 @@ function buildCompositeHelperDefinitions(
 
     for (const moduleInstance of internalProject.modules) {
       const def = registry[moduleInstance.defId];
-      if (!def || isIteratorDefinition(def)) {
+      if (!def) {
         continue;
       }
       const variableName = variablesByModuleId.get(moduleInstance.id);
@@ -2142,6 +2192,21 @@ function buildCompositeHelperDefinitions(
           initLines.push(
             buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
             `    state[${JSON.stringify(variableName)}] = ${childDefinition.functionName}_init_state(${forwardedArgs.join(', ')})`,
+          );
+        }
+      } else if (isIteratorDefinition(def)) {
+        const iteratorDefinition = iteratorDefinitionsByLookupKey.get(
+          buildIteratorLookupKey(moduleInstance.id, compositeDefinition.def.id),
+        );
+        if (iteratorDefinition?.stateful) {
+          const initArgs = buildIteratorStateInitArguments(
+            iteratorDefinition,
+            expressionContext,
+            moduleInstance,
+          );
+          initLines.push(
+            buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+            `    state[${JSON.stringify(variableName)}] = ${iteratorDefinition.functionName}_init_state(${initArgs.join(', ')})`,
           );
         }
       } else if (def.id === 'Counter') {
@@ -2175,7 +2240,7 @@ function buildCompositeHelperDefinitions(
         throw new Error(`Python export could not resolve composite module "${moduleId}".`);
       }
       const def = registry[moduleInstance.defId];
-      if (!def || isIteratorDefinition(def)) {
+      if (!def) {
         throw new Error(`Python export encountered unsupported composite definition "${moduleInstance.defId}".`);
       }
 
@@ -2208,6 +2273,31 @@ function buildCompositeHelperDefinitions(
         } else {
           tickLines.push(
             `    ${variableName} = ${childDefinition.functionName}(${callArguments.join(', ')})`,
+          );
+        }
+        continue;
+      }
+
+      if (isIteratorDefinition(def)) {
+        const iteratorDefinition = iteratorDefinitionsByLookupKey.get(
+          buildIteratorLookupKey(moduleInstance.id, compositeDefinition.def.id),
+        );
+        if (!iteratorDefinition) {
+          throw new Error(`Python export could not resolve nested iterator helper for "${moduleInstance.id}".`);
+        }
+        const callArguments = buildIteratorCallArguments(
+          iteratorDefinition,
+          expressionContext,
+          moduleInstance,
+        );
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        if (iteratorDefinition.stateful) {
+          tickLines.push(
+            `    ${variableName} = ${iteratorDefinition.functionName}_tick(state[${JSON.stringify(variableName)}], tick${callArguments.length > 0 ? `, ${callArguments.join(', ')}` : ''})`,
+          );
+        } else {
+          tickLines.push(
+            `    ${variableName} = ${iteratorDefinition.functionName}(${callArguments.join(', ')})`,
           );
         }
         continue;
@@ -2358,24 +2448,28 @@ function collectIteratorExportDefinitions(
   project: Project,
   registry: ModuleRegistry,
 ): IteratorExportDefinition[] {
-  const definitions: IteratorExportDefinition[] = [];
+  const definitionsByKey = new Map<string, IteratorExportDefinition>();
+  const visitedCompositeDefs = new Set<string>();
 
-  for (const moduleInstance of project.modules) {
-    const def = registry[moduleInstance.defId];
-    if (!def || !isIteratorDefinition(def)) {
-      continue;
+  const registerIteratorDefinition = (
+    moduleInstance: ModuleInstance,
+    def: IteratorDef,
+    roundDef: ModuleDefinition,
+    ownerCompositeDefId?: string,
+  ) => {
+    const lookupKey = buildIteratorLookupKey(moduleInstance.id, ownerCompositeDefId);
+    if (definitionsByKey.has(lookupKey)) {
+      return;
     }
 
-    const roundDef = registry[def.roundDefId];
-    if (!roundDef || isIteratorDefinition(roundDef)) {
-      continue;
-    }
-
-    definitions.push({
+    definitionsByKey.set(lookupKey, {
+      lookupKey,
       moduleInstance,
       def,
       roundDef,
-      functionName: `iterator_${sanitizeIdentifierPart(moduleInstance.id)}`,
+      functionName: ownerCompositeDefId
+        ? `iterator_${sanitizeIdentifierPart(ownerCompositeDefId)}_${sanitizeIdentifierPart(moduleInstance.id)}`
+        : `iterator_${sanitizeIdentifierPart(moduleInstance.id)}`,
       resolvedIterationCount: getResolvedIteratorIterationCount(def, moduleInstance.params),
       stateful: isCompositeDefinition(roundDef)
         ? projectHasStatefulExportCandidate(roundDef.project, registry, new Set([roundDef.id]))
@@ -2384,11 +2478,72 @@ function collectIteratorExportDefinitions(
         def.inputs.map((input) => input.name),
         'input',
       ),
+      ownerCompositeDefId,
+      iterationCountArgName: ownerCompositeDefId ? 'param_iterationCount' : undefined,
     });
+  };
+
+  const visitCompositeDefinition = (compositeDef: CompositeDef) => {
+    if (visitedCompositeDefs.has(compositeDef.id)) {
+      return;
+    }
+    visitedCompositeDefs.add(compositeDef.id);
+
+    for (const moduleInstance of compositeDef.project.modules) {
+      const def = registry[moduleInstance.defId];
+      if (!def) {
+        continue;
+      }
+      if (isCompositeDefinition(def)) {
+        visitCompositeDefinition(def);
+        continue;
+      }
+      if (!isIteratorDefinition(def)) {
+        continue;
+      }
+
+      const roundDef = registry[def.roundDefId];
+      if (!roundDef || isIteratorDefinition(roundDef)) {
+        continue;
+      }
+
+      if (isCompositeDefinition(roundDef)) {
+        visitCompositeDefinition(roundDef);
+      }
+
+      registerIteratorDefinition(moduleInstance, def, roundDef, compositeDef.id);
+    }
+  };
+
+  for (const moduleInstance of project.modules) {
+    const def = registry[moduleInstance.defId];
+    if (!def) {
+      continue;
+    }
+
+    if (isCompositeDefinition(def)) {
+      visitCompositeDefinition(def);
+      continue;
+    }
+
+    if (!isIteratorDefinition(def)) {
+      continue;
+    }
+
+    const roundDef = registry[def.roundDefId];
+    if (!roundDef || isIteratorDefinition(roundDef)) {
+      continue;
+    }
+
+    if (isCompositeDefinition(roundDef)) {
+      visitCompositeDefinition(roundDef);
+    }
+
+    registerIteratorDefinition(moduleInstance, def, roundDef);
   }
 
-  return definitions.sort((left, right) =>
-    left.moduleInstance.id.localeCompare(right.moduleInstance.id),
+  return Array.from(definitionsByKey.values()).sort((left, right) =>
+    left.lookupKey.localeCompare(right.lookupKey),
   );
 }
 
@@ -2399,20 +2554,43 @@ function buildIteratorFunctionArgumentList(
     (input) =>
       iteratorDefinition.inputArgNames.get(input.name) ?? sanitizeIdentifierPart(input.name),
   );
+  const paramArgs = iteratorDefinition.iterationCountArgName
+    ? [iteratorDefinition.iterationCountArgName]
+    : [];
 
   return {
     inputArgs,
-    allArgs: inputArgs,
+    paramArgs,
+    allArgs: [...inputArgs, ...paramArgs],
   };
 }
 
 function buildIteratorCallArguments(
   iteratorDefinition: IteratorExportDefinition,
   expressionContext: PythonExpressionContext,
+  moduleInstance: ModuleInstance = iteratorDefinition.moduleInstance,
 ) {
-  return iteratorDefinition.def.inputs.map((input) =>
-    expressionContext.getInputExpression(iteratorDefinition.moduleInstance.id, input.name),
+  const args = iteratorDefinition.def.inputs.map((input) =>
+    expressionContext.getInputExpression(moduleInstance.id, input.name),
   );
+
+  if (iteratorDefinition.iterationCountArgName) {
+    args.push(expressionContext.getParamExpression(moduleInstance, iteratorDefinition.def, 'iterationCount'));
+  }
+
+  return args;
+}
+
+function buildIteratorStateInitArguments(
+  iteratorDefinition: IteratorExportDefinition,
+  expressionContext: PythonExpressionContext,
+  moduleInstance: ModuleInstance = iteratorDefinition.moduleInstance,
+) {
+  if (!iteratorDefinition.iterationCountArgName) {
+    return [];
+  }
+
+  return [expressionContext.getParamExpression(moduleInstance, iteratorDefinition.def, 'iterationCount')];
 }
 
 function buildIteratorRoundExpression(
@@ -2489,6 +2667,153 @@ function buildIteratorHelperDefinitions(
     const roundDef = iteratorDefinition.roundDef;
     const keyInputName = iteratorDefinition.inputArgNames.get('key') ?? null;
     const keyBitsName = keyInputName ? `${sanitizeIdentifierPart(keyInputName)}_bits` : null;
+    const iterationCountName = iteratorDefinition.iterationCountArgName;
+
+    if (iterationCountName) {
+      if (!iteratorDefinition.stateful) {
+        const bodyLines: string[] = [
+          `def ${iteratorDefinition.functionName}(${args.allArgs.join(', ')}):`,
+          `    # Iterator helper: ${iteratorDefinition.def.id} [${iteratorDefinition.moduleInstance.id}]`,
+          `    iteration_count = _require_positive_int(${iterationCountName}, "iterationCount", ${JSON.stringify(iteratorDefinition.def.id)})`,
+        ];
+
+        if (iteratorDefinition.def.roundKeyWidth !== undefined) {
+          if (!keyInputName || !keyBitsName) {
+            throw new Error(`Python export requires keyed iterator "${iteratorDefinition.def.id}" to expose a "key" input.`);
+          }
+          bodyLines.push(
+            `    ${keyBitsName} = _expect_bits(${keyInputName}, ${JSON.stringify(iteratorDefinition.def.id)})`,
+            `    if len(${keyBitsName}) != iteration_count * ${iteratorDefinition.def.roundKeyWidth}:`,
+            `        raise ValueError(${JSON.stringify(`Iterator "${iteratorDefinition.def.id}" requires a key bus of exactly iterationCount * roundKeyWidth bits.`)})`,
+          );
+        }
+
+        bodyLines.push(`    previous_round = ${inputName}`, '    for round_index in range(iteration_count):');
+
+        const roundKeyExpression =
+          iteratorDefinition.def.roundKeyWidth !== undefined && keyBitsName
+            ? `${keyBitsName}[round_index * ${iteratorDefinition.def.roundKeyWidth}:(round_index + 1) * ${iteratorDefinition.def.roundKeyWidth}]`
+            : null;
+        bodyLines.push(
+          `        # Round ${'${round_index + 1}'}: ${iteratorDefinition.def.roundDefId}`.replace("${'${round_index + 1}'}", '{round_index + 1}'),
+          `        round_result = ${buildIteratorRoundExpression(
+            iteratorDefinition,
+            roundDef,
+            'round-runtime',
+            'previous_round',
+            roundKeyExpression,
+            compositeDefinitionsById,
+          )}`,
+          '        previous_round = round_result["out"]',
+          '    return {"out": previous_round}',
+        );
+
+        helperBlocks.push(bodyLines.join('\n'));
+        continue;
+      }
+
+      const initLines: string[] = [
+        `def ${iteratorDefinition.functionName}_init_state(${args.paramArgs.join(', ')}):`,
+        `    # Iterator state init: ${iteratorDefinition.def.id} [${iteratorDefinition.moduleInstance.id}]`,
+        `    iteration_count = _require_positive_int(${iterationCountName}, "iterationCount", ${JSON.stringify(iteratorDefinition.def.id)})`,
+        '    state = []',
+        '    for round_index in range(iteration_count):',
+      ];
+
+      if (isCompositeDefinition(roundDef)) {
+        const compositeDefinition = compositeDefinitionsById.get(roundDef.id);
+        if (!compositeDefinition) {
+          throw new Error(`Python export could not resolve stateful composite round helper for "${roundDef.id}".`);
+        }
+        const forwardedArgs = getCompositeForwardedParamKeys(roundDef).map((paramKey) =>
+          getDefaultParamExpression(
+            { id: 'round-runtime', defId: roundDef.id, params: {} },
+            roundDef,
+            paramKey,
+          ),
+        );
+        initLines.push(
+          `        state.append(${compositeDefinition.functionName}_init_state(${forwardedArgs.join(', ')}))`,
+        );
+      } else if (roundDef.id === 'Rotor') {
+        initLines.push(
+          `        state.append(rotor_init(${toPythonLiteral(getResolvedParamValue({ id: 'round-runtime', defId: roundDef.id, params: {} }, roundDef, 'wiring'))}, ${toPythonLiteral(getResolvedParamValue({ id: 'round-runtime', defId: roundDef.id, params: {} }, roundDef, 'position'))}, ${toPythonLiteral(getResolvedParamValue({ id: 'round-runtime', defId: roundDef.id, params: {} }, roundDef, 'ringOffset'))}, ${toPythonLiteral(getResolvedParamValue({ id: 'round-runtime', defId: roundDef.id, params: {} }, roundDef, 'notches'))}))`,
+        );
+      } else {
+        throw new Error(`Python export does not support temporal iterator round "${roundDef.id}".`);
+      }
+      initLines.push('    return state');
+
+      const tickLines: string[] = [
+        `def ${iteratorDefinition.functionName}_tick(state, tick${args.allArgs.length > 0 ? `, ${args.allArgs.join(', ')}` : ''}):`,
+        `    # Iterator helper: ${iteratorDefinition.def.id} [${iteratorDefinition.moduleInstance.id}]`,
+        `    iteration_count = _require_positive_int(${iterationCountName}, "iterationCount", ${JSON.stringify(iteratorDefinition.def.id)})`,
+        '    if len(state) != iteration_count:',
+        `        raise ValueError(${JSON.stringify(`Iterator "${iteratorDefinition.def.id}" state does not match iterationCount.`)})`,
+      ];
+
+      if (iteratorDefinition.def.roundKeyWidth !== undefined) {
+        if (!keyInputName || !keyBitsName) {
+          throw new Error(`Python export requires keyed iterator "${iteratorDefinition.def.id}" to expose a "key" input.`);
+        }
+        tickLines.push(
+          `    ${keyBitsName} = _expect_bits(${keyInputName}, ${JSON.stringify(iteratorDefinition.def.id)})`,
+          `    if len(${keyBitsName}) != iteration_count * ${iteratorDefinition.def.roundKeyWidth}:`,
+          `        raise ValueError(${JSON.stringify(`Iterator "${iteratorDefinition.def.id}" requires a key bus of exactly iterationCount * roundKeyWidth bits.`)})`,
+        );
+      }
+
+      tickLines.push(`    previous_round = ${inputName}`, '    for round_index in range(iteration_count):');
+      const dynamicRoundKeyExpression =
+        iteratorDefinition.def.roundKeyWidth !== undefined && keyBitsName
+          ? `${keyBitsName}[round_index * ${iteratorDefinition.def.roundKeyWidth}:(round_index + 1) * ${iteratorDefinition.def.roundKeyWidth}]`
+          : null;
+
+      if (isCompositeDefinition(roundDef)) {
+        const compositeDefinition = compositeDefinitionsById.get(roundDef.id);
+        if (!compositeDefinition) {
+          throw new Error(`Python export could not resolve stateful composite round helper for "${roundDef.id}".`);
+        }
+        const roundArgs = roundDef.inputs.map((input) => {
+          if (input.name === 'in') {
+            return 'previous_round';
+          }
+          if (input.name === 'key') {
+            if (!dynamicRoundKeyExpression) {
+              throw new Error(`Python export could not resolve keyed iterator input for "${iteratorDefinition.def.id}".`);
+            }
+            return dynamicRoundKeyExpression;
+          }
+          throw new Error(`Python export does not support iterator round input "${input.name}" for "${iteratorDefinition.def.id}".`);
+        });
+        for (const forwardedParamKey of getCompositeForwardedParamKeys(roundDef)) {
+          roundArgs.push(
+            getDefaultParamExpression(
+              { id: 'round-runtime', defId: roundDef.id, params: {} },
+              roundDef,
+              forwardedParamKey,
+            ),
+          );
+        }
+        tickLines.push(
+          `        # Round {round_index + 1}: ${iteratorDefinition.def.roundDefId}`,
+          `        round_result = ${compositeDefinition.functionName}_tick(state[round_index], tick${roundArgs.length > 0 ? `, ${roundArgs.join(', ')}` : ''})`,
+          '        previous_round = round_result["out"]',
+        );
+      } else {
+        tickLines.push(
+          `        # Round {round_index + 1}: ${iteratorDefinition.def.roundDefId}`,
+          '        round_result = rotor_eval(previous_round, state[round_index])',
+          '        previous_round = round_result["out"]',
+          '        rotor_advance(state[round_index])',
+        );
+      }
+
+      tickLines.push('    return {"out": previous_round}');
+      helperBlocks.push(initLines.join('\n'));
+      helperBlocks.push(tickLines.join('\n'));
+      continue;
+    }
 
     if (!iteratorDefinition.stateful) {
       const bodyLines: string[] = [
@@ -2719,12 +3044,19 @@ export function generatePythonExport(project: Project, registry: ModuleRegistry)
     compositeDefinitions.map((definition) => [definition.def.id, definition]),
   );
   const iteratorDefinitions = collectIteratorExportDefinitions(project, registry);
-  const iteratorDefinitionsByModuleId = new Map(
-    iteratorDefinitions.map((definition) => [definition.moduleInstance.id, definition]),
+  const iteratorDefinitionsByLookupKey = new Map(
+    iteratorDefinitions.map((definition) => [definition.lookupKey, definition]),
+  );
+  const topLevelIteratorDefinitions = iteratorDefinitions.filter(
+    (definition) => !definition.ownerCompositeDefId,
+  );
+  const nestedIteratorDefinitions = iteratorDefinitions.filter(
+    (definition) => Boolean(definition.ownerCompositeDefId),
   );
   const helperBlocks = [
-    ...buildCompositeHelperDefinitions(compositeDefinitions, registry),
-    ...buildIteratorHelperDefinitions(iteratorDefinitions, compositeDefinitionsById),
+    ...buildIteratorHelperDefinitions(nestedIteratorDefinitions, compositeDefinitionsById),
+    ...buildCompositeHelperDefinitions(compositeDefinitions, registry, iteratorDefinitionsByLookupKey),
+    ...buildIteratorHelperDefinitions(topLevelIteratorDefinitions, compositeDefinitionsById),
   ];
   const hasStatefulModules = projectHasStatefulExportCandidate(project, registry);
 
@@ -2733,7 +3065,7 @@ export function generatePythonExport(project: Project, registry: ModuleRegistry)
       project,
       registry,
       compositeDefinitionsById,
-      iteratorDefinitionsByModuleId,
+      iteratorDefinitionsByLookupKey,
       helperBlocks,
     );
   }
@@ -2788,7 +3120,7 @@ export function generatePythonExport(project: Project, registry: ModuleRegistry)
     }
 
     if (isIteratorDefinition(def)) {
-      const iteratorDefinition = iteratorDefinitionsByModuleId.get(moduleInstance.id);
+      const iteratorDefinition = iteratorDefinitionsByLookupKey.get(moduleInstance.id);
       if (!iteratorDefinition) {
         throw new Error(`Python export could not resolve iterator helper for "${moduleInstance.id}".`);
       }
@@ -2820,7 +3152,7 @@ function generateStatefulPythonExport(
   project: Project,
   registry: ModuleRegistry,
   compositeDefinitionsById: Map<string, CompositeExportDefinition>,
-  iteratorDefinitionsByModuleId: Map<string, IteratorExportDefinition>,
+  iteratorDefinitionsByLookupKey: Map<string, IteratorExportDefinition>,
   helperBlocks: string[],
 ) {
   const tickCount = derivePythonExportTickCount(project, registry);
@@ -2865,7 +3197,7 @@ function generateStatefulPythonExport(
     }
 
     if (isIteratorDefinition(def)) {
-      const iteratorDefinition = iteratorDefinitionsByModuleId.get(moduleInstance.id);
+      const iteratorDefinition = iteratorDefinitionsByLookupKey.get(moduleInstance.id);
       if (!iteratorDefinition || !iteratorDefinition.stateful) {
         continue;
       }
@@ -2875,7 +3207,7 @@ function generateStatefulPythonExport(
       }
       bodyLines.push(
         buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
-        `    ${variableName}_state = ${iteratorDefinition.functionName}_init_state()`,
+        `    ${variableName}_state = ${iteratorDefinition.functionName}_init_state(${buildIteratorStateInitArguments(iteratorDefinition, expressionContext).join(', ')})`,
       );
       continue;
     }
@@ -2972,7 +3304,7 @@ function generateStatefulPythonExport(
     }
 
     if (isIteratorDefinition(def)) {
-      const iteratorDefinition = iteratorDefinitionsByModuleId.get(moduleInstance.id);
+      const iteratorDefinition = iteratorDefinitionsByLookupKey.get(moduleInstance.id);
       if (!iteratorDefinition) {
         throw new Error(`Python export could not resolve iterator helper for "${moduleInstance.id}".`);
       }

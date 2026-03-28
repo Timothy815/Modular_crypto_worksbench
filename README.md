@@ -284,6 +284,12 @@ That nested composite export slice is now also shipped:
 - helper definitions are emitted leaf-first, preserve local scope isolation, and drill forwarded params through nested composite calls
 - iterator-containing composites and generalized mixed recursive structure remain out of scope in this slice
 
+That mixed-structure export slice is now also shipped:
+- `PYTHON-EXPORT-ITERATOR-CONTAINING-COMPOSITES-V1.md`
+- exported Python now supports composites whose bodies contain already-supported iterator helpers
+- generated helper names are namespaced for internal iterator instances, composite helpers route iterator sub-state explicitly, and forwarded composite params can control internal iterator `iterationCount`
+- iterator-round-as-iterator behavior and generalized mixed recursive export remain out of scope in this slice
+
 The future Python export architecture note after that is now explicitly recorded as:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
 - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file

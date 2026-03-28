@@ -331,6 +331,48 @@ const compositeContainingIterator: CompositeDef = {
   outputBindings: [{ externalPort: 'out', internalModuleId: 'iter', internalPort: 'out' }],
 };
 
+const forwardedIteratorComposite: CompositeDef = {
+  id: 'ForwardedIteratorComposite',
+  name: 'Forwarded Iterator Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [{ name: 'in', type: 'bits' }],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {
+    rounds: {
+      key: 'rounds',
+      label: 'Rounds',
+      kind: 'number',
+      defaultValue: 2,
+    },
+  },
+  project: {
+    modules: [{ id: 'iter', defId: 'ByteRoundIterator', params: { iterationCount: 2 } }],
+    connections: [],
+  },
+  inputBindings: [{ externalPort: 'in', internalModuleId: 'iter', internalPort: 'in' }],
+  outputBindings: [{ externalPort: 'out', internalModuleId: 'iter', internalPort: 'out' }],
+  forwardedParams: [
+    { externalParam: 'rounds', internalModuleId: 'iter', internalParamKey: 'iterationCount' },
+  ],
+};
+
+const temporalIteratorContainingComposite: CompositeDef = {
+  id: 'TemporalIteratorContainingComposite',
+  name: 'Temporal Iterator Containing Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [{ name: 'in', type: 'symbol' }],
+  outputs: [{ name: 'out', type: 'symbol' }],
+  paramSchema: {},
+  project: {
+    modules: [{ id: 'iter', defId: 'SteppingRotorIterator', params: { iterationCount: 2 } }],
+    connections: [],
+  },
+  inputBindings: [{ externalPort: 'in', internalModuleId: 'iter', internalPort: 'in' }],
+  outputBindings: [{ externalPort: 'out', internalModuleId: 'iter', internalPort: 'out' }],
+};
+
 const iteratorWithCompositeIteratorRound: IteratorDef = {
   id: 'IteratorWithCompositeIteratorRound',
   name: 'Iterator With Composite Iterator Round',
@@ -513,12 +555,12 @@ describe('getPythonExportCompatibility', () => {
     });
   });
 
-  it('rejects composites containing iterators in v1', () => {
+  it('allows composites containing iterators in v1', () => {
     const compatibilityRegistry: ModuleRegistry = {
       ...starterDefinitionRegistry,
       CompositeContainingIterator: compositeContainingIterator,
     };
-    const incompatibleProject: Project = {
+    const compatibleProject: Project = {
       modules: [
         { id: 'bits-1', defId: 'HexSource', params: { value: '3C' } },
         { id: 'comp-1', defId: 'CompositeContainingIterator', params: {} },
@@ -532,14 +574,10 @@ describe('getPythonExportCompatibility', () => {
       ],
     };
 
-    const compatibility = getPythonExportCompatibility(incompatibleProject, compatibilityRegistry);
+    const compatibility = getPythonExportCompatibility(compatibleProject, compatibilityRegistry);
 
-    expect(compatibility.ok).toBe(false);
-    expect(compatibility.issues).toContainEqual({
-      moduleId: 'comp-1/iter',
-      defId: 'ByteRoundIterator',
-      reason: 'Iterators inside composites are not exportable in V1.',
-    });
+    expect(compatibility.ok).toBe(true);
+    expect(compatibility.issues).toEqual([]);
   });
 
   it('rejects iterator round definitions whose composite body contains an iterator in v1', () => {
@@ -582,8 +620,11 @@ parityDescribe('generatePythonExport', () => {
     NestedComposite: nestedComposite,
     NestedForwardedComposite: nestedForwardedComposite,
     NestedClockedRotorComposite: nestedClockedRotorComposite,
+    CompositeContainingIterator: compositeContainingIterator,
+    ForwardedIteratorComposite: forwardedIteratorComposite,
     SteppingRotorComposite: steppingRotorComposite,
     SteppingRotorIterator: steppingRotorIterator,
+    TemporalIteratorContainingComposite: temporalIteratorContainingComposite,
   };
 
   it('matches executeProject for a bridge-heavy stateless workspace', () => {
@@ -867,6 +908,77 @@ parityDescribe('generatePythonExport', () => {
     expect(pythonSource.indexOf('def composite_ClockedRotorComposite_init_state')).toBeLessThan(
       pythonSource.indexOf('def composite_NestedClockedRotorComposite_init_state'),
     );
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, compositeRegistry));
+  });
+
+  it('matches executeProject for a shipped iterator-containing composite workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'left-1', defId: 'HexSource', params: { value: '3C' } },
+        { id: 'right-1', defId: 'HexSource', params: { value: 'A5' } },
+        { id: 'comp-1', defId: 'ToyCompressionHashComposite', params: { digestRounds: 3 } },
+        { id: 'hex-1', defId: 'BitsToHex', params: {} },
+        { id: 'out-1', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'left-1', port: 'out' }, to: { moduleId: 'comp-1', port: 'left' } },
+        { from: { moduleId: 'right-1', port: 'out' }, to: { moduleId: 'comp-1', port: 'right' } },
+        { from: { moduleId: 'comp-1', port: 'out' }, to: { moduleId: 'hex-1', port: 'in' } },
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('def iterator_ToyCompressionHashComposite_digest_rounds');
+    expect(pythonSource).toContain('iterator_ToyCompressionHashComposite_digest_rounds(');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, compositeRegistry));
+  });
+
+  it('matches executeProject for a user-authored iterator-containing composite workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'hex-1', defId: 'HexSource', params: { value: '3C' } },
+        { id: 'comp-1', defId: 'ForwardedIteratorComposite', params: { rounds: 3 } },
+        { id: 'hex-2', defId: 'BitsToHex', params: {} },
+        { id: 'out-1', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'comp-1', port: 'in' } },
+        { from: { moduleId: 'comp-1', port: 'out' }, to: { moduleId: 'hex-2', port: 'in' } },
+        { from: { moduleId: 'hex-2', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('def iterator_ForwardedIteratorComposite_iter');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, compositeRegistry));
+  });
+
+  it('matches executeTickedProject for a temporal iterator-containing composite workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'AAAA' } },
+        { id: 'comp-1', defId: 'TemporalIteratorContainingComposite', params: {} },
+        { id: 'out-1', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'comp-1', port: 'in' } },
+        { from: { moduleId: 'comp-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('def iterator_TemporalIteratorContainingComposite_iter_init_state');
+    expect(pythonSource).toContain('def iterator_TemporalIteratorContainingComposite_iter_tick');
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, compositeRegistry));
   });
 
