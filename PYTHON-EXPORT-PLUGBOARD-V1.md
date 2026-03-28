@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Proposed
+Status: Implemented on `main`
 
 ---
 
@@ -67,6 +67,7 @@ This slice must:
 - mirror [plugboard.ts](/Users/timothykoerner/Desktop/modular_cryptography/src/engine/modules/plugboard.ts) directly rather than introducing a cleaned-up reinterpretation
 - preserve reciprocal wiring validation
 - preserve uppercase alphabet validation
+- preserve identity wiring as a valid passthrough configuration
 - preserve readable generated wiring embedding
 - preserve one-file export architecture
 
@@ -84,12 +85,14 @@ Generated Python must mirror MCW behavior exactly for:
 - reciprocal pair enforcement
 - passthrough identity mappings
 - symbol lookup against the uppercase alphabet
+- uppercase normalization of incoming symbols before lookup
 - invalid symbol rejection
 
 The Python helper should stay structurally parallel to the engine logic:
 - parse/validate wiring
 - normalize the incoming symbol
 - map through the reciprocal wiring array
+- preserve the exact reciprocal rule that `wiring[wiring[i]] == ALPHABET[i]` for every position
 
 ---
 

@@ -250,6 +250,15 @@ The next Python export implementation slice is now explicitly recorded as:
 - close the remaining obvious Enigma-class primitive gap in current export coverage
 - keep the slice bounded to `Plugboard` itself, without widening into broader historical-machine redesign
 
+That `Plugboard` export slice is now also shipped:
+- `PYTHON-EXPORT-PLUGBOARD-V1.md`
+- exported Python now supports bounded `Plugboard` parity
+- parity-tested for both direct `Plugboard` use and a plugboard-plus-rotor historical-machine path
+- the remaining primitive gaps are now:
+  - `BaudotSource`
+  - `ModExp`
+  - `ModInverse`
+
 The future Python export architecture note after that is now explicitly recorded as:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
 - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file

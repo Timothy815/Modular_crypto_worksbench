@@ -31,9 +31,9 @@ The definitive primitive-module baseline for this audit is:
 
 Primitive modules currently present in the registry: `59`
 
-Primitive modules currently export-compatible: `55`
+Primitive modules currently export-compatible: `56`
 
-Primitive modules currently unsupported: `4`
+Primitive modules currently unsupported: `3`
 
 ---
 
@@ -98,6 +98,7 @@ Current Python export supports these primitive modules:
   - `Rotor`
   - `RotorReverse`
   - `Reflector`
+  - `Plugboard`
 
 ---
 
@@ -119,11 +120,6 @@ These primitive modules are still not export-compatible:
 - classification: `missing-runtime-support`
 - reason: no emitted Python helper or parity line yet
 - likely difficulty: low to medium
-
-4. `Plugboard`
-- classification: `missing-runtime-support`
-- reason: historical-machine support is broad, but plugboard permutation behavior is not yet exported
-- likely difficulty: medium
 
 ---
 
@@ -205,13 +201,12 @@ Current historical-machine export coverage includes:
 - `Reflector`
 - `RotorReverse`
 - turnover-driven rotor stepping
+- `Plugboard`
 
 Current historical-machine export gaps:
-- `Plugboard`
 - broader rotor/control-bank authored-machine export beyond the current bounded control slice
 
 Classification:
-- `Plugboard` is `missing-runtime-support`
 - broader control-bank / authored-bank export is `shared-state-or-recursive-semantics`
 
 ---
@@ -239,23 +234,19 @@ It is a test-strengthening note.
 
 The highest-value remaining gaps are:
 
-1. `Plugboard`
-- why: completes the remaining obvious Enigma-class vocabulary hole in primitive export
-- category: `missing-runtime-support`
-
-2. `BaudotSource`
+1. `BaudotSource`
 - why: closes the remaining Baudot source/output asymmetry
 - category: `missing-runtime-support`
 
-3. `ModExp` and `ModInverse`
+2. `ModExp` and `ModInverse`
 - why: completes the remaining major number-theoretic primitive gap
 - category: `missing-runtime-support`
 
-4. nested/recursive structured export
+3. nested/recursive structured export
 - why: this is the largest remaining structural blocker between “strong export line” and “anything MCW can run should eventually export”
 - category: `shared-state-or-recursive-semantics`
 
-5. runtime-library split
+4. runtime-library split
 - why: productization and long-term code organization
 - category: `future-productization`
 
@@ -267,10 +258,9 @@ Based on the shipped codebase, the most likely next export frontier is:
 - finish the remaining unsupported primitive/runtime helpers first
 
 Recommended immediate implementation order:
-1. `Plugboard`
-2. `BaudotSource`
-3. `ModExp`
-4. `ModInverse`
+1. `BaudotSource`
+2. `ModExp`
+3. `ModInverse`
 
 After that, the next true frontier becomes:
 - broader recursive structured export

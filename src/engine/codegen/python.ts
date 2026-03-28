@@ -70,6 +70,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'Rotor',
   'Reflector',
   'RotorReverse',
+  'Plugboard',
 ]);
 
 const SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS = new Set([
@@ -100,6 +101,7 @@ const SUPPORTED_STATEFUL_PYTHON_EXPORT_COMPANION_DEF_IDS = new Set([
   'BitPad',
   'BitWindow',
   'BitShifter',
+  'Plugboard',
 ]);
 
 const SYMBOL_SINK_DEF_IDS = new Set(['Output', 'TextOutput', 'BaudotOutput']);
@@ -922,6 +924,35 @@ def reflector_traverse(signal, wiring):
     return wiring[reflected_index]
 
 
+def _parse_plugboard_wiring(wiring_value):
+    if not isinstance(wiring_value, list) or len(wiring_value) != ROTOR_SIZE:
+        raise ValueError("Plugboard wiring must be an array of 26 uppercase letters.")
+    wiring = []
+    for entry in wiring_value:
+        if not isinstance(entry, str) or len(entry) != 1 or ALPHABET.find(entry.upper()) == -1:
+            raise ValueError("Plugboard wiring must be an array of 26 uppercase letters.")
+        wiring.append(entry.upper())
+    if len(set(wiring)) != ROTOR_SIZE:
+        raise ValueError("Plugboard wiring must be a permutation with no duplicates.")
+    for index, source in enumerate(ALPHABET):
+        target = wiring[index]
+        target_index = ALPHABET.index(target)
+        if wiring[target_index] != source:
+            raise ValueError("Plugboard wiring must be reciprocal: every mapped pair must map back to itself.")
+    return wiring
+
+
+def plugboard_eval(signal, wiring):
+    symbol = str(signal)
+    if len(symbol) != 1:
+        raise ValueError("Plugboard expects a symbol signal")
+    normalized = symbol.upper()
+    index = ALPHABET.find(normalized)
+    if index == -1:
+        raise ValueError(f'Plugboard: "{symbol}" is not in the alphabet')
+    return {"out": wiring[index]}
+
+
 def rotor_reverse_eval(signal, linked_rotor_state):
     input_symbol = _expect_rotor_symbol(signal)
     input_index = ALPHABET.index(input_symbol)
@@ -1223,6 +1254,8 @@ function buildModuleExpression(
       return `symbol_window(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'start')}, ${expressionContext.getParamExpression(moduleInstance, def, 'width')})`;
     case 'Reflector':
       return `{"out": reflector_traverse(${expressionContext.getInputExpression(moduleId, 'in')}, _parse_reflector_wiring(${expressionContext.getParamExpression(moduleInstance, def, 'wiring')}))}`;
+    case 'Plugboard':
+      return `plugboard_eval(${expressionContext.getInputExpression(moduleId, 'in')}, _parse_plugboard_wiring(${expressionContext.getParamExpression(moduleInstance, def, 'wiring')}))`;
     case 'BitsToSymbol':
       return `bits_to_symbol(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'BitsToAscii':
@@ -1996,6 +2029,14 @@ function buildCompositeHelperDefinitions(
         continue;
       }
 
+      if (def.id === 'Plugboard') {
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        tickLines.push(
+          `    ${variableName} = plugboard_eval(${expressionContext.getInputExpression(moduleId, 'in')}, _parse_plugboard_wiring(${expressionContext.getParamExpression(moduleInstance, def, 'wiring')}))`,
+        );
+        continue;
+      }
+
       if (def.id === 'BitSource') {
         tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
         tickLines.push(
@@ -2756,6 +2797,14 @@ function generateStatefulPythonExport(
       bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
       bodyLines.push(
         `        ${variableName} = {"out": reflector_traverse(${expressionContext.getInputExpression(moduleId, 'in')}, _parse_reflector_wiring(${expressionContext.getParamExpression(moduleInstance, def, 'wiring')}))}`,
+      );
+      continue;
+    }
+
+    if (def.id === 'Plugboard') {
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
+      bodyLines.push(
+        `        ${variableName} = plugboard_eval(${expressionContext.getInputExpression(moduleId, 'in')}, _parse_plugboard_wiring(${expressionContext.getParamExpression(moduleInstance, def, 'wiring')}))`,
       );
       continue;
     }

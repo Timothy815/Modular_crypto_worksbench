@@ -515,6 +515,33 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
   });
 
+  it('matches executeProject for a direct plugboard workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'a' } },
+        {
+          id: 'plug-1',
+          defId: 'Plugboard',
+          params: {
+            wiring: ['B', 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
+          },
+        },
+        { id: 'out-1', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'plug-1', port: 'in' } },
+        { from: { moduleId: 'plug-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('# Module: plug-1 [Plugboard]');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
   it('matches executeProject for a routing and structural transform workspace', () => {
     const project: Project = {
       modules: [
@@ -1243,6 +1270,48 @@ parityDescribe('generatePythonExport', () => {
     const execution = executeGeneratedPython(pythonSource);
 
     expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeTickedProject for a plugboard-plus-rotor path workspace', () => {
+    const rotorWiring = ['E', 'K', 'M', 'F', 'L', 'G', 'D', 'Q', 'V', 'Z', 'N', 'T', 'O', 'W', 'Y', 'H', 'X', 'U', 'S', 'P', 'A', 'I', 'B', 'R', 'C', 'J'];
+    const reflectorWiring = ['Y', 'R', 'U', 'H', 'Q', 'S', 'L', 'D', 'P', 'X', 'N', 'G', 'O', 'K', 'M', 'I', 'E', 'B', 'F', 'Z', 'C', 'W', 'V', 'J', 'A', 'T'];
+    const plugboardWiring = ['B', 'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'AAAA' } },
+        { id: 'plug-in', defId: 'Plugboard', params: { wiring: plugboardWiring } },
+        { id: 'clock-1', defId: 'Clock', params: { period: 1, offset: 0, length: 4 } },
+        {
+          id: 'rotor-fwd',
+          defId: 'Rotor',
+          params: { wiring: rotorWiring, position: 0, ringOffset: 0, notches: 'Q' },
+        },
+        { id: 'reflector-1', defId: 'Reflector', params: { wiring: reflectorWiring } },
+        {
+          id: 'rotor-rev',
+          defId: 'RotorReverse',
+          params: { linkedRotorId: 'rotor-fwd', wiring: rotorWiring, position: 0, ringOffset: 0, notches: 'Q' },
+        },
+        { id: 'plug-out', defId: 'Plugboard', params: { wiring: plugboardWiring } },
+        { id: 'text-out', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'plug-in', port: 'in' } },
+        { from: { moduleId: 'plug-in', port: 'out' }, to: { moduleId: 'rotor-fwd', port: 'in' } },
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'rotor-fwd', port: 'clock' } },
+        { from: { moduleId: 'rotor-fwd', port: 'out' }, to: { moduleId: 'reflector-1', port: 'in' } },
+        { from: { moduleId: 'reflector-1', port: 'out' }, to: { moduleId: 'rotor-rev', port: 'in' } },
+        { from: { moduleId: 'rotor-rev', port: 'out' }, to: { moduleId: 'plug-out', port: 'in' } },
+        { from: { moduleId: 'plug-out', port: 'out' }, to: { moduleId: 'text-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('# Module: plug-in [Plugboard]');
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, V1_REGISTRY));
   });
 
