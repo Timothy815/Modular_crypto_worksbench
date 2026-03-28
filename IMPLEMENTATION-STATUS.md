@@ -143,6 +143,10 @@ Current `main` now also includes:
   - uses `src/engine/modules/index.ts` as the primitive baseline
   - identifies remaining primitive gaps as `BaudotSource`, `ModExp`, `ModInverse`, and `Plugboard`
   - identifies recursive structured export as the primary remaining structural frontier
+- next Python export implementation slice:
+  - `PYTHON-EXPORT-PLUGBOARD-V1.md`
+  - target the remaining obvious Enigma-class primitive gap first
+  - keep the slice bounded to `Plugboard` rather than widening into broader historical-machine redesign
 - future Python export architecture note:
   - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
   - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file

@@ -245,6 +245,11 @@ That audit is now also shipped:
   - `Plugboard`
 - the remaining structured gaps are now identified primarily as recursive/nested structured export rather than broad primitive deficiency
 
+The next Python export implementation slice is now explicitly recorded as:
+- `PYTHON-EXPORT-PLUGBOARD-V1.md`
+- close the remaining obvious Enigma-class primitive gap in current export coverage
+- keep the slice bounded to `Plugboard` itself, without widening into broader historical-machine redesign
+
 The future Python export architecture note after that is now explicitly recorded as:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
 - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file
