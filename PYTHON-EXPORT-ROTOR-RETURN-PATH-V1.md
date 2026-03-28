@@ -76,6 +76,8 @@ This slice must:
   - `RotorReverse`
   - linked forward/reverse rotor shadowing
 - keep systematic generated comments for module blocks
+- require synchronous live shadowing for linked reverse rotors
+- keep evaluate-before-advance ordering intact for the whole tick loop
 
 It must not redesign the existing export runtime shape.
 
@@ -123,6 +125,9 @@ That means:
 - `RotorReverse` remains a visible exported module block
 - linked state is derived from the forward rotor state in a bounded, explicit way
 - reverse traversal does not own an independent stepping lifecycle
+- `RotorReverse` must not allocate its own rotor-state object in generated Python
+- reverse traversal must read from the linked forward rotor state object at evaluation time, not from a copied snapshot
+- reverse traversal must use the same normalization helper as forward traversal
 
 ---
 
@@ -143,6 +148,9 @@ That file should now contain:
 Python stdlib only.
 Target Python `3.8+`.
 
+Reflector wiring must be embedded as an explicit 26-element list of single-character strings.
+The generated Python should include a dedicated `reflector_traverse(signal, wiring)` helper.
+
 ---
 
 ## State Model Requirement
@@ -152,6 +160,7 @@ The generated return-path code must stay explicit and readable:
 - reverse rotor blocks must visibly derive from that state rather than mutating it
 - reflector wiring remains explicit
 - traversal helpers remain line-by-line understandable
+- `rotor_reverse_eval(signal, linked_rotor_state)` should be the concrete helper shape for linked reverse traversal
 
 The generated code should read like:
 - initialize forward rotor state
@@ -188,6 +197,8 @@ The compatibility check should now:
 - allow `Reflector`
 - allow `RotorReverse`
 - allow bounded linked forward/reverse rotor export
+- reject orphaned or invalid `linkedRotorId` references for exported `RotorReverse` instances
+- reject unlinked `RotorReverse` for this slice
 - continue allowing the already-shipped stateless and temporal subset
 - continue rejecting unsupported rotor-control and structured features
 - continue requiring a valid graph and a derivable tick count when needed
@@ -202,6 +213,7 @@ This slice must add parity tests for at least:
 - one `TextInput -> Rotor -> Reflector -> RotorReverse -> Output` workspace
 - one linked forward/reverse workspace where forward rotor stepping changes the return-path output across ticks
 - one workspace verifying that reverse traversal mirrors the forward rotor state without independently advancing
+- one workspace where a linked reverse rotor `turnover` output remains in parity with the shared forward rotor state if it is used downstream
 
 Tests must:
 - generate Python

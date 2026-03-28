@@ -63,9 +63,17 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'Counter',
   'LFSR',
   'Rotor',
+  'Reflector',
+  'RotorReverse',
 ]);
 
-const SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS = new Set(['Clock', 'Counter', 'LFSR', 'Rotor']);
+const SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS = new Set([
+  'Clock',
+  'Counter',
+  'LFSR',
+  'Rotor',
+  'RotorReverse',
+]);
 const SUPPORTED_STATEFUL_PYTHON_EXPORT_COMPANION_DEF_IDS = new Set([
   'TextInput',
   'BitSource',
@@ -883,6 +891,51 @@ def rotor_advance(state):
     state["position"] = _normalize_rotor_offset(state["position"] + 1)
 
 
+def _parse_reflector_wiring(wiring_value):
+    if not isinstance(wiring_value, list) or len(wiring_value) != ROTOR_SIZE:
+        raise ValueError("Reflector wiring must be an array of 26 uppercase letters.")
+    wiring = []
+    for entry in wiring_value:
+        if not isinstance(entry, str) or len(entry) != 1 or ALPHABET.find(entry.upper()) == -1:
+            raise ValueError("Reflector wiring must be an array of 26 uppercase letters.")
+        wiring.append(entry.upper())
+    if len(set(wiring)) != ROTOR_SIZE:
+        raise ValueError("Reflector wiring must be a permutation with no duplicates.")
+    for index, source in enumerate(ALPHABET):
+        target = wiring[index]
+        if target == source:
+            raise ValueError("Reflector wiring cannot map a letter to itself.")
+        target_index = ALPHABET.index(target)
+        if wiring[target_index] != source:
+            raise ValueError("Reflector wiring must be involutive: every pair must map back to itself.")
+    return wiring
+
+
+def reflector_traverse(signal, wiring):
+    input_symbol = _expect_rotor_symbol(signal)
+    reflected_index = ALPHABET.index(input_symbol)
+    return wiring[reflected_index]
+
+
+def rotor_reverse_eval(signal, linked_rotor_state):
+    input_symbol = _expect_rotor_symbol(signal)
+    input_index = ALPHABET.index(input_symbol)
+    effective_shift = _normalize_rotor_offset(linked_rotor_state["position"] - linked_rotor_state["ringOffset"])
+    shifted_index = _normalize_rotor_offset(input_index + effective_shift)
+    target_letter = ALPHABET[shifted_index]
+    inverse_index = linked_rotor_state["wiring"].index(target_letter)
+    unshifted_index = _normalize_rotor_offset(inverse_index - effective_shift)
+    turnover_active = _is_rotor_turnover_active(
+        linked_rotor_state["position"],
+        linked_rotor_state["ringOffset"],
+        linked_rotor_state["notches"],
+    )
+    return {
+        "out": ALPHABET[unshifted_index],
+        "turnover": [1 if turnover_active else 0],
+    }
+
+
 def format_ticked_sink_line(tick, module_id, value):
     return f"tick {tick} | {module_id}: {value}"
 `;
@@ -1098,6 +1151,8 @@ function buildModuleExpression(
       return `symbol_permutation(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'order'))})`;
     case 'SymbolWindow':
       return `symbol_window(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'start'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'width'))})`;
+    case 'Reflector':
+      return `{"out": reflector_traverse(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, _parse_reflector_wiring(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'wiring'))}))}`;
     case 'BitsToSymbol':
       return `bits_to_symbol(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')})`;
     case 'BitsToAscii':
@@ -1282,6 +1337,30 @@ export function getPythonExportCompatibility(
         reason: 'This tick-sliceable primitive is outside the Python export stateful companion subset.',
       });
     }
+
+    if (def.id === 'RotorReverse') {
+      const linkedRotorId =
+        typeof moduleInstance.params.linkedRotorId === 'string'
+          ? moduleInstance.params.linkedRotorId.trim()
+          : '';
+      if (!linkedRotorId) {
+        issues.push({
+          moduleId: moduleInstance.id,
+          defId: moduleInstance.defId,
+          reason: 'RotorReverse requires a linked forward Rotor for Python export.',
+        });
+        continue;
+      }
+
+      const linkedModule = project.modules.find((candidate) => candidate.id === linkedRotorId);
+      if (!linkedModule || linkedModule.defId !== 'Rotor') {
+        issues.push({
+          moduleId: moduleInstance.id,
+          defId: moduleInstance.defId,
+          reason: `RotorReverse linkedRotorId must reference an exported forward Rotor, not "${linkedRotorId}".`,
+        });
+      }
+    }
   }
 
   if (hasStatefulSupportCandidate && deriveTickCount(project, registry) === null) {
@@ -1417,6 +1496,7 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
         buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
         `    ${variableName}_state = rotor_init(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'wiring'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'position'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'ringOffset'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'notches'))})`,
       );
+      continue;
     }
   }
 
@@ -1475,6 +1555,30 @@ function generateStatefulPythonExport(project: Project, registry: ModuleRegistry
       bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
       bodyLines.push(
         `        ${variableName} = rotor_eval(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${variableName}_state)`,
+      );
+      continue;
+    }
+
+    if (def.id === 'RotorReverse') {
+      const linkedRotorId =
+        typeof moduleInstance.params.linkedRotorId === 'string'
+          ? moduleInstance.params.linkedRotorId.trim()
+          : '';
+      const linkedVariableName = variablesByModuleId.get(linkedRotorId);
+      if (!linkedVariableName) {
+        throw new Error(`Python export could not resolve linked forward rotor "${linkedRotorId}" for "${moduleInstance.id}".`);
+      }
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
+      bodyLines.push(
+        `        ${variableName} = rotor_reverse_eval(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, ${linkedVariableName}_state)`,
+      );
+      continue;
+    }
+
+    if (def.id === 'Reflector') {
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
+      bodyLines.push(
+        `        ${variableName} = {"out": reflector_traverse(${getInputExpression(connectionsByTarget, variablesByModuleId, moduleId, 'in')}, _parse_reflector_wiring(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'wiring'))}))}`,
       );
       continue;
     }
