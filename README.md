@@ -295,6 +295,12 @@ The next structural export frontier is now explicitly recorded as:
 - the next bounded structural slice is iterator round definitions that are themselves already-supported iterators
 - generalized recursive mixed export remains out of scope beyond that slice
 
+That nested iterator export slice is now also shipped:
+- `PYTHON-EXPORT-NESTED-ITERATORS-V1.md`
+- exported Python now supports iterator round definitions that are themselves already-supported iterators
+- generated Python now includes definition-level nested iterator helpers, explicit nested iterator state routing, and parity-tested stateless, keyed, and temporal nested iterator workspaces
+- generalized recursive mixed export remains out of scope beyond this slice
+
 The future Python export architecture note after that is now explicitly recorded as:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
 - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file

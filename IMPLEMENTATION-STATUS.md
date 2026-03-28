@@ -176,8 +176,11 @@ Current `main` now also includes:
   - keeps iterator round definitions that are themselves iterators and generalized mixed recursive export out of scope for the first mixed slice
 - next structural iterator-recursive frontier:
   - `PYTHON-EXPORT-NESTED-ITERATORS-V1.md`
-  - records iterator round definitions that are themselves already-supported iterators as the next bounded structural slice
-  - keeps generalized recursive mixed export out of scope beyond that slice
+  - now shipped as the next bounded iterator-recursive slice
+  - exported Python now supports iterator round definitions that are themselves already-supported iterators
+  - generated Python now includes definition-level iterator helpers, explicit nested iterator state routing, and recursive compatibility checks for iterator-definition cycles
+  - parity-tested for user-authored, keyed, and temporal nested iterator workspaces
+  - keeps generalized recursive mixed export out of scope beyond this slice
 - future Python export architecture note:
   - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
   - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file

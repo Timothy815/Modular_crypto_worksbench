@@ -404,6 +404,70 @@ const steppingRotorIterator: IteratorDef = {
   iterationCount: 2,
 };
 
+const nestedByteRoundIterator: IteratorDef = {
+  id: 'NestedByteRoundIterator',
+  name: 'Nested Byte Round Iterator',
+  kind: 'iterator',
+  version: 1,
+  inputs: [{ name: 'in', type: 'bits' }],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {},
+  roundDefId: 'ByteRoundIterator',
+  iterationCount: 2,
+};
+
+const nestedKeyedByteRoundIterator: IteratorDef = {
+  id: 'NestedKeyedByteRoundIterator',
+  name: 'Nested Keyed Byte Round Iterator',
+  kind: 'iterator',
+  version: 1,
+  inputs: [
+    { name: 'in', type: 'bits' },
+    { name: 'key', type: 'bits' },
+  ],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {},
+  roundDefId: 'KeyedByteRoundIterator',
+  iterationCount: 2,
+  roundKeyWidth: 16,
+};
+
+const nestedSteppingRotorIterator: IteratorDef = {
+  id: 'NestedSteppingRotorIterator',
+  name: 'Nested Stepping Rotor Iterator',
+  kind: 'iterator',
+  version: 1,
+  inputs: [{ name: 'in', type: 'symbol' }],
+  outputs: [{ name: 'out', type: 'symbol' }],
+  paramSchema: {},
+  roundDefId: 'SteppingRotorIterator',
+  iterationCount: 2,
+};
+
+const cyclicIteratorA: IteratorDef = {
+  id: 'CyclicIteratorA',
+  name: 'Cyclic Iterator A',
+  kind: 'iterator',
+  version: 1,
+  inputs: [{ name: 'in', type: 'bits' }],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {},
+  roundDefId: 'CyclicIteratorB',
+  iterationCount: 2,
+};
+
+const cyclicIteratorB: IteratorDef = {
+  id: 'CyclicIteratorB',
+  name: 'Cyclic Iterator B',
+  kind: 'iterator',
+  version: 1,
+  inputs: [{ name: 'in', type: 'bits' }],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {},
+  roundDefId: 'CyclicIteratorA',
+  iterationCount: 2,
+};
+
 describe('getPythonExportCompatibility', () => {
   it('rejects invalid linked reverse rotors and bypassed modules', () => {
     const incompatibleProject: Project = {
@@ -580,6 +644,64 @@ describe('getPythonExportCompatibility', () => {
     expect(compatibility.issues).toEqual([]);
   });
 
+  it('allows iterator round definitions that are themselves iterators in v1', () => {
+    const compatibilityRegistry: ModuleRegistry = {
+      ...starterDefinitionRegistry,
+      SteppingRotorComposite: steppingRotorComposite,
+      SteppingRotorIterator: steppingRotorIterator,
+      NestedByteRoundIterator: nestedByteRoundIterator,
+      NestedSteppingRotorIterator: nestedSteppingRotorIterator,
+    };
+    const compatibleProject: Project = {
+      modules: [
+        { id: 'bits-1', defId: 'HexSource', params: { value: '3C' } },
+        { id: 'iter-1', defId: 'NestedByteRoundIterator', params: {} },
+        { id: 'hex-1', defId: 'BitsToHex', params: {} },
+        { id: 'out-1', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'bits-1', port: 'out' }, to: { moduleId: 'iter-1', port: 'in' } },
+        { from: { moduleId: 'iter-1', port: 'out' }, to: { moduleId: 'hex-1', port: 'in' } },
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const compatibility = getPythonExportCompatibility(compatibleProject, compatibilityRegistry);
+
+    expect(compatibility.ok).toBe(true);
+    expect(compatibility.issues).toEqual([]);
+  });
+
+  it('rejects iterator definition cycles in v1', () => {
+    const compatibilityRegistry: ModuleRegistry = {
+      ...starterDefinitionRegistry,
+      CyclicIteratorA: cyclicIteratorA,
+      CyclicIteratorB: cyclicIteratorB,
+    };
+    const incompatibleProject: Project = {
+      modules: [
+        { id: 'bits-1', defId: 'HexSource', params: { value: '3C' } },
+        { id: 'iter-1', defId: 'CyclicIteratorA', params: {} },
+        { id: 'hex-1', defId: 'BitsToHex', params: {} },
+        { id: 'out-1', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'bits-1', port: 'out' }, to: { moduleId: 'iter-1', port: 'in' } },
+        { from: { moduleId: 'iter-1', port: 'out' }, to: { moduleId: 'hex-1', port: 'in' } },
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const compatibility = getPythonExportCompatibility(incompatibleProject, compatibilityRegistry);
+
+    expect(compatibility.ok).toBe(false);
+    expect(compatibility.issues).toContainEqual({
+      moduleId: 'iter-1',
+      defId: 'CyclicIteratorA',
+      reason: 'Iterator definition cycles are not exportable in V1.',
+    });
+  });
+
   it('rejects iterator round definitions whose composite body contains an iterator in v1', () => {
     const compatibilityRegistry: ModuleRegistry = {
       ...starterDefinitionRegistry,
@@ -625,6 +747,9 @@ parityDescribe('generatePythonExport', () => {
     SteppingRotorComposite: steppingRotorComposite,
     SteppingRotorIterator: steppingRotorIterator,
     TemporalIteratorContainingComposite: temporalIteratorContainingComposite,
+    NestedByteRoundIterator: nestedByteRoundIterator,
+    NestedKeyedByteRoundIterator: nestedKeyedByteRoundIterator,
+    NestedSteppingRotorIterator: nestedSteppingRotorIterator,
   };
 
   it('matches executeProject for a bridge-heavy stateless workspace', () => {
@@ -1127,6 +1252,82 @@ parityDescribe('generatePythonExport', () => {
     expect(pythonSource).toContain('def iterator_iter_1_init_state');
     expect(pythonSource).toContain('def iterator_iter_1_tick');
     expect(pythonSource).toContain('# Round 2: SteppingRotorComposite');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, compositeRegistry));
+  });
+
+  it('matches executeProject for a user-authored nested iterator workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'hex-1', defId: 'HexSource', params: { value: '3C' } },
+        { id: 'iter-1', defId: 'NestedByteRoundIterator', params: {} },
+        { id: 'hex-2', defId: 'BitsToHex', params: {} },
+        { id: 'out-1', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'iter-1', port: 'in' } },
+        { from: { moduleId: 'iter-1', port: 'out' }, to: { moduleId: 'hex-2', port: 'in' } },
+        { from: { moduleId: 'hex-2', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('def iterator_def_ByteRoundIterator');
+    expect(pythonSource).toContain('def iterator_iter_1');
+    expect(pythonSource).toContain('# Round 1: ByteRoundIterator');
+    expect(pythonSource).toContain('iterator_def_ByteRoundIterator(');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, compositeRegistry));
+  });
+
+  it('matches executeProject for a keyed nested iterator workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'hex-1', defId: 'HexSource', params: { value: '3C' } },
+        { id: 'key-1', defId: 'HexSource', params: { value: 'A55AF00F' } },
+        { id: 'iter-1', defId: 'NestedKeyedByteRoundIterator', params: {} },
+        { id: 'hex-2', defId: 'BitsToHex', params: {} },
+        { id: 'out-1', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'iter-1', port: 'in' } },
+        { from: { moduleId: 'key-1', port: 'out' }, to: { moduleId: 'iter-1', port: 'key' } },
+        { from: { moduleId: 'iter-1', port: 'out' }, to: { moduleId: 'hex-2', port: 'in' } },
+        { from: { moduleId: 'hex-2', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('def iterator_def_KeyedByteRoundIterator');
+    expect(pythonSource).toContain('requires a key bus of exactly 32 bits');
+    expect(pythonSource).toContain('iterator_def_KeyedByteRoundIterator(');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, compositeRegistry));
+  });
+
+  it('matches executeTickedProject for a temporal nested iterator workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'AAAA' } },
+        { id: 'iter-1', defId: 'NestedSteppingRotorIterator', params: {} },
+        { id: 'out-1', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'iter-1', port: 'in' } },
+        { from: { moduleId: 'iter-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('def iterator_def_SteppingRotorIterator_init_state');
+    expect(pythonSource).toContain('def iterator_def_SteppingRotorIterator_tick');
+    expect(pythonSource).toContain('iterator_def_SteppingRotorIterator_tick(');
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, compositeRegistry));
   });
 

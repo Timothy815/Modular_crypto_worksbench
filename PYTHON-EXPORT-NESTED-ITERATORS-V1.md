@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Proposed
+Status: Implemented
 
 ---
 
@@ -72,6 +72,7 @@ This slice must:
 - preserve Python stdlib-only output
 - preserve helper-function iterator export
 - allow iterator round definitions that are themselves already-export-compatible iterators
+- use distinct definition-level helper names for iterator round definitions that are themselves iterators
 - preserve globally unique helper names for nested iterator helpers
 - preserve explicit local scoping inside each generated helper
 - preserve deterministic dependency ordering across nested iterator helpers
@@ -114,6 +115,7 @@ Generated Python must mirror MCW behavior exactly for:
 - nested iterator key-bus slicing
 - nested `iterationCount` override handling
 - nested iterator `_init_state` / `_tick` sub-state routing
+- explicit recursive walking of nested iterator state trees during `_init_state` and `_tick`
 - helper-to-helper call ordering
 - temporal behavior inside nested iterators when every internal definition already falls inside the shipped temporal subset
 
@@ -130,7 +132,8 @@ That file should now contain:
 1. the shipped stateless/temporal helper layer
 2. generated helper functions for export-compatible composites
 3. generated helper functions for export-compatible iterators
-4. visible nested iterator-helper calls inside generated iterator helpers where authored machines use iterator round definitions
+4. generated definition-level iterator helpers for iterator round definitions that are themselves iterators
+5. visible nested iterator-helper calls inside generated iterator helpers where authored machines use iterator round definitions
 5. top-level `run()` or `run_ticks()` using those helpers
 6. one `main()` that prints stable sink output lines
 
@@ -149,6 +152,7 @@ It must not read like:
 
 The compatibility check should now:
 - allow iterator round definitions that are themselves already-supported iterators
+- reject iterator definition cycles before code generation
 - continue to reject unsupported iterator families inside nested iterator layers
 - continue to reject generalized recursive mixed structure beyond this bounded slice
 
@@ -159,8 +163,8 @@ This slice should extend the current compatibility architecture rather than repl
 ## Parity Tests
 
 This slice must add parity tests for at least:
-- one shipped nested iterator workspace
 - one user-authored nested iterator workspace
+- one keyed nested iterator workspace
 - one temporal nested iterator workspace if a compatible temporal case is available
 - one workspace proving that nested iterator helper calls remain visible in emitted Python
 
