@@ -290,6 +290,11 @@ That mixed-structure export slice is now also shipped:
 - generated helper names are namespaced for internal iterator instances, composite helpers route iterator sub-state explicitly, and forwarded composite params can control internal iterator `iterationCount`
 - iterator-round-as-iterator behavior and generalized mixed recursive export remain out of scope in this slice
 
+The next structural export frontier is now explicitly recorded as:
+- `PYTHON-EXPORT-NESTED-ITERATORS-V1.md`
+- the next bounded structural slice is iterator round definitions that are themselves already-supported iterators
+- generalized recursive mixed export remains out of scope beyond that slice
+
 The future Python export architecture note after that is now explicitly recorded as:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
 - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file

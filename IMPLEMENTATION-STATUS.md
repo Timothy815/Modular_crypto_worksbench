@@ -174,6 +174,10 @@ Current `main` now also includes:
   - helper names for internal iterator instances are namespaced, composite helpers route iterator sub-state explicitly, and forwarded composite params can control internal iterator `iterationCount`
   - parity-tested for shipped, user-authored, and temporal iterator-containing composite workspaces
   - keeps iterator round definitions that are themselves iterators and generalized mixed recursive export out of scope for the first mixed slice
+- next structural iterator-recursive frontier:
+  - `PYTHON-EXPORT-NESTED-ITERATORS-V1.md`
+  - records iterator round definitions that are themselves already-supported iterators as the next bounded structural slice
+  - keeps generalized recursive mixed export out of scope beyond that slice
 - future Python export architecture note:
   - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
   - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file
