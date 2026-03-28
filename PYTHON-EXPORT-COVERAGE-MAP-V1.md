@@ -31,9 +31,9 @@ The definitive primitive-module baseline for this audit is:
 
 Primitive modules currently present in the registry: `59`
 
-Primitive modules currently export-compatible: `56`
+Primitive modules currently export-compatible: `57`
 
-Primitive modules currently unsupported: `3`
+Primitive modules currently unsupported: `2`
 
 ---
 
@@ -46,6 +46,7 @@ Current Python export supports these primitive modules:
   - `KeyInput`
   - `BitSource`
   - `AsciiSource`
+  - `BaudotSource`
   - `HexSource`
   - `IV`
   - `Nonce`
@@ -106,17 +107,12 @@ Current Python export supports these primitive modules:
 
 These primitive modules are still not export-compatible:
 
-1. `BaudotSource`
-- classification: `missing-runtime-support`
-- reason: export supports Baudot decoding/output, but not a Python-side Baudot source helper
-- likely difficulty: low
-
-2. `ModExp`
+1. `ModExp`
 - classification: `missing-runtime-support`
 - reason: no emitted Python helper or parity line yet
 - likely difficulty: low to medium
 
-3. `ModInverse`
+2. `ModInverse`
 - classification: `missing-runtime-support`
 - reason: no emitted Python helper or parity line yet
 - likely difficulty: low to medium
@@ -234,19 +230,15 @@ It is a test-strengthening note.
 
 The highest-value remaining gaps are:
 
-1. `BaudotSource`
-- why: closes the remaining Baudot source/output asymmetry
-- category: `missing-runtime-support`
-
-2. `ModExp` and `ModInverse`
+1. `ModExp` and `ModInverse`
 - why: completes the remaining major number-theoretic primitive gap
 - category: `missing-runtime-support`
 
-3. nested/recursive structured export
+2. nested/recursive structured export
 - why: this is the largest remaining structural blocker between “strong export line” and “anything MCW can run should eventually export”
 - category: `shared-state-or-recursive-semantics`
 
-4. runtime-library split
+3. runtime-library split
 - why: productization and long-term code organization
 - category: `future-productization`
 
@@ -258,9 +250,8 @@ Based on the shipped codebase, the most likely next export frontier is:
 - finish the remaining unsupported primitive/runtime helpers first
 
 Recommended immediate implementation order:
-1. `BaudotSource`
-2. `ModExp`
-3. `ModInverse`
+1. `ModExp`
+2. `ModInverse`
 
 After that, the next true frontier becomes:
 - broader recursive structured export

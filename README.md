@@ -259,6 +259,13 @@ That `Plugboard` export slice is now also shipped:
   - `ModExp`
   - `ModInverse`
 
+That `BaudotSource` export slice is now also shipped:
+- `PYTHON-EXPORT-BAUDOT-SOURCE-V1.md`
+- exported Python now supports both stateless and tick-sliced `BaudotSource` parity
+- the remaining primitive gaps are now:
+  - `ModExp`
+  - `ModInverse`
+
 The future Python export architecture note after that is now explicitly recorded as:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
 - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file

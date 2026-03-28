@@ -19,6 +19,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'TextInput',
   'KeyInput',
   'AsciiSource',
+  'BaudotSource',
   'BitSource',
   'HexSource',
   'IV',
@@ -83,6 +84,7 @@ const SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS = new Set([
 const SUPPORTED_STATEFUL_PYTHON_EXPORT_COMPANION_DEF_IDS = new Set([
   'TextInput',
   'BitSource',
+  'BaudotSource',
   'BitOutput',
   'Output',
   'TextOutput',
@@ -184,6 +186,66 @@ def ascii_source(value):
         for shift in (7, 6, 5, 4, 3, 2, 1, 0):
             bits.append((code >> shift) & 1)
     return {"out": bits}
+
+
+def _validate_baudot_text(value):
+    if not isinstance(value, str):
+        raise ValueError("BaudotSource requires a text string")
+    for char in value.upper():
+        if not ("A" <= char <= "Z" or char == " "):
+            raise ValueError("BaudotSource accepts only letters A-Z and spaces in letters mode")
+
+
+def _encode_baudot_text(value):
+    table = {
+        "E": 1,
+        "A": 3,
+        " ": 4,
+        "S": 5,
+        "I": 6,
+        "U": 7,
+        "D": 9,
+        "R": 10,
+        "J": 11,
+        "N": 12,
+        "F": 13,
+        "C": 14,
+        "K": 15,
+        "T": 16,
+        "Z": 17,
+        "L": 18,
+        "W": 19,
+        "H": 20,
+        "Y": 21,
+        "P": 22,
+        "Q": 23,
+        "O": 24,
+        "B": 25,
+        "G": 26,
+        "M": 28,
+        "X": 29,
+        "V": 30,
+    }
+    bits = []
+    for char in value.upper():
+        code = table.get(char)
+        if code is None:
+            raise ValueError(f'BaudotSource cannot encode "{char}" in letters mode')
+        for shift in (4, 3, 2, 1, 0):
+            bits.append((code >> shift) & 1)
+    return bits
+
+
+def baudot_source(value):
+    _validate_baudot_text(value)
+    return {"out": _encode_baudot_text(value)}
+
+
+def baudot_source_tick(value, tick):
+    text = value if isinstance(value, str) else ""
+    sliced = text[tick] if tick < len(text) else ""
+    _validate_baudot_text(sliced)
+    return {"out": _encode_baudot_text(sliced)}
 
 
 def bit_source(stream):
@@ -1236,6 +1298,8 @@ function buildModuleExpression(
       return `key_input(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
     case 'AsciiSource':
       return `ascii_source(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
+    case 'BaudotSource':
+      return `baudot_source(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
     case 'BitSource':
       return `bit_source(${expressionContext.getParamExpression(moduleInstance, def, 'stream')})`;
     case 'HexSource':
@@ -2045,6 +2109,14 @@ function buildCompositeHelperDefinitions(
         continue;
       }
 
+      if (def.id === 'BaudotSource') {
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        tickLines.push(
+          `    ${variableName} = baudot_source_tick(${expressionContext.getParamExpression(moduleInstance, def, 'value')}, tick)`,
+        );
+        continue;
+      }
+
       if (def.id === 'TextInput') {
         tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
         tickLines.push(
@@ -2813,6 +2885,14 @@ function generateStatefulPythonExport(
       bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
       bodyLines.push(
         `        ${variableName} = bit_source_tick(${expressionContext.getParamExpression(moduleInstance, def, 'stream')}, tick)`,
+      );
+      continue;
+    }
+
+    if (def.id === 'BaudotSource') {
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
+      bodyLines.push(
+        `        ${variableName} = baudot_source_tick(${expressionContext.getParamExpression(moduleInstance, def, 'value')}, tick)`,
       );
       continue;
     }

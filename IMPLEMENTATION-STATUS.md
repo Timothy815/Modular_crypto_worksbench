@@ -148,6 +148,10 @@ Current `main` now also includes:
   - now shipped as the next audit-ranked primitive/runtime gap
   - exported Python now supports bounded `Plugboard` parity
   - parity-tested for direct `Plugboard` use and a plugboard-plus-rotor historical-machine path
+- next Python export implementation slice after that:
+  - `PYTHON-EXPORT-BAUDOT-SOURCE-V1.md`
+  - now shipped as the next audit-ranked primitive/runtime gap
+  - exported Python now supports stateless and tick-sliced `BaudotSource` parity
 - future Python export architecture note:
   - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
   - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file

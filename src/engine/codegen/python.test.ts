@@ -1010,6 +1010,25 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
   });
 
+  it('matches executeProject for a direct baudot source workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'baudot-src', defId: 'BaudotSource', params: { value: 'AB' } },
+        { id: 'bits-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'baudot-src', port: 'out' }, to: { moduleId: 'bits-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('# Module: baudot-src [BaudotSource]');
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
   it('matches executeTickedProject for a clocked counter workspace', () => {
     const project: Project = {
       modules: [
@@ -1020,6 +1039,29 @@ parityDescribe('generatePythonExport', () => {
       connections: [
         { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'counter-1', port: 'clock' } },
         { from: { moduleId: 'counter-1', port: 'out' }, to: { moduleId: 'bits-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeTickedProject for a baudot source decoding workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'clock-1', defId: 'Clock', params: { period: 1, offset: 0, length: 2 } },
+        { id: 'counter-1', defId: 'Counter', params: { width: 2, value: 0, step: 1 } },
+        { id: 'baudot-src', defId: 'BaudotSource', params: { value: 'AB' } },
+        { id: 'decode-1', defId: 'BitsToBaudot', params: {} },
+        { id: 'baudot-out', defId: 'BaudotOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'counter-1', port: 'clock' } },
+        { from: { moduleId: 'baudot-src', port: 'out' }, to: { moduleId: 'decode-1', port: 'in' } },
+        { from: { moduleId: 'decode-1', port: 'out' }, to: { moduleId: 'baudot-out', port: 'in' } },
       ],
     };
 
