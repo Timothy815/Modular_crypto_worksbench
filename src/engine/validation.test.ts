@@ -29,6 +29,7 @@ import { Nonce } from './modules/nonce';
 import { NOT } from './modules/not';
 import { OR } from './modules/or';
 import { Permutation } from './modules/permutation';
+import { PolluxFractionation } from './modules/pollux-fractionation';
 import { Plugboard } from './modules/plugboard';
 import { Reflector } from './modules/reflector';
 import { Rotor } from './modules/rotor';
@@ -104,6 +105,7 @@ const registry: ModuleRegistry = {
   [Modulo.id]: Modulo,
   [MulMod.id]: MulMod,
   [Permutation.id]: Permutation,
+  [PolluxFractionation.id]: PolluxFractionation,
   [SymbolPermutation.id]: SymbolPermutation,
   [SymbolWindow.id]: SymbolWindow,
   [Rotor.id]: Rotor,
@@ -272,6 +274,30 @@ describe('validateProject', () => {
         (issue) =>
           issue.moduleId === 'sbox-1' &&
           issue.message.includes('SBox table length must be a power of two'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects overlapping Pollux fractionation alphabets before execution', () => {
+    const project: Project = {
+      modules: [
+        {
+          id: 'pollux-1',
+          defId: 'PolluxFractionation',
+          params: { zeroAlphabet: 'ABC', oneAlphabet: 'CDE' },
+        },
+      ],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'pollux-1' &&
+          issue.message.includes('disjoint'),
       ),
     ).toBe(true);
   });

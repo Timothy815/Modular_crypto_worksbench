@@ -54,6 +54,7 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   BitsToAscii: 'bridge',
   BitsToBaudot: 'bridge',
   BitsToSymbol: 'bridge',
+  PolluxFractionation: 'bridge',
   BitsToHex: 'bridge',
   HexToAscii: 'bridge',
   AsciiToHex: 'bridge',

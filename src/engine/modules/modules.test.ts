@@ -13,6 +13,11 @@ import { BitsToAscii } from './bits-to-ascii';
 import { BitsToBaudot } from './bits-to-baudot';
 import { BitsToSymbol } from './bits-to-symbol';
 import { BitsToHex } from './bits-to-hex';
+import {
+  encodePolluxFractionation,
+  parsePolluxAlphabet,
+  PolluxFractionation,
+} from './pollux-fractionation';
 import { HexToAscii } from './hex-to-ascii';
 import { AsciiToHex } from './ascii-to-hex';
 import { AddMod } from './add-mod';
@@ -451,6 +456,57 @@ describe('BitsToSymbol', () => {
       const decoded = BitsToSymbol.evaluate({ in: encoded.out }, {});
       expect(decoded.out).toEqual({ type: 'symbol', value: letter });
     }
+  });
+});
+
+describe('PolluxFractionation', () => {
+  it('encodes bits with deterministic per-set round-robin selection', () => {
+    const result = PolluxFractionation.evaluate(
+      { in: { type: 'bits', value: [0, 1, 0, 0, 1, 1] } },
+      { zeroAlphabet: 'XQ', oneAlphabet: 'MN' },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'XMQXNM' });
+  });
+
+  it('accepts comma-separated alphabets and normalizes letters to uppercase', () => {
+    const result = PolluxFractionation.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 0] } },
+      { zeroAlphabet: 'a, c', oneAlphabet: 'b, d' },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'BADC' });
+  });
+
+  it('returns an empty symbol stream for an empty bit input', () => {
+    const result = PolluxFractionation.evaluate(
+      { in: { type: 'bits', value: [] } },
+      { zeroAlphabet: 'XQ', oneAlphabet: 'MN' },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: '' });
+  });
+
+  it('rejects overlapping alphabets', () => {
+    expect(() =>
+      PolluxFractionation.evaluate(
+        { in: { type: 'bits', value: [0, 1] } },
+        { zeroAlphabet: 'AX', oneAlphabet: 'AB' },
+      ),
+    ).toThrow(/disjoint/i);
+  });
+});
+
+describe('parsePolluxAlphabet', () => {
+  it('splits bare strings into single-character symbols', () => {
+    expect(parsePolluxAlphabet('XQZ', 'zeroAlphabet')).toEqual(['X', 'Q', 'Z']);
+  });
+
+  it('rejects duplicates within a single alphabet', () => {
+    expect(() => parsePolluxAlphabet('AAB', 'zeroAlphabet')).toThrow(/duplicate/i);
+  });
+});
+
+describe('encodePolluxFractionation', () => {
+  it('cycles zero and one alphabets independently', () => {
+    expect(encodePolluxFractionation([1, 1, 0, 1, 0], ['X', 'Q'], ['M', 'N'])).toBe('MNXMQ');
   });
 });
 

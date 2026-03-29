@@ -681,6 +681,7 @@ Implemented and shipped:
 - `SBOX-TABLE-TRANSFORMS-V1.md`: shipped bounded follow-on for visible row/column transforms on authored `SBox` tables
 - `CUSTOM-PERMUTATION-AUTHORING-V1.md`: shipped bounded tactile authoring slice for editable routing/permutation design inside the workbench
 - `CUSTOM-REFLECTOR-AUTHORING-V1.md`: shipped bounded tactile authoring slice for paired reflector wiring inside the workbench
+- `POLLUX-FRACTIONATION-V1.md`: shipped bounded classical fractionation / homophonic-encoding primitive for disjoint bit-to-symbol output sets
 - `WORKBENCH-ERGONOMICS-V1.md`: shipped bounded workbench-usability slice for multi-select, group movement, and one-click cleanup
 - `WORKSPACE-LIBRARY-V1.md`: shipped bounded workspace-management slice for blank build spaces and saved personal collections
 - `WORKSPACE-RENAME-V1.md`: shipped bounded housekeeping slice for workspace-local module instance renaming

@@ -999,6 +999,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `SBOX-TABLE-TRANSFORMS-V1.md` | Shipped bounded follow-on for visible row/column transforms on authored `SBox` tables |
 | `CUSTOM-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.12.0` as bounded tactile routing authoring |
 | `CUSTOM-REFLECTOR-AUTHORING-V1.md` | Shipped in `v1.12.0` as bounded paired reflector authoring |
+| `POLLUX-FRACTIONATION-V1.md` | Shipped bounded classical fractionation / homophonic-encoding primitive for disjoint bit-to-symbol output sets |
 | `WORKBENCH-ERGONOMICS-V1.md` | Shipped in `v1.13.0` as bounded workbench usability improvements |
 | `WORKSPACE-LIBRARY-V1.md` | Shipped in `v1.13.0` as bounded blank/save/delete user workspace management |
 | `COMPOSITE-UNZIP-V1.md` | Shipped in `v1.13.0` as bounded inverse-composition for one composite instance |

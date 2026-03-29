@@ -36,6 +36,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'SymbolWindow',
   'SymbolToBits',
   'BitsToSymbol',
+  'PolluxFractionation',
   'BitsToHex',
   'HexToAscii',
   'AsciiToHex',
@@ -183,7 +184,9 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'format_ticked_sink_line',
 ] as const;
 
-const PYTHON_RUNTIME = `ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const PYTHON_RUNTIME = `import re
+
+ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 ROTOR_SIZE = len(ALPHABET)
 
 
@@ -387,6 +390,54 @@ def bits_to_symbol(signal):
     index = _bits_to_unsigned_number(bits)
     index = ((index % 26) + 26) % 26
     return {"out": alphabet[index]}
+
+
+def _parse_pollux_alphabet(value, field_name):
+    if not isinstance(value, str):
+        raise ValueError(f'Pollux Fractionation requires "{field_name}" to be a string')
+    trimmed = value.strip()
+    if not trimmed:
+        raise ValueError(f'Pollux Fractionation requires "{field_name}" to contain at least one symbol')
+    if "," in trimmed or any(char.isspace() for char in trimmed):
+        raw_tokens = [part for part in re.split(r"[\\s,]+", trimmed) if part]
+    else:
+        raw_tokens = list(trimmed)
+    tokens = [token.upper() for token in raw_tokens]
+    if any(len(token) != 1 for token in tokens):
+        raise ValueError(
+            f'Pollux Fractionation requires "{field_name}" to contain only single-character symbols'
+        )
+    if any((token.isspace() or token == ",") for token in tokens):
+        raise ValueError(
+            f'Pollux Fractionation requires "{field_name}" to contain visible non-separator symbols'
+        )
+    if len(set(tokens)) != len(tokens):
+        raise ValueError(f'Pollux Fractionation requires "{field_name}" to avoid duplicate symbols')
+    return tokens
+
+
+def pollux_fractionation(signal, zero_alphabet_value, one_alphabet_value):
+    bits = _expect_bits(signal, "PolluxFractionation")
+    zero_alphabet = _parse_pollux_alphabet(zero_alphabet_value, "zeroAlphabet")
+    one_alphabet = _parse_pollux_alphabet(one_alphabet_value, "oneAlphabet")
+    overlap = next((symbol for symbol in zero_alphabet if symbol in one_alphabet), None)
+    if overlap is not None:
+        raise ValueError(
+            f'Pollux Fractionation requires zeroAlphabet and oneAlphabet to be disjoint (overlap: "{overlap}")'
+        )
+    output = []
+    zero_index = 0
+    one_index = 0
+    for bit in bits:
+        if bit == 0:
+            output.append(zero_alphabet[zero_index % len(zero_alphabet)])
+            zero_index += 1
+        elif bit == 1:
+            output.append(one_alphabet[one_index % len(one_alphabet)])
+            one_index += 1
+        else:
+            raise ValueError("Pollux Fractionation expects only 0/1 bits")
+    return {"out": "".join(output)}
 
 
 def bits_to_ascii(signal):
@@ -1676,6 +1727,8 @@ function buildModuleExpression(
       return `plugboard_eval(${expressionContext.getInputExpression(moduleId, 'in')}, _parse_plugboard_wiring(${expressionContext.getParamExpression(moduleInstance, def, 'wiring')}))`;
     case 'BitsToSymbol':
       return `bits_to_symbol(${expressionContext.getInputExpression(moduleId, 'in')})`;
+    case 'PolluxFractionation':
+      return `pollux_fractionation(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'zeroAlphabet')}, ${expressionContext.getParamExpression(moduleInstance, def, 'oneAlphabet')})`;
     case 'BitsToAscii':
       return `bits_to_ascii(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'BitsToBaudot':

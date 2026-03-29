@@ -13,6 +13,7 @@ import { BitsToAscii } from './bits-to-ascii';
 import { BitsToBaudot } from './bits-to-baudot';
 import { BitsToSymbol } from './bits-to-symbol';
 import { BitsToHex } from './bits-to-hex';
+import { PolluxFractionation } from './pollux-fractionation';
 import { HexToAscii } from './hex-to-ascii';
 import { AsciiToHex } from './ascii-to-hex';
 import { XOR } from './xor';
@@ -73,6 +74,7 @@ export {
   BitsToBaudot,
   BitsToSymbol,
   BitsToHex,
+  PolluxFractionation,
   HexToAscii,
   AsciiToHex,
   XOR,
@@ -134,6 +136,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [BitsToBaudot.id]: BitsToBaudot,
   [BitsToSymbol.id]: BitsToSymbol,
   [BitsToHex.id]: BitsToHex,
+  [PolluxFractionation.id]: PolluxFractionation,
   [HexToAscii.id]: HexToAscii,
   [AsciiToHex.id]: AsciiToHex,
   [XOR.id]: XOR,

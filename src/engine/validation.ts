@@ -34,6 +34,7 @@ import { validateBitPadParam } from './modules/bit-pad';
 import { validateBitUnpadParam } from './modules/bit-unpad';
 import { validateBitWindowParam } from './modules/bit-window';
 import { validateByteRotateParam } from './modules/byte-rotate';
+import { parsePolluxAlphabet, validatePolluxFractionationParam } from './modules/pollux-fractionation';
 import { isBypassEligibleDefinition } from './bypass';
 import {
   validateProtocolMaterialParam,
@@ -228,6 +229,10 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'ByteRotate') {
     return validateByteRotateParam(field.key, value);
+  }
+
+  if (def.id === 'PolluxFractionation') {
+    return validatePolluxFractionationParam(field.key, value);
   }
 
   return null;
@@ -789,6 +794,23 @@ function validateParams(
   }
 
   if (!isCompositeDefinition(def) && !isIteratorDefinition(def)) {
+    if (def.id === 'PolluxFractionation') {
+      try {
+        const zeroAlphabet = parsePolluxAlphabet(params.zeroAlphabet, 'zeroAlphabet');
+        const oneAlphabet = parsePolluxAlphabet(params.oneAlphabet, 'oneAlphabet');
+        const overlap = zeroAlphabet.find((symbol) => oneAlphabet.includes(symbol));
+        if (overlap) {
+          issues.push({
+            code: 'invalid-param-type',
+            message: `Module "${moduleInstance.id}" parameter "oneAlphabet" is invalid. Pollux Fractionation requires zeroAlphabet and oneAlphabet to be disjoint (overlap: "${overlap}")`,
+            moduleId: moduleInstance.id,
+          });
+        }
+      } catch {
+        // Field-level validation already reports malformed alphabet inputs.
+      }
+    }
+
     if (def.id === 'IV' || def.id === 'Nonce' || def.id === 'Salt') {
       const widthMessage = validateProtocolMaterialValueFitsWidth(params.value, params.width);
       if (widthMessage) {

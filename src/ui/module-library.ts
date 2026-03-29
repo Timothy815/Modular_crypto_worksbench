@@ -422,6 +422,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this to return from bit-based transforms back into a symbolic result.',
     searchTerms: ['bridge', 'convert', 'decode', 'bits', 'symbol'],
   },
+  PolluxFractionation: {
+    sectionId: 'bridges',
+    sortOrder: 45,
+    purpose: 'Encodes each input bit into one visible symbol drawn from disjoint zero/one symbol sets.',
+    detail: 'A bounded Pollux-style fractionation bridge. It disguises bit values at the representation layer without claiming modern diffusion or mixing.',
+    searchTerms: ['pollux', 'fractionation', 'homophonic', 'bridge', 'bits', 'symbol', 'classical', 'disguise'],
+  },
   BitsToHex: {
     sectionId: 'bridges',
     sortOrder: 50,
