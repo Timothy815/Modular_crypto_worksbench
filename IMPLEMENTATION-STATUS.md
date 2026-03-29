@@ -264,8 +264,9 @@ The next export/trust slice after that is now also recorded:
   - includes live primitive inventory from the registry, actual workspace/challenge interface shapes, explicit connection rules, and minimal JSON examples for workspace/challenge generation without embedding a chatbot or provider integration in MCW
 - next bounded cryptanalysis legibility refinement after that:
   - `CRYPTANALYSIS-VISUALS-V1.md`
-  - records a first visual-upgrade pass for the existing cryptanalysis workspace
-  - prioritizes round diffusion charts, candidate-period comparison plots, frequency-confidence visuals, and a bounded influence heatmap without widening into a generic chart suite
+  - now active as the current first visual-upgrade pass for the existing cryptanalysis workspace
+  - first phase ships a round diffusion chart for modern analysis and clickable candidate-period comparison for classical analysis
+  - keeps later frequency-confidence and bounded influence-heatmap work explicitly deferred rather than widening into a generic chart suite
 - expand Python export carefully second
 - refactor the largest UI surfaces third
 - keep multi-window workspace support as a deliberate next-tier priority after those lines

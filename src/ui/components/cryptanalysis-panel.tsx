@@ -6,8 +6,10 @@ import {
   analyzeSymbolSignal,
   bitsToAlphabetSymbol,
   bitsToAsciiText,
+  buildCandidatePeriodChartEntries,
   analyzeVigenereColumns,
   bitsToHex,
+  buildRoundDiffusionChartEntries,
   buildFrequencyGraphEntries,
   flipBitAtIndex,
   hexToBits,
@@ -249,6 +251,14 @@ export function CryptanalysisPanel({
   const roundDiffusion = useMemo(
     () => analyzeRoundDiffusion(execution, variantExecution),
     [execution, variantExecution],
+  );
+  const roundDiffusionChart = useMemo(
+    () => buildRoundDiffusionChartEntries(roundDiffusion),
+    [roundDiffusion],
+  );
+  const candidatePeriodChart = useMemo(
+    () => (analysis ? buildCandidatePeriodChartEntries(analysis.candidatePeriods) : []),
+    [analysis],
   );
   const hasBitDomainOutput = baselineOutputBits !== null;
   const showModernCompatibilityCallout = !flippableSource || !hasBitDomainOutput;
@@ -542,8 +552,8 @@ export function CryptanalysisPanel({
                     </div>
                   ))}
                 </div>
-                <div className="modern-round-diffusion-list">
-                  {roundDiffusion.map((entry) => (
+                <div className="modern-round-diffusion-chart" role="list" aria-label="Round diffusion chart">
+                  {roundDiffusionChart.map((entry) => (
                     <div key={entry.moduleId} className="modern-round-diffusion-row">
                       <div className="modern-round-diffusion-copy">
                         <span className="meta-label">Round {entry.round}</span>
@@ -555,7 +565,7 @@ export function CryptanalysisPanel({
                       <div className="modern-round-diffusion-bar">
                         <div
                           className="modern-round-diffusion-fill"
-                          style={{ width: `${Math.max(entry.changedPercent * 100, 2)}%` }}
+                          style={{ width: `${entry.barPercent}%` }}
                           title={`${(entry.changedPercent * 100).toFixed(1)}% changed`}
                         />
                       </div>
@@ -652,19 +662,54 @@ export function CryptanalysisPanel({
           <span className="meta-label">Candidate Key Lengths</span>
           <strong>IOC plus repetition support</strong>
           {analysis && analysis.candidatePeriods.length > 0 ? (
-            <div className="cryptanalysis-list">
-              {analysis.candidatePeriods.map((entry) => (
-                <p key={entry.period} className="comparison-copy">
-                  <strong>Period {entry.period}</strong>
-                  {' '}| avg IOC{' '}
-                  <strong>
-                    {entry.averageIndexOfCoincidence !== null
-                      ? entry.averageIndexOfCoincidence.toFixed(3)
-                      : 'n/a'}
-                  </strong>
-                  {' '}| supporting distances <strong>{entry.supportingDistanceCount}</strong>
-                </p>
+            <div className="cryptanalysis-period-chart" role="list" aria-label="Candidate period comparison">
+              {candidatePeriodChart.map((entry) => (
+                <button
+                  key={entry.period}
+                  type="button"
+                  className={
+                    effectivePeriod === entry.period
+                      ? 'cryptanalysis-period-row cryptanalysis-period-row-active'
+                      : 'cryptanalysis-period-row'
+                  }
+                  onClick={() => setSelectedPeriod(entry.period)}
+                >
+                  <div className="cryptanalysis-period-copy">
+                    <span className="meta-label">Period {entry.period}</span>
+                    <strong>
+                      IOC {entry.averageIndexOfCoincidence !== null
+                        ? entry.averageIndexOfCoincidence.toFixed(3)
+                        : 'n/a'}
+                    </strong>
+                    <span className="comparison-copy">
+                      Support {entry.supportingDistanceCount}
+                    </span>
+                  </div>
+                  <div className="cryptanalysis-period-bars">
+                    <div className="cryptanalysis-period-bar-group">
+                      <span className="cryptanalysis-period-bar-label">IOC</span>
+                      <div className="cryptanalysis-period-bar-track">
+                        <div
+                          className="cryptanalysis-period-bar-fill cryptanalysis-period-bar-fill-ioc"
+                          style={{ width: `${Math.max(entry.iocBarPercent, entry.averageIndexOfCoincidence ? 4 : 0)}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="cryptanalysis-period-bar-group">
+                      <span className="cryptanalysis-period-bar-label">Support</span>
+                      <div className="cryptanalysis-period-bar-track">
+                        <div
+                          className="cryptanalysis-period-bar-fill cryptanalysis-period-bar-fill-support"
+                          style={{ width: `${Math.max(entry.supportBarPercent, entry.supportingDistanceCount > 0 ? 4 : 0)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </button>
               ))}
+              <p className="comparison-copy cryptanalysis-help-copy">
+                Click a candidate period to drive the column-analysis workflow below.
+              </p>
             </div>
           ) : (
             <p className="comparison-copy">

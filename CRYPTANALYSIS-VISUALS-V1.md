@@ -1,6 +1,10 @@
 # CRYPTANALYSIS-VISUALS-V1
 
-Status: Proposed
+Status: Active
+
+Implementation note:
+- first phase shipped: round diffusion chart + clickable candidate-period comparison
+- remaining follow-ons stay bounded: frequency confidence view + influence heatmap
 
 Owner: Codex
 Scope: UI / Analysis Surface / Product Legibility
@@ -59,6 +63,8 @@ It should remain a visualization refinement of already-shipped workflows.
    - textual explanation
 5. New visuals must remain lightweight enough to fit inside the current cryptanalysis panel architecture.
 6. No third-party charting library is required in V1 unless implementation proves the native DOM/CSS/SVG path genuinely inadequate.
+7. New chart visuals should replace or collapse the corresponding text-list presentation rather than stacking above it.
+8. All visuals must respect the current light/dark theme using existing CSS variables rather than hard-coded palette values.
 
 ## V1 Priority Visuals
 
@@ -75,6 +81,8 @@ Purpose:
 - show where spread accelerates
 - make different constructions easier to compare visually
 
+The chart should replace the current text-list round-diffusion summary. The existing bit-strip matrix should remain as the detailed companion view.
+
 ### 2. Input-to-Output Influence Heatmap
 
 For modern analysis, add a bounded influence view that shows how individual input-bit flips affect output bits.
@@ -83,6 +91,7 @@ Bounded V1 rule:
 - use a sweep over the available input bit positions
 - show a simple matrix/heatmap of changed output positions
 - stay within currently supported modern-analysis source/output compatibility rules
+- cap the sweep at a maximum of 64 input bit positions in V1
 
 Purpose:
 - reveal asymmetry
@@ -100,6 +109,8 @@ Minimum useful form:
 Purpose:
 - reduce scan cost versus list-only period reasoning
 - make standout candidate periods easier to notice
+
+Clicking a candidate-period bar should select that period as the active analysis period for the existing column-analysis workflow.
 
 ### 4. Frequency Residual / Confidence View
 
@@ -123,6 +134,8 @@ Purpose:
 - No generic arbitrary chart dashboard
 - No large plotting dependency by default
 - No detached cryptanalysis window expansion as part of this slice
+- No interactive heatmap editing in V1
+- No chart image export in V1
 
 ## UX Rules
 

@@ -756,7 +756,8 @@ body.dock-resizing {
   background: color-mix(in srgb, var(--danger-text) 18%, var(--surface-soft-strong));
 }
 
-.modern-round-diffusion-list {
+.modern-round-diffusion-list,
+.modern-round-diffusion-chart {
   display: grid;
   gap: 12px;
 }
@@ -3965,6 +3966,86 @@ body.dock-resizing {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.cryptanalysis-period-chart {
+  display: grid;
+  gap: 10px;
+}
+
+.cryptanalysis-period-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 160px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+
+.cryptanalysis-period-row:hover {
+  background: var(--surface-2);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+.cryptanalysis-period-row-active {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-1));
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+  transform: translateY(-1px);
+}
+
+.cryptanalysis-period-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.cryptanalysis-period-copy .comparison-copy {
+  margin: 0;
+}
+
+.cryptanalysis-period-bars {
+  display: grid;
+  gap: 8px;
+}
+
+.cryptanalysis-period-bar-group {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.cryptanalysis-period-bar-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.cryptanalysis-period-bar-track {
+  min-height: 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-2) 85%, var(--surface-panel));
+  overflow: hidden;
+}
+
+.cryptanalysis-period-bar-fill {
+  min-height: 100%;
+  border-radius: 999px;
+}
+
+.cryptanalysis-period-bar-fill-ioc {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 78%, white), color-mix(in srgb, var(--accent) 46%, var(--surface-2)));
+}
+
+.cryptanalysis-period-bar-fill-support {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--danger-text) 68%, white), color-mix(in srgb, #d97706 72%, white));
 }
 
 .cryptanalysis-column-summary {

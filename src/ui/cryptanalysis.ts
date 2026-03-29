@@ -74,6 +74,23 @@ export interface RoundDiffusionEntry {
   changedPercent: number;
 }
 
+export interface RoundDiffusionChartEntry {
+  round: number;
+  moduleId: string;
+  label: string;
+  changedCount: number;
+  changedPercent: number;
+  barPercent: number;
+}
+
+export interface CandidatePeriodChartEntry {
+  period: number;
+  averageIndexOfCoincidence: number | null;
+  supportingDistanceCount: number;
+  iocBarPercent: number;
+  supportBarPercent: number;
+}
+
 export function hexToBits(value: string): number[] {
   return value
     .trim()
@@ -335,6 +352,44 @@ export function analyzeRoundDiffusion(
   }
 
   return [...latestByRound.values()].sort((left, right) => left.round - right.round);
+}
+
+export function buildRoundDiffusionChartEntries(
+  entries: RoundDiffusionEntry[],
+): RoundDiffusionChartEntry[] {
+  return entries.map((entry) => ({
+    round: entry.round,
+    moduleId: entry.moduleId,
+    label: entry.label,
+    changedCount: entry.changedCount,
+    changedPercent: entry.changedPercent,
+    barPercent: Math.max(entry.changedPercent * 100, 2),
+  }));
+}
+
+export function buildCandidatePeriodChartEntries(
+  entries: CandidatePeriodEntry[],
+): CandidatePeriodChartEntry[] {
+  const maxIoc = entries.reduce(
+    (best, entry) => Math.max(best, entry.averageIndexOfCoincidence ?? 0),
+    0,
+  );
+  const maxSupport = entries.reduce(
+    (best, entry) => Math.max(best, entry.supportingDistanceCount),
+    0,
+  );
+
+  return entries.map((entry) => ({
+    period: entry.period,
+    averageIndexOfCoincidence: entry.averageIndexOfCoincidence,
+    supportingDistanceCount: entry.supportingDistanceCount,
+    iocBarPercent:
+      maxIoc > 0 && entry.averageIndexOfCoincidence !== null
+        ? (entry.averageIndexOfCoincidence / maxIoc) * 100
+        : 0,
+    supportBarPercent:
+      maxSupport > 0 ? (entry.supportingDistanceCount / maxSupport) * 100 : 0,
+  }));
 }
 
 function calculateIndexOfCoincidence(counts: number[], totalLetters: number) {

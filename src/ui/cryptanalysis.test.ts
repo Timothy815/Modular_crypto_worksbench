@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   analyzeBitDifference,
+  buildCandidatePeriodChartEntries,
+  buildRoundDiffusionChartEntries,
   analyzeRoundDiffusion,
   analyzeSymbolSignal,
   analyzeVigenereColumns,
@@ -160,6 +162,56 @@ describe('buildFrequencyGraphEntries', () => {
 describe('modern bit analysis helpers', () => {
   it('parses bit strings while ignoring non-bit separators', () => {
     expect(parseBitString('10 01-11x')).toEqual([1, 0, 0, 1, 1, 1]);
+  });
+
+  it('builds round diffusion chart entries from existing diffusion data', () => {
+    expect(
+      buildRoundDiffusionChartEntries([
+        {
+          round: 1,
+          moduleId: 'rounds/round-1',
+          label: 'Round',
+          baselineBits: [0, 0, 0, 0],
+          variantBits: [1, 0, 0, 0],
+          changedFlags: [true, false, false, false],
+          changedCount: 1,
+          changedPercent: 0.25,
+        },
+      ]),
+    ).toEqual([
+      {
+        round: 1,
+        moduleId: 'rounds/round-1',
+        label: 'Round',
+        changedCount: 1,
+        changedPercent: 0.25,
+        barPercent: 25,
+      },
+    ]);
+  });
+
+  it('normalizes candidate period metrics for chart rendering', () => {
+    expect(
+      buildCandidatePeriodChartEntries([
+        { period: 3, averageIndexOfCoincidence: 0.045, supportingDistanceCount: 2 },
+        { period: 6, averageIndexOfCoincidence: 0.067, supportingDistanceCount: 4 },
+      ]),
+    ).toEqual([
+      {
+        period: 3,
+        averageIndexOfCoincidence: 0.045,
+        supportingDistanceCount: 2,
+        iocBarPercent: expect.closeTo((0.045 / 0.067) * 100, 6),
+        supportBarPercent: 50,
+      },
+      {
+        period: 6,
+        averageIndexOfCoincidence: 0.067,
+        supportingDistanceCount: 4,
+        iocBarPercent: 100,
+        supportBarPercent: 100,
+      },
+    ]);
   });
 
   it('flips one bit at a chosen index', () => {
