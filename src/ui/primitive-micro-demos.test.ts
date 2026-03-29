@@ -17,6 +17,7 @@ describe('primitive micro demos', () => {
       'BitPad',
       'BitJoin',
       'SBox',
+      'PolluxFractionation',
       'LFSR',
       'MultiRouter',
       'Rotor',
@@ -29,6 +30,7 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('Demux')?.name).toBe('Demux Micro Demo');
     expect(getPrimitiveMicroDemo('Counter')?.name).toBe('Counter Micro Demo');
     expect(getPrimitiveMicroDemo('SBox')?.name).toBe('S-Box Micro Demo');
+    expect(getPrimitiveMicroDemo('PolluxFractionation')?.name).toBe('Pollux Fractionation Micro Demo');
     expect(getPrimitiveMicroDemo('LFSR')?.name).toBe('LFSR Micro Demo');
     expect(getPrimitiveMicroDemo('MultiRouter')?.name).toBe('Multi Router Micro Demo');
     expect(getPrimitiveMicroDemo('Rotor')?.name).toBe('Rotor Micro Demo');

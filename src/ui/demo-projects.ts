@@ -854,6 +854,33 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'pollux-fractionation',
+    name: 'Pollux Fractionation',
+    group: 'Historical Bridges',
+    summary: 'A visible Pollux-style bridge that fractionates bits into disjoint symbol sets so disguise stays separate from diffusion.',
+    pipeline: 'BitSource -> PolluxFractionation -> TextOutput',
+    project: {
+      modules: [
+        { id: 'source', defId: 'BitSource', params: { stream: [0, 1, 0, 1, 1, 0, 0, 1] } },
+        {
+          id: 'pollux',
+          defId: 'PolluxFractionation',
+          params: { zeroAlphabet: 'X,Q,Z', oneAlphabet: 'M,N,O' },
+        },
+        { id: 'output', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'pollux', port: 'in' } },
+        { from: { moduleId: 'pollux', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      source: { x: 64, y: 176 },
+      pollux: { x: 364, y: 176 },
+      output: { x: 664, y: 176 },
+    },
+  },
+  {
     id: 'lorenz-foundation',
     name: 'Lorenz SZ42 Foundation',
     group: 'Historical Bridges',

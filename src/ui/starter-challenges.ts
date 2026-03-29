@@ -13,6 +13,7 @@ const splitTransformProject = demoProjects.find((project) => project.id === 'spl
 const padAndSplitProject = demoProjects.find((project) => project.id === 'pad-and-split');
 const protocolMaterialProject = demoProjects.find((project) => project.id === 'protocol-material-mixer');
 const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
+const polluxFractionationProject = demoProjects.find((project) => project.id === 'pollux-fractionation');
 const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
 const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-lorenz');
 const pairedLorenzProject = demoProjects.find((project) => project.id === 'paired-lorenz');
@@ -78,6 +79,9 @@ if (!protocolMaterialProject) {
 }
 if (!baudotProject) {
   throw new Error('Expected baudot-bridge demo project to seed starter challenges.');
+}
+if (!polluxFractionationProject) {
+  throw new Error('Expected pollux-fractionation demo project to seed starter challenges.');
 }
 if (!lorenzProject) {
   throw new Error('Expected lorenz-foundation demo project to seed starter challenges.');
@@ -482,6 +486,16 @@ if (!brokenBaudotSource) {
 }
 brokenBaudotSource.params.value = 'BEST';
 
+const polluxFractionationTarget = cloneProject(polluxFractionationProject.project);
+const brokenPolluxFractionationStart = cloneProject(polluxFractionationProject.project);
+const brokenPolluxModule = brokenPolluxFractionationStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'pollux',
+);
+if (!brokenPolluxModule) {
+  throw new Error('Expected pollux-fractionation demo project to contain a pollux module.');
+}
+brokenPolluxModule.params.oneAlphabet = 'N,O,P';
+
 const brokenLorenzLfsr = brokenLorenzStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'lfsr',
 );
@@ -843,6 +857,27 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The graph topology is already correct in this lab.',
       'Select the BitShifter and inspect its module controls instead of editing the connections.',
       'Bypass is useful for comparison, but this challenge wants the transform active again.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-pollux-fractionation',
+    title: 'Repair the Pollux Fractionation',
+    projectId: 'pollux-fractionation',
+    group: 'Historical Bridges',
+    difficulty: 'beginner',
+    prompt:
+      'The bit stream is still correct, but the one-symbol alphabet drifted away from the reference machine. Restore the fractionation mapping so the output matches the captured Pollux baseline again.',
+    startingProject: brokenPolluxFractionationStart,
+    startingLayout: cloneProject(polluxFractionationProject.layout),
+    targetProject: polluxFractionationTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The input bits are already correct in this lab.',
+      'This is a symbol-set repair, not a wiring repair.',
+      'Only the oneAlphabet drifted; the zeroAlphabet is still correct.',
     ],
   },
   {

@@ -393,6 +393,39 @@ const SBOX_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const POLLUX_FRACTIONATION_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'PolluxFractionation',
+  name: 'Pollux Fractionation Micro Demo',
+  summary: 'Minimal visible fractionation: each input bit becomes one output symbol drawn from the zero-set or one-set alphabet.',
+  pipeline: 'PolluxFractionation(bits) -> TextOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        {
+          id: 'pollux',
+          defId: 'PolluxFractionation',
+          params: { zeroAlphabet: 'X,Q,Z', oneAlphabet: 'M,N,O' },
+        },
+        { id: 'source', defId: 'BitSource', params: { stream: [0, 1, 0, 1, 1, 0] } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'pollux', port: 'in' } },
+        { from: { moduleId: 'pollux', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        pollux: { x: 360, y: 176 },
+        source: { x: 76, y: 176 },
+        out: { x: 644, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const LFSR_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'LFSR',
   name: 'LFSR Micro Demo',
@@ -577,6 +610,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   BIT_PAD_MICRO_DEMO,
   BIT_JOIN_MICRO_DEMO,
   SBOX_MICRO_DEMO,
+  POLLUX_FRACTIONATION_MICRO_DEMO,
   LFSR_MICRO_DEMO,
   MULTI_ROUTER_MICRO_DEMO,
   ROTOR_MICRO_DEMO,

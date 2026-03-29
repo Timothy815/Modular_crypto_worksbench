@@ -81,6 +81,13 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'Guide mode exposes tutorials and challenges that teach by doing, while the compare and verification surfaces help you test whether a machine behaves as expected. The verification station supports explicit input and expected-output cases, baseline-backed comparison, known-vector import, and bounded ticked verification. The goal is not to claim that a construction is secure; the goal is to help you prove that your machine matches reference behavior or matches the baseline you intended. Use tutorials when you want guided practice, and use verification when you want confidence that a machine is behaviorally right.',
         indexTerms: ['tutorials', 'challenges', 'compare', 'verification', 'known vectors'],
       },
+      {
+        id: 'pollux-fractionation',
+        title: 'Pollux Fractionation',
+        body:
+          'PolluxFractionation is a classical bridge primitive, not a modern diffusion block. It takes a bit stream and emits one visible symbol per bit using two disjoint symbol sets: one for 0 bits and one for 1 bits. MCW keeps the first version deterministic by cycling through each set as matching bits are consumed, so students can inspect the disguise mechanism instead of attributing the output variation to hidden randomness. This is useful for teaching how homophonic or fractionated representation can flatten direct symbol clues without actually mixing positions or spreading influence the way a modern round function would.',
+        indexTerms: ['pollux', 'fractionation', 'homophonic', 'disguise', 'zeroalphabet', 'onealphabet'],
+      },
     ],
   },
   {
