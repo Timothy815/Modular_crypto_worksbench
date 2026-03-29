@@ -1,3 +1,5 @@
+import { useMemo, useState } from 'react';
+
 import type { DemoProject } from '../demo-projects';
 import {
   getFirstLearningItemInGroup,
@@ -93,6 +95,30 @@ export function WorkbenchProjectContext({
   onSetComparisonVersionId,
   formatVersionTimestamp,
 }: WorkbenchProjectContextProps) {
+  const [projectSearch, setProjectSearch] = useState('');
+  const normalizedProjectSearch = projectSearch.trim().toLowerCase();
+  const searchVisibleProjects = useMemo(() => {
+    if (!normalizedProjectSearch) {
+      return visibleProjects;
+    }
+
+    return projects.filter((project) => {
+      const haystack = [
+        project.id,
+        project.name,
+        project.group ?? '',
+        project.summary,
+        project.pipeline,
+      ]
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(normalizedProjectSearch);
+    });
+  }, [normalizedProjectSearch, projects, visibleProjects]);
+  const projectSelectValue = searchVisibleProjects.some((project) => project.id === activeProject.id)
+    ? activeProject.id
+    : searchVisibleProjects[0]?.id ?? '';
+
   if (isCompositeEditor) {
     return null;
   }
@@ -121,15 +147,36 @@ export function WorkbenchProjectContext({
         </label>
         <label className="project-selector">
           <span className="meta-label">Workspace</span>
-          <select value={activeProject.id} onChange={(event) => onSwitchProject(event.target.value)}>
-            {visibleProjects.map((project) => (
+          <select
+            value={projectSelectValue}
+            onChange={(event) => onSwitchProject(event.target.value)}
+          >
+            {searchVisibleProjects.map((project) => (
               <option key={project.id} value={project.id}>
                 {project.name}
               </option>
             ))}
           </select>
         </label>
+        <label className="project-selector">
+          <span className="meta-label">Search demos</span>
+          <input
+            type="search"
+            value={projectSearch}
+            onChange={(event) => setProjectSearch(event.target.value)}
+            placeholder="Search by name, concept, or pipeline"
+          />
+        </label>
       </div>
+      {normalizedProjectSearch && searchVisibleProjects.length === 0 ? (
+        <div className="project-context-card project-context-card-wide">
+          <strong>No demos matched that search.</strong>
+          <p>
+            Try a machine family or mechanic like <code>rotor</code>, <code>sbox</code>,{' '}
+            <code>pollux</code>, <code>hash</code>, or <code>double-step</code>.
+          </p>
+        </div>
+      ) : null}
       <div className="project-context-card project-context-card-wide">
         <strong>{activeProject.name}</strong>
         <p>{summary ?? activeProject.summary}</p>
