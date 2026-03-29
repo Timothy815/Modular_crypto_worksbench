@@ -30,6 +30,7 @@ import { LearningDock } from './ui/components/learning-dock';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
 import { demoProjects, getDefaultDemoProject, runDemoProject } from './ui/demo-projects';
 import { compareExecutionResults } from './ui/execution-compare';
+import { createInstructorPilotUrl } from './ui/instructor-pilot-url';
 import { createUserManualUrl } from './ui/manual-url';
 import {
   createVerificationCaseFromBaseline,
@@ -104,6 +105,7 @@ const MAX_LEFT_DOCK_WIDTH = 520;
 const MIN_RIGHT_DOCK_WIDTH = 280;
 const MAX_RIGHT_DOCK_WIDTH = 680;
 const USER_MANUAL_QUERY_KEY = 'manual';
+const INSTRUCTOR_PILOT_QUERY_KEY = 'instructorPilot';
 const USER_MANUAL_THEME_QUERY_KEY = 'theme';
 
 const DetachedPanelWindow = lazy(() =>
@@ -119,6 +121,11 @@ const ParameterInspector = lazy(() =>
 const ManualWindow = lazy(() =>
   import('./ui/components/manual-window').then((module) => ({
     default: module.ManualWindow,
+  })),
+);
+const InstructorPilotWindow = lazy(() =>
+  import('./ui/components/instructor-pilot-window').then((module) => ({
+    default: module.InstructorPilotWindow,
   })),
 );
 
@@ -236,6 +243,21 @@ function getUserManualConfig(): { theme: 'light' | 'dark' } | null {
   return { theme };
 }
 
+function getInstructorPilotConfig(): { theme: 'light' | 'dark' } | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const url = new URL(window.location.href);
+  const pilot = url.searchParams.get(INSTRUCTOR_PILOT_QUERY_KEY);
+  if (pilot !== '1') {
+    return null;
+  }
+
+  const theme = url.searchParams.get(USER_MANUAL_THEME_QUERY_KEY) === 'dark' ? 'dark' : 'light';
+  return { theme };
+}
+
 function createWindowSessionId() {
   return `window-${Math.random().toString(36).slice(2, 10)}`;
 }
@@ -246,6 +268,15 @@ function App() {
     return (
       <Suspense fallback={<LazyPanelFallback label="Manual" title="Preparing user manual…" />}>
         <ManualWindow initialTheme={userManualConfig.theme} />
+      </Suspense>
+    );
+  }
+
+  const instructorPilotConfig = getInstructorPilotConfig();
+  if (instructorPilotConfig) {
+    return (
+      <Suspense fallback={<LazyPanelFallback label="Pilot" title="Preparing instructor pilot pack…" />}>
+        <InstructorPilotWindow initialTheme={instructorPilotConfig.theme} />
       </Suspense>
     );
   }
@@ -2447,6 +2478,12 @@ function MainApp() {
                     'mcw-user-manual',
                     'noopener,noreferrer,width=1320,height=900',
                   );
+                } else if (value === 'instructor-pilot-pack') {
+                  window.open(
+                    createInstructorPilotUrl(theme),
+                    'mcw-instructor-pilot-pack',
+                    'noopener,noreferrer,width=1320,height=900',
+                  );
                 } else if (value === 'ai-toolkit') {
                   downloadAiToolkitDocument();
                 }
@@ -2454,6 +2491,7 @@ function MainApp() {
             >
               <option value="">Open…</option>
               <option value="ai-toolkit">AI Toolkit</option>
+              <option value="instructor-pilot-pack">Instructor Pilot Pack</option>
               <option value="user-manual">User Manual</option>
               <option value="notes">Notes</option>
               <option value="repo">Repository</option>
