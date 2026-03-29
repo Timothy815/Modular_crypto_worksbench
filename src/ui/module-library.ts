@@ -429,6 +429,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'A bounded Pollux-style fractionation bridge. It disguises bit values at the representation layer without claiming modern diffusion or mixing.',
     searchTerms: ['pollux', 'fractionation', 'homophonic', 'bridge', 'bits', 'symbol', 'classical', 'disguise'],
   },
+  PolluxInverse: {
+    sectionId: 'bridges',
+    sortOrder: 46,
+    purpose: 'Decodes Pollux-style symbols back into bits using known zero/one symbol sets.',
+    detail: 'The inverse bounded Pollux bridge. It recovers the original bit stream by checking which visible alphabet each symbol belongs to.',
+    searchTerms: ['pollux', 'inverse', 'decode', 'homophonic', 'bridge', 'symbol', 'bits', 'classical'],
+  },
   BitsToHex: {
     sectionId: 'bridges',
     sortOrder: 50,

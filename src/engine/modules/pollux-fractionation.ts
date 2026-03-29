@@ -93,6 +93,28 @@ export function encodePolluxFractionation(
   return output;
 }
 
+export function decodePolluxFractionation(
+  symbols: string,
+  zeroAlphabet: string[],
+  oneAlphabet: string[],
+): number[] {
+  const zeroSet = new Set(zeroAlphabet);
+  const oneSet = new Set(oneAlphabet);
+
+  return Array.from(symbols, (symbol) => {
+    const normalized = normalizeAlphabetToken(symbol);
+    if (zeroSet.has(normalized)) {
+      return 0;
+    }
+
+    if (oneSet.has(normalized)) {
+      return 1;
+    }
+
+    throw new Error(`Pollux Inverse encountered symbol "${symbol}" that is not present in either alphabet`);
+  });
+}
+
 export const PolluxFractionation: ModuleDef = {
   id: 'PolluxFractionation',
   name: 'Pollux Fractionation',
@@ -127,6 +149,45 @@ export const PolluxFractionation: ModuleDef = {
       out: {
         type: 'symbol',
         value: encodePolluxFractionation(signal.value, zeroAlphabet, oneAlphabet),
+      },
+    };
+  },
+};
+
+export const PolluxInverse: ModuleDef = {
+  id: 'PolluxInverse',
+  name: 'Pollux Inverse',
+  inputs: [{ name: 'in', type: 'symbol' }],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {
+    zeroAlphabet: {
+      key: 'zeroAlphabet',
+      label: 'Zero Symbols',
+      kind: 'string',
+      defaultValue: 'XQZ',
+      required: true,
+      description: 'Single-character symbols that decode to 0 bits. Commas/spaces are optional separators.',
+    },
+    oneAlphabet: {
+      key: 'oneAlphabet',
+      label: 'One Symbols',
+      kind: 'string',
+      defaultValue: 'MNO',
+      required: true,
+      description: 'Single-character symbols that decode to 1 bits. Commas/spaces are optional separators.',
+    },
+  },
+  evaluate: (inputs, params) => {
+    const signal = inputs.in;
+    if (signal.type !== 'symbol') {
+      throw new Error('Pollux Inverse expects a symbol signal');
+    }
+
+    const { zeroAlphabet, oneAlphabet } = parsePolluxAlphabets(params);
+    return {
+      out: {
+        type: 'bits',
+        value: decodePolluxFractionation(signal.value, zeroAlphabet, oneAlphabet),
       },
     };
   },

@@ -14,9 +14,11 @@ import { BitsToBaudot } from './bits-to-baudot';
 import { BitsToSymbol } from './bits-to-symbol';
 import { BitsToHex } from './bits-to-hex';
 import {
+  decodePolluxFractionation,
   encodePolluxFractionation,
   parsePolluxAlphabet,
   PolluxFractionation,
+  PolluxInverse,
 } from './pollux-fractionation';
 import { HexToAscii } from './hex-to-ascii';
 import { AsciiToHex } from './ascii-to-hex';
@@ -494,6 +496,33 @@ describe('PolluxFractionation', () => {
   });
 });
 
+describe('PolluxInverse', () => {
+  it('decodes symbols back into bits using alphabet membership', () => {
+    const result = PolluxInverse.evaluate(
+      { in: { type: 'symbol', value: 'XMQXNM' } },
+      { zeroAlphabet: 'XQ', oneAlphabet: 'MN' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [0, 1, 0, 0, 1, 1] });
+  });
+
+  it('normalizes lowercase symbols during decode', () => {
+    const result = PolluxInverse.evaluate(
+      { in: { type: 'symbol', value: 'badc' } },
+      { zeroAlphabet: 'a, c', oneAlphabet: 'b, d' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1, 0] });
+  });
+
+  it('rejects symbols outside both alphabets', () => {
+    expect(() =>
+      PolluxInverse.evaluate(
+        { in: { type: 'symbol', value: 'AXZ' } },
+        { zeroAlphabet: 'AB', oneAlphabet: 'MN' },
+      ),
+    ).toThrow(/either alphabet/i);
+  });
+});
+
 describe('parsePolluxAlphabet', () => {
   it('splits bare strings into single-character symbols', () => {
     expect(parsePolluxAlphabet('XQZ', 'zeroAlphabet')).toEqual(['X', 'Q', 'Z']);
@@ -507,6 +536,12 @@ describe('parsePolluxAlphabet', () => {
 describe('encodePolluxFractionation', () => {
   it('cycles zero and one alphabets independently', () => {
     expect(encodePolluxFractionation([1, 1, 0, 1, 0], ['X', 'Q'], ['M', 'N'])).toBe('MNXMQ');
+  });
+});
+
+describe('decodePolluxFractionation', () => {
+  it('maps symbols back to bits by membership only', () => {
+    expect(decodePolluxFractionation('MNXMQ', ['X', 'Q'], ['M', 'N'])).toEqual([1, 1, 0, 1, 0]);
   });
 });
 

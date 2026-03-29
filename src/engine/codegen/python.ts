@@ -37,6 +37,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'SymbolToBits',
   'BitsToSymbol',
   'PolluxFractionation',
+  'PolluxInverse',
   'BitsToHex',
   'HexToAscii',
   'AsciiToHex',
@@ -392,6 +393,12 @@ def bits_to_symbol(signal):
     return {"out": alphabet[index]}
 
 
+def _expect_symbol(signal, module_name):
+    if not isinstance(signal, str):
+        raise ValueError(f"{module_name} expects a symbol signal")
+    return signal
+
+
 def _parse_pollux_alphabet(value, field_name):
     if not isinstance(value, str):
         raise ValueError(f'Pollux Fractionation requires "{field_name}" to be a string')
@@ -438,6 +445,31 @@ def pollux_fractionation(signal, zero_alphabet_value, one_alphabet_value):
         else:
             raise ValueError("Pollux Fractionation expects only 0/1 bits")
     return {"out": "".join(output)}
+
+
+def pollux_inverse(signal, zero_alphabet_value, one_alphabet_value):
+    symbols = _expect_symbol(signal, "PolluxInverse")
+    zero_alphabet = _parse_pollux_alphabet(zero_alphabet_value, "zeroAlphabet")
+    one_alphabet = _parse_pollux_alphabet(one_alphabet_value, "oneAlphabet")
+    overlap = next((symbol for symbol in zero_alphabet if symbol in one_alphabet), None)
+    if overlap is not None:
+        raise ValueError(
+            f'Pollux Fractionation requires zeroAlphabet and oneAlphabet to be disjoint (overlap: "{overlap}")'
+        )
+    zero_set = set(zero_alphabet)
+    one_set = set(one_alphabet)
+    bits = []
+    for symbol in symbols:
+        normalized = symbol.upper()
+        if normalized in zero_set:
+            bits.append(0)
+        elif normalized in one_set:
+            bits.append(1)
+        else:
+            raise ValueError(
+                f'Pollux Inverse encountered symbol "{symbol}" that is not present in either alphabet'
+            )
+    return {"out": bits}
 
 
 def bits_to_ascii(signal):
@@ -1729,6 +1761,8 @@ function buildModuleExpression(
       return `bits_to_symbol(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'PolluxFractionation':
       return `pollux_fractionation(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'zeroAlphabet')}, ${expressionContext.getParamExpression(moduleInstance, def, 'oneAlphabet')})`;
+    case 'PolluxInverse':
+      return `pollux_inverse(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'zeroAlphabet')}, ${expressionContext.getParamExpression(moduleInstance, def, 'oneAlphabet')})`;
     case 'BitsToAscii':
       return `bits_to_ascii(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'BitsToBaudot':

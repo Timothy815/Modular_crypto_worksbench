@@ -1,6 +1,6 @@
 # POLLUX-INVERSE-V1
 
-Status: Proposed
+Status: Implemented
 
 Owner: Codex
 Scope: Classical Cryptanalysis / Historical Bridges / Pollux Round-Trip
@@ -68,6 +68,9 @@ The right framing is:
 9. The teaching surface must make it clear that decoding depends entirely on known set membership.
 10. The primitive must remain usable inside existing trace, compare, verification, and Python export workflows.
 11. V1 should round-trip cleanly with the shipped forward `PolluxFractionation` primitive when both use the same alphabets.
+12. Runtime evaluation must fail atomically if an input symbol is found in neither alphabet, so decode never silently shortens or drifts the bitstream.
+13. Decode must use the same uppercase normalization rule as forward Pollux before checking alphabet membership.
+14. The inverse primitive should share alphabet parsing and disjointness logic with the forward Pollux implementation rather than duplicating independent parsing rules.
 
 ## Preferred V1 Direction
 
@@ -88,6 +91,7 @@ That keeps the slice:
 
 - The UI and docs must state plainly that Pollux decode is only as good as the known alphabets.
 - The product must not imply that Pollux recovery is “breaking” a secure system; it is decoding with the agreed representation sets.
+- The product must make it clear that inverse Pollux decodes by set membership only; symbol order within each alphabet is irrelevant to recovery.
 - The analysis angle should emphasize:
   - visible membership sets
   - reversible disguise
@@ -107,6 +111,7 @@ This slice is successful if:
 - a user can encode bits into Pollux symbols with the forward primitive
 - decode those symbols back into the original bit sequence with the inverse primitive
 - see the round-trip explicitly in the graph
+- build `BitSource -> PolluxFractionation -> PolluxInverse -> Equals` and observe a clean round-trip
 - and understand that the disguise layer is reversible once the two symbol sets are known
 
 ## Notes

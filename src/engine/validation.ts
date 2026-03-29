@@ -231,7 +231,7 @@ function getModuleSpecificParamMessage(
     return validateByteRotateParam(field.key, value);
   }
 
-  if (def.id === 'PolluxFractionation') {
+  if (def.id === 'PolluxFractionation' || def.id === 'PolluxInverse') {
     return validatePolluxFractionationParam(field.key, value);
   }
 
@@ -794,7 +794,7 @@ function validateParams(
   }
 
   if (!isCompositeDefinition(def) && !isIteratorDefinition(def)) {
-    if (def.id === 'PolluxFractionation') {
+    if (def.id === 'PolluxFractionation' || def.id === 'PolluxInverse') {
       try {
         const zeroAlphabet = parsePolluxAlphabet(params.zeroAlphabet, 'zeroAlphabet');
         const oneAlphabet = parsePolluxAlphabet(params.oneAlphabet, 'oneAlphabet');
