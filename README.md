@@ -73,6 +73,11 @@ The next bounded AI-facing handoff refinement after that is now explicitly recor
 - now shipped as a `Resources` entry for downloading a single-file external-LLM toolkit prompt pack
 - includes live primitive inventory, actual JSON/interface shapes, explicit connection rules, and minimal examples for workspace/challenge generation without embedding a chatbot inside the product
 
+The next bounded cryptanalysis legibility refinement after that is now explicitly recorded as:
+- `CRYPTANALYSIS-VISUALS-V1.md`
+- targets stronger visual interpretation inside the existing cryptanalysis workspace
+- prioritizes round diffusion charts, candidate-period plots, frequency-confidence visuals, and an influence heatmap without widening into a generic statistics dashboard
+
 The current checkpointing follow-on after that is:
 - named workspace versions / restore points
 - explicit `Save Version` and `Restore` workflow per workspace
