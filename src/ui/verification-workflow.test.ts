@@ -7,6 +7,7 @@ import {
   createTickedVerificationCaseFromBaseline,
   evaluateVerificationCases,
   getVerificationSourceOptions,
+  importVerificationCasesFromText,
 } from './verification-workflow';
 
 describe('verification workflow helpers', () => {
@@ -209,6 +210,60 @@ describe('verification workflow helpers', () => {
     expect(failingResults[0]?.divergence).toMatchObject({
       tickIndex: 0,
       reason: 'outputs',
+    });
+  });
+
+  it('imports multiple known-answer cases from bounded line-oriented text', () => {
+    const sourceOption = getVerificationSourceOptions(project, V1_REGISTRY)[0]!;
+    const preview = importVerificationCasesFromText({
+      baselineProject: null,
+      currentProject: project,
+      registry: V1_REGISTRY,
+      sourceOption,
+      rawText: 'A -> W\nB: X\n# comment\nC, Y',
+      mode: 'stateless',
+    });
+
+    expect(preview.errors).toEqual([]);
+    expect(preview.cases).toHaveLength(3);
+    expect(preview.cases.map((entry) => entry.inputValue)).toEqual(['A', 'B', 'C']);
+    expect(preview.cases.map((entry) => entry.expectedOutput)).toEqual(['W', 'X', 'Y']);
+    expect(preview.cases.every((entry) => entry.targetSinkModuleId === 'output')).toBe(true);
+  });
+
+  it('evaluates imported cases without a captured baseline as output-only checks', () => {
+    const sourceOption = getVerificationSourceOptions(project, V1_REGISTRY)[0]!;
+    const preview = importVerificationCasesFromText({
+      baselineProject: null,
+      currentProject: project,
+      registry: V1_REGISTRY,
+      sourceOption,
+      rawText: 'A -> W\nB -> Q',
+      mode: 'stateless',
+    });
+
+    const results = evaluateVerificationCases({
+      baselineProject: null,
+      currentProject: project,
+      registry: V1_REGISTRY,
+      cases: preview.cases,
+    });
+
+    expect(results[0]).toMatchObject({
+      expectedOutput: 'W',
+      actualOutput: 'W',
+      baselineOutput: 'W',
+      passed: true,
+      divergence: null,
+      targetSinkLabel: 'output (Output)',
+    });
+    expect(results[1]).toMatchObject({
+      expectedOutput: 'Q',
+      actualOutput: 'X',
+      baselineOutput: 'Q',
+      passed: false,
+      divergence: null,
+      targetSinkLabel: 'output (Output)',
     });
   });
 });

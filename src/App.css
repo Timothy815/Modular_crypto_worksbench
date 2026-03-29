@@ -1235,6 +1235,29 @@ body.dock-resizing {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent);
 }
 
+.verification-import-card {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.verification-import-textarea {
+  min-height: 120px;
+  resize: vertical;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-panel);
+  color: var(--ink);
+  font: inherit;
+}
+
+.verification-import-errors {
+  display: grid;
+  gap: 6px;
+}
+
 .verification-result-head {
   display: flex;
   align-items: flex-start;

@@ -2,7 +2,7 @@
 
 Last updated: March 29, 2026
 
-Status: Proposed
+Status: Implemented
 
 ---
 
@@ -75,6 +75,11 @@ This slice must:
   - optional tick count for bounded temporal cases
 - validate imported cases before adding them
 - show clear rejection reasons when a case cannot be imported cleanly
+- allow imported cases to exist without a captured baseline
+- make baseline-free behavior explicit:
+  - pass/fail still works against the chosen expected output
+  - first-divergence tracing is limited unless the captured baseline also matches the imported expectation
+- resolve a deterministic verification target sink for imported cases when a workspace has multiple sinks
 - preserve the existing trust language:
   - “matches these chosen known-answer cases”
   - not “secure” or “certified”
@@ -117,6 +122,17 @@ V1 should prefer one of these bounded models:
 
 Whatever format is chosen, MCW should convert it into the same internal verification cases already used by the current verification station.
 
+The parser should remain intentionally small but tolerant of common classroom delimiters:
+- `->`
+- `:`
+- tab
+- `,`
+
+It may normalize bounded source/input formats where that matches current engine behavior, such as:
+- trimming whitespace
+- case-insensitive hexadecimal input for `HexSource`
+- stripping `0x` prefixes from hexadecimal source input
+
 ---
 
 ## UX Shape
@@ -128,6 +144,9 @@ That means:
 - obvious preview or validation summary
 - obvious “add N cases” result
 - obvious rejection feedback when parsing fails
+- obvious distinction between:
+  - baseline-backed cases with trace divergence support
+  - imported cases that may be output-only checks when no matching baseline exists
 
 It should not feel like:
 - uploading fixtures into a separate lab

@@ -790,6 +790,12 @@ function DetachedInspectorView({
         });
         return null;
       }}
+      onImportVerificationCases={(cases) =>
+        onSendCommand({
+          type: 'importVerificationCases',
+          cases,
+        })
+      }
       onRemoveVerificationCase={(caseId) => onSendCommand({ type: 'removeVerificationCase', caseId })}
       onClearVerificationCases={() => onSendCommand({ type: 'clearVerificationCases' })}
       probedModuleIds={snapshot.probedModuleIds}

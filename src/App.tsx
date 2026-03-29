@@ -959,6 +959,22 @@ function MainApp() {
       [activeProjectDefinition.id]: [],
     }));
   }, [activeProjectDefinition.id]);
+  const handleImportVerificationCases = useCallback(
+    (cases: VerificationCase[]) => {
+      if (cases.length === 0) {
+        return;
+      }
+
+      setVerificationCasesByProject((current) => ({
+        ...current,
+        [activeProjectDefinition.id]: [
+          ...(current[activeProjectDefinition.id] ?? []),
+          ...cases,
+        ],
+      }));
+    },
+    [activeProjectDefinition.id],
+  );
   const activeTutorialStep =
     workspaceMode === 'guide' &&
     tutorialNotesVisible &&
@@ -1877,6 +1893,9 @@ function MainApp() {
           case 'clearVerificationCases':
             handleClearVerificationCases();
             return;
+          case 'importVerificationCases':
+            handleImportVerificationCases(message.command.cases);
+            return;
           case 'unzipComposite':
             handleUnzipComposite(message.command.moduleId);
             return;
@@ -2111,6 +2130,7 @@ function MainApp() {
     handleCaptureBaseline,
     handleClearBaseline,
     handleClearVerificationCases,
+    handleImportVerificationCases,
     handleOpenPrimitiveMicroDemo,
     handleRemoveVerificationCase,
     handleUnzipComposite,
@@ -3025,6 +3045,7 @@ function MainApp() {
                 onCaptureBaseline={handleCaptureBaseline}
                 onClearBaseline={handleClearBaseline}
                 onAddVerificationCase={handleAddVerificationCase}
+                onImportVerificationCases={handleImportVerificationCases}
                 onRemoveVerificationCase={handleRemoveVerificationCase}
                 onClearVerificationCases={handleClearVerificationCases}
                 probedModuleIds={state.probedModuleIdsByProject[activeProjectDefinition.id] ?? []}

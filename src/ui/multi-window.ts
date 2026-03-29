@@ -150,6 +150,10 @@ export type DetachedPanelCommand =
       inputValue: string;
       tickCount: number | null;
     }
+  | {
+      type: 'importVerificationCases';
+      cases: VerificationCase[];
+    }
   | { type: 'removeVerificationCase'; caseId: string }
   | { type: 'clearVerificationCases' }
   | { type: 'unzipComposite'; moduleId: string }

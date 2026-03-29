@@ -29,9 +29,10 @@ export interface ExecutionComparison {
 export function compareExecutionResults(
   baseline: ExecutionResult,
   variant: ExecutionResult,
+  targetSinkModuleId?: string,
 ): ExecutionComparison {
-  const baselineOutput = getTerminalSignal(baseline);
-  const variantOutput = getTerminalSignal(variant);
+  const baselineOutput = getTerminalSignal(baseline, targetSinkModuleId);
+  const variantOutput = getTerminalSignal(variant, targetSinkModuleId);
 
   return {
     baselineOutput,
@@ -63,9 +64,10 @@ export function findFirstAnalysisTraceDivergence(
 export function compareTickedExecutionResults(
   baseline: TickedExecutionResult,
   variant: TickedExecutionResult,
+  targetSinkModuleId?: string,
 ): ExecutionComparison {
-  const baselineOutput = collectTickedOutput(baseline);
-  const variantOutput = collectTickedOutput(variant);
+  const baselineOutput = collectTickedOutput(baseline, targetSinkModuleId);
+  const variantOutput = collectTickedOutput(variant, targetSinkModuleId);
   const firstDivergence = findFirstTickedDivergence(baseline, variant);
 
   return {
@@ -82,10 +84,13 @@ export function compareTickedExecutionResults(
   };
 }
 
-export function collectTickedOutput(result: TickedExecutionResult): string {
+export function collectTickedOutput(
+  result: TickedExecutionResult,
+  targetSinkModuleId?: string,
+): string {
   return result.ticks
     .map((tick) => {
-      const outputModule = tick.trace.find((entry) => isOutputSinkDefId(entry.defId));
+      const outputModule = getOutputTraceEntry(tick, targetSinkModuleId);
       const signal = outputModule?.outputs.out ?? outputModule?.inputs.in ?? null;
 
       if (!signal) {
@@ -206,8 +211,11 @@ function findFirstEntryDivergence(
   return null;
 }
 
-function getTerminalSignal(result: ExecutionResult): ComparedSignal {
-  const terminalTrace = result.trace.at(-1);
+function getTerminalSignal(
+  result: ExecutionResult,
+  targetSinkModuleId?: string,
+): ComparedSignal {
+  const terminalTrace = getOutputTraceEntry(result, targetSinkModuleId) ?? result.trace.at(-1);
   const terminalInput = terminalTrace?.inputs.in;
   const terminalOutput =
     terminalTrace && Object.values(terminalTrace.outputs)[0]
@@ -221,9 +229,21 @@ function getTerminalSignal(result: ExecutionResult): ComparedSignal {
   };
 }
 
-function getOutputTraceEntry(result: ExecutionResult | null): ExecutionTraceEntry | null {
+function getOutputTraceEntry(
+  result: ExecutionResult | null,
+  targetSinkModuleId?: string,
+): ExecutionTraceEntry | null {
   if (!result) {
     return null;
+  }
+
+  if (targetSinkModuleId) {
+    const targetedEntry = result.trace.find(
+      (entry) => entry.moduleId === targetSinkModuleId && isOutputSinkDefId(entry.defId),
+    );
+    if (targetedEntry) {
+      return targetedEntry;
+    }
   }
 
   return result.trace.find((entry) => isOutputSinkDefId(entry.defId)) ?? result.trace.at(-1) ?? null;

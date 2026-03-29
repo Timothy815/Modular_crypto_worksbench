@@ -55,8 +55,8 @@ The next export/trust follow-on after that is now explicitly recorded as:
 
 The next bounded verification/trust refinement after that is now explicitly recorded as:
 - `KNOWN-VECTOR-IMPORT-V1.md`
-- defines the first bounded way to paste or import multiple known-answer cases into the existing verification station
-- keeps verification case authoring explicit and classroom-friendly without widening into a standards bundle or generic test harness
+- now shipped as the first bounded known-answer case import accelerator for the verification station
+- adds source-scoped vector paste, preview/validation, deterministic sink targeting, and baseline-free pass/fail behavior without widening into a standards bundle or generic test harness
 
 The current checkpointing follow-on after that is:
 - named workspace versions / restore points

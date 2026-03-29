@@ -158,6 +158,7 @@ interface ParameterInspectorProps {
     inputValue: string,
     tickCount?: number | null,
   ) => string | null;
+  onImportVerificationCases: (cases: VerificationCase[]) => void;
   onRemoveVerificationCase: (caseId: string) => void;
   onClearVerificationCases: () => void;
   probedModuleIds: string[];
@@ -211,6 +212,7 @@ export function ParameterInspector({
   onCaptureBaseline,
   onClearBaseline,
   onAddVerificationCase,
+  onImportVerificationCases,
   onRemoveVerificationCase,
   onClearVerificationCases,
   probedModuleIds,
@@ -3253,6 +3255,8 @@ export function ParameterInspector({
             baselineError={baselineExecutionError}
             variantError={executionError}
             comparison={executionComparison}
+            project={project}
+            registry={registry}
             onCaptureBaseline={onCaptureBaseline}
             onClearBaseline={onClearBaseline}
             isTickedMode={isTickedMode}
@@ -3260,6 +3264,7 @@ export function ParameterInspector({
             verificationCases={verificationCases}
             verificationResults={verificationResults}
             onAddVerificationCase={onAddVerificationCase}
+            onImportVerificationCases={onImportVerificationCases}
             onRemoveVerificationCase={onRemoveVerificationCase}
             onClearVerificationCases={onClearVerificationCases}
           />

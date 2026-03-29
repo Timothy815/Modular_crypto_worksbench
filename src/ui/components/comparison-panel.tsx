@@ -1,12 +1,15 @@
+import type { ModuleRegistry, Project } from '../../engine/types';
 import type { ComparisonBaselineDocument } from '../workbench-document';
 import type { ExecutionComparison } from '../execution-compare';
 import { analyzeSymbolSignal } from '../cryptanalysis';
 import type {
   VerificationCase,
+  VerificationImportPreview,
   VerificationCaseResult,
   VerificationSourceOption,
 } from '../verification-workflow';
-import { useState } from 'react';
+import { importVerificationCasesFromText } from '../verification-workflow';
+import { useMemo, useState } from 'react';
 
 interface ComparisonPanelProps {
   projectName: string;
@@ -16,6 +19,8 @@ interface ComparisonPanelProps {
   baselineError: string | null;
   variantError: string | null;
   comparison: ExecutionComparison | null;
+  project: Project;
+  registry: ModuleRegistry;
   isTickedMode: boolean;
   verificationSourceOptions: VerificationSourceOption[];
   verificationCases: VerificationCase[];
@@ -27,6 +32,7 @@ interface ComparisonPanelProps {
     inputValue: string,
     tickCount?: number | null,
   ) => string | null;
+  onImportVerificationCases: (cases: VerificationCase[]) => void;
   onRemoveVerificationCase: (caseId: string) => void;
   onClearVerificationCases: () => void;
   embedded?: boolean;
@@ -40,6 +46,8 @@ export function ComparisonPanel({
   baselineError,
   variantError,
   comparison,
+  project,
+  registry,
   isTickedMode,
   verificationSourceOptions,
   verificationCases,
@@ -47,6 +55,7 @@ export function ComparisonPanel({
   onCaptureBaseline,
   onClearBaseline,
   onAddVerificationCase,
+  onImportVerificationCases,
   onRemoveVerificationCase,
   onClearVerificationCases,
   embedded = false,
@@ -57,11 +66,45 @@ export function ComparisonPanel({
   const [verificationInputValue, setVerificationInputValue] = useState('');
   const [verificationTickCount, setVerificationTickCount] = useState('4');
   const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [showVectorImport, setShowVectorImport] = useState(false);
+  const [vectorImportText, setVectorImportText] = useState('');
+  const [vectorImportTickCount, setVectorImportTickCount] = useState('4');
   const selectedVerificationSourceModuleId = verificationSourceOptions.some(
     (option) => option.moduleId === verificationSourceModuleId,
   )
     ? verificationSourceModuleId
     : verificationSourceOptions[0]?.moduleId ?? '';
+  const vectorImportPreview = useMemo<VerificationImportPreview | null>(() => {
+    if (!showVectorImport || !vectorImportText.trim() || !selectedVerificationSourceModuleId) {
+      return null;
+    }
+
+    const sourceOption =
+      verificationSourceOptions.find((option) => option.moduleId === selectedVerificationSourceModuleId) ?? null;
+    if (!sourceOption) {
+      return null;
+    }
+
+    return importVerificationCasesFromText({
+      baselineProject: baseline?.project ?? null,
+      currentProject: project,
+      registry,
+      sourceOption,
+      rawText: vectorImportText,
+      mode: isTickedMode ? 'ticked' : 'stateless',
+      tickCount: isTickedMode ? Number.parseInt(vectorImportTickCount, 10) : null,
+    });
+  }, [
+    baseline,
+    isTickedMode,
+    project,
+    registry,
+    selectedVerificationSourceModuleId,
+    showVectorImport,
+    vectorImportText,
+    vectorImportTickCount,
+    verificationSourceOptions,
+  ]);
 
   const divergentSignals = comparison?.firstDivergence
     ? getDivergentSignals(comparison.firstDivergence)
@@ -182,10 +225,12 @@ export function ComparisonPanel({
             </p>
             {!baseline ? (
               <p className="comparison-copy">
-                Capture a baseline first. Verification cases are generated from that reference so
-                failures can point to a first trace divergence.
+                Capture a baseline for baseline-backed verification cases and first-divergence
+                tracing. Imported known-answer cases can still run without a baseline, but mismatches
+                will be output-only checks until a matching baseline is captured.
               </p>
-            ) : verificationSourceOptions.length === 0 ? (
+            ) : null}
+            {verificationSourceOptions.length === 0 ? (
               <p className="comparison-copy">
                 This workspace has no supported verification source yet. V1 supports Text, ASCII,
                 Baudot, and Hex source modules.
@@ -249,6 +294,13 @@ export function ComparisonPanel({
                     >
                       Add Verification Case
                     </button>
+                    <button
+                      type="button"
+                      className="mini-action-button"
+                      onClick={() => setShowVectorImport((current) => !current)}
+                    >
+                      {showVectorImport ? 'Hide Vector Import' : 'Paste Known Vectors'}
+                    </button>
                     {verificationCases.length > 0 ? (
                       <button
                         type="button"
@@ -265,6 +317,74 @@ export function ComparisonPanel({
                 </div>
                 {verificationError ? (
                   <p className="comparison-copy verification-error">{verificationError}</p>
+                ) : null}
+                {showVectorImport ? (
+                  <div className="comparison-diff-card verification-import-card">
+                    <p className="comparison-copy">
+                      Paste one vector per line using a bounded format such as
+                      <strong> input -&gt; output</strong>, <strong>input: output</strong>, or tab /
+                      comma separated pairs.
+                    </p>
+                    <label className="verification-field">
+                      <span className="meta-label">Vector Paste</span>
+                      <textarea
+                        className="verification-import-textarea"
+                        value={vectorImportText}
+                        onChange={(event) => setVectorImportText(event.target.value)}
+                        placeholder={
+                          isTickedMode
+                            ? 'AAAA -> KQBJ'
+                            : 'A -> W\nB -> X'
+                        }
+                      />
+                    </label>
+                    {isTickedMode ? (
+                      <label className="verification-field">
+                        <span className="meta-label">Tick Count For Imported Cases</span>
+                        <input
+                          type="number"
+                          min={1}
+                          step={1}
+                          value={vectorImportTickCount}
+                          onChange={(event) => setVectorImportTickCount(event.target.value)}
+                          placeholder="4"
+                        />
+                      </label>
+                    ) : null}
+                    {vectorImportPreview ? (
+                      <>
+                        <p className="comparison-copy">
+                          Preview: <strong>{vectorImportPreview.cases.length}</strong> case(s) ready,
+                          <strong> {vectorImportPreview.errors.length}</strong> issue(s).
+                        </p>
+                        {vectorImportPreview.errors.length > 0 ? (
+                          <div className="verification-import-errors">
+                            {vectorImportPreview.errors.map((error) => (
+                              <p key={error} className="comparison-copy verification-error">
+                                {error}
+                              </p>
+                            ))}
+                          </div>
+                        ) : null}
+                      </>
+                    ) : null}
+                    <div className="comparison-actions verification-actions">
+                      <button
+                        type="button"
+                        className="mini-action-button"
+                        disabled={!vectorImportPreview || vectorImportPreview.cases.length === 0}
+                        onClick={() => {
+                          if (!vectorImportPreview || vectorImportPreview.cases.length === 0) {
+                            return;
+                          }
+                          onImportVerificationCases(vectorImportPreview.cases);
+                          setVectorImportText('');
+                        }}
+                      >
+                        Add Imported Cases
+                      </button>
+                    </div>
+                  </div>
                 ) : null}
                 {verificationCases.length > 0 ? (
                   <div className="verification-case-list">
@@ -300,6 +420,11 @@ export function ComparisonPanel({
                           {result.tickCount ? (
                             <p className="comparison-copy">
                               Tick Count: <strong>{result.tickCount}</strong>
+                            </p>
+                          ) : null}
+                          {result.targetSinkLabel ? (
+                            <p className="comparison-copy">
+                              Target Sink: <strong>{result.targetSinkLabel}</strong>
                             </p>
                           ) : null}
                           <p className="comparison-copy">
