@@ -64,9 +64,12 @@ import {
   getDetachedPanelGroupByKind,
   isDetachedPanelKindActive,
   isDetachedPanelKind,
+  moveDetachedPanelKindEarlier,
+  moveDetachedPanelKindLater,
   moveDetachedPanelKindToGroup,
   removeDetachedPanelGroup,
   removeDetachedPanelKind,
+  setDetachedPanelGroupPresentationMode,
   setDetachedPanelGroupActiveKind,
 } from './ui/multi-window';
 import {
@@ -1583,6 +1586,7 @@ function MainApp() {
         panelWindowId,
         tabs: group.tabs,
         activeKind: group.activeKind,
+        presentationMode: group.presentationMode,
         payloadByKind,
       };
       const message: DetachedPanelMessage = {
@@ -1865,6 +1869,42 @@ function MainApp() {
             );
             return;
             }
+          case 'setDetachedPresentationMode':
+            {
+              const nextPresentationMode = message.command.presentationMode;
+            setDetachedPanelGroups((current) =>
+              setDetachedPanelGroupPresentationMode(
+                current,
+                message.panelWindowId,
+                nextPresentationMode,
+              ),
+            );
+            return;
+            }
+          case 'moveDetachedPaneEarlier':
+            {
+              const nextKind = message.command.kind;
+            setDetachedPanelGroups((current) =>
+              moveDetachedPanelKindEarlier(
+                current,
+                message.panelWindowId,
+                nextKind,
+              ),
+            );
+            return;
+            }
+          case 'moveDetachedPaneLater':
+            {
+              const nextKind = message.command.kind;
+            setDetachedPanelGroups((current) =>
+              moveDetachedPanelKindLater(
+                current,
+                message.panelWindowId,
+                nextKind,
+              ),
+            );
+            return;
+            }
           case 'returnDetachedTabToMain': {
             const nextKind = message.command.kind;
             const nextGroups = removeDetachedPanelKind(
@@ -1933,6 +1973,7 @@ function MainApp() {
           panelWindowId: group.panelWindowId,
           tabs: group.tabs,
           activeKind: group.activeKind,
+          presentationMode: group.presentationMode,
           payloadByKind,
         },
       } satisfies DetachedPanelMessage);
@@ -1950,6 +1991,7 @@ function MainApp() {
         panelWindowId: group.panelWindowId,
         label: formatDetachedPanelWindowLabel(detachedPanelGroups, group),
         tabs: group.tabs,
+        presentationMode: group.presentationMode,
       })),
     [detachedPanelGroups],
   );

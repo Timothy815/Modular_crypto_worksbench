@@ -364,6 +364,12 @@ The next multi-window expansion is now recorded:
 - keeps the pane family bounded to `Palette`, `Inspector`, and `Learning`
 - treats combined visible mode as the next deliberate expansion, not a jump to a generalized docking system
 
+That combined-view expansion is now also shipped:
+- `MULTI-WINDOW-COMBINED-VIEWS-V1.md`
+- detached windows can now switch between `tabs` and `combined` presentation modes
+- combined mode shows an ordered visible stack of supported panes with per-pane move up/down controls
+- the pane family remains bounded to `Palette`, `Inspector`, and `Learning`
+
 The next maintenance follow-on is now also shipped:
 - `APP-SHELL-REFACTOR-V1.md`
 - extracted the main tutorial/challenge surface into `src/ui/components/learning-dock.tsx`

@@ -10,6 +10,10 @@
   padding-bottom: 24px;
 }
 
+.detached-panel-shell-combined {
+  min-height: 100vh;
+}
+
 .app-header {
   position: relative;
   overflow: hidden;
@@ -291,6 +295,12 @@ body.dock-resizing {
   gap: 10px;
 }
 
+.detached-window-mode-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .detached-window-tab {
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -308,6 +318,49 @@ body.dock-resizing {
 
 .detached-window-return-button {
   white-space: nowrap;
+}
+
+.detached-combined-stack {
+  display: grid;
+  gap: 16px;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.detached-combined-pane {
+  display: grid;
+  gap: 14px;
+}
+
+.detached-combined-pane-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface-panel);
+}
+
+.detached-combined-pane-title {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.1;
+}
+
+.detached-combined-pane-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.detached-panel-shell-combined .palette-panel,
+.detached-panel-shell-combined .inspector-panel {
+  max-height: none;
+  overflow: visible;
 }
 
 .primitive-list,

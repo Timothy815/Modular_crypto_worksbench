@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Proposed
+Status: Shipped
 
 ---
 
@@ -136,3 +136,14 @@ This slice is successful when:
 - tabbed mode remains available
 - host-authoritative synchronization remains intact
 - MCW gains materially more useful second-screen composition without becoming a generalized docking system
+
+---
+
+## Shipped Notes
+
+Current `main` now includes:
+- a per-window `tabs` / `combined` presentation mode for detached groups
+- scrollable combined detached windows showing any supported subset of `Palette`, `Inspector`, and `Learning`
+- explicit move-up / move-down ordering controls for combined visible panes
+- continued per-pane return-to-main behavior inside combined detached windows
+- preserved host-authoritative synchronization and active-pane identity

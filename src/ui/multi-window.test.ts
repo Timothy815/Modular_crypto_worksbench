@@ -6,8 +6,11 @@ import {
   formatDetachedPanelGroupLabel,
   formatDetachedPanelWindowLabel,
   getDetachedPanelGroupByKind,
+  moveDetachedPanelKindEarlier,
+  moveDetachedPanelKindLater,
   moveDetachedPanelKindToGroup,
   removeDetachedPanelKind,
+  setDetachedPanelGroupPresentationMode,
   setDetachedPanelGroupActiveKind,
   type DetachedPanelWindowGroup,
 } from './multi-window';
@@ -21,14 +24,15 @@ describe('multi-window helpers', () => {
         panelWindowId: 'window-a',
         tabs: ['palette'],
         activeKind: 'palette',
+        presentationMode: 'tabs',
       },
     ]);
   });
 
   it('moves a detached surface into an existing window as the active tab', () => {
     const groups: DetachedPanelWindowGroup[] = [
-      { panelWindowId: 'window-a', tabs: ['palette'], activeKind: 'palette' },
-      { panelWindowId: 'window-b', tabs: ['inspector'], activeKind: 'inspector' },
+      { panelWindowId: 'window-a', tabs: ['palette'], activeKind: 'palette', presentationMode: 'tabs' },
+      { panelWindowId: 'window-b', tabs: ['inspector'], activeKind: 'inspector', presentationMode: 'combined' },
     ];
 
     const moved = moveDetachedPanelKindToGroup(groups, 'palette', 'window-b');
@@ -38,6 +42,7 @@ describe('multi-window helpers', () => {
         panelWindowId: 'window-b',
         tabs: ['inspector', 'palette'],
         activeKind: 'palette',
+        presentationMode: 'combined',
       },
     ]);
   });
@@ -48,6 +53,7 @@ describe('multi-window helpers', () => {
         panelWindowId: 'window-a',
         tabs: ['palette', 'inspector', 'learning'],
         activeKind: 'inspector',
+        presentationMode: 'tabs',
       },
     ];
 
@@ -58,14 +64,15 @@ describe('multi-window helpers', () => {
         panelWindowId: 'window-a',
         tabs: ['palette', 'learning'],
         activeKind: 'learning',
+        presentationMode: 'tabs',
       },
     ]);
   });
 
   it('updates the active tab only within the targeted detached window', () => {
     const groups: DetachedPanelWindowGroup[] = [
-      { panelWindowId: 'window-a', tabs: ['palette', 'inspector'], activeKind: 'palette' },
-      { panelWindowId: 'window-b', tabs: ['learning'], activeKind: 'learning' },
+      { panelWindowId: 'window-a', tabs: ['palette', 'inspector'], activeKind: 'palette', presentationMode: 'tabs' },
+      { panelWindowId: 'window-b', tabs: ['learning'], activeKind: 'learning', presentationMode: 'tabs' },
     ];
 
     const nextGroups = setDetachedPanelGroupActiveKind(groups, 'window-a', 'inspector');
@@ -80,14 +87,15 @@ describe('multi-window helpers', () => {
         panelWindowId: 'window-a',
         tabs: ['palette', 'inspector', 'learning'],
         activeKind: 'palette',
+        presentationMode: 'tabs',
       }),
     ).toBe('Tools + Inspector + Learning');
   });
 
   it('formats detached window labels with stable ordinals for the windows menu', () => {
     const groups: DetachedPanelWindowGroup[] = [
-      { panelWindowId: 'window-a', tabs: ['palette', 'inspector'], activeKind: 'palette' },
-      { panelWindowId: 'window-b', tabs: ['learning'], activeKind: 'learning' },
+      { panelWindowId: 'window-a', tabs: ['palette', 'inspector'], activeKind: 'palette', presentationMode: 'tabs' },
+      { panelWindowId: 'window-b', tabs: ['learning'], activeKind: 'learning', presentationMode: 'combined' },
     ];
 
     expect(formatDetachedPanelWindowLabel(groups, groups[0])).toBe(
@@ -99,9 +107,39 @@ describe('multi-window helpers', () => {
   });
 
   it('formats detached browser titles from the active tab and grouped context', () => {
-    expect(formatDetachedPanelDocumentTitle(['palette'], 'palette')).toBe('Tools — MCW');
-    expect(formatDetachedPanelDocumentTitle(['palette', 'inspector'], 'inspector')).toBe(
+    expect(formatDetachedPanelDocumentTitle(['palette'], 'palette', 'tabs')).toBe('Tools — MCW');
+    expect(formatDetachedPanelDocumentTitle(['palette', 'inspector'], 'inspector', 'tabs')).toBe(
       'Inspector — Tools + Inspector — MCW',
     );
+    expect(
+      formatDetachedPanelDocumentTitle(['palette', 'inspector'], 'inspector', 'combined'),
+    ).toBe('Combined (Tools + Inspector) — MCW');
+  });
+
+  it('can switch a detached group into combined mode and preserve its pane order', () => {
+    const groups: DetachedPanelWindowGroup[] = [
+      { panelWindowId: 'window-a', tabs: ['palette', 'inspector'], activeKind: 'palette', presentationMode: 'tabs' },
+    ];
+
+    expect(
+      setDetachedPanelGroupPresentationMode(groups, 'window-a', 'combined')[0]?.presentationMode,
+    ).toBe('combined');
+  });
+
+  it('can move panes earlier and later within a combined detached stack', () => {
+    const groups: DetachedPanelWindowGroup[] = [
+      {
+        panelWindowId: 'window-a',
+        tabs: ['palette', 'inspector', 'learning'],
+        activeKind: 'inspector',
+        presentationMode: 'combined',
+      },
+    ];
+
+    const movedEarlier = moveDetachedPanelKindEarlier(groups, 'window-a', 'learning');
+    expect(movedEarlier[0]?.tabs).toEqual(['palette', 'learning', 'inspector']);
+
+    const movedLater = moveDetachedPanelKindLater(movedEarlier, 'window-a', 'palette');
+    expect(movedLater[0]?.tabs).toEqual(['learning', 'palette', 'inspector']);
   });
 });

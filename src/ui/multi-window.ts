@@ -95,6 +95,7 @@ export interface DetachedPanelStateSnapshot {
   panelWindowId: string;
   tabs: DetachedPanelKind[];
   activeKind: DetachedPanelKind;
+  presentationMode: 'tabs' | 'combined';
   payloadByKind: Partial<DetachedPanelPayloadByKind>;
 }
 
@@ -102,6 +103,7 @@ export interface DetachedPanelWindowGroup {
   panelWindowId: string;
   tabs: DetachedPanelKind[];
   activeKind: DetachedPanelKind;
+  presentationMode: 'tabs' | 'combined';
 }
 
 export type DetachedPanelCommand =
@@ -143,7 +145,10 @@ export type DetachedPanelCommand =
   | { type: 'focusStepModule'; moduleId: string }
   | { type: 'resetTutorialProgress' }
   | { type: 'setActiveDetachedTab'; kind: DetachedPanelKind }
-  | { type: 'returnDetachedTabToMain'; kind: DetachedPanelKind };
+  | { type: 'returnDetachedTabToMain'; kind: DetachedPanelKind }
+  | { type: 'setDetachedPresentationMode'; presentationMode: 'tabs' | 'combined' }
+  | { type: 'moveDetachedPaneEarlier'; kind: DetachedPanelKind }
+  | { type: 'moveDetachedPaneLater'; kind: DetachedPanelKind };
 
 export type DetachedPanelMessage =
   | {
@@ -217,7 +222,7 @@ export function createDetachedPanelGroup(
   groups: DetachedPanelWindowGroup[],
   panelWindowId: string,
   kind: DetachedPanelKind,
-) {
+): DetachedPanelWindowGroup[] {
   const withoutKind = removeDetachedPanelKind(groups, kind);
   return [
     ...withoutKind,
@@ -225,6 +230,7 @@ export function createDetachedPanelGroup(
       panelWindowId,
       tabs: [kind],
       activeKind: kind,
+      presentationMode: 'tabs',
     },
   ];
 }
@@ -233,7 +239,7 @@ export function moveDetachedPanelKindToGroup(
   groups: DetachedPanelWindowGroup[],
   kind: DetachedPanelKind,
   targetPanelWindowId: string,
-) {
+): DetachedPanelWindowGroup[] {
   const withoutKind = removeDetachedPanelKind(groups, kind);
   let didAttach = false;
   const nextGroups = withoutKind.map((group) => {
@@ -250,6 +256,7 @@ export function moveDetachedPanelKindToGroup(
       ...group,
       tabs: [...group.tabs, kind],
       activeKind: kind,
+      presentationMode: group.presentationMode,
     };
   });
 
@@ -263,6 +270,7 @@ export function moveDetachedPanelKindToGroup(
       panelWindowId: targetPanelWindowId,
       tabs: [kind],
       activeKind: kind,
+      presentationMode: 'tabs',
     },
   ];
 }
@@ -271,7 +279,7 @@ export function setDetachedPanelGroupActiveKind(
   groups: DetachedPanelWindowGroup[],
   panelWindowId: string,
   kind: DetachedPanelKind,
-) {
+): DetachedPanelWindowGroup[] {
   return groups.map((group) =>
     group.panelWindowId === panelWindowId && group.tabs.includes(kind)
       ? { ...group, activeKind: kind }
@@ -282,7 +290,7 @@ export function setDetachedPanelGroupActiveKind(
 export function removeDetachedPanelKind(
   groups: DetachedPanelWindowGroup[],
   kind: DetachedPanelKind,
-) {
+): DetachedPanelWindowGroup[] {
   return groups.flatMap((group) => {
     if (!group.tabs.includes(kind)) {
       return [group];
@@ -309,8 +317,60 @@ export function removeDetachedPanelKind(
 export function removeDetachedPanelGroup(
   groups: DetachedPanelWindowGroup[],
   panelWindowId: string,
-) {
+): DetachedPanelWindowGroup[] {
   return groups.filter((group) => group.panelWindowId !== panelWindowId);
+}
+
+export function setDetachedPanelGroupPresentationMode(
+  groups: DetachedPanelWindowGroup[],
+  panelWindowId: string,
+  presentationMode: 'tabs' | 'combined',
+): DetachedPanelWindowGroup[] {
+  return groups.map((group) =>
+    group.panelWindowId === panelWindowId ? { ...group, presentationMode } : group,
+  );
+}
+
+export function moveDetachedPanelKindEarlier(
+  groups: DetachedPanelWindowGroup[],
+  panelWindowId: string,
+  kind: DetachedPanelKind,
+): DetachedPanelWindowGroup[] {
+  return groups.map((group) => {
+    if (group.panelWindowId !== panelWindowId) {
+      return group;
+    }
+
+    const index = group.tabs.indexOf(kind);
+    if (index <= 0) {
+      return group;
+    }
+
+    const nextTabs = [...group.tabs];
+    [nextTabs[index - 1], nextTabs[index]] = [nextTabs[index], nextTabs[index - 1]];
+    return { ...group, tabs: nextTabs };
+  });
+}
+
+export function moveDetachedPanelKindLater(
+  groups: DetachedPanelWindowGroup[],
+  panelWindowId: string,
+  kind: DetachedPanelKind,
+): DetachedPanelWindowGroup[] {
+  return groups.map((group) => {
+    if (group.panelWindowId !== panelWindowId) {
+      return group;
+    }
+
+    const index = group.tabs.indexOf(kind);
+    if (index < 0 || index >= group.tabs.length - 1) {
+      return group;
+    }
+
+    const nextTabs = [...group.tabs];
+    [nextTabs[index], nextTabs[index + 1]] = [nextTabs[index + 1], nextTabs[index]];
+    return { ...group, tabs: nextTabs };
+  });
 }
 
 export function getDetachedPanelKindsByWindowId(
@@ -359,7 +419,12 @@ export function formatDetachedPanelWindowLabel(
 export function formatDetachedPanelDocumentTitle(
   tabs: DetachedPanelKind[],
   activeKind: DetachedPanelKind,
+  presentationMode: 'tabs' | 'combined',
 ) {
+  if (presentationMode === 'combined') {
+    return `Combined (${formatDetachedPanelTabList(tabs)}) — MCW`;
+  }
+
   const activeLabel = formatDetachedPanelKindLabel(activeKind);
   if (tabs.length <= 1) {
     return `${activeLabel} — MCW`;

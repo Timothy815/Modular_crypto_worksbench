@@ -124,7 +124,11 @@ export function DetachedPanelWindow({
     const activePayload = getDetachedPayload(snapshot, activeKind);
     const theme: ThemeMode = activePayload?.theme ?? 'light';
     document.documentElement.dataset.theme = theme;
-    document.title = formatDetachedPanelDocumentTitle(snapshot?.tabs ?? [activeKind], activeKind);
+    document.title = formatDetachedPanelDocumentTitle(
+      snapshot?.tabs ?? [activeKind],
+      activeKind,
+      snapshot?.presentationMode ?? 'tabs',
+    );
   }, [kind, snapshot]);
 
   const registry = useMemo(() => {
@@ -160,7 +164,13 @@ export function DetachedPanelWindow({
   };
 
   return (
-    <main className="app-shell detached-panel-shell">
+    <main
+      className={
+        snapshot?.presentationMode === 'combined'
+          ? 'app-shell detached-panel-shell detached-panel-shell-combined'
+          : 'app-shell detached-panel-shell'
+      }
+    >
       {!snapshot ? (
         <LazyPanelFallback label="Window" title="Syncing detached panel…" />
       ) : (
@@ -173,9 +183,48 @@ export function DetachedPanelWindow({
                   panelWindowId,
                   tabs: snapshot.tabs,
                   activeKind: snapshot.activeKind,
+                  presentationMode: snapshot.presentationMode,
                 })}
               </p>
-              <p className="detached-window-group-note">Host-synced tab group</p>
+              <p className="detached-window-group-note">
+                {snapshot.presentationMode === 'combined'
+                  ? 'Host-synced combined view'
+                  : 'Host-synced tab group'}
+              </p>
+              <div className="detached-window-mode-toggle" role="tablist" aria-label="Detached view mode">
+                <button
+                  type="button"
+                  className={
+                    snapshot.presentationMode === 'tabs'
+                      ? 'detached-window-tab active'
+                      : 'detached-window-tab'
+                  }
+                  onClick={() =>
+                    sendCommand(activeKind, {
+                      type: 'setDetachedPresentationMode',
+                      presentationMode: 'tabs',
+                    })
+                  }
+                >
+                  Tabs
+                </button>
+                <button
+                  type="button"
+                  className={
+                    snapshot.presentationMode === 'combined'
+                      ? 'detached-window-tab active'
+                      : 'detached-window-tab'
+                  }
+                  onClick={() =>
+                    sendCommand(activeKind, {
+                      type: 'setDetachedPresentationMode',
+                      presentationMode: 'combined',
+                    })
+                  }
+                >
+                  Combined
+                </button>
+              </div>
               <div className="detached-window-tabs" role="tablist" aria-label="Detached window tabs">
                 {snapshot.tabs.map((tabKind) => (
                   <button
@@ -205,51 +254,69 @@ export function DetachedPanelWindow({
               Return {formatDetachedPanelKindLabel(activeKind)} To Main
             </button>
           </section>
-          {activeKind === 'palette' && activePayload ? (
-            <PrimitivePalette
-              registry={registry}
-              viewMode={(activePayload as DetachedPaletteSnapshot).paletteViewMode}
-              onToggleViewMode={() => sendCommand('palette', { type: 'togglePaletteViewMode' })}
-              compositeUsageCountById={(activePayload as DetachedPaletteSnapshot).compositeUsageCountById}
-              builtInReusableIds={(activePayload as DetachedPaletteSnapshot).builtInReusableIds}
-              onAddModule={(defId) => sendCommand('palette', { type: 'addModule', defId })}
-              onExportCompositeLibrary={() => sendCommand('palette', { type: 'exportCompositeLibrary' })}
-              onOpenComposite={(defId) =>
-                postAction({
-                  type: 'openCompositeEditor',
-                  entryId: defId,
-                })
-              }
-              onDuplicateReusable={(defId) => sendCommand('palette', { type: 'duplicateReusable', defId })}
-              onOpenPrimitiveMicroDemo={(defId) =>
-                sendCommand('palette', { type: 'openPrimitiveMicroDemo', defId })
-              }
-              onRemoveComposite={(defId) =>
-                postAction({
-                  type: 'removeCompositeFromLibrary',
-                  compositeId: defId,
-                })
-              }
-            />
-          ) : null}
-          {activeKind === 'inspector' && activePayload ? (
-            <Suspense fallback={<LazyPanelFallback label="Analyze" title="Loading inspector…" />}>
-              <DetachedInspectorView
-                snapshot={activePayload as DetachedInspectorSnapshot}
-                registry={registry}
-                onDispatchAction={postAction}
-                onSendCommand={(command) => sendCommand('inspector', command)}
-              />
-            </Suspense>
-          ) : null}
-          {activeKind === 'learning' && activePayload ? (
-            <Suspense fallback={<LazyPanelFallback label="Learning" title="Loading learning surface…" />}>
-              <DetachedLearningView
-                snapshot={activePayload as DetachedLearningSnapshot}
-                onSendCommand={(command) => sendCommand('learning', command)}
-              />
-            </Suspense>
-          ) : null}
+          {snapshot.presentationMode === 'combined' ? (
+            <section className="detached-combined-stack">
+              {snapshot.tabs.map((tabKind, index) => {
+                const payload = getDetachedPayload(snapshot, tabKind);
+                if (!payload) {
+                  return null;
+                }
+
+                return (
+                  <section key={tabKind} className="detached-combined-pane">
+                    <div className="detached-combined-pane-header">
+                      <div>
+                        <p className="meta-label detached-window-meta">Visible Pane</p>
+                        <h2 className="detached-combined-pane-title">
+                          {formatDetachedPanelKindLabel(tabKind)}
+                        </h2>
+                      </div>
+                      <div className="detached-combined-pane-actions">
+                        <button
+                          type="button"
+                          className="button button-ghost"
+                          disabled={index === 0}
+                          onClick={() =>
+                            sendCommand(tabKind, { type: 'moveDetachedPaneEarlier', kind: tabKind })
+                          }
+                        >
+                          Move Up
+                        </button>
+                        <button
+                          type="button"
+                          className="button button-ghost"
+                          disabled={index === snapshot.tabs.length - 1}
+                          onClick={() =>
+                            sendCommand(tabKind, { type: 'moveDetachedPaneLater', kind: tabKind })
+                          }
+                        >
+                          Move Down
+                        </button>
+                        <button
+                          type="button"
+                          className="button button-ghost"
+                          onClick={() =>
+                            sendCommand(tabKind, { type: 'returnDetachedTabToMain', kind: tabKind })
+                          }
+                        >
+                          Return To Main
+                        </button>
+                      </div>
+                    </div>
+                    {renderDetachedPane(
+                      tabKind,
+                      payload,
+                      registry,
+                      postAction,
+                      sendCommand,
+                    )}
+                  </section>
+                );
+              })}
+            </section>
+          ) : (
+            renderDetachedPane(activeKind, activePayload, registry, postAction, sendCommand)
+          )}
         </>
       )}
     </main>
@@ -262,6 +329,70 @@ function getDetachedPayload(snapshot: DetachedPanelStateSnapshot | null, kind: D
   }
 
   return snapshot.payloadByKind[kind] ?? null;
+}
+
+function renderDetachedPane(
+  kind: DetachedPanelKind,
+  payload: DetachedPaletteSnapshot | DetachedInspectorSnapshot | DetachedLearningSnapshot | null,
+  registry: ReturnType<typeof getEffectiveRegistry>,
+  postAction: (action: UiAction) => void,
+  sendCommand: (targetKind: DetachedPanelKind, command: DetachedPanelCommand) => void,
+) {
+  if (!payload) {
+    return null;
+  }
+
+  if (kind === 'palette') {
+    return (
+      <PrimitivePalette
+        registry={registry}
+        viewMode={(payload as DetachedPaletteSnapshot).paletteViewMode}
+        onToggleViewMode={() => sendCommand('palette', { type: 'togglePaletteViewMode' })}
+        compositeUsageCountById={(payload as DetachedPaletteSnapshot).compositeUsageCountById}
+        builtInReusableIds={(payload as DetachedPaletteSnapshot).builtInReusableIds}
+        onAddModule={(defId) => sendCommand('palette', { type: 'addModule', defId })}
+        onExportCompositeLibrary={() => sendCommand('palette', { type: 'exportCompositeLibrary' })}
+        onOpenComposite={(defId) =>
+          postAction({
+            type: 'openCompositeEditor',
+            entryId: defId,
+          })
+        }
+        onDuplicateReusable={(defId) => sendCommand('palette', { type: 'duplicateReusable', defId })}
+        onOpenPrimitiveMicroDemo={(defId) =>
+          sendCommand('palette', { type: 'openPrimitiveMicroDemo', defId })
+        }
+        onRemoveComposite={(defId) =>
+          postAction({
+            type: 'removeCompositeFromLibrary',
+            compositeId: defId,
+          })
+        }
+      />
+    );
+  }
+
+  if (kind === 'inspector') {
+    return (
+      <Suspense fallback={<LazyPanelFallback label="Analyze" title="Loading inspector…" />}>
+        <DetachedInspectorView
+          snapshot={payload as DetachedInspectorSnapshot}
+          registry={registry}
+          onDispatchAction={postAction}
+          onSendCommand={(command) => sendCommand('inspector', command)}
+        />
+      </Suspense>
+    );
+  }
+
+  return (
+    <Suspense fallback={<LazyPanelFallback label="Learning" title="Loading learning surface…" />}>
+      <DetachedLearningView
+        snapshot={payload as DetachedLearningSnapshot}
+        onSendCommand={(command) => sendCommand('learning', command)}
+      />
+    </Suspense>
+  );
 }
 
 function DetachedInspectorView({
