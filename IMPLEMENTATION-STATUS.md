@@ -254,6 +254,10 @@ The next export/trust slice after that is now also recorded:
   - now shipped as a grouped-dropdown cleanup pass for the crowded workbench control area
   - reorganizes workbench actions into bounded `View`, `Edit`, `Project`, and `Import/Export` categories
   - keeps the refinement organizational: clearer categories, one-line fit in most desktop widths, and no expansion of workbench capability
+- next bounded product-help refinement after that:
+  - `USER-MANUAL-V1.md`
+  - records a first-class user-manual surface reachable from `Resources`
+  - targets searchable product-use help with a table of contents, index, and extendable structured content
 - expand Python export carefully second
 - refactor the largest UI surfaces third
 - keep multi-window workspace support as a deliberate next-tier priority after those lines

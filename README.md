@@ -63,6 +63,11 @@ The next bounded workbench-shell refinement after that is now explicitly recorde
 - now shipped as a grouped-dropdown cleanup pass for the crowded workbench control strip
 - reorganizes workbench actions into `View`, `Edit`, `Project`, and `Import/Export` categories while preserving existing command behavior
 
+The next bounded product-help refinement after that is now explicitly recorded as:
+- `USER-MANUAL-V1.md`
+- adds a first-class user-manual surface from `Resources`
+- targets searchable product-use help with a table of contents, index, and extendable structured content
+
 The current checkpointing follow-on after that is:
 - named workspace versions / restore points
 - explicit `Save Version` and `Restore` workflow per workspace
