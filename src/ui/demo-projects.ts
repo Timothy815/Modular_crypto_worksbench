@@ -1820,7 +1820,11 @@ export const demoProjects: DemoProject[] = [
     id: 'keystream',
     name: 'Modern Keystream',
     group: 'Sequential',
-    summary: 'A clocked LFSR keystream XORs a plaintext bit stream without ever leaving the bit domain.',
+    stage: 'streams-and-scheduling',
+    order: 130,
+    recommendedAfter: ['counter-pulse-gate'],
+    summary:
+      'EDUCATIONAL MODEL: NOT CRYPTOGRAPHICALLY SECURE. A 5-bit LFSR keystream XORs a plaintext bit stream without leaving the bit domain. With width 5, the maximum theoretical period is 31 states.',
     pipeline: 'Clock -> LFSR -> XOR(BitSource) -> BitOutput',
     defaultTickedMode: true,
     project: {
@@ -1851,10 +1855,51 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'lfsr-predictability',
+    name: 'LFSR Predictability Lab',
+    group: 'Sequential',
+    stage: 'streams-and-scheduling',
+    order: 135,
+    recommendedAfter: ['keystream'],
+    summary:
+      'EDUCATIONAL MODEL: NOT CRYPTOGRAPHICALLY SECURE. The first eight output bits are already copied into a visible prediction stream; the goal is to infer the ninth bit of this 5-bit LFSR. Maximum theoretical period: 31.',
+    pipeline: 'Clock -> LFSR + Prediction BitSource -> BitOutput',
+    defaultTickedMode: true,
+    project: {
+      modules: [
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 9 } },
+        {
+          id: 'lfsr',
+          defId: 'LFSR',
+          params: { seed: [1, 0, 1, 1, 0], taps: '0,2', outputLength: 1 },
+        },
+        { id: 'prediction', defId: 'BitSource', params: { stream: [0, 1, 1, 0, 1, 0, 0, 1, 1] } },
+        { id: 'stream-out', defId: 'BitOutput', params: {} },
+        { id: 'prediction-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'lfsr', port: 'clock' } },
+        { from: { moduleId: 'lfsr', port: 'out' }, to: { moduleId: 'stream-out', port: 'in' } },
+        { from: { moduleId: 'prediction', port: 'out' }, to: { moduleId: 'prediction-out', port: 'in' } },
+      ],
+    },
+    layout: {
+      clock: { x: 40, y: 48 },
+      lfsr: { x: 280, y: 48 },
+      prediction: { x: 280, y: 256 },
+      'stream-out': { x: 560, y: 64 },
+      'prediction-out': { x: 560, y: 240 },
+    },
+  },
+  {
     id: 'gated-keystream',
     name: 'Gated Keystream',
     group: 'Conditional Clocking',
-    summary: 'One clocked LFSR gates a second keystream register, creating a dependent clock chain in the bit domain.',
+    stage: 'streams-and-scheduling',
+    order: 140,
+    recommendedAfter: ['lfsr-predictability'],
+    summary:
+      'EDUCATIONAL MODEL: NOT CRYPTOGRAPHICALLY SECURE. One clocked LFSR gates a second keystream register, changing the output rhythm without making the machine cryptographically strong.',
     pipeline: 'Clock -> Gate LFSR -> Data LFSR -> XOR(BitSource) -> BitOutput',
     defaultTickedMode: true,
     project: {
@@ -1895,7 +1940,11 @@ export const demoProjects: DemoProject[] = [
     id: 'majority-keystream',
     name: 'Majority-Clocked Keystream',
     group: 'Conditional Clocking',
-    summary: 'Three visible control registers vote through Majority on whether a data register advances, making irregular clocking explicit instead of hidden.',
+    stage: 'streams-and-scheduling',
+    order: 150,
+    recommendedAfter: ['gated-keystream'],
+    summary:
+      'EDUCATIONAL MODEL: NOT CRYPTOGRAPHICALLY SECURE. Three visible control registers vote through Majority on whether a data register advances, making irregular clocking explicit without claiming algebraic hardness.',
     pipeline: 'Clock -> 3 Control LFSRs -> Majority -> Gate(clock pulse) -> Data LFSR -> XOR(BitSource) -> BitOutput',
     defaultTickedMode: true,
     project: {

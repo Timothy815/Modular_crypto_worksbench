@@ -88,6 +88,13 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'PolluxFractionation is a classical bridge primitive, not a modern diffusion block. It takes a bit stream and emits one visible symbol per bit using two disjoint symbol sets: one for 0 bits and one for 1 bits. MCW keeps the first version deterministic by cycling through each set as matching bits are consumed, so students can inspect the disguise mechanism instead of attributing the output variation to hidden randomness. This is useful for teaching how homophonic or fractionated representation can flatten direct symbol clues without actually mixing positions or spreading influence the way a modern round function would.',
         indexTerms: ['pollux', 'fractionation', 'homophonic', 'disguise', 'zeroalphabet', 'onealphabet'],
       },
+      {
+        id: 'visible-prng-labs',
+        title: 'Visible PRNG Labs',
+        body:
+          'MCW’s PRNG-oriented workspaces are teaching laboratories, not security badges. The plain LFSR, gated keystream, majority-clocked keystream, and predictability labs are designed to show how visible state evolves into an output stream, how gating or voting changes that rhythm, and why those changes still do not guarantee cryptographic strength. Read the warning text in each workspace, use Trace to connect register state to the emitted bit, and pay attention to disclosed period limits such as 2^n - 1 for an n-bit LFSR. The important distinction is this: a stream can look noisy while remaining deterministic and structurally weak.',
+        indexTerms: ['prng', 'lfsr', 'keystream', 'predictability', 'period', 'not secure'],
+      },
     ],
   },
   {

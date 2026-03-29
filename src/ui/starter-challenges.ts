@@ -27,6 +27,7 @@ const sboxTableTransformProject = demoProjects.find((project) => project.id === 
 const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
 const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
 const keystreamProject = demoProjects.find((project) => project.id === 'keystream');
+const lfsrPredictabilityProject = demoProjects.find((project) => project.id === 'lfsr-predictability');
 const gatedKeystreamProject = demoProjects.find((project) => project.id === 'gated-keystream');
 const majorityKeystreamProject = demoProjects.find((project) => project.id === 'majority-keystream');
 const filteredKeystreamProject = demoProjects.find((project) => project.id === 'filtered-keystream');
@@ -121,6 +122,9 @@ if (!asciiRoundProject) {
 }
 if (!keystreamProject) {
   throw new Error('Expected keystream demo project to seed starter challenges.');
+}
+if (!lfsrPredictabilityProject) {
+  throw new Error('Expected lfsr-predictability demo project to seed starter challenges.');
 }
 if (!gatedKeystreamProject) {
   throw new Error('Expected gated-keystream demo project to seed starter challenges.');
@@ -231,6 +235,8 @@ const asciiRoundTarget = cloneProject(asciiRoundProject.project);
 const brokenAsciiRoundStart = cloneProject(asciiRoundProject.project);
 const keystreamTarget = cloneProject(keystreamProject.project);
 const brokenKeystreamStart = cloneProject(keystreamProject.project);
+const lfsrPredictabilityTarget = cloneProject(lfsrPredictabilityProject.project);
+const brokenLfsrPredictabilityStart = cloneProject(lfsrPredictabilityProject.project);
 const gatedKeystreamTarget = cloneProject(gatedKeystreamProject.project);
 const brokenGatedKeystreamStart = cloneProject(gatedKeystreamProject.project);
 const majorityKeystreamTarget = cloneProject(majorityKeystreamProject.project);
@@ -617,6 +623,14 @@ if (!brokenKeystreamLfsr) {
   throw new Error('Expected keystream demo project to contain an LFSR module.');
 }
 brokenKeystreamLfsr.params.seed = [0, 1, 1, 0, 1];
+
+const brokenPredictabilitySource = brokenLfsrPredictabilityStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'prediction',
+);
+if (!brokenPredictabilitySource) {
+  throw new Error('Expected lfsr-predictability demo project to contain a prediction source.');
+}
+brokenPredictabilitySource.params.stream = [0, 1, 1, 0, 1, 0, 0, 1, 0];
 
 const brokenGateLfsr = brokenGatedKeystreamStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'gate',
@@ -1172,6 +1186,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The clock timing is already correct in this machine.',
       'The XOR stage simply mixes the plaintext bits with the current keystream bit.',
       'If the seed is wrong, the output starts diverging as soon as the first shifted bit changes.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'predict-the-ninth-bit',
+    title: 'Predict the Ninth Bit',
+    projectId: 'lfsr-predictability',
+    stage: 'streams-and-scheduling',
+    order: 135,
+    recommendedAfter: ['modern-keystream'],
+    group: 'Sequential',
+    difficulty: 'intermediate',
+    prompt:
+      'The first eight LFSR output bits are already copied into the visible prediction stream, but the ninth guess is wrong. Infer the final bit so the prediction sink matches the live stream across all nine ticks.',
+    startingProject: brokenLfsrPredictabilityStart,
+    startingLayout: cloneProject(lfsrPredictabilityProject.layout),
+    targetProject: lfsrPredictabilityTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'This is an educational predictability exercise, not a repair-the-cipher exercise.',
+      'Open Trace on the LFSR and follow how the 5-bit seed shifts after each tick.',
+      'With a 5-bit register, the maximum theoretical period is 31, so the stream is deterministic enough to extrapolate one more bit.',
     ],
   },
   {

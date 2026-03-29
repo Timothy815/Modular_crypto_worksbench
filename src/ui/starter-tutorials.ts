@@ -1643,7 +1643,11 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
     id: 'modern-keystream',
     title: 'The Modern Keystream',
     group: 'Sequential',
-    summary: 'Learn how a clocked LFSR produces a running bit mask that XOR encrypts a plaintext stream.',
+    stage: 'streams-and-scheduling',
+    order: 130,
+    recommendedAfter: ['counter-pulse-gate'],
+    summary:
+      'Learn how a visible 5-bit LFSR produces a running bit mask, why its maximum period is only 31 states, and why that still does not make it secure.',
     projectId: 'keystream',
     steps: [
       {
@@ -1663,7 +1667,14 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       {
         id: 'keystream-lfsr',
         title: 'Generate The Mask',
-        body: 'LFSR emits one keystream bit per tick because its output length is 1. Its internal seed shifts after each live clock pulse, producing a running pseudo-random mask.',
+        body: 'LFSR emits one keystream bit per tick because its output length is 1. Its internal seed shifts after each live clock pulse, producing a deterministic running mask. This lab uses a 5-bit register, so the maximum theoretical period is 31 states, not an unlimited stream.',
+        focusModuleId: 'lfsr',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'keystream-trace',
+        title: 'Trace State Into Output',
+        body: 'Open Trace and read the LFSR entry tick by tick. The emitted bit is not magic noise: it is the visible output bit of the current register state before the next shift happens. This is the core lesson of the whole PRNG line.',
         focusModuleId: 'lfsr',
         targetStepIndex: 2,
       },
@@ -1677,9 +1688,58 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       {
         id: 'keystream-output',
         title: 'Read The Cipher Stream',
-        body: 'BitOutput marks the terminal ciphertext sink. Use the tick bar, probes, and challenge workflow here to inspect how the encrypted bit stream evolves over time.',
+        body: 'BitOutput marks the terminal ciphertext sink. Use the tick bar, probes, and challenge workflow here to inspect how the encrypted bit stream evolves over time, but keep the warning in mind: visible complexity and a changing stream are not the same thing as cryptographic security.',
         focusModuleId: 'output',
-        targetStepIndex: 4,
+        targetStepIndex: 5,
+      },
+    ],
+  },
+  {
+    version: 1,
+    id: 'lfsr-predictability',
+    title: 'Predicting The Naked LFSR',
+    group: 'Sequential',
+    stage: 'streams-and-scheduling',
+    order: 135,
+    recommendedAfter: ['modern-keystream'],
+    summary:
+      'Use a visible prediction stream and Equals to prove that an observed LFSR stream can be extrapolated without calling it secure.',
+    projectId: 'lfsr-predictability',
+    steps: [
+      {
+        id: 'predictability-warning',
+        title: 'Read The Warning First',
+        body: 'This workspace is intentionally an educational predictability exercise, not a secure stream generator. The point is to show that once the mechanism is visible and the state width is small, later bits can be inferred from earlier ones.',
+        focusModuleId: 'lfsr',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'predictability-stream',
+        title: 'Watch The Actual Stream Emerge',
+        body: 'Clock advances the 5-bit LFSR for nine ticks. The top sink shows the emitted stream directly, so you can compare the observed bits against the prediction stream without hidden tooling.',
+        focusModuleId: 'stream-out',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'predictability-source',
+        title: 'Use The First Eight Bits As Evidence',
+        body: 'Prediction BitSource already contains the first eight observed bits and one deliberate final guess. This keeps the exercise honest: you are not repairing the generator, you are inferring one later bit from the visible pattern.',
+        focusModuleId: 'prediction',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'predictability-trace',
+        title: 'Trace Register State To The Ninth Bit',
+        body: 'Open Trace and follow the LFSR seed as it shifts. The ninth output bit comes from the register state produced by the earlier eight shifts, which is exactly why the machine is predictable enough for this bounded exercise.',
+        focusModuleId: 'lfsr',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'predictability-equals',
+        title: 'Compare The Two Visible Streams',
+        body: 'The lower sink replays the prediction stream. When the final guess is correct, both sink histories line up across all nine ticks. That is the payoff: determinism can be checked directly without pretending the machine became secure.',
+        focusModuleId: 'prediction-out',
+        targetStepIndex: 3,
       },
     ],
   },
@@ -1688,7 +1748,11 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
     id: 'gated-keystream',
     title: 'The Gated Keystream',
     group: 'Conditional Clocking',
-    summary: 'Learn how one keystream register can control when a second register advances.',
+    stage: 'streams-and-scheduling',
+    order: 140,
+    recommendedAfter: ['lfsr-predictability'],
+    summary:
+      'Learn how one keystream register can control when a second register advances, and why visible irregularity still does not make the machine secure.',
     projectId: 'gated-keystream',
     steps: [
       {
@@ -1722,7 +1786,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       {
         id: 'gated-output',
         title: 'Inspect The Resulting Stream',
-        body: 'BitOutput marks the final ciphertext sink. Use the tick bar and history chips to see how the gate register changes the rhythm of the output stream.',
+        body: 'BitOutput marks the final ciphertext sink. Use the tick bar and history chips to see how the gate register changes the rhythm of the output stream, then compare that rhythm against the plain LFSR lab. The lesson is structural dependence, not a security upgrade.',
         focusModuleId: 'output',
         targetStepIndex: 4,
       },
@@ -1733,7 +1797,11 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
     id: 'majority-clocked-keystream',
     title: 'The Majority-Clocked Keystream',
     group: 'Conditional Clocking',
-    summary: 'Learn how three visible control bits can vote on whether a keystream register advances.',
+    stage: 'streams-and-scheduling',
+    order: 150,
+    recommendedAfter: ['gated-keystream'],
+    summary:
+      'Learn how three visible control bits can vote on whether a keystream register advances, while keeping the distinction between irregularity and security explicit.',
     projectId: 'majority-keystream',
     steps: [
       {
@@ -1767,7 +1835,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       {
         id: 'majority-output',
         title: 'Watch The Cipher Rhythm Change',
-        body: 'The data LFSR now encrypts the plaintext only on ticks where the majority vote opens the gate. Step through the output history and compare it with the simpler gated-keystream lab: the point is not just that the bits differ, but that the graph explains why.',
+        body: 'The data LFSR now encrypts the plaintext only on ticks where the majority vote opens the gate. Step through the output history and compare it with the simpler gated-keystream lab: the point is not just that the bits differ, but that the graph explains why, and why that still falls short of a cryptographic security claim.',
         focusModuleId: 'output',
         targetStepIndex: 9,
       },

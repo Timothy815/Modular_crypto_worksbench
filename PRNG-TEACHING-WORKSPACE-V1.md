@@ -1,6 +1,6 @@
 # PRNG-TEACHING-WORKSPACE-V1
 
-Status: Proposed
+Status: Implemented
 
 Owner: Codex
 Scope: Sequential / Historical Bridges / Cryptanalysis Teaching
@@ -56,21 +56,26 @@ It is not about:
    - a plain `LFSR`
    - at least one gated or irregular-clock variant
    - at least one combined-control variant such as majority-clocked or routed clocking
-4. The teaching copy must explicitly distinguish:
+4. Every workspace in this line must carry a persistent disclosure that it is an educational model and not cryptographically secure.
+5. Every `LFSR`-based workspace in this line must disclose the register width and the maximum theoretical period (`2^n - 1`) for the chosen seed width.
+6. V1 must include one explicit predictability exercise where the student can infer a later output bit from an observed visible stream.
+7. The teaching copy must use trace explicitly to connect visible register state to the emitted output bit on each tick.
+8. The teaching copy must explicitly distinguish:
    - pseudo-random appearance
    - structural predictability
    - cryptographic suitability
-5. The analysis angle should remain bounded to existing product surfaces:
+9. The analysis angle should remain bounded to existing product surfaces:
    - trace
    - verification
    - compare
    - cryptanalysis views where they are applicable
-6. V1 must not label any seeded construction “cryptographically secure.”
-7. If the slice adds new demos, tutorials, or challenges, they should focus on:
+10. V1 must not label any seeded construction “cryptographically secure.”
+11. If the slice adds new demos, tutorials, or challenges, they should focus on:
    - observing patterns
    - comparing generators
    - repairing weak control logic
    - explaining why visible irregularity can still fail cryptographic expectations
+12. V1 should include one plainly degenerate or obviously weak case so students can see that a stateful generator can still stall, repeat too quickly, or remain directly predictable.
 
 ## Preferred V1 Direction
 
@@ -96,6 +101,7 @@ This keeps the slice:
   - control dependence
   - output regularity
   - visible state effects
+- The line should explicitly teach that irregularity in the rendered stream is not the same thing as algebraic hardness.
 
 ## Non-Goals
 
@@ -104,6 +110,7 @@ This keeps the slice:
 - No hidden entropy or OS-randomness module
 - No formal randomness test suite in V1
 - No standards-conformance claim against NIST SP 800-22 or similar batteries
+- No new PRNG-specific analysis UI in V1
 
 ## Success Condition
 
@@ -111,6 +118,7 @@ This slice is successful if:
 - students can open a small set of generator workspaces
 - compare their structure and outputs
 - explain why visible irregularity is not enough for security
+- predict a later bit in at least one bounded `LFSR` exercise
 - and leave with a clearer idea of what makes PRNG design stronger or weaker
 
 ## Notes
