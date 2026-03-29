@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Proposed
+Status: Implemented
 
 ---
 
@@ -49,6 +49,7 @@ It is:
 - attached to the verification story MCW already has
 - explicit about what is being checked
 - honest about what is not being checked
+- executed as a local parity artifact rather than browser-hosted Python execution
 
 This keeps export trust aligned with MCW’s “Glass Box” and executable-specification identity.
 
@@ -66,10 +67,16 @@ This slice must:
   - stateless parity cases
   - and, if it remains clean, bounded ticked parity cases
 - reuse the verification-station case model wherever possible
-- give the user a tangible parity artifact or workflow, such as:
-  - generated verification script content
-  - generated parity metadata
-  - or another bounded export-side parity companion
+- generate a standalone `verify_parity.py` artifact inside the Python export bundle
+- embed the active verification cases directly into that parity script as a self-contained data block
+- define parity against the same formatted output model MCW already uses:
+  - terminal formatted output for stateless cases
+  - collected-output formatted parity for bounded ticked cases
+- include a small parity-script header that identifies:
+  - MCW engine/export parity check
+  - exported runtime version
+  - expected local Python baseline
+- normalize output narrowly enough to avoid trivial false negatives without masking real mismatches
 - keep the exported-workspace/runtime split intact
 
 It must not:
@@ -98,6 +105,7 @@ The workflow should be explicit about:
 The workflow should also preserve MCW’s honesty:
 - parity success means “faithful for these cases”
 - not “universally equivalent under all future edits or environments”
+- not “cryptographically secure”
 
 ---
 
@@ -110,6 +118,7 @@ That means:
 - obvious “engine vs export” framing
 - small bounded artifacts
 - clear pass/fail or parity expectations
+- a script the user runs locally, not a browser-side Python runner
 
 It should not feel like:
 - a Python IDE inside MCW

@@ -50,8 +50,8 @@ The next bounded trust follow-on after that is now explicitly recorded as:
 
 The next export/trust follow-on after that is now explicitly recorded as:
 - `EXPORT-ENGINE-PARITY-WORKFLOW-V1.md`
-- defines the first bounded user-facing workflow for checking exported Python against live MCW behavior
-- keeps export trust inside the verification/product line without widening into arbitrary external execution
+- now shipped as the first bounded engine-vs-export trust workflow
+- Python export now includes a standalone `verify_parity.py` artifact that runs the active verification cases against the exported workspace locally
 
 The current checkpointing follow-on after that is:
 - named workspace versions / restore points
@@ -351,7 +351,7 @@ The next Python export frontier is now productization:
 - exported Python now declares a deliberate runtime public surface and clearer workspace provenance/runtime dependency headers
 - `PYTHON-EXPORT-DELIVERY-UX-V1.md`
 - now ships the next bounded export-productization slice for reliable two-file handoff and artifact delivery clarity
-- Python export now hands off one flat ZIP archive containing `mcw_runtime.py` plus the generated workspace file
+- Python export now hands off one flat ZIP archive containing `mcw_runtime.py`, the generated workspace file, and `verify_parity.py`
 
 The future Python export architecture note after that is now explicitly recorded as:
 - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`

@@ -675,7 +675,14 @@ export function buildFlatZipArchive(
 
 export function downloadPythonExportBundle(
   workspaceName: string,
-  files: { runtimeFileName: string; runtimeSource: string; workspaceFileName: string; workspaceSource: string },
+  files: {
+    runtimeFileName: string;
+    runtimeSource: string;
+    workspaceFileName: string;
+    workspaceSource: string;
+    parityFileName: string;
+    paritySource: string;
+  },
 ): void {
   const archiveStem = workspaceName
     .trim()
@@ -687,6 +694,7 @@ export function downloadPythonExportBundle(
   const archiveBlob = buildFlatZipArchive([
     { fileName: files.runtimeFileName, contents: files.runtimeSource },
     { fileName: files.workspaceFileName, contents: files.workspaceSource },
+    { fileName: files.parityFileName, contents: files.paritySource },
   ]);
   const url = URL.createObjectURL(archiveBlob);
   const anchor = document.createElement('a');

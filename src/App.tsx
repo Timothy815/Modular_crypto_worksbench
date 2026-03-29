@@ -2666,6 +2666,7 @@ function MainApp() {
                   activeProjectState,
                   effectiveRegistry,
                   activeProjectDefinition.name,
+                  verificationCases,
                 );
                 downloadPythonExportBundle(activeProjectDefinition.name, pythonExport);
                 setImportError(null);

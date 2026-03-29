@@ -210,8 +210,8 @@ Current `main` now also includes:
 - next Python export delivery/productization slice:
   - `PYTHON-EXPORT-DELIVERY-UX-V1.md`
   - shipped the first bounded delivery-UX follow-on for the two-file Python export handoff
-  - keeps artifact contents unchanged while refining how the runtime and workspace are delivered together
-  - now hands off one flat ZIP archive containing the runtime and workspace files at the root level
+  - now superseded slightly by the later parity workflow, which adds `verify_parity.py` to the bundle
+  - Python export now hands off one flat ZIP archive containing the runtime file, workspace file, and parity script at the root level
 - stage assembly ergonomics:
   - `Arrange Selected Stage Row` for horizontal staged fragments
   - `Stack Selected Stage Column` for vertical bank / ladder fragments
@@ -243,8 +243,8 @@ The next bounded verification slice after that is now also recorded:
 
 The next export/trust slice after that is now also recorded:
 - `EXPORT-ENGINE-PARITY-WORKFLOW-V1.md`
-- defines the first bounded user-facing workflow for checking exported Python against live MCW behavior
-- keeps export trust inside the verification/product line without widening into arbitrary external execution
+- now shipped as the first bounded engine-vs-export trust workflow
+- Python export now includes a standalone `verify_parity.py` artifact that runs the active verification cases against the exported workspace locally
 - expand Python export carefully second
 - refactor the largest UI surfaces third
 - keep multi-window workspace support as a deliberate next-tier priority after those lines
