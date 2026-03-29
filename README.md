@@ -68,6 +68,11 @@ The next bounded product-help refinement after that is now explicitly recorded a
 - now shipped as a first-class user-manual surface from `Resources`
 - opens a standalone manual window with structured content, table of contents, search, and a curated index
 
+The next bounded AI-facing handoff refinement after that is now explicitly recorded as:
+- `AI-TOOLKIT-V1.md`
+- adds a `Resources` entry for downloading an external-LLM toolkit package
+- targets promptable generation of MCW workspace and challenge JSON without embedding a chatbot inside the product
+
 The current checkpointing follow-on after that is:
 - named workspace versions / restore points
 - explicit `Save Version` and `Restore` workflow per workspace

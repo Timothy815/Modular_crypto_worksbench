@@ -258,6 +258,10 @@ The next export/trust slice after that is now also recorded:
   - `USER-MANUAL-V1.md`
   - now shipped as a first-class user-manual surface reachable from `Resources`
   - opens a standalone manual window with structured content, table of contents, search, and a curated index
+- next bounded AI-facing handoff refinement after that:
+  - `AI-TOOLKIT-V1.md`
+  - records a `Resources`-linked toolkit package for external LLM prompting
+  - targets workspace/challenge JSON generation guidance without embedding a chatbot or provider integration in MCW
 - expand Python export carefully second
 - refactor the largest UI surfaces third
 - keep multi-window workspace support as a deliberate next-tier priority after those lines
