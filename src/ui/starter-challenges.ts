@@ -14,6 +14,7 @@ const padAndSplitProject = demoProjects.find((project) => project.id === 'pad-an
 const protocolMaterialProject = demoProjects.find((project) => project.id === 'protocol-material-mixer');
 const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
 const polluxFractionationProject = demoProjects.find((project) => project.id === 'pollux-fractionation');
+const polluxRoundTripProject = demoProjects.find((project) => project.id === 'pollux-round-trip');
 const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
 const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-lorenz');
 const pairedLorenzProject = demoProjects.find((project) => project.id === 'paired-lorenz');
@@ -83,6 +84,9 @@ if (!baudotProject) {
 }
 if (!polluxFractionationProject) {
   throw new Error('Expected pollux-fractionation demo project to seed starter challenges.');
+}
+if (!polluxRoundTripProject) {
+  throw new Error('Expected pollux-round-trip demo project to seed starter challenges.');
 }
 if (!lorenzProject) {
   throw new Error('Expected lorenz-foundation demo project to seed starter challenges.');
@@ -502,6 +506,17 @@ if (!brokenPolluxModule) {
 }
 brokenPolluxModule.params.oneAlphabet = 'N,O,P';
 
+const polluxRoundTripTarget = cloneProject(polluxRoundTripProject.project);
+const brokenPolluxRoundTripStart = cloneProject(polluxRoundTripProject.project);
+const brokenPolluxRoundTripDecode = brokenPolluxRoundTripStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'decode',
+);
+if (!brokenPolluxRoundTripDecode) {
+  throw new Error('Expected pollux-round-trip demo project to contain a decode module.');
+}
+brokenPolluxRoundTripDecode.params.zeroAlphabet = 'X,Q,N';
+brokenPolluxRoundTripDecode.params.oneAlphabet = 'M,O,Z';
+
 const brokenLorenzLfsr = brokenLorenzStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'lfsr',
 );
@@ -892,6 +907,28 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The input bits are already correct in this lab.',
       'This is a symbol-set repair, not a wiring repair.',
       'Only the oneAlphabet drifted; the zeroAlphabet is still correct.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-pollux-round-trip',
+    title: 'Repair the Pollux Round Trip',
+    projectId: 'pollux-round-trip',
+    group: 'Historical Bridges',
+    difficulty: 'beginner',
+    prompt:
+      'The sender still encodes the bit stream correctly, but the receiver no longer agrees on one of the Pollux alphabets. Repair the decoder so the recovered bits match the original source again and the verification sink returns to PASS.',
+    startingProject: brokenPolluxRoundTripStart,
+    startingLayout: cloneProject(polluxRoundTripProject.layout),
+    targetProject: polluxRoundTripTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'This lab is about alphabet agreement, not rewiring the graph.',
+      'Compare the encoder and decoder zeroAlphabet / oneAlphabet strings directly before changing anything else.',
+      'PolluxInverse normalizes symbols to uppercase, so casing is not the real problem here.',
+      'Use the recovered-bit sink and the verification sink together: the round-trip is only fixed when both line up with the original source again.',
     ],
   },
   {

@@ -1,6 +1,6 @@
 # POLLUX-ROUNDTRIP-CONTENT-V1
 
-Status: Proposed
+Status: Implemented
 
 Owner: Codex
 Scope: Historical Bridges / Tutorials / Challenges / Manual
@@ -64,8 +64,8 @@ The right framing is:
    - why known alphabets make the disguise reversible
 4. V1 should add one challenge that requires repairing a broken Pollux round-trip.
 5. The challenge should stay bounded to:
-   - mismatched alphabets
-   - or a broken inverse-side configuration
+   - mismatched encoder/decoder alphabets
+   - or a broken inverse-side configuration that still teaches alphabet agreement
    - not a frequency-analysis or cracking exercise
 6. V1 should update the manual so Pollux is documented as a round-trip historical bridge rather than only a forward disguise primitive.
 7. The teaching copy must state plainly that:
@@ -73,6 +73,8 @@ The right framing is:
    - Pollux is reversible when the alphabets are known
    - this is not the same thing as modern diffusion or secrecy
 8. The content should remain compatible with the existing learning, compare, verification, and Python export story.
+9. The challenge and tutorial should explicitly direct users to compare the encoder and decoder alphabet parameters and use the existing output/verification surfaces to confirm the repaired round-trip.
+10. The tutorial and manual should note that Pollux symbol membership is normalized to uppercase, so sender/receiver agreement is about shared sets rather than visible letter casing.
 
 ## Preferred V1 Direction
 
@@ -85,7 +87,7 @@ The likely best first shape is:
   - set-membership recovery
 - one challenge where:
   - the forward Pollux side is correct
-  - the inverse alphabets are wrong or swapped
+  - the inverse alphabets contain one wrong symbol or one mismatched set entry
   - the student must restore a clean round-trip
 
 That keeps the slice:
@@ -98,6 +100,9 @@ That keeps the slice:
 
 - The content must not imply that Pollux round-tripping makes a secure channel.
 - The tutorial and manual should say explicitly that recovery works because both sides share the same zero/one symbol sets.
+- The challenge should focus on alphabet agreement rather than generic wiring repair.
+- The challenge hints should point users toward compare/verification-oriented diagnosis instead of blind trial and error.
+- The content should mention that Pollux membership checks are case-insensitive because symbols are normalized before decode.
 - The challenge should reward understanding of:
   - disjoint alphabets
   - membership-based decoding
@@ -119,6 +124,7 @@ This slice is successful if:
 - a student can open one Pollux round-trip demo
 - see the encoded symbol stream and the recovered bits
 - repair one broken round-trip challenge
+- confirm that the repaired challenge passes again by comparing the recovered bits against the original source or the captured reference output
 - and explain why the recovery depends on known alphabet agreement rather than hidden magic
 
 ## Notes

@@ -881,6 +881,51 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'pollux-round-trip',
+    name: 'Pollux Round Trip',
+    group: 'Historical Bridges',
+    summary:
+      'A sender/receiver Pollux lab that fractionates one visible bit stream into symbols, recovers it by shared alphabet agreement, and proves the round-trip with an explicit equality check.',
+    pipeline: 'BitSource -> PolluxFractionation -> PolluxInverse -> Equals + TextOutput + BitOutput',
+    project: {
+      modules: [
+        { id: 'source', defId: 'BitSource', params: { stream: [0, 1, 1, 0, 1, 0, 0, 1] } },
+        {
+          id: 'encode',
+          defId: 'PolluxFractionation',
+          params: { zeroAlphabet: 'X,Q,Z', oneAlphabet: 'M,N,O' },
+        },
+        { id: 'ciphertext', defId: 'TextOutput', params: {} },
+        {
+          id: 'decode',
+          defId: 'PolluxInverse',
+          params: { zeroAlphabet: 'X,Q,Z', oneAlphabet: 'M,N,O' },
+        },
+        { id: 'matches', defId: 'Equals', params: {} },
+        { id: 'verify-out', defId: 'BitOutput', params: {} },
+        { id: 'recovered', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'encode', port: 'in' } },
+        { from: { moduleId: 'encode', port: 'out' }, to: { moduleId: 'ciphertext', port: 'in' } },
+        { from: { moduleId: 'encode', port: 'out' }, to: { moduleId: 'decode', port: 'in' } },
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'matches', port: 'a' } },
+        { from: { moduleId: 'decode', port: 'out' }, to: { moduleId: 'matches', port: 'b' } },
+        { from: { moduleId: 'matches', port: 'out' }, to: { moduleId: 'verify-out', port: 'in' } },
+        { from: { moduleId: 'decode', port: 'out' }, to: { moduleId: 'recovered', port: 'in' } },
+      ],
+    },
+    layout: {
+      source: { x: 56, y: 180 },
+      encode: { x: 324, y: 180 },
+      ciphertext: { x: 608, y: 72 },
+      decode: { x: 608, y: 272 },
+      matches: { x: 888, y: 180 },
+      'verify-out': { x: 1148, y: 120 },
+      recovered: { x: 1148, y: 260 },
+    },
+  },
+  {
     id: 'lorenz-foundation',
     name: 'Lorenz SZ42 Foundation',
     group: 'Historical Bridges',

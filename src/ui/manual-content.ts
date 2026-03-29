@@ -85,8 +85,17 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         id: 'pollux-fractionation',
         title: 'Pollux Fractionation',
         body:
-          'PolluxFractionation is a classical bridge primitive, not a modern diffusion block. It takes a bit stream and emits one visible symbol per bit using two disjoint symbol sets: one for 0 bits and one for 1 bits. MCW keeps the first version deterministic by cycling through each set as matching bits are consumed, so students can inspect the disguise mechanism instead of attributing the output variation to hidden randomness. This is useful for teaching how homophonic or fractionated representation can flatten direct symbol clues without actually mixing positions or spreading influence the way a modern round function would.',
-        indexTerms: ['pollux', 'fractionation', 'homophonic', 'disguise', 'zeroalphabet', 'onealphabet'],
+          'Pollux in MCW is a round-trip historical bridge, not a security claim. PolluxFractionation takes a bit stream and emits one visible symbol per bit using two disjoint symbol sets: one for 0 bits and one for 1 bits. PolluxInverse reverses that disguise by checking set membership and recovering one bit per symbol. Both sides must share the same zeroAlphabet and oneAlphabet values, and membership is normalized to uppercase so the agreement is about the sets themselves rather than letter casing. This is useful for teaching sender/receiver representation agreement: Pollux can flatten direct symbol clues, but it does not mix positions or create modern diffusion.',
+        indexTerms: [
+          'pollux',
+          'fractionation',
+          'homophonic',
+          'disguise',
+          'polluxinverse',
+          'round trip',
+          'zeroalphabet',
+          'onealphabet',
+        ],
       },
       {
         id: 'visible-prng-labs',

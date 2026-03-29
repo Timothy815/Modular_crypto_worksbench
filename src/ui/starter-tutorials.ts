@@ -1152,6 +1152,45 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
   },
   {
     version: 1,
+    id: 'pollux-round-trip',
+    title: 'Pollux Round Trip',
+    group: 'Historical Bridges',
+    summary:
+      'Follow one sender/receiver Pollux lab from visible bit source through disguise, membership decode, and explicit round-trip verification.',
+    projectId: 'pollux-round-trip',
+    steps: [
+      {
+        id: 'pollux-roundtrip-source',
+        title: 'Start With The Shared Bit Source',
+        body: 'BitSource is the original message both sides care about. The round-trip lesson begins here: the source bits stay visible, so later equality is not guessed or hand-waved.',
+        focusModuleId: 'source',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'pollux-roundtrip-encode',
+        title: 'Disguise The Bits Into A Symbol Stream',
+        body: 'PolluxFractionation turns each bit into one visible symbol from the matching alphabet. This is still disguise, not diffusion. Read the zeroAlphabet and oneAlphabet directly before you move on.',
+        focusModuleId: 'encode',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'pollux-roundtrip-decode',
+        title: 'Recover By Shared Alphabet Agreement',
+        body: 'PolluxInverse does not reverse the stream by guessing symbol order. It checks which shared set each symbol belongs to, normalizes membership to uppercase, and recovers one bit per symbol. This only works when sender and receiver agree on the same alphabets.',
+        focusModuleId: 'decode',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'pollux-roundtrip-verify',
+        title: 'Use Equality And Verification To Prove The Round Trip',
+        body: 'Equals compares the recovered bit word against the original source. The BitOutput verification sink should go high only when the alphabets match on both sides. If you ever break the round-trip, compare the encoder and decoder parameter strings first before changing wires.',
+        focusModuleId: 'matches',
+        targetStepIndex: 3,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'banked-lorenz',
     title: 'The Banked Lorenz Control',
     group: 'Historical Bridges',
