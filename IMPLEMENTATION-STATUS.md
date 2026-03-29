@@ -1001,6 +1001,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `CUSTOM-REFLECTOR-AUTHORING-V1.md` | Shipped in `v1.12.0` as bounded paired reflector authoring |
 | `POLLUX-FRACTIONATION-V1.md` | Shipped bounded classical fractionation / homophonic-encoding primitive for disjoint bit-to-symbol output sets |
 | `POLLUX-INVERSE-V1.md` | Shipped bounded inverse Pollux primitive for symbol-to-bit recovery using known zero/one alphabets |
+| `POLLUX-ROUNDTRIP-CONTENT-V1.md` | Proposed bounded teaching-content slice for explicit Pollux encode/decode round-trip demos, tutorial flow, challenge, and manual support |
 | `PRNG-TEACHING-WORKSPACE-V1.md` | Shipped bounded teaching-workspace line for comparing visible pseudo-random generator constructions without making CSPRNG claims |
 | `WORKBENCH-ERGONOMICS-V1.md` | Shipped in `v1.13.0` as bounded workbench usability improvements |
 | `WORKSPACE-LIBRARY-V1.md` | Shipped in `v1.13.0` as bounded blank/save/delete user workspace management |
