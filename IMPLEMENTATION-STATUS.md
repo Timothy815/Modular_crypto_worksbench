@@ -238,8 +238,8 @@ The next implementation-ready verification slice is now also recorded:
 
 The next bounded verification slice after that is now also recorded:
 - `VERIFIED-MACHINE-TICKED-WORKFLOW-V1.md`
-- extends the verification station into bounded temporal/ticked cases
-- targets first-divergence reporting across time without widening into a general test harness
+- now shipped as the bounded temporal/ticked verification follow-on
+- adds explicit tick-count cases, collected-output pass/fail, and first-divergence reporting by tick/module
 - expand Python export carefully second
 - refactor the largest UI surfaces third
 - keep multi-window workspace support as a deliberate next-tier priority after those lines

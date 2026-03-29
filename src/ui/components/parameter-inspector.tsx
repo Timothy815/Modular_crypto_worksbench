@@ -153,7 +153,11 @@ interface ParameterInspectorProps {
   onRequestFocusModule?: (moduleId: string) => void;
   onCaptureBaseline: () => void;
   onClearBaseline: () => void;
-  onAddVerificationCase: (sourceModuleId: string, inputValue: string) => string | null;
+  onAddVerificationCase: (
+    sourceModuleId: string,
+    inputValue: string,
+    tickCount?: number | null,
+  ) => string | null;
   onRemoveVerificationCase: (caseId: string) => void;
   onClearVerificationCases: () => void;
   probedModuleIds: string[];

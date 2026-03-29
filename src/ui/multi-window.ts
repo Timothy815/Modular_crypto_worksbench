@@ -144,7 +144,12 @@ export type DetachedPanelCommand =
   | { type: 'requestFocusModule'; moduleId: string }
   | { type: 'captureBaseline' }
   | { type: 'clearBaseline' }
-  | { type: 'addVerificationCase'; sourceModuleId: string; inputValue: string }
+  | {
+      type: 'addVerificationCase';
+      sourceModuleId: string;
+      inputValue: string;
+      tickCount: number | null;
+    }
   | { type: 'removeVerificationCase'; caseId: string }
   | { type: 'clearVerificationCases' }
   | { type: 'unzipComposite'; moduleId: string }

@@ -1,4 +1,10 @@
-import type { ExecutionResult, ExecutionTraceEntry, Signal } from '../engine/types';
+import type {
+  ExecutionResult,
+  ExecutionTraceEntry,
+  Signal,
+  TickedExecutionResult,
+} from '../engine/types';
+import { isOutputSinkDefId } from '../engine/output-sinks';
 
 export interface ComparedSignal {
   raw: Signal | null;
@@ -52,6 +58,85 @@ export function findFirstAnalysisTraceDivergence(
     variant.analysisTrace,
     new Set(ignoredModuleIds),
   );
+}
+
+export function compareTickedExecutionResults(
+  baseline: TickedExecutionResult,
+  variant: TickedExecutionResult,
+): ExecutionComparison {
+  const baselineOutput = collectTickedOutput(baseline);
+  const variantOutput = collectTickedOutput(variant);
+  const firstDivergence = findFirstTickedDivergence(baseline, variant);
+
+  return {
+    baselineOutput: {
+      raw: { type: 'symbol', value: baselineOutput },
+      formatted: baselineOutput || 'n/a',
+    },
+    variantOutput: {
+      raw: { type: 'symbol', value: variantOutput },
+      formatted: variantOutput || 'n/a',
+    },
+    outputsMatch: baselineOutput === variantOutput,
+    firstDivergence,
+  };
+}
+
+export function collectTickedOutput(result: TickedExecutionResult): string {
+  return result.ticks
+    .map((tick) => {
+      const outputModule = tick.trace.find((entry) => isOutputSinkDefId(entry.defId));
+      const signal = outputModule?.outputs.out ?? outputModule?.inputs.in ?? null;
+
+      if (!signal) {
+        return '';
+      }
+
+      return signal.type === 'symbol' ? signal.value : signal.value.join('');
+    })
+    .join('');
+}
+
+export function findFirstTickedDivergence(
+  baseline: TickedExecutionResult,
+  variant: TickedExecutionResult,
+): TraceDivergence | null {
+  const maxTicks = Math.max(baseline.ticks.length, variant.ticks.length);
+
+  for (let tickIndex = 0; tickIndex < maxTicks; tickIndex += 1) {
+    const baselineTick = baseline.ticks[tickIndex] ?? null;
+    const variantTick = variant.ticks[tickIndex] ?? null;
+
+    if (!baselineTick || !variantTick) {
+      return {
+        stepIndex: tickIndex,
+        tickIndex,
+        baseline: getOutputTraceEntry(baselineTick),
+        variant: getOutputTraceEntry(variantTick),
+        reason: 'trace-length',
+      };
+    }
+
+    const perTickComparison = compareExecutionResults(baselineTick, variantTick);
+    if (!perTickComparison.outputsMatch) {
+      if (perTickComparison.firstDivergence) {
+        return {
+          ...perTickComparison.firstDivergence,
+          tickIndex,
+        };
+      }
+
+      return {
+        stepIndex: tickIndex,
+        tickIndex,
+        baseline: getOutputTraceEntry(baselineTick),
+        variant: getOutputTraceEntry(variantTick),
+        reason: 'outputs',
+      };
+    }
+  }
+
+  return null;
 }
 
 function findFirstEntryDivergence(
@@ -134,6 +219,14 @@ function getTerminalSignal(result: ExecutionResult): ComparedSignal {
     raw: signal,
     formatted: formatComparedSignal(signal),
   };
+}
+
+function getOutputTraceEntry(result: ExecutionResult | null): ExecutionTraceEntry | null {
+  if (!result) {
+    return null;
+  }
+
+  return result.trace.find((entry) => isOutputSinkDefId(entry.defId)) ?? result.trace.at(-1) ?? null;
 }
 
 function areRecordSignalsEqual(

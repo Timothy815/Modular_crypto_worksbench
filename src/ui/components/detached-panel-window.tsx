@@ -781,8 +781,13 @@ function DetachedInspectorView({
       onRequestFocusModule={(moduleId) => onSendCommand({ type: 'requestFocusModule', moduleId })}
       onCaptureBaseline={() => onSendCommand({ type: 'captureBaseline' })}
       onClearBaseline={() => onSendCommand({ type: 'clearBaseline' })}
-      onAddVerificationCase={(sourceModuleId, inputValue) => {
-        onSendCommand({ type: 'addVerificationCase', sourceModuleId, inputValue });
+      onAddVerificationCase={(sourceModuleId, inputValue, tickCount) => {
+        onSendCommand({
+          type: 'addVerificationCase',
+          sourceModuleId,
+          inputValue,
+          tickCount: tickCount ?? null,
+        });
         return null;
       }}
       onRemoveVerificationCase={(caseId) => onSendCommand({ type: 'removeVerificationCase', caseId })}

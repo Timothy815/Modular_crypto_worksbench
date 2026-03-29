@@ -32,6 +32,7 @@ import { demoProjects, runDemoProject } from './ui/demo-projects';
 import { compareExecutionResults } from './ui/execution-compare';
 import {
   createVerificationCaseFromBaseline,
+  createTickedVerificationCaseFromBaseline,
   evaluateVerificationCases,
   getVerificationSourceOptions,
   type VerificationCase,
@@ -787,11 +788,8 @@ function MainApp() {
       ? compareExecutionResults(baselineExecution, execution)
       : null;
   const verificationSourceOptions = useMemo(
-    () =>
-      !isTickedMode
-        ? getVerificationSourceOptions(activeProjectState, effectiveRegistry)
-        : [],
-    [activeProjectState, effectiveRegistry, isTickedMode],
+    () => getVerificationSourceOptions(activeProjectState, effectiveRegistry),
+    [activeProjectState, effectiveRegistry],
   );
   const verificationCases = useMemo(
     () => verificationCasesByProject[activeProjectDefinition.id] ?? [],
@@ -799,7 +797,7 @@ function MainApp() {
   );
   const verificationResults = useMemo(
     () =>
-      !isTickedMode && comparisonBaseline
+      comparisonBaseline
         ? evaluateVerificationCases({
             baselineProject: comparisonBaseline.project,
             currentProject: activeProjectState,
@@ -811,7 +809,6 @@ function MainApp() {
       activeProjectState,
       comparisonBaseline,
       effectiveRegistry,
-      isTickedMode,
       verificationCases,
     ],
   );
@@ -899,11 +896,7 @@ function MainApp() {
     }));
   }, [activeProjectDefinition.id]);
   const handleAddVerificationCase = useCallback(
-    (sourceModuleId: string, inputValue: string) => {
-      if (isTickedMode) {
-        return 'Ticked verification will come in a later slice.';
-      }
-
+    (sourceModuleId: string, inputValue: string, tickCount: number | null = null) => {
       if (!comparisonBaseline) {
         return 'Capture a baseline before adding verification cases.';
       }
@@ -914,12 +907,20 @@ function MainApp() {
         return 'Choose a supported source module for verification.';
       }
 
-      const nextCase = createVerificationCaseFromBaseline({
-        baselineProject: comparisonBaseline.project,
-        registry: effectiveRegistry,
-        sourceOption,
-        inputValue,
-      });
+      const nextCase = isTickedMode
+        ? createTickedVerificationCaseFromBaseline({
+            baselineProject: comparisonBaseline.project,
+            registry: effectiveRegistry,
+            sourceOption,
+            inputValue,
+            tickCount: tickCount ?? 0,
+          })
+        : createVerificationCaseFromBaseline({
+            baselineProject: comparisonBaseline.project,
+            registry: effectiveRegistry,
+            sourceOption,
+            inputValue,
+          });
       if (!nextCase.case) {
         return nextCase.error;
       }
@@ -937,8 +938,8 @@ function MainApp() {
       activeProjectDefinition.id,
       comparisonBaseline,
       effectiveRegistry,
-      isTickedMode,
       verificationSourceOptions,
+      isTickedMode,
     ],
   );
   const handleRemoveVerificationCase = useCallback(
@@ -1867,6 +1868,7 @@ function MainApp() {
             handleAddVerificationCase(
               message.command.sourceModuleId,
               message.command.inputValue,
+              message.command.tickCount,
             );
             return;
           case 'removeVerificationCase':

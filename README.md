@@ -45,8 +45,8 @@ The current implementation-ready trust follow-on after that is:
 
 The next bounded trust follow-on after that is now explicitly recorded as:
 - `VERIFIED-MACHINE-TICKED-WORKFLOW-V1.md`
-- extends the verification station into bounded temporal/ticked cases
-- aims to make MCW’s stateful-machine trust story explicit without widening into a general test harness
+- now shipped as the bounded temporal/ticked follow-on to the verification station
+- adds explicit tick-count cases, collected-output pass/fail, and first divergence by tick/module
 
 The current checkpointing follow-on after that is:
 - named workspace versions / restore points

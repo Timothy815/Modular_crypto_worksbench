@@ -22,7 +22,11 @@ interface ComparisonPanelProps {
   verificationResults: VerificationCaseResult[];
   onCaptureBaseline: () => void;
   onClearBaseline: () => void;
-  onAddVerificationCase: (sourceModuleId: string, inputValue: string) => string | null;
+  onAddVerificationCase: (
+    sourceModuleId: string,
+    inputValue: string,
+    tickCount?: number | null,
+  ) => string | null;
   onRemoveVerificationCase: (caseId: string) => void;
   onClearVerificationCases: () => void;
   embedded?: boolean;
@@ -51,6 +55,7 @@ export function ComparisonPanel({
     verificationSourceOptions[0]?.moduleId ?? '',
   );
   const [verificationInputValue, setVerificationInputValue] = useState('');
+  const [verificationTickCount, setVerificationTickCount] = useState('4');
   const [verificationError, setVerificationError] = useState<string | null>(null);
   const selectedVerificationSourceModuleId = verificationSourceOptions.some(
     (option) => option.moduleId === verificationSourceModuleId,
@@ -175,12 +180,7 @@ export function ComparisonPanel({
               Verified means this workspace matches the chosen reference behavior. It does not mean
               the machine is secure or certified.
             </p>
-            {isTickedMode ? (
-              <p className="comparison-copy">
-                Ticked verification will come in a later slice. This V1 station is bounded to
-                stateless cases.
-              </p>
-            ) : !baseline ? (
+            {!baseline ? (
               <p className="comparison-copy">
                 Capture a baseline first. Verification cases are generated from that reference so
                 failures can point to a first trace divergence.
@@ -215,14 +215,31 @@ export function ComparisonPanel({
                       placeholder="Enter a reference input"
                     />
                   </label>
+                  {isTickedMode ? (
+                    <label className="verification-field">
+                      <span className="meta-label">Tick Count</span>
+                      <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={verificationTickCount}
+                        onChange={(event) => setVerificationTickCount(event.target.value)}
+                        placeholder="4"
+                      />
+                    </label>
+                  ) : null}
                   <div className="comparison-actions verification-actions">
                     <button
                       type="button"
                       className="mini-action-button"
                       onClick={() => {
+                        const requestedTickCount = isTickedMode
+                          ? Number.parseInt(verificationTickCount, 10)
+                          : null;
                         const message = onAddVerificationCase(
                           selectedVerificationSourceModuleId,
                           verificationInputValue,
+                          requestedTickCount,
                         );
                         setVerificationError(message);
                         if (!message) {
@@ -280,6 +297,11 @@ export function ComparisonPanel({
                           <p className="comparison-copy">
                             Input: <strong>{result.inputValue || '∅'}</strong>
                           </p>
+                          {result.tickCount ? (
+                            <p className="comparison-copy">
+                              Tick Count: <strong>{result.tickCount}</strong>
+                            </p>
+                          ) : null}
                           <p className="comparison-copy">
                             Expected: <strong>{caseDefinition?.expectedOutput ?? result.expectedOutput}</strong>
                           </p>
@@ -295,7 +317,12 @@ export function ComparisonPanel({
                               ) : result.divergence ? (
                                 <p className="comparison-copy">
                                   First divergence at{' '}
-                                  <strong>step {result.divergence.stepIndex + 1}</strong>:{' '}
+                                  <strong>
+                                    {result.divergence.tickIndex !== undefined
+                                      ? `tick ${result.divergence.tickIndex + 1}`
+                                      : `step ${result.divergence.stepIndex + 1}`}
+                                  </strong>
+                                  :{' '}
                                   <strong>
                                     {result.divergence.variant?.moduleId ??
                                       result.divergence.baseline?.moduleId ??

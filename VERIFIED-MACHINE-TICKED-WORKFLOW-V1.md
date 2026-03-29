@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Proposed
+Status: Shipped
 
 ---
 
@@ -135,3 +135,31 @@ This slice is successful when:
 - a failing temporal case points the user toward the first divergence by tick and module
 - the workflow strengthens trust for MCW’s stateful machines without widening into a general programming surface
 - MCW has a first real answer to “how do I prove this temporal machine matches a reference over time?”
+
+---
+
+## Shipped Shape
+
+This slice is now shipped in a bounded form:
+- it lives inside the existing compare surface
+- it extends the baseline-backed verification station into ticked mode
+- it supports bounded temporal cases for the same supported verification sources:
+  - `TextInput`
+  - `AsciiSource`
+  - `BaudotSource`
+  - `HexSource`
+- each ticked case stores:
+  - source module
+  - explicit input value
+  - explicit tick count
+  - explicit expected collected output captured from the chosen baseline
+- each ticked case reports:
+  - pass/fail
+  - expected collected output
+  - actual collected output
+  - first divergence by tick and module when the live workspace no longer matches the captured reference
+
+This V1 shape remains intentionally bounded:
+- it does not add waveform authoring
+- it does not add arbitrary temporal assertions
+- it does not widen into a general test harness
