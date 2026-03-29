@@ -105,11 +105,6 @@ const MAX_RIGHT_DOCK_WIDTH = 680;
 const USER_MANUAL_QUERY_KEY = 'manual';
 const USER_MANUAL_THEME_QUERY_KEY = 'theme';
 
-const CryptanalysisPanel = lazy(() =>
-  import('./ui/components/cryptanalysis-panel').then((module) => ({
-    default: module.CryptanalysisPanel,
-  })),
-);
 const DetachedPanelWindow = lazy(() =>
   import('./ui/components/detached-panel-window').then((module) => ({
     default: module.DetachedPanelWindow,
@@ -290,7 +285,9 @@ function MainApp() {
   const [headerResourceAction, setHeaderResourceAction] = useState('');
   const [headerWorkspaceAction, setHeaderWorkspaceAction] = useState('');
   const [headerWindowAction, setHeaderWindowAction] = useState('');
-  const [learningPanelTab, setLearningPanelTab] = useState<'tutorial' | 'challenge'>('tutorial');
+  const [learningPanelTab, setLearningPanelTab] = useState<
+    'tutorial' | 'challenge' | 'cryptanalysis'
+  >('tutorial');
   const [leftDockWidth, setLeftDockWidth] = useState(() => {
     if (typeof window === 'undefined') {
       return 320;
@@ -904,16 +901,30 @@ function MainApp() {
   );
   const selectedTutorialStep = getTutorialStep(selectedTutorial, tutorialStepIndex);
   const workspaceMode = state.workspaceModeByProject[activeProjectDefinition.id] ?? 'guide';
-  const hasChallengePanel = workspaceMode !== 'cryptanalysis' && Boolean(selectedChallenge);
-  const hasTutorialPanel = workspaceMode !== 'cryptanalysis' && Boolean(selectedTutorial);
-  const activeLearningPanelTab =
-    learningPanelTab === 'challenge'
-      ? hasChallengePanel
+  const hasChallengePanel = Boolean(selectedChallenge);
+  const hasTutorialPanel = Boolean(selectedTutorial);
+  const hasCryptanalysisPanel = true;
+  const activeLearningPanelTab = (() => {
+    if (learningPanelTab === 'challenge') {
+      return hasChallengePanel
         ? 'challenge'
-        : 'tutorial'
+        : hasTutorialPanel
+          ? 'tutorial'
+          : 'cryptanalysis';
+    }
+    if (learningPanelTab === 'tutorial') {
+      return hasTutorialPanel
+        ? 'tutorial'
+        : hasChallengePanel
+          ? 'challenge'
+          : 'cryptanalysis';
+    }
+    return hasCryptanalysisPanel
+      ? 'cryptanalysis'
       : hasTutorialPanel
         ? 'tutorial'
         : 'challenge';
+  })();
   const tutorialNotesVisible =
     state.tutorialNotesVisibleByProject[activeProjectDefinition.id] ?? true;
   const canCaptureChallenge =
@@ -1129,12 +1140,15 @@ function MainApp() {
       learningPanelTab: activeLearningPanelTab,
       hasTutorialPanel,
       hasChallengePanel,
+      hasCryptanalysisPanel,
       tutorials: state.tutorialLibrary,
       challenges: state.challengeLibrary,
       selectedTutorialId: selectedTutorial?.id ?? null,
       selectedChallengeId: selectedChallenge?.id ?? null,
       currentProjectId: activeProjectDefinition.id,
+      projectName: activeProjectDefinition.name,
       currentProject: activeProjectState,
+      execution,
       tutorialStepIndex,
       selectedTutorialStep,
       completedTutorialIds,
@@ -1143,21 +1157,32 @@ function MainApp() {
       tutorialNotesVisible,
       challengeEvaluation,
       canCaptureChallenge,
+      ciphertext: state.cryptanalysisInputByProject[activeProjectDefinition.id] ?? '',
+      cryptanalysisMode: state.cryptanalysisModeByProject[activeProjectDefinition.id] ?? 'classical',
+      modernBaseline: state.modernAnalysisBaselineByProject[activeProjectDefinition.id] ?? '',
+      modernFlipBit: state.modernAnalysisFlipBitByProject[activeProjectDefinition.id] ?? 0,
     }),
     [
       activeLearningPanelTab,
       activeProjectDefinition.id,
+      activeProjectDefinition.name,
       activeProjectState,
       canCaptureChallenge,
       challengeEvaluation,
       completedTutorialIds,
       hasChallengePanel,
+      hasCryptanalysisPanel,
       hasTutorialPanel,
       isTutorialCompleted,
+      execution,
       selectedChallenge,
       selectedTutorial,
       selectedTutorialStep,
       state.challengeLibrary,
+      state.cryptanalysisInputByProject,
+      state.cryptanalysisModeByProject,
+      state.modernAnalysisBaselineByProject,
+      state.modernAnalysisFlipBitByProject,
       state.tutorialLibrary,
       theme,
       tutorialNotesVisible,
@@ -1948,6 +1973,19 @@ function MainApp() {
             return;
           case 'setLearningTab':
             setLearningPanelTab(message.command.tab);
+            if (message.command.tab === 'cryptanalysis') {
+              dispatch({
+                type: 'setWorkspaceMode',
+                projectId: activeProjectDefinition.id,
+                mode: 'cryptanalysis',
+              });
+            } else if (workspaceMode === 'cryptanalysis') {
+              dispatch({
+                type: 'setWorkspaceMode',
+                projectId: activeProjectDefinition.id,
+                mode: 'guide',
+              });
+            }
             return;
           case 'selectChallenge': {
             const { challengeId } = message.command;
@@ -1956,6 +1994,16 @@ function MainApp() {
               null;
             const challengeProjectId = nextChallenge?.projectId ?? activeProjectDefinition.id;
             setLearningPanelTab('challenge');
+            if (
+              challengeProjectId === activeProjectDefinition.id &&
+              workspaceMode === 'cryptanalysis'
+            ) {
+              dispatch({
+                type: 'setWorkspaceMode',
+                projectId: activeProjectDefinition.id,
+                mode: 'guide',
+              });
+            }
             if (challengeProjectId !== activeProjectDefinition.id) {
               dispatch({ type: 'switchProject', projectId: challengeProjectId });
             }
@@ -1968,6 +2016,13 @@ function MainApp() {
           }
           case 'loadChallengeStart':
             setLearningPanelTab('challenge');
+            if (workspaceMode === 'cryptanalysis') {
+              dispatch({
+                type: 'setWorkspaceMode',
+                projectId: activeProjectDefinition.id,
+                mode: 'guide',
+              });
+            }
             setIsChallengeResetConfirmOpen(true);
             return;
           case 'exportChallenge':
@@ -1984,6 +2039,16 @@ function MainApp() {
             dispatch({ type: 'upsertChallenge', challenge: challengeDocument });
             const challengeProjectId = challengeDocument.projectId ?? activeProjectDefinition.id;
             setLearningPanelTab('challenge');
+            if (
+              challengeProjectId === activeProjectDefinition.id &&
+              workspaceMode === 'cryptanalysis'
+            ) {
+              dispatch({
+                type: 'setWorkspaceMode',
+                projectId: activeProjectDefinition.id,
+                mode: 'guide',
+              });
+            }
             if (challengeProjectId !== activeProjectDefinition.id) {
               dispatch({ type: 'switchProject', projectId: challengeProjectId });
             }
@@ -1997,6 +2062,13 @@ function MainApp() {
           }
           case 'captureChallenge':
             setLearningPanelTab('challenge');
+            if (workspaceMode === 'cryptanalysis') {
+              dispatch({
+                type: 'setWorkspaceMode',
+                projectId: activeProjectDefinition.id,
+                mode: 'guide',
+              });
+            }
             {
               const draft = createChallengeCaptureDraft(
                 activeProjectDefinition.id,
@@ -2012,11 +2084,46 @@ function MainApp() {
               setIsChallengeCaptureOpen(true);
             }
             return;
+          case 'setCryptanalysisMode':
+            dispatch({
+              type: 'setCryptanalysisMode',
+              projectId: activeProjectDefinition.id,
+              mode: message.command.mode,
+            });
+            return;
+          case 'setCryptanalysisInput':
+            dispatch({
+              type: 'setCryptanalysisInput',
+              projectId: activeProjectDefinition.id,
+              value: message.command.value,
+            });
+            return;
+          case 'setModernAnalysisBaseline':
+            dispatch({
+              type: 'setModernAnalysisBaseline',
+              projectId: activeProjectDefinition.id,
+              value: message.command.value,
+            });
+            return;
+          case 'setModernAnalysisFlipBit':
+            dispatch({
+              type: 'setModernAnalysisFlipBit',
+              projectId: activeProjectDefinition.id,
+              value: message.command.value,
+            });
+            return;
           case 'selectTutorial': {
             const { tutorialId } = message.command;
             const nextTutorial =
               state.tutorialLibrary.find((tutorial) => tutorial.id === tutorialId) ?? null;
             setLearningPanelTab('tutorial');
+            if (workspaceMode === 'cryptanalysis') {
+              dispatch({
+                type: 'setWorkspaceMode',
+                projectId: activeProjectDefinition.id,
+                mode: 'guide',
+              });
+            }
             setStepIndex(nextTutorial?.steps[0]?.targetStepIndex ?? null);
             dispatch({
               type: 'selectTutorial',
@@ -2191,6 +2298,7 @@ function MainApp() {
     state.compositeLibrary,
     state.tutorialLibrary,
     syncTutorialStepFromTrace,
+    workspaceMode,
   ]);
 
   useEffect(() => {
@@ -3147,103 +3255,55 @@ function MainApp() {
 
       {!state.compositeEditor ? (
         <>
-          {workspaceMode === 'cryptanalysis' ? (
-            <Suspense
-              fallback={<LazyPanelFallback label="Cryptanalysis" title="Loading analysis workspace…" />}
-            >
-              <CryptanalysisPanel
-                projectName={activeProjectDefinition.name}
-                project={activeProjectState}
-                registry={effectiveRegistry}
-                execution={execution}
-                ciphertext={state.cryptanalysisInputByProject[activeProjectDefinition.id] ?? ''}
-                cryptanalysisMode={state.cryptanalysisModeByProject[activeProjectDefinition.id] ?? 'classical'}
-                modernBaseline={state.modernAnalysisBaselineByProject[activeProjectDefinition.id] ?? ''}
-                modernFlipBit={state.modernAnalysisFlipBitByProject[activeProjectDefinition.id] ?? 0}
-                workspaceMode={workspaceMode}
-                tutorial={selectedTutorial?.projectId === activeProjectDefinition.id ? selectedTutorial : null}
-                tutorialStep={
-                  tutorialNotesVisible && selectedTutorial?.projectId === activeProjectDefinition.id
-                    ? selectedTutorialStep
-                    : null
-                }
-                tutorialStepIndex={tutorialStepIndex}
-                tutorialNotesVisible={tutorialNotesVisible}
-                onSetWorkspaceMode={(mode) =>
-                  dispatch({
-                    type: 'setWorkspaceMode',
-                    projectId: activeProjectDefinition.id,
-                    mode,
-                  })
-                }
-                onSetCryptanalysisMode={(mode) =>
-                  dispatch({
-                    type: 'setCryptanalysisMode',
-                    projectId: activeProjectDefinition.id,
-                    mode,
-                  })
-                }
-                onSetTutorialNotesVisible={(visible) =>
-                  dispatch({
-                    type: 'setTutorialNotesVisible',
-                    projectId: activeProjectDefinition.id,
-                    visible,
-                  })
-                }
-                onCiphertextChange={(value) =>
-                  dispatch({
-                    type: 'setCryptanalysisInput',
-                    projectId: activeProjectDefinition.id,
-                    value,
-                  })
-                }
-                onModernBaselineChange={(value) =>
-                  dispatch({
-                    type: 'setModernAnalysisBaseline',
-                    projectId: activeProjectDefinition.id,
-                    value,
-                  })
-                }
-                onModernFlipBitChange={(value) =>
-                  dispatch({
-                    type: 'setModernAnalysisFlipBit',
-                    projectId: activeProjectDefinition.id,
-                    value,
-                  })
-                }
-                onSetTutorialStep={(stepValue) => {
-                  setStepIndex(selectedTutorial?.steps[stepValue]?.targetStepIndex ?? null);
-                  dispatch({
-                    type: 'setTutorialStep',
-                    projectId: activeProjectDefinition.id,
-                    stepIndex: stepValue,
-                  });
-                }}
-                onFocusTutorialModule={(moduleId) =>
-                  dispatch({
-                    type: 'selectModule',
-                    projectId: activeProjectDefinition.id,
-                    moduleId,
-                  })
-                }
-              />
-            </Suspense>
-          ) : showLearningInMain ? (
+          {showLearningInMain ? (
             <LearningDock
               hasTutorialPanel={hasTutorialPanel}
               hasChallengePanel={hasChallengePanel}
+              hasCryptanalysisPanel={hasCryptanalysisPanel}
               activeLearningPanelTab={activeLearningPanelTab}
-              onSetLearningPanelTab={setLearningPanelTab}
+              onSetLearningPanelTab={(tab) => {
+                setLearningPanelTab(tab);
+                if (tab === 'cryptanalysis') {
+                  dispatch({
+                    type: 'setWorkspaceMode',
+                    projectId: activeProjectDefinition.id,
+                    mode: 'cryptanalysis',
+                  });
+                } else if (workspaceMode === 'cryptanalysis') {
+                  dispatch({
+                    type: 'setWorkspaceMode',
+                    projectId: activeProjectDefinition.id,
+                    mode: 'guide',
+                  });
+                }
+              }}
               selectedChallenge={selectedChallenge}
               challenges={state.challengeLibrary}
               challengeEvaluation={challengeEvaluation}
               currentProject={activeProjectState}
+              projectName={activeProjectDefinition.name}
+              registry={effectiveRegistry}
+              execution={execution}
               canCaptureChallenge={canCaptureChallenge}
+              ciphertext={state.cryptanalysisInputByProject[activeProjectDefinition.id] ?? ''}
+              cryptanalysisMode={state.cryptanalysisModeByProject[activeProjectDefinition.id] ?? 'classical'}
+              modernBaseline={state.modernAnalysisBaselineByProject[activeProjectDefinition.id] ?? ''}
+              modernFlipBit={state.modernAnalysisFlipBitByProject[activeProjectDefinition.id] ?? 0}
               onSelectChallenge={(challengeId) => {
                 const nextChallenge =
                   state.challengeLibrary.find((challenge) => challenge.id === challengeId) ?? null;
                 const challengeProjectId = nextChallenge?.projectId ?? activeProjectDefinition.id;
                 setLearningPanelTab('challenge');
+                if (
+                  challengeProjectId === activeProjectDefinition.id &&
+                  workspaceMode === 'cryptanalysis'
+                ) {
+                  dispatch({
+                    type: 'setWorkspaceMode',
+                    projectId: activeProjectDefinition.id,
+                    mode: 'guide',
+                  });
+                }
                 if (challengeProjectId !== activeProjectDefinition.id) {
                   dispatch({
                     type: 'switchProject',
@@ -3258,6 +3318,13 @@ function MainApp() {
               }}
               onLoadChallengeStart={() => {
                 setLearningPanelTab('challenge');
+                if (workspaceMode === 'cryptanalysis') {
+                  dispatch({
+                    type: 'setWorkspaceMode',
+                    projectId: activeProjectDefinition.id,
+                    mode: 'guide',
+                  });
+                }
                 setIsChallengeResetConfirmOpen(true);
               }}
               onExportChallenge={() => {
@@ -3279,6 +3346,16 @@ function MainApp() {
                 });
                 const challengeProjectId = challengeDocument.projectId ?? activeProjectDefinition.id;
                 setLearningPanelTab('challenge');
+                if (
+                  challengeProjectId === activeProjectDefinition.id &&
+                  workspaceMode === 'cryptanalysis'
+                ) {
+                  dispatch({
+                    type: 'setWorkspaceMode',
+                    projectId: activeProjectDefinition.id,
+                    mode: 'guide',
+                  });
+                }
                 if (challengeProjectId !== activeProjectDefinition.id) {
                   dispatch({
                     type: 'switchProject',
@@ -3294,6 +3371,13 @@ function MainApp() {
               }}
               onCaptureChallenge={() => {
                 setLearningPanelTab('challenge');
+                if (workspaceMode === 'cryptanalysis') {
+                  dispatch({
+                    type: 'setWorkspaceMode',
+                    projectId: activeProjectDefinition.id,
+                    mode: 'guide',
+                  });
+                }
                 const draft = createChallengeCaptureDraft(
                   activeProjectDefinition.id,
                   activeProjectDefinition.name,
@@ -3323,6 +3407,13 @@ function MainApp() {
                   mode,
                 })
               }
+              onSetCryptanalysisMode={(mode) =>
+                dispatch({
+                  type: 'setCryptanalysisMode',
+                  projectId: activeProjectDefinition.id,
+                  mode,
+                })
+              }
               onSetTutorialNotesVisible={(visible) =>
                 dispatch({
                   type: 'setTutorialNotesVisible',
@@ -3330,10 +3421,38 @@ function MainApp() {
                   visible,
                 })
               }
+              onCiphertextChange={(value) =>
+                dispatch({
+                  type: 'setCryptanalysisInput',
+                  projectId: activeProjectDefinition.id,
+                  value,
+                })
+              }
+              onModernBaselineChange={(value) =>
+                dispatch({
+                  type: 'setModernAnalysisBaseline',
+                  projectId: activeProjectDefinition.id,
+                  value,
+                })
+              }
+              onModernFlipBitChange={(value) =>
+                dispatch({
+                  type: 'setModernAnalysisFlipBit',
+                  projectId: activeProjectDefinition.id,
+                  value,
+                })
+              }
               onSelectTutorial={(tutorialId) => {
                 const nextTutorial =
                   state.tutorialLibrary.find((tutorial) => tutorial.id === tutorialId) ?? null;
                 setLearningPanelTab('tutorial');
+                if (workspaceMode === 'cryptanalysis') {
+                  dispatch({
+                    type: 'setWorkspaceMode',
+                    projectId: activeProjectDefinition.id,
+                    mode: 'guide',
+                  });
+                }
                 setStepIndex(nextTutorial?.steps[0]?.targetStepIndex ?? null);
                 dispatch({
                   type: 'selectTutorial',

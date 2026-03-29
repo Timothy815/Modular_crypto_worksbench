@@ -42,6 +42,11 @@ const ChallengePanel = lazy(() =>
     default: module.ChallengePanel,
   })),
 );
+const CryptanalysisPanel = lazy(() =>
+  import('./cryptanalysis-panel').then((module) => ({
+    default: module.CryptanalysisPanel,
+  })),
+);
 
 function LazyPanelFallback({
   label = 'Loading',
@@ -664,6 +669,7 @@ function renderDetachedPane(
     <Suspense fallback={<LazyPanelFallback label="Learning" title="Loading learning surface…" />}>
       <DetachedLearningView
         snapshot={payload as DetachedLearningSnapshot}
+        registry={registry}
         onSendCommand={(command) => sendCommand('learning', command)}
       />
     </Suspense>
@@ -845,9 +851,11 @@ function postDetachedAction(
 
 function DetachedLearningView({
   snapshot,
+  registry,
   onSendCommand,
 }: {
   snapshot: DetachedLearningSnapshot;
+  registry: ReturnType<typeof getEffectiveRegistry>;
   onSendCommand: (command: DetachedPanelCommand) => void;
 }) {
   return (
@@ -881,6 +889,21 @@ function DetachedLearningView({
             onClick={() => onSendCommand({ type: 'setLearningTab', tab: 'challenge' })}
           >
             Challenge
+          </button>
+        ) : null}
+        {snapshot.hasCryptanalysisPanel ? (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={snapshot.learningPanelTab === 'cryptanalysis'}
+            className={
+              snapshot.learningPanelTab === 'cryptanalysis'
+                ? 'learning-dock-tab active'
+                : 'learning-dock-tab'
+            }
+            onClick={() => onSendCommand({ type: 'setLearningTab', tab: 'cryptanalysis' })}
+          >
+            Cryptanalysis
           </button>
         ) : null}
       </div>
@@ -924,6 +947,46 @@ function DetachedLearningView({
           onSwitchProject={(projectId) => onSendCommand({ type: 'switchProject', projectId })}
           onFocusStepModule={(moduleId) => onSendCommand({ type: 'focusStepModule', moduleId })}
           onResetProgress={() => onSendCommand({ type: 'resetTutorialProgress' })}
+        />
+      ) : null}
+
+      {snapshot.learningPanelTab === 'cryptanalysis' ? (
+        <CryptanalysisPanel
+          projectName={snapshot.projectName}
+          project={snapshot.currentProject}
+          registry={registry}
+          execution={snapshot.execution}
+          ciphertext={snapshot.ciphertext}
+          cryptanalysisMode={snapshot.cryptanalysisMode}
+          modernBaseline={snapshot.modernBaseline}
+          modernFlipBit={snapshot.modernFlipBit}
+          workspaceMode={snapshot.workspaceMode}
+          tutorial={
+            snapshot.tutorials.find(
+              (tutorial) =>
+                tutorial.id === snapshot.selectedTutorialId &&
+                tutorial.projectId === snapshot.currentProjectId,
+            ) ?? null
+          }
+          tutorialStep={snapshot.tutorialNotesVisible ? snapshot.selectedTutorialStep : null}
+          tutorialStepIndex={snapshot.tutorialStepIndex}
+          tutorialNotesVisible={snapshot.tutorialNotesVisible}
+          onSetWorkspaceMode={(mode) => onSendCommand({ type: 'setWorkspaceMode', mode })}
+          onSetCryptanalysisMode={(mode) =>
+            onSendCommand({ type: 'setCryptanalysisMode', mode })
+          }
+          onSetTutorialNotesVisible={(visible) =>
+            onSendCommand({ type: 'setTutorialNotesVisible', visible })
+          }
+          onCiphertextChange={(value) => onSendCommand({ type: 'setCryptanalysisInput', value })}
+          onModernBaselineChange={(value) =>
+            onSendCommand({ type: 'setModernAnalysisBaseline', value })
+          }
+          onModernFlipBitChange={(value) =>
+            onSendCommand({ type: 'setModernAnalysisFlipBit', value })
+          }
+          onSetTutorialStep={(stepIndex) => onSendCommand({ type: 'setTutorialStep', stepIndex })}
+          onFocusTutorialModule={(moduleId) => onSendCommand({ type: 'focusStepModule', moduleId })}
         />
       ) : null}
     </section>

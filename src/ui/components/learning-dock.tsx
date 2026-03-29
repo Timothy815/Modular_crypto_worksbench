@@ -1,7 +1,8 @@
 import { lazy, Suspense } from 'react';
 
 import type { ChallengeEvaluation, GuidedChallenge } from '../challenges';
-import type { Project } from '../../engine/types';
+import type { ExecutionResult, ModuleRegistry, Project } from '../../engine/types';
+import type { CryptanalysisMode } from '../cryptanalysis-mode';
 import type { GuidedTutorial, TutorialStep } from '../tutorials';
 import type { WorkspaceMode } from '../workspace-mode';
 
@@ -10,6 +11,9 @@ const ChallengePanel = lazy(() =>
 );
 const TutorialPanel = lazy(() =>
   import('./tutorial-panel').then((module) => ({ default: module.TutorialPanel })),
+);
+const CryptanalysisPanel = lazy(() =>
+  import('./cryptanalysis-panel').then((module) => ({ default: module.CryptanalysisPanel })),
 );
 
 function LazyPanelFallback({
@@ -32,13 +36,21 @@ function LazyPanelFallback({
 interface LearningDockProps {
   hasTutorialPanel: boolean;
   hasChallengePanel: boolean;
-  activeLearningPanelTab: 'tutorial' | 'challenge';
-  onSetLearningPanelTab: (tab: 'tutorial' | 'challenge') => void;
+  hasCryptanalysisPanel: boolean;
+  activeLearningPanelTab: 'tutorial' | 'challenge' | 'cryptanalysis';
+  onSetLearningPanelTab: (tab: 'tutorial' | 'challenge' | 'cryptanalysis') => void;
   selectedChallenge: GuidedChallenge | null;
   challenges: GuidedChallenge[];
   challengeEvaluation: ChallengeEvaluation | null;
   currentProject: Project;
+  projectName: string;
+  registry: ModuleRegistry;
+  execution: ExecutionResult | null;
   canCaptureChallenge: boolean;
+  ciphertext: string;
+  cryptanalysisMode: CryptanalysisMode;
+  modernBaseline: string;
+  modernFlipBit: number;
   onSelectChallenge: (challengeId: string) => void;
   onLoadChallengeStart: () => void;
   onExportChallenge: () => void;
@@ -54,7 +66,11 @@ interface LearningDockProps {
   workspaceMode: WorkspaceMode;
   tutorialNotesVisible: boolean;
   onSetWorkspaceMode: (mode: WorkspaceMode) => void;
+  onSetCryptanalysisMode: (mode: CryptanalysisMode) => void;
   onSetTutorialNotesVisible: (visible: boolean) => void;
+  onCiphertextChange: (value: string) => void;
+  onModernBaselineChange: (value: string) => void;
+  onModernFlipBitChange: (value: number) => void;
   onSelectTutorial: (tutorialId: string) => void;
   onSetTutorialStep: (stepIndex: number) => void;
   onSwitchProject: (projectId: string) => void;
@@ -65,13 +81,21 @@ interface LearningDockProps {
 export function LearningDock({
   hasTutorialPanel,
   hasChallengePanel,
+  hasCryptanalysisPanel,
   activeLearningPanelTab,
   onSetLearningPanelTab,
   selectedChallenge,
   challenges,
   challengeEvaluation,
   currentProject,
+  projectName,
+  registry,
+  execution,
   canCaptureChallenge,
+  ciphertext,
+  cryptanalysisMode,
+  modernBaseline,
+  modernFlipBit,
   onSelectChallenge,
   onLoadChallengeStart,
   onExportChallenge,
@@ -87,14 +111,18 @@ export function LearningDock({
   workspaceMode,
   tutorialNotesVisible,
   onSetWorkspaceMode,
+  onSetCryptanalysisMode,
   onSetTutorialNotesVisible,
+  onCiphertextChange,
+  onModernBaselineChange,
+  onModernFlipBitChange,
   onSelectTutorial,
   onSetTutorialStep,
   onSwitchProject,
   onFocusStepModule,
   onResetTutorialProgress,
 }: LearningDockProps) {
-  if (!hasChallengePanel && !hasTutorialPanel) {
+  if (!hasChallengePanel && !hasTutorialPanel && !hasCryptanalysisPanel) {
     return null;
   }
 
@@ -129,6 +157,21 @@ export function LearningDock({
             onClick={() => onSetLearningPanelTab('challenge')}
           >
             Challenge
+          </button>
+        ) : null}
+        {hasCryptanalysisPanel ? (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeLearningPanelTab === 'cryptanalysis'}
+            className={
+              activeLearningPanelTab === 'cryptanalysis'
+                ? 'learning-dock-tab active'
+                : 'learning-dock-tab'
+            }
+            onClick={() => onSetLearningPanelTab('cryptanalysis')}
+          >
+            Cryptanalysis
           </button>
         ) : null}
       </div>
@@ -169,6 +212,40 @@ export function LearningDock({
             onSwitchProject={onSwitchProject}
             onFocusStepModule={onFocusStepModule}
             onResetProgress={onResetTutorialProgress}
+          />
+        </Suspense>
+      ) : null}
+
+      {activeLearningPanelTab === 'cryptanalysis' ? (
+        <Suspense
+          fallback={<LazyPanelFallback label="Cryptanalysis" title="Loading analysis workspace…" />}
+        >
+          <CryptanalysisPanel
+            projectName={projectName}
+            project={currentProject}
+            registry={registry}
+            execution={execution}
+            ciphertext={ciphertext}
+            cryptanalysisMode={cryptanalysisMode}
+            modernBaseline={modernBaseline}
+            modernFlipBit={modernFlipBit}
+            workspaceMode={workspaceMode}
+            tutorial={selectedTutorial?.projectId === currentProjectId ? selectedTutorial : null}
+            tutorialStep={
+              tutorialNotesVisible && selectedTutorial?.projectId === currentProjectId
+                ? selectedTutorialStep
+                : null
+            }
+            tutorialStepIndex={tutorialStepIndex}
+            tutorialNotesVisible={tutorialNotesVisible}
+            onSetWorkspaceMode={onSetWorkspaceMode}
+            onSetCryptanalysisMode={onSetCryptanalysisMode}
+            onSetTutorialNotesVisible={onSetTutorialNotesVisible}
+            onCiphertextChange={onCiphertextChange}
+            onModernBaselineChange={onModernBaselineChange}
+            onModernFlipBitChange={onModernFlipBitChange}
+            onSetTutorialStep={onSetTutorialStep}
+            onFocusTutorialModule={onFocusStepModule}
           />
         </Suspense>
       ) : null}

@@ -111,22 +111,11 @@ export function TutorialPanel({
           >
             Guide
           </button>
-          <button
-            type="button"
-            role="radio"
-            aria-checked={workspaceMode === 'cryptanalysis'}
-            className={workspaceMode === 'cryptanalysis' ? 'workspace-mode-chip active' : 'workspace-mode-chip'}
-            onClick={() => onSetWorkspaceMode('cryptanalysis')}
-          >
-            Cryptanalysis
-          </button>
         </div>
         <p className="tutorial-progress-summary">
           {completedCount} of {tutorials.length} completed
           {workspaceMode === 'build' ? (
             <span className="workspace-mode-hint"> — canvas overlays paused</span>
-          ) : workspaceMode === 'cryptanalysis' ? (
-            <span className="workspace-mode-hint"> — analysis workspace active</span>
           ) : null}
         </p>
       </div>

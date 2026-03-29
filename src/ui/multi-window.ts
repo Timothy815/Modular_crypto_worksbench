@@ -1,5 +1,10 @@
 import type { CompositeLibraryEntry } from '../engine/composites';
-import type { ExecutionResult, ExecutionTraceEntry, Project, ValidationIssue } from '../engine/types';
+import type {
+  ExecutionResult,
+  ExecutionTraceEntry,
+  Project,
+  ValidationIssue,
+} from '../engine/types';
 import type { UiAction } from './store';
 import type { TutorialStep } from './tutorials';
 import type { GuidedTutorial } from './tutorials';
@@ -73,15 +78,18 @@ export interface DetachedInspectorSnapshot {
 
 export interface DetachedLearningSnapshot {
   theme: ThemeMode;
-  learningPanelTab: 'tutorial' | 'challenge';
+  learningPanelTab: 'tutorial' | 'challenge' | 'cryptanalysis';
   hasTutorialPanel: boolean;
   hasChallengePanel: boolean;
+  hasCryptanalysisPanel: boolean;
   tutorials: GuidedTutorial[];
   challenges: GuidedChallenge[];
   selectedTutorialId: string | null;
   selectedChallengeId: string | null;
   currentProjectId: string;
+  projectName: string;
   currentProject: Project;
+  execution: ExecutionResult | null;
   tutorialStepIndex: number;
   selectedTutorialStep: TutorialStep | null;
   completedTutorialIds: string[];
@@ -90,6 +98,10 @@ export interface DetachedLearningSnapshot {
   tutorialNotesVisible: boolean;
   challengeEvaluation: ChallengeEvaluation | null;
   canCaptureChallenge: boolean;
+  ciphertext: string;
+  cryptanalysisMode: 'classical' | 'modern';
+  modernBaseline: string;
+  modernFlipBit: number;
 }
 
 export interface DetachedPanelPayloadByKind {
@@ -157,12 +169,16 @@ export type DetachedPanelCommand =
   | { type: 'removeVerificationCase'; caseId: string }
   | { type: 'clearVerificationCases' }
   | { type: 'unzipComposite'; moduleId: string }
-  | { type: 'setLearningTab'; tab: 'tutorial' | 'challenge' }
+  | { type: 'setLearningTab'; tab: 'tutorial' | 'challenge' | 'cryptanalysis' }
   | { type: 'selectChallenge'; challengeId: string }
   | { type: 'loadChallengeStart' }
   | { type: 'exportChallenge' }
   | { type: 'importChallengeRaw'; rawValue: string }
   | { type: 'captureChallenge' }
+  | { type: 'setCryptanalysisMode'; mode: 'classical' | 'modern' }
+  | { type: 'setCryptanalysisInput'; value: string }
+  | { type: 'setModernAnalysisBaseline'; value: string }
+  | { type: 'setModernAnalysisFlipBit'; value: number }
   | { type: 'selectTutorial'; tutorialId: string }
   | { type: 'setTutorialStep'; stepIndex: number }
   | { type: 'switchProject'; projectId: string }
