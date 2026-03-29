@@ -90,6 +90,7 @@ Read PYTHON-EXPORT-RUNTIME-LIBRARY-FOUNDATIONS-V1.md before implementing the fir
 Read PYTHON-EXPORT-RUNTIME-SURFACE-V1.md before reshaping the public surface of `mcw_runtime.py`, changing workspace/runtime provenance headers, or tightening the intended stable API boundary of the two-file Python export.
 Read PYTHON-EXPORT-DELIVERY-UX-V1.md before changing how two-file Python exports are handed off to the user, bundling runtime/workspace artifacts together, or refining the delivery UX of the split runtime export.
 Read V2.1-NEXT-DOCKET.md before reordering the current near-future priorities across builder power, Python export expansion, UI refactoring, or multi-window workspace support.
+Read WORKBENCH-MENU-CLEANUP-V1.md before reorganizing the workbench control strip, grouping workspace actions into dropdown categories, or reframing the top workbench shell around intent-based menus.
 Read INSPECTOR-REFACTOR-V1.md before restructuring `parameter-inspector.tsx`, moving more inspector logic into helper modules, or beginning a larger inspector decomposition pass.
 Read WORKBENCH-REFACTOR-V1.md before restructuring `workbench-panel.tsx`, moving more workbench helper logic into extracted modules, or beginning a larger workbench decomposition pass.
 Read STAGE-ASSEMBLY-ERGONOMICS-V1.md before changing selected stage-row / stage-column layout actions or broader stage-oriented builder-power assembly helpers.

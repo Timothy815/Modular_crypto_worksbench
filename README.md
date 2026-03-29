@@ -58,6 +58,11 @@ The next bounded verification/trust refinement after that is now explicitly reco
 - now shipped as the first bounded known-answer case import accelerator for the verification station
 - adds source-scoped vector paste, preview/validation, deterministic sink targeting, and baseline-free pass/fail behavior without widening into a standards bundle or generic test harness
 
+The next bounded workbench-shell refinement after that is now explicitly recorded as:
+- `WORKBENCH-MENU-CLEANUP-V1.md`
+- reorganize the crowded workbench control strip into clear grouped dropdown categories
+- intended to keep the workbench bar on one line in most desktop widths without changing workbench capability
+
 The current checkpointing follow-on after that is:
 - named workspace versions / restore points
 - explicit `Save Version` and `Restore` workflow per workspace
