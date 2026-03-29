@@ -18,6 +18,7 @@ Read POLLUX-INVERSE-V1.md before starting work on inverse Pollux decoding, Pollu
 Read POLLUX-ROUNDTRIP-CONTENT-V1.md before starting work on Pollux demo/tutorial/challenge/manual follow-ons that teach explicit encode/decode round-trips.
 Read FIRST-SESSION-ONBOARDING-V1.md before starting work on onboarding flow, `Start Here` entrypoints, or first-session guidance across demo/tutorial/challenge/manual/verification surfaces.
 Read FLAGSHIP-LAB-CLASSICAL-V1.md before starting work on a classroom-first rotor / Enigma-style flagship sequence that ties together tutorials, challenges, verification, and export/parity as one coherent lab family.
+Read FLAGSHIP-LAB-MODERN-V1.md before starting work on a classroom-first modern flagship sequence that ties together visible rounds, S-boxes, diffusion analysis, verification, and export/parity as one coherent lab family.
 Read PRNG-TEACHING-WORKSPACE-V1.md before starting work on bounded PRNG teaching demos, visible generator comparison workspaces, or any broader “what makes a generator good or bad” educational slice.
 Read TRANSFORMATION-VISUALIZATION-V1.md before starting work on primitive-level drill-down or transformation-legibility features.
 Read SBOX-TRANSFORMATION-V1.md before starting work on the first S-Box transformation view.
