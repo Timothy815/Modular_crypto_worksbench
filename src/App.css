@@ -320,8 +320,38 @@ body.dock-resizing {
   background: color-mix(in srgb, var(--accent) 12%, var(--surface-button));
 }
 
+.detached-window-action-button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-button);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  padding: 9px 14px;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    box-shadow 120ms ease,
+    color 120ms ease;
+}
+
+.detached-window-action-button:hover,
+.detached-window-action-button:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-button));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.detached-window-action-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .detached-window-return-button {
   white-space: nowrap;
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-button));
 }
 
 .detached-combined-stack {

@@ -363,7 +363,7 @@ export function DetachedPanelWindow({
             </div>
             <button
               type="button"
-              className="button button-ghost detached-window-return-button"
+              className="detached-window-action-button detached-window-return-button"
               onClick={() =>
                 sendCommand(activeKind, { type: 'returnDetachedTabToMain', kind: activeKind })
               }
@@ -391,7 +391,7 @@ export function DetachedPanelWindow({
                       <div className="detached-combined-pane-actions">
                         <button
                           type="button"
-                          className="button button-ghost"
+                          className="detached-window-action-button"
                           disabled={index === 0}
                           onClick={() =>
                             sendCommand(tabKind, { type: 'moveDetachedPaneEarlier', kind: tabKind })
@@ -401,7 +401,7 @@ export function DetachedPanelWindow({
                         </button>
                         <button
                           type="button"
-                          className="button button-ghost"
+                          className="detached-window-action-button"
                           disabled={index === snapshot.tabs.length - 1}
                           onClick={() =>
                             sendCommand(tabKind, { type: 'moveDetachedPaneLater', kind: tabKind })
@@ -411,7 +411,7 @@ export function DetachedPanelWindow({
                         </button>
                         <button
                           type="button"
-                          className="button button-ghost"
+                          className="detached-window-action-button"
                           onClick={() =>
                             sendCommand(tabKind, { type: 'returnDetachedTabToMain', kind: tabKind })
                           }
@@ -447,7 +447,7 @@ export function DetachedPanelWindow({
                   <div className="detached-split-actions">
                     <button
                       type="button"
-                      className="button button-ghost"
+                      className="detached-window-action-button"
                       onClick={() => sendCommand(activeKind, { type: 'swapDetachedSplitSides' })}
                     >
                       Swap Sides
@@ -502,7 +502,7 @@ export function DetachedPanelWindow({
                         <button
                           key={`hidden:${tabKind}`}
                           type="button"
-                          className="detached-window-tab"
+                          className="detached-window-action-button"
                           onClick={() =>
                             sendCommand(activeKind, {
                               type: 'setDetachedSplitSide',
@@ -530,7 +530,7 @@ export function DetachedPanelWindow({
                     <div className="detached-combined-pane-actions">
                       <button
                         type="button"
-                        className="button button-ghost"
+                        className="detached-window-action-button"
                         onClick={() =>
                           sendCommand(splitLeftKind, {
                             type: 'returnDetachedTabToMain',
@@ -567,7 +567,7 @@ export function DetachedPanelWindow({
                     <div className="detached-combined-pane-actions">
                       <button
                         type="button"
-                        className="button button-ghost"
+                        className="detached-window-action-button"
                         onClick={() =>
                           sendCommand(splitRightKind, {
                             type: 'returnDetachedTabToMain',
