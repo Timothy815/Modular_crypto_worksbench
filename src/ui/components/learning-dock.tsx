@@ -9,6 +9,9 @@ import type { WorkspaceMode } from '../workspace-mode';
 const ChallengePanel = lazy(() =>
   import('./challenge-panel').then((module) => ({ default: module.ChallengePanel })),
 );
+const QuickStartPanel = lazy(() =>
+  import('./quick-start-panel').then((module) => ({ default: module.QuickStartPanel })),
+);
 const TutorialPanel = lazy(() =>
   import('./tutorial-panel').then((module) => ({ default: module.TutorialPanel })),
 );
@@ -37,8 +40,8 @@ interface LearningDockProps {
   hasTutorialPanel: boolean;
   hasChallengePanel: boolean;
   hasCryptanalysisPanel: boolean;
-  activeLearningPanelTab: 'tutorial' | 'challenge' | 'cryptanalysis';
-  onSetLearningPanelTab: (tab: 'tutorial' | 'challenge' | 'cryptanalysis') => void;
+  activeLearningPanelTab: 'quickstart' | 'tutorial' | 'challenge' | 'cryptanalysis';
+  onSetLearningPanelTab: (tab: 'quickstart' | 'tutorial' | 'challenge' | 'cryptanalysis') => void;
   selectedChallenge: GuidedChallenge | null;
   challenges: GuidedChallenge[];
   challengeEvaluation: ChallengeEvaluation | null;
@@ -72,10 +75,12 @@ interface LearningDockProps {
   onModernBaselineChange: (value: string) => void;
   onModernFlipBitChange: (value: number) => void;
   onSelectTutorial: (tutorialId: string) => void;
+  onOpenTutorialPath: (projectId: string, tutorialId: string) => void;
   onSetTutorialStep: (stepIndex: number) => void;
   onSwitchProject: (projectId: string) => void;
   onFocusStepModule: (moduleId: string) => void;
   onResetTutorialProgress: () => void;
+  onOpenManual: () => void;
 }
 
 export function LearningDock({
@@ -117,10 +122,12 @@ export function LearningDock({
   onModernBaselineChange,
   onModernFlipBitChange,
   onSelectTutorial,
+  onOpenTutorialPath,
   onSetTutorialStep,
   onSwitchProject,
   onFocusStepModule,
   onResetTutorialProgress,
+  onOpenManual,
 }: LearningDockProps) {
   if (!hasChallengePanel && !hasTutorialPanel && !hasCryptanalysisPanel) {
     return null;
@@ -129,6 +136,19 @@ export function LearningDock({
   return (
     <section className="learning-dock">
       <div className="learning-dock-tabs" role="tablist" aria-label="Learning panel">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeLearningPanelTab === 'quickstart'}
+          className={
+            activeLearningPanelTab === 'quickstart'
+              ? 'learning-dock-tab active'
+              : 'learning-dock-tab'
+          }
+          onClick={() => onSetLearningPanelTab('quickstart')}
+        >
+          Quick Start
+        </button>
         {hasTutorialPanel ? (
           <button
             type="button"
@@ -175,6 +195,25 @@ export function LearningDock({
           </button>
         ) : null}
       </div>
+
+      {activeLearningPanelTab === 'quickstart' ? (
+        <Suspense fallback={<LazyPanelFallback label="Quick Start" title="Preparing onboarding…" />}>
+          <QuickStartPanel
+            currentProjectId={currentProjectId}
+            selectedTutorialId={selectedTutorial?.id ?? null}
+            selectedChallengeId={selectedChallenge?.id ?? null}
+            starterChallengeSolved={selectedChallenge?.id === 'repair-bridge-key' && challengeEvaluation?.status === 'success'}
+            onOpenProject={onSwitchProject}
+            onOpenTutorialPath={onOpenTutorialPath}
+            onOpenChallenge={onSelectChallenge}
+            onOpenManual={onOpenManual}
+            onOpenCryptanalysis={() => {
+              onSetWorkspaceMode('cryptanalysis');
+              onSetLearningPanelTab('cryptanalysis');
+            }}
+          />
+        </Suspense>
+      ) : null}
 
       {activeLearningPanelTab === 'challenge' && selectedChallenge ? (
         <Suspense fallback={<LazyPanelFallback label="Challenge" title="Loading challenge…" />}>

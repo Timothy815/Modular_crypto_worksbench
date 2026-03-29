@@ -1002,6 +1002,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `POLLUX-FRACTIONATION-V1.md` | Shipped bounded classical fractionation / homophonic-encoding primitive for disjoint bit-to-symbol output sets |
 | `POLLUX-INVERSE-V1.md` | Shipped bounded inverse Pollux primitive for symbol-to-bit recovery using known zero/one alphabets |
 | `POLLUX-ROUNDTRIP-CONTENT-V1.md` | Implemented Pollux round-trip teaching-content slice for explicit encode/decode demo flow, alphabet-agreement repair challenge, and manual support |
+| `FIRST-SESSION-ONBOARDING-V1.md` | Implemented bounded onboarding slice for visible `Start Here` guidance, first-session workflow orientation, and stronger handoffs between existing learning/help surfaces |
 | `PRNG-TEACHING-WORKSPACE-V1.md` | Shipped bounded teaching-workspace line for comparing visible pseudo-random generator constructions without making CSPRNG claims |
 | `WORKBENCH-ERGONOMICS-V1.md` | Shipped in `v1.13.0` as bounded workbench usability improvements |
 | `WORKSPACE-LIBRARY-V1.md` | Shipped in `v1.13.0` as bounded blank/save/delete user workspace management |

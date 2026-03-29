@@ -12,6 +12,7 @@ import {
 import { V1_REGISTRY } from '../../engine/modules';
 import { PrimitivePalette } from './primitive-palette';
 import { getEffectiveRegistry } from '../store';
+import { createUserManualUrl } from '../manual-url';
 import type { UiAction } from '../store';
 import type {
   DetachedInspectorSnapshot,
@@ -40,6 +41,11 @@ const TutorialPanel = lazy(() =>
 const ChallengePanel = lazy(() =>
   import('./challenge-panel').then((module) => ({
     default: module.ChallengePanel,
+  })),
+);
+const QuickStartPanel = lazy(() =>
+  import('./quick-start-panel').then((module) => ({
+    default: module.QuickStartPanel,
   })),
 );
 const CryptanalysisPanel = lazy(() =>
@@ -861,6 +867,19 @@ function DetachedLearningView({
   return (
     <section className="learning-dock detached-learning-dock">
       <div className="learning-dock-tabs" role="tablist" aria-label="Learning panel">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={snapshot.learningPanelTab === 'quickstart'}
+          className={
+            snapshot.learningPanelTab === 'quickstart'
+              ? 'learning-dock-tab active'
+              : 'learning-dock-tab'
+          }
+          onClick={() => onSendCommand({ type: 'setLearningTab', tab: 'quickstart' })}
+        >
+          Quick Start
+        </button>
         {snapshot.hasTutorialPanel ? (
           <button
             type="button"
@@ -907,6 +926,34 @@ function DetachedLearningView({
           </button>
         ) : null}
       </div>
+
+      {snapshot.learningPanelTab === 'quickstart' ? (
+        <QuickStartPanel
+          currentProjectId={snapshot.currentProjectId}
+          selectedTutorialId={snapshot.selectedTutorialId}
+          selectedChallengeId={snapshot.selectedChallengeId}
+          starterChallengeSolved={
+            snapshot.selectedChallengeId === 'repair-bridge-key' &&
+            snapshot.challengeEvaluation?.status === 'success'
+          }
+          onOpenProject={(projectId) => onSendCommand({ type: 'switchProject', projectId })}
+          onOpenTutorialPath={(projectId, tutorialId) =>
+            onSendCommand({ type: 'selectTutorial', tutorialId, projectId })
+          }
+          onOpenChallenge={(challengeId) => onSendCommand({ type: 'selectChallenge', challengeId })}
+          onOpenManual={() => {
+            window.open(
+              createUserManualUrl(snapshot.theme),
+              'mcw-user-manual',
+              'noopener,noreferrer,width=1320,height=900',
+            );
+          }}
+          onOpenCryptanalysis={() => {
+            onSendCommand({ type: 'setWorkspaceMode', mode: 'cryptanalysis' });
+            onSendCommand({ type: 'setLearningTab', tab: 'cryptanalysis' });
+          }}
+        />
+      ) : null}
 
       {snapshot.learningPanelTab === 'challenge' && snapshot.selectedChallengeId ? (
         <ChallengePanel

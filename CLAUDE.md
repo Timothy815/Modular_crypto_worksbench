@@ -16,6 +16,7 @@ Read SBOX-TABLE-TRANSFORMS-V1.md before starting work on bounded transform opera
 Read POLLUX-FRACTIONATION-V1.md before starting work on classical fractionation, homophonic encoding, or Pollux-style bit-to-symbol disguise primitives.
 Read POLLUX-INVERSE-V1.md before starting work on inverse Pollux decoding, Pollux round-trip workflows, or symbol-to-bit recovery using known Pollux alphabets.
 Read POLLUX-ROUNDTRIP-CONTENT-V1.md before starting work on Pollux demo/tutorial/challenge/manual follow-ons that teach explicit encode/decode round-trips.
+Read FIRST-SESSION-ONBOARDING-V1.md before starting work on onboarding flow, `Start Here` entrypoints, or first-session guidance across demo/tutorial/challenge/manual/verification surfaces.
 Read PRNG-TEACHING-WORKSPACE-V1.md before starting work on bounded PRNG teaching demos, visible generator comparison workspaces, or any broader “what makes a generator good or bad” educational slice.
 Read TRANSFORMATION-VISUALIZATION-V1.md before starting work on primitive-level drill-down or transformation-legibility features.
 Read SBOX-TRANSFORMATION-V1.md before starting work on the first S-Box transformation view.

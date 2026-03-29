@@ -684,6 +684,7 @@ Implemented and shipped:
 - `POLLUX-FRACTIONATION-V1.md`: shipped bounded classical fractionation / homophonic-encoding primitive for disjoint bit-to-symbol output sets
 - `POLLUX-INVERSE-V1.md`: shipped bounded inverse Pollux primitive for symbol-to-bit recovery using known zero/one alphabets
 - `POLLUX-ROUNDTRIP-CONTENT-V1.md`: implemented Pollux round-trip teaching content slice covering sender/receiver demo flow, repair challenge, and manual support
+- `FIRST-SESSION-ONBOARDING-V1.md`: implemented bounded onboarding slice for a visible `Start Here` path, first-session workflow guidance, and clearer transitions between demo, tutorial, challenge, verification, and manual surfaces
 - `PRNG-TEACHING-WORKSPACE-V1.md`: shipped bounded teaching-workspace line for comparing visible pseudo-random generator constructions without making CSPRNG claims
 - `WORKBENCH-ERGONOMICS-V1.md`: shipped bounded workbench-usability slice for multi-select, group movement, and one-click cleanup
 - `WORKSPACE-LIBRARY-V1.md`: shipped bounded workspace-management slice for blank build spaces and saved personal collections

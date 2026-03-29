@@ -30,6 +30,7 @@ import { LearningDock } from './ui/components/learning-dock';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
 import { demoProjects, getDefaultDemoProject, runDemoProject } from './ui/demo-projects';
 import { compareExecutionResults } from './ui/execution-compare';
+import { createUserManualUrl } from './ui/manual-url';
 import {
   createVerificationCaseFromBaseline,
   createTickedVerificationCaseFromBaseline,
@@ -235,20 +236,6 @@ function getUserManualConfig(): { theme: 'light' | 'dark' } | null {
   return { theme };
 }
 
-function createUserManualUrl(theme: 'light' | 'dark') {
-  if (typeof window === 'undefined') {
-    return '';
-  }
-
-  const url = new URL(window.location.href);
-  url.searchParams.delete(DETACHED_PANEL_QUERY_KEY);
-  url.searchParams.delete(DETACHED_PANEL_HOST_QUERY_KEY);
-  url.searchParams.delete(DETACHED_PANEL_WINDOW_QUERY_KEY);
-  url.searchParams.set(USER_MANUAL_QUERY_KEY, '1');
-  url.searchParams.set(USER_MANUAL_THEME_QUERY_KEY, theme);
-  return url.toString();
-}
-
 function createWindowSessionId() {
   return `window-${Math.random().toString(36).slice(2, 10)}`;
 }
@@ -286,8 +273,8 @@ function MainApp() {
   const [headerWorkspaceAction, setHeaderWorkspaceAction] = useState('');
   const [headerWindowAction, setHeaderWindowAction] = useState('');
   const [learningPanelTab, setLearningPanelTab] = useState<
-    'tutorial' | 'challenge' | 'cryptanalysis'
-  >('tutorial');
+    'quickstart' | 'tutorial' | 'challenge' | 'cryptanalysis'
+  >('quickstart');
   const [leftDockWidth, setLeftDockWidth] = useState(() => {
     if (typeof window === 'undefined') {
       return 320;
@@ -905,6 +892,9 @@ function MainApp() {
   const hasTutorialPanel = Boolean(selectedTutorial);
   const hasCryptanalysisPanel = true;
   const activeLearningPanelTab = (() => {
+    if (learningPanelTab === 'quickstart') {
+      return 'quickstart';
+    }
     if (learningPanelTab === 'challenge') {
       return hasChallengePanel
         ? 'challenge'
@@ -953,6 +943,40 @@ function MainApp() {
       [activeProjectDefinition.id]: [],
     }));
   }, [activeProjectDefinition.id]);
+  const handleOpenUserManual = useCallback(() => {
+    window.open(
+      createUserManualUrl(theme),
+      'mcw-user-manual',
+      'noopener,noreferrer,width=1320,height=900',
+    );
+  }, [theme]);
+  const handleOpenTutorialPath = useCallback(
+    (projectId: string, tutorialId: string) => {
+      const nextTutorial =
+        state.tutorialLibrary.find((tutorial) => tutorial.id === tutorialId) ?? null;
+      setLearningPanelTab('tutorial');
+      if (workspaceMode === 'cryptanalysis') {
+        dispatch({
+          type: 'setWorkspaceMode',
+          projectId: activeProjectDefinition.id,
+          mode: 'guide',
+        });
+      }
+      if (projectId !== activeProjectDefinition.id) {
+        dispatch({
+          type: 'switchProject',
+          projectId,
+        });
+      }
+      setStepIndex(nextTutorial?.steps[0]?.targetStepIndex ?? null);
+      dispatch({
+        type: 'selectTutorial',
+        projectId,
+        tutorialId,
+      });
+    },
+    [activeProjectDefinition.id, state.tutorialLibrary, workspaceMode],
+  );
   const handleAddVerificationCase = useCallback(
     (sourceModuleId: string, inputValue: string, tickCount: number | null = null) => {
       if (!comparisonBaseline) {
@@ -2114,20 +2138,24 @@ function MainApp() {
             return;
           case 'selectTutorial': {
             const { tutorialId } = message.command;
+            const tutorialProjectId = message.command.projectId ?? activeProjectDefinition.id;
             const nextTutorial =
               state.tutorialLibrary.find((tutorial) => tutorial.id === tutorialId) ?? null;
             setLearningPanelTab('tutorial');
-            if (workspaceMode === 'cryptanalysis') {
+            if (tutorialProjectId === activeProjectDefinition.id && workspaceMode === 'cryptanalysis') {
               dispatch({
                 type: 'setWorkspaceMode',
                 projectId: activeProjectDefinition.id,
                 mode: 'guide',
               });
             }
+            if (tutorialProjectId !== activeProjectDefinition.id) {
+              dispatch({ type: 'switchProject', projectId: tutorialProjectId });
+            }
             setStepIndex(nextTutorial?.steps[0]?.targetStepIndex ?? null);
             dispatch({
               type: 'selectTutorial',
-              projectId: activeProjectDefinition.id,
+              projectId: tutorialProjectId,
               tutorialId,
             });
             return;
@@ -3460,6 +3488,7 @@ function MainApp() {
                   tutorialId,
                 });
               }}
+              onOpenTutorialPath={handleOpenTutorialPath}
               onSetTutorialStep={(stepValue) => {
                 setStepIndex(selectedTutorial?.steps[stepValue]?.targetStepIndex ?? null);
                 dispatch({
@@ -3487,6 +3516,7 @@ function MainApp() {
                   projectId: activeProjectDefinition.id,
                 })
               }
+              onOpenManual={handleOpenUserManual}
             />
           ) : null}
 

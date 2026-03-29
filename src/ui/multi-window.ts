@@ -78,7 +78,7 @@ export interface DetachedInspectorSnapshot {
 
 export interface DetachedLearningSnapshot {
   theme: ThemeMode;
-  learningPanelTab: 'tutorial' | 'challenge' | 'cryptanalysis';
+  learningPanelTab: 'quickstart' | 'tutorial' | 'challenge' | 'cryptanalysis';
   hasTutorialPanel: boolean;
   hasChallengePanel: boolean;
   hasCryptanalysisPanel: boolean;
@@ -169,7 +169,7 @@ export type DetachedPanelCommand =
   | { type: 'removeVerificationCase'; caseId: string }
   | { type: 'clearVerificationCases' }
   | { type: 'unzipComposite'; moduleId: string }
-  | { type: 'setLearningTab'; tab: 'tutorial' | 'challenge' | 'cryptanalysis' }
+  | { type: 'setLearningTab'; tab: 'quickstart' | 'tutorial' | 'challenge' | 'cryptanalysis' }
   | { type: 'selectChallenge'; challengeId: string }
   | { type: 'loadChallengeStart' }
   | { type: 'exportChallenge' }
@@ -179,7 +179,7 @@ export type DetachedPanelCommand =
   | { type: 'setCryptanalysisInput'; value: string }
   | { type: 'setModernAnalysisBaseline'; value: string }
   | { type: 'setModernAnalysisFlipBit'; value: number }
-  | { type: 'selectTutorial'; tutorialId: string }
+  | { type: 'selectTutorial'; tutorialId: string; projectId?: string }
   | { type: 'setTutorialStep'; stepIndex: number }
   | { type: 'switchProject'; projectId: string }
   | { type: 'setWorkspaceMode'; mode: WorkspaceMode }
