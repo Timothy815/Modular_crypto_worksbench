@@ -5,10 +5,15 @@ import { analyzeSymbolSignal } from '../cryptanalysis';
 import type {
   VerificationCase,
   VerificationImportPreview,
+  VerificationGuidance,
   VerificationCaseResult,
   VerificationSourceOption,
 } from '../verification-workflow';
-import { importVerificationCasesFromText } from '../verification-workflow';
+import {
+  getComparisonGuidance,
+  getVerificationResultGuidance,
+  importVerificationCasesFromText,
+} from '../verification-workflow';
 import { useMemo, useState } from 'react';
 
 interface ComparisonPanelProps {
@@ -109,6 +114,18 @@ export function ComparisonPanel({
   const divergentSignals = comparison?.firstDivergence
     ? getDivergentSignals(comparison.firstDivergence)
     : null;
+  const comparisonGuidance = getComparisonGuidance({
+    hasBaseline: Boolean(baseline),
+    baselineError,
+    variantError,
+    comparison: comparison
+      ? {
+          outputsMatch: comparison.outputsMatch,
+          firstDivergence: comparison.firstDivergence,
+        }
+      : null,
+    isTickedMode,
+  });
   const baselineAnalysis = analyzeSymbolSignal(comparison?.baselineOutput.raw ?? null);
   const variantAnalysis = analyzeSymbolSignal(comparison?.variantOutput.raw ?? null);
   const content = (
@@ -209,6 +226,19 @@ export function ComparisonPanel({
                     No trace divergence detected across the current execution.
                   </p>
                 )}
+                {comparisonGuidance ? (
+                  <div className="verification-guidance">
+                    <p className="comparison-copy verification-guidance-label">
+                      {comparisonGuidance.label}
+                    </p>
+                    <p className="comparison-copy verification-guidance-copy">
+                      {comparisonGuidance.meaning}
+                    </p>
+                    <p className="comparison-copy verification-guidance-copy">
+                      Next: {comparisonGuidance.nextStep}
+                    </p>
+                  </div>
+                ) : null}
               </>
             ) : (
               <p className="comparison-copy">
@@ -392,6 +422,7 @@ export function ComparisonPanel({
                       const caseDefinition = verificationCases.find(
                         (entry) => entry.id === result.caseId,
                       );
+                      const guidance = getVerificationResultGuidance(result, Boolean(baseline));
                       return (
                         <div
                           key={result.caseId}
@@ -461,6 +492,9 @@ export function ComparisonPanel({
                                   divergence.
                                 </p>
                               )}
+                              {guidance ? (
+                                <VerificationGuidanceBlock guidance={guidance} />
+                              ) : null}
                             </>
                           ) : null}
                         </div>
@@ -546,6 +580,22 @@ export function ComparisonPanel({
   }
 
   return <section className="panel comparison-panel">{content}</section>;
+}
+
+function VerificationGuidanceBlock({
+  guidance,
+}: {
+  guidance: VerificationGuidance;
+}) {
+  return (
+    <div className="verification-guidance">
+      <p className="comparison-copy verification-guidance-label">{guidance.label}</p>
+      <p className="comparison-copy verification-guidance-copy">{guidance.meaning}</p>
+      <p className="comparison-copy verification-guidance-copy">
+        Next: {guidance.nextStep}
+      </p>
+    </div>
+  );
 }
 
 function formatTopLetters(

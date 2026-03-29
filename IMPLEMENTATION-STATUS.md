@@ -1005,6 +1005,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `FIRST-SESSION-ONBOARDING-V1.md` | Implemented bounded onboarding slice for visible `Start Here` guidance, first-session workflow orientation, and stronger handoffs between existing learning/help surfaces |
 | `FLAGSHIP-LAB-CLASSICAL-V1.md` | Shipped classroom-first classical flagship sequence built from the rotor / Enigma-style line, linked challenges, verification, export/parity trust handoff, and searchable lab-numbered demos |
 | `FLAGSHIP-LAB-MODERN-V1.md` | Shipped classroom-first modern flagship sequence built from the visible round / S-box / diffusion line, linked analysis, verification, export/parity trust handoff, and searchable lab-numbered demos |
+| `VERIFICATION-EXPLAINABILITY-V1.md` | Shipped bounded compare/verification interpretation pass for clearer failure classes, next-step guidance, and more classroom-readable trust language |
 | `PRNG-TEACHING-WORKSPACE-V1.md` | Shipped bounded teaching-workspace line for comparing visible pseudo-random generator constructions without making CSPRNG claims |
 | `WORKBENCH-ERGONOMICS-V1.md` | Shipped in `v1.13.0` as bounded workbench usability improvements |
 | `WORKSPACE-LIBRARY-V1.md` | Shipped in `v1.13.0` as bounded blank/save/delete user workspace management |

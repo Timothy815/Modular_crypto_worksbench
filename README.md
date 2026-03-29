@@ -687,6 +687,7 @@ Implemented and shipped:
 - `FIRST-SESSION-ONBOARDING-V1.md`: implemented bounded onboarding slice for a visible `Start Here` path, first-session workflow guidance, and clearer transitions between demo, tutorial, challenge, verification, and manual surfaces
 - `FLAGSHIP-LAB-CLASSICAL-V1.md`: shipped classroom-first classical flagship sequence built from the rotor / Enigma-style line, linked challenges, verification, export/parity trust handoff, and searchable lab-numbered demos
 - `FLAGSHIP-LAB-MODERN-V1.md`: shipped classroom-first modern flagship sequence built from the visible round / S-box / diffusion line, linked analysis, verification, export/parity trust handoff, and searchable lab-numbered demos
+- `VERIFICATION-EXPLAINABILITY-V1.md`: shipped bounded compare/verification interpretation pass for clearer failure classes, next-step guidance, and more classroom-readable trust language
 - `PRNG-TEACHING-WORKSPACE-V1.md`: shipped bounded teaching-workspace line for comparing visible pseudo-random generator constructions without making CSPRNG claims
 - `WORKBENCH-ERGONOMICS-V1.md`: shipped bounded workbench-usability slice for multi-select, group movement, and one-click cleanup
 - `WORKSPACE-LIBRARY-V1.md`: shipped bounded workspace-management slice for blank build spaces and saved personal collections

@@ -1481,6 +1481,23 @@ body.dock-resizing {
   gap: 12px;
 }
 
+.verification-guidance {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+}
+
+.verification-guidance-label {
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.verification-guidance-copy {
+  color: color-mix(in srgb, var(--ink) 72%, var(--surface-soft));
+  font-size: 0.94rem;
+}
+
 .verification-result-pass {
   border-color: color-mix(in srgb, var(--success-text) 36%, var(--line));
   background: color-mix(in srgb, var(--success-bg) 50%, var(--surface-panel));

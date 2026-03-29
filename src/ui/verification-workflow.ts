@@ -55,6 +55,19 @@ export interface VerificationImportPreview {
   errors: string[];
 }
 
+export type VerificationFailureClass =
+  | 'validation-problem'
+  | 'runtime-problem'
+  | 'output-mismatch'
+  | 'trace-divergence'
+  | 'baseline-free-mismatch';
+
+export interface VerificationGuidance {
+  label: string;
+  meaning: string;
+  nextStep: string;
+}
+
 export function getVerificationSourceOptions(
   project: Project,
   registry: ModuleRegistry,
@@ -323,6 +336,96 @@ export function evaluateVerificationCases(args: {
       };
     }
   });
+}
+
+export function getVerificationResultGuidance(
+  result: VerificationCaseResult,
+  hasBaseline: boolean,
+): VerificationGuidance | null {
+  if (result.passed) {
+    return null;
+  }
+
+  if (result.error) {
+    if (result.error.includes('not valid')) {
+      return getGuidanceForFailureClass(
+        'validation-problem',
+        result.mode,
+      );
+    }
+
+    return getGuidanceForFailureClass(
+      'runtime-problem',
+      result.mode,
+    );
+  }
+
+  if (result.divergence) {
+    return getGuidanceForFailureClass(
+      'trace-divergence',
+      result.mode,
+      result.divergence,
+    );
+  }
+
+  if (!hasBaseline) {
+    return getGuidanceForFailureClass(
+      'baseline-free-mismatch',
+      result.mode,
+    );
+  }
+
+  return getGuidanceForFailureClass(
+    'output-mismatch',
+    result.mode,
+  );
+}
+
+export function getComparisonGuidance(args: {
+  hasBaseline: boolean;
+  baselineError: string | null;
+  variantError: string | null;
+  comparison: ExecutionComparisonLike | null;
+  isTickedMode: boolean;
+}): VerificationGuidance | null {
+  const { hasBaseline, baselineError, variantError, comparison, isTickedMode } = args;
+
+  if (!hasBaseline) {
+    return null;
+  }
+
+  if (baselineError || variantError) {
+    return getGuidanceForFailureClass(
+      'runtime-problem',
+      isTickedMode ? 'ticked' : 'stateless',
+    );
+  }
+
+  if (!comparison) {
+    return null;
+  }
+
+  if (comparison.outputsMatch) {
+    return {
+      label: 'Outputs Match',
+      meaning: 'The live workspace currently matches the captured baseline at the final output.',
+      nextStep:
+        'If you expected a difference, inspect the modules or parameters you meant to change and run Compare again.',
+    };
+  }
+
+  if (comparison.firstDivergence) {
+    return getGuidanceForFailureClass(
+      'trace-divergence',
+      isTickedMode ? 'ticked' : 'stateless',
+      comparison.firstDivergence,
+    );
+  }
+
+  return getGuidanceForFailureClass(
+    'output-mismatch',
+    isTickedMode ? 'ticked' : 'stateless',
+  );
 }
 
 export function importVerificationCasesFromText(args: {
@@ -633,4 +736,91 @@ function resolveVerificationTargetSink(result: ExecutionResult | null) {
 
 function createVerificationCaseId() {
   return `verification-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+interface ExecutionComparisonLike {
+  outputsMatch: boolean;
+  firstDivergence: TraceDivergence | null;
+}
+
+function getGuidanceForFailureClass(
+  failureClass: VerificationFailureClass,
+  mode: VerificationCaseResult['mode'],
+  divergence?: TraceDivergence | null,
+): VerificationGuidance {
+  const tickNote =
+    mode === 'ticked'
+      ? ' In ticked machines, also check the clock, tick count, and any gated timing path.'
+      : '';
+
+  switch (failureClass) {
+    case 'validation-problem':
+      return {
+        label: 'Invalid Before Run',
+        meaning:
+          'This machine could not be checked because the current graph is invalid before execution starts.',
+        nextStep:
+          `Open the validation messages first, then inspect missing ports, type mismatches, or broken wiring before trying verification again.${tickNote}`,
+      };
+    case 'runtime-problem':
+      return {
+        label: 'Execution Problem',
+        meaning:
+          'The machine started to run but hit a runtime problem, so MCW could not produce a trustworthy comparison result.',
+        nextStep:
+          `Inspect the relevant module parameters, source values, and expected widths. Then rerun Compare or Verification after the machine executes cleanly.${tickNote}`,
+      };
+    case 'baseline-free-mismatch':
+      return {
+        label: 'Output Mismatch Only',
+        meaning:
+          'This imported case does not have an active baseline trace behind it, so MCW can only compare the final output right now.',
+        nextStep:
+          `Check the source input, expected output, and sink choice first. Capture a matching baseline later if you want first-divergence guidance.${tickNote}`,
+      };
+    case 'trace-divergence': {
+      const when =
+        divergence?.tickIndex !== undefined
+          ? `tick ${divergence.tickIndex + 1}`
+          : divergence
+            ? `step ${divergence.stepIndex + 1}`
+            : 'the execution trace';
+      const moduleLabel =
+        divergence?.variant?.moduleId ?? divergence?.baseline?.moduleId ?? 'the active module';
+      const readableReason = getReadableDivergenceReason(divergence?.reason);
+      return {
+        label: 'Internal Divergence',
+        meaning:
+          `The machine ran, but it stopped matching the reference inside the trace at ${when} near ${moduleLabel}. ${readableReason}`,
+        nextStep:
+          `Open Analyze or Trace around ${when}, inspect ${moduleLabel}, and compare its live inputs, outputs, and parameters against the reference expectation.${tickNote}`,
+      };
+    }
+    case 'output-mismatch':
+    default:
+      return {
+        label: 'Final Output Mismatch',
+        meaning:
+          'The machine ran to completion, but the final output did not match the chosen reference behavior.',
+        nextStep:
+          `Start at the active source value and target sink, then inspect the modules closest to the output path for a wrong parameter or transformation.${tickNote}`,
+      };
+  }
+}
+
+function getReadableDivergenceReason(reason: TraceDivergence['reason'] | undefined) {
+  switch (reason) {
+    case 'module-id':
+      return 'The compared traces reached different modules at that point.';
+    case 'def-id':
+      return 'The compared traces reached modules with different definitions at that point.';
+    case 'inputs':
+      return 'The module inputs stopped matching there.';
+    case 'outputs':
+      return 'The module outputs stopped matching there.';
+    case 'trace-length':
+      return 'One execution stopped earlier or continued longer than the other.';
+    default:
+      return 'The compared traces stopped agreeing there.';
+  }
 }
