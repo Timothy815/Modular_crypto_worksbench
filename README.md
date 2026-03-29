@@ -60,8 +60,8 @@ The next bounded verification/trust refinement after that is now explicitly reco
 
 The next bounded workbench-shell refinement after that is now explicitly recorded as:
 - `WORKBENCH-MENU-CLEANUP-V1.md`
-- reorganize the crowded workbench control strip into clear grouped dropdown categories
-- intended to keep the workbench bar on one line in most desktop widths without changing workbench capability
+- now shipped as a grouped-dropdown cleanup pass for the crowded workbench control strip
+- reorganizes workbench actions into `View`, `Edit`, `Project`, and `Import/Export` categories while preserving existing command behavior
 
 The current checkpointing follow-on after that is:
 - named workspace versions / restore points

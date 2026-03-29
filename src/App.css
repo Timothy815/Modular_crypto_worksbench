@@ -1102,6 +1102,86 @@ body.dock-resizing {
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 14px;
+  align-items: stretch;
+}
+
+.workbench-action-menu {
+  position: relative;
+}
+
+.workbench-action-menu[open] {
+  z-index: 24;
+}
+
+.workbench-action-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-button);
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.workbench-action-menu-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.workbench-action-menu-trigger::after {
+  content: '▾';
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.workbench-action-menu-label {
+  font-weight: 700;
+}
+
+.workbench-action-menu-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.workbench-action-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 220px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-panel);
+  box-shadow: 0 18px 40px rgba(40, 28, 12, 0.12);
+}
+
+.workbench-menu-action-button {
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-button);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  padding: 10px 12px;
+}
+
+.workbench-menu-action-button:hover:not(:disabled),
+.workbench-action-menu-trigger:hover,
+.workbench-action-menu-trigger:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-button));
+}
+
+.workbench-menu-action-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .comparison-panel {

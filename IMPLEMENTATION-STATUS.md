@@ -251,7 +251,8 @@ The next export/trust slice after that is now also recorded:
   - adds source-scoped vector paste, preview/validation, deterministic sink targeting, and baseline-free pass/fail behavior without widening into a standards bundle or generic test harness
 - next bounded workbench-shell refinement after that:
   - `WORKBENCH-MENU-CLEANUP-V1.md`
-  - records a grouped-dropdown cleanup pass for the crowded workbench control area
+  - now shipped as a grouped-dropdown cleanup pass for the crowded workbench control area
+  - reorganizes workbench actions into bounded `View`, `Edit`, `Project`, and `Import/Export` categories
   - keeps the refinement organizational: clearer categories, one-line fit in most desktop widths, and no expansion of workbench capability
 - expand Python export carefully second
 - refactor the largest UI surfaces third

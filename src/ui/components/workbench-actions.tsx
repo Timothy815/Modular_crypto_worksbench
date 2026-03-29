@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 interface WorkbenchActionsProps {
   isCompositeEditor: boolean;
   canUndo: boolean;
@@ -23,6 +25,46 @@ interface WorkbenchActionsProps {
   onRequestImport: () => void;
   onRequestCreateComposite: () => void;
   onToggleTutorialNotes?: (visible: boolean) => void;
+}
+
+interface WorkbenchMenuAction {
+  label: string;
+  onSelect: () => void;
+  disabled?: boolean;
+}
+
+interface WorkbenchActionMenuProps {
+  label: string;
+  description?: string;
+  children: ReactNode;
+}
+
+function WorkbenchActionMenu({ label, description, children }: WorkbenchActionMenuProps) {
+  return (
+    <details className="workbench-action-menu">
+      <summary className="workbench-action-menu-trigger">
+        <span className="workbench-action-menu-label">{label}</span>
+        {description ? <span className="workbench-action-menu-note">{description}</span> : null}
+      </summary>
+      <div className="workbench-action-menu-panel">{children}</div>
+    </details>
+  );
+}
+
+function WorkbenchMenuActionButton({ label, onSelect, disabled = false }: WorkbenchMenuAction) {
+  return (
+    <button
+      type="button"
+      className="workbench-menu-action-button"
+      disabled={disabled}
+      onClick={(event) => {
+        onSelect();
+        event.currentTarget.closest('details')?.removeAttribute('open');
+      }}
+    >
+      {label}
+    </button>
+  );
 }
 
 export function WorkbenchActions({
@@ -51,89 +93,72 @@ export function WorkbenchActions({
   onRequestCreateComposite,
   onToggleTutorialNotes,
 }: WorkbenchActionsProps) {
+  const hasSelection = selectedModuleIds.length > 0;
+  const canDeleteWire = effectiveSelectedConnectionIndex !== null;
+
   return (
     <div className="project-actions">
       {!isCompositeEditor ? (
         <>
-          <button type="button" className="mini-action-button" onClick={onAddAnnotation}>
-            Add Note
-          </button>
-          <button type="button" className="mini-action-button" onClick={onExportDocument}>
-            Export JSON
-          </button>
-          <button type="button" className="mini-action-button" onClick={onExportPython}>
-            Export Python
-          </button>
-          <button type="button" className="mini-action-button" onClick={onTidyLayout}>
-            Tidy Layout
-          </button>
-          <button type="button" className="mini-action-button" onClick={onRequestUndo} disabled={!canUndo}>
-            Undo
-          </button>
-          <button type="button" className="mini-action-button" onClick={onRequestRedo} disabled={!canRedo}>
-            Redo
-          </button>
-          <button type="button" className="mini-action-button" onClick={onZoomOut}>
-            Zoom Out
-          </button>
-          <button type="button" className="mini-action-button" onClick={onZoomIn}>
-            Zoom In
-          </button>
-          <button type="button" className="mini-action-button" onClick={onResetView}>
-            Reset View
-          </button>
-          <button type="button" className="mini-action-button" onClick={onFitView}>
-            Fit View
-          </button>
-          <button type="button" className="mini-action-button" onClick={onRequestSaveVersion}>
-            Save Version
-          </button>
-          <button
-            type="button"
-            className="mini-action-button"
-            onClick={onRequestDuplicateSelection}
-            disabled={selectedModuleIds.length === 0}
-          >
-            Duplicate Cluster
-          </button>
-          <button
-            type="button"
-            className="mini-action-button"
-            onClick={onRequestDeleteSelection}
-            disabled={selectedModuleIds.length === 0}
-          >
-            Delete Cluster
-          </button>
-          <button
-            type="button"
-            className="mini-action-button"
-            onClick={onRequestDeleteWire}
-            disabled={effectiveSelectedConnectionIndex === null}
-          >
-            Delete Wire
-          </button>
-          <button type="button" className="mini-action-button" onClick={onRequestImport}>
-            Import JSON
-          </button>
+          <WorkbenchActionMenu label="View" description="Zoom and navigate">
+            <WorkbenchMenuActionButton label="Zoom Out" onSelect={onZoomOut} />
+            <WorkbenchMenuActionButton label="Zoom In" onSelect={onZoomIn} />
+            <WorkbenchMenuActionButton label="Reset View" onSelect={onResetView} />
+            <WorkbenchMenuActionButton label="Fit View" onSelect={onFitView} />
+          </WorkbenchActionMenu>
+
+          <WorkbenchActionMenu label="Edit" description="Author and arrange">
+            <WorkbenchMenuActionButton label="Add Note" onSelect={onAddAnnotation} />
+            <WorkbenchMenuActionButton
+              label="Create Composite"
+              onSelect={onRequestCreateComposite}
+              disabled={!hasSelection}
+            />
+            <WorkbenchMenuActionButton label="Tidy Layout" onSelect={onTidyLayout} />
+            <WorkbenchMenuActionButton
+              label="Duplicate Cluster"
+              onSelect={onRequestDuplicateSelection}
+              disabled={!hasSelection}
+            />
+            <WorkbenchMenuActionButton
+              label="Delete Cluster"
+              onSelect={onRequestDeleteSelection}
+              disabled={!hasSelection}
+            />
+            <WorkbenchMenuActionButton
+              label="Delete Wire"
+              onSelect={onRequestDeleteWire}
+              disabled={!canDeleteWire}
+            />
+            {showTutorialToggle ? (
+              <WorkbenchMenuActionButton
+                label={tutorialNotesVisible ? 'Hide Step Notes' : 'Show Step Notes'}
+                onSelect={() => onToggleTutorialNotes?.(!tutorialNotesVisible)}
+              />
+            ) : null}
+          </WorkbenchActionMenu>
+
+          <WorkbenchActionMenu label="Project" description="Save and recover">
+            <WorkbenchMenuActionButton label="Undo" onSelect={onRequestUndo} disabled={!canUndo} />
+            <WorkbenchMenuActionButton label="Redo" onSelect={onRequestRedo} disabled={!canRedo} />
+            <WorkbenchMenuActionButton label="Save Version" onSelect={onRequestSaveVersion} />
+          </WorkbenchActionMenu>
+
+          <WorkbenchActionMenu label="Import/Export" description="Move artifacts">
+            <WorkbenchMenuActionButton label="Import JSON" onSelect={onRequestImport} />
+            <WorkbenchMenuActionButton label="Export JSON" onSelect={onExportDocument} />
+            <WorkbenchMenuActionButton label="Export Python" onSelect={onExportPython} />
+          </WorkbenchActionMenu>
         </>
-      ) : null}
-      <button
-        type="button"
-        className="mini-action-button"
-        onClick={onRequestCreateComposite}
-        disabled={selectedModuleIds.length === 0}
-      >
-        Create Composite
-      </button>
-      {showTutorialToggle ? (
-        <button
-          type="button"
-          className="mini-action-button"
-          onClick={() => onToggleTutorialNotes?.(!tutorialNotesVisible)}
-        >
-          {tutorialNotesVisible ? 'Hide Step Notes' : 'Show Step Notes'}
-        </button>
-      ) : null}
+      ) : (
+        <WorkbenchActionMenu label="Edit" description="Composite capture">
+          <WorkbenchMenuActionButton
+            label="Create Composite"
+            onSelect={onRequestCreateComposite}
+            disabled={!hasSelection}
+          />
+        </WorkbenchActionMenu>
+      )}
     </div>
   );
 }
