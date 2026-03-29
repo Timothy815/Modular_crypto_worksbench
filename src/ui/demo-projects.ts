@@ -1576,6 +1576,35 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'sbox-table-transform',
+    name: 'S-Box Table Transform',
+    group: 'Modern Rounds',
+    summary: 'A focused 4-bit S-Box lab for swapping and rotating table rows and columns while keeping the table valid.',
+    pipeline: 'BitSource -> SBox(16) -> BitOutput',
+    project: {
+      modules: [
+        { id: 'source', defId: 'BitSource', params: { stream: [0, 1, 1, 0] } },
+        {
+          id: 'sbox',
+          defId: 'SBox',
+          params: {
+            table: '14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7',
+          },
+        },
+        { id: 'output', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'sbox', port: 'in' } },
+        { from: { moduleId: 'sbox', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      source: { x: 64, y: 176 },
+      sbox: { x: 332, y: 176 },
+      output: { x: 600, y: 176 },
+    },
+  },
+  {
     id: 'hex-round',
     name: 'Hex Byte Round',
     group: 'Bridge Rounds',

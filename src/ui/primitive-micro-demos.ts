@@ -360,6 +360,39 @@ const BIT_JOIN_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const SBOX_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'SBox',
+  name: 'S-Box Micro Demo',
+  summary: 'Minimal visible substitution: one 4-bit input nibble enters an S-Box and leaves as a substituted 4-bit output.',
+  pipeline: 'BitSource -> SBox(16) -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        {
+          id: 'sbox',
+          defId: 'SBox',
+          params: { table: '14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7' },
+        },
+        { id: 'source', defId: 'BitSource', params: { stream: [0, 1, 1, 0] } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'sbox', port: 'in' } },
+        { from: { moduleId: 'sbox', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        sbox: { x: 348, y: 176 },
+        source: { x: 76, y: 176 },
+        out: { x: 620, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const LFSR_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'LFSR',
   name: 'LFSR Micro Demo',
@@ -543,6 +576,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   BIT_SPLIT_MICRO_DEMO,
   BIT_PAD_MICRO_DEMO,
   BIT_JOIN_MICRO_DEMO,
+  SBOX_MICRO_DEMO,
   LFSR_MICRO_DEMO,
   MULTI_ROUTER_MICRO_DEMO,
   ROTOR_MICRO_DEMO,

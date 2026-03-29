@@ -22,6 +22,7 @@ const keyedByteRoundsProject = demoProjects.find((project) => project.id === 'ke
 const keyedByteIteratorProject = demoProjects.find((project) => project.id === 'keyed-byte-iterator');
 const feistelProject = demoProjects.find((project) => project.id === 'feistel-network');
 const byteRoundProject = demoProjects.find((project) => project.id === 'byte-round');
+const sboxTableTransformProject = demoProjects.find((project) => project.id === 'sbox-table-transform');
 const hexRoundProject = demoProjects.find((project) => project.id === 'hex-round');
 const asciiRoundProject = demoProjects.find((project) => project.id === 'ascii-round');
 const keystreamProject = demoProjects.find((project) => project.id === 'keystream');
@@ -104,6 +105,9 @@ if (!feistelProject) {
 }
 if (!byteRoundProject) {
   throw new Error('Expected byte-round demo project to seed starter challenges.');
+}
+if (!sboxTableTransformProject) {
+  throw new Error('Expected sbox-table-transform demo project to seed starter challenges.');
 }
 if (!hexRoundProject) {
   throw new Error('Expected hex-round demo project to seed starter challenges.');
@@ -215,6 +219,8 @@ const feistelTarget = cloneProject(feistelProject.project);
 const brokenFeistelStart = cloneProject(feistelProject.project);
 const byteRoundTarget = cloneProject(byteRoundProject.project);
 const brokenByteRoundStart = cloneProject(byteRoundProject.project);
+const sboxTableTransformTarget = cloneProject(sboxTableTransformProject.project);
+const brokenSBoxTableTransformStart = cloneProject(sboxTableTransformProject.project);
 const hexRoundTarget = cloneProject(hexRoundProject.project);
 const brokenHexRoundStart = cloneProject(hexRoundProject.project);
 const asciiRoundTarget = cloneProject(asciiRoundProject.project);
@@ -565,6 +571,14 @@ if (!brokenPermutationModule) {
   throw new Error('Expected byte-round demo project to contain a permutation module.');
 }
 brokenPermutationModule.params.order = '0,1,2,3,4,5,6,7';
+
+const brokenSBoxTransformModule = brokenSBoxTableTransformStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'sbox',
+);
+if (!brokenSBoxTransformModule) {
+  throw new Error('Expected sbox-table-transform demo project to contain an S-Box module.');
+}
+brokenSBoxTransformModule.params.table = '14,4,13,1,8,2,15,11,3,10,6,12,5,9,0,7';
 
 const brokenHexSource = brokenHexRoundStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'source',
@@ -1060,6 +1074,27 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The problem is at the very start of the graph, not in the S-Box or permutation.',
       'HexSource should inject the same byte the reference machine begins with.',
       'Compare the current source value against the expected output pattern.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-sbox-table-transform',
+    title: 'Repair the S-Box Transform',
+    projectId: 'sbox-table-transform',
+    group: 'Modern Rounds',
+    difficulty: 'beginner',
+    prompt:
+      'The S-Box table is still a valid permutation, but one row was rotated out of place. Use the S-Box transform controls to restore the original table so the output matches the captured reference machine again.',
+    startingProject: brokenSBoxTableTransformStart,
+    startingLayout: cloneProject(sboxTableTransformProject.layout),
+    targetProject: sboxTableTransformTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The source nibble is already correct in this lab.',
+      'Select a cell inside the shifted row first so the active row is correct.',
+      'This is a transform problem, not a raw CSV typing problem.',
     ],
   },
   {
