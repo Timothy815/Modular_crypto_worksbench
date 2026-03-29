@@ -1,0 +1,121 @@
+export interface ManualEntry {
+  id: string;
+  title: string;
+  body: string;
+  indexTerms: string[];
+}
+
+export interface ManualSection {
+  id: string;
+  title: string;
+  summary: string;
+  entries: ManualEntry[];
+}
+
+export const USER_MANUAL_SECTIONS: ManualSection[] = [
+  {
+    id: 'getting-started',
+    title: 'Getting Started',
+    summary: 'What MCW is, how to orient yourself, and where to begin.',
+    entries: [
+      {
+        id: 'what-mcw-is',
+        title: 'What MCW Is',
+        body:
+          'Modular Cryptography Workbench is a visual systems IDE for building cryptographic machines out of explicit parts. Instead of choosing a finished cipher from a menu, you assemble signal paths from sources, transforms, bridges, sinks, composites, and iterators. The goal is visibility: the workspace should show how data moves, how state changes, and where control or timing matters. MCW is strongest when you treat it as a foundry for executable cryptographic specifications rather than a black-box calculator.',
+        indexTerms: ['what is mcw', 'overview', 'about', 'systems ide', 'foundry'],
+      },
+      {
+        id: 'where-to-begin',
+        title: 'Where To Begin',
+        body:
+          'New users should usually start in the earliest learning demos rather than the advanced arithmetic or protocol stages. Begin with the foundation workspaces, read the pipeline summary at the top of the workbench, and inspect how modules are connected before editing anything. If you want guided help, switch to Guide mode and use the tutorial and challenge surfaces. If you want freeform exploration, stay in Build mode and use the palette plus inspector together. The workbench is designed so you can move between guided learning and direct authoring without leaving the same project surface.',
+        indexTerms: ['start', 'begin', 'first project', 'guide mode', 'build mode'],
+      },
+    ],
+  },
+  {
+    id: 'workbench-basics',
+    title: 'Workbench Basics',
+    summary: 'How to read, navigate, and edit the workspace.',
+    entries: [
+      {
+        id: 'reading-the-workspace',
+        title: 'Reading The Workspace',
+        body:
+          'The workbench is a typed signal-flow graph. Modules are the nodes, connections are the wires, and the pipeline summary gives a quick read of the current machine. Sources introduce values, operators transform them, bridges change domain explicitly, and sinks render visible output. If a machine is stateful, ticked execution and trace surfaces help you see when state advances. The key habit is to read from left to right or from source to sink, watching where signals are transformed instead of assuming hidden behavior.',
+        indexTerms: ['workspace', 'graph', 'pipeline', 'sources', 'sinks', 'bridges'],
+      },
+      {
+        id: 'editing-and-recovery',
+        title: 'Editing, Versions, And Recovery',
+        body:
+          'Use the grouped workbench menus for common actions. View contains zoom and navigation actions. Edit contains authoring operations such as notes, composite creation, layout cleanup, and selection actions. Project contains recovery actions such as undo, redo, and save version. Import/Export contains JSON and Python export. MCW also supports workspace-local undo and redo, named saved versions, and restore workflows. If you are trying something risky, save a version first so you can return to a known checkpoint without rebuilding the graph by hand.',
+        indexTerms: ['undo', 'redo', 'save version', 'restore', 'workbench menus', 'project menu'],
+      },
+    ],
+  },
+  {
+    id: 'core-surfaces',
+    title: 'Core Surfaces',
+    summary: 'What the palette, inspector, learning, and compare surfaces are for.',
+    entries: [
+      {
+        id: 'palette-and-inspector',
+        title: 'Palette And Inspector',
+        body:
+          'The palette is where you add modules, browse reusable structures, and launch micro demos or library exports. The inspector is where you tune parameters, inspect live trace values, compare selected modules, and work through verification cases. The fastest authoring loop in MCW is often Palette plus Inspector side by side: add a structure from the palette, then immediately inspect or tune it. If you lose track of a module, use the trace and focus tools to jump back to the relevant workspace area instead of manually panning through the full graph.',
+        indexTerms: ['palette', 'inspector', 'parameters', 'micro demos', 'library'],
+      },
+      {
+        id: 'learning-and-verification',
+        title: 'Learning And Verification',
+        body:
+          'Guide mode exposes tutorials and challenges that teach by doing, while the compare and verification surfaces help you test whether a machine behaves as expected. The verification station supports explicit input and expected-output cases, baseline-backed comparison, known-vector import, and bounded ticked verification. The goal is not to claim that a construction is secure; the goal is to help you prove that your machine matches reference behavior or matches the baseline you intended. Use tutorials when you want guided practice, and use verification when you want confidence that a machine is behaviorally right.',
+        indexTerms: ['tutorials', 'challenges', 'compare', 'verification', 'known vectors'],
+      },
+    ],
+  },
+  {
+    id: 'multi-window',
+    title: 'Multi-Window Work',
+    summary: 'How detached windows, tabs, combined views, and split views work.',
+    entries: [
+      {
+        id: 'detaching-and-grouping',
+        title: 'Detaching And Grouping Panes',
+        body:
+          'MCW can detach the Palette, Inspector, and Learning surfaces into separate windows. Detached panes can be grouped into tabs, stacked in combined view, or shown side by side in split view. The Windows surface in the header is where you open panes in new windows, move panes between windows, and return them to the main app. This lets you use a second monitor or arrange work around your preferred authoring loop without hiding important context. The detached system remains host-authoritative, so the main app owns the live project state even when panes are displayed elsewhere.',
+        indexTerms: ['windows', 'detach', 'group tabs', 'combined view', 'split view'],
+      },
+      {
+        id: 'choosing-a-layout',
+        title: 'Choosing A Layout',
+        body:
+          'Use tabs when you want several related surfaces in one detached place but only need one visible at a time. Use combined view when you want several panes visible in one scrollable vertical stack. Use split view when you want two panes visible side by side on a wide display, especially common pairs such as Palette plus Inspector or Learning plus Inspector. The right choice depends on whether your bottleneck is screen width, scrolling, or rapid switching. When in doubt, split view is usually the fastest way to keep authoring and inspection visible at the same time.',
+        indexTerms: ['tabbed windows', 'split view', 'combined view', 'layout', 'second monitor'],
+      },
+    ],
+  },
+  {
+    id: 'export-and-verification',
+    title: 'Export And Verification',
+    summary: 'How JSON export, Python export, parity, and manual verification fit together.',
+    entries: [
+      {
+        id: 'json-and-python-export',
+        title: 'JSON And Python Export',
+        body:
+          'Import/Export actions in the workbench let you move workspace documents or generate executable Python artifacts. JSON export preserves the workspace document so it can be reloaded into MCW later. Python export produces a flat ZIP bundle containing the generated workspace file, the shared runtime file, and a parity verification script. The export path is intended to let you carry a machine out of MCW as code while preserving the authored structure rather than collapsing it into a hidden black box.',
+        indexTerms: ['json export', 'python export', 'zip bundle', 'mcw_runtime.py'],
+      },
+      {
+        id: 'parity-and-known-vectors',
+        title: 'Parity And Known Vectors',
+        body:
+          'Verification and export trust are separate but related. Known-answer verification inside MCW helps you prove that the machine behaves like a reference case. Export parity then helps you prove that the exported Python behaves like the machine you authored. The generated verify_parity.py script replays active verification cases against the exported workspace in a local Python environment. Known-vector import inside the verification station makes it faster to bring textbook or classroom reference cases into the product without typing them one by one.',
+        indexTerms: ['verify_parity.py', 'parity', 'known-answer', 'known vectors', 'reference behavior'],
+      },
+    ],
+  },
+];

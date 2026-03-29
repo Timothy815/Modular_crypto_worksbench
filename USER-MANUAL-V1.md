@@ -1,6 +1,6 @@
 # USER-MANUAL-V1
 
-Status: Proposed
+Status: Implemented
 
 Owner: Codex
 Scope: UI / Product Surface / Documentation
@@ -45,28 +45,33 @@ The manual should help a new user quickly learn:
 - No context-aware AI assistant
 - No attempt to document every primitive exhaustively in the first slice
 - No replacement for tutorials/challenges
+- No new `DetachedPanelKind` for the manual in V1
+- No BroadcastChannel synchronization for the manual window
+- No live content editing inside the manual viewer
+- No per-primitive exhaustive reference in V1
 
 ## Required V1 Shape
 
 1. The `Resources` surface must include a `User Manual` action.
-2. That action must open a dedicated manual window or panel, not an external website.
+2. That action must open a standalone browser window via `window.open()`, not an external website and not a new detached multi-window pane.
 3. The manual surface must support:
-   - table of contents
-   - text search
-   - index
-4. The manual content model must be structured and extendable rather than one large hard-coded blob.
-5. The manual must be oriented around product use, not only cryptographic theory.
-6. The first V1 content set must prioritize:
+   - a visible table of contents
+   - text search across titles, bodies, and index terms
+4. A curated alphabetical index should be included in V1 only as a distinct lookup aid for known feature names and topics.
+5. The manual content model must be structured and extendable rather than one large hard-coded blob.
+6. The manual must be oriented around product use, not only cryptographic theory.
+7. The first V1 content set must prioritize:
    - getting started
    - workspace layout / workbench basics
    - palette / inspector / learning surfaces
    - save / version / import / export
    - detached windows / combined / split use
    - verification station basics
-7. The manual should be searchable by feature names and user-intent phrasing where practical.
-8. The table of contents and index should both be visible, understandable navigation tools, not hidden implementation details.
-9. The surface should be designed so future manual sections can be added without redesigning the viewer.
-10. This must remain a bounded help/documentation feature, not a new generalized content-management system.
+8. The manual should be searchable by feature names and user-intent phrasing where practical.
+9. The table of contents and index should both be visible, understandable navigation tools, not hidden implementation details.
+10. The surface should be designed so future manual sections can be added without redesigning the viewer.
+11. The manual must respect the current light/dark theme at open time, without adding live cross-window theme synchronization.
+12. This must remain a bounded help/documentation feature, not a new generalized content-management system.
 
 ## Content Model
 
@@ -82,6 +87,25 @@ The content model should support future additions such as:
 - new workflow pages
 - feature-specific reference pages
 - troubleshooting pages
+
+### Content Data Shape
+
+V1 content must live in one typed TypeScript data module.
+
+Expected shape:
+- `ManualSection[]`
+- each section has:
+  - `id`
+  - `title`
+  - `summary`
+  - `entries`
+- each entry has:
+  - `id`
+  - `title`
+  - `body`
+  - `indexTerms`
+
+No markdown parsing, external file loading, dynamic fetching, or CMS behavior in V1.
 
 ## Primary V1 Topics
 
@@ -126,6 +150,17 @@ The content model should support future additions such as:
 - The table of contents should help orientation.
 - The index should help lookup when users know a feature name but not where it lives.
 - The manual should be useful to someone seeing MCW for the first time.
+
+## Content Density
+
+Each V1 entry should be concise product-oriented prose meant for orientation and lookup.
+
+The manual should explain:
+- what a surface is for
+- where to find it
+- how it fits into the common workflow
+
+Detailed exhaustive primitive-by-primitive reference is explicitly deferred.
 
 ## Success Condition
 

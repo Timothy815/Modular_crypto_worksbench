@@ -101,6 +101,8 @@ const MIN_LEFT_DOCK_WIDTH = 220;
 const MAX_LEFT_DOCK_WIDTH = 520;
 const MIN_RIGHT_DOCK_WIDTH = 280;
 const MAX_RIGHT_DOCK_WIDTH = 680;
+const USER_MANUAL_QUERY_KEY = 'manual';
+const USER_MANUAL_THEME_QUERY_KEY = 'theme';
 
 const CryptanalysisPanel = lazy(() =>
   import('./ui/components/cryptanalysis-panel').then((module) => ({
@@ -115,6 +117,11 @@ const DetachedPanelWindow = lazy(() =>
 const ParameterInspector = lazy(() =>
   import('./ui/components/parameter-inspector').then((module) => ({
     default: module.ParameterInspector,
+  })),
+);
+const ManualWindow = lazy(() =>
+  import('./ui/components/manual-window').then((module) => ({
+    default: module.ManualWindow,
   })),
 );
 
@@ -217,11 +224,49 @@ function getDetachedPanelConfig() {
   return { kind, hostId, panelWindowId };
 }
 
+function getUserManualConfig(): { theme: 'light' | 'dark' } | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const url = new URL(window.location.href);
+  const manual = url.searchParams.get(USER_MANUAL_QUERY_KEY);
+  if (manual !== '1') {
+    return null;
+  }
+
+  const theme = url.searchParams.get(USER_MANUAL_THEME_QUERY_KEY) === 'dark' ? 'dark' : 'light';
+  return { theme };
+}
+
+function createUserManualUrl(theme: 'light' | 'dark') {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  const url = new URL(window.location.href);
+  url.searchParams.delete(DETACHED_PANEL_QUERY_KEY);
+  url.searchParams.delete(DETACHED_PANEL_HOST_QUERY_KEY);
+  url.searchParams.delete(DETACHED_PANEL_WINDOW_QUERY_KEY);
+  url.searchParams.set(USER_MANUAL_QUERY_KEY, '1');
+  url.searchParams.set(USER_MANUAL_THEME_QUERY_KEY, theme);
+  return url.toString();
+}
+
 function createWindowSessionId() {
   return `window-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function App() {
+  const userManualConfig = getUserManualConfig();
+  if (userManualConfig) {
+    return (
+      <Suspense fallback={<LazyPanelFallback label="Manual" title="Preparing user manual…" />}>
+        <ManualWindow initialTheme={userManualConfig.theme} />
+      </Suspense>
+    );
+  }
+
   const detachedPanelConfig = getDetachedPanelConfig();
   if (detachedPanelConfig) {
     return (
@@ -2259,10 +2304,17 @@ function MainApp() {
                     '_blank',
                     'noopener,noreferrer',
                   );
+                } else if (value === 'user-manual') {
+                  window.open(
+                    createUserManualUrl(theme),
+                    'mcw-user-manual',
+                    'noopener,noreferrer,width=1320,height=900',
+                  );
                 }
               }}
             >
               <option value="">Open…</option>
+              <option value="user-manual">User Manual</option>
               <option value="notes">Notes</option>
               <option value="repo">Repository</option>
               <option value="cipher-museum">Cipher Museum</option>

@@ -65,8 +65,8 @@ The next bounded workbench-shell refinement after that is now explicitly recorde
 
 The next bounded product-help refinement after that is now explicitly recorded as:
 - `USER-MANUAL-V1.md`
-- adds a first-class user-manual surface from `Resources`
-- targets searchable product-use help with a table of contents, index, and extendable structured content
+- now shipped as a first-class user-manual surface from `Resources`
+- opens a standalone manual window with structured content, table of contents, search, and a curated index
 
 The current checkpointing follow-on after that is:
 - named workspace versions / restore points
