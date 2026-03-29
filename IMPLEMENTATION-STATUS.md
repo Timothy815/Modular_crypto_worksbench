@@ -245,6 +245,10 @@ The next export/trust slice after that is now also recorded:
 - `EXPORT-ENGINE-PARITY-WORKFLOW-V1.md`
 - now shipped as the first bounded engine-vs-export trust workflow
 - Python export now includes a standalone `verify_parity.py` artifact that runs the active verification cases against the exported workspace locally
+- next bounded verification/trust refinement after that:
+  - `KNOWN-VECTOR-IMPORT-V1.md`
+  - defines the first bounded workflow for pasting or importing multiple known-answer cases into the existing verification station
+  - keeps verification case authoring explicit and classroom-friendly without widening into a standards bundle or generic test harness
 - expand Python export carefully second
 - refactor the largest UI surfaces third
 - keep multi-window workspace support as a deliberate next-tier priority after those lines

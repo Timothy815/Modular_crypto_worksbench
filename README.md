@@ -53,6 +53,11 @@ The next export/trust follow-on after that is now explicitly recorded as:
 - now shipped as the first bounded engine-vs-export trust workflow
 - Python export now includes a standalone `verify_parity.py` artifact that runs the active verification cases against the exported workspace locally
 
+The next bounded verification/trust refinement after that is now explicitly recorded as:
+- `KNOWN-VECTOR-IMPORT-V1.md`
+- defines the first bounded way to paste or import multiple known-answer cases into the existing verification station
+- keeps verification case authoring explicit and classroom-friendly without widening into a standards bundle or generic test harness
+
 The current checkpointing follow-on after that is:
 - named workspace versions / restore points
 - explicit `Save Version` and `Restore` workflow per workspace
