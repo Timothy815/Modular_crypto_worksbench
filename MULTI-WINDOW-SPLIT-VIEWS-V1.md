@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Proposed
+Status: Shipped
 
 ---
 
@@ -139,3 +139,22 @@ This slice is successful when:
 - tabbed mode and combined mode remain available
 - host-authoritative synchronization remains intact
 - MCW gains a materially more useful second-screen layout without becoming a generalized docking system
+
+---
+
+## Shipped Notes
+
+This slice is now shipped on `main`.
+
+What landed:
+- detached windows now support `tabs`, `combined`, and `split` presentation modes
+- `split` mode shows exactly two visible panes side by side
+- users can choose the left/right split pair when more than two panes belong to that detached window
+- split-side assignment, side swapping, and bounded width resizing are host-authoritative
+- `Palette`, `Inspector`, and `Learning` remain the only supported detachable pane family
+
+Still out of scope:
+- arbitrary split trees
+- three-pane simultaneous detached layouts
+- saved detached layouts
+- cryptanalysis as a detached pane

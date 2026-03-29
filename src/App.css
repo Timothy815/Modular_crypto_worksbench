@@ -14,6 +14,10 @@
   min-height: 100vh;
 }
 
+.detached-panel-shell-split {
+  min-height: 100vh;
+}
+
 .app-header {
   position: relative;
   overflow: hidden;
@@ -361,6 +365,129 @@ body.dock-resizing {
 .detached-panel-shell-combined .inspector-panel {
   max-height: none;
   overflow: visible;
+}
+
+.detached-split-shell {
+  display: grid;
+  gap: 16px;
+}
+
+.detached-split-controls {
+  display: grid;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 18px;
+}
+
+.detached-split-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.detached-split-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.detached-split-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.detached-split-assignments {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 240px));
+  gap: 12px;
+}
+
+.detached-split-hidden {
+  display: grid;
+  gap: 8px;
+}
+
+.detached-split-layout {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  min-height: calc(100vh - 280px);
+}
+
+.detached-split-pane {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-width: 280px;
+  flex: 1 1 0;
+}
+
+.detached-split-pane-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface-panel);
+}
+
+.detached-split-divider {
+  flex: 0 0 14px;
+  align-self: stretch;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: col-resize;
+  position: relative;
+}
+
+.detached-split-divider::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: 6px;
+  width: 2px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line) 82%, transparent);
+  transition:
+    background 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.detached-split-divider:hover::before,
+.detached-split-divider:focus-visible::before {
+  background: color-mix(in srgb, var(--accent) 58%, white);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.detached-panel-shell-split .palette-panel,
+.detached-panel-shell-split .inspector-panel {
+  max-height: none;
+  overflow: visible;
+}
+
+@media (max-width: 960px) {
+  .detached-split-assignments {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .detached-split-layout {
+    flex-direction: column;
+  }
+
+  .detached-split-pane {
+    min-width: 0;
+  }
+
+  .detached-split-divider {
+    display: none;
+  }
 }
 
 .primitive-list,

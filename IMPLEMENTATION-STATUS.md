@@ -258,11 +258,11 @@ Current `main` now also includes that combined-view expansion:
 - allows visible ordered pane stacks inside one detached window
 - preserves host-authoritative synchronization without widening into a freeform layout engine
 
-Next multi-window expansion is now recorded:
+Current `main` now also includes that split-view expansion:
 - `MULTI-WINDOW-SPLIT-VIEWS-V1.md`
-- adds a bounded side-by-side split mode for detached windows
-- keeps the pane family bounded to `Palette`, `Inspector`, and `Learning`
-- treats horizontal split composition as the next deliberate expansion rather than arbitrary layout trees
+- detached windows now support `tabs`, `combined`, and bounded `split` presentation modes
+- split mode shows exactly two visible panes side by side with host-authoritative left/right selection and bounded width resizing
+- keeps the pane family bounded to `Palette`, `Inspector`, and `Learning` without widening into arbitrary split trees
 
 Current `main` now also includes the first App-shell maintenance slice:
 - `APP-SHELL-REFACTOR-V1.md`

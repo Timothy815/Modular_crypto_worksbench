@@ -70,7 +70,10 @@ import {
   removeDetachedPanelGroup,
   removeDetachedPanelKind,
   setDetachedPanelGroupPresentationMode,
+  setDetachedPanelGroupSplitRatio,
+  setDetachedPanelGroupSplitSide,
   setDetachedPanelGroupActiveKind,
+  swapDetachedPanelGroupSplitSides,
 } from './ui/multi-window';
 import {
   createInitialUiState,
@@ -1587,6 +1590,9 @@ function MainApp() {
         tabs: group.tabs,
         activeKind: group.activeKind,
         presentationMode: group.presentationMode,
+        splitLeftKind: group.splitLeftKind,
+        splitRightKind: group.splitRightKind,
+        splitRatio: group.splitRatio,
         payloadByKind,
       };
       const message: DetachedPanelMessage = {
@@ -1872,38 +1878,65 @@ function MainApp() {
           case 'setDetachedPresentationMode':
             {
               const nextPresentationMode = message.command.presentationMode;
-            setDetachedPanelGroups((current) =>
-              setDetachedPanelGroupPresentationMode(
-                current,
-                message.panelWindowId,
-                nextPresentationMode,
-              ),
-            );
-            return;
+              setDetachedPanelGroups((current) =>
+                setDetachedPanelGroupPresentationMode(
+                  current,
+                  message.panelWindowId,
+                  nextPresentationMode,
+                ),
+              );
+              return;
             }
           case 'moveDetachedPaneEarlier':
             {
               const nextKind = message.command.kind;
-            setDetachedPanelGroups((current) =>
-              moveDetachedPanelKindEarlier(
-                current,
-                message.panelWindowId,
-                nextKind,
-              ),
-            );
-            return;
+              setDetachedPanelGroups((current) =>
+                moveDetachedPanelKindEarlier(
+                  current,
+                  message.panelWindowId,
+                  nextKind,
+                ),
+              );
+              return;
             }
           case 'moveDetachedPaneLater':
             {
               const nextKind = message.command.kind;
+              setDetachedPanelGroups((current) =>
+                moveDetachedPanelKindLater(
+                  current,
+                  message.panelWindowId,
+                  nextKind,
+                ),
+              );
+              return;
+            }
+          case 'setDetachedSplitSide':
+            {
+              const nextKind = message.command.kind;
+              const nextSide = message.command.side;
+              setDetachedPanelGroups((current) =>
+                setDetachedPanelGroupSplitSide(
+                  current,
+                  message.panelWindowId,
+                  nextSide,
+                  nextKind,
+                ),
+              );
+              return;
+            }
+          case 'swapDetachedSplitSides':
             setDetachedPanelGroups((current) =>
-              moveDetachedPanelKindLater(
-                current,
-                message.panelWindowId,
-                nextKind,
-              ),
+              swapDetachedPanelGroupSplitSides(current, message.panelWindowId),
             );
             return;
+          case 'setDetachedSplitRatio':
+            {
+              const nextRatio = message.command.ratio;
+              setDetachedPanelGroups((current) =>
+                setDetachedPanelGroupSplitRatio(current, message.panelWindowId, nextRatio),
+              );
+              return;
             }
           case 'returnDetachedTabToMain': {
             const nextKind = message.command.kind;
@@ -1974,6 +2007,9 @@ function MainApp() {
           tabs: group.tabs,
           activeKind: group.activeKind,
           presentationMode: group.presentationMode,
+          splitLeftKind: group.splitLeftKind,
+          splitRightKind: group.splitRightKind,
+          splitRatio: group.splitRatio,
           payloadByKind,
         },
       } satisfies DetachedPanelMessage);

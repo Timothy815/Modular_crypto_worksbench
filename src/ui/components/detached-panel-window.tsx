@@ -1,4 +1,13 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 
 import { V1_REGISTRY } from '../../engine/modules';
 import { PrimitivePalette } from './primitive-palette';
@@ -65,6 +74,9 @@ export function DetachedPanelWindow({
   kind,
 }: DetachedPanelWindowProps) {
   const [snapshot, setSnapshot] = useState<DetachedPanelStateSnapshot | null>(null);
+  const splitContainerRef = useRef<HTMLDivElement | null>(null);
+  const splitRatioFrameRef = useRef<number | null>(null);
+  const queuedSplitRatioRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof BroadcastChannel === 'undefined') {
@@ -128,6 +140,8 @@ export function DetachedPanelWindow({
       snapshot?.tabs ?? [activeKind],
       activeKind,
       snapshot?.presentationMode ?? 'tabs',
+      snapshot?.splitLeftKind ?? null,
+      snapshot?.splitRightKind ?? null,
     );
   }, [kind, snapshot]);
 
@@ -141,6 +155,22 @@ export function DetachedPanelWindow({
 
   const activeKind = snapshot?.activeKind ?? kind;
   const activePayload = snapshot ? getDetachedPayload(snapshot, activeKind) : null;
+  const splitLeftKind =
+    snapshot?.tabs.find((tabKind) => tabKind === snapshot.splitLeftKind) ?? snapshot?.tabs[0] ?? activeKind;
+  const splitRightKind =
+    snapshot?.tabs.find((tabKind) => tabKind === snapshot.splitRightKind && tabKind !== splitLeftKind) ??
+    snapshot?.tabs.find((tabKind) => tabKind !== splitLeftKind) ??
+    splitLeftKind;
+  const splitRatio = snapshot?.splitRatio ?? 0.5;
+  const leftPaneStyle: CSSProperties = {
+    flexBasis: `${splitRatio * 100}%`,
+  };
+  const rightPaneStyle: CSSProperties = {
+    flexBasis: `${(1 - splitRatio) * 100}%`,
+  };
+  const splitHiddenKinds = snapshot?.tabs.filter(
+    (tabKind) => tabKind !== splitLeftKind && tabKind !== splitRightKind,
+  ) ?? [];
 
   const sendCommand = (targetKind: DetachedPanelKind, command: DetachedPanelCommand) => {
     if (typeof BroadcastChannel === 'undefined') {
@@ -159,8 +189,72 @@ export function DetachedPanelWindow({
     channel.close();
   };
 
+  const sendSplitRatio = (ratio: number) => {
+    queuedSplitRatioRef.current = ratio;
+    if (splitRatioFrameRef.current !== null) {
+      return;
+    }
+
+    splitRatioFrameRef.current = window.requestAnimationFrame(() => {
+      splitRatioFrameRef.current = null;
+      const nextRatio = queuedSplitRatioRef.current;
+      queuedSplitRatioRef.current = null;
+      if (nextRatio === null) {
+        return;
+      }
+
+      sendCommand(activeKind, { type: 'setDetachedSplitRatio', ratio: nextRatio });
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      if (splitRatioFrameRef.current !== null) {
+        window.cancelAnimationFrame(splitRatioFrameRef.current);
+      }
+    };
+  }, []);
+
   const postAction = (action: UiAction) => {
     postDetachedAction(channelName, hostId, panelWindowId, action);
+  };
+
+  const startSplitResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const container = splitContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    event.preventDefault();
+    const pointerId = event.pointerId;
+    const handle = event.currentTarget;
+    handle.setPointerCapture(pointerId);
+
+    const updateRatio = (clientX: number) => {
+      const rect = container.getBoundingClientRect();
+      if (rect.width <= 0) {
+        return;
+      }
+      const ratio = (clientX - rect.left) / rect.width;
+      sendSplitRatio(ratio);
+    };
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      updateRatio(moveEvent.clientX);
+    };
+
+    const finishResize = () => {
+      handle.removeEventListener('pointermove', handlePointerMove);
+      handle.removeEventListener('pointerup', finishResize);
+      handle.removeEventListener('pointercancel', finishResize);
+      if (handle.hasPointerCapture(pointerId)) {
+        handle.releasePointerCapture(pointerId);
+      }
+    };
+
+    handle.addEventListener('pointermove', handlePointerMove);
+    handle.addEventListener('pointerup', finishResize);
+    handle.addEventListener('pointercancel', finishResize);
   };
 
   return (
@@ -168,7 +262,9 @@ export function DetachedPanelWindow({
       className={
         snapshot?.presentationMode === 'combined'
           ? 'app-shell detached-panel-shell detached-panel-shell-combined'
-          : 'app-shell detached-panel-shell'
+          : snapshot?.presentationMode === 'split'
+            ? 'app-shell detached-panel-shell detached-panel-shell-split'
+            : 'app-shell detached-panel-shell'
       }
     >
       {!snapshot ? (
@@ -184,12 +280,17 @@ export function DetachedPanelWindow({
                   tabs: snapshot.tabs,
                   activeKind: snapshot.activeKind,
                   presentationMode: snapshot.presentationMode,
+                  splitLeftKind: snapshot.splitLeftKind,
+                  splitRightKind: snapshot.splitRightKind,
+                  splitRatio: snapshot.splitRatio,
                 })}
               </p>
               <p className="detached-window-group-note">
                 {snapshot.presentationMode === 'combined'
                   ? 'Host-synced combined view'
-                  : 'Host-synced tab group'}
+                  : snapshot.presentationMode === 'split'
+                    ? 'Host-synced split view'
+                    : 'Host-synced tab group'}
               </p>
               <div className="detached-window-mode-toggle" role="tablist" aria-label="Detached view mode">
                 <button
@@ -223,6 +324,22 @@ export function DetachedPanelWindow({
                   }
                 >
                   Combined
+                </button>
+                <button
+                  type="button"
+                  className={
+                    snapshot.presentationMode === 'split'
+                      ? 'detached-window-tab active'
+                      : 'detached-window-tab'
+                  }
+                  onClick={() =>
+                    sendCommand(activeKind, {
+                      type: 'setDetachedPresentationMode',
+                      presentationMode: 'split',
+                    })
+                  }
+                >
+                  Split
                 </button>
               </div>
               <div className="detached-window-tabs" role="tablist" aria-label="Detached window tabs">
@@ -313,6 +430,164 @@ export function DetachedPanelWindow({
                   </section>
                 );
               })}
+            </section>
+          ) : snapshot.presentationMode === 'split' ? (
+            <section className="detached-split-shell">
+              <section className="detached-split-controls panel">
+                <div className="detached-split-controls-row">
+                  <div className="detached-split-copy">
+                    <p className="meta-label detached-window-meta">Visible Pair</p>
+                    <p className="detached-window-group-label">
+                      {formatDetachedPanelKindLabel(splitLeftKind)} + {formatDetachedPanelKindLabel(splitRightKind)}
+                    </p>
+                    <p className="detached-window-group-note">
+                      Exactly two panes are visible in split mode.
+                    </p>
+                  </div>
+                  <div className="detached-split-actions">
+                    <button
+                      type="button"
+                      className="button button-ghost"
+                      onClick={() => sendCommand(activeKind, { type: 'swapDetachedSplitSides' })}
+                    >
+                      Swap Sides
+                    </button>
+                  </div>
+                </div>
+                <div className="detached-split-assignments">
+                  <label className="inspector-section-select">
+                    <span className="meta-label">Left Pane</span>
+                    <select
+                      value={splitLeftKind}
+                      onChange={(event) =>
+                        sendCommand(activeKind, {
+                          type: 'setDetachedSplitSide',
+                          side: 'left',
+                          kind: event.target.value as DetachedPanelKind,
+                        })
+                      }
+                    >
+                      {snapshot.tabs.map((tabKind) => (
+                        <option key={`left:${tabKind}`} value={tabKind}>
+                          {formatDetachedPanelKindLabel(tabKind)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="inspector-section-select">
+                    <span className="meta-label">Right Pane</span>
+                    <select
+                      value={splitRightKind}
+                      onChange={(event) =>
+                        sendCommand(activeKind, {
+                          type: 'setDetachedSplitSide',
+                          side: 'right',
+                          kind: event.target.value as DetachedPanelKind,
+                        })
+                      }
+                    >
+                      {snapshot.tabs.map((tabKind) => (
+                        <option key={`right:${tabKind}`} value={tabKind}>
+                          {formatDetachedPanelKindLabel(tabKind)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                {splitHiddenKinds.length > 0 ? (
+                  <div className="detached-split-hidden">
+                    <p className="meta-label detached-window-meta">Hidden In This View</p>
+                    <div className="detached-window-tabs">
+                      {splitHiddenKinds.map((tabKind) => (
+                        <button
+                          key={`hidden:${tabKind}`}
+                          type="button"
+                          className="detached-window-tab"
+                          onClick={() =>
+                            sendCommand(activeKind, {
+                              type: 'setDetachedSplitSide',
+                              side: 'right',
+                              kind: tabKind,
+                            })
+                          }
+                        >
+                          Show {formatDetachedPanelKindLabel(tabKind)} On Right
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </section>
+              <div ref={splitContainerRef} className="detached-split-layout">
+                <section className="detached-split-pane" style={leftPaneStyle}>
+                  <div className="detached-split-pane-header">
+                    <div>
+                      <p className="meta-label detached-window-meta">Left</p>
+                      <h2 className="detached-combined-pane-title">
+                        {formatDetachedPanelKindLabel(splitLeftKind)}
+                      </h2>
+                    </div>
+                    <div className="detached-combined-pane-actions">
+                      <button
+                        type="button"
+                        className="button button-ghost"
+                        onClick={() =>
+                          sendCommand(splitLeftKind, {
+                            type: 'returnDetachedTabToMain',
+                            kind: splitLeftKind,
+                          })
+                        }
+                      >
+                        Return To Main
+                      </button>
+                    </div>
+                  </div>
+                  {renderDetachedPane(
+                    splitLeftKind,
+                    getDetachedPayload(snapshot, splitLeftKind),
+                    registry,
+                    postAction,
+                    sendCommand,
+                  )}
+                </section>
+                <button
+                  type="button"
+                  className="detached-split-divider"
+                  aria-label="Resize split panes"
+                  onPointerDown={startSplitResize}
+                />
+                <section className="detached-split-pane" style={rightPaneStyle}>
+                  <div className="detached-split-pane-header">
+                    <div>
+                      <p className="meta-label detached-window-meta">Right</p>
+                      <h2 className="detached-combined-pane-title">
+                        {formatDetachedPanelKindLabel(splitRightKind)}
+                      </h2>
+                    </div>
+                    <div className="detached-combined-pane-actions">
+                      <button
+                        type="button"
+                        className="button button-ghost"
+                        onClick={() =>
+                          sendCommand(splitRightKind, {
+                            type: 'returnDetachedTabToMain',
+                            kind: splitRightKind,
+                          })
+                        }
+                      >
+                        Return To Main
+                      </button>
+                    </div>
+                  </div>
+                  {renderDetachedPane(
+                    splitRightKind,
+                    getDetachedPayload(snapshot, splitRightKind),
+                    registry,
+                    postAction,
+                    sendCommand,
+                  )}
+                </section>
+              </div>
             </section>
           ) : (
             renderDetachedPane(activeKind, activePayload, registry, postAction, sendCommand)

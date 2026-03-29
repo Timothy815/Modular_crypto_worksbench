@@ -370,11 +370,11 @@ That combined-view expansion is now also shipped:
 - combined mode shows an ordered visible stack of supported panes with per-pane move up/down controls
 - the pane family remains bounded to `Palette`, `Inspector`, and `Learning`
 
-The next multi-window expansion is now recorded:
+That split-view expansion is now also shipped:
 - `MULTI-WINDOW-SPLIT-VIEWS-V1.md`
-- adds a bounded side-by-side split mode for detached windows
-- keeps the pane family bounded to `Palette`, `Inspector`, and `Learning`
-- treats horizontal split composition as the next deliberate step, not a jump to arbitrary layout trees
+- detached windows now support `tabs`, `combined`, and bounded `split` presentation modes
+- split mode shows exactly two visible panes side by side with host-authoritative left/right selection and bounded width resizing
+- the pane family remains bounded to `Palette`, `Inspector`, and `Learning`
 
 The next maintenance follow-on is now also shipped:
 - `APP-SHELL-REFACTOR-V1.md`

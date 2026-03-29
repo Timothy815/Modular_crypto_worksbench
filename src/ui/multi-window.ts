@@ -95,7 +95,10 @@ export interface DetachedPanelStateSnapshot {
   panelWindowId: string;
   tabs: DetachedPanelKind[];
   activeKind: DetachedPanelKind;
-  presentationMode: 'tabs' | 'combined';
+  presentationMode: 'tabs' | 'combined' | 'split';
+  splitLeftKind: DetachedPanelKind | null;
+  splitRightKind: DetachedPanelKind | null;
+  splitRatio: number;
   payloadByKind: Partial<DetachedPanelPayloadByKind>;
 }
 
@@ -103,7 +106,10 @@ export interface DetachedPanelWindowGroup {
   panelWindowId: string;
   tabs: DetachedPanelKind[];
   activeKind: DetachedPanelKind;
-  presentationMode: 'tabs' | 'combined';
+  presentationMode: 'tabs' | 'combined' | 'split';
+  splitLeftKind: DetachedPanelKind | null;
+  splitRightKind: DetachedPanelKind | null;
+  splitRatio: number;
 }
 
 export type DetachedPanelCommand =
@@ -146,9 +152,12 @@ export type DetachedPanelCommand =
   | { type: 'resetTutorialProgress' }
   | { type: 'setActiveDetachedTab'; kind: DetachedPanelKind }
   | { type: 'returnDetachedTabToMain'; kind: DetachedPanelKind }
-  | { type: 'setDetachedPresentationMode'; presentationMode: 'tabs' | 'combined' }
+  | { type: 'setDetachedPresentationMode'; presentationMode: 'tabs' | 'combined' | 'split' }
   | { type: 'moveDetachedPaneEarlier'; kind: DetachedPanelKind }
-  | { type: 'moveDetachedPaneLater'; kind: DetachedPanelKind };
+  | { type: 'moveDetachedPaneLater'; kind: DetachedPanelKind }
+  | { type: 'setDetachedSplitSide'; side: 'left' | 'right'; kind: DetachedPanelKind }
+  | { type: 'swapDetachedSplitSides' }
+  | { type: 'setDetachedSplitRatio'; ratio: number };
 
 export type DetachedPanelMessage =
   | {
@@ -231,8 +240,44 @@ export function createDetachedPanelGroup(
       tabs: [kind],
       activeKind: kind,
       presentationMode: 'tabs',
+      splitLeftKind: kind,
+      splitRightKind: kind,
+      splitRatio: 0.5,
     },
   ];
+}
+
+export function clampDetachedSplitRatio(ratio: number) {
+  return Math.min(0.7, Math.max(0.3, ratio));
+}
+
+function getDefaultDetachedSplitPair(tabs: DetachedPanelKind[]) {
+  const [left = null, right = left] = tabs;
+  return { left, right };
+}
+
+function normalizeDetachedSplitPair(
+  tabs: DetachedPanelKind[],
+  leftKind: DetachedPanelKind | null,
+  rightKind: DetachedPanelKind | null,
+) {
+  const availableTabs = tabs.filter((tab) => tab === leftKind || tab === rightKind);
+  if (availableTabs.length === 2) {
+    return {
+      splitLeftKind: availableTabs[0],
+      splitRightKind: availableTabs[1],
+    };
+  }
+
+  const fallbackPair = getDefaultDetachedSplitPair(tabs);
+  return {
+    splitLeftKind: availableTabs[0] ?? fallbackPair.left,
+    splitRightKind:
+      availableTabs[1] ??
+      tabs.find((tab) => tab !== (availableTabs[0] ?? fallbackPair.left)) ??
+      availableTabs[0] ??
+      fallbackPair.right,
+  };
 }
 
 export function moveDetachedPanelKindToGroup(
@@ -252,11 +297,14 @@ export function moveDetachedPanelKindToGroup(
       return { ...group, activeKind: kind };
     }
 
+    const nextTabs = [...group.tabs, kind];
     return {
       ...group,
-      tabs: [...group.tabs, kind],
+      tabs: nextTabs,
       activeKind: kind,
       presentationMode: group.presentationMode,
+      ...normalizeDetachedSplitPair(nextTabs, group.splitLeftKind, group.splitRightKind),
+      splitRatio: clampDetachedSplitRatio(group.splitRatio),
     };
   });
 
@@ -271,6 +319,9 @@ export function moveDetachedPanelKindToGroup(
       tabs: [kind],
       activeKind: kind,
       presentationMode: 'tabs',
+      splitLeftKind: kind,
+      splitRightKind: kind,
+      splitRatio: 0.5,
     },
   ];
 }
@@ -309,6 +360,7 @@ export function removeDetachedPanelKind(
           group.activeKind === kind
             ? nextTabs[nextTabs.length - 1]
             : group.activeKind,
+        ...normalizeDetachedSplitPair(nextTabs, group.splitLeftKind, group.splitRightKind),
       },
     ];
   });
@@ -324,11 +376,26 @@ export function removeDetachedPanelGroup(
 export function setDetachedPanelGroupPresentationMode(
   groups: DetachedPanelWindowGroup[],
   panelWindowId: string,
-  presentationMode: 'tabs' | 'combined',
+  presentationMode: 'tabs' | 'combined' | 'split',
 ): DetachedPanelWindowGroup[] {
-  return groups.map((group) =>
-    group.panelWindowId === panelWindowId ? { ...group, presentationMode } : group,
-  );
+  return groups.map((group) => {
+    if (group.panelWindowId !== panelWindowId) {
+      return group;
+    }
+
+    if (presentationMode !== 'split') {
+      return { ...group, presentationMode };
+    }
+
+    const pair = normalizeDetachedSplitPair(group.tabs, group.splitLeftKind, group.splitRightKind);
+    return {
+      ...group,
+      presentationMode,
+      splitLeftKind: pair.splitLeftKind,
+      splitRightKind: pair.splitRightKind,
+      splitRatio: clampDetachedSplitRatio(group.splitRatio),
+    };
+  });
 }
 
 export function moveDetachedPanelKindEarlier(
@@ -348,7 +415,11 @@ export function moveDetachedPanelKindEarlier(
 
     const nextTabs = [...group.tabs];
     [nextTabs[index - 1], nextTabs[index]] = [nextTabs[index], nextTabs[index - 1]];
-    return { ...group, tabs: nextTabs };
+    return {
+      ...group,
+      tabs: nextTabs,
+      ...normalizeDetachedSplitPair(nextTabs, group.splitLeftKind, group.splitRightKind),
+    };
   });
 }
 
@@ -369,8 +440,64 @@ export function moveDetachedPanelKindLater(
 
     const nextTabs = [...group.tabs];
     [nextTabs[index], nextTabs[index + 1]] = [nextTabs[index + 1], nextTabs[index]];
-    return { ...group, tabs: nextTabs };
+    return {
+      ...group,
+      tabs: nextTabs,
+      ...normalizeDetachedSplitPair(nextTabs, group.splitLeftKind, group.splitRightKind),
+    };
   });
+}
+
+export function setDetachedPanelGroupSplitSide(
+  groups: DetachedPanelWindowGroup[],
+  panelWindowId: string,
+  side: 'left' | 'right',
+  kind: DetachedPanelKind,
+): DetachedPanelWindowGroup[] {
+  return groups.map((group) => {
+    if (group.panelWindowId !== panelWindowId || !group.tabs.includes(kind)) {
+      return group;
+    }
+
+    const nextLeftKind = side === 'left' ? kind : group.splitLeftKind;
+    const nextRightKind = side === 'right' ? kind : group.splitRightKind;
+    const pair = normalizeDetachedSplitPair(group.tabs, nextLeftKind, nextRightKind);
+    return {
+      ...group,
+      splitLeftKind: pair.splitLeftKind,
+      splitRightKind: pair.splitRightKind,
+      activeKind: kind,
+    };
+  });
+}
+
+export function swapDetachedPanelGroupSplitSides(
+  groups: DetachedPanelWindowGroup[],
+  panelWindowId: string,
+): DetachedPanelWindowGroup[] {
+  return groups.map((group) => {
+    if (group.panelWindowId !== panelWindowId) {
+      return group;
+    }
+
+    return {
+      ...group,
+      splitLeftKind: group.splitRightKind,
+      splitRightKind: group.splitLeftKind,
+    };
+  });
+}
+
+export function setDetachedPanelGroupSplitRatio(
+  groups: DetachedPanelWindowGroup[],
+  panelWindowId: string,
+  ratio: number,
+): DetachedPanelWindowGroup[] {
+  return groups.map((group) =>
+    group.panelWindowId === panelWindowId
+      ? { ...group, splitRatio: clampDetachedSplitRatio(ratio) }
+      : group,
+  );
 }
 
 export function getDetachedPanelKindsByWindowId(
@@ -419,10 +546,17 @@ export function formatDetachedPanelWindowLabel(
 export function formatDetachedPanelDocumentTitle(
   tabs: DetachedPanelKind[],
   activeKind: DetachedPanelKind,
-  presentationMode: 'tabs' | 'combined',
+  presentationMode: 'tabs' | 'combined' | 'split',
+  splitLeftKind: DetachedPanelKind | null = null,
+  splitRightKind: DetachedPanelKind | null = null,
 ) {
   if (presentationMode === 'combined') {
     return `Combined (${formatDetachedPanelTabList(tabs)}) — MCW`;
+  }
+
+  if (presentationMode === 'split') {
+    const pair = normalizeDetachedSplitPair(tabs, splitLeftKind, splitRightKind);
+    return `Split (${formatDetachedPanelKindLabel(pair.splitLeftKind ?? activeKind)} + ${formatDetachedPanelKindLabel(pair.splitRightKind ?? activeKind)}) — MCW`;
   }
 
   const activeLabel = formatDetachedPanelKindLabel(activeKind);
