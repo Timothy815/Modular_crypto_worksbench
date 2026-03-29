@@ -707,6 +707,9 @@ function DetachedInspectorView({
       executionComparison={snapshot.executionComparison}
       baselineOutput={snapshot.baselineOutput}
       variantOutput={snapshot.variantOutput}
+      verificationSourceOptions={snapshot.verificationSourceOptions}
+      verificationCases={snapshot.verificationCases}
+      verificationResults={snapshot.verificationResults}
       baselineExecutionError={snapshot.baselineExecutionError}
       baselineModuleInstance={baselineModuleInstance}
       moduleDef={moduleDef}
@@ -778,6 +781,12 @@ function DetachedInspectorView({
       onRequestFocusModule={(moduleId) => onSendCommand({ type: 'requestFocusModule', moduleId })}
       onCaptureBaseline={() => onSendCommand({ type: 'captureBaseline' })}
       onClearBaseline={() => onSendCommand({ type: 'clearBaseline' })}
+      onAddVerificationCase={(sourceModuleId, inputValue) => {
+        onSendCommand({ type: 'addVerificationCase', sourceModuleId, inputValue });
+        return null;
+      }}
+      onRemoveVerificationCase={(caseId) => onSendCommand({ type: 'removeVerificationCase', caseId })}
+      onClearVerificationCases={() => onSendCommand({ type: 'clearVerificationCases' })}
       probedModuleIds={snapshot.probedModuleIds}
       isTickedMode={snapshot.isTickedMode}
       currentTick={snapshot.currentTick}

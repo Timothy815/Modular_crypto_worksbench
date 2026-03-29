@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Proposed
+Status: Shipped
 
 ---
 
@@ -126,3 +126,27 @@ This slice is successful when:
 - a failing case points the user toward the first divergence instead of forcing manual guesswork
 - the workflow strengthens trust without widening into general programming behavior
 - MCW has a first real answer to “how do I prove this machine matches a reference?”
+
+---
+
+## Shipped Shape
+
+This slice is now shipped in a bounded form:
+- it lives inside the existing compare surface
+- it is baseline-backed rather than standards-database-backed
+- it supports stateless verification cases for:
+  - `TextInput`
+  - `AsciiSource`
+  - `BaudotSource`
+  - `HexSource`
+- each case stores:
+  - source module
+  - explicit input value
+  - explicit expected output captured from the chosen baseline
+- each case reports:
+  - pass/fail
+  - expected output
+  - actual output
+  - first divergence when the live workspace no longer matches the captured reference
+
+Ticked verification remains deferred to a later slice.

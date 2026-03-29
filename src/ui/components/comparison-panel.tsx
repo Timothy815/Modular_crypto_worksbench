@@ -1,6 +1,12 @@
 import type { ComparisonBaselineDocument } from '../workbench-document';
 import type { ExecutionComparison } from '../execution-compare';
 import { analyzeSymbolSignal } from '../cryptanalysis';
+import type {
+  VerificationCase,
+  VerificationCaseResult,
+  VerificationSourceOption,
+} from '../verification-workflow';
+import { useState } from 'react';
 
 interface ComparisonPanelProps {
   projectName: string;
@@ -10,8 +16,15 @@ interface ComparisonPanelProps {
   baselineError: string | null;
   variantError: string | null;
   comparison: ExecutionComparison | null;
+  isTickedMode: boolean;
+  verificationSourceOptions: VerificationSourceOption[];
+  verificationCases: VerificationCase[];
+  verificationResults: VerificationCaseResult[];
   onCaptureBaseline: () => void;
   onClearBaseline: () => void;
+  onAddVerificationCase: (sourceModuleId: string, inputValue: string) => string | null;
+  onRemoveVerificationCase: (caseId: string) => void;
+  onClearVerificationCases: () => void;
   embedded?: boolean;
 }
 
@@ -23,10 +36,28 @@ export function ComparisonPanel({
   baselineError,
   variantError,
   comparison,
+  isTickedMode,
+  verificationSourceOptions,
+  verificationCases,
+  verificationResults,
   onCaptureBaseline,
   onClearBaseline,
+  onAddVerificationCase,
+  onRemoveVerificationCase,
+  onClearVerificationCases,
   embedded = false,
 }: ComparisonPanelProps) {
+  const [verificationSourceModuleId, setVerificationSourceModuleId] = useState(
+    verificationSourceOptions[0]?.moduleId ?? '',
+  );
+  const [verificationInputValue, setVerificationInputValue] = useState('');
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+  const selectedVerificationSourceModuleId = verificationSourceOptions.some(
+    (option) => option.moduleId === verificationSourceModuleId,
+  )
+    ? verificationSourceModuleId
+    : verificationSourceOptions[0]?.moduleId ?? '';
+
   const divergentSignals = comparison?.firstDivergence
     ? getDivergentSignals(comparison.firstDivergence)
     : null;
@@ -136,6 +167,161 @@ export function ComparisonPanel({
                 Capture a baseline, then mutate the live workbench to compare outputs and the
                 first divergent trace step.
               </p>
+            )}
+          </div>
+          <div className="comparison-card comparison-card-wide">
+            <span className="meta-label">Verification Station</span>
+            <p className="comparison-copy">
+              Verified means this workspace matches the chosen reference behavior. It does not mean
+              the machine is secure or certified.
+            </p>
+            {isTickedMode ? (
+              <p className="comparison-copy">
+                Ticked verification will come in a later slice. This V1 station is bounded to
+                stateless cases.
+              </p>
+            ) : !baseline ? (
+              <p className="comparison-copy">
+                Capture a baseline first. Verification cases are generated from that reference so
+                failures can point to a first trace divergence.
+              </p>
+            ) : verificationSourceOptions.length === 0 ? (
+              <p className="comparison-copy">
+                This workspace has no supported verification source yet. V1 supports Text, ASCII,
+                Baudot, and Hex source modules.
+              </p>
+            ) : (
+              <>
+                <div className="verification-case-form">
+                  <label className="verification-field">
+                    <span className="meta-label">Input Source</span>
+                    <select
+                      value={selectedVerificationSourceModuleId}
+                      onChange={(event) => setVerificationSourceModuleId(event.target.value)}
+                    >
+                      {verificationSourceOptions.map((option) => (
+                        <option key={option.moduleId} value={option.moduleId}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="verification-field">
+                    <span className="meta-label">Input Value</span>
+                    <input
+                      type="text"
+                      value={verificationInputValue}
+                      onChange={(event) => setVerificationInputValue(event.target.value)}
+                      placeholder="Enter a reference input"
+                    />
+                  </label>
+                  <div className="comparison-actions verification-actions">
+                    <button
+                      type="button"
+                      className="mini-action-button"
+                      onClick={() => {
+                        const message = onAddVerificationCase(
+                          selectedVerificationSourceModuleId,
+                          verificationInputValue,
+                        );
+                        setVerificationError(message);
+                        if (!message) {
+                          setVerificationInputValue('');
+                        }
+                      }}
+                    >
+                      Add Verification Case
+                    </button>
+                    {verificationCases.length > 0 ? (
+                      <button
+                        type="button"
+                        className="mini-action-button"
+                        onClick={() => {
+                          onClearVerificationCases();
+                          setVerificationError(null);
+                        }}
+                      >
+                        Clear Cases
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+                {verificationError ? (
+                  <p className="comparison-copy verification-error">{verificationError}</p>
+                ) : null}
+                {verificationCases.length > 0 ? (
+                  <div className="verification-case-list">
+                    {verificationResults.map((result) => {
+                      const caseDefinition = verificationCases.find(
+                        (entry) => entry.id === result.caseId,
+                      );
+                      return (
+                        <div
+                          key={result.caseId}
+                          className={`comparison-diff-card verification-result-card ${
+                            result.passed
+                              ? 'verification-result-pass'
+                              : 'verification-result-fail'
+                          }`}
+                        >
+                          <div className="verification-result-head">
+                            <div>
+                              <span className="meta-label">{result.sourceLabel}</span>
+                              <strong>{result.passed ? 'PASS' : 'FAIL'}</strong>
+                            </div>
+                            <button
+                              type="button"
+                              className="mini-action-button"
+                              onClick={() => onRemoveVerificationCase(result.caseId)}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                          <p className="comparison-copy">
+                            Input: <strong>{result.inputValue || '∅'}</strong>
+                          </p>
+                          <p className="comparison-copy">
+                            Expected: <strong>{caseDefinition?.expectedOutput ?? result.expectedOutput}</strong>
+                          </p>
+                          <p className="comparison-copy">
+                            Actual: <strong>{result.actualOutput}</strong>
+                          </p>
+                          {!result.passed ? (
+                            <>
+                              {result.error ? (
+                                <p className="comparison-copy verification-error">
+                                  {result.error}
+                                </p>
+                              ) : result.divergence ? (
+                                <p className="comparison-copy">
+                                  First divergence at{' '}
+                                  <strong>step {result.divergence.stepIndex + 1}</strong>:{' '}
+                                  <strong>
+                                    {result.divergence.variant?.moduleId ??
+                                      result.divergence.baseline?.moduleId ??
+                                      'unknown'}
+                                  </strong>{' '}
+                                  ({result.divergence.reason}).
+                                </p>
+                              ) : (
+                                <p className="comparison-copy">
+                                  Output diverged from the reference without a trace-local
+                                  divergence.
+                                </p>
+                              )}
+                            </>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="comparison-copy">
+                    Add a case to check the current workspace against the captured reference
+                    behavior.
+                  </p>
+                )}
+              </>
             )}
           </div>
           {baselineAnalysis && variantAnalysis ? (

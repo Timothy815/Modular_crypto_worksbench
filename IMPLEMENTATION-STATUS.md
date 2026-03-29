@@ -233,7 +233,8 @@ The next explicit verification/trust check is now also recorded:
 The next implementation-ready verification slice is now also recorded:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - defines the first bounded compare-surface refinement for known-answer verification cases
-- aims to give MCW a first real verification-station workflow without widening into scripting or formal-proof claims
+- now shipped as the first bounded verification-station workflow
+- baseline-backed stateless verification cases now support explicit input/expected-output checks with first-divergence reporting
 - expand Python export carefully second
 - refactor the largest UI surfaces third
 - keep multi-window workspace support as a deliberate next-tier priority after those lines

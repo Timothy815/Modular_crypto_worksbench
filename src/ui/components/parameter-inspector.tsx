@@ -38,6 +38,11 @@ import type { TutorialStep } from '../tutorials';
 import { ComparisonPanel } from './comparison-panel';
 import type { ComparisonBaselineDocument } from '../workbench-document';
 import type { ExecutionComparison } from '../execution-compare';
+import type {
+  VerificationCase,
+  VerificationCaseResult,
+  VerificationSourceOption,
+} from '../verification-workflow';
 import {
   buildInversePermutationOrder,
   buildIdentityPermutationOrder,
@@ -111,6 +116,9 @@ interface ParameterInspectorProps {
   executionComparison: ExecutionComparison | null;
   baselineOutput: string;
   variantOutput: string;
+  verificationSourceOptions: VerificationSourceOption[];
+  verificationCases: VerificationCase[];
+  verificationResults: VerificationCaseResult[];
   baselineExecutionError: string | null;
   baselineModuleInstance: ModuleInstance | null;
   moduleDef: ModuleDefinition | null;
@@ -145,6 +153,9 @@ interface ParameterInspectorProps {
   onRequestFocusModule?: (moduleId: string) => void;
   onCaptureBaseline: () => void;
   onClearBaseline: () => void;
+  onAddVerificationCase: (sourceModuleId: string, inputValue: string) => string | null;
+  onRemoveVerificationCase: (caseId: string) => void;
+  onClearVerificationCases: () => void;
   probedModuleIds: string[];
   isTickedMode?: boolean;
   currentTick?: number;
@@ -169,6 +180,9 @@ export function ParameterInspector({
   executionComparison,
   baselineOutput,
   variantOutput,
+  verificationSourceOptions,
+  verificationCases,
+  verificationResults,
   baselineExecutionError,
   baselineModuleInstance,
   moduleDef,
@@ -192,6 +206,9 @@ export function ParameterInspector({
   onRequestFocusModule,
   onCaptureBaseline,
   onClearBaseline,
+  onAddVerificationCase,
+  onRemoveVerificationCase,
+  onClearVerificationCases,
   probedModuleIds,
   isTickedMode = false,
   currentTick = 0,
@@ -3234,6 +3251,13 @@ export function ParameterInspector({
             comparison={executionComparison}
             onCaptureBaseline={onCaptureBaseline}
             onClearBaseline={onClearBaseline}
+            isTickedMode={isTickedMode}
+            verificationSourceOptions={verificationSourceOptions}
+            verificationCases={verificationCases}
+            verificationResults={verificationResults}
+            onAddVerificationCase={onAddVerificationCase}
+            onRemoveVerificationCase={onRemoveVerificationCase}
+            onClearVerificationCases={onClearVerificationCases}
           />
         </section>
       ) : null}

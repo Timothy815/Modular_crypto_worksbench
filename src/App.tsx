@@ -30,6 +30,12 @@ import { LearningDock } from './ui/components/learning-dock';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
 import { demoProjects, runDemoProject } from './ui/demo-projects';
 import { compareExecutionResults } from './ui/execution-compare';
+import {
+  createVerificationCaseFromBaseline,
+  evaluateVerificationCases,
+  getVerificationSourceOptions,
+  type VerificationCase,
+} from './ui/verification-workflow';
 import { clampTutorialStepIndex, getTutorialStep } from './ui/tutorials';
 import {
   downloadDocument,
@@ -510,6 +516,9 @@ function MainApp() {
   const [challengeCaptureError, setChallengeCaptureError] = useState<string | null>(null);
   const [challengeCaptureDifficulty, setChallengeCaptureDifficulty] =
     useState<'beginner' | 'intermediate' | 'expert'>('beginner');
+  const [verificationCasesByProject, setVerificationCasesByProject] = useState<
+    Record<string, VerificationCase[]>
+  >({});
   const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
   const [hoveredTraceModuleId, setHoveredTraceModuleId] = useState<string | null>(null);
   const [stepIndex, setStepIndex] = useState<number | null>(null);
@@ -777,6 +786,35 @@ function MainApp() {
     baselineExecution && execution
       ? compareExecutionResults(baselineExecution, execution)
       : null;
+  const verificationSourceOptions = useMemo(
+    () =>
+      !isTickedMode
+        ? getVerificationSourceOptions(activeProjectState, effectiveRegistry)
+        : [],
+    [activeProjectState, effectiveRegistry, isTickedMode],
+  );
+  const verificationCases = useMemo(
+    () => verificationCasesByProject[activeProjectDefinition.id] ?? [],
+    [activeProjectDefinition.id, verificationCasesByProject],
+  );
+  const verificationResults = useMemo(
+    () =>
+      !isTickedMode && comparisonBaseline
+        ? evaluateVerificationCases({
+            baselineProject: comparisonBaseline.project,
+            currentProject: activeProjectState,
+            registry: effectiveRegistry,
+            cases: verificationCases,
+          })
+        : [],
+    [
+      activeProjectState,
+      comparisonBaseline,
+      effectiveRegistry,
+      isTickedMode,
+      verificationCases,
+    ],
+  );
   const divergenceModuleId =
     executionComparison?.firstDivergence?.variant?.moduleId ??
     executionComparison?.firstDivergence?.baseline?.moduleId ??
@@ -839,6 +877,87 @@ function MainApp() {
     comparisonBaseline !== null &&
     baselineValidation?.ok === true &&
     baselineExecutionError === null;
+  const handleCaptureBaseline = useCallback(() => {
+    dispatch({
+      type: 'captureComparisonBaseline',
+      projectId: activeProjectDefinition.id,
+      capturedAt: new Date().toISOString(),
+    });
+    setVerificationCasesByProject((current) => ({
+      ...current,
+      [activeProjectDefinition.id]: [],
+    }));
+  }, [activeProjectDefinition.id]);
+  const handleClearBaseline = useCallback(() => {
+    dispatch({
+      type: 'clearComparisonBaseline',
+      projectId: activeProjectDefinition.id,
+    });
+    setVerificationCasesByProject((current) => ({
+      ...current,
+      [activeProjectDefinition.id]: [],
+    }));
+  }, [activeProjectDefinition.id]);
+  const handleAddVerificationCase = useCallback(
+    (sourceModuleId: string, inputValue: string) => {
+      if (isTickedMode) {
+        return 'Ticked verification will come in a later slice.';
+      }
+
+      if (!comparisonBaseline) {
+        return 'Capture a baseline before adding verification cases.';
+      }
+
+      const sourceOption =
+        verificationSourceOptions.find((option) => option.moduleId === sourceModuleId) ?? null;
+      if (!sourceOption) {
+        return 'Choose a supported source module for verification.';
+      }
+
+      const nextCase = createVerificationCaseFromBaseline({
+        baselineProject: comparisonBaseline.project,
+        registry: effectiveRegistry,
+        sourceOption,
+        inputValue,
+      });
+      if (!nextCase.case) {
+        return nextCase.error;
+      }
+
+      setVerificationCasesByProject((current) => ({
+        ...current,
+        [activeProjectDefinition.id]: [
+          ...(current[activeProjectDefinition.id] ?? []),
+          nextCase.case,
+        ],
+      }));
+      return null;
+    },
+    [
+      activeProjectDefinition.id,
+      comparisonBaseline,
+      effectiveRegistry,
+      isTickedMode,
+      verificationSourceOptions,
+    ],
+  );
+  const handleRemoveVerificationCase = useCallback(
+    (caseId: string) => {
+      setVerificationCasesByProject((current) => ({
+        ...current,
+        [activeProjectDefinition.id]: (current[activeProjectDefinition.id] ?? []).filter(
+          (entry) => entry.id !== caseId,
+        ),
+      }));
+    },
+    [activeProjectDefinition.id],
+  );
+  const handleClearVerificationCases = useCallback(() => {
+    setVerificationCasesByProject((current) => ({
+      ...current,
+      [activeProjectDefinition.id]: [],
+    }));
+  }, [activeProjectDefinition.id]);
   const activeTutorialStep =
     workspaceMode === 'guide' &&
     tutorialNotesVisible &&
@@ -871,6 +990,9 @@ function MainApp() {
       executionComparison,
       baselineOutput: baselineExecution ? executionComparison?.baselineOutput.formatted ?? 'n/a' : 'blocked',
       variantOutput: execution ? executionComparison?.variantOutput.formatted ?? 'n/a' : 'blocked',
+      verificationSourceOptions,
+      verificationCases,
+      verificationResults,
       baselineExecutionError,
       baselineModuleId: baselineSelectedModule?.id ?? null,
       selectedModuleId: selectedModule?.id ?? null,
@@ -915,6 +1037,9 @@ function MainApp() {
       executionError,
       isTickedMode,
       parameterClipboard,
+      verificationCases,
+      verificationResults,
+      verificationSourceOptions,
       requestedWorkspaceFocusModuleId,
       selectedModule,
       state.compositeEditor,
@@ -1733,17 +1858,22 @@ function MainApp() {
             setRequestedWorkspaceFocusModuleId(message.command.moduleId);
             return;
           case 'captureBaseline':
-            dispatch({
-              type: 'captureComparisonBaseline',
-              projectId: activeProjectDefinition.id,
-              capturedAt: new Date().toISOString(),
-            });
+            handleCaptureBaseline();
             return;
           case 'clearBaseline':
-            dispatch({
-              type: 'clearComparisonBaseline',
-              projectId: activeProjectDefinition.id,
-            });
+            handleClearBaseline();
+            return;
+          case 'addVerificationCase':
+            handleAddVerificationCase(
+              message.command.sourceModuleId,
+              message.command.inputValue,
+            );
+            return;
+          case 'removeVerificationCase':
+            handleRemoveVerificationCase(message.command.caseId);
+            return;
+          case 'clearVerificationCases':
+            handleClearVerificationCases();
             return;
           case 'unzipComposite':
             handleUnzipComposite(message.command.moduleId);
@@ -1975,7 +2105,12 @@ function MainApp() {
     detachedPanelGroups,
     detachedPayloadByKind,
     effectiveRegistry,
+    handleAddVerificationCase,
+    handleCaptureBaseline,
+    handleClearBaseline,
+    handleClearVerificationCases,
     handleOpenPrimitiveMicroDemo,
+    handleRemoveVerificationCase,
     handleUnzipComposite,
     selectedChallenge,
     selectedModule,
@@ -2784,6 +2919,9 @@ function MainApp() {
                     ? executionComparison?.variantOutput.formatted ?? 'n/a'
                     : 'blocked'
                 }
+                verificationSourceOptions={verificationSourceOptions}
+                verificationCases={verificationCases}
+                verificationResults={verificationResults}
                 baselineExecutionError={baselineExecutionError}
                 moduleDef={selectedModuleDef}
                 moduleInstance={selectedModule}
@@ -2881,19 +3019,11 @@ function MainApp() {
                 onStepChange={syncTutorialStepFromTrace}
                 onActiveAnalysisTraceChange={setActiveAnalysisTraceEntry}
                 onRequestFocusModule={setRequestedWorkspaceFocusModuleId}
-                onCaptureBaseline={() =>
-                  dispatch({
-                    type: 'captureComparisonBaseline',
-                    projectId: activeProjectDefinition.id,
-                    capturedAt: new Date().toISOString(),
-                  })
-                }
-                onClearBaseline={() =>
-                  dispatch({
-                    type: 'clearComparisonBaseline',
-                    projectId: activeProjectDefinition.id,
-                  })
-                }
+                onCaptureBaseline={handleCaptureBaseline}
+                onClearBaseline={handleClearBaseline}
+                onAddVerificationCase={handleAddVerificationCase}
+                onRemoveVerificationCase={handleRemoveVerificationCase}
+                onClearVerificationCases={handleClearVerificationCases}
                 probedModuleIds={state.probedModuleIdsByProject[activeProjectDefinition.id] ?? []}
                 isTickedMode={isTickedMode}
                 currentTick={effectiveCurrentTick}

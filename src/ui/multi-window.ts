@@ -6,6 +6,11 @@ import type { GuidedTutorial } from './tutorials';
 import type { GuidedChallenge, ChallengeEvaluation } from './challenges';
 import type { ComparisonBaselineDocument } from './workbench-document';
 import type { ExecutionComparison } from './execution-compare';
+import type {
+  VerificationCase,
+  VerificationCaseResult,
+  VerificationSourceOption,
+} from './verification-workflow';
 import type { WorkbenchAnnotation } from './workbench-document';
 import type { WorkspaceMode } from './workspace-mode';
 
@@ -39,6 +44,9 @@ export interface DetachedInspectorSnapshot {
   executionComparison: ExecutionComparison | null;
   baselineOutput: string;
   variantOutput: string;
+  verificationSourceOptions: VerificationSourceOption[];
+  verificationCases: VerificationCase[];
+  verificationResults: VerificationCaseResult[];
   baselineExecutionError: string | null;
   baselineModuleId: string | null;
   selectedModuleId: string | null;
@@ -136,6 +144,9 @@ export type DetachedPanelCommand =
   | { type: 'requestFocusModule'; moduleId: string }
   | { type: 'captureBaseline' }
   | { type: 'clearBaseline' }
+  | { type: 'addVerificationCase'; sourceModuleId: string; inputValue: string }
+  | { type: 'removeVerificationCase'; caseId: string }
+  | { type: 'clearVerificationCases' }
   | { type: 'unzipComposite'; moduleId: string }
   | { type: 'setLearningTab'; tab: 'tutorial' | 'challenge' }
   | { type: 'selectChallenge'; challengeId: string }

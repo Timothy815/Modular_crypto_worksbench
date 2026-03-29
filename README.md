@@ -40,8 +40,8 @@ The current explicit trust/coherence follow-on after that is:
 
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
-- a bounded verification-station refinement inside the compare/analyze line
-- intended to let users run explicit known-answer cases against the current workspace
+- now shipped as the first bounded verification-station refinement inside the compare/analyze line
+- lets users run baseline-backed stateless known-answer cases against the current workspace with first-divergence reporting
 
 The current checkpointing follow-on after that is:
 - named workspace versions / restore points
