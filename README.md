@@ -43,6 +43,11 @@ The current implementation-ready trust follow-on after that is:
 - now shipped as the first bounded verification-station refinement inside the compare/analyze line
 - lets users run baseline-backed stateless known-answer cases against the current workspace with first-divergence reporting
 
+The next bounded trust follow-on after that is now explicitly recorded as:
+- `VERIFIED-MACHINE-TICKED-WORKFLOW-V1.md`
+- extends the verification station into bounded temporal/ticked cases
+- aims to make MCW’s stateful-machine trust story explicit without widening into a general test harness
+
 The current checkpointing follow-on after that is:
 - named workspace versions / restore points
 - explicit `Save Version` and `Restore` workflow per workspace

@@ -235,6 +235,11 @@ The next implementation-ready verification slice is now also recorded:
 - defines the first bounded compare-surface refinement for known-answer verification cases
 - now shipped as the first bounded verification-station workflow
 - baseline-backed stateless verification cases now support explicit input/expected-output checks with first-divergence reporting
+
+The next bounded verification slice after that is now also recorded:
+- `VERIFIED-MACHINE-TICKED-WORKFLOW-V1.md`
+- extends the verification station into bounded temporal/ticked cases
+- targets first-divergence reporting across time without widening into a general test harness
 - expand Python export carefully second
 - refactor the largest UI surfaces third
 - keep multi-window workspace support as a deliberate next-tier priority after those lines

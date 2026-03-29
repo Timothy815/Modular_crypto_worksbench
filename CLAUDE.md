@@ -37,6 +37,7 @@ Read V2.0-RELEASE-NOTES.md for the official meaning of `v2.0.0`.
 Read SYSTEMS-IDE-COHERENCE-V1.md before reframing MCW’s global north star, reordering major product lines by product identity rather than local leverage, or proposing a coherence-first consolidation pass after the recent Python-export and multi-window milestones.
 Read VERIFIED-MACHINE-COHERENCE-V1.md before reframing compare/trace/export as a unified verification story, defining what “verified” should mean in MCW, or proposing trust-first follow-on work after the current Python-export and multi-window milestones.
 Read VERIFIED-MACHINE-WORKFLOW-V1.md before extending compare/analyze into a first-class verification station, adding known-answer verification cases, or proposing pass/fail reference checking against the current workspace.
+Read VERIFIED-MACHINE-TICKED-WORKFLOW-V1.md before extending the verification station into temporal/ticked machines, adding bounded multi-tick known-answer verification cases, or proposing tick-aware first-divergence trust workflows for stateful machines.
 Read V2.1-AUTHORING-POWER-PLAN.md before proposing the first post-`v2.0.0` builder-power line.
 Read REPEATED-STRUCTURE-AUTHORING-V1.md before changing same-workspace cluster duplication, repeated-structure authoring, or first-wave `v2.1` builder acceleration.
 Read SELECTED-CLUSTER-OPERATIONS-V1.md before changing drag-box selection, selected-cluster deletion, or the second bounded `v2.1` authoring-power slice.
