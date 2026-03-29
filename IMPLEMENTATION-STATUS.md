@@ -224,6 +224,11 @@ The next explicit north-star check is now recorded:
 - `SYSTEMS-IDE-COHERENCE-V1.md`
 - defines a bounded product-shaping pass for deciding what MCW most clearly is now
 - treats future prioritization as a coherence question rather than a novelty question
+
+The next explicit verification/trust check is now also recorded:
+- `VERIFIED-MACHINE-COHERENCE-V1.md`
+- defines a bounded pass for deciding what “verified” should mean inside MCW
+- treats compare, trace, and export as parts of one trust story rather than disconnected features
 - expand Python export carefully second
 - refactor the largest UI surfaces third
 - keep multi-window workspace support as a deliberate next-tier priority after those lines

@@ -33,6 +33,11 @@ The current explicit north-star check after the major Python-export and multi-wi
 - a bounded product-shaping pass for deciding what MCW most clearly is now
 - intended to protect product identity as breadth increases
 
+The current explicit trust/coherence follow-on after that is:
+- `VERIFIED-MACHINE-COHERENCE-V1.md`
+- a bounded verification/trust pass for deciding what “verified” should mean in MCW
+- intended to turn compare, trace, and export into a clearer user trust story
+
 The current checkpointing follow-on after that is:
 - named workspace versions / restore points
 - explicit `Save Version` and `Restore` workflow per workspace
