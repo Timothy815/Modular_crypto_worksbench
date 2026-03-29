@@ -1,6 +1,6 @@
 # AI-TOOLKIT-V1
 
-Status: Proposed
+Status: Shipped
 
 Owner: Codex
 Scope: UI / Export / Product Surface
@@ -47,21 +47,23 @@ The package should function as an AI-facing authoring reference, not as an embed
 ## Required V1 Shape
 
 1. `Resources` must include an `AI Toolkit` action.
-2. That action must download a bounded package, not open a third-party AI site directly.
+2. That action must download one self-contained toolkit file (`.md`), not open a third-party AI site directly and not hand off a multi-file bundle.
 3. The package must include:
    - a concise system/use prompt for an external LLM
-   - MCW document-shape guidance for workspace JSON
-   - challenge-document guidance for challenge JSON
+   - actual TypeScript interface definitions for the bounded workspace and challenge JSON shapes
    - a bounded feature inventory of currently supported primitives and structured authoring features
-   - explicit rules about typed signals and no hidden conversions
+   - explicit connection and signal-domain rules, including no hidden conversions
+   - minimal worked examples for workspace and challenge artifacts
 4. The package must be designed for external model prompting, not for machine execution by MCW itself.
-5. The package must be extendable as MCW grows.
+5. The primitive inventory must be derived from the live registry rather than maintained as a second handwritten catalog.
+6. The package must be extendable as MCW grows.
 6. The package must clearly distinguish:
    - what an AI may generate
    - what the user must still verify inside MCW
 7. The toolkit must present MCW as a graph-based systems IDE, not as a freeform code interpreter.
 8. The toolkit must explicitly instruct the external model to emit valid MCW JSON artifacts rather than prose when requested.
-9. The toolkit must stay bounded. It should be a reference pack, not a full documentation mirror.
+9. The toolkit must include a generation date stamp and stay compact enough for direct LLM prompting.
+10. The toolkit must stay bounded. It should be a reference pack, not a full documentation mirror.
 
 ## Expected V1 Package Contents
 
@@ -75,21 +77,19 @@ A reusable prompt scaffold that tells an external model:
 
 ### Workspace JSON Guide
 
-A bounded explanation of:
+A bounded schema section containing the actual TypeScript interfaces for:
 - `WorkbenchDocument`
-- `project`
-- `modules`
-- `connections`
-- `ui.layout`
-- `ui.annotations`
+- `Project`
+- `ModuleInstance`
+- `Connection`
+- `WorkbenchPosition`
+- `WorkbenchAnnotation`
 
 ### Challenge JSON Guide
 
-A bounded explanation of:
-- guided challenge shape
-- starting project vs target project
-- hints
-- challenge intent
+A bounded schema section containing the actual TypeScript interfaces for:
+- `GuidedChallenge`
+- `ChallengeSuccessCondition`
 
 ### Feature Inventory
 
@@ -99,18 +99,27 @@ A concise AI-facing summary of:
 - stateful vs stateless expectations
 - learning/verification/export-relevant surfaces only where useful for generation
 
+The primitive inventory must be auto-generated from the live module registry and include:
+- module id
+- input ports with signal types
+- output ports with signal types
+- key params when present
+
 ### Worked Examples
 
-A small number of examples showing:
-- one simple workspace JSON
-- one structured machine example
+A small number of minimal examples showing:
+- one simple workspace JSON (~3-5 modules, including layout)
+- one structured machine example (~5-8 modules)
 - one challenge-document example
+
+Examples must use the fewest modules needed to demonstrate the pattern and must not become a token-heavy demo library.
 
 ## UX Rules
 
 - The user should be able to find the toolkit from `Resources` without coaching.
 - The toolkit should feel like a practical handoff pack, not like raw internal notes.
 - The content should be concise enough to paste into an external AI workflow.
+- The content should fit comfortably as a one-file prompt pack rather than a documentation dump.
 - The package should clearly warn that generated layouts still need validation and human review inside MCW.
 
 ## Success Condition
@@ -134,3 +143,10 @@ The value is:
 The trust boundary must remain explicit:
 - AI can propose layouts
 - MCW still validates, runs, verifies, and exports them
+
+## Non-Goals Clarified
+
+- No multi-file bundle or ZIP for V1
+- No hand-maintained primitive reference that duplicates the registry manually
+- No exhaustive per-primitive manual pages
+- No provider-specific prompt variants in V1

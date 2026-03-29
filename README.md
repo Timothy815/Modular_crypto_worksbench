@@ -70,8 +70,8 @@ The next bounded product-help refinement after that is now explicitly recorded a
 
 The next bounded AI-facing handoff refinement after that is now explicitly recorded as:
 - `AI-TOOLKIT-V1.md`
-- adds a `Resources` entry for downloading an external-LLM toolkit package
-- targets promptable generation of MCW workspace and challenge JSON without embedding a chatbot inside the product
+- now shipped as a `Resources` entry for downloading a single-file external-LLM toolkit prompt pack
+- includes live primitive inventory, actual JSON/interface shapes, explicit connection rules, and minimal examples for workspace/challenge generation without embedding a chatbot inside the product
 
 The current checkpointing follow-on after that is:
 - named workspace versions / restore points

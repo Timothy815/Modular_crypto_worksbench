@@ -40,6 +40,7 @@ import {
 import { clampTutorialStepIndex, getTutorialStep } from './ui/tutorials';
 import {
   downloadDocument,
+  downloadAiToolkitDocument,
   downloadPythonExportBundle,
   downloadCompositeLibraryDocument,
   downloadGuidedChallengeDocument,
@@ -2310,10 +2311,13 @@ function MainApp() {
                     'mcw-user-manual',
                     'noopener,noreferrer,width=1320,height=900',
                   );
+                } else if (value === 'ai-toolkit') {
+                  downloadAiToolkitDocument();
                 }
               }}
             >
               <option value="">Open…</option>
+              <option value="ai-toolkit">AI Toolkit</option>
               <option value="user-manual">User Manual</option>
               <option value="notes">Notes</option>
               <option value="repo">Repository</option>

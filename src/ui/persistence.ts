@@ -11,6 +11,7 @@ import type { GuidedTutorial } from './tutorials';
 import { STARTER_COMPOSITE_LIBRARY } from './starter-composites';
 import { STARTER_CHALLENGES } from './starter-challenges';
 import { STARTER_TUTORIALS } from './starter-tutorials';
+import { generateAiToolkitDocument, getAiToolkitFileName } from './ai-toolkit';
 import type { UiState } from './store';
 import type {
   ComparisonBaselineDocument,
@@ -563,6 +564,18 @@ export function downloadPythonDocument(fileName: string, source: string): void {
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = fileName;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+export function downloadAiToolkitDocument(): void {
+  const blob = new Blob([generateAiToolkitDocument()], {
+    type: 'text/markdown;charset=utf-8',
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = getAiToolkitFileName();
   anchor.click();
   URL.revokeObjectURL(url);
 }
