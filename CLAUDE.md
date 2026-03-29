@@ -14,6 +14,7 @@ Read POST-COLLISION-INTERPRETATION-V1.md before extending the collision-teaching
 Read CUSTOM-SBOX-AUTHORING-V1.md before starting work on editable substitution-table authoring.
 Read SBOX-TABLE-TRANSFORMS-V1.md before starting work on bounded transform operations for authored `SBox` tables.
 Read POLLUX-FRACTIONATION-V1.md before starting work on classical fractionation, homophonic encoding, or Pollux-style bit-to-symbol disguise primitives.
+Read POLLUX-INVERSE-V1.md before starting work on inverse Pollux decoding, Pollux round-trip workflows, or symbol-to-bit recovery using known Pollux alphabets.
 Read PRNG-TEACHING-WORKSPACE-V1.md before starting work on bounded PRNG teaching demos, visible generator comparison workspaces, or any broader “what makes a generator good or bad” educational slice.
 Read TRANSFORMATION-VISUALIZATION-V1.md before starting work on primitive-level drill-down or transformation-legibility features.
 Read SBOX-TRANSFORMATION-V1.md before starting work on the first S-Box transformation view.

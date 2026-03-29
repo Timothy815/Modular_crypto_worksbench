@@ -682,6 +682,7 @@ Implemented and shipped:
 - `CUSTOM-PERMUTATION-AUTHORING-V1.md`: shipped bounded tactile authoring slice for editable routing/permutation design inside the workbench
 - `CUSTOM-REFLECTOR-AUTHORING-V1.md`: shipped bounded tactile authoring slice for paired reflector wiring inside the workbench
 - `POLLUX-FRACTIONATION-V1.md`: shipped bounded classical fractionation / homophonic-encoding primitive for disjoint bit-to-symbol output sets
+- `POLLUX-INVERSE-V1.md`: proposed bounded inverse Pollux primitive for symbol-to-bit recovery using known zero/one alphabets
 - `PRNG-TEACHING-WORKSPACE-V1.md`: shipped bounded teaching-workspace line for comparing visible pseudo-random generator constructions without making CSPRNG claims
 - `WORKBENCH-ERGONOMICS-V1.md`: shipped bounded workbench-usability slice for multi-select, group movement, and one-click cleanup
 - `WORKSPACE-LIBRARY-V1.md`: shipped bounded workspace-management slice for blank build spaces and saved personal collections
