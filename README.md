@@ -48,6 +48,11 @@ The next bounded trust follow-on after that is now explicitly recorded as:
 - now shipped as the bounded temporal/ticked follow-on to the verification station
 - adds explicit tick-count cases, collected-output pass/fail, and first divergence by tick/module
 
+The next export/trust follow-on after that is now explicitly recorded as:
+- `EXPORT-ENGINE-PARITY-WORKFLOW-V1.md`
+- defines the first bounded user-facing workflow for checking exported Python against live MCW behavior
+- keeps export trust inside the verification/product line without widening into arbitrary external execution
+
 The current checkpointing follow-on after that is:
 - named workspace versions / restore points
 - explicit `Save Version` and `Restore` workflow per workspace

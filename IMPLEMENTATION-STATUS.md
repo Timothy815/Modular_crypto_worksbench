@@ -240,6 +240,11 @@ The next bounded verification slice after that is now also recorded:
 - `VERIFIED-MACHINE-TICKED-WORKFLOW-V1.md`
 - now shipped as the bounded temporal/ticked verification follow-on
 - adds explicit tick-count cases, collected-output pass/fail, and first-divergence reporting by tick/module
+
+The next export/trust slice after that is now also recorded:
+- `EXPORT-ENGINE-PARITY-WORKFLOW-V1.md`
+- defines the first bounded user-facing workflow for checking exported Python against live MCW behavior
+- keeps export trust inside the verification/product line without widening into arbitrary external execution
 - expand Python export carefully second
 - refactor the largest UI surfaces third
 - keep multi-window workspace support as a deliberate next-tier priority after those lines
