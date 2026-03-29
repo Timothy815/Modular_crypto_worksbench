@@ -98,6 +98,21 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         ],
       },
       {
+        id: 'classical-flagship-lab',
+        title: 'The Classical Flagship Lab',
+        body:
+          'MCW’s classical flagship path is a numbered rotor lab sequence, not a museum tour. Start with [LAB-1.1] to read the forward rotor, reflector, and inverse return path as one honest machine. Continue into [LAB-1.2] to inspect ring setting, turnover, and the double-step as visible stepping logic instead of folklore. Then use the linked repair challenges to fix a wrong notch and a wrong ring-setting-versus-position configuration. The capstone is [LAB-1.3], where you capture a verification case, export the machine to Python, and either run verify_parity.py locally or explain the parity handoff if Python is unavailable. The point of the sequence is to prove that a mechanical cipher can be built, debugged, verified, and exported as one coherent glass-box system.',
+        indexTerms: [
+          'classical flagship lab',
+          'rotor lab',
+          'enigma lab',
+          'double-step',
+          'ring setting',
+          'return path',
+          'verify_parity.py',
+        ],
+      },
+      {
         id: 'visible-prng-labs',
         title: 'Visible PRNG Labs',
         body:

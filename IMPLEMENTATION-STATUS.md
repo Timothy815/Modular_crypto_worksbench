@@ -1003,7 +1003,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `POLLUX-INVERSE-V1.md` | Shipped bounded inverse Pollux primitive for symbol-to-bit recovery using known zero/one alphabets |
 | `POLLUX-ROUNDTRIP-CONTENT-V1.md` | Implemented Pollux round-trip teaching-content slice for explicit encode/decode demo flow, alphabet-agreement repair challenge, and manual support |
 | `FIRST-SESSION-ONBOARDING-V1.md` | Implemented bounded onboarding slice for visible `Start Here` guidance, first-session workflow orientation, and stronger handoffs between existing learning/help surfaces |
-| `FLAGSHIP-LAB-CLASSICAL-V1.md` | Proposed classroom-first classical flagship sequence built from the rotor / Enigma-style line, linked challenges, verification, and export/parity trust handoff |
+| `FLAGSHIP-LAB-CLASSICAL-V1.md` | Shipped classroom-first classical flagship sequence built from the rotor / Enigma-style line, linked challenges, verification, export/parity trust handoff, and searchable lab-numbered demos |
 | `PRNG-TEACHING-WORKSPACE-V1.md` | Shipped bounded teaching-workspace line for comparing visible pseudo-random generator constructions without making CSPRNG claims |
 | `WORKBENCH-ERGONOMICS-V1.md` | Shipped in `v1.13.0` as bounded workbench usability improvements |
 | `WORKSPACE-LIBRARY-V1.md` | Shipped in `v1.13.0` as bounded blank/save/delete user workspace management |

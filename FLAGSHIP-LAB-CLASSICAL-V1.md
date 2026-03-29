@@ -1,6 +1,6 @@
 # FLAGSHIP-LAB-CLASSICAL-V1
 
-Status: Proposed
+Status: Implemented
 
 Owner: Codex
 Scope: Classical Flagship Sequence / Tutorials / Challenges / Verification / Manual

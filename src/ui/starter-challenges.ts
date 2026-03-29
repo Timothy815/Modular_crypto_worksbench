@@ -251,6 +251,7 @@ const routedClockKeystreamTarget = cloneProject(routedClockKeystreamProject.proj
 const brokenRoutedClockKeystreamStart = cloneProject(routedClockKeystreamProject.project);
 const advancedRotorSteppingTarget = cloneProject(advancedRotorSteppingProject.project);
 const brokenAdvancedRotorSteppingStart = cloneProject(advancedRotorSteppingProject.project);
+const brokenRotorRingSettingStart = cloneProject(advancedRotorSteppingProject.project);
 const visibleSymbolScrambleTarget = cloneProject(visibleSymbolScrambleProject.project);
 const brokenVisibleSymbolScrambleStart = cloneProject(visibleSymbolScrambleProject.project);
 const visibleSubkeyBusTarget = cloneProject(visibleSubkeyBusProject.project);
@@ -352,6 +353,15 @@ if (!brokenMiddleRotor) {
   throw new Error('Expected advanced-rotor-stepping demo project to contain a middle rotor.');
 }
 brokenMiddleRotor.params.notches = 'F';
+
+const brokenLeftRotorForRingSetting = brokenRotorRingSettingStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'left',
+);
+if (!brokenLeftRotorForRingSetting) {
+  throw new Error('Expected advanced-rotor-stepping demo project to contain a left rotor.');
+}
+brokenLeftRotorForRingSetting.params.position = 2;
+brokenLeftRotorForRingSetting.params.ringOffset = 0;
 
 const brokenSymbolPermutation = brokenVisibleSymbolScrambleStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'permute',
@@ -1420,9 +1430,12 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
   {
     version: 1,
     id: 'repair-rotor-notch',
-    title: 'Repair the Rotor Notch',
+    title: '[LAB-1.2A] Repair the Rotor Notch',
     projectId: 'advanced-rotor-stepping',
     group: 'Rotor Realism',
+    stage: 'rotor-realism-and-mechanized-systems',
+    order: 180,
+    recommendedAfter: ['advanced-rotor-stepping'],
     difficulty: 'expert',
     prompt:
       'This stepped rotor machine still has the right wiring, clock, and gate layout, but the middle rotor is turning over at the wrong window letter. Restore the notch so the visible stepping pattern and output stream match the reference machine again.',
@@ -1436,6 +1449,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The OR and Gate wiring are already correct; the mistake lives inside the middle rotor params.',
       'Watch when the left gate opens. It should happen when the middle rotor turnover bit goes active, not one tick later.',
       'A wrong notch changes the stepping rhythm even if every wiring table stays the same.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-ring-setting-vs-position',
+    title: '[LAB-1.2B] Repair Ring Setting Versus Position',
+    projectId: 'advanced-rotor-stepping',
+    group: 'Rotor Realism',
+    stage: 'rotor-realism-and-mechanized-systems',
+    order: 185,
+    recommendedAfter: ['repair-rotor-notch'],
+    difficulty: 'expert',
+    prompt:
+      'This stepped rotor machine still has the right wiring, notches, and clock logic, but the left rotor was configured as if position and ring setting meant the same thing. Restore the correct ringOffset and position so the captured reference output matches again.',
+    startingProject: brokenRotorRingSettingStart,
+    startingLayout: cloneProject(advancedRotorSteppingProject.layout),
+    targetProject: advancedRotorSteppingTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Use Compare or Verification first: this lab is about parameter agreement, not rewiring the graph.',
+      'The left rotor should keep the same visible window position as the target machine while its ringOffset handles the separate alignment shift.',
+      'Position changes over time. Ring Offset changes the mapping without pretending to be the same motion.',
     ],
   },
   {

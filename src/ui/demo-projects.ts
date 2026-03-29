@@ -2214,11 +2214,11 @@ export const demoProjects: DemoProject[] = [
   },
   {
     id: 'rotor-return-path',
-    name: 'Rotor Return Path',
+    name: '[LAB-1.1] Rotor Return Path',
     group: 'Rotor Realism',
     stage: 'rotor-realism-and-mechanized-systems',
-    order: 110,
-    recommendedAfter: ['advanced-rotor-stepping'],
+    order: 170,
+    recommendedAfter: ['bridge'],
     summary: 'A minimal Enigma-style path showing why the signal must return through the inverse rotor mapping after reflection.',
     pipeline: 'TextInput -> Rotor -> Reflector -> RotorReverse -> TextOutput',
     project: {
@@ -2269,7 +2269,11 @@ export const demoProjects: DemoProject[] = [
   },
   {
     id: 'advanced-rotor-stepping',
-    name: 'Advanced Rotor Stepping',
+    name: '[LAB-1.2] Advanced Rotor Stepping',
+    group: 'Rotor Realism',
+    stage: 'rotor-realism-and-mechanized-systems',
+    order: 180,
+    recommendedAfter: ['rotor-return-path'],
     summary: 'A bounded three-rotor machine with explicit turnover wiring, ring setting, and visible double-step control.',
     pipeline: 'TextInput -> Rotor -> Rotor -> Rotor -> TextOutput, with Clock -> Rotor Double-Step Control -> middle rotor and explicit left gate turnover',
     project: {
