@@ -102,6 +102,15 @@ import {
   PERMUTATION_EDITOR_PORT_HEIGHT,
   stepHexString,
 } from '../inspector-analysis';
+import {
+  getSBoxGridColumn,
+  getSBoxGridColumns,
+  getSBoxGridRow,
+  rotateSBoxColumn,
+  rotateSBoxRow,
+  swapSBoxColumns,
+  swapSBoxRows,
+} from '../sbox-transforms';
 
 interface ParameterInspectorProps {
   execution: ExecutionResult | null;
@@ -2533,7 +2542,15 @@ export function ParameterInspector({
                       : 0;
                   const selectedEntryValue = editableTable?.[selectedEntryIndex] ?? 0;
                   const usesHexGrid = editableTable?.length === 256;
-                  const gridColumns = editableTable ? Math.min(16, Math.max(1, Math.sqrt(editableTable.length))) : 4;
+                  const gridColumns = editableTable ? getSBoxGridColumns(editableTable.length) : 4;
+                  const selectedRow = getSBoxGridRow(selectedEntryIndex, gridColumns);
+                  const selectedColumn = getSBoxGridColumn(selectedEntryIndex, gridColumns);
+                  const rowCount = editableTable ? Math.ceil(editableTable.length / gridColumns) : 0;
+                  const applyNextTable = (nextTable: number[]) => {
+                    const serialized = serializeSBoxTable(nextTable);
+                    onParamDraftChange(moduleInstance.id, field.key, serialized);
+                    onParamChange(moduleInstance.id, field.key, serialized);
+                  };
 
                   return (
                     <label key={field.key} className="param-field">
@@ -2550,9 +2567,7 @@ export function ParameterInspector({
                               type="button"
                               className="mini-action-button"
                               onClick={() => {
-                                const nextValue = serializeSBoxTable(buildIdentitySBoxTable(editableTable.length));
-                                onParamDraftChange(moduleInstance.id, field.key, nextValue);
-                                onParamChange(moduleInstance.id, field.key, nextValue);
+                                applyNextTable(buildIdentitySBoxTable(editableTable.length));
                               }}
                             >
                               Reset To Identity
@@ -2561,18 +2576,64 @@ export function ParameterInspector({
                               type="button"
                               className="mini-action-button"
                               onClick={() => {
-                                const nextValue = serializeSBoxTable(buildReverseSBoxTable(editableTable.length));
-                                onParamDraftChange(moduleInstance.id, field.key, nextValue);
-                                onParamChange(moduleInstance.id, field.key, nextValue);
+                                applyNextTable(buildReverseSBoxTable(editableTable.length));
                               }}
                             >
                               Reset To Reverse
+                            </button>
+                            <button
+                              type="button"
+                              className="mini-action-button"
+                              onClick={() =>
+                                applyNextTable(
+                                  rotateSBoxRow(editableTable, selectedRow, gridColumns, 'left'),
+                                )
+                              }
+                            >
+                              Rotate Row Left
+                            </button>
+                            <button
+                              type="button"
+                              className="mini-action-button"
+                              onClick={() =>
+                                applyNextTable(
+                                  rotateSBoxRow(editableTable, selectedRow, gridColumns, 'right'),
+                                )
+                              }
+                            >
+                              Rotate Row Right
+                            </button>
+                            <button
+                              type="button"
+                              className="mini-action-button"
+                              onClick={() =>
+                                applyNextTable(
+                                  rotateSBoxColumn(editableTable, selectedColumn, gridColumns, 'up'),
+                                )
+                              }
+                            >
+                              Rotate Column Up
+                            </button>
+                            <button
+                              type="button"
+                              className="mini-action-button"
+                              onClick={() =>
+                                applyNextTable(
+                                  rotateSBoxColumn(editableTable, selectedColumn, gridColumns, 'down'),
+                                )
+                              }
+                            >
+                              Rotate Column Down
                             </button>
                           </div>
                           <div className="sbox-editor-meta">
                             <span className="content-status-chip">{editableTable.length} entries</span>
                             <span className="content-status-chip">
                               Safe edit mode swaps entries so the table stays a valid permutation
+                            </span>
+                            <span className="content-status-chip">
+                              Active row {formatSBoxAxisLabel(selectedRow, gridColumns)} · column{' '}
+                              {formatSBoxAxisLabel(selectedColumn, gridColumns)}
                             </span>
                           </div>
                           <div
@@ -2588,7 +2649,13 @@ export function ParameterInspector({
                             {editableTable.map((entryValue, index) => (
                               <Fragment key={`sbox-editor-cell-wrap-${index}`}>
                                 {index % gridColumns === 0 ? (
-                                  <span className="sbox-table-header sbox-table-row-header">
+                                  <span
+                                    className={
+                                      Math.floor(index / gridColumns) === selectedRow
+                                        ? 'sbox-table-header sbox-table-row-header active'
+                                        : 'sbox-table-header sbox-table-row-header'
+                                    }
+                                  >
                                     {formatSBoxAxisLabel(Math.floor(index / gridColumns), gridColumns)}
                                   </span>
                                 ) : null}
@@ -2597,6 +2664,9 @@ export function ParameterInspector({
                                   className={
                                     index === selectedEntryIndex
                                       ? 'sbox-table-cell active sbox-editor-cell'
+                                      : Math.floor(index / gridColumns) === selectedRow ||
+                                          index % gridColumns === selectedColumn
+                                        ? 'sbox-table-cell context sbox-editor-cell'
                                       : 'sbox-table-cell sbox-editor-cell'
                                   }
                                   onClick={() => setRequestedSBoxEditIndex(index)}
@@ -2629,14 +2699,9 @@ export function ParameterInspector({
                                 value={String(selectedEntryValue)}
                                 onChange={(event) => {
                                   const nextEntryValue = Number(event.target.value);
-                                  const nextTable = swapSBoxEntry(
-                                    editableTable,
-                                    selectedEntryIndex,
-                                    nextEntryValue,
+                                  applyNextTable(
+                                    swapSBoxEntry(editableTable, selectedEntryIndex, nextEntryValue),
                                   );
-                                  const serialized = serializeSBoxTable(nextTable);
-                                  onParamDraftChange(moduleInstance.id, field.key, serialized);
-                                  onParamChange(moduleInstance.id, field.key, serialized);
                                 }}
                               >
                                 {editableTable.map((_, optionValue) => (
@@ -2644,6 +2709,51 @@ export function ParameterInspector({
                                     {usesHexGrid
                                       ? `0x${formatSBoxHexValue(optionValue, 8)} · ${optionValue}`
                                       : optionValue}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <label className="param-field sbox-editor-select">
+                              <span>Swap selected row with</span>
+                              <select
+                                value={String(selectedRow)}
+                                onChange={(event) => {
+                                  const nextRow = Number(event.target.value);
+                                  applyNextTable(
+                                    swapSBoxRows(editableTable, selectedRow, nextRow, gridColumns),
+                                  );
+                                }}
+                              >
+                                {Array.from({ length: rowCount }, (_, rowIndex) => (
+                                  <option key={`sbox-editor-row-${rowIndex}`} value={rowIndex}>
+                                    {usesHexGrid
+                                      ? `row 0x${formatSBoxAxisLabel(rowIndex, gridColumns)}`
+                                      : `row ${rowIndex}`}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <label className="param-field sbox-editor-select">
+                              <span>Swap selected column with</span>
+                              <select
+                                value={String(selectedColumn)}
+                                onChange={(event) => {
+                                  const nextColumn = Number(event.target.value);
+                                  applyNextTable(
+                                    swapSBoxColumns(
+                                      editableTable,
+                                      selectedColumn,
+                                      nextColumn,
+                                      gridColumns,
+                                    ),
+                                  );
+                                }}
+                              >
+                                {Array.from({ length: gridColumns }, (_, columnIndex) => (
+                                  <option key={`sbox-editor-column-${columnIndex}`} value={columnIndex}>
+                                    {usesHexGrid
+                                      ? `column 0x${formatSBoxAxisLabel(columnIndex, gridColumns)}`
+                                      : `column ${columnIndex}`}
                                   </option>
                                 ))}
                               </select>

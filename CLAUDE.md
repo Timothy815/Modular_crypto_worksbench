@@ -12,6 +12,7 @@ Read HASH-COLLISION-CHALLENGE-V1.md before starting work on the first post-`v1.7
 Read SPONGE-COLLISION-CHALLENGE-V1.md before starting work on the bounded sponge-collision follow-on.
 Read POST-COLLISION-INTERPRETATION-V1.md before extending the collision-teaching line beyond the shipped nudges/comparison slice.
 Read CUSTOM-SBOX-AUTHORING-V1.md before starting work on editable substitution-table authoring.
+Read SBOX-TABLE-TRANSFORMS-V1.md before starting work on bounded transform operations for authored `SBox` tables.
 Read TRANSFORMATION-VISUALIZATION-V1.md before starting work on primitive-level drill-down or transformation-legibility features.
 Read SBOX-TRANSFORMATION-V1.md before starting work on the first S-Box transformation view.
 Read CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md before starting work on new primitive-language families, operator/control expansion, or long-range roadmap framing.
