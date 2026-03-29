@@ -246,6 +246,12 @@ Current `main` now also includes that detached-window polish slice:
 - updates detached browser titles to track active tab plus grouped context
 - keeps the multi-window line inside polish and product-surface refinement rather than broader expansion
 
+Next multi-window expansion is now recorded:
+- `MULTI-WINDOW-COMBINED-VIEWS-V1.md`
+- allows one detached window to show multiple supported panes simultaneously
+- keeps the pane family bounded to `Palette`, `Inspector`, and `Learning`
+- treats combined visible mode as the next deliberate expansion rather than a generalized docking jump
+
 Current `main` now also includes the first App-shell maintenance slice:
 - `APP-SHELL-REFACTOR-V1.md`
 - extracted the main tutorial/challenge rendering surface into `src/ui/components/learning-dock.tsx`

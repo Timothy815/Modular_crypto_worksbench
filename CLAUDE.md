@@ -92,6 +92,7 @@ Read MULTI-WINDOW-WORKSPACE-V1.md before extending the shipped detachable `Palet
 Read MULTI-WINDOW-WORKSPACE-V2.md before extending the shipped detachable `Learning` window, splitting tutorials and challenges apart, or broadening the detached learning surface toward cryptanalysis or other panes.
 Read MULTI-WINDOW-TABBED-WINDOWS-V1.md before extending the shipped tabbed detached-window groupings, broadening the `Windows` control surface, or allowing detached combinations beyond `Palette`, `Inspector`, and `Learning`.
 Read MULTI-WINDOW-DETACHED-POLISH-V1.md before extending the shipped detached-window polish pass, broadening grouped-window naming/title behavior further, or turning the `Windows` surface into something more than a bounded refinement of the current tabbed-window model.
+Read MULTI-WINDOW-COMBINED-VIEWS-V1.md before allowing one detached window to show multiple supported panes simultaneously, adding ordered combined visible mode, or broadening the detached-window model beyond bounded tabbed groups toward a richer composed view surface.
 Read APP-SHELL-REFACTOR-V1.md before extracting more `App.tsx` panel-routing or challenge-capture logic, or beginning a larger App-shell decomposition pass.
 Read STORE-REFACTOR-V1.md before restructuring `src/ui/store.ts`, moving more workspace-history/versioning behavior into helper modules, or beginning a larger reducer decomposition pass.
 Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.

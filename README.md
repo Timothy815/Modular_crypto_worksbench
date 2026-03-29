@@ -358,6 +358,12 @@ That detached-window polish pass is now also shipped:
 - browser window titles now track the active tab and grouped context more deliberately
 - detached shell identity and action wording are more polished without widening the pane model
 
+The next multi-window expansion is now recorded:
+- `MULTI-WINDOW-COMBINED-VIEWS-V1.md`
+- allows one detached window to show multiple supported panes simultaneously
+- keeps the pane family bounded to `Palette`, `Inspector`, and `Learning`
+- treats combined visible mode as the next deliberate expansion, not a jump to a generalized docking system
+
 The next maintenance follow-on is now also shipped:
 - `APP-SHELL-REFACTOR-V1.md`
 - extracted the main tutorial/challenge surface into `src/ui/components/learning-dock.tsx`
