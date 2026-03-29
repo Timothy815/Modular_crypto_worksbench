@@ -1112,9 +1112,12 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
   {
     version: 1,
     id: 'restore-feistel-rounds',
-    title: 'Repair the Feistel Bus',
+    title: '[LAB-2.2A] Repair the Feistel Bus',
     projectId: 'feistel-network',
     group: 'Modern Rounds',
+    stage: 'modern-bit-machines',
+    order: 140,
+    recommendedAfter: ['modern-cipher-foundry'],
     difficulty: 'intermediate',
     prompt:
       'The Feistel network still has the right round structure, but the visible key bus no longer feeds the right sub-keys into its half-block swaps. Restore the bus so the final ciphertext matches the captured reference network again.',
@@ -1133,9 +1136,12 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
   {
     version: 1,
     id: 'byte-scrambler',
-    title: 'Byte Scrambler',
+    title: '[LAB-2.1A] Repair the Permutation',
     projectId: 'byte-round',
     group: 'Modern Rounds',
+    stage: 'modern-bit-machines',
+    order: 130,
+    recommendedAfter: ['byte-round'],
     difficulty: 'intermediate',
     prompt:
       'The byte-round machine still substitutes correctly, but its bit permutation was flattened. Restore the permutation order so the final bit output matches the captured reference round.',
@@ -1146,6 +1152,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       kind: 'output-match-target',
     },
     hints: [
+      'Use Cryptanalysis after the fix: the repaired permutation should help the change spread more visibly than the flattened order.',
       'The S-Box table is already correct in this lab.',
       'Focus on the permutation stage after substitution.',
       'The target round reverses the bit order after the byte leaves the S-Box.',
@@ -1175,9 +1182,12 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
   {
     version: 1,
     id: 'repair-sbox-table-transform',
-    title: 'Repair the S-Box Transform',
+    title: '[LAB-2.1B] Repair the S-Box Transform',
     projectId: 'sbox-table-transform',
     group: 'Modern Rounds',
+    stage: 'modern-bit-machines',
+    order: 135,
+    recommendedAfter: ['byte-scrambler'],
     difficulty: 'beginner',
     prompt:
       'The S-Box table is still a valid permutation, but one row was rotated out of place. Use the S-Box transform controls to restore the original table so the output matches the captured reference machine again.',

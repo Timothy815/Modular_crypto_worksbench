@@ -113,6 +113,22 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         ],
       },
       {
+        id: 'modern-flagship-lab',
+        title: 'The Modern Flagship Lab',
+        body:
+          'MCW’s modern flagship path is a numbered Lab 2 sequence built to make modern-round structure visible instead of mystical. Start with [LAB-2.1] to read one explicit byte round as substitution plus permutation. Continue into [LAB-2.2] to see a visible key bus feed a small Feistel network rather than disappearing into hidden round metadata. Then use the linked repair challenges to restore a broken permutation and a broken S-Box table, and use [LAB-2.3] to run an Avalanche experiment in Modern Cryptanalysis so diffusion becomes something you can point to rather than just praise abstractly. The capstone is [LAB-2.4], where you capture a verification case, export the machine to Python, and either run verify_parity.py locally or explain the parity handoff if Python is unavailable. The point of the sequence is to show that modern cipher structure can be built, analyzed, verified, and exported as one coherent glass-box system.',
+        indexTerms: [
+          'modern flagship lab',
+          'lab 2',
+          'byte round',
+          'feistel',
+          'diffusion',
+          'avalanche',
+          'sbox',
+          'verify_parity.py',
+        ],
+      },
+      {
         id: 'visible-prng-labs',
         title: 'Visible PRNG Labs',
         body:

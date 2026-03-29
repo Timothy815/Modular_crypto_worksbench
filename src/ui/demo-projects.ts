@@ -1543,8 +1543,11 @@ export const demoProjects: DemoProject[] = [
   },
   {
     id: 'feistel-network',
-    name: 'Feistel Network',
+    name: '[LAB-2.2] Feistel Network',
     group: 'Modern Rounds',
+    stage: 'modern-bit-machines',
+    order: 135,
+    recommendedAfter: ['byte-round'],
     summary: 'A small keyed Feistel network that splits a byte into left and right halves, transforms the right half, recombines the result, and iterates that structure visibly.',
     pipeline: 'HexSource + Key Bus -> FeistelRoundIterator -> BitsToHex -> HexOutput',
     project: {
@@ -1617,8 +1620,11 @@ export const demoProjects: DemoProject[] = [
   },
   {
     id: 'byte-round',
-    name: 'Byte S-Box Round',
+    name: '[LAB-2.1] Byte S-Box Round',
     group: 'Modern Rounds',
+    stage: 'modern-bit-machines',
+    order: 130,
+    recommendedAfter: ['bridge'],
     summary: 'An 8-bit substitution and permutation round that stays fully in the bit domain.',
     pipeline: 'BitSource -> SBox(256) -> Permutation -> BitOutput',
     project: {

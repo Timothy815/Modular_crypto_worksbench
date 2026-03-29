@@ -1,6 +1,6 @@
 # FLAGSHIP-LAB-MODERN-V1
 
-Status: Proposed
+Status: Implemented
 
 Owner: Codex
 Scope: Modern Flagship Sequence / Tutorials / Challenges / Cryptanalysis / Verification / Manual
@@ -96,6 +96,8 @@ The right framing is:
 8. Flagship demos, tutorials, and challenges should use explicit lab-style numbering or namespacing so the intended sequence order is unmistakable.
 9. The sequence should be discoverable through the existing demo searchability using terms like `round`, `sbox`, `diffusion`, `avalanche`, or `feistel`.
 10. The parity capstone should include a short success guide that explains what to do if local Python is unavailable, so environment setup does not erase the teaching value of the sequence.
+11. At least one tutorial step must explicitly guide the user to trigger an Avalanche run in the Modern Cryptanalysis panel and interpret the resulting diffusion chart.
+12. The flagship machine should stay small enough that avalanche and diffusion views remain readable on a standard laptop screen.
 
 ## Preferred V1 Direction
 
@@ -133,6 +135,7 @@ That gives the user a visible modern machine journey:
 ## Teaching Rules
 
 - The sequence must not treat modern-round behavior as mystical “security by complexity.”
+- The sequence should use a clear `LAB-2.x` namespace to distinguish it from the shipped classical `LAB-1.x` line.
 - Every surprising behavior should be explained through visible machine structure:
   - S-box substitution
   - permutation
@@ -147,7 +150,8 @@ That gives the user a visible modern machine journey:
   - verification
   - export trust
 - The tutorial and challenge copy should help a student explain *why* the machine behaved as it did, not only restore the correct output.
-- One challenge in the sequence should focus specifically on authored S-box or permutation structure, since that is a confusion point MCW is uniquely able to expose honestly.
+- One challenge in the sequence should focus specifically on permutation repair, since that is a confusion point MCW is uniquely able to expose honestly.
+- One challenge in the sequence should focus specifically on authored S-box structure, since that is another confusion point MCW can expose honestly without hiding the table.
 
 ## Non-Goals
 
@@ -163,7 +167,7 @@ This slice is successful if:
 - a student can complete one coherent modern-round sequence in MCW
 - explain substitution, permutation, and diffusion without appealing to hidden magic
 - solve linked repair challenges
-- use the existing analysis surfaces to read a real structural consequence
+- use the existing analysis surfaces to read and explain a real structural consequence
 - verify behavior against expected results
 - and understand that the same machine can then be exported with parity support, with a clear path for either running parity locally or understanding the handoff if Python is not available
 
