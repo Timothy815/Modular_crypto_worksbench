@@ -28,7 +28,7 @@ import { createChallengeCaptureDraft, createChallengeIdCandidate } from './ui/ch
 import { PrimitivePalette } from './ui/components/primitive-palette';
 import { LearningDock } from './ui/components/learning-dock';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
-import { demoProjects, runDemoProject } from './ui/demo-projects';
+import { demoProjects, getDefaultDemoProject, runDemoProject } from './ui/demo-projects';
 import { compareExecutionResults } from './ui/execution-compare';
 import {
   createVerificationCaseFromBaseline,
@@ -240,6 +240,7 @@ function App() {
 }
 
 function MainApp() {
+  const defaultDemoProject = getDefaultDemoProject(demoProjects);
   const [headerResourceAction, setHeaderResourceAction] = useState('');
   const [headerWorkspaceAction, setHeaderWorkspaceAction] = useState('');
   const [headerWindowAction, setHeaderWindowAction] = useState('');
@@ -1479,7 +1480,7 @@ function MainApp() {
     dispatch({
       type: 'removeWorkspace',
       workspaceId: existingWorkspace.id,
-      fallbackProjectId: demoProjects[0]?.id ?? '',
+      fallbackProjectId: defaultDemoProject?.id ?? '',
     });
   }
 

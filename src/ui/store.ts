@@ -8,7 +8,7 @@ import type { ModuleDefinition, ModuleInstance, ModuleRegistry, Project } from '
 import type { GuidedChallenge } from './challenges';
 import type { CryptanalysisMode } from './cryptanalysis-mode';
 import type { GuidedTutorial } from './tutorials';
-import type { DemoProject } from './demo-projects';
+import { getDefaultDemoProject, type DemoProject } from './demo-projects';
 import type { WorkspaceMode } from './workspace-mode';
 import { STARTER_COMPOSITE_LIBRARY } from './starter-composites';
 import { STARTER_CHALLENGES } from './starter-challenges';
@@ -429,6 +429,7 @@ function getHistoryProjectId(action: UiAction): string | null {
 }
 
 export function createInitialUiState(projects: DemoProject[]): UiState {
+  const defaultProject = getDefaultDemoProject(projects);
   const defaultChallengeId = STARTER_CHALLENGES[0]?.id ?? null;
   const defaultTutorialByProject = Object.fromEntries(
     projects.map((project) => [
@@ -439,7 +440,7 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     ]),
   );
   return {
-    activeProjectId: projects[0]?.id ?? '',
+    activeProjectId: defaultProject?.id ?? '',
     defaultWorkspaceMode: 'guide',
     challengeLibrary: STARTER_CHALLENGES.map((challenge) => ({
       ...challenge,

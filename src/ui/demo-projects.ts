@@ -5,7 +5,11 @@ import type {
   ModuleRegistry,
   Project,
 } from '../engine/types';
-import type { LearningSequenceMeta } from './learning-sequence';
+import {
+  compareLearningItems,
+  isCoreLearningItem,
+  type LearningSequenceMeta,
+} from './learning-sequence';
 
 export interface DemoProject extends LearningSequenceMeta {
   id: string;
@@ -2266,6 +2270,11 @@ export const demoProjects: DemoProject[] = [
     },
   },
 ];
+
+export function getDefaultDemoProject(projects: DemoProject[]): DemoProject | null {
+  const sortedProjects = [...projects].sort(compareLearningItems);
+  return sortedProjects.find((project) => isCoreLearningItem(project)) ?? sortedProjects[0] ?? null;
+}
 
 export function runDemoProject(project: Project, registry: ModuleRegistry = V1_REGISTRY): ExecutionResult {
   return executeProject(project, registry);
