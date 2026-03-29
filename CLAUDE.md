@@ -34,6 +34,7 @@ Read V2.0-READINESS.md before debating whether MCW should still be treated as a 
 Read V2.0-READINESS-AUDIT.md before proposing extra pre-`v2.0` blocker work.
 Read V2.0-RELEASE-CONTRACT.md before reframing the project’s major-version boundary.
 Read V2.0-RELEASE-NOTES.md for the official meaning of `v2.0.0`.
+Read SYSTEMS-IDE-COHERENCE-V1.md before reframing MCW’s global north star, reordering major product lines by product identity rather than local leverage, or proposing a coherence-first consolidation pass after the recent Python-export and multi-window milestones.
 Read V2.1-AUTHORING-POWER-PLAN.md before proposing the first post-`v2.0.0` builder-power line.
 Read REPEATED-STRUCTURE-AUTHORING-V1.md before changing same-workspace cluster duplication, repeated-structure authoring, or first-wave `v2.1` builder acceleration.
 Read SELECTED-CLUSTER-OPERATIONS-V1.md before changing drag-box selection, selected-cluster deletion, or the second bounded `v2.1` authoring-power slice.

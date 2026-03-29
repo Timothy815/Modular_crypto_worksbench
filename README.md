@@ -28,6 +28,11 @@ The next bounded follow-on after that is:
 The current active safety slice after that is:
 - workspace-local undo / redo
 
+The current explicit north-star check after the major Python-export and multi-window advances is:
+- `SYSTEMS-IDE-COHERENCE-V1.md`
+- a bounded product-shaping pass for deciding what MCW most clearly is now
+- intended to protect product identity as breadth increases
+
 The current checkpointing follow-on after that is:
 - named workspace versions / restore points
 - explicit `Save Version` and `Restore` workflow per workspace

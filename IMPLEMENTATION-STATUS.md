@@ -20,7 +20,8 @@ Current development now carries:
   - `V2.0-RELEASE-CONTRACT.md`
   - `V2.0-RELEASE-NOTES.md`
 - post-`v2.0.0` authoring-power planning:
-  - `V2.1-AUTHORING-POWER-PLAN.md`
+- `V2.1-AUTHORING-POWER-PLAN.md`
+- `SYSTEMS-IDE-COHERENCE-V1.md`
   - `REPEATED-STRUCTURE-AUTHORING-V1.md`
   - `SELECTED-CLUSTER-OPERATIONS-V1.md`
   - `WORKSPACE-HISTORY-V1.md`
@@ -218,6 +219,11 @@ Current `main` now also includes:
 
 Current near-future sequencing is now explicit:
 - continue the `v2.1` builder-power line first
+
+The next explicit north-star check is now recorded:
+- `SYSTEMS-IDE-COHERENCE-V1.md`
+- defines a bounded product-shaping pass for deciding what MCW most clearly is now
+- treats future prioritization as a coherence question rather than a novelty question
 - expand Python export carefully second
 - refactor the largest UI surfaces third
 - keep multi-window workspace support as a deliberate next-tier priority after those lines
