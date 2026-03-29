@@ -229,6 +229,11 @@ The next explicit verification/trust check is now also recorded:
 - `VERIFIED-MACHINE-COHERENCE-V1.md`
 - defines a bounded pass for deciding what “verified” should mean inside MCW
 - treats compare, trace, and export as parts of one trust story rather than disconnected features
+
+The next implementation-ready verification slice is now also recorded:
+- `VERIFIED-MACHINE-WORKFLOW-V1.md`
+- defines the first bounded compare-surface refinement for known-answer verification cases
+- aims to give MCW a first real verification-station workflow without widening into scripting or formal-proof claims
 - expand Python export carefully second
 - refactor the largest UI surfaces third
 - keep multi-window workspace support as a deliberate next-tier priority after those lines

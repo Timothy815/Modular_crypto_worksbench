@@ -38,6 +38,11 @@ The current explicit trust/coherence follow-on after that is:
 - a bounded verification/trust pass for deciding what “verified” should mean in MCW
 - intended to turn compare, trace, and export into a clearer user trust story
 
+The current implementation-ready trust follow-on after that is:
+- `VERIFIED-MACHINE-WORKFLOW-V1.md`
+- a bounded verification-station refinement inside the compare/analyze line
+- intended to let users run explicit known-answer cases against the current workspace
+
 The current checkpointing follow-on after that is:
 - named workspace versions / restore points
 - explicit `Save Version` and `Restore` workflow per workspace
