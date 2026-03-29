@@ -11,10 +11,19 @@ The goal is to make cryptographic structure visible. MCW is designed as a worksh
 
 ## Current State
 
-The latest shipped tag is `v2.0.0`.
-Current development now begins from the `v2.0.0` product boundary, with the active `v2.1` line focused on authoring power.
+The latest shipped release checkpoint is `v2.1.0`.
+The previous major boundary was `v2.0.0`, which marked the "Cryptographic Systems IDE" transition.
 
-The first bounded `v2.1` target is:
+The `v2.1.0` checkpoint consolidates:
+- first-session onboarding
+- user manual and instructor pilot support
+- AI toolkit handoff resources
+- cryptanalysis visibility and visuals
+- Pollux, S-box, and PRNG teaching-line expansion
+- flagship classical and modern lab sequences
+- verification explainability
+
+The next active development line after `v2.1.0` is still the broader builder-power / authoring-power line. The first bounded follow-on target remains:
 - same-workspace repeated-structure authoring
 - duplicate a selected visible cluster nearby
 - preserve internal topology and params

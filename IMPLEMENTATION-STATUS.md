@@ -1,12 +1,26 @@
 # MCW — Implementation Status
 
-Last updated: March 27, 2026
+Last updated: March 29, 2026
 
 ---
 
 ## Current State
 
-The latest shipped tag is `v2.0.0`.
+The latest shipped release checkpoint is `v2.1.0`.
+The previous major boundary was `v2.0.0`.
+
+`v2.1.0` now includes:
+- first-session onboarding
+- user manual
+- instructor pilot pack
+- AI toolkit
+- cryptanalysis visibility and visualization improvements
+- Pollux fractionation and inverse round-trip teaching line
+- S-box authoring and table transforms
+- PRNG teaching workspaces
+- flagship classical and modern lab sequences
+- verification explainability
+
 Current development now carries:
 - the proposed post-`v1.44.0` `v2.0` sanity-pass contract
 - the completed `v2.0` sanity audit deliverable
@@ -19,7 +33,7 @@ Current development now carries:
   - `V2.0-READINESS-AUDIT.md`
   - `V2.0-RELEASE-CONTRACT.md`
   - `V2.0-RELEASE-NOTES.md`
-- post-`v2.0.0` authoring-power planning:
+- post-`v2.1.0` authoring-power planning:
 - `V2.1-AUTHORING-POWER-PLAN.md`
 - `SYSTEMS-IDE-COHERENCE-V1.md`
   - `REPEATED-STRUCTURE-AUTHORING-V1.md`

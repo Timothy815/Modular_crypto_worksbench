@@ -13,6 +13,7 @@ A visual, composable cryptographic construction environment — a "cryptographic
 - **GitHub Pages:** https://timothy815.github.io/Modular_crypto_worksbench/
 - **Deployment:** GitHub Actions workflow in `.github/workflows/deploy.yml` — auto-deploys on push to `main`
 - **Vite base path:** `/Modular_crypto_worksbench/` (required for GitHub Pages subdirectory hosting)
+- **Current release checkpoint:** `v2.1.0` (previous major boundary: `v2.0.0`)
 
 ## Git Workflow & Branching Strategy
 
@@ -41,6 +42,10 @@ Tag `main` at these milestones for safe rollback points:
 - `v0.4.0` — Minimal UI functional
 - `v0.5.0` — Save/load working
 - `v1.0.0` — V1 milestone complete
+- `v2.0.0` — Cryptographic Systems IDE boundary
+- `v2.1.0` — Onboarding, flagship labs, verification explainability, and pilot-readiness checkpoint
+
+For current release policy, read `RELEASE-VERSIONING.md`.
 
 ### Recovery
 If something goes wrong, tags provide safe rollback points. Use `git log --oneline --graph` to understand history before any reset.
