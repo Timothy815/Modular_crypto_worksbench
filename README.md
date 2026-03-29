@@ -79,6 +79,11 @@ The next bounded cryptanalysis legibility refinement after that is now explicitl
 - first phase ships a round diffusion chart and clickable candidate-period comparison inside the existing cryptanalysis workspace
 - keeps later frequency-confidence and influence-heatmap work explicitly bounded rather than widening into a generic statistics dashboard
 
+The next bounded cryptanalysis navigation refinement after that is now explicitly recorded as:
+- `CRYPTANALYSIS-PROMINENCE-V1.md`
+- targets equal local footing for `Tutorial`, `Challenge`, and `Cryptanalysis`
+- focuses on navigation prominence rather than new cryptanalysis capability
+
 The current checkpointing follow-on after that is:
 - named workspace versions / restore points
 - explicit `Save Version` and `Restore` workflow per workspace

@@ -43,6 +43,7 @@ Read KNOWN-VECTOR-IMPORT-V1.md before adding bulk known-answer case input, vecto
 Read USER-MANUAL-V1.md before adding a first-class user manual surface, searchable in-product help, a Resources-linked manual window, or structured manual/index content for onboarding and feature lookup.
 Read AI-TOOLKIT-V1.md before adding an AI-facing toolkit package, a Resources-linked external-LLM handoff bundle, prompt scaffolds for MCW JSON generation, or any broader “AI assistant for layout generation” product surface.
 Read CRYPTANALYSIS-VISUALS-V1.md before expanding the existing cryptanalysis workspace with new charts, stronger statistical visualizations, or bounded modern/classical analysis legibility upgrades.
+Read CRYPTANALYSIS-PROMINENCE-V1.md before changing how cryptanalysis is reached relative to Tutorial and Challenge, promoting cryptanalysis to peer local-navigation footing, or reframing the learning/analysis dock structure.
 Read V2.1-AUTHORING-POWER-PLAN.md before proposing the first post-`v2.0.0` builder-power line.
 Read REPEATED-STRUCTURE-AUTHORING-V1.md before changing same-workspace cluster duplication, repeated-structure authoring, or first-wave `v2.1` builder acceleration.
 Read SELECTED-CLUSTER-OPERATIONS-V1.md before changing drag-box selection, selected-cluster deletion, or the second bounded `v2.1` authoring-power slice.

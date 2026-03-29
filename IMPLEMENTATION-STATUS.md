@@ -267,6 +267,10 @@ The next export/trust slice after that is now also recorded:
   - now active as the current first visual-upgrade pass for the existing cryptanalysis workspace
   - first phase ships a round diffusion chart for modern analysis and clickable candidate-period comparison for classical analysis
   - keeps later frequency-confidence and bounded influence-heatmap work explicitly deferred rather than widening into a generic chart suite
+- next bounded cryptanalysis navigation refinement after that:
+  - `CRYPTANALYSIS-PROMINENCE-V1.md`
+  - records a local-navigation/product-signaling pass to give `Tutorial`, `Challenge`, and `Cryptanalysis` equal footing
+  - focuses on discoverability and peer-tab prominence rather than new analysis capability
 - expand Python export carefully second
 - refactor the largest UI surfaces third
 - keep multi-window workspace support as a deliberate next-tier priority after those lines
