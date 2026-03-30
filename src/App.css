@@ -1075,7 +1075,8 @@ body.dock-resizing {
   gap: 6px;
 }
 
-.project-selector select {
+.project-selector select,
+.project-selector input {
   width: 100%;
   min-height: 42px;
   border: 1px solid var(--line);
@@ -1085,6 +1086,58 @@ body.dock-resizing {
   font: inherit;
   font-weight: 700;
   padding: 0 14px;
+}
+
+.project-search-results-card {
+  display: grid;
+  gap: 10px;
+}
+
+.project-search-results {
+  display: grid;
+  gap: 10px;
+}
+
+.project-search-result {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-panel);
+  color: var(--ink);
+  font: inherit;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+
+.project-search-result:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-panel));
+}
+
+.project-search-result-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.project-search-result-header strong {
+  margin: 0;
+}
+
+.project-search-result-summary {
+  color: var(--muted);
+}
+
+.project-search-result code {
+  font-family: var(--mono);
+  font-size: 0.84rem;
+  color: var(--ink);
+  overflow-wrap: anywhere;
 }
 
 .project-context-card {

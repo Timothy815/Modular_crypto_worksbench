@@ -97,9 +97,9 @@ export function WorkbenchProjectContext({
 }: WorkbenchProjectContextProps) {
   const [projectSearch, setProjectSearch] = useState('');
   const normalizedProjectSearch = projectSearch.trim().toLowerCase();
-  const searchVisibleProjects = useMemo(() => {
+  const searchMatchingProjects = useMemo(() => {
     if (!normalizedProjectSearch) {
-      return visibleProjects;
+      return [];
     }
 
     return projects.filter((project) => {
@@ -114,10 +114,7 @@ export function WorkbenchProjectContext({
         .toLowerCase();
       return haystack.includes(normalizedProjectSearch);
     });
-  }, [normalizedProjectSearch, projects, visibleProjects]);
-  const projectSelectValue = searchVisibleProjects.some((project) => project.id === activeProject.id)
-    ? activeProject.id
-    : searchVisibleProjects[0]?.id ?? '';
+  }, [normalizedProjectSearch, projects]);
 
   if (isCompositeEditor) {
     return null;
@@ -148,10 +145,10 @@ export function WorkbenchProjectContext({
         <label className="project-selector">
           <span className="meta-label">Workspace</span>
           <select
-            value={projectSelectValue}
+            value={activeProject.id}
             onChange={(event) => onSwitchProject(event.target.value)}
           >
-            {searchVisibleProjects.map((project) => (
+            {visibleProjects.map((project) => (
               <option key={project.id} value={project.id}>
                 {project.name}
               </option>
@@ -168,7 +165,32 @@ export function WorkbenchProjectContext({
           />
         </label>
       </div>
-      {normalizedProjectSearch && searchVisibleProjects.length === 0 ? (
+      {normalizedProjectSearch && searchMatchingProjects.length > 0 ? (
+        <div className="project-context-card project-context-card-wide project-search-results-card">
+          <strong>Matching demos</strong>
+          <div className="project-search-results">
+            {searchMatchingProjects.map((project) => (
+              <button
+                key={project.id}
+                type="button"
+                className="project-search-result"
+                onClick={() => {
+                  onSwitchProject(project.id);
+                  setProjectSearch('');
+                }}
+              >
+                <span className="project-search-result-header">
+                  <strong>{project.name}</strong>
+                  <span className="content-status-chip">{project.group ?? 'misc'}</span>
+                </span>
+                <span className="project-search-result-summary">{project.summary}</span>
+                <code>{project.pipeline}</code>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {normalizedProjectSearch && searchMatchingProjects.length === 0 ? (
         <div className="project-context-card project-context-card-wide">
           <strong>No demos matched that search.</strong>
           <p>
