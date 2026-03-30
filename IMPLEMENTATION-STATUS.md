@@ -1021,6 +1021,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `FLAGSHIP-LAB-MODERN-V1.md` | Shipped classroom-first modern flagship sequence built from the visible round / S-box / diffusion line, linked analysis, verification, export/parity trust handoff, and searchable lab-numbered demos |
 | `VERIFICATION-EXPLAINABILITY-V1.md` | Shipped bounded compare/verification interpretation pass for clearer failure classes, next-step guidance, and more classroom-readable trust language |
 | `INSTRUCTOR-PILOT-PACK-V1.md` | Shipped instructor-facing pilot resource with search, TOC, index, and concrete guidance for running first classroom trials with the flagship labs |
+| `SHAREABLE-LAB-PACKS-V1.md` | Proposed as the first bounded post-`v2.1.0` portability/distribution slice for exporting and importing verified local lab packs without a cloud backend |
 | `PRNG-TEACHING-WORKSPACE-V1.md` | Shipped bounded teaching-workspace line for comparing visible pseudo-random generator constructions without making CSPRNG claims |
 | `WORKBENCH-ERGONOMICS-V1.md` | Shipped in `v1.13.0` as bounded workbench usability improvements |
 | `WORKSPACE-LIBRARY-V1.md` | Shipped in `v1.13.0` as bounded blank/save/delete user workspace management |
