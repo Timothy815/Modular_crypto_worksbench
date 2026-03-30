@@ -930,13 +930,14 @@ export const demoProjects: DemoProject[] = [
     name: 'Pollux Controlled Selection',
     group: 'Historical Bridges',
     summary:
-      'A selector-driven Pollux lab where the message bit chooses the zero/one alphabet and a second visible bit stream chooses which symbol inside that alphabet is emitted.',
+      'A clocked selector-driven Pollux lab where the message bit chooses the zero/one alphabet and a live counter chooses which symbol inside that alphabet is emitted on each tick.',
     pipeline:
-      'BitSource(message) + BitSource(select) -> PolluxControlledFractionation -> PolluxInverse -> Equals + TextOutput + BitOutput',
+      'Clock -> Counter(select) + BitSource(message) -> PolluxControlledFractionation -> PolluxInverse -> Equals + TextOutput + BitOutput',
     project: {
       modules: [
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 8 } },
         { id: 'message', defId: 'BitSource', params: { stream: [0, 1, 1, 0, 1, 0, 0, 1] } },
-        { id: 'selector', defId: 'BitSource', params: { stream: [1, 0, 1, 1, 0, 0] } },
+        { id: 'selector', defId: 'Counter', params: { width: 2, value: 0, step: 1 } },
         {
           id: 'encode',
           defId: 'PolluxControlledFractionation',
@@ -953,6 +954,7 @@ export const demoProjects: DemoProject[] = [
         { id: 'recovered', defId: 'BitOutput', params: {} },
       ],
       connections: [
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'selector', port: 'clock' } },
         { from: { moduleId: 'message', port: 'out' }, to: { moduleId: 'encode', port: 'in' } },
         { from: { moduleId: 'selector', port: 'out' }, to: { moduleId: 'encode', port: 'select' } },
         { from: { moduleId: 'encode', port: 'out' }, to: { moduleId: 'ciphertext', port: 'in' } },
@@ -964,15 +966,17 @@ export const demoProjects: DemoProject[] = [
       ],
     },
     layout: {
-      message: { x: 52, y: 132 },
-      selector: { x: 52, y: 292 },
-      encode: { x: 360, y: 212 },
-      ciphertext: { x: 676, y: 88 },
-      decode: { x: 676, y: 320 },
-      matches: { x: 980, y: 212 },
-      'verify-out': { x: 1248, y: 152 },
-      recovered: { x: 1248, y: 288 },
+      clock: { x: 44, y: 300 },
+      message: { x: 56, y: 120 },
+      selector: { x: 340, y: 300 },
+      encode: { x: 620, y: 202 },
+      ciphertext: { x: 932, y: 84 },
+      decode: { x: 932, y: 320 },
+      matches: { x: 1220, y: 202 },
+      'verify-out': { x: 1480, y: 144 },
+      recovered: { x: 1480, y: 280 },
     },
+    defaultTickedMode: true,
   },
   {
     id: 'lorenz-foundation',

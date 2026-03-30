@@ -1262,7 +1262,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
         id: 'pollux-controlled-message',
         title: 'Keep The Message Bits Visible',
         body:
-          'The message BitSource is still the thing being disguised. Controlled Pollux does not change which bits are sent; it changes which visible symbol from the matching set is chosen for each bit.',
+          'The message BitSource is still the thing being disguised. In this lab the workspace starts in ticked mode, so BitSource contributes one message bit per tick. Controlled Pollux does not change which bits are sent; it changes which visible symbol from the matching set is chosen for that tick’s message bit.',
         focusModuleId: 'message',
         targetStepIndex: 0,
       },
@@ -1270,7 +1270,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
         id: 'pollux-controlled-selector',
         title: 'Use A Second Bit Stream To Pick The Visible Symbol',
         body:
-          'The selector BitSource feeds the select port on PolluxControlledFractionation. Those selector bits do not decide whether the message bit is 0 or 1. They decide which symbol inside the already-correct zero-set or one-set alphabet is emitted.',
+          'Clock advances the selector Counter on every tick, and the Counter emits a two-bit choice word. Those selector bits do not decide whether the message bit is 0 or 1. They decide which symbol inside the already-correct zero-set or one-set alphabet is emitted for the current tick.',
         focusModuleId: 'selector',
         targetStepIndex: 1,
       },
@@ -1278,7 +1278,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
         id: 'pollux-controlled-encode',
         title: 'Read Controlled Fractionation As Explicit Choice',
         body:
-          'PolluxControlledFractionation stays glass-box. The message bit chooses the alphabet, and the select stream chooses the entry inside that alphabet. This is the right way to model pseudo-random or keyed-looking Pollux variation in MCW: the variability comes from another visible signal, not from hidden randomness inside the module.',
+          'PolluxControlledFractionation stays glass-box. The message bit chooses the alphabet, and the select stream chooses the entry inside that alphabet. This is the right way to model pseudo-random or keyed-looking Pollux variation in MCW: the variability comes from another visible signal, not from hidden randomness inside the module. In this ticked lab, the collected output is the meaningful ciphertext; the non-ticked view is only a snapshot of the current selector state.',
         focusModuleId: 'encode',
         targetStepIndex: 2,
       },

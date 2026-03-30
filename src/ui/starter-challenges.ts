@@ -541,7 +541,7 @@ const brokenPolluxSelectorSource = brokenPolluxControlledSelectionStart.modules.
 if (!brokenPolluxSelectorSource) {
   throw new Error('Expected pollux-controlled-selection demo project to contain a selector source.');
 }
-brokenPolluxSelectorSource.params.stream = [0, 0, 1, 0, 1, 1];
+brokenPolluxSelectorSource.params.step = 2;
 
 const brokenLorenzLfsr = brokenLorenzStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'lfsr',
@@ -965,7 +965,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     group: 'Historical Bridges',
     difficulty: 'beginner',
     prompt:
-      'The sender and receiver still agree on the Pollux alphabets, so the recovered bit stream is fine, but the selector stream drifted and the visible ciphertext no longer matches the captured reference machine. Restore the selector source so the controlled Pollux output matches the expected disguise again.',
+      'The sender and receiver still agree on the Pollux alphabets, so the recovered bit stream is fine, but the live selector counter drifted and the visible ciphertext no longer matches the captured reference machine. Restore the selector source so the controlled Pollux output matches the expected disguise again.',
     startingProject: brokenPolluxControlledSelectionStart,
     startingLayout: cloneProject(polluxControlledSelectionProject.layout),
     targetProject: polluxControlledSelectionTarget,
@@ -973,9 +973,9 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       kind: 'output-match-target',
     },
     hints: [
-      'This lab is about the selector stream, not the zeroAlphabet / oneAlphabet strings.',
+      'This lab is about the live selector source, not the zeroAlphabet / oneAlphabet strings.',
       'The receiver can still recover the message because PolluxInverse only cares about set membership.',
-      'Fix the selector BitSource so the visible ciphertext matches the captured target again.',
+      'Compare the selector counter parameters against the intended stepping pattern before rewiring anything.',
     ],
   },
   {
