@@ -2726,6 +2726,7 @@ body.dock-resizing {
   position: sticky;
   top: 0;
   z-index: 8;
+  background: var(--surface-panel);
   border: 1px solid color-mix(in srgb, var(--line) 72%, white);
   box-shadow: 0 8px 24px rgba(40, 28, 12, 0.08);
 }
