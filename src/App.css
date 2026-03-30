@@ -2664,14 +2664,14 @@ body.dock-resizing {
 
 .graph-meta {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .graph-meta > div,
 .trace-summary {
-  padding: 14px 16px;
-  border-radius: 18px;
+  padding: 10px 12px;
+  border-radius: 14px;
   background: var(--surface-soft);
 }
 
@@ -2679,6 +2679,10 @@ body.dock-resizing {
 .trace-summary strong {
   display: block;
   color: var(--ink);
+}
+
+.graph-meta .meta-label {
+  margin-bottom: 4px;
 }
 
 .trace-summary {

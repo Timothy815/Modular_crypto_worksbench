@@ -1680,10 +1680,6 @@ export function WorkbenchPanel({
           <strong>{activeProjectState.connections.length}</strong>
         </div>
         <div>
-          <span className="meta-label">Execution Order</span>
-          <strong>{execution ? execution.order.join(' -> ') : 'blocked'}</strong>
-        </div>
-        <div>
           <span className="meta-label">Validation</span>
           <strong>{validationIssues.length > 0 ? `${validationIssues.length} issues` : 'clean'}</strong>
         </div>
