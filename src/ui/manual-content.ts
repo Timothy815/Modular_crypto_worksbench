@@ -85,13 +85,15 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         id: 'pollux-fractionation',
         title: 'Pollux Fractionation',
         body:
-          'Pollux in MCW is a round-trip historical bridge, not a security claim. PolluxFractionation takes a bit stream and emits one visible symbol per bit using two disjoint symbol sets: one for 0 bits and one for 1 bits. PolluxInverse reverses that disguise by checking set membership and recovering one bit per symbol. Both sides must share the same zeroAlphabet and oneAlphabet values, and membership is normalized to uppercase so the agreement is about the sets themselves rather than letter casing. This is useful for teaching sender/receiver representation agreement: Pollux can flatten direct symbol clues, but it does not mix positions or create modern diffusion.',
+          'Pollux in MCW is a round-trip historical bridge, not a security claim. PolluxFractionation takes a bit stream and emits one visible symbol per bit using two disjoint symbol sets: one for 0 bits and one for 1 bits. PolluxControlledFractionation adds a second explicit bits input called select, so another visible signal can choose which symbol inside the already-correct zero-set or one-set alphabet gets emitted. That means the same message can surface as many different ciphertexts while remaining easy to decode, because PolluxInverse reverses the disguise by checking set membership only and recovering one bit per symbol. Both sides must share the same zeroAlphabet and oneAlphabet values, and membership is normalized to uppercase so the agreement is about the sets themselves rather than letter casing. This is useful for teaching sender/receiver representation agreement: Pollux can flatten direct symbol clues, but it does not mix positions or create modern diffusion.',
         indexTerms: [
           'pollux',
           'fractionation',
           'homophonic',
           'disguise',
+          'polluxcontrolledfractionation',
           'polluxinverse',
+          'selector',
           'round trip',
           'zeroalphabet',
           'onealphabet',

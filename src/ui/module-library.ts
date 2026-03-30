@@ -429,9 +429,16 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'A bounded Pollux-style fractionation bridge. It disguises bit values at the representation layer without claiming modern diffusion or mixing.',
     searchTerms: ['pollux', 'fractionation', 'homophonic', 'bridge', 'bits', 'symbol', 'classical', 'disguise'],
   },
-  PolluxInverse: {
+  PolluxControlledFractionation: {
     sectionId: 'bridges',
     sortOrder: 46,
+    purpose: 'Encodes each input bit into one visible symbol chosen from disjoint zero/one sets by an explicit selector bitstream.',
+    detail: 'A selector-driven Pollux bridge. Use a clocked or pseudo-random-looking bit source to vary which visible symbol represents each 0 or 1 without hiding the choice logic inside the primitive.',
+    searchTerms: ['pollux', 'controlled', 'selector', 'homophonic', 'fractionation', 'bridge', 'bits', 'symbol', 'lfsr', 'clock', 'counter'],
+  },
+  PolluxInverse: {
+    sectionId: 'bridges',
+    sortOrder: 47,
     purpose: 'Decodes Pollux-style symbols back into bits using known zero/one symbol sets.',
     detail: 'The inverse bounded Pollux bridge. It recovers the original bit stream by checking which visible alphabet each symbol belongs to.',
     searchTerms: ['pollux', 'inverse', 'decode', 'homophonic', 'bridge', 'symbol', 'bits', 'classical'],

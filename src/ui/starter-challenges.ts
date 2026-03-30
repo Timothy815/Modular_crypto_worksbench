@@ -15,6 +15,9 @@ const protocolMaterialProject = demoProjects.find((project) => project.id === 'p
 const baudotProject = demoProjects.find((project) => project.id === 'baudot-bridge');
 const polluxFractionationProject = demoProjects.find((project) => project.id === 'pollux-fractionation');
 const polluxRoundTripProject = demoProjects.find((project) => project.id === 'pollux-round-trip');
+const polluxControlledSelectionProject = demoProjects.find(
+  (project) => project.id === 'pollux-controlled-selection',
+);
 const lorenzProject = demoProjects.find((project) => project.id === 'lorenz-foundation');
 const gatedLorenzProject = demoProjects.find((project) => project.id === 'gated-lorenz');
 const pairedLorenzProject = demoProjects.find((project) => project.id === 'paired-lorenz');
@@ -87,6 +90,9 @@ if (!polluxFractionationProject) {
 }
 if (!polluxRoundTripProject) {
   throw new Error('Expected pollux-round-trip demo project to seed starter challenges.');
+}
+if (!polluxControlledSelectionProject) {
+  throw new Error('Expected pollux-controlled-selection demo project to seed starter challenges.');
 }
 if (!lorenzProject) {
   throw new Error('Expected lorenz-foundation demo project to seed starter challenges.');
@@ -527,6 +533,16 @@ if (!brokenPolluxRoundTripDecode) {
 brokenPolluxRoundTripDecode.params.zeroAlphabet = 'X,Q,N';
 brokenPolluxRoundTripDecode.params.oneAlphabet = 'M,O,Z';
 
+const polluxControlledSelectionTarget = cloneProject(polluxControlledSelectionProject.project);
+const brokenPolluxControlledSelectionStart = cloneProject(polluxControlledSelectionProject.project);
+const brokenPolluxSelectorSource = brokenPolluxControlledSelectionStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'selector',
+);
+if (!brokenPolluxSelectorSource) {
+  throw new Error('Expected pollux-controlled-selection demo project to contain a selector source.');
+}
+brokenPolluxSelectorSource.params.stream = [0, 0, 1, 0, 1, 1];
+
 const brokenLorenzLfsr = brokenLorenzStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'lfsr',
 );
@@ -939,6 +955,27 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'Compare the encoder and decoder zeroAlphabet / oneAlphabet strings directly before changing anything else.',
       'PolluxInverse normalizes symbols to uppercase, so casing is not the real problem here.',
       'Use the recovered-bit sink and the verification sink together: the round-trip is only fixed when both line up with the original source again.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-pollux-selector',
+    title: 'Repair the Pollux Selector',
+    projectId: 'pollux-controlled-selection',
+    group: 'Historical Bridges',
+    difficulty: 'beginner',
+    prompt:
+      'The sender and receiver still agree on the Pollux alphabets, so the recovered bit stream is fine, but the selector stream drifted and the visible ciphertext no longer matches the captured reference machine. Restore the selector source so the controlled Pollux output matches the expected disguise again.',
+    startingProject: brokenPolluxControlledSelectionStart,
+    startingLayout: cloneProject(polluxControlledSelectionProject.layout),
+    targetProject: polluxControlledSelectionTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'This lab is about the selector stream, not the zeroAlphabet / oneAlphabet strings.',
+      'The receiver can still recover the message because PolluxInverse only cares about set membership.',
+      'Fix the selector BitSource so the visible ciphertext matches the captured target again.',
     ],
   },
   {

@@ -65,6 +65,43 @@ function parsePolluxAlphabets(params: Record<string, unknown>) {
   return { oneAlphabet, zeroAlphabet };
 }
 
+function getPolluxSelectorChunkWidth(alphabetLength: number): number {
+  if (alphabetLength <= 1) {
+    return 0;
+  }
+
+  return Math.ceil(Math.log2(alphabetLength));
+}
+
+function consumePolluxSelectorIndex(
+  selectorBits: number[],
+  cursor: number,
+  alphabetLength: number,
+): { index: number; nextCursor: number } {
+  const width = getPolluxSelectorChunkWidth(alphabetLength);
+  if (width === 0) {
+    return { index: 0, nextCursor: cursor };
+  }
+
+  if (selectorBits.length === 0) {
+    throw new Error('Pollux Controlled Fractionation requires a non-empty selector bit stream');
+  }
+
+  let value = 0;
+  for (let offset = 0; offset < width; offset += 1) {
+    const bit = selectorBits[(cursor + offset) % selectorBits.length];
+    if (bit !== 0 && bit !== 1) {
+      throw new Error('Pollux Controlled Fractionation expects selector to contain only 0/1 bits');
+    }
+    value = (value << 1) | bit;
+  }
+
+  return {
+    index: value % alphabetLength,
+    nextCursor: cursor + width,
+  };
+}
+
 export function encodePolluxFractionation(
   bits: number[],
   zeroAlphabet: string[],
@@ -88,6 +125,33 @@ export function encodePolluxFractionation(
     }
 
     throw new Error('Pollux Fractionation expects only 0/1 bits');
+  }
+
+  return output;
+}
+
+export function encodePolluxControlledFractionation(
+  bits: number[],
+  selectorBits: number[],
+  zeroAlphabet: string[],
+  oneAlphabet: string[],
+): string {
+  let selectorCursor = 0;
+  let output = '';
+
+  for (const bit of bits) {
+    if (bit !== 0 && bit !== 1) {
+      throw new Error('Pollux Controlled Fractionation expects only 0/1 bits');
+    }
+
+    const alphabet = bit === 0 ? zeroAlphabet : oneAlphabet;
+    const { index, nextCursor } = consumePolluxSelectorIndex(
+      selectorBits,
+      selectorCursor,
+      alphabet.length,
+    );
+    selectorCursor = nextCursor;
+    output += alphabet[index];
   }
 
   return output;
@@ -188,6 +252,57 @@ export const PolluxInverse: ModuleDef = {
       out: {
         type: 'bits',
         value: decodePolluxFractionation(signal.value, zeroAlphabet, oneAlphabet),
+      },
+    };
+  },
+};
+
+export const PolluxControlledFractionation: ModuleDef = {
+  id: 'PolluxControlledFractionation',
+  name: 'Pollux Fractionation (Controlled)',
+  inputs: [
+    { name: 'in', type: 'bits' },
+    { name: 'select', type: 'bits' },
+  ],
+  outputs: [{ name: 'out', type: 'symbol' }],
+  paramSchema: {
+    zeroAlphabet: {
+      key: 'zeroAlphabet',
+      label: 'Zero Symbols',
+      kind: 'string',
+      defaultValue: 'XQZ',
+      required: true,
+      description: 'Single-character symbols used to represent 0 bits. Commas/spaces are optional separators.',
+    },
+    oneAlphabet: {
+      key: 'oneAlphabet',
+      label: 'One Symbols',
+      kind: 'string',
+      defaultValue: 'MNO',
+      required: true,
+      description: 'Single-character symbols used to represent 1 bits. Commas/spaces are optional separators.',
+    },
+  },
+  evaluate: (inputs, params) => {
+    const signal = inputs.in;
+    const selector = inputs.select;
+    if (signal.type !== 'bits') {
+      throw new Error('Pollux Controlled Fractionation expects a bits signal');
+    }
+    if (selector.type !== 'bits') {
+      throw new Error('Pollux Controlled Fractionation expects selector to be a bits signal');
+    }
+
+    const { zeroAlphabet, oneAlphabet } = parsePolluxAlphabets(params);
+    return {
+      out: {
+        type: 'symbol',
+        value: encodePolluxControlledFractionation(
+          signal.value,
+          selector.value,
+          zeroAlphabet,
+          oneAlphabet,
+        ),
       },
     };
   },

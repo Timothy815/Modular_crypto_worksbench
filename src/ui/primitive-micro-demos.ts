@@ -426,6 +426,43 @@ const POLLUX_FRACTIONATION_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const POLLUX_CONTROLLED_FRACTIONATION_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'PolluxControlledFractionation',
+  name: 'Controlled Pollux Fractionation Micro Demo',
+  summary:
+    'Minimal selector-driven fractionation: the message bit chooses the alphabet, and a separate bit stream chooses which visible symbol inside that alphabet is emitted.',
+  pipeline: 'BitSource(message) + BitSource(select) -> PolluxControlledFractionation -> TextOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        {
+          id: 'pollux',
+          defId: 'PolluxControlledFractionation',
+          params: { zeroAlphabet: 'X,Q,Z', oneAlphabet: 'M,N,O' },
+        },
+        { id: 'message', defId: 'BitSource', params: { stream: [0, 1, 0, 1, 1, 0] } },
+        { id: 'select', defId: 'BitSource', params: { stream: [1, 0, 1, 1, 0, 0] } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'message', port: 'out' }, to: { moduleId: 'pollux', port: 'in' } },
+        { from: { moduleId: 'select', port: 'out' }, to: { moduleId: 'pollux', port: 'select' } },
+        { from: { moduleId: 'pollux', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        message: { x: 56, y: 120 },
+        select: { x: 56, y: 244 },
+        pollux: { x: 388, y: 182 },
+        out: { x: 716, y: 182 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const LFSR_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'LFSR',
   name: 'LFSR Micro Demo',
@@ -611,6 +648,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   BIT_JOIN_MICRO_DEMO,
   SBOX_MICRO_DEMO,
   POLLUX_FRACTIONATION_MICRO_DEMO,
+  POLLUX_CONTROLLED_FRACTIONATION_MICRO_DEMO,
   LFSR_MICRO_DEMO,
   MULTI_ROUTER_MICRO_DEMO,
   ROTOR_MICRO_DEMO,

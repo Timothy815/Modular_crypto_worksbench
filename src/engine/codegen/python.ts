@@ -37,6 +37,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'SymbolToBits',
   'BitsToSymbol',
   'PolluxFractionation',
+  'PolluxControlledFractionation',
   'PolluxInverse',
   'BitsToHex',
   'HexToAscii',
@@ -185,7 +186,8 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'format_ticked_sink_line',
 ] as const;
 
-const PYTHON_RUNTIME = `import re
+const PYTHON_RUNTIME = `import math
+import re
 
 ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 ROTOR_SIZE = len(ALPHABET)
@@ -444,6 +446,50 @@ def pollux_fractionation(signal, zero_alphabet_value, one_alphabet_value):
             one_index += 1
         else:
             raise ValueError("Pollux Fractionation expects only 0/1 bits")
+    return {"out": "".join(output)}
+
+
+def _pollux_selector_chunk_width(alphabet_length):
+    if alphabet_length <= 1:
+        return 0
+    return math.ceil(math.log2(alphabet_length))
+
+
+def _consume_pollux_selector_index(selector_bits, cursor, alphabet_length):
+    width = _pollux_selector_chunk_width(alphabet_length)
+    if width == 0:
+        return 0, cursor
+    if len(selector_bits) == 0:
+        raise ValueError("Pollux Controlled Fractionation requires a non-empty selector bit stream")
+    value = 0
+    for offset in range(width):
+        bit = selector_bits[(cursor + offset) % len(selector_bits)]
+        if bit not in (0, 1):
+            raise ValueError("Pollux Controlled Fractionation expects selector to contain only 0/1 bits")
+        value = (value << 1) | bit
+    return value % alphabet_length, cursor + width
+
+
+def pollux_controlled_fractionation(signal, selector_signal, zero_alphabet_value, one_alphabet_value):
+    bits = _expect_bits(signal, "PolluxControlledFractionation")
+    selector_bits = _expect_bits(selector_signal, "PolluxControlledFractionation")
+    zero_alphabet = _parse_pollux_alphabet(zero_alphabet_value, "zeroAlphabet")
+    one_alphabet = _parse_pollux_alphabet(one_alphabet_value, "oneAlphabet")
+    overlap = next((symbol for symbol in zero_alphabet if symbol in one_alphabet), None)
+    if overlap is not None:
+        raise ValueError(
+            f'Pollux Fractionation requires zeroAlphabet and oneAlphabet to be disjoint (overlap: "{overlap}")'
+        )
+    output = []
+    selector_cursor = 0
+    for bit in bits:
+        if bit not in (0, 1):
+            raise ValueError("Pollux Controlled Fractionation expects only 0/1 bits")
+        alphabet = zero_alphabet if bit == 0 else one_alphabet
+        index, selector_cursor = _consume_pollux_selector_index(
+            selector_bits, selector_cursor, len(alphabet)
+        )
+        output.append(alphabet[index])
     return {"out": "".join(output)}
 
 
@@ -1761,6 +1807,8 @@ function buildModuleExpression(
       return `bits_to_symbol(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'PolluxFractionation':
       return `pollux_fractionation(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'zeroAlphabet')}, ${expressionContext.getParamExpression(moduleInstance, def, 'oneAlphabet')})`;
+    case 'PolluxControlledFractionation':
+      return `pollux_controlled_fractionation(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'select')}, ${expressionContext.getParamExpression(moduleInstance, def, 'zeroAlphabet')}, ${expressionContext.getParamExpression(moduleInstance, def, 'oneAlphabet')})`;
     case 'PolluxInverse':
       return `pollux_inverse(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'zeroAlphabet')}, ${expressionContext.getParamExpression(moduleInstance, def, 'oneAlphabet')})`;
     case 'BitsToAscii':

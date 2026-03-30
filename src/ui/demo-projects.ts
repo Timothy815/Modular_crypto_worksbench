@@ -926,6 +926,55 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'pollux-controlled-selection',
+    name: 'Pollux Controlled Selection',
+    group: 'Historical Bridges',
+    summary:
+      'A selector-driven Pollux lab where the message bit chooses the zero/one alphabet and a second visible bit stream chooses which symbol inside that alphabet is emitted.',
+    pipeline:
+      'BitSource(message) + BitSource(select) -> PolluxControlledFractionation -> PolluxInverse -> Equals + TextOutput + BitOutput',
+    project: {
+      modules: [
+        { id: 'message', defId: 'BitSource', params: { stream: [0, 1, 1, 0, 1, 0, 0, 1] } },
+        { id: 'selector', defId: 'BitSource', params: { stream: [1, 0, 1, 1, 0, 0] } },
+        {
+          id: 'encode',
+          defId: 'PolluxControlledFractionation',
+          params: { zeroAlphabet: 'X,Q,Z', oneAlphabet: 'M,N,O' },
+        },
+        { id: 'ciphertext', defId: 'TextOutput', params: {} },
+        {
+          id: 'decode',
+          defId: 'PolluxInverse',
+          params: { zeroAlphabet: 'X,Q,Z', oneAlphabet: 'M,N,O' },
+        },
+        { id: 'matches', defId: 'Equals', params: {} },
+        { id: 'verify-out', defId: 'BitOutput', params: {} },
+        { id: 'recovered', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'message', port: 'out' }, to: { moduleId: 'encode', port: 'in' } },
+        { from: { moduleId: 'selector', port: 'out' }, to: { moduleId: 'encode', port: 'select' } },
+        { from: { moduleId: 'encode', port: 'out' }, to: { moduleId: 'ciphertext', port: 'in' } },
+        { from: { moduleId: 'encode', port: 'out' }, to: { moduleId: 'decode', port: 'in' } },
+        { from: { moduleId: 'message', port: 'out' }, to: { moduleId: 'matches', port: 'a' } },
+        { from: { moduleId: 'decode', port: 'out' }, to: { moduleId: 'matches', port: 'b' } },
+        { from: { moduleId: 'matches', port: 'out' }, to: { moduleId: 'verify-out', port: 'in' } },
+        { from: { moduleId: 'decode', port: 'out' }, to: { moduleId: 'recovered', port: 'in' } },
+      ],
+    },
+    layout: {
+      message: { x: 52, y: 132 },
+      selector: { x: 52, y: 292 },
+      encode: { x: 360, y: 212 },
+      ciphertext: { x: 676, y: 88 },
+      decode: { x: 676, y: 320 },
+      matches: { x: 980, y: 212 },
+      'verify-out': { x: 1248, y: 152 },
+      recovered: { x: 1248, y: 288 },
+    },
+  },
+  {
     id: 'lorenz-foundation',
     name: 'Lorenz SZ42 Foundation',
     group: 'Historical Bridges',

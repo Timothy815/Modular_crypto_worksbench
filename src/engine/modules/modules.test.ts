@@ -15,8 +15,10 @@ import { BitsToSymbol } from './bits-to-symbol';
 import { BitsToHex } from './bits-to-hex';
 import {
   decodePolluxFractionation,
+  encodePolluxControlledFractionation,
   encodePolluxFractionation,
   parsePolluxAlphabet,
+  PolluxControlledFractionation,
   PolluxFractionation,
   PolluxInverse,
 } from './pollux-fractionation';
@@ -496,6 +498,59 @@ describe('PolluxFractionation', () => {
   });
 });
 
+describe('PolluxControlledFractionation', () => {
+  it('encodes bits using explicit selector bits to choose alphabet entries', () => {
+    const result = PolluxControlledFractionation.evaluate(
+      {
+        in: { type: 'bits', value: [0, 1, 0, 1] },
+        select: { type: 'bits', value: [1, 0, 1, 1, 0, 0] },
+      },
+      { zeroAlphabet: 'XQZ', oneAlphabet: 'MNO' },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'ZMXO' });
+  });
+
+  it('wraps selector bits cyclically when the selector stream is shorter than required', () => {
+    const result = PolluxControlledFractionation.evaluate(
+      {
+        in: { type: 'bits', value: [0, 0, 1] },
+        select: { type: 'bits', value: [1, 0] },
+      },
+      { zeroAlphabet: 'XQZ', oneAlphabet: 'MN' },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'ZZN' });
+  });
+
+  it('roundtrips cleanly with PolluxInverse', () => {
+    const encoded = PolluxControlledFractionation.evaluate(
+      {
+        in: { type: 'bits', value: [0, 1, 1, 0, 1, 0] },
+        select: { type: 'bits', value: [1, 1, 0, 0] },
+      },
+      { zeroAlphabet: 'ABC', oneAlphabet: 'XYZ' },
+    );
+
+    const decoded = PolluxInverse.evaluate(
+      { in: encoded.out },
+      { zeroAlphabet: 'ABC', oneAlphabet: 'XYZ' },
+    );
+
+    expect(decoded.out).toEqual({ type: 'bits', value: [0, 1, 1, 0, 1, 0] });
+  });
+
+  it('rejects an empty selector stream', () => {
+    expect(() =>
+      PolluxControlledFractionation.evaluate(
+        {
+          in: { type: 'bits', value: [0, 1] },
+          select: { type: 'bits', value: [] },
+        },
+        { zeroAlphabet: 'XQ', oneAlphabet: 'MN' },
+      ),
+    ).toThrow(/non-empty selector bit stream/i);
+  });
+});
+
 describe('PolluxInverse', () => {
   it('decodes symbols back into bits using alphabet membership', () => {
     const result = PolluxInverse.evaluate(
@@ -536,6 +591,14 @@ describe('parsePolluxAlphabet', () => {
 describe('encodePolluxFractionation', () => {
   it('cycles zero and one alphabets independently', () => {
     expect(encodePolluxFractionation([1, 1, 0, 1, 0], ['X', 'Q'], ['M', 'N'])).toBe('MNXMQ');
+  });
+});
+
+describe('encodePolluxControlledFractionation', () => {
+  it('derives symbol choices from selector chunks', () => {
+    expect(
+      encodePolluxControlledFractionation([0, 1, 0, 1], [1, 0, 1, 1, 0, 0], ['X', 'Q', 'Z'], ['M', 'N', 'O']),
+    ).toBe('ZMXO');
   });
 });
 

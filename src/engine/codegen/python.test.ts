@@ -1734,6 +1734,32 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
   });
 
+  it('matches executeProject for a controlled Pollux fractionation workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'bits-1', defId: 'BitSource', params: { stream: [0, 1, 0, 1, 1, 0] } },
+        { id: 'select-1', defId: 'BitSource', params: { stream: [1, 0, 1, 1, 0, 0] } },
+        {
+          id: 'pollux-controlled-1',
+          defId: 'PolluxControlledFractionation',
+          params: { zeroAlphabet: 'X,Q,Z', oneAlphabet: 'M,N,O' },
+        },
+        { id: 'text-out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'bits-1', port: 'out' }, to: { moduleId: 'pollux-controlled-1', port: 'in' } },
+        { from: { moduleId: 'select-1', port: 'out' }, to: { moduleId: 'pollux-controlled-1', port: 'select' } },
+        { from: { moduleId: 'pollux-controlled-1', port: 'out' }, to: { moduleId: 'text-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
   it('matches executeProject for a stateless baudot decoding workspace', () => {
     const project: Project = {
       modules: [

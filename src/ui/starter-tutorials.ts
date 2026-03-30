@@ -1251,6 +1251,57 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
   },
   {
     version: 1,
+    id: 'pollux-controlled-selection',
+    title: 'Pollux Controlled Selection',
+    group: 'Historical Bridges',
+    summary:
+      'Learn how a second visible bit stream can steer which Pollux symbol is emitted while the receiver still decodes by set membership only.',
+    projectId: 'pollux-controlled-selection',
+    steps: [
+      {
+        id: 'pollux-controlled-message',
+        title: 'Keep The Message Bits Visible',
+        body:
+          'The message BitSource is still the thing being disguised. Controlled Pollux does not change which bits are sent; it changes which visible symbol from the matching set is chosen for each bit.',
+        focusModuleId: 'message',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'pollux-controlled-selector',
+        title: 'Use A Second Bit Stream To Pick The Visible Symbol',
+        body:
+          'The selector BitSource feeds the select port on PolluxControlledFractionation. Those selector bits do not decide whether the message bit is 0 or 1. They decide which symbol inside the already-correct zero-set or one-set alphabet is emitted.',
+        focusModuleId: 'selector',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'pollux-controlled-encode',
+        title: 'Read Controlled Fractionation As Explicit Choice',
+        body:
+          'PolluxControlledFractionation stays glass-box. The message bit chooses the alphabet, and the select stream chooses the entry inside that alphabet. This is the right way to model pseudo-random or keyed-looking Pollux variation in MCW: the variability comes from another visible signal, not from hidden randomness inside the module.',
+        focusModuleId: 'encode',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'pollux-controlled-decode',
+        title: 'Decode Still Depends Only On Shared Set Membership',
+        body:
+          'PolluxInverse ignores the selector path completely. It only checks whether each visible symbol belongs to the zeroAlphabet or oneAlphabet set. That is why many different ciphertext surfaces can still decode back to the same underlying bit stream.',
+        focusModuleId: 'decode',
+        targetStepIndex: 3,
+      },
+      {
+        id: 'pollux-controlled-verify',
+        title: 'Use Equality To Prove Variation Without Loss',
+        body:
+          'Equals compares the recovered bits against the original message bits. The ciphertext can change when the selector changes, but the verification sink should still return PASS as long as the alphabets agree on both sides. Try replacing the selector BitSource with LFSR or Counter later if you want a live control stream.',
+        focusModuleId: 'matches',
+        targetStepIndex: 4,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'banked-lorenz',
     title: 'The Banked Lorenz Control',
     group: 'Historical Bridges',

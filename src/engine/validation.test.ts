@@ -29,7 +29,11 @@ import { Nonce } from './modules/nonce';
 import { NOT } from './modules/not';
 import { OR } from './modules/or';
 import { Permutation } from './modules/permutation';
-import { PolluxFractionation, PolluxInverse } from './modules/pollux-fractionation';
+import {
+  PolluxControlledFractionation,
+  PolluxFractionation,
+  PolluxInverse,
+} from './modules/pollux-fractionation';
 import { Plugboard } from './modules/plugboard';
 import { Reflector } from './modules/reflector';
 import { Rotor } from './modules/rotor';
@@ -105,6 +109,7 @@ const registry: ModuleRegistry = {
   [Modulo.id]: Modulo,
   [MulMod.id]: MulMod,
   [Permutation.id]: Permutation,
+  [PolluxControlledFractionation.id]: PolluxControlledFractionation,
   [PolluxFractionation.id]: PolluxFractionation,
   [PolluxInverse.id]: PolluxInverse,
   [SymbolPermutation.id]: SymbolPermutation,
@@ -322,6 +327,30 @@ describe('validateProject', () => {
       result.issues.some(
         (issue) =>
           issue.moduleId === 'pollux-inverse-1' &&
+          issue.message.includes('disjoint'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects overlapping controlled Pollux alphabets before execution', () => {
+    const project: Project = {
+      modules: [
+        {
+          id: 'pollux-controlled-1',
+          defId: 'PolluxControlledFractionation',
+          params: { zeroAlphabet: 'ABC', oneAlphabet: 'CDE' },
+        },
+      ],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.moduleId === 'pollux-controlled-1' &&
           issue.message.includes('disjoint'),
       ),
     ).toBe(true);
