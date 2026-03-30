@@ -243,6 +243,7 @@ export function ParameterInspector({
   const [sinkRepresentationsByModuleId, setSinkRepresentationsByModuleId] = useState<
     Record<string, SinkRepresentation>
   >({});
+  const [activeOutputSummaryModuleId, setActiveOutputSummaryModuleId] = useState<string | null>(null);
   const [draggedPermutationInputIndex, setDraggedPermutationInputIndex] = useState<number | null>(null);
   const [draggedRotorInputIndex, setDraggedRotorInputIndex] = useState<number | null>(null);
   const [selectedPlugboardLetter, setSelectedPlugboardLetter] = useState<string | null>(null);
@@ -347,6 +348,22 @@ export function ParameterInspector({
       },
     ];
   }, [execution, outputSignal, outputTrace, project.modules, sinkRepresentationsByModuleId]);
+  const activeOutputSummary = useMemo(() => {
+    if (outputSummaries.length === 0) {
+      return null;
+    }
+
+    if (
+      activeOutputSummaryModuleId &&
+      outputSummaries.some((summary) => summary.moduleId === activeOutputSummaryModuleId)
+    ) {
+      return (
+        outputSummaries.find((summary) => summary.moduleId === activeOutputSummaryModuleId) ?? null
+      );
+    }
+
+    return outputSummaries[0] ?? null;
+  }, [activeOutputSummaryModuleId, outputSummaries]);
   const selectedTrace = execution?.trace.find(
     (entry) => entry.moduleId === moduleInstance?.id,
   );
@@ -701,31 +718,47 @@ export function ParameterInspector({
         {isTickedMode && collectedOutput !== null && outputSummaries.length <= 1 ? (
           <p className="trace-summary-subtitle">Collected output: <strong>{collectedOutput}</strong></p>
         ) : null}
-        <div className="inspector-output-list">
-          {outputSummaries.map((summary) => (
-            <div key={`output-summary-${summary.moduleId}`} className="inspector-output-card">
+        {outputSummaries.length > 1 ? (
+          <div className="inspector-output-switcher">
+            {outputSummaries.map((summary) => (
+              <button
+                key={`output-summary-switch-${summary.moduleId}`}
+                type="button"
+                className={`inspector-output-switch${activeOutputSummary?.moduleId === summary.moduleId ? ' active' : ''}`}
+                onClick={() => setActiveOutputSummaryModuleId(summary.moduleId)}
+              >
+                {summary.moduleId}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {activeOutputSummary ? (
+          <div className="inspector-output-list">
+            <div key={`output-summary-${activeOutputSummary.moduleId}`} className="inspector-output-card">
               <div className="inspector-output-card-head">
-                <strong>{summary.moduleId}</strong>
+                <strong>{activeOutputSummary.moduleId}</strong>
                 {outputSummaries.length > 1 ? (
-                  <span className="content-status-chip">Sink</span>
+                  <span className="content-status-chip">
+                    Sink {outputSummaries.findIndex((summary) => summary.moduleId === activeOutputSummary.moduleId) + 1} / {outputSummaries.length}
+                  </span>
                 ) : null}
               </div>
-              <code>{formatSignal(summary.signal)}</code>
-              {summary.effectiveRepresentationOption ? (
+              <code>{formatSignal(activeOutputSummary.signal)}</code>
+              {activeOutputSummary.effectiveRepresentationOption ? (
                 <div className="sink-representation">
                   <span className="meta-label">Interpret Output As</span>
                   <p className="sink-rep-note">Observational views only. These do not change the graph.</p>
                   <div className="sink-rep-tabs">
-                    {summary.representationOptions.map((option) => (
+                    {activeOutputSummary.representationOptions.map((option) => (
                       <button
-                        key={`output-summary-${summary.moduleId}-${option.id}`}
+                        key={`output-summary-${activeOutputSummary.moduleId}-${option.id}`}
                         type="button"
-                        className={`sink-rep-tab${summary.effectiveRepresentation === option.id ? ' active' : ''}${!option.available ? ' unavailable' : ''}`}
+                        className={`sink-rep-tab${activeOutputSummary.effectiveRepresentation === option.id ? ' active' : ''}${!option.available ? ' unavailable' : ''}`}
                         onClick={() =>
                           option.available &&
                           setSinkRepresentationsByModuleId((current) => ({
                             ...current,
-                            [summary.moduleId]: option.id,
+                            [activeOutputSummary.moduleId]: option.id,
                           }))
                         }
                         disabled={!option.available}
@@ -736,18 +769,18 @@ export function ParameterInspector({
                     ))}
                   </div>
                   <div className="sink-rep-value">
-                    <code>{summary.effectiveRepresentationOption.value}</code>
+                    <code>{activeOutputSummary.effectiveRepresentationOption.value}</code>
                   </div>
                 </div>
               ) : null}
-              {isTickedMode && tickHistoryByModule?.[summary.moduleId]?.length ? (
+              {isTickedMode && tickHistoryByModule?.[activeOutputSummary.moduleId]?.length ? (
                 <p className="sink-rep-note">
-                  {tickHistoryByModule[summary.moduleId].length} tick sample(s) available for this sink.
+                  {tickHistoryByModule[activeOutputSummary.moduleId].length} tick sample(s) available for this sink.
                 </p>
               ) : null}
             </div>
-          ))}
-        </div>
+          </div>
+        ) : null}
       </div>
 
       {inspectorTab === 'analyze' && isTickedMode && tickCount > 0 && moduleInstance ? (

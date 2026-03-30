@@ -2737,6 +2737,35 @@ body.dock-resizing {
   margin-top: 12px;
 }
 
+.inspector-output-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.inspector-output-switch {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--role-sink-soft);
+  background: var(--surface-soft);
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.inspector-output-switch:hover {
+  background: color-mix(in srgb, var(--role-sink-bg) 45%, var(--surface-soft));
+}
+
+.inspector-output-switch.active {
+  background: var(--role-sink-bg);
+  border-color: var(--role-sink-strong);
+  color: var(--role-sink-strong);
+}
+
 .inspector-output-card {
   display: grid;
   gap: 8px;
