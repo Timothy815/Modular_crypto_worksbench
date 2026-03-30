@@ -26,6 +26,11 @@ export interface SequencedLearningItem extends LearningSequenceMeta {
   projectId?: string;
 }
 
+export interface RecommendedLearningTarget {
+  id: string;
+  label: string;
+}
+
 const STAGE_LABELS: Record<LearningStage, string> = {
   foundations: 'Stage 1 · Foundations',
   'classical-symbol-machines': 'Stage 2 · Classical Symbol Machines',
@@ -313,19 +318,30 @@ export function getRecommendedAfterTitles(
   items: SequencedLearningItem[],
   item: SequencedLearningItem,
 ): string[] {
+  return getRecommendedAfterTargets(items, item).map((target) => target.label);
+}
+
+export function getRecommendedAfterTargets(
+  items: SequencedLearningItem[],
+  item: SequencedLearningItem,
+): RecommendedLearningTarget[] {
   const allItems = [...items];
-  const titleById = new Map<string, string>();
+  const targetById = new Map<string, RecommendedLearningTarget>();
 
   for (const entry of allItems) {
-    titleById.set(entry.id, getDisplayLabel(entry));
+    const target = {
+      id: entry.projectId ?? entry.id,
+      label: getDisplayLabel(entry),
+    };
+    targetById.set(entry.id, target);
     if (entry.projectId) {
-      titleById.set(entry.projectId, getDisplayLabel(entry));
+      targetById.set(entry.projectId, target);
     }
   }
 
   return getRecommendedAfterIds(item)
-    .map((id) => titleById.get(id))
-    .filter((title): title is string => Boolean(title));
+    .map((id) => targetById.get(id))
+    .filter((target): target is RecommendedLearningTarget => Boolean(target));
 }
 
 export function getRecommendedNextItem<T extends SequencedLearningItem>(

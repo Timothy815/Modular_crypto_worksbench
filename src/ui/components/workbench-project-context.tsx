@@ -8,6 +8,7 @@ import {
   isCoreLearningItem,
 } from '../learning-sequence';
 import type { LearningStage } from '../learning-sequence';
+import type { RecommendedLearningTarget } from '../learning-sequence';
 import type { WorkspaceComparisonSummary } from '../workspace-comparison';
 import { getConnectionComparisonKey } from '../workspace-comparison';
 import type { WorkspaceLandmark, } from '../workspace-landmarks';
@@ -18,7 +19,7 @@ interface WorkbenchProjectContextProps {
   activeProject: DemoProject;
   activeProjectGroup: string;
   activeProjectStage: LearningStage;
-  activeProjectRecommendedAfter: string[];
+  activeProjectRecommendedAfter: RecommendedLearningTarget[];
   projects: DemoProject[];
   projectGroups: string[];
   projectCountByGroup: Record<string, number>;
@@ -211,9 +212,23 @@ export function WorkbenchProjectContext({
           <span className="content-status-chip">{isCoreLearningItem(activeProject) ? 'Core Path' : 'Optional'}</span>
         </div>
         {activeProjectRecommendedAfter.length > 0 ? (
-          <p className="comparison-copy">
-            Best after: <strong>{activeProjectRecommendedAfter.join(', ')}</strong>
-          </p>
+          <div className="comparison-copy project-recommended-next">
+            <span>
+              Best after:
+            </span>
+            <div className="project-recommended-next-list">
+              {activeProjectRecommendedAfter.map((target) => (
+                <button
+                  key={target.id}
+                  type="button"
+                  className="project-recommended-next-button"
+                  onClick={() => onSwitchProject(target.id)}
+                >
+                  {target.label}
+                </button>
+              ))}
+            </div>
+          </div>
         ) : null}
         {showWorkspaceLandmarks ? (
           <div className="workspace-landmarks-card">

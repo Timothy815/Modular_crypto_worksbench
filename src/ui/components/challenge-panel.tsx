@@ -5,7 +5,7 @@ import {
   getFirstLearningItemInGroup,
   getLearningGroupLabel,
   getLearningStageLabel,
-  getRecommendedAfterTitles,
+  getRecommendedAfterTargets,
   getRecommendedNextItem,
   getSortedLearningGroups,
   inferLearningStage,
@@ -107,8 +107,8 @@ export function ChallengePanel({
   const recommendedNext = selectedChallenge
     ? getRecommendedNextItem(sortedChallenges, selectedChallenge.id)
     : null;
-  const recommendedAfterTitles = selectedChallenge
-    ? getRecommendedAfterTitles(sortedChallenges, selectedChallenge)
+  const recommendedAfterTargets = selectedChallenge
+    ? getRecommendedAfterTargets(sortedChallenges, selectedChallenge)
     : [];
 
   return (
@@ -184,14 +184,35 @@ export function ChallengePanel({
               </span>
             </div>
             {recommendedNext ? (
-              <p className="comparison-copy">
-                Recommended next: <strong>{recommendedNext.title}</strong>
-              </p>
+              <div className="comparison-copy project-recommended-next">
+                <span>Recommended next:</span>
+                <div className="project-recommended-next-list">
+                  <button
+                    type="button"
+                    className="project-recommended-next-button"
+                    onClick={() => onSelectChallenge(recommendedNext.id)}
+                  >
+                    {recommendedNext.title}
+                  </button>
+                </div>
+              </div>
             ) : null}
-            {recommendedAfterTitles.length > 0 ? (
-              <p className="comparison-copy">
-                Best after: <strong>{recommendedAfterTitles.join(', ')}</strong>
-              </p>
+            {recommendedAfterTargets.length > 0 ? (
+              <div className="comparison-copy project-recommended-next">
+                <span>Best after:</span>
+                <div className="project-recommended-next-list">
+                  {recommendedAfterTargets.map((target) => (
+                    <button
+                      key={target.id}
+                      type="button"
+                      className="project-recommended-next-button"
+                      onClick={() => onSelectChallenge(target.id)}
+                    >
+                      {target.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ) : null}
           </div>
 

@@ -5,7 +5,7 @@ import {
   getFirstLearningItemInGroup,
   getLearningGroupLabel,
   getLearningStageLabel,
-  getRecommendedAfterTitles,
+  getRecommendedAfterTargets,
   getRecommendedNextItem,
   getSortedLearningGroups,
   inferLearningStage,
@@ -79,7 +79,7 @@ export function TutorialPanel({
   );
   const selectedStage = inferLearningStage(selectedTutorial);
   const recommendedNext = getRecommendedNextItem(sortedTutorials, selectedTutorial.id);
-  const recommendedAfterTitles = getRecommendedAfterTitles(sortedTutorials, selectedTutorial);
+  const recommendedAfterTargets = getRecommendedAfterTargets(sortedTutorials, selectedTutorial);
 
   const isTutorialProjectActive = selectedTutorial.projectId === currentProjectId;
   const totalSteps = selectedTutorial.steps.length;
@@ -180,14 +180,35 @@ export function TutorialPanel({
           )}
         </div>
         {recommendedNext ? (
-          <p className="comparison-copy">
-            Recommended next: <strong>{recommendedNext.title}</strong>
-          </p>
+          <div className="comparison-copy project-recommended-next">
+            <span>Recommended next:</span>
+            <div className="project-recommended-next-list">
+              <button
+                type="button"
+                className="project-recommended-next-button"
+                onClick={() => onSelectTutorial(recommendedNext.id)}
+              >
+                {recommendedNext.title}
+              </button>
+            </div>
+          </div>
         ) : null}
-        {recommendedAfterTitles.length > 0 ? (
-          <p className="comparison-copy">
-            Best after: <strong>{recommendedAfterTitles.join(', ')}</strong>
-          </p>
+        {recommendedAfterTargets.length > 0 ? (
+          <div className="comparison-copy project-recommended-next">
+            <span>Best after:</span>
+            <div className="project-recommended-next-list">
+              {recommendedAfterTargets.map((target) => (
+                <button
+                  key={target.id}
+                  type="button"
+                  className="project-recommended-next-button"
+                  onClick={() => onSelectTutorial(target.id)}
+                >
+                  {target.label}
+                </button>
+              ))}
+            </div>
+          </div>
         ) : null}
       </div>
 

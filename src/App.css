@@ -1140,6 +1140,33 @@ body.dock-resizing {
   overflow-wrap: anywhere;
 }
 
+.project-recommended-next {
+  display: grid;
+  gap: 8px;
+}
+
+.project-recommended-next-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.project-recommended-next-button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-button);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.project-recommended-next-button:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-button));
+}
+
 .project-context-card {
   padding: 12px 14px;
   border: 1px solid var(--line);

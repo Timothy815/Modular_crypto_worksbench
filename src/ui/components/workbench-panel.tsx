@@ -16,7 +16,7 @@ import {
 import type { DemoProject } from '../demo-projects';
 import {
   compareLearningItems,
-  getRecommendedAfterTitles,
+  getRecommendedAfterTargets,
   getSortedLearningGroups,
   inferLearningStage,
 } from '../learning-sequence';
@@ -310,7 +310,7 @@ export function WorkbenchPanel({
   );
   const activeProjectStage = inferLearningStage(activeProject);
   const activeProjectRecommendedAfter = useMemo(
-    () => getRecommendedAfterTitles(projects, activeProject),
+    () => getRecommendedAfterTargets(projects, activeProject),
     [activeProject, projects],
   );
   const effectiveLayout = useMemo(
