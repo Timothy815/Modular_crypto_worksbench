@@ -240,7 +240,9 @@ export function ParameterInspector({
   const [requestedStepperMode, setRequestedStepperMode] = useState<'top-level' | 'nested'>('top-level');
   const [requestedNestedStepIndex, setRequestedNestedStepIndex] = useState<number | null>(null);
   const [requestedLookupChunkIndex, setRequestedLookupChunkIndex] = useState(0);
-  const [sinkRepresentation, setSinkRepresentation] = useState<SinkRepresentation>('bits');
+  const [sinkRepresentationsByModuleId, setSinkRepresentationsByModuleId] = useState<
+    Record<string, SinkRepresentation>
+  >({});
   const [draggedPermutationInputIndex, setDraggedPermutationInputIndex] = useState<number | null>(null);
   const [draggedRotorInputIndex, setDraggedRotorInputIndex] = useState<number | null>(null);
   const [selectedPlugboardLetter, setSelectedPlugboardLetter] = useState<string | null>(null);
@@ -294,18 +296,57 @@ export function ParameterInspector({
     return execution.trace.at(-1);
   }, [execution, project.modules]);
   const outputSignal = outputTrace?.inputs.in;
-  const outputSinkDefId =
-    outputTrace && isOutputSinkDefId(outputTrace.defId) ? outputTrace.defId : undefined;
-  const outputRepresentationOptions = useMemo(
-    () => getSinkRepresentationOptions(outputSinkDefId, outputSignal),
-    [outputSignal, outputSinkDefId],
-  );
-  const effectiveOutputRepresentation =
-    outputRepresentationOptions.some((option) => option.id === sinkRepresentation && option.available)
-      ? sinkRepresentation
-      : outputRepresentationOptions[0]?.id ?? 'bits';
-  const effectiveOutputRepresentationOption =
-    outputRepresentationOptions.find((option) => option.id === effectiveOutputRepresentation) ?? null;
+  const outputSummaries = useMemo(() => {
+    const sinkModules = project.modules.filter((module) => isOutputSinkDefId(module.defId));
+    const summaries = sinkModules.map((module) => {
+      const traceEntry = execution?.trace.find((entry) => entry.moduleId === module.id);
+      const signal = execution?.outputsByModuleId[module.id]?.out ?? traceEntry?.inputs.in;
+      const sinkDefId = isOutputSinkDefId(module.defId) ? module.defId : undefined;
+      const representationOptions = getSinkRepresentationOptions(sinkDefId, signal);
+      const preferredRepresentation = sinkRepresentationsByModuleId[module.id] ?? 'bits';
+      const effectiveRepresentation = representationOptions.some(
+        (option) => option.id === preferredRepresentation && option.available,
+      )
+        ? preferredRepresentation
+        : representationOptions[0]?.id ?? 'bits';
+      const effectiveRepresentationOption =
+        representationOptions.find((option) => option.id === effectiveRepresentation) ?? null;
+
+      return {
+        moduleId: module.id,
+        signal,
+        representationOptions,
+        effectiveRepresentation,
+        effectiveRepresentationOption,
+      };
+    });
+
+    if (summaries.length > 0) {
+      return summaries;
+    }
+
+    const fallbackOptions = outputTrace && isOutputSinkDefId(outputTrace.defId)
+      ? getSinkRepresentationOptions(outputTrace.defId, outputSignal)
+      : [];
+    const fallbackPreferred = sinkRepresentationsByModuleId.__fallback ?? 'bits';
+    const fallbackRepresentation = fallbackOptions.some(
+      (option) => option.id === fallbackPreferred && option.available,
+    )
+      ? fallbackPreferred
+      : fallbackOptions[0]?.id ?? 'bits';
+    const fallbackRepresentationOption =
+      fallbackOptions.find((option) => option.id === fallbackRepresentation) ?? null;
+
+    return [
+      {
+        moduleId: outputTrace?.moduleId ?? 'output',
+        signal: outputSignal,
+        representationOptions: fallbackOptions,
+        effectiveRepresentation: fallbackRepresentation,
+        effectiveRepresentationOption: fallbackRepresentationOption,
+      },
+    ];
+  }, [execution, outputSignal, outputTrace, project.modules, sinkRepresentationsByModuleId]);
   const selectedTrace = execution?.trace.find(
     (entry) => entry.moduleId === moduleInstance?.id,
   );
@@ -646,9 +687,10 @@ export function ParameterInspector({
         </select>
       </label>
 
-      <div className="trace-summary">
-        <span className="meta-label">{isTickedMode ? 'Collected Output' : 'Output'}</span>
-        <strong>{isTickedMode && collectedOutput !== null ? collectedOutput : formatSignal(outputTrace?.inputs.in)}</strong>
+      <div className="trace-summary inspector-output-summary">
+        <span className="meta-label">
+          {isTickedMode ? 'Output Summary' : 'Outputs'}
+        </span>
         <p className="trace-summary-subtitle">
           {validationIssues.length > 0
             ? `${validationIssues.length} validation issue${validationIssues.length === 1 ? '' : 's'} blocking execution`
@@ -656,31 +698,56 @@ export function ParameterInspector({
               ? `${execution.trace.length} module${execution.trace.length === 1 ? '' : 's'} executed`
               : 'Execution is waiting for a valid graph'}
         </p>
-        {effectiveOutputRepresentationOption ? (
-          <div className="sink-representation">
-            <span className="meta-label">Interpret Output As</span>
-            <p className="sink-rep-note">Observational views only. These do not change the graph.</p>
-            <div className="sink-rep-tabs">
-              {outputRepresentationOptions.map((option) => {
-                return (
-                  <button
-                    key={`output-summary-${option.id}`}
-                    type="button"
-                    className={`sink-rep-tab${effectiveOutputRepresentation === option.id ? ' active' : ''}${!option.available ? ' unavailable' : ''}`}
-                    onClick={() => option.available && setSinkRepresentation(option.id)}
-                    disabled={!option.available}
-                    title={option.reason ?? option.label}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="sink-rep-value">
-              <code>{effectiveOutputRepresentationOption.value}</code>
-            </div>
-          </div>
+        {isTickedMode && collectedOutput !== null && outputSummaries.length <= 1 ? (
+          <p className="trace-summary-subtitle">Collected output: <strong>{collectedOutput}</strong></p>
         ) : null}
+        <div className="inspector-output-list">
+          {outputSummaries.map((summary) => (
+            <div key={`output-summary-${summary.moduleId}`} className="inspector-output-card">
+              <div className="inspector-output-card-head">
+                <strong>{summary.moduleId}</strong>
+                {outputSummaries.length > 1 ? (
+                  <span className="content-status-chip">Sink</span>
+                ) : null}
+              </div>
+              <code>{formatSignal(summary.signal)}</code>
+              {summary.effectiveRepresentationOption ? (
+                <div className="sink-representation">
+                  <span className="meta-label">Interpret Output As</span>
+                  <p className="sink-rep-note">Observational views only. These do not change the graph.</p>
+                  <div className="sink-rep-tabs">
+                    {summary.representationOptions.map((option) => (
+                      <button
+                        key={`output-summary-${summary.moduleId}-${option.id}`}
+                        type="button"
+                        className={`sink-rep-tab${summary.effectiveRepresentation === option.id ? ' active' : ''}${!option.available ? ' unavailable' : ''}`}
+                        onClick={() =>
+                          option.available &&
+                          setSinkRepresentationsByModuleId((current) => ({
+                            ...current,
+                            [summary.moduleId]: option.id,
+                          }))
+                        }
+                        disabled={!option.available}
+                        title={option.reason ?? option.label}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="sink-rep-value">
+                    <code>{summary.effectiveRepresentationOption.value}</code>
+                  </div>
+                </div>
+              ) : null}
+              {isTickedMode && tickHistoryByModule?.[summary.moduleId]?.length ? (
+                <p className="sink-rep-note">
+                  {tickHistoryByModule[summary.moduleId].length} tick sample(s) available for this sink.
+                </p>
+              ) : null}
+            </div>
+          ))}
+        </div>
       </div>
 
       {inspectorTab === 'analyze' && isTickedMode && tickCount > 0 && moduleInstance ? (
