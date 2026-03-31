@@ -22,6 +22,7 @@ Read FLAGSHIP-LAB-MODERN-V1.md before starting work on a classroom-first modern 
 Read VERIFICATION-EXPLAINABILITY-V1.md before changing compare-surface wording, verification-station failure summaries, or baseline/known-answer interpretation guidance.
 Read INSTRUCTOR-PILOT-PACK-V1.md before changing instructor-facing pilot resources, professor outreach guidance, or the classroom adoption support surface in Resources.
 Read SHAREABLE-LAB-PACKS-V1.md before changing lab distribution, packaged workspace portability, or import/export of attached teaching and verification context.
+Read BITSTREAM-RANDOMNESS-LAB-V1.md before changing PRNG-analysis workspaces, bitstream randomness metrics, or any teaching surface that compares random-looking output against simple statistical weakness.
 Read PRNG-TEACHING-WORKSPACE-V1.md before starting work on bounded PRNG teaching demos, visible generator comparison workspaces, or any broader “what makes a generator good or bad” educational slice.
 Read TRANSFORMATION-VISUALIZATION-V1.md before starting work on primitive-level drill-down or transformation-legibility features.
 Read SBOX-TRANSFORMATION-V1.md before starting work on the first S-Box transformation view.

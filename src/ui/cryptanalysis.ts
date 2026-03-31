@@ -91,6 +91,46 @@ export interface CandidatePeriodChartEntry {
   supportBarPercent: number;
 }
 
+export interface BitstreamRunLengthGroup {
+  lengthLabel: string;
+  zeroRuns: number;
+  oneRuns: number;
+}
+
+export interface BitstreamRepeatedWindowEntry {
+  window: string;
+  count: number;
+}
+
+export interface BitstreamRepeatedWindowGroup {
+  size: number;
+  matches: BitstreamRepeatedWindowEntry[];
+  truncated: boolean;
+}
+
+export interface BitstreamRandomnessAnalysis {
+  bits: number[];
+  sampleBitCount: number;
+  zeroCount: number;
+  oneCount: number;
+  zeroShare: number;
+  oneShare: number;
+  imbalance: number;
+  lowConfidence: boolean;
+  longestZeroRun: number;
+  longestOneRun: number;
+  runLengthSummary: BitstreamRunLengthGroup[];
+  transitionCounts: Record<'00' | '01' | '10' | '11', number>;
+  equalAdjacentCount: number;
+  differentAdjacentCount: number;
+  equalAdjacentShare: number | null;
+  repeatedWindowGroups: BitstreamRepeatedWindowGroup[];
+}
+
+const RANDOMNESS_LOW_CONFIDENCE_BIT_COUNT = 64;
+const RANDOMNESS_REPEATED_WINDOW_LIMIT = 1024;
+const RANDOMNESS_REPEATED_WINDOW_SIZES = [4, 8] as const;
+
 export function hexToBits(value: string): number[] {
   return value
     .trim()
@@ -390,6 +430,153 @@ export function buildCandidatePeriodChartEntries(
     supportBarPercent:
       maxSupport > 0 ? (entry.supportingDistanceCount / maxSupport) * 100 : 0,
   }));
+}
+
+export function analyzeBitstreamRandomness(bits: number[]): BitstreamRandomnessAnalysis {
+  const normalizedBits = bits.map((bit) => (bit ? 1 : 0));
+  const sampleBitCount = normalizedBits.length;
+  const oneCount = normalizedBits.reduce<number>((sum, bit) => sum + bit, 0);
+  const zeroCount = sampleBitCount - oneCount;
+  const zeroShare = sampleBitCount > 0 ? zeroCount / sampleBitCount : 0;
+  const oneShare = sampleBitCount > 0 ? oneCount / sampleBitCount : 0;
+  const imbalance = Math.abs(zeroCount - oneCount);
+
+  const transitionCounts: Record<'00' | '01' | '10' | '11', number> = {
+    '00': 0,
+    '01': 0,
+    '10': 0,
+    '11': 0,
+  };
+  let equalAdjacentCount = 0;
+  let differentAdjacentCount = 0;
+
+  for (let index = 0; index < normalizedBits.length - 1; index += 1) {
+    const pair = `${normalizedBits[index]}${normalizedBits[index + 1]}` as '00' | '01' | '10' | '11';
+    transitionCounts[pair] += 1;
+    if (normalizedBits[index] === normalizedBits[index + 1]) {
+      equalAdjacentCount += 1;
+    } else {
+      differentAdjacentCount += 1;
+    }
+  }
+
+  const runs = collectBitRuns(normalizedBits);
+  const longestZeroRun = runs
+    .filter((run) => run.bit === 0)
+    .reduce((best, run) => Math.max(best, run.length), 0);
+  const longestOneRun = runs
+    .filter((run) => run.bit === 1)
+    .reduce((best, run) => Math.max(best, run.length), 0);
+
+  return {
+    bits: normalizedBits,
+    sampleBitCount,
+    zeroCount,
+    oneCount,
+    zeroShare,
+    oneShare,
+    imbalance,
+    lowConfidence: sampleBitCount < RANDOMNESS_LOW_CONFIDENCE_BIT_COUNT,
+    longestZeroRun,
+    longestOneRun,
+    runLengthSummary: summarizeRunLengths(runs),
+    transitionCounts,
+    equalAdjacentCount,
+    differentAdjacentCount,
+    equalAdjacentShare:
+      equalAdjacentCount + differentAdjacentCount > 0
+        ? equalAdjacentCount / (equalAdjacentCount + differentAdjacentCount)
+        : null,
+    repeatedWindowGroups: RANDOMNESS_REPEATED_WINDOW_SIZES.map((size) =>
+      analyzeRepeatedWindows(normalizedBits, size),
+    ),
+  };
+}
+
+function collectBitRuns(bits: number[]) {
+  const runs: Array<{ bit: 0 | 1; length: number }> = [];
+  if (bits.length === 0) {
+    return runs;
+  }
+
+  let currentBit = bits[0] as 0 | 1;
+  let currentLength = 1;
+
+  for (let index = 1; index < bits.length; index += 1) {
+    const bit = bits[index] as 0 | 1;
+    if (bit === currentBit) {
+      currentLength += 1;
+      continue;
+    }
+
+    runs.push({ bit: currentBit, length: currentLength });
+    currentBit = bit;
+    currentLength = 1;
+  }
+
+  runs.push({ bit: currentBit, length: currentLength });
+  return runs;
+}
+
+function summarizeRunLengths(
+  runs: Array<{ bit: 0 | 1; length: number }>,
+): BitstreamRunLengthGroup[] {
+  const buckets = [
+    { lengthLabel: '1', zeroRuns: 0, oneRuns: 0 },
+    { lengthLabel: '2', zeroRuns: 0, oneRuns: 0 },
+    { lengthLabel: '3', zeroRuns: 0, oneRuns: 0 },
+    { lengthLabel: '4+', zeroRuns: 0, oneRuns: 0 },
+  ];
+
+  for (const run of runs) {
+    const bucket =
+      run.length === 1 ? buckets[0]
+        : run.length === 2 ? buckets[1]
+        : run.length === 3 ? buckets[2]
+        : buckets[3];
+    if (run.bit === 0) {
+      bucket.zeroRuns += 1;
+    } else {
+      bucket.oneRuns += 1;
+    }
+  }
+
+  return buckets;
+}
+
+function analyzeRepeatedWindows(
+  bits: number[],
+  size: number,
+): BitstreamRepeatedWindowGroup {
+  const cappedBits = bits.slice(0, RANDOMNESS_REPEATED_WINDOW_LIMIT);
+  if (cappedBits.length < size) {
+    return {
+      size,
+      matches: [],
+      truncated: bits.length > RANDOMNESS_REPEATED_WINDOW_LIMIT,
+    };
+  }
+
+  const counts = new Map<string, number>();
+  for (let index = 0; index <= cappedBits.length - size; index += 1) {
+    const window = cappedBits.slice(index, index + size).join('');
+    counts.set(window, (counts.get(window) ?? 0) + 1);
+  }
+
+  return {
+    size,
+    matches: [...counts.entries()]
+      .filter(([, count]) => count > 1)
+      .sort((left, right) => {
+        if (right[1] !== left[1]) {
+          return right[1] - left[1];
+        }
+        return left[0].localeCompare(right[0]);
+      })
+      .slice(0, 4)
+      .map(([window, count]) => ({ window, count })),
+    truncated: bits.length > RANDOMNESS_REPEATED_WINDOW_LIMIT,
+  };
 }
 
 function calculateIndexOfCoincidence(counts: number[], totalLetters: number) {

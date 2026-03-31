@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   analyzeBitDifference,
+  analyzeBitstreamRandomness,
   buildCandidatePeriodChartEntries,
   buildRoundDiffusionChartEntries,
   analyzeRoundDiffusion,
@@ -313,6 +314,47 @@ describe('modern bit analysis helpers', () => {
         changedFlags: [false, false, true, false],
         changedCount: 1,
         changedPercent: 0.25,
+      },
+    ]);
+  });
+
+  it('summarizes bounded bitstream randomness metrics', () => {
+    const analysis = analyzeBitstreamRandomness([
+      0, 0, 1, 1, 0, 1, 0, 1,
+      0, 0, 1, 1, 0, 1, 0, 1,
+    ]);
+
+    expect(analysis.sampleBitCount).toBe(16);
+    expect(analysis.zeroCount).toBe(8);
+    expect(analysis.oneCount).toBe(8);
+    expect(analysis.lowConfidence).toBe(true);
+    expect(analysis.longestZeroRun).toBe(2);
+    expect(analysis.longestOneRun).toBe(2);
+    expect(analysis.transitionCounts).toEqual({
+      '00': 2,
+      '01': 6,
+      '10': 5,
+      '11': 2,
+    });
+    expect(analysis.runLengthSummary).toEqual([
+      { lengthLabel: '1', zeroRuns: 4, oneRuns: 4 },
+      { lengthLabel: '2', zeroRuns: 2, oneRuns: 2 },
+      { lengthLabel: '3', zeroRuns: 0, oneRuns: 0 },
+      { lengthLabel: '4+', zeroRuns: 0, oneRuns: 0 },
+    ]);
+    expect(analysis.repeatedWindowGroups).toEqual([
+      {
+        size: 4,
+        truncated: false,
+        matches: expect.arrayContaining([
+          { window: '1010', count: 3 },
+          { window: '0011', count: 2 },
+        ]),
+      },
+      {
+        size: 8,
+        truncated: false,
+        matches: [{ window: '00110101', count: 2 }],
       },
     ]);
   });

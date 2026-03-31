@@ -1003,6 +1003,8 @@ function DetachedLearningView({
           project={snapshot.currentProject}
           registry={registry}
           execution={snapshot.execution}
+          isTickedMode={snapshot.isTickedMode}
+          tickedExecution={snapshot.tickedExecution}
           ciphertext={snapshot.ciphertext}
           cryptanalysisMode={snapshot.cryptanalysisMode}
           modernBaseline={snapshot.modernBaseline}

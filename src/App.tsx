@@ -1216,6 +1216,8 @@ function MainApp() {
       cryptanalysisMode: state.cryptanalysisModeByProject[activeProjectDefinition.id] ?? 'classical',
       modernBaseline: state.modernAnalysisBaselineByProject[activeProjectDefinition.id] ?? '',
       modernFlipBit: state.modernAnalysisFlipBitByProject[activeProjectDefinition.id] ?? 0,
+      isTickedMode,
+      tickedExecution,
     }),
     [
       activeLearningPanelTab,
@@ -1238,10 +1240,12 @@ function MainApp() {
       state.cryptanalysisModeByProject,
       state.modernAnalysisBaselineByProject,
       state.modernAnalysisFlipBitByProject,
+      tickedExecution,
       state.tutorialLibrary,
       theme,
       tutorialNotesVisible,
       tutorialStepIndex,
+      isTickedMode,
       workspaceMode,
     ],
   );
@@ -3350,6 +3354,8 @@ function MainApp() {
               projectName={activeProjectDefinition.name}
               registry={effectiveRegistry}
               execution={execution}
+              isTickedMode={isTickedMode}
+              tickedExecution={tickedExecution}
               canCaptureChallenge={canCaptureChallenge}
               ciphertext={state.cryptanalysisInputByProject[activeProjectDefinition.id] ?? ''}
               cryptanalysisMode={state.cryptanalysisModeByProject[activeProjectDefinition.id] ?? 'classical'}

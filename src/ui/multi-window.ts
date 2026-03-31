@@ -3,6 +3,7 @@ import type {
   ExecutionResult,
   ExecutionTraceEntry,
   Project,
+  TickedExecutionResult,
   ValidationIssue,
 } from '../engine/types';
 import type { UiAction } from './store';
@@ -99,9 +100,11 @@ export interface DetachedLearningSnapshot {
   challengeEvaluation: ChallengeEvaluation | null;
   canCaptureChallenge: boolean;
   ciphertext: string;
-  cryptanalysisMode: 'classical' | 'modern';
+  cryptanalysisMode: 'classical' | 'modern' | 'randomness';
   modernBaseline: string;
   modernFlipBit: number;
+  isTickedMode: boolean;
+  tickedExecution: TickedExecutionResult | null;
 }
 
 export interface DetachedPanelPayloadByKind {
@@ -175,7 +178,7 @@ export type DetachedPanelCommand =
   | { type: 'exportChallenge' }
   | { type: 'importChallengeRaw'; rawValue: string }
   | { type: 'captureChallenge' }
-  | { type: 'setCryptanalysisMode'; mode: 'classical' | 'modern' }
+  | { type: 'setCryptanalysisMode'; mode: 'classical' | 'modern' | 'randomness' }
   | { type: 'setCryptanalysisInput'; value: string }
   | { type: 'setModernAnalysisBaseline'; value: string }
   | { type: 'setModernAnalysisFlipBit'; value: number }

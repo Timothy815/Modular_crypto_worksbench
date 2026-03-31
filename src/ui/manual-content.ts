@@ -137,6 +137,13 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'MCW’s PRNG-oriented workspaces are teaching laboratories, not security badges. The plain LFSR, gated keystream, majority-clocked keystream, and predictability labs are designed to show how visible state evolves into an output stream, how gating or voting changes that rhythm, and why those changes still do not guarantee cryptographic strength. Read the warning text in each workspace, use Trace to connect register state to the emitted bit, and pay attention to disclosed period limits such as 2^n - 1 for an n-bit LFSR. The important distinction is this: a stream can look noisy while remaining deterministic and structurally weak.',
         indexTerms: ['prng', 'lfsr', 'keystream', 'predictability', 'period', 'not secure'],
       },
+      {
+        id: 'bitstream-randomness-lab',
+        title: 'Bitstream Randomness Lab',
+        body:
+          'The Randomness mode inside Cryptanalysis is a bounded teaching surface for bitstreams, not a security certificate. It reads a visible bit-domain sink and summarizes simple checks such as monobit balance, run lengths, transition counts, lag-1 dependence, and repeated 4-bit or 8-bit windows. The right habit is to read the meaning first: a stream can be perfectly balanced and still be weak, and a short sample can be misleading enough that the lab marks it as low-confidence under 64 bits. In ticked workspaces the lab analyzes the collected sink history rather than only the current snapshot, and if a project has several bit outputs you can choose which sink to inspect. This is useful for PRNG teaching because it turns “looks noisy” into something measurable without pretending the result proves cryptographic security.',
+        indexTerms: ['randomness lab', 'bitstream analysis', 'monobit', 'runs', 'autocorrelation', 'transition counts', 'repeated windows'],
+      },
     ],
   },
   {

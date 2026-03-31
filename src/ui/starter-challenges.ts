@@ -247,6 +247,7 @@ const keystreamTarget = cloneProject(keystreamProject.project);
 const brokenKeystreamStart = cloneProject(keystreamProject.project);
 const lfsrPredictabilityTarget = cloneProject(lfsrPredictabilityProject.project);
 const brokenLfsrPredictabilityStart = cloneProject(lfsrPredictabilityProject.project);
+const brokenRandomnessLabStart = cloneProject(lfsrPredictabilityProject.project);
 const gatedKeystreamTarget = cloneProject(gatedKeystreamProject.project);
 const brokenGatedKeystreamStart = cloneProject(gatedKeystreamProject.project);
 const majorityKeystreamTarget = cloneProject(majorityKeystreamProject.project);
@@ -672,6 +673,14 @@ if (!brokenPredictabilitySource) {
   throw new Error('Expected lfsr-predictability demo project to contain a prediction source.');
 }
 brokenPredictabilitySource.params.stream = [0, 1, 1, 0, 1, 0, 0, 1, 0];
+
+const brokenRandomnessLfsr = brokenRandomnessLabStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'lfsr',
+);
+if (!brokenRandomnessLfsr) {
+  throw new Error('Expected lfsr-predictability demo project to contain an LFSR module for randomness analysis.');
+}
+brokenRandomnessLfsr.params.taps = '0';
 
 const brokenGateLfsr = brokenGatedKeystreamStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'gate',
@@ -1325,6 +1334,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The first LFSR is not the mask itself; it controls when the second LFSR advances.',
       'Watch the gate register output bit on each tick and compare it against the target rhythm.',
       'A wrong gate seed can leave the second register frozen on the wrong ticks.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'find-the-weak-stream',
+    title: 'Find The Weak Stream',
+    projectId: 'lfsr-predictability',
+    stage: 'streams-and-scheduling',
+    order: 138,
+    recommendedAfter: ['reading-a-keystream'],
+    group: 'Sequential',
+    difficulty: 'intermediate',
+    prompt:
+      'This naked LFSR stream now repeats too quickly because the tap pattern is wrong. Use the Randomness lab on the real stream sink to spot the weak rhythm, then restore the taps so the output matches the captured reference machine again.',
+    startingProject: brokenRandomnessLabStart,
+    startingLayout: cloneProject(lfsrPredictabilityProject.layout),
+    targetProject: lfsrPredictabilityTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Open Cryptanalysis, switch to Randomness, and inspect the stream-out sink rather than the prediction helper.',
+      'A visibly weak tap pattern often creates repeated short windows and an uneven transition rhythm.',
+      'The seeded target machine uses the original 5-bit LFSR taps, not a one-tap shortcut.',
     ],
   },
   {

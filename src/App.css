@@ -4385,3 +4385,57 @@ body.dock-resizing {
 .cryptanalysis-help-copy {
   color: color-mix(in srgb, var(--text-muted) 88%, var(--text));
 }
+
+.status-chip-warning {
+  border-color: color-mix(in srgb, #d97706 48%, var(--border));
+  background: color-mix(in srgb, #d97706 12%, var(--surface-1));
+  color: color-mix(in srgb, #92400e 86%, var(--text));
+}
+
+.randomness-sample-block {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-1) 76%, var(--surface-panel));
+}
+
+.randomness-sample-block code {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.randomness-run-grid,
+.randomness-transition-grid,
+.randomness-repeat-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.randomness-run-grid {
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  margin-top: 10px;
+}
+
+.randomness-run-cell,
+.randomness-transition-cell,
+.randomness-repeat-card {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+}
+
+.randomness-transition-grid {
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  margin: 12px 0;
+}
+
+.randomness-repeat-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-top: 12px;
+}

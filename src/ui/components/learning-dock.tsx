@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 
 import type { ChallengeEvaluation, GuidedChallenge } from '../challenges';
-import type { ExecutionResult, ModuleRegistry, Project } from '../../engine/types';
+import type { ExecutionResult, ModuleRegistry, Project, TickedExecutionResult } from '../../engine/types';
 import type { CryptanalysisMode } from '../cryptanalysis-mode';
 import type { GuidedTutorial, TutorialStep } from '../tutorials';
 import type { WorkspaceMode } from '../workspace-mode';
@@ -49,6 +49,8 @@ interface LearningDockProps {
   projectName: string;
   registry: ModuleRegistry;
   execution: ExecutionResult | null;
+  isTickedMode: boolean;
+  tickedExecution: TickedExecutionResult | null;
   canCaptureChallenge: boolean;
   ciphertext: string;
   cryptanalysisMode: CryptanalysisMode;
@@ -96,6 +98,8 @@ export function LearningDock({
   projectName,
   registry,
   execution,
+  isTickedMode,
+  tickedExecution,
   canCaptureChallenge,
   ciphertext,
   cryptanalysisMode,
@@ -264,6 +268,8 @@ export function LearningDock({
             project={currentProject}
             registry={registry}
             execution={execution}
+            isTickedMode={isTickedMode}
+            tickedExecution={tickedExecution}
             ciphertext={ciphertext}
             cryptanalysisMode={cryptanalysisMode}
             modernBaseline={modernBaseline}

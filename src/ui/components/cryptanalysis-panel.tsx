@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 
 import {
   analyzeBitDifference,
+  analyzeBitstreamRandomness,
   analyzeRoundDiffusion,
   analyzeSymbolSignal,
   bitsToAlphabetSymbol,
@@ -21,15 +22,19 @@ import type { CryptanalysisMode } from '../cryptanalysis-mode';
 import { runDemoProject } from '../demo-projects';
 import type { GuidedTutorial, TutorialStep } from '../tutorials';
 import { validateProject } from '../../engine/validation';
-import type { ExecutionResult, ModuleRegistry, Project } from '../../engine/types';
+import type { ExecutionResult, ModuleRegistry, Project, TickedExecutionResult } from '../../engine/types';
 import { cloneProject } from '../project-clone';
 import type { WorkspaceMode } from '../workspace-mode';
+import { collectTickedOutput } from '../execution-compare';
+import { isOutputSinkDefId } from '../../engine/output-sinks';
 
 interface CryptanalysisPanelProps {
   projectName: string;
   project: Project;
   registry: ModuleRegistry;
   execution: ExecutionResult | null;
+  isTickedMode: boolean;
+  tickedExecution: TickedExecutionResult | null;
   ciphertext: string;
   cryptanalysisMode: CryptanalysisMode;
   modernBaseline: string;
@@ -54,6 +59,8 @@ export function CryptanalysisPanel({
   project,
   registry,
   execution,
+  isTickedMode,
+  tickedExecution,
   ciphertext,
   cryptanalysisMode,
   modernBaseline,
@@ -75,6 +82,7 @@ export function CryptanalysisPanel({
   const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
   const [selectedColumnIndex, setSelectedColumnIndex] = useState<number>(0);
   const [selectedShiftsByColumnKey, setSelectedShiftsByColumnKey] = useState<Record<string, number>>({});
+  const [selectedRandomnessSinkId, setSelectedRandomnessSinkId] = useState<string>('');
   const analysis = analyzeSymbolSignal(
     ciphertext.trim().length > 0 ? { type: 'symbol', value: ciphertext } : null,
   );
@@ -263,12 +271,37 @@ export function CryptanalysisPanel({
   const hasBitDomainOutput = baselineOutputBits !== null;
   const showModernCompatibilityCallout = !flippableSource || !hasBitDomainOutput;
   const showTutorialCard = tutorial !== null && tutorialStep !== null;
+  const randomnessSinkOptions = useMemo(
+    () => getBitstreamSinkOptions(project, execution, tickedExecution, isTickedMode),
+    [project, execution, tickedExecution, isTickedMode],
+  );
+  const effectiveRandomnessSinkId = randomnessSinkOptions.some(
+    (option) => option.moduleId === selectedRandomnessSinkId,
+  )
+    ? selectedRandomnessSinkId
+    : randomnessSinkOptions[0]?.moduleId ?? '';
+  const activeRandomnessSink =
+    randomnessSinkOptions.find((option) => option.moduleId === effectiveRandomnessSinkId) ?? null;
+  const randomnessAnalysis = useMemo(
+    () => (activeRandomnessSink ? analyzeBitstreamRandomness(activeRandomnessSink.bits) : null),
+    [activeRandomnessSink],
+  );
+  const formattedRandomnessSample = useMemo(
+    () => formatBitstreamSample(activeRandomnessSink?.bits ?? []),
+    [activeRandomnessSink],
+  );
 
   return (
     <section className="panel comparison-panel cryptanalysis-panel">
       <div className="panel-head">
         <p className="panel-label">Cryptanalysis Workspace</p>
-        <h2>{cryptanalysisMode === 'classical' ? 'Vigenere Analysis Lab' : 'Avalanche Explorer'}</h2>
+        <h2>
+          {cryptanalysisMode === 'classical'
+            ? 'Vigenere Analysis Lab'
+            : cryptanalysisMode === 'modern'
+              ? 'Avalanche Explorer'
+              : 'Bitstream Randomness Lab'}
+        </h2>
         <div className="workspace-mode-switch" role="radiogroup" aria-label="Workspace mode">
           <button
             type="button"
@@ -322,6 +355,15 @@ export function CryptanalysisPanel({
           onClick={() => onSetCryptanalysisMode('modern')}
         >
           Modern
+        </button>
+        <button
+          type="button"
+          role="radio"
+          aria-checked={cryptanalysisMode === 'randomness'}
+          className={cryptanalysisMode === 'randomness' ? 'workspace-mode-chip active' : 'workspace-mode-chip'}
+          onClick={() => onSetCryptanalysisMode('randomness')}
+        >
+          Randomness
         </button>
         {tutorial ? (
           <button
@@ -579,6 +621,144 @@ export function CryptanalysisPanel({
               </p>
             )}
           </div>
+        </div>
+      ) : cryptanalysisMode === 'randomness' ? (
+        <div className="comparison-grid">
+          {activeRandomnessSink ? (
+            <>
+              <div className="comparison-card comparison-card-wide">
+                <span className="meta-label">Bitstream Source</span>
+                <strong>
+                  {activeRandomnessSink.label}
+                  {' '}| {activeRandomnessSink.sourceLabel}
+                </strong>
+                {randomnessSinkOptions.length > 1 ? (
+                  <div className="content-filter-row">
+                    <label className="param-field">
+                      <span>Analyze Sink</span>
+                      <select
+                        value={effectiveRandomnessSinkId}
+                        onChange={(event) => setSelectedRandomnessSinkId(event.target.value)}
+                      >
+                        {randomnessSinkOptions.map((option) => (
+                          <option key={option.moduleId} value={option.moduleId}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                ) : null}
+                <div className="cryptanalysis-output-summary-row">
+                  <span className="content-status-chip">
+                    Sample bits: <strong>{randomnessAnalysis?.sampleBitCount ?? 0}</strong>
+                  </span>
+                  {randomnessAnalysis?.lowConfidence ? (
+                    <span className="content-status-chip status-chip-warning">
+                      Low confidence sample: <strong>under 64 bits</strong>
+                    </span>
+                  ) : null}
+                </div>
+                <p className="comparison-copy cryptanalysis-help-copy">
+                  This lab measures visible stream structure. Passing one or two simple checks does not prove security.
+                </p>
+                <div className="randomness-sample-block">
+                  <span className="meta-label">Sampled Stream</span>
+                  <code>{formattedRandomnessSample || 'No visible bitstream yet.'}</code>
+                </div>
+              </div>
+
+              <div className="comparison-card">
+                <span className="meta-label">Balance</span>
+                <strong>{getMonobitInterpretation(randomnessAnalysis)}</strong>
+                <p className="comparison-copy">
+                  0 bits <strong>{randomnessAnalysis?.zeroCount ?? 0}</strong>
+                  {' '}| 1 bits <strong>{randomnessAnalysis?.oneCount ?? 0}</strong>
+                </p>
+                <p className="comparison-copy">
+                  Split <strong>{formatPercent(randomnessAnalysis?.zeroShare ?? 0)}</strong> /{' '}
+                  <strong>{formatPercent(randomnessAnalysis?.oneShare ?? 0)}</strong>
+                  {' '}| imbalance <strong>{randomnessAnalysis?.imbalance ?? 0}</strong>
+                </p>
+                <p className="comparison-copy cryptanalysis-help-copy">
+                  A balanced stream can still be easy to predict; this only rules out obvious bias.
+                </p>
+              </div>
+
+              <div className="comparison-card">
+                <span className="meta-label">Runs</span>
+                <strong>{getRunInterpretation(randomnessAnalysis)}</strong>
+                <p className="comparison-copy">
+                  Longest 0 run <strong>{randomnessAnalysis?.longestZeroRun ?? 0}</strong>
+                  {' '}| longest 1 run <strong>{randomnessAnalysis?.longestOneRun ?? 0}</strong>
+                </p>
+                <div className="randomness-run-grid">
+                  {randomnessAnalysis?.runLengthSummary.map((entry) => (
+                    <div key={entry.lengthLabel} className="randomness-run-cell">
+                      <span className="meta-label">Len {entry.lengthLabel}</span>
+                      <strong>0:{entry.zeroRuns} / 1:{entry.oneRuns}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="comparison-card comparison-card-wide">
+                <span className="meta-label">Transitions And Local Dependence</span>
+                <strong>{getTransitionInterpretation(randomnessAnalysis)}</strong>
+                <div className="randomness-transition-grid">
+                  {(['00', '01', '10', '11'] as const).map((pair) => (
+                    <div key={pair} className="randomness-transition-cell">
+                      <span className="meta-label">{pair}</span>
+                      <strong>{randomnessAnalysis?.transitionCounts[pair] ?? 0}</strong>
+                    </div>
+                  ))}
+                </div>
+                <p className="comparison-copy">
+                  Adjacent bits equal <strong>{randomnessAnalysis?.equalAdjacentCount ?? 0}</strong>
+                  {' '}| different <strong>{randomnessAnalysis?.differentAdjacentCount ?? 0}</strong>
+                </p>
+                <p className="comparison-copy cryptanalysis-help-copy">
+                  Lag-1 view: if adjacent bits hold far more often than they flip, the generator rhythm is probably too dependent on its previous state.
+                </p>
+              </div>
+
+              <div className="comparison-card comparison-card-wide">
+                <span className="meta-label">Repeated Windows</span>
+                <strong>{getRepeatedWindowInterpretation(randomnessAnalysis)}</strong>
+                <div className="randomness-repeat-grid">
+                  {randomnessAnalysis?.repeatedWindowGroups.map((group) => (
+                    <div key={group.size} className="randomness-repeat-card">
+                      <span className="meta-label">Window {group.size}</span>
+                      {group.matches.length > 0 ? (
+                        <div className="cryptanalysis-list">
+                          {group.matches.map((entry) => (
+                            <p key={`${group.size}-${entry.window}`} className="comparison-copy">
+                              <strong>{entry.window}</strong> repeats <strong>{entry.count}</strong> times
+                            </p>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="comparison-copy">No repeated {group.size}-bit windows found in the sampled stream.</p>
+                      )}
+                      {group.truncated ? (
+                        <p className="comparison-copy cryptanalysis-help-copy">
+                          Repeated-window scan capped at the first 1024 bits for responsiveness.
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="comparison-card comparison-card-wide cryptanalysis-modern-callout">
+              <span className="meta-label">Randomness Lab Compatibility</span>
+              <strong>This project needs a bit-domain output sink before the randomness lab can measure it.</strong>
+              <p className="comparison-copy">
+                Use a workspace with a visible bitstream sink such as <strong>keystream</strong>, <strong>lfsr-predictability</strong>, <strong>gated-keystream</strong>, or <strong>majority-keystream</strong>.
+              </p>
+            </div>
+          )}
         </div>
       ) : (
       <div className="comparison-grid">
@@ -1077,6 +1257,134 @@ function getTerminalBits(result: ExecutionResult): number[] | null {
   }
 
   return null;
+}
+
+function getBitSignalForSink(result: ExecutionResult | null, moduleId: string): number[] | null {
+  if (!result) {
+    return null;
+  }
+
+  const traceEntry =
+    result.trace.find((entry) => entry.moduleId === moduleId && isOutputSinkDefId(entry.defId)) ?? null;
+  const signal =
+    result.outputsByModuleId[moduleId]?.out ??
+    traceEntry?.outputs.out ??
+    traceEntry?.inputs.in ??
+    null;
+
+  return signal?.type === 'bits' ? signal.value : null;
+}
+
+function getBitstreamSinkOptions(
+  project: Project,
+  execution: ExecutionResult | null,
+  tickedExecution: TickedExecutionResult | null,
+  isTickedMode: boolean,
+) {
+  return project.modules
+    .filter((moduleInstance) => isOutputSinkDefId(moduleInstance.defId))
+    .map((moduleInstance) => {
+      if (isTickedMode && tickedExecution) {
+        const firstTickBits = getBitSignalForSink(tickedExecution.ticks[0] ?? null, moduleInstance.id);
+        if (!firstTickBits) {
+          return null;
+        }
+
+        return {
+          moduleId: moduleInstance.id,
+          label: moduleInstance.id,
+          bits: parseBitString(collectTickedOutput(tickedExecution, moduleInstance.id)),
+          sourceLabel: 'collected ticked stream',
+        };
+      }
+
+      const bits = getBitSignalForSink(execution, moduleInstance.id);
+      if (!bits) {
+        return null;
+      }
+
+      return {
+        moduleId: moduleInstance.id,
+        label: moduleInstance.id,
+        bits,
+        sourceLabel: 'current output snapshot',
+      };
+    })
+    .filter((entry): entry is { moduleId: string; label: string; bits: number[]; sourceLabel: string } => entry !== null);
+}
+
+function formatBitstreamSample(bits: number[]): string {
+  if (bits.length === 0) {
+    return '';
+  }
+
+  return bits
+    .map((bit) => String(bit))
+    .join('')
+    .match(/.{1,8}/g)
+    ?.join(' ') ?? bits.join('');
+}
+
+function formatPercent(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function getMonobitInterpretation(
+  analysis: ReturnType<typeof analyzeBitstreamRandomness> | null,
+): string {
+  if (!analysis || analysis.sampleBitCount === 0) {
+    return 'No bitstream captured yet';
+  }
+
+  if (analysis.imbalance >= Math.max(4, Math.ceil(analysis.sampleBitCount * 0.2))) {
+    return 'This stream is visibly biased';
+  }
+
+  return 'Balance alone does not certify strength';
+}
+
+function getRunInterpretation(
+  analysis: ReturnType<typeof analyzeBitstreamRandomness> | null,
+): string {
+  if (!analysis || analysis.sampleBitCount === 0) {
+    return 'No run evidence yet';
+  }
+
+  if (Math.max(analysis.longestZeroRun, analysis.longestOneRun) >= 6) {
+    return 'Long runs suggest obvious structure';
+  }
+
+  return 'Run lengths look ordinary, but that still proves little';
+}
+
+function getTransitionInterpretation(
+  analysis: ReturnType<typeof analyzeBitstreamRandomness> | null,
+): string {
+  if (!analysis || analysis.sampleBitCount < 2) {
+    return 'Not enough adjacent bits yet';
+  }
+
+  const holdCount = analysis.transitionCounts['00'] + analysis.transitionCounts['11'];
+  const flipCount = analysis.transitionCounts['01'] + analysis.transitionCounts['10'];
+  if (Math.abs(holdCount - flipCount) >= Math.max(3, Math.ceil((holdCount + flipCount) * 0.2))) {
+    return 'Adjacent-bit rhythm is uneven';
+  }
+
+  return 'Transitions look mixed, but predictability may remain';
+}
+
+function getRepeatedWindowInterpretation(
+  analysis: ReturnType<typeof analyzeBitstreamRandomness> | null,
+): string {
+  if (!analysis || analysis.sampleBitCount === 0) {
+    return 'No repeated-window evidence yet';
+  }
+
+  if (analysis.repeatedWindowGroups.some((group) => group.matches.length > 0)) {
+    return 'Repeated short windows suggest cycling or a short rhythm';
+  }
+
+  return 'No short exact repeats were found in this sample';
 }
 
 function findFlippableProjectSource(project: Project) {
