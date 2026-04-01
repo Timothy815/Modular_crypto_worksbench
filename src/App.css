@@ -2804,6 +2804,8 @@ body.dock-resizing {
   font-size: 0.92rem;
   color: var(--ink);
   overflow-wrap: anywhere;
+  max-height: 4.5lh;
+  overflow-y: auto;
 }
 
 .trace-toolbar {
@@ -3478,6 +3480,8 @@ body.dock-resizing {
   font-size: 0.85rem;
   word-break: break-all;
   overflow-wrap: anywhere;
+  max-height: 4.5lh;
+  overflow-y: auto;
 }
 
 .analysis-section {
