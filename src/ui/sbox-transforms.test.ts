@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  generateSBoxTable,
   getSBoxGridColumn,
   getSBoxGridColumns,
   getSBoxGridRow,
@@ -46,5 +47,42 @@ describe('sbox-transforms', () => {
     expect(rotateSBoxRow(table, 5, 2, 'left')).toEqual(table);
     expect(rotateSBoxColumn(table, 5, 2, 'up')).toEqual(table);
     expect(swapSBoxRows(table, 0, 0, 2)).not.toBe(table);
+  });
+
+  describe('generateSBoxTable', () => {
+    it('generates a valid identity table', () => {
+      expect(generateSBoxTable(16, 'identity')).toEqual(
+        Array.from({ length: 16 }, (_, i) => i),
+      );
+      expect(generateSBoxTable(256, 'identity')).toEqual(
+        Array.from({ length: 256 }, (_, i) => i),
+      );
+    });
+
+    it('generates a valid reverse table', () => {
+      expect(generateSBoxTable(16, 'reverse')).toEqual(
+        Array.from({ length: 16 }, (_, i) => 15 - i),
+      );
+    });
+
+    it('generates a valid pair-swap table', () => {
+      const table = generateSBoxTable(16, 'pair-swap');
+      expect(table).toEqual([1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14]);
+      expect(new Set(table).size).toBe(16);
+    });
+
+    it('generates a valid random permutation for 16 entries', () => {
+      const table = generateSBoxTable(16, 'random');
+      expect(table).toHaveLength(16);
+      expect(new Set(table).size).toBe(16);
+      expect(table.every((v) => v >= 0 && v < 16)).toBe(true);
+    });
+
+    it('generates a valid random permutation for 256 entries', () => {
+      const table = generateSBoxTable(256, 'random');
+      expect(table).toHaveLength(256);
+      expect(new Set(table).size).toBe(256);
+      expect(table.every((v) => v >= 0 && v < 256)).toBe(true);
+    });
   });
 });

@@ -1660,8 +1660,24 @@ body.dock-resizing {
 
 .sbox-editor-actions {
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sbox-generate-controls {
+  display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.sbox-generate-controls select {
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-panel);
+  color: var(--ink);
+  font-size: 13px;
+  font-family: var(--mono);
 }
 
 .sbox-editor-meta {

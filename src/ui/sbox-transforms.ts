@@ -98,6 +98,44 @@ export function rotateSBoxRow(
   return nextTable;
 }
 
+export type SBoxGenerationPreset = 'identity' | 'reverse' | 'random' | 'pair-swap';
+
+export const SBOX_GENERATION_SIZES = [
+  { label: '4-bit / 16 entries', entryCount: 16 },
+  { label: '8-bit / 256 entries', entryCount: 256 },
+] as const;
+
+export const SBOX_GENERATION_PRESETS: readonly { id: SBoxGenerationPreset; label: string }[] = [
+  { id: 'identity', label: 'Identity' },
+  { id: 'reverse', label: 'Reverse' },
+  { id: 'random', label: 'Random Permutation' },
+  { id: 'pair-swap', label: 'Pair-Swap' },
+] as const;
+
+export function generateSBoxTable(entryCount: number, preset: SBoxGenerationPreset): number[] {
+  switch (preset) {
+    case 'identity':
+      return Array.from({ length: entryCount }, (_, index) => index);
+    case 'reverse':
+      return Array.from({ length: entryCount }, (_, index) => entryCount - 1 - index);
+    case 'random': {
+      const table = Array.from({ length: entryCount }, (_, index) => index);
+      for (let i = table.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [table[i], table[j]] = [table[j], table[i]];
+      }
+      return table;
+    }
+    case 'pair-swap': {
+      const table = Array.from({ length: entryCount }, (_, index) => index);
+      for (let i = 0; i + 1 < entryCount; i += 2) {
+        [table[i], table[i + 1]] = [table[i + 1], table[i]];
+      }
+      return table;
+    }
+  }
+}
+
 export function rotateSBoxColumn(
   table: number[],
   column: number,

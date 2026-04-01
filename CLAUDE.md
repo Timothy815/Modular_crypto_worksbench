@@ -13,6 +13,7 @@ Read SPONGE-COLLISION-CHALLENGE-V1.md before starting work on the bounded sponge
 Read POST-COLLISION-INTERPRETATION-V1.md before extending the collision-teaching line beyond the shipped nudges/comparison slice.
 Read CUSTOM-SBOX-AUTHORING-V1.md before starting work on editable substitution-table authoring.
 Read SBOX-TABLE-TRANSFORMS-V1.md before starting work on bounded transform operations for authored `SBox` tables.
+Read SBOX-GENERATION-WORKFLOW-V1.md before changing dimension-first S-box creation, generation presets, or the faster initial workflow for authored `SBox` tables.
 Read POLLUX-FRACTIONATION-V1.md before starting work on classical fractionation, homophonic encoding, or Pollux-style bit-to-symbol disguise primitives.
 Read POLLUX-INVERSE-V1.md before starting work on inverse Pollux decoding, Pollux round-trip workflows, or symbol-to-bit recovery using known Pollux alphabets.
 Read POLLUX-ROUNDTRIP-CONTENT-V1.md before starting work on Pollux demo/tutorial/challenge/manual follow-ons that teach explicit encode/decode round-trips.

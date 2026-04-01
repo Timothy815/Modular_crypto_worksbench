@@ -67,8 +67,6 @@ import {
   swapRotorWiringTargets,
 } from '../../engine/modules/rotor';
 import {
-  buildIdentitySBoxTable,
-  buildReverseSBoxTable,
   serializeSBoxTable,
   swapSBoxEntry,
 } from '../../engine/modules/s-box';
@@ -106,10 +104,13 @@ import {
   getSBoxGridColumn,
   getSBoxGridColumns,
   getSBoxGridRow,
+  generateSBoxTable,
   rotateSBoxColumn,
   rotateSBoxRow,
   swapSBoxColumns,
   swapSBoxRows,
+  SBOX_GENERATION_SIZES,
+  SBOX_GENERATION_PRESETS,
 } from '../sbox-transforms';
 
 interface ParameterInspectorProps {
@@ -253,6 +254,7 @@ export function ParameterInspector({
     text: string;
   } | null>(null);
   const [requestedSBoxEditIndex, setRequestedSBoxEditIndex] = useState(0);
+  const [sboxGenerateSize, setSboxGenerateSize] = useState(16);
   const [renameState, setRenameState] = useState<{
     moduleId: string | null;
     draft: string;
@@ -2663,68 +2665,80 @@ export function ParameterInspector({
                       {editableTable ? (
                         <div className="sbox-editor">
                           <div className="sbox-editor-actions">
-                            <button
-                              type="button"
-                              className="mini-action-button"
-                              onClick={() => {
-                                applyNextTable(buildIdentitySBoxTable(editableTable.length));
-                              }}
-                            >
-                              Reset To Identity
-                            </button>
-                            <button
-                              type="button"
-                              className="mini-action-button"
-                              onClick={() => {
-                                applyNextTable(buildReverseSBoxTable(editableTable.length));
-                              }}
-                            >
-                              Reset To Reverse
-                            </button>
-                            <button
-                              type="button"
-                              className="mini-action-button"
-                              onClick={() =>
-                                applyNextTable(
-                                  rotateSBoxRow(editableTable, selectedRow, gridColumns, 'left'),
-                                )
-                              }
-                            >
-                              Rotate Row Left
-                            </button>
-                            <button
-                              type="button"
-                              className="mini-action-button"
-                              onClick={() =>
-                                applyNextTable(
-                                  rotateSBoxRow(editableTable, selectedRow, gridColumns, 'right'),
-                                )
-                              }
-                            >
-                              Rotate Row Right
-                            </button>
-                            <button
-                              type="button"
-                              className="mini-action-button"
-                              onClick={() =>
-                                applyNextTable(
-                                  rotateSBoxColumn(editableTable, selectedColumn, gridColumns, 'up'),
-                                )
-                              }
-                            >
-                              Rotate Column Up
-                            </button>
-                            <button
-                              type="button"
-                              className="mini-action-button"
-                              onClick={() =>
-                                applyNextTable(
-                                  rotateSBoxColumn(editableTable, selectedColumn, gridColumns, 'down'),
-                                )
-                              }
-                            >
-                              Rotate Column Down
-                            </button>
+                            <span className="meta-label">Generate</span>
+                            <div className="sbox-generate-controls">
+                              <select
+                                value={String(sboxGenerateSize)}
+                                onChange={(event) => setSboxGenerateSize(Number(event.target.value))}
+                              >
+                                {SBOX_GENERATION_SIZES.map((size) => (
+                                  <option key={size.entryCount} value={size.entryCount}>
+                                    {size.label}
+                                  </option>
+                                ))}
+                              </select>
+                              {SBOX_GENERATION_PRESETS.map((preset) => (
+                                <button
+                                  key={preset.id}
+                                  type="button"
+                                  className="mini-action-button"
+                                  onClick={() =>
+                                    applyNextTable(generateSBoxTable(sboxGenerateSize, preset.id))
+                                  }
+                                >
+                                  {preset.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="sbox-editor-actions">
+                            <span className="meta-label">Transform</span>
+                            <div className="sbox-generate-controls">
+                              <button
+                                type="button"
+                                className="mini-action-button"
+                                onClick={() =>
+                                  applyNextTable(
+                                    rotateSBoxRow(editableTable, selectedRow, gridColumns, 'left'),
+                                  )
+                                }
+                              >
+                                Rotate Row Left
+                              </button>
+                              <button
+                                type="button"
+                                className="mini-action-button"
+                                onClick={() =>
+                                  applyNextTable(
+                                    rotateSBoxRow(editableTable, selectedRow, gridColumns, 'right'),
+                                  )
+                                }
+                              >
+                                Rotate Row Right
+                              </button>
+                              <button
+                                type="button"
+                                className="mini-action-button"
+                                onClick={() =>
+                                  applyNextTable(
+                                    rotateSBoxColumn(editableTable, selectedColumn, gridColumns, 'up'),
+                                  )
+                                }
+                              >
+                                Rotate Column Up
+                              </button>
+                              <button
+                                type="button"
+                                className="mini-action-button"
+                                onClick={() =>
+                                  applyNextTable(
+                                    rotateSBoxColumn(editableTable, selectedColumn, gridColumns, 'down'),
+                                  )
+                                }
+                              >
+                                Rotate Column Down
+                              </button>
+                            </div>
                           </div>
                           <div className="sbox-editor-meta">
                             <span className="content-status-chip">{editableTable.length} entries</span>
