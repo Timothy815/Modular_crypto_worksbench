@@ -330,11 +330,19 @@ describe('modern bit analysis helpers', () => {
     expect(analysis.lowConfidence).toBe(true);
     expect(analysis.longestZeroRun).toBe(2);
     expect(analysis.longestOneRun).toBe(2);
+    expect(analysis.entropyPerBit).toBeCloseTo(1, 6);
+    expect(analysis.entropyGap).toBeCloseTo(0, 6);
     expect(analysis.transitionCounts).toEqual({
       '00': 2,
       '01': 6,
       '10': 5,
       '11': 2,
+    });
+    expect(analysis.transitionShares).toEqual({
+      '00': 2 / 15,
+      '01': 6 / 15,
+      '10': 5 / 15,
+      '11': 2 / 15,
     });
     expect(analysis.runLengthSummary).toEqual([
       { lengthLabel: '1', zeroRuns: 4, oneRuns: 4 },
@@ -342,6 +350,13 @@ describe('modern bit analysis helpers', () => {
       { lengthLabel: '3', zeroRuns: 0, oneRuns: 0 },
       { lengthLabel: '4+', zeroRuns: 0, oneRuns: 0 },
     ]);
+    expect(analysis.patternHeatmap).toEqual(
+      expect.arrayContaining([
+        { pattern: '000', count: 0, share: 0, intensity: 0 },
+        { pattern: '001', count: 2, share: 2 / 14, intensity: 0.5 },
+        { pattern: '101', count: 4, share: 4 / 14, intensity: 1 },
+      ]),
+    );
     expect(analysis.repeatedWindowGroups).toEqual([
       {
         size: 4,

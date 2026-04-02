@@ -1980,14 +1980,14 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       {
         id: 'randomness-balance-runs',
         title: 'Read Balance And Runs Together',
-        body: 'Start with balance and run lengths together. A stream can be near 50/50 and still show suspicious long runs or repeated short patterns. One check never settles the question.',
+        body: 'Start with balance, entropy, and run lengths together. A stream can be near 50/50 and have high bit-balance entropy while still showing suspicious long runs or repeated short patterns. One check never settles the question.',
         focusModuleId: 'lfsr',
         targetStepIndex: 1,
       },
       {
         id: 'randomness-transitions',
         title: 'Inspect Adjacent Dependence',
-        body: 'Transition counts and the lag-1 summary tell you whether adjacent bits hold or flip unevenly. This is the simplest way to show that “noisy-looking” output can still reveal a visible rhythm.',
+        body: 'Transition counts, the lag-1 summary, and the short-pattern heatmap tell you whether adjacent bits hold or flip unevenly and which 3-bit chunks dominate the sample. This is the simplest way to show that “noisy-looking” output can still reveal a visible rhythm.',
         focusModuleId: 'stream-out',
         targetStepIndex: 2,
       },

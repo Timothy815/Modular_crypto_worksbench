@@ -2757,6 +2757,46 @@ body.dock-resizing {
   min-width: 0;
 }
 
+.inspector-output-summary-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.inspector-output-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.inspector-output-action {
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.77rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.inspector-output-action:hover {
+  border-color: var(--accent-soft);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent-soft) 16%, var(--surface-soft));
+}
+
+.inspector-output-summary.collapsed {
+  margin-bottom: 10px;
+}
+
+.inspector-output-summary.collapsed .trace-summary-subtitle:last-of-type {
+  margin-bottom: 0;
+}
+
 .inspector-output-list {
   display: grid;
   gap: 10px;
@@ -4476,9 +4516,33 @@ body.dock-resizing {
   background: var(--surface-1);
 }
 
+.randomness-heat-cell {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent) var(--heat-percent, 0%), var(--surface-1)),
+      color-mix(in srgb, var(--accent) var(--heat-percent, 0%), var(--surface-panel))
+    );
+  border-color: color-mix(in srgb, var(--accent) var(--heat-border-percent, 0%), var(--border));
+}
+
 .randomness-transition-grid {
   grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
   margin: 12px 0;
+}
+
+.randomness-pattern-cell {
+  display: grid;
+  gap: 4px;
+  min-height: 92px;
+  align-content: start;
+}
+
+.randomness-heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .randomness-repeat-grid {

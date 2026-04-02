@@ -248,6 +248,8 @@ export function ParameterInspector({
     Record<string, SinkRepresentation>
   >({});
   const [activeOutputSummaryModuleId, setActiveOutputSummaryModuleId] = useState<string | null>(null);
+  const [isOutputSummaryCollapsed, setIsOutputSummaryCollapsed] = useState(false);
+  const [showCollectedOutput, setShowCollectedOutput] = useState(true);
   const [draggedPermutationInputIndex, setDraggedPermutationInputIndex] = useState<number | null>(null);
   const [draggedRotorInputIndex, setDraggedRotorInputIndex] = useState<number | null>(null);
   const [selectedPlugboardLetter, setSelectedPlugboardLetter] = useState<string | null>(null);
@@ -369,6 +371,7 @@ export function ParameterInspector({
 
     return outputSummaries[0] ?? null;
   }, [activeOutputSummaryModuleId, outputSummaries]);
+  const hasCollectedOutput = isTickedMode && collectedOutput !== null;
   const selectedTrace = execution?.trace.find(
     (entry) => entry.moduleId === moduleInstance?.id,
   );
@@ -709,10 +712,30 @@ export function ParameterInspector({
         </select>
       </label>
 
-      <div className="trace-summary inspector-output-summary">
-        <span className="meta-label">
-          {isTickedMode ? 'Output Summary' : 'Outputs'}
-        </span>
+      <div className={`trace-summary inspector-output-summary${isOutputSummaryCollapsed ? ' collapsed' : ''}`}>
+        <div className="inspector-output-summary-head">
+          <span className="meta-label">
+            {isTickedMode ? 'Output Summary' : 'Outputs'}
+          </span>
+          <div className="inspector-output-actions">
+            {hasCollectedOutput ? (
+              <button
+                type="button"
+                className="inspector-output-action"
+                onClick={() => setShowCollectedOutput((current) => !current)}
+              >
+                {showCollectedOutput ? 'Hide collected output' : 'Show collected output'}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="inspector-output-action"
+              onClick={() => setIsOutputSummaryCollapsed((current) => !current)}
+            >
+              {isOutputSummaryCollapsed ? 'Expand output' : 'Collapse output'}
+            </button>
+          </div>
+        </div>
         <p className="trace-summary-subtitle">
           {validationIssues.length > 0
             ? `${validationIssues.length} validation issue${validationIssues.length === 1 ? '' : 's'} blocking execution`
@@ -720,7 +743,7 @@ export function ParameterInspector({
               ? `${execution.trace.length} module${execution.trace.length === 1 ? '' : 's'} executed`
               : 'Execution is waiting for a valid graph'}
         </p>
-        {isTickedMode && collectedOutput !== null && outputSummaries.length <= 1 ? (
+        {showCollectedOutput && hasCollectedOutput && outputSummaries.length <= 1 ? (
           <p className="trace-summary-subtitle">Collected output: <strong>{collectedOutput}</strong></p>
         ) : null}
         {outputSummaries.length > 1 ? (
@@ -737,7 +760,7 @@ export function ParameterInspector({
             ))}
           </div>
         ) : null}
-        {activeOutputSummary ? (
+        {!isOutputSummaryCollapsed && activeOutputSummary ? (
           <div className="inspector-output-list">
             <div key={`output-summary-${activeOutputSummary.moduleId}`} className="inspector-output-card">
               <div className="inspector-output-card-head">

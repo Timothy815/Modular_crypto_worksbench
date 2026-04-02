@@ -686,6 +686,31 @@ export function CryptanalysisPanel({
               </div>
 
               <div className="comparison-card">
+                <span className="meta-label">Entropy</span>
+                <strong>{getEntropyInterpretation(randomnessAnalysis)}</strong>
+                <p className="comparison-copy">
+                  Shannon entropy per bit{' '}
+                  <strong>
+                    {randomnessAnalysis?.entropyPerBit !== null && randomnessAnalysis
+                      ? randomnessAnalysis.entropyPerBit.toFixed(3)
+                      : 'n/a'}
+                  </strong>
+                  {' '}out of <strong>1.000</strong>
+                </p>
+                <p className="comparison-copy">
+                  Entropy gap{' '}
+                  <strong>
+                    {randomnessAnalysis?.entropyGap !== null && randomnessAnalysis
+                      ? randomnessAnalysis.entropyGap.toFixed(3)
+                      : 'n/a'}
+                  </strong>
+                </p>
+                <p className="comparison-copy cryptanalysis-help-copy">
+                  This is a picture of bit balance only. High entropy here means the stream is not obviously biased, not that it is secure.
+                </p>
+              </div>
+
+              <div className="comparison-card">
                 <span className="meta-label">Runs</span>
                 <strong>{getRunInterpretation(randomnessAnalysis)}</strong>
                 <p className="comparison-copy">
@@ -707,9 +732,14 @@ export function CryptanalysisPanel({
                 <strong>{getTransitionInterpretation(randomnessAnalysis)}</strong>
                 <div className="randomness-transition-grid">
                   {(['00', '01', '10', '11'] as const).map((pair) => (
-                    <div key={pair} className="randomness-transition-cell">
+                    <div
+                      key={pair}
+                      className="randomness-transition-cell randomness-heat-cell"
+                      style={buildHeatCellStyle(randomnessAnalysis?.transitionShares[pair] ?? 0)}
+                    >
                       <span className="meta-label">{pair}</span>
                       <strong>{randomnessAnalysis?.transitionCounts[pair] ?? 0}</strong>
+                      <span className="comparison-copy">{formatPercent(randomnessAnalysis?.transitionShares[pair] ?? 0)}</span>
                     </div>
                   ))}
                 </div>
@@ -719,6 +749,27 @@ export function CryptanalysisPanel({
                 </p>
                 <p className="comparison-copy cryptanalysis-help-copy">
                   Lag-1 view: if adjacent bits hold far more often than they flip, the generator rhythm is probably too dependent on its previous state.
+                </p>
+              </div>
+
+              <div className="comparison-card comparison-card-wide">
+                <span className="meta-label">Short-Pattern Heatmap</span>
+                <strong>{getHeatmapInterpretation(randomnessAnalysis)}</strong>
+                <div className="randomness-heatmap-grid" role="list" aria-label="3-bit pattern heatmap">
+                  {randomnessAnalysis?.patternHeatmap.map((cell) => (
+                    <div
+                      key={cell.pattern}
+                      className="randomness-pattern-cell randomness-heat-cell"
+                      style={buildHeatCellStyle(cell.intensity)}
+                    >
+                      <span className="meta-label">{cell.pattern}</span>
+                      <strong>{cell.count}</strong>
+                      <span className="comparison-copy">{formatPercent(cell.share)}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="comparison-copy cryptanalysis-help-copy">
+                  A uniform-looking heatmap is what students often imagine randomness should resemble. Bright clusters show which short patterns appear too often.
                 </p>
               </div>
 
@@ -1329,6 +1380,14 @@ function formatPercent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
 
+function buildHeatCellStyle(intensity: number) {
+  const safeIntensity = Math.max(0, Math.min(1, intensity));
+  return {
+    ['--heat-percent' as string]: `${(safeIntensity * 45).toFixed(1)}%`,
+    ['--heat-border-percent' as string]: `${(safeIntensity * 55).toFixed(1)}%`,
+  };
+}
+
 function getMonobitInterpretation(
   analysis: ReturnType<typeof analyzeBitstreamRandomness> | null,
 ): string {
@@ -1357,6 +1416,20 @@ function getRunInterpretation(
   return 'Run lengths look ordinary, but that still proves little';
 }
 
+function getEntropyInterpretation(
+  analysis: ReturnType<typeof analyzeBitstreamRandomness> | null,
+): string {
+  if (!analysis || analysis.sampleBitCount === 0 || analysis.entropyPerBit === null) {
+    return 'No entropy evidence yet';
+  }
+
+  if (analysis.entropyPerBit < 0.92) {
+    return 'Entropy is low enough to reveal obvious bias';
+  }
+
+  return 'Entropy looks high, but this only measures balance';
+}
+
 function getTransitionInterpretation(
   analysis: ReturnType<typeof analyzeBitstreamRandomness> | null,
 ): string {
@@ -1371,6 +1444,24 @@ function getTransitionInterpretation(
   }
 
   return 'Transitions look mixed, but predictability may remain';
+}
+
+function getHeatmapInterpretation(
+  analysis: ReturnType<typeof analyzeBitstreamRandomness> | null,
+): string {
+  if (!analysis || analysis.sampleBitCount < 3) {
+    return 'Not enough short-pattern evidence yet';
+  }
+
+  const mostCommonShare = analysis.patternHeatmap.reduce(
+    (best, cell) => Math.max(best, cell.share),
+    0,
+  );
+  if (mostCommonShare >= 0.25) {
+    return 'A few short patterns are dominating the stream';
+  }
+
+  return 'Short patterns are spread more evenly across the sample';
 }
 
 function getRepeatedWindowInterpretation(

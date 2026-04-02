@@ -108,6 +108,13 @@ export interface BitstreamRepeatedWindowGroup {
   truncated: boolean;
 }
 
+export interface BitstreamPatternHeatmapCell {
+  pattern: string;
+  count: number;
+  share: number;
+  intensity: number;
+}
+
 export interface BitstreamRandomnessAnalysis {
   bits: number[];
   sampleBitCount: number;
@@ -124,6 +131,10 @@ export interface BitstreamRandomnessAnalysis {
   equalAdjacentCount: number;
   differentAdjacentCount: number;
   equalAdjacentShare: number | null;
+  entropyPerBit: number | null;
+  entropyGap: number | null;
+  transitionShares: Record<'00' | '01' | '10' | '11', number>;
+  patternHeatmap: BitstreamPatternHeatmapCell[];
   repeatedWindowGroups: BitstreamRepeatedWindowGroup[];
 }
 
@@ -467,6 +478,14 @@ export function analyzeBitstreamRandomness(bits: number[]): BitstreamRandomnessA
   const longestOneRun = runs
     .filter((run) => run.bit === 1)
     .reduce((best, run) => Math.max(best, run.length), 0);
+  const transitionTotal = equalAdjacentCount + differentAdjacentCount;
+  const transitionShares: Record<'00' | '01' | '10' | '11', number> = {
+    '00': transitionTotal > 0 ? transitionCounts['00'] / transitionTotal : 0,
+    '01': transitionTotal > 0 ? transitionCounts['01'] / transitionTotal : 0,
+    '10': transitionTotal > 0 ? transitionCounts['10'] / transitionTotal : 0,
+    '11': transitionTotal > 0 ? transitionCounts['11'] / transitionTotal : 0,
+  };
+  const entropyPerBit = calculateShannonEntropy([zeroCount, oneCount], sampleBitCount);
 
   return {
     bits: normalizedBits,
@@ -487,10 +506,29 @@ export function analyzeBitstreamRandomness(bits: number[]): BitstreamRandomnessA
       equalAdjacentCount + differentAdjacentCount > 0
         ? equalAdjacentCount / (equalAdjacentCount + differentAdjacentCount)
         : null,
+    entropyPerBit,
+    entropyGap: entropyPerBit !== null ? 1 - entropyPerBit : null,
+    transitionShares,
+    patternHeatmap: buildPatternHeatmap(normalizedBits, 3),
     repeatedWindowGroups: RANDOMNESS_REPEATED_WINDOW_SIZES.map((size) =>
       analyzeRepeatedWindows(normalizedBits, size),
     ),
   };
+}
+
+function calculateShannonEntropy(counts: number[], total: number): number | null {
+  if (total === 0) {
+    return null;
+  }
+
+  return counts.reduce((entropy, count) => {
+    if (count === 0) {
+      return entropy;
+    }
+
+    const probability = count / total;
+    return entropy - probability * Math.log2(probability);
+  }, 0);
 }
 
 function collectBitRuns(bits: number[]) {
@@ -577,6 +615,34 @@ function analyzeRepeatedWindows(
       .map(([window, count]) => ({ window, count })),
     truncated: bits.length > RANDOMNESS_REPEATED_WINDOW_LIMIT,
   };
+}
+
+function buildPatternHeatmap(bits: number[], size: number): BitstreamPatternHeatmapCell[] {
+  const cappedBits = bits.slice(0, RANDOMNESS_REPEATED_WINDOW_LIMIT);
+  const patternCount = 2 ** size;
+  const counts = new Map<string, number>(
+    Array.from({ length: patternCount }, (_, index) => [
+      index.toString(2).padStart(size, '0'),
+      0,
+    ]),
+  );
+
+  if (cappedBits.length >= size) {
+    for (let index = 0; index <= cappedBits.length - size; index += 1) {
+      const pattern = cappedBits.slice(index, index + size).join('');
+      counts.set(pattern, (counts.get(pattern) ?? 0) + 1);
+    }
+  }
+
+  const total = Math.max(cappedBits.length - size + 1, 0);
+  const maxCount = Math.max(...counts.values(), 0);
+
+  return [...counts.entries()].map(([pattern, count]) => ({
+    pattern,
+    count,
+    share: total > 0 ? count / total : 0,
+    intensity: maxCount > 0 ? count / maxCount : 0,
+  }));
 }
 
 function calculateIndexOfCoincidence(counts: number[], totalLetters: number) {
