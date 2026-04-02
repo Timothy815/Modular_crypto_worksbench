@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 
 import {
   analyzeBitDifference,
@@ -755,18 +755,46 @@ export function CryptanalysisPanel({
               <div className="comparison-card comparison-card-wide">
                 <span className="meta-label">Short-Pattern Heatmap</span>
                 <strong>{getHeatmapInterpretation(randomnessAnalysis)}</strong>
-                <div className="randomness-heatmap-grid" role="list" aria-label="3-bit pattern heatmap">
-                  {randomnessAnalysis?.patternHeatmap.map((cell) => (
-                    <div
-                      key={cell.pattern}
-                      className="randomness-pattern-cell randomness-heat-cell"
-                      style={buildHeatCellStyle(cell.intensity)}
-                    >
-                      <span className="meta-label">{cell.pattern}</span>
-                      <strong>{cell.count}</strong>
-                      <span className="comparison-copy">{formatPercent(cell.share)}</span>
-                    </div>
-                  ))}
+                <div className="randomness-heatmap-shell">
+                  <div className="randomness-heatmap-legend" aria-hidden="true">
+                    <span className="meta-label">Rare</span>
+                    <div className="randomness-heatmap-legend-bar" />
+                    <span className="meta-label">Dense</span>
+                  </div>
+                  <div className="randomness-heatmap-matrix" role="table" aria-label="3-bit pattern heatmap">
+                    <div className="randomness-heatmap-corner" aria-hidden="true" />
+                    {['00', '01', '10', '11'].map((suffix) => (
+                      <div key={`heatmap-col-${suffix}`} className="randomness-heatmap-axis randomness-heatmap-axis-column" role="columnheader">
+                        <span className="meta-label">Ends</span>
+                        <strong>{suffix}</strong>
+                      </div>
+                    ))}
+                    {['0', '1'].map((prefix) => (
+                      <Fragment key={`heatmap-row-${prefix}`}>
+                        <div className="randomness-heatmap-axis randomness-heatmap-axis-row" role="rowheader">
+                          <span className="meta-label">Starts</span>
+                          <strong>{prefix}</strong>
+                        </div>
+                        {['00', '01', '10', '11'].map((suffix) => {
+                          const pattern = `${prefix}${suffix}`;
+                          const cell = randomnessAnalysis?.patternHeatmap.find((entry) => entry.pattern === pattern);
+                          return (
+                            <div
+                              key={pattern}
+                              className="randomness-pattern-cell randomness-heat-cell"
+                              style={buildHeatCellStyle(cell?.intensity ?? 0)}
+                              role="cell"
+                              title={`${pattern}: ${cell?.count ?? 0} windows (${formatPercent(cell?.share ?? 0)})`}
+                            >
+                              <span className="meta-label">{pattern}</span>
+                              <strong>{cell?.count ?? 0}</strong>
+                              <span className="comparison-copy">{formatPercent(cell?.share ?? 0)}</span>
+                            </div>
+                          );
+                        })}
+                      </Fragment>
+                    ))}
+                  </div>
                 </div>
                 <p className="comparison-copy cryptanalysis-help-copy">
                   A uniform-looking heatmap is what students often imagine randomness should resemble. Bright clusters show which short patterns appear too often.
@@ -1383,8 +1411,9 @@ function formatPercent(value: number): string {
 function buildHeatCellStyle(intensity: number) {
   const safeIntensity = Math.max(0, Math.min(1, intensity));
   return {
-    ['--heat-percent' as string]: `${(safeIntensity * 45).toFixed(1)}%`,
-    ['--heat-border-percent' as string]: `${(safeIntensity * 55).toFixed(1)}%`,
+    ['--heat-percent' as string]: `${(10 + safeIntensity * 75).toFixed(1)}%`,
+    ['--heat-border-percent' as string]: `${(18 + safeIntensity * 70).toFixed(1)}%`,
+    ['--heat-fill-percent' as string]: `${(safeIntensity * 100).toFixed(1)}%`,
   };
 }
 
