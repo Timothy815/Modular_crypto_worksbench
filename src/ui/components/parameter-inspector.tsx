@@ -751,16 +751,7 @@ export function ParameterInspector({
               <code>{formatSignal(activeOutputSummary.signal)}</code>
               {activeOutputSummary.effectiveRepresentationOption ? (
                 <div className="sink-representation">
-                  <span className="meta-label">
-                    Interpret Output As
-                    {' '}
-                    <span
-                      className="info-hint"
-                      title="Observational views only. These do not change the graph."
-                    >
-                      ?
-                    </span>
-                  </span>
+                  <span className="meta-label">Interpret Output As</span>
                   <div className="sink-rep-tabs">
                     {activeOutputSummary.representationOptions.map((option) => (
                       <button
