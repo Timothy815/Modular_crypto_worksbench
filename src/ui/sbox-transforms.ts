@@ -98,10 +98,12 @@ export function rotateSBoxRow(
   return nextTable;
 }
 
-export type SBoxGenerationPreset = 'identity' | 'reverse' | 'random' | 'pair-swap';
+export type SBoxGenerationPreset = 'identity' | 'reverse' | 'random' | 'pair-swap' | 'bit-complement' | 'left-rotate';
 
 export const SBOX_GENERATION_SIZES = [
+  { label: '3-bit / 8 entries', entryCount: 8 },
   { label: '4-bit / 16 entries', entryCount: 16 },
+  { label: '5-bit / 32 entries', entryCount: 32 },
   { label: '8-bit / 256 entries', entryCount: 256 },
 ] as const;
 
@@ -110,6 +112,8 @@ export const SBOX_GENERATION_PRESETS: readonly { id: SBoxGenerationPreset; label
   { id: 'reverse', label: 'Reverse' },
   { id: 'random', label: 'Random Permutation' },
   { id: 'pair-swap', label: 'Pair-Swap' },
+  { id: 'bit-complement', label: 'Bit-Complement' },
+  { id: 'left-rotate', label: 'Left-Rotate' },
 ] as const;
 
 export function generateSBoxTable(entryCount: number, preset: SBoxGenerationPreset): number[] {
@@ -133,7 +137,41 @@ export function generateSBoxTable(entryCount: number, preset: SBoxGenerationPres
       }
       return table;
     }
+    case 'bit-complement': {
+      const mask = entryCount - 1;
+      return Array.from({ length: entryCount }, (_, index) => index ^ mask);
+    }
+    case 'left-rotate': {
+      const bits = Math.log2(entryCount);
+      const mask = entryCount - 1;
+      return Array.from({ length: entryCount }, (_, index) =>
+        ((index << 1) | (index >> (bits - 1))) & mask,
+      );
+    }
   }
+}
+
+export function invertSBoxTable(table: number[]): number[] {
+  const inverse = new Array<number>(table.length);
+  for (let i = 0; i < table.length; i += 1) {
+    inverse[table[i]] = i;
+  }
+  return inverse;
+}
+
+export function countSBoxFixedPoints(table: number[]): number {
+  let count = 0;
+  for (let i = 0; i < table.length; i += 1) {
+    if (table[i] === i) count += 1;
+  }
+  return count;
+}
+
+export function isSBoxInvolution(table: number[]): boolean {
+  for (let i = 0; i < table.length; i += 1) {
+    if (table[table[i]] !== i) return false;
+  }
+  return true;
 }
 
 export function rotateSBoxColumn(

@@ -101,10 +101,13 @@ import {
   stepHexString,
 } from '../inspector-analysis';
 import {
+  countSBoxFixedPoints,
   getSBoxGridColumn,
   getSBoxGridColumns,
   getSBoxGridRow,
   generateSBoxTable,
+  invertSBoxTable,
+  isSBoxInvolution,
   rotateSBoxColumn,
   rotateSBoxRow,
   swapSBoxColumns,
@@ -2737,6 +2740,25 @@ export function ParameterInspector({
                                 }
                               >
                                 Rotate Column Down
+                              </button>
+                            </div>
+                          </div>
+                          <div className="sbox-editor-actions">
+                            <span className="meta-label">Analyze</span>
+                            <div className="sbox-generate-controls">
+                              <span className="content-status-chip">
+                                {countSBoxFixedPoints(editableTable)} fixed point{countSBoxFixedPoints(editableTable) === 1 ? '' : 's'}
+                              </span>
+                              <span className="content-status-chip">
+                                {isSBoxInvolution(editableTable) ? 'Involution (self-inverse)' : 'Not an involution'}
+                              </span>
+                              <button
+                                type="button"
+                                className="mini-action-button"
+                                title="Build the table that undoes this substitution"
+                                onClick={() => applyNextTable(invertSBoxTable(editableTable))}
+                              >
+                                Build Inverse
                               </button>
                             </div>
                           </div>

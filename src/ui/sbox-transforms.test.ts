@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  countSBoxFixedPoints,
   generateSBoxTable,
   getSBoxGridColumn,
   getSBoxGridColumns,
   getSBoxGridRow,
+  invertSBoxTable,
+  isSBoxInvolution,
   rotateSBoxColumn,
   rotateSBoxRow,
   swapSBoxColumns,
@@ -83,6 +86,90 @@ describe('sbox-transforms', () => {
       expect(table).toHaveLength(256);
       expect(new Set(table).size).toBe(256);
       expect(table.every((v) => v >= 0 && v < 256)).toBe(true);
+    });
+
+    it('generates a valid bit-complement table', () => {
+      expect(generateSBoxTable(8, 'bit-complement')).toEqual([7, 6, 5, 4, 3, 2, 1, 0]);
+      expect(generateSBoxTable(16, 'bit-complement')).toEqual(
+        Array.from({ length: 16 }, (_, i) => i ^ 15),
+      );
+      const table256 = generateSBoxTable(256, 'bit-complement');
+      expect(table256[0]).toBe(255);
+      expect(table256[255]).toBe(0);
+      expect(table256[0xAA]).toBe(0x55);
+      expect(new Set(table256).size).toBe(256);
+    });
+
+    it('generates a valid left-rotate table', () => {
+      expect(generateSBoxTable(8, 'left-rotate')).toEqual([0, 2, 4, 6, 1, 3, 5, 7]);
+      const table16 = generateSBoxTable(16, 'left-rotate');
+      expect(table16[0]).toBe(0);
+      expect(table16[1]).toBe(2);
+      expect(table16[8]).toBe(1);
+      expect(table16[15]).toBe(15);
+      expect(new Set(table16).size).toBe(16);
+    });
+
+    it('generates valid permutations for 8 and 32 entry sizes', () => {
+      for (const size of [8, 32]) {
+        const table = generateSBoxTable(size, 'random');
+        expect(table).toHaveLength(size);
+        expect(new Set(table).size).toBe(size);
+        expect(table.every((v) => v >= 0 && v < size)).toBe(true);
+      }
+    });
+  });
+
+  describe('invertSBoxTable', () => {
+    it('computes the inverse of identity', () => {
+      expect(invertSBoxTable([0, 1, 2, 3])).toEqual([0, 1, 2, 3]);
+    });
+
+    it('computes the inverse of a non-trivial table', () => {
+      const table = [2, 0, 3, 1];
+      const inverse = invertSBoxTable(table);
+      expect(inverse).toEqual([1, 3, 0, 2]);
+      for (let i = 0; i < table.length; i += 1) {
+        expect(inverse[table[i]]).toBe(i);
+      }
+    });
+
+    it('double-inverse returns the original table', () => {
+      const table = generateSBoxTable(16, 'random');
+      expect(invertSBoxTable(invertSBoxTable(table))).toEqual(table);
+    });
+  });
+
+  describe('countSBoxFixedPoints', () => {
+    it('counts all fixed points for identity', () => {
+      expect(countSBoxFixedPoints([0, 1, 2, 3])).toBe(4);
+    });
+
+    it('counts zero fixed points for reverse', () => {
+      expect(countSBoxFixedPoints([3, 2, 1, 0])).toBe(0);
+    });
+
+    it('counts partial fixed points', () => {
+      expect(countSBoxFixedPoints([0, 3, 2, 1])).toBe(2);
+    });
+  });
+
+  describe('isSBoxInvolution', () => {
+    it('detects identity as an involution', () => {
+      expect(isSBoxInvolution([0, 1, 2, 3])).toBe(true);
+    });
+
+    it('detects pair-swap as an involution', () => {
+      expect(isSBoxInvolution([1, 0, 3, 2])).toBe(true);
+    });
+
+    it('detects non-involutions', () => {
+      expect(isSBoxInvolution([1, 2, 3, 0])).toBe(false);
+    });
+
+    it('detects bit-complement as an involution', () => {
+      const table = generateSBoxTable(16, 'bit-complement');
+      expect(isSBoxInvolution(table)).toBe(true);
     });
   });
 });
