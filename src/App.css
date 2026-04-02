@@ -4034,13 +4034,17 @@ body.dock-resizing {
 
 .tick-bar-collected {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 4px;
   font-family: var(--mono);
   font-size: 0.78rem;
   padding: 2px 8px;
   border-radius: 4px;
   background: var(--surface-2);
+  min-width: 0;
+  flex-basis: 100%;
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 .tick-bar-speed {
