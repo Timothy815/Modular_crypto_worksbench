@@ -2738,6 +2738,12 @@ body.dock-resizing {
   color: var(--muted);
   word-break: break-all;
   overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.trace-summary-subtitle strong {
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 .inspector-output-summary {
@@ -2747,6 +2753,8 @@ body.dock-resizing {
   background: var(--surface-panel);
   border: 1px solid color-mix(in srgb, var(--line) 72%, white);
   box-shadow: 0 8px 24px rgba(40, 28, 12, 0.08);
+  overflow: hidden;
+  min-width: 0;
 }
 
 .inspector-output-list {
