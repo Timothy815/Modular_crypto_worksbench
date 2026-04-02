@@ -3429,21 +3429,29 @@ body.dock-resizing {
 }
 
 .sink-representation {
-  margin-top: 12px;
-  padding-top: 10px;
+  margin-top: 8px;
+  padding-top: 8px;
   border-top: 1px solid var(--border);
 }
 
 .sink-rep-tabs {
   display: flex;
   gap: 4px;
-  margin: 8px 0;
+  margin: 4px 0;
 }
 
-.sink-rep-note {
-  margin: 6px 0 0;
+.info-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1px solid var(--muted);
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.7rem;
+  cursor: help;
+  vertical-align: middle;
 }
 
 .sink-rep-tab {
