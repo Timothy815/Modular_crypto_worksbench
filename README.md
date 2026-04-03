@@ -41,14 +41,13 @@ The older `v2.1` builder-power queue is now largely present on `main` as shipped
 - parameter comparison
 - inspector / workbench / store / app-shell maintenance passes
 
-That means the next docket should now be chosen from the remaining unshipped contracts rather than the older authoring-power queue.
-The clearest current candidates are:
-1. `SYSTEMS-IDE-COHERENCE-V1.md`
+That means the next docket should now be chosen from bounded product-facing slices rather than the older authoring-power queue.
 
-The current explicit north-star check after the major Python-export and multi-window advances is:
+The product-shaping north-star check is now also shipped:
 - `SYSTEMS-IDE-COHERENCE-V1.md`
-- a bounded product-shaping pass for deciding what MCW most clearly is now
-- intended to protect product identity as breadth increases
+- defines MCW as a visual cryptographic systems IDE
+- makes `Author / Understand / Verify / Export` the clearest core pillar set
+- treats future prioritization as a coherence question rather than a novelty question
 
 The current explicit trust/coherence follow-on after that is:
 - `VERIFIED-MACHINE-COHERENCE-V1.md`

@@ -48,8 +48,11 @@ Current active sequencing should now be read as:
 - choose the next product-facing slice from the remaining unshipped contracts
 - keep future work explicit, bounded, and evidence-driven
 
-The current practical next-up candidates are:
-1. `SYSTEMS-IDE-COHERENCE-V1.md`
+The product-shaping north-star note is now also shipped:
+- `SYSTEMS-IDE-COHERENCE-V1.md`
+- defines MCW as a visual cryptographic systems IDE
+- makes `Author / Understand / Verify / Export` the clearest core pillar set
+- treats future prioritization as a coherence question rather than a novelty question
 
 Current `main` now also includes:
 - Python export foundations:
@@ -221,9 +224,9 @@ Current `main` now also includes:
 Current near-future sequencing is now explicit:
 - continue the `v2.1` builder-power line first
 
-The next explicit north-star check is now recorded:
+The next explicit north-star check is now recorded as shipped:
 - `SYSTEMS-IDE-COHERENCE-V1.md`
-- defines a bounded product-shaping pass for deciding what MCW most clearly is now
+- completed the bounded product-shaping pass for deciding what MCW most clearly is now
 - treats future prioritization as a coherence question rather than a novelty question
 
 The next explicit verification/trust check is now also recorded:

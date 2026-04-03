@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Proposed
+Status: Shipped on `main`.
 
 ---
 
@@ -118,3 +118,96 @@ This slice is successful when:
 - the main strategic risk is identified honestly
 - the next move is justified against product coherence rather than novelty
 - future prioritization can use this pass as a north-star check without reopening the entire roadmap
+
+---
+
+## Shipped Note
+
+MCW now has a clearer product-facing answer to what kind of tool it is and what its strongest center actually is.
+
+### What MCW Most Clearly Is
+
+MCW is a **visual cryptographic systems IDE**.
+
+That framing is stronger than:
+- a simulator collection
+- a visual crypto toy
+- a loose teaching sandbox
+
+It reflects the product as it now exists on `main`:
+- users can author explicit machines from visible parts
+- inspect and analyze live behavior
+- verify those machines against bounded reference behavior
+- export executable artifacts with parity support
+
+### Core Product Pillars
+
+The strongest current product pillars are:
+- **Author**
+  - build explicit machines from visible, typed parts
+- **Understand**
+  - inspect, trace, compare, analyze, and learn from live behavior
+- **Verify**
+  - prove bounded behavioral agreement against chosen references
+- **Export**
+  - carry a machine out as executable Python with parity support
+
+The earlier draft pillar of `Arrange` remains important, but it is better understood as part of the workbench ergonomics that support the four core pillars rather than a peer pillar of its own.
+
+### Strongest Supporting Surfaces
+
+The most important supporting surfaces around those pillars are:
+- first-session onboarding
+- user manual
+- flagship classical and modern lab families
+- instructor pilot pack
+- AI toolkit handoff resources
+- detached windows and workbench organization
+
+These support the core systems-IDE identity rather than replace it.
+
+### Main Strategic Risk
+
+The main strategic risk is no longer missing capability.
+
+It is:
+- breadth outrunning legibility
+- novelty winning over product identity
+- internal coherence being mistaken for external classroom readiness
+
+In other words, the danger is not “MCW cannot do enough.”
+It is “MCW can do many strong things, but future work could blur what the product most clearly is.”
+
+### Canonical Workflows
+
+The workflows that best represent MCW at its strongest are:
+- build a machine from visible parts
+- inspect and trace the behavior
+- compare or verify it against a known reference
+- export it and prove parity
+
+The flagship lab lines are the clearest teaching versions of that same story:
+- classical machine realism
+- modern round visibility
+
+### Deferrable Temptations
+
+This note also sharpens what should be treated cautiously or deferred:
+- feature work chosen only because it is locally interesting
+- broad platform ambitions before more real user evidence
+- novelty primitives that do not strengthen the core author / understand / verify / export story
+- any wording that blurs bounded behavioral trust into security certification
+
+### Best Next Move After This Note
+
+The best next move after this coherence pass was not another abstract positioning document.
+
+It was to keep choosing bounded slices that strengthen the systems-IDE identity in practice:
+- trust/coherence work such as `VERIFIED-MACHINE-COHERENCE-V1.md`
+- classroom portability such as shareable lab packs
+- bounded authoring/readability improvements that make the language easier to use
+
+That is now the right way to judge future work:
+- does it strengthen **Author / Understand / Verify / Export**?
+- does it make MCW more legible to students, instructors, and exported-artifact users?
+- or is it merely interesting?
