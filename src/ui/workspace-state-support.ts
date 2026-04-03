@@ -3,6 +3,7 @@ import type { Project } from '../engine/types';
 import type {
   ComparisonBaselineDocument,
   WorkbenchAnnotation,
+  WorkbenchConnectionLayout,
   WorkbenchLayoutDirection,
   WorkbenchPosition,
   WorkbenchRoutingMode,
@@ -16,6 +17,7 @@ export interface WorkspaceHistorySnapshot {
   annotations: WorkbenchAnnotation[];
   layoutDirection: WorkbenchLayoutDirection;
   routingMode: WorkbenchRoutingMode;
+  connectionLayout: Record<string, WorkbenchConnectionLayout>;
   selectedModuleIds: string[];
   probedModuleIds: string[];
   paramDrafts: Record<string, string>;
@@ -34,6 +36,7 @@ interface WorkspaceSnapshotState {
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
   layoutDirectionByProject: Record<string, WorkbenchLayoutDirection>;
   routingModeByProject: Record<string, WorkbenchRoutingMode>;
+  connectionLayoutByProject: Record<string, Record<string, WorkbenchConnectionLayout>>;
   selectedModuleIdByProject: Record<string, string | null>;
   selectedModuleIdsByProject: Record<string, string[]>;
   probedModuleIdsByProject: Record<string, string[]>;
@@ -71,6 +74,21 @@ export function createEmptyWorkspaceHistoryState(): WorkspaceHistoryState {
   };
 }
 
+function cloneConnectionLayout(
+  connectionLayout: Record<string, WorkbenchConnectionLayout>,
+): Record<string, WorkbenchConnectionLayout> {
+  return Object.fromEntries(
+    Object.entries(connectionLayout).map(([connectionKey, layout]) => [
+      connectionKey,
+      layout.orthogonalBend
+        ? {
+            orthogonalBend: { ...layout.orthogonalBend },
+          }
+        : {},
+    ]),
+  );
+}
+
 export function cloneWorkspaceHistorySnapshot(
   snapshot: WorkspaceHistorySnapshot,
 ): WorkspaceHistorySnapshot {
@@ -80,6 +98,7 @@ export function cloneWorkspaceHistorySnapshot(
     annotations: cloneAnnotations(snapshot.annotations),
     layoutDirection: snapshot.layoutDirection,
     routingMode: snapshot.routingMode,
+    connectionLayout: cloneConnectionLayout(snapshot.connectionLayout),
     selectedModuleIds: [...snapshot.selectedModuleIds],
     probedModuleIds: [...snapshot.probedModuleIds],
     paramDrafts: { ...snapshot.paramDrafts },
@@ -104,6 +123,7 @@ export function buildWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
     annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
     layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
     routingMode: state.routingModeByProject[projectId] ?? 'curved',
+    connectionLayout: cloneConnectionLayout(state.connectionLayoutByProject[projectId] ?? {}),
     selectedModuleIds: [...(state.selectedModuleIdsByProject[projectId] ?? [])],
     probedModuleIds: [...(state.probedModuleIdsByProject[projectId] ?? [])],
     paramDrafts: Object.fromEntries(
@@ -142,6 +162,10 @@ export function applyWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
     routingModeByProject: {
       ...state.routingModeByProject,
       [projectId]: snapshot.routingMode,
+    },
+    connectionLayoutByProject: {
+      ...state.connectionLayoutByProject,
+      [projectId]: cloneConnectionLayout(snapshot.connectionLayout),
     },
     selectedModuleIdByProject: {
       ...state.selectedModuleIdByProject,
@@ -196,6 +220,7 @@ export function buildWorkspaceVersionDocument<State extends WorkspaceVersionHost
         annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
         layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
         routingMode: state.routingModeByProject[projectId] ?? 'curved',
+        connectionLayout: cloneConnectionLayout(state.connectionLayoutByProject[projectId] ?? {}),
       },
     },
   };

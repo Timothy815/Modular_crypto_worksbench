@@ -18,6 +18,7 @@ import type {
   CompositeLibraryDocument,
   UserWorkspaceMetadata,
   WorkbenchAnnotation,
+  WorkbenchConnectionLayout,
   WorkbenchLayoutDirection,
   WorkbenchRoutingMode,
   WorkbenchPosition,
@@ -60,6 +61,7 @@ export interface UiState {
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
   layoutDirectionByProject: Record<string, WorkbenchLayoutDirection>;
   routingModeByProject: Record<string, WorkbenchRoutingMode>;
+  connectionLayoutByProject: Record<string, Record<string, WorkbenchConnectionLayout>>;
   comparisonBaselinesByProject: Record<string, ComparisonBaselineDocument | null>;
   activeChallengeIdByProject: Record<string, string | null>;
   activeTutorialIdByProject: Record<string, string | null>;
@@ -176,6 +178,14 @@ export type UiAction =
       toModuleId: string;
       toPort: string;
     }
+  | {
+      type: 'setConnectionOrthogonalBend';
+      projectId: string;
+      connectionKey: string;
+      axis: 'x' | 'y';
+      value: number;
+    }
+  | { type: 'clearConnectionOrthogonalBend'; projectId: string; connectionKey: string }
   | {
       type: 'applyCopiedParams';
       projectId: string;
@@ -391,6 +401,8 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'addConnection',
   'removeConnection',
   'replaceConnection',
+  'setConnectionOrthogonalBend',
+  'clearConnectionOrthogonalBend',
   'applyCopiedParams',
   'updateParam',
   'setModuleBypass',
@@ -541,6 +553,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     routingModeByProject: Object.fromEntries(
       projects.map((project) => [project.id, 'curved' as const]),
     ),
+    connectionLayoutByProject: Object.fromEntries(
+      projects.map((project) => [project.id, {}]),
+    ),
     comparisonBaselinesByProject: Object.fromEntries(
       projects.map((project) => [project.id, null]),
     ),
@@ -685,6 +700,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.routingModeByProject,
           [action.workspaceId]: 'curved',
         },
+        connectionLayoutByProject: {
+          ...state.connectionLayoutByProject,
+          [action.workspaceId]: {},
+        },
         comparisonBaselinesByProject: {
           ...state.comparisonBaselinesByProject,
           [action.workspaceId]: null,
@@ -812,6 +831,19 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.routingModeByProject,
           [action.workspaceId]: sourceRoutingMode,
         },
+        connectionLayoutByProject: {
+          ...state.connectionLayoutByProject,
+          [action.workspaceId]: Object.fromEntries(
+            Object.entries(state.connectionLayoutByProject[action.sourceProjectId] ?? {}).map(
+              ([connectionKey, layout]) => [
+                connectionKey,
+                layout.orthogonalBend
+                  ? { orthogonalBend: { ...layout.orthogonalBend } }
+                  : {},
+              ],
+            ),
+          ),
+        },
         comparisonBaselinesByProject: {
           ...state.comparisonBaselinesByProject,
           [action.workspaceId]: null,
@@ -917,6 +949,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           action.workspaceId,
         ),
         routingModeByProject: removeProjectEntry(state.routingModeByProject, action.workspaceId),
+        connectionLayoutByProject: removeProjectEntry(
+          state.connectionLayoutByProject,
+          action.workspaceId,
+        ),
         comparisonBaselinesByProject: removeProjectEntry(
           state.comparisonBaselinesByProject,
           action.workspaceId,
@@ -1132,6 +1168,57 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         routingModeByProject: {
           ...state.routingModeByProject,
           [action.projectId]: action.mode,
+        },
+      };
+    }
+    case 'setConnectionOrthogonalBend': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentLayout = state.connectionLayoutByProject[action.projectId] ?? {};
+      const currentBend = currentLayout[action.connectionKey]?.orthogonalBend;
+      if (
+        currentBend?.axis === action.axis &&
+        Math.abs(currentBend.value - action.value) < 0.001
+      ) {
+        return state;
+      }
+
+      return {
+        ...state,
+        connectionLayoutByProject: {
+          ...state.connectionLayoutByProject,
+          [action.projectId]: {
+            ...currentLayout,
+            [action.connectionKey]: {
+              orthogonalBend: {
+                axis: action.axis,
+                value: action.value,
+              },
+            },
+          },
+        },
+      };
+    }
+    case 'clearConnectionOrthogonalBend': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentLayout = state.connectionLayoutByProject[action.projectId] ?? {};
+      if (!(action.connectionKey in currentLayout)) {
+        return state;
+      }
+
+      const nextConnectionLayout = { ...currentLayout };
+      delete nextConnectionLayout[action.connectionKey];
+
+      return {
+        ...state,
+        connectionLayoutByProject: {
+          ...state.connectionLayoutByProject,
+          [action.projectId]: nextConnectionLayout,
         },
       };
     }
@@ -2025,6 +2112,19 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         routingModeByProject: {
           ...state.routingModeByProject,
           [action.projectId]: action.document.ui.routingMode ?? 'curved',
+        },
+        connectionLayoutByProject: {
+          ...state.connectionLayoutByProject,
+          [action.projectId]: Object.fromEntries(
+            Object.entries(action.document.ui.connectionLayout ?? {}).map(
+              ([connectionKey, layout]) => [
+                connectionKey,
+                layout.orthogonalBend
+                  ? { orthogonalBend: { ...layout.orthogonalBend } }
+                  : {},
+              ],
+            ),
+          ),
         },
         selectedModuleIdByProject: {
           ...state.selectedModuleIdByProject,

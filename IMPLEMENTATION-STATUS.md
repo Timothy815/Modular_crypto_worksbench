@@ -70,6 +70,11 @@ The next wire-legibility follow-on after node rotation and wire labels/colors is
 - a bounded workspace-level `Curved` / `Orthogonal` routing slice
 - ships deterministic right-angle paths in workspace UI metadata with no freeform bend-point editing in V1
 
+The next bounded routing-control follow-on after that is now shipped:
+- `MANUAL-WIRE-BEND-EDITING-V1.md`
+- a bounded orthogonal-wire bend-editing slice
+- ships per-connection bend overrides in workspace UI metadata only and stops short of arbitrary path editing
+
 Current `main` now also includes:
 - Python export foundations:
   - one workspace-local `Export Python` action beside JSON export

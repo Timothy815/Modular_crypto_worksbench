@@ -67,6 +67,27 @@ function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
       candidate.ui.layoutDirection === 'vertical') &&
     (candidate.ui.routingMode === undefined ||
       candidate.ui.routingMode === 'curved' ||
-      candidate.ui.routingMode === 'orthogonal')
+      candidate.ui.routingMode === 'orthogonal') &&
+    isConnectionLayoutMap(candidate.ui.connectionLayout)
+  );
+}
+
+function isConnectionLayoutMap(value: unknown) {
+  return (
+    value === undefined ||
+    (typeof value === 'object' &&
+      value !== null &&
+      Object.values(value).every((layout) => {
+        if (typeof layout !== 'object' || layout === null) {
+          return false;
+        }
+
+        const bend = (layout as { orthogonalBend?: { axis?: unknown; value?: unknown } })
+          .orthogonalBend;
+        return (
+          bend === undefined ||
+          ((bend.axis === 'x' || bend.axis === 'y') && typeof bend.value === 'number')
+        );
+      }))
   );
 }

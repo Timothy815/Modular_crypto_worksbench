@@ -331,6 +331,10 @@ function MainApp() {
     state.layoutDirectionByProject[activeProjectDefinition.id] ?? 'horizontal';
   const activeRoutingMode =
     state.routingModeByProject[activeProjectDefinition.id] ?? 'curved';
+  const activeConnectionLayout = useMemo(
+    () => state.connectionLayoutByProject[activeProjectDefinition.id] ?? {},
+    [activeProjectDefinition.id, state.connectionLayoutByProject],
+  );
   const baseAnnotations = useMemo(
     () => state.annotationsByProject[activeProjectDefinition.id] ?? [],
     [activeProjectDefinition.id, state.annotationsByProject],
@@ -897,6 +901,7 @@ function MainApp() {
         annotations: activeAnnotations,
         layoutDirection: activeLayoutDirection,
         routingMode: activeRoutingMode,
+        connectionLayout: activeConnectionLayout,
         comparisonBaseline,
         verificationCases,
         tutorial: selectedProjectTutorial,
@@ -909,6 +914,7 @@ function MainApp() {
     activeLayout,
     activeLayoutDirection,
     activeRoutingMode,
+    activeConnectionLayout,
     activeProjectDefinition.id,
     activeProjectDefinition.name,
     activeProjectDefinition.summary,
@@ -1595,6 +1601,7 @@ function MainApp() {
             annotations: activeAnnotations,
             layoutDirection: activeLayoutDirection,
             routingMode: activeRoutingMode,
+            connectionLayout: activeConnectionLayout,
           },
         },
     });
@@ -1784,6 +1791,7 @@ function MainApp() {
               : state.annotationsByProject[activeProjectDefinition.id] ?? [],
             layoutDirection: activeLayoutDirection,
             routingMode: activeRoutingMode,
+            connectionLayout: activeConnectionLayout,
           },
         },
       });
@@ -1810,6 +1818,7 @@ function MainApp() {
       activeLayout,
       activeLayoutDirection,
       activeRoutingMode,
+      activeConnectionLayout,
       activeProjectDefinition.id,
       activeProjectState,
       selectedModule,
@@ -2414,6 +2423,11 @@ function MainApp() {
             layout={compositeDrilldownContext?.layout ?? activeLayout}
             layoutDirection={activeLayoutDirection}
             routingMode={activeRoutingMode}
+            connectionLayout={
+              isCompositeDrilldownActive
+                ? {}
+                : activeConnectionLayout
+            }
             annotations={isCompositeDrilldownActive ? [] : activeAnnotations}
             execution={compositeDrilldownContext?.execution ?? execution}
             executionError={isCompositeDrilldownActive ? compositeDrilldownExecutionError : executionError}
@@ -2654,6 +2668,22 @@ function MainApp() {
                 connectionIndex,
               })
             }
+            onSetConnectionOrthogonalBend={(connectionKey, axis, value) =>
+              dispatch({
+                type: 'setConnectionOrthogonalBend',
+                projectId: activeProjectDefinition.id,
+                connectionKey,
+                axis,
+                value,
+              })
+            }
+            onClearConnectionOrthogonalBend={(connectionKey) =>
+              dispatch({
+                type: 'clearConnectionOrthogonalBend',
+                projectId: activeProjectDefinition.id,
+                connectionKey,
+              })
+            }
             onExportDocument={() => {
               if (isCompositeDrilldownActive) {
                 return;
@@ -2668,6 +2698,7 @@ function MainApp() {
                     : state.annotationsByProject[activeProjectDefinition.id] ?? [],
                   layoutDirection: activeLayoutDirection,
                   routingMode: activeRoutingMode,
+                  connectionLayout: activeConnectionLayout,
                 },
               });
               setImportError(null);
@@ -3645,6 +3676,7 @@ function MainApp() {
                           annotations: state.annotationsByProject[activeProjectDefinition.id] ?? [],
                           layoutDirection: activeLayoutDirection,
                           routingMode: activeRoutingMode,
+                          connectionLayout: activeConnectionLayout,
                         },
                       },
                     });
@@ -3747,6 +3779,8 @@ function MainApp() {
                           'horizontal',
                         routingMode:
                           state.routingModeByProject[selectedChallengeProjectId] ?? 'curved',
+                        connectionLayout:
+                          state.connectionLayoutByProject[selectedChallengeProjectId] ?? {},
                       },
                     },
                   });

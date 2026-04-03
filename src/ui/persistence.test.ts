@@ -159,6 +159,7 @@ describe('workspace persistence', () => {
     });
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.layoutDirection).toBe('vertical');
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.routingMode).toBe('orthogonal');
+    expect(restored?.documentsByProjectId['my-scratchpad']?.ui.connectionLayout).toEqual({});
   });
 
   it('round-trips node orientation through storage', () => {
@@ -229,6 +230,11 @@ describe('parseShareableLabPack', () => {
           annotations: [],
           layoutDirection: 'vertical',
           routingMode: 'orthogonal',
+          connectionLayout: {
+            'a:out->b:in': {
+              orthogonalBend: { axis: 'x', value: 144 },
+            },
+          },
         },
       },
       verificationCases: [

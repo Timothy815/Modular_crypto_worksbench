@@ -192,6 +192,12 @@ export function hydrateInitialUiState(projects: DemoProject[]): UiState {
         persistedWorkspace.documentsByProjectId[project.id]?.ui.routingMode ?? 'curved',
       ]),
     ),
+    connectionLayoutByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.documentsByProjectId[project.id]?.ui.connectionLayout ?? {},
+      ]),
+    ),
     comparisonBaselinesByProject: Object.fromEntries(
       allProjects.map((project) => [
         project.id,
@@ -358,6 +364,7 @@ export interface BuildShareableLabPackArgs {
   annotations: WorkbenchAnnotation[];
   layoutDirection: 'horizontal' | 'vertical';
   routingMode: 'curved' | 'orthogonal';
+  connectionLayout?: Record<string, { orthogonalBend?: { axis: 'x' | 'y'; value: number } }>;
   comparisonBaseline: ComparisonBaselineDocument | null;
   verificationCases: VerificationCase[];
   tutorial?: GuidedTutorial;
@@ -373,6 +380,7 @@ export function buildShareableLabPack({
   annotations,
   layoutDirection,
   routingMode,
+  connectionLayout = {},
   comparisonBaseline,
   verificationCases,
   tutorial,
@@ -396,6 +404,12 @@ export function buildShareableLabPack({
         annotations: cloneAnnotations(annotations),
         layoutDirection,
         routingMode,
+        connectionLayout: Object.fromEntries(
+          Object.entries(connectionLayout).map(([connectionKey, layout]) => [
+            connectionKey,
+            layout.orthogonalBend ? { orthogonalBend: { ...layout.orthogonalBend } } : {},
+          ]),
+        ),
       },
     },
     comparisonBaseline: cloneComparisonBaseline(comparisonBaseline),
@@ -507,6 +521,14 @@ export function prepareImportedLabPack({
         annotations: cloneAnnotations(pack.workspace.ui.annotations),
         layoutDirection: pack.workspace.ui.layoutDirection ?? 'horizontal',
         routingMode: pack.workspace.ui.routingMode ?? 'curved',
+        connectionLayout: Object.fromEntries(
+          Object.entries(pack.workspace.ui.connectionLayout ?? {}).map(
+            ([connectionKey, layout]) => [
+              connectionKey,
+              layout.orthogonalBend ? { orthogonalBend: { ...layout.orthogonalBend } } : {},
+            ],
+          ),
+        ),
       },
     },
     comparisonBaseline: cloneComparisonBaseline(pack.comparisonBaseline) ?? null,

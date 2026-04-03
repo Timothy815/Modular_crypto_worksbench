@@ -155,6 +155,12 @@ function cloneWorkspaceDocument(document: WorkbenchDocument): WorkbenchDocument 
       annotations: cloneAnnotations(document.ui.annotations),
       layoutDirection: document.ui.layoutDirection ?? 'horizontal',
       routingMode: document.ui.routingMode ?? 'curved',
+      connectionLayout: Object.fromEntries(
+        Object.entries(document.ui.connectionLayout ?? {}).map(([connectionKey, layout]) => [
+          connectionKey,
+          layout.orthogonalBend ? { orthogonalBend: { ...layout.orthogonalBend } } : {},
+        ]),
+      ),
     },
   };
 }
@@ -185,6 +191,7 @@ function buildDefaultDocument(project: DemoProject): WorkbenchDocument {
       annotations: [],
       layoutDirection: 'horizontal',
       routingMode: 'curved',
+      connectionLayout: {},
     },
   };
 }
@@ -222,6 +229,14 @@ export function buildPersistedWorkspace(
             annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
             layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
             routingMode: state.routingModeByProject[projectId] ?? 'curved',
+            connectionLayout: Object.fromEntries(
+              Object.entries(state.connectionLayoutByProject[projectId] ?? {}).map(
+                ([connectionKey, layout]) => [
+                  connectionKey,
+                  layout.orthogonalBend ? { orthogonalBend: { ...layout.orthogonalBend } } : {},
+                ],
+              ),
+            ),
           },
         },
       ]),
@@ -845,7 +860,28 @@ function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
       candidate.ui.layoutDirection === 'vertical') &&
     (candidate.ui.routingMode === undefined ||
       candidate.ui.routingMode === 'curved' ||
-      candidate.ui.routingMode === 'orthogonal')
+      candidate.ui.routingMode === 'orthogonal') &&
+    isConnectionLayoutMap(candidate.ui.connectionLayout)
+  );
+}
+
+function isConnectionLayoutMap(value: unknown) {
+  return (
+    value === undefined ||
+    (typeof value === 'object' &&
+      value !== null &&
+      Object.values(value).every((layout) => {
+        if (typeof layout !== 'object' || layout === null) {
+          return false;
+        }
+
+        const bend = (layout as { orthogonalBend?: { axis?: unknown; value?: unknown } })
+          .orthogonalBend;
+        return (
+          bend === undefined ||
+          ((bend.axis === 'x' || bend.axis === 'y') && typeof bend.value === 'number')
+        );
+      }))
   );
 }
 

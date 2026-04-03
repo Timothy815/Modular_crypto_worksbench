@@ -2415,6 +2415,25 @@ body.canvas-resizing {
   letter-spacing: 0;
 }
 
+.connection-bend-handle {
+  fill: color-mix(in srgb, var(--surface-panel) 90%, white);
+  stroke: color-mix(in srgb, var(--accent) 72%, var(--line));
+  stroke-width: 2;
+  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--accent) 18%, transparent));
+}
+
+.connection-bend-handle-x {
+  cursor: ew-resize;
+}
+
+.connection-bend-handle-y {
+  cursor: ns-resize;
+}
+
+.connection-bend-handle:hover {
+  fill: color-mix(in srgb, var(--accent) 16%, white);
+}
+
 .pending-connection {
   stroke: var(--danger-text);
   stroke-width: 2.5;

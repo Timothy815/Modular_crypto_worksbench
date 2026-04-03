@@ -80,6 +80,11 @@ The next wire-routing follow-on after that is now shipped as:
 - ships a workspace-level `Curved` / `Orthogonal` routing mode for cleaner circuit-surface readability
 - keeps routing as UI metadata only and stops short of freeform bend-point editing or full CAD behavior
 
+The next bounded routing-control follow-on after that is now shipped as:
+- `MANUAL-WIRE-BEND-EDITING-V1.md`
+- ships draggable elbow control for orthogonal wires only
+- keeps bend metadata in workspace UI state only and stops short of arbitrary path editing
+
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - now shipped as the first bounded verification-station refinement inside the compare/analyze line

@@ -48,6 +48,7 @@ import {
 } from '../workspace-viewport';
 import type {
   WorkbenchAnnotation,
+  WorkbenchConnectionLayout,
   WorkbenchLayoutDirection,
   WorkbenchPosition,
   WorkbenchRoutingMode,
@@ -68,8 +69,9 @@ import {
   formatVersionTimestamp,
   getAnchorPosition,
   getInputAnchorClassName,
-  getOrthogonalPath,
+  getOrthogonalPathData,
   getOrthogonalPendingPath,
+  shouldClearOrthogonalBendOverride,
 } from '../workbench-support';
 const WorkbenchActions = lazy(() =>
   import('./workbench-actions').then((module) => ({
@@ -179,6 +181,7 @@ interface WorkbenchPanelProps {
   layout: Record<string, WorkbenchPosition>;
   layoutDirection: WorkbenchLayoutDirection;
   routingMode: WorkbenchRoutingMode;
+  connectionLayout: Record<string, WorkbenchConnectionLayout>;
   annotations: WorkbenchAnnotation[];
   execution: ExecutionResult | null;
   executionError: string | null;
@@ -250,6 +253,12 @@ interface WorkbenchPanelProps {
     toPort: string,
   ) => void;
   onRemoveConnection: (connectionIndex: number) => void;
+  onSetConnectionOrthogonalBend: (
+    connectionKey: string,
+    axis: 'x' | 'y',
+    value: number,
+  ) => void;
+  onClearConnectionOrthogonalBend: (connectionKey: string) => void;
   onExportDocument: () => void;
   onExportLabPack: () => void;
   onExportPython: () => void;
@@ -272,6 +281,7 @@ export function WorkbenchPanel({
   layout,
   layoutDirection,
   routingMode,
+  connectionLayout,
   annotations,
   execution,
   executionError,
@@ -332,6 +342,8 @@ export function WorkbenchPanel({
   onAddConnection,
   onReplaceConnection,
   onRemoveConnection,
+  onSetConnectionOrthogonalBend,
+  onClearConnectionOrthogonalBend,
   onExportDocument,
   onExportLabPack,
   onExportPython,
@@ -371,6 +383,12 @@ export function WorkbenchPanel({
   const [connectionFeedback, setConnectionFeedback] = useState<string | null>(null);
   const [selectedConnectionIndex, setSelectedConnectionIndex] = useState<number | null>(null);
   const [hoveredConnectionIndex, setHoveredConnectionIndex] = useState<number | null>(null);
+  const [bendDragState, setBendDragState] = useState<{
+    connectionKey: string;
+    axis: 'x' | 'y';
+    autoValue: number;
+    currentValue: number;
+  } | null>(null);
   const [selectionBox, setSelectionBox] = useState<{
     startX: number;
     startY: number;
@@ -497,6 +515,13 @@ export function WorkbenchPanel({
     selectedConnectionIndex < activeProjectState.connections.length
       ? selectedConnectionIndex
       : null;
+  const selectedConnectionKey =
+    effectiveSelectedConnectionIndex !== null
+      ? getConnectionComparisonKey(activeProjectState.connections[effectiveSelectedConnectionIndex])
+      : null;
+  const selectedConnectionHasManualPath = Boolean(
+    selectedConnectionKey && connectionLayout[selectedConnectionKey]?.orthogonalBend,
+  );
 
   function getCanvasPointerFromClient(clientX: number, clientY: number) {
     const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
@@ -573,7 +598,7 @@ export function WorkbenchPanel({
   }, [canvasHeightResizeState]);
 
   useEffect(() => {
-    if (!dragState && !annotationDragState && !selectionBox) {
+    if (!dragState && !annotationDragState && !bendDragState && !selectionBox) {
       return undefined;
     }
 
@@ -655,6 +680,26 @@ export function WorkbenchPanel({
         );
       }
 
+      if (bendDragState) {
+        const pointer = getCanvasViewportPoint({
+          clientX: event.clientX,
+          clientY: event.clientY,
+          canvasLeft: canvasRect.left,
+          canvasTop: canvasRect.top,
+          scrollLeft: canvasSurface.scrollLeft,
+          scrollTop: canvasSurface.scrollTop,
+          zoom: workspaceZoom,
+        });
+        setBendDragState((prev) =>
+          prev
+            ? {
+                ...prev,
+                currentValue: prev.axis === 'x' ? pointer.x : pointer.y,
+              }
+            : null,
+        );
+      }
+
       if (selectionBox) {
         const pointer = getCanvasViewportPoint({
           clientX: event.clientX,
@@ -724,8 +769,25 @@ export function WorkbenchPanel({
         });
         onSelectModules(selectedModuleIds, selectionBox.additive);
       }
+      if (bendDragState) {
+        if (
+          shouldClearOrthogonalBendOverride({
+            autoValue: bendDragState.autoValue,
+            value: bendDragState.currentValue,
+          })
+        ) {
+          onClearConnectionOrthogonalBend(bendDragState.connectionKey);
+        } else {
+          onSetConnectionOrthogonalBend(
+            bendDragState.connectionKey,
+            bendDragState.axis,
+            bendDragState.currentValue,
+          );
+        }
+      }
       setDragState(null);
       setAnnotationDragState(null);
+      setBendDragState(null);
       setSelectionBox(null);
     }
 
@@ -739,12 +801,15 @@ export function WorkbenchPanel({
   }, [
     activeProjectState.modules,
     annotationDragState,
+    bendDragState,
     dragState,
     effectiveLayout,
     layout,
+    onClearConnectionOrthogonalBend,
     onMoveAnnotation,
     onMoveModule,
     onMoveModules,
+    onSetConnectionOrthogonalBend,
     onSelectModules,
     selectionBox,
     workspaceZoom,
@@ -1086,6 +1151,7 @@ export function WorkbenchPanel({
           canRedo={canRedo}
           selectedModuleIds={selectedModuleIds}
           effectiveSelectedConnectionIndex={effectiveSelectedConnectionIndex}
+          selectedConnectionHasManualPath={selectedConnectionHasManualPath}
           showTutorialToggle={showTutorialToggle}
           tutorialNotesVisible={tutorialNotesVisible}
           onAddAnnotation={onAddAnnotation}
@@ -1111,6 +1177,11 @@ export function WorkbenchPanel({
             if (effectiveSelectedConnectionIndex !== null) {
               onRemoveConnection(effectiveSelectedConnectionIndex);
               setSelectedConnectionIndex(null);
+            }
+          }}
+          onRequestResetWirePath={() => {
+            if (selectedConnectionKey) {
+              onClearConnectionOrthogonalBend(selectedConnectionKey);
             }
           }}
           onRequestImport={() => importInputRef.current?.click()}
@@ -1398,6 +1469,7 @@ export function WorkbenchPanel({
               const targetOrientation = getNodeOrientation(to.orientation, layoutDirection);
               const sourceSide = getPortSideForOrientation(sourceOrientation, 'out');
               const targetSide = getPortSideForOrientation(targetOrientation, 'in');
+              const connectionKey = getConnectionComparisonKey(connection);
               const sourceAnchor = getAnchorPosition(
                 from.x,
                 from.y,
@@ -1418,18 +1490,31 @@ export function WorkbenchPanel({
                 PORT_START_Y,
                 PORT_GAP,
               );
-              const pathD =
+              const orthogonalPathData =
                 routingMode === 'orthogonal'
-                  ? getOrthogonalPath(
+                  ? getOrthogonalPathData(
                       sourceAnchor,
                       sourceSide,
                       targetAnchor,
                       targetSide,
                       sourceIndex,
                       targetIndex,
+                      bendDragState?.connectionKey === connectionKey
+                        ? {
+                            orthogonalBend: {
+                              axis: bendDragState.axis,
+                              value: bendDragState.currentValue,
+                            },
+                          }
+                        : connectionLayout[connectionKey],
                     )
-                  : getConnectionPath(sourceAnchor, sourceSide, targetAnchor, targetSide);
-              const showConnectionLabel = hoveredConnectionIndex === connectionIndex;
+                  : null;
+              const pathD =
+                orthogonalPathData?.path ??
+                getConnectionPath(sourceAnchor, sourceSide, targetAnchor, targetSide);
+              const showConnectionLabel =
+                hoveredConnectionIndex === connectionIndex ||
+                effectiveSelectedConnectionIndex === connectionIndex;
               const midpointX = (sourceAnchor.x + targetAnchor.x) / 2;
               const midpointY = (sourceAnchor.y + targetAnchor.y) / 2;
               const sourceLabel = `${connection.from.moduleId}.${connection.from.port}`;
@@ -1485,6 +1570,27 @@ export function WorkbenchPanel({
                     }}
                   />
                   <path d={pathD} />
+                  {routingMode === 'orthogonal' &&
+                  !isObservationMode &&
+                  !isCompositeEditor &&
+                  effectiveSelectedConnectionIndex === connectionIndex &&
+                  orthogonalPathData?.bendHandle ? (
+                    <circle
+                      className={`connection-bend-handle connection-bend-handle-${orthogonalPathData.bendHandle.axis}`}
+                      cx={orthogonalPathData.bendHandle.x}
+                      cy={orthogonalPathData.bendHandle.y}
+                      r={7}
+                      onMouseDown={(event) => {
+                        event.stopPropagation();
+                        setBendDragState({
+                          connectionKey,
+                          axis: orthogonalPathData.bendHandle.axis,
+                          autoValue: orthogonalPathData.bendHandle.autoValue,
+                          currentValue: orthogonalPathData.bendHandle.value,
+                        });
+                      }}
+                    />
+                  ) : null}
                   {showConnectionLabel ? (
                     <g
                       className="connection-hover-label"

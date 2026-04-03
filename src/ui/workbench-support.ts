@@ -1,10 +1,12 @@
 import type { ExecutionResult, ExecutionTraceEntry, ValidationIssue } from '../engine/types';
 import type { TargetPortState } from './connection-authoring';
 import type { PortSide } from './node-orientation';
+import type { WorkbenchConnectionLayout } from './workbench-document';
 
 const ORTHOGONAL_STEP_BACK_PX = 20;
 const ORTHOGONAL_LANE_OFFSET_PX = 6;
 const ORTHOGONAL_CORNER_RADIUS_PX = 8;
+const ORTHOGONAL_BEND_NO_OP_EPSILON_PX = 2;
 
 export function getAnchorPosition(
   x: number,
@@ -110,6 +112,25 @@ export function getOrthogonalPath(
   sourceIndex: number,
   targetIndex: number,
 ) {
+  return getOrthogonalPathData(
+    sourceAnchor,
+    sourceSide,
+    targetAnchor,
+    targetSide,
+    sourceIndex,
+    targetIndex,
+  ).path;
+}
+
+export function getOrthogonalPathData(
+  sourceAnchor: { x: number; y: number },
+  sourceSide: PortSide,
+  targetAnchor: { x: number; y: number },
+  targetSide: PortSide,
+  sourceIndex: number,
+  targetIndex: number,
+  connectionLayout?: WorkbenchConnectionLayout | null,
+) {
   const sourceVector = getSideVector(sourceSide);
   const targetVector = getSideVector(targetSide);
   const laneOffset = getLaneOffset(sourceIndex, targetIndex);
@@ -123,30 +144,61 @@ export function getOrthogonalPath(
   };
 
   if (sourceExit.x === targetEntry.x || sourceExit.y === targetEntry.y) {
-    return buildRoundedOrthogonalPath([sourceAnchor, sourceExit, targetEntry, targetAnchor]);
+    return {
+      path: buildRoundedOrthogonalPath([sourceAnchor, sourceExit, targetEntry, targetAnchor]),
+      bendHandle: null,
+    };
   }
 
   if (sourceSide === 'left' || sourceSide === 'right') {
-    const elbowX = (sourceExit.x + targetEntry.x) / 2 + laneOffset;
-    return buildRoundedOrthogonalPath([
-      sourceAnchor,
-      sourceExit,
-      { x: elbowX, y: sourceExit.y },
-      { x: elbowX, y: targetEntry.y },
-      targetEntry,
-      targetAnchor,
-    ]);
+    const autoValue = (sourceExit.x + targetEntry.x) / 2 + laneOffset;
+    const bendValue =
+      connectionLayout?.orthogonalBend?.axis === 'x' &&
+      Number.isFinite(connectionLayout.orthogonalBend.value)
+        ? connectionLayout.orthogonalBend.value
+        : autoValue;
+    return {
+      path: buildRoundedOrthogonalPath([
+        sourceAnchor,
+        sourceExit,
+        { x: bendValue, y: sourceExit.y },
+        { x: bendValue, y: targetEntry.y },
+        targetEntry,
+        targetAnchor,
+      ]),
+      bendHandle: {
+        axis: 'x' as const,
+        value: bendValue,
+        autoValue,
+        x: bendValue,
+        y: (sourceExit.y + targetEntry.y) / 2,
+      },
+    };
   }
 
-  const elbowY = (sourceExit.y + targetEntry.y) / 2 + laneOffset;
-  return buildRoundedOrthogonalPath([
-    sourceAnchor,
-    sourceExit,
-    { x: sourceExit.x, y: elbowY },
-    { x: targetEntry.x, y: elbowY },
-    targetEntry,
-    targetAnchor,
-  ]);
+  const autoValue = (sourceExit.y + targetEntry.y) / 2 + laneOffset;
+  const bendValue =
+    connectionLayout?.orthogonalBend?.axis === 'y' &&
+    Number.isFinite(connectionLayout.orthogonalBend.value)
+      ? connectionLayout.orthogonalBend.value
+      : autoValue;
+  return {
+    path: buildRoundedOrthogonalPath([
+      sourceAnchor,
+      sourceExit,
+      { x: sourceExit.x, y: bendValue },
+      { x: targetEntry.x, y: bendValue },
+      targetEntry,
+      targetAnchor,
+    ]),
+    bendHandle: {
+      axis: 'y' as const,
+      value: bendValue,
+      autoValue,
+      x: (sourceExit.x + targetEntry.x) / 2,
+      y: bendValue,
+    },
+  };
 }
 
 export function getOrthogonalPendingPath(
@@ -183,6 +235,12 @@ export function getOrthogonalPendingPath(
     { x: targetPoint.x, y: elbowY },
     targetPoint,
   ]);
+}
+
+export function shouldClearOrthogonalBendOverride(
+  bendHandle: { autoValue: number; value: number } | null,
+) {
+  return !bendHandle || Math.abs(bendHandle.value - bendHandle.autoValue) < ORTHOGONAL_BEND_NO_OP_EPSILON_PX;
 }
 
 export function formatVersionTimestamp(savedAt: string) {

@@ -19,6 +19,15 @@ export interface WorkbenchAnnotation {
   text: string;
 }
 
+export type WorkbenchConnectionBendAxis = 'x' | 'y';
+
+export interface WorkbenchConnectionLayout {
+  orthogonalBend?: {
+    axis: WorkbenchConnectionBendAxis;
+    value: number;
+  };
+}
+
 export type WorkbenchLayoutDirection = 'horizontal' | 'vertical';
 export type WorkbenchNodeOrientation = 'east' | 'south' | 'west' | 'north';
 export type WorkbenchRoutingMode = 'curved' | 'orthogonal';
@@ -28,6 +37,7 @@ export interface WorkbenchUiMetadata {
   annotations: WorkbenchAnnotation[];
   layoutDirection?: WorkbenchLayoutDirection;
   routingMode?: WorkbenchRoutingMode;
+  connectionLayout?: Record<string, WorkbenchConnectionLayout>;
 }
 
 export interface WorkbenchDocument {

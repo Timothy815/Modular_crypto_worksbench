@@ -1076,6 +1076,30 @@ describe('uiReducer', () => {
     expect(nextState.routingModeByProject[projectId]).toBe('orthogonal');
   });
 
+  it('stores and clears orthogonal bend overrides per connection', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const connectionKey = 'clock:out->output:in';
+
+    const bentState = uiReducer(initialState, {
+      type: 'setConnectionOrthogonalBend',
+      projectId,
+      connectionKey,
+      axis: 'x',
+      value: 180,
+    });
+    expect(bentState.connectionLayoutByProject[projectId]?.[connectionKey]).toEqual({
+      orthogonalBend: { axis: 'x', value: 180 },
+    });
+
+    const clearedState = uiReducer(bentState, {
+      type: 'clearConnectionOrthogonalBend',
+      projectId,
+      connectionKey,
+    });
+    expect(clearedState.connectionLayoutByProject[projectId]?.[connectionKey]).toBeUndefined();
+  });
+
   it('creates a blank personal workspace in build mode', () => {
     const initialState = createInitialUiState(demoProjects);
 

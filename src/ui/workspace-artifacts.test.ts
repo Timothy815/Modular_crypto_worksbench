@@ -17,6 +17,11 @@ describe('workspace-artifacts', () => {
           annotations: [],
           layoutDirection: 'vertical',
           routingMode: 'orthogonal',
+          connectionLayout: {
+            'a:out->b:in': {
+              orthogonalBend: { axis: 'x', value: 120 },
+            },
+          },
         },
       }),
     );
@@ -34,6 +39,11 @@ describe('workspace-artifacts', () => {
       annotations: [],
       layoutDirection: 'vertical',
       routingMode: 'orthogonal',
+      connectionLayout: {
+        'a:out->b:in': {
+          orthogonalBend: { axis: 'x', value: 120 },
+        },
+      },
       comparisonBaseline: null,
       verificationCases: [],
       tutorial: {
@@ -72,5 +82,10 @@ describe('workspace-artifacts', () => {
     expect(prepared.learningPanelTab).toBe('challenge');
     expect(prepared.document.ui.layoutDirection).toBe('vertical');
     expect(prepared.document.ui.routingMode).toBe('orthogonal');
+    expect(prepared.document.ui.connectionLayout).toEqual({
+      'a:out->b:in': {
+        orthogonalBend: { axis: 'x', value: 120 },
+      },
+    });
   });
 });

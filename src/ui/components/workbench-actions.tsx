@@ -11,6 +11,7 @@ interface WorkbenchActionsProps {
   canRedo: boolean;
   selectedModuleIds: string[];
   effectiveSelectedConnectionIndex: number | null;
+  selectedConnectionHasManualPath: boolean;
   showTutorialToggle: boolean;
   tutorialNotesVisible: boolean;
   onAddAnnotation: () => void;
@@ -30,6 +31,7 @@ interface WorkbenchActionsProps {
   onRequestDuplicateSelection: () => void;
   onRequestDeleteSelection: () => void;
   onRequestDeleteWire: () => void;
+  onRequestResetWirePath: () => void;
   onRequestImport: () => void;
   onRequestImportLabPack: () => void;
   onRequestCreateComposite: () => void;
@@ -85,6 +87,7 @@ export function WorkbenchActions({
   canRedo,
   selectedModuleIds,
   effectiveSelectedConnectionIndex,
+  selectedConnectionHasManualPath,
   showTutorialToggle,
   tutorialNotesVisible,
   onAddAnnotation,
@@ -104,6 +107,7 @@ export function WorkbenchActions({
   onRequestDuplicateSelection,
   onRequestDeleteSelection,
   onRequestDeleteWire,
+  onRequestResetWirePath,
   onRequestImport,
   onRequestImportLabPack,
   onRequestCreateComposite,
@@ -172,6 +176,11 @@ export function WorkbenchActions({
               label="Delete Wire"
               onSelect={onRequestDeleteWire}
               disabled={!canDeleteWire}
+            />
+            <WorkbenchMenuActionButton
+              label="Reset Wire Path"
+              onSelect={onRequestResetWirePath}
+              disabled={!selectedConnectionHasManualPath}
             />
             {showTutorialToggle ? (
               <WorkbenchMenuActionButton
