@@ -1443,6 +1443,10 @@ body.dock-resizing {
   background: color-mix(in srgb, var(--surface-panel) 94%, white);
 }
 
+.workbench-quick-actions {
+  margin-right: 2px;
+}
+
 .workbench-inline-action-button {
   min-width: 36px;
   min-height: 32px;
@@ -1464,6 +1468,12 @@ body.dock-resizing {
 .workbench-inline-action-button:focus-visible {
   border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
   background: color-mix(in srgb, var(--accent) 10%, var(--surface-button));
+}
+
+.workbench-inline-action-button.active {
+  border-color: color-mix(in srgb, var(--accent) 52%, var(--line));
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface-button));
+  color: color-mix(in srgb, var(--accent) 80%, var(--ink));
 }
 
 .workbench-inline-action-button:disabled {

@@ -75,20 +75,25 @@ The next bounded routing-control follow-on after that is now shipped:
 - a bounded orthogonal-wire bend-editing slice
 - ships per-connection bend overrides in workspace UI metadata only and stops short of arbitrary path editing
 
-The next local graph-layout follow-on now being implemented is:
+The next local graph-layout follow-on now shipped is:
 - `SELECTED-CLUSTER-ALIGNMENT-V1.md`
 - a bounded selected-cluster alignment/distribution slice
 - now adds explicit align/distribute actions while keeping layout cleanup local to the visible selection and stopping short of a full diagramming toolbar
 
-The next large-workspace readability slice now implemented locally after that is:
+The next large-workspace readability slice now shipped after that is:
 - `STAGE-GROUP-BOXES-V1.md`
 - a bounded visual grouping-region slice for rounds, banks, phases, and feedback areas
 - keeps grouping purely visual and stored only in workspace UI metadata
 
-The next large-workspace navigation slice now implemented locally after that is:
+The next large-workspace navigation slice now shipped after that is:
 - `MINIMAP-OVERVIEW-NAVIGATOR-V1.md`
 - a bounded overview navigator with viewport tracking and click-to-pan navigation
 - keeps visibility persisted per workspace as UI metadata only
+
+The next workbench-chrome refinement after that is now shipped as:
+- `WORKBENCH-QUICK-ACTIONS-V1.md`
+- a bounded quick-access strip for high-frequency canvas controls
+- keeps grouped dropdown menus intact as the full fallback path
 
 Current `main` now also includes:
 - Python export foundations:

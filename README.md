@@ -85,20 +85,25 @@ The next bounded routing-control follow-on after that is now shipped as:
 - ships draggable elbow control for orthogonal wires only
 - keeps bend metadata in workspace UI state only and stops short of arbitrary path editing
 
-The next local graph-layout follow-on now being implemented is:
+The next local graph-layout follow-on now shipped is:
 - `SELECTED-CLUSTER-ALIGNMENT-V1.md`
 - now adds explicit selection-scoped align and distribute actions for visible module clusters
 - stays bounded as local layout cleanup rather than widening into a full diagram-editor toolbar
 
-The next large-workspace readability slice now implemented locally after that is:
+The next large-workspace readability slice now shipped after that is:
 - `STAGE-GROUP-BOXES-V1.md`
 - adds lightweight visual region boxes for rounds, banks, phases, and feedback areas
 - keeps grouping purely visual and stored only in workspace UI metadata
 
-The next large-workspace navigation slice now implemented locally after that is:
+The next large-workspace navigation slice now shipped after that is:
 - `MINIMAP-OVERVIEW-NAVIGATOR-V1.md`
 - adds a compact workspace overview with viewport tracking and click-to-pan navigation
 - keeps visibility persisted per workspace as UI metadata only
+
+The next workbench-chrome refinement after that is now shipped as:
+- `WORKBENCH-QUICK-ACTIONS-V1.md`
+- adds a compact icon-first quick-actions strip for high-frequency canvas controls
+- keeps grouped dropdown menus intact as the complete fallback path
 
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
