@@ -181,6 +181,24 @@ function createWorkspaceNameFromBase(baseName: string, existingNames: Set<string
   return candidate;
 }
 
+function createUniqueImportedLearningId(baseId: string, usedIds: Set<string>) {
+  const sanitizedBase =
+    baseId
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'imported-item';
+  let candidate = sanitizedBase;
+  let suffix = 2;
+
+  while (usedIds.has(candidate)) {
+    candidate = `${sanitizedBase}-${suffix}`;
+    suffix += 1;
+  }
+
+  return candidate;
+}
+
 interface ParameterClipboardState {
   sourceModuleId: string;
   sourceDefId: string;
@@ -581,7 +599,13 @@ function MainApp() {
     useState<'beginner' | 'intermediate' | 'expert'>('beginner');
   const [verificationCasesByProject, setVerificationCasesByProject] = useState<
     Record<string, VerificationCase[]>
-  >({});
+  >(() => {
+    if (typeof window === 'undefined') {
+      return {};
+    }
+
+    return loadWorkspaceFromStorage(demoProjects)?.verificationCasesByProjectId ?? {};
+  });
   const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
   const [hoveredTraceModuleId, setHoveredTraceModuleId] = useState<string | null>(null);
   const [stepIndex, setStepIndex] = useState<number | null>(null);
@@ -617,14 +641,19 @@ function MainApp() {
     state.projectStates[activeProjectDefinition.id] ?? activeProjectDefinition.project;
   const baseLayout =
     state.layoutByProject[activeProjectDefinition.id] ?? activeProjectDefinition.layout;
-  const baseAnnotations =
-    state.annotationsByProject[activeProjectDefinition.id] ?? [];
+  const baseAnnotations = useMemo(
+    () => state.annotationsByProject[activeProjectDefinition.id] ?? [],
+    [activeProjectDefinition.id, state.annotationsByProject],
+  );
   const activeCompositeEntry = state.compositeEditor
     ? state.compositeLibrary.find((entry) => entry.id === state.compositeEditor?.entryId) ?? null
     : null;
   const activeProjectState = state.compositeEditor?.project ?? baseProjectState;
   const activeLayout = state.compositeEditor?.layout ?? baseLayout;
-  const activeAnnotations = state.compositeEditor ? [] : baseAnnotations;
+  const activeAnnotations = useMemo(
+    () => (state.compositeEditor ? [] : baseAnnotations),
+    [baseAnnotations, state.compositeEditor],
+  );
   const effectiveSelectedModuleId = state.compositeEditor
     ? state.compositeEditor.selectedModuleId
     : getSelectedModuleId(state, activeProjectDefinition.id, activeProjectState);
@@ -1088,6 +1117,199 @@ function MainApp() {
     },
     [activeProjectDefinition.id],
   );
+  const handleExportShareableLabPack = useCallback(async () => {
+    const selectedProjectTutorial =
+      selectedTutorial?.projectId === activeProjectDefinition.id ? selectedTutorial : undefined;
+    const selectedProjectChallenge =
+      selectedChallenge?.projectId === activeProjectDefinition.id ? selectedChallenge : undefined;
+    const fileNameStem =
+      activeProjectDefinition.name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || activeProjectDefinition.id;
+
+    const { downloadShareableLabPack } = await import('./ui/persistence');
+    downloadShareableLabPack(fileNameStem, {
+      version: 1,
+      kind: 'mcw-shareable-lab-pack',
+      metadata: {
+        id: activeProjectDefinition.id,
+        title: activeProjectDefinition.name,
+        summary: activeProjectDefinition.summary,
+        source: 'MCW Shareable Lab Pack',
+        exportedAt: new Date().toISOString(),
+      },
+      workspace: {
+        version: 1,
+        project: cloneProject(activeProjectState),
+        ui: {
+          layout: Object.fromEntries(
+            Object.entries(activeLayout).map(([moduleId, position]) => [moduleId, { ...position }]),
+          ),
+          annotations: activeAnnotations.map((annotation) => ({ ...annotation })),
+        },
+      },
+      comparisonBaseline: comparisonBaseline
+        ? {
+            capturedAt: comparisonBaseline.capturedAt,
+            project: cloneProject(comparisonBaseline.project),
+          }
+        : null,
+      verificationCases: verificationCases.map((verificationCase) => ({ ...verificationCase })),
+      tutorial: selectedProjectTutorial
+        ? {
+            ...selectedProjectTutorial,
+            steps: selectedProjectTutorial.steps.map((step) => ({ ...step })),
+          }
+        : undefined,
+      challenge: selectedProjectChallenge
+        ? {
+            ...selectedProjectChallenge,
+            startingProject: cloneProject(selectedProjectChallenge.startingProject),
+            startingLayout: selectedProjectChallenge.startingLayout
+              ? Object.fromEntries(
+                  Object.entries(selectedProjectChallenge.startingLayout).map(
+                    ([moduleId, position]) => [moduleId, { ...position }],
+                  ),
+                )
+              : undefined,
+            targetProject: cloneProject(selectedProjectChallenge.targetProject),
+            hints: selectedProjectChallenge.hints ? [...selectedProjectChallenge.hints] : undefined,
+          }
+        : undefined,
+    });
+    setImportError(null);
+  }, [
+    activeAnnotations,
+    activeLayout,
+    activeProjectDefinition.id,
+    activeProjectDefinition.name,
+    activeProjectDefinition.summary,
+    activeProjectState,
+    comparisonBaseline,
+    selectedChallenge,
+    selectedTutorial,
+    verificationCases,
+  ]);
+  const handleImportShareableLabPack = useCallback(
+    async (file: File) => {
+      const { parseShareableLabPack } = await import('./ui/persistence');
+      const rawValue = await file.text();
+      const pack = parseShareableLabPack(rawValue);
+      if (!pack) {
+        setImportError('The selected file is not a valid MCW shareable lab pack.');
+        return;
+      }
+
+      const validation = validateProject(pack.workspace.project, effectiveRegistry);
+      if (!validation.ok) {
+        setImportError(
+          `The imported lab pack is not valid in this build: ${validation.issues
+            .map((issue) => issue.message)
+            .join(' ')}`,
+        );
+        return;
+      }
+
+      const existingNames = new Set(availableProjects.map((project) => project.name));
+      const workspaceName = createWorkspaceNameFromBase(pack.metadata.title, existingNames);
+      const workspaceId = createUniqueWorkspaceId(
+        workspaceName,
+        new Set(availableProjects.map((project) => project.id)),
+      );
+      const workspaceSummary = pack.metadata.summary || 'Imported shareable lab pack.';
+      const workspacePipeline = describeWorkspacePipeline(pack.workspace.project);
+
+      dispatch({
+        type: 'createBlankWorkspace',
+        workspaceId,
+        name: workspaceName,
+        summary: workspaceSummary,
+        pipeline: workspacePipeline,
+        group: 'Imported Lab Packs',
+      });
+      dispatch({
+        type: 'loadDocument',
+        projectId: workspaceId,
+        document: pack.workspace,
+      });
+      dispatch({
+        type: 'setComparisonBaseline',
+        projectId: workspaceId,
+        baseline:
+          pack.comparisonBaseline === undefined
+            ? null
+            : pack.comparisonBaseline,
+      });
+      setVerificationCasesByProject((current) => ({
+        ...current,
+        [workspaceId]: (pack.verificationCases ?? []).map((verificationCase) => ({
+          ...verificationCase,
+        })),
+      }));
+
+      if (pack.tutorial) {
+        const tutorialId = createUniqueImportedLearningId(
+          pack.tutorial.id,
+          new Set(state.tutorialLibrary.map((tutorial) => tutorial.id)),
+        );
+        dispatch({
+          type: 'upsertTutorial',
+          tutorial: {
+            ...pack.tutorial,
+            id: tutorialId,
+            projectId: workspaceId,
+            steps: pack.tutorial.steps.map((step) => ({ ...step })),
+          },
+        });
+        dispatch({
+          type: 'selectTutorial',
+          projectId: workspaceId,
+          tutorialId,
+        });
+      }
+
+      if (pack.challenge) {
+        const challengeId = createUniqueImportedLearningId(
+          pack.challenge.id,
+          new Set(state.challengeLibrary.map((challenge) => challenge.id)),
+        );
+        dispatch({
+          type: 'upsertChallenge',
+          challenge: {
+            ...pack.challenge,
+            id: challengeId,
+            projectId: workspaceId,
+            startingProject: cloneProject(pack.challenge.startingProject),
+            startingLayout: pack.challenge.startingLayout
+              ? Object.fromEntries(
+                  Object.entries(pack.challenge.startingLayout).map(([moduleId, position]) => [
+                    moduleId,
+                    { ...position },
+                  ]),
+                )
+              : undefined,
+            targetProject: cloneProject(pack.challenge.targetProject),
+            hints: pack.challenge.hints ? [...pack.challenge.hints] : undefined,
+          },
+        });
+        dispatch({
+          type: 'selectChallenge',
+          projectId: workspaceId,
+          challengeId,
+        });
+      }
+
+      dispatch({
+        type: 'switchProject',
+        projectId: workspaceId,
+      });
+      setLearningPanelTab(pack.challenge ? 'challenge' : pack.tutorial ? 'tutorial' : 'quickstart');
+      setImportError(null);
+    },
+    [availableProjects, effectiveRegistry, state.challengeLibrary, state.tutorialLibrary],
+  );
   const activeTutorialStep =
     workspaceMode === 'guide' &&
     tutorialNotesVisible &&
@@ -1315,13 +1537,13 @@ function MainApp() {
     }
 
     const timeoutId = window.setTimeout(() => {
-      saveWorkspaceToStorage(state);
+      saveWorkspaceToStorage(state, verificationCasesByProject);
     }, 500);
 
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [state]);
+  }, [state, verificationCasesByProject]);
 
   useEffect(() => {
     if (typeof document === 'undefined' || typeof window === 'undefined') {
@@ -2894,6 +3116,7 @@ function MainApp() {
               });
               setImportError(null);
             }}
+            onExportLabPack={handleExportShareableLabPack}
             onExportPython={async () => {
               const exportValidation = validateProject(activeProjectState, effectiveRegistry);
               if (!exportValidation.ok) {
@@ -2956,6 +3179,7 @@ function MainApp() {
 
               setImportError('The selected file is not a valid MCW workbench or composite library document.');
             }}
+            onImportLabPack={handleImportShareableLabPack}
             onTidyLayout={() =>
               dispatch({
                 type: 'tidyLayout',

@@ -6,10 +6,11 @@ import {
   loadWorkspaceFromStorage,
   parseCompositeLibraryDocument,
   parseGuidedChallengeDocument,
+  parseShareableLabPack,
   saveWorkspaceToStorage,
 } from './persistence';
 import { createInitialUiState, uiReducer } from './store';
-import type { CompositeLibraryDocument } from './workbench-document';
+import type { CompositeLibraryDocument, ShareableLabPack } from './workbench-document';
 
 class MemoryStorage implements Storage {
   private values = new Map<string, string>();
@@ -129,7 +130,7 @@ describe('workspace persistence', () => {
     });
     const storage = new MemoryStorage();
 
-    saveWorkspaceToStorage(stateWithWorkspace, storage);
+    saveWorkspaceToStorage(stateWithWorkspace, {}, storage);
     const restored = loadWorkspaceFromStorage(demoProjects, storage);
 
     expect(restored?.userWorkspaceLibrary).toEqual([
@@ -159,7 +160,7 @@ describe('workspace persistence', () => {
     });
     const storage = new MemoryStorage();
 
-    saveWorkspaceToStorage(stateWithVersion, storage);
+    saveWorkspaceToStorage(stateWithVersion, {}, storage);
     const restored = loadWorkspaceFromStorage(demoProjects, storage);
 
     expect(restored?.workspaceVersionsByProjectId?.['sequential']).toHaveLength(1);
@@ -172,6 +173,45 @@ describe('workspace persistence', () => {
     expect(
       restored?.workspaceVersionsByProjectId?.['sequential']?.[0]?.document.project,
     ).toEqual(initialState.projectStates['sequential']);
+  });
+});
+
+describe('parseShareableLabPack', () => {
+  it('accepts a valid lab pack with workspace context', () => {
+    const pack: ShareableLabPack = {
+      version: 1,
+      kind: 'mcw-shareable-lab-pack',
+      metadata: {
+        id: 'lab-pack-demo',
+        title: 'Lab Pack Demo',
+        summary: 'A portable verified lab.',
+        exportedAt: '2026-04-02T12:00:00.000Z',
+      },
+      workspace: {
+        version: 1,
+        project: {
+          modules: [],
+          connections: [],
+        },
+        ui: {
+          layout: {},
+          annotations: [],
+        },
+      },
+      verificationCases: [
+        {
+          id: 'case-1',
+          mode: 'stateless',
+          sourceModuleId: 'input-1',
+          sourceDefId: 'BitInput',
+          sourceLabel: 'Input',
+          inputValue: '1010',
+          expectedOutput: '1010',
+        },
+      ],
+    };
+
+    expect(parseShareableLabPack(JSON.stringify(pack))).toEqual(pack);
   });
 });
 

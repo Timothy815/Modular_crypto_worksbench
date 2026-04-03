@@ -96,6 +96,8 @@ export type UiAction =
       name: string;
       summary: string;
       pipeline: string;
+      group?: string;
+      defaultTickedMode?: boolean;
     }
   | {
       type: 'saveWorkspaceAs';
@@ -104,6 +106,7 @@ export type UiAction =
       name: string;
       summary: string;
       pipeline: string;
+      group?: string;
       defaultTickedMode?: boolean;
     }
   | { type: 'removeWorkspace'; workspaceId: string; fallbackProjectId: string }
@@ -170,6 +173,7 @@ export type UiAction =
   | { type: 'selectChallenge'; projectId: string; challengeId: string | null }
   | { type: 'upsertChallenge'; challenge: GuidedChallenge }
   | { type: 'selectTutorial'; projectId: string; tutorialId: string | null }
+  | { type: 'upsertTutorial'; tutorial: GuidedTutorial }
   | { type: 'setTutorialStep'; projectId: string; stepIndex: number }
   | { type: 'completeTutorial'; projectId: string; tutorialId: string }
   | { type: 'resetTutorialProgress'; projectId: string }
@@ -187,6 +191,11 @@ export type UiAction =
   | { type: 'setTickPlaybackActive'; projectId: string; active: boolean }
   | { type: 'setTickPlaybackSpeed'; projectId: string; speedMs: number }
   | { type: 'captureComparisonBaseline'; projectId: string; capturedAt: string }
+  | {
+      type: 'setComparisonBaseline';
+      projectId: string;
+      baseline: ComparisonBaselineDocument | null;
+    }
   | { type: 'clearComparisonBaseline'; projectId: string }
   | { type: 'loadCompositeLibrary'; document: CompositeLibraryDocument }
   | { type: 'addCompositeToLibrary'; entry: CompositeLibraryEntry }
@@ -588,10 +597,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           {
             id: action.workspaceId,
             name: action.name,
-            group: 'My Workspaces',
+            group: action.group ?? 'My Workspaces',
             summary: action.summary,
             pipeline: action.pipeline,
-            defaultTickedMode: false,
+            defaultTickedMode: action.defaultTickedMode ?? false,
           },
         ],
         projectStates: {
@@ -659,7 +668,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         },
         tickedModeByProject: {
           ...state.tickedModeByProject,
-          [action.workspaceId]: false,
+          [action.workspaceId]: action.defaultTickedMode ?? false,
         },
         currentTickByProject: {
           ...state.currentTickByProject,
@@ -707,7 +716,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           {
             id: action.workspaceId,
             name: action.name,
-            group: 'My Workspaces',
+            group: action.group ?? 'My Workspaces',
             summary: action.summary,
             pipeline: action.pipeline,
             defaultTickedMode: action.defaultTickedMode ?? false,
@@ -1918,6 +1927,19 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         },
       };
     }
+    case 'setComparisonBaseline':
+      return {
+        ...state,
+        comparisonBaselinesByProject: {
+          ...state.comparisonBaselinesByProject,
+          [action.projectId]: action.baseline
+            ? {
+                capturedAt: action.baseline.capturedAt,
+                project: cloneProject(action.baseline.project),
+              }
+            : null,
+        },
+      };
     case 'selectTutorial':
       return {
         ...state,
@@ -1930,6 +1952,21 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           [action.projectId]: 0,
         },
       };
+    case 'upsertTutorial': {
+      const existing = state.tutorialLibrary.some((tutorial) => tutorial.id === action.tutorial.id);
+      const nextTutorial = {
+        ...action.tutorial,
+        steps: action.tutorial.steps.map((step) => ({ ...step })),
+      };
+      return {
+        ...state,
+        tutorialLibrary: existing
+          ? state.tutorialLibrary.map((tutorial) =>
+              tutorial.id === nextTutorial.id ? nextTutorial : tutorial,
+            )
+          : [...state.tutorialLibrary, nextTutorial],
+      };
+    }
     case 'setTutorialStep': {
       const clampedStep = Math.max(0, Math.trunc(action.stepIndex));
       const tutorialId = state.activeTutorialIdByProject[action.projectId] ?? null;

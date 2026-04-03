@@ -3,6 +3,7 @@ import type { CompositeLibraryEntry } from '../engine/composites';
 import type { GuidedChallenge } from './challenges';
 import type { CryptanalysisMode } from './cryptanalysis-mode';
 import type { GuidedTutorial } from './tutorials';
+import type { VerificationCase } from './verification-workflow';
 import type { WorkspaceMode } from './workspace-mode';
 
 export interface WorkbenchPosition {
@@ -81,4 +82,24 @@ export interface PersistedWorkspaceDocument {
   tutorialLibrary: GuidedTutorial[];
   compositeLibrary: CompositeLibraryDocument;
   userWorkspaceLibrary?: UserWorkspaceMetadata[];
+  verificationCasesByProjectId?: Record<string, VerificationCase[]>;
+}
+
+export interface ShareableLabPack {
+  version: 1;
+  kind: 'mcw-shareable-lab-pack';
+  metadata: {
+    id: string;
+    title: string;
+    summary: string;
+    author?: string;
+    source?: string;
+    exportedAt: string;
+  };
+  workspace: WorkbenchDocument;
+  comparisonBaseline?: ComparisonBaselineDocument | null;
+  verificationCases?: VerificationCase[];
+  tutorial?: GuidedTutorial;
+  challenge?: GuidedChallenge;
+  teachingNotes?: string;
 }

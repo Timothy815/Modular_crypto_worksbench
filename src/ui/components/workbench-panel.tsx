@@ -151,8 +151,10 @@ interface WorkbenchPanelProps {
   ) => void;
   onRemoveConnection: (connectionIndex: number) => void;
   onExportDocument: () => void;
+  onExportLabPack: () => void;
   onExportPython: () => void;
   onImportDocument: (file: File) => void;
+  onImportLabPack: (file: File) => void;
   onTidyLayout: () => void;
   onSetTutorialStep?: (stepIndex: number) => void;
   onSetTutorialNotesVisible?: (visible: boolean) => void;
@@ -225,8 +227,10 @@ export function WorkbenchPanel({
   onReplaceConnection,
   onRemoveConnection,
   onExportDocument,
+  onExportLabPack,
   onExportPython,
   onImportDocument,
+  onImportLabPack,
   onTidyLayout,
   onSetTutorialStep,
   onSetTutorialNotesVisible,
@@ -234,6 +238,7 @@ export function WorkbenchPanel({
 }: WorkbenchPanelProps) {
   const canvasSurfaceRef = useRef<HTMLDivElement | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
+  const importLabPackInputRef = useRef<HTMLInputElement | null>(null);
   const [dragState, setDragState] = useState<{
     moduleId: string;
     pointerOffsetX: number;
@@ -885,6 +890,7 @@ export function WorkbenchPanel({
         tutorialNotesVisible={tutorialNotesVisible}
         onAddAnnotation={onAddAnnotation}
         onExportDocument={onExportDocument}
+        onExportLabPack={onExportLabPack}
         onExportPython={onExportPython}
         onTidyLayout={onTidyLayout}
         onRequestUndo={onRequestUndo}
@@ -906,6 +912,7 @@ export function WorkbenchPanel({
           }
         }}
         onRequestImport={() => importInputRef.current?.click()}
+        onRequestImportLabPack={() => importLabPackInputRef.current?.click()}
         onRequestCreateComposite={onRequestCreateComposite}
         onToggleTutorialNotes={onSetTutorialNotesVisible}
       />
@@ -918,6 +925,19 @@ export function WorkbenchPanel({
           const file = event.target.files?.[0];
           if (file) {
             onImportDocument(file);
+          }
+          event.target.value = '';
+        }}
+      />
+      <input
+        ref={importLabPackInputRef}
+        type="file"
+        accept="application/json,.json"
+        className="hidden-file-input"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) {
+            onImportLabPack(file);
           }
           event.target.value = '';
         }}

@@ -699,7 +699,7 @@ Implemented and shipped:
 - `FLAGSHIP-LAB-MODERN-V1.md`: shipped classroom-first modern flagship sequence built from the visible round / S-box / diffusion line, linked analysis, verification, export/parity trust handoff, and searchable lab-numbered demos
 - `VERIFICATION-EXPLAINABILITY-V1.md`: shipped bounded compare/verification interpretation pass for clearer failure classes, next-step guidance, and more classroom-readable trust language
 - `INSTRUCTOR-PILOT-PACK-V1.md`: shipped instructor-facing pilot resource with search, TOC, index, and concrete guidance for running first classroom trials with the flagship labs
-- `SHAREABLE-LAB-PACKS-V1.md`: proposed bounded portability/distribution follow-on for exporting and importing a single-file verified lab pack with workspace, layout, and attached teaching/verification context
+- `SHAREABLE-LAB-PACKS-V1.md`: shipped bounded portability/distribution slice for exporting and importing a single-file verified lab pack with workspace, layout, and attached teaching/verification context
 - `BITSTREAM-RANDOMNESS-LAB-V1.md`: shipped bounded analysis lab for inspecting PRNG-style bitstreams with sink selection, sample-size warnings, balance/run/transition metrics, lag-1 dependence, and repeated-window hints without making security claims
 - `SEQUENTIAL-STATE-AUTHORING-V1.md`: shipped bounded language/ergonomics follow-on for metadata-free, ticked-mode-only `State` / `Control` / `Observe` role badges that make sequential machines easier to read without changing engine semantics
 - `PRNG-TEACHING-WORKSPACE-V1.md`: shipped bounded teaching-workspace line for comparing visible pseudo-random generator constructions without making CSPRNG claims

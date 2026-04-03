@@ -10,6 +10,7 @@ interface WorkbenchActionsProps {
   tutorialNotesVisible: boolean;
   onAddAnnotation: () => void;
   onExportDocument: () => void;
+  onExportLabPack: () => void;
   onExportPython: () => void;
   onTidyLayout: () => void;
   onRequestUndo: () => void;
@@ -23,6 +24,7 @@ interface WorkbenchActionsProps {
   onRequestDeleteSelection: () => void;
   onRequestDeleteWire: () => void;
   onRequestImport: () => void;
+  onRequestImportLabPack: () => void;
   onRequestCreateComposite: () => void;
   onToggleTutorialNotes?: (visible: boolean) => void;
 }
@@ -77,6 +79,7 @@ export function WorkbenchActions({
   tutorialNotesVisible,
   onAddAnnotation,
   onExportDocument,
+  onExportLabPack,
   onExportPython,
   onTidyLayout,
   onRequestUndo,
@@ -90,6 +93,7 @@ export function WorkbenchActions({
   onRequestDeleteSelection,
   onRequestDeleteWire,
   onRequestImport,
+  onRequestImportLabPack,
   onRequestCreateComposite,
   onToggleTutorialNotes,
 }: WorkbenchActionsProps) {
@@ -146,7 +150,9 @@ export function WorkbenchActions({
 
           <WorkbenchActionMenu label="Import/Export" description="Move artifacts">
             <WorkbenchMenuActionButton label="Import JSON" onSelect={onRequestImport} />
+            <WorkbenchMenuActionButton label="Import Lab Pack" onSelect={onRequestImportLabPack} />
             <WorkbenchMenuActionButton label="Export JSON" onSelect={onExportDocument} />
+            <WorkbenchMenuActionButton label="Export Lab Pack" onSelect={onExportLabPack} />
             <WorkbenchMenuActionButton label="Export Python" onSelect={onExportPython} />
           </WorkbenchActionMenu>
         </>

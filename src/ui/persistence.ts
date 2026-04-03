@@ -8,6 +8,7 @@ import type { Project } from '../engine/types';
 import type { DemoProject } from './demo-projects';
 import type { GuidedChallenge } from './challenges';
 import type { GuidedTutorial } from './tutorials';
+import type { VerificationCase } from './verification-workflow';
 import { STARTER_COMPOSITE_LIBRARY } from './starter-composites';
 import { STARTER_CHALLENGES } from './starter-challenges';
 import { STARTER_TUTORIALS } from './starter-tutorials';
@@ -17,6 +18,7 @@ import type {
   ComparisonBaselineDocument,
   CompositeLibraryDocument,
   PersistedWorkspaceDocument,
+  ShareableLabPack,
   UserWorkspaceMetadata,
   WorkbenchAnnotation,
   WorkbenchDocument,
@@ -97,6 +99,10 @@ function cloneTutorial(tutorial: GuidedTutorial): GuidedTutorial {
     group: tutorial.group ?? STARTER_TUTORIAL_GROUP_BY_ID[tutorial.id],
     steps: tutorial.steps.map((step) => ({ ...step })),
   };
+}
+
+function cloneVerificationCase(verificationCase: VerificationCase): VerificationCase {
+  return { ...verificationCase };
 }
 
 function cloneReusableEntry(entry: CompositeLibraryEntry): CompositeLibraryEntry {
@@ -188,7 +194,10 @@ export function createDocumentMapFromDemos(
   );
 }
 
-export function buildPersistedWorkspace(state: UiState): PersistedWorkspaceDocument {
+export function buildPersistedWorkspace(
+  state: UiState,
+  verificationCasesByProjectId: Record<string, VerificationCase[]> = {},
+): PersistedWorkspaceDocument {
   return {
     version: 1,
     activeProjectId: state.activeProjectId,
@@ -309,14 +318,24 @@ export function buildPersistedWorkspace(state: UiState): PersistedWorkspaceDocum
       entries: state.compositeLibrary.map(cloneReusableEntry),
     },
     userWorkspaceLibrary: state.userWorkspaceLibrary.map(cloneUserWorkspaceMetadata),
+    verificationCasesByProjectId: Object.fromEntries(
+      Object.entries(verificationCasesByProjectId).map(([projectId, cases]) => [
+        projectId,
+        cases.map(cloneVerificationCase),
+      ]),
+    ),
   };
 }
 
 export function saveWorkspaceToStorage(
   state: UiState,
+  verificationCasesByProjectId: Record<string, VerificationCase[]> = {},
   storage: Storage = window.localStorage,
 ): void {
-  storage.setItem(STORAGE_KEY, JSON.stringify(buildPersistedWorkspace(state)));
+  storage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(buildPersistedWorkspace(state, verificationCasesByProjectId)),
+  );
 }
 
 export function loadWorkspaceFromStorage(
@@ -364,6 +383,16 @@ export function loadWorkspaceFromStorage(
         parsed.userWorkspaceLibrary === undefined ||
         (Array.isArray(parsed.userWorkspaceLibrary) &&
           parsed.userWorkspaceLibrary.every(isUserWorkspaceMetadata))
+      ) ||
+      !(
+        parsed.verificationCasesByProjectId === undefined ||
+        (typeof parsed.verificationCasesByProjectId === 'object' &&
+          parsed.verificationCasesByProjectId !== null &&
+          Object.values(parsed.verificationCasesByProjectId).every(
+            (cases) =>
+              Array.isArray(cases) &&
+              cases.every(isVerificationCaseDocument),
+          ))
       )
     ) {
       return null;
@@ -506,6 +535,14 @@ export function loadWorkspaceFromStorage(
       userWorkspaceLibrary: (parsed.userWorkspaceLibrary ?? []).map(
         cloneUserWorkspaceMetadata,
       ),
+      verificationCasesByProjectId: Object.fromEntries(
+        Object.entries(parsed.verificationCasesByProjectId ?? {}).filter(
+          ([projectId, cases]) =>
+            allowedProjectIds.has(projectId) &&
+            Array.isArray(cases) &&
+            cases.every(isVerificationCaseDocument),
+        ).map(([projectId, cases]) => [projectId, cases.map(cloneVerificationCase)]),
+      ),
     };
   } catch {
     return null;
@@ -552,6 +589,21 @@ export function downloadDocument(projectId: string, workbenchDocument: Workbench
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = `${projectId}.mcw.json`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+export function downloadShareableLabPack(
+  fileNameStem: string,
+  pack: ShareableLabPack,
+): void {
+  const blob = new Blob([JSON.stringify(pack, null, 2)], {
+    type: 'application/json',
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `${fileNameStem}.labpack.mcw.json`;
   anchor.click();
   URL.revokeObjectURL(url);
 }
@@ -746,6 +798,24 @@ export function parseGuidedChallengeDocument(rawValue: string): GuidedChallenge 
   }
 }
 
+export function parseGuidedTutorialDocument(rawValue: string): GuidedTutorial | null {
+  try {
+    const parsed = JSON.parse(rawValue);
+    return isGuidedTutorialDocument(parsed) ? cloneTutorial(parsed) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function parseShareableLabPack(rawValue: string): ShareableLabPack | null {
+  try {
+    const parsed = JSON.parse(rawValue);
+    return isShareableLabPack(parsed) ? cloneShareableLabPack(parsed) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function downloadCompositeLibraryDocument(
   libraryDocument: CompositeLibraryDocument,
 ): void {
@@ -880,6 +950,79 @@ function isGuidedTutorialDocument(value: unknown): value is GuidedTutorial {
         (step.focusModuleId === undefined || typeof step.focusModuleId === 'string'),
     )
   );
+}
+
+function isVerificationCaseDocument(value: unknown): value is VerificationCase {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as VerificationCase;
+  return (
+    typeof candidate.id === 'string' &&
+    (candidate.mode === 'stateless' || candidate.mode === 'ticked') &&
+    typeof candidate.sourceModuleId === 'string' &&
+    typeof candidate.sourceDefId === 'string' &&
+    typeof candidate.sourceLabel === 'string' &&
+    (candidate.targetSinkModuleId === undefined || typeof candidate.targetSinkModuleId === 'string') &&
+    (candidate.targetSinkLabel === undefined || typeof candidate.targetSinkLabel === 'string') &&
+    typeof candidate.inputValue === 'string' &&
+    typeof candidate.expectedOutput === 'string' &&
+    (candidate.tickCount === undefined ||
+      (typeof candidate.tickCount === 'number' &&
+        Number.isInteger(candidate.tickCount) &&
+        candidate.tickCount > 0))
+  );
+}
+
+function isShareableLabPack(value: unknown): value is ShareableLabPack {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as ShareableLabPack;
+  return (
+    candidate.version === 1 &&
+    candidate.kind === 'mcw-shareable-lab-pack' &&
+    typeof candidate.metadata === 'object' &&
+    candidate.metadata !== null &&
+    typeof candidate.metadata.id === 'string' &&
+    typeof candidate.metadata.title === 'string' &&
+    typeof candidate.metadata.summary === 'string' &&
+    (candidate.metadata.author === undefined || typeof candidate.metadata.author === 'string') &&
+    (candidate.metadata.source === undefined || typeof candidate.metadata.source === 'string') &&
+    typeof candidate.metadata.exportedAt === 'string' &&
+    isWorkbenchDocument(candidate.workspace) &&
+    (candidate.comparisonBaseline === undefined ||
+      candidate.comparisonBaseline === null ||
+      isComparisonBaselineDocument(candidate.comparisonBaseline)) &&
+    (candidate.verificationCases === undefined ||
+      (Array.isArray(candidate.verificationCases) &&
+        candidate.verificationCases.every(isVerificationCaseDocument))) &&
+    (candidate.tutorial === undefined || isGuidedTutorialDocument(candidate.tutorial)) &&
+    (candidate.challenge === undefined || isGuidedChallengeDocument(candidate.challenge)) &&
+    (candidate.teachingNotes === undefined || typeof candidate.teachingNotes === 'string')
+  );
+}
+
+function cloneShareableLabPack(pack: ShareableLabPack): ShareableLabPack {
+  return {
+    version: 1,
+    kind: 'mcw-shareable-lab-pack',
+    metadata: { ...pack.metadata },
+    workspace: cloneWorkspaceDocument(pack.workspace),
+    comparisonBaseline:
+      pack.comparisonBaseline === undefined
+        ? undefined
+        : cloneComparisonBaseline(pack.comparisonBaseline),
+    verificationCases:
+      pack.verificationCases === undefined
+        ? undefined
+        : pack.verificationCases.map(cloneVerificationCase),
+    tutorial: pack.tutorial === undefined ? undefined : cloneTutorial(pack.tutorial),
+    challenge: pack.challenge === undefined ? undefined : cloneChallenge(pack.challenge),
+    teachingNotes: pack.teachingNotes,
+  };
 }
 
 function isCompositeLibraryEntry(value: unknown): value is CompositeLibraryEntry {

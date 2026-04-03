@@ -1022,7 +1022,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `FLAGSHIP-LAB-MODERN-V1.md` | Shipped classroom-first modern flagship sequence built from the visible round / S-box / diffusion line, linked analysis, verification, export/parity trust handoff, and searchable lab-numbered demos |
 | `VERIFICATION-EXPLAINABILITY-V1.md` | Shipped bounded compare/verification interpretation pass for clearer failure classes, next-step guidance, and more classroom-readable trust language |
 | `INSTRUCTOR-PILOT-PACK-V1.md` | Shipped instructor-facing pilot resource with search, TOC, index, and concrete guidance for running first classroom trials with the flagship labs |
-| `SHAREABLE-LAB-PACKS-V1.md` | Proposed as the first bounded post-`v2.1.0` portability/distribution slice for exporting and importing verified local lab packs without a cloud backend |
+| `SHAREABLE-LAB-PACKS-V1.md` | Shipped bounded portability/distribution slice for exporting and importing verified local lab packs without a cloud backend |
 | `BITSTREAM-RANDOMNESS-LAB-V1.md` | Shipped bounded PRNG-analysis follow-on with a randomness mode in Cryptanalysis, sink selection, low-confidence sample warnings, live bitstream metrics, and teaching content for reading weak visible streams honestly |
 | `SEQUENTIAL-STATE-AUTHORING-V1.md` | Shipped bounded language-strengthening follow-on for derived ticked-mode `State` / `Control` / `Observe` role badges with no project-model or export changes |
 | `PRNG-TEACHING-WORKSPACE-V1.md` | Shipped bounded teaching-workspace line for comparing visible pseudo-random generator constructions without making CSPRNG claims |

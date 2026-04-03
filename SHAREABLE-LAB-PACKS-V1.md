@@ -1,6 +1,6 @@
 # SHAREABLE-LAB-PACKS-V1
 
-Status: Proposed
+Status: Shipped
 
 Owner: Codex
 
@@ -236,4 +236,3 @@ This slice would let:
 - peers exchange machines without requiring localStorage spelunking
 
 It is the smallest honest step from "workbench" toward "platform."
-
