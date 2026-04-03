@@ -490,12 +490,6 @@ export function WorkbenchPanel({
     selectedConnectionIndex < activeProjectState.connections.length
       ? selectedConnectionIndex
       : null;
-  const effectiveHoveredConnectionIndex =
-    hoveredConnectionIndex !== null &&
-    hoveredConnectionIndex >= 0 &&
-    hoveredConnectionIndex < activeProjectState.connections.length
-      ? hoveredConnectionIndex
-      : null;
 
   function getCanvasPointerFromClient(clientX: number, clientY: number) {
     const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
@@ -1383,6 +1377,13 @@ export function WorkbenchPanel({
                 0,
                 targetDef.inputs.findIndex((port) => port.name === connection.to.port),
               );
+              const sourcePort = sourceDef.outputs[sourceIndex];
+              const connectionDomainTone =
+                sourcePort?.type === 'bits'
+                  ? 'bits'
+                  : sourcePort?.type === 'symbol'
+                    ? 'symbol'
+                    : '';
 
               const sourceOrientation = getNodeOrientation(from.orientation, layoutDirection);
               const targetOrientation = getNodeOrientation(to.orientation, layoutDirection);
@@ -1409,9 +1410,7 @@ export function WorkbenchPanel({
                 PORT_GAP,
               );
               const pathD = getConnectionPath(sourceAnchor, sourceSide, targetAnchor, targetSide);
-              const showConnectionLabel =
-                effectiveHoveredConnectionIndex === connectionIndex ||
-                effectiveSelectedConnectionIndex === connectionIndex;
+              const showConnectionLabel = hoveredConnectionIndex === connectionIndex;
               const midpointX = (sourceAnchor.x + targetAnchor.x) / 2;
               const midpointY = (sourceAnchor.y + targetAnchor.y) / 2;
               const sourceLabel = `${connection.from.moduleId}.${connection.from.port}`;
@@ -1431,6 +1430,7 @@ export function WorkbenchPanel({
                   key={`${connection.from.moduleId}:${connection.from.port}-${connection.to.moduleId}:${connection.to.port}`}
                   className={[
                     'connection-group',
+                    connectionDomainTone ? `connection-group-domain-${connectionDomainTone}` : '',
                     validationIssues.some(
                       (issue) =>
                         issue.connection?.from.moduleId === connection.from.moduleId &&
@@ -1457,11 +1457,7 @@ export function WorkbenchPanel({
                     className="connection-hit-area"
                     d={pathD}
                     onMouseEnter={() => setHoveredConnectionIndex(connectionIndex)}
-                    onMouseLeave={() =>
-                      setHoveredConnectionIndex((current) =>
-                        current === connectionIndex ? null : current,
-                      )
-                    }
+                    onMouseLeave={() => setHoveredConnectionIndex(null)}
                     onClick={(event) => {
                       event.stopPropagation();
                       setSelectedConnectionIndex((current) =>

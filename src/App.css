@@ -2351,6 +2351,14 @@ body.canvas-resizing {
   pointer-events: none;
 }
 
+.connection-group-domain-bits path:not(.connection-hit-area) {
+  stroke: color-mix(in srgb, #0f74d1 88%, var(--connection-stroke));
+}
+
+.connection-group-domain-symbol path:not(.connection-hit-area) {
+  stroke: color-mix(in srgb, #c46a12 88%, var(--connection-stroke));
+}
+
 .connection-group:hover path:not(.connection-hit-area) {
   stroke: var(--danger-text);
   stroke-width: 3.5;
