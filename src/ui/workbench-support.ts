@@ -4,6 +4,7 @@ import type { PortSide } from './node-orientation';
 
 const ORTHOGONAL_STEP_BACK_PX = 20;
 const ORTHOGONAL_LANE_OFFSET_PX = 6;
+const ORTHOGONAL_CORNER_RADIUS_PX = 8;
 
 export function getAnchorPosition(
   x: number,
@@ -46,8 +47,59 @@ function getLaneOffset(sourceIndex: number, targetIndex: number) {
   return (laneSeed - 2) * ORTHOGONAL_LANE_OFFSET_PX;
 }
 
-function buildPolylinePath(points: Array<{ x: number; y: number }>) {
-  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+function buildRoundedOrthogonalPath(points: Array<{ x: number; y: number }>) {
+  if (points.length < 3) {
+    return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+  }
+
+  const commands: string[] = [`M ${points[0].x} ${points[0].y}`];
+
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const previous = points[index - 1];
+    const current = points[index];
+    const next = points[index + 1];
+    const incomingDx = current.x - previous.x;
+    const incomingDy = current.y - previous.y;
+    const outgoingDx = next.x - current.x;
+    const outgoingDy = next.y - current.y;
+
+    if (
+      (incomingDx === 0 && outgoingDx === 0) ||
+      (incomingDy === 0 && outgoingDy === 0) ||
+      (incomingDx === 0 && incomingDy === 0) ||
+      (outgoingDx === 0 && outgoingDy === 0)
+    ) {
+      commands.push(`L ${current.x} ${current.y}`);
+      continue;
+    }
+
+    const incomingLength = Math.abs(incomingDx) + Math.abs(incomingDy);
+    const outgoingLength = Math.abs(outgoingDx) + Math.abs(outgoingDy);
+    const radius = Math.min(
+      ORTHOGONAL_CORNER_RADIUS_PX,
+      incomingLength / 2,
+      outgoingLength / 2,
+    );
+
+    const entry = {
+      x: current.x - Math.sign(incomingDx) * radius,
+      y: current.y - Math.sign(incomingDy) * radius,
+    };
+    const exit = {
+      x: current.x + Math.sign(outgoingDx) * radius,
+      y: current.y + Math.sign(outgoingDy) * radius,
+    };
+
+    commands.push(`L ${entry.x} ${entry.y}`);
+    commands.push(`Q ${current.x} ${current.y} ${exit.x} ${exit.y}`);
+  }
+
+  const last = points.at(-1);
+  if (last) {
+    commands.push(`L ${last.x} ${last.y}`);
+  }
+
+  return commands.join(' ');
 }
 
 export function getOrthogonalPath(
@@ -71,12 +123,12 @@ export function getOrthogonalPath(
   };
 
   if (sourceExit.x === targetEntry.x || sourceExit.y === targetEntry.y) {
-    return buildPolylinePath([sourceAnchor, sourceExit, targetEntry, targetAnchor]);
+    return buildRoundedOrthogonalPath([sourceAnchor, sourceExit, targetEntry, targetAnchor]);
   }
 
   if (sourceSide === 'left' || sourceSide === 'right') {
     const elbowX = (sourceExit.x + targetEntry.x) / 2 + laneOffset;
-    return buildPolylinePath([
+    return buildRoundedOrthogonalPath([
       sourceAnchor,
       sourceExit,
       { x: elbowX, y: sourceExit.y },
@@ -87,7 +139,7 @@ export function getOrthogonalPath(
   }
 
   const elbowY = (sourceExit.y + targetEntry.y) / 2 + laneOffset;
-  return buildPolylinePath([
+  return buildRoundedOrthogonalPath([
     sourceAnchor,
     sourceExit,
     { x: sourceExit.x, y: elbowY },
@@ -109,12 +161,12 @@ export function getOrthogonalPendingPath(
   };
 
   if (sourceExit.x === targetPoint.x || sourceExit.y === targetPoint.y) {
-    return buildPolylinePath([sourceAnchor, sourceExit, targetPoint]);
+    return buildRoundedOrthogonalPath([sourceAnchor, sourceExit, targetPoint]);
   }
 
   if (sourceSide === 'left' || sourceSide === 'right') {
     const elbowX = (sourceExit.x + targetPoint.x) / 2;
-    return buildPolylinePath([
+    return buildRoundedOrthogonalPath([
       sourceAnchor,
       sourceExit,
       { x: elbowX, y: sourceExit.y },
@@ -124,7 +176,7 @@ export function getOrthogonalPendingPath(
   }
 
   const elbowY = (sourceExit.y + targetPoint.y) / 2;
-  return buildPolylinePath([
+  return buildRoundedOrthogonalPath([
     sourceAnchor,
     sourceExit,
     { x: sourceExit.x, y: elbowY },
