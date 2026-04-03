@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type { DemoProject } from '../demo-projects';
 import {
@@ -99,7 +99,13 @@ export function WorkbenchProjectContext({
   formatVersionTimestamp,
 }: WorkbenchProjectContextProps) {
   const [projectSearch, setProjectSearch] = useState('');
-  const [isProjectContextCollapsed, setIsProjectContextCollapsed] = useState(false);
+  const [isProjectContextCollapsed, setIsProjectContextCollapsed] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return window.localStorage.getItem('mcw:project-context-collapsed') === 'true';
+  });
   const normalizedProjectSearch = projectSearch.trim().toLowerCase();
   const searchMatchingProjects = useMemo(() => {
     if (!normalizedProjectSearch) {
@@ -119,6 +125,17 @@ export function WorkbenchProjectContext({
       return haystack.includes(normalizedProjectSearch);
     });
   }, [normalizedProjectSearch, projects]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.localStorage.setItem(
+      'mcw:project-context-collapsed',
+      isProjectContextCollapsed ? 'true' : 'false',
+    );
+  }, [isProjectContextCollapsed]);
 
   if (isCompositeEditor || isObservationMode) {
     return null;

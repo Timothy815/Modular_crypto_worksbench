@@ -254,7 +254,13 @@ export function ParameterInspector({
     Record<string, SinkRepresentation>
   >({});
   const [activeOutputSummaryModuleId, setActiveOutputSummaryModuleId] = useState<string | null>(null);
-  const [isOutputSummaryCollapsed, setIsOutputSummaryCollapsed] = useState(false);
+  const [isOutputSummaryCollapsed, setIsOutputSummaryCollapsed] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return window.localStorage.getItem('mcw:inspector-output-collapsed') === 'true';
+  });
   const [showCollectedOutput, setShowCollectedOutput] = useState(true);
   const [draggedPermutationInputIndex, setDraggedPermutationInputIndex] = useState<number | null>(null);
   const [draggedRotorInputIndex, setDraggedRotorInputIndex] = useState<number | null>(null);
@@ -283,6 +289,16 @@ export function ParameterInspector({
     draft: '',
     error: null,
   });
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.localStorage.setItem(
+      'mcw:inspector-output-collapsed',
+      isOutputSummaryCollapsed ? 'true' : 'false',
+    );
+  }, [isOutputSummaryCollapsed]);
   const permutationInputLaneRef = useRef<HTMLDivElement | null>(null);
   const permutationOutputLaneRef = useRef<HTMLDivElement | null>(null);
   const permutationInputRefs = useRef<(HTMLButtonElement | null)[]>([]);
