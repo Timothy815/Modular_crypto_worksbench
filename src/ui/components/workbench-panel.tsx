@@ -75,6 +75,7 @@ import {
   getOrthogonalPendingPath,
   shouldClearOrthogonalBendOverride,
 } from '../workbench-support';
+import { WORKBENCH_GRID_SIZE } from '../store';
 const WorkbenchActions = lazy(() =>
   import('./workbench-actions').then((module) => ({
     default: module.WorkbenchActions,
@@ -97,6 +98,17 @@ const MIN_GROUP_BOX_WIDTH = 180;
 const MIN_GROUP_BOX_HEIGHT = 120;
 const MINIMAP_WIDTH = 220;
 const MINIMAP_HEIGHT = 152;
+
+function snapCoordinateToGrid(value: number) {
+  return Math.max(16, Math.round(value / WORKBENCH_GRID_SIZE) * WORKBENCH_GRID_SIZE);
+}
+
+function snapPointToGrid(position: { x: number; y: number }) {
+  return {
+    x: snapCoordinateToGrid(position.x),
+    y: snapCoordinateToGrid(position.y),
+  };
+}
 const MINIMAP_PADDING = 10;
 
 interface PendingConnection {
@@ -192,6 +204,8 @@ interface WorkbenchPanelProps {
   annotations: WorkbenchAnnotation[];
   groupBoxes: WorkbenchGroupBox[];
   showOverviewNavigator: boolean;
+  showGrid: boolean;
+  snapToGrid: boolean;
   execution: ExecutionResult | null;
   executionError: string | null;
   validationIssues: ValidationIssue[];
@@ -238,6 +252,8 @@ interface WorkbenchPanelProps {
   onSetGroupBoxVariant: (groupBoxId: string, variant: WorkbenchGroupBoxVariant) => void;
   onRemoveGroupBox: (groupBoxId: string) => void;
   onSetOverviewNavigatorVisible: (visible: boolean) => void;
+  onSetGridVisible: (visible: boolean) => void;
+  onSetSnapToGrid: (enabled: boolean) => void;
   onMoveAnnotation: (annotationId: string, x: number, y: number) => void;
   onUpdateAnnotationText: (annotationId: string, text: string) => void;
   onRemoveAnnotation: (annotationId: string) => void;
@@ -315,6 +331,8 @@ export function WorkbenchPanel({
   annotations,
   groupBoxes,
   showOverviewNavigator,
+  showGrid,
+  snapToGrid,
   execution,
   executionError,
   validationIssues,
@@ -361,6 +379,8 @@ export function WorkbenchPanel({
   onSetGroupBoxVariant,
   onRemoveGroupBox,
   onSetOverviewNavigatorVisible,
+  onSetGridVisible,
+  onSetSnapToGrid,
   onMoveAnnotation,
   onUpdateAnnotationText,
   onRemoveAnnotation,
@@ -794,19 +814,23 @@ export function WorkbenchPanel({
         const nextX = Math.max(16, pointer.x - dragState.pointerOffsetX);
         const nextY = Math.max(16, pointer.y - dragState.pointerOffsetY);
         if (dragState.moduleIds.length <= 1) {
+          const snappedPosition = snapToGrid ? snapPointToGrid({ x: nextX, y: nextY }) : { x: nextX, y: nextY };
           setDragState((prev) =>
             prev
               ? {
                   ...prev,
                   currentPositions: {
-                    [prev.moduleId]: { x: nextX, y: nextY },
+                    [prev.moduleId]: snappedPosition,
                   },
                 }
               : null,
           );
         } else {
-          const deltaX = nextX - dragState.anchorStartX;
-          const deltaY = nextY - dragState.anchorStartY;
+          const anchorPosition = snapToGrid
+            ? snapPointToGrid({ x: nextX, y: nextY })
+            : { x: nextX, y: nextY };
+          const deltaX = anchorPosition.x - dragState.anchorStartX;
+          const deltaY = anchorPosition.y - dragState.anchorStartY;
           setDragState((prev) =>
             prev
               ? {
@@ -1060,6 +1084,7 @@ export function WorkbenchPanel({
     onSetConnectionOrthogonalBend,
     onSelectModules,
     selectionBox,
+    snapToGrid,
     workspaceZoom,
   ]);
 
@@ -1576,6 +1601,8 @@ export function WorkbenchPanel({
           layoutDirection={layoutDirection}
           routingMode={routingMode}
           showOverviewNavigator={showOverviewNavigator}
+          showGrid={showGrid}
+          snapToGrid={snapToGrid}
           canUndo={canUndo}
           canRedo={canRedo}
           selectedModuleIds={selectedModuleIds}
@@ -1591,6 +1618,8 @@ export function WorkbenchPanel({
           onSetLayoutDirection={onSetLayoutDirection}
           onSetRoutingMode={onSetRoutingMode}
           onToggleOverviewNavigator={onSetOverviewNavigatorVisible}
+          onToggleGrid={onSetGridVisible}
+          onToggleSnapToGrid={onSetSnapToGrid}
           onRequestUndo={onRequestUndo}
           onRequestRedo={onRequestRedo}
           onZoomOut={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'out'))}
@@ -1861,6 +1890,7 @@ export function WorkbenchPanel({
             });
           }}
         >
+          {showGrid ? <div className="graph-grid-overlay" /> : null}
           {groupBoxes.map((groupBox) => {
             const groupBoxX =
               groupBoxDragState?.groupBoxId === groupBox.id

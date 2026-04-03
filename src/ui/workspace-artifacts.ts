@@ -199,6 +199,20 @@ export function hydrateInitialUiState(projects: DemoProject[]): UiState {
           initialState.showOverviewNavigatorByProject[project.id],
       ]),
     ),
+    showGridByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.documentsByProjectId[project.id]?.ui.showGrid ??
+          initialState.showGridByProject[project.id],
+      ]),
+    ),
+    snapToGridByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.documentsByProjectId[project.id]?.ui.snapToGrid ??
+          initialState.snapToGridByProject[project.id],
+      ]),
+    ),
     layoutDirectionByProject: Object.fromEntries(
       allProjects.map((project) => [
         project.id,
@@ -383,6 +397,8 @@ export interface BuildShareableLabPackArgs {
   annotations: WorkbenchAnnotation[];
   groupBoxes?: WorkbenchGroupBox[];
   showOverviewNavigator?: boolean;
+  showGrid?: boolean;
+  snapToGrid?: boolean;
   layoutDirection: 'horizontal' | 'vertical';
   routingMode: 'curved' | 'orthogonal';
   connectionLayout?: Record<string, { orthogonalBend?: { axis: 'x' | 'y'; value: number } }>;
@@ -401,6 +417,8 @@ export function buildShareableLabPack({
   annotations,
   groupBoxes = [],
   showOverviewNavigator = false,
+  showGrid = false,
+  snapToGrid = false,
   layoutDirection,
   routingMode,
   connectionLayout = {},
@@ -427,6 +445,8 @@ export function buildShareableLabPack({
         annotations: cloneAnnotations(annotations),
         groupBoxes: cloneGroupBoxes(groupBoxes),
         showOverviewNavigator,
+        showGrid,
+        snapToGrid,
         layoutDirection,
         routingMode,
         connectionLayout: Object.fromEntries(
@@ -547,6 +567,8 @@ export function prepareImportedLabPack({
         groupBoxes: cloneGroupBoxes(pack.workspace.ui.groupBoxes ?? []),
         showOverviewNavigator:
           pack.workspace.ui.showOverviewNavigator ?? isLargeWorkspace(pack.workspace.project),
+        showGrid: pack.workspace.ui.showGrid ?? false,
+        snapToGrid: pack.workspace.ui.snapToGrid ?? false,
         layoutDirection: pack.workspace.ui.layoutDirection ?? 'horizontal',
         routingMode: pack.workspace.ui.routingMode ?? 'curved',
         connectionLayout: Object.fromEntries(

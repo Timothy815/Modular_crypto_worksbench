@@ -201,6 +201,25 @@ describe('uiReducer', () => {
     expect(initialState.showOverviewNavigatorByProject[projectId]).toBe(false);
   });
 
+  it('toggles grid visibility and snap-to-grid per workspace', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+
+    const withGrid = uiReducer(initialState, {
+      type: 'setGridVisible',
+      projectId,
+      visible: true,
+    });
+    const withSnap = uiReducer(withGrid, {
+      type: 'setSnapToGrid',
+      projectId,
+      enabled: true,
+    });
+
+    expect(withGrid.showGridByProject[projectId]).toBe(true);
+    expect(withSnap.snapToGridByProject[projectId]).toBe(true);
+  });
+
   it('rejects invalid or duplicate module instance IDs', () => {
     const initialState = createInitialUiState(demoProjects);
     const projectId = 'sequential';

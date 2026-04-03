@@ -49,6 +49,8 @@ export interface WorkbenchUiMetadata {
   annotations: WorkbenchAnnotation[];
   groupBoxes?: WorkbenchGroupBox[];
   showOverviewNavigator?: boolean;
+  showGrid?: boolean;
+  snapToGrid?: boolean;
   layoutDirection?: WorkbenchLayoutDirection;
   routingMode?: WorkbenchRoutingMode;
   connectionLayout?: Record<string, WorkbenchConnectionLayout>;

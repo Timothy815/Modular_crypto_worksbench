@@ -65,6 +65,8 @@ export interface UiState {
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
   groupBoxesByProject: Record<string, WorkbenchGroupBox[]>;
   showOverviewNavigatorByProject: Record<string, boolean>;
+  showGridByProject: Record<string, boolean>;
+  snapToGridByProject: Record<string, boolean>;
   layoutDirectionByProject: Record<string, WorkbenchLayoutDirection>;
   routingModeByProject: Record<string, WorkbenchRoutingMode>;
   connectionLayoutByProject: Record<string, Record<string, WorkbenchConnectionLayout>>;
@@ -142,6 +144,8 @@ export type UiAction =
   | { type: 'selectModule'; projectId: string; moduleId: string; additive?: boolean }
   | { type: 'selectModules'; projectId: string; moduleIds: string[]; additive?: boolean }
   | { type: 'moveModule'; projectId: string; moduleId: string; x: number; y: number }
+  | { type: 'setGridVisible'; projectId: string; visible: boolean }
+  | { type: 'setSnapToGrid'; projectId: string; enabled: boolean }
   | {
       type: 'setLayoutDirection';
       projectId: string;
@@ -329,6 +333,7 @@ function findNextModulePlacement(
   layout: Record<string, CompositeLayoutPosition>,
   direction: WorkbenchLayoutDirection,
   selectedModuleId: string | null,
+  snapToGrid: boolean,
 ): CompositeLayoutPosition {
   const occupiedSet = new Set(Object.values(layout).map((position) => `${position.x},${position.y}`));
   const selectedPosition = selectedModuleId ? layout[selectedModuleId] : undefined;
@@ -352,7 +357,20 @@ function findNextModulePlacement(
         : { x: candidate.x, y: candidate.y + 148 };
   }
 
-  return candidate;
+  return snapToGrid ? snapPointToGrid(candidate) : candidate;
+}
+
+export const WORKBENCH_GRID_SIZE = 24;
+
+function snapCoordinateToGrid(value: number) {
+  return Math.max(16, Math.round(value / WORKBENCH_GRID_SIZE) * WORKBENCH_GRID_SIZE);
+}
+
+function snapPointToGrid(position: { x: number; y: number }) {
+  return {
+    x: snapCoordinateToGrid(position.x),
+    y: snapCoordinateToGrid(position.y),
+  };
 }
 
 function renameDraftKeys(
@@ -725,6 +743,12 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     showOverviewNavigatorByProject: Object.fromEntries(
       projects.map((project) => [project.id, isLargeWorkspace(project.project)]),
     ),
+    showGridByProject: Object.fromEntries(
+      projects.map((project) => [project.id, false]),
+    ),
+    snapToGridByProject: Object.fromEntries(
+      projects.map((project) => [project.id, false]),
+    ),
     layoutDirectionByProject: Object.fromEntries(
       projects.map((project) => [project.id, 'horizontal' as const]),
     ),
@@ -878,6 +902,14 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.showOverviewNavigatorByProject,
           [action.workspaceId]: false,
         },
+        showGridByProject: {
+          ...state.showGridByProject,
+          [action.workspaceId]: false,
+        },
+        snapToGridByProject: {
+          ...state.snapToGridByProject,
+          [action.workspaceId]: false,
+        },
         layoutDirectionByProject: {
           ...state.layoutDirectionByProject,
           [action.workspaceId]: 'horizontal',
@@ -979,6 +1011,8 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       const sourceGroupBoxes = state.groupBoxesByProject[action.sourceProjectId] ?? [];
       const sourceShowOverviewNavigator =
         state.showOverviewNavigatorByProject[action.sourceProjectId] ?? false;
+      const sourceShowGrid = state.showGridByProject[action.sourceProjectId] ?? false;
+      const sourceSnapToGrid = state.snapToGridByProject[action.sourceProjectId] ?? false;
       const sourceLayoutDirection =
         state.layoutDirectionByProject[action.sourceProjectId] ?? 'horizontal';
       const sourceRoutingMode = state.routingModeByProject[action.sourceProjectId] ?? 'curved';
@@ -1019,6 +1053,14 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         showOverviewNavigatorByProject: {
           ...state.showOverviewNavigatorByProject,
           [action.workspaceId]: sourceShowOverviewNavigator,
+        },
+        showGridByProject: {
+          ...state.showGridByProject,
+          [action.workspaceId]: sourceShowGrid,
+        },
+        snapToGridByProject: {
+          ...state.snapToGridByProject,
+          [action.workspaceId]: sourceSnapToGrid,
         },
         layoutDirectionByProject: {
           ...state.layoutDirectionByProject,
@@ -1146,6 +1188,8 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           state.showOverviewNavigatorByProject,
           action.workspaceId,
         ),
+        showGridByProject: removeProjectEntry(state.showGridByProject, action.workspaceId),
+        snapToGridByProject: removeProjectEntry(state.snapToGridByProject, action.workspaceId),
         layoutDirectionByProject: removeProjectEntry(
           state.layoutDirectionByProject,
           action.workspaceId,
@@ -1304,10 +1348,45 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
             ...currentLayout,
             [action.moduleId]: {
               ...currentLayout[action.moduleId],
-              x: action.x,
-              y: action.y,
+              ...((state.snapToGridByProject[action.projectId] ?? false)
+                ? snapPointToGrid({ x: action.x, y: action.y })
+                : { x: action.x, y: action.y }),
             },
           },
+        },
+      };
+    }
+    case 'setGridVisible': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      if ((state.showGridByProject[action.projectId] ?? false) === action.visible) {
+        return state;
+      }
+
+      return {
+        ...state,
+        showGridByProject: {
+          ...state.showGridByProject,
+          [action.projectId]: action.visible,
+        },
+      };
+    }
+    case 'setSnapToGrid': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      if ((state.snapToGridByProject[action.projectId] ?? false) === action.enabled) {
+        return state;
+      }
+
+      return {
+        ...state,
+        snapToGridByProject: {
+          ...state.snapToGridByProject,
+          [action.projectId]: action.enabled,
         },
       };
     }
@@ -1473,7 +1552,9 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
               moduleId in action.positions
                 ? {
                     ...currentLayout[moduleId],
-                    ...position,
+                    ...((state.snapToGridByProject[action.projectId] ?? false)
+                      ? snapPointToGrid(position)
+                      : position),
                   }
                 : position,
             ]),
@@ -1828,6 +1909,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         currentLayout,
         currentLayoutDirection,
         state.selectedModuleIdByProject[action.projectId] ?? null,
+        state.snapToGridByProject[action.projectId] ?? false,
       );
 
       return {
@@ -2497,6 +2579,14 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         showOverviewNavigatorByProject: {
           ...state.showOverviewNavigatorByProject,
           [action.projectId]: action.document.ui.showOverviewNavigator ?? false,
+        },
+        showGridByProject: {
+          ...state.showGridByProject,
+          [action.projectId]: action.document.ui.showGrid ?? false,
+        },
+        snapToGridByProject: {
+          ...state.snapToGridByProject,
+          [action.projectId]: action.document.ui.snapToGrid ?? false,
         },
         layoutDirectionByProject: {
           ...state.layoutDirectionByProject,

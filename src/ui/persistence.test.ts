@@ -176,6 +176,8 @@ describe('workspace persistence', () => {
       },
     ]);
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.showOverviewNavigator).toBe(false);
+    expect(restored?.documentsByProjectId['my-scratchpad']?.ui.showGrid).toBe(false);
+    expect(restored?.documentsByProjectId['my-scratchpad']?.ui.snapToGrid).toBe(false);
   });
 
   it('round-trips node orientation through storage', () => {

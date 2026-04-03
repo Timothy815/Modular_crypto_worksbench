@@ -95,6 +95,11 @@ The next workbench-chrome refinement after that is now shipped as:
 - a bounded quick-access strip for high-frequency canvas controls
 - keeps grouped dropdown menus intact as the full fallback path
 
+The next manual-layout refinement after that is now implemented locally as:
+- `SOFT-GRID-SNAP-V1.md`
+- adds per-workspace soft grid visibility and optional snap-to-grid placement
+- keeps the first slice bounded to module placement only
+
 Current `main` now also includes:
 - Python export foundations:
   - one workspace-local `Export Python` action beside JSON export

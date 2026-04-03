@@ -345,6 +345,8 @@ function MainApp() {
   );
   const activeShowOverviewNavigator =
     state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false;
+  const activeShowGrid = state.showGridByProject[activeProjectDefinition.id] ?? false;
+  const activeSnapToGrid = state.snapToGridByProject[activeProjectDefinition.id] ?? false;
   const activeCompositeEntry = state.compositeEditor
     ? state.compositeLibrary.find((entry) => entry.id === state.compositeEditor?.entryId) ?? null
     : null;
@@ -907,6 +909,8 @@ function MainApp() {
         annotations: activeAnnotations,
         groupBoxes: activeGroupBoxes,
         showOverviewNavigator: activeShowOverviewNavigator,
+        showGrid: activeShowGrid,
+        snapToGrid: activeSnapToGrid,
         layoutDirection: activeLayoutDirection,
         routingMode: activeRoutingMode,
         connectionLayout: activeConnectionLayout,
@@ -921,6 +925,8 @@ function MainApp() {
     activeAnnotations,
     activeGroupBoxes,
     activeShowOverviewNavigator,
+    activeShowGrid,
+    activeSnapToGrid,
     activeLayout,
     activeLayoutDirection,
     activeRoutingMode,
@@ -1611,6 +1617,8 @@ function MainApp() {
             annotations: activeAnnotations,
             groupBoxes: activeGroupBoxes,
             showOverviewNavigator: activeShowOverviewNavigator,
+            showGrid: activeShowGrid,
+            snapToGrid: activeSnapToGrid,
             layoutDirection: activeLayoutDirection,
             routingMode: activeRoutingMode,
             connectionLayout: activeConnectionLayout,
@@ -2507,6 +2515,8 @@ function MainApp() {
             annotations={isCompositeDrilldownActive ? [] : activeAnnotations}
             groupBoxes={isCompositeDrilldownActive ? [] : activeGroupBoxes}
             showOverviewNavigator={isCompositeDrilldownActive ? false : activeShowOverviewNavigator}
+            showGrid={isCompositeDrilldownActive ? false : activeShowGrid}
+            snapToGrid={isCompositeDrilldownActive ? false : activeSnapToGrid}
             execution={compositeDrilldownContext?.execution ?? execution}
             executionError={isCompositeDrilldownActive ? compositeDrilldownExecutionError : executionError}
             validationIssues={isCompositeDrilldownActive ? compositeDrilldownValidationIssues : validationIssues}
@@ -2680,6 +2690,24 @@ function MainApp() {
                     type: 'setOverviewNavigatorVisible',
                     projectId: activeProjectDefinition.id,
                     visible,
+                  })
+            }
+            onSetGridVisible={(visible) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'setGridVisible',
+                    projectId: activeProjectDefinition.id,
+                    visible,
+                  })
+            }
+            onSetSnapToGrid={(enabled) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'setSnapToGrid',
+                    projectId: activeProjectDefinition.id,
+                    enabled,
                   })
             }
             onMoveAnnotation={(annotationId, x, y) =>
@@ -2865,6 +2893,12 @@ function MainApp() {
                   showOverviewNavigator: state.compositeEditor
                     ? false
                     : state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
+                  showGrid: state.compositeEditor
+                    ? false
+                    : state.showGridByProject[activeProjectDefinition.id] ?? false,
+                  snapToGrid: state.compositeEditor
+                    ? false
+                    : state.snapToGridByProject[activeProjectDefinition.id] ?? false,
                   layoutDirection: activeLayoutDirection,
                   routingMode: activeRoutingMode,
                   connectionLayout: activeConnectionLayout,
@@ -3846,6 +3880,10 @@ function MainApp() {
                           groupBoxes: state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
                           showOverviewNavigator:
                             state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
+                          showGrid:
+                            state.showGridByProject[activeProjectDefinition.id] ?? false,
+                          snapToGrid:
+                            state.snapToGridByProject[activeProjectDefinition.id] ?? false,
                           layoutDirection: activeLayoutDirection,
                           routingMode: activeRoutingMode,
                           connectionLayout: activeConnectionLayout,
@@ -3949,6 +3987,10 @@ function MainApp() {
                         groupBoxes: [],
                         showOverviewNavigator:
                           state.showOverviewNavigatorByProject[selectedChallengeProjectId] ?? false,
+                        showGrid:
+                          state.showGridByProject[selectedChallengeProjectId] ?? false,
+                        snapToGrid:
+                          state.snapToGridByProject[selectedChallengeProjectId] ?? false,
                         layoutDirection:
                           state.layoutDirectionByProject[selectedChallengeProjectId] ??
                           'horizontal',

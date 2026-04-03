@@ -160,6 +160,8 @@ function cloneWorkspaceDocument(document: WorkbenchDocument): WorkbenchDocument 
       annotations: cloneAnnotations(document.ui.annotations),
       groupBoxes: cloneGroupBoxes(document.ui.groupBoxes ?? []),
       showOverviewNavigator: document.ui.showOverviewNavigator ?? false,
+      showGrid: document.ui.showGrid ?? false,
+      snapToGrid: document.ui.snapToGrid ?? false,
       layoutDirection: document.ui.layoutDirection ?? 'horizontal',
       routingMode: document.ui.routingMode ?? 'curved',
       connectionLayout: Object.fromEntries(
@@ -198,6 +200,8 @@ function buildDefaultDocument(project: DemoProject): WorkbenchDocument {
       annotations: [],
       groupBoxes: [],
       showOverviewNavigator: false,
+      showGrid: false,
+      snapToGrid: false,
       layoutDirection: 'horizontal',
       routingMode: 'curved',
       connectionLayout: {},
@@ -238,6 +242,8 @@ export function buildPersistedWorkspace(
             annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
             groupBoxes: cloneGroupBoxes(state.groupBoxesByProject[projectId] ?? []),
             showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
+            showGrid: state.showGridByProject[projectId] ?? false,
+            snapToGrid: state.snapToGridByProject[projectId] ?? false,
             layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
             routingMode: state.routingModeByProject[projectId] ?? 'curved',
             connectionLayout: Object.fromEntries(
@@ -885,6 +891,8 @@ function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
               groupBox.variant === 'emphasis')))) &&
     (candidate.ui.showOverviewNavigator === undefined ||
       typeof candidate.ui.showOverviewNavigator === 'boolean') &&
+    (candidate.ui.showGrid === undefined || typeof candidate.ui.showGrid === 'boolean') &&
+    (candidate.ui.snapToGrid === undefined || typeof candidate.ui.snapToGrid === 'boolean') &&
     (candidate.ui.layoutDirection === undefined ||
       candidate.ui.layoutDirection === 'horizontal' ||
       candidate.ui.layoutDirection === 'vertical') &&

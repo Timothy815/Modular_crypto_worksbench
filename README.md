@@ -105,6 +105,11 @@ The next workbench-chrome refinement after that is now shipped as:
 - adds a compact icon-first quick-actions strip for high-frequency canvas controls
 - keeps grouped dropdown menus intact as the complete fallback path
 
+The next manual-layout refinement after that is now implemented locally as:
+- `SOFT-GRID-SNAP-V1.md`
+- adds per-workspace soft grid visibility and optional snap-to-grid placement
+- keeps the first slice bounded to module placement only
+
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - now shipped as the first bounded verification-station refinement inside the compare/analyze line
