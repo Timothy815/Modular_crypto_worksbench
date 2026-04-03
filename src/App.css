@@ -2626,8 +2626,9 @@ body.canvas-resizing {
   position: absolute;
   width: 132px;
   text-align: left;
-  overflow: visible;
+  overflow: hidden;
   z-index: 1;
+  isolation: isolate;
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
 }
@@ -2787,28 +2788,28 @@ body.canvas-resizing {
 
 .graph-node-source {
   border-color: var(--role-source-soft);
-  background: color-mix(in srgb, var(--role-source-bg) 91%, var(--surface-strong));
+  background: color-mix(in srgb, var(--role-source-bg) 94%, var(--surface-strong));
 }
 
 .graph-node-operator {
   border-color: var(--role-operator-soft);
-  background: color-mix(in srgb, var(--role-operator-bg) 91%, var(--surface-strong));
+  background: color-mix(in srgb, var(--role-operator-bg) 94%, var(--surface-strong));
 }
 
 .graph-node-bridge {
   border-color: var(--role-bridge-soft);
-  background: color-mix(in srgb, var(--role-bridge-bg) 91%, var(--surface-strong));
+  background: color-mix(in srgb, var(--role-bridge-bg) 94%, var(--surface-strong));
 }
 
 .graph-node-sink {
   border-color: var(--role-sink-soft);
-  background: color-mix(in srgb, var(--role-sink-bg) 92%, var(--surface-strong));
+  background: color-mix(in srgb, var(--role-sink-bg) 95%, var(--surface-strong));
 }
 
 .graph-node-composite {
   border-style: dashed;
   border-color: var(--role-composite-soft);
-  background: color-mix(in srgb, var(--role-composite-bg) 93%, var(--surface-strong));
+  background: color-mix(in srgb, var(--role-composite-bg) 95%, var(--surface-strong));
 }
 
 .graph-node-selected {
@@ -2952,6 +2953,9 @@ body.canvas-resizing {
   padding: 14px 14px 12px;
   cursor: grab;
   user-select: none;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--surface-strong) 94%, white);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, white 34%, transparent);
 }
 
 .graph-node-issue-badge {
