@@ -1,15 +1,24 @@
 import type { ExecutionResult, ExecutionTraceEntry, ValidationIssue } from '../engine/types';
 import type { TargetPortState } from './connection-authoring';
+import type { PortSide } from './node-orientation';
 
 export function getAnchorPosition(
   x: number,
   y: number,
-  side: 'left' | 'right',
+  side: PortSide,
   portIndex: number,
   nodeWidth: number,
+  nodeHeight: number,
   portStartY: number,
   portGap: number,
 ) {
+  if (side === 'top' || side === 'bottom') {
+    return {
+      x: x + portStartY + portIndex * portGap,
+      y: side === 'top' ? y : y + nodeHeight,
+    };
+  }
+
   return {
     x: side === 'left' ? x : x + nodeWidth,
     y: y + portStartY + portIndex * portGap,

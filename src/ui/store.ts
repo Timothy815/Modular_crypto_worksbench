@@ -19,6 +19,7 @@ import type {
   UserWorkspaceMetadata,
   WorkbenchAnnotation,
   WorkbenchLayoutDirection,
+  WorkbenchPosition,
   WorkbenchDocument,
   WorkspaceVersionDocument,
 } from './workbench-document';
@@ -40,6 +41,10 @@ import {
   type WorkspaceHistoryState,
 } from './workspace-state-support';
 import { duplicateWorkspaceSelection } from './workspace-clipboard';
+import {
+  getDefaultNodeOrientation,
+  getNextNodeOrientationClockwise,
+} from './node-orientation';
 
 export interface UiState {
   activeProjectId: string;
@@ -50,7 +55,7 @@ export interface UiState {
   userWorkspaceLibrary: UserWorkspaceMetadata[];
   compositeEditor: CompositeEditorState | null;
   projectStates: Record<string, Project>;
-  layoutByProject: Record<string, Record<string, { x: number; y: number }>>;
+  layoutByProject: Record<string, Record<string, WorkbenchPosition>>;
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
   layoutDirectionByProject: Record<string, WorkbenchLayoutDirection>;
   comparisonBaselinesByProject: Record<string, ComparisonBaselineDocument | null>;
@@ -125,6 +130,7 @@ export type UiAction =
       projectId: string;
       positions: Record<string, { x: number; y: number }>;
     }
+  | { type: 'rotateModuleClockwise'; projectId: string; moduleId: string }
   | { type: 'tidyLayout'; projectId: string }
   | {
       type: 'arrangeSelectedModules';
@@ -334,7 +340,7 @@ function renameModuleReferencesInProject(
 }
 
 function renameModuleLayoutEntry(
-  layout: Record<string, { x: number; y: number }>,
+  layout: Record<string, WorkbenchPosition>,
   moduleId: string,
   nextModuleId: string,
 ) {
@@ -384,6 +390,7 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'loadDocument',
   'moveModule',
   'moveModules',
+  'rotateModuleClockwise',
   'tidyLayout',
   'arrangeSelectedModules',
   'restoreWorkspaceVersion',
@@ -393,7 +400,7 @@ const STAGE_ROW_GAP = 244;
 const STAGE_COLUMN_GAP = 148;
 
 function arrangeSelectedLayoutPositions(
-  layout: Record<string, { x: number; y: number }>,
+  layout: Record<string, WorkbenchPosition>,
   selectedModuleIds: string[],
   anchorModuleId: string | null,
   mode: 'stage-row' | 'stage-column',
@@ -454,10 +461,12 @@ function arrangeSelectedLayoutPositions(
     nextLayout[moduleId] =
       mode === 'stage-row'
         ? {
+            ...nextLayout[moduleId],
             x: anchorPosition.x + offset * STAGE_ROW_GAP,
             y: anchorPosition.y,
           }
         : {
+            ...nextLayout[moduleId],
             x: anchorPosition.x,
             y: anchorPosition.y + offset * STAGE_COLUMN_GAP,
           };
@@ -1015,6 +1024,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
             layout: {
               ...state.compositeEditor.layout,
               [action.moduleId]: {
+                ...state.compositeEditor.layout[action.moduleId],
                 x: action.x,
                 y: action.y,
               },
@@ -1035,8 +1045,37 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           [action.projectId]: {
             ...currentLayout,
             [action.moduleId]: {
+              ...currentLayout[action.moduleId],
               x: action.x,
               y: action.y,
+            },
+          },
+        },
+      };
+    }
+    case 'rotateModuleClockwise': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentLayout = state.layoutByProject[action.projectId];
+      if (!currentLayout?.[action.moduleId]) {
+        return state;
+      }
+
+      const currentDirection = state.layoutDirectionByProject[action.projectId] ?? 'horizontal';
+      const currentOrientation =
+        currentLayout[action.moduleId]?.orientation ?? getDefaultNodeOrientation(currentDirection);
+
+      return {
+        ...state,
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: {
+            ...currentLayout,
+            [action.moduleId]: {
+              ...currentLayout[action.moduleId],
+              orientation: getNextNodeOrientationClockwise(currentOrientation),
             },
           },
         },
@@ -1082,10 +1121,20 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         ...state,
         layoutByProject: {
           ...state.layoutByProject,
-          [action.projectId]: {
-            ...currentLayout,
-            ...action.positions,
-          },
+          [action.projectId]: Object.fromEntries(
+            Object.entries({
+              ...currentLayout,
+              ...action.positions,
+            }).map(([moduleId, position]) => [
+              moduleId,
+              moduleId in action.positions
+                ? {
+                    ...currentLayout[moduleId],
+                    ...position,
+                  }
+                : position,
+            ]),
+          ),
         },
       };
     }
@@ -1288,6 +1337,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
             [nextModuleId]: {
               x: newX,
               y: newY,
+              orientation: getDefaultNodeOrientation(currentLayoutDirection),
             },
           },
         },
@@ -2655,10 +2705,12 @@ function createTidiedLayout(
           moduleId,
           direction === 'vertical'
             ? {
+                ...currentLayout[moduleId],
                 x: columnXStart + indexWithinLayer * columnGap,
                 y: rowYStart + layer * rowGap,
               }
             : {
+                ...currentLayout[moduleId],
                 x: columnXStart + layer * columnGap,
                 y: rowYStart + indexWithinLayer * rowGap,
               },

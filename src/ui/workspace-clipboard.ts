@@ -1,9 +1,10 @@
 import type { Connection, ModuleInstance, Project } from '../engine/types';
+import type { WorkbenchPosition } from './workbench-document';
 
 export interface WorkspaceClipboardSnapshot {
   modules: ModuleInstance[];
   connections: Connection[];
-  relativeLayout: Record<string, { x: number; y: number }>;
+  relativeLayout: Record<string, WorkbenchPosition>;
 }
 
 const DEFAULT_PASTE_GAP_X = 180;
@@ -36,7 +37,7 @@ function createPastedModuleId(project: Project, defId: string) {
   return candidate;
 }
 
-function getPasteAnchor(layout: Record<string, { x: number; y: number }>) {
+function getPasteAnchor(layout: Record<string, WorkbenchPosition>) {
   const positions = Object.values(layout);
   if (positions.length === 0) {
     return { x: 48, y: 48 };
@@ -52,12 +53,12 @@ function getSelectionAnchor({
   layout,
   selectedModuleIds,
 }: {
-  layout: Record<string, { x: number; y: number }>;
+  layout: Record<string, WorkbenchPosition>;
   selectedModuleIds: string[];
 }) {
   const selectedPositions = selectedModuleIds
     .map((moduleId) => layout[moduleId])
-    .filter((position): position is { x: number; y: number } => Boolean(position));
+    .filter((position): position is WorkbenchPosition => Boolean(position));
 
   if (selectedPositions.length === 0) {
     return { x: 48, y: 48 };
@@ -75,7 +76,7 @@ export function buildWorkspaceClipboardSnapshot({
   selectedModuleIds,
 }: {
   project: Project;
-  layout: Record<string, { x: number; y: number }>;
+  layout: Record<string, WorkbenchPosition>;
   selectedModuleIds: string[];
 }) {
   if (selectedModuleIds.length === 0) {
@@ -115,6 +116,7 @@ export function buildWorkspaceClipboardSnapshot({
         {
           x: position.x - minX,
           y: position.y - minY,
+          orientation: position.orientation,
         },
       ]),
     ),
@@ -128,7 +130,7 @@ export function pasteWorkspaceClipboardSnapshot({
   anchor = getPasteAnchor(targetLayout),
 }: {
   targetProject: Project;
-  targetLayout: Record<string, { x: number; y: number }>;
+  targetLayout: Record<string, WorkbenchPosition>;
   snapshot: WorkspaceClipboardSnapshot;
   anchor?: { x: number; y: number };
 }) {
@@ -150,6 +152,7 @@ export function pasteWorkspaceClipboardSnapshot({
     nextLayout[nextModuleId] = {
       x: anchor.x + relativePosition.x,
       y: anchor.y + relativePosition.y,
+      orientation: relativePosition.orientation,
     };
   }
 
@@ -181,7 +184,7 @@ export function duplicateWorkspaceSelection({
   selectedModuleIds,
 }: {
   project: Project;
-  layout: Record<string, { x: number; y: number }>;
+  layout: Record<string, WorkbenchPosition>;
   selectedModuleIds: string[];
 }) {
   const snapshot = buildWorkspaceClipboardSnapshot({

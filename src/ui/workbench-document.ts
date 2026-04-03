@@ -9,6 +9,7 @@ import type { WorkspaceMode } from './workspace-mode';
 export interface WorkbenchPosition {
   x: number;
   y: number;
+  orientation?: WorkbenchNodeOrientation;
 }
 
 export interface WorkbenchAnnotation {
@@ -19,6 +20,7 @@ export interface WorkbenchAnnotation {
 }
 
 export type WorkbenchLayoutDirection = 'horizontal' | 'vertical';
+export type WorkbenchNodeOrientation = 'east' | 'south' | 'west' | 'north';
 
 export interface WorkbenchUiMetadata {
   layout: Record<string, WorkbenchPosition>;

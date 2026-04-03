@@ -18,6 +18,7 @@ import type {
   ShareableLabPack,
   WorkbenchAnnotation,
   WorkbenchDocument,
+  WorkbenchPosition,
 } from './workbench-document';
 
 export function slugifyWorkspaceName(value: string) {
@@ -75,7 +76,7 @@ export function describeWorkspacePipeline(project: Project) {
     : 'Blank canvas';
 }
 
-function cloneLayout(layout: Record<string, { x: number; y: number }>) {
+function cloneLayout(layout: Record<string, WorkbenchPosition>) {
   return Object.fromEntries(
     Object.entries(layout).map(([moduleId, position]) => [moduleId, { ...position }]),
   );

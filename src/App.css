@@ -2796,15 +2796,26 @@ body.canvas-resizing {
 
 .graph-node-anchor-group {
   position: absolute;
+}
+
+.graph-node-anchor-group-left {
+  left: -42px;
   inset-block: 0;
 }
 
-.graph-node-anchor-group-in {
-  left: -42px;
+.graph-node-anchor-group-right {
+  right: -56px;
+  inset-block: 0;
 }
 
-.graph-node-anchor-group-out {
-  right: -56px;
+.graph-node-anchor-group-top {
+  top: -30px;
+  inset-inline: 0;
+}
+
+.graph-node-anchor-group-bottom {
+  bottom: -30px;
+  inset-inline: 0;
 }
 
 .graph-port-anchor {
@@ -2824,12 +2835,24 @@ body.canvas-resizing {
     opacity 120ms ease;
 }
 
-.graph-port-anchor-in {
+.graph-port-anchor-left {
   left: 0;
+  flex-direction: row;
 }
 
-.graph-port-anchor-out {
+.graph-port-anchor-right {
   right: 0;
+  flex-direction: row-reverse;
+}
+
+.graph-port-anchor-top {
+  top: 0;
+  flex-direction: column;
+}
+
+.graph-port-anchor-bottom {
+  bottom: 0;
+  flex-direction: column-reverse;
 }
 
 .graph-port-anchor-active {

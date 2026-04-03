@@ -4,13 +4,14 @@ import type {
   ComparisonBaselineDocument,
   WorkbenchAnnotation,
   WorkbenchLayoutDirection,
+  WorkbenchPosition,
   WorkspaceVersionDocument,
 } from './workbench-document';
 import { cloneProject } from './project-clone';
 
 export interface WorkspaceHistorySnapshot {
   project: Project;
-  layout: Record<string, { x: number; y: number }>;
+  layout: Record<string, WorkbenchPosition>;
   annotations: WorkbenchAnnotation[];
   layoutDirection: WorkbenchLayoutDirection;
   selectedModuleIds: string[];

@@ -157,6 +157,25 @@ describe('workspace persistence', () => {
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.layoutDirection).toBe('vertical');
   });
 
+  it('round-trips node orientation through storage', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const storage = new MemoryStorage();
+
+    const rotatedState = uiReducer(initialState, {
+      type: 'rotateModuleClockwise',
+      projectId,
+      moduleId: 'clock',
+    });
+
+    saveWorkspaceToStorage(rotatedState, {}, storage);
+    const restored = loadWorkspaceFromStorage(demoProjects, storage);
+
+    expect(restored?.documentsByProjectId[projectId]?.ui.layout.clock).toMatchObject({
+      orientation: 'south',
+    });
+  });
+
   it('round-trips named workspace versions through storage', () => {
     const initialState = createInitialUiState(demoProjects);
     const stateWithVersion = uiReducer(initialState, {

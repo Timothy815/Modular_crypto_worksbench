@@ -49,8 +49,15 @@ import {
 import type {
   WorkbenchAnnotation,
   WorkbenchLayoutDirection,
+  WorkbenchPosition,
   WorkspaceVersionDocument,
 } from '../workbench-document';
+import {
+  getNodeOrientation,
+  getPortSideForOrientation,
+  isVerticalPortSide,
+  type PortSide,
+} from '../node-orientation';
 import type { TutorialStep } from '../tutorials';
 import {
   buildActiveAnalysisSignalByModuleId,
@@ -84,9 +91,80 @@ interface PendingConnection {
   fromModuleId: string;
   fromPort: string;
   fromAnchor: { x: number; y: number };
+  fromSide: PortSide;
   mouseX: number;
   mouseY: number;
   excludedConnectionIndex: number | null;
+}
+
+function getPortAnchorStyle(side: PortSide, portIndex: number): CSSProperties {
+  const offset = PORT_START_Y + portIndex * PORT_GAP;
+  if (side === 'top' || side === 'bottom') {
+    return { left: `${offset}px` };
+  }
+  return { top: `${offset}px` };
+}
+
+function getConnectionPath(
+  sourceAnchor: { x: number; y: number },
+  sourceSide: PortSide,
+  targetAnchor: { x: number; y: number },
+  targetSide: PortSide,
+) {
+  const horizontal = !isVerticalPortSide(sourceSide) && !isVerticalPortSide(targetSide);
+  const primaryDistance = horizontal
+    ? Math.abs(targetAnchor.x - sourceAnchor.x)
+    : Math.abs(targetAnchor.y - sourceAnchor.y);
+  const bend = Math.max(56, primaryDistance * 0.42);
+
+  const sourceControl = horizontal
+    ? {
+        x: sourceSide === 'right' ? sourceAnchor.x + bend : sourceAnchor.x - bend,
+        y: sourceAnchor.y,
+      }
+    : {
+        x: sourceAnchor.x,
+        y: sourceSide === 'bottom' ? sourceAnchor.y + bend : sourceAnchor.y - bend,
+      };
+
+  const targetControl = horizontal
+    ? {
+        x: targetSide === 'left' ? targetAnchor.x - bend : targetAnchor.x + bend,
+        y: targetAnchor.y,
+      }
+    : {
+        x: targetAnchor.x,
+        y: targetSide === 'top' ? targetAnchor.y - bend : targetAnchor.y + bend,
+      };
+
+  return `M ${sourceAnchor.x} ${sourceAnchor.y} C ${sourceControl.x} ${sourceControl.y}, ${targetControl.x} ${targetControl.y}, ${targetAnchor.x} ${targetAnchor.y}`;
+}
+
+function getPendingConnectionPath(
+  sourceAnchor: { x: number; y: number },
+  sourceSide: PortSide,
+  targetPoint: { x: number; y: number },
+) {
+  const primaryDistance = isVerticalPortSide(sourceSide)
+    ? Math.abs(targetPoint.y - sourceAnchor.y)
+    : Math.abs(targetPoint.x - sourceAnchor.x);
+  const bend = Math.max(56, primaryDistance * 0.42);
+
+  const sourceControl = isVerticalPortSide(sourceSide)
+    ? {
+        x: sourceAnchor.x,
+        y: sourceSide === 'bottom' ? sourceAnchor.y + bend : sourceAnchor.y - bend,
+      }
+    : {
+        x: sourceSide === 'right' ? sourceAnchor.x + bend : sourceAnchor.x - bend,
+        y: sourceAnchor.y,
+      };
+
+  const targetControl = isVerticalPortSide(sourceSide)
+    ? { x: targetPoint.x, y: targetPoint.y + (targetPoint.y >= sourceAnchor.y ? -bend : bend) }
+    : { x: targetPoint.x + (targetPoint.x >= sourceAnchor.x ? -bend : bend), y: targetPoint.y };
+
+  return `M ${sourceAnchor.x} ${sourceAnchor.y} C ${sourceControl.x} ${sourceControl.y}, ${targetControl.x} ${targetControl.y}, ${targetPoint.x} ${targetPoint.y}`;
 }
 
 interface WorkbenchPanelProps {
@@ -95,7 +173,7 @@ interface WorkbenchPanelProps {
   summary?: string;
   pipelineLabel?: string;
   activeProjectState: Project;
-  layout: Record<string, { x: number; y: number }>;
+  layout: Record<string, WorkbenchPosition>;
   layoutDirection: WorkbenchLayoutDirection;
   annotations: WorkbenchAnnotation[];
   execution: ExecutionResult | null;
@@ -363,10 +441,21 @@ export function WorkbenchPanel({
     [activeProject, projects],
   );
   const effectiveLayout = useMemo(
-    () => ({
-      ...layout,
-      ...(dragState?.currentPositions ?? {}),
-    }),
+    () =>
+      Object.fromEntries(
+        Object.entries({
+          ...layout,
+          ...(dragState?.currentPositions ?? {}),
+        }).map(([moduleId, position]) => [
+          moduleId,
+          moduleId in (dragState?.currentPositions ?? {})
+            ? {
+                ...layout[moduleId],
+                ...position,
+              }
+            : position,
+        ]),
+      ) as Record<string, WorkbenchPosition>,
     [dragState?.currentPositions, layout],
   );
   const workspaceLandmarks = useMemo(
@@ -786,12 +875,24 @@ export function WorkbenchPanel({
     setSelectedConnectionIndex(null);
     const pos = layout[moduleId];
     if (!pos) return;
-    const anchor = getAnchorPosition(pos.x, pos.y, 'right', portIndex, NODE_WIDTH, PORT_START_Y, PORT_GAP);
+    const orientation = getNodeOrientation(pos.orientation, layoutDirection);
+    const sourceSide = getPortSideForOrientation(orientation, 'out');
+    const anchor = getAnchorPosition(
+      pos.x,
+      pos.y,
+      sourceSide,
+      portIndex,
+      NODE_WIDTH,
+      NODE_HEIGHT,
+      PORT_START_Y,
+      PORT_GAP,
+    );
     setConnectionFeedback(null);
     setPendingConnection({
       fromModuleId: moduleId,
       fromPort: portName,
       fromAnchor: anchor,
+      fromSide: sourceSide,
       mouseX: anchor.x,
       mouseY: anchor.y,
       excludedConnectionIndex: null,
@@ -819,12 +920,15 @@ export function WorkbenchPanel({
       return;
     }
 
+    const sourceOrientation = getNodeOrientation(sourcePosition.orientation, layoutDirection);
+    const sourceSide = getPortSideForOrientation(sourceOrientation, 'out');
     const sourceAnchor = getAnchorPosition(
       sourcePosition.x,
       sourcePosition.y,
-      'right',
+      sourceSide,
       sourcePortIndex,
       NODE_WIDTH,
+      NODE_HEIGHT,
       PORT_START_Y,
       PORT_GAP,
     );
@@ -834,6 +938,7 @@ export function WorkbenchPanel({
       fromModuleId: connection.from.moduleId,
       fromPort: connection.from.port,
       fromAnchor: sourceAnchor,
+      fromSide: sourceSide,
       mouseX: sourceAnchor.x,
       mouseY: sourceAnchor.y,
       excludedConnectionIndex: connectionIndex,
@@ -1272,14 +1377,17 @@ export function WorkbenchPanel({
                 targetDef.inputs.findIndex((port) => port.name === connection.to.port),
               );
 
-              const sourceSide = from.x <= to.x ? 'right' : 'left';
-              const targetSide = from.x <= to.x ? 'left' : 'right';
+              const sourceOrientation = getNodeOrientation(from.orientation, layoutDirection);
+              const targetOrientation = getNodeOrientation(to.orientation, layoutDirection);
+              const sourceSide = getPortSideForOrientation(sourceOrientation, 'out');
+              const targetSide = getPortSideForOrientation(targetOrientation, 'in');
               const sourceAnchor = getAnchorPosition(
                 from.x,
                 from.y,
                 sourceSide,
                 sourceIndex,
                 NODE_WIDTH,
+                NODE_HEIGHT,
                 PORT_START_Y,
                 PORT_GAP,
               );
@@ -1289,17 +1397,11 @@ export function WorkbenchPanel({
                 targetSide,
                 targetIndex,
                 NODE_WIDTH,
+                NODE_HEIGHT,
                 PORT_START_Y,
                 PORT_GAP,
               );
-              const horizontalDistance = Math.abs(targetAnchor.x - sourceAnchor.x);
-              const bend = Math.max(56, horizontalDistance * 0.42);
-              const sourceControlX =
-                sourceSide === 'right' ? sourceAnchor.x + bend : sourceAnchor.x - bend;
-              const targetControlX =
-                targetSide === 'left' ? targetAnchor.x - bend : targetAnchor.x + bend;
-
-              const pathD = `M ${sourceAnchor.x} ${sourceAnchor.y} C ${sourceControlX} ${sourceAnchor.y}, ${targetControlX} ${targetAnchor.y}, ${targetAnchor.x} ${targetAnchor.y}`;
+              const pathD = getConnectionPath(sourceAnchor, sourceSide, targetAnchor, targetSide);
               const legibilityState = deriveConnectionLegibilityState({
                 connection,
                 connectionIndex,
@@ -1351,13 +1453,14 @@ export function WorkbenchPanel({
             })}
 
             {pendingConnection ? (() => {
-              const { fromAnchor, mouseX, mouseY } = pendingConnection;
-              const dx = Math.abs(mouseX - fromAnchor.x);
-              const bend = Math.max(56, dx * 0.42);
+              const { fromAnchor, fromSide, mouseX, mouseY } = pendingConnection;
               return (
                 <path
                   className="pending-connection"
-                  d={`M ${fromAnchor.x} ${fromAnchor.y} C ${fromAnchor.x + bend} ${fromAnchor.y}, ${mouseX - bend} ${mouseY}, ${mouseX} ${mouseY}`}
+                  d={getPendingConnectionPath(fromAnchor, fromSide, {
+                    x: mouseX,
+                    y: mouseY,
+                  })}
                 />
               );
             })() : null}
@@ -1367,6 +1470,9 @@ export function WorkbenchPanel({
             const position = effectiveLayout[moduleInstance.id] ?? { x: 24, y: 24 };
             const def = registry[moduleInstance.defId];
             const category = def ? getModuleCategory(def) : getModuleCategory(moduleInstance.defId);
+            const orientation = getNodeOrientation(position.orientation, layoutDirection);
+            const inputSide = getPortSideForOrientation(orientation, 'in');
+            const outputSide = getPortSideForOrientation(orientation, 'out');
             const sequentialRole = isTickedMode
               ? getSequentialRole(moduleInstance.defId, def)
               : null;
@@ -1388,6 +1494,7 @@ export function WorkbenchPanel({
                   (moduleInstance.id === tutorialStep?.focusModuleId ? ' graph-node-tutorial-focus' : '') +
                   (probedModuleIds.includes(moduleInstance.id) ? ' graph-node-probed' : '') +
                   ((moduleIssueCountById[moduleInstance.id] ?? 0) > 0 ? ' graph-node-invalid' : '') +
+                  ` graph-node-orientation-${orientation}` +
                   (workspaceComparison
                     ? workspaceComparison.currentModuleStatusById[moduleInstance.id] === 'added'
                       ? ' graph-node-compare-added'
@@ -1582,7 +1689,9 @@ export function WorkbenchPanel({
                   </div>
                 </div>
 
-                <div className="graph-node-anchor-group graph-node-anchor-group-in">
+                <div
+                  className={`graph-node-anchor-group graph-node-anchor-group-${inputSide}`}
+                >
                   {(def?.inputs ?? []).map((port, index) => (
                     (() => {
                       const inputKey = `${moduleInstance.id}:${port.name}`;
@@ -1597,12 +1706,12 @@ export function WorkbenchPanel({
                       return (
                         <span
                           key={port.name}
-                          className={getInputAnchorClassName(
+                          className={`${getInputAnchorClassName(
                             pendingConnection,
                             targetPortStates[inputKey],
                             hasIncomingConnection,
-                          )}
-                          style={{ top: `${PORT_START_Y + index * PORT_GAP}px` }}
+                          )} graph-port-anchor-${inputSide}`}
+                          style={getPortAnchorStyle(inputSide, index)}
                           title={title}
                           onMouseEnter={() => setHoveredPortHintKey(`${moduleInstance.id}:in:${port.name}`)}
                           onMouseLeave={() =>
@@ -1630,24 +1739,26 @@ export function WorkbenchPanel({
                             portType: port.type,
                           })}
                           <span className="graph-port-dot" />
-                          <span className="graph-port-label">IN</span>
+                          <span className="graph-port-label">{port.name}</span>
                         </span>
                       );
                     })()
                   ))}
                 </div>
 
-                <div className="graph-node-anchor-group graph-node-anchor-group-out">
+                <div
+                  className={`graph-node-anchor-group graph-node-anchor-group-${outputSide}`}
+                >
                   {(def?.outputs ?? []).map((port, index) => (
                     <span
                       key={port.name}
-                      className={
+                      className={`${
                         pendingConnection?.fromModuleId === moduleInstance.id &&
                         pendingConnection.fromPort === port.name
                           ? 'graph-port-anchor graph-port-anchor-out graph-port-anchor-active'
                           : 'graph-port-anchor graph-port-anchor-out'
-                      }
-                      style={{ top: `${PORT_START_Y + index * PORT_GAP}px` }}
+                      } graph-port-anchor-${outputSide}`}
+                      style={getPortAnchorStyle(outputSide, index)}
                       title={
                         isCompositePortHintEligible(def) ? undefined : `${port.name}: ${port.type}`
                       }
@@ -1670,7 +1781,7 @@ export function WorkbenchPanel({
                         );
                       }}
                     >
-                      <span className="graph-port-label">OUT</span>
+                      <span className="graph-port-label">{port.name}</span>
                       <span className="graph-port-dot" />
                       {renderCompositePortHint({
                         definition: def,

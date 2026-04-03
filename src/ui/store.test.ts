@@ -71,6 +71,22 @@ describe('uiReducer', () => {
     expect(nextState.paramDrafts[`${projectId}:${moduleId}:seed`]).toBeUndefined();
   });
 
+  it('rotates a module clockwise without changing engine state', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+
+    const nextState = uiReducer(initialState, {
+      type: 'rotateModuleClockwise',
+      projectId,
+      moduleId: 'clock',
+    });
+
+    expect(nextState.layoutByProject[projectId]?.clock).toMatchObject({
+      orientation: 'south',
+    });
+    expect(nextState.projectStates[projectId]).toEqual(initialState.projectStates[projectId]);
+  });
+
   it('rejects invalid or duplicate module instance IDs', () => {
     const initialState = createInitialUiState(demoProjects);
     const projectId = 'sequential';
@@ -1040,9 +1056,10 @@ describe('uiReducer', () => {
     expect(addedModule?.defId).toBe('Output');
     expect(nextState.layoutDirectionByProject[projectId]).toBe('vertical');
     expect(selectedPosition).toBeDefined();
-    expect(nextState.layoutByProject[projectId]?.[addedModule?.id ?? '']).toEqual({
+    expect(nextState.layoutByProject[projectId]?.[addedModule?.id ?? '']).toMatchObject({
       x: selectedPosition?.x ?? 0,
       y: (selectedPosition?.y ?? 0) + 148,
+      orientation: 'south',
     });
   });
 

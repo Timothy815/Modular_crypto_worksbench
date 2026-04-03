@@ -3110,6 +3110,16 @@ function MainApp() {
                         bypass,
                       })
                 }
+                onRotateModuleClockwise={
+                  isCompositeDrilldownActive || state.compositeEditor
+                    ? undefined
+                    : (moduleId) =>
+                        dispatch({
+                          type: 'rotateModuleClockwise',
+                          projectId: activeProjectDefinition.id,
+                          moduleId,
+                        })
+                }
                 onRenameModuleInstance={(moduleId, nextModuleId) =>
                   isCompositeDrilldownActive
                     ? undefined

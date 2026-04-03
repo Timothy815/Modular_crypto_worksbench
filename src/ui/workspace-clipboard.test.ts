@@ -43,6 +43,21 @@ describe('buildWorkspaceClipboardSnapshot', () => {
       middle: { x: 160, y: 40 },
     });
   });
+
+  it('preserves node orientation in relative layout snapshots', () => {
+    const snapshot = buildWorkspaceClipboardSnapshot({
+      project: {
+        modules: [{ id: 'left', defId: 'XOR', params: {} }],
+        connections: [],
+      },
+      layout: {
+        left: { x: 120, y: 200, orientation: 'south' },
+      },
+      selectedModuleIds: ['left'],
+    });
+
+    expect(snapshot?.relativeLayout.left).toEqual({ x: 0, y: 0, orientation: 'south' });
+  });
 });
 
 describe('pasteWorkspaceClipboardSnapshot', () => {
@@ -119,6 +134,32 @@ describe('pasteWorkspaceClipboardSnapshot', () => {
     });
 
     expect(pasted.layout['xor-1']).toEqual({ x: 640, y: 180 });
+  });
+
+  it('preserves node orientation on paste', () => {
+    const snapshot = buildWorkspaceClipboardSnapshot({
+      project: {
+        modules: [{ id: 'left', defId: 'XOR', params: {} }],
+        connections: [],
+      },
+      layout: {
+        left: { x: 100, y: 100, orientation: 'north' },
+      },
+      selectedModuleIds: ['left'],
+    });
+
+    if (!snapshot) {
+      throw new Error('Expected clipboard snapshot.');
+    }
+
+    const pasted = pasteWorkspaceClipboardSnapshot({
+      targetProject: { modules: [], connections: [] },
+      targetLayout: {},
+      snapshot,
+      anchor: { x: 200, y: 140 },
+    });
+
+    expect(pasted.layout['xor-1']).toEqual({ x: 200, y: 140, orientation: 'north' });
   });
 });
 

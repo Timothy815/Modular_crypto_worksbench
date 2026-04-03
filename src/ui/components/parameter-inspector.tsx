@@ -155,6 +155,7 @@ interface ParameterInspectorProps {
   onParamDraftChange: (moduleId: string, key: string, rawValue: string) => void;
   onParamChange: (moduleId: string, key: string, value: unknown) => void;
   onSetModuleBypass: (moduleId: string, bypass: boolean) => void;
+  onRotateModuleClockwise?: (moduleId: string) => void;
   onRenameModuleInstance?: (moduleId: string, nextModuleId: string) => void;
   onDeleteModule: (moduleId: string) => void;
   canRenameModuleIds?: boolean;
@@ -216,6 +217,7 @@ export function ParameterInspector({
   onParamDraftChange,
   onParamChange,
   onSetModuleBypass,
+  onRotateModuleClockwise,
   onRenameModuleInstance,
   onDeleteModule,
   canRenameModuleIds = true,
@@ -1953,6 +1955,15 @@ export function ParameterInspector({
                 onClick={() => onSetModuleBypass(moduleInstance.id, !moduleInstance.bypass)}
               >
                 {moduleInstance.bypass ? 'Disable Bypass' : 'Enable Bypass'}
+              </button>
+            ) : null}
+            {!isReadOnlyMode && onRotateModuleClockwise ? (
+              <button
+                type="button"
+                className="mini-action-button"
+                onClick={() => onRotateModuleClockwise(moduleInstance.id)}
+              >
+                Rotate 90°
               </button>
             ) : null}
             {!isReadOnlyMode && isCompositeDefinition(moduleDef) && onOpenCompositeInstanceDrilldown ? (
