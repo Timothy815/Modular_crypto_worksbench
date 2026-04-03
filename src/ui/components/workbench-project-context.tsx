@@ -97,6 +97,7 @@ export function WorkbenchProjectContext({
   formatVersionTimestamp,
 }: WorkbenchProjectContextProps) {
   const [projectSearch, setProjectSearch] = useState('');
+  const [isProjectContextCollapsed, setIsProjectContextCollapsed] = useState(false);
   const normalizedProjectSearch = projectSearch.trim().toLowerCase();
   const searchMatchingProjects = useMemo(() => {
     if (!normalizedProjectSearch) {
@@ -200,44 +201,59 @@ export function WorkbenchProjectContext({
           </p>
         </div>
       ) : null}
-      <div className="project-context-card project-context-card-wide">
-        <strong>{activeProject.name}</strong>
-        <p>{summary ?? activeProject.summary}</p>
-        <code>{pipelineLabel ?? activeProject.pipeline}</code>
-        <div className="content-selector-meta">
-          <span className="content-status-chip">{getLearningStageLabel(activeProjectStage)}</span>
-          <span className="content-status-chip">
-            Group: <strong>{activeProjectGroup}</strong>
-          </span>
-          <span className="content-status-chip">{isCoreLearningItem(activeProject) ? 'Core Path' : 'Optional'}</span>
+      <div className={`project-context-card project-context-card-wide${isProjectContextCollapsed ? ' collapsed' : ''}`}>
+        <div className="project-context-card-head">
+          <strong>{activeProject.name}</strong>
+          <button
+            type="button"
+            className="collapse-toggle-button"
+            aria-label={isProjectContextCollapsed ? 'Expand workspace details' : 'Collapse workspace details'}
+            title={isProjectContextCollapsed ? 'Expand workspace details' : 'Collapse workspace details'}
+            onClick={() => setIsProjectContextCollapsed((current) => !current)}
+          >
+            {isProjectContextCollapsed ? '+' : '\u2212'}
+          </button>
         </div>
-        {activeProjectRecommendedAfter.length > 0 ? (
-          <div className="comparison-copy project-recommended-next">
-            <span>
-              Best after:
-            </span>
-            <div className="project-recommended-next-list">
-              {activeProjectRecommendedAfter.map((target) => (
-                <button
-                  key={target.id}
-                  type="button"
-                  className="project-recommended-next-button"
-                  onClick={() => onSwitchProject(target.id)}
-                >
-                  {target.label}
-                </button>
-              ))}
+        {!isProjectContextCollapsed ? (
+          <>
+            <p>{summary ?? activeProject.summary}</p>
+            <code>{pipelineLabel ?? activeProject.pipeline}</code>
+            <div className="content-selector-meta">
+              <span className="content-status-chip">{getLearningStageLabel(activeProjectStage)}</span>
+              <span className="content-status-chip">
+                Group: <strong>{activeProjectGroup}</strong>
+              </span>
+              <span className="content-status-chip">{isCoreLearningItem(activeProject) ? 'Core Path' : 'Optional'}</span>
             </div>
-          </div>
-        ) : null}
-        {showWorkspaceLandmarks ? (
-          <div className="workspace-landmarks-card">
-            <strong>Workspace Landmarks</strong>
-            <p>Jump to visible sources, context, and outputs in large graphs.</p>
-            {renderLandmarkGroup('Protocol & Timing', workspaceLandmarks.context, onJumpToModule)}
-            {renderLandmarkGroup('Sources', workspaceLandmarks.sources, onJumpToModule)}
-            {renderLandmarkGroup('Outputs', workspaceLandmarks.outputs, onJumpToModule)}
-          </div>
+            {activeProjectRecommendedAfter.length > 0 ? (
+              <div className="comparison-copy project-recommended-next">
+                <span>
+                  Best after:
+                </span>
+                <div className="project-recommended-next-list">
+                  {activeProjectRecommendedAfter.map((target) => (
+                    <button
+                      key={target.id}
+                      type="button"
+                      className="project-recommended-next-button"
+                      onClick={() => onSwitchProject(target.id)}
+                    >
+                      {target.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {showWorkspaceLandmarks ? (
+              <div className="workspace-landmarks-card">
+                <strong>Workspace Landmarks</strong>
+                <p>Jump to visible sources, context, and outputs in large graphs.</p>
+                {renderLandmarkGroup('Protocol & Timing', workspaceLandmarks.context, onJumpToModule)}
+                {renderLandmarkGroup('Sources', workspaceLandmarks.sources, onJumpToModule)}
+                {renderLandmarkGroup('Outputs', workspaceLandmarks.outputs, onJumpToModule)}
+              </div>
+            ) : null}
+          </>
         ) : null}
         {workspaceVersions.length > 0 ? (
           <div className="workspace-versions-card">

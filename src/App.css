@@ -1266,6 +1266,13 @@ body.dock-resizing {
   background: var(--surface-soft);
 }
 
+.project-context-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .project-context-card-wide {
   max-width: none;
 }
@@ -1287,6 +1294,10 @@ body.dock-resizing {
   font-size: 0.84rem;
   color: var(--ink);
   overflow-wrap: anywhere;
+}
+
+.project-context-card.collapsed {
+  padding-bottom: 10px;
 }
 
 .workspace-landmarks-card {
@@ -2912,6 +2923,32 @@ body.dock-resizing {
 }
 
 .inspector-output-action:hover {
+  border-color: var(--accent-soft);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent-soft) 16%, var(--surface-soft));
+}
+
+.collapse-toggle-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--muted);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.collapse-toggle-button:hover {
   border-color: var(--accent-soft);
   color: var(--ink);
   background: color-mix(in srgb, var(--accent-soft) 16%, var(--surface-soft));

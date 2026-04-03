@@ -738,10 +738,12 @@ export function ParameterInspector({
             ) : null}
             <button
               type="button"
-              className="inspector-output-action"
+              className="collapse-toggle-button"
+              aria-label={isOutputSummaryCollapsed ? 'Expand output summary' : 'Collapse output summary'}
+              title={isOutputSummaryCollapsed ? 'Expand output summary' : 'Collapse output summary'}
               onClick={() => setIsOutputSummaryCollapsed((current) => !current)}
             >
-              {isOutputSummaryCollapsed ? 'Expand' : 'Collapse'}
+              {isOutputSummaryCollapsed ? '+' : '\u2212'}
             </button>
           </div>
         </div>
