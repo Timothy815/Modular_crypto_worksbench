@@ -61,6 +61,9 @@ function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
     candidate.ui !== null &&
     typeof candidate.ui.layout === 'object' &&
     candidate.ui.layout !== null &&
-    Array.isArray(candidate.ui.annotations)
+    Array.isArray(candidate.ui.annotations) &&
+    (candidate.ui.layoutDirection === undefined ||
+      candidate.ui.layoutDirection === 'horizontal' ||
+      candidate.ui.layoutDirection === 'vertical')
   );
 }

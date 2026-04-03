@@ -46,7 +46,11 @@ import {
   getModuleFocusScrollPosition,
   getNextWorkspaceZoom,
 } from '../workspace-viewport';
-import type { WorkbenchAnnotation, WorkspaceVersionDocument } from '../workbench-document';
+import type {
+  WorkbenchAnnotation,
+  WorkbenchLayoutDirection,
+  WorkspaceVersionDocument,
+} from '../workbench-document';
 import type { TutorialStep } from '../tutorials';
 import {
   buildActiveAnalysisSignalByModuleId,
@@ -92,6 +96,7 @@ interface WorkbenchPanelProps {
   pipelineLabel?: string;
   activeProjectState: Project;
   layout: Record<string, { x: number; y: number }>;
+  layoutDirection: WorkbenchLayoutDirection;
   annotations: WorkbenchAnnotation[];
   execution: ExecutionResult | null;
   executionError: string | null;
@@ -169,6 +174,7 @@ interface WorkbenchPanelProps {
   onImportDocument: (file: File) => void;
   onImportLabPack: (file: File) => void;
   onTidyLayout: () => void;
+  onSetLayoutDirection: (direction: WorkbenchLayoutDirection) => void;
   onSetTutorialStep?: (stepIndex: number) => void;
   onSetTutorialNotesVisible?: (visible: boolean) => void;
   projects: DemoProject[];
@@ -181,6 +187,7 @@ export function WorkbenchPanel({
   pipelineLabel,
   activeProjectState,
   layout,
+  layoutDirection,
   annotations,
   execution,
   executionError,
@@ -247,6 +254,7 @@ export function WorkbenchPanel({
   onImportDocument,
   onImportLabPack,
   onTidyLayout,
+  onSetLayoutDirection,
   onSetTutorialStep,
   onSetTutorialNotesVisible,
   projects,
@@ -959,6 +967,7 @@ export function WorkbenchPanel({
         <WorkbenchActions
           isCompositeEditor={isCompositeEditor}
           isObservationMode={isObservationMode}
+          layoutDirection={layoutDirection}
           canUndo={canUndo}
           canRedo={canRedo}
           selectedModuleIds={selectedModuleIds}
@@ -970,6 +979,7 @@ export function WorkbenchPanel({
           onExportLabPack={onExportLabPack}
           onExportPython={onExportPython}
           onTidyLayout={onTidyLayout}
+          onSetLayoutDirection={onSetLayoutDirection}
           onRequestUndo={onRequestUndo}
           onRequestRedo={onRequestRedo}
           onZoomOut={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'out'))}

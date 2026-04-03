@@ -18,9 +18,12 @@ export interface WorkbenchAnnotation {
   text: string;
 }
 
+export type WorkbenchLayoutDirection = 'horizontal' | 'vertical';
+
 export interface WorkbenchUiMetadata {
   layout: Record<string, WorkbenchPosition>;
   annotations: WorkbenchAnnotation[];
+  layoutDirection?: WorkbenchLayoutDirection;
 }
 
 export interface WorkbenchDocument {

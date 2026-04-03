@@ -65,6 +65,11 @@ The current explicit trust/coherence follow-on after that is:
 - now shipped as the bounded verification/trust coherence note defining what “verified” should mean in MCW
 - frames verification as bounded behavioral agreement, not security certification
 
+The next workspace-legibility exploration now being considered is:
+- `WORKSPACE-LAYOUT-DIRECTION-V1.md`
+- shipped per-workspace horizontal/vertical layout direction with direction-aware tidy and add-module placement
+- scoped as a layout/tidy/navigation slice only, not an execution or graph-semantics change
+
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - now shipped as the first bounded verification-station refinement inside the compare/analyze line

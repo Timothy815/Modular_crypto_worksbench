@@ -3,6 +3,7 @@ import type { Project } from '../engine/types';
 import type {
   ComparisonBaselineDocument,
   WorkbenchAnnotation,
+  WorkbenchLayoutDirection,
   WorkspaceVersionDocument,
 } from './workbench-document';
 import { cloneProject } from './project-clone';
@@ -11,6 +12,7 @@ export interface WorkspaceHistorySnapshot {
   project: Project;
   layout: Record<string, { x: number; y: number }>;
   annotations: WorkbenchAnnotation[];
+  layoutDirection: WorkbenchLayoutDirection;
   selectedModuleIds: string[];
   probedModuleIds: string[];
   paramDrafts: Record<string, string>;
@@ -27,6 +29,7 @@ interface WorkspaceSnapshotState {
   projectStates: Record<string, Project>;
   layoutByProject: Record<string, Record<string, CompositeLayoutPosition>>;
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
+  layoutDirectionByProject: Record<string, WorkbenchLayoutDirection>;
   selectedModuleIdByProject: Record<string, string | null>;
   selectedModuleIdsByProject: Record<string, string[]>;
   probedModuleIdsByProject: Record<string, string[]>;
@@ -71,6 +74,7 @@ export function cloneWorkspaceHistorySnapshot(
     project: cloneProject(snapshot.project),
     layout: cloneLayout(snapshot.layout),
     annotations: cloneAnnotations(snapshot.annotations),
+    layoutDirection: snapshot.layoutDirection,
     selectedModuleIds: [...snapshot.selectedModuleIds],
     probedModuleIds: [...snapshot.probedModuleIds],
     paramDrafts: { ...snapshot.paramDrafts },
@@ -93,6 +97,7 @@ export function buildWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
     project: cloneProject(project),
     layout: cloneLayout(layout),
     annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
+    layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
     selectedModuleIds: [...(state.selectedModuleIdsByProject[projectId] ?? [])],
     probedModuleIds: [...(state.probedModuleIdsByProject[projectId] ?? [])],
     paramDrafts: Object.fromEntries(
@@ -123,6 +128,10 @@ export function applyWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
     annotationsByProject: {
       ...state.annotationsByProject,
       [projectId]: cloneAnnotations(snapshot.annotations),
+    },
+    layoutDirectionByProject: {
+      ...state.layoutDirectionByProject,
+      [projectId]: snapshot.layoutDirection,
     },
     selectedModuleIdByProject: {
       ...state.selectedModuleIdByProject,
@@ -175,6 +184,7 @@ export function buildWorkspaceVersionDocument<State extends WorkspaceVersionHost
       ui: {
         layout: cloneLayout(layout),
         annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
+        layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
       },
     },
   };

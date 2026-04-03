@@ -974,6 +974,78 @@ describe('uiReducer', () => {
     expect(tidiedState.layoutByProject[projectId]?.output?.x).toBe(780);
   });
 
+  it('tidies layout vertically in a deterministic stage ladder', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const project = initialState.projectStates[projectId];
+    const verticalState = uiReducer(initialState, {
+      type: 'setLayoutDirection',
+      projectId,
+      direction: 'vertical',
+    });
+    const scrambledState = uiReducer(verticalState, {
+      type: 'moveModules',
+      projectId,
+      positions: Object.fromEntries(
+        project.modules.slice(0, 3).map((moduleInstance, index) => [
+          moduleInstance.id,
+          {
+            x: 480 - index * 97,
+            y: 260 + index * 53,
+          },
+        ]),
+      ),
+    });
+
+    const tidiedState = uiReducer(scrambledState, {
+      type: 'tidyLayout',
+      projectId,
+    });
+
+    expect(
+      project.connections.every((connection) => {
+        const from = tidiedState.layoutByProject[projectId]?.[connection.from.moduleId];
+        const to = tidiedState.layoutByProject[projectId]?.[connection.to.moduleId];
+        return Boolean(from && to && from.y < to.y);
+      }),
+    ).toBe(true);
+    expect(tidiedState.layoutByProject[projectId]?.clock).toEqual({ x: 48, y: 72 });
+    expect(tidiedState.layoutByProject[projectId]?.lfsr?.y).toBe(220);
+    expect(tidiedState.layoutByProject[projectId]?.decode?.y).toBe(368);
+    expect(tidiedState.layoutByProject[projectId]?.output?.y).toBe(516);
+  });
+
+  it('adds modules below the selected module in vertical mode', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const verticalState = uiReducer(initialState, {
+      type: 'setLayoutDirection',
+      projectId,
+      direction: 'vertical',
+    });
+    const selectedState = uiReducer(verticalState, {
+      type: 'selectModule',
+      projectId,
+      moduleId: 'clock',
+    });
+
+    const nextState = uiReducer(selectedState, {
+      type: 'addModule',
+      projectId,
+      moduleDef: V1_REGISTRY.Output,
+    });
+
+    const addedModule = nextState.projectStates[projectId]?.modules.at(-1);
+    const selectedPosition = selectedState.layoutByProject[projectId]?.clock;
+    expect(addedModule?.defId).toBe('Output');
+    expect(nextState.layoutDirectionByProject[projectId]).toBe('vertical');
+    expect(selectedPosition).toBeDefined();
+    expect(nextState.layoutByProject[projectId]?.[addedModule?.id ?? '']).toEqual({
+      x: selectedPosition?.x ?? 0,
+      y: (selectedPosition?.y ?? 0) + 148,
+    });
+  });
+
   it('creates a blank personal workspace in build mode', () => {
     const initialState = createInitialUiState(demoProjects);
 

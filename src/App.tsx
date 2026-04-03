@@ -331,6 +331,8 @@ function MainApp() {
     state.projectStates[activeProjectDefinition.id] ?? activeProjectDefinition.project;
   const baseLayout =
     state.layoutByProject[activeProjectDefinition.id] ?? activeProjectDefinition.layout;
+  const activeLayoutDirection =
+    state.layoutDirectionByProject[activeProjectDefinition.id] ?? 'horizontal';
   const baseAnnotations = useMemo(
     () => state.annotationsByProject[activeProjectDefinition.id] ?? [],
     [activeProjectDefinition.id, state.annotationsByProject],
@@ -892,6 +894,7 @@ function MainApp() {
         project: activeProjectState,
         layout: activeLayout,
         annotations: activeAnnotations,
+        layoutDirection: activeLayoutDirection,
         comparisonBaseline,
         verificationCases,
         tutorial: selectedProjectTutorial,
@@ -902,6 +905,7 @@ function MainApp() {
   }, [
     activeAnnotations,
     activeLayout,
+    activeLayoutDirection,
     activeProjectDefinition.id,
     activeProjectDefinition.name,
     activeProjectDefinition.summary,
@@ -1585,6 +1589,7 @@ function MainApp() {
         ui: {
           layout: pasted.layout,
           annotations: activeAnnotations,
+          layoutDirection: activeLayoutDirection,
         },
       },
     });
@@ -1772,6 +1777,7 @@ function MainApp() {
             annotations: state.compositeEditor
               ? []
               : state.annotationsByProject[activeProjectDefinition.id] ?? [],
+            layoutDirection: activeLayoutDirection,
           },
         },
       });
@@ -1796,6 +1802,7 @@ function MainApp() {
     },
     [
       activeLayout,
+      activeLayoutDirection,
       activeProjectDefinition.id,
       activeProjectState,
       selectedModule,
@@ -2398,6 +2405,7 @@ function MainApp() {
             }
             activeProjectState={compositeDrilldownContext?.project ?? activeProjectState}
             layout={compositeDrilldownContext?.layout ?? activeLayout}
+            layoutDirection={activeLayoutDirection}
             annotations={isCompositeDrilldownActive ? [] : activeAnnotations}
             execution={compositeDrilldownContext?.execution ?? execution}
             executionError={isCompositeDrilldownActive ? compositeDrilldownExecutionError : executionError}
@@ -2650,6 +2658,7 @@ function MainApp() {
                   annotations: state.compositeEditor
                     ? []
                     : state.annotationsByProject[activeProjectDefinition.id] ?? [],
+                  layoutDirection: activeLayoutDirection,
                 },
               });
               setImportError(null);
@@ -2701,6 +2710,15 @@ function MainApp() {
                 : dispatch({
                     type: 'tidyLayout',
                     projectId: activeProjectDefinition.id,
+                  })
+            }
+            onSetLayoutDirection={(direction) =>
+              isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'setLayoutDirection',
+                    projectId: activeProjectDefinition.id,
+                    direction,
                   })
             }
             onSwitchProject={(projectId) =>
@@ -3595,6 +3613,7 @@ function MainApp() {
                         ui: {
                           layout: replacement.layout,
                           annotations: state.annotationsByProject[activeProjectDefinition.id] ?? [],
+                          layoutDirection: activeLayoutDirection,
                         },
                       },
                     });
@@ -3692,6 +3711,9 @@ function MainApp() {
                         layout:
                           selectedChallenge.startingLayout ?? selectedChallengeProjectDefinition.layout,
                         annotations: [],
+                        layoutDirection:
+                          state.layoutDirectionByProject[selectedChallengeProjectId] ??
+                          'horizontal',
                       },
                     },
                   });

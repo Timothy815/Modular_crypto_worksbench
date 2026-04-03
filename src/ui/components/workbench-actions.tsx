@@ -1,8 +1,11 @@
 import type { ReactNode } from 'react';
 
+import type { WorkbenchLayoutDirection } from '../workbench-document';
+
 interface WorkbenchActionsProps {
   isCompositeEditor: boolean;
   isObservationMode?: boolean;
+  layoutDirection: WorkbenchLayoutDirection;
   canUndo: boolean;
   canRedo: boolean;
   selectedModuleIds: string[];
@@ -14,6 +17,7 @@ interface WorkbenchActionsProps {
   onExportLabPack: () => void;
   onExportPython: () => void;
   onTidyLayout: () => void;
+  onSetLayoutDirection: (direction: WorkbenchLayoutDirection) => void;
   onRequestUndo: () => void;
   onRequestRedo: () => void;
   onZoomOut: () => void;
@@ -73,6 +77,7 @@ function WorkbenchMenuActionButton({ label, onSelect, disabled = false }: Workbe
 export function WorkbenchActions({
   isCompositeEditor,
   isObservationMode = false,
+  layoutDirection,
   canUndo,
   canRedo,
   selectedModuleIds,
@@ -84,6 +89,7 @@ export function WorkbenchActions({
   onExportLabPack,
   onExportPython,
   onTidyLayout,
+  onSetLayoutDirection,
   onRequestUndo,
   onRequestRedo,
   onZoomOut,
@@ -128,6 +134,16 @@ export function WorkbenchActions({
               disabled={!hasSelection}
             />
             <WorkbenchMenuActionButton label="Tidy Layout" onSelect={onTidyLayout} />
+            <WorkbenchMenuActionButton
+              label="Horizontal Layout"
+              onSelect={() => onSetLayoutDirection('horizontal')}
+              disabled={layoutDirection === 'horizontal'}
+            />
+            <WorkbenchMenuActionButton
+              label="Vertical Layout"
+              onSelect={() => onSetLayoutDirection('vertical')}
+              disabled={layoutDirection === 'vertical'}
+            />
             <WorkbenchMenuActionButton
               label="Duplicate Cluster"
               onSelect={onRequestDuplicateSelection}

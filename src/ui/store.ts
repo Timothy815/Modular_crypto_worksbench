@@ -18,6 +18,7 @@ import type {
   CompositeLibraryDocument,
   UserWorkspaceMetadata,
   WorkbenchAnnotation,
+  WorkbenchLayoutDirection,
   WorkbenchDocument,
   WorkspaceVersionDocument,
 } from './workbench-document';
@@ -51,6 +52,7 @@ export interface UiState {
   projectStates: Record<string, Project>;
   layoutByProject: Record<string, Record<string, { x: number; y: number }>>;
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
+  layoutDirectionByProject: Record<string, WorkbenchLayoutDirection>;
   comparisonBaselinesByProject: Record<string, ComparisonBaselineDocument | null>;
   activeChallengeIdByProject: Record<string, string | null>;
   activeTutorialIdByProject: Record<string, string | null>;
@@ -113,6 +115,11 @@ export type UiAction =
   | { type: 'selectModule'; projectId: string; moduleId: string; additive?: boolean }
   | { type: 'selectModules'; projectId: string; moduleIds: string[]; additive?: boolean }
   | { type: 'moveModule'; projectId: string; moduleId: string; x: number; y: number }
+  | {
+      type: 'setLayoutDirection';
+      projectId: string;
+      direction: WorkbenchLayoutDirection;
+    }
   | {
       type: 'moveModules';
       projectId: string;
@@ -241,6 +248,36 @@ function createAnnotationId(annotations: WorkbenchAnnotation[]) {
   while (annotations.some((annotation) => annotation.id === candidate)) {
     index += 1;
     candidate = `note-${index}`;
+  }
+
+  return candidate;
+}
+
+function findNextModulePlacement(
+  layout: Record<string, CompositeLayoutPosition>,
+  direction: WorkbenchLayoutDirection,
+  selectedModuleId: string | null,
+): CompositeLayoutPosition {
+  const occupiedSet = new Set(Object.values(layout).map((position) => `${position.x},${position.y}`));
+  const selectedPosition = selectedModuleId ? layout[selectedModuleId] : undefined;
+  const positions = Object.values(layout);
+  const maxX = positions.length > 0 ? Math.max(...positions.map((position) => position.x)) : 40;
+  const maxY = positions.length > 0 ? Math.max(...positions.map((position) => position.y)) : 40;
+
+  let candidate =
+    direction === 'vertical'
+      ? selectedPosition
+        ? { x: selectedPosition.x, y: selectedPosition.y + 148 }
+        : { x: 48, y: maxY + 148 }
+      : selectedPosition
+        ? { x: selectedPosition.x + 188, y: selectedPosition.y }
+        : { x: maxX + 188, y: 72 };
+
+  while (occupiedSet.has(`${candidate.x},${candidate.y}`)) {
+    candidate =
+      direction === 'vertical'
+        ? { x: candidate.x + 188, y: candidate.y }
+        : { x: candidate.x, y: candidate.y + 148 };
   }
 
   return candidate;
@@ -482,6 +519,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     annotationsByProject: Object.fromEntries(
       projects.map((project) => [project.id, []]),
     ),
+    layoutDirectionByProject: Object.fromEntries(
+      projects.map((project) => [project.id, 'horizontal' as const]),
+    ),
     comparisonBaselinesByProject: Object.fromEntries(
       projects.map((project) => [project.id, null]),
     ),
@@ -618,6 +658,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.annotationsByProject,
           [action.workspaceId]: [],
         },
+        layoutDirectionByProject: {
+          ...state.layoutDirectionByProject,
+          [action.workspaceId]: 'horizontal',
+        },
         comparisonBaselinesByProject: {
           ...state.comparisonBaselinesByProject,
           [action.workspaceId]: null,
@@ -704,6 +748,8 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       const sourceProject = state.projectStates[action.sourceProjectId];
       const sourceLayout = state.layoutByProject[action.sourceProjectId];
       const sourceAnnotations = state.annotationsByProject[action.sourceProjectId] ?? [];
+      const sourceLayoutDirection =
+        state.layoutDirectionByProject[action.sourceProjectId] ?? 'horizontal';
       if (!sourceProject || !sourceLayout) {
         return state;
       }
@@ -733,6 +779,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         annotationsByProject: {
           ...state.annotationsByProject,
           [action.workspaceId]: cloneAnnotations(sourceAnnotations),
+        },
+        layoutDirectionByProject: {
+          ...state.layoutDirectionByProject,
+          [action.workspaceId]: sourceLayoutDirection,
         },
         comparisonBaselinesByProject: {
           ...state.comparisonBaselinesByProject,
@@ -834,6 +884,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         projectStates: removeProjectEntry(state.projectStates, action.workspaceId),
         layoutByProject: removeProjectEntry(state.layoutByProject, action.workspaceId),
         annotationsByProject: removeProjectEntry(state.annotationsByProject, action.workspaceId),
+        layoutDirectionByProject: removeProjectEntry(
+          state.layoutDirectionByProject,
+          action.workspaceId,
+        ),
         comparisonBaselinesByProject: removeProjectEntry(
           state.comparisonBaselinesByProject,
           action.workspaceId,
@@ -988,6 +1042,23 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         },
       };
     }
+    case 'setLayoutDirection': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      if ((state.layoutDirectionByProject[action.projectId] ?? 'horizontal') === action.direction) {
+        return state;
+      }
+
+      return {
+        ...state,
+        layoutDirectionByProject: {
+          ...state.layoutDirectionByProject,
+          [action.projectId]: action.direction,
+        },
+      };
+    }
     case 'moveModules': {
       if (state.compositeEditor) {
         return {
@@ -1027,6 +1098,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
             layout: createTidiedLayout(
               state.compositeEditor.project,
               state.compositeEditor.layout,
+              'horizontal',
             ),
           },
         };
@@ -1042,7 +1114,11 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         ...state,
         layoutByProject: {
           ...state.layoutByProject,
-          [action.projectId]: createTidiedLayout(currentProject, currentLayout),
+          [action.projectId]: createTidiedLayout(
+            currentProject,
+            currentLayout,
+            state.layoutDirectionByProject[action.projectId] ?? 'horizontal',
+          ),
         },
       };
     }
@@ -1176,6 +1252,8 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
 
       const currentProject = state.projectStates[action.projectId];
       const currentLayout = state.layoutByProject[action.projectId];
+      const currentLayoutDirection =
+        state.layoutDirectionByProject[action.projectId] ?? 'horizontal';
       if (!currentProject || !currentLayout) {
         return state;
       }
@@ -1191,18 +1269,11 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         },
       ];
 
-      const positions = Object.values(currentLayout);
-      const occupiedSet = new Set(positions.map((p) => `${p.x},${p.y}`));
-      let newX = 40;
-      let newY = 40;
-
-      while (occupiedSet.has(`${newX},${newY}`)) {
-        newX += 160;
-        if (newX > 700) {
-          newX = 40;
-          newY += 100;
-        }
-      }
+      const { x: newX, y: newY } = findNextModulePlacement(
+        currentLayout,
+        currentLayoutDirection,
+        state.selectedModuleIdByProject[action.projectId] ?? null,
+      );
 
       return {
         ...state,
@@ -1860,6 +1931,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.annotationsByProject,
           [action.projectId]: nextAnnotations,
         },
+        layoutDirectionByProject: {
+          ...state.layoutDirectionByProject,
+          [action.projectId]: action.document.ui.layoutDirection ?? 'horizontal',
+        },
         selectedModuleIdByProject: {
           ...state.selectedModuleIdByProject,
           [action.projectId]: nextProject.modules[0]?.id ?? null,
@@ -2465,6 +2540,7 @@ function createAutoLayout(project: Project): Record<string, CompositeLayoutPosit
 function createTidiedLayout(
   project: Project,
   currentLayout: Record<string, CompositeLayoutPosition>,
+  direction: WorkbenchLayoutDirection,
 ): Record<string, CompositeLayoutPosition> {
   const adjacency = new Map<string, string[]>();
   const indegree = new Map<string, number>();
@@ -2548,30 +2624,46 @@ function createTidiedLayout(
   const columnGap = 244;
   const rowGap = 148;
 
+  const sortedLayers = [...modulesByLayer.entries()].sort(
+    ([leftLayer], [rightLayer]) => leftLayer - rightLayer,
+  );
+
   return Object.fromEntries(
-    [...modulesByLayer.entries()]
-      .sort(([leftLayer], [rightLayer]) => leftLayer - rightLayer)
-      .flatMap(([layer, moduleIds]) =>
-        moduleIds
-          .sort((leftId, rightId) => {
-            const leftPosition = currentLayout[leftId] ?? { x: 0, y: 0 };
-            const rightPosition = currentLayout[rightId] ?? { x: 0, y: 0 };
+    sortedLayers.flatMap(([layer, moduleIds]) =>
+      moduleIds
+        .sort((leftId, rightId) => {
+          const leftPosition = currentLayout[leftId] ?? { x: 0, y: 0 };
+          const rightPosition = currentLayout[rightId] ?? { x: 0, y: 0 };
+          if (direction === 'vertical') {
+            if (leftPosition.x !== rightPosition.x) {
+              return leftPosition.x - rightPosition.x;
+            }
+            if (leftPosition.y !== rightPosition.y) {
+              return leftPosition.y - rightPosition.y;
+            }
+          } else {
             if (leftPosition.y !== rightPosition.y) {
               return leftPosition.y - rightPosition.y;
             }
             if (leftPosition.x !== rightPosition.x) {
               return leftPosition.x - rightPosition.x;
             }
-            return leftId.localeCompare(rightId);
-          })
-          .map((moduleId, rowIndex) => [
-            moduleId,
-            {
-              x: columnXStart + layer * columnGap,
-              y: rowYStart + rowIndex * rowGap,
-            },
-          ]),
-      ),
+          }
+          return leftId.localeCompare(rightId);
+        })
+        .map((moduleId, indexWithinLayer) => [
+          moduleId,
+          direction === 'vertical'
+            ? {
+                x: columnXStart + indexWithinLayer * columnGap,
+                y: rowYStart + layer * rowGap,
+              }
+            : {
+                x: columnXStart + layer * columnGap,
+                y: rowYStart + indexWithinLayer * rowGap,
+              },
+        ]),
+    ),
   );
 }
 

@@ -245,6 +245,11 @@ The next explicit verification/trust check is now also recorded:
 - now shipped as the bounded trust/coherence note for defining what “verified” should mean inside MCW
 - treats compare, trace, verification cases, known vectors, and export parity as one trust story
 
+The next workspace-legibility exploration now also recorded is:
+- `WORKSPACE-LAYOUT-DIRECTION-V1.md`
+- shipped per-workspace horizontal/vertical layout direction with direction-aware tidy and add-module placement
+- keeps the slice bounded to layout, tidy, and navigation behavior only
+
 The next implementation-ready verification slice is now also recorded:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - defines the first bounded compare-surface refinement for known-answer verification cases

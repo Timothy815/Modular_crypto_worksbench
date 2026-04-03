@@ -121,13 +121,20 @@ describe('parseGuidedChallengeDocument', () => {
 describe('workspace persistence', () => {
   it('round-trips user workspaces through storage', () => {
     const initialState = createInitialUiState(demoProjects);
-    const stateWithWorkspace = uiReducer(initialState, {
-      type: 'createBlankWorkspace',
-      workspaceId: 'my-scratchpad',
-      name: 'My Scratchpad',
-      summary: 'A blank personal workspace for building from scratch.',
-      pipeline: 'Blank canvas',
-    });
+    const stateWithWorkspace = uiReducer(
+      uiReducer(initialState, {
+        type: 'createBlankWorkspace',
+        workspaceId: 'my-scratchpad',
+        name: 'My Scratchpad',
+        summary: 'A blank personal workspace for building from scratch.',
+        pipeline: 'Blank canvas',
+      }),
+      {
+        type: 'setLayoutDirection',
+        projectId: 'my-scratchpad',
+        direction: 'vertical',
+      },
+    );
     const storage = new MemoryStorage();
 
     saveWorkspaceToStorage(stateWithWorkspace, {}, storage);
@@ -147,6 +154,7 @@ describe('workspace persistence', () => {
       modules: [],
       connections: [],
     });
+    expect(restored?.documentsByProjectId['my-scratchpad']?.ui.layoutDirection).toBe('vertical');
   });
 
   it('round-trips named workspace versions through storage', () => {
@@ -196,6 +204,7 @@ describe('parseShareableLabPack', () => {
         ui: {
           layout: {},
           annotations: [],
+          layoutDirection: 'vertical',
         },
       },
       verificationCases: [

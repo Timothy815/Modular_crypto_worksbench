@@ -179,6 +179,12 @@ export function hydrateInitialUiState(projects: DemoProject[]): UiState {
         persistedWorkspace.documentsByProjectId[project.id]?.ui.annotations ?? initialState.annotationsByProject[project.id],
       ]),
     ),
+    layoutDirectionByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.documentsByProjectId[project.id]?.ui.layoutDirection ?? 'horizontal',
+      ]),
+    ),
     comparisonBaselinesByProject: Object.fromEntries(
       allProjects.map((project) => [
         project.id,
@@ -343,6 +349,7 @@ export interface BuildShareableLabPackArgs {
   project: Project;
   layout: Record<string, { x: number; y: number }>;
   annotations: WorkbenchAnnotation[];
+  layoutDirection: 'horizontal' | 'vertical';
   comparisonBaseline: ComparisonBaselineDocument | null;
   verificationCases: VerificationCase[];
   tutorial?: GuidedTutorial;
@@ -356,6 +363,7 @@ export function buildShareableLabPack({
   project,
   layout,
   annotations,
+  layoutDirection,
   comparisonBaseline,
   verificationCases,
   tutorial,
@@ -377,6 +385,7 @@ export function buildShareableLabPack({
       ui: {
         layout: cloneLayout(layout),
         annotations: cloneAnnotations(annotations),
+        layoutDirection,
       },
     },
     comparisonBaseline: cloneComparisonBaseline(comparisonBaseline),
@@ -486,6 +495,7 @@ export function prepareImportedLabPack({
       ui: {
         layout: cloneLayout(pack.workspace.ui.layout),
         annotations: cloneAnnotations(pack.workspace.ui.annotations),
+        layoutDirection: pack.workspace.ui.layoutDirection ?? 'horizontal',
       },
     },
     comparisonBaseline: cloneComparisonBaseline(pack.comparisonBaseline) ?? null,

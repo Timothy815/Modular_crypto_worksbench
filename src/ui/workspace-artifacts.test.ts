@@ -12,7 +12,7 @@ describe('workspace-artifacts', () => {
       JSON.stringify({
         version: 1,
         project: { modules: [], connections: [] },
-        ui: { layout: {}, annotations: [] },
+        ui: { layout: {}, annotations: [], layoutDirection: 'vertical' },
       }),
     );
 
@@ -27,6 +27,7 @@ describe('workspace-artifacts', () => {
       project: { modules: [], connections: [] },
       layout: {},
       annotations: [],
+      layoutDirection: 'vertical',
       comparisonBaseline: null,
       verificationCases: [],
       tutorial: {
@@ -63,5 +64,6 @@ describe('workspace-artifacts', () => {
     expect(prepared.tutorial?.tutorialId).toBe('tutorial-1-2');
     expect(prepared.challenge?.challengeId).toBe('challenge-1-2');
     expect(prepared.learningPanelTab).toBe('challenge');
+    expect(prepared.document.ui.layoutDirection).toBe('vertical');
   });
 });

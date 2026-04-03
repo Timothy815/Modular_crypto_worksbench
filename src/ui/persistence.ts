@@ -153,6 +153,7 @@ function cloneWorkspaceDocument(document: WorkbenchDocument): WorkbenchDocument 
         ]),
       ),
       annotations: cloneAnnotations(document.ui.annotations),
+      layoutDirection: document.ui.layoutDirection ?? 'horizontal',
     },
   };
 }
@@ -181,6 +182,7 @@ function buildDefaultDocument(project: DemoProject): WorkbenchDocument {
         ]),
       ),
       annotations: [],
+      layoutDirection: 'horizontal',
     },
   };
 }
@@ -216,6 +218,7 @@ export function buildPersistedWorkspace(
               ),
             ),
             annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
+            layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
           },
         },
       ]),
@@ -833,7 +836,10 @@ function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
     candidate.ui !== null &&
     typeof candidate.ui.layout === 'object' &&
     candidate.ui.layout !== null &&
-    Array.isArray(candidate.ui.annotations)
+    Array.isArray(candidate.ui.annotations) &&
+    (candidate.ui.layoutDirection === undefined ||
+      candidate.ui.layoutDirection === 'horizontal' ||
+      candidate.ui.layoutDirection === 'vertical')
   );
 }
 
