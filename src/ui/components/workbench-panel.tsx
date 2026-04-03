@@ -363,6 +363,7 @@ export function WorkbenchPanel({
     useState<PendingConnection | null>(null);
   const [connectionFeedback, setConnectionFeedback] = useState<string | null>(null);
   const [selectedConnectionIndex, setSelectedConnectionIndex] = useState<number | null>(null);
+  const [hoveredConnectionIndex, setHoveredConnectionIndex] = useState<number | null>(null);
   const [selectionBox, setSelectionBox] = useState<{
     startX: number;
     startY: number;
@@ -488,6 +489,12 @@ export function WorkbenchPanel({
     selectedConnectionIndex >= 0 &&
     selectedConnectionIndex < activeProjectState.connections.length
       ? selectedConnectionIndex
+      : null;
+  const effectiveHoveredConnectionIndex =
+    hoveredConnectionIndex !== null &&
+    hoveredConnectionIndex >= 0 &&
+    hoveredConnectionIndex < activeProjectState.connections.length
+      ? hoveredConnectionIndex
       : null;
 
   function getCanvasPointerFromClient(clientX: number, clientY: number) {
@@ -1402,6 +1409,15 @@ export function WorkbenchPanel({
                 PORT_GAP,
               );
               const pathD = getConnectionPath(sourceAnchor, sourceSide, targetAnchor, targetSide);
+              const showConnectionLabel =
+                effectiveHoveredConnectionIndex === connectionIndex ||
+                effectiveSelectedConnectionIndex === connectionIndex;
+              const midpointX = (sourceAnchor.x + targetAnchor.x) / 2;
+              const midpointY = (sourceAnchor.y + targetAnchor.y) / 2;
+              const sourceLabel = `${connection.from.moduleId}.${connection.from.port}`;
+              const targetLabel = `${connection.to.moduleId}.${connection.to.port}`;
+              const labelWidth = Math.max(sourceLabel.length, targetLabel.length) * 7 + 20;
+              const labelHeight = 40;
               const legibilityState = deriveConnectionLegibilityState({
                 connection,
                 connectionIndex,
@@ -1440,6 +1456,12 @@ export function WorkbenchPanel({
                   <path
                     className="connection-hit-area"
                     d={pathD}
+                    onMouseEnter={() => setHoveredConnectionIndex(connectionIndex)}
+                    onMouseLeave={() =>
+                      setHoveredConnectionIndex((current) =>
+                        current === connectionIndex ? null : current,
+                      )
+                    }
                     onClick={(event) => {
                       event.stopPropagation();
                       setSelectedConnectionIndex((current) =>
@@ -1448,6 +1470,22 @@ export function WorkbenchPanel({
                     }}
                   />
                   <path d={pathD} />
+                  {showConnectionLabel ? (
+                    <g
+                      className="connection-hover-label"
+                      transform={`translate(${midpointX - labelWidth / 2} ${midpointY - labelHeight - 10})`}
+                    >
+                      <rect width={labelWidth} height={labelHeight} rx="10" ry="10" />
+                      <text x={10} y={15}>
+                        <tspan x={10} dy="0">
+                          {sourceLabel}
+                        </tspan>
+                        <tspan x={10} dy="14">
+                          {targetLabel}
+                        </tspan>
+                      </text>
+                    </g>
+                  ) : null}
                 </g>
               );
             })}

@@ -2389,6 +2389,24 @@ body.canvas-resizing {
   stroke-width: 3.2;
 }
 
+.connection-hover-label {
+  pointer-events: none;
+}
+
+.connection-hover-label rect {
+  fill: color-mix(in srgb, var(--surface-panel) 94%, white);
+  stroke: color-mix(in srgb, var(--line) 78%, var(--accent));
+  stroke-width: 1;
+  filter: drop-shadow(0 8px 18px color-mix(in srgb, var(--accent) 10%, transparent));
+}
+
+.connection-hover-label text {
+  fill: var(--ink);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
 .pending-connection {
   stroke: var(--danger-text);
   stroke-width: 2.5;
