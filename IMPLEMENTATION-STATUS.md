@@ -250,6 +250,11 @@ The next workspace-legibility exploration now also recorded is:
 - shipped per-workspace horizontal/vertical layout direction with direction-aware tidy and add-module placement
 - keeps the slice bounded to layout, tidy, and navigation behavior only
 
+The next advanced node/wire legibility exploration now also recorded is:
+- `NODE-ROTATION-WIRE-LEGIBILITY-V1.md`
+- proposes per-instance port orientation for hybrid local layouts after the workspace-direction foundation
+- locks upright node labels/content in V1 while keeping wire colors, hover endpoint labels, and more precise routing as later bounded follow-ons
+
 The next implementation-ready verification slice is now also recorded:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - defines the first bounded compare-surface refinement for known-answer verification cases

@@ -70,6 +70,11 @@ The next workspace-legibility exploration now being considered is:
 - shipped per-workspace horizontal/vertical layout direction with direction-aware tidy and add-module placement
 - scoped as a layout/tidy/navigation slice only, not an execution or graph-semantics change
 
+The next advanced legibility exploration after that is now recorded as:
+- `NODE-ROTATION-WIRE-LEGIBILITY-V1.md`
+- proposes per-instance port orientation as a local override for hybrid circuit-board-style layouts
+- locks upright node labels/content in V1 while keeping wire colors, hover endpoint labels, and more precise routing as later bounded follow-ons
+
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - now shipped as the first bounded verification-station refinement inside the compare/analyze line
