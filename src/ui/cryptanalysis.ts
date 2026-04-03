@@ -55,6 +55,15 @@ export interface FrequencyGraphEntry {
   shifted: number;
 }
 
+export interface ShiftConfidenceEntry {
+  shift: number;
+  keyLetter: string;
+  score: number;
+  preview: string;
+  fitPercent: number;
+  gapFromBest: number;
+}
+
 export interface BitDifferenceAnalysis {
   baselineBits: number[];
   variantBits: number[];
@@ -81,6 +90,13 @@ export interface RoundDiffusionChartEntry {
   changedCount: number;
   changedPercent: number;
   barPercent: number;
+}
+
+export interface InfluenceHeatmapColumnEntry {
+  outputIndex: number;
+  activationCount: number;
+  activationShare: number;
+  intensity: number;
 }
 
 export interface CandidatePeriodChartEntry {
@@ -298,6 +314,32 @@ export function buildFrequencyGraphEntries(
   });
 }
 
+export function buildShiftConfidenceEntries(
+  candidates: ShiftScoreEntry[],
+  limit = 5,
+): ShiftConfidenceEntry[] {
+  const ranked = candidates.slice(0, Math.max(1, limit));
+  if (ranked.length === 0) {
+    return [];
+  }
+
+  const bestScore = ranked[0]?.score ?? 0;
+  const worstScore = ranked.reduce((worst, entry) => Math.max(worst, entry.score), bestScore);
+  const spread = Math.max(worstScore - bestScore, 0);
+
+  return ranked.map((entry) => ({
+    shift: entry.shift,
+    keyLetter: entry.keyLetter,
+    score: entry.score,
+    preview: entry.preview,
+    fitPercent:
+      spread > 0
+        ? Math.max(10, ((worstScore - entry.score) / spread) * 100)
+        : 100,
+    gapFromBest: Math.max(0, entry.score - bestScore),
+  }));
+}
+
 export function analyzeSymbolSignal(signal: Signal | null): SymbolTextAnalysis | null {
   if (!signal || signal.type !== 'symbol') {
     return null;
@@ -441,6 +483,30 @@ export function buildCandidatePeriodChartEntries(
     supportBarPercent:
       maxSupport > 0 ? (entry.supportingDistanceCount / maxSupport) * 100 : 0,
   }));
+}
+
+export function buildInfluenceHeatmapColumnEntries(
+  changedFlagsByInput: boolean[][],
+): InfluenceHeatmapColumnEntry[] {
+  const outputBitCount = changedFlagsByInput.reduce(
+    (best, row) => Math.max(best, row.length),
+    0,
+  );
+  const inputCount = changedFlagsByInput.length;
+
+  return Array.from({ length: outputBitCount }, (_, outputIndex) => {
+    const activationCount = changedFlagsByInput.reduce(
+      (sum, row) => sum + (row[outputIndex] ? 1 : 0),
+      0,
+    );
+
+    return {
+      outputIndex,
+      activationCount,
+      activationShare: inputCount > 0 ? activationCount / inputCount : 0,
+      intensity: inputCount > 0 ? activationCount / inputCount : 0,
+    };
+  });
 }
 
 export function analyzeBitstreamRandomness(bits: number[]): BitstreamRandomnessAnalysis {

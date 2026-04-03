@@ -1,10 +1,10 @@
 # CRYPTANALYSIS-VISUALS-V1
 
-Status: Active
+Status: Shipped on `main`.
 
 Implementation note:
 - first phase shipped: round diffusion chart + clickable candidate-period comparison
-- remaining follow-ons stay bounded: frequency confidence view + influence heatmap
+- follow-on visuals now also shipped: frequency confidence view + bounded influence heatmap
 
 Owner: Codex
 Scope: UI / Analysis Surface / Product Legibility
@@ -183,3 +183,22 @@ MCW should make statistical evidence visible, not merely available.
 
 The next cryptanalysis win is not more algorithms.
 It is better visual understanding of the algorithms and evidence already present.
+
+---
+
+## Shipped Note
+
+This contract is now fully shipped on `main`.
+
+The bounded cryptanalysis visual legibility pass now includes:
+- round diffusion chart for modern analysis
+- clickable candidate-period comparison for classical analysis
+- top-shift confidence bars for per-column Vigenere shift inspection
+- bounded input-to-output influence heatmap for supported modern source/output paths
+
+The resulting shape stays within the original contract boundary:
+- no new cryptanalysis family
+- no new detached analysis surface
+- no automatic solver behavior
+
+MCW now makes more of its cryptanalytic evidence visible at a glance instead of leaving students to infer it from raw lists alone.

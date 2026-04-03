@@ -5,6 +5,8 @@ import {
   analyzeBitstreamRandomness,
   analyzeRoundDiffusion,
   analyzeSymbolSignal,
+  buildInfluenceHeatmapColumnEntries,
+  buildShiftConfidenceEntries,
   bitsToAlphabetSymbol,
   bitsToAsciiText,
   buildCandidatePeriodChartEntries,
@@ -27,6 +29,32 @@ import { cloneProject } from '../project-clone';
 import type { WorkspaceMode } from '../workspace-mode';
 import { collectTickedOutput } from '../execution-compare';
 import { isOutputSinkDefId } from '../../engine/output-sinks';
+
+type FlippableProjectSource =
+  | {
+      moduleId: string;
+      moduleName: string;
+      kind: 'bit-source';
+      bits: number[];
+    }
+  | {
+      moduleId: string;
+      moduleName: string;
+      kind: 'hex-source';
+      bits: number[];
+    }
+  | {
+      moduleId: string;
+      moduleName: string;
+      kind: 'ascii-source';
+      bits: number[];
+    }
+  | {
+      moduleId: string;
+      moduleName: string;
+      kind: 'text-symbol-bridge';
+      bits: number[];
+    };
 
 interface CryptanalysisPanelProps {
   projectName: string;
@@ -129,6 +157,10 @@ export function CryptanalysisPanel({
         : [],
     [activeColumn, activeColumnShift],
   );
+  const activeShiftConfidence = useMemo(
+    () => (activeColumn ? buildShiftConfidenceEntries(activeColumn.shiftCandidates) : []),
+    [activeColumn],
+  );
   const baselineBits = useMemo(() => parseBitString(modernBaseline), [modernBaseline]);
   const flippableSource = useMemo(() => findFlippableProjectSource(project), [project]);
   const projectSourceBits = useMemo(() => {
@@ -179,33 +211,7 @@ export function CryptanalysisPanel({
       return null;
     }
 
-    const nextProject = cloneProject(project);
-    const targetModule = nextProject.modules.find((moduleInstance) => moduleInstance.id === flippableSource.moduleId);
-    if (!targetModule) {
-      return null;
-    }
-
-    if (flippableSource.kind === 'bit-source') {
-      targetModule.params.stream = variantInputBits;
-      return nextProject;
-    }
-
-    if (flippableSource.kind === 'ascii-source') {
-      targetModule.params.value = bitsToAsciiText(variantInputBits);
-      return nextProject;
-    }
-
-    if (flippableSource.kind === 'text-symbol-bridge') {
-      if (!variantBridgeSymbol) {
-        return null;
-      }
-
-      targetModule.params.value = variantBridgeSymbol;
-      return nextProject;
-    }
-
-    targetModule.params.value = bitsToHex(variantInputBits);
-    return nextProject;
+    return buildVariantProject(project, flippableSource, variantInputBits, variantBridgeSymbol);
   }, [flippableSource, project, variantBridgeSymbol, variantInputBits]);
   const variantExecution = useMemo(() => {
     if (!variantProject) {
@@ -264,6 +270,58 @@ export function CryptanalysisPanel({
     () => buildRoundDiffusionChartEntries(roundDiffusion),
     [roundDiffusion],
   );
+  const influenceRows = useMemo(() => {
+    if (!flippableSource || !baselineOutputBits || flippableSource.kind === 'text-symbol-bridge') {
+      return [];
+    }
+
+    const maxInputCount = Math.min(effectiveInputBits.length, 64);
+    const rows: {
+      inputIndex: number;
+      changedFlags: boolean[];
+      changedCount: number;
+      changedPercent: number;
+    }[] = [];
+
+    for (let inputIndex = 0; inputIndex < maxInputCount; inputIndex += 1) {
+      const sweepVariantBits = flipBitAtIndex(effectiveInputBits, inputIndex);
+      const sweepProject = buildVariantProject(project, flippableSource, sweepVariantBits);
+      if (!sweepProject) {
+        continue;
+      }
+
+      const validation = validateProject(sweepProject, registry);
+      if (!validation.ok) {
+        continue;
+      }
+
+      try {
+        const sweepExecution = runDemoProject(sweepProject, registry);
+        const sweepOutputBits = getTerminalBits(sweepExecution);
+        if (!sweepOutputBits) {
+          continue;
+        }
+
+        const difference = analyzeBitDifference(baselineOutputBits, sweepOutputBits);
+        rows.push({
+          inputIndex,
+          changedFlags: difference.changedFlags,
+          changedCount: difference.changedCount,
+          changedPercent: difference.changedPercent,
+        });
+      } catch {
+        continue;
+      }
+    }
+
+    return rows;
+  }, [baselineOutputBits, effectiveInputBits, flippableSource, project, registry]);
+  const influenceColumns = useMemo(
+    () => buildInfluenceHeatmapColumnEntries(influenceRows.map((row) => row.changedFlags)),
+    [influenceRows],
+  );
+  const showInfluenceSweep =
+    influenceRows.length > 0 && influenceColumns.length > 0;
   const candidatePeriodChart = useMemo(
     () => (analysis ? buildCandidatePeriodChartEntries(analysis.candidatePeriods) : []),
     [analysis],
@@ -613,6 +671,77 @@ export function CryptanalysisPanel({
                       </div>
                     </div>
                   ))}
+                </div>
+                <div className="modern-influence-heatmap-shell">
+                  <span className="meta-label">Input-to-Output Influence</span>
+                  <strong>
+                    {showInfluenceSweep
+                      ? 'See which output bits react when each input bit flips'
+                      : 'Influence sweep is not available for this source path'}
+                  </strong>
+                  {showInfluenceSweep ? (
+                    <>
+                      <p className="comparison-copy cryptanalysis-help-copy">
+                        Rows are flipped input positions. Columns are output bits. Brighter cells mean that output bit changed for that input flip more often in this bounded sweep.
+                      </p>
+                      <div className="modern-influence-column-summary" role="list" aria-label="Output influence totals">
+                        {influenceColumns.map((column) => (
+                          <div key={`influence-column-${column.outputIndex}`} className="modern-influence-column-card">
+                            <span className="meta-label">Out {column.outputIndex + 1}</span>
+                            <strong>{Math.round(column.activationShare * 100)}%</strong>
+                            <span className="comparison-copy">
+                              {column.activationCount} of {influenceRows.length} flips
+                            </span>
+                            <div className="modern-influence-column-bar">
+                              <div
+                                className="modern-influence-column-fill"
+                                style={{ width: `${Math.max(column.activationShare * 100, column.activationCount > 0 ? 6 : 0)}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="modern-influence-grid" role="table" aria-label="Input-to-output influence heatmap">
+                        <div className="modern-influence-axis-corner" aria-hidden="true" />
+                        {influenceColumns.map((column) => (
+                          <div
+                            key={`influence-col-head-${column.outputIndex}`}
+                            className="modern-influence-axis modern-influence-axis-column"
+                            role="columnheader"
+                          >
+                            <span className="meta-label">Output</span>
+                            <strong>{column.outputIndex + 1}</strong>
+                          </div>
+                        ))}
+                        {influenceRows.map((row) => (
+                          <Fragment key={`influence-row-${row.inputIndex}`}>
+                            <div className="modern-influence-axis modern-influence-axis-row" role="rowheader">
+                              <span className="meta-label">Flip</span>
+                              <strong>{row.inputIndex + 1}</strong>
+                              <span className="comparison-copy">
+                                {row.changedCount} bits
+                              </span>
+                            </div>
+                            {influenceColumns.map((column) => {
+                              const changed = row.changedFlags[column.outputIndex] ?? false;
+                              return (
+                                <div
+                                  key={`influence-cell-${row.inputIndex}-${column.outputIndex}`}
+                                  className={changed ? 'modern-influence-cell modern-influence-cell-active' : 'modern-influence-cell'}
+                                  role="cell"
+                                  title={`Input ${row.inputIndex + 1} -> output ${column.outputIndex + 1}: ${changed ? 'changed' : 'same'}`}
+                                />
+                              );
+                            })}
+                          </Fragment>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <p className="comparison-copy cryptanalysis-help-copy">
+                      The bounded influence heatmap currently needs a bit, hex, or ASCII source path plus a bit-domain output. Single-symbol `TextInput → SymbolToBits` paths remain out of scope for this sweep.
+                    </p>
+                  )}
                 </div>
               </>
             ) : (
@@ -1111,6 +1240,33 @@ export function CryptanalysisPanel({
                   : 'n/a'}
               </strong>
             </p>
+            {activeShiftConfidence.length > 0 ? (
+              <div className="cryptanalysis-shift-confidence" role="list" aria-label="Top shift confidence">
+                {activeShiftConfidence.map((entry, index) => (
+                  <div key={`shift-confidence-${entry.shift}`} className="cryptanalysis-shift-confidence-row">
+                    <div className="cryptanalysis-shift-confidence-copy">
+                      <span className="meta-label">
+                        {index === 0 ? 'Best fit' : `Candidate ${index + 1}`}
+                      </span>
+                      <strong>
+                        {entry.keyLetter} | shift {entry.shift}
+                      </strong>
+                      <span className="comparison-copy">
+                        score {entry.score.toFixed(1)}
+                        {index > 0 ? ` | +${entry.gapFromBest.toFixed(1)} from best` : ''}
+                      </span>
+                    </div>
+                    <div className="cryptanalysis-shift-confidence-bar">
+                      <div
+                        className="cryptanalysis-shift-confidence-fill"
+                        style={{ width: `${entry.fitPercent}%` }}
+                        title={`Relative fit ${(entry.fitPercent).toFixed(1)}%`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             <div className="cryptanalysis-frequency-chart">
               {activeGraphEntries.map((entry) => (
                 <div key={entry.letter} className="cryptanalysis-frequency-column">
@@ -1130,6 +1286,11 @@ export function CryptanalysisPanel({
                 </div>
               ))}
             </div>
+            {activeShiftConfidence.length > 1 ? (
+              <p className="comparison-copy cryptanalysis-help-copy">
+                The confidence bars compare the top shifts using the existing chi-squared fit. A wide gap between the best and second-best fit usually means the column is easier to trust.
+              </p>
+            ) : null}
             <p className="comparison-copy">
               Column preview: <strong>{truncateText(activeColumn.text, 28)}</strong>
             </p>
@@ -1507,7 +1668,43 @@ function getRepeatedWindowInterpretation(
   return 'No short exact repeats were found in this sample';
 }
 
-function findFlippableProjectSource(project: Project) {
+function buildVariantProject(
+  project: Project,
+  flippableSource: FlippableProjectSource,
+  variantBits: number[],
+  variantBridgeSymbol?: string | null,
+): Project | null {
+  const nextProject = cloneProject(project);
+  const targetModule = nextProject.modules.find((moduleInstance) => moduleInstance.id === flippableSource.moduleId);
+  if (!targetModule) {
+    return null;
+  }
+
+  if (flippableSource.kind === 'bit-source') {
+    targetModule.params.stream = variantBits;
+    return nextProject;
+  }
+
+  if (flippableSource.kind === 'ascii-source') {
+    targetModule.params.value = bitsToAsciiText(variantBits);
+    return nextProject;
+  }
+
+  if (flippableSource.kind === 'text-symbol-bridge') {
+    const effectiveSymbol = variantBridgeSymbol ?? bitsToAlphabetSymbol(variantBits);
+    if (!effectiveSymbol) {
+      return null;
+    }
+
+    targetModule.params.value = effectiveSymbol;
+    return nextProject;
+  }
+
+  targetModule.params.value = bitsToHex(variantBits);
+  return nextProject;
+}
+
+function findFlippableProjectSource(project: Project): FlippableProjectSource | null {
   for (const moduleInstance of project.modules) {
     if (moduleInstance.defId === 'BitSource' && Array.isArray(moduleInstance.params.stream)) {
       const bits = (moduleInstance.params.stream as number[]).map((bit) => (bit ? 1 : 0));

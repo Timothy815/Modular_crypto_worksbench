@@ -91,9 +91,9 @@ The next bounded AI-facing handoff refinement after that is now explicitly recor
 
 The next bounded cryptanalysis legibility refinement after that is now explicitly recorded as:
 - `CRYPTANALYSIS-VISUALS-V1.md`
-- now active as the current cryptanalysis legibility refinement
-- first phase ships a round diffusion chart and clickable candidate-period comparison inside the existing cryptanalysis workspace
-- keeps later frequency-confidence and influence-heatmap work explicitly bounded rather than widening into a generic statistics dashboard
+- now fully shipped as the bounded cryptanalysis legibility refinement
+- includes the round diffusion chart, clickable candidate-period comparison, frequency confidence view, and bounded influence heatmap inside the existing cryptanalysis workspace
+- keeps the entire pass bounded rather than widening into a generic statistics dashboard
 
 The next bounded cryptanalysis navigation refinement after that is now explicitly recorded as:
 - `CRYPTANALYSIS-PROMINENCE-V1.md`

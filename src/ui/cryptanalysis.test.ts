@@ -4,7 +4,9 @@ import {
   analyzeBitDifference,
   analyzeBitstreamRandomness,
   buildCandidatePeriodChartEntries,
+  buildInfluenceHeatmapColumnEntries,
   buildRoundDiffusionChartEntries,
+  buildShiftConfidenceEntries,
   analyzeRoundDiffusion,
   analyzeSymbolSignal,
   analyzeVigenereColumns,
@@ -160,6 +162,43 @@ describe('buildFrequencyGraphEntries', () => {
   });
 });
 
+describe('buildShiftConfidenceEntries', () => {
+  it('normalizes top shift fits against the displayed candidate set', () => {
+    expect(
+      buildShiftConfidenceEntries([
+        { shift: 4, keyLetter: 'E', score: 12, preview: 'AAAA' },
+        { shift: 11, keyLetter: 'L', score: 18, preview: 'BBBB' },
+        { shift: 19, keyLetter: 'T', score: 30, preview: 'CCCC' },
+      ]),
+    ).toEqual([
+      {
+        shift: 4,
+        keyLetter: 'E',
+        score: 12,
+        preview: 'AAAA',
+        fitPercent: 100,
+        gapFromBest: 0,
+      },
+      {
+        shift: 11,
+        keyLetter: 'L',
+        score: 18,
+        preview: 'BBBB',
+        fitPercent: expect.closeTo(66.6666667, 6),
+        gapFromBest: 6,
+      },
+      {
+        shift: 19,
+        keyLetter: 'T',
+        score: 30,
+        preview: 'CCCC',
+        fitPercent: 10,
+        gapFromBest: 18,
+      },
+    ]);
+  });
+});
+
 describe('modern bit analysis helpers', () => {
   it('parses bit strings while ignoring non-bit separators', () => {
     expect(parseBitString('10 01-11x')).toEqual([1, 0, 0, 1, 1, 1]);
@@ -187,6 +226,35 @@ describe('modern bit analysis helpers', () => {
         changedCount: 1,
         changedPercent: 0.25,
         barPercent: 25,
+      },
+    ]);
+  });
+
+  it('summarizes output-bit influence across a bounded input sweep', () => {
+    expect(
+      buildInfluenceHeatmapColumnEntries([
+        [true, false, true],
+        [false, true, true],
+        [false, false, true],
+      ]),
+    ).toEqual([
+      {
+        outputIndex: 0,
+        activationCount: 1,
+        activationShare: 1 / 3,
+        intensity: 1 / 3,
+      },
+      {
+        outputIndex: 1,
+        activationCount: 1,
+        activationShare: 1 / 3,
+        intensity: 1 / 3,
+      },
+      {
+        outputIndex: 2,
+        activationCount: 3,
+        activationShare: 1,
+        intensity: 1,
       },
     ]);
   });

@@ -268,9 +268,9 @@ The next export/trust slice after that is now also recorded:
   - includes live primitive inventory from the registry, actual workspace/challenge interface shapes, explicit connection rules, and minimal JSON examples for workspace/challenge generation without embedding a chatbot or provider integration in MCW
 - next bounded cryptanalysis legibility refinement after that:
   - `CRYPTANALYSIS-VISUALS-V1.md`
-  - now active as the current first visual-upgrade pass for the existing cryptanalysis workspace
-  - first phase ships a round diffusion chart for modern analysis and clickable candidate-period comparison for classical analysis
-  - keeps later frequency-confidence and bounded influence-heatmap work explicitly deferred rather than widening into a generic chart suite
+  - now fully shipped as the bounded cryptanalysis legibility refinement
+  - includes the round diffusion chart, clickable candidate-period comparison, frequency confidence view, and bounded influence heatmap inside the existing cryptanalysis workspace
+  - keeps the entire pass bounded rather than widening into a generic chart suite
 - next bounded cryptanalysis navigation refinement after that:
   - `CRYPTANALYSIS-PROMINENCE-V1.md`
   - records a local-navigation/product-signaling pass to give `Tutorial`, `Challenge`, and `Cryptanalysis` equal footing

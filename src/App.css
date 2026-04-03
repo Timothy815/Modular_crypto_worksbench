@@ -845,6 +845,98 @@ body.dock-resizing {
   background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 76%, white), var(--danger-text));
 }
 
+.modern-influence-heatmap-shell {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.modern-influence-column-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.modern-influence-column-card {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-1);
+}
+
+.modern-influence-column-bar,
+.cryptanalysis-shift-confidence-bar {
+  min-height: 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface-2) 85%, var(--surface-panel));
+  overflow: hidden;
+}
+
+.modern-influence-column-fill,
+.cryptanalysis-shift-confidence-fill {
+  min-height: 100%;
+  border-radius: inherit;
+}
+
+.modern-influence-column-fill {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 70%, white), color-mix(in srgb, #2563eb 70%, white));
+}
+
+.modern-influence-grid {
+  display: grid;
+  grid-template-columns: minmax(78px, auto) repeat(auto-fit, minmax(16px, 1fr));
+  gap: 6px;
+  align-items: stretch;
+}
+
+.modern-influence-axis-corner,
+.modern-influence-axis {
+  border-radius: 12px;
+}
+
+.modern-influence-axis-corner {
+  background: color-mix(in srgb, var(--surface-soft) 85%, var(--surface-panel));
+  border: 1px dashed var(--line);
+}
+
+.modern-influence-axis {
+  display: grid;
+  gap: 2px;
+  align-content: center;
+  justify-items: center;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--line) 88%, white);
+  background: color-mix(in srgb, var(--surface-soft) 92%, var(--surface-panel));
+  text-align: center;
+}
+
+.modern-influence-axis-row {
+  justify-items: start;
+  text-align: left;
+}
+
+.modern-influence-cell {
+  min-height: 24px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, white);
+  background: color-mix(in srgb, var(--surface-1) 88%, var(--surface-panel));
+}
+
+.modern-influence-cell-active {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 72%, white),
+    color-mix(in srgb, #2563eb 62%, white)
+  );
+  border-color: color-mix(in srgb, var(--accent) 68%, var(--line));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
 .primitive-main {
   display: grid;
   gap: 12px;
@@ -4482,6 +4574,28 @@ body.dock-resizing {
   font-size: 0.58rem;
   font-weight: 700;
   color: var(--text-muted);
+}
+
+.cryptanalysis-shift-confidence {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 14px;
+}
+
+.cryptanalysis-shift-confidence-row {
+  display: grid;
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.cryptanalysis-shift-confidence-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.cryptanalysis-shift-confidence-fill {
+  background: linear-gradient(90deg, color-mix(in srgb, #d97706 74%, white), color-mix(in srgb, var(--accent) 64%, white));
 }
 
 .cryptanalysis-key-row {
