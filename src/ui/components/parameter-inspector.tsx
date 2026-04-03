@@ -704,11 +704,11 @@ export function ParameterInspector({
     <aside className="panel inspector-panel">
       <div className="panel-head">
         <p className="panel-label">Inspector</p>
-        <h2>Selection + Trace</h2>
+        <h2>Inspector</h2>
       </div>
 
       <label className="inspector-section-select">
-        <span className="meta-label">Section</span>
+        <span className="meta-label">View</span>
         <select
           value={inspectorTab}
           onChange={(event) =>
@@ -733,7 +733,7 @@ export function ParameterInspector({
                 className="inspector-output-action"
                 onClick={() => setShowCollectedOutput((current) => !current)}
               >
-                {showCollectedOutput ? 'Hide collected output' : 'Show collected output'}
+                {showCollectedOutput ? 'Hide collected' : 'Show collected'}
               </button>
             ) : null}
             <button
@@ -741,19 +741,19 @@ export function ParameterInspector({
               className="inspector-output-action"
               onClick={() => setIsOutputSummaryCollapsed((current) => !current)}
             >
-              {isOutputSummaryCollapsed ? 'Expand output' : 'Collapse output'}
+              {isOutputSummaryCollapsed ? 'Expand' : 'Collapse'}
             </button>
           </div>
         </div>
         <p className="trace-summary-subtitle">
           {validationIssues.length > 0
-            ? `${validationIssues.length} validation issue${validationIssues.length === 1 ? '' : 's'} blocking execution`
+            ? `${validationIssues.length} validation issue${validationIssues.length === 1 ? '' : 's'} blocking run`
             : execution
               ? `${execution.trace.length} module${execution.trace.length === 1 ? '' : 's'} executed`
-              : 'Execution is waiting for a valid graph'}
+              : 'Fix validation issues to run'}
         </p>
         {showCollectedOutput && hasCollectedOutput && outputSummaries.length <= 1 ? (
-          <p className="trace-summary-subtitle">Collected output: <strong>{collectedOutput}</strong></p>
+          <p className="trace-summary-subtitle">Collected: <strong>{collectedOutput}</strong></p>
         ) : null}
         {outputSummaries.length > 1 ? (
           <div className="inspector-output-switcher">
@@ -767,6 +767,16 @@ export function ParameterInspector({
                 {summary.moduleId}
               </button>
             ))}
+          </div>
+        ) : null}
+        {isOutputSummaryCollapsed && activeOutputSummary ? (
+          <div className="inspector-output-collapsed-line">
+            <span className="meta-label">
+              {outputSummaries.length > 1 ? activeOutputSummary.moduleId : 'Output'}
+            </span>
+            <code>
+              {activeOutputSummary.effectiveRepresentationOption?.value ?? formatSignal(activeOutputSummary.signal)}
+            </code>
           </div>
         ) : null}
         {!isOutputSummaryCollapsed && activeOutputSummary ? (
@@ -783,7 +793,7 @@ export function ParameterInspector({
               <code>{formatSignal(activeOutputSummary.signal)}</code>
               {activeOutputSummary.effectiveRepresentationOption ? (
                 <div className="sink-representation">
-                  <span className="meta-label">Interpret Output As</span>
+                  <span className="meta-label">View As</span>
                   <div className="sink-rep-tabs">
                     {activeOutputSummary.representationOptions.map((option) => (
                       <button
@@ -811,7 +821,7 @@ export function ParameterInspector({
               ) : null}
               {isTickedMode && tickHistoryByModule?.[activeOutputSummary.moduleId]?.length ? (
                 <p className="sink-rep-note">
-                  {tickHistoryByModule[activeOutputSummary.moduleId].length} tick sample(s) available for this sink.
+                  {tickHistoryByModule[activeOutputSummary.moduleId].length} tick sample{tickHistoryByModule[activeOutputSummary.moduleId].length === 1 ? '' : 's'} for this sink.
                 </p>
               ) : null}
             </div>
@@ -821,9 +831,9 @@ export function ParameterInspector({
 
       {inspectorTab === 'analyze' && isTickedMode && tickCount > 0 && moduleInstance ? (
         <section className="analysis-section tick-state-section">
-          <span className="meta-label">Tick State</span>
+          <span className="meta-label">Tick</span>
           <p className="tick-state-summary">
-            Viewing tick <strong>{currentTick + 1}</strong> of <strong>{tickCount}</strong>
+            Tick <strong>{currentTick + 1}</strong> of <strong>{tickCount}</strong>
           </p>
           {tickedParamsByModule?.[moduleInstance.id] ? (() => {
             const tickParams = tickedParamsByModule[moduleInstance.id]?.[currentTick];
@@ -875,7 +885,7 @@ export function ParameterInspector({
      {inspectorTab === 'analyze' && execution && execution.trace.length > 0 ? (
         <section className="analysis-section">
           <div className="stepper-head">
-            <span className="meta-label">Step-Through</span>
+            <span className="meta-label">Stepper</span>
             <div className="stepper-controls">
               {canUseNestedStepper ? (
                 <div className="trace-mode-toggle">
@@ -979,7 +989,7 @@ export function ParameterInspector({
           </div>
 
           <div className="selected-trace">
-            <span className="meta-label">Current Step</span>
+            <span className="meta-label">Step</span>
             {effectiveStepperMode === 'nested' ? (
               steppedAnalysisEntry ? (
                 <>
@@ -987,25 +997,25 @@ export function ParameterInspector({
                     Nested step {effectiveNestedStepIndex! + 1} of {traceEntries.length}
                   </p>
                   <p>
-                    module: <strong>{getDisplayTraceModuleId(steppedAnalysisEntry)}</strong> (
+                    Module: <strong>{getDisplayTraceModuleId(steppedAnalysisEntry)}</strong> (
                     {steppedAnalysisEntry.defId})
                   </p>
                   {getIteratorRoundPath(steppedAnalysisEntry) ? (
                     <p>
-                      round:{' '}
+                      Round:{' '}
                       <strong>
                         {formatIteratorRoundLabel(getIteratorRoundPath(steppedAnalysisEntry) ?? '')}
                       </strong>
                     </p>
                   ) : null}
                   <p>
-                    inputs:{' '}
+                    Inputs:{' '}
                     {Object.entries(steppedAnalysisEntry.inputs)
                       .map(([, signal]) => formatSignal(signal))
                       .join(' | ') || 'none'}
                   </p>
                   <p>
-                    outputs:{' '}
+                    Outputs:{' '}
                     {Object.entries(steppedAnalysisEntry.outputs)
                       .map(([, signal]) => formatSignal(signal))
                       .join(' | ') || 'none'}
@@ -1023,16 +1033,16 @@ export function ParameterInspector({
                  Step {stepIndex! + 1} of {execution.trace.length}
                 </p>
                 <p>
-                  module: <strong>{steppedTrace.moduleId}</strong> ({steppedTrace.defId})
+                  Module: <strong>{steppedTrace.moduleId}</strong> ({steppedTrace.defId})
                 </p>
                 <p>
-                  inputs:{' '}
+                  Inputs:{' '}
                   {Object.entries(steppedTrace.inputs)
                     .map(([, signal]) => formatSignal(signal))
                     .join(' | ') || 'none'}
                 </p>
                 <p>
-                  outputs:{' '}
+                  Outputs:{' '}
                   {Object.entries(steppedTrace.outputs)
                     .map(([, signal]) => formatSignal(signal))
                     .join(' | ') || 'none'}
@@ -1050,7 +1060,7 @@ export function ParameterInspector({
       {inspectorTab === 'analyze' && probedModuleIds.length > 0 ? (
         <section className="analysis-section probe-section">
           <div className="probe-head">
-            <span className="meta-label">Pinned Signals</span>
+            <span className="meta-label">Pinned</span>
             <button
               type="button"
               className="trace-mode-button"
@@ -1082,13 +1092,13 @@ export function ParameterInspector({
                   {probeTrace ? (
                     <>
                       <p>
-                        in:{' '}
+                        In:{' '}
                         {Object.entries(probeTrace.inputs)
                           .map(([, signal]) => formatSignal(signal))
                           .join(' | ') || 'none'}
                       </p>
                       <p>
-                        out:{' '}
+                        Out:{' '}
                         {Object.entries(probeTrace.outputs)
                           .map(([, signal]) => formatSignal(signal))
                           .join(' | ') || 'none'}
@@ -1106,13 +1116,13 @@ export function ParameterInspector({
 
       {inspectorTab === 'analyze' && tutorialStep ? (
         <section className="analysis-section tutorial-analysis-section">
-          <span className="meta-label">Tutorial Focus</span>
+          <span className="meta-label">Tutorial</span>
           <div className="tutorial-analysis-card">
             <strong>{tutorialStep.title}</strong>
             <p>{tutorialStep.body}</p>
             {tutorialStep.focusModuleId ? (
               <p className="tutorial-analysis-target">
-                Focus module: <strong>{tutorialStep.focusModuleId}</strong>
+                Focus: <strong>{tutorialStep.focusModuleId}</strong>
                 {tutorialTraceIndex ? ` • Trace step ${tutorialTraceIndex}` : ''}
               </p>
             ) : (
@@ -1779,7 +1789,7 @@ export function ParameterInspector({
 
       {moduleDef && moduleInstance && inspectorTab === 'configure' ? (
         <section className="inspector-section">
-          <span className="meta-label">Selected Module</span>
+          <span className="meta-label">Module</span>
           <strong className="selected-module-name">{moduleInstance.id}</strong>
           <p className="selected-module-type">{moduleDef.id}</p>
           {'kind' in moduleDef ? (
@@ -1811,14 +1821,14 @@ export function ParameterInspector({
               disabled={!canRenameModuleIds || !onRenameModuleInstance}
             />
             <p className="comparison-copy">
-              Workspace-local ID. Use letters, numbers, hyphens, or underscores.
+              Local ID. Use letters, numbers, hyphens, or underscores.
             </p>
             {effectiveRenameError || renameValidationError ? (
               <p className="field-error">{effectiveRenameError ?? renameValidationError}</p>
             ) : null}
             {!canRenameModuleIds ? (
               <p className="comparison-copy">
-                Rename is unavailable while editing a reusable composite definition.
+                Rename is unavailable while editing a reusable composite.
               </p>
             ) : null}
           </div>
@@ -1849,7 +1859,7 @@ export function ParameterInspector({
                   )
                 }
               >
-                Apply Params To Selected
+                Apply To Selected
               </button>
             ) : null}
             {canRenameModuleIds && onRenameModuleInstance ? (

@@ -2925,6 +2925,22 @@ body.dock-resizing {
   margin-bottom: 0;
 }
 
+.inspector-output-collapsed-line {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  min-width: 0;
+}
+
+.inspector-output-collapsed-line code {
+  display: block;
+  max-height: 3lh;
+  overflow-y: auto;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
 .inspector-output-list {
   display: grid;
   gap: 10px;
