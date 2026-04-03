@@ -85,6 +85,11 @@ The next large-workspace readability slice now implemented locally after that is
 - a bounded visual grouping-region slice for rounds, banks, phases, and feedback areas
 - keeps grouping purely visual and stored only in workspace UI metadata
 
+The next large-workspace navigation slice now implemented locally after that is:
+- `MINIMAP-OVERVIEW-NAVIGATOR-V1.md`
+- a bounded overview navigator with viewport tracking and click-to-pan navigation
+- keeps visibility persisted per workspace as UI metadata only
+
 Current `main` now also includes:
 - Python export foundations:
   - one workspace-local `Export Python` action beside JSON export

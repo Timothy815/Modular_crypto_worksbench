@@ -48,6 +48,7 @@ export interface WorkbenchUiMetadata {
   layout: Record<string, WorkbenchPosition>;
   annotations: WorkbenchAnnotation[];
   groupBoxes?: WorkbenchGroupBox[];
+  showOverviewNavigator?: boolean;
   layoutDirection?: WorkbenchLayoutDirection;
   routingMode?: WorkbenchRoutingMode;
   connectionLayout?: Record<string, WorkbenchConnectionLayout>;

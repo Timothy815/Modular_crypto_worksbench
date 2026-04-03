@@ -187,6 +187,20 @@ describe('uiReducer', () => {
     ]);
   });
 
+  it('toggles the overview navigator per workspace', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+
+    const nextState = uiReducer(initialState, {
+      type: 'setOverviewNavigatorVisible',
+      projectId,
+      visible: false,
+    });
+
+    expect(nextState.showOverviewNavigatorByProject[projectId]).toBe(false);
+    expect(initialState.showOverviewNavigatorByProject[projectId]).toBe(false);
+  });
+
   it('rejects invalid or duplicate module instance IDs', () => {
     const initialState = createInitialUiState(demoProjects);
     const projectId = 'sequential';

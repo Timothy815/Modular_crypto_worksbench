@@ -7,6 +7,7 @@ interface WorkbenchActionsProps {
   isObservationMode?: boolean;
   layoutDirection: WorkbenchLayoutDirection;
   routingMode: WorkbenchRoutingMode;
+  showOverviewNavigator: boolean;
   canUndo: boolean;
   canRedo: boolean;
   selectedModuleIds: string[];
@@ -21,6 +22,7 @@ interface WorkbenchActionsProps {
   onTidyLayout: () => void;
   onSetLayoutDirection: (direction: WorkbenchLayoutDirection) => void;
   onSetRoutingMode: (mode: WorkbenchRoutingMode) => void;
+  onToggleOverviewNavigator: (visible: boolean) => void;
   onRequestUndo: () => void;
   onRequestRedo: () => void;
   onZoomOut: () => void;
@@ -57,6 +59,7 @@ interface WorkbenchMenuAction {
   label: string;
   onSelect: () => void;
   disabled?: boolean;
+  title?: string;
 }
 
 interface WorkbenchActionMenuProps {
@@ -77,12 +80,18 @@ function WorkbenchActionMenu({ label, description, children }: WorkbenchActionMe
   );
 }
 
-function WorkbenchMenuActionButton({ label, onSelect, disabled = false }: WorkbenchMenuAction) {
+function WorkbenchMenuActionButton({
+  label,
+  onSelect,
+  disabled = false,
+  title,
+}: WorkbenchMenuAction) {
   return (
     <button
       type="button"
       className="workbench-menu-action-button"
       disabled={disabled}
+      title={title}
       onClick={(event) => {
         onSelect();
         event.currentTarget.closest('details')?.removeAttribute('open');
@@ -93,11 +102,142 @@ function WorkbenchMenuActionButton({ label, onSelect, disabled = false }: Workbe
   );
 }
 
+interface WorkbenchInlineActionButtonProps {
+  content: ReactNode;
+  title: string;
+  onSelect: () => void;
+  disabled?: boolean;
+}
+
+function WorkbenchInlineActionButton({
+  content,
+  title,
+  onSelect,
+  disabled = false,
+}: WorkbenchInlineActionButtonProps) {
+  return (
+    <button
+      type="button"
+      className="workbench-inline-action-button"
+      title={title}
+      aria-label={title}
+      disabled={disabled}
+      onClick={onSelect}
+    >
+      {content}
+    </button>
+  );
+}
+
+type WorkbenchInlineIconName =
+  | 'stage-row'
+  | 'stage-column'
+  | 'align-left'
+  | 'align-right'
+  | 'align-top'
+  | 'align-bottom'
+  | 'align-horizontal-center'
+  | 'align-vertical-center'
+  | 'distribute-horizontal'
+  | 'distribute-vertical';
+
+function WorkbenchInlineIcon({ name }: { name: WorkbenchInlineIconName }) {
+  switch (name) {
+    case 'stage-row':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <rect x="2" y="6" width="4" height="8" rx="1.5" />
+          <rect x="8" y="6" width="4" height="8" rx="1.5" />
+          <rect x="14" y="6" width="4" height="8" rx="1.5" />
+        </svg>
+      );
+    case 'stage-column':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <rect x="6" y="2" width="8" height="4" rx="1.5" />
+          <rect x="6" y="8" width="8" height="4" rx="1.5" />
+          <rect x="6" y="14" width="8" height="4" rx="1.5" />
+        </svg>
+      );
+    case 'align-left':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M4 3v14" />
+          <rect x="6" y="4" width="9" height="3" rx="1.2" />
+          <rect x="6" y="9" width="6" height="3" rx="1.2" />
+          <rect x="6" y="14" width="11" height="3" rx="1.2" />
+        </svg>
+      );
+    case 'align-right':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M16 3v14" />
+          <rect x="5" y="4" width="9" height="3" rx="1.2" />
+          <rect x="8" y="9" width="6" height="3" rx="1.2" />
+          <rect x="3" y="14" width="11" height="3" rx="1.2" />
+        </svg>
+      );
+    case 'align-top':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M3 4h14" />
+          <rect x="4" y="6" width="3" height="9" rx="1.2" />
+          <rect x="9" y="6" width="3" height="6" rx="1.2" />
+          <rect x="14" y="6" width="3" height="11" rx="1.2" />
+        </svg>
+      );
+    case 'align-bottom':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M3 16h14" />
+          <rect x="4" y="5" width="3" height="9" rx="1.2" />
+          <rect x="9" y="8" width="3" height="6" rx="1.2" />
+          <rect x="14" y="3" width="3" height="11" rx="1.2" />
+        </svg>
+      );
+    case 'align-horizontal-center':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M10 3v14" />
+          <rect x="6" y="4" width="8" height="3" rx="1.2" />
+          <rect x="7.5" y="9" width="5" height="3" rx="1.2" />
+          <rect x="4.5" y="14" width="11" height="3" rx="1.2" />
+        </svg>
+      );
+    case 'align-vertical-center':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M3 10h14" />
+          <rect x="4" y="6" width="3" height="8" rx="1.2" />
+          <rect x="9" y="7.5" width="3" height="5" rx="1.2" />
+          <rect x="14" y="4.5" width="3" height="11" rx="1.2" />
+        </svg>
+      );
+    case 'distribute-horizontal':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M4 4v12M16 4v12" />
+          <rect x="6" y="7" width="2.5" height="6" rx="1.2" />
+          <rect x="11.5" y="7" width="2.5" height="6" rx="1.2" />
+        </svg>
+      );
+    case 'distribute-vertical':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M4 4h12M4 16h12" />
+          <rect x="7" y="6" width="6" height="2.5" rx="1.2" />
+          <rect x="7" y="11.5" width="6" height="2.5" rx="1.2" />
+        </svg>
+      );
+  }
+}
+
 export function WorkbenchActions({
   isCompositeEditor,
   isObservationMode = false,
   layoutDirection,
   routingMode,
+  showOverviewNavigator,
   canUndo,
   canRedo,
   selectedModuleIds,
@@ -112,6 +252,7 @@ export function WorkbenchActions({
   onTidyLayout,
   onSetLayoutDirection,
   onSetRoutingMode,
+  onToggleOverviewNavigator,
   onRequestUndo,
   onRequestRedo,
   onZoomOut,
@@ -133,6 +274,8 @@ export function WorkbenchActions({
 }: WorkbenchActionsProps) {
   const hasSelection = selectedModuleIds.length > 0;
   const canDeleteWire = effectiveSelectedConnectionIndex !== null;
+  const canAlignSelection = selectedModuleIds.length >= 2;
+  const canDistributeSelection = selectedModuleIds.length >= 3;
 
   return (
     <div className="project-actions">
@@ -145,76 +288,88 @@ export function WorkbenchActions({
         </WorkbenchActionMenu>
       ) : !isCompositeEditor ? (
         <>
+          <div className="workbench-inline-toolbar" aria-label="Selection layout tools">
+            <WorkbenchInlineActionButton
+              content="Tidy"
+              title="Tidy Layout"
+              onSelect={onTidyLayout}
+            />
+            <WorkbenchInlineActionButton
+              content={<WorkbenchInlineIcon name="stage-row" />}
+              title="Arrange Selected Stage Row"
+              onSelect={() => onRequestArrangeSelection('stage-row')}
+              disabled={!canAlignSelection}
+            />
+            <WorkbenchInlineActionButton
+              content={<WorkbenchInlineIcon name="stage-column" />}
+              title="Stack Selected Stage Column"
+              onSelect={() => onRequestArrangeSelection('stage-column')}
+              disabled={!canAlignSelection}
+            />
+            <WorkbenchInlineActionButton
+              content={<WorkbenchInlineIcon name="align-left" />}
+              title="Align Left"
+              onSelect={() => onRequestArrangeSelection('align-left')}
+              disabled={!canAlignSelection}
+            />
+            <WorkbenchInlineActionButton
+              content={<WorkbenchInlineIcon name="align-right" />}
+              title="Align Right"
+              onSelect={() => onRequestArrangeSelection('align-right')}
+              disabled={!canAlignSelection}
+            />
+            <WorkbenchInlineActionButton
+              content={<WorkbenchInlineIcon name="align-top" />}
+              title="Align Top"
+              onSelect={() => onRequestArrangeSelection('align-top')}
+              disabled={!canAlignSelection}
+            />
+            <WorkbenchInlineActionButton
+              content={<WorkbenchInlineIcon name="align-bottom" />}
+              title="Align Bottom"
+              onSelect={() => onRequestArrangeSelection('align-bottom')}
+              disabled={!canAlignSelection}
+            />
+            <WorkbenchInlineActionButton
+              content={<WorkbenchInlineIcon name="align-horizontal-center" />}
+              title="Align Horizontal Center"
+              onSelect={() => onRequestArrangeSelection('align-horizontal-center')}
+              disabled={!canAlignSelection}
+            />
+            <WorkbenchInlineActionButton
+              content={<WorkbenchInlineIcon name="align-vertical-center" />}
+              title="Align Vertical Center"
+              onSelect={() => onRequestArrangeSelection('align-vertical-center')}
+              disabled={!canAlignSelection}
+            />
+            <WorkbenchInlineActionButton
+              content={<WorkbenchInlineIcon name="distribute-horizontal" />}
+              title="Distribute Horizontally"
+              onSelect={() => onRequestArrangeSelection('distribute-horizontal')}
+              disabled={!canDistributeSelection}
+            />
+            <WorkbenchInlineActionButton
+              content={<WorkbenchInlineIcon name="distribute-vertical" />}
+              title="Distribute Vertically"
+              onSelect={() => onRequestArrangeSelection('distribute-vertical')}
+              disabled={!canDistributeSelection}
+            />
+          </div>
+
           <WorkbenchActionMenu label="View" description="Zoom and navigate">
             <WorkbenchMenuActionButton label="Zoom Out" onSelect={onZoomOut} />
             <WorkbenchMenuActionButton label="Zoom In" onSelect={onZoomIn} />
             <WorkbenchMenuActionButton label="Reset View" onSelect={onResetView} />
             <WorkbenchMenuActionButton label="Fit View" onSelect={onFitView} />
-          </WorkbenchActionMenu>
-
-          <WorkbenchActionMenu label="Edit" description="Author and arrange">
-            <WorkbenchMenuActionButton label="Add Note" onSelect={onAddAnnotation} />
             <WorkbenchMenuActionButton
-              label="Create Composite"
-              onSelect={onRequestCreateComposite}
-              disabled={!hasSelection}
-            />
-            <WorkbenchMenuActionButton label="Tidy Layout" onSelect={onTidyLayout} />
-            <WorkbenchMenuActionButton
-              label="Arrange Selected Stage Row"
-              onSelect={() => onRequestArrangeSelection('stage-row')}
-              disabled={selectedModuleIds.length < 2}
+              label="Horizontal Layout"
+              onSelect={() => onSetLayoutDirection('horizontal')}
+              disabled={layoutDirection === 'horizontal'}
             />
             <WorkbenchMenuActionButton
-              label="Stack Selected Stage Column"
-              onSelect={() => onRequestArrangeSelection('stage-column')}
-              disabled={selectedModuleIds.length < 2}
-            />
-            <WorkbenchMenuActionButton
-              label="Align Left"
-              onSelect={() => onRequestArrangeSelection('align-left')}
-              disabled={selectedModuleIds.length < 2}
-            />
-            <WorkbenchMenuActionButton
-              label="Align Right"
-              onSelect={() => onRequestArrangeSelection('align-right')}
-              disabled={selectedModuleIds.length < 2}
-            />
-            <WorkbenchMenuActionButton
-              label="Align Top"
-              onSelect={() => onRequestArrangeSelection('align-top')}
-              disabled={selectedModuleIds.length < 2}
-            />
-            <WorkbenchMenuActionButton
-              label="Align Bottom"
-              onSelect={() => onRequestArrangeSelection('align-bottom')}
-              disabled={selectedModuleIds.length < 2}
-            />
-            <WorkbenchMenuActionButton
-              label="Align Horizontal Center"
-              onSelect={() => onRequestArrangeSelection('align-horizontal-center')}
-              disabled={selectedModuleIds.length < 2}
-            />
-            <WorkbenchMenuActionButton
-              label="Align Vertical Center"
-              onSelect={() => onRequestArrangeSelection('align-vertical-center')}
-              disabled={selectedModuleIds.length < 2}
-            />
-            <WorkbenchMenuActionButton
-              label="Distribute Horizontally"
-              onSelect={() => onRequestArrangeSelection('distribute-horizontal')}
-              disabled={selectedModuleIds.length < 3}
-            />
-            <WorkbenchMenuActionButton
-              label="Distribute Vertically"
-              onSelect={() => onRequestArrangeSelection('distribute-vertical')}
-              disabled={selectedModuleIds.length < 3}
-            />
-            <WorkbenchMenuActionButton label="Add Group Box" onSelect={onRequestAddGroupBox} />
-            <WorkbenchMenuActionButton
-              label="Group Selection"
-              onSelect={onRequestAddGroupBoxFromSelection}
-              disabled={selectedModuleIds.length < 1}
+              label="Vertical Layout"
+              onSelect={() => onSetLayoutDirection('vertical')}
+              disabled={layoutDirection === 'vertical'}
             />
             <WorkbenchMenuActionButton
               label="Curve"
@@ -227,14 +382,29 @@ export function WorkbenchActions({
               disabled={routingMode === 'orthogonal'}
             />
             <WorkbenchMenuActionButton
-              label="Horizontal Layout"
-              onSelect={() => onSetLayoutDirection('horizontal')}
-              disabled={layoutDirection === 'horizontal'}
+              label={showOverviewNavigator ? 'Hide Overview' : 'Show Overview'}
+              onSelect={() => onToggleOverviewNavigator(!showOverviewNavigator)}
             />
+            {showTutorialToggle ? (
+              <WorkbenchMenuActionButton
+                label={tutorialNotesVisible ? 'Hide Step Notes' : 'Show Step Notes'}
+                onSelect={() => onToggleTutorialNotes?.(!tutorialNotesVisible)}
+              />
+            ) : null}
+          </WorkbenchActionMenu>
+
+          <WorkbenchActionMenu label="Structure" description="Author and group">
+            <WorkbenchMenuActionButton label="Add Note" onSelect={onAddAnnotation} />
             <WorkbenchMenuActionButton
-              label="Vertical Layout"
-              onSelect={() => onSetLayoutDirection('vertical')}
-              disabled={layoutDirection === 'vertical'}
+              label="Create Composite"
+              onSelect={onRequestCreateComposite}
+              disabled={!hasSelection}
+            />
+            <WorkbenchMenuActionButton label="Add Group Box" onSelect={onRequestAddGroupBox} />
+            <WorkbenchMenuActionButton
+              label="Group Selection"
+              onSelect={onRequestAddGroupBoxFromSelection}
+              disabled={selectedModuleIds.length < 1}
             />
             <WorkbenchMenuActionButton
               label="Duplicate Cluster"
@@ -246,6 +416,9 @@ export function WorkbenchActions({
               onSelect={onRequestDeleteSelection}
               disabled={!hasSelection}
             />
+          </WorkbenchActionMenu>
+
+          <WorkbenchActionMenu label="Wire" description="Connection cleanup">
             <WorkbenchMenuActionButton
               label="Delete Wire"
               onSelect={onRequestDeleteWire}
@@ -256,12 +429,6 @@ export function WorkbenchActions({
               onSelect={onRequestResetWirePath}
               disabled={!selectedConnectionHasManualPath}
             />
-            {showTutorialToggle ? (
-              <WorkbenchMenuActionButton
-                label={tutorialNotesVisible ? 'Hide Step Notes' : 'Show Step Notes'}
-                onSelect={() => onToggleTutorialNotes?.(!tutorialNotesVisible)}
-              />
-            ) : null}
           </WorkbenchActionMenu>
 
           <WorkbenchActionMenu label="Project" description="Save and recover">

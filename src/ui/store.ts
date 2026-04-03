@@ -50,6 +50,7 @@ import {
   getNextNodeOrientationClockwise,
 } from './node-orientation';
 import { CANVAS_NODE_HEIGHT, CANVAS_NODE_WIDTH } from './canvas-selection';
+import { isLargeWorkspace } from './workspace-landmarks';
 
 export interface UiState {
   activeProjectId: string;
@@ -63,6 +64,7 @@ export interface UiState {
   layoutByProject: Record<string, Record<string, WorkbenchPosition>>;
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
   groupBoxesByProject: Record<string, WorkbenchGroupBox[]>;
+  showOverviewNavigatorByProject: Record<string, boolean>;
   layoutDirectionByProject: Record<string, WorkbenchLayoutDirection>;
   routingModeByProject: Record<string, WorkbenchRoutingMode>;
   connectionLayoutByProject: Record<string, Record<string, WorkbenchConnectionLayout>>;
@@ -184,6 +186,7 @@ export type UiAction =
       variant: WorkbenchGroupBoxVariant;
     }
   | { type: 'removeGroupBox'; projectId: string; groupBoxId: string }
+  | { type: 'setOverviewNavigatorVisible'; projectId: string; visible: boolean }
   | { type: 'addModule'; projectId: string; moduleDef: ModuleDefinition }
   | {
       type: 'renameModuleInstance';
@@ -465,6 +468,7 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'rotateModuleClockwise',
   'tidyLayout',
   'arrangeSelectedModules',
+  'setOverviewNavigatorVisible',
   'restoreWorkspaceVersion',
 ]);
 
@@ -718,6 +722,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     groupBoxesByProject: Object.fromEntries(
       projects.map((project) => [project.id, []]),
     ),
+    showOverviewNavigatorByProject: Object.fromEntries(
+      projects.map((project) => [project.id, isLargeWorkspace(project.project)]),
+    ),
     layoutDirectionByProject: Object.fromEntries(
       projects.map((project) => [project.id, 'horizontal' as const]),
     ),
@@ -867,6 +874,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.groupBoxesByProject,
           [action.workspaceId]: [],
         },
+        showOverviewNavigatorByProject: {
+          ...state.showOverviewNavigatorByProject,
+          [action.workspaceId]: false,
+        },
         layoutDirectionByProject: {
           ...state.layoutDirectionByProject,
           [action.workspaceId]: 'horizontal',
@@ -966,6 +977,8 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       const sourceLayout = state.layoutByProject[action.sourceProjectId];
       const sourceAnnotations = state.annotationsByProject[action.sourceProjectId] ?? [];
       const sourceGroupBoxes = state.groupBoxesByProject[action.sourceProjectId] ?? [];
+      const sourceShowOverviewNavigator =
+        state.showOverviewNavigatorByProject[action.sourceProjectId] ?? false;
       const sourceLayoutDirection =
         state.layoutDirectionByProject[action.sourceProjectId] ?? 'horizontal';
       const sourceRoutingMode = state.routingModeByProject[action.sourceProjectId] ?? 'curved';
@@ -1002,6 +1015,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         groupBoxesByProject: {
           ...state.groupBoxesByProject,
           [action.workspaceId]: sourceGroupBoxes.map((groupBox) => ({ ...groupBox })),
+        },
+        showOverviewNavigatorByProject: {
+          ...state.showOverviewNavigatorByProject,
+          [action.workspaceId]: sourceShowOverviewNavigator,
         },
         layoutDirectionByProject: {
           ...state.layoutDirectionByProject,
@@ -1125,6 +1142,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         layoutByProject: removeProjectEntry(state.layoutByProject, action.workspaceId),
         annotationsByProject: removeProjectEntry(state.annotationsByProject, action.workspaceId),
         groupBoxesByProject: removeProjectEntry(state.groupBoxesByProject, action.workspaceId),
+        showOverviewNavigatorByProject: removeProjectEntry(
+          state.showOverviewNavigatorByProject,
+          action.workspaceId,
+        ),
         layoutDirectionByProject: removeProjectEntry(
           state.layoutDirectionByProject,
           action.workspaceId,
@@ -1349,6 +1370,23 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         routingModeByProject: {
           ...state.routingModeByProject,
           [action.projectId]: action.mode,
+        },
+      };
+    }
+    case 'setOverviewNavigatorVisible': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      if ((state.showOverviewNavigatorByProject[action.projectId] ?? false) === action.visible) {
+        return state;
+      }
+
+      return {
+        ...state,
+        showOverviewNavigatorByProject: {
+          ...state.showOverviewNavigatorByProject,
+          [action.projectId]: action.visible,
         },
       };
     }
@@ -2455,6 +2493,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         groupBoxesByProject: {
           ...state.groupBoxesByProject,
           [action.projectId]: nextGroupBoxes,
+        },
+        showOverviewNavigatorByProject: {
+          ...state.showOverviewNavigatorByProject,
+          [action.projectId]: action.document.ui.showOverviewNavigator ?? false,
         },
         layoutDirectionByProject: {
           ...state.layoutDirectionByProject,

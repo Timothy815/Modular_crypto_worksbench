@@ -95,6 +95,11 @@ The next large-workspace readability slice now implemented locally after that is
 - adds lightweight visual region boxes for rounds, banks, phases, and feedback areas
 - keeps grouping purely visual and stored only in workspace UI metadata
 
+The next large-workspace navigation slice now implemented locally after that is:
+- `MINIMAP-OVERVIEW-NAVIGATOR-V1.md`
+- adds a compact workspace overview with viewport tracking and click-to-pan navigation
+- keeps visibility persisted per workspace as UI metadata only
+
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - now shipped as the first bounded verification-station refinement inside the compare/analyze line

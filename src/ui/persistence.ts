@@ -159,6 +159,7 @@ function cloneWorkspaceDocument(document: WorkbenchDocument): WorkbenchDocument 
       ),
       annotations: cloneAnnotations(document.ui.annotations),
       groupBoxes: cloneGroupBoxes(document.ui.groupBoxes ?? []),
+      showOverviewNavigator: document.ui.showOverviewNavigator ?? false,
       layoutDirection: document.ui.layoutDirection ?? 'horizontal',
       routingMode: document.ui.routingMode ?? 'curved',
       connectionLayout: Object.fromEntries(
@@ -196,6 +197,7 @@ function buildDefaultDocument(project: DemoProject): WorkbenchDocument {
       ),
       annotations: [],
       groupBoxes: [],
+      showOverviewNavigator: false,
       layoutDirection: 'horizontal',
       routingMode: 'curved',
       connectionLayout: {},
@@ -235,6 +237,7 @@ export function buildPersistedWorkspace(
             ),
             annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
             groupBoxes: cloneGroupBoxes(state.groupBoxesByProject[projectId] ?? []),
+            showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
             layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
             routingMode: state.routingModeByProject[projectId] ?? 'curved',
             connectionLayout: Object.fromEntries(
@@ -880,6 +883,8 @@ function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
               groupBox.variant === 'stage' ||
               groupBox.variant === 'feedback' ||
               groupBox.variant === 'emphasis')))) &&
+    (candidate.ui.showOverviewNavigator === undefined ||
+      typeof candidate.ui.showOverviewNavigator === 'boolean') &&
     (candidate.ui.layoutDirection === undefined ||
       candidate.ui.layoutDirection === 'horizontal' ||
       candidate.ui.layoutDirection === 'vertical') &&

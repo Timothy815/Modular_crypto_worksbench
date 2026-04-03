@@ -95,6 +95,9 @@ const MIN_CANVAS_VIEWPORT_HEIGHT = 360;
 const MAX_CANVAS_VIEWPORT_HEIGHT = 1200;
 const MIN_GROUP_BOX_WIDTH = 180;
 const MIN_GROUP_BOX_HEIGHT = 120;
+const MINIMAP_WIDTH = 220;
+const MINIMAP_HEIGHT = 152;
+const MINIMAP_PADDING = 10;
 
 interface PendingConnection {
   fromModuleId: string;
@@ -188,6 +191,7 @@ interface WorkbenchPanelProps {
   connectionLayout: Record<string, WorkbenchConnectionLayout>;
   annotations: WorkbenchAnnotation[];
   groupBoxes: WorkbenchGroupBox[];
+  showOverviewNavigator: boolean;
   execution: ExecutionResult | null;
   executionError: string | null;
   validationIssues: ValidationIssue[];
@@ -233,6 +237,7 @@ interface WorkbenchPanelProps {
   onUpdateGroupBoxTitle: (groupBoxId: string, title: string) => void;
   onSetGroupBoxVariant: (groupBoxId: string, variant: WorkbenchGroupBoxVariant) => void;
   onRemoveGroupBox: (groupBoxId: string) => void;
+  onSetOverviewNavigatorVisible: (visible: boolean) => void;
   onMoveAnnotation: (annotationId: string, x: number, y: number) => void;
   onUpdateAnnotationText: (annotationId: string, text: string) => void;
   onRemoveAnnotation: (annotationId: string) => void;
@@ -309,6 +314,7 @@ export function WorkbenchPanel({
   connectionLayout,
   annotations,
   groupBoxes,
+  showOverviewNavigator,
   execution,
   executionError,
   validationIssues,
@@ -354,6 +360,7 @@ export function WorkbenchPanel({
   onUpdateGroupBoxTitle,
   onSetGroupBoxVariant,
   onRemoveGroupBox,
+  onSetOverviewNavigatorVisible,
   onMoveAnnotation,
   onUpdateAnnotationText,
   onRemoveAnnotation,
@@ -482,6 +489,12 @@ export function WorkbenchPanel({
     originY: number;
     originHeight: number;
   } | null>(null);
+  const [viewportMetrics, setViewportMetrics] = useState({
+    scrollLeft: 0,
+    scrollTop: 0,
+    clientWidth: 0,
+    clientHeight: 0,
+  });
   const [comparisonVersionId, setComparisonVersionId] = useState<string | null>(null);
   const projectGroups = useMemo(
     () => getSortedLearningGroups(projects),
@@ -514,6 +527,32 @@ export function WorkbenchPanel({
     360,
     ...Object.values(layout).map((position) => position.y + 140),
   );
+  const minimapMetrics = useMemo(() => {
+    const availableWidth = MINIMAP_WIDTH - MINIMAP_PADDING * 2;
+    const availableHeight = MINIMAP_HEIGHT - MINIMAP_PADDING * 2;
+    const scale = Math.min(
+      availableWidth / Math.max(1, canvasWidth),
+      availableHeight / Math.max(1, canvasHeight),
+    );
+    const contentWidth = canvasWidth * scale;
+    const contentHeight = canvasHeight * scale;
+    return {
+      scale,
+      offsetX: (MINIMAP_WIDTH - contentWidth) / 2,
+      offsetY: (MINIMAP_HEIGHT - contentHeight) / 2,
+      contentWidth,
+      contentHeight,
+    };
+  }, [canvasHeight, canvasWidth]);
+  const minimapViewportRect = useMemo(() => {
+    const safeZoom = workspaceZoom > 0 ? workspaceZoom : DEFAULT_WORKSPACE_ZOOM;
+    return {
+      left: minimapMetrics.offsetX + (viewportMetrics.scrollLeft / safeZoom) * minimapMetrics.scale,
+      top: minimapMetrics.offsetY + (viewportMetrics.scrollTop / safeZoom) * minimapMetrics.scale,
+      width: (viewportMetrics.clientWidth / safeZoom) * minimapMetrics.scale,
+      height: (viewportMetrics.clientHeight / safeZoom) * minimapMetrics.scale,
+    };
+  }, [minimapMetrics, viewportMetrics, workspaceZoom]);
 
   const visibleProjects = useMemo(
     () =>
@@ -618,6 +657,71 @@ export function WorkbenchPanel({
     );
     canvasSurface.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
   }
+
+  function syncViewportMetrics() {
+    const canvasSurface = canvasSurfaceRef.current;
+    if (!canvasSurface) {
+      return;
+    }
+
+    setViewportMetrics({
+      scrollLeft: canvasSurface.scrollLeft,
+      scrollTop: canvasSurface.scrollTop,
+      clientWidth: canvasSurface.clientWidth,
+      clientHeight: canvasSurface.clientHeight,
+    });
+  }
+
+  function panToMinimapPoint(clientX: number, clientY: number, smooth = false) {
+    const canvasSurface = canvasSurfaceRef.current;
+    const minimapElement = document.getElementById(`workbench-minimap-${activeProject.id}`);
+    if (!canvasSurface || !minimapElement) {
+      return;
+    }
+
+    const rect = minimapElement.getBoundingClientRect();
+    const relativeX = Math.max(
+      0,
+      Math.min(minimapMetrics.contentWidth, clientX - rect.left - minimapMetrics.offsetX),
+    );
+    const relativeY = Math.max(
+      0,
+      Math.min(minimapMetrics.contentHeight, clientY - rect.top - minimapMetrics.offsetY),
+    );
+    const worldX = relativeX / minimapMetrics.scale;
+    const worldY = relativeY / minimapMetrics.scale;
+
+    canvasSurface.scrollTo({
+      left: Math.max(0, worldX * workspaceZoom - canvasSurface.clientWidth / 2),
+      top: Math.max(0, worldY * workspaceZoom - canvasSurface.clientHeight / 2),
+      behavior: smooth ? 'smooth' : 'auto',
+    });
+    syncViewportMetrics();
+  }
+
+  useEffect(() => {
+    const canvasSurface = canvasSurfaceRef.current;
+    if (!canvasSurface) {
+      return;
+    }
+
+    const update = () => {
+      setViewportMetrics({
+        scrollLeft: canvasSurface.scrollLeft,
+        scrollTop: canvasSurface.scrollTop,
+        clientWidth: canvasSurface.clientWidth,
+        clientHeight: canvasSurface.clientHeight,
+      });
+    };
+
+    update();
+    canvasSurface.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      canvasSurface.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, [canvasHeight, canvasViewportHeight, canvasWidth, workspaceZoom]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -1252,6 +1356,186 @@ export function WorkbenchPanel({
     onWorkspaceFocusHandled?.();
   }, [effectiveLayout, onSelectModule, onWorkspaceFocusHandled, requestedFocusModuleId, workspaceZoom]);
 
+  function renderConnection(
+    connection: Project['connections'][number],
+    connectionIndex: number,
+    layer: 'base' | 'overlay',
+  ) {
+    const isSelectedConnection = effectiveSelectedConnectionIndex === connectionIndex;
+    if ((layer === 'base' && isSelectedConnection) || (layer === 'overlay' && !isSelectedConnection)) {
+      return null;
+    }
+
+    const from = effectiveLayout[connection.from.moduleId];
+    const to = effectiveLayout[connection.to.moduleId];
+    const sourceDef = registry[
+      activeProjectState.modules.find((moduleInstance) => moduleInstance.id === connection.from.moduleId)
+        ?.defId ?? ''
+    ];
+    const targetDef = registry[
+      activeProjectState.modules.find((moduleInstance) => moduleInstance.id === connection.to.moduleId)?.defId ??
+        ''
+    ];
+
+    if (!from || !to || !sourceDef || !targetDef) {
+      return null;
+    }
+
+    const sourceIndex = Math.max(
+      0,
+      sourceDef.outputs.findIndex((port) => port.name === connection.from.port),
+    );
+    const targetIndex = Math.max(
+      0,
+      targetDef.inputs.findIndex((port) => port.name === connection.to.port),
+    );
+    const sourcePort = sourceDef.outputs[sourceIndex];
+    const connectionDomainTone =
+      sourcePort?.type === 'bits' ? 'bits' : sourcePort?.type === 'symbol' ? 'symbol' : '';
+
+    const sourceOrientation = getNodeOrientation(from.orientation, layoutDirection);
+    const targetOrientation = getNodeOrientation(to.orientation, layoutDirection);
+    const sourceSide = getPortSideForOrientation(sourceOrientation, 'out');
+    const targetSide = getPortSideForOrientation(targetOrientation, 'in');
+    const connectionKey = getConnectionComparisonKey(connection);
+    const sourceAnchor = getAnchorPosition(
+      from.x,
+      from.y,
+      sourceSide,
+      sourceIndex,
+      NODE_WIDTH,
+      NODE_HEIGHT,
+      PORT_START_Y,
+      PORT_GAP,
+    );
+    const targetAnchor = getAnchorPosition(
+      to.x,
+      to.y,
+      targetSide,
+      targetIndex,
+      NODE_WIDTH,
+      NODE_HEIGHT,
+      PORT_START_Y,
+      PORT_GAP,
+    );
+    const orthogonalPathData =
+      routingMode === 'orthogonal'
+        ? getOrthogonalPathData(
+            sourceAnchor,
+            sourceSide,
+            targetAnchor,
+            targetSide,
+            sourceIndex,
+            targetIndex,
+            bendDragState?.connectionKey === connectionKey
+              ? {
+                  orthogonalBend: {
+                    axis: bendDragState.axis,
+                    value: bendDragState.currentValue,
+                  },
+                }
+              : connectionLayout[connectionKey],
+          )
+        : null;
+    const pathD =
+      orthogonalPathData?.path ?? getConnectionPath(sourceAnchor, sourceSide, targetAnchor, targetSide);
+    const showConnectionLabel =
+      hoveredConnectionIndex === connectionIndex || effectiveSelectedConnectionIndex === connectionIndex;
+    const midpointX = (sourceAnchor.x + targetAnchor.x) / 2;
+    const midpointY = (sourceAnchor.y + targetAnchor.y) / 2;
+    const sourceLabel = `${connection.from.moduleId}.${connection.from.port}`;
+    const targetLabel = `${connection.to.moduleId}.${connection.to.port}`;
+    const labelWidth = Math.max(sourceLabel.length, targetLabel.length) * 7 + 20;
+    const labelHeight = 40;
+    const legibilityState = deriveConnectionLegibilityState({
+      connection,
+      connectionIndex,
+      selectedConnectionIndex: effectiveSelectedConnectionIndex,
+      focusedModuleId: selectedModuleId,
+      traceFocusedModuleId,
+    });
+
+    return (
+      <g
+        key={`${layer}:${connection.from.moduleId}:${connection.from.port}-${connection.to.moduleId}:${connection.to.port}`}
+        className={[
+          'connection-group',
+          connectionDomainTone ? `connection-group-domain-${connectionDomainTone}` : '',
+          validationIssues.some(
+            (issue) =>
+              issue.connection?.from.moduleId === connection.from.moduleId &&
+              issue.connection?.from.port === connection.from.port &&
+              issue.connection?.to.moduleId === connection.to.moduleId &&
+              issue.connection?.to.port === connection.to.port,
+          )
+            ? 'connection-group-invalid'
+            : '',
+          layer === 'overlay' ? 'connection-group-selected' : '',
+          layer === 'base' && legibilityState.emphasized ? 'connection-group-emphasized' : '',
+          layer === 'base' && legibilityState.traceEmphasized ? 'connection-group-trace' : '',
+          layer === 'base' && legibilityState.dimmed ? 'connection-group-dimmed' : '',
+          workspaceComparison
+            ? workspaceComparison.currentConnectionStatusByKey[getConnectionComparisonKey(connection)] === 'added'
+              ? 'connection-group-compare-added'
+              : 'connection-group-compare-unchanged'
+            : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        <path
+          className="connection-hit-area"
+          d={pathD}
+          onMouseEnter={() => setHoveredConnectionIndex(connectionIndex)}
+          onMouseLeave={() => setHoveredConnectionIndex(null)}
+          onClick={(event) => {
+            event.stopPropagation();
+            setSelectedConnectionIndex((current) => (current === connectionIndex ? null : connectionIndex));
+          }}
+        />
+        <path d={pathD} />
+        {routingMode === 'orthogonal' &&
+        !isObservationMode &&
+        !isCompositeEditor &&
+        isSelectedConnection &&
+        orthogonalPathData?.bendHandle &&
+        layer === 'overlay' ? (
+          <circle
+            className={`connection-bend-handle connection-bend-handle-${orthogonalPathData.bendHandle.axis}`}
+            cx={orthogonalPathData.bendHandle.x}
+            cy={orthogonalPathData.bendHandle.y}
+            r={7}
+            onMouseDown={(event) => {
+              event.stopPropagation();
+              setBendDragState({
+                connectionKey,
+                axis: orthogonalPathData.bendHandle.axis,
+                autoValue: orthogonalPathData.bendHandle.autoValue,
+                currentValue: orthogonalPathData.bendHandle.value,
+              });
+            }}
+          />
+        ) : null}
+        {showConnectionLabel ? (
+          <g
+            className="connection-hover-label"
+            transform={`translate(${midpointX - labelWidth / 2} ${midpointY - labelHeight - 10})`}
+          >
+            <rect width={labelWidth} height={labelHeight} rx="10" ry="10" />
+            <text x={10} y={15}>
+              <tspan x={10} dy="0">
+                {sourceLabel}
+              </tspan>
+              <tspan x={10} dy="14">
+                {targetLabel}
+              </tspan>
+            </text>
+          </g>
+        ) : null}
+      </g>
+    );
+  }
+
   return (
     <section className={challengeSolved ? 'panel canvas-panel canvas-panel-success' : 'panel canvas-panel'}>
       <div className="panel-head">
@@ -1291,6 +1575,7 @@ export function WorkbenchPanel({
           isObservationMode={isObservationMode}
           layoutDirection={layoutDirection}
           routingMode={routingMode}
+          showOverviewNavigator={showOverviewNavigator}
           canUndo={canUndo}
           canRedo={canRedo}
           selectedModuleIds={selectedModuleIds}
@@ -1305,6 +1590,7 @@ export function WorkbenchPanel({
           onTidyLayout={onTidyLayout}
           onSetLayoutDirection={onSetLayoutDirection}
           onSetRoutingMode={onSetRoutingMode}
+          onToggleOverviewNavigator={onSetOverviewNavigatorVisible}
           onRequestUndo={onRequestUndo}
           onRequestRedo={onRequestRedo}
           onZoomOut={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'out'))}
@@ -1531,6 +1817,7 @@ export function WorkbenchPanel({
         </div>
       ) : null}
 
+      <div className="canvas-surface-shell">
       <div
         ref={canvasSurfaceRef}
         className="canvas-surface"
@@ -1702,189 +1989,13 @@ export function WorkbenchPanel({
             );
           })}
           <svg
-            className="graph-connections"
+            className="graph-connections graph-connections-base"
             viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
             preserveAspectRatio="none"
           >
-            {activeProjectState.connections.map((connection, connectionIndex) => {
-              const from = effectiveLayout[connection.from.moduleId];
-              const to = effectiveLayout[connection.to.moduleId];
-              const sourceDef = registry[
-                activeProjectState.modules.find(
-                  (moduleInstance) => moduleInstance.id === connection.from.moduleId,
-                )?.defId ?? ''
-              ];
-              const targetDef = registry[
-                activeProjectState.modules.find(
-                  (moduleInstance) => moduleInstance.id === connection.to.moduleId,
-                )?.defId ?? ''
-              ];
-
-              if (!from || !to || !sourceDef || !targetDef) {
-                return null;
-              }
-
-              const sourceIndex = Math.max(
-                0,
-                sourceDef.outputs.findIndex((port) => port.name === connection.from.port),
-              );
-              const targetIndex = Math.max(
-                0,
-                targetDef.inputs.findIndex((port) => port.name === connection.to.port),
-              );
-              const sourcePort = sourceDef.outputs[sourceIndex];
-              const connectionDomainTone =
-                sourcePort?.type === 'bits'
-                  ? 'bits'
-                  : sourcePort?.type === 'symbol'
-                    ? 'symbol'
-                    : '';
-
-              const sourceOrientation = getNodeOrientation(from.orientation, layoutDirection);
-              const targetOrientation = getNodeOrientation(to.orientation, layoutDirection);
-              const sourceSide = getPortSideForOrientation(sourceOrientation, 'out');
-              const targetSide = getPortSideForOrientation(targetOrientation, 'in');
-              const connectionKey = getConnectionComparisonKey(connection);
-              const sourceAnchor = getAnchorPosition(
-                from.x,
-                from.y,
-                sourceSide,
-                sourceIndex,
-                NODE_WIDTH,
-                NODE_HEIGHT,
-                PORT_START_Y,
-                PORT_GAP,
-              );
-              const targetAnchor = getAnchorPosition(
-                to.x,
-                to.y,
-                targetSide,
-                targetIndex,
-                NODE_WIDTH,
-                NODE_HEIGHT,
-                PORT_START_Y,
-                PORT_GAP,
-              );
-              const orthogonalPathData =
-                routingMode === 'orthogonal'
-                  ? getOrthogonalPathData(
-                      sourceAnchor,
-                      sourceSide,
-                      targetAnchor,
-                      targetSide,
-                      sourceIndex,
-                      targetIndex,
-                      bendDragState?.connectionKey === connectionKey
-                        ? {
-                            orthogonalBend: {
-                              axis: bendDragState.axis,
-                              value: bendDragState.currentValue,
-                            },
-                          }
-                        : connectionLayout[connectionKey],
-                    )
-                  : null;
-              const pathD =
-                orthogonalPathData?.path ??
-                getConnectionPath(sourceAnchor, sourceSide, targetAnchor, targetSide);
-              const showConnectionLabel =
-                hoveredConnectionIndex === connectionIndex ||
-                effectiveSelectedConnectionIndex === connectionIndex;
-              const midpointX = (sourceAnchor.x + targetAnchor.x) / 2;
-              const midpointY = (sourceAnchor.y + targetAnchor.y) / 2;
-              const sourceLabel = `${connection.from.moduleId}.${connection.from.port}`;
-              const targetLabel = `${connection.to.moduleId}.${connection.to.port}`;
-              const labelWidth = Math.max(sourceLabel.length, targetLabel.length) * 7 + 20;
-              const labelHeight = 40;
-              const legibilityState = deriveConnectionLegibilityState({
-                connection,
-                connectionIndex,
-                selectedConnectionIndex: effectiveSelectedConnectionIndex,
-                focusedModuleId: selectedModuleId,
-                traceFocusedModuleId,
-              });
-
-              return (
-                <g
-                  key={`${connection.from.moduleId}:${connection.from.port}-${connection.to.moduleId}:${connection.to.port}`}
-                  className={[
-                    'connection-group',
-                    connectionDomainTone ? `connection-group-domain-${connectionDomainTone}` : '',
-                    validationIssues.some(
-                      (issue) =>
-                        issue.connection?.from.moduleId === connection.from.moduleId &&
-                        issue.connection?.from.port === connection.from.port &&
-                        issue.connection?.to.moduleId === connection.to.moduleId &&
-                        issue.connection?.to.port === connection.to.port,
-                    )
-                      ? 'connection-group-invalid'
-                      : '',
-                    legibilityState.selected ? 'connection-group-selected' : '',
-                    legibilityState.emphasized ? 'connection-group-emphasized' : '',
-                    legibilityState.traceEmphasized ? 'connection-group-trace' : '',
-                    legibilityState.dimmed ? 'connection-group-dimmed' : '',
-                    workspaceComparison
-                      ? workspaceComparison.currentConnectionStatusByKey[getConnectionComparisonKey(connection)] === 'added'
-                        ? 'connection-group-compare-added'
-                        : 'connection-group-compare-unchanged'
-                      : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                >
-                  <path
-                    className="connection-hit-area"
-                    d={pathD}
-                    onMouseEnter={() => setHoveredConnectionIndex(connectionIndex)}
-                    onMouseLeave={() => setHoveredConnectionIndex(null)}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setSelectedConnectionIndex((current) =>
-                        current === connectionIndex ? null : connectionIndex,
-                      );
-                    }}
-                  />
-                  <path d={pathD} />
-                  {routingMode === 'orthogonal' &&
-                  !isObservationMode &&
-                  !isCompositeEditor &&
-                  effectiveSelectedConnectionIndex === connectionIndex &&
-                  orthogonalPathData?.bendHandle ? (
-                    <circle
-                      className={`connection-bend-handle connection-bend-handle-${orthogonalPathData.bendHandle.axis}`}
-                      cx={orthogonalPathData.bendHandle.x}
-                      cy={orthogonalPathData.bendHandle.y}
-                      r={7}
-                      onMouseDown={(event) => {
-                        event.stopPropagation();
-                        setBendDragState({
-                          connectionKey,
-                          axis: orthogonalPathData.bendHandle.axis,
-                          autoValue: orthogonalPathData.bendHandle.autoValue,
-                          currentValue: orthogonalPathData.bendHandle.value,
-                        });
-                      }}
-                    />
-                  ) : null}
-                  {showConnectionLabel ? (
-                    <g
-                      className="connection-hover-label"
-                      transform={`translate(${midpointX - labelWidth / 2} ${midpointY - labelHeight - 10})`}
-                    >
-                      <rect width={labelWidth} height={labelHeight} rx="10" ry="10" />
-                      <text x={10} y={15}>
-                        <tspan x={10} dy="0">
-                          {sourceLabel}
-                        </tspan>
-                        <tspan x={10} dy="14">
-                          {targetLabel}
-                        </tspan>
-                      </text>
-                    </g>
-                  ) : null}
-                </g>
-              );
-            })}
+            {activeProjectState.connections.map((connection, connectionIndex) =>
+              renderConnection(connection, connectionIndex, 'base'),
+            )}
 
             {pendingConnection ? (() => {
               const { fromAnchor, fromSide, mouseX, mouseY } = pendingConnection;
@@ -2347,8 +2458,103 @@ export function WorkbenchPanel({
               );
             })()
           ))}
+
+          {effectiveSelectedConnectionIndex !== null &&
+          activeProjectState.connections[effectiveSelectedConnectionIndex] ? (
+            <svg
+              className="graph-connections graph-connections-overlay"
+              viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
+              preserveAspectRatio="none"
+            >
+              {renderConnection(
+                activeProjectState.connections[effectiveSelectedConnectionIndex],
+                effectiveSelectedConnectionIndex,
+                'overlay',
+              )}
+            </svg>
+          ) : null}
         </div>
         </div>
+      </div>
+      {showOverviewNavigator ? (
+        <div className="workbench-minimap-panel">
+          <div className="workbench-minimap-head">
+            <span className="meta-label">Overview</span>
+            <button
+              type="button"
+              className="dock-collapse-button"
+              onClick={() => onSetOverviewNavigatorVisible(false)}
+              aria-label="Hide overview navigator"
+            >
+              −
+            </button>
+          </div>
+          <div
+            id={`workbench-minimap-${activeProject.id}`}
+            className="workbench-minimap"
+            onMouseDown={(event) => {
+              event.preventDefault();
+              panToMinimapPoint(event.clientX, event.clientY, true);
+            }}
+          >
+            <div
+              className="workbench-minimap-content"
+              style={{
+                width: `${minimapMetrics.contentWidth}px`,
+                height: `${minimapMetrics.contentHeight}px`,
+                left: `${minimapMetrics.offsetX}px`,
+                top: `${minimapMetrics.offsetY}px`,
+              }}
+            >
+              {groupBoxes.map((groupBox) => (
+                <div
+                  key={groupBox.id}
+                  className={`workbench-minimap-group workbench-minimap-group-${groupBox.variant ?? 'stage'}`}
+                  style={{
+                    left: `${groupBox.x * minimapMetrics.scale}px`,
+                    top: `${groupBox.y * minimapMetrics.scale}px`,
+                    width: `${groupBox.width * minimapMetrics.scale}px`,
+                    height: `${groupBox.height * minimapMetrics.scale}px`,
+                  }}
+                />
+              ))}
+              {Object.entries(effectiveLayout).map(([moduleId, position]) => (
+                <div
+                  key={moduleId}
+                  className={`workbench-minimap-node${
+                    selectedModuleIds.includes(moduleId) ? ' selected' : ''
+                  }`}
+                  style={{
+                    left: `${position.x * minimapMetrics.scale}px`,
+                    top: `${position.y * minimapMetrics.scale}px`,
+                    width: `${NODE_WIDTH * minimapMetrics.scale}px`,
+                    height: `${NODE_HEIGHT * minimapMetrics.scale}px`,
+                  }}
+                />
+              ))}
+              {annotations.map((annotation) => (
+                <div
+                  key={annotation.id}
+                  className="workbench-minimap-annotation"
+                  style={{
+                    left: `${annotation.x * minimapMetrics.scale}px`,
+                    top: `${annotation.y * minimapMetrics.scale}px`,
+                  }}
+                />
+              ))}
+              <div
+                className="workbench-minimap-viewport"
+                style={{
+                  left: `${minimapViewportRect.left - minimapMetrics.offsetX}px`,
+                  top: `${minimapViewportRect.top - minimapMetrics.offsetY}px`,
+                  width: `${minimapViewportRect.width}px`,
+                  height: `${minimapViewportRect.height}px`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
       </div>
       <button
         type="button"

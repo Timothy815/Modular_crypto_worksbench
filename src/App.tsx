@@ -343,6 +343,8 @@ function MainApp() {
     () => state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
     [activeProjectDefinition.id, state.groupBoxesByProject],
   );
+  const activeShowOverviewNavigator =
+    state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false;
   const activeCompositeEntry = state.compositeEditor
     ? state.compositeLibrary.find((entry) => entry.id === state.compositeEditor?.entryId) ?? null
     : null;
@@ -904,6 +906,7 @@ function MainApp() {
         layout: activeLayout,
         annotations: activeAnnotations,
         groupBoxes: activeGroupBoxes,
+        showOverviewNavigator: activeShowOverviewNavigator,
         layoutDirection: activeLayoutDirection,
         routingMode: activeRoutingMode,
         connectionLayout: activeConnectionLayout,
@@ -917,6 +920,7 @@ function MainApp() {
   }, [
     activeAnnotations,
     activeGroupBoxes,
+    activeShowOverviewNavigator,
     activeLayout,
     activeLayoutDirection,
     activeRoutingMode,
@@ -1606,6 +1610,7 @@ function MainApp() {
             layout: pasted.layout,
             annotations: activeAnnotations,
             groupBoxes: activeGroupBoxes,
+            showOverviewNavigator: activeShowOverviewNavigator,
             layoutDirection: activeLayoutDirection,
             routingMode: activeRoutingMode,
             connectionLayout: activeConnectionLayout,
@@ -1799,6 +1804,9 @@ function MainApp() {
             groupBoxes: state.compositeEditor
               ? []
               : state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
+            showOverviewNavigator: state.compositeEditor
+              ? false
+              : state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
             layoutDirection: activeLayoutDirection,
             routingMode: activeRoutingMode,
             connectionLayout: activeConnectionLayout,
@@ -1836,6 +1844,7 @@ function MainApp() {
       state.compositeEditor,
       state.compositeLibrary,
       state.groupBoxesByProject,
+      state.showOverviewNavigatorByProject,
     ],
   );
 
@@ -2497,6 +2506,7 @@ function MainApp() {
             }
             annotations={isCompositeDrilldownActive ? [] : activeAnnotations}
             groupBoxes={isCompositeDrilldownActive ? [] : activeGroupBoxes}
+            showOverviewNavigator={isCompositeDrilldownActive ? false : activeShowOverviewNavigator}
             execution={compositeDrilldownContext?.execution ?? execution}
             executionError={isCompositeDrilldownActive ? compositeDrilldownExecutionError : executionError}
             validationIssues={isCompositeDrilldownActive ? compositeDrilldownValidationIssues : validationIssues}
@@ -2661,6 +2671,15 @@ function MainApp() {
                     type: 'removeGroupBox',
                     projectId: activeProjectDefinition.id,
                     groupBoxId,
+                  })
+            }
+            onSetOverviewNavigatorVisible={(visible) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'setOverviewNavigatorVisible',
+                    projectId: activeProjectDefinition.id,
+                    visible,
                   })
             }
             onMoveAnnotation={(annotationId, x, y) =>
@@ -2843,6 +2862,9 @@ function MainApp() {
                   groupBoxes: state.compositeEditor
                     ? []
                     : state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
+                  showOverviewNavigator: state.compositeEditor
+                    ? false
+                    : state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
                   layoutDirection: activeLayoutDirection,
                   routingMode: activeRoutingMode,
                   connectionLayout: activeConnectionLayout,
@@ -3822,6 +3844,8 @@ function MainApp() {
                           layout: replacement.layout,
                           annotations: state.annotationsByProject[activeProjectDefinition.id] ?? [],
                           groupBoxes: state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
+                          showOverviewNavigator:
+                            state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
                           layoutDirection: activeLayoutDirection,
                           routingMode: activeRoutingMode,
                           connectionLayout: activeConnectionLayout,
@@ -3923,6 +3947,8 @@ function MainApp() {
                           selectedChallenge.startingLayout ?? selectedChallengeProjectDefinition.layout,
                         annotations: [],
                         groupBoxes: [],
+                        showOverviewNavigator:
+                          state.showOverviewNavigatorByProject[selectedChallengeProjectId] ?? false,
                         layoutDirection:
                           state.layoutDirectionByProject[selectedChallengeProjectId] ??
                           'horizontal',

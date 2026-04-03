@@ -17,6 +17,7 @@ export interface WorkspaceHistorySnapshot {
   layout: Record<string, WorkbenchPosition>;
   annotations: WorkbenchAnnotation[];
   groupBoxes: WorkbenchGroupBox[];
+  showOverviewNavigator: boolean;
   layoutDirection: WorkbenchLayoutDirection;
   routingMode: WorkbenchRoutingMode;
   connectionLayout: Record<string, WorkbenchConnectionLayout>;
@@ -37,6 +38,7 @@ interface WorkspaceSnapshotState {
   layoutByProject: Record<string, Record<string, CompositeLayoutPosition>>;
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
   groupBoxesByProject: Record<string, WorkbenchGroupBox[]>;
+  showOverviewNavigatorByProject: Record<string, boolean>;
   layoutDirectionByProject: Record<string, WorkbenchLayoutDirection>;
   routingModeByProject: Record<string, WorkbenchRoutingMode>;
   connectionLayoutByProject: Record<string, Record<string, WorkbenchConnectionLayout>>;
@@ -104,6 +106,7 @@ export function cloneWorkspaceHistorySnapshot(
     layout: cloneLayout(snapshot.layout),
     annotations: cloneAnnotations(snapshot.annotations),
     groupBoxes: cloneGroupBoxes(snapshot.groupBoxes),
+    showOverviewNavigator: snapshot.showOverviewNavigator,
     layoutDirection: snapshot.layoutDirection,
     routingMode: snapshot.routingMode,
     connectionLayout: cloneConnectionLayout(snapshot.connectionLayout),
@@ -130,6 +133,7 @@ export function buildWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
     layout: cloneLayout(layout),
     annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
     groupBoxes: cloneGroupBoxes(state.groupBoxesByProject[projectId] ?? []),
+    showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
     layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
     routingMode: state.routingModeByProject[projectId] ?? 'curved',
     connectionLayout: cloneConnectionLayout(state.connectionLayoutByProject[projectId] ?? {}),
@@ -167,6 +171,10 @@ export function applyWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
     groupBoxesByProject: {
       ...state.groupBoxesByProject,
       [projectId]: cloneGroupBoxes(snapshot.groupBoxes),
+    },
+    showOverviewNavigatorByProject: {
+      ...state.showOverviewNavigatorByProject,
+      [projectId]: snapshot.showOverviewNavigator,
     },
     layoutDirectionByProject: {
       ...state.layoutDirectionByProject,
@@ -232,6 +240,7 @@ export function buildWorkspaceVersionDocument<State extends WorkspaceVersionHost
         layout: cloneLayout(layout),
         annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
         groupBoxes: cloneGroupBoxes(state.groupBoxesByProject[projectId] ?? []),
+        showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
         layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
         routingMode: state.routingModeByProject[projectId] ?? 'curved',
         connectionLayout: cloneConnectionLayout(state.connectionLayoutByProject[projectId] ?? {}),
@@ -355,6 +364,10 @@ export function applyRestoreWorkspaceVersion<State extends WorkspaceVersionHostS
     groupBoxesByProject: {
       ...state.groupBoxesByProject,
       [projectId]: cloneGroupBoxes(version.document.ui.groupBoxes ?? []),
+    },
+    showOverviewNavigatorByProject: {
+      ...state.showOverviewNavigatorByProject,
+      [projectId]: version.document.ui.showOverviewNavigator ?? false,
     },
     comparisonBaselinesByProject: {
       ...state.comparisonBaselinesByProject,

@@ -5,6 +5,7 @@ import type { DemoProject } from './demo-projects';
 import type { GuidedTutorial } from './tutorials';
 import { createInitialUiState, type UiState } from './store';
 import type { VerificationCase } from './verification-workflow';
+import { isLargeWorkspace } from './workspace-landmarks';
 import { cloneProject } from './project-clone';
 import {
   downloadPythonExportBundle,
@@ -191,6 +192,13 @@ export function hydrateInitialUiState(projects: DemoProject[]): UiState {
         persistedWorkspace.documentsByProjectId[project.id]?.ui.groupBoxes ?? initialState.groupBoxesByProject[project.id],
       ]),
     ),
+    showOverviewNavigatorByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.documentsByProjectId[project.id]?.ui.showOverviewNavigator ??
+          initialState.showOverviewNavigatorByProject[project.id],
+      ]),
+    ),
     layoutDirectionByProject: Object.fromEntries(
       allProjects.map((project) => [
         project.id,
@@ -374,6 +382,7 @@ export interface BuildShareableLabPackArgs {
   layout: Record<string, { x: number; y: number }>;
   annotations: WorkbenchAnnotation[];
   groupBoxes?: WorkbenchGroupBox[];
+  showOverviewNavigator?: boolean;
   layoutDirection: 'horizontal' | 'vertical';
   routingMode: 'curved' | 'orthogonal';
   connectionLayout?: Record<string, { orthogonalBend?: { axis: 'x' | 'y'; value: number } }>;
@@ -391,6 +400,7 @@ export function buildShareableLabPack({
   layout,
   annotations,
   groupBoxes = [],
+  showOverviewNavigator = false,
   layoutDirection,
   routingMode,
   connectionLayout = {},
@@ -416,6 +426,7 @@ export function buildShareableLabPack({
         layout: cloneLayout(layout),
         annotations: cloneAnnotations(annotations),
         groupBoxes: cloneGroupBoxes(groupBoxes),
+        showOverviewNavigator,
         layoutDirection,
         routingMode,
         connectionLayout: Object.fromEntries(
@@ -534,6 +545,8 @@ export function prepareImportedLabPack({
         layout: cloneLayout(pack.workspace.ui.layout),
         annotations: cloneAnnotations(pack.workspace.ui.annotations),
         groupBoxes: cloneGroupBoxes(pack.workspace.ui.groupBoxes ?? []),
+        showOverviewNavigator:
+          pack.workspace.ui.showOverviewNavigator ?? isLargeWorkspace(pack.workspace.project),
         layoutDirection: pack.workspace.ui.layoutDirection ?? 'horizontal',
         routingMode: pack.workspace.ui.routingMode ?? 'curved',
         connectionLayout: Object.fromEntries(

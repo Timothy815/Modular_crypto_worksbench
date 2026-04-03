@@ -175,6 +175,7 @@ describe('workspace persistence', () => {
         variant: 'stage',
       },
     ]);
+    expect(restored?.documentsByProjectId['my-scratchpad']?.ui.showOverviewNavigator).toBe(false);
   });
 
   it('round-trips node orientation through storage', () => {
