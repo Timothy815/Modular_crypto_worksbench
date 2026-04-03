@@ -2626,7 +2626,7 @@ body.canvas-resizing {
   position: absolute;
   width: 132px;
   text-align: left;
-  overflow: hidden;
+  overflow: visible;
   z-index: 1;
   isolation: isolate;
   backdrop-filter: blur(3px);
