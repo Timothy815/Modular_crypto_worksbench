@@ -724,10 +724,10 @@ export function ParameterInspector({
       <div className={`trace-summary inspector-output-summary${isOutputSummaryCollapsed ? ' collapsed' : ''}`}>
         <div className="inspector-output-summary-head">
           <span className="meta-label">
-            {isTickedMode ? 'Output Summary' : 'Outputs'}
+            {isOutputSummaryCollapsed ? 'Output' : isTickedMode ? 'Output Summary' : 'Outputs'}
           </span>
           <div className="inspector-output-actions">
-            {hasCollectedOutput ? (
+            {hasCollectedOutput && !isOutputSummaryCollapsed ? (
               <button
                 type="button"
                 className="inspector-output-action"
@@ -745,17 +745,19 @@ export function ParameterInspector({
             </button>
           </div>
         </div>
-        <p className="trace-summary-subtitle">
-          {validationIssues.length > 0
-            ? `${validationIssues.length} validation issue${validationIssues.length === 1 ? '' : 's'} blocking run`
-            : execution
-              ? `${execution.trace.length} module${execution.trace.length === 1 ? '' : 's'} executed`
-              : 'Fix validation issues to run'}
-        </p>
-        {showCollectedOutput && hasCollectedOutput && outputSummaries.length <= 1 ? (
+        {!isOutputSummaryCollapsed ? (
+          <p className="trace-summary-subtitle">
+            {validationIssues.length > 0
+              ? `${validationIssues.length} validation issue${validationIssues.length === 1 ? '' : 's'} blocking run`
+              : execution
+                ? `${execution.trace.length} module${execution.trace.length === 1 ? '' : 's'} executed`
+                : 'Fix validation issues to run'}
+          </p>
+        ) : null}
+        {!isOutputSummaryCollapsed && showCollectedOutput && hasCollectedOutput && outputSummaries.length <= 1 ? (
           <p className="trace-summary-subtitle">Collected: <strong>{collectedOutput}</strong></p>
         ) : null}
-        {outputSummaries.length > 1 ? (
+        {outputSummaries.length > 1 && !isOutputSummaryCollapsed ? (
           <div className="inspector-output-switcher">
             {outputSummaries.map((summary) => (
               <button
@@ -771,9 +773,9 @@ export function ParameterInspector({
         ) : null}
         {isOutputSummaryCollapsed && activeOutputSummary ? (
           <div className="inspector-output-collapsed-line">
-            <span className="meta-label">
-              {outputSummaries.length > 1 ? activeOutputSummary.moduleId : 'Output'}
-            </span>
+            {outputSummaries.length > 1 ? (
+              <span className="meta-label">{activeOutputSummary.moduleId}</span>
+            ) : null}
             <code>
               {activeOutputSummary.effectiveRepresentationOption?.value ?? formatSignal(activeOutputSummary.signal)}
             </code>
