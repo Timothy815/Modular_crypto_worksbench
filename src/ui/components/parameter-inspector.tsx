@@ -159,6 +159,9 @@ interface ParameterInspectorProps {
   onDeleteModule: (moduleId: string) => void;
   canRenameModuleIds?: boolean;
   onUnzipComposite?: (moduleId: string) => void;
+  onOpenCompositeInstanceDrilldown?: (moduleId: string) => void;
+  onOpenCompositeDefinition?: (definitionId: string) => void;
+  isReadOnlyMode?: boolean;
   onSelectIssueTarget: (moduleId: string) => void;
   onTraceHover: (moduleId: string | null) => void;
   onStepChange: (nextIndex: number | null) => void;
@@ -217,6 +220,9 @@ export function ParameterInspector({
   onDeleteModule,
   canRenameModuleIds = true,
   onUnzipComposite,
+  onOpenCompositeInstanceDrilldown,
+  onOpenCompositeDefinition,
+  isReadOnlyMode = false,
   onSelectIssueTarget,
   onTraceHover,
   onStepChange,
@@ -1808,36 +1814,44 @@ export function ParameterInspector({
               </p>
             ) : null
           ) : null}
-          <div className="param-field selected-module-rename-field">
-            <span>Module ID</span>
-            <input
-              type="text"
-              value={effectiveRenameDraft}
-              onChange={(event) => {
-                setRenameState({
-                  moduleId: moduleInstance.id,
-                  draft: event.target.value,
-                  error: null,
-                });
-              }}
-              placeholder="round-1-mixer"
-              spellCheck={false}
-              disabled={!canRenameModuleIds || !onRenameModuleInstance}
-            />
-            <p className="comparison-copy">
-              Local ID. Use letters, numbers, hyphens, or underscores.
-            </p>
-            {effectiveRenameError || renameValidationError ? (
-              <p className="field-error">{effectiveRenameError ?? renameValidationError}</p>
-            ) : null}
-            {!canRenameModuleIds ? (
+          {isReadOnlyMode ? (
+            <div className="param-field selected-module-rename-field">
+              <span>Module ID</span>
+              <code>{moduleInstance.id}</code>
+              <p className="comparison-copy">Read-only inside the selected composite instance.</p>
+            </div>
+          ) : (
+            <div className="param-field selected-module-rename-field">
+              <span>Module ID</span>
+              <input
+                type="text"
+                value={effectiveRenameDraft}
+                onChange={(event) => {
+                  setRenameState({
+                    moduleId: moduleInstance.id,
+                    draft: event.target.value,
+                    error: null,
+                  });
+                }}
+                placeholder="round-1-mixer"
+                spellCheck={false}
+                disabled={!canRenameModuleIds || !onRenameModuleInstance}
+              />
               <p className="comparison-copy">
-                Rename is unavailable while editing a reusable composite.
+                Local ID. Use letters, numbers, hyphens, or underscores.
               </p>
-            ) : null}
-          </div>
+              {effectiveRenameError || renameValidationError ? (
+                <p className="field-error">{effectiveRenameError ?? renameValidationError}</p>
+              ) : null}
+              {!canRenameModuleIds ? (
+                <p className="comparison-copy">
+                  Rename is unavailable while editing a reusable composite.
+                </p>
+              ) : null}
+            </div>
+          )}
           <div className="selected-module-actions">
-            {Object.values(moduleDef.paramSchema).length > 0 ? (
+            {!isReadOnlyMode && Object.values(moduleDef.paramSchema).length > 0 ? (
               <button
                 type="button"
                 className="mini-action-button"
@@ -1846,7 +1860,7 @@ export function ParameterInspector({
                 Copy Params
               </button>
             ) : null}
-            {parameterClipboard &&
+            {!isReadOnlyMode && parameterClipboard &&
             parameterClipboard.sourceModuleId === moduleInstance.id &&
             parameterClipboard.sourceDefId === moduleDef.id ? (
               <button
@@ -1866,7 +1880,7 @@ export function ParameterInspector({
                 Apply To Selected
               </button>
             ) : null}
-            {canRenameModuleIds && onRenameModuleInstance ? (
+            {!isReadOnlyMode && canRenameModuleIds && onRenameModuleInstance ? (
               <button
                 type="button"
                 className="mini-action-button"
@@ -1901,7 +1915,7 @@ export function ParameterInspector({
                 Rename Module
               </button>
             ) : null}
-            {canBypassSelectedModule ? (
+            {!isReadOnlyMode && canBypassSelectedModule ? (
               <button
                 type="button"
                 className={moduleInstance.bypass ? 'mini-action-button' : 'mini-action-button'}
@@ -1910,7 +1924,16 @@ export function ParameterInspector({
                 {moduleInstance.bypass ? 'Disable Bypass' : 'Enable Bypass'}
               </button>
             ) : null}
-            {isCompositeDefinition(moduleDef) && onUnzipComposite ? (
+            {!isReadOnlyMode && isCompositeDefinition(moduleDef) && onOpenCompositeInstanceDrilldown ? (
+              <button
+                type="button"
+                className="mini-action-button"
+                onClick={() => onOpenCompositeInstanceDrilldown(moduleInstance.id)}
+              >
+                Open Instance
+              </button>
+            ) : null}
+            {!isReadOnlyMode && isCompositeDefinition(moduleDef) && onUnzipComposite ? (
               <button
                 type="button"
                 className="primitive-add-button"
@@ -1919,15 +1942,26 @@ export function ParameterInspector({
                 Unzip Composite
               </button>
             ) : null}
-            <button
-              type="button"
-              className="delete-module-button"
-              onClick={() => onDeleteModule(moduleInstance.id)}
-            >
-              Delete Module
-            </button>
+            {!isReadOnlyMode ? (
+              <button
+                type="button"
+                className="delete-module-button"
+                onClick={() => onDeleteModule(moduleInstance.id)}
+              >
+                Delete Module
+              </button>
+            ) : null}
+            {isReadOnlyMode && isCompositeDefinition(moduleDef) && onOpenCompositeDefinition ? (
+              <button
+                type="button"
+                className="mini-action-button"
+                onClick={() => onOpenCompositeDefinition(moduleDef.id)}
+              >
+                Edit Shared Definition
+              </button>
+            ) : null}
           </div>
-          {parameterClipboard &&
+          {!isReadOnlyMode && parameterClipboard &&
           parameterClipboard.sourceModuleId === moduleInstance.id &&
           parameterClipboard.sourceDefId === moduleDef.id ? (
             <div className="content-selector-card">
@@ -1946,7 +1980,7 @@ export function ParameterInspector({
             </div>
           ) : null}
 
-          {canBypassSelectedModule ? (
+          {!isReadOnlyMode && canBypassSelectedModule ? (
             <div className="content-selector-card">
               <p className="comparison-copy">
                 Bypass keeps this module in the graph but passes its single input straight through unchanged.
@@ -1961,7 +1995,7 @@ export function ParameterInspector({
               </div>
             </div>
           ) : null}
-          {bypassIneligibilityReason ? (
+          {!isReadOnlyMode && bypassIneligibilityReason ? (
             <div className="content-selector-card">
               <p className="comparison-copy">
                 Bypass unavailable: {bypassIneligibilityReason}
@@ -2030,6 +2064,15 @@ export function ParameterInspector({
                   (moduleDef.forwardedParams ?? []).some(
                     (binding) => binding.externalParam === field.key,
                   );
+
+                if (isReadOnlyMode) {
+                  return (
+                    <div key={field.key} className="param-field param-field-read-only">
+                      {renderParamFieldLabel(field.label, field.key, isForwardedParam)}
+                      <code>{formatParamValue(value, field)}</code>
+                    </div>
+                  );
+                }
 
                 if (moduleDef.id === 'RotorReverse' && field.key === 'linkedRotorId') {
                   const rotorOptions = project.modules.filter((candidate) => candidate.defId === 'Rotor');

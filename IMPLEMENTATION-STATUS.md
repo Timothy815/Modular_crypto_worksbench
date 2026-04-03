@@ -54,6 +54,11 @@ The clearest immediate next candidate is now:
 - meant to tighten existing surfaces rather than open another major feature family
 - bounded by zero schema drift and a small fixed set of named friction fixes
 
+Another shipped bounded readability slice after that is:
+- `COMPOSITE-INSTANCE-DRILLDOWN-V1.md`
+- instance-scoped composite inspection in a transient drill-down view
+- explicitly read/trace/analyze first, with no instance override model in V1
+
 The product-shaping north-star note is now also shipped:
 - `SYSTEMS-IDE-COHERENCE-V1.md`
 - defines MCW as a visual cryptographic systems IDE

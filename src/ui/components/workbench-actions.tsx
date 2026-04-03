@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 interface WorkbenchActionsProps {
   isCompositeEditor: boolean;
+  isObservationMode?: boolean;
   canUndo: boolean;
   canRedo: boolean;
   selectedModuleIds: string[];
@@ -71,6 +72,7 @@ function WorkbenchMenuActionButton({ label, onSelect, disabled = false }: Workbe
 
 export function WorkbenchActions({
   isCompositeEditor,
+  isObservationMode = false,
   canUndo,
   canRedo,
   selectedModuleIds,
@@ -102,7 +104,14 @@ export function WorkbenchActions({
 
   return (
     <div className="project-actions">
-      {!isCompositeEditor ? (
+      {isObservationMode ? (
+        <WorkbenchActionMenu label="View" description="Zoom and navigate">
+          <WorkbenchMenuActionButton label="Zoom Out" onSelect={onZoomOut} />
+          <WorkbenchMenuActionButton label="Zoom In" onSelect={onZoomIn} />
+          <WorkbenchMenuActionButton label="Reset View" onSelect={onResetView} />
+          <WorkbenchMenuActionButton label="Fit View" onSelect={onFitView} />
+        </WorkbenchActionMenu>
+      ) : !isCompositeEditor ? (
         <>
           <WorkbenchActionMenu label="View" description="Zoom and navigate">
             <WorkbenchMenuActionButton label="Zoom Out" onSelect={onZoomOut} />

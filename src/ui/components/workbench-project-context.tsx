@@ -16,6 +16,7 @@ import type { WorkspaceVersionDocument } from '../workbench-document';
 
 interface WorkbenchProjectContextProps {
   isCompositeEditor: boolean;
+  isObservationMode?: boolean;
   activeProject: DemoProject;
   activeProjectGroup: string;
   activeProjectStage: LearningStage;
@@ -74,6 +75,7 @@ function renderLandmarkGroup(
 
 export function WorkbenchProjectContext({
   isCompositeEditor,
+  isObservationMode = false,
   activeProject,
   activeProjectGroup,
   activeProjectStage,
@@ -118,7 +120,7 @@ export function WorkbenchProjectContext({
     });
   }, [normalizedProjectSearch, projects]);
 
-  if (isCompositeEditor) {
+  if (isCompositeEditor || isObservationMode) {
     return null;
   }
 

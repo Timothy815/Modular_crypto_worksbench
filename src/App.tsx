@@ -22,7 +22,6 @@ import {
   getUserManualConfig,
 } from './ui/app-shell-support';
 import { LazyPanelFallback } from './ui/components/lazy-panel-fallback';
-import { LearningDock } from './ui/components/learning-dock';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
 import { demoProjects, getDefaultDemoProject, runDemoProject } from './ui/demo-projects';
 import { compareExecutionResults } from './ui/execution-compare';
@@ -97,6 +96,7 @@ import {
   prepareImportedLabPack,
 } from './ui/workspace-artifacts';
 import { getPrimitiveMicroDemo } from './ui/primitive-micro-demos';
+import { buildCompositeInstanceDrilldownContext } from './ui/composite-instance-drilldown';
 
 const MIN_LEFT_DOCK_WIDTH = 220;
 const MAX_LEFT_DOCK_WIDTH = 520;
@@ -121,6 +121,11 @@ const ManualWindow = lazy(() =>
 const PrimitivePalette = lazy(() =>
   import('./ui/components/primitive-palette').then((module) => ({
     default: module.PrimitivePalette,
+  })),
+);
+const LearningDock = lazy(() =>
+  import('./ui/components/learning-dock').then((module) => ({
+    default: module.LearningDock,
   })),
 );
 const InstructorPilotWindow = lazy(() =>
@@ -151,6 +156,17 @@ interface ParameterClipboardState {
   sourceDefId: string;
   params: Record<string, unknown>;
   paramKeys: string[];
+}
+
+interface CompositeDrilldownState {
+  parentProjectId: string;
+  instanceId: string;
+  selectedModuleId: string | null;
+  selectedModuleIds: string[];
+  hoveredTraceModuleId: string | null;
+  stepIndex: number | null;
+  activeAnalysisTraceEntry: ExecutionTraceEntry | null;
+  requestedFocusModuleId: string | null;
 }
 
 function App() {
@@ -275,6 +291,7 @@ function MainApp() {
     useState<WorkspaceClipboardSnapshot | null>(null);
   const [requestedWorkspaceFocusModuleId, setRequestedWorkspaceFocusModuleId] =
     useState<string | null>(null);
+  const [compositeDrilldown, setCompositeDrilldown] = useState<CompositeDrilldownState | null>(null);
 
   const availableProjects = useMemo(
     () => [
@@ -441,6 +458,80 @@ function MainApp() {
         })
         .join('')
     : null;
+
+  const activeCompositeDrilldownInstance =
+    compositeDrilldown?.parentProjectId === activeProjectDefinition.id
+      ? baseProjectState.modules.find((moduleInstance) => moduleInstance.id === compositeDrilldown.instanceId) ?? null
+      : null;
+  const activeCompositeDrilldownDefinition =
+    activeCompositeDrilldownInstance
+      ? effectiveRegistry[activeCompositeDrilldownInstance.defId]
+      : null;
+  const compositeDrilldownContext =
+    compositeDrilldown &&
+    activeCompositeDrilldownInstance &&
+    activeCompositeDrilldownDefinition &&
+    isCompositeDefinition(activeCompositeDrilldownDefinition)
+      ? buildCompositeInstanceDrilldownContext(
+          activeCompositeDrilldownDefinition,
+          activeCompositeDrilldownInstance.params,
+          execution,
+          activeCompositeDrilldownInstance.id,
+        )
+      : null;
+  const compositeDrilldownSelectedModule =
+    compositeDrilldownContext && compositeDrilldown
+      ? compositeDrilldownContext.project.modules.find(
+          (moduleInstance) => moduleInstance.id === compositeDrilldown.selectedModuleId,
+        ) ?? null
+      : null;
+  const compositeDrilldownSelectedModuleDef =
+    compositeDrilldownSelectedModule
+      ? effectiveRegistry[compositeDrilldownSelectedModule.defId] ?? null
+      : null;
+  const isCompositeDrilldownActive = Boolean(compositeDrilldown && compositeDrilldownContext);
+  const compositeDrilldownTitle =
+    isCompositeDrilldownActive && activeCompositeDrilldownInstance && activeCompositeDrilldownDefinition
+      ? `${activeCompositeDrilldownInstance.id} (${activeCompositeDrilldownDefinition.name})`
+      : undefined;
+  const compositeDrilldownValidationIssues = compositeDrilldownContext
+    ? validateProject(compositeDrilldownContext.project, effectiveRegistry).issues
+    : [];
+  const compositeDrilldownExecutionError =
+    isCompositeDrilldownActive && !compositeDrilldownContext?.execution
+      ? 'Instance trace is unavailable until the parent workspace runs successfully.'
+      : null;
+  const compositeDrilldownSteppedModuleId =
+    compositeDrilldown &&
+    compositeDrilldown.stepIndex !== null &&
+    compositeDrilldownContext?.execution
+      ? compositeDrilldownContext.execution.trace[
+          Math.min(
+            Math.max(0, compositeDrilldown.stepIndex),
+            Math.max(0, compositeDrilldownContext.execution.trace.length - 1),
+          )
+        ]?.moduleId ?? null
+      : null;
+
+  useEffect(() => {
+    if (!compositeDrilldown) {
+      return;
+    }
+
+    if (
+      compositeDrilldown.parentProjectId !== activeProjectDefinition.id ||
+      !activeCompositeDrilldownInstance ||
+      !activeCompositeDrilldownDefinition ||
+      !isCompositeDefinition(activeCompositeDrilldownDefinition)
+    ) {
+      setCompositeDrilldown(null);
+    }
+  }, [
+    activeCompositeDrilldownDefinition,
+    activeCompositeDrilldownInstance,
+    activeProjectDefinition.id,
+    compositeDrilldown,
+  ]);
 
   useEffect(() => {
     if (!isTickedMode || !tickedExecution) {
@@ -686,6 +777,41 @@ function MainApp() {
       });
     },
     [activeProjectDefinition.id, state.tutorialLibrary, workspaceMode],
+  );
+  const handleOpenCompositeInstanceDrilldown = useCallback(
+    (moduleId: string) => {
+      if (state.compositeEditor || compositeDrilldown) {
+        return;
+      }
+
+      const moduleInstance = baseProjectState.modules.find((candidate) => candidate.id === moduleId);
+      if (!moduleInstance) {
+        return;
+      }
+
+      const definition = effectiveRegistry[moduleInstance.defId];
+      if (!definition || !isCompositeDefinition(definition)) {
+        return;
+      }
+
+      setCompositeDrilldown({
+        parentProjectId: activeProjectDefinition.id,
+        instanceId: moduleId,
+        selectedModuleId: null,
+        selectedModuleIds: [],
+        hoveredTraceModuleId: null,
+        stepIndex: null,
+        activeAnalysisTraceEntry: null,
+        requestedFocusModuleId: null,
+      });
+    },
+    [
+      activeProjectDefinition.id,
+      baseProjectState.modules,
+      compositeDrilldown,
+      effectiveRegistry,
+      state.compositeEditor,
+    ],
   );
   const handleAddVerificationCase = useCallback(
     (sourceModuleId: string, inputValue: string, tickCount: number | null = null) => {
@@ -2223,33 +2349,50 @@ function MainApp() {
           }
         >
           <WorkbenchPanel
-            key={`${state.compositeEditor ? 'composite' : 'workspace'}:${activeProjectDefinition.id}`}
+            key={`${state.compositeEditor ? 'composite' : isCompositeDrilldownActive ? 'drilldown' : 'workspace'}:${activeProjectDefinition.id}:${compositeDrilldown?.instanceId ?? 'root'}`}
             activeProject={activeProjectDefinition}
-            title={activeCompositeEntry ? `${activeCompositeEntry.name} Internals` : undefined}
+            title={
+              state.compositeEditor
+                ? activeCompositeEntry
+                  ? `${activeCompositeEntry.name} Internals`
+                  : undefined
+                : isCompositeDrilldownActive
+                  ? compositeDrilldownTitle
+                  : undefined
+            }
             summary={
-              activeCompositeEntry
+              state.compositeEditor && activeCompositeEntry
                 ? 'Editing the internal graph of a reusable composite. Boundary ports stay fixed in this first editing slice.'
-                : undefined
+                : isCompositeDrilldownActive
+                  ? 'Read-only drill-down into one placed composite instance. Inspect signals, trace, and forwarded parameters without mutating the shared definition.'
+                  : undefined
             }
             pipelineLabel={
-              activeCompositeEntry
+              state.compositeEditor && activeCompositeEntry
                 ? `${activeCompositeEntry.definition.inputs.length} in -> reusable composite -> ${activeCompositeEntry.definition.outputs.length} out`
-                : undefined
+                : isCompositeDrilldownActive && activeCompositeDrilldownDefinition && isCompositeDefinition(activeCompositeDrilldownDefinition)
+                  ? `${activeCompositeDrilldownDefinition.inputs.length} in -> instance drill-down -> ${activeCompositeDrilldownDefinition.outputs.length} out`
+                  : undefined
             }
-            activeProjectState={activeProjectState}
-            layout={activeLayout}
-            annotations={activeAnnotations}
-            execution={execution}
-            executionError={executionError}
-            validationIssues={validationIssues}
+            activeProjectState={compositeDrilldownContext?.project ?? activeProjectState}
+            layout={compositeDrilldownContext?.layout ?? activeLayout}
+            annotations={isCompositeDrilldownActive ? [] : activeAnnotations}
+            execution={compositeDrilldownContext?.execution ?? execution}
+            executionError={isCompositeDrilldownActive ? compositeDrilldownExecutionError : executionError}
+            validationIssues={isCompositeDrilldownActive ? compositeDrilldownValidationIssues : validationIssues}
             registry={effectiveRegistry}
-            selectedModuleId={effectiveSelectedModuleId}
-            selectedModuleIds={effectiveSelectedModuleIds}
-            hoveredTraceModuleId={hoveredTraceModuleId}
-            steppedModuleId={steppedModuleId}
-            activeAnalysisTraceEntry={activeAnalysisTraceEntry}
-            activeAnalysisOwnerModuleId={activeAnalysisOwnerModuleId}
-            divergenceModuleId={divergenceModuleId}
+            selectedModuleId={compositeDrilldown?.selectedModuleId ?? effectiveSelectedModuleId}
+            selectedModuleIds={compositeDrilldown?.selectedModuleIds ?? effectiveSelectedModuleIds}
+            hoveredTraceModuleId={compositeDrilldown?.hoveredTraceModuleId ?? hoveredTraceModuleId}
+            steppedModuleId={isCompositeDrilldownActive ? compositeDrilldownSteppedModuleId : steppedModuleId}
+            activeAnalysisTraceEntry={compositeDrilldown?.activeAnalysisTraceEntry ?? activeAnalysisTraceEntry}
+            activeAnalysisOwnerModuleId={
+              compositeDrilldown?.activeAnalysisTraceEntry
+                ? compositeDrilldown.activeAnalysisTraceEntry.moduleId.split('/')[0] ??
+                  compositeDrilldown.activeAnalysisTraceEntry.moduleId
+                : activeAnalysisOwnerModuleId
+            }
+            divergenceModuleId={isCompositeDrilldownActive ? null : divergenceModuleId}
             tutorialStep={activeTutorialStep}
             tutorialTitle={selectedTutorial?.projectId === activeProjectDefinition.id ? selectedTutorial.title : null}
             tutorialStepIndex={tutorialStepIndex}
@@ -2257,13 +2400,15 @@ function MainApp() {
             showTutorialToggle={Boolean(selectedTutorial?.projectId === activeProjectDefinition.id)}
             tutorialNotesVisible={tutorialNotesVisible}
             challengeSolved={challengeEvaluation?.status === 'success'}
-            probedModuleIds={state.probedModuleIdsByProject[activeProjectDefinition.id] ?? []}
+            isObservationMode={isCompositeDrilldownActive}
+            probedModuleIds={isCompositeDrilldownActive ? [] : state.probedModuleIdsByProject[activeProjectDefinition.id] ?? []}
             isTickedMode={isTickedMode}
+            showTickControls={!isCompositeDrilldownActive}
             tickCount={effectiveTickCount}
             currentTick={effectiveCurrentTick}
-            collectedOutput={collectedOutput}
-            tickedParamsByModule={tickedExecution?.paramsByModuleByTick ?? null}
-            tickHistoryByModule={tickHistoryByModule}
+            collectedOutput={isCompositeDrilldownActive ? null : collectedOutput}
+            tickedParamsByModule={isCompositeDrilldownActive ? null : tickedExecution?.paramsByModuleByTick ?? null}
+            tickHistoryByModule={isCompositeDrilldownActive ? null : tickHistoryByModule}
             onSetTickedMode={(enabled) =>
               dispatch({
                 type: 'setTickedMode',
@@ -2295,30 +2440,36 @@ function MainApp() {
               })
             }
             onToggleProbe={(moduleId) =>
-              dispatch({
-                type: 'toggleProbe',
-                projectId: activeProjectDefinition.id,
-                moduleId,
-              })
+              isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'toggleProbe',
+                    projectId: activeProjectDefinition.id,
+                    moduleId,
+                  })
             }
             onMoveModule={(moduleId, x, y) =>
-              dispatch({
-                type: 'moveModule',
-                projectId: activeProjectDefinition.id,
-                moduleId,
-                x,
-                y,
-              })
+              isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'moveModule',
+                    projectId: activeProjectDefinition.id,
+                    moduleId,
+                    x,
+                    y,
+                  })
             }
             onMoveModules={(positions) =>
-              dispatch({
-                type: 'moveModules',
-                projectId: activeProjectDefinition.id,
-                positions,
-              })
+              isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'moveModules',
+                    projectId: activeProjectDefinition.id,
+                    positions,
+                  })
             }
             onAddAnnotation={() =>
-              state.compositeEditor
+              state.compositeEditor || isCompositeDrilldownActive
                 ? undefined
                 : dispatch({
                     type: 'addAnnotation',
@@ -2356,20 +2507,46 @@ function MainApp() {
                   })
             }
             onSelectModule={(moduleId, additive) =>
-              dispatch({
-                type: 'selectModule',
-                projectId: activeProjectDefinition.id,
-                moduleId,
-                additive,
-              })
+              isCompositeDrilldownActive
+                ? setCompositeDrilldown((current) =>
+                    current
+                      ? {
+                          ...current,
+                          selectedModuleId: additive
+                            ? current.selectedModuleId ?? moduleId
+                            : moduleId,
+                          selectedModuleIds: additive
+                            ? Array.from(new Set([...current.selectedModuleIds, moduleId]))
+                            : [moduleId],
+                        }
+                      : current,
+                  )
+                : dispatch({
+                    type: 'selectModule',
+                    projectId: activeProjectDefinition.id,
+                    moduleId,
+                    additive,
+                  })
             }
             onSelectModules={(moduleIds, additive) =>
-              dispatch({
-                type: 'selectModules',
-                projectId: activeProjectDefinition.id,
-                moduleIds,
-                additive,
-              })
+              isCompositeDrilldownActive
+                ? setCompositeDrilldown((current) =>
+                    current
+                      ? {
+                          ...current,
+                          selectedModuleId: moduleIds[0] ?? null,
+                          selectedModuleIds: additive
+                            ? Array.from(new Set([...current.selectedModuleIds, ...moduleIds]))
+                            : moduleIds,
+                        }
+                      : current,
+                  )
+                : dispatch({
+                    type: 'selectModules',
+                    projectId: activeProjectDefinition.id,
+                    moduleIds,
+                    additive,
+                  })
             }
             onRequestCreateComposite={() => {
               setCompositeName('');
@@ -2379,17 +2556,32 @@ function MainApp() {
               setReplaceSelectionAfterCreate(!state.compositeEditor);
               setIsCompositeDialogOpen(true);
             }}
-            onRequestDuplicateSelection={handleDuplicateSelectedCluster}
-            onRequestDeleteSelection={handleDeleteSelectedCluster}
+            onRequestDuplicateSelection={isCompositeDrilldownActive ? () => undefined : handleDuplicateSelectedCluster}
+            onRequestDeleteSelection={isCompositeDrilldownActive ? () => undefined : handleDeleteSelectedCluster}
             onRequestUndo={handleUndoWorkspaceHistory}
             onRequestRedo={handleRedoWorkspaceHistory}
-            canUndo={canUndoWorkspaceHistory}
-            canRedo={canRedoWorkspaceHistory}
-            workspaceVersions={activeWorkspaceVersions}
+            canUndo={isCompositeDrilldownActive ? false : canUndoWorkspaceHistory}
+            canRedo={isCompositeDrilldownActive ? false : canRedoWorkspaceHistory}
+            workspaceVersions={isCompositeDrilldownActive ? [] : activeWorkspaceVersions}
             onRequestSaveVersion={handleSaveWorkspaceVersion}
             onRequestRestoreVersion={handleRestoreWorkspaceVersion}
-            requestedFocusModuleId={requestedWorkspaceFocusModuleId}
-            onWorkspaceFocusHandled={() => setRequestedWorkspaceFocusModuleId(null)}
+            requestedFocusModuleId={
+              isCompositeDrilldownActive
+                ? compositeDrilldown?.requestedFocusModuleId ?? null
+                : requestedWorkspaceFocusModuleId
+            }
+            onWorkspaceFocusHandled={() =>
+              isCompositeDrilldownActive
+                ? setCompositeDrilldown((current) =>
+                    current
+                      ? {
+                          ...current,
+                          requestedFocusModuleId: null,
+                        }
+                      : current,
+                  )
+                : setRequestedWorkspaceFocusModuleId(null)
+            }
             onAddConnection={(fromModuleId, fromPort, toModuleId, toPort) =>
               dispatch({
                 type: 'addConnection',
@@ -2425,6 +2617,9 @@ function MainApp() {
               })
             }
             onExportDocument={() => {
+              if (isCompositeDrilldownActive) {
+                return;
+              }
               downloadDocument(activeProjectDefinition.id, {
                 version: 1,
                 project: activeProjectState,
@@ -2437,8 +2632,11 @@ function MainApp() {
               });
               setImportError(null);
             }}
-            onExportLabPack={handleExportShareableLabPack}
+            onExportLabPack={isCompositeDrilldownActive ? () => undefined : handleExportShareableLabPack}
             onExportPython={async () => {
+              if (isCompositeDrilldownActive) {
+                return;
+              }
               const error = await exportPythonWorkspaceBundle({
                 project: activeProjectState,
                 registry: effectiveRegistry,
@@ -2448,6 +2646,9 @@ function MainApp() {
               setImportError(error);
             }}
             onImportDocument={async (file) => {
+              if (isCompositeDrilldownActive) {
+                return;
+              }
               const rawValue = await file.text();
               const artifact = parseWorkspaceArtifact(rawValue);
               if (artifact?.kind === 'workbench') {
@@ -2471,15 +2672,17 @@ function MainApp() {
 
               setImportError('The selected file is not a valid MCW workbench or composite library document.');
             }}
-            onImportLabPack={handleImportShareableLabPack}
+            onImportLabPack={isCompositeDrilldownActive ? async () => undefined : handleImportShareableLabPack}
             onTidyLayout={() =>
-              dispatch({
-                type: 'tidyLayout',
-                projectId: activeProjectDefinition.id,
-              })
+              isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'tidyLayout',
+                    projectId: activeProjectDefinition.id,
+                  })
             }
             onSwitchProject={(projectId) =>
-              state.compositeEditor
+              state.compositeEditor || isCompositeDrilldownActive
                 ? undefined
                 : dispatch({
                     type: 'switchProject',
@@ -2501,10 +2704,53 @@ function MainApp() {
                 visible,
               })
             }
-            projects={state.compositeEditor ? [activeProjectDefinition] : availableProjects}
+            projects={state.compositeEditor || isCompositeDrilldownActive ? [activeProjectDefinition] : availableProjects}
             isCompositeEditor={Boolean(state.compositeEditor)}
           />
           {importError ? <p className="import-error-banner">{importError}</p> : null}
+          {isCompositeDrilldownActive && activeCompositeDrilldownInstance && activeCompositeDrilldownDefinition ? (
+            <div className="composite-editor-toolbar">
+              <div>
+                <span className="meta-label">Instance Drill-down</span>
+                <strong>
+                  {activeProjectDefinition.name} &gt; {activeCompositeDrilldownInstance.id} ({activeCompositeDrilldownDefinition.name})
+                </strong>
+                <p className="composite-editor-subtitle">Read-only view of one placed composite instance</p>
+                {compositeDrilldownContext?.forwardedParamValues.length ? (
+                  <p className="comparison-copy">
+                    Forwarded params:{' '}
+                    <strong>
+                      {compositeDrilldownContext.forwardedParamValues
+                        .map((binding) => `${binding.externalParam} -> ${binding.internalModuleId}.${binding.internalParamKey} = ${String(binding.value)}`)
+                        .join(' | ')}
+                    </strong>
+                  </p>
+                ) : null}
+              </div>
+              <div className="composite-editor-actions">
+                <button
+                  type="button"
+                  className="secondary-dialog-button"
+                  onClick={() => setCompositeDrilldown(null)}
+                >
+                  Back to Workspace
+                </button>
+                <button
+                  type="button"
+                  className="primary-dialog-button"
+                  onClick={() => {
+                    setCompositeDrilldown(null);
+                    dispatch({
+                      type: 'openCompositeEditor',
+                      entryId: activeCompositeDrilldownDefinition.id,
+                    });
+                  }}
+                >
+                  Edit Shared Definition
+                </button>
+              </div>
+            </div>
+          ) : null}
           {state.compositeEditor && activeCompositeEntry ? (
             <div className="composite-editor-toolbar">
               <div>
@@ -2584,7 +2830,7 @@ function MainApp() {
             </div>
           ) : null}
         </div>
-        {showPaletteInMain ? (
+        {showPaletteInMain && !isCompositeDrilldownActive ? (
           <div
             className={paletteViewMode === 'compact' ? 'workbench-dock workbench-dock-left workbench-dock-compact' : 'workbench-dock workbench-dock-left'}
           >
@@ -2675,39 +2921,50 @@ function MainApp() {
           <div className="workbench-dock workbench-dock-right">
             <Suspense fallback={<LazyPanelFallback label="Analyze" title="Loading inspector…" />}>
               <ParameterInspector
-                execution={execution}
+                execution={compositeDrilldownContext?.execution ?? execution}
                 registry={effectiveRegistry}
-                executionError={executionError}
-                validationIssues={validationIssues}
-                stepIndex={effectiveStepIndex}
-                project={activeProjectState}
-                tutorialStep={activeTutorialStep}
-                projectName={activeProjectDefinition.name}
-                comparisonBaseline={comparisonBaseline}
-                executionComparison={executionComparison}
+                executionError={isCompositeDrilldownActive ? compositeDrilldownExecutionError : executionError}
+                validationIssues={isCompositeDrilldownActive ? compositeDrilldownValidationIssues : validationIssues}
+                stepIndex={isCompositeDrilldownActive ? compositeDrilldown?.stepIndex ?? null : effectiveStepIndex}
+                project={compositeDrilldownContext?.project ?? activeProjectState}
+                tutorialStep={isCompositeDrilldownActive ? null : activeTutorialStep}
+                projectName={isCompositeDrilldownActive ? compositeDrilldownTitle ?? activeProjectDefinition.name : activeProjectDefinition.name}
+                comparisonBaseline={isCompositeDrilldownActive ? null : comparisonBaseline}
+                executionComparison={isCompositeDrilldownActive ? null : executionComparison}
                 baselineOutput={
-                  baselineExecution
+                  isCompositeDrilldownActive
+                    ? 'n/a'
+                    : baselineExecution
                     ? executionComparison?.baselineOutput.formatted ?? 'n/a'
                     : 'blocked'
                 }
                 variantOutput={
-                  execution
+                  isCompositeDrilldownActive
+                    ? compositeDrilldownContext?.execution
+                      ? 'n/a'
+                      : 'blocked'
+                    : execution
                     ? executionComparison?.variantOutput.formatted ?? 'n/a'
                     : 'blocked'
                 }
-                verificationSourceOptions={verificationSourceOptions}
-                verificationCases={verificationCases}
-                verificationResults={verificationResults}
-                baselineExecutionError={baselineExecutionError}
-                moduleDef={selectedModuleDef}
-                moduleInstance={selectedModule}
-                selectedModuleIds={effectiveSelectedModuleIds}
+                verificationSourceOptions={isCompositeDrilldownActive ? [] : verificationSourceOptions}
+                verificationCases={isCompositeDrilldownActive ? [] : verificationCases}
+                verificationResults={isCompositeDrilldownActive ? [] : verificationResults}
+                baselineExecutionError={isCompositeDrilldownActive ? null : baselineExecutionError}
+                moduleDef={compositeDrilldownSelectedModuleDef ?? selectedModuleDef}
+                moduleInstance={compositeDrilldownSelectedModule ?? selectedModule}
+                selectedModuleIds={compositeDrilldown?.selectedModuleIds ?? effectiveSelectedModuleIds}
                 parameterClipboard={parameterClipboard}
                 getParamDraft={(moduleId, key) =>
-                  getDraftValue(state, activeProjectDefinition.id, moduleId, key)
+                  isCompositeDrilldownActive
+                    ? undefined
+                    : getDraftValue(state, activeProjectDefinition.id, moduleId, key)
                 }
-                baselineModuleInstance={baselineSelectedModule}
+                baselineModuleInstance={isCompositeDrilldownActive ? null : baselineSelectedModule}
                 onCopyParams={(moduleId) => {
+                  if (isCompositeDrilldownActive) {
+                    return;
+                  }
                   if (!selectedModule || !selectedModuleDef || selectedModule.id !== moduleId) {
                     return;
                   }
@@ -2725,52 +2982,64 @@ function MainApp() {
                   });
                 }}
                 onApplyCopiedParams={(sourceModuleId, sourceDefId, targetModuleIds, params, paramKeys) =>
-                  dispatch({
-                    type: 'applyCopiedParams',
-                    projectId: activeProjectDefinition.id,
-                    sourceModuleId,
-                    sourceDefId,
-                    targetModuleIds,
-                    params,
-                    paramKeys,
-                  })
+                  isCompositeDrilldownActive
+                    ? undefined
+                    : dispatch({
+                        type: 'applyCopiedParams',
+                        projectId: activeProjectDefinition.id,
+                        sourceModuleId,
+                        sourceDefId,
+                        targetModuleIds,
+                        params,
+                        paramKeys,
+                      })
                 }
                 onParamDraftChange={(moduleId, key, rawValue) =>
-                  dispatch({
-                    type: 'setParamDraft',
-                    projectId: activeProjectDefinition.id,
-                    moduleId,
-                    key,
-                    rawValue,
-                  })
+                  isCompositeDrilldownActive
+                    ? undefined
+                    : dispatch({
+                        type: 'setParamDraft',
+                        projectId: activeProjectDefinition.id,
+                        moduleId,
+                        key,
+                        rawValue,
+                      })
                 }
                 onParamChange={(moduleId, key, value) =>
-                  dispatch({
-                    type: 'updateParam',
-                    projectId: activeProjectDefinition.id,
-                    moduleId,
-                    key,
-                    value,
-                  })
+                  isCompositeDrilldownActive
+                    ? undefined
+                    : dispatch({
+                        type: 'updateParam',
+                        projectId: activeProjectDefinition.id,
+                        moduleId,
+                        key,
+                        value,
+                      })
                 }
                 onSetModuleBypass={(moduleId, bypass) =>
-                  dispatch({
-                    type: 'setModuleBypass',
-                    projectId: activeProjectDefinition.id,
-                    moduleId,
-                    bypass,
-                  })
+                  isCompositeDrilldownActive
+                    ? undefined
+                    : dispatch({
+                        type: 'setModuleBypass',
+                        projectId: activeProjectDefinition.id,
+                        moduleId,
+                        bypass,
+                      })
                 }
                 onRenameModuleInstance={(moduleId, nextModuleId) =>
-                  dispatch({
-                    type: 'renameModuleInstance',
-                    projectId: activeProjectDefinition.id,
-                    moduleId,
-                    nextModuleId,
-                  })
+                  isCompositeDrilldownActive
+                    ? undefined
+                    : dispatch({
+                        type: 'renameModuleInstance',
+                        projectId: activeProjectDefinition.id,
+                        moduleId,
+                        nextModuleId,
+                      })
                 }
                 onDeleteModule={(moduleId) =>
-                  state.compositeEditor && activeCompositeEntry && isCompositeBoundaryModule(activeCompositeEntry, moduleId)
+                  isCompositeDrilldownActive
+                    ? undefined
+                    : state.compositeEditor && activeCompositeEntry && isCompositeBoundaryModule(activeCompositeEntry, moduleId)
                     ? dispatch({
                         type: 'setCompositeEditorSaveError',
                         message:
@@ -2782,44 +3051,117 @@ function MainApp() {
                         moduleId,
                       })
                 }
-                canRenameModuleIds={!state.compositeEditor}
-                onUnzipComposite={(moduleId) => handleUnzipComposite(moduleId)}
-                onSelectIssueTarget={(moduleId) =>
-                  dispatch({
-                    type: 'selectModule',
-                    projectId: activeProjectDefinition.id,
-                    moduleId,
-                  })
+                canRenameModuleIds={!state.compositeEditor && !isCompositeDrilldownActive}
+                onUnzipComposite={isCompositeDrilldownActive ? undefined : (moduleId) => handleUnzipComposite(moduleId)}
+                onOpenCompositeInstanceDrilldown={
+                  isCompositeDrilldownActive || state.compositeEditor
+                    ? undefined
+                    : handleOpenCompositeInstanceDrilldown
                 }
-                onTraceHover={setHoveredTraceModuleId}
-                onStepChange={syncTutorialStepFromTrace}
-                onActiveAnalysisTraceChange={setActiveAnalysisTraceEntry}
-                onRequestFocusModule={setRequestedWorkspaceFocusModuleId}
+                onOpenCompositeDefinition={(definitionId) =>
+                  {
+                    setCompositeDrilldown(null);
+                    dispatch({
+                      type: 'openCompositeEditor',
+                      entryId: definitionId,
+                    });
+                  }
+                }
+                isReadOnlyMode={isCompositeDrilldownActive}
+                onSelectIssueTarget={(moduleId) =>
+                  isCompositeDrilldownActive
+                    ? setCompositeDrilldown((current) =>
+                        current
+                          ? {
+                              ...current,
+                              selectedModuleId: moduleId,
+                              selectedModuleIds: [moduleId],
+                            }
+                          : current,
+                      )
+                    : dispatch({
+                        type: 'selectModule',
+                        projectId: activeProjectDefinition.id,
+                        moduleId,
+                      })
+                }
+                onTraceHover={(moduleId) =>
+                  isCompositeDrilldownActive
+                    ? setCompositeDrilldown((current) =>
+                        current
+                          ? {
+                              ...current,
+                              hoveredTraceModuleId: moduleId,
+                            }
+                          : current,
+                      )
+                    : setHoveredTraceModuleId(moduleId)
+                }
+                onStepChange={(nextIndex) =>
+                  isCompositeDrilldownActive
+                    ? setCompositeDrilldown((current) =>
+                        current
+                          ? {
+                              ...current,
+                              stepIndex: nextIndex,
+                            }
+                          : current,
+                      )
+                    : syncTutorialStepFromTrace(nextIndex)
+                }
+                onActiveAnalysisTraceChange={(entry) =>
+                  isCompositeDrilldownActive
+                    ? setCompositeDrilldown((current) =>
+                        current
+                          ? {
+                              ...current,
+                              activeAnalysisTraceEntry: entry,
+                            }
+                          : current,
+                      )
+                    : setActiveAnalysisTraceEntry(entry)
+                }
+                onRequestFocusModule={(moduleId) =>
+                  isCompositeDrilldownActive
+                    ? setCompositeDrilldown((current) =>
+                        current
+                          ? {
+                              ...current,
+                              requestedFocusModuleId: moduleId,
+                            }
+                          : current,
+                      )
+                    : setRequestedWorkspaceFocusModuleId(moduleId)
+                }
                 onCaptureBaseline={handleCaptureBaseline}
                 onClearBaseline={handleClearBaseline}
                 onAddVerificationCase={handleAddVerificationCase}
                 onImportVerificationCases={handleImportVerificationCases}
                 onRemoveVerificationCase={handleRemoveVerificationCase}
                 onClearVerificationCases={handleClearVerificationCases}
-                probedModuleIds={state.probedModuleIdsByProject[activeProjectDefinition.id] ?? []}
+                probedModuleIds={isCompositeDrilldownActive ? [] : state.probedModuleIdsByProject[activeProjectDefinition.id] ?? []}
                 isTickedMode={isTickedMode}
                 currentTick={effectiveCurrentTick}
                 tickCount={effectiveTickCount}
-                tickedParamsByModule={tickedExecution?.paramsByModuleByTick ?? null}
-                tickHistoryByModule={tickHistoryByModule}
-                collectedOutput={collectedOutput}
+                tickedParamsByModule={isCompositeDrilldownActive ? null : tickedExecution?.paramsByModuleByTick ?? null}
+                tickHistoryByModule={isCompositeDrilldownActive ? null : tickHistoryByModule}
+                collectedOutput={isCompositeDrilldownActive ? null : collectedOutput}
                 onToggleProbe={(moduleId) =>
-                  dispatch({
-                    type: 'toggleProbe',
-                    projectId: activeProjectDefinition.id,
-                    moduleId,
-                  })
+                  isCompositeDrilldownActive
+                    ? undefined
+                    : dispatch({
+                        type: 'toggleProbe',
+                        projectId: activeProjectDefinition.id,
+                        moduleId,
+                      })
                 }
                 onClearProbes={() =>
-                  dispatch({
-                    type: 'clearProbes',
-                    projectId: activeProjectDefinition.id,
-                  })
+                  isCompositeDrilldownActive
+                    ? undefined
+                    : dispatch({
+                        type: 'clearProbes',
+                        projectId: activeProjectDefinition.id,
+                      })
                 }
               />
             </Suspense>
@@ -2841,133 +3183,135 @@ function MainApp() {
         ) : null}
       </section>
 
-      {!state.compositeEditor ? (
+      {!state.compositeEditor && !isCompositeDrilldownActive ? (
         <>
           {showLearningInMain ? (
-            <LearningDock
-              hasTutorialPanel={hasTutorialPanel}
-              hasChallengePanel={hasChallengePanel}
-              hasCryptanalysisPanel={hasCryptanalysisPanel}
-              activeLearningPanelTab={activeLearningPanelTab}
-              onSetLearningPanelTab={(tab) =>
-                applyLearningPanelTabSelection({
-                  tab,
-                  activeProjectId: activeProjectDefinition.id,
-                  workspaceMode,
-                  dispatch,
-                  setLearningPanelTab,
-                })
-              }
-              selectedChallenge={selectedChallenge}
-              challenges={state.challengeLibrary}
-              challengeEvaluation={challengeEvaluation}
-              currentProject={activeProjectState}
-              projectName={activeProjectDefinition.name}
-              registry={effectiveRegistry}
-              execution={execution}
-              isTickedMode={isTickedMode}
-              tickedExecution={tickedExecution}
-              canCaptureChallenge={canCaptureChallenge}
-              ciphertext={state.cryptanalysisInputByProject[activeProjectDefinition.id] ?? ''}
-              cryptanalysisMode={state.cryptanalysisModeByProject[activeProjectDefinition.id] ?? 'classical'}
-              modernBaseline={state.modernAnalysisBaselineByProject[activeProjectDefinition.id] ?? ''}
-              modernFlipBit={state.modernAnalysisFlipBitByProject[activeProjectDefinition.id] ?? 0}
-              onSelectChallenge={(challengeId) => {
-                handleSelectChallenge(challengeId);
-              }}
-              onLoadChallengeStart={handleLoadChallengeStart}
-              onExportChallenge={() => {
-                if (selectedChallenge) {
-                  downloadGuidedChallengeDocument(selectedChallenge);
+            <Suspense fallback={<LazyPanelFallback label="Learn" title="Loading learning dock…" />}>
+              <LearningDock
+                hasTutorialPanel={hasTutorialPanel}
+                hasChallengePanel={hasChallengePanel}
+                hasCryptanalysisPanel={hasCryptanalysisPanel}
+                activeLearningPanelTab={activeLearningPanelTab}
+                onSetLearningPanelTab={(tab) =>
+                  applyLearningPanelTabSelection({
+                    tab,
+                    activeProjectId: activeProjectDefinition.id,
+                    workspaceMode,
+                    dispatch,
+                    setLearningPanelTab,
+                  })
                 }
-              }}
-              onImportChallenge={async (file) => {
-                const rawValue = await file.text();
-                handleImportChallengeRaw(rawValue);
-              }}
-              onCaptureChallenge={handleCaptureChallenge}
-              selectedTutorial={selectedTutorial}
-              tutorials={state.tutorialLibrary}
-              currentProjectId={activeProjectDefinition.id}
-              tutorialStepIndex={tutorialStepIndex}
-              selectedTutorialStep={selectedTutorialStep}
-              completedTutorialIds={completedTutorialIds}
-              isTutorialCompleted={isTutorialCompleted}
-              workspaceMode={workspaceMode}
-              tutorialNotesVisible={tutorialNotesVisible}
-              onSetWorkspaceMode={(mode) =>
-                dispatch({
-                  type: 'setWorkspaceMode',
-                  projectId: activeProjectDefinition.id,
-                  mode,
-                })
-              }
-              onSetCryptanalysisMode={(mode) =>
-                dispatch({
-                  type: 'setCryptanalysisMode',
-                  projectId: activeProjectDefinition.id,
-                  mode,
-                })
-              }
-              onSetTutorialNotesVisible={(visible) =>
-                dispatch({
-                  type: 'setTutorialNotesVisible',
-                  projectId: activeProjectDefinition.id,
-                  visible,
-                })
-              }
-              onCiphertextChange={(value) =>
-                dispatch({
-                  type: 'setCryptanalysisInput',
-                  projectId: activeProjectDefinition.id,
-                  value,
-                })
-              }
-              onModernBaselineChange={(value) =>
-                dispatch({
-                  type: 'setModernAnalysisBaseline',
-                  projectId: activeProjectDefinition.id,
-                  value,
-                })
-              }
-              onModernFlipBitChange={(value) =>
-                dispatch({
-                  type: 'setModernAnalysisFlipBit',
-                  projectId: activeProjectDefinition.id,
-                  value,
-                })
-              }
-              onSelectTutorial={(tutorialId) => handleSelectTutorial(tutorialId)}
-              onOpenTutorialPath={handleOpenTutorialPath}
-              onSetTutorialStep={(stepValue) => {
-                setStepIndex(selectedTutorial?.steps[stepValue]?.targetStepIndex ?? null);
-                dispatch({
-                  type: 'setTutorialStep',
-                  projectId: activeProjectDefinition.id,
-                  stepIndex: stepValue,
-                });
-              }}
-              onSwitchProject={(projectId) =>
-                dispatch({
-                  type: 'switchProject',
-                  projectId,
-                })
-              }
-              onFocusStepModule={(moduleId) =>
-                dispatch({
-                  type: 'selectModule',
-                  projectId: activeProjectDefinition.id,
-                  moduleId,
-                })
-              }
-              onResetTutorialProgress={() =>
-                dispatch({
-                  type: 'resetTutorialProgress',
-                  projectId: activeProjectDefinition.id,
-                })
-              }
-              onOpenManual={handleOpenUserManual}
-            />
+                selectedChallenge={selectedChallenge}
+                challenges={state.challengeLibrary}
+                challengeEvaluation={challengeEvaluation}
+                currentProject={activeProjectState}
+                projectName={activeProjectDefinition.name}
+                registry={effectiveRegistry}
+                execution={execution}
+                isTickedMode={isTickedMode}
+                tickedExecution={tickedExecution}
+                canCaptureChallenge={canCaptureChallenge}
+                ciphertext={state.cryptanalysisInputByProject[activeProjectDefinition.id] ?? ''}
+                cryptanalysisMode={state.cryptanalysisModeByProject[activeProjectDefinition.id] ?? 'classical'}
+                modernBaseline={state.modernAnalysisBaselineByProject[activeProjectDefinition.id] ?? ''}
+                modernFlipBit={state.modernAnalysisFlipBitByProject[activeProjectDefinition.id] ?? 0}
+                onSelectChallenge={(challengeId) => {
+                  handleSelectChallenge(challengeId);
+                }}
+                onLoadChallengeStart={handleLoadChallengeStart}
+                onExportChallenge={() => {
+                  if (selectedChallenge) {
+                    downloadGuidedChallengeDocument(selectedChallenge);
+                  }
+                }}
+                onImportChallenge={async (file) => {
+                  const rawValue = await file.text();
+                  handleImportChallengeRaw(rawValue);
+                }}
+                onCaptureChallenge={handleCaptureChallenge}
+                selectedTutorial={selectedTutorial}
+                tutorials={state.tutorialLibrary}
+                currentProjectId={activeProjectDefinition.id}
+                tutorialStepIndex={tutorialStepIndex}
+                selectedTutorialStep={selectedTutorialStep}
+                completedTutorialIds={completedTutorialIds}
+                isTutorialCompleted={isTutorialCompleted}
+                workspaceMode={workspaceMode}
+                tutorialNotesVisible={tutorialNotesVisible}
+                onSetWorkspaceMode={(mode) =>
+                  dispatch({
+                    type: 'setWorkspaceMode',
+                    projectId: activeProjectDefinition.id,
+                    mode,
+                  })
+                }
+                onSetCryptanalysisMode={(mode) =>
+                  dispatch({
+                    type: 'setCryptanalysisMode',
+                    projectId: activeProjectDefinition.id,
+                    mode,
+                  })
+                }
+                onSetTutorialNotesVisible={(visible) =>
+                  dispatch({
+                    type: 'setTutorialNotesVisible',
+                    projectId: activeProjectDefinition.id,
+                    visible,
+                  })
+                }
+                onCiphertextChange={(value) =>
+                  dispatch({
+                    type: 'setCryptanalysisInput',
+                    projectId: activeProjectDefinition.id,
+                    value,
+                  })
+                }
+                onModernBaselineChange={(value) =>
+                  dispatch({
+                    type: 'setModernAnalysisBaseline',
+                    projectId: activeProjectDefinition.id,
+                    value,
+                  })
+                }
+                onModernFlipBitChange={(value) =>
+                  dispatch({
+                    type: 'setModernAnalysisFlipBit',
+                    projectId: activeProjectDefinition.id,
+                    value,
+                  })
+                }
+                onSelectTutorial={(tutorialId) => handleSelectTutorial(tutorialId)}
+                onOpenTutorialPath={handleOpenTutorialPath}
+                onSetTutorialStep={(stepValue) => {
+                  setStepIndex(selectedTutorial?.steps[stepValue]?.targetStepIndex ?? null);
+                  dispatch({
+                    type: 'setTutorialStep',
+                    projectId: activeProjectDefinition.id,
+                    stepIndex: stepValue,
+                  });
+                }}
+                onSwitchProject={(projectId) =>
+                  dispatch({
+                    type: 'switchProject',
+                    projectId,
+                  })
+                }
+                onFocusStepModule={(moduleId) =>
+                  dispatch({
+                    type: 'selectModule',
+                    projectId: activeProjectDefinition.id,
+                    moduleId,
+                  })
+                }
+                onResetTutorialProgress={() =>
+                  dispatch({
+                    type: 'resetTutorialProgress',
+                    projectId: activeProjectDefinition.id,
+                  })
+                }
+                onOpenManual={handleOpenUserManual}
+              />
+            </Suspense>
           ) : null}
 
         </>

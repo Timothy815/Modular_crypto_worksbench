@@ -101,8 +101,10 @@ interface WorkbenchPanelProps {
   tutorialNotesVisible?: boolean;
   challengeSolved?: boolean;
   isCompositeEditor?: boolean;
+  isObservationMode?: boolean;
   probedModuleIds?: string[];
   isTickedMode?: boolean;
+  showTickControls?: boolean;
   tickCount?: number;
   currentTick?: number;
   collectedOutput?: string | null;
@@ -188,8 +190,10 @@ export function WorkbenchPanel({
   tutorialNotesVisible = true,
   challengeSolved = false,
   isCompositeEditor = false,
+  isObservationMode = false,
   probedModuleIds = [],
   isTickedMode = false,
+  showTickControls = true,
   tickCount = 0,
   currentTick = 0,
   collectedOutput = null,
@@ -857,6 +861,7 @@ export function WorkbenchPanel({
 
       <WorkbenchProjectContext
         isCompositeEditor={isCompositeEditor}
+        isObservationMode={isObservationMode}
         activeProject={activeProject}
         activeProjectGroup={activeProjectGroup}
         activeProjectStage={activeProjectStage}
@@ -882,6 +887,7 @@ export function WorkbenchPanel({
 
       <WorkbenchActions
         isCompositeEditor={isCompositeEditor}
+        isObservationMode={isObservationMode}
         canUndo={canUndo}
         canRedo={canRedo}
         selectedModuleIds={selectedModuleIds}
@@ -992,9 +998,18 @@ export function WorkbenchPanel({
       ) : null}
       {selectedModuleIds.length > 0 ? (
         <p className="selection-status">
-          Selected modules: <strong>{selectedModuleIds.length}</strong>. Use
-          <strong> Shift-click</strong>, <strong> Cmd/Ctrl-click</strong>, or drag on empty canvas
-          to build a composite selection, then drag any selected module to move the group.
+          {isObservationMode ? (
+            <>
+              Selected modules: <strong>{selectedModuleIds.length}</strong>. Use
+              <strong> Shift-click</strong> or <strong> Cmd/Ctrl-click</strong> to compare internal modules inside this instance view.
+            </>
+          ) : (
+            <>
+              Selected modules: <strong>{selectedModuleIds.length}</strong>. Use
+              <strong> Shift-click</strong>, <strong> Cmd/Ctrl-click</strong>, or drag on empty canvas
+              to build a composite selection, then drag any selected module to move the group.
+            </>
+          )}
         </p>
       ) : null}
       {pendingConnection ? (
@@ -1022,7 +1037,7 @@ export function WorkbenchPanel({
         </p>
       ) : null}
 
-      {!isCompositeEditor ? (
+      {!isCompositeEditor && showTickControls ? (
         <div className="tick-bar">
           <label className="tick-bar-toggle">
             <input
@@ -1317,6 +1332,11 @@ export function WorkbenchPanel({
                       onSelectModule(moduleInstance.id, true);
                       return;
                     }
+                    if (isObservationMode) {
+                      setSelectedConnectionIndex(null);
+                      onSelectModule(moduleInstance.id, false);
+                      return;
+                    }
                     const isDraggingExistingSelection =
                       selectedModuleIds.length > 1 &&
                       selectedModuleIds.includes(moduleInstance.id);
@@ -1505,7 +1525,7 @@ export function WorkbenchPanel({
                             )
                           }
                           onMouseDown={(event) => {
-                            if (pendingConnection || !hasIncomingConnection) {
+                            if (isObservationMode || pendingConnection || !hasIncomingConnection) {
                               return;
                             }
                             event.preventDefault();
@@ -1552,6 +1572,9 @@ export function WorkbenchPanel({
                         )
                       }
                       onMouseDown={(event) => {
+                        if (isObservationMode) {
+                          return;
+                        }
                         event.preventDefault();
                         event.stopPropagation();
                         startConnectionFromOutput(
@@ -1639,6 +1662,9 @@ export function WorkbenchPanel({
               <div
                 className="canvas-annotation-handle"
                 onMouseDown={(event) => {
+                  if (isObservationMode) {
+                    return;
+                  }
                   event.preventDefault();
                   event.stopPropagation();
                   const pointer = getCanvasPointerFromClient(event.clientX, event.clientY);
@@ -1662,6 +1688,9 @@ export function WorkbenchPanel({
                   type="button"
                   className="annotation-delete-button"
                   onClick={(event) => {
+                    if (isObservationMode) {
+                      return;
+                    }
                     event.stopPropagation();
                     onRemoveAnnotation(annotation.id);
                   }}
@@ -1671,6 +1700,7 @@ export function WorkbenchPanel({
               </div>
               <textarea
                 value={annotation.text}
+                readOnly={isObservationMode}
                 onChange={(event) =>
                   onUpdateAnnotationText(annotation.id, event.target.value)
                 }
