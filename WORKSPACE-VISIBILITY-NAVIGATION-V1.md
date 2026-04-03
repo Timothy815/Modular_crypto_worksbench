@@ -2,7 +2,7 @@
 
 Last updated: March 27, 2026
 
-Status: Implemented on the `feature/workspace-visibility-navigation` line.
+Status: Shipped on `main`.
 
 ## Purpose
 

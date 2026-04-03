@@ -2,7 +2,7 @@
 
 Last updated: March 27, 2026
 
-Status: Implemented on `feature/parameter-comparison-ergonomics` as the next bounded follow-on after `PARAMETER-AUTHORING-ERGONOMICS-V1`.
+Status: Shipped on `main`.
 
 ## Purpose
 

@@ -2,7 +2,7 @@
 
 Last updated: March 27, 2026
 
-Status: Implemented locally on `feature/repeated-structure-authoring`; awaiting review/commit.
+Status: Shipped on `main`.
 
 ## Purpose
 

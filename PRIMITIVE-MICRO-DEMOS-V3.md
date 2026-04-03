@@ -2,7 +2,7 @@
 
 Last updated: March 27, 2026
 
-Status: Active bounded follow-on for rotor legibility after `ROTOR-REVERSE-PATH-V1`.
+Status: Shipped on `main`.
 
 ## Purpose
 
