@@ -18,7 +18,6 @@ import type {
   ComparisonBaselineDocument,
   CompositeLibraryDocument,
   PersistedWorkspaceDocument,
-  ShareableLabPack,
   UserWorkspaceMetadata,
   WorkbenchAnnotation,
   WorkbenchDocument,
@@ -593,21 +592,6 @@ export function downloadDocument(projectId: string, workbenchDocument: Workbench
   URL.revokeObjectURL(url);
 }
 
-export function downloadShareableLabPack(
-  fileNameStem: string,
-  pack: ShareableLabPack,
-): void {
-  const blob = new Blob([JSON.stringify(pack, null, 2)], {
-    type: 'application/json',
-  });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = `${fileNameStem}.labpack.mcw.json`;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
-
 export function downloadPythonDocument(fileName: string, source: string): void {
   const blob = new Blob([source], {
     type: 'text/x-python',
@@ -807,15 +791,6 @@ export function parseGuidedTutorialDocument(rawValue: string): GuidedTutorial | 
   }
 }
 
-export function parseShareableLabPack(rawValue: string): ShareableLabPack | null {
-  try {
-    const parsed = JSON.parse(rawValue);
-    return isShareableLabPack(parsed) ? cloneShareableLabPack(parsed) : null;
-  } catch {
-    return null;
-  }
-}
-
 export function downloadCompositeLibraryDocument(
   libraryDocument: CompositeLibraryDocument,
 ): void {
@@ -975,55 +950,6 @@ function isVerificationCaseDocument(value: unknown): value is VerificationCase {
   );
 }
 
-function isShareableLabPack(value: unknown): value is ShareableLabPack {
-  if (typeof value !== 'object' || value === null) {
-    return false;
-  }
-
-  const candidate = value as ShareableLabPack;
-  return (
-    candidate.version === 1 &&
-    candidate.kind === 'mcw-shareable-lab-pack' &&
-    typeof candidate.metadata === 'object' &&
-    candidate.metadata !== null &&
-    typeof candidate.metadata.id === 'string' &&
-    typeof candidate.metadata.title === 'string' &&
-    typeof candidate.metadata.summary === 'string' &&
-    (candidate.metadata.author === undefined || typeof candidate.metadata.author === 'string') &&
-    (candidate.metadata.source === undefined || typeof candidate.metadata.source === 'string') &&
-    typeof candidate.metadata.exportedAt === 'string' &&
-    isWorkbenchDocument(candidate.workspace) &&
-    (candidate.comparisonBaseline === undefined ||
-      candidate.comparisonBaseline === null ||
-      isComparisonBaselineDocument(candidate.comparisonBaseline)) &&
-    (candidate.verificationCases === undefined ||
-      (Array.isArray(candidate.verificationCases) &&
-        candidate.verificationCases.every(isVerificationCaseDocument))) &&
-    (candidate.tutorial === undefined || isGuidedTutorialDocument(candidate.tutorial)) &&
-    (candidate.challenge === undefined || isGuidedChallengeDocument(candidate.challenge)) &&
-    (candidate.teachingNotes === undefined || typeof candidate.teachingNotes === 'string')
-  );
-}
-
-function cloneShareableLabPack(pack: ShareableLabPack): ShareableLabPack {
-  return {
-    version: 1,
-    kind: 'mcw-shareable-lab-pack',
-    metadata: { ...pack.metadata },
-    workspace: cloneWorkspaceDocument(pack.workspace),
-    comparisonBaseline:
-      pack.comparisonBaseline === undefined
-        ? undefined
-        : cloneComparisonBaseline(pack.comparisonBaseline),
-    verificationCases:
-      pack.verificationCases === undefined
-        ? undefined
-        : pack.verificationCases.map(cloneVerificationCase),
-    tutorial: pack.tutorial === undefined ? undefined : cloneTutorial(pack.tutorial),
-    challenge: pack.challenge === undefined ? undefined : cloneChallenge(pack.challenge),
-    teachingNotes: pack.teachingNotes,
-  };
-}
 
 function isCompositeLibraryEntry(value: unknown): value is CompositeLibraryEntry {
   if (typeof value !== 'object' || value === null) {

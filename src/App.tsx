@@ -22,7 +22,6 @@ import {
   getUserManualConfig,
 } from './ui/app-shell-support';
 import { LazyPanelFallback } from './ui/components/lazy-panel-fallback';
-import { PrimitivePalette } from './ui/components/primitive-palette';
 import { LearningDock } from './ui/components/learning-dock';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
 import { demoProjects, getDefaultDemoProject, runDemoProject } from './ui/demo-projects';
@@ -117,6 +116,11 @@ const ParameterInspector = lazy(() =>
 const ManualWindow = lazy(() =>
   import('./ui/components/manual-window').then((module) => ({
     default: module.ManualWindow,
+  })),
+);
+const PrimitivePalette = lazy(() =>
+  import('./ui/components/primitive-palette').then((module) => ({
+    default: module.PrimitivePalette,
   })),
 );
 const InstructorPilotWindow = lazy(() =>
@@ -748,7 +752,7 @@ function MainApp() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '') || activeProjectDefinition.id;
 
-    const { downloadShareableLabPack } = await import('./ui/persistence');
+    const { downloadShareableLabPack } = await import('./ui/shareable-lab-pack-persistence');
     downloadShareableLabPack(
       fileNameStem,
       buildShareableLabPack({
@@ -779,7 +783,7 @@ function MainApp() {
   ]);
   const handleImportShareableLabPack = useCallback(
     async (file: File) => {
-      const { parseShareableLabPack } = await import('./ui/persistence');
+      const { parseShareableLabPack } = await import('./ui/shareable-lab-pack-persistence');
       const rawValue = await file.text();
       const pack = parseShareableLabPack(rawValue);
       if (!pack) {
@@ -2584,71 +2588,73 @@ function MainApp() {
           <div
             className={paletteViewMode === 'compact' ? 'workbench-dock workbench-dock-left workbench-dock-compact' : 'workbench-dock workbench-dock-left'}
           >
-            <PrimitivePalette
-              registry={effectiveRegistry}
-              viewMode={paletteViewMode}
-              onToggleViewMode={() =>
-                setPaletteViewMode((currentMode) =>
-                  currentMode === 'expanded' ? 'compact' : 'expanded',
-                )
-              }
-              compositeUsageCountById={compositeUsageCountById}
-              builtInReusableIds={builtInReusableIds}
-              onAddModule={(defId) => {
-                const moduleDef = effectiveRegistry[defId] ?? null;
-                if (!moduleDef) {
-                  return;
+            <Suspense fallback={<LazyPanelFallback label="Tools" title="Loading palette…" />}>
+              <PrimitivePalette
+                registry={effectiveRegistry}
+                viewMode={paletteViewMode}
+                onToggleViewMode={() =>
+                  setPaletteViewMode((currentMode) =>
+                    currentMode === 'expanded' ? 'compact' : 'expanded',
+                  )
                 }
+                compositeUsageCountById={compositeUsageCountById}
+                builtInReusableIds={builtInReusableIds}
+                onAddModule={(defId) => {
+                  const moduleDef = effectiveRegistry[defId] ?? null;
+                  if (!moduleDef) {
+                    return;
+                  }
 
-                dispatch({
-                  type: 'addModule',
-                  projectId: activeProjectDefinition.id,
-                  moduleDef,
-                });
-              }}
-              onExportCompositeLibrary={() =>
-                downloadCompositeLibraryDocument({
-                  version: 1,
-                  entries: state.compositeLibrary,
-                })
-              }
-              onOpenComposite={(defId) => {
-                dispatch({
-                  type: 'openCompositeEditor',
-                  entryId: defId,
-                });
-              }}
-              onDuplicateReusable={(defId) => {
-                const entry = state.compositeLibrary.find((candidate) => candidate.id === defId);
-                if (!entry) {
-                  return;
+                  dispatch({
+                    type: 'addModule',
+                    projectId: activeProjectDefinition.id,
+                    moduleDef,
+                  });
+                }}
+                onExportCompositeLibrary={() =>
+                  downloadCompositeLibraryDocument({
+                    version: 1,
+                    entries: state.compositeLibrary,
+                  })
                 }
-
-                const nextEntry = createUserOwnedReusableDuplicate(
-                  entry,
-                  state.compositeLibrary,
-                );
-
-                dispatch({
-                  type: 'addCompositeToLibrary',
-                  entry: nextEntry,
-                });
-
-                if (isCompositeDefinition(nextEntry.definition)) {
+                onOpenComposite={(defId) => {
                   dispatch({
                     type: 'openCompositeEditor',
-                    entryId: nextEntry.id,
+                    entryId: defId,
                   });
+                }}
+                onDuplicateReusable={(defId) => {
+                  const entry = state.compositeLibrary.find((candidate) => candidate.id === defId);
+                  if (!entry) {
+                    return;
+                  }
+
+                  const nextEntry = createUserOwnedReusableDuplicate(
+                    entry,
+                    state.compositeLibrary,
+                  );
+
+                  dispatch({
+                    type: 'addCompositeToLibrary',
+                    entry: nextEntry,
+                  });
+
+                  if (isCompositeDefinition(nextEntry.definition)) {
+                    dispatch({
+                      type: 'openCompositeEditor',
+                      entryId: nextEntry.id,
+                    });
+                  }
+                }}
+                onOpenPrimitiveMicroDemo={handleOpenPrimitiveMicroDemo}
+                onRemoveComposite={(defId) =>
+                  dispatch({
+                    type: 'removeCompositeFromLibrary',
+                    compositeId: defId,
+                  })
                 }
-              }}
-              onOpenPrimitiveMicroDemo={handleOpenPrimitiveMicroDemo}
-              onRemoveComposite={(defId) =>
-                dispatch({
-                  type: 'removeCompositeFromLibrary',
-                  compositeId: defId,
-                })
-              }
-            />
+              />
+            </Suspense>
             <button
               type="button"
               className="dock-resize-handle dock-resize-handle-right"

@@ -6,9 +6,9 @@ import {
   loadWorkspaceFromStorage,
   parseCompositeLibraryDocument,
   parseGuidedChallengeDocument,
-  parseShareableLabPack,
   saveWorkspaceToStorage,
 } from './persistence';
+import { parseShareableLabPack } from './shareable-lab-pack-persistence';
 import { createInitialUiState, uiReducer } from './store';
 import type { CompositeLibraryDocument, ShareableLabPack } from './workbench-document';
 
