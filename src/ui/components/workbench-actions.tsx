@@ -149,9 +149,9 @@ export function WorkbenchActions({
           </WorkbenchActionMenu>
 
           <WorkbenchActionMenu label="Import/Export" description="Move artifacts">
-            <WorkbenchMenuActionButton label="Import JSON" onSelect={onRequestImport} />
+            <WorkbenchMenuActionButton label="Import Workspace" onSelect={onRequestImport} />
             <WorkbenchMenuActionButton label="Import Lab Pack" onSelect={onRequestImportLabPack} />
-            <WorkbenchMenuActionButton label="Export JSON" onSelect={onExportDocument} />
+            <WorkbenchMenuActionButton label="Export Workspace" onSelect={onExportDocument} />
             <WorkbenchMenuActionButton label="Export Lab Pack" onSelect={onExportLabPack} />
             <WorkbenchMenuActionButton label="Export Python" onSelect={onExportPython} />
           </WorkbenchActionMenu>

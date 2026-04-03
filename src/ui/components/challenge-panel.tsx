@@ -169,20 +169,18 @@ export function ChallengePanel({
                 <span className="content-status-chip">{getLearningStageLabel(selectedStage)}</span>
               ) : null}
               <span className="content-status-chip">
-                Group: <strong>{activeGroup}</strong>
+                <strong>{activeGroup}</strong>
               </span>
               <span className="content-status-chip">
                 {isCoreLearningItem(selectedChallenge) ? 'Core Path' : 'Optional'}
               </span>
               {selectedChallenge.difficulty ? (
                 <span className="content-status-chip">
-                  Difficulty: <strong>{formatDifficultyLabel(selectedChallenge.difficulty)}</strong>
+                  <strong>{formatDifficultyLabel(selectedChallenge.difficulty)}</strong>
                 </span>
               ) : null}
-              <span className="content-status-chip">
-                Resetting restores the seeded starting machine
-              </span>
             </div>
+            <p className="comparison-copy">Reset returns to the seeded starting machine.</p>
             {recommendedNext ? (
               <div className="comparison-copy project-recommended-next">
                 <span>Recommended next:</span>
@@ -222,14 +220,14 @@ export function ChallengePanel({
               className="mini-action-button"
               onClick={onLoadChallengeStart}
             >
-              Reset Challenge Progress
+              Reset Challenge
             </button>
             <button
               type="button"
               className="mini-action-button"
               onClick={onExportChallenge}
             >
-              Export Challenge
+              Export
             </button>
             <button
               type="button"
@@ -242,14 +240,14 @@ export function ChallengePanel({
                   : 'Capture a compare baseline first, then adjust the graph you want students to start from.'
               }
             >
-              Capture Current As Challenge
+              Capture As Challenge
             </button>
             <button
               type="button"
               className="mini-action-button"
               onClick={() => importInputRef.current?.click()}
             >
-              Load Challenge File
+              Import
             </button>
             {availableHints.length > 0 ? (
               <button
@@ -266,7 +264,7 @@ export function ChallengePanel({
                 }
                 disabled={revealedHintCount >= availableHints.length}
               >
-                {revealedHintCount === 0 ? 'Need A Hint?' : 'Reveal Next Hint'}
+                {revealedHintCount === 0 ? 'Reveal Hint' : 'Next Hint'}
               </button>
             ) : null}
             <input

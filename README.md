@@ -43,6 +43,12 @@ The older `v2.1` builder-power queue is now largely present on `main` as shipped
 
 That means the next docket should now be chosen from bounded product-facing slices rather than the older authoring-power queue.
 
+The clearest immediate next candidate is now:
+- `PILOT-POLISH-V1.md`
+- a short evidence-driven friction-removal loop for classroom-readiness and first-use smoothness
+- meant to tighten existing surfaces rather than open another major feature family
+- bounded by zero schema drift and a small fixed set of named friction fixes
+
 The product-shaping north-star check is now also shipped:
 - `SYSTEMS-IDE-COHERENCE-V1.md`
 - defines MCW as a visual cryptographic systems IDE

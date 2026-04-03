@@ -1089,7 +1089,7 @@ export function WorkbenchPanel({
               </label>
               {collectedOutput !== null ? (
                 <span className="tick-bar-collected">
-                  <span className="meta-label">Output</span> <strong>{collectedOutput}</strong>
+                  <span className="meta-label">Collected</span> <strong>{collectedOutput}</strong>
                 </span>
               ) : null}
             </>

@@ -115,7 +115,7 @@ export function TutorialPanel({
         <p className="tutorial-progress-summary">
           {completedCount} of {tutorials.length} completed
           {workspaceMode === 'build' ? (
-            <span className="workspace-mode-hint"> — canvas overlays paused</span>
+            <span className="workspace-mode-hint"> — overlays off</span>
           ) : null}
         </p>
       </div>
@@ -163,13 +163,13 @@ export function TutorialPanel({
             {getLearningStageLabel(selectedStage)}
           </span>
           <span className="content-status-chip">
-            Group: <strong>{activeGroup}</strong>
+            <strong>{activeGroup}</strong>
           </span>
           <span className="content-status-chip">
             {isCoreLearningItem(selectedTutorial) ? 'Core Path' : 'Optional'}
           </span>
           <span className="content-status-chip">
-            Project: <strong>{selectedTutorial.projectId}</strong>
+            {isTutorialProjectActive ? 'Workspace Open' : 'Workspace Closed'}
           </span>
           {isCompleted ? (
             <span className="content-status-chip tutorial-completed-chip">Completed</span>
@@ -236,7 +236,7 @@ export function TutorialPanel({
             className="mini-action-button"
             onClick={() => onSwitchProject(selectedTutorial.projectId)}
           >
-            Open Tutorial Project
+            Open Workspace
           </button>
         ) : null}
         <button
@@ -284,7 +284,7 @@ export function TutorialPanel({
               <p className="comparison-copy">{activeStep.body}</p>
               {activeStep.focusModuleId ? (
                 <p className="comparison-copy">
-                  Step target: <strong>{activeStep.focusModuleId}</strong>
+                  Focus: <strong>{activeStep.focusModuleId}</strong>
                 </p>
               ) : null}
             </>

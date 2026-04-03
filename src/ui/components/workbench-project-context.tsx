@@ -157,18 +157,18 @@ export function WorkbenchProjectContext({
           </select>
         </label>
         <label className="project-selector">
-          <span className="meta-label">Search demos</span>
+          <span className="meta-label">Search</span>
           <input
             type="search"
             value={projectSearch}
             onChange={(event) => setProjectSearch(event.target.value)}
-            placeholder="Search by name, concept, or pipeline"
+            placeholder="Name, concept, or pipeline"
           />
         </label>
       </div>
       {normalizedProjectSearch && searchMatchingProjects.length > 0 ? (
         <div className="project-context-card project-context-card-wide project-search-results-card">
-          <strong>Matching demos</strong>
+          <strong>Matches</strong>
           <div className="project-search-results">
             {searchMatchingProjects.map((project) => (
               <button
@@ -193,10 +193,10 @@ export function WorkbenchProjectContext({
       ) : null}
       {normalizedProjectSearch && searchMatchingProjects.length === 0 ? (
         <div className="project-context-card project-context-card-wide">
-          <strong>No demos matched that search.</strong>
+          <strong>No matches</strong>
           <p>
-            Try a machine family or mechanic like <code>rotor</code>, <code>sbox</code>,{' '}
-            <code>pollux</code>, <code>hash</code>, or <code>double-step</code>.
+            Try <code>rotor</code>, <code>sbox</code>, <code>pollux</code>, <code>hash</code>, or{' '}
+            <code>double-step</code>.
           </p>
         </div>
       ) : null}
@@ -233,10 +233,7 @@ export function WorkbenchProjectContext({
         {showWorkspaceLandmarks ? (
           <div className="workspace-landmarks-card">
             <strong>Workspace Landmarks</strong>
-            <p>
-              Large graphs can start off-screen. Jump directly to visible sources, protocol context,
-              and outputs.
-            </p>
+            <p>Jump to visible sources, context, and outputs in large graphs.</p>
             {renderLandmarkGroup('Protocol & Timing', workspaceLandmarks.context, onJumpToModule)}
             {renderLandmarkGroup('Sources', workspaceLandmarks.sources, onJumpToModule)}
             {renderLandmarkGroup('Outputs', workspaceLandmarks.outputs, onJumpToModule)}
@@ -245,7 +242,7 @@ export function WorkbenchProjectContext({
         {workspaceVersions.length > 0 ? (
           <div className="workspace-versions-card">
             <strong>Saved Versions</strong>
-            <p>Restore an intentional workspace checkpoint without replacing undo/redo.</p>
+            <p>Restore a checkpoint without replacing undo/redo.</p>
             <div className="workspace-version-list">
               {[...workspaceVersions]
                 .sort((left, right) => right.savedAt.localeCompare(left.savedAt))
