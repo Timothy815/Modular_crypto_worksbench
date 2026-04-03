@@ -19,6 +19,18 @@ export interface WorkbenchAnnotation {
   text: string;
 }
 
+export type WorkbenchGroupBoxVariant = 'neutral' | 'stage' | 'feedback' | 'emphasis';
+
+export interface WorkbenchGroupBox {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  title: string;
+  variant?: WorkbenchGroupBoxVariant;
+}
+
 export type WorkbenchConnectionBendAxis = 'x' | 'y';
 
 export interface WorkbenchConnectionLayout {
@@ -35,6 +47,7 @@ export type WorkbenchRoutingMode = 'curved' | 'orthogonal';
 export interface WorkbenchUiMetadata {
   layout: Record<string, WorkbenchPosition>;
   annotations: WorkbenchAnnotation[];
+  groupBoxes?: WorkbenchGroupBox[];
   layoutDirection?: WorkbenchLayoutDirection;
   routingMode?: WorkbenchRoutingMode;
   connectionLayout?: Record<string, WorkbenchConnectionLayout>;

@@ -80,6 +80,11 @@ The next local graph-layout follow-on now being implemented is:
 - a bounded selected-cluster alignment/distribution slice
 - now adds explicit align/distribute actions while keeping layout cleanup local to the visible selection and stopping short of a full diagramming toolbar
 
+The next large-workspace readability slice now implemented locally after that is:
+- `STAGE-GROUP-BOXES-V1.md`
+- a bounded visual grouping-region slice for rounds, banks, phases, and feedback areas
+- keeps grouping purely visual and stored only in workspace UI metadata
+
 Current `main` now also includes:
 - Python export foundations:
   - one workspace-local `Export Python` action beside JSON export

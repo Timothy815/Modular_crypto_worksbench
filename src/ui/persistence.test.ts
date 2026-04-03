@@ -138,9 +138,13 @@ describe('workspace persistence', () => {
       projectId: 'my-scratchpad',
       mode: 'orthogonal',
     });
+    const stateWithGroupBox = uiReducer(stateWithWorkspace, {
+      type: 'addGroupBox',
+      projectId: 'my-scratchpad',
+    });
     const storage = new MemoryStorage();
 
-    saveWorkspaceToStorage(stateWithWorkspace, {}, storage);
+    saveWorkspaceToStorage(stateWithGroupBox, {}, storage);
     const restored = loadWorkspaceFromStorage(demoProjects, storage);
 
     expect(restored?.userWorkspaceLibrary).toEqual([
@@ -160,6 +164,17 @@ describe('workspace persistence', () => {
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.layoutDirection).toBe('vertical');
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.routingMode).toBe('orthogonal');
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.connectionLayout).toEqual({});
+    expect(restored?.documentsByProjectId['my-scratchpad']?.ui.groupBoxes).toEqual([
+      {
+        id: 'group-1',
+        x: 88,
+        y: 88,
+        width: 280,
+        height: 180,
+        title: 'Group',
+        variant: 'stage',
+      },
+    ]);
   });
 
   it('round-trips node orientation through storage', () => {

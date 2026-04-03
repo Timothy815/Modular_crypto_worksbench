@@ -41,6 +41,8 @@ interface WorkbenchActionsProps {
       | 'distribute-horizontal'
       | 'distribute-vertical',
   ) => void;
+  onRequestAddGroupBox: () => void;
+  onRequestAddGroupBoxFromSelection: () => void;
   onRequestDuplicateSelection: () => void;
   onRequestDeleteSelection: () => void;
   onRequestDeleteWire: () => void;
@@ -118,6 +120,8 @@ export function WorkbenchActions({
   onFitView,
   onRequestSaveVersion,
   onRequestArrangeSelection,
+  onRequestAddGroupBox,
+  onRequestAddGroupBoxFromSelection,
   onRequestDuplicateSelection,
   onRequestDeleteSelection,
   onRequestDeleteWire,
@@ -205,6 +209,12 @@ export function WorkbenchActions({
               label="Distribute Vertically"
               onSelect={() => onRequestArrangeSelection('distribute-vertical')}
               disabled={selectedModuleIds.length < 3}
+            />
+            <WorkbenchMenuActionButton label="Add Group Box" onSelect={onRequestAddGroupBox} />
+            <WorkbenchMenuActionButton
+              label="Group Selection"
+              onSelect={onRequestAddGroupBoxFromSelection}
+              disabled={selectedModuleIds.length < 1}
             />
             <WorkbenchMenuActionButton
               label="Curve"

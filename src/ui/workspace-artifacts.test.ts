@@ -37,6 +37,17 @@ describe('workspace-artifacts', () => {
       project: { modules: [], connections: [] },
       layout: {},
       annotations: [],
+      groupBoxes: [
+        {
+          id: 'group-box-1',
+          x: 40,
+          y: 60,
+          width: 240,
+          height: 160,
+          title: 'Round 1',
+          variant: 'stage',
+        },
+      ],
       layoutDirection: 'vertical',
       routingMode: 'orthogonal',
       connectionLayout: {
@@ -82,6 +93,17 @@ describe('workspace-artifacts', () => {
     expect(prepared.learningPanelTab).toBe('challenge');
     expect(prepared.document.ui.layoutDirection).toBe('vertical');
     expect(prepared.document.ui.routingMode).toBe('orthogonal');
+    expect(prepared.document.ui.groupBoxes).toEqual([
+      {
+        id: 'group-box-1',
+        x: 40,
+        y: 60,
+        width: 240,
+        height: 160,
+        title: 'Round 1',
+        variant: 'stage',
+      },
+    ]);
     expect(prepared.document.ui.connectionLayout).toEqual({
       'a:out->b:in': {
         orthogonalBend: { axis: 'x', value: 120 },

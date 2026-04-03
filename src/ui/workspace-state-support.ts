@@ -4,6 +4,7 @@ import type {
   ComparisonBaselineDocument,
   WorkbenchAnnotation,
   WorkbenchConnectionLayout,
+  WorkbenchGroupBox,
   WorkbenchLayoutDirection,
   WorkbenchPosition,
   WorkbenchRoutingMode,
@@ -15,6 +16,7 @@ export interface WorkspaceHistorySnapshot {
   project: Project;
   layout: Record<string, WorkbenchPosition>;
   annotations: WorkbenchAnnotation[];
+  groupBoxes: WorkbenchGroupBox[];
   layoutDirection: WorkbenchLayoutDirection;
   routingMode: WorkbenchRoutingMode;
   connectionLayout: Record<string, WorkbenchConnectionLayout>;
@@ -34,6 +36,7 @@ interface WorkspaceSnapshotState {
   projectStates: Record<string, Project>;
   layoutByProject: Record<string, Record<string, CompositeLayoutPosition>>;
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
+  groupBoxesByProject: Record<string, WorkbenchGroupBox[]>;
   layoutDirectionByProject: Record<string, WorkbenchLayoutDirection>;
   routingModeByProject: Record<string, WorkbenchRoutingMode>;
   connectionLayoutByProject: Record<string, Record<string, WorkbenchConnectionLayout>>;
@@ -57,6 +60,10 @@ interface WorkspaceVersionHostState extends WorkspaceSnapshotState {
 
 export function cloneAnnotations(annotations: WorkbenchAnnotation[]): WorkbenchAnnotation[] {
   return annotations.map((annotation) => ({ ...annotation }));
+}
+
+export function cloneGroupBoxes(groupBoxes: WorkbenchGroupBox[]): WorkbenchGroupBox[] {
+  return groupBoxes.map((groupBox) => ({ ...groupBox }));
 }
 
 export function cloneLayout(
@@ -96,6 +103,7 @@ export function cloneWorkspaceHistorySnapshot(
     project: cloneProject(snapshot.project),
     layout: cloneLayout(snapshot.layout),
     annotations: cloneAnnotations(snapshot.annotations),
+    groupBoxes: cloneGroupBoxes(snapshot.groupBoxes),
     layoutDirection: snapshot.layoutDirection,
     routingMode: snapshot.routingMode,
     connectionLayout: cloneConnectionLayout(snapshot.connectionLayout),
@@ -121,6 +129,7 @@ export function buildWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
     project: cloneProject(project),
     layout: cloneLayout(layout),
     annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
+    groupBoxes: cloneGroupBoxes(state.groupBoxesByProject[projectId] ?? []),
     layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
     routingMode: state.routingModeByProject[projectId] ?? 'curved',
     connectionLayout: cloneConnectionLayout(state.connectionLayoutByProject[projectId] ?? {}),
@@ -154,6 +163,10 @@ export function applyWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
     annotationsByProject: {
       ...state.annotationsByProject,
       [projectId]: cloneAnnotations(snapshot.annotations),
+    },
+    groupBoxesByProject: {
+      ...state.groupBoxesByProject,
+      [projectId]: cloneGroupBoxes(snapshot.groupBoxes),
     },
     layoutDirectionByProject: {
       ...state.layoutDirectionByProject,
@@ -218,6 +231,7 @@ export function buildWorkspaceVersionDocument<State extends WorkspaceVersionHost
       ui: {
         layout: cloneLayout(layout),
         annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
+        groupBoxes: cloneGroupBoxes(state.groupBoxesByProject[projectId] ?? []),
         layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
         routingMode: state.routingModeByProject[projectId] ?? 'curved',
         connectionLayout: cloneConnectionLayout(state.connectionLayoutByProject[projectId] ?? {}),
@@ -337,6 +351,10 @@ export function applyRestoreWorkspaceVersion<State extends WorkspaceVersionHostS
     annotationsByProject: {
       ...state.annotationsByProject,
       [projectId]: cloneAnnotations(version.document.ui.annotations),
+    },
+    groupBoxesByProject: {
+      ...state.groupBoxesByProject,
+      [projectId]: cloneGroupBoxes(version.document.ui.groupBoxes ?? []),
     },
     comparisonBaselinesByProject: {
       ...state.comparisonBaselinesByProject,

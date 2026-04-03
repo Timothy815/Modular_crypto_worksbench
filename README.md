@@ -90,6 +90,11 @@ The next local graph-layout follow-on now being implemented is:
 - now adds explicit selection-scoped align and distribute actions for visible module clusters
 - stays bounded as local layout cleanup rather than widening into a full diagram-editor toolbar
 
+The next large-workspace readability slice now implemented locally after that is:
+- `STAGE-GROUP-BOXES-V1.md`
+- adds lightweight visual region boxes for rounds, banks, phases, and feedback areas
+- keeps grouping purely visual and stored only in workspace UI metadata
+
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - now shipped as the first bounded verification-station refinement inside the compare/analyze line

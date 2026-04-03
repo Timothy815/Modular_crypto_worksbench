@@ -18,6 +18,7 @@ import type {
   ShareableLabPack,
   WorkbenchAnnotation,
   WorkbenchDocument,
+  WorkbenchGroupBox,
   WorkbenchPosition,
 } from './workbench-document';
 
@@ -84,6 +85,10 @@ function cloneLayout(layout: Record<string, WorkbenchPosition>) {
 
 function cloneAnnotations(annotations: WorkbenchAnnotation[]) {
   return annotations.map((annotation) => ({ ...annotation }));
+}
+
+function cloneGroupBoxes(groupBoxes: WorkbenchGroupBox[]) {
+  return groupBoxes.map((groupBox) => ({ ...groupBox }));
 }
 
 function cloneComparisonBaseline(
@@ -178,6 +183,12 @@ export function hydrateInitialUiState(projects: DemoProject[]): UiState {
       allProjects.map((project) => [
         project.id,
         persistedWorkspace.documentsByProjectId[project.id]?.ui.annotations ?? initialState.annotationsByProject[project.id],
+      ]),
+    ),
+    groupBoxesByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.documentsByProjectId[project.id]?.ui.groupBoxes ?? initialState.groupBoxesByProject[project.id],
       ]),
     ),
     layoutDirectionByProject: Object.fromEntries(
@@ -362,6 +373,7 @@ export interface BuildShareableLabPackArgs {
   project: Project;
   layout: Record<string, { x: number; y: number }>;
   annotations: WorkbenchAnnotation[];
+  groupBoxes?: WorkbenchGroupBox[];
   layoutDirection: 'horizontal' | 'vertical';
   routingMode: 'curved' | 'orthogonal';
   connectionLayout?: Record<string, { orthogonalBend?: { axis: 'x' | 'y'; value: number } }>;
@@ -378,6 +390,7 @@ export function buildShareableLabPack({
   project,
   layout,
   annotations,
+  groupBoxes = [],
   layoutDirection,
   routingMode,
   connectionLayout = {},
@@ -402,6 +415,7 @@ export function buildShareableLabPack({
       ui: {
         layout: cloneLayout(layout),
         annotations: cloneAnnotations(annotations),
+        groupBoxes: cloneGroupBoxes(groupBoxes),
         layoutDirection,
         routingMode,
         connectionLayout: Object.fromEntries(
@@ -519,6 +533,7 @@ export function prepareImportedLabPack({
       ui: {
         layout: cloneLayout(pack.workspace.ui.layout),
         annotations: cloneAnnotations(pack.workspace.ui.annotations),
+        groupBoxes: cloneGroupBoxes(pack.workspace.ui.groupBoxes ?? []),
         layoutDirection: pack.workspace.ui.layoutDirection ?? 'horizontal',
         routingMode: pack.workspace.ui.routingMode ?? 'curved',
         connectionLayout: Object.fromEntries(

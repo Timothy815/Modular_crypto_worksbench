@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { V1_REGISTRY } from '../engine/modules';
+import { CANVAS_NODE_HEIGHT, CANVAS_NODE_WIDTH } from './canvas-selection';
 import { demoProjects } from './demo-projects';
 import { createInitialUiState, uiReducer } from './store';
 
@@ -85,6 +86,105 @@ describe('uiReducer', () => {
       orientation: 'south',
     });
     expect(nextState.projectStates[projectId]).toEqual(initialState.projectStates[projectId]);
+  });
+
+  it('creates a stage group box around the selected cluster bounds', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const clockPosition = initialState.layoutByProject[projectId]?.clock;
+    const lfsrPosition = initialState.layoutByProject[projectId]?.lfsr;
+    if (!clockPosition || !lfsrPosition) {
+      throw new Error('Expected clock and lfsr positions in the sequential demo.');
+    }
+
+    const selectedState = uiReducer(
+      uiReducer(initialState, {
+        type: 'selectModule',
+        projectId,
+        moduleId: 'clock',
+      }),
+      {
+        type: 'selectModule',
+        projectId,
+        moduleId: 'lfsr',
+        additive: true,
+      },
+    );
+
+    const nextState = uiReducer(selectedState, {
+      type: 'addGroupBoxFromSelection',
+      projectId,
+    });
+
+    expect(nextState.groupBoxesByProject[projectId]).toHaveLength(1);
+    expect(nextState.groupBoxesByProject[projectId]?.[0]).toEqual({
+      id: 'group-1',
+      x: Math.max(16, Math.min(clockPosition.x, lfsrPosition.x) - 36),
+      y: Math.max(16, Math.min(clockPosition.y, lfsrPosition.y) - 36),
+      width:
+        Math.max(clockPosition.x, lfsrPosition.x) -
+        Math.min(clockPosition.x, lfsrPosition.x) +
+        CANVAS_NODE_WIDTH +
+        72,
+      height:
+        Math.max(clockPosition.y, lfsrPosition.y) -
+        Math.min(clockPosition.y, lfsrPosition.y) +
+        CANVAS_NODE_HEIGHT +
+        72,
+      title: 'Selected Group',
+      variant: 'stage',
+    });
+
+    const movedState = uiReducer(nextState, {
+      type: 'moveGroupBox',
+      projectId,
+      groupBoxId: 'group-1',
+      x: 120,
+      y: 144,
+    });
+    const resizedState = uiReducer(movedState, {
+      type: 'resizeGroupBox',
+      projectId,
+      groupBoxId: 'group-1',
+      width: 480,
+      height: 220,
+    });
+
+    expect(resizedState.groupBoxesByProject[projectId]?.[0]).toMatchObject({
+      x: 120,
+      y: 144,
+      width: 480,
+      height: 220,
+    });
+  });
+
+  it('round-trips group boxes through workspace history snapshots', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const stateWithBox = uiReducer(initialState, {
+      type: 'addGroupBox',
+      projectId,
+    });
+
+    const savedVersionState = uiReducer(stateWithBox, {
+      type: 'saveWorkspaceVersion',
+      projectId,
+      versionId: 'group-boxes-v1',
+      name: 'Grouped',
+      savedAt: '2026-04-03T22:00:00.000Z',
+    });
+
+    expect(savedVersionState.workspaceVersionsByProject[projectId]?.[0]?.document.ui.groupBoxes).toEqual([
+      {
+        id: 'group-1',
+        x: 88,
+        y: 88,
+        width: 280,
+        height: 180,
+        title: 'Group',
+        variant: 'stage',
+      },
+    ]);
   });
 
   it('rejects invalid or duplicate module instance IDs', () => {

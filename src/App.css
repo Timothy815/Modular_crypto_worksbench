@@ -2457,6 +2457,96 @@ body.canvas-resizing {
   z-index: 1;
 }
 
+.canvas-group-box {
+  position: absolute;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, white);
+  background: color-mix(in srgb, var(--surface-panel) 60%, white);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 18%, transparent);
+  z-index: 0;
+}
+
+.canvas-group-box-neutral {
+  background: color-mix(in srgb, var(--surface-panel) 72%, white);
+}
+
+.canvas-group-box-stage {
+  background: color-mix(in srgb, var(--accent) 8%, white);
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
+}
+
+.canvas-group-box-feedback {
+  background: color-mix(in srgb, var(--role-composite-bg) 18%, white);
+  border-color: color-mix(in srgb, var(--role-composite-ink) 24%, var(--line));
+}
+
+.canvas-group-box-emphasis {
+  background: color-mix(in srgb, #d97706 10%, white);
+  border-color: color-mix(in srgb, #d97706 26%, var(--line));
+}
+
+.canvas-group-box.selected {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.canvas-group-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 2.1rem;
+  padding: 8px 10px;
+  cursor: grab;
+  user-select: none;
+}
+
+.canvas-group-box-header:active {
+  cursor: grabbing;
+}
+
+.canvas-group-box-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.canvas-group-box-title-input,
+.canvas-group-box-variant-select {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-panel) 88%, white);
+  padding: 4px 9px;
+  font: inherit;
+  font-size: 0.76rem;
+  color: var(--ink);
+}
+
+.canvas-group-box-title-input {
+  min-width: 7rem;
+  max-width: 12rem;
+}
+
+.canvas-group-box-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.canvas-group-box-resize-handle {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent) 72%, white);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 14%, transparent);
+  cursor: nwse-resize;
+}
+
 .canvas-annotation {
   position: absolute;
   width: 200px;

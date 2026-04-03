@@ -339,6 +339,10 @@ function MainApp() {
     () => state.annotationsByProject[activeProjectDefinition.id] ?? [],
     [activeProjectDefinition.id, state.annotationsByProject],
   );
+  const activeGroupBoxes = useMemo(
+    () => state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
+    [activeProjectDefinition.id, state.groupBoxesByProject],
+  );
   const activeCompositeEntry = state.compositeEditor
     ? state.compositeLibrary.find((entry) => entry.id === state.compositeEditor?.entryId) ?? null
     : null;
@@ -899,6 +903,7 @@ function MainApp() {
         project: activeProjectState,
         layout: activeLayout,
         annotations: activeAnnotations,
+        groupBoxes: activeGroupBoxes,
         layoutDirection: activeLayoutDirection,
         routingMode: activeRoutingMode,
         connectionLayout: activeConnectionLayout,
@@ -911,6 +916,7 @@ function MainApp() {
     setImportError(null);
   }, [
     activeAnnotations,
+    activeGroupBoxes,
     activeLayout,
     activeLayoutDirection,
     activeRoutingMode,
@@ -1599,6 +1605,7 @@ function MainApp() {
           ui: {
             layout: pasted.layout,
             annotations: activeAnnotations,
+            groupBoxes: activeGroupBoxes,
             layoutDirection: activeLayoutDirection,
             routingMode: activeRoutingMode,
             connectionLayout: activeConnectionLayout,
@@ -1789,6 +1796,9 @@ function MainApp() {
             annotations: state.compositeEditor
               ? []
               : state.annotationsByProject[activeProjectDefinition.id] ?? [],
+            groupBoxes: state.compositeEditor
+              ? []
+              : state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
             layoutDirection: activeLayoutDirection,
             routingMode: activeRoutingMode,
             connectionLayout: activeConnectionLayout,
@@ -1825,6 +1835,7 @@ function MainApp() {
       state.annotationsByProject,
       state.compositeEditor,
       state.compositeLibrary,
+      state.groupBoxesByProject,
     ],
   );
 
@@ -2485,6 +2496,7 @@ function MainApp() {
                 : activeConnectionLayout
             }
             annotations={isCompositeDrilldownActive ? [] : activeAnnotations}
+            groupBoxes={isCompositeDrilldownActive ? [] : activeGroupBoxes}
             execution={compositeDrilldownContext?.execution ?? execution}
             executionError={isCompositeDrilldownActive ? compositeDrilldownExecutionError : executionError}
             validationIssues={isCompositeDrilldownActive ? compositeDrilldownValidationIssues : validationIssues}
@@ -2582,6 +2594,73 @@ function MainApp() {
                 : dispatch({
                     type: 'addAnnotation',
                     projectId: activeProjectDefinition.id,
+                  })
+            }
+            onAddGroupBox={() =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'addGroupBox',
+                    projectId: activeProjectDefinition.id,
+                  })
+            }
+            onAddGroupBoxFromSelection={() =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'addGroupBoxFromSelection',
+                    projectId: activeProjectDefinition.id,
+                  })
+            }
+            onMoveGroupBox={(groupBoxId, x, y) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'moveGroupBox',
+                    projectId: activeProjectDefinition.id,
+                    groupBoxId,
+                    x,
+                    y,
+                  })
+            }
+            onResizeGroupBox={(groupBoxId, width, height) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'resizeGroupBox',
+                    projectId: activeProjectDefinition.id,
+                    groupBoxId,
+                    width,
+                    height,
+                  })
+            }
+            onUpdateGroupBoxTitle={(groupBoxId, title) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'updateGroupBoxTitle',
+                    projectId: activeProjectDefinition.id,
+                    groupBoxId,
+                    title,
+                  })
+            }
+            onSetGroupBoxVariant={(groupBoxId, variant) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'setGroupBoxVariant',
+                    projectId: activeProjectDefinition.id,
+                    groupBoxId,
+                    variant,
+                  })
+            }
+            onRemoveGroupBox={(groupBoxId) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'removeGroupBox',
+                    projectId: activeProjectDefinition.id,
+                    groupBoxId,
                   })
             }
             onMoveAnnotation={(annotationId, x, y) =>
@@ -2761,6 +2840,9 @@ function MainApp() {
                   annotations: state.compositeEditor
                     ? []
                     : state.annotationsByProject[activeProjectDefinition.id] ?? [],
+                  groupBoxes: state.compositeEditor
+                    ? []
+                    : state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
                   layoutDirection: activeLayoutDirection,
                   routingMode: activeRoutingMode,
                   connectionLayout: activeConnectionLayout,
@@ -3739,6 +3821,7 @@ function MainApp() {
                         ui: {
                           layout: replacement.layout,
                           annotations: state.annotationsByProject[activeProjectDefinition.id] ?? [],
+                          groupBoxes: state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
                           layoutDirection: activeLayoutDirection,
                           routingMode: activeRoutingMode,
                           connectionLayout: activeConnectionLayout,
@@ -3839,6 +3922,7 @@ function MainApp() {
                         layout:
                           selectedChallenge.startingLayout ?? selectedChallengeProjectDefinition.layout,
                         annotations: [],
+                        groupBoxes: [],
                         layoutDirection:
                           state.layoutDirectionByProject[selectedChallengeProjectId] ??
                           'horizontal',

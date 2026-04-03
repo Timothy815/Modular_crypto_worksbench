@@ -49,6 +49,8 @@ import {
 import type {
   WorkbenchAnnotation,
   WorkbenchConnectionLayout,
+  WorkbenchGroupBox,
+  WorkbenchGroupBoxVariant,
   WorkbenchLayoutDirection,
   WorkbenchPosition,
   WorkbenchRoutingMode,
@@ -91,6 +93,8 @@ const PORT_START_Y = 34;
 const DEFAULT_CANVAS_VIEWPORT_HEIGHT = 520;
 const MIN_CANVAS_VIEWPORT_HEIGHT = 360;
 const MAX_CANVAS_VIEWPORT_HEIGHT = 1200;
+const MIN_GROUP_BOX_WIDTH = 180;
+const MIN_GROUP_BOX_HEIGHT = 120;
 
 interface PendingConnection {
   fromModuleId: string;
@@ -183,6 +187,7 @@ interface WorkbenchPanelProps {
   routingMode: WorkbenchRoutingMode;
   connectionLayout: Record<string, WorkbenchConnectionLayout>;
   annotations: WorkbenchAnnotation[];
+  groupBoxes: WorkbenchGroupBox[];
   execution: ExecutionResult | null;
   executionError: string | null;
   validationIssues: ValidationIssue[];
@@ -221,6 +226,13 @@ interface WorkbenchPanelProps {
   onMoveModule: (moduleId: string, x: number, y: number) => void;
   onMoveModules: (positions: Record<string, { x: number; y: number }>) => void;
   onAddAnnotation: () => void;
+  onAddGroupBox: () => void;
+  onAddGroupBoxFromSelection: () => void;
+  onMoveGroupBox: (groupBoxId: string, x: number, y: number) => void;
+  onResizeGroupBox: (groupBoxId: string, width: number, height: number) => void;
+  onUpdateGroupBoxTitle: (groupBoxId: string, title: string) => void;
+  onSetGroupBoxVariant: (groupBoxId: string, variant: WorkbenchGroupBoxVariant) => void;
+  onRemoveGroupBox: (groupBoxId: string) => void;
   onMoveAnnotation: (annotationId: string, x: number, y: number) => void;
   onUpdateAnnotationText: (annotationId: string, text: string) => void;
   onRemoveAnnotation: (annotationId: string) => void;
@@ -296,6 +308,7 @@ export function WorkbenchPanel({
   routingMode,
   connectionLayout,
   annotations,
+  groupBoxes,
   execution,
   executionError,
   validationIssues,
@@ -334,6 +347,13 @@ export function WorkbenchPanel({
   onMoveModule,
   onMoveModules,
   onAddAnnotation,
+  onAddGroupBox,
+  onAddGroupBoxFromSelection,
+  onMoveGroupBox,
+  onResizeGroupBox,
+  onUpdateGroupBoxTitle,
+  onSetGroupBoxVariant,
+  onRemoveGroupBox,
   onMoveAnnotation,
   onUpdateAnnotationText,
   onRemoveAnnotation,
@@ -392,6 +412,25 @@ export function WorkbenchPanel({
     currentX: number;
     currentY: number;
   } | null>(null);
+  const [selectedGroupBoxId, setSelectedGroupBoxId] = useState<string | null>(null);
+  const [groupBoxDragState, setGroupBoxDragState] = useState<{
+    groupBoxId: string;
+    pointerOffsetX: number;
+    pointerOffsetY: number;
+    initialX: number;
+    initialY: number;
+    currentX: number;
+    currentY: number;
+  } | null>(null);
+  const [groupBoxResizeState, setGroupBoxResizeState] = useState<{
+    groupBoxId: string;
+    originX: number;
+    originY: number;
+    initialWidth: number;
+    initialHeight: number;
+    currentWidth: number;
+    currentHeight: number;
+  } | null>(null);
   const [pendingConnection, setPendingConnection] =
     useState<PendingConnection | null>(null);
   const [connectionFeedback, setConnectionFeedback] = useState<string | null>(null);
@@ -431,6 +470,14 @@ export function WorkbenchPanel({
       Math.max(MIN_CANVAS_VIEWPORT_HEIGHT, parsedValue),
     );
   });
+
+  const effectiveSelectedGroupBoxId = useMemo(
+    () =>
+      selectedGroupBoxId && groupBoxes.some((groupBox) => groupBox.id === selectedGroupBoxId)
+        ? selectedGroupBoxId
+        : null,
+    [groupBoxes, selectedGroupBoxId],
+  );
   const [canvasHeightResizeState, setCanvasHeightResizeState] = useState<{
     originY: number;
     originHeight: number;
@@ -612,7 +659,14 @@ export function WorkbenchPanel({
   }, [canvasHeightResizeState]);
 
   useEffect(() => {
-    if (!dragState && !annotationDragState && !bendDragState && !selectionBox) {
+    if (
+      !dragState &&
+      !annotationDragState &&
+      !groupBoxDragState &&
+      !groupBoxResizeState &&
+      !bendDragState &&
+      !selectionBox
+    ) {
       return undefined;
     }
 
@@ -689,6 +743,50 @@ export function WorkbenchPanel({
                 ...prev,
                 currentX: nextX,
                 currentY: nextY,
+              }
+            : null,
+        );
+      }
+
+      if (groupBoxDragState) {
+        const pointer = getCanvasViewportPoint({
+          clientX: event.clientX,
+          clientY: event.clientY,
+          canvasLeft: canvasRect.left,
+          canvasTop: canvasRect.top,
+          scrollLeft: canvasSurface.scrollLeft,
+          scrollTop: canvasSurface.scrollTop,
+          zoom: workspaceZoom,
+        });
+        const nextX = Math.max(16, pointer.x - groupBoxDragState.pointerOffsetX);
+        const nextY = Math.max(16, pointer.y - groupBoxDragState.pointerOffsetY);
+        setGroupBoxDragState((prev) =>
+          prev
+            ? {
+                ...prev,
+                currentX: nextX,
+                currentY: nextY,
+              }
+            : null,
+        );
+      }
+
+      if (groupBoxResizeState) {
+        const pointer = getCanvasViewportPoint({
+          clientX: event.clientX,
+          clientY: event.clientY,
+          canvasLeft: canvasRect.left,
+          canvasTop: canvasRect.top,
+          scrollLeft: canvasSurface.scrollLeft,
+          scrollTop: canvasSurface.scrollTop,
+          zoom: workspaceZoom,
+        });
+        setGroupBoxResizeState((prev) =>
+          prev
+            ? {
+                ...prev,
+                currentWidth: Math.max(MIN_GROUP_BOX_WIDTH, pointer.x - prev.originX),
+                currentHeight: Math.max(MIN_GROUP_BOX_HEIGHT, pointer.y - prev.originY),
               }
             : null,
         );
@@ -775,6 +873,32 @@ export function WorkbenchPanel({
         }
       }
 
+      if (groupBoxDragState) {
+        if (
+          groupBoxDragState.currentX !== groupBoxDragState.initialX ||
+          groupBoxDragState.currentY !== groupBoxDragState.initialY
+        ) {
+          onMoveGroupBox(
+            groupBoxDragState.groupBoxId,
+            groupBoxDragState.currentX,
+            groupBoxDragState.currentY,
+          );
+        }
+      }
+
+      if (groupBoxResizeState) {
+        if (
+          groupBoxResizeState.currentWidth !== groupBoxResizeState.initialWidth ||
+          groupBoxResizeState.currentHeight !== groupBoxResizeState.initialHeight
+        ) {
+          onResizeGroupBox(
+            groupBoxResizeState.groupBoxId,
+            groupBoxResizeState.currentWidth,
+            groupBoxResizeState.currentHeight,
+          );
+        }
+      }
+
       if (selectionBox) {
         const selectedModuleIds = getModulesInSelectionBox({
           moduleIds: activeProjectState.modules.map((moduleInstance) => moduleInstance.id),
@@ -801,6 +925,8 @@ export function WorkbenchPanel({
       }
       setDragState(null);
       setAnnotationDragState(null);
+      setGroupBoxDragState(null);
+      setGroupBoxResizeState(null);
       setBendDragState(null);
       setSelectionBox(null);
     }
@@ -818,11 +944,15 @@ export function WorkbenchPanel({
     bendDragState,
     dragState,
     effectiveLayout,
+    groupBoxDragState,
+    groupBoxResizeState,
     layout,
     onClearConnectionOrthogonalBend,
     onMoveAnnotation,
+    onMoveGroupBox,
     onMoveModule,
     onMoveModules,
+    onResizeGroupBox,
     onSetConnectionOrthogonalBend,
     onSelectModules,
     selectionBox,
@@ -1186,6 +1316,8 @@ export function WorkbenchPanel({
           onFitView={fitWorkspaceView}
           onRequestSaveVersion={onRequestSaveVersion}
           onRequestArrangeSelection={onRequestArrangeSelection}
+          onRequestAddGroupBox={onAddGroupBox}
+          onRequestAddGroupBoxFromSelection={onAddGroupBoxFromSelection}
           onRequestDuplicateSelection={onRequestDuplicateSelection}
           onRequestDeleteSelection={onRequestDeleteSelection}
           onRequestDeleteWire={() => {
@@ -1431,6 +1563,7 @@ export function WorkbenchPanel({
             }
 
             event.preventDefault();
+            setSelectedGroupBoxId(null);
             setSelectedConnectionIndex(null);
             setSelectionBox({
               startX: pointer.x,
@@ -1441,6 +1574,133 @@ export function WorkbenchPanel({
             });
           }}
         >
+          {groupBoxes.map((groupBox) => {
+            const groupBoxX =
+              groupBoxDragState?.groupBoxId === groupBox.id
+                ? groupBoxDragState.currentX
+                : groupBox.x;
+            const groupBoxY =
+              groupBoxDragState?.groupBoxId === groupBox.id
+                ? groupBoxDragState.currentY
+                : groupBox.y;
+            const groupBoxWidth =
+              groupBoxResizeState?.groupBoxId === groupBox.id
+                ? groupBoxResizeState.currentWidth
+                : groupBox.width;
+            const groupBoxHeight =
+              groupBoxResizeState?.groupBoxId === groupBox.id
+                ? groupBoxResizeState.currentHeight
+                : groupBox.height;
+            const isSelected = effectiveSelectedGroupBoxId === groupBox.id;
+
+            return (
+              <div
+                key={groupBox.id}
+                className={`canvas-group-box canvas-group-box-${groupBox.variant ?? 'stage'}${
+                  isSelected ? ' selected' : ''
+                }`}
+                style={{
+                  left: `${groupBoxX}px`,
+                  top: `${groupBoxY}px`,
+                  width: `${groupBoxWidth}px`,
+                  height: `${groupBoxHeight}px`,
+                }}
+                onMouseDown={(event) => {
+                  event.stopPropagation();
+                  setSelectedGroupBoxId(groupBox.id);
+                  setSelectedConnectionIndex(null);
+                }}
+              >
+                <div
+                  className="canvas-group-box-header"
+                  onMouseDown={(event) => {
+                    event.stopPropagation();
+                    const pointer = getCanvasPointerFromClient(event.clientX, event.clientY);
+                    if (!pointer) {
+                      return;
+                    }
+                    setSelectedGroupBoxId(groupBox.id);
+                    setGroupBoxDragState({
+                      groupBoxId: groupBox.id,
+                      pointerOffsetX: pointer.x - groupBoxX,
+                      pointerOffsetY: pointer.y - groupBoxY,
+                      initialX: groupBoxX,
+                      initialY: groupBoxY,
+                      currentX: groupBoxX,
+                      currentY: groupBoxY,
+                    });
+                  }}
+                >
+                  {isSelected ? (
+                    <input
+                      className="canvas-group-box-title-input"
+                      value={groupBox.title}
+                      onChange={(event) => onUpdateGroupBoxTitle(groupBox.id, event.target.value)}
+                      onMouseDown={(event) => event.stopPropagation()}
+                    />
+                  ) : (
+                    <span className="canvas-group-box-title">{groupBox.title}</span>
+                  )}
+                  {isSelected ? (
+                    <div className="canvas-group-box-controls" onMouseDown={(event) => event.stopPropagation()}>
+                      <select
+                        className="canvas-group-box-variant-select"
+                        value={groupBox.variant ?? 'stage'}
+                        onChange={(event) =>
+                          onSetGroupBoxVariant(
+                            groupBox.id,
+                            event.target.value as WorkbenchGroupBoxVariant,
+                          )
+                        }
+                      >
+                        <option value="neutral">Neutral</option>
+                        <option value="stage">Stage</option>
+                        <option value="feedback">Feedback</option>
+                        <option value="emphasis">Emphasis</option>
+                      </select>
+                      <button
+                        type="button"
+                        className="annotation-delete-button"
+                        aria-label={`Delete ${groupBox.title || 'group box'}`}
+                        title="Delete group box"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onRemoveGroupBox(groupBox.id);
+                          setSelectedGroupBoxId((current) =>
+                            current === groupBox.id ? null : current,
+                          );
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+                {isSelected ? (
+                  <div
+                    className="canvas-group-box-resize-handle"
+                    onMouseDown={(event) => {
+                      event.stopPropagation();
+                      const pointer = getCanvasPointerFromClient(event.clientX, event.clientY);
+                      if (!pointer) {
+                        return;
+                      }
+                      setSelectedGroupBoxId(groupBox.id);
+                      setGroupBoxResizeState({
+                        groupBoxId: groupBox.id,
+                        originX: groupBoxX,
+                        originY: groupBoxY,
+                        initialWidth: groupBoxWidth,
+                        initialHeight: groupBoxHeight,
+                        currentWidth: groupBoxWidth,
+                        currentHeight: groupBoxHeight,
+                      });
+                    }}
+                  />
+                ) : null}
+              </div>
+            );
+          })}
           <svg
             className="graph-connections"
             viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}

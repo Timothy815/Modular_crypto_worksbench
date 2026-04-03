@@ -19,6 +19,8 @@ import type {
   UserWorkspaceMetadata,
   WorkbenchAnnotation,
   WorkbenchConnectionLayout,
+  WorkbenchGroupBox,
+  WorkbenchGroupBoxVariant,
   WorkbenchLayoutDirection,
   WorkbenchRoutingMode,
   WorkbenchPosition,
@@ -60,6 +62,7 @@ export interface UiState {
   projectStates: Record<string, Project>;
   layoutByProject: Record<string, Record<string, WorkbenchPosition>>;
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
+  groupBoxesByProject: Record<string, WorkbenchGroupBox[]>;
   layoutDirectionByProject: Record<string, WorkbenchLayoutDirection>;
   routingModeByProject: Record<string, WorkbenchRoutingMode>;
   connectionLayoutByProject: Record<string, Record<string, WorkbenchConnectionLayout>>;
@@ -163,6 +166,24 @@ export type UiAction =
   | { type: 'moveAnnotation'; projectId: string; annotationId: string; x: number; y: number }
   | { type: 'updateAnnotationText'; projectId: string; annotationId: string; text: string }
   | { type: 'removeAnnotation'; projectId: string; annotationId: string }
+  | { type: 'addGroupBox'; projectId: string }
+  | { type: 'addGroupBoxFromSelection'; projectId: string }
+  | { type: 'moveGroupBox'; projectId: string; groupBoxId: string; x: number; y: number }
+  | {
+      type: 'resizeGroupBox';
+      projectId: string;
+      groupBoxId: string;
+      width: number;
+      height: number;
+    }
+  | { type: 'updateGroupBoxTitle'; projectId: string; groupBoxId: string; title: string }
+  | {
+      type: 'setGroupBoxVariant';
+      projectId: string;
+      groupBoxId: string;
+      variant: WorkbenchGroupBoxVariant;
+    }
+  | { type: 'removeGroupBox'; projectId: string; groupBoxId: string }
   | { type: 'addModule'; projectId: string; moduleDef: ModuleDefinition }
   | {
       type: 'renameModuleInstance';
@@ -289,6 +310,18 @@ function createAnnotationId(annotations: WorkbenchAnnotation[]) {
   return candidate;
 }
 
+function createGroupBoxId(groupBoxes: WorkbenchGroupBox[]) {
+  let index = groupBoxes.length + 1;
+  let candidate = `group-${index}`;
+
+  while (groupBoxes.some((groupBox) => groupBox.id === candidate)) {
+    index += 1;
+    candidate = `group-${index}`;
+  }
+
+  return candidate;
+}
+
 function findNextModulePlacement(
   layout: Record<string, CompositeLayoutPosition>,
   direction: WorkbenchLayoutDirection,
@@ -406,6 +439,13 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'moveAnnotation',
   'updateAnnotationText',
   'removeAnnotation',
+  'addGroupBox',
+  'addGroupBoxFromSelection',
+  'moveGroupBox',
+  'resizeGroupBox',
+  'updateGroupBoxTitle',
+  'setGroupBoxVariant',
+  'removeGroupBox',
   'addModule',
   'renameModuleInstance',
   'duplicateSelectedCluster',
@@ -432,6 +472,11 @@ const STAGE_ROW_GAP = 244;
 const STAGE_COLUMN_GAP = 148;
 const NODE_CENTER_X_OFFSET = CANVAS_NODE_WIDTH / 2;
 const NODE_CENTER_Y_OFFSET = CANVAS_NODE_HEIGHT / 2;
+const DEFAULT_GROUP_BOX_WIDTH = 280;
+const DEFAULT_GROUP_BOX_HEIGHT = 180;
+const GROUP_BOX_SELECTION_PADDING = 36;
+const MIN_GROUP_BOX_WIDTH = 180;
+const MIN_GROUP_BOX_HEIGHT = 120;
 
 function arrangeSelectedLayoutPositions(
   layout: Record<string, WorkbenchPosition>,
@@ -670,6 +715,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     annotationsByProject: Object.fromEntries(
       projects.map((project) => [project.id, []]),
     ),
+    groupBoxesByProject: Object.fromEntries(
+      projects.map((project) => [project.id, []]),
+    ),
     layoutDirectionByProject: Object.fromEntries(
       projects.map((project) => [project.id, 'horizontal' as const]),
     ),
@@ -815,6 +863,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.annotationsByProject,
           [action.workspaceId]: [],
         },
+        groupBoxesByProject: {
+          ...state.groupBoxesByProject,
+          [action.workspaceId]: [],
+        },
         layoutDirectionByProject: {
           ...state.layoutDirectionByProject,
           [action.workspaceId]: 'horizontal',
@@ -913,6 +965,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       const sourceProject = state.projectStates[action.sourceProjectId];
       const sourceLayout = state.layoutByProject[action.sourceProjectId];
       const sourceAnnotations = state.annotationsByProject[action.sourceProjectId] ?? [];
+      const sourceGroupBoxes = state.groupBoxesByProject[action.sourceProjectId] ?? [];
       const sourceLayoutDirection =
         state.layoutDirectionByProject[action.sourceProjectId] ?? 'horizontal';
       const sourceRoutingMode = state.routingModeByProject[action.sourceProjectId] ?? 'curved';
@@ -945,6 +998,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         annotationsByProject: {
           ...state.annotationsByProject,
           [action.workspaceId]: cloneAnnotations(sourceAnnotations),
+        },
+        groupBoxesByProject: {
+          ...state.groupBoxesByProject,
+          [action.workspaceId]: sourceGroupBoxes.map((groupBox) => ({ ...groupBox })),
         },
         layoutDirectionByProject: {
           ...state.layoutDirectionByProject,
@@ -1067,6 +1124,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         projectStates: removeProjectEntry(state.projectStates, action.workspaceId),
         layoutByProject: removeProjectEntry(state.layoutByProject, action.workspaceId),
         annotationsByProject: removeProjectEntry(state.annotationsByProject, action.workspaceId),
+        groupBoxesByProject: removeProjectEntry(state.groupBoxesByProject, action.workspaceId),
         layoutDirectionByProject: removeProjectEntry(
           state.layoutDirectionByProject,
           action.workspaceId,
@@ -1483,6 +1541,169 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
               text: 'Add note...',
             },
           ],
+        },
+      };
+    }
+    case 'addGroupBox': {
+      const currentGroupBoxes = state.groupBoxesByProject[action.projectId] ?? [];
+      const nextGroupBoxId = createGroupBoxId(currentGroupBoxes);
+
+      return {
+        ...state,
+        groupBoxesByProject: {
+          ...state.groupBoxesByProject,
+          [action.projectId]: [
+            ...currentGroupBoxes,
+            {
+              id: nextGroupBoxId,
+              x: 88,
+              y: 88,
+              width: DEFAULT_GROUP_BOX_WIDTH,
+              height: DEFAULT_GROUP_BOX_HEIGHT,
+              title: 'Group',
+              variant: 'stage',
+            },
+          ],
+        },
+      };
+    }
+    case 'addGroupBoxFromSelection': {
+      const currentLayout = state.layoutByProject[action.projectId];
+      const selectedModuleIds = state.selectedModuleIdsByProject[action.projectId] ?? [];
+      if (!currentLayout || selectedModuleIds.length === 0) {
+        return state;
+      }
+
+      const selectedPositions = selectedModuleIds
+        .map((moduleId) => currentLayout[moduleId])
+        .filter((position): position is WorkbenchPosition => Boolean(position));
+      if (selectedPositions.length === 0) {
+        return state;
+      }
+
+      const minX = Math.min(...selectedPositions.map((position) => position.x));
+      const maxX = Math.max(...selectedPositions.map((position) => position.x));
+      const minY = Math.min(...selectedPositions.map((position) => position.y));
+      const maxY = Math.max(...selectedPositions.map((position) => position.y));
+      const currentGroupBoxes = state.groupBoxesByProject[action.projectId] ?? [];
+      const nextGroupBoxId = createGroupBoxId(currentGroupBoxes);
+
+      return {
+        ...state,
+        groupBoxesByProject: {
+          ...state.groupBoxesByProject,
+          [action.projectId]: [
+            ...currentGroupBoxes,
+            {
+              id: nextGroupBoxId,
+              x: Math.max(16, minX - GROUP_BOX_SELECTION_PADDING),
+              y: Math.max(16, minY - GROUP_BOX_SELECTION_PADDING),
+              width:
+                maxX -
+                minX +
+                CANVAS_NODE_WIDTH +
+                GROUP_BOX_SELECTION_PADDING * 2,
+              height:
+                maxY -
+                minY +
+                CANVAS_NODE_HEIGHT +
+                GROUP_BOX_SELECTION_PADDING * 2,
+              title: 'Selected Group',
+              variant: 'stage',
+            },
+          ],
+        },
+      };
+    }
+    case 'moveGroupBox': {
+      const currentGroupBoxes = state.groupBoxesByProject[action.projectId];
+      if (!currentGroupBoxes) {
+        return state;
+      }
+
+      return {
+        ...state,
+        groupBoxesByProject: {
+          ...state.groupBoxesByProject,
+          [action.projectId]: currentGroupBoxes.map((groupBox) =>
+            groupBox.id === action.groupBoxId
+              ? { ...groupBox, x: action.x, y: action.y }
+              : groupBox,
+          ),
+        },
+      };
+    }
+    case 'resizeGroupBox': {
+      const currentGroupBoxes = state.groupBoxesByProject[action.projectId];
+      if (!currentGroupBoxes) {
+        return state;
+      }
+
+      return {
+        ...state,
+        groupBoxesByProject: {
+          ...state.groupBoxesByProject,
+          [action.projectId]: currentGroupBoxes.map((groupBox) =>
+            groupBox.id === action.groupBoxId
+              ? {
+                  ...groupBox,
+                  width: Math.max(MIN_GROUP_BOX_WIDTH, action.width),
+                  height: Math.max(MIN_GROUP_BOX_HEIGHT, action.height),
+                }
+              : groupBox,
+          ),
+        },
+      };
+    }
+    case 'updateGroupBoxTitle': {
+      const currentGroupBoxes = state.groupBoxesByProject[action.projectId];
+      if (!currentGroupBoxes) {
+        return state;
+      }
+
+      return {
+        ...state,
+        groupBoxesByProject: {
+          ...state.groupBoxesByProject,
+          [action.projectId]: currentGroupBoxes.map((groupBox) =>
+            groupBox.id === action.groupBoxId
+              ? { ...groupBox, title: action.title }
+              : groupBox,
+          ),
+        },
+      };
+    }
+    case 'setGroupBoxVariant': {
+      const currentGroupBoxes = state.groupBoxesByProject[action.projectId];
+      if (!currentGroupBoxes) {
+        return state;
+      }
+
+      return {
+        ...state,
+        groupBoxesByProject: {
+          ...state.groupBoxesByProject,
+          [action.projectId]: currentGroupBoxes.map((groupBox) =>
+            groupBox.id === action.groupBoxId
+              ? { ...groupBox, variant: action.variant }
+              : groupBox,
+          ),
+        },
+      };
+    }
+    case 'removeGroupBox': {
+      const currentGroupBoxes = state.groupBoxesByProject[action.projectId];
+      if (!currentGroupBoxes) {
+        return state;
+      }
+
+      return {
+        ...state,
+        groupBoxesByProject: {
+          ...state.groupBoxesByProject,
+          [action.projectId]: currentGroupBoxes.filter(
+            (groupBox) => groupBox.id !== action.groupBoxId,
+          ),
         },
       };
     }
@@ -2208,6 +2429,9 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       const nextAnnotations = action.document.ui.annotations.map((annotation) => ({
         ...annotation,
       }));
+      const nextGroupBoxes = (action.document.ui.groupBoxes ?? []).map((groupBox) => ({
+        ...groupBox,
+      }));
       const nextDrafts = Object.fromEntries(
         Object.entries(state.paramDrafts).filter(
           ([key]) => !key.startsWith(`${action.projectId}:`),
@@ -2227,6 +2451,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         annotationsByProject: {
           ...state.annotationsByProject,
           [action.projectId]: nextAnnotations,
+        },
+        groupBoxesByProject: {
+          ...state.groupBoxesByProject,
+          [action.projectId]: nextGroupBoxes,
         },
         layoutDirectionByProject: {
           ...state.layoutDirectionByProject,

@@ -20,6 +20,7 @@ import type {
   PersistedWorkspaceDocument,
   UserWorkspaceMetadata,
   WorkbenchAnnotation,
+  WorkbenchGroupBox,
   WorkbenchDocument,
   WorkspaceVersionDocument,
 } from './workbench-document';
@@ -58,6 +59,10 @@ function cloneProject(project: Project): Project {
 
 function cloneAnnotations(annotations: WorkbenchAnnotation[]): WorkbenchAnnotation[] {
   return annotations.map((annotation) => ({ ...annotation }));
+}
+
+function cloneGroupBoxes(groupBoxes: WorkbenchGroupBox[]): WorkbenchGroupBox[] {
+  return groupBoxes.map((groupBox) => ({ ...groupBox }));
 }
 
 function cloneComparisonBaseline(
@@ -153,6 +158,7 @@ function cloneWorkspaceDocument(document: WorkbenchDocument): WorkbenchDocument 
         ]),
       ),
       annotations: cloneAnnotations(document.ui.annotations),
+      groupBoxes: cloneGroupBoxes(document.ui.groupBoxes ?? []),
       layoutDirection: document.ui.layoutDirection ?? 'horizontal',
       routingMode: document.ui.routingMode ?? 'curved',
       connectionLayout: Object.fromEntries(
@@ -189,6 +195,7 @@ function buildDefaultDocument(project: DemoProject): WorkbenchDocument {
         ]),
       ),
       annotations: [],
+      groupBoxes: [],
       layoutDirection: 'horizontal',
       routingMode: 'curved',
       connectionLayout: {},
@@ -227,6 +234,7 @@ export function buildPersistedWorkspace(
               ),
             ),
             annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
+            groupBoxes: cloneGroupBoxes(state.groupBoxesByProject[projectId] ?? []),
             layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
             routingMode: state.routingModeByProject[projectId] ?? 'curved',
             connectionLayout: Object.fromEntries(
@@ -855,6 +863,23 @@ function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
     typeof candidate.ui.layout === 'object' &&
     candidate.ui.layout !== null &&
     Array.isArray(candidate.ui.annotations) &&
+    (candidate.ui.groupBoxes === undefined ||
+      (Array.isArray(candidate.ui.groupBoxes) &&
+        candidate.ui.groupBoxes.every(
+          (groupBox) =>
+            typeof groupBox === 'object' &&
+            groupBox !== null &&
+            typeof groupBox.id === 'string' &&
+            typeof groupBox.x === 'number' &&
+            typeof groupBox.y === 'number' &&
+            typeof groupBox.width === 'number' &&
+            typeof groupBox.height === 'number' &&
+            typeof groupBox.title === 'string' &&
+            (groupBox.variant === undefined ||
+              groupBox.variant === 'neutral' ||
+              groupBox.variant === 'stage' ||
+              groupBox.variant === 'feedback' ||
+              groupBox.variant === 'emphasis')))) &&
     (candidate.ui.layoutDirection === undefined ||
       candidate.ui.layoutDirection === 'horizontal' ||
       candidate.ui.layoutDirection === 'vertical') &&
