@@ -1024,6 +1024,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `INSTRUCTOR-PILOT-PACK-V1.md` | Shipped instructor-facing pilot resource with search, TOC, index, and concrete guidance for running first classroom trials with the flagship labs |
 | `SHAREABLE-LAB-PACKS-V1.md` | Proposed as the first bounded post-`v2.1.0` portability/distribution slice for exporting and importing verified local lab packs without a cloud backend |
 | `BITSTREAM-RANDOMNESS-LAB-V1.md` | Shipped bounded PRNG-analysis follow-on with a randomness mode in Cryptanalysis, sink selection, low-confidence sample warnings, live bitstream metrics, and teaching content for reading weak visible streams honestly |
+| `SEQUENTIAL-STATE-AUTHORING-V1.md` | Shipped bounded language-strengthening follow-on for derived ticked-mode `State` / `Control` / `Observe` role badges with no project-model or export changes |
 | `PRNG-TEACHING-WORKSPACE-V1.md` | Shipped bounded teaching-workspace line for comparing visible pseudo-random generator constructions without making CSPRNG claims |
 | `WORKBENCH-ERGONOMICS-V1.md` | Shipped in `v1.13.0` as bounded workbench usability improvements |
 | `WORKSPACE-LIBRARY-V1.md` | Shipped in `v1.13.0` as bounded blank/save/delete user workspace management |

@@ -701,6 +701,7 @@ Implemented and shipped:
 - `INSTRUCTOR-PILOT-PACK-V1.md`: shipped instructor-facing pilot resource with search, TOC, index, and concrete guidance for running first classroom trials with the flagship labs
 - `SHAREABLE-LAB-PACKS-V1.md`: proposed bounded portability/distribution follow-on for exporting and importing a single-file verified lab pack with workspace, layout, and attached teaching/verification context
 - `BITSTREAM-RANDOMNESS-LAB-V1.md`: shipped bounded analysis lab for inspecting PRNG-style bitstreams with sink selection, sample-size warnings, balance/run/transition metrics, lag-1 dependence, and repeated-window hints without making security claims
+- `SEQUENTIAL-STATE-AUTHORING-V1.md`: shipped bounded language/ergonomics follow-on for metadata-free, ticked-mode-only `State` / `Control` / `Observe` role badges that make sequential machines easier to read without changing engine semantics
 - `PRNG-TEACHING-WORKSPACE-V1.md`: shipped bounded teaching-workspace line for comparing visible pseudo-random generator constructions without making CSPRNG claims
 - `WORKBENCH-ERGONOMICS-V1.md`: shipped bounded workbench-usability slice for multi-select, group movement, and one-click cleanup
 - `WORKSPACE-LIBRARY-V1.md`: shipped bounded workspace-management slice for blank build spaces and saved personal collections

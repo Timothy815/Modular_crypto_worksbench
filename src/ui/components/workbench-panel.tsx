@@ -34,6 +34,7 @@ import {
 } from '../connection-authoring';
 import { deriveConnectionLegibilityState } from '../wire-legibility';
 import { compareWorkspaceToVersion, getConnectionComparisonKey } from '../workspace-comparison';
+import { getSequentialRole, getSequentialRoleLabel } from '../sequential-roles';
 import {
   deriveWorkspaceLandmarks,
   isLargeWorkspace,
@@ -1245,6 +1246,9 @@ export function WorkbenchPanel({
             const position = effectiveLayout[moduleInstance.id] ?? { x: 24, y: 24 };
             const def = registry[moduleInstance.defId];
             const category = def ? getModuleCategory(def) : getModuleCategory(moduleInstance.defId);
+            const sequentialRole = isTickedMode
+              ? getSequentialRole(moduleInstance.defId, def)
+              : null;
 
             return (
               <div
@@ -1325,7 +1329,14 @@ export function WorkbenchPanel({
                     });
                   }}
                 >
-                  <span className="graph-node-type">{moduleInstance.defId}</span>
+                  <div className="graph-node-meta-row">
+                    <span className="graph-node-type">{moduleInstance.defId}</span>
+                    {sequentialRole ? (
+                      <span className={`graph-node-role-badge graph-node-role-badge-${sequentialRole}`}>
+                        {getSequentialRoleLabel(sequentialRole)}
+                      </span>
+                    ) : null}
+                  </div>
                   <strong>{moduleInstance.id}</strong>
                   {moduleInstance.id === tutorialStep?.focusModuleId ? (
                     <span className="graph-node-tutorial-badge">Tutorial</span>

@@ -2394,13 +2394,49 @@ body.dock-resizing {
 }
 
 .graph-node-type {
-  display: block;
-  margin-bottom: 6px;
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--accent);
+}
+
+.graph-node-meta-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.graph-node-role-badge {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.graph-node-role-badge-state {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-soft));
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  color: var(--accent);
+}
+
+.graph-node-role-badge-control {
+  background: color-mix(in srgb, var(--role-bridge-bg) 75%, var(--surface-soft));
+  border-color: color-mix(in srgb, var(--role-bridge-strong) 36%, var(--border));
+  color: var(--role-bridge-strong);
+}
+
+.graph-node-role-badge-observe {
+  background: color-mix(in srgb, var(--role-sink-bg) 82%, var(--surface-soft));
+  border-color: color-mix(in srgb, var(--role-sink-strong) 36%, var(--border));
+  color: var(--role-sink-strong);
 }
 
 .graph-node-ports {
