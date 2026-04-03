@@ -154,6 +154,7 @@ function cloneWorkspaceDocument(document: WorkbenchDocument): WorkbenchDocument 
       ),
       annotations: cloneAnnotations(document.ui.annotations),
       layoutDirection: document.ui.layoutDirection ?? 'horizontal',
+      routingMode: document.ui.routingMode ?? 'curved',
     },
   };
 }
@@ -183,6 +184,7 @@ function buildDefaultDocument(project: DemoProject): WorkbenchDocument {
       ),
       annotations: [],
       layoutDirection: 'horizontal',
+      routingMode: 'curved',
     },
   };
 }
@@ -219,6 +221,7 @@ export function buildPersistedWorkspace(
             ),
             annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
             layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
+            routingMode: state.routingModeByProject[projectId] ?? 'curved',
           },
         },
       ]),
@@ -839,7 +842,10 @@ function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
     Array.isArray(candidate.ui.annotations) &&
     (candidate.ui.layoutDirection === undefined ||
       candidate.ui.layoutDirection === 'horizontal' ||
-      candidate.ui.layoutDirection === 'vertical')
+      candidate.ui.layoutDirection === 'vertical') &&
+    (candidate.ui.routingMode === undefined ||
+      candidate.ui.routingMode === 'curved' ||
+      candidate.ui.routingMode === 'orthogonal')
   );
 }
 

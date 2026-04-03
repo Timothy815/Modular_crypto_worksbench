@@ -75,6 +75,11 @@ The next advanced legibility exploration after that is now recorded as:
 - proposes per-instance port orientation as a local override for hybrid circuit-board-style layouts
 - locks upright node labels/content in V1 while keeping wire colors, hover endpoint labels, and more precise routing as later bounded follow-ons
 
+The next wire-routing follow-on after that is now shipped as:
+- `ORTHOGONAL-WIRE-ROUTING-V1.md`
+- ships a workspace-level `Curved` / `Orthogonal` routing mode for cleaner circuit-surface readability
+- keeps routing as UI metadata only and stops short of freeform bend-point editing or full CAD behavior
+
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - now shipped as the first bounded verification-station refinement inside the compare/analyze line

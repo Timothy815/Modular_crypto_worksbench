@@ -19,6 +19,7 @@ import type {
   UserWorkspaceMetadata,
   WorkbenchAnnotation,
   WorkbenchLayoutDirection,
+  WorkbenchRoutingMode,
   WorkbenchPosition,
   WorkbenchDocument,
   WorkspaceVersionDocument,
@@ -58,6 +59,7 @@ export interface UiState {
   layoutByProject: Record<string, Record<string, WorkbenchPosition>>;
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
   layoutDirectionByProject: Record<string, WorkbenchLayoutDirection>;
+  routingModeByProject: Record<string, WorkbenchRoutingMode>;
   comparisonBaselinesByProject: Record<string, ComparisonBaselineDocument | null>;
   activeChallengeIdByProject: Record<string, string | null>;
   activeTutorialIdByProject: Record<string, string | null>;
@@ -124,6 +126,11 @@ export type UiAction =
       type: 'setLayoutDirection';
       projectId: string;
       direction: WorkbenchLayoutDirection;
+    }
+  | {
+      type: 'setRoutingMode';
+      projectId: string;
+      mode: WorkbenchRoutingMode;
     }
   | {
       type: 'moveModules';
@@ -531,6 +538,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     layoutDirectionByProject: Object.fromEntries(
       projects.map((project) => [project.id, 'horizontal' as const]),
     ),
+    routingModeByProject: Object.fromEntries(
+      projects.map((project) => [project.id, 'curved' as const]),
+    ),
     comparisonBaselinesByProject: Object.fromEntries(
       projects.map((project) => [project.id, null]),
     ),
@@ -671,6 +681,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.layoutDirectionByProject,
           [action.workspaceId]: 'horizontal',
         },
+        routingModeByProject: {
+          ...state.routingModeByProject,
+          [action.workspaceId]: 'curved',
+        },
         comparisonBaselinesByProject: {
           ...state.comparisonBaselinesByProject,
           [action.workspaceId]: null,
@@ -759,6 +773,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       const sourceAnnotations = state.annotationsByProject[action.sourceProjectId] ?? [];
       const sourceLayoutDirection =
         state.layoutDirectionByProject[action.sourceProjectId] ?? 'horizontal';
+      const sourceRoutingMode = state.routingModeByProject[action.sourceProjectId] ?? 'curved';
       if (!sourceProject || !sourceLayout) {
         return state;
       }
@@ -792,6 +807,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         layoutDirectionByProject: {
           ...state.layoutDirectionByProject,
           [action.workspaceId]: sourceLayoutDirection,
+        },
+        routingModeByProject: {
+          ...state.routingModeByProject,
+          [action.workspaceId]: sourceRoutingMode,
         },
         comparisonBaselinesByProject: {
           ...state.comparisonBaselinesByProject,
@@ -897,6 +916,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           state.layoutDirectionByProject,
           action.workspaceId,
         ),
+        routingModeByProject: removeProjectEntry(state.routingModeByProject, action.workspaceId),
         comparisonBaselinesByProject: removeProjectEntry(
           state.comparisonBaselinesByProject,
           action.workspaceId,
@@ -1095,6 +1115,23 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         layoutDirectionByProject: {
           ...state.layoutDirectionByProject,
           [action.projectId]: action.direction,
+        },
+      };
+    }
+    case 'setRoutingMode': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      if ((state.routingModeByProject[action.projectId] ?? 'curved') === action.mode) {
+        return state;
+      }
+
+      return {
+        ...state,
+        routingModeByProject: {
+          ...state.routingModeByProject,
+          [action.projectId]: action.mode,
         },
       };
     }
@@ -1984,6 +2021,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         layoutDirectionByProject: {
           ...state.layoutDirectionByProject,
           [action.projectId]: action.document.ui.layoutDirection ?? 'horizontal',
+        },
+        routingModeByProject: {
+          ...state.routingModeByProject,
+          [action.projectId]: action.document.ui.routingMode ?? 'curved',
         },
         selectedModuleIdByProject: {
           ...state.selectedModuleIdByProject,

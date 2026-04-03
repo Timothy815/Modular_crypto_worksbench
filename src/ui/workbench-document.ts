@@ -21,11 +21,13 @@ export interface WorkbenchAnnotation {
 
 export type WorkbenchLayoutDirection = 'horizontal' | 'vertical';
 export type WorkbenchNodeOrientation = 'east' | 'south' | 'west' | 'north';
+export type WorkbenchRoutingMode = 'curved' | 'orthogonal';
 
 export interface WorkbenchUiMetadata {
   layout: Record<string, WorkbenchPosition>;
   annotations: WorkbenchAnnotation[];
   layoutDirection?: WorkbenchLayoutDirection;
+  routingMode?: WorkbenchRoutingMode;
 }
 
 export interface WorkbenchDocument {

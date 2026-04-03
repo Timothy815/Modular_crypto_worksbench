@@ -50,6 +50,7 @@ import type {
   WorkbenchAnnotation,
   WorkbenchLayoutDirection,
   WorkbenchPosition,
+  WorkbenchRoutingMode,
   WorkspaceVersionDocument,
 } from '../workbench-document';
 import {
@@ -67,6 +68,8 @@ import {
   formatVersionTimestamp,
   getAnchorPosition,
   getInputAnchorClassName,
+  getOrthogonalPath,
+  getOrthogonalPendingPath,
 } from '../workbench-support';
 const WorkbenchActions = lazy(() =>
   import('./workbench-actions').then((module) => ({
@@ -175,6 +178,7 @@ interface WorkbenchPanelProps {
   activeProjectState: Project;
   layout: Record<string, WorkbenchPosition>;
   layoutDirection: WorkbenchLayoutDirection;
+  routingMode: WorkbenchRoutingMode;
   annotations: WorkbenchAnnotation[];
   execution: ExecutionResult | null;
   executionError: string | null;
@@ -253,6 +257,7 @@ interface WorkbenchPanelProps {
   onImportLabPack: (file: File) => void;
   onTidyLayout: () => void;
   onSetLayoutDirection: (direction: WorkbenchLayoutDirection) => void;
+  onSetRoutingMode: (mode: WorkbenchRoutingMode) => void;
   onSetTutorialStep?: (stepIndex: number) => void;
   onSetTutorialNotesVisible?: (visible: boolean) => void;
   projects: DemoProject[];
@@ -266,6 +271,7 @@ export function WorkbenchPanel({
   activeProjectState,
   layout,
   layoutDirection,
+  routingMode,
   annotations,
   execution,
   executionError,
@@ -333,6 +339,7 @@ export function WorkbenchPanel({
   onImportLabPack,
   onTidyLayout,
   onSetLayoutDirection,
+  onSetRoutingMode,
   onSetTutorialStep,
   onSetTutorialNotesVisible,
   projects,
@@ -1074,6 +1081,7 @@ export function WorkbenchPanel({
           isCompositeEditor={isCompositeEditor}
           isObservationMode={isObservationMode}
           layoutDirection={layoutDirection}
+          routingMode={routingMode}
           canUndo={canUndo}
           canRedo={canRedo}
           selectedModuleIds={selectedModuleIds}
@@ -1086,6 +1094,7 @@ export function WorkbenchPanel({
           onExportPython={onExportPython}
           onTidyLayout={onTidyLayout}
           onSetLayoutDirection={onSetLayoutDirection}
+          onSetRoutingMode={onSetRoutingMode}
           onRequestUndo={onRequestUndo}
           onRequestRedo={onRequestRedo}
           onZoomOut={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'out'))}
@@ -1409,7 +1418,17 @@ export function WorkbenchPanel({
                 PORT_START_Y,
                 PORT_GAP,
               );
-              const pathD = getConnectionPath(sourceAnchor, sourceSide, targetAnchor, targetSide);
+              const pathD =
+                routingMode === 'orthogonal'
+                  ? getOrthogonalPath(
+                      sourceAnchor,
+                      sourceSide,
+                      targetAnchor,
+                      targetSide,
+                      sourceIndex,
+                      targetIndex,
+                    )
+                  : getConnectionPath(sourceAnchor, sourceSide, targetAnchor, targetSide);
               const showConnectionLabel = hoveredConnectionIndex === connectionIndex;
               const midpointX = (sourceAnchor.x + targetAnchor.x) / 2;
               const midpointY = (sourceAnchor.y + targetAnchor.y) / 2;
@@ -1491,10 +1510,17 @@ export function WorkbenchPanel({
               return (
                 <path
                   className="pending-connection"
-                  d={getPendingConnectionPath(fromAnchor, fromSide, {
-                    x: mouseX,
-                    y: mouseY,
-                  })}
+                  d={
+                    routingMode === 'orthogonal'
+                      ? getOrthogonalPendingPath(fromAnchor, fromSide, {
+                          x: mouseX,
+                          y: mouseY,
+                        })
+                      : getPendingConnectionPath(fromAnchor, fromSide, {
+                          x: mouseX,
+                          y: mouseY,
+                        })
+                  }
                 />
               );
             })() : null}

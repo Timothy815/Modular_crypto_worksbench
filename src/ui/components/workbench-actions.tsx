@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
 
-import type { WorkbenchLayoutDirection } from '../workbench-document';
+import type { WorkbenchLayoutDirection, WorkbenchRoutingMode } from '../workbench-document';
 
 interface WorkbenchActionsProps {
   isCompositeEditor: boolean;
   isObservationMode?: boolean;
   layoutDirection: WorkbenchLayoutDirection;
+  routingMode: WorkbenchRoutingMode;
   canUndo: boolean;
   canRedo: boolean;
   selectedModuleIds: string[];
@@ -18,6 +19,7 @@ interface WorkbenchActionsProps {
   onExportPython: () => void;
   onTidyLayout: () => void;
   onSetLayoutDirection: (direction: WorkbenchLayoutDirection) => void;
+  onSetRoutingMode: (mode: WorkbenchRoutingMode) => void;
   onRequestUndo: () => void;
   onRequestRedo: () => void;
   onZoomOut: () => void;
@@ -78,6 +80,7 @@ export function WorkbenchActions({
   isCompositeEditor,
   isObservationMode = false,
   layoutDirection,
+  routingMode,
   canUndo,
   canRedo,
   selectedModuleIds,
@@ -90,6 +93,7 @@ export function WorkbenchActions({
   onExportPython,
   onTidyLayout,
   onSetLayoutDirection,
+  onSetRoutingMode,
   onRequestUndo,
   onRequestRedo,
   onZoomOut,
@@ -134,6 +138,16 @@ export function WorkbenchActions({
               disabled={!hasSelection}
             />
             <WorkbenchMenuActionButton label="Tidy Layout" onSelect={onTidyLayout} />
+            <WorkbenchMenuActionButton
+              label="Curve"
+              onSelect={() => onSetRoutingMode('curved')}
+              disabled={routingMode === 'curved'}
+            />
+            <WorkbenchMenuActionButton
+              label="Ortho"
+              onSelect={() => onSetRoutingMode('orthogonal')}
+              disabled={routingMode === 'orthogonal'}
+            />
             <WorkbenchMenuActionButton
               label="Horizontal Layout"
               onSelect={() => onSetLayoutDirection('horizontal')}

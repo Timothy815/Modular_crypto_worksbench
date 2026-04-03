@@ -121,20 +121,23 @@ describe('parseGuidedChallengeDocument', () => {
 describe('workspace persistence', () => {
   it('round-trips user workspaces through storage', () => {
     const initialState = createInitialUiState(demoProjects);
-    const stateWithWorkspace = uiReducer(
-      uiReducer(initialState, {
-        type: 'createBlankWorkspace',
-        workspaceId: 'my-scratchpad',
-        name: 'My Scratchpad',
-        summary: 'A blank personal workspace for building from scratch.',
-        pipeline: 'Blank canvas',
-      }),
-      {
-        type: 'setLayoutDirection',
-        projectId: 'my-scratchpad',
-        direction: 'vertical',
-      },
-    );
+    const createdState = uiReducer(initialState, {
+      type: 'createBlankWorkspace',
+      workspaceId: 'my-scratchpad',
+      name: 'My Scratchpad',
+      summary: 'A blank personal workspace for building from scratch.',
+      pipeline: 'Blank canvas',
+    });
+    const verticalState = uiReducer(createdState, {
+      type: 'setLayoutDirection',
+      projectId: 'my-scratchpad',
+      direction: 'vertical',
+    });
+    const stateWithWorkspace = uiReducer(verticalState, {
+      type: 'setRoutingMode',
+      projectId: 'my-scratchpad',
+      mode: 'orthogonal',
+    });
     const storage = new MemoryStorage();
 
     saveWorkspaceToStorage(stateWithWorkspace, {}, storage);
@@ -155,6 +158,7 @@ describe('workspace persistence', () => {
       connections: [],
     });
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.layoutDirection).toBe('vertical');
+    expect(restored?.documentsByProjectId['my-scratchpad']?.ui.routingMode).toBe('orthogonal');
   });
 
   it('round-trips node orientation through storage', () => {
@@ -224,6 +228,7 @@ describe('parseShareableLabPack', () => {
           layout: {},
           annotations: [],
           layoutDirection: 'vertical',
+          routingMode: 'orthogonal',
         },
       },
       verificationCases: [

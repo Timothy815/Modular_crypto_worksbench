@@ -2,6 +2,9 @@ import type { ExecutionResult, ExecutionTraceEntry, ValidationIssue } from '../e
 import type { TargetPortState } from './connection-authoring';
 import type { PortSide } from './node-orientation';
 
+const ORTHOGONAL_STEP_BACK_PX = 20;
+const ORTHOGONAL_LANE_OFFSET_PX = 6;
+
 export function getAnchorPosition(
   x: number,
   y: number,
@@ -23,6 +26,111 @@ export function getAnchorPosition(
     x: side === 'left' ? x : x + nodeWidth,
     y: y + portStartY + portIndex * portGap,
   };
+}
+
+function getSideVector(side: PortSide) {
+  switch (side) {
+    case 'left':
+      return { x: -1, y: 0 };
+    case 'right':
+      return { x: 1, y: 0 };
+    case 'top':
+      return { x: 0, y: -1 };
+    case 'bottom':
+      return { x: 0, y: 1 };
+  }
+}
+
+function getLaneOffset(sourceIndex: number, targetIndex: number) {
+  const laneSeed = ((sourceIndex + 1) * 31 + (targetIndex + 1) * 17) % 5;
+  return (laneSeed - 2) * ORTHOGONAL_LANE_OFFSET_PX;
+}
+
+function buildPolylinePath(points: Array<{ x: number; y: number }>) {
+  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+}
+
+export function getOrthogonalPath(
+  sourceAnchor: { x: number; y: number },
+  sourceSide: PortSide,
+  targetAnchor: { x: number; y: number },
+  targetSide: PortSide,
+  sourceIndex: number,
+  targetIndex: number,
+) {
+  const sourceVector = getSideVector(sourceSide);
+  const targetVector = getSideVector(targetSide);
+  const laneOffset = getLaneOffset(sourceIndex, targetIndex);
+  const sourceExit = {
+    x: sourceAnchor.x + sourceVector.x * ORTHOGONAL_STEP_BACK_PX,
+    y: sourceAnchor.y + sourceVector.y * ORTHOGONAL_STEP_BACK_PX,
+  };
+  const targetEntry = {
+    x: targetAnchor.x + targetVector.x * ORTHOGONAL_STEP_BACK_PX,
+    y: targetAnchor.y + targetVector.y * ORTHOGONAL_STEP_BACK_PX,
+  };
+
+  if (sourceExit.x === targetEntry.x || sourceExit.y === targetEntry.y) {
+    return buildPolylinePath([sourceAnchor, sourceExit, targetEntry, targetAnchor]);
+  }
+
+  if (sourceSide === 'left' || sourceSide === 'right') {
+    const elbowX = (sourceExit.x + targetEntry.x) / 2 + laneOffset;
+    return buildPolylinePath([
+      sourceAnchor,
+      sourceExit,
+      { x: elbowX, y: sourceExit.y },
+      { x: elbowX, y: targetEntry.y },
+      targetEntry,
+      targetAnchor,
+    ]);
+  }
+
+  const elbowY = (sourceExit.y + targetEntry.y) / 2 + laneOffset;
+  return buildPolylinePath([
+    sourceAnchor,
+    sourceExit,
+    { x: sourceExit.x, y: elbowY },
+    { x: targetEntry.x, y: elbowY },
+    targetEntry,
+    targetAnchor,
+  ]);
+}
+
+export function getOrthogonalPendingPath(
+  sourceAnchor: { x: number; y: number },
+  sourceSide: PortSide,
+  targetPoint: { x: number; y: number },
+) {
+  const sourceVector = getSideVector(sourceSide);
+  const sourceExit = {
+    x: sourceAnchor.x + sourceVector.x * ORTHOGONAL_STEP_BACK_PX,
+    y: sourceAnchor.y + sourceVector.y * ORTHOGONAL_STEP_BACK_PX,
+  };
+
+  if (sourceExit.x === targetPoint.x || sourceExit.y === targetPoint.y) {
+    return buildPolylinePath([sourceAnchor, sourceExit, targetPoint]);
+  }
+
+  if (sourceSide === 'left' || sourceSide === 'right') {
+    const elbowX = (sourceExit.x + targetPoint.x) / 2;
+    return buildPolylinePath([
+      sourceAnchor,
+      sourceExit,
+      { x: elbowX, y: sourceExit.y },
+      { x: elbowX, y: targetPoint.y },
+      targetPoint,
+    ]);
+  }
+
+  const elbowY = (sourceExit.y + targetPoint.y) / 2;
+  return buildPolylinePath([
+    sourceAnchor,
+    sourceExit,
+    { x: sourceExit.x, y: elbowY },
+    { x: targetPoint.x, y: elbowY },
+    targetPoint,
+  ]);
 }
 
 export function formatVersionTimestamp(savedAt: string) {

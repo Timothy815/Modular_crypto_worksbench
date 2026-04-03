@@ -1063,6 +1063,19 @@ describe('uiReducer', () => {
     });
   });
 
+  it('stores routing mode per workspace', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+
+    const nextState = uiReducer(initialState, {
+      type: 'setRoutingMode',
+      projectId,
+      mode: 'orthogonal',
+    });
+
+    expect(nextState.routingModeByProject[projectId]).toBe('orthogonal');
+  });
+
   it('creates a blank personal workspace in build mode', () => {
     const initialState = createInitialUiState(demoProjects);
 

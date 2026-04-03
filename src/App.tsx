@@ -85,15 +85,11 @@ import {
 } from './ui/workspace-clipboard';
 import type { WorkspaceMode } from './ui/workspace-mode';
 import {
-  buildShareableLabPack,
   createUniqueWorkspaceId,
   createWorkspaceNameFromBase,
   describeWorkspacePipeline,
-  exportPythonWorkspaceBundle,
   hydrateInitialUiState,
   loadInitialVerificationCasesByProject,
-  parseWorkspaceArtifact,
-  prepareImportedLabPack,
 } from './ui/workspace-artifacts';
 import { getPrimitiveMicroDemo } from './ui/primitive-micro-demos';
 import { buildCompositeInstanceDrilldownContext } from './ui/composite-instance-drilldown';
@@ -333,6 +329,8 @@ function MainApp() {
     state.layoutByProject[activeProjectDefinition.id] ?? activeProjectDefinition.layout;
   const activeLayoutDirection =
     state.layoutDirectionByProject[activeProjectDefinition.id] ?? 'horizontal';
+  const activeRoutingMode =
+    state.routingModeByProject[activeProjectDefinition.id] ?? 'curved';
   const baseAnnotations = useMemo(
     () => state.annotationsByProject[activeProjectDefinition.id] ?? [],
     [activeProjectDefinition.id, state.annotationsByProject],
@@ -884,7 +882,10 @@ function MainApp() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '') || activeProjectDefinition.id;
 
-    const { downloadShareableLabPack } = await import('./ui/shareable-lab-pack-persistence');
+    const [{ downloadShareableLabPack }, { buildShareableLabPack }] = await Promise.all([
+      import('./ui/shareable-lab-pack-persistence'),
+      import('./ui/workspace-artifacts'),
+    ]);
     downloadShareableLabPack(
       fileNameStem,
       buildShareableLabPack({
@@ -895,6 +896,7 @@ function MainApp() {
         layout: activeLayout,
         annotations: activeAnnotations,
         layoutDirection: activeLayoutDirection,
+        routingMode: activeRoutingMode,
         comparisonBaseline,
         verificationCases,
         tutorial: selectedProjectTutorial,
@@ -906,6 +908,7 @@ function MainApp() {
     activeAnnotations,
     activeLayout,
     activeLayoutDirection,
+    activeRoutingMode,
     activeProjectDefinition.id,
     activeProjectDefinition.name,
     activeProjectDefinition.summary,
@@ -935,6 +938,7 @@ function MainApp() {
         return;
       }
 
+      const { prepareImportedLabPack } = await import('./ui/workspace-artifacts');
       const plan = prepareImportedLabPack({
         pack,
         availableProjects,
@@ -1586,12 +1590,13 @@ function MainApp() {
       document: {
         version: 1,
         project: pasted.project,
-        ui: {
-          layout: pasted.layout,
-          annotations: activeAnnotations,
-          layoutDirection: activeLayoutDirection,
+          ui: {
+            layout: pasted.layout,
+            annotations: activeAnnotations,
+            layoutDirection: activeLayoutDirection,
+            routingMode: activeRoutingMode,
+          },
         },
-      },
     });
     setImportError(null);
 
@@ -1778,6 +1783,7 @@ function MainApp() {
               ? []
               : state.annotationsByProject[activeProjectDefinition.id] ?? [],
             layoutDirection: activeLayoutDirection,
+            routingMode: activeRoutingMode,
           },
         },
       });
@@ -1803,6 +1809,7 @@ function MainApp() {
     [
       activeLayout,
       activeLayoutDirection,
+      activeRoutingMode,
       activeProjectDefinition.id,
       activeProjectState,
       selectedModule,
@@ -2406,6 +2413,7 @@ function MainApp() {
             activeProjectState={compositeDrilldownContext?.project ?? activeProjectState}
             layout={compositeDrilldownContext?.layout ?? activeLayout}
             layoutDirection={activeLayoutDirection}
+            routingMode={activeRoutingMode}
             annotations={isCompositeDrilldownActive ? [] : activeAnnotations}
             execution={compositeDrilldownContext?.execution ?? execution}
             executionError={isCompositeDrilldownActive ? compositeDrilldownExecutionError : executionError}
@@ -2659,6 +2667,7 @@ function MainApp() {
                     ? []
                     : state.annotationsByProject[activeProjectDefinition.id] ?? [],
                   layoutDirection: activeLayoutDirection,
+                  routingMode: activeRoutingMode,
                 },
               });
               setImportError(null);
@@ -2668,6 +2677,7 @@ function MainApp() {
               if (isCompositeDrilldownActive) {
                 return;
               }
+              const { exportPythonWorkspaceBundle } = await import('./ui/workspace-artifacts');
               const error = await exportPythonWorkspaceBundle({
                 project: activeProjectState,
                 registry: effectiveRegistry,
@@ -2681,6 +2691,7 @@ function MainApp() {
                 return;
               }
               const rawValue = await file.text();
+              const { parseWorkspaceArtifact } = await import('./ui/workspace-artifacts');
               const artifact = parseWorkspaceArtifact(rawValue);
               if (artifact?.kind === 'workbench') {
                 dispatch({
@@ -2719,6 +2730,15 @@ function MainApp() {
                     type: 'setLayoutDirection',
                     projectId: activeProjectDefinition.id,
                     direction,
+                  })
+            }
+            onSetRoutingMode={(mode) =>
+              isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'setRoutingMode',
+                    projectId: activeProjectDefinition.id,
+                    mode,
                   })
             }
             onSwitchProject={(projectId) =>
@@ -3624,6 +3644,7 @@ function MainApp() {
                           layout: replacement.layout,
                           annotations: state.annotationsByProject[activeProjectDefinition.id] ?? [],
                           layoutDirection: activeLayoutDirection,
+                          routingMode: activeRoutingMode,
                         },
                       },
                     });
@@ -3724,6 +3745,8 @@ function MainApp() {
                         layoutDirection:
                           state.layoutDirectionByProject[selectedChallengeProjectId] ??
                           'horizontal',
+                        routingMode:
+                          state.routingModeByProject[selectedChallengeProjectId] ?? 'curved',
                       },
                     },
                   });

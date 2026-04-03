@@ -186,6 +186,12 @@ export function hydrateInitialUiState(projects: DemoProject[]): UiState {
         persistedWorkspace.documentsByProjectId[project.id]?.ui.layoutDirection ?? 'horizontal',
       ]),
     ),
+    routingModeByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.documentsByProjectId[project.id]?.ui.routingMode ?? 'curved',
+      ]),
+    ),
     comparisonBaselinesByProject: Object.fromEntries(
       allProjects.map((project) => [
         project.id,
@@ -351,6 +357,7 @@ export interface BuildShareableLabPackArgs {
   layout: Record<string, { x: number; y: number }>;
   annotations: WorkbenchAnnotation[];
   layoutDirection: 'horizontal' | 'vertical';
+  routingMode: 'curved' | 'orthogonal';
   comparisonBaseline: ComparisonBaselineDocument | null;
   verificationCases: VerificationCase[];
   tutorial?: GuidedTutorial;
@@ -365,6 +372,7 @@ export function buildShareableLabPack({
   layout,
   annotations,
   layoutDirection,
+  routingMode,
   comparisonBaseline,
   verificationCases,
   tutorial,
@@ -387,6 +395,7 @@ export function buildShareableLabPack({
         layout: cloneLayout(layout),
         annotations: cloneAnnotations(annotations),
         layoutDirection,
+        routingMode,
       },
     },
     comparisonBaseline: cloneComparisonBaseline(comparisonBaseline),
@@ -497,6 +506,7 @@ export function prepareImportedLabPack({
         layout: cloneLayout(pack.workspace.ui.layout),
         annotations: cloneAnnotations(pack.workspace.ui.annotations),
         layoutDirection: pack.workspace.ui.layoutDirection ?? 'horizontal',
+        routingMode: pack.workspace.ui.routingMode ?? 'curved',
       },
     },
     comparisonBaseline: cloneComparisonBaseline(pack.comparisonBaseline) ?? null,
