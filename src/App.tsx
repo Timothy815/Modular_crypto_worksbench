@@ -2261,6 +2261,54 @@ function MainApp() {
                     projectId: activeProjectDefinition.id,
                     mode: 'stage-column',
                   });
+                } else if (value === 'align-left') {
+                  dispatch({
+                    type: 'arrangeSelectedModules',
+                    projectId: activeProjectDefinition.id,
+                    mode: 'align-left',
+                  });
+                } else if (value === 'align-right') {
+                  dispatch({
+                    type: 'arrangeSelectedModules',
+                    projectId: activeProjectDefinition.id,
+                    mode: 'align-right',
+                  });
+                } else if (value === 'align-top') {
+                  dispatch({
+                    type: 'arrangeSelectedModules',
+                    projectId: activeProjectDefinition.id,
+                    mode: 'align-top',
+                  });
+                } else if (value === 'align-bottom') {
+                  dispatch({
+                    type: 'arrangeSelectedModules',
+                    projectId: activeProjectDefinition.id,
+                    mode: 'align-bottom',
+                  });
+                } else if (value === 'align-horizontal-center') {
+                  dispatch({
+                    type: 'arrangeSelectedModules',
+                    projectId: activeProjectDefinition.id,
+                    mode: 'align-horizontal-center',
+                  });
+                } else if (value === 'align-vertical-center') {
+                  dispatch({
+                    type: 'arrangeSelectedModules',
+                    projectId: activeProjectDefinition.id,
+                    mode: 'align-vertical-center',
+                  });
+                } else if (value === 'distribute-horizontal') {
+                  dispatch({
+                    type: 'arrangeSelectedModules',
+                    projectId: activeProjectDefinition.id,
+                    mode: 'distribute-horizontal',
+                  });
+                } else if (value === 'distribute-vertical') {
+                  dispatch({
+                    type: 'arrangeSelectedModules',
+                    projectId: activeProjectDefinition.id,
+                    mode: 'distribute-vertical',
+                  });
                 } else if (value === 'undo-workspace-history') {
                   handleUndoWorkspaceHistory();
                 } else if (value === 'redo-workspace-history') {
@@ -2287,6 +2335,14 @@ function MainApp() {
               <option value="delete-selected-cluster">Delete Selected Cluster</option>
               <option value="arrange-selected-stage-row">Arrange Selected Stage Row</option>
               <option value="stack-selected-stage-column">Stack Selected Stage Column</option>
+              <option value="align-left">Align Left</option>
+              <option value="align-right">Align Right</option>
+              <option value="align-top">Align Top</option>
+              <option value="align-bottom">Align Bottom</option>
+              <option value="align-horizontal-center">Align Horizontal Center</option>
+              <option value="align-vertical-center">Align Vertical Center</option>
+              <option value="distribute-horizontal">Distribute Horizontally</option>
+              <option value="distribute-vertical">Distribute Vertically</option>
               <option value="copy-selected-cluster">Copy Selected Cluster</option>
               <option value="paste-selected-cluster">Paste Selected Cluster</option>
               <option value="save-current-workspace">Save Current Workspace</option>
@@ -2616,6 +2672,15 @@ function MainApp() {
             canRedo={isCompositeDrilldownActive ? false : canRedoWorkspaceHistory}
             workspaceVersions={isCompositeDrilldownActive ? [] : activeWorkspaceVersions}
             onRequestSaveVersion={handleSaveWorkspaceVersion}
+            onRequestArrangeSelection={(mode) =>
+              isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'arrangeSelectedModules',
+                    projectId: activeProjectDefinition.id,
+                    mode,
+                  })
+            }
             onRequestRestoreVersion={handleRestoreWorkspaceVersion}
             requestedFocusModuleId={
               isCompositeDrilldownActive

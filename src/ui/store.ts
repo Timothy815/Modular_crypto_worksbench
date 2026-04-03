@@ -47,6 +47,7 @@ import {
   getDefaultNodeOrientation,
   getNextNodeOrientationClockwise,
 } from './node-orientation';
+import { CANVAS_NODE_HEIGHT, CANVAS_NODE_WIDTH } from './canvas-selection';
 
 export interface UiState {
   activeProjectId: string;
@@ -99,6 +100,18 @@ export interface CompositeEditorState {
   saveError: string | null;
 }
 
+type ArrangeSelectedModulesMode =
+  | 'stage-row'
+  | 'stage-column'
+  | 'align-left'
+  | 'align-right'
+  | 'align-top'
+  | 'align-bottom'
+  | 'align-horizontal-center'
+  | 'align-vertical-center'
+  | 'distribute-horizontal'
+  | 'distribute-vertical';
+
 export type UiAction =
   | { type: 'switchProject'; projectId: string }
   | {
@@ -144,7 +157,7 @@ export type UiAction =
   | {
       type: 'arrangeSelectedModules';
       projectId: string;
-      mode: 'stage-row' | 'stage-column';
+      mode: ArrangeSelectedModulesMode;
     }
   | { type: 'addAnnotation'; projectId: string }
   | { type: 'moveAnnotation'; projectId: string; annotationId: string; x: number; y: number }
@@ -417,15 +430,130 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
 
 const STAGE_ROW_GAP = 244;
 const STAGE_COLUMN_GAP = 148;
+const NODE_CENTER_X_OFFSET = CANVAS_NODE_WIDTH / 2;
+const NODE_CENTER_Y_OFFSET = CANVAS_NODE_HEIGHT / 2;
 
 function arrangeSelectedLayoutPositions(
   layout: Record<string, WorkbenchPosition>,
   selectedModuleIds: string[],
   anchorModuleId: string | null,
-  mode: 'stage-row' | 'stage-column',
+  mode: ArrangeSelectedModulesMode,
 ) {
-  if (selectedModuleIds.length < 2) {
+  const sortableIds = selectedModuleIds.filter((moduleId) => layout[moduleId]);
+  if (sortableIds.length < 2) {
     return layout;
+  }
+
+  if (
+    (mode === 'distribute-horizontal' || mode === 'distribute-vertical') &&
+    sortableIds.length < 3
+  ) {
+    return layout;
+  }
+
+  if (mode !== 'stage-row' && mode !== 'stage-column') {
+    const orderedIds = [...sortableIds].sort((leftId, rightId) => {
+      const leftPosition = layout[leftId] ?? { x: 0, y: 0 };
+      const rightPosition = layout[rightId] ?? { x: 0, y: 0 };
+
+      if (mode === 'distribute-horizontal') {
+        if (leftPosition.x !== rightPosition.x) {
+          return leftPosition.x - rightPosition.x;
+        }
+        if (leftPosition.y !== rightPosition.y) {
+          return leftPosition.y - rightPosition.y;
+        }
+      } else if (mode === 'distribute-vertical') {
+        if (leftPosition.y !== rightPosition.y) {
+          return leftPosition.y - rightPosition.y;
+        }
+        if (leftPosition.x !== rightPosition.x) {
+          return leftPosition.x - rightPosition.x;
+        }
+      }
+
+      return leftId.localeCompare(rightId);
+    });
+
+    const positions = orderedIds.map((moduleId) => layout[moduleId] ?? { x: 0, y: 0 });
+    const minX = Math.min(...positions.map((position) => position.x));
+    const maxX = Math.max(...positions.map((position) => position.x));
+    const minY = Math.min(...positions.map((position) => position.y));
+    const maxY = Math.max(...positions.map((position) => position.y));
+    const centerX = (minX + maxX + CANVAS_NODE_WIDTH) / 2;
+    const centerY = (minY + maxY + CANVAS_NODE_HEIGHT) / 2;
+
+    let changed = false;
+    const nextLayout = { ...layout };
+
+    const updatePosition = (
+      moduleId: string,
+      axis: 'x' | 'y',
+      nextValue: number,
+    ) => {
+      if (Math.abs(((nextLayout[moduleId]?.[axis] as number | undefined) ?? 0) - nextValue) <= 0.001) {
+        return;
+      }
+      changed = true;
+      nextLayout[moduleId] = { ...nextLayout[moduleId], [axis]: nextValue };
+    };
+
+    switch (mode) {
+      case 'align-left':
+        for (const moduleId of orderedIds) {
+          updatePosition(moduleId, 'x', minX);
+        }
+        break;
+      case 'align-right':
+        for (const moduleId of orderedIds) {
+          updatePosition(moduleId, 'x', maxX);
+        }
+        break;
+      case 'align-top':
+        for (const moduleId of orderedIds) {
+          updatePosition(moduleId, 'y', minY);
+        }
+        break;
+      case 'align-bottom':
+        for (const moduleId of orderedIds) {
+          updatePosition(moduleId, 'y', maxY);
+        }
+        break;
+      case 'align-horizontal-center': {
+        const alignedX = centerX - NODE_CENTER_X_OFFSET;
+        for (const moduleId of orderedIds) {
+          updatePosition(moduleId, 'x', alignedX);
+        }
+        break;
+      }
+      case 'align-vertical-center': {
+        const alignedY = centerY - NODE_CENTER_Y_OFFSET;
+        for (const moduleId of orderedIds) {
+          updatePosition(moduleId, 'y', alignedY);
+        }
+        break;
+      }
+      case 'distribute-horizontal': {
+        const firstPosition = positions[0];
+        const lastPosition = positions[positions.length - 1];
+        const gap = (lastPosition.x - firstPosition.x) / (orderedIds.length - 1);
+        for (const [index, moduleId] of orderedIds.entries()) {
+          updatePosition(moduleId, 'x', firstPosition.x + gap * index);
+        }
+        break;
+      }
+      case 'distribute-vertical': {
+        const firstPosition = positions[0];
+        const lastPosition = positions[positions.length - 1];
+        const gap = (lastPosition.y - firstPosition.y) / (orderedIds.length - 1);
+        for (const [index, moduleId] of orderedIds.entries()) {
+          updatePosition(moduleId, 'y', firstPosition.y + gap * index);
+        }
+        break;
+      }
+    }
+
+    return changed ? nextLayout : layout;
   }
 
   const anchorId =
@@ -438,11 +566,6 @@ function arrangeSelectedLayoutPositions(
 
   const anchorPosition = layout[anchorId];
   if (!anchorPosition) {
-    return layout;
-  }
-
-  const sortableIds = selectedModuleIds.filter((moduleId) => layout[moduleId]);
-  if (sortableIds.length < 2) {
     return layout;
   }
 

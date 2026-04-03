@@ -75,6 +75,11 @@ The next bounded routing-control follow-on after that is now shipped:
 - a bounded orthogonal-wire bend-editing slice
 - ships per-connection bend overrides in workspace UI metadata only and stops short of arbitrary path editing
 
+The next local graph-layout follow-on now being implemented is:
+- `SELECTED-CLUSTER-ALIGNMENT-V1.md`
+- a bounded selected-cluster alignment/distribution slice
+- now adds explicit align/distribute actions while keeping layout cleanup local to the visible selection and stopping short of a full diagramming toolbar
+
 Current `main` now also includes:
 - Python export foundations:
   - one workspace-local `Export Python` action beside JSON export

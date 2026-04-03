@@ -378,6 +378,134 @@ describe('uiReducer', () => {
     expect(nextState.layoutByProject[projectId]?.[secondModuleId]?.y).toBe(anchorPosition.y - 148);
   });
 
+  it('aligns the selected modules to the left edge without changing their y positions', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const [firstModuleId, secondModuleId, thirdModuleId] =
+      initialState.projectStates[projectId].modules.map((moduleInstance) => moduleInstance.id);
+
+    if (!firstModuleId || !secondModuleId || !thirdModuleId) {
+      throw new Error('Expected at least three modules in the sequential demo.');
+    }
+
+    const movedState = uiReducer(initialState, {
+      type: 'moveModules',
+      projectId,
+      positions: {
+        [firstModuleId]: { x: 420, y: 40 },
+        [secondModuleId]: { x: 260, y: 160 },
+        [thirdModuleId]: { x: 640, y: 280 },
+      },
+    });
+
+    const selectedState = uiReducer(movedState, {
+      type: 'selectModules',
+      projectId,
+      moduleIds: [firstModuleId, secondModuleId, thirdModuleId],
+    });
+
+    const nextState = uiReducer(selectedState, {
+      type: 'arrangeSelectedModules',
+      projectId,
+      mode: 'align-left',
+    });
+
+    expect(nextState.layoutByProject[projectId]?.[firstModuleId]?.x).toBe(260);
+    expect(nextState.layoutByProject[projectId]?.[secondModuleId]?.x).toBe(260);
+    expect(nextState.layoutByProject[projectId]?.[thirdModuleId]?.x).toBe(260);
+    expect(nextState.layoutByProject[projectId]?.[firstModuleId]?.y).toBe(40);
+    expect(nextState.layoutByProject[projectId]?.[secondModuleId]?.y).toBe(160);
+    expect(nextState.layoutByProject[projectId]?.[thirdModuleId]?.y).toBe(280);
+    expect(nextState.selectedModuleIdsByProject[projectId]).toEqual([
+      firstModuleId,
+      secondModuleId,
+      thirdModuleId,
+    ]);
+  });
+
+  it('distributes the selected modules horizontally while keeping the outer modules fixed', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const [firstModuleId, secondModuleId, thirdModuleId] =
+      initialState.projectStates[projectId].modules.map((moduleInstance) => moduleInstance.id);
+
+    if (!firstModuleId || !secondModuleId || !thirdModuleId) {
+      throw new Error('Expected at least three modules in the sequential demo.');
+    }
+
+    const movedState = uiReducer(initialState, {
+      type: 'moveModules',
+      projectId,
+      positions: {
+        [firstModuleId]: { x: 80, y: 40 },
+        [secondModuleId]: { x: 180, y: 160 },
+        [thirdModuleId]: { x: 680, y: 280 },
+      },
+    });
+
+    const selectedState = uiReducer(
+      uiReducer(
+        uiReducer(movedState, {
+          type: 'selectModule',
+          projectId,
+          moduleId: firstModuleId,
+        }),
+        {
+          type: 'selectModule',
+          projectId,
+          moduleId: secondModuleId,
+          additive: true,
+        },
+      ),
+      {
+        type: 'selectModule',
+        projectId,
+        moduleId: thirdModuleId,
+        additive: true,
+      },
+    );
+
+    const nextState = uiReducer(selectedState, {
+      type: 'arrangeSelectedModules',
+      projectId,
+      mode: 'distribute-horizontal',
+    });
+
+    expect(nextState.layoutByProject[projectId]?.[firstModuleId]?.x).toBe(80);
+    expect(nextState.layoutByProject[projectId]?.[thirdModuleId]?.x).toBe(680);
+    expect(nextState.layoutByProject[projectId]?.[secondModuleId]?.x).toBe(380);
+    expect(nextState.layoutByProject[projectId]?.[secondModuleId]?.y).toBe(160);
+  });
+
+  it('undos selected-cluster alignment in one workspace history step', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const [firstModuleId, secondModuleId] =
+      initialState.projectStates[projectId].modules.map((moduleInstance) => moduleInstance.id);
+
+    if (!firstModuleId || !secondModuleId) {
+      throw new Error('Expected at least two modules in the sequential demo.');
+    }
+
+    const selectedState = uiReducer(initialState, {
+      type: 'selectModules',
+      projectId,
+      moduleIds: [firstModuleId, secondModuleId],
+    });
+
+    const alignedState = uiReducer(selectedState, {
+      type: 'arrangeSelectedModules',
+      projectId,
+      mode: 'align-top',
+    });
+    const undoneState = uiReducer(alignedState, {
+      type: 'undoWorkspaceHistory',
+      projectId,
+    });
+
+    expect(undoneState.layoutByProject[projectId]).toEqual(selectedState.layoutByProject[projectId]);
+  });
+
   it('deletes the selected cluster and cleans related workspace state', () => {
     const initialState = createInitialUiState(demoProjects);
     const projectId = 'sequential';

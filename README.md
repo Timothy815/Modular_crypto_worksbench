@@ -85,6 +85,11 @@ The next bounded routing-control follow-on after that is now shipped as:
 - ships draggable elbow control for orthogonal wires only
 - keeps bend metadata in workspace UI state only and stops short of arbitrary path editing
 
+The next local graph-layout follow-on now being implemented is:
+- `SELECTED-CLUSTER-ALIGNMENT-V1.md`
+- now adds explicit selection-scoped align and distribute actions for visible module clusters
+- stays bounded as local layout cleanup rather than widening into a full diagram-editor toolbar
+
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - now shipped as the first bounded verification-station refinement inside the compare/analyze line

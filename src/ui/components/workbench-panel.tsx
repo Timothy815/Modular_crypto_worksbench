@@ -235,6 +235,19 @@ interface WorkbenchPanelProps {
   canRedo: boolean;
   workspaceVersions: WorkspaceVersionDocument[];
   onRequestSaveVersion: () => void;
+  onRequestArrangeSelection: (
+    mode:
+      | 'stage-row'
+      | 'stage-column'
+      | 'align-left'
+      | 'align-right'
+      | 'align-top'
+      | 'align-bottom'
+      | 'align-horizontal-center'
+      | 'align-vertical-center'
+      | 'distribute-horizontal'
+      | 'distribute-vertical',
+  ) => void;
   onRequestRestoreVersion: (versionId: string) => void;
   requestedFocusModuleId?: string | null;
   onWorkspaceFocusHandled?: () => void;
@@ -335,6 +348,7 @@ export function WorkbenchPanel({
   canRedo,
   workspaceVersions,
   onRequestSaveVersion,
+  onRequestArrangeSelection,
   onRequestRestoreVersion,
   requestedFocusModuleId = null,
   onWorkspaceFocusHandled,
@@ -1171,6 +1185,7 @@ export function WorkbenchPanel({
           }}
           onFitView={fitWorkspaceView}
           onRequestSaveVersion={onRequestSaveVersion}
+          onRequestArrangeSelection={onRequestArrangeSelection}
           onRequestDuplicateSelection={onRequestDuplicateSelection}
           onRequestDeleteSelection={onRequestDeleteSelection}
           onRequestDeleteWire={() => {

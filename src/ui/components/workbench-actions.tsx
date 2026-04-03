@@ -28,6 +28,19 @@ interface WorkbenchActionsProps {
   onResetView: () => void;
   onFitView: () => void;
   onRequestSaveVersion: () => void;
+  onRequestArrangeSelection: (
+    mode:
+      | 'stage-row'
+      | 'stage-column'
+      | 'align-left'
+      | 'align-right'
+      | 'align-top'
+      | 'align-bottom'
+      | 'align-horizontal-center'
+      | 'align-vertical-center'
+      | 'distribute-horizontal'
+      | 'distribute-vertical',
+  ) => void;
   onRequestDuplicateSelection: () => void;
   onRequestDeleteSelection: () => void;
   onRequestDeleteWire: () => void;
@@ -104,6 +117,7 @@ export function WorkbenchActions({
   onResetView,
   onFitView,
   onRequestSaveVersion,
+  onRequestArrangeSelection,
   onRequestDuplicateSelection,
   onRequestDeleteSelection,
   onRequestDeleteWire,
@@ -142,6 +156,56 @@ export function WorkbenchActions({
               disabled={!hasSelection}
             />
             <WorkbenchMenuActionButton label="Tidy Layout" onSelect={onTidyLayout} />
+            <WorkbenchMenuActionButton
+              label="Arrange Selected Stage Row"
+              onSelect={() => onRequestArrangeSelection('stage-row')}
+              disabled={selectedModuleIds.length < 2}
+            />
+            <WorkbenchMenuActionButton
+              label="Stack Selected Stage Column"
+              onSelect={() => onRequestArrangeSelection('stage-column')}
+              disabled={selectedModuleIds.length < 2}
+            />
+            <WorkbenchMenuActionButton
+              label="Align Left"
+              onSelect={() => onRequestArrangeSelection('align-left')}
+              disabled={selectedModuleIds.length < 2}
+            />
+            <WorkbenchMenuActionButton
+              label="Align Right"
+              onSelect={() => onRequestArrangeSelection('align-right')}
+              disabled={selectedModuleIds.length < 2}
+            />
+            <WorkbenchMenuActionButton
+              label="Align Top"
+              onSelect={() => onRequestArrangeSelection('align-top')}
+              disabled={selectedModuleIds.length < 2}
+            />
+            <WorkbenchMenuActionButton
+              label="Align Bottom"
+              onSelect={() => onRequestArrangeSelection('align-bottom')}
+              disabled={selectedModuleIds.length < 2}
+            />
+            <WorkbenchMenuActionButton
+              label="Align Horizontal Center"
+              onSelect={() => onRequestArrangeSelection('align-horizontal-center')}
+              disabled={selectedModuleIds.length < 2}
+            />
+            <WorkbenchMenuActionButton
+              label="Align Vertical Center"
+              onSelect={() => onRequestArrangeSelection('align-vertical-center')}
+              disabled={selectedModuleIds.length < 2}
+            />
+            <WorkbenchMenuActionButton
+              label="Distribute Horizontally"
+              onSelect={() => onRequestArrangeSelection('distribute-horizontal')}
+              disabled={selectedModuleIds.length < 3}
+            />
+            <WorkbenchMenuActionButton
+              label="Distribute Vertically"
+              onSelect={() => onRequestArrangeSelection('distribute-vertical')}
+              disabled={selectedModuleIds.length < 3}
+            />
             <WorkbenchMenuActionButton
               label="Curve"
               onSelect={() => onSetRoutingMode('curved')}
