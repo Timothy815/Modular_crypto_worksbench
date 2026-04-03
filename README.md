@@ -43,9 +43,7 @@ The older `v2.1` builder-power queue is now largely present on `main` as shipped
 
 That means the next docket should now be chosen from the remaining unshipped contracts rather than the older authoring-power queue.
 The clearest current candidates are:
-1. `PRIMITIVE-MICRO-DEMOS-V3.md`
-2. `SYSTEMS-IDE-COHERENCE-V1.md`
-3. `VERIFIED-MACHINE-COHERENCE-V1.md`
+1. `SYSTEMS-IDE-COHERENCE-V1.md`
 
 The current explicit north-star check after the major Python-export and multi-window advances is:
 - `SYSTEMS-IDE-COHERENCE-V1.md`
@@ -54,8 +52,8 @@ The current explicit north-star check after the major Python-export and multi-wi
 
 The current explicit trust/coherence follow-on after that is:
 - `VERIFIED-MACHINE-COHERENCE-V1.md`
-- a bounded verification/trust pass for deciding what “verified” should mean in MCW
-- intended to turn compare, trace, and export into a clearer user trust story
+- now shipped as the bounded verification/trust coherence note defining what “verified” should mean in MCW
+- frames verification as bounded behavioral agreement, not security certification
 
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`

@@ -186,6 +186,13 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'Verification and export trust are separate but related. Known-answer verification inside MCW helps you prove that the machine behaves like a reference case. Export parity then helps you prove that the exported Python behaves like the machine you authored. The generated verify_parity.py script replays active verification cases against the exported workspace in a local Python environment. Known-vector import inside the verification station makes it faster to bring textbook or classroom reference cases into the product without typing them one by one.',
         indexTerms: ['verify_parity.py', 'parity', 'known-answer', 'known vectors', 'reference behavior'],
       },
+      {
+        id: 'what-verified-means',
+        title: 'What Verified Means',
+        body:
+          'In MCW, verified means the current workspace matches a chosen reference behavior for the bounded cases you checked. That reference may come from a captured baseline, an imported known vector, or the exported parity workflow. A passing result is strong evidence that the machine matches the tested behavior; it is not a claim that the construction is secure, certified, or formally proven correct under all conditions. The trust story is behavioral and explicit: capture or import a reference, run the cases, inspect any first divergence, and if needed replay the same cases against the exported Python. That is the honest meaning of verified inside MCW.',
+        indexTerms: ['verified', 'what verified means', 'trust', 'reference behavior', 'security claims'],
+      },
     ],
   },
 ];

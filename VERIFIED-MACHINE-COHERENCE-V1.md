@@ -2,7 +2,7 @@
 
 Last updated: March 28, 2026
 
-Status: Proposed
+Status: Shipped on `main`.
 
 ---
 
@@ -111,3 +111,68 @@ This slice is successful when:
 - “verified” is defined in a way that is strong but honest
 - the next trust-focused implementation slice is identified without reopening the entire roadmap
 - future compare/export work can be judged against a stable verification philosophy rather than ad hoc convenience
+
+---
+
+## Shipped Note
+
+MCW now has a clear product-facing answer to “how does the user know the machine is right?”
+
+### What “Verified” Means In MCW
+
+In MCW, **verified** means:
+- the current workspace matches a chosen reference behavior for the bounded cases being checked
+- mismatches are made visible through pass/fail results plus first-divergence guidance where available
+- exported Python can be checked against the same bounded cases through parity artifacts
+
+It does **not** mean:
+- formally proven secure
+- mathematically certified
+- universally correct for all possible future edits or environments
+
+This is a behavioral trust claim, not a security certification claim.
+
+### Strongest Trust Signals Already Present
+
+MCW’s strongest current trust signals are:
+- explicit compare baseline capture inside the workbench
+- bounded verification cases in the Verification Station
+- first-divergence guidance for failed cases
+- known-vector import for faster external reference alignment
+- ticked verification for bounded temporal behavior
+- export-vs-engine parity through `verify_parity.py`
+
+Taken together, those form one coherent trust chain:
+- author the machine
+- capture or import the reference behavior
+- verify the live workspace
+- export the machine
+- replay the same bounded cases against the export
+
+### Main Trust Gap This Note Identified
+
+The largest remaining gap was not missing engine capability.
+
+It was product coherence:
+- compare, verification, known vectors, and export parity already existed or were emerging
+- but the product needed one honest definition of what those surfaces together were claiming
+
+That coherence gap is now closed at the documentation and product-language level.
+
+### Best Next Trust Move
+
+The strongest bounded next move after this note was:
+- `VERIFIED-MACHINE-WORKFLOW-V1.md`
+
+That direction is now shipped, followed by:
+- `VERIFIED-MACHINE-TICKED-WORKFLOW-V1.md`
+- `EXPORT-ENGINE-PARITY-WORKFLOW-V1.md`
+- `KNOWN-VECTOR-IMPORT-V1.md`
+
+### Product Position
+
+MCW should continue to describe verification in this bounded way:
+- “matches this chosen reference behavior”
+- not “secure”
+- not “certified”
+- not “formally verified”

@@ -49,9 +49,7 @@ Current active sequencing should now be read as:
 - keep future work explicit, bounded, and evidence-driven
 
 The current practical next-up candidates are:
-1. `PRIMITIVE-MICRO-DEMOS-V3.md`
-2. `SYSTEMS-IDE-COHERENCE-V1.md`
-3. `VERIFIED-MACHINE-COHERENCE-V1.md`
+1. `SYSTEMS-IDE-COHERENCE-V1.md`
 
 Current `main` now also includes:
 - Python export foundations:
@@ -230,8 +228,8 @@ The next explicit north-star check is now recorded:
 
 The next explicit verification/trust check is now also recorded:
 - `VERIFIED-MACHINE-COHERENCE-V1.md`
-- defines a bounded pass for deciding what “verified” should mean inside MCW
-- treats compare, trace, and export as parts of one trust story rather than disconnected features
+- now shipped as the bounded trust/coherence note for defining what “verified” should mean inside MCW
+- treats compare, trace, verification cases, known vectors, and export parity as one trust story
 
 The next implementation-ready verification slice is now also recorded:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
