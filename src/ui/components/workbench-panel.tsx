@@ -72,6 +72,9 @@ const NODE_WIDTH = CANVAS_NODE_WIDTH;
 const NODE_HEIGHT = CANVAS_NODE_HEIGHT;
 const PORT_GAP = 18;
 const PORT_START_Y = 34;
+const DEFAULT_CANVAS_VIEWPORT_HEIGHT = 520;
+const MIN_CANVAS_VIEWPORT_HEIGHT = 360;
+const MAX_CANVAS_VIEWPORT_HEIGHT = 1200;
 
 interface PendingConnection {
   fromModuleId: string;
@@ -286,6 +289,26 @@ export function WorkbenchPanel({
   );
   const [hoveredPortHintKey, setHoveredPortHintKey] = useState<string | null>(null);
   const [workspaceZoom, setWorkspaceZoom] = useState(DEFAULT_WORKSPACE_ZOOM);
+  const [canvasViewportHeight, setCanvasViewportHeight] = useState(() => {
+    if (typeof window === 'undefined') {
+      return DEFAULT_CANVAS_VIEWPORT_HEIGHT;
+    }
+
+    const rawValue = window.localStorage.getItem('mcw:canvas-viewport-height');
+    const parsedValue = rawValue ? Number(rawValue) : NaN;
+    if (!Number.isFinite(parsedValue)) {
+      return DEFAULT_CANVAS_VIEWPORT_HEIGHT;
+    }
+
+    return Math.min(
+      MAX_CANVAS_VIEWPORT_HEIGHT,
+      Math.max(MIN_CANVAS_VIEWPORT_HEIGHT, parsedValue),
+    );
+  });
+  const [canvasHeightResizeState, setCanvasHeightResizeState] = useState<{
+    originY: number;
+    originHeight: number;
+  } | null>(null);
   const [comparisonVersionId, setComparisonVersionId] = useState<string | null>(null);
   const projectGroups = useMemo(
     () => getSortedLearningGroups(projects),
@@ -404,6 +427,45 @@ export function WorkbenchPanel({
     );
     canvasSurface.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
   }
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.localStorage.setItem('mcw:canvas-viewport-height', String(canvasViewportHeight));
+  }, [canvasViewportHeight]);
+
+  useEffect(() => {
+    if (!canvasHeightResizeState || typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const handlePointerMove = (event: PointerEvent) => {
+      const nextHeight = canvasHeightResizeState.originHeight + (event.clientY - canvasHeightResizeState.originY);
+      setCanvasViewportHeight(
+        Math.min(
+          MAX_CANVAS_VIEWPORT_HEIGHT,
+          Math.max(MIN_CANVAS_VIEWPORT_HEIGHT, nextHeight),
+        ),
+      );
+    };
+
+    const handlePointerUp = () => {
+      setCanvasHeightResizeState(null);
+      document.body.classList.remove('canvas-resizing');
+    };
+
+    document.body.classList.add('canvas-resizing');
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+
+    return () => {
+      document.body.classList.remove('canvas-resizing');
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, [canvasHeightResizeState]);
 
   useEffect(() => {
     if (!dragState && !annotationDragState && !selectionBox) {
@@ -1126,7 +1188,11 @@ export function WorkbenchPanel({
         </div>
       ) : null}
 
-      <div ref={canvasSurfaceRef} className="canvas-surface">
+      <div
+        ref={canvasSurfaceRef}
+        className="canvas-surface"
+        style={{ height: `${canvasViewportHeight}px` }}
+      >
         <div
           className="graph-viewport"
           style={{
@@ -1604,9 +1670,9 @@ export function WorkbenchPanel({
                         portType: port.type,
                       })}
                     </span>
-                  ))}
-                </div>
-              </div>
+          ))}
+        </div>
+      </div>
             );
           })}
 
@@ -1722,6 +1788,19 @@ export function WorkbenchPanel({
         </div>
         </div>
       </div>
+      <button
+        type="button"
+        className="canvas-height-resize-handle"
+        aria-label="Resize workbench height"
+        title="Drag to resize workbench height"
+        onPointerDown={(event) => {
+          event.preventDefault();
+          setCanvasHeightResizeState({
+            originY: event.clientY,
+            originHeight: canvasViewportHeight,
+          });
+        }}
+      />
 
       {executionError ? (
         <div className="execution-error">
