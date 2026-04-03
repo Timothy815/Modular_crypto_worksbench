@@ -702,6 +702,7 @@ Implemented and shipped:
 - `SHAREABLE-LAB-PACKS-V1.md`: shipped bounded portability/distribution slice for exporting and importing a single-file verified lab pack with workspace, layout, and attached teaching/verification context
 - `BITSTREAM-RANDOMNESS-LAB-V1.md`: shipped bounded analysis lab for inspecting PRNG-style bitstreams with sink selection, sample-size warnings, balance/run/transition metrics, lag-1 dependence, and repeated-window hints without making security claims
 - `SEQUENTIAL-STATE-AUTHORING-V1.md`: shipped bounded language/ergonomics follow-on for metadata-free, ticked-mode-only `State` / `Control` / `Observe` role badges that make sequential machines easier to read without changing engine semantics
+- `UI-ARCHITECTURE-STABILIZATION-V1.md`: shipped bounded maintainability slice for extracting import/export, learning/verification, and detached-window orchestration pressure out of `App.tsx` without changing product behavior or reducer ownership
 - `PRNG-TEACHING-WORKSPACE-V1.md`: shipped bounded teaching-workspace line for comparing visible pseudo-random generator constructions without making CSPRNG claims
 - `WORKBENCH-ERGONOMICS-V1.md`: shipped bounded workbench-usability slice for multi-select, group movement, and one-click cleanup
 - `WORKSPACE-LIBRARY-V1.md`: shipped bounded workspace-management slice for blank build spaces and saved personal collections

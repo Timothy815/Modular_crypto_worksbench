@@ -1,0 +1,101 @@
+import { describe, expect, it } from 'vitest';
+
+import { createDetachedSnapshot } from './detached-window-orchestration';
+
+describe('detached-window-orchestration', () => {
+  it('builds a payload-scoped snapshot for the requested detached window', () => {
+    const snapshot = createDetachedSnapshot({
+      hostId: 'host-a',
+      panelWindowId: 'window-a',
+      groups: [
+        {
+          panelWindowId: 'window-a',
+          tabs: ['palette', 'learning'],
+          activeKind: 'learning',
+          presentationMode: 'tabs',
+          splitLeftKind: 'palette',
+          splitRightKind: 'learning',
+          splitRatio: 0.5,
+        },
+      ],
+      payloadByKind: {
+        palette: {
+          theme: 'light',
+          paletteViewMode: 'expanded',
+          compositeLibrary: [],
+          compositeUsageCountById: {},
+          builtInReusableIds: [],
+        },
+        inspector: {
+          theme: 'light',
+          projectId: 'demo',
+          execution: null,
+          executionError: null,
+          validationIssues: [],
+          stepIndex: null,
+          project: { modules: [], connections: [] },
+          tutorialStep: null,
+          projectName: 'Demo',
+          comparisonBaseline: null,
+          executionComparison: null,
+          baselineOutput: 'n/a',
+          variantOutput: 'n/a',
+          verificationSourceOptions: [],
+          verificationCases: [],
+          verificationResults: [],
+          baselineExecutionError: null,
+          baselineModuleId: null,
+          selectedModuleId: null,
+          selectedModuleIds: [],
+          parameterClipboard: null,
+          paramDrafts: {},
+          compositeLibrary: [],
+          probedModuleIds: [],
+          isTickedMode: false,
+          currentTick: 0,
+          tickCount: 0,
+          tickedParamsByModule: null,
+          tickHistoryByModule: null,
+          collectedOutput: null,
+          activeAnalysisTraceEntry: null,
+          requestedWorkspaceFocusModuleId: null,
+          canRenameModuleIds: true,
+        },
+        learning: {
+          theme: 'light',
+          learningPanelTab: 'tutorial',
+          hasTutorialPanel: true,
+          hasChallengePanel: true,
+          hasCryptanalysisPanel: true,
+          tutorials: [],
+          challenges: [],
+          selectedTutorialId: null,
+          selectedChallengeId: null,
+          currentProjectId: 'demo',
+          projectName: 'Demo',
+          currentProject: { modules: [], connections: [] },
+          execution: null,
+          tutorialStepIndex: 0,
+          selectedTutorialStep: null,
+          completedTutorialIds: [],
+          isTutorialCompleted: false,
+          workspaceMode: 'guide',
+          tutorialNotesVisible: true,
+          challengeEvaluation: null,
+          canCaptureChallenge: false,
+          ciphertext: '',
+          cryptanalysisMode: 'classical',
+          modernBaseline: '',
+          modernFlipBit: 0,
+          isTickedMode: false,
+          tickedExecution: null,
+        },
+      },
+    });
+
+    expect(snapshot?.panelWindowId).toBe('window-a');
+    expect(snapshot?.tabs).toEqual(['palette', 'learning']);
+    expect(snapshot?.payloadByKind.inspector).toBeUndefined();
+    expect(snapshot?.payloadByKind.learning?.learningPanelTab).toBe('tutorial');
+  });
+});

@@ -25,6 +25,7 @@ Read INSTRUCTOR-PILOT-PACK-V1.md before changing instructor-facing pilot resourc
 Read SHAREABLE-LAB-PACKS-V1.md before changing lab distribution, packaged workspace portability, or import/export of attached teaching and verification context.
 Read BITSTREAM-RANDOMNESS-LAB-V1.md before changing PRNG-analysis workspaces, bitstream randomness metrics, or any teaching surface that compares random-looking output against simple statistical weakness.
 Read SEQUENTIAL-STATE-AUTHORING-V1.md before changing derived ticked-mode `State` / `Control` / `Observe` role badges or broader ergonomics for reading time-evolving machines.
+Read UI-ARCHITECTURE-STABILIZATION-V1.md before restructuring `App.tsx`, extracting top-level UI orchestration, or changing the ownership boundaries of import/export, learning/verification, or detached-window coordination.
 Read PRNG-TEACHING-WORKSPACE-V1.md before starting work on bounded PRNG teaching demos, visible generator comparison workspaces, or any broader “what makes a generator good or bad” educational slice.
 Read TRANSFORMATION-VISUALIZATION-V1.md before starting work on primitive-level drill-down or transformation-legibility features.
 Read SBOX-TRANSFORMATION-V1.md before starting work on the first S-Box transformation view.

@@ -1025,6 +1025,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `SHAREABLE-LAB-PACKS-V1.md` | Shipped bounded portability/distribution slice for exporting and importing verified local lab packs without a cloud backend |
 | `BITSTREAM-RANDOMNESS-LAB-V1.md` | Shipped bounded PRNG-analysis follow-on with a randomness mode in Cryptanalysis, sink selection, low-confidence sample warnings, live bitstream metrics, and teaching content for reading weak visible streams honestly |
 | `SEQUENTIAL-STATE-AUTHORING-V1.md` | Shipped bounded language-strengthening follow-on for derived ticked-mode `State` / `Control` / `Observe` role badges with no project-model or export changes |
+| `UI-ARCHITECTURE-STABILIZATION-V1.md` | Shipped bounded maintainability slice for extracting import/export, learning/verification, and detached-window orchestration pressure out of `App.tsx` without changing product behavior or reducer ownership |
 | `PRNG-TEACHING-WORKSPACE-V1.md` | Shipped bounded teaching-workspace line for comparing visible pseudo-random generator constructions without making CSPRNG claims |
 | `WORKBENCH-ERGONOMICS-V1.md` | Shipped in `v1.13.0` as bounded workbench usability improvements |
 | `WORKSPACE-LIBRARY-V1.md` | Shipped in `v1.13.0` as bounded blank/save/delete user workspace management |

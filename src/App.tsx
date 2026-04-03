@@ -1,19 +1,9 @@
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useReducer,
-  useRef,
-  useState,
-  type CSSProperties,
-} from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react';
 
 import './App.css';
 import { isCompositeDefinition, type CompositeLibraryEntry } from './engine/composites';
 import { V1_REGISTRY } from './engine/modules';
-import type { ExecutionResult, ExecutionTraceEntry, Project, TickedExecutionResult } from './engine/types';
+import type { ExecutionResult, ExecutionTraceEntry, TickedExecutionResult } from './engine/types';
 import { deriveTickCount, executeTickedProject } from './engine/executor';
 import { isOutputSinkDefId } from './engine/output-sinks';
 import { validateCompositeDef, validateProject } from './engine/validation';
@@ -24,7 +14,14 @@ import {
   unzipCompositeInstance,
 } from './ui/composite-authoring';
 import { evaluateChallengeAttempt } from './ui/challenges';
-import { createChallengeCaptureDraft, createChallengeIdCandidate } from './ui/challenge-capture';
+import { createChallengeIdCandidate } from './ui/challenge-capture';
+import {
+  clampDockWidth,
+  getDetachedPanelConfig,
+  getInstructorPilotConfig,
+  getUserManualConfig,
+} from './ui/app-shell-support';
+import { LazyPanelFallback } from './ui/components/lazy-panel-fallback';
 import { PrimitivePalette } from './ui/components/primitive-palette';
 import { LearningDock } from './ui/components/learning-dock';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
@@ -33,60 +30,49 @@ import { compareExecutionResults } from './ui/execution-compare';
 import { createInstructorPilotUrl } from './ui/instructor-pilot-url';
 import { createUserManualUrl } from './ui/manual-url';
 import {
-  createVerificationCaseFromBaseline,
-  createTickedVerificationCaseFromBaseline,
-  evaluateVerificationCases,
-  getVerificationSourceOptions,
-  type VerificationCase,
-} from './ui/verification-workflow';
+  addVerificationCasesToProject,
+  applyChallengeSelectionPlan,
+  applyTutorialSelectionPlan,
+  buildChallengeSelectionPlan,
+  buildTutorialSelectionPlan,
+  clearVerificationCasesForProject,
+  createChallengeCaptureDialogState,
+  createVerificationCaseForProject,
+  removeVerificationCaseFromProject,
+  type LearningPanelTab,
+} from './ui/learning-orchestration';
+import { evaluateVerificationCases, getVerificationSourceOptions, type VerificationCase } from './ui/verification-workflow';
 import { clampTutorialStepIndex, getTutorialStep } from './ui/tutorials';
 import {
   downloadDocument,
   downloadAiToolkitDocument,
-  downloadPythonExportBundle,
   downloadCompositeLibraryDocument,
   downloadGuidedChallengeDocument,
-  loadWorkspaceFromStorage,
   parseGuidedChallengeDocument,
-  parseCompositeLibraryDocument,
-  parseWorkbenchDocument,
   saveWorkspaceToStorage,
 } from './ui/persistence';
 import { cloneProject } from './ui/project-clone';
 import {
+  broadcastDetachedSnapshots,
+  connectDetachedPanelChannel,
+  createWindowSessionId,
+  moveDetachedPanelToExistingWindow as moveDetachedPanelToExistingWindowHelper,
+  openDetachedPanelInNewWindow as openDetachedPanelInNewWindowHelper,
+  returnDetachedPanelToMain as returnDetachedPanelToMainHelper,
+} from './ui/detached-window-orchestration';
+import {
   DETACHED_PANEL_CHANNEL_NAME,
-  DETACHED_PANEL_HOST_QUERY_KEY,
-  DETACHED_PANEL_QUERY_KEY,
-  DETACHED_PANEL_WINDOW_QUERY_KEY,
   formatDetachedPanelKindLabel,
   formatDetachedPanelWindowLabel,
   type DetachedInspectorSnapshot,
   type DetachedLearningSnapshot,
   type DetachedPanelKind,
-  type DetachedPanelMessage,
-  type DetachedPanelStateSnapshot,
   type DetachedPaletteSnapshot,
   type DetachedPanelPayloadByKind,
   type DetachedPanelWindowGroup,
-  createDetachedPanelUrl,
-  createDetachedPanelWindowName,
-  createDetachedPanelGroup,
-  getDetachedPanelGroupByKind,
   isDetachedPanelKindActive,
-  isDetachedPanelKind,
-  moveDetachedPanelKindEarlier,
-  moveDetachedPanelKindLater,
-  moveDetachedPanelKindToGroup,
-  removeDetachedPanelGroup,
-  removeDetachedPanelKind,
-  setDetachedPanelGroupPresentationMode,
-  setDetachedPanelGroupSplitRatio,
-  setDetachedPanelGroupSplitSide,
-  setDetachedPanelGroupActiveKind,
-  swapDetachedPanelGroupSplitSides,
 } from './ui/multi-window';
 import {
-  createInitialUiState,
   getEffectiveRegistry,
   getDraftValue,
   getSelectedModuleId,
@@ -98,15 +84,24 @@ import {
   pasteWorkspaceClipboardSnapshot,
   type WorkspaceClipboardSnapshot,
 } from './ui/workspace-clipboard';
+import type { WorkspaceMode } from './ui/workspace-mode';
+import {
+  buildShareableLabPack,
+  createUniqueWorkspaceId,
+  createWorkspaceNameFromBase,
+  describeWorkspacePipeline,
+  exportPythonWorkspaceBundle,
+  hydrateInitialUiState,
+  loadInitialVerificationCasesByProject,
+  parseWorkspaceArtifact,
+  prepareImportedLabPack,
+} from './ui/workspace-artifacts';
 import { getPrimitiveMicroDemo } from './ui/primitive-micro-demos';
 
 const MIN_LEFT_DOCK_WIDTH = 220;
 const MAX_LEFT_DOCK_WIDTH = 520;
 const MIN_RIGHT_DOCK_WIDTH = 280;
 const MAX_RIGHT_DOCK_WIDTH = 680;
-const USER_MANUAL_QUERY_KEY = 'manual';
-const INSTRUCTOR_PILOT_QUERY_KEY = 'instructorPilot';
-const USER_MANUAL_THEME_QUERY_KEY = 'theme';
 
 const DetachedPanelWindow = lazy(() =>
   import('./ui/components/detached-panel-window').then((module) => ({
@@ -129,29 +124,6 @@ const InstructorPilotWindow = lazy(() =>
   })),
 );
 
-function clampDockWidth(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, Math.round(value)));
-}
-
-function slugifyWorkspaceName(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-function createUniqueWorkspaceId(name: string, usedIds: Set<string>) {
-  const base = slugifyWorkspaceName(name) || 'workspace';
-  let nextId = base;
-  let index = 2;
-  while (usedIds.has(nextId)) {
-    nextId = `${base}-${index}`;
-    index += 1;
-  }
-  return nextId;
-}
-
 function createDuplicateWorkspaceName(sourceName: string, existingNames: Set<string>) {
   const baseName = `${sourceName} Copy`;
   let candidate = baseName;
@@ -169,115 +141,11 @@ function createWorkspaceVersionId(projectId: string, timestamp: string) {
   return `${projectId}-version-${timestamp.replace(/[^0-9]/g, '')}`;
 }
 
-function createWorkspaceNameFromBase(baseName: string, existingNames: Set<string>) {
-  let candidate = baseName;
-  let suffix = 2;
-
-  while (existingNames.has(candidate)) {
-    candidate = `${baseName} ${suffix}`;
-    suffix += 1;
-  }
-
-  return candidate;
-}
-
-function createUniqueImportedLearningId(baseId: string, usedIds: Set<string>) {
-  const sanitizedBase =
-    baseId
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'imported-item';
-  let candidate = sanitizedBase;
-  let suffix = 2;
-
-  while (usedIds.has(candidate)) {
-    candidate = `${sanitizedBase}-${suffix}`;
-    suffix += 1;
-  }
-
-  return candidate;
-}
-
 interface ParameterClipboardState {
   sourceModuleId: string;
   sourceDefId: string;
   params: Record<string, unknown>;
   paramKeys: string[];
-}
-
-function describeWorkspacePipeline(project: Project) {
-  return project.modules.length > 0
-    ? project.modules.map((moduleInstance) => moduleInstance.defId).join(' -> ')
-    : 'Blank canvas';
-}
-
-function LazyPanelFallback({
-  label = 'Loading',
-  title = 'Preparing panel…',
-}: {
-  label?: string;
-  title?: string;
-}) {
-  return (
-    <section className="panel comparison-panel">
-      <div className="panel-head">
-        <p className="panel-label">{label}</p>
-        <h2>{title}</h2>
-      </div>
-    </section>
-  );
-}
-
-function getDetachedPanelConfig() {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  const url = new URL(window.location.href);
-  const kind = url.searchParams.get(DETACHED_PANEL_QUERY_KEY);
-  const hostId = url.searchParams.get(DETACHED_PANEL_HOST_QUERY_KEY);
-  const panelWindowId = url.searchParams.get(DETACHED_PANEL_WINDOW_QUERY_KEY);
-
-  if (!isDetachedPanelKind(kind) || !hostId || !panelWindowId) {
-    return null;
-  }
-
-  return { kind, hostId, panelWindowId };
-}
-
-function getUserManualConfig(): { theme: 'light' | 'dark' } | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  const url = new URL(window.location.href);
-  const manual = url.searchParams.get(USER_MANUAL_QUERY_KEY);
-  if (manual !== '1') {
-    return null;
-  }
-
-  const theme = url.searchParams.get(USER_MANUAL_THEME_QUERY_KEY) === 'dark' ? 'dark' : 'light';
-  return { theme };
-}
-
-function getInstructorPilotConfig(): { theme: 'light' | 'dark' } | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  const url = new URL(window.location.href);
-  const pilot = url.searchParams.get(INSTRUCTOR_PILOT_QUERY_KEY);
-  if (pilot !== '1') {
-    return null;
-  }
-
-  const theme = url.searchParams.get(USER_MANUAL_THEME_QUERY_KEY) === 'dark' ? 'dark' : 'light';
-  return { theme };
-}
-
-function createWindowSessionId() {
-  return `window-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function App() {
@@ -321,9 +189,7 @@ function MainApp() {
   const [headerResourceAction, setHeaderResourceAction] = useState('');
   const [headerWorkspaceAction, setHeaderWorkspaceAction] = useState('');
   const [headerWindowAction, setHeaderWindowAction] = useState('');
-  const [learningPanelTab, setLearningPanelTab] = useState<
-    'quickstart' | 'tutorial' | 'challenge' | 'cryptanalysis'
-  >('quickstart');
+  const [learningPanelTab, setLearningPanelTab] = useState<LearningPanelTab>('quickstart');
   const [leftDockWidth, setLeftDockWidth] = useState(() => {
     if (typeof window === 'undefined') {
       return 320;
@@ -373,213 +239,7 @@ function MainApp() {
   const [state, dispatch] = useReducer(
     uiReducer,
     demoProjects,
-    (projects) => {
-      if (typeof window === 'undefined') {
-        return createInitialUiState(projects);
-      }
-
-      const persistedWorkspace = loadWorkspaceFromStorage(projects);
-      const userWorkspaceProjects = (persistedWorkspace?.userWorkspaceLibrary ?? []).map(
-        (workspace) => ({
-          id: workspace.id,
-          name: workspace.name,
-          group: workspace.group ?? 'My Workspaces',
-          summary: workspace.summary,
-          pipeline: workspace.pipeline,
-          defaultTickedMode: workspace.defaultTickedMode,
-          project:
-            persistedWorkspace?.documentsByProjectId[workspace.id]?.project ?? {
-              modules: [],
-              connections: [],
-            },
-          layout: persistedWorkspace?.documentsByProjectId[workspace.id]?.ui.layout ?? {},
-        }),
-      );
-      const allProjects = [...projects, ...userWorkspaceProjects];
-      const initialState = createInitialUiState(allProjects);
-      if (!persistedWorkspace) {
-        return initialState;
-      }
-
-      const restoredProjectStates = Object.fromEntries(
-        allProjects.map((project) => [
-          project.id,
-          persistedWorkspace.documentsByProjectId[project.id]?.project ?? initialState.projectStates[project.id],
-        ]),
-      );
-
-      return {
-        ...initialState,
-        activeProjectId: persistedWorkspace.activeProjectId,
-        defaultWorkspaceMode: persistedWorkspace.defaultWorkspaceMode ?? initialState.defaultWorkspaceMode,
-        challengeLibrary:
-          persistedWorkspace.challengeLibrary.length > 0
-            ? persistedWorkspace.challengeLibrary
-            : initialState.challengeLibrary,
-        tutorialLibrary:
-          persistedWorkspace.tutorialLibrary.length > 0
-            ? persistedWorkspace.tutorialLibrary
-            : initialState.tutorialLibrary,
-        compositeLibrary:
-          persistedWorkspace.compositeLibrary.entries.length > 0
-            ? persistedWorkspace.compositeLibrary.entries
-            : initialState.compositeLibrary,
-        userWorkspaceLibrary: persistedWorkspace.userWorkspaceLibrary ?? [],
-        showPalette: persistedWorkspace.showPalette,
-        showInspector: persistedWorkspace.showInspector,
-        projectStates: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            restoredProjectStates[project.id],
-          ]),
-        ),
-        layoutByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            persistedWorkspace.documentsByProjectId[project.id]?.ui.layout ?? initialState.layoutByProject[project.id],
-          ]),
-        ),
-        annotationsByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            persistedWorkspace.documentsByProjectId[project.id]?.ui.annotations ?? initialState.annotationsByProject[project.id],
-          ]),
-        ),
-        comparisonBaselinesByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            persistedWorkspace.comparisonBaselinesByProjectId[project.id] ?? null,
-          ]),
-        ),
-        activeChallengeIdByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            persistedWorkspace.activeChallengeIdByProjectId[project.id] ??
-              initialState.activeChallengeIdByProject[project.id] ??
-              null,
-          ]),
-        ),
-        activeTutorialIdByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            persistedWorkspace.activeTutorialIdByProjectId[project.id] ??
-              initialState.activeTutorialIdByProject[project.id] ??
-              null,
-          ]),
-        ),
-        activeTutorialStepByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            persistedWorkspace.activeTutorialStepByProjectId[project.id] ??
-              initialState.activeTutorialStepByProject[project.id] ??
-              0,
-          ]),
-        ),
-        completedTutorialsByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            persistedWorkspace.completedTutorialsByProjectId[project.id] ??
-              initialState.completedTutorialsByProject[project.id] ??
-              [],
-          ]),
-        ),
-        tutorialNotesVisibleByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            persistedWorkspace.tutorialNotesVisibleByProjectId?.[project.id] ??
-              initialState.tutorialNotesVisibleByProject[project.id] ??
-              true,
-          ]),
-        ),
-        workspaceModeByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            persistedWorkspace.workspaceModeByProjectId?.[project.id] ??
-              initialState.workspaceModeByProject[project.id] ??
-              'guide',
-          ]),
-        ),
-        cryptanalysisModeByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            persistedWorkspace.cryptanalysisModeByProjectId?.[project.id] ??
-              initialState.cryptanalysisModeByProject[project.id] ??
-              'classical',
-          ]),
-        ),
-        cryptanalysisInputByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            persistedWorkspace.cryptanalysisInputByProjectId?.[project.id] ??
-              initialState.cryptanalysisInputByProject[project.id] ??
-              '',
-          ]),
-        ),
-        modernAnalysisBaselineByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            persistedWorkspace.modernAnalysisBaselineByProjectId?.[project.id] ??
-              initialState.modernAnalysisBaselineByProject[project.id] ??
-              '',
-          ]),
-        ),
-        modernAnalysisFlipBitByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            persistedWorkspace.modernAnalysisFlipBitByProjectId?.[project.id] ??
-              initialState.modernAnalysisFlipBitByProject[project.id] ??
-              0,
-          ]),
-        ),
-        tickedModeByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            persistedWorkspace.tickedModeByProjectId?.[project.id] ??
-              initialState.tickedModeByProject[project.id] ??
-              false,
-          ]),
-        ),
-        currentTickByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            persistedWorkspace.currentTickByProjectId?.[project.id] ??
-              initialState.currentTickByProject[project.id] ??
-              0,
-          ]),
-        ),
-        isTickPlaybackActiveByProject: Object.fromEntries(
-          allProjects.map((project) => [project.id, false]),
-        ),
-        tickPlaybackSpeedMsByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            persistedWorkspace.tickPlaybackSpeedMsByProjectId?.[project.id] ??
-              initialState.tickPlaybackSpeedMsByProject[project.id] ??
-              500,
-          ]),
-        ),
-        selectedModuleIdByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            restoredProjectStates[project.id]?.modules[0]?.id ?? null,
-          ]),
-        ),
-        selectedModuleIdsByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            restoredProjectStates[project.id]?.modules[0]?.id
-              ? [restoredProjectStates[project.id].modules[0].id]
-              : [],
-          ]),
-        ),
-        workspaceVersionsByProject: Object.fromEntries(
-          allProjects.map((project) => [
-            project.id,
-            persistedWorkspace.workspaceVersionsByProjectId?.[project.id] ?? [],
-          ]),
-        ),
-      };
-    },
+    hydrateInitialUiState,
   );
   const [importError, setImportError] = useState<string | null>(null);
   const [isCompositeDialogOpen, setIsCompositeDialogOpen] = useState(false);
@@ -599,13 +259,7 @@ function MainApp() {
     useState<'beginner' | 'intermediate' | 'expert'>('beginner');
   const [verificationCasesByProject, setVerificationCasesByProject] = useState<
     Record<string, VerificationCase[]>
-  >(() => {
-    if (typeof window === 'undefined') {
-      return {};
-    }
-
-    return loadWorkspaceFromStorage(demoProjects)?.verificationCasesByProjectId ?? {};
-  });
+  >(() => loadInitialVerificationCasesByProject(demoProjects));
   const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
   const [hoveredTraceModuleId, setHoveredTraceModuleId] = useState<string | null>(null);
   const [stepIndex, setStepIndex] = useState<number | null>(null);
@@ -1012,69 +666,41 @@ function MainApp() {
   }, [theme]);
   const handleOpenTutorialPath = useCallback(
     (projectId: string, tutorialId: string) => {
-      const nextTutorial =
-        state.tutorialLibrary.find((tutorial) => tutorial.id === tutorialId) ?? null;
-      setLearningPanelTab('tutorial');
-      if (workspaceMode === 'cryptanalysis') {
-        dispatch({
-          type: 'setWorkspaceMode',
-          projectId: activeProjectDefinition.id,
-          mode: 'guide',
-        });
-      }
-      if (projectId !== activeProjectDefinition.id) {
-        dispatch({
-          type: 'switchProject',
+      applyTutorialSelectionPlan({
+        plan: buildTutorialSelectionPlan({
+          activeProjectId: activeProjectDefinition.id,
+          workspaceMode,
           projectId,
-        });
-      }
-      setStepIndex(nextTutorial?.steps[0]?.targetStepIndex ?? null);
-      dispatch({
-        type: 'selectTutorial',
-        projectId,
-        tutorialId,
+          tutorialId,
+          tutorials: state.tutorialLibrary,
+        }),
+        activeProjectId: activeProjectDefinition.id,
+        dispatch,
+        setLearningPanelTab,
+        setStepIndex,
       });
     },
     [activeProjectDefinition.id, state.tutorialLibrary, workspaceMode],
   );
   const handleAddVerificationCase = useCallback(
     (sourceModuleId: string, inputValue: string, tickCount: number | null = null) => {
-      if (!comparisonBaseline) {
-        return 'Capture a baseline before adding verification cases.';
-      }
-
-      const sourceOption =
-        verificationSourceOptions.find((option) => option.moduleId === sourceModuleId) ?? null;
-      if (!sourceOption) {
-        return 'Choose a supported source module for verification.';
-      }
-
-      const nextCase = isTickedMode
-        ? createTickedVerificationCaseFromBaseline({
-            baselineProject: comparisonBaseline.project,
-            registry: effectiveRegistry,
-            sourceOption,
-            inputValue,
-            tickCount: tickCount ?? 0,
-          })
-        : createVerificationCaseFromBaseline({
-            baselineProject: comparisonBaseline.project,
-            registry: effectiveRegistry,
-            sourceOption,
-            inputValue,
-          });
-      if (!nextCase.case) {
-        return nextCase.error;
-      }
-
-      setVerificationCasesByProject((current) => ({
-        ...current,
-        [activeProjectDefinition.id]: [
-          ...(current[activeProjectDefinition.id] ?? []),
-          nextCase.case,
-        ],
-      }));
-      return null;
+      let nextError: string | null = null;
+      setVerificationCasesByProject((current) => {
+        const result = createVerificationCaseForProject({
+          comparisonBaseline,
+          verificationSourceOptions,
+          registry: effectiveRegistry,
+          sourceModuleId,
+          inputValue,
+          projectId: activeProjectDefinition.id,
+          casesByProject: current,
+          isTickedMode,
+          tickCount,
+        });
+        nextError = result.error;
+        return result.nextCasesByProject;
+      });
+      return nextError;
     },
     [
       activeProjectDefinition.id,
@@ -1086,20 +712,16 @@ function MainApp() {
   );
   const handleRemoveVerificationCase = useCallback(
     (caseId: string) => {
-      setVerificationCasesByProject((current) => ({
-        ...current,
-        [activeProjectDefinition.id]: (current[activeProjectDefinition.id] ?? []).filter(
-          (entry) => entry.id !== caseId,
-        ),
-      }));
+      setVerificationCasesByProject((current) =>
+        removeVerificationCaseFromProject(current, activeProjectDefinition.id, caseId),
+      );
     },
     [activeProjectDefinition.id],
   );
   const handleClearVerificationCases = useCallback(() => {
-    setVerificationCasesByProject((current) => ({
-      ...current,
-      [activeProjectDefinition.id]: [],
-    }));
+    setVerificationCasesByProject((current) =>
+      clearVerificationCasesForProject(current, activeProjectDefinition.id),
+    );
   }, [activeProjectDefinition.id]);
   const handleImportVerificationCases = useCallback(
     (cases: VerificationCase[]) => {
@@ -1107,13 +729,9 @@ function MainApp() {
         return;
       }
 
-      setVerificationCasesByProject((current) => ({
-        ...current,
-        [activeProjectDefinition.id]: [
-          ...(current[activeProjectDefinition.id] ?? []),
-          ...cases,
-        ],
-      }));
+      setVerificationCasesByProject((current) =>
+        addVerificationCasesToProject(current, activeProjectDefinition.id, cases),
+      );
     },
     [activeProjectDefinition.id],
   );
@@ -1130,55 +748,21 @@ function MainApp() {
         .replace(/^-+|-+$/g, '') || activeProjectDefinition.id;
 
     const { downloadShareableLabPack } = await import('./ui/persistence');
-    downloadShareableLabPack(fileNameStem, {
-      version: 1,
-      kind: 'mcw-shareable-lab-pack',
-      metadata: {
-        id: activeProjectDefinition.id,
-        title: activeProjectDefinition.name,
-        summary: activeProjectDefinition.summary,
-        source: 'MCW Shareable Lab Pack',
-        exportedAt: new Date().toISOString(),
-      },
-      workspace: {
-        version: 1,
-        project: cloneProject(activeProjectState),
-        ui: {
-          layout: Object.fromEntries(
-            Object.entries(activeLayout).map(([moduleId, position]) => [moduleId, { ...position }]),
-          ),
-          annotations: activeAnnotations.map((annotation) => ({ ...annotation })),
-        },
-      },
-      comparisonBaseline: comparisonBaseline
-        ? {
-            capturedAt: comparisonBaseline.capturedAt,
-            project: cloneProject(comparisonBaseline.project),
-          }
-        : null,
-      verificationCases: verificationCases.map((verificationCase) => ({ ...verificationCase })),
-      tutorial: selectedProjectTutorial
-        ? {
-            ...selectedProjectTutorial,
-            steps: selectedProjectTutorial.steps.map((step) => ({ ...step })),
-          }
-        : undefined,
-      challenge: selectedProjectChallenge
-        ? {
-            ...selectedProjectChallenge,
-            startingProject: cloneProject(selectedProjectChallenge.startingProject),
-            startingLayout: selectedProjectChallenge.startingLayout
-              ? Object.fromEntries(
-                  Object.entries(selectedProjectChallenge.startingLayout).map(
-                    ([moduleId, position]) => [moduleId, { ...position }],
-                  ),
-                )
-              : undefined,
-            targetProject: cloneProject(selectedProjectChallenge.targetProject),
-            hints: selectedProjectChallenge.hints ? [...selectedProjectChallenge.hints] : undefined,
-          }
-        : undefined,
-    });
+    downloadShareableLabPack(
+      fileNameStem,
+      buildShareableLabPack({
+        activeProjectId: activeProjectDefinition.id,
+        projectName: activeProjectDefinition.name,
+        projectSummary: activeProjectDefinition.summary,
+        project: activeProjectState,
+        layout: activeLayout,
+        annotations: activeAnnotations,
+        comparisonBaseline,
+        verificationCases,
+        tutorial: selectedProjectTutorial,
+        challenge: selectedProjectChallenge,
+      }),
+    );
     setImportError(null);
   }, [
     activeAnnotations,
@@ -1212,103 +796,177 @@ function MainApp() {
         return;
       }
 
-      const existingNames = new Set(availableProjects.map((project) => project.name));
-      const workspaceName = createWorkspaceNameFromBase(pack.metadata.title, existingNames);
-      const workspaceId = createUniqueWorkspaceId(
-        workspaceName,
-        new Set(availableProjects.map((project) => project.id)),
-      );
-      const workspaceSummary = pack.metadata.summary || 'Imported shareable lab pack.';
-      const workspacePipeline = describeWorkspacePipeline(pack.workspace.project);
+      const plan = prepareImportedLabPack({
+        pack,
+        availableProjects,
+        tutorialLibrary: state.tutorialLibrary,
+        challengeLibrary: state.challengeLibrary,
+      });
 
       dispatch({
         type: 'createBlankWorkspace',
-        workspaceId,
-        name: workspaceName,
-        summary: workspaceSummary,
-        pipeline: workspacePipeline,
+        workspaceId: plan.workspaceId,
+        name: plan.workspaceName,
+        summary: plan.workspaceSummary,
+        pipeline: plan.workspacePipeline,
         group: 'Imported Lab Packs',
       });
       dispatch({
         type: 'loadDocument',
-        projectId: workspaceId,
-        document: pack.workspace,
+        projectId: plan.workspaceId,
+        document: plan.document,
       });
       dispatch({
         type: 'setComparisonBaseline',
-        projectId: workspaceId,
-        baseline:
-          pack.comparisonBaseline === undefined
-            ? null
-            : pack.comparisonBaseline,
+        projectId: plan.workspaceId,
+        baseline: plan.comparisonBaseline,
       });
       setVerificationCasesByProject((current) => ({
         ...current,
-        [workspaceId]: (pack.verificationCases ?? []).map((verificationCase) => ({
-          ...verificationCase,
-        })),
+        [plan.workspaceId]: plan.verificationCases,
       }));
 
-      if (pack.tutorial) {
-        const tutorialId = createUniqueImportedLearningId(
-          pack.tutorial.id,
-          new Set(state.tutorialLibrary.map((tutorial) => tutorial.id)),
-        );
+      if (plan.tutorial) {
         dispatch({
           type: 'upsertTutorial',
           tutorial: {
-            ...pack.tutorial,
-            id: tutorialId,
-            projectId: workspaceId,
-            steps: pack.tutorial.steps.map((step) => ({ ...step })),
+            ...plan.tutorial.tutorial,
+            id: plan.tutorial.tutorialId,
           },
         });
         dispatch({
           type: 'selectTutorial',
-          projectId: workspaceId,
-          tutorialId,
+          projectId: plan.workspaceId,
+          tutorialId: plan.tutorial.tutorialId,
         });
       }
 
-      if (pack.challenge) {
-        const challengeId = createUniqueImportedLearningId(
-          pack.challenge.id,
-          new Set(state.challengeLibrary.map((challenge) => challenge.id)),
-        );
+      if (plan.challenge) {
         dispatch({
           type: 'upsertChallenge',
           challenge: {
-            ...pack.challenge,
-            id: challengeId,
-            projectId: workspaceId,
-            startingProject: cloneProject(pack.challenge.startingProject),
-            startingLayout: pack.challenge.startingLayout
-              ? Object.fromEntries(
-                  Object.entries(pack.challenge.startingLayout).map(([moduleId, position]) => [
-                    moduleId,
-                    { ...position },
-                  ]),
-                )
-              : undefined,
-            targetProject: cloneProject(pack.challenge.targetProject),
-            hints: pack.challenge.hints ? [...pack.challenge.hints] : undefined,
+            ...plan.challenge.challenge,
+            id: plan.challenge.challengeId,
           },
         });
         dispatch({
           type: 'selectChallenge',
-          projectId: workspaceId,
-          challengeId,
+          projectId: plan.workspaceId,
+          challengeId: plan.challenge.challengeId,
         });
       }
 
       dispatch({
         type: 'switchProject',
-        projectId: workspaceId,
+        projectId: plan.workspaceId,
       });
-      setLearningPanelTab(pack.challenge ? 'challenge' : pack.tutorial ? 'tutorial' : 'quickstart');
+      setLearningPanelTab(plan.learningPanelTab);
       setImportError(null);
     },
     [availableProjects, effectiveRegistry, state.challengeLibrary, state.tutorialLibrary],
+  );
+  const handleSelectChallenge = useCallback(
+    (challengeId: string) => {
+      applyChallengeSelectionPlan({
+        plan: buildChallengeSelectionPlan({
+          activeProjectId: activeProjectDefinition.id,
+          workspaceMode,
+          challengeId,
+          challenges: state.challengeLibrary,
+        }),
+        activeProjectId: activeProjectDefinition.id,
+        dispatch,
+        setLearningPanelTab,
+      });
+    },
+    [activeProjectDefinition.id, state.challengeLibrary, workspaceMode],
+  );
+  const handleLoadChallengeStart = useCallback(() => {
+    setLearningPanelTab('challenge');
+    if (workspaceMode === 'cryptanalysis') {
+      dispatch({
+        type: 'setWorkspaceMode',
+        projectId: activeProjectDefinition.id,
+        mode: 'guide',
+      });
+    }
+    setIsChallengeResetConfirmOpen(true);
+  }, [activeProjectDefinition.id, workspaceMode]);
+  const handleCaptureChallenge = useCallback(() => {
+    setLearningPanelTab('challenge');
+    if (workspaceMode === 'cryptanalysis') {
+      dispatch({
+        type: 'setWorkspaceMode',
+        projectId: activeProjectDefinition.id,
+        mode: 'guide',
+      });
+    }
+    const draft = createChallengeCaptureDialogState(
+      activeProjectDefinition.id,
+      activeProjectDefinition.name,
+    );
+    setChallengeCaptureTitle(draft.title);
+    setChallengeCaptureId(draft.id);
+    setChallengeCaptureDifficulty(draft.difficulty);
+    setChallengeCapturePrompt(draft.prompt);
+    setChallengeCaptureHints(draft.hints);
+    setChallengeCaptureShouldExport(true);
+    setChallengeCaptureError(null);
+    setIsChallengeCaptureOpen(true);
+  }, [activeProjectDefinition.id, activeProjectDefinition.name, workspaceMode]);
+  const handleImportChallengeRaw = useCallback(
+    (rawValue: string) => {
+      const challengeDocument = parseGuidedChallengeDocument(rawValue);
+      if (!challengeDocument) {
+        setImportError('The selected file is not a valid MCW guided challenge document.');
+        return;
+      }
+
+      dispatch({
+        type: 'upsertChallenge',
+        challenge: challengeDocument,
+      });
+      const challengeProjectId = challengeDocument.projectId ?? activeProjectDefinition.id;
+      if (challengeProjectId !== activeProjectDefinition.id) {
+        dispatch({
+          type: 'switchProject',
+          projectId: challengeProjectId,
+        });
+      }
+      if (workspaceMode === 'cryptanalysis' && challengeProjectId === activeProjectDefinition.id) {
+        dispatch({
+          type: 'setWorkspaceMode',
+          projectId: activeProjectDefinition.id,
+          mode: 'guide',
+        });
+      }
+      setLearningPanelTab('challenge');
+      dispatch({
+        type: 'selectChallenge',
+        projectId: challengeProjectId,
+        challengeId: challengeDocument.id,
+      });
+      setImportError(null);
+    },
+    [activeProjectDefinition.id, workspaceMode],
+  );
+  const handleSelectTutorial = useCallback(
+    (tutorialId: string, projectId = activeProjectDefinition.id) => {
+      applyTutorialSelectionPlan({
+        plan: buildTutorialSelectionPlan({
+          activeProjectId: activeProjectDefinition.id,
+          workspaceMode,
+          projectId,
+          tutorialId,
+          tutorials: state.tutorialLibrary,
+        }),
+        activeProjectId: activeProjectDefinition.id,
+        dispatch,
+        setLearningPanelTab,
+        setStepIndex,
+      });
+    },
+    [activeProjectDefinition.id, state.tutorialLibrary, workspaceMode],
   );
   const activeTutorialStep =
     workspaceMode === 'guide' &&
@@ -1996,622 +1654,288 @@ function MainApp() {
     ],
   );
 
-  function openDetachedPanelInNewWindow(kind: DetachedPanelKind) {
-    if (typeof window === 'undefined') {
-      return;
-    }
+  const openDetachedPanelInNewWindow = useCallback((kind: DetachedPanelKind) => {
+    openDetachedPanelInNewWindowHelper({
+      kind,
+      currentHref: window.location.href,
+      hostWindowId: hostWindowIdRef.current,
+      groups: detachedPanelGroups,
+      detachedWindowsRef: detachedPanelWindowsRef,
+      setGroups: setDetachedPanelGroups,
+      setError: setImportError,
+    });
+  }, [detachedPanelGroups]);
 
-    const previousGroup = getDetachedPanelGroupByKind(detachedPanelGroups, kind);
-    const panelWindowId = createWindowSessionId();
-    const detachedWindow = window.open(
-      createDetachedPanelUrl(
-        window.location.href,
-        kind,
-        hostWindowIdRef.current,
-        panelWindowId,
-      ),
-      createDetachedPanelWindowName(kind, panelWindowId),
-      'popup=yes,width=520,height=980,resizable=yes,scrollbars=yes',
-    );
+  const openDetachedPanelInExistingWindow = useCallback(
+    (kind: DetachedPanelKind, panelWindowId: string) => {
+      moveDetachedPanelToExistingWindowHelper({
+      kind,
+      panelWindowId,
+      groups: detachedPanelGroups,
+      detachedWindowsRef: detachedPanelWindowsRef,
+      setGroups: setDetachedPanelGroups,
+    });
+    },
+    [detachedPanelGroups],
+  );
 
-    if (!detachedWindow) {
-      setImportError(`Unable to open the ${kind} window.`);
-      return;
-    }
+  const returnDetachedPanelToMain = useCallback((kind: DetachedPanelKind) => {
+    returnDetachedPanelToMainHelper({
+      kind,
+      groups: detachedPanelGroups,
+      detachedWindowsRef: detachedPanelWindowsRef,
+      setGroups: setDetachedPanelGroups,
+    });
+  }, [detachedPanelGroups]);
 
-    detachedPanelWindowsRef.current[panelWindowId] = detachedWindow;
-    setDetachedPanelGroups((current) =>
-      createDetachedPanelGroup(current, panelWindowId, kind),
-    );
-    if (previousGroup) {
-      const remainingTabs = previousGroup.tabs.filter((tab) => tab !== kind);
-      if (remainingTabs.length === 0) {
-        detachedPanelWindowsRef.current[previousGroup.panelWindowId]?.close();
-        delete detachedPanelWindowsRef.current[previousGroup.panelWindowId];
-      }
-    }
-  }
-
-  function openDetachedPanelInExistingWindow(kind: DetachedPanelKind, panelWindowId: string) {
-    const previousGroup = getDetachedPanelGroupByKind(detachedPanelGroups, kind);
-    setDetachedPanelGroups((current) =>
-      moveDetachedPanelKindToGroup(current, kind, panelWindowId),
-    );
-    if (previousGroup && previousGroup.panelWindowId !== panelWindowId) {
-      const remainingTabs = previousGroup.tabs.filter((tab) => tab !== kind);
-      if (remainingTabs.length === 0) {
-        detachedPanelWindowsRef.current[previousGroup.panelWindowId]?.close();
-        delete detachedPanelWindowsRef.current[previousGroup.panelWindowId];
-      }
-    }
-    detachedPanelWindowsRef.current[panelWindowId]?.focus();
-  }
-
-  function returnDetachedPanelToMain(kind: DetachedPanelKind) {
-    const targetGroup = getDetachedPanelGroupByKind(detachedPanelGroups, kind);
-    if (!targetGroup) {
-      return;
-    }
-
-    const nextGroups = removeDetachedPanelKind(detachedPanelGroups, kind);
-    setDetachedPanelGroups(nextGroups);
-    if (!nextGroups.some((group) => group.panelWindowId === targetGroup.panelWindowId)) {
-      detachedPanelWindowsRef.current[targetGroup.panelWindowId]?.close();
-      delete detachedPanelWindowsRef.current[targetGroup.panelWindowId];
-    }
-  }
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof BroadcastChannel === 'undefined') {
-      return;
-    }
-
-    const channel = new BroadcastChannel(DETACHED_PANEL_CHANNEL_NAME);
-
-    const postSnapshot = (panelWindowId: string) => {
-      const group = detachedPanelGroups.find(
-        (candidate) => candidate.panelWindowId === panelWindowId,
-      );
-      if (!group) {
-        return;
-      }
-
-      const payloadByKind = Object.fromEntries(
-        group.tabs.map((kind) => [kind, detachedPayloadByKind[kind]]),
-      ) as Partial<DetachedPanelPayloadByKind>;
-      const snapshot: DetachedPanelStateSnapshot = {
-        hostId: hostWindowIdRef.current,
-        panelWindowId,
-        tabs: group.tabs,
-        activeKind: group.activeKind,
-        presentationMode: group.presentationMode,
-        splitLeftKind: group.splitLeftKind,
-        splitRightKind: group.splitRightKind,
-        splitRatio: group.splitRatio,
-        payloadByKind,
-      };
-      const message: DetachedPanelMessage = {
-        type: 'snapshot',
-        snapshot,
-      };
-      channel.postMessage(message);
-    };
-
-    const handleMessage = (event: MessageEvent<DetachedPanelMessage>) => {
-      const message = event.data;
-
-      if ('hostId' in message && message.hostId !== hostWindowIdRef.current) {
-        return;
-      }
-
-      if (message.type === 'requestSnapshot') {
-        postSnapshot(message.panelWindowId);
-        return;
-      }
-
-      if (message.type === 'dispatchAction') {
-        dispatch(message.action);
-        return;
-      }
-
-      if (message.type === 'command') {
-        switch (message.command.type) {
-          case 'togglePaletteViewMode':
-            setPaletteViewMode((currentMode) =>
-              currentMode === 'expanded' ? 'compact' : 'expanded',
-            );
-            return;
-          case 'addModule': {
-            const moduleDef = effectiveRegistry[message.command.defId] ?? null;
-            if (!moduleDef) {
-              return;
-            }
-            dispatch({
-              type: 'addModule',
-              projectId: activeProjectDefinition.id,
-              moduleDef,
-            });
-            return;
-          }
-          case 'openComposite':
-            dispatch({
-              type: 'openCompositeEditor',
-              entryId: message.command.defId,
-            });
-            return;
-          case 'duplicateReusable': {
-            const { defId } = message.command;
-            const entry = state.compositeLibrary.find(
-              (candidate) => candidate.id === defId,
-            );
-            if (!entry) {
-              return;
-            }
-            const nextEntry = createUserOwnedReusableDuplicate(entry, state.compositeLibrary);
-            dispatch({ type: 'addCompositeToLibrary', entry: nextEntry });
-            if (isCompositeDefinition(nextEntry.definition)) {
-              dispatch({ type: 'openCompositeEditor', entryId: nextEntry.id });
-            }
-            return;
-          }
-          case 'openPrimitiveMicroDemo':
-            handleOpenPrimitiveMicroDemo(message.command.defId);
-            return;
-          case 'exportCompositeLibrary':
-            downloadCompositeLibraryDocument({
-              version: 1,
-              entries: state.compositeLibrary,
-            });
-            return;
-          case 'removeComposite':
-            dispatch({
-              type: 'removeCompositeFromLibrary',
-              compositeId: message.command.defId,
-            });
-            return;
-          case 'copyParams':
-            if (!selectedModule || !selectedModuleDef || selectedModule.id !== message.command.moduleId) {
-              return;
-            }
-            setParameterClipboard({
-              sourceModuleId: selectedModule.id,
-              sourceDefId: selectedModuleDef.id,
-              params: Object.fromEntries(
-                selectedModuleParamKeys.map((key) => [
-                  key,
-                  selectedModule.params[key] ?? selectedModuleDef.paramSchema[key]?.defaultValue,
-                ]),
-              ),
-              paramKeys: selectedModuleParamKeys,
-            });
-            return;
-          case 'applyCopiedParams':
-            dispatch({
-              type: 'applyCopiedParams',
-              projectId: activeProjectDefinition.id,
-              sourceModuleId: message.command.sourceModuleId,
-              sourceDefId: message.command.sourceDefId,
-              targetModuleIds: message.command.targetModuleIds,
-              params: message.command.params,
-              paramKeys: message.command.paramKeys,
-            });
-            return;
-          case 'deleteModule':
-            if (
-              state.compositeEditor &&
-              activeCompositeEntry &&
-              isCompositeBoundaryModule(activeCompositeEntry, message.command.moduleId)
-            ) {
-              dispatch({
-                type: 'setCompositeEditorSaveError',
-                message:
-                  'This module is bound to an exposed composite port. Boundary editing will come in a later slice.',
-              });
-              return;
-            }
-            dispatch({
-              type: 'removeModule',
-              projectId: activeProjectDefinition.id,
-              moduleId: message.command.moduleId,
-            });
-            return;
-          case 'traceHover':
-            setHoveredTraceModuleId(message.command.moduleId);
-            return;
-          case 'stepChange':
-            syncTutorialStepFromTrace(message.command.nextIndex);
-            return;
-          case 'activeAnalysisTraceChange':
-            setActiveAnalysisTraceEntry(message.command.entry);
-            return;
-          case 'requestFocusModule':
-            setRequestedWorkspaceFocusModuleId(message.command.moduleId);
-            return;
-          case 'captureBaseline':
-            handleCaptureBaseline();
-            return;
-          case 'clearBaseline':
-            handleClearBaseline();
-            return;
-          case 'addVerificationCase':
-            handleAddVerificationCase(
-              message.command.sourceModuleId,
-              message.command.inputValue,
-              message.command.tickCount,
-            );
-            return;
-          case 'removeVerificationCase':
-            handleRemoveVerificationCase(message.command.caseId);
-            return;
-          case 'clearVerificationCases':
-            handleClearVerificationCases();
-            return;
-          case 'importVerificationCases':
-            handleImportVerificationCases(message.command.cases);
-            return;
-          case 'unzipComposite':
-            handleUnzipComposite(message.command.moduleId);
-            return;
-          case 'setLearningTab':
-            setLearningPanelTab(message.command.tab);
-            if (message.command.tab === 'cryptanalysis') {
-              dispatch({
-                type: 'setWorkspaceMode',
-                projectId: activeProjectDefinition.id,
-                mode: 'cryptanalysis',
-              });
-            } else if (workspaceMode === 'cryptanalysis') {
-              dispatch({
-                type: 'setWorkspaceMode',
-                projectId: activeProjectDefinition.id,
-                mode: 'guide',
-              });
-            }
-            return;
-          case 'selectChallenge': {
-            const { challengeId } = message.command;
-            const nextChallenge =
-              state.challengeLibrary.find((challenge) => challenge.id === challengeId) ??
-              null;
-            const challengeProjectId = nextChallenge?.projectId ?? activeProjectDefinition.id;
-            setLearningPanelTab('challenge');
-            if (
-              challengeProjectId === activeProjectDefinition.id &&
-              workspaceMode === 'cryptanalysis'
-            ) {
-              dispatch({
-                type: 'setWorkspaceMode',
-                projectId: activeProjectDefinition.id,
-                mode: 'guide',
-              });
-            }
-            if (challengeProjectId !== activeProjectDefinition.id) {
-              dispatch({ type: 'switchProject', projectId: challengeProjectId });
-            }
-            dispatch({
-              type: 'selectChallenge',
-              projectId: challengeProjectId,
-              challengeId,
-            });
-            return;
-          }
-          case 'loadChallengeStart':
-            setLearningPanelTab('challenge');
-            if (workspaceMode === 'cryptanalysis') {
-              dispatch({
-                type: 'setWorkspaceMode',
-                projectId: activeProjectDefinition.id,
-                mode: 'guide',
-              });
-            }
-            setIsChallengeResetConfirmOpen(true);
-            return;
-          case 'exportChallenge':
-            if (selectedChallenge) {
-              downloadGuidedChallengeDocument(selectedChallenge);
-            }
-            return;
-          case 'importChallengeRaw': {
-            const challengeDocument = parseGuidedChallengeDocument(message.command.rawValue);
-            if (!challengeDocument) {
-              setImportError('The selected file is not a valid MCW guided challenge document.');
-              return;
-            }
-            dispatch({ type: 'upsertChallenge', challenge: challengeDocument });
-            const challengeProjectId = challengeDocument.projectId ?? activeProjectDefinition.id;
-            setLearningPanelTab('challenge');
-            if (
-              challengeProjectId === activeProjectDefinition.id &&
-              workspaceMode === 'cryptanalysis'
-            ) {
-              dispatch({
-                type: 'setWorkspaceMode',
-                projectId: activeProjectDefinition.id,
-                mode: 'guide',
-              });
-            }
-            if (challengeProjectId !== activeProjectDefinition.id) {
-              dispatch({ type: 'switchProject', projectId: challengeProjectId });
-            }
-            dispatch({
-              type: 'selectChallenge',
-              projectId: challengeProjectId,
-              challengeId: challengeDocument.id,
-            });
-            setImportError(null);
-            return;
-          }
-          case 'captureChallenge':
-            setLearningPanelTab('challenge');
-            if (workspaceMode === 'cryptanalysis') {
-              dispatch({
-                type: 'setWorkspaceMode',
-                projectId: activeProjectDefinition.id,
-                mode: 'guide',
-              });
-            }
-            {
-              const draft = createChallengeCaptureDraft(
-                activeProjectDefinition.id,
-                activeProjectDefinition.name,
-              );
-              setChallengeCaptureTitle(draft.title);
-              setChallengeCaptureId(draft.id);
-              setChallengeCaptureDifficulty(draft.difficulty);
-              setChallengeCapturePrompt(draft.prompt);
-              setChallengeCaptureHints(draft.hints);
-              setChallengeCaptureShouldExport(true);
-              setChallengeCaptureError(null);
-              setIsChallengeCaptureOpen(true);
-            }
-            return;
-          case 'setCryptanalysisMode':
-            dispatch({
-              type: 'setCryptanalysisMode',
-              projectId: activeProjectDefinition.id,
-              mode: message.command.mode,
-            });
-            return;
-          case 'setCryptanalysisInput':
-            dispatch({
-              type: 'setCryptanalysisInput',
-              projectId: activeProjectDefinition.id,
-              value: message.command.value,
-            });
-            return;
-          case 'setModernAnalysisBaseline':
-            dispatch({
-              type: 'setModernAnalysisBaseline',
-              projectId: activeProjectDefinition.id,
-              value: message.command.value,
-            });
-            return;
-          case 'setModernAnalysisFlipBit':
-            dispatch({
-              type: 'setModernAnalysisFlipBit',
-              projectId: activeProjectDefinition.id,
-              value: message.command.value,
-            });
-            return;
-          case 'selectTutorial': {
-            const { tutorialId } = message.command;
-            const tutorialProjectId = message.command.projectId ?? activeProjectDefinition.id;
-            const nextTutorial =
-              state.tutorialLibrary.find((tutorial) => tutorial.id === tutorialId) ?? null;
-            setLearningPanelTab('tutorial');
-            if (tutorialProjectId === activeProjectDefinition.id && workspaceMode === 'cryptanalysis') {
-              dispatch({
-                type: 'setWorkspaceMode',
-                projectId: activeProjectDefinition.id,
-                mode: 'guide',
-              });
-            }
-            if (tutorialProjectId !== activeProjectDefinition.id) {
-              dispatch({ type: 'switchProject', projectId: tutorialProjectId });
-            }
-            setStepIndex(nextTutorial?.steps[0]?.targetStepIndex ?? null);
-            dispatch({
-              type: 'selectTutorial',
-              projectId: tutorialProjectId,
-              tutorialId,
-            });
-            return;
-          }
-          case 'setTutorialStep':
-            setStepIndex(selectedTutorial?.steps[message.command.stepIndex]?.targetStepIndex ?? null);
-            dispatch({
-              type: 'setTutorialStep',
-              projectId: activeProjectDefinition.id,
-              stepIndex: message.command.stepIndex,
-            });
-            return;
-          case 'switchProject':
-            dispatch({ type: 'switchProject', projectId: message.command.projectId });
-            return;
-          case 'setWorkspaceMode':
-            dispatch({
-              type: 'setWorkspaceMode',
-              projectId: activeProjectDefinition.id,
-              mode: message.command.mode,
-            });
-            return;
-          case 'setTutorialNotesVisible':
-            dispatch({
-              type: 'setTutorialNotesVisible',
-              projectId: activeProjectDefinition.id,
-              visible: message.command.visible,
-            });
-            return;
-          case 'focusStepModule':
-            setRequestedWorkspaceFocusModuleId(message.command.moduleId);
-            return;
-          case 'resetTutorialProgress':
-            if (selectedTutorial) {
-              dispatch({
-                type: 'resetTutorialProgress',
-                projectId: activeProjectDefinition.id,
-              });
-            }
-            return;
-          case 'setActiveDetachedTab':
-            {
-              const nextKind = message.command.kind;
-            setDetachedPanelGroups((current) =>
-              setDetachedPanelGroupActiveKind(
-                current,
-                message.panelWindowId,
-                nextKind,
-              ),
-            );
-            return;
-            }
-          case 'setDetachedPresentationMode':
-            {
-              const nextPresentationMode = message.command.presentationMode;
-              setDetachedPanelGroups((current) =>
-                setDetachedPanelGroupPresentationMode(
-                  current,
-                  message.panelWindowId,
-                  nextPresentationMode,
-                ),
-              );
-              return;
-            }
-          case 'moveDetachedPaneEarlier':
-            {
-              const nextKind = message.command.kind;
-              setDetachedPanelGroups((current) =>
-                moveDetachedPanelKindEarlier(
-                  current,
-                  message.panelWindowId,
-                  nextKind,
-                ),
-              );
-              return;
-            }
-          case 'moveDetachedPaneLater':
-            {
-              const nextKind = message.command.kind;
-              setDetachedPanelGroups((current) =>
-                moveDetachedPanelKindLater(
-                  current,
-                  message.panelWindowId,
-                  nextKind,
-                ),
-              );
-              return;
-            }
-          case 'setDetachedSplitSide':
-            {
-              const nextKind = message.command.kind;
-              const nextSide = message.command.side;
-              setDetachedPanelGroups((current) =>
-                setDetachedPanelGroupSplitSide(
-                  current,
-                  message.panelWindowId,
-                  nextSide,
-                  nextKind,
-                ),
-              );
-              return;
-            }
-          case 'swapDetachedSplitSides':
-            setDetachedPanelGroups((current) =>
-              swapDetachedPanelGroupSplitSides(current, message.panelWindowId),
-            );
-            return;
-          case 'setDetachedSplitRatio':
-            {
-              const nextRatio = message.command.ratio;
-              setDetachedPanelGroups((current) =>
-                setDetachedPanelGroupSplitRatio(current, message.panelWindowId, nextRatio),
-              );
-              return;
-            }
-          case 'returnDetachedTabToMain': {
-            const nextKind = message.command.kind;
-            const nextGroups = removeDetachedPanelKind(
-              detachedPanelGroups,
-              nextKind,
-            );
-            setDetachedPanelGroups(nextGroups);
-            if (!nextGroups.some((group) => group.panelWindowId === message.panelWindowId)) {
-              detachedPanelWindowsRef.current[message.panelWindowId]?.close();
-              delete detachedPanelWindowsRef.current[message.panelWindowId];
-            }
-            return;
-          }
+  const detachedCommandHandlers = useMemo(
+    () => ({
+      dispatch,
+      togglePaletteViewMode: () =>
+        setPaletteViewMode((currentMode) => (currentMode === 'expanded' ? 'compact' : 'expanded')),
+      addModuleByDefId: (defId: string) => {
+        const moduleDef = effectiveRegistry[defId] ?? null;
+        if (!moduleDef) {
+          return null;
         }
-      }
-
-      if (message.type === 'panelClosed') {
-        delete detachedPanelWindowsRef.current[message.panelWindowId];
-        setDetachedPanelGroups((current) =>
-          removeDetachedPanelGroup(current, message.panelWindowId),
-        );
-      }
-    };
-
-    channel.addEventListener('message', handleMessage);
-
-    return () => {
-      channel.removeEventListener('message', handleMessage);
-      channel.close();
-    };
-  }, [
-    activeCompositeEntry,
-    activeProjectDefinition.id,
-    activeProjectDefinition.name,
-    detachedPanelGroups,
-    detachedPayloadByKind,
-    effectiveRegistry,
-    handleAddVerificationCase,
-    handleCaptureBaseline,
-    handleClearBaseline,
-    handleClearVerificationCases,
-    handleImportVerificationCases,
-    handleOpenPrimitiveMicroDemo,
-    handleRemoveVerificationCase,
-    handleUnzipComposite,
-    selectedChallenge,
-    selectedModule,
-    selectedModuleDef,
-    selectedModuleParamKeys,
-    selectedTutorial,
-    state.compositeEditor,
-    state.challengeLibrary,
-    state.compositeLibrary,
-    state.tutorialLibrary,
-    syncTutorialStepFromTrace,
-    workspaceMode,
-  ]);
+        dispatch({
+          type: 'addModule',
+          projectId: activeProjectDefinition.id,
+          moduleDef,
+        });
+        return moduleDef;
+      },
+      openComposite: (defId: string) =>
+        dispatch({
+          type: 'openCompositeEditor',
+          entryId: defId,
+        }),
+      duplicateReusable: (defId: string) => {
+        const entry = state.compositeLibrary.find((candidate) => candidate.id === defId);
+        if (!entry) {
+          return;
+        }
+        const nextEntry = createUserOwnedReusableDuplicate(entry, state.compositeLibrary);
+        dispatch({ type: 'addCompositeToLibrary', entry: nextEntry });
+        if (isCompositeDefinition(nextEntry.definition)) {
+          dispatch({ type: 'openCompositeEditor', entryId: nextEntry.id });
+        }
+      },
+      openPrimitiveMicroDemo: handleOpenPrimitiveMicroDemo,
+      exportCompositeLibrary: () =>
+        downloadCompositeLibraryDocument({
+          version: 1,
+          entries: state.compositeLibrary,
+        }),
+      removeComposite: (defId: string) =>
+        dispatch({
+          type: 'removeCompositeFromLibrary',
+          compositeId: defId,
+        }),
+      copyParams: (moduleId: string) => {
+        if (!selectedModule || !selectedModuleDef || selectedModule.id !== moduleId) {
+          return;
+        }
+        setParameterClipboard({
+          sourceModuleId: selectedModule.id,
+          sourceDefId: selectedModuleDef.id,
+          params: Object.fromEntries(
+            selectedModuleParamKeys.map((key) => [
+              key,
+              selectedModule.params[key] ?? selectedModuleDef.paramSchema[key]?.defaultValue,
+            ]),
+          ),
+          paramKeys: selectedModuleParamKeys,
+        });
+      },
+      applyCopiedParams: (
+        sourceModuleId: string,
+        sourceDefId: string,
+        targetModuleIds: string[],
+        params: Record<string, unknown>,
+        paramKeys: string[],
+      ) =>
+        dispatch({
+          type: 'applyCopiedParams',
+          projectId: activeProjectDefinition.id,
+          sourceModuleId,
+          sourceDefId,
+          targetModuleIds,
+          params,
+          paramKeys,
+        }),
+      deleteModule: (moduleId: string) => {
+        if (
+          state.compositeEditor &&
+          activeCompositeEntry &&
+          isCompositeBoundaryModule(activeCompositeEntry, moduleId)
+        ) {
+          dispatch({
+            type: 'setCompositeEditorSaveError',
+            message:
+              'This module is bound to an exposed composite port. Boundary editing will come in a later slice.',
+          });
+          return;
+        }
+        dispatch({
+          type: 'removeModule',
+          projectId: activeProjectDefinition.id,
+          moduleId,
+        });
+      },
+      setTraceHover: setHoveredTraceModuleId,
+      setStepChange: syncTutorialStepFromTrace,
+      setActiveAnalysisTraceChange: setActiveAnalysisTraceEntry,
+      requestFocusModule: setRequestedWorkspaceFocusModuleId,
+      captureBaseline: handleCaptureBaseline,
+      clearBaseline: handleClearBaseline,
+      addVerificationCase: (
+        sourceModuleId: string,
+        inputValue: string,
+        tickCount: number | null,
+      ) => {
+        handleAddVerificationCase(sourceModuleId, inputValue, tickCount);
+      },
+      removeVerificationCase: handleRemoveVerificationCase,
+      clearVerificationCases: handleClearVerificationCases,
+      importVerificationCases: handleImportVerificationCases,
+      unzipComposite: handleUnzipComposite,
+      setLearningTab: (tab: LearningPanelTab) => {
+        setLearningPanelTab(tab);
+        if (tab === 'cryptanalysis') {
+          dispatch({
+            type: 'setWorkspaceMode',
+            projectId: activeProjectDefinition.id,
+            mode: 'cryptanalysis',
+          });
+        } else if (workspaceMode === 'cryptanalysis') {
+          dispatch({
+            type: 'setWorkspaceMode',
+            projectId: activeProjectDefinition.id,
+            mode: 'guide',
+          });
+        }
+      },
+      selectChallenge: handleSelectChallenge,
+      loadChallengeStart: handleLoadChallengeStart,
+      exportChallenge: () => {
+        if (selectedChallenge) {
+          downloadGuidedChallengeDocument(selectedChallenge);
+        }
+      },
+      importChallengeRaw: handleImportChallengeRaw,
+      captureChallenge: handleCaptureChallenge,
+      setCryptanalysisMode: (mode: 'classical' | 'modern' | 'randomness') =>
+        dispatch({
+          type: 'setCryptanalysisMode',
+          projectId: activeProjectDefinition.id,
+          mode,
+        }),
+      setCryptanalysisInput: (value: string) =>
+        dispatch({
+          type: 'setCryptanalysisInput',
+          projectId: activeProjectDefinition.id,
+          value,
+        }),
+      setModernAnalysisBaseline: (value: string) =>
+        dispatch({
+          type: 'setModernAnalysisBaseline',
+          projectId: activeProjectDefinition.id,
+          value,
+        }),
+      setModernAnalysisFlipBit: (value: number) =>
+        dispatch({
+          type: 'setModernAnalysisFlipBit',
+          projectId: activeProjectDefinition.id,
+          value,
+        }),
+      selectTutorial: handleSelectTutorial,
+      setTutorialStep: (stepIndex: number) => {
+        setStepIndex(selectedTutorial?.steps[stepIndex]?.targetStepIndex ?? null);
+        dispatch({
+          type: 'setTutorialStep',
+          projectId: activeProjectDefinition.id,
+          stepIndex,
+        });
+      },
+      switchProject: (projectId: string) =>
+        dispatch({
+          type: 'switchProject',
+          projectId,
+        }),
+      setWorkspaceMode: (mode: WorkspaceMode) =>
+        dispatch({
+          type: 'setWorkspaceMode',
+          projectId: activeProjectDefinition.id,
+          mode,
+        }),
+      setTutorialNotesVisible: (visible: boolean) =>
+        dispatch({
+          type: 'setTutorialNotesVisible',
+          projectId: activeProjectDefinition.id,
+          visible,
+        }),
+      focusStepModule: (moduleId: string) => setRequestedWorkspaceFocusModuleId(moduleId),
+      resetTutorialProgress: () => {
+        if (selectedTutorial) {
+          dispatch({
+            type: 'resetTutorialProgress',
+            projectId: activeProjectDefinition.id,
+          });
+        }
+      },
+      setGroups: setDetachedPanelGroups,
+      returnDetachedTabToMain: returnDetachedPanelToMain,
+      detachedWindowsRef: detachedPanelWindowsRef,
+    }),
+    [
+      activeCompositeEntry,
+      activeProjectDefinition.id,
+      dispatch,
+      effectiveRegistry,
+      handleAddVerificationCase,
+      handleCaptureBaseline,
+      handleCaptureChallenge,
+      handleClearBaseline,
+      handleClearVerificationCases,
+      handleImportChallengeRaw,
+      handleImportVerificationCases,
+      handleLoadChallengeStart,
+      handleOpenPrimitiveMicroDemo,
+      handleRemoveVerificationCase,
+      handleSelectChallenge,
+      handleSelectTutorial,
+      handleUnzipComposite,
+      returnDetachedPanelToMain,
+      selectedChallenge,
+      selectedModule,
+      selectedModuleDef,
+      selectedModuleParamKeys,
+      selectedTutorial,
+      state.compositeEditor,
+      state.compositeLibrary,
+      syncTutorialStepFromTrace,
+      workspaceMode,
+    ],
+  );
 
   useEffect(() => {
-    if (typeof BroadcastChannel === 'undefined') {
-      return;
-    }
+    return connectDetachedPanelChannel({
+      channelName: DETACHED_PANEL_CHANNEL_NAME,
+      hostWindowId: hostWindowIdRef.current,
+      groups: detachedPanelGroups,
+      payloadByKind: detachedPayloadByKind,
+      commandHandlers: detachedCommandHandlers,
+    });
+  }, [detachedCommandHandlers, detachedPanelGroups, detachedPayloadByKind]);
 
-    const channel = new BroadcastChannel(DETACHED_PANEL_CHANNEL_NAME);
-    for (const group of detachedPanelGroups) {
-      const payloadByKind = Object.fromEntries(
-        group.tabs.map((kind) => [kind, detachedPayloadByKind[kind]]),
-      ) as Partial<DetachedPanelPayloadByKind>;
-      channel.postMessage({
-        type: 'snapshot',
-        snapshot: {
-          hostId: hostWindowIdRef.current,
-          panelWindowId: group.panelWindowId,
-          tabs: group.tabs,
-          activeKind: group.activeKind,
-          presentationMode: group.presentationMode,
-          splitLeftKind: group.splitLeftKind,
-          splitRightKind: group.splitRightKind,
-          splitRatio: group.splitRatio,
-          payloadByKind,
-        },
-      } satisfies DetachedPanelMessage);
-    }
-    channel.close();
+  useEffect(() => {
+    broadcastDetachedSnapshots({
+      channelName: DETACHED_PANEL_CHANNEL_NAME,
+      hostWindowId: hostWindowIdRef.current,
+      groups: detachedPanelGroups,
+      payloadByKind: detachedPayloadByKind,
+    });
   }, [detachedPanelGroups, detachedPayloadByKind]);
 
   const showPaletteInMain = state.showPalette && !isDetachedPanelKindActive(detachedPanelGroups, 'palette');
@@ -3118,60 +2442,31 @@ function MainApp() {
             }}
             onExportLabPack={handleExportShareableLabPack}
             onExportPython={async () => {
-              const exportValidation = validateProject(activeProjectState, effectiveRegistry);
-              if (!exportValidation.ok) {
-                setImportError(exportValidation.issues.map((issue) => issue.message).join('\n'));
-                return;
-              }
-
-              const {
-                formatPythonExportCompatibilityIssues,
-                generatePythonExportFiles,
-                getPythonExportCompatibility,
-              } = await import('./engine/codegen/python');
-
-              const compatibility = getPythonExportCompatibility(
-                activeProjectState,
-                effectiveRegistry,
-              );
-              if (!compatibility.ok) {
-                setImportError(formatPythonExportCompatibilityIssues(compatibility.issues));
-                return;
-              }
-
-              try {
-                const pythonExport = generatePythonExportFiles(
-                  activeProjectState,
-                  effectiveRegistry,
-                  activeProjectDefinition.name,
-                  verificationCases,
-                );
-                downloadPythonExportBundle(activeProjectDefinition.name, pythonExport);
-                setImportError(null);
-              } catch (error) {
-                setImportError(
-                  error instanceof Error ? error.message : 'Python export failed.',
-                );
-              }
+              const error = await exportPythonWorkspaceBundle({
+                project: activeProjectState,
+                registry: effectiveRegistry,
+                projectName: activeProjectDefinition.name,
+                verificationCases,
+              });
+              setImportError(error);
             }}
             onImportDocument={async (file) => {
               const rawValue = await file.text();
-              const workbenchDocument = parseWorkbenchDocument(rawValue);
-              if (workbenchDocument) {
+              const artifact = parseWorkspaceArtifact(rawValue);
+              if (artifact?.kind === 'workbench') {
                 dispatch({
                   type: 'loadDocument',
                   projectId: activeProjectDefinition.id,
-                  document: workbenchDocument,
+                  document: artifact.document,
                 });
                 setImportError(null);
                 return;
               }
 
-              const libraryDocument = parseCompositeLibraryDocument(rawValue);
-              if (libraryDocument) {
+              if (artifact?.kind === 'composite-library') {
                 dispatch({
                   type: 'loadCompositeLibrary',
-                  document: libraryDocument,
+                  document: artifact.document,
                 });
                 setImportError(null);
                 return;
@@ -3586,43 +2881,9 @@ function MainApp() {
               modernBaseline={state.modernAnalysisBaselineByProject[activeProjectDefinition.id] ?? ''}
               modernFlipBit={state.modernAnalysisFlipBitByProject[activeProjectDefinition.id] ?? 0}
               onSelectChallenge={(challengeId) => {
-                const nextChallenge =
-                  state.challengeLibrary.find((challenge) => challenge.id === challengeId) ?? null;
-                const challengeProjectId = nextChallenge?.projectId ?? activeProjectDefinition.id;
-                setLearningPanelTab('challenge');
-                if (
-                  challengeProjectId === activeProjectDefinition.id &&
-                  workspaceMode === 'cryptanalysis'
-                ) {
-                  dispatch({
-                    type: 'setWorkspaceMode',
-                    projectId: activeProjectDefinition.id,
-                    mode: 'guide',
-                  });
-                }
-                if (challengeProjectId !== activeProjectDefinition.id) {
-                  dispatch({
-                    type: 'switchProject',
-                    projectId: challengeProjectId,
-                  });
-                }
-                dispatch({
-                  type: 'selectChallenge',
-                  projectId: challengeProjectId,
-                  challengeId,
-                });
+                handleSelectChallenge(challengeId);
               }}
-              onLoadChallengeStart={() => {
-                setLearningPanelTab('challenge');
-                if (workspaceMode === 'cryptanalysis') {
-                  dispatch({
-                    type: 'setWorkspaceMode',
-                    projectId: activeProjectDefinition.id,
-                    mode: 'guide',
-                  });
-                }
-                setIsChallengeResetConfirmOpen(true);
-              }}
+              onLoadChallengeStart={handleLoadChallengeStart}
               onExportChallenge={() => {
                 if (selectedChallenge) {
                   downloadGuidedChallengeDocument(selectedChallenge);
@@ -3630,63 +2891,9 @@ function MainApp() {
               }}
               onImportChallenge={async (file) => {
                 const rawValue = await file.text();
-                const challengeDocument = parseGuidedChallengeDocument(rawValue);
-                if (!challengeDocument) {
-                  setImportError('The selected file is not a valid MCW guided challenge document.');
-                  return;
-                }
-
-                dispatch({
-                  type: 'upsertChallenge',
-                  challenge: challengeDocument,
-                });
-                const challengeProjectId = challengeDocument.projectId ?? activeProjectDefinition.id;
-                setLearningPanelTab('challenge');
-                if (
-                  challengeProjectId === activeProjectDefinition.id &&
-                  workspaceMode === 'cryptanalysis'
-                ) {
-                  dispatch({
-                    type: 'setWorkspaceMode',
-                    projectId: activeProjectDefinition.id,
-                    mode: 'guide',
-                  });
-                }
-                if (challengeProjectId !== activeProjectDefinition.id) {
-                  dispatch({
-                    type: 'switchProject',
-                    projectId: challengeProjectId,
-                  });
-                }
-                dispatch({
-                  type: 'selectChallenge',
-                  projectId: challengeProjectId,
-                  challengeId: challengeDocument.id,
-                });
-                setImportError(null);
+                handleImportChallengeRaw(rawValue);
               }}
-              onCaptureChallenge={() => {
-                setLearningPanelTab('challenge');
-                if (workspaceMode === 'cryptanalysis') {
-                  dispatch({
-                    type: 'setWorkspaceMode',
-                    projectId: activeProjectDefinition.id,
-                    mode: 'guide',
-                  });
-                }
-                const draft = createChallengeCaptureDraft(
-                  activeProjectDefinition.id,
-                  activeProjectDefinition.name,
-                );
-                setChallengeCaptureTitle(draft.title);
-                setChallengeCaptureId(draft.id);
-                setChallengeCaptureDifficulty(draft.difficulty);
-                setChallengeCapturePrompt(draft.prompt);
-                setChallengeCaptureHints(draft.hints);
-                setChallengeCaptureShouldExport(true);
-                setChallengeCaptureError(null);
-                setIsChallengeCaptureOpen(true);
-              }}
+              onCaptureChallenge={handleCaptureChallenge}
               selectedTutorial={selectedTutorial}
               tutorials={state.tutorialLibrary}
               currentProjectId={activeProjectDefinition.id}
@@ -3738,24 +2945,7 @@ function MainApp() {
                   value,
                 })
               }
-              onSelectTutorial={(tutorialId) => {
-                const nextTutorial =
-                  state.tutorialLibrary.find((tutorial) => tutorial.id === tutorialId) ?? null;
-                setLearningPanelTab('tutorial');
-                if (workspaceMode === 'cryptanalysis') {
-                  dispatch({
-                    type: 'setWorkspaceMode',
-                    projectId: activeProjectDefinition.id,
-                    mode: 'guide',
-                  });
-                }
-                setStepIndex(nextTutorial?.steps[0]?.targetStepIndex ?? null);
-                dispatch({
-                  type: 'selectTutorial',
-                  projectId: activeProjectDefinition.id,
-                  tutorialId,
-                });
-              }}
+              onSelectTutorial={(tutorialId) => handleSelectTutorial(tutorialId)}
               onOpenTutorialPath={handleOpenTutorialPath}
               onSetTutorialStep={(stepValue) => {
                 setStepIndex(selectedTutorial?.steps[stepValue]?.targetStepIndex ?? null);
