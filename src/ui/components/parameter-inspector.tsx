@@ -308,11 +308,17 @@ export function ParameterInspector({
   const tutorialTraceRef = useRef<HTMLLIElement | null>(null);
   const outputTrace = useMemo(() => {
     if (!execution) return undefined;
-    const outputModuleId = project.modules.find(
-      (m) => isOutputSinkDefId(m.defId),
-    )?.id;
-    if (outputModuleId) {
-      const found = execution.trace.find((entry) => entry.moduleId === outputModuleId);
+    const sinkModules = project.modules.filter((module) => isOutputSinkDefId(module.defId));
+    for (const sinkModule of sinkModules) {
+      const found = execution.trace.find((entry) => entry.moduleId === sinkModule.id);
+      const signal = execution.outputsByModuleId[sinkModule.id]?.out ?? found?.inputs.in;
+      if (found && signal) {
+        return found;
+      }
+    }
+    const fallbackOutputModuleId = sinkModules[0]?.id;
+    if (fallbackOutputModuleId) {
+      const found = execution.trace.find((entry) => entry.moduleId === fallbackOutputModuleId);
       if (found) return found;
     }
     return execution.trace.at(-1);
@@ -383,7 +389,16 @@ export function ParameterInspector({
       );
     }
 
-    return outputSummaries[0] ?? null;
+    return (
+      outputSummaries.find(
+        (summary) =>
+          summary.signal !== null &&
+          summary.effectiveRepresentationOption !== null &&
+          summary.effectiveRepresentationOption.available,
+      ) ??
+      outputSummaries[0] ??
+      null
+    );
   }, [activeOutputSummaryModuleId, outputSummaries]);
   const hasCollectedOutput = isTickedMode && collectedOutput !== null;
   const selectedTrace = execution?.trace.find(

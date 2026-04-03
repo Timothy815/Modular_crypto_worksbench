@@ -265,6 +265,44 @@
   pointer-events: auto;
 }
 
+.workbench-dock-toggle {
+  position: sticky;
+  top: 84px;
+  z-index: 18;
+  grid-column: 1;
+  grid-row: 1;
+  pointer-events: none;
+}
+
+.workbench-dock-toggle-left {
+  justify-self: start;
+  margin-left: 8px;
+}
+
+.workbench-dock-toggle-right {
+  justify-self: end;
+  margin-right: 8px;
+}
+
+.workbench-dock-toggle > .collapse-toggle-button,
+.workbench-dock-toggle-button {
+  pointer-events: auto;
+  box-shadow: 0 10px 22px rgba(40, 28, 12, 0.08);
+}
+
+.workbench-dock-toggle-button {
+  position: absolute;
+  top: 16px;
+}
+
+.workbench-dock-toggle-button-left {
+  right: 12px;
+}
+
+.workbench-dock-toggle-button-right {
+  left: 12px;
+}
+
 .workbench-dock-left {
   justify-self: start;
   width: min(var(--left-dock-width), calc(100vw - 48px));

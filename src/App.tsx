@@ -4,7 +4,6 @@ import './App.css';
 import { isCompositeDefinition, type CompositeLibraryEntry } from './engine/composites';
 import { V1_REGISTRY } from './engine/modules';
 import type { ExecutionResult, ExecutionTraceEntry, TickedExecutionResult } from './engine/types';
-import { deriveTickCount, executeTickedProject } from './engine/executor';
 import { isOutputSinkDefId } from './engine/output-sinks';
 import { validateCompositeDef, validateProject } from './engine/validation';
 import {
@@ -78,6 +77,7 @@ import {
   getSelectedModuleIds,
   uiReducer,
 } from './ui/store';
+import { resolveWorkspaceExecution } from './ui/workspace-execution';
 import {
   buildWorkspaceClipboardSnapshot,
   pasteWorkspaceClipboardSnapshot,
@@ -222,6 +222,13 @@ function MainApp() {
       ? clampDockWidth(parsedValue, MIN_LEFT_DOCK_WIDTH, MAX_LEFT_DOCK_WIDTH)
       : 320;
   });
+  const [leftDockCollapsed, setLeftDockCollapsed] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return window.localStorage.getItem('mcw:left-dock-collapsed') === 'true';
+  });
   const [rightDockWidth, setRightDockWidth] = useState(() => {
     if (typeof window === 'undefined') {
       return 360;
@@ -232,6 +239,13 @@ function MainApp() {
     return Number.isFinite(parsedValue)
       ? clampDockWidth(parsedValue, MIN_RIGHT_DOCK_WIDTH, MAX_RIGHT_DOCK_WIDTH)
       : 360;
+  });
+  const [rightDockCollapsed, setRightDockCollapsed] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return window.localStorage.getItem('mcw:right-dock-collapsed') === 'true';
   });
   const [dockResizeState, setDockResizeState] = useState<{
     side: 'left' | 'right';
@@ -397,27 +411,17 @@ function MainApp() {
   let tickCount: number | null = null;
   const validationResult = validateProject(activeProjectState, effectiveRegistry);
   const validationIssues = validationResult.issues;
-
-  if (validationResult.ok) {
-    try {
-      if (isTickedMode) {
-        tickCount = deriveTickCount(activeProjectState, effectiveRegistry);
-        if (tickCount !== null && tickCount > 0) {
-          tickedExecution = executeTickedProject(activeProjectState, effectiveRegistry, tickCount);
-          const effectiveTick = Math.min(currentTick, tickCount - 1);
-          execution = tickedExecution.ticks[effectiveTick] ?? null;
-        } else {
-          execution = runDemoProject(activeProjectState, effectiveRegistry);
-        }
-      } else {
-        execution = runDemoProject(activeProjectState, effectiveRegistry);
-      }
-    } catch (error) {
-      executionError = error instanceof Error ? error.message : 'Execution failed.';
-    }
-  } else {
-    executionError = 'Execution is blocked until the graph is valid.';
-  }
+  const workspaceExecution = resolveWorkspaceExecution(
+    activeProjectState,
+    effectiveRegistry,
+    isTickedMode,
+    currentTick,
+  );
+  execution = workspaceExecution.execution;
+  executionError = workspaceExecution.executionError;
+  tickedExecution = workspaceExecution.tickedExecution;
+  tickCount = workspaceExecution.tickCount;
+  const primaryOutputModuleId = workspaceExecution.primaryOutputModuleId;
 
   const effectiveTickCount = tickCount ?? 0;
   const effectiveCurrentTick = tickedExecution
@@ -442,9 +446,9 @@ function MainApp() {
   const collectedOutput = tickedExecution
     ? tickedExecution.ticks
         .map((tick) => {
-          const outputModule = activeProjectState.modules.find(
-            (m) => isOutputSinkDefId(m.defId),
-          );
+          const outputModule = primaryOutputModuleId
+            ? activeProjectState.modules.find((m) => m.id === primaryOutputModuleId) ?? null
+            : activeProjectState.modules.find((m) => isOutputSinkDefId(m.defId)) ?? null;
           if (!outputModule) return '';
           const outputTraceEntry = tick.trace.find(
             (entry) => entry.moduleId === outputModule.id,
@@ -1367,8 +1371,24 @@ function MainApp() {
       return;
     }
 
+    window.localStorage.setItem('mcw:left-dock-collapsed', leftDockCollapsed ? 'true' : 'false');
+  }, [leftDockCollapsed]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     window.localStorage.setItem('mcw:right-dock-width', String(rightDockWidth));
   }, [rightDockWidth]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.localStorage.setItem('mcw:right-dock-collapsed', rightDockCollapsed ? 'true' : 'false');
+  }, [rightDockCollapsed]);
 
   useEffect(() => {
     if (!dockResizeState || typeof window === 'undefined') {
@@ -2343,9 +2363,11 @@ function MainApp() {
         <div
           className={
             'workbench-stage' +
-            (showPaletteInMain ? ' workbench-stage-has-left' : '') +
-            (showInspectorInMain ? ' workbench-stage-has-right' : '') +
-            (showPaletteInMain && paletteViewMode === 'compact' ? ' workbench-stage-tools-compact' : '')
+            (showPaletteInMain && !leftDockCollapsed ? ' workbench-stage-has-left' : '') +
+            (showInspectorInMain && !rightDockCollapsed ? ' workbench-stage-has-right' : '') +
+            (showPaletteInMain && !leftDockCollapsed && paletteViewMode === 'compact'
+              ? ' workbench-stage-tools-compact'
+              : '')
           }
         >
           <WorkbenchPanel
@@ -2830,10 +2852,32 @@ function MainApp() {
             </div>
           ) : null}
         </div>
-        {showPaletteInMain && !isCompositeDrilldownActive ? (
+        {showPaletteInMain && leftDockCollapsed && !isCompositeDrilldownActive ? (
+          <div className="workbench-dock-toggle workbench-dock-toggle-left">
+            <button
+              type="button"
+              className="collapse-toggle-button"
+              aria-label="Expand tool palette"
+              title="Expand tool palette"
+              onClick={() => setLeftDockCollapsed(false)}
+            >
+              +
+            </button>
+          </div>
+        ) : null}
+        {showPaletteInMain && !leftDockCollapsed && !isCompositeDrilldownActive ? (
           <div
             className={paletteViewMode === 'compact' ? 'workbench-dock workbench-dock-left workbench-dock-compact' : 'workbench-dock workbench-dock-left'}
           >
+            <button
+              type="button"
+              className="collapse-toggle-button workbench-dock-toggle-button workbench-dock-toggle-button-left"
+              aria-label="Collapse tool palette"
+              title="Collapse tool palette"
+              onClick={() => setLeftDockCollapsed(true)}
+            >
+              −
+            </button>
             <Suspense fallback={<LazyPanelFallback label="Tools" title="Loading palette…" />}>
               <PrimitivePalette
                 registry={effectiveRegistry}
@@ -2917,8 +2961,30 @@ function MainApp() {
             />
           </div>
         ) : null}
-        {showInspectorInMain ? (
+        {showInspectorInMain && rightDockCollapsed ? (
+          <div className="workbench-dock-toggle workbench-dock-toggle-right">
+            <button
+              type="button"
+              className="collapse-toggle-button"
+              aria-label="Expand inspector"
+              title="Expand inspector"
+              onClick={() => setRightDockCollapsed(false)}
+            >
+              +
+            </button>
+          </div>
+        ) : null}
+        {showInspectorInMain && !rightDockCollapsed ? (
           <div className="workbench-dock workbench-dock-right">
+            <button
+              type="button"
+              className="collapse-toggle-button workbench-dock-toggle-button workbench-dock-toggle-button-right"
+              aria-label="Collapse inspector"
+              title="Collapse inspector"
+              onClick={() => setRightDockCollapsed(true)}
+            >
+              −
+            </button>
             <Suspense fallback={<LazyPanelFallback label="Analyze" title="Loading inspector…" />}>
               <ParameterInspector
                 execution={compositeDrilldownContext?.execution ?? execution}

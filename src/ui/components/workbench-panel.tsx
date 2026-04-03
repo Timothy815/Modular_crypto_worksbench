@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
 import type { ModuleDefinition } from '../../engine/types';
 import type {
@@ -57,8 +57,16 @@ import {
   getAnchorPosition,
   getInputAnchorClassName,
 } from '../workbench-support';
-import { WorkbenchActions } from './workbench-actions';
-import { WorkbenchProjectContext } from './workbench-project-context';
+const WorkbenchActions = lazy(() =>
+  import('./workbench-actions').then((module) => ({
+    default: module.WorkbenchActions,
+  })),
+);
+const WorkbenchProjectContext = lazy(() =>
+  import('./workbench-project-context').then((module) => ({
+    default: module.WorkbenchProjectContext,
+  })),
+);
 
 const NODE_WIDTH = CANVAS_NODE_WIDTH;
 const NODE_HEIGHT = CANVAS_NODE_HEIGHT;
@@ -859,69 +867,71 @@ export function WorkbenchPanel({
         <h2>{title ?? 'Demo Graphs'}</h2>
       </div>
 
-      <WorkbenchProjectContext
-        isCompositeEditor={isCompositeEditor}
-        isObservationMode={isObservationMode}
-        activeProject={activeProject}
-        activeProjectGroup={activeProjectGroup}
-        activeProjectStage={activeProjectStage}
-        activeProjectRecommendedAfter={activeProjectRecommendedAfter}
-        projects={projects}
-        projectGroups={projectGroups}
-        projectCountByGroup={projectCountByGroup}
-        visibleProjects={visibleProjects}
-        summary={summary}
-        pipelineLabel={pipelineLabel}
-        showWorkspaceLandmarks={showWorkspaceLandmarks}
-        workspaceLandmarks={workspaceLandmarks}
-        workspaceVersions={workspaceVersions}
-        workspaceComparison={workspaceComparison}
-        activeComparisonVersion={activeComparisonVersion}
-        comparisonVersionId={comparisonVersionId}
-        onSwitchProject={onSwitchProject}
-        onJumpToModule={jumpToModule}
-        onRequestRestoreVersion={onRequestRestoreVersion}
-        onSetComparisonVersionId={setComparisonVersionId}
-        formatVersionTimestamp={formatVersionTimestamp}
-      />
+      <Suspense fallback={null}>
+        <WorkbenchProjectContext
+          isCompositeEditor={isCompositeEditor}
+          isObservationMode={isObservationMode}
+          activeProject={activeProject}
+          activeProjectGroup={activeProjectGroup}
+          activeProjectStage={activeProjectStage}
+          activeProjectRecommendedAfter={activeProjectRecommendedAfter}
+          projects={projects}
+          projectGroups={projectGroups}
+          projectCountByGroup={projectCountByGroup}
+          visibleProjects={visibleProjects}
+          summary={summary}
+          pipelineLabel={pipelineLabel}
+          showWorkspaceLandmarks={showWorkspaceLandmarks}
+          workspaceLandmarks={workspaceLandmarks}
+          workspaceVersions={workspaceVersions}
+          workspaceComparison={workspaceComparison}
+          activeComparisonVersion={activeComparisonVersion}
+          comparisonVersionId={comparisonVersionId}
+          onSwitchProject={onSwitchProject}
+          onJumpToModule={jumpToModule}
+          onRequestRestoreVersion={onRequestRestoreVersion}
+          onSetComparisonVersionId={setComparisonVersionId}
+          formatVersionTimestamp={formatVersionTimestamp}
+        />
 
-      <WorkbenchActions
-        isCompositeEditor={isCompositeEditor}
-        isObservationMode={isObservationMode}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        selectedModuleIds={selectedModuleIds}
-        effectiveSelectedConnectionIndex={effectiveSelectedConnectionIndex}
-        showTutorialToggle={showTutorialToggle}
-        tutorialNotesVisible={tutorialNotesVisible}
-        onAddAnnotation={onAddAnnotation}
-        onExportDocument={onExportDocument}
-        onExportLabPack={onExportLabPack}
-        onExportPython={onExportPython}
-        onTidyLayout={onTidyLayout}
-        onRequestUndo={onRequestUndo}
-        onRequestRedo={onRequestRedo}
-        onZoomOut={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'out'))}
-        onZoomIn={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'in'))}
-        onResetView={() => {
-          setWorkspaceZoom(DEFAULT_WORKSPACE_ZOOM);
-          canvasSurfaceRef.current?.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
-        }}
-        onFitView={fitWorkspaceView}
-        onRequestSaveVersion={onRequestSaveVersion}
-        onRequestDuplicateSelection={onRequestDuplicateSelection}
-        onRequestDeleteSelection={onRequestDeleteSelection}
-        onRequestDeleteWire={() => {
-          if (effectiveSelectedConnectionIndex !== null) {
-            onRemoveConnection(effectiveSelectedConnectionIndex);
-            setSelectedConnectionIndex(null);
-          }
-        }}
-        onRequestImport={() => importInputRef.current?.click()}
-        onRequestImportLabPack={() => importLabPackInputRef.current?.click()}
-        onRequestCreateComposite={onRequestCreateComposite}
-        onToggleTutorialNotes={onSetTutorialNotesVisible}
-      />
+        <WorkbenchActions
+          isCompositeEditor={isCompositeEditor}
+          isObservationMode={isObservationMode}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          selectedModuleIds={selectedModuleIds}
+          effectiveSelectedConnectionIndex={effectiveSelectedConnectionIndex}
+          showTutorialToggle={showTutorialToggle}
+          tutorialNotesVisible={tutorialNotesVisible}
+          onAddAnnotation={onAddAnnotation}
+          onExportDocument={onExportDocument}
+          onExportLabPack={onExportLabPack}
+          onExportPython={onExportPython}
+          onTidyLayout={onTidyLayout}
+          onRequestUndo={onRequestUndo}
+          onRequestRedo={onRequestRedo}
+          onZoomOut={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'out'))}
+          onZoomIn={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'in'))}
+          onResetView={() => {
+            setWorkspaceZoom(DEFAULT_WORKSPACE_ZOOM);
+            canvasSurfaceRef.current?.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+          }}
+          onFitView={fitWorkspaceView}
+          onRequestSaveVersion={onRequestSaveVersion}
+          onRequestDuplicateSelection={onRequestDuplicateSelection}
+          onRequestDeleteSelection={onRequestDeleteSelection}
+          onRequestDeleteWire={() => {
+            if (effectiveSelectedConnectionIndex !== null) {
+              onRemoveConnection(effectiveSelectedConnectionIndex);
+              setSelectedConnectionIndex(null);
+            }
+          }}
+          onRequestImport={() => importInputRef.current?.click()}
+          onRequestImportLabPack={() => importLabPackInputRef.current?.click()}
+          onRequestCreateComposite={onRequestCreateComposite}
+          onToggleTutorialNotes={onSetTutorialNotesVisible}
+        />
+      </Suspense>
       <input
         ref={importInputRef}
         type="file"
