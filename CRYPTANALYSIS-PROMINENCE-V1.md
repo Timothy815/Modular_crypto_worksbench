@@ -1,6 +1,6 @@
 # CRYPTANALYSIS-PROMINENCE-V1
 
-Status: Proposed
+Status: Shipped on `main`.
 
 Owner: Codex
 Scope: UI / Navigation / Product Coherence

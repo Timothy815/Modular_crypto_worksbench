@@ -23,19 +23,29 @@ The `v2.1.0` checkpoint consolidates:
 - flagship classical and modern lab sequences
 - verification explainability
 
-The next active development line after `v2.1.0` is still the broader builder-power / authoring-power line. The first bounded follow-on target remains:
-- same-workspace repeated-structure authoring
-- duplicate a selected visible cluster nearby
-- preserve internal topology and params
-- keep the duplicate fully local, explicit, and immediately editable
+Current `main` now also includes post-`v2.1.0` follow-on work that was not yet reflected in the original checkpoint summary:
+- shareable lab-pack import/export
+- bitstream randomness analysis in Cryptanalysis
+- peer-footing `Tutorial` / `Challenge` / `Cryptanalysis` navigation in the learning dock
+- sequential `State` / `Control` / `Observe` role badges in ticked workspaces
+- dimension-first S-box generation workflow
+- `App.tsx` shell-orchestration stabilization
 
-The next bounded follow-on after that is:
-- cluster operations
-- drag-box selection on empty canvas
-- explicit delete-selected-cluster workflow
-
-The current active safety slice after that is:
+The older `v2.1` builder-power queue is now largely present on `main` as shipped work:
+- same-workspace repeated-structure duplication
+- selected cluster operations
 - workspace-local undo / redo
+- named workspace versions / restore points
+- workspace visibility/navigation
+- connection and parameter ergonomics
+- parameter comparison
+- inspector / workbench / store / app-shell maintenance passes
+
+That means the next docket should now be chosen from the remaining unshipped contracts rather than the older authoring-power queue.
+The clearest current candidates are:
+1. `PRIMITIVE-MICRO-DEMOS-V3.md`
+2. `SYSTEMS-IDE-COHERENCE-V1.md`
+3. `VERIFIED-MACHINE-COHERENCE-V1.md`
 
 The current explicit north-star check after the major Python-export and multi-window advances is:
 - `SYSTEMS-IDE-COHERENCE-V1.md`
@@ -775,17 +785,14 @@ In ticked mode, the rotor advances per character and TextInput emits one charact
 
 ## Near-Term Roadmap
 
-1. Treat MCW explicitly as a **cryptographic systems IDE** and grow the primitive language toward full expressive coverage, not just isolated feature branches
-2. Continue the primitive-language phase beyond shipped stream, rotor, symbol-permutation, key-routing, and symbol-structure foundations:
-   the next bounded decision should stay within shared vocabulary growth rather than preset-building
-3. Keep future rotor follow-ons bounded:
-   reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices rather than spilling into convenience presets
-4. Add one tutorial plus one demo/challenge whenever a major new primitive family ships so the language grows with teaching support
-5. Add each new teaching artifact to a visible suggested learning stage so the library feels ordered rather than flat
-6. Keep performance/bundle size under watch now that builder workflow and tactile editors both sit behind the guardrails
-7. Monitor classroom use of workspace library and composite unzip before widening them into sharing, folders, or bulk-expansion tooling
-8. Monitor challenge-induced project switching in classroom use before adding warning dialogs
-9. Avoid scope creep into brute-force tooling, birthday-bound calculators, famous-hash comparisons, or premature asymmetric demos before the underlying vocabulary exists
-10. Keep the shipped bypass line bounded to honest one-in/one-out same-domain modules rather than widening it into universal mute/solo behavior
-11. Tighten bridge ergonomics before opening a broad new encoding family — make raw bit entry and byte-oriented bridges feel natural before considering UTF-8 follow-ons
-12. Treat a `v2.0` sanity/framing pass as the next product-level checkpoint now that the first systems-composition slice is framed, but keep it focused on organization, cohesion, and close-out rather than restarting vocabulary sprawl
+1. Choose the next slice from the remaining unshipped contracts, not from the older authoring-power queue that is now already largely shipped
+2. The strongest concrete product-facing candidate is `CRYPTANALYSIS-PROMINENCE-V1.md`:
+   equal local footing for `Tutorial`, `Challenge`, and `Cryptanalysis` without widening capability
+3. Keep future language growth explicit and bounded:
+   no hidden scheduling, no black-box presets, no “good crypto generator” claims
+4. Keep new teaching content attached to real executable surfaces:
+   add demos, tutorials, and challenges when a major new language slice ships
+5. Preserve the trust chain:
+   compare, verification, export parity, and shareable lab packs should continue to reinforce each other
+6. Keep bundle size and UI sprawl under watch as teaching, analysis, and portability surfaces continue to expand
+7. Use classroom and pilot feedback to choose between the remaining product-shaping contracts rather than reopening broad speculative roadmap branches

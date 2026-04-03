@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  applyLearningPanelTabSelection,
   buildChallengeSelectionPlan,
   buildTutorialSelectionPlan,
   createVerificationCaseForProject,
@@ -111,5 +112,57 @@ describe('learning-orchestration', () => {
 
     expect(result.error).toBeNull();
     expect(result.nextCasesByProject['project-a']).toHaveLength(1);
+  });
+
+  it('syncs workspace mode when selecting the cryptanalysis learning tab', () => {
+    const dispatched: unknown[] = [];
+    let selectedTab: string | null = null;
+
+    applyLearningPanelTabSelection({
+      tab: 'cryptanalysis',
+      activeProjectId: 'project-a',
+      workspaceMode: 'guide',
+      dispatch: (action) => {
+        dispatched.push(action);
+      },
+      setLearningPanelTab: (value) => {
+        selectedTab = typeof value === 'function' ? value('quickstart') : value;
+      },
+    });
+
+    expect(selectedTab).toBe('cryptanalysis');
+    expect(dispatched).toEqual([
+      {
+        type: 'setWorkspaceMode',
+        projectId: 'project-a',
+        mode: 'cryptanalysis',
+      },
+    ]);
+  });
+
+  it('returns to guide mode when leaving cryptanalysis for a peer learning tab', () => {
+    const dispatched: unknown[] = [];
+    let selectedTab: string | null = null;
+
+    applyLearningPanelTabSelection({
+      tab: 'tutorial',
+      activeProjectId: 'project-a',
+      workspaceMode: 'cryptanalysis',
+      dispatch: (action) => {
+        dispatched.push(action);
+      },
+      setLearningPanelTab: (value) => {
+        selectedTab = typeof value === 'function' ? value('quickstart') : value;
+      },
+    });
+
+    expect(selectedTab).toBe('tutorial');
+    expect(dispatched).toEqual([
+      {
+        type: 'setWorkspaceMode',
+        projectId: 'project-a',
+        mode: 'guide',
+      },
+    ]);
   });
 });

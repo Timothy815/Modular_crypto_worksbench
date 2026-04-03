@@ -41,6 +41,41 @@ export interface ChallengeCaptureDialogState {
   hints: string;
 }
 
+export function applyLearningPanelTabSelection(args: {
+  tab: LearningPanelTab;
+  activeProjectId: string;
+  workspaceMode: WorkspaceMode;
+  dispatch: Dispatch<UiAction>;
+  setLearningPanelTab: Dispatch<SetStateAction<LearningPanelTab>>;
+}) {
+  const {
+    tab,
+    activeProjectId,
+    workspaceMode,
+    dispatch,
+    setLearningPanelTab,
+  } = args;
+
+  setLearningPanelTab(tab);
+
+  if (tab === 'cryptanalysis') {
+    dispatch({
+      type: 'setWorkspaceMode',
+      projectId: activeProjectId,
+      mode: 'cryptanalysis',
+    });
+    return;
+  }
+
+  if (workspaceMode === 'cryptanalysis') {
+    dispatch({
+      type: 'setWorkspaceMode',
+      projectId: activeProjectId,
+      mode: 'guide',
+    });
+  }
+}
+
 export function buildTutorialSelectionPlan(args: {
   activeProjectId: string;
   workspaceMode: WorkspaceMode;

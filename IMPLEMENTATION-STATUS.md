@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: March 29, 2026
+Last updated: April 3, 2026
 
 ---
 
@@ -21,48 +21,37 @@ The previous major boundary was `v2.0.0`.
 - flagship classical and modern lab sequences
 - verification explainability
 
-Current development now carries:
-- the proposed post-`v1.44.0` `v2.0` sanity-pass contract
-- the completed `v2.0` sanity audit deliverable
-- implemented bounded follow-on passes:
-  - `LEARNING-SEQUENCE-V2.md`
-  - selector/pathfinding polish on `main`
-  - `PALETTE-COHERENCE-V1.md`
-- completed release-boundary decisions:
-  - `V2.0-READINESS.md`
-  - `V2.0-READINESS-AUDIT.md`
-  - `V2.0-RELEASE-CONTRACT.md`
-  - `V2.0-RELEASE-NOTES.md`
-- post-`v2.1.0` authoring-power planning:
-- `V2.1-AUTHORING-POWER-PLAN.md`
-- `SYSTEMS-IDE-COHERENCE-V1.md`
-  - `REPEATED-STRUCTURE-AUTHORING-V1.md`
-  - `SELECTED-CLUSTER-OPERATIONS-V1.md`
-  - `WORKSPACE-HISTORY-V1.md`
-  - `WORKSPACE-VERSIONING-V1.md`
-  - `WORKSPACE-VISIBILITY-NAVIGATION-V1.md`
-  - `CONNECTION-AUTHORING-ERGONOMICS-V1.md`
-  - `PARAMETER-AUTHORING-ERGONOMICS-V1.md`
-  - `PARAMETER-COMPARISON-ERGONOMICS-V1.md`
-  - `PRIMITIVE-MICRO-DEMOS-V1.md`
-  - `PRIMITIVE-MICRO-DEMOS-V2.md`
-  - `WIRE-LEGIBILITY-ERGONOMICS-V1.md`
-  - `TRACE-WORKSPACE-BRIDGING-V1.md`
-  - `COMPOSITE-REUSE-ERGONOMICS-V1.md`
-  - `WORKSPACE-COMPARISON-ERGONOMICS-V1.md`
-  - `MULTIWAY-ROUTING-V1.md`
-  - `CONDITIONAL-COMPOSITION-V1.md`
-  - `ITERATOR-CONTROL-V1.md`
-  - `ROTOR-REVERSE-PATH-V1.md`
-  - `LINKED-ROTOR-PAIRING-V1.md`
-  - `ROTOR-DRIVEN-STEPPING-V1.md`
-  - `ROTOR-CONTROL-BANK-V1.md`
-  - `PYTHON-EXPORT-V1.md`
-  - `PYTHON-EXPORT-FOUNDATIONS-V1.md`
-  - `PYTHON-EXPORT-EXPANSION-V1.md`
-  - `V2.1-NEXT-DOCKET.md`
-  - `STAGE-ASSEMBLY-ERGONOMICS-V1.md`
-  - `MULTI-WINDOW-WORKSPACE-V1.md`
+Current `main` now also includes later post-`v2.1.0` follow-ons:
+- `SHAREABLE-LAB-PACKS-V1.md`
+- `BITSTREAM-RANDOMNESS-LAB-V1.md`
+- `CRYPTANALYSIS-PROMINENCE-V1.md`
+- `SEQUENTIAL-STATE-AUTHORING-V1.md`
+- `SBOX-GENERATION-WORKFLOW-V1.md`
+- `UI-ARCHITECTURE-STABILIZATION-V1.md`
+
+The older `v2.1` builder-power / maintainability queue is now largely already present on `main`:
+- `REPEATED-STRUCTURE-AUTHORING-V1.md`
+- `SELECTED-CLUSTER-OPERATIONS-V1.md`
+- `WORKSPACE-HISTORY-V1.md`
+- `WORKSPACE-VERSIONING-V1.md`
+- `WORKSPACE-VISIBILITY-NAVIGATION-V1.md`
+- `CONNECTION-AUTHORING-ERGONOMICS-V1.md`
+- `PARAMETER-AUTHORING-ERGONOMICS-V1.md`
+- `PARAMETER-COMPARISON-ERGONOMICS-V1.md`
+- `INSPECTOR-REFACTOR-V1.md`
+- `WORKBENCH-REFACTOR-V1.md`
+- `STORE-REFACTOR-V1.md`
+- `APP-SHELL-REFACTOR-V1.md`
+- `UI-ARCHITECTURE-STABILIZATION-V1.md`
+
+Current active sequencing should now be read as:
+- choose the next product-facing slice from the remaining unshipped contracts
+- keep future work explicit, bounded, and evidence-driven
+
+The current practical next-up candidates are:
+1. `PRIMITIVE-MICRO-DEMOS-V3.md`
+2. `SYSTEMS-IDE-COHERENCE-V1.md`
+3. `VERIFIED-MACHINE-COHERENCE-V1.md`
 
 Current `main` now also includes:
 - Python export foundations:
@@ -979,16 +968,11 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 
 ### Near-Term Roadmap
 
-1. **Treat MCW as a cryptographic systems IDE** — optimize future roadmap choices around expressive machine vocabulary, not just isolated features
-2. **Use a `v2.0` pass to consolidate the product after the first systems-level milestone** — prioritize library coherence, curriculum framing, and honest scaling before opening a new concept family
-3. **Keep future rotor follow-ons bounded** — reversible rotation direction, flipped insertion, and deeper rotor-bank realism should remain explicit sub-slices, not convenience presets
-4. **Establish a suggested learning path across demos/tutorials/challenges** — future teaching content should fit a visible stage/order spine rather than accumulating as a flat library
-5. **Treat workspace library and unzip as shipped foundations** — avoid widening them immediately into folders, sharing, bulk expansion, or cloud sync
-6. **Keep the new bundle-size guardrails healthy** — treat regressions as release-blocking debt, not background noise
-7. **Monitor challenge-induced project switching in classroom use** before adding warning dialogs
-8. **Defer deeper transformation playback/animation** until classroom feedback justifies a second visualization slice
-9. **If bypass lands, keep it bounded** — instance-local, visibly disabled, and limited to modules where identity pass-through is honest
-10. **Tighten bridge ergonomics before adding broad new encodings** — make raw bit entry and byte-oriented bridges feel natural before opening a UTF-8 follow-on
+1. **Choose the next slice from the remaining unshipped contracts** rather than from the already-shipped authoring-power queue
+2. **Treat the remaining unshipped product-facing contracts as the real next choice set** rather than older stale “next” labels
+3. **Keep language growth explicit and bounded** — future additions should stay machine-centered, not drift into black-box presets or pseudo-security claims
+4. **Use real classroom feedback to choose between the remaining product-shaping contracts** — MCW now has enough onboarding, labs, pilot support, and sharing to benefit more from evidence than speculation
+5. **Keep bundle-size and interaction-density guardrails healthy** as teaching, analysis, and portability surfaces continue to expand
 
 ### Key Contracts
 

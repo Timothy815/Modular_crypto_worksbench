@@ -31,6 +31,7 @@ import { createInstructorPilotUrl } from './ui/instructor-pilot-url';
 import { createUserManualUrl } from './ui/manual-url';
 import {
   addVerificationCasesToProject,
+  applyLearningPanelTabSelection,
   applyChallengeSelectionPlan,
   applyTutorialSelectionPlan,
   buildChallengeSelectionPlan,
@@ -1800,22 +1801,14 @@ function MainApp() {
       clearVerificationCases: handleClearVerificationCases,
       importVerificationCases: handleImportVerificationCases,
       unzipComposite: handleUnzipComposite,
-      setLearningTab: (tab: LearningPanelTab) => {
-        setLearningPanelTab(tab);
-        if (tab === 'cryptanalysis') {
-          dispatch({
-            type: 'setWorkspaceMode',
-            projectId: activeProjectDefinition.id,
-            mode: 'cryptanalysis',
-          });
-        } else if (workspaceMode === 'cryptanalysis') {
-          dispatch({
-            type: 'setWorkspaceMode',
-            projectId: activeProjectDefinition.id,
-            mode: 'guide',
-          });
-        }
-      },
+      setLearningTab: (tab: LearningPanelTab) =>
+        applyLearningPanelTabSelection({
+          tab,
+          activeProjectId: activeProjectDefinition.id,
+          workspaceMode,
+          dispatch,
+          setLearningPanelTab,
+        }),
       selectChallenge: handleSelectChallenge,
       loadChallengeStart: handleLoadChallengeStart,
       exportChallenge: () => {
@@ -2850,22 +2843,15 @@ function MainApp() {
               hasChallengePanel={hasChallengePanel}
               hasCryptanalysisPanel={hasCryptanalysisPanel}
               activeLearningPanelTab={activeLearningPanelTab}
-              onSetLearningPanelTab={(tab) => {
-                setLearningPanelTab(tab);
-                if (tab === 'cryptanalysis') {
-                  dispatch({
-                    type: 'setWorkspaceMode',
-                    projectId: activeProjectDefinition.id,
-                    mode: 'cryptanalysis',
-                  });
-                } else if (workspaceMode === 'cryptanalysis') {
-                  dispatch({
-                    type: 'setWorkspaceMode',
-                    projectId: activeProjectDefinition.id,
-                    mode: 'guide',
-                  });
-                }
-              }}
+              onSetLearningPanelTab={(tab) =>
+                applyLearningPanelTabSelection({
+                  tab,
+                  activeProjectId: activeProjectDefinition.id,
+                  workspaceMode,
+                  dispatch,
+                  setLearningPanelTab,
+                })
+              }
               selectedChallenge={selectedChallenge}
               challenges={state.challengeLibrary}
               challengeEvaluation={challengeEvaluation}
