@@ -1,6 +1,6 @@
 # SBOX-GENERATION-WORKFLOW-V1
 
-Status: Implementing
+Status: Shipped
 
 Owner: Codex
 Scope: Primitive Authoring / Modern-Crypto Teaching / Workflow Ergonomics

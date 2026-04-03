@@ -88,30 +88,8 @@ describe('sbox-transforms', () => {
       expect(table.every((v) => v >= 0 && v < 256)).toBe(true);
     });
 
-    it('generates a valid bit-complement table', () => {
-      expect(generateSBoxTable(8, 'bit-complement')).toEqual([7, 6, 5, 4, 3, 2, 1, 0]);
-      expect(generateSBoxTable(16, 'bit-complement')).toEqual(
-        Array.from({ length: 16 }, (_, i) => i ^ 15),
-      );
-      const table256 = generateSBoxTable(256, 'bit-complement');
-      expect(table256[0]).toBe(255);
-      expect(table256[255]).toBe(0);
-      expect(table256[0xAA]).toBe(0x55);
-      expect(new Set(table256).size).toBe(256);
-    });
-
-    it('generates a valid left-rotate table', () => {
-      expect(generateSBoxTable(8, 'left-rotate')).toEqual([0, 2, 4, 6, 1, 3, 5, 7]);
-      const table16 = generateSBoxTable(16, 'left-rotate');
-      expect(table16[0]).toBe(0);
-      expect(table16[1]).toBe(2);
-      expect(table16[8]).toBe(1);
-      expect(table16[15]).toBe(15);
-      expect(new Set(table16).size).toBe(16);
-    });
-
-    it('generates valid permutations for 8 and 32 entry sizes', () => {
-      for (const size of [8, 32]) {
+    it('generates valid permutations for the supported entry sizes', () => {
+      for (const size of [16, 256]) {
         const table = generateSBoxTable(size, 'random');
         expect(table).toHaveLength(size);
         expect(new Set(table).size).toBe(size);
@@ -165,11 +143,6 @@ describe('sbox-transforms', () => {
 
     it('detects non-involutions', () => {
       expect(isSBoxInvolution([1, 2, 3, 0])).toBe(false);
-    });
-
-    it('detects bit-complement as an involution', () => {
-      const table = generateSBoxTable(16, 'bit-complement');
-      expect(isSBoxInvolution(table)).toBe(true);
     });
   });
 });

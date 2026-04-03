@@ -259,7 +259,15 @@ export function ParameterInspector({
     text: string;
   } | null>(null);
   const [requestedSBoxEditIndex, setRequestedSBoxEditIndex] = useState(0);
-  const [sboxGenerateSize, setSboxGenerateSize] = useState(16);
+  const [sboxGenerationState, setSboxGenerationState] = useState<{
+    moduleId: string | null;
+    size: 16 | 256;
+    preset: 'identity' | 'reverse' | 'random' | 'pair-swap';
+  }>({
+    moduleId: null,
+    size: 16,
+    preset: 'identity',
+  });
   const [renameState, setRenameState] = useState<{
     moduleId: string | null;
     draft: string;
@@ -659,6 +667,7 @@ export function ParameterInspector({
     steppedAnalysisEntry,
     steppedTrace,
   ]);
+
 
   const renderParameterComparisonChip = (fieldKey: string) => {
     const fieldComparison = parameterComparisonSummary?.fieldsByKey[fieldKey];
@@ -2673,6 +2682,16 @@ export function ParameterInspector({
                   const selectedRow = getSBoxGridRow(selectedEntryIndex, gridColumns);
                   const selectedColumn = getSBoxGridColumn(selectedEntryIndex, gridColumns);
                   const rowCount = editableTable ? Math.ceil(editableTable.length / gridColumns) : 0;
+                  const currentSBoxGenerateSize =
+                    sboxGenerationState.moduleId === moduleInstance.id
+                      ? sboxGenerationState.size
+                      : editableTable?.length === 256
+                        ? 256
+                        : 16;
+                  const currentSBoxGenerationPreset =
+                    sboxGenerationState.moduleId === moduleInstance.id
+                      ? sboxGenerationState.preset
+                      : 'identity';
                   const applyNextTable = (nextTable: number[]) => {
                     const serialized = serializeSBoxTable(nextTable);
                     onParamDraftChange(moduleInstance.id, field.key, serialized);
@@ -2693,8 +2712,14 @@ export function ParameterInspector({
                             <span className="meta-label">Generate</span>
                             <div className="sbox-generate-controls">
                               <select
-                                value={String(sboxGenerateSize)}
-                                onChange={(event) => setSboxGenerateSize(Number(event.target.value))}
+                                value={String(currentSBoxGenerateSize)}
+                                onChange={(event) =>
+                                  setSboxGenerationState({
+                                    moduleId: moduleInstance.id,
+                                    size: Number(event.target.value) as 16 | 256,
+                                    preset: currentSBoxGenerationPreset,
+                                  })
+                                }
                               >
                                 {SBOX_GENERATION_SIZES.map((size) => (
                                   <option key={size.entryCount} value={size.entryCount}>
@@ -2702,19 +2727,40 @@ export function ParameterInspector({
                                   </option>
                                 ))}
                               </select>
-                              {SBOX_GENERATION_PRESETS.map((preset) => (
-                                <button
-                                  key={preset.id}
-                                  type="button"
-                                  className="mini-action-button"
-                                  onClick={() =>
-                                    applyNextTable(generateSBoxTable(sboxGenerateSize, preset.id))
-                                  }
-                                >
-                                  {preset.label}
-                                </button>
-                              ))}
+                              <select
+                                value={currentSBoxGenerationPreset}
+                                onChange={(event) =>
+                                  setSboxGenerationState({
+                                    moduleId: moduleInstance.id,
+                                    size: currentSBoxGenerateSize,
+                                    preset: event.target.value as typeof currentSBoxGenerationPreset,
+                                  })
+                                }
+                              >
+                                {SBOX_GENERATION_PRESETS.map((preset) => (
+                                  <option key={preset.id} value={preset.id}>
+                                    {preset.label}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                type="button"
+                                className="mini-action-button"
+                                onClick={() => {
+                                  setRequestedSBoxEditIndex(0);
+                                  applyNextTable(
+                                    generateSBoxTable(currentSBoxGenerateSize, currentSBoxGenerationPreset),
+                                  );
+                                }}
+                              >
+                                Generate Table
+                              </button>
                             </div>
+                            <span className="content-status-chip">
+                              {currentSBoxGenerationPreset === 'random'
+                                ? 'Random permutation only changes table order. It is not a cryptographic quality claim.'
+                                : 'Generation creates a visible permutation table that you can refine with the editor and transforms.'}
+                            </span>
                           </div>
                           <div className="sbox-editor-actions">
                             <span className="meta-label">Transform</span>

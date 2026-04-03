@@ -71,8 +71,8 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         id: 'sbox-table-editing',
         title: 'Editing S-Box Tables',
         body:
-          'The S-Box editor in Configure mode is more than a raw CSV field. You can still edit the table directly, but MCW also provides a grid view, value-preserving swap controls, reset helpers, and bounded row or column transforms. The selected cell determines the active row and active column, so you can rotate or swap parts of the table without breaking permutation validity. This is useful for modern-round labs because it lets you experiment with substitution structure while staying inside the visible authored machine instead of replacing the S-Box with a hidden black box.',
-        indexTerms: ['sbox editor', 's-box table', 'rotate row', 'swap column', 'substitution table'],
+          'The S-Box editor in Configure mode is more than a raw CSV field. You can still edit the table directly, but MCW now also provides a dimension-first Generate block for 4-bit and 8-bit permutation tables, plus the grid view, value-preserving swap controls, and bounded row or column transforms. The selected cell determines the active row and active column, so you can rotate or swap parts of the table without breaking permutation validity. Generate is best for creating an initial visible table quickly; the grid and transforms are best for refining that authored structure without replacing the S-Box with a hidden black box.',
+        indexTerms: ['sbox editor', 's-box table', 'generate sbox', 'rotate row', 'swap column', 'substitution table'],
       },
       {
         id: 'learning-and-verification',

@@ -1011,7 +1011,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `POST-COLLISION-INTERPRETATION-V1.md` | First milestone shipped in `v1.11.0` — nudges, message comparison, and first internal-divergence helper delivered |
 | `CUSTOM-SBOX-AUTHORING-V1.md` | Shipped in `v1.12.0` as bounded substitution-table authoring |
 | `SBOX-TABLE-TRANSFORMS-V1.md` | Shipped bounded follow-on for visible row/column transforms on authored `SBox` tables |
-| `SBOX-GENERATION-WORKFLOW-V1.md` | Proposed bounded workflow follow-on for faster dimension-first S-box creation with visible generation presets and continued use of the existing editor and transform surfaces |
+| `SBOX-GENERATION-WORKFLOW-V1.md` | Shipped bounded workflow slice for faster dimension-first S-box creation with visible generation presets and continued use of the existing editor and transform surfaces |
 | `CUSTOM-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.12.0` as bounded tactile routing authoring |
 | `CUSTOM-REFLECTOR-AUTHORING-V1.md` | Shipped in `v1.12.0` as bounded paired reflector authoring |
 | `POLLUX-FRACTIONATION-V1.md` | Shipped bounded classical fractionation / homophonic-encoding primitive for disjoint bit-to-symbol output sets |

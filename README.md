@@ -688,7 +688,7 @@ Implemented and shipped:
 - `POST-COLLISION-INTERPRETATION-V1.md`: shipped first milestone for understanding why colliding messages still differ internally
 - `CUSTOM-SBOX-AUTHORING-V1.md`: shipped bounded authoring slice for editable substitution-table design inside the workbench
 - `SBOX-TABLE-TRANSFORMS-V1.md`: shipped bounded follow-on for visible row/column transforms on authored `SBox` tables
-- `SBOX-GENERATION-WORKFLOW-V1.md`: proposed bounded workflow follow-on for dimension-first S-box creation with visible generation presets such as identity, reverse, random permutation, and pair-swap permutations
+- `SBOX-GENERATION-WORKFLOW-V1.md`: shipped bounded workflow slice for dimension-first S-box creation with visible generation presets such as identity, reverse, random permutation, and pair-swap permutations
 - `CUSTOM-PERMUTATION-AUTHORING-V1.md`: shipped bounded tactile authoring slice for editable routing/permutation design inside the workbench
 - `CUSTOM-REFLECTOR-AUTHORING-V1.md`: shipped bounded tactile authoring slice for paired reflector wiring inside the workbench
 - `POLLUX-FRACTIONATION-V1.md`: shipped bounded classical fractionation / homophonic-encoding primitive for disjoint bit-to-symbol output sets
