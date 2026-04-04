@@ -2938,7 +2938,7 @@ export function WorkbenchPanel({
             );
           })() : null}
 
-          {tutorialStep?.focusModuleId && effectiveLayout[tutorialStep.focusModuleId] ? (() => {
+          {!tutorialNotesVisible && tutorialStep?.focusModuleId && effectiveLayout[tutorialStep.focusModuleId] ? (() => {
             const focusPos = effectiveLayout[tutorialStep.focusModuleId];
             const CALLOUT_WIDTH = 240;
             const placeRight = focusPos.x + NODE_WIDTH + 18 + CALLOUT_WIDTH < canvasWidth;
