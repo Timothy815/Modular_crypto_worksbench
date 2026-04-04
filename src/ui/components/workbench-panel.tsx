@@ -55,6 +55,7 @@ import type {
   WorkbenchLayoutDirection,
   WorkbenchPosition,
   WorkbenchRoutingMode,
+  WorkbenchStageLabel,
   WorkspaceVersionDocument,
 } from '../workbench-document';
 import {
@@ -204,6 +205,7 @@ interface WorkbenchPanelProps {
   routingMode: WorkbenchRoutingMode;
   connectionLayout: Record<string, WorkbenchConnectionLayout>;
   annotations: WorkbenchAnnotation[];
+  stageLabels: WorkbenchStageLabel[];
   groupBoxes: WorkbenchGroupBox[];
   guideRails: WorkbenchGuideRail[];
   showOverviewNavigator: boolean;
@@ -248,6 +250,7 @@ interface WorkbenchPanelProps {
   onMoveModule: (moduleId: string, x: number, y: number) => void;
   onMoveModules: (positions: Record<string, { x: number; y: number }>) => void;
   onAddAnnotation: () => void;
+  onAddStageLabel: () => void;
   onAddGroupBox: () => void;
   onAddGroupBoxFromSelection: () => void;
   onAddGuideRail: (axis: 'horizontal' | 'vertical') => void;
@@ -266,6 +269,9 @@ interface WorkbenchPanelProps {
   onMoveAnnotation: (annotationId: string, x: number, y: number) => void;
   onUpdateAnnotationText: (annotationId: string, text: string) => void;
   onRemoveAnnotation: (annotationId: string) => void;
+  onMoveStageLabel: (stageLabelId: string, x: number, y: number) => void;
+  onUpdateStageLabelText: (stageLabelId: string, text: string) => void;
+  onRemoveStageLabel: (stageLabelId: string) => void;
   onSelectModule: (moduleId: string, additive?: boolean) => void;
   onSelectModules: (moduleIds: string[], additive?: boolean) => void;
   onRequestCreateComposite: () => void;
@@ -343,6 +349,7 @@ export function WorkbenchPanel({
   routingMode,
   connectionLayout,
   annotations,
+  stageLabels,
   groupBoxes,
   guideRails,
   showOverviewNavigator,
@@ -387,6 +394,7 @@ export function WorkbenchPanel({
   onMoveModule,
   onMoveModules,
   onAddAnnotation,
+  onAddStageLabel,
   onAddGroupBox,
   onAddGroupBoxFromSelection,
   onAddGuideRail,
@@ -405,6 +413,9 @@ export function WorkbenchPanel({
   onMoveAnnotation,
   onUpdateAnnotationText,
   onRemoveAnnotation,
+  onMoveStageLabel,
+  onUpdateStageLabelText,
+  onRemoveStageLabel,
   onSelectModule,
   onSelectModules,
   onRequestCreateComposite,
@@ -455,6 +466,15 @@ export function WorkbenchPanel({
   } | null>(null);
   const [annotationDragState, setAnnotationDragState] = useState<{
     annotationId: string;
+    pointerOffsetX: number;
+    pointerOffsetY: number;
+    initialX: number;
+    initialY: number;
+    currentX: number;
+    currentY: number;
+  } | null>(null);
+  const [stageLabelDragState, setStageLabelDragState] = useState<{
+    stageLabelId: string;
     pointerOffsetX: number;
     pointerOffsetY: number;
     initialX: number;
@@ -623,6 +643,11 @@ export function WorkbenchPanel({
           ? annotationDragState.currentX
           : annotation.x) + 260,
       ),
+      ...stageLabels.map((stageLabel) =>
+        (stageLabelDragState?.stageLabelId === stageLabel.id
+          ? stageLabelDragState.currentX
+          : stageLabel.x) + 220,
+      ),
     );
     const maxAnnotationY = Math.max(
       0,
@@ -630,6 +655,11 @@ export function WorkbenchPanel({
         (annotationDragState?.annotationId === annotation.id
           ? annotationDragState.currentY
           : annotation.y) + 170,
+      ),
+      ...stageLabels.map((stageLabel) =>
+        (stageLabelDragState?.stageLabelId === stageLabel.id
+          ? stageLabelDragState.currentY
+          : stageLabel.y) + 56,
       ),
     );
     const maxGroupBoxX = Math.max(
@@ -672,6 +702,8 @@ export function WorkbenchPanel({
     groupBoxDragState,
     groupBoxResizeState,
     groupBoxes,
+    stageLabels,
+    stageLabelDragState,
   ]);
   const canvasWidth = contentBounds.width;
   const canvasHeight = contentBounds.height;
@@ -915,6 +947,7 @@ export function WorkbenchPanel({
     if (
       !dragState &&
       !annotationDragState &&
+      !stageLabelDragState &&
       !guideRailDragState &&
       !groupBoxDragState &&
       !groupBoxResizeState &&
@@ -1012,6 +1045,29 @@ export function WorkbenchPanel({
         const nextX = Math.max(16, pointer.x - annotationDragState.pointerOffsetX);
         const nextY = Math.max(16, pointer.y - annotationDragState.pointerOffsetY);
         setAnnotationDragState((prev) =>
+          prev
+            ? {
+                ...prev,
+                currentX: nextX,
+                currentY: nextY,
+              }
+            : null,
+        );
+      }
+
+      if (stageLabelDragState) {
+        const pointer = getCanvasViewportPoint({
+          clientX: event.clientX,
+          clientY: event.clientY,
+          canvasLeft: canvasRect.left,
+          canvasTop: canvasRect.top,
+          scrollLeft: canvasSurface.scrollLeft,
+          scrollTop: canvasSurface.scrollTop,
+          zoom: workspaceZoom,
+        });
+        const nextX = Math.max(16, pointer.x - stageLabelDragState.pointerOffsetX);
+        const nextY = Math.max(16, pointer.y - stageLabelDragState.pointerOffsetY);
+        setStageLabelDragState((prev) =>
           prev
             ? {
                 ...prev,
@@ -1172,6 +1228,19 @@ export function WorkbenchPanel({
         }
       }
 
+      if (stageLabelDragState) {
+        if (
+          stageLabelDragState.currentX !== stageLabelDragState.initialX ||
+          stageLabelDragState.currentY !== stageLabelDragState.initialY
+        ) {
+          onMoveStageLabel(
+            stageLabelDragState.stageLabelId,
+            stageLabelDragState.currentX,
+            stageLabelDragState.currentY,
+          );
+        }
+      }
+
       if (groupBoxDragState) {
         if (
           groupBoxDragState.currentX !== groupBoxDragState.initialX ||
@@ -1230,6 +1299,7 @@ export function WorkbenchPanel({
       }
       setDragState(null);
       setAnnotationDragState(null);
+      setStageLabelDragState(null);
       setGuideRailDragState(null);
       setGroupBoxDragState(null);
       setGroupBoxResizeState(null);
@@ -1256,6 +1326,7 @@ export function WorkbenchPanel({
     layout,
     onClearConnectionOrthogonalBend,
     onMoveAnnotation,
+    onMoveStageLabel,
     onMoveGuideRail,
     onMoveGroupBox,
     onMoveModule,
@@ -1264,6 +1335,7 @@ export function WorkbenchPanel({
     onSetConnectionOrthogonalBend,
     onSelectModules,
     selectionBox,
+    stageLabelDragState,
     guideRails,
     snapToGrid,
     snapToGuides,
@@ -1801,6 +1873,7 @@ export function WorkbenchPanel({
           showTutorialToggle={showTutorialToggle}
           tutorialNotesVisible={tutorialNotesVisible}
           onAddAnnotation={onAddAnnotation}
+          onAddStageLabel={onAddStageLabel}
           onExportDocument={onExportDocument}
           onExportLabPack={onExportLabPack}
           onExportPython={onExportPython}
@@ -2783,6 +2856,71 @@ export function WorkbenchPanel({
             })()
           ))}
 
+          {stageLabels.map((stageLabel) => {
+            const stageLabelX =
+              stageLabelDragState?.stageLabelId === stageLabel.id
+                ? stageLabelDragState.currentX
+                : stageLabel.x;
+            const stageLabelY =
+              stageLabelDragState?.stageLabelId === stageLabel.id
+                ? stageLabelDragState.currentY
+                : stageLabel.y;
+
+            return (
+              <div
+                key={stageLabel.id}
+                className="canvas-stage-label"
+                style={{ left: `${stageLabelX}px`, top: `${stageLabelY}px` }}
+              >
+                <div
+                  className="canvas-stage-label-handle"
+                  onMouseDown={(event) => {
+                    if (isObservationMode) {
+                      return;
+                    }
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const pointer = getCanvasPointerFromClient(event.clientX, event.clientY);
+                    if (!pointer) {
+                      return;
+                    }
+                    setSelectedGuideRailId(null);
+                    setStageLabelDragState({
+                      stageLabelId: stageLabel.id,
+                      pointerOffsetX: pointer.x - stageLabel.x,
+                      pointerOffsetY: pointer.y - stageLabel.y,
+                      initialX: stageLabel.x,
+                      initialY: stageLabel.y,
+                      currentX: stageLabel.x,
+                      currentY: stageLabel.y,
+                    });
+                  }}
+                >
+                  Stage
+                  <button
+                    type="button"
+                    className="annotation-delete-button"
+                    onClick={(event) => {
+                      if (isObservationMode) {
+                        return;
+                      }
+                      event.stopPropagation();
+                      onRemoveStageLabel(stageLabel.id);
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={stageLabel.text}
+                  readOnly={isObservationMode}
+                  onChange={(event) => onUpdateStageLabelText(stageLabel.id, event.target.value)}
+                />
+              </div>
+            );
+          })}
+
           {effectiveSelectedConnectionIndex !== null &&
           activeProjectState.connections[effectiveSelectedConnectionIndex] ? (
             <svg
@@ -2863,6 +3001,16 @@ export function WorkbenchPanel({
                   style={{
                     left: `${annotation.x * minimapMetrics.scale}px`,
                     top: `${annotation.y * minimapMetrics.scale}px`,
+                  }}
+                />
+              ))}
+              {stageLabels.map((stageLabel) => (
+                <div
+                  key={stageLabel.id}
+                  className="workbench-minimap-stage-label"
+                  style={{
+                    left: `${stageLabel.x * minimapMetrics.scale}px`,
+                    top: `${stageLabel.y * minimapMetrics.scale}px`,
                   }}
                 />
               ))}

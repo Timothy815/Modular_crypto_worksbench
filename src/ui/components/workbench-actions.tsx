@@ -21,6 +21,7 @@ interface WorkbenchActionsProps {
   showTutorialToggle: boolean;
   tutorialNotesVisible: boolean;
   onAddAnnotation: () => void;
+  onAddStageLabel: () => void;
   onExportDocument: () => void;
   onExportLabPack: () => void;
   onExportPython: () => void;
@@ -396,6 +397,7 @@ export function WorkbenchActions({
   showTutorialToggle,
   tutorialNotesVisible,
   onAddAnnotation,
+  onAddStageLabel,
   onExportDocument,
   onExportLabPack,
   onExportPython,
@@ -668,6 +670,7 @@ export function WorkbenchActions({
 
           <WorkbenchActionMenu label="Structure" description="Author and group">
             <WorkbenchMenuActionButton label="Add Note" onSelect={onAddAnnotation} />
+            <WorkbenchMenuActionButton label="Add Stage Label" onSelect={onAddStageLabel} />
             <WorkbenchMenuActionButton
               label="Create Composite"
               onSelect={onRequestCreateComposite}

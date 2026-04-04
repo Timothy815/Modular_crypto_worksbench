@@ -361,6 +361,10 @@ function MainApp() {
     () => (state.compositeEditor ? [] : baseAnnotations),
     [baseAnnotations, state.compositeEditor],
   );
+  const activeStageLabels = useMemo(
+    () => (state.compositeEditor ? [] : state.stageLabelsByProject[activeProjectDefinition.id] ?? []),
+    [activeProjectDefinition.id, state.compositeEditor, state.stageLabelsByProject],
+  );
   const effectiveSelectedModuleId = state.compositeEditor
     ? state.compositeEditor.selectedModuleId
     : getSelectedModuleId(state, activeProjectDefinition.id, activeProjectState);
@@ -912,6 +916,7 @@ function MainApp() {
         project: activeProjectState,
         layout: activeLayout,
         annotations: activeAnnotations,
+        stageLabels: activeStageLabels,
         groupBoxes: activeGroupBoxes,
         guideRails: activeGuideRails,
         showOverviewNavigator: activeShowOverviewNavigator,
@@ -930,6 +935,7 @@ function MainApp() {
     setImportError(null);
   }, [
     activeAnnotations,
+    activeStageLabels,
     activeGroupBoxes,
     activeGuideRails,
     activeShowOverviewNavigator,
@@ -1624,6 +1630,7 @@ function MainApp() {
           ui: {
             layout: pasted.layout,
             annotations: activeAnnotations,
+            stageLabels: activeStageLabels,
             groupBoxes: activeGroupBoxes,
             guideRails: activeGuideRails,
             showOverviewNavigator: activeShowOverviewNavigator,
@@ -2528,6 +2535,7 @@ function MainApp() {
                 : activeConnectionLayout
             }
             annotations={isCompositeDrilldownActive ? [] : activeAnnotations}
+            stageLabels={isCompositeDrilldownActive ? [] : activeStageLabels}
             groupBoxes={isCompositeDrilldownActive ? [] : activeGroupBoxes}
             guideRails={isCompositeDrilldownActive ? [] : activeGuideRails}
             showOverviewNavigator={isCompositeDrilldownActive ? false : activeShowOverviewNavigator}
@@ -2630,6 +2638,14 @@ function MainApp() {
                 ? undefined
                 : dispatch({
                     type: 'addAnnotation',
+                    projectId: activeProjectDefinition.id,
+                  })
+            }
+            onAddStageLabel={() =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'addStageLabel',
                     projectId: activeProjectDefinition.id,
                   })
             }
@@ -2780,7 +2796,18 @@ function MainApp() {
                 : dispatch({
                     type: 'moveAnnotation',
                     projectId: activeProjectDefinition.id,
-                    annotationId,
+                  annotationId,
+                  x,
+                  y,
+                })
+            }
+            onMoveStageLabel={(stageLabelId, x, y) =>
+              state.compositeEditor
+                ? undefined
+                : dispatch({
+                    type: 'moveStageLabel',
+                    projectId: activeProjectDefinition.id,
+                    stageLabelId,
                     x,
                     y,
                   })
@@ -2791,7 +2818,17 @@ function MainApp() {
                 : dispatch({
                     type: 'updateAnnotationText',
                     projectId: activeProjectDefinition.id,
-                    annotationId,
+                  annotationId,
+                  text,
+                })
+            }
+            onUpdateStageLabelText={(stageLabelId, text) =>
+              state.compositeEditor
+                ? undefined
+                : dispatch({
+                    type: 'updateStageLabelText',
+                    projectId: activeProjectDefinition.id,
+                    stageLabelId,
                     text,
                   })
             }
@@ -2801,7 +2838,16 @@ function MainApp() {
                 : dispatch({
                     type: 'removeAnnotation',
                     projectId: activeProjectDefinition.id,
-                    annotationId,
+                  annotationId,
+                })
+            }
+            onRemoveStageLabel={(stageLabelId) =>
+              state.compositeEditor
+                ? undefined
+                : dispatch({
+                    type: 'removeStageLabel',
+                    projectId: activeProjectDefinition.id,
+                    stageLabelId,
                   })
             }
             onSelectModule={(moduleId, additive) =>
@@ -3962,6 +4008,7 @@ function MainApp() {
                         ui: {
                           layout: replacement.layout,
                           annotations: state.annotationsByProject[activeProjectDefinition.id] ?? [],
+                          stageLabels: state.stageLabelsByProject[activeProjectDefinition.id] ?? [],
                           groupBoxes: state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
                           guideRails: state.guideRailsByProject[activeProjectDefinition.id] ?? [],
                           showOverviewNavigator:
@@ -4072,6 +4119,7 @@ function MainApp() {
                         layout:
                           selectedChallenge.startingLayout ?? selectedChallengeProjectDefinition.layout,
                         annotations: [],
+                        stageLabels: [],
                         groupBoxes: [],
                         guideRails: [],
                         showOverviewNavigator:

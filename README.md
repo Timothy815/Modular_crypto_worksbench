@@ -125,6 +125,11 @@ The next guide-rail follow-on after that is now implemented locally as:
 - adds per-workspace snap-to-guides for module placement and dragging
 - keeps the slice bounded to nearby rail snapping with no solver, wire snapping, or note/group-box snapping
 
+The next readability follow-on after that is now implemented locally as:
+- `ON-CANVAS-STAGE-LABELS-V1.md`
+- adds lightweight persistent stage labels directly on the workspace canvas
+- keeps the slice visual-only and intentionally lighter than sticky notes or group boxes
+
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - now shipped as the first bounded verification-station refinement inside the compare/analyze line

@@ -19,6 +19,13 @@ export interface WorkbenchAnnotation {
   text: string;
 }
 
+export interface WorkbenchStageLabel {
+  id: string;
+  x: number;
+  y: number;
+  text: string;
+}
+
 export type WorkbenchGroupBoxVariant = 'neutral' | 'stage' | 'feedback' | 'emphasis';
 
 export interface WorkbenchGroupBox {
@@ -58,6 +65,7 @@ export type WorkbenchRoutingMode = 'curved' | 'orthogonal';
 export interface WorkbenchUiMetadata {
   layout: Record<string, WorkbenchPosition>;
   annotations: WorkbenchAnnotation[];
+  stageLabels?: WorkbenchStageLabel[];
   groupBoxes?: WorkbenchGroupBox[];
   guideRails?: WorkbenchGuideRail[];
   showOverviewNavigator?: boolean;

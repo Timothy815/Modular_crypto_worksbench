@@ -22,6 +22,7 @@ import type {
   WorkbenchGuideRail,
   WorkbenchGroupBox,
   WorkbenchPosition,
+  WorkbenchStageLabel,
 } from './workbench-document';
 
 export function slugifyWorkspaceName(value: string) {
@@ -87,6 +88,10 @@ function cloneLayout(layout: Record<string, WorkbenchPosition>) {
 
 function cloneAnnotations(annotations: WorkbenchAnnotation[]) {
   return annotations.map((annotation) => ({ ...annotation }));
+}
+
+function cloneStageLabels(stageLabels: WorkbenchStageLabel[]) {
+  return stageLabels.map((stageLabel) => ({ ...stageLabel }));
 }
 
 function cloneGroupBoxes(groupBoxes: WorkbenchGroupBox[]) {
@@ -189,6 +194,13 @@ export function hydrateInitialUiState(projects: DemoProject[]): UiState {
       allProjects.map((project) => [
         project.id,
         persistedWorkspace.documentsByProjectId[project.id]?.ui.annotations ?? initialState.annotationsByProject[project.id],
+      ]),
+    ),
+    stageLabelsByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.documentsByProjectId[project.id]?.ui.stageLabels ??
+          initialState.stageLabelsByProject[project.id],
       ]),
     ),
     groupBoxesByProject: Object.fromEntries(
@@ -414,6 +426,7 @@ export interface BuildShareableLabPackArgs {
   project: Project;
   layout: Record<string, { x: number; y: number }>;
   annotations: WorkbenchAnnotation[];
+  stageLabels?: WorkbenchStageLabel[];
   groupBoxes?: WorkbenchGroupBox[];
   guideRails?: WorkbenchGuideRail[];
   showOverviewNavigator?: boolean;
@@ -442,6 +455,7 @@ export function buildShareableLabPack({
   project,
   layout,
   annotations,
+  stageLabels = [],
   groupBoxes = [],
   guideRails = [],
   showOverviewNavigator = false,
@@ -472,6 +486,7 @@ export function buildShareableLabPack({
       ui: {
         layout: cloneLayout(layout),
         annotations: cloneAnnotations(annotations),
+        stageLabels: cloneStageLabels(stageLabels),
         groupBoxes: cloneGroupBoxes(groupBoxes),
         guideRails: cloneGuideRails(guideRails),
         showOverviewNavigator,
@@ -600,6 +615,7 @@ export function prepareImportedLabPack({
       ui: {
         layout: cloneLayout(pack.workspace.ui.layout),
         annotations: cloneAnnotations(pack.workspace.ui.annotations),
+        stageLabels: cloneStageLabels(pack.workspace.ui.stageLabels ?? []),
         groupBoxes: cloneGroupBoxes(pack.workspace.ui.groupBoxes ?? []),
         guideRails: cloneGuideRails(pack.workspace.ui.guideRails ?? []),
         showOverviewNavigator:

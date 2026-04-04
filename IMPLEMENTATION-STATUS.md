@@ -115,6 +115,11 @@ The next guide-rail follow-on after that is now implemented locally as:
 - a bounded snap-to-guides slice for module placement and dragging
 - keeps the slice focused on nearby rail alignment with no solver, wire snapping, or note/group-box snapping
 
+The next readability follow-on after that is now implemented locally as:
+- `ON-CANVAS-STAGE-LABELS-V1.md`
+- a bounded stage-label slice for lightweight on-canvas rounds, outputs, and feedback markers
+- keeps the labels visual-only and intentionally lighter than notes or group boxes
+
 Current `main` now also includes:
 - Python export foundations:
   - one workspace-local `Export Python` action beside JSON export

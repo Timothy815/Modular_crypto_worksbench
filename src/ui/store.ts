@@ -25,6 +25,7 @@ import type {
   WorkbenchLayoutDirection,
   WorkbenchRoutingMode,
   WorkbenchPosition,
+  WorkbenchStageLabel,
   WorkbenchDocument,
   WorkspaceVersionDocument,
 } from './workbench-document';
@@ -41,6 +42,7 @@ import {
   buildWorkspaceHistorySnapshot,
   cloneAnnotations,
   cloneLayout,
+  cloneStageLabels,
   createEmptyWorkspaceHistoryState,
   recordWorkspaceHistoryTransition,
   type WorkspaceHistoryState,
@@ -65,6 +67,7 @@ export interface UiState {
   projectStates: Record<string, Project>;
   layoutByProject: Record<string, Record<string, WorkbenchPosition>>;
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
+  stageLabelsByProject: Record<string, WorkbenchStageLabel[]>;
   groupBoxesByProject: Record<string, WorkbenchGroupBox[]>;
   guideRailsByProject: Record<string, WorkbenchGuideRail[]>;
   showOverviewNavigatorByProject: Record<string, boolean>;
@@ -174,9 +177,13 @@ export type UiAction =
       mode: ArrangeSelectedModulesMode;
     }
   | { type: 'addAnnotation'; projectId: string }
+  | { type: 'addStageLabel'; projectId: string }
   | { type: 'moveAnnotation'; projectId: string; annotationId: string; x: number; y: number }
   | { type: 'updateAnnotationText'; projectId: string; annotationId: string; text: string }
   | { type: 'removeAnnotation'; projectId: string; annotationId: string }
+  | { type: 'moveStageLabel'; projectId: string; stageLabelId: string; x: number; y: number }
+  | { type: 'updateStageLabelText'; projectId: string; stageLabelId: string; text: string }
+  | { type: 'removeStageLabel'; projectId: string; stageLabelId: string }
   | { type: 'addGroupBox'; projectId: string }
   | { type: 'addGroupBoxFromSelection'; projectId: string }
   | { type: 'addGuideRail'; projectId: string; axis: 'horizontal' | 'vertical' }
@@ -328,6 +335,18 @@ function createAnnotationId(annotations: WorkbenchAnnotation[]) {
   while (annotations.some((annotation) => annotation.id === candidate)) {
     index += 1;
     candidate = `note-${index}`;
+  }
+
+  return candidate;
+}
+
+function createStageLabelId(stageLabels: WorkbenchStageLabel[]) {
+  let index = stageLabels.length + 1;
+  let candidate = `label-${index}`;
+
+  while (stageLabels.some((stageLabel) => stageLabel.id === candidate)) {
+    index += 1;
+    candidate = `label-${index}`;
   }
 
   return candidate;
@@ -777,6 +796,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     annotationsByProject: Object.fromEntries(
       projects.map((project) => [project.id, []]),
     ),
+    stageLabelsByProject: Object.fromEntries(
+      projects.map((project) => [project.id, []]),
+    ),
     groupBoxesByProject: Object.fromEntries(
       projects.map((project) => [project.id, []]),
     ),
@@ -940,6 +962,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.annotationsByProject,
           [action.workspaceId]: [],
         },
+        stageLabelsByProject: {
+          ...state.stageLabelsByProject,
+          [action.workspaceId]: [],
+        },
         groupBoxesByProject: {
           ...state.groupBoxesByProject,
           [action.workspaceId]: [],
@@ -1062,6 +1088,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       const sourceProject = state.projectStates[action.sourceProjectId];
       const sourceLayout = state.layoutByProject[action.sourceProjectId];
       const sourceAnnotations = state.annotationsByProject[action.sourceProjectId] ?? [];
+      const sourceStageLabels = state.stageLabelsByProject[action.sourceProjectId] ?? [];
       const sourceGroupBoxes = state.groupBoxesByProject[action.sourceProjectId] ?? [];
       const sourceGuideRails = state.guideRailsByProject[action.sourceProjectId] ?? [];
       const sourceShowOverviewNavigator =
@@ -1101,6 +1128,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         annotationsByProject: {
           ...state.annotationsByProject,
           [action.workspaceId]: cloneAnnotations(sourceAnnotations),
+        },
+        stageLabelsByProject: {
+          ...state.stageLabelsByProject,
+          [action.workspaceId]: cloneStageLabels(sourceStageLabels),
         },
         groupBoxesByProject: {
           ...state.groupBoxesByProject,
@@ -1252,6 +1283,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         projectStates: removeProjectEntry(state.projectStates, action.workspaceId),
         layoutByProject: removeProjectEntry(state.layoutByProject, action.workspaceId),
         annotationsByProject: removeProjectEntry(state.annotationsByProject, action.workspaceId),
+        stageLabelsByProject: removeProjectEntry(state.stageLabelsByProject, action.workspaceId),
         groupBoxesByProject: removeProjectEntry(state.groupBoxesByProject, action.workspaceId),
         guideRailsByProject: removeProjectEntry(state.guideRailsByProject, action.workspaceId),
         showOverviewNavigatorByProject: removeProjectEntry(
@@ -1830,6 +1862,26 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         },
       };
     }
+    case 'addStageLabel': {
+      const currentStageLabels = state.stageLabelsByProject[action.projectId] ?? [];
+      const nextStageLabelId = createStageLabelId(currentStageLabels);
+
+      return {
+        ...state,
+        stageLabelsByProject: {
+          ...state.stageLabelsByProject,
+          [action.projectId]: [
+            ...currentStageLabels,
+            {
+              id: nextStageLabelId,
+              x: 96,
+              y: 48,
+              text: 'Stage Label',
+            },
+          ],
+        },
+      };
+    }
     case 'addGroupBox': {
       const currentGroupBoxes = state.groupBoxesByProject[action.projectId] ?? [];
       const nextGroupBoxId = createGroupBoxId(currentGroupBoxes);
@@ -2113,6 +2165,58 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.annotationsByProject,
           [action.projectId]: currentAnnotations.filter(
             (annotation) => annotation.id !== action.annotationId,
+          ),
+        },
+      };
+    }
+    case 'moveStageLabel': {
+      const currentStageLabels = state.stageLabelsByProject[action.projectId];
+      if (!currentStageLabels) {
+        return state;
+      }
+
+      return {
+        ...state,
+        stageLabelsByProject: {
+          ...state.stageLabelsByProject,
+          [action.projectId]: currentStageLabels.map((stageLabel) =>
+            stageLabel.id === action.stageLabelId
+              ? { ...stageLabel, x: action.x, y: action.y }
+              : stageLabel,
+          ),
+        },
+      };
+    }
+    case 'updateStageLabelText': {
+      const currentStageLabels = state.stageLabelsByProject[action.projectId];
+      if (!currentStageLabels) {
+        return state;
+      }
+
+      return {
+        ...state,
+        stageLabelsByProject: {
+          ...state.stageLabelsByProject,
+          [action.projectId]: currentStageLabels.map((stageLabel) =>
+            stageLabel.id === action.stageLabelId
+              ? { ...stageLabel, text: action.text }
+              : stageLabel,
+          ),
+        },
+      };
+    }
+    case 'removeStageLabel': {
+      const currentStageLabels = state.stageLabelsByProject[action.projectId];
+      if (!currentStageLabels) {
+        return state;
+      }
+
+      return {
+        ...state,
+        stageLabelsByProject: {
+          ...state.stageLabelsByProject,
+          [action.projectId]: currentStageLabels.filter(
+            (stageLabel) => stageLabel.id !== action.stageLabelId,
           ),
         },
       };
@@ -2790,6 +2894,9 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       const nextAnnotations = action.document.ui.annotations.map((annotation) => ({
         ...annotation,
       }));
+      const nextStageLabels = (action.document.ui.stageLabels ?? []).map((stageLabel) => ({
+        ...stageLabel,
+      }));
       const nextGroupBoxes = (action.document.ui.groupBoxes ?? []).map((groupBox) => ({
         ...groupBox,
       }));
@@ -2815,6 +2922,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         annotationsByProject: {
           ...state.annotationsByProject,
           [action.projectId]: nextAnnotations,
+        },
+        stageLabelsByProject: {
+          ...state.stageLabelsByProject,
+          [action.projectId]: nextStageLabels,
         },
         groupBoxesByProject: {
           ...state.groupBoxesByProject,

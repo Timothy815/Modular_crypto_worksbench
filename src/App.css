@@ -2393,6 +2393,7 @@ body.dock-resizing {
 .workbench-minimap-group,
 .workbench-minimap-node,
 .workbench-minimap-annotation,
+.workbench-minimap-stage-label,
 .workbench-minimap-viewport {
   position: absolute;
 }
@@ -2431,6 +2432,14 @@ body.dock-resizing {
   height: 6px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--warning) 68%, white);
+  transform: translate(-50%, -50%);
+}
+
+.workbench-minimap-stage-label {
+  width: 16px;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 72%, white);
   transform: translate(-50%, -50%);
 }
 
@@ -2900,6 +2909,52 @@ body.canvas-resizing {
   resize: vertical;
   font: inherit;
   color: var(--annotation-ink);
+}
+
+.canvas-stage-label {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 2.25rem;
+  padding: 6px 8px 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-panel) 94%, white);
+  box-shadow: 0 10px 24px rgba(24, 18, 12, 0.08);
+  z-index: 2;
+}
+
+.canvas-stage-label-handle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--accent) 70%, var(--ink));
+  cursor: grab;
+  user-select: none;
+}
+
+.canvas-stage-label-handle:active {
+  cursor: grabbing;
+}
+
+.canvas-stage-label input {
+  min-width: 7rem;
+  max-width: 12rem;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.canvas-stage-label input:focus {
+  outline: none;
 }
 
 .annotation-delete-button {

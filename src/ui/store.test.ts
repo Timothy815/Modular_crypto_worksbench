@@ -233,6 +233,42 @@ describe('uiReducer', () => {
     expect(removedRail.guideRailsByProject[projectId]).toEqual([]);
   });
 
+  it('adds, moves, renames, and removes stage labels', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+
+    const withLabel = uiReducer(initialState, {
+      type: 'addStageLabel',
+      projectId,
+    });
+    const movedLabel = uiReducer(withLabel, {
+      type: 'moveStageLabel',
+      projectId,
+      stageLabelId: 'label-1',
+      x: 212,
+      y: 64,
+    });
+    const renamedLabel = uiReducer(movedLabel, {
+      type: 'updateStageLabelText',
+      projectId,
+      stageLabelId: 'label-1',
+      text: 'Round 1',
+    });
+    const removedLabel = uiReducer(renamedLabel, {
+      type: 'removeStageLabel',
+      projectId,
+      stageLabelId: 'label-1',
+    });
+
+    expect(withLabel.stageLabelsByProject[projectId]).toEqual([
+      { id: 'label-1', x: 96, y: 48, text: 'Stage Label' },
+    ]);
+    expect(renamedLabel.stageLabelsByProject[projectId]).toEqual([
+      { id: 'label-1', x: 212, y: 64, text: 'Round 1' },
+    ]);
+    expect(removedLabel.stageLabelsByProject[projectId]).toEqual([]);
+  });
+
   it('toggles the overview navigator per workspace', () => {
     const initialState = createInitialUiState(demoProjects);
     const projectId = 'sequential';

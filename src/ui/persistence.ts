@@ -22,6 +22,7 @@ import type {
   WorkbenchAnnotation,
   WorkbenchGuideRail,
   WorkbenchGroupBox,
+  WorkbenchStageLabel,
   WorkbenchDocument,
   WorkspaceVersionDocument,
 } from './workbench-document';
@@ -60,6 +61,10 @@ function cloneProject(project: Project): Project {
 
 function cloneAnnotations(annotations: WorkbenchAnnotation[]): WorkbenchAnnotation[] {
   return annotations.map((annotation) => ({ ...annotation }));
+}
+
+function cloneStageLabels(stageLabels: WorkbenchStageLabel[]): WorkbenchStageLabel[] {
+  return stageLabels.map((stageLabel) => ({ ...stageLabel }));
 }
 
 function cloneGroupBoxes(groupBoxes: WorkbenchGroupBox[]): WorkbenchGroupBox[] {
@@ -163,6 +168,7 @@ function cloneWorkspaceDocument(document: WorkbenchDocument): WorkbenchDocument 
         ]),
       ),
       annotations: cloneAnnotations(document.ui.annotations),
+      stageLabels: cloneStageLabels(document.ui.stageLabels ?? []),
       groupBoxes: cloneGroupBoxes(document.ui.groupBoxes ?? []),
       guideRails: cloneGuideRails(document.ui.guideRails ?? []),
       showOverviewNavigator: document.ui.showOverviewNavigator ?? false,
@@ -210,6 +216,7 @@ function buildDefaultDocument(project: DemoProject): WorkbenchDocument {
         ]),
       ),
       annotations: [],
+      stageLabels: [],
       groupBoxes: [],
       guideRails: [],
       showOverviewNavigator: false,
@@ -254,6 +261,7 @@ export function buildPersistedWorkspace(
               ),
             ),
             annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
+            stageLabels: cloneStageLabels(state.stageLabelsByProject[projectId] ?? []),
             groupBoxes: cloneGroupBoxes(state.groupBoxesByProject[projectId] ?? []),
             guideRails: cloneGuideRails(state.guideRailsByProject[projectId] ?? []),
             showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
@@ -895,6 +903,26 @@ function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
     typeof candidate.ui.layout === 'object' &&
     candidate.ui.layout !== null &&
     Array.isArray(candidate.ui.annotations) &&
+    candidate.ui.annotations.every(
+      (annotation) =>
+        typeof annotation === 'object' &&
+        annotation !== null &&
+        typeof annotation.id === 'string' &&
+        typeof annotation.x === 'number' &&
+        typeof annotation.y === 'number' &&
+        typeof annotation.text === 'string',
+    ) &&
+    (candidate.ui.stageLabels === undefined ||
+      (Array.isArray(candidate.ui.stageLabels) &&
+        candidate.ui.stageLabels.every(
+          (stageLabel) =>
+            typeof stageLabel === 'object' &&
+            stageLabel !== null &&
+            typeof stageLabel.id === 'string' &&
+            typeof stageLabel.x === 'number' &&
+            typeof stageLabel.y === 'number' &&
+            typeof stageLabel.text === 'string',
+        ))) &&
     (candidate.ui.groupBoxes === undefined ||
       (Array.isArray(candidate.ui.groupBoxes) &&
         candidate.ui.groupBoxes.every(

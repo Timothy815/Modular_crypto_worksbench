@@ -147,14 +147,21 @@ describe('workspace persistence', () => {
       projectId: 'my-scratchpad',
       axis: 'horizontal',
     });
-    const stateWithGuideSnap = uiReducer(stateWithGuideRail, {
-      type: 'setSnapToGuides',
+    const stateWithStageLabel = uiReducer(stateWithGuideRail, {
+      type: 'addStageLabel',
       projectId: 'my-scratchpad',
-      enabled: true,
     });
     const storage = new MemoryStorage();
 
-    saveWorkspaceToStorage(stateWithGuideSnap, {}, storage);
+    saveWorkspaceToStorage(
+      uiReducer(stateWithStageLabel, {
+        type: 'setSnapToGuides',
+        projectId: 'my-scratchpad',
+        enabled: true,
+      }),
+      {},
+      storage,
+    );
     const restored = loadWorkspaceFromStorage(demoProjects, storage);
 
     expect(restored?.userWorkspaceLibrary).toEqual([
@@ -191,6 +198,14 @@ describe('workspace persistence', () => {
         axis: 'horizontal',
         position: 140,
         title: 'Horizontal Rail',
+      },
+    ]);
+    expect(restored?.documentsByProjectId['my-scratchpad']?.ui.stageLabels).toEqual([
+      {
+        id: 'label-1',
+        x: 96,
+        y: 48,
+        text: 'Stage Label',
       },
     ]);
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.showOverviewNavigator).toBe(false);

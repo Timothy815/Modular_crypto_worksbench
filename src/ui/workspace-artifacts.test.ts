@@ -38,6 +38,14 @@ describe('workspace-artifacts', () => {
       project: { modules: [], connections: [] },
       layout: {},
       annotations: [],
+      stageLabels: [
+        {
+          id: 'label-1',
+          x: 84,
+          y: 40,
+          text: 'Round 1',
+        },
+      ],
       groupBoxes: [
         {
           id: 'group-box-1',
@@ -116,6 +124,14 @@ describe('workspace-artifacts', () => {
         height: 160,
         title: 'Round 1',
         variant: 'stage',
+      },
+    ]);
+    expect(prepared.document.ui.stageLabels).toEqual([
+      {
+        id: 'label-1',
+        x: 84,
+        y: 40,
+        text: 'Round 1',
       },
     ]);
     expect(prepared.document.ui.guideRails).toEqual([
