@@ -21,6 +21,10 @@ interface WorkbenchActionsProps {
   canUndo: boolean;
   canRedo: boolean;
   selectedModuleIds: string[];
+  selectedFurnitureKind: 'stage-label' | 'group-box' | 'guide-rail' | null;
+  selectedFurnitureTitle: string | null;
+  selectedFurnitureDetailPrimary: string | null;
+  selectedFurnitureDetailSecondary: string | null;
   effectiveSelectedConnectionIndex: number | null;
   selectedConnectionHasManualPath: boolean;
   selectedConnectionSourceLabel: string | null;
@@ -493,6 +497,32 @@ function WorkbenchWireDetailsRow({
   );
 }
 
+function WorkbenchFurnitureDetailsCard({
+  kind,
+  title,
+  detailPrimary,
+  detailSecondary,
+}: {
+  kind: 'stage-label' | 'group-box' | 'guide-rail';
+  title: string;
+  detailPrimary: string | null;
+  detailSecondary: string | null;
+}) {
+  const kindLabel =
+    kind === 'stage-label' ? 'Stage Label' : kind === 'group-box' ? 'Group Box' : 'Guide Rail';
+
+  return (
+    <div className="workbench-wire-details-card workbench-furniture-details-card" aria-label="Selected layout details">
+      <div className="workbench-wire-details-head">
+        <span className="meta-label">{kindLabel}</span>
+      </div>
+      <WorkbenchWireDetailsRow label="Title" value={title} />
+      {detailPrimary ? <WorkbenchWireDetailsRow label="Info" value={detailPrimary} /> : null}
+      {detailSecondary ? <WorkbenchWireDetailsRow label="Detail" value={detailSecondary} /> : null}
+    </div>
+  );
+}
+
 export function WorkbenchActions({
   isCompositeEditor,
   isObservationMode = false,
@@ -507,6 +537,10 @@ export function WorkbenchActions({
   canUndo,
   canRedo,
   selectedModuleIds,
+  selectedFurnitureKind,
+  selectedFurnitureTitle,
+  selectedFurnitureDetailPrimary,
+  selectedFurnitureDetailSecondary,
   effectiveSelectedConnectionIndex,
   selectedConnectionHasManualPath,
   selectedConnectionSourceLabel,
@@ -774,6 +808,15 @@ export function WorkbenchActions({
                 disabled={!canDistributeSelection}
               />
             </div>
+          ) : null}
+
+          {selectedFurnitureKind && selectedFurnitureTitle ? (
+            <WorkbenchFurnitureDetailsCard
+              kind={selectedFurnitureKind}
+              title={selectedFurnitureTitle}
+              detailPrimary={selectedFurnitureDetailPrimary}
+              detailSecondary={selectedFurnitureDetailSecondary}
+            />
           ) : null}
 
           {showWireToolbar ? (

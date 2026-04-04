@@ -1533,6 +1533,10 @@ body.dock-resizing {
   overflow-wrap: anywhere;
 }
 
+.workbench-furniture-details-card {
+  min-width: min(360px, 100%);
+}
+
 .workbench-quick-actions .workbench-inline-toolbar-group + .workbench-inline-toolbar-group {
   position: relative;
   margin-left: 6px;

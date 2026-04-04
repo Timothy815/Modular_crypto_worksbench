@@ -159,6 +159,11 @@ The next wire-readability follow-on after that is now implemented locally as:
 - a bounded selected-wire details card for source, target, and current state
 - keeps the slice UI-only and avoids adding a second inspector surface
 
+The next workspace-readability symmetry follow-on after that is now implemented locally as:
+- `LAYOUT-FURNITURE-DETAILS-V1.md`
+- a bounded details-card pass for selected stage labels, group boxes, and guide rails
+- keeps the slice UI-only and adjacent to the existing layout tools
+
 Current `main` now also includes:
 - Python export foundations:
   - one workspace-local `Export Python` action beside JSON export

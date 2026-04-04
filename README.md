@@ -170,6 +170,11 @@ The next wire-readability follow-on after that is now implemented locally as:
 - adds a compact selected-wire details card with source, target, and current state
 - keeps the slice UI-only and avoids adding a second inspector surface
 
+The next workspace-readability symmetry follow-on after that is now implemented locally as:
+- `LAYOUT-FURNITURE-DETAILS-V1.md`
+- adds a compact details card for selected stage labels, group boxes, and guide rails
+- keeps the slice UI-only and adjacent to the existing layout tools
+
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - now shipped as the first bounded verification-station refinement inside the compare/analyze line

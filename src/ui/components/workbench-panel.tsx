@@ -849,6 +849,55 @@ export function WorkbenchPanel({
     const sourcePort = sourceDef?.outputs.find((port) => port.name === selectedConnection.from.port);
     return sourcePort?.type === 'bits' ? 'bits' : sourcePort?.type === 'symbol' ? 'symbol' : null;
   }, [activeProjectState.modules, registry, selectedConnection]);
+  const selectedGroupBox = useMemo(
+    () =>
+      effectiveSelectedGroupBoxId
+        ? groupBoxes.find((groupBox) => groupBox.id === effectiveSelectedGroupBoxId) ?? null
+        : null,
+    [effectiveSelectedGroupBoxId, groupBoxes],
+  );
+  const selectedGuideRail = useMemo(
+    () =>
+      effectiveSelectedGuideRailId
+        ? guideRails.find((guideRail) => guideRail.id === effectiveSelectedGuideRailId) ?? null
+        : null,
+    [effectiveSelectedGuideRailId, guideRails],
+  );
+  const selectedStageLabel = useMemo(
+    () =>
+      effectiveSelectedStageLabelId
+        ? stageLabels.find((stageLabel) => stageLabel.id === effectiveSelectedStageLabelId) ?? null
+        : null,
+    [effectiveSelectedStageLabelId, stageLabels],
+  );
+  const selectedFurnitureKind = selectedGuideRail
+    ? ('guide-rail' as const)
+    : selectedGroupBox
+      ? ('group-box' as const)
+      : selectedStageLabel
+        ? ('stage-label' as const)
+        : null;
+  const selectedFurnitureTitle = selectedGuideRail
+    ? selectedGuideRail.title || 'Guide Rail'
+    : selectedGroupBox
+      ? selectedGroupBox.title || 'Group Box'
+      : selectedStageLabel
+        ? selectedStageLabel.text || 'Stage Label'
+        : null;
+  const selectedFurnitureDetailPrimary = selectedGuideRail
+    ? `${selectedGuideRail.axis === 'vertical' ? 'Vertical' : 'Horizontal'} at ${Math.round(selectedGuideRail.position)}px`
+    : selectedGroupBox
+      ? `${selectedGroupBox.variant ?? 'neutral'} • ${Math.round(selectedGroupBox.width)}×${Math.round(selectedGroupBox.height)}`
+      : selectedStageLabel
+        ? `Position ${Math.round(selectedStageLabel.x)}, ${Math.round(selectedStageLabel.y)}`
+        : null;
+  const selectedFurnitureDetailSecondary = selectedGuideRail
+    ? 'Drag to reposition'
+    : selectedGroupBox
+      ? `Position ${Math.round(selectedGroupBox.x)}, ${Math.round(selectedGroupBox.y)}`
+      : selectedStageLabel
+        ? 'Drag to reposition'
+        : null;
   const selectedConnectionLaneAxis = useMemo(() => {
     if (routingMode !== 'orthogonal' || effectiveSelectedConnectionIndex === null) {
       return null;
@@ -1955,6 +2004,10 @@ export function WorkbenchPanel({
           canUndo={canUndo}
           canRedo={canRedo}
           selectedModuleIds={selectedModuleIds}
+          selectedFurnitureKind={selectedFurnitureKind}
+          selectedFurnitureTitle={selectedFurnitureTitle}
+          selectedFurnitureDetailPrimary={selectedFurnitureDetailPrimary}
+          selectedFurnitureDetailSecondary={selectedFurnitureDetailSecondary}
           effectiveSelectedConnectionIndex={effectiveSelectedConnectionIndex}
           selectedConnectionHasManualPath={selectedConnectionHasManualPath}
           selectedConnectionSourceLabel={selectedConnectionSourceLabel}
