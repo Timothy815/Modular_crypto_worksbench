@@ -640,6 +640,40 @@ function InspectorTabButton({ icon, label, active, onClick }: InspectorTabButton
   );
 }
 
+function InspectorSection({
+  label,
+  collapsible = false,
+  collapsed = false,
+  onToggle,
+  children,
+}: {
+  label: string;
+  collapsible?: boolean;
+  collapsed?: boolean;
+  onToggle?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className={`analysis-section${collapsed ? ' analysis-section-collapsed' : ''}`}>
+      <div className="analysis-section-head">
+        <span className="meta-label">{label}</span>
+        {collapsible ? (
+          <button
+            type="button"
+            className="collapse-toggle-button analysis-section-toggle"
+            aria-label={collapsed ? `Expand ${label}` : `Collapse ${label}`}
+            title={collapsed ? `Expand ${label}` : `Collapse ${label}`}
+            onClick={onToggle}
+          >
+            {collapsed ? '+' : '\u2212'}
+          </button>
+        ) : null}
+      </div>
+      {!collapsed ? children : null}
+    </section>
+  );
+}
+
 export function ParameterInspector({
   execution,
   registry,
@@ -770,6 +804,22 @@ export function ParameterInspector({
     draft: '',
     error: null,
   });
+  const [collapsedAnalyzeSections, setCollapsedAnalyzeSections] = useState({
+    tick: false,
+    selectedIssues: false,
+    graphIssues: false,
+    traceList: true,
+    pinned: false,
+    tutorial: true,
+    transformation: false,
+  });
+
+  const toggleAnalyzeSection = (key: keyof typeof collapsedAnalyzeSections) => {
+    setCollapsedAnalyzeSections((current) => ({
+      ...current,
+      [key]: !current[key],
+    }));
+  };
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
@@ -1370,8 +1420,12 @@ export function ParameterInspector({
       </div>
 
       {inspectorTab === 'analyze' && isTickedMode && tickCount > 0 && moduleInstance ? (
-        <section className="analysis-section tick-state-section">
-          <span className="meta-label">Tick</span>
+        <InspectorSection
+          label="Tick"
+          collapsible
+          collapsed={collapsedAnalyzeSections.tick}
+          onToggle={() => toggleAnalyzeSection('tick')}
+        >
           <p className="tick-state-summary">
             Tick <strong>{currentTick + 1}</strong> of <strong>{tickCount}</strong>
           </p>
@@ -1419,13 +1473,12 @@ export function ParameterInspector({
               </>
             );
           })() : null}
-        </section>
+        </InspectorSection>
       ) : null}
 
      {inspectorTab === 'analyze' && execution && execution.trace.length > 0 ? (
-        <section className="analysis-section">
+        <InspectorSection label="Stepper">
           <div className="stepper-head">
-            <span className="meta-label">Stepper</span>
             <div className="stepper-controls">
               {canUseNestedStepper ? (
                 <div className="trace-mode-toggle">
@@ -1594,13 +1647,17 @@ export function ParameterInspector({
               </p>
             )}
           </div>
-        </section>
+        </InspectorSection>
       ) : null}
 
       {inspectorTab === 'analyze' && probedModuleIds.length > 0 ? (
-        <section className="analysis-section probe-section">
+        <InspectorSection
+          label="Pinned"
+          collapsible
+          collapsed={collapsedAnalyzeSections.pinned}
+          onToggle={() => toggleAnalyzeSection('pinned')}
+        >
           <div className="probe-head">
-            <span className="meta-label">Pinned</span>
             <button
               type="button"
               className="trace-mode-button"
@@ -1651,12 +1708,16 @@ export function ParameterInspector({
               );
             })}
           </ul>
-        </section>
+        </InspectorSection>
       ) : null}
 
       {inspectorTab === 'analyze' && tutorialStep ? (
-        <section className="analysis-section tutorial-analysis-section">
-          <span className="meta-label">Tutorial</span>
+        <InspectorSection
+          label="Tutorial"
+          collapsible
+          collapsed={collapsedAnalyzeSections.tutorial}
+          onToggle={() => toggleAnalyzeSection('tutorial')}
+        >
           <div className="tutorial-analysis-card">
             <strong>{tutorialStep.title}</strong>
             <p>{tutorialStep.body}</p>
@@ -1671,12 +1732,16 @@ export function ParameterInspector({
               </p>
             )}
           </div>
-        </section>
+        </InspectorSection>
       ) : null}
 
       {inspectorTab === 'analyze' && transformationView ? (
-        <section className="analysis-section transformation-section">
-          <span className="meta-label">Transformation</span>
+        <InspectorSection
+          label="Transformation"
+          collapsible
+          collapsed={collapsedAnalyzeSections.transformation}
+          onToggle={() => toggleAnalyzeSection('transformation')}
+        >
           <div className="transformation-card">
             <div className="transformation-card-head">
               <strong>{transformationView.title}</strong>
@@ -2324,7 +2389,7 @@ export function ParameterInspector({
                 : transformationView.summary}
             </p>
           </div>
-        </section>
+        </InspectorSection>
       ) : null}
 
       {moduleDef && moduleInstance && inspectorTab === 'configure' ? (
@@ -4423,8 +4488,12 @@ export function ParameterInspector({
       )}
 
       {inspectorTab === 'analyze' && selectedIssues.length > 0 ? (
-        <section className="analysis-section">
-          <span className="meta-label">Selected Issues</span>
+        <InspectorSection
+          label="Selected Issues"
+          collapsible
+          collapsed={collapsedAnalyzeSections.selectedIssues}
+          onToggle={() => toggleAnalyzeSection('selectedIssues')}
+        >
           <ul className="issue-list">
             {groupedSelectedIssues.map((group, index) => (
               <li
@@ -4444,7 +4513,7 @@ export function ParameterInspector({
               </li>
             ))}
           </ul>
-        </section>
+        </InspectorSection>
       ) : null}
 
       {inspectorTab === 'analyze' && executionError ? (
@@ -4476,8 +4545,12 @@ export function ParameterInspector({
       ) : null}
 
       {inspectorTab === 'analyze' && globalIssues.length > 0 ? (
-        <section className="analysis-section">
-          <span className="meta-label">Graph Issues</span>
+        <InspectorSection
+          label="Graph Issues"
+          collapsible
+          collapsed={collapsedAnalyzeSections.graphIssues}
+          onToggle={() => toggleAnalyzeSection('graphIssues')}
+        >
           <ul className="issue-list">
             {groupedGlobalIssues.map((group, index) => (
               <li
@@ -4497,12 +4570,17 @@ export function ParameterInspector({
               </li>
             ))}
           </ul>
-        </section>
+        </InspectorSection>
       ) : null}
 
       {inspectorTab === 'analyze' ? (
+      <InspectorSection
+        label="Execution Trace"
+        collapsible
+        collapsed={collapsedAnalyzeSections.traceList}
+        onToggle={() => toggleAnalyzeSection('traceList')}
+      >
       <div className="trace-toolbar">
-        <span className="meta-label">Execution Trace</span>
         <div className="trace-toolbar-controls">
           {roundFocusOptions.length > 0 ? (
             <label className="trace-round-select">
@@ -4555,9 +4633,7 @@ export function ParameterInspector({
           </div>
         </div>
       </div>
-      ) : null}
-
-      {inspectorTab === 'analyze' ? (
+      {!collapsedAnalyzeSections.traceList ? (
       <ol className="trace-list">
         {traceEntries.map((entry, analysisIndex) => {
           const isNested = (entry.depth ?? 0) > 0;
@@ -4651,6 +4727,8 @@ export function ParameterInspector({
           );
         })}
       </ol>
+      ) : null}
+      </InspectorSection>
       ) : null}
 
       {inspectorTab === 'compare' ? (
