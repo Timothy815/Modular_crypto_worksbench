@@ -2689,12 +2689,14 @@ export function WorkbenchPanel({
                 >
                   <div className="graph-node-meta-row">
                     <span className="graph-node-type">{moduleInstance.defId}</span>
-                    {sequentialRole ? (
+                  </div>
+                  {sequentialRole ? (
+                    <div className="graph-node-role-row">
                       <span className={`graph-node-role-badge graph-node-role-badge-${sequentialRole}`}>
                         {getSequentialRoleLabel(sequentialRole)}
                       </span>
-                    ) : null}
-                  </div>
+                    </div>
+                  ) : null}
                   <strong className="graph-node-title">{moduleInstance.id}</strong>
                   {moduleInstance.id === tutorialStep?.focusModuleId ? (
                     <span className="graph-node-tutorial-badge">Tutorial</span>

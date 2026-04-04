@@ -3726,7 +3726,6 @@ body.canvas-resizing {
 }
 
 .graph-node-type {
-  flex: 1 1 auto;
   min-width: 0;
   display: block;
   font-size: 0.78rem;
@@ -3736,8 +3735,8 @@ body.canvas-resizing {
   line-height: 1.2;
   color: var(--accent);
   white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: break-word;
+  word-break: normal;
   text-wrap: pretty;
 }
 
@@ -3755,10 +3754,13 @@ body.canvas-resizing {
 }
 
 .graph-node-meta-row {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.graph-node-role-row {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: flex-start;
   margin-bottom: 6px;
 }
 

@@ -721,6 +721,8 @@ export function ParameterInspector({
   const [hoveredPermutationOutputIndex, setHoveredPermutationOutputIndex] = useState<number | null>(null);
   const [armedPermutationInputIndex, setArmedPermutationInputIndex] = useState<number | null>(null);
   const [draggedRotorInputIndex, setDraggedRotorInputIndex] = useState<number | null>(null);
+  const [hoveredRotorOutputIndex, setHoveredRotorOutputIndex] = useState<number | null>(null);
+  const [armedRotorInputIndex, setArmedRotorInputIndex] = useState<number | null>(null);
   const [selectedPlugboardLetter, setSelectedPlugboardLetter] = useState<string | null>(null);
   const [selectedReflectorLetter, setSelectedReflectorLetter] = useState<string | null>(null);
   const [reciprocityNote, setReciprocityNote] = useState<{
@@ -2743,6 +2745,8 @@ export function ParameterInspector({
                     const rotorWiring = getEditableRotorWiring(value);
                     const baselineRotorWiring = getEditableRotorWiring(baselineValue);
                     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+                    const activeRotorInputIndex =
+                      draggedRotorInputIndex ?? armedRotorInputIndex;
                     const rotorSvgHeight =
                       rotorWireLayout?.height ??
                       (rotorWiring
@@ -2762,13 +2766,28 @@ export function ParameterInspector({
                           <div className="permutation-editor">
                             <div className="permutation-editor-meta">
                               <span className="content-status-chip">
-                                Drag an input wire onto an output letter to replug the rotor wiring
+                                Drag an input wire onto an output letter, or click an input then click an output to replug the rotor wiring
                               </span>
                               <span className="content-status-chip">
                                 Position stays separate from the authored wiring
                               </span>
+                              {activeRotorInputIndex !== null ? (
+                                <span className="content-status-chip">
+                                  {draggedRotorInputIndex !== null ? 'Dragging' : 'Armed'} input{' '}
+                                  {alphabet[activeRotorInputIndex]}
+                                  {hoveredRotorOutputIndex !== null
+                                    ? ` → output ${alphabet[hoveredRotorOutputIndex]}`
+                                    : ''}
+                                </span>
+                              ) : null}
                             </div>
-                            <div className="permutation-wire-editor">
+                            <div
+                              className={
+                                activeRotorInputIndex !== null
+                                  ? 'permutation-wire-editor permutation-wire-editor-dragging'
+                                  : 'permutation-wire-editor'
+                              }
+                            >
                               <div className="permutation-wire-lane" ref={rotorInputLaneRef}>
                                 <span className="meta-label permutation-wire-lane-label">Input</span>
                                 {alphabet.map((letter, inputIndex) => (
@@ -2780,9 +2799,14 @@ export function ParameterInspector({
                                     }}
                                     draggable
                                     className={
-                                      draggedRotorInputIndex === inputIndex
+                                      activeRotorInputIndex === inputIndex
                                         ? 'permutation-port permutation-port-input active'
                                         : 'permutation-port permutation-port-input'
+                                    }
+                                    onClick={() =>
+                                      setArmedRotorInputIndex((current) =>
+                                        current === inputIndex ? null : inputIndex,
+                                      )
                                     }
                                     onDragStart={(event) => {
                                       event.dataTransfer.effectAllowed = 'move';
@@ -2790,9 +2814,13 @@ export function ParameterInspector({
                                         'text/plain',
                                         `rotor-input:${inputIndex}`,
                                       );
+                                      setArmedRotorInputIndex(null);
                                       setDraggedRotorInputIndex(inputIndex);
                                     }}
-                                    onDragEnd={() => setDraggedRotorInputIndex(null)}
+                                    onDragEnd={() => {
+                                      setDraggedRotorInputIndex(null);
+                                      setHoveredRotorOutputIndex(null);
+                                    }}
                                   >
                                     <strong className="permutation-slot-value">{letter}</strong>
                                   </button>
@@ -2855,21 +2883,57 @@ export function ParameterInspector({
                                       ref={(node) => {
                                         rotorOutputRefs.current[alphabet.indexOf(outputLetter)] = node;
                                       }}
-                                      className="permutation-port permutation-port-output"
-                                      onDragOver={(event) => event.preventDefault()}
+                                      className={
+                                        activeRotorInputIndex !== null &&
+                                        hoveredRotorOutputIndex === alphabet.indexOf(outputLetter)
+                                          ? 'permutation-port permutation-port-output drop-target'
+                                          : 'permutation-port permutation-port-output'
+                                      }
+                                      onDragOver={(event) => {
+                                        event.preventDefault();
+                                        if (activeRotorInputIndex !== null) {
+                                          setHoveredRotorOutputIndex(alphabet.indexOf(outputLetter));
+                                        }
+                                      }}
+                                      onDragLeave={() => {
+                                        if (
+                                          hoveredRotorOutputIndex === alphabet.indexOf(outputLetter)
+                                        ) {
+                                          setHoveredRotorOutputIndex(null);
+                                        }
+                                      }}
                                       onDrop={(event) => {
                                         event.preventDefault();
-                                        if (draggedRotorInputIndex === null) {
+                                        if (activeRotorInputIndex === null) {
                                           return;
                                         }
 
                                         const nextWiring = swapRotorWiringTargets(
                                           rotorWiring,
-                                          draggedRotorInputIndex,
+                                          activeRotorInputIndex,
                                           sourceInputIndex,
                                         );
                                         const serialized = serializeRotorWiring(nextWiring);
                                         setDraggedRotorInputIndex(null);
+                                        setArmedRotorInputIndex(null);
+                                        setHoveredRotorOutputIndex(null);
+                                        onParamDraftChange(moduleInstance.id, field.key, serialized);
+                                        onParamChange(moduleInstance.id, field.key, nextWiring);
+                                      }}
+                                      onClick={() => {
+                                        if (activeRotorInputIndex === null) {
+                                          return;
+                                        }
+
+                                        const nextWiring = swapRotorWiringTargets(
+                                          rotorWiring,
+                                          activeRotorInputIndex,
+                                          sourceInputIndex,
+                                        );
+                                        const serialized = serializeRotorWiring(nextWiring);
+                                        setDraggedRotorInputIndex(null);
+                                        setArmedRotorInputIndex(null);
+                                        setHoveredRotorOutputIndex(null);
                                         onParamDraftChange(moduleInstance.id, field.key, serialized);
                                         onParamChange(moduleInstance.id, field.key, nextWiring);
                                       }}
