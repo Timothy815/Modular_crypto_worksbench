@@ -2695,7 +2695,7 @@ export function WorkbenchPanel({
                       </span>
                     ) : null}
                   </div>
-                  <strong>{moduleInstance.id}</strong>
+                  <strong className="graph-node-title">{moduleInstance.id}</strong>
                   {moduleInstance.id === tutorialStep?.focusModuleId ? (
                     <span className="graph-node-tutorial-badge">Tutorial</span>
                   ) : null}

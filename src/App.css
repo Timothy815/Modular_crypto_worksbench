@@ -3488,11 +3488,32 @@ body.canvas-resizing {
 }
 
 .graph-node-type {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: block;
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  line-height: 1.2;
   color: var(--accent);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-wrap: pretty;
+}
+
+.graph-node-title {
+  display: block;
+  max-width: 100%;
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.22;
+  color: var(--ink-strong);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-wrap: pretty;
 }
 
 .graph-node-meta-row {
