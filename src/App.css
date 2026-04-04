@@ -2681,7 +2681,7 @@ body.dock-resizing {
 .palette-search {
   display: grid;
   gap: 6px;
-  margin: 16px 0 14px;
+  margin: 16px 0 0;
 }
 
 .palette-search input {
@@ -2697,6 +2697,23 @@ body.dock-resizing {
 .primitive-sections {
   display: grid;
   gap: 16px;
+}
+
+.primitive-search-results {
+  gap: 12px;
+}
+
+.primitive-search-summary {
+  display: grid;
+  gap: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.primitive-search-copy {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted);
 }
 
 .primitive-section {

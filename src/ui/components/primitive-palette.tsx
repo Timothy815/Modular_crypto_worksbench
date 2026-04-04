@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 
 import type { ModuleRegistry } from '../../engine/types';
 import { getModuleCategory } from '../module-categories';
@@ -72,6 +72,60 @@ function PaletteViewModeIcon({ viewMode }: { viewMode: 'compact' | 'expanded' })
   );
 }
 
+function normalizePaletteSearchQuery(query: string) {
+  return query.trim().toLowerCase();
+}
+
+function getPaletteSearchCandidates(definition: ModuleRegistry[string]) {
+  return {
+    id: definition.id,
+    name: definition.name,
+    purpose: getModulePurpose(definition),
+    detail: getModuleDetail(definition),
+    section: getModuleLibrarySectionId(definition).replace(/-/g, ' '),
+  };
+}
+
+function getPaletteSearchRank(definition: ModuleRegistry[string], query: string) {
+  const normalized = normalizePaletteSearchQuery(query);
+  if (!normalized) {
+    return 0;
+  }
+
+  const { id, name, purpose, detail, section } = getPaletteSearchCandidates(definition);
+  const normalizedId = id.toLowerCase();
+  const normalizedName = name.toLowerCase();
+  const normalizedPurpose = purpose.toLowerCase();
+  const normalizedDetail = detail.toLowerCase();
+  const normalizedSection = section.toLowerCase();
+
+  if (normalizedId === normalized || normalizedName === normalized) {
+    return 1000;
+  }
+
+  if (normalizedId.startsWith(normalized) || normalizedName.startsWith(normalized)) {
+    return 800;
+  }
+
+  if (normalizedId.includes(normalized) || normalizedName.includes(normalized)) {
+    return 600;
+  }
+
+  if (normalizedSection.includes(normalized)) {
+    return 300;
+  }
+
+  if (normalizedPurpose.includes(normalized)) {
+    return 200;
+  }
+
+  if (normalizedDetail.includes(normalized) || matchesModuleSearch(definition, normalized)) {
+    return 100;
+  }
+
+  return 0;
+}
+
 export function PrimitivePalette({
   registry,
   viewMode,
@@ -87,6 +141,7 @@ export function PrimitivePalette({
 }: PrimitivePaletteProps) {
   const [activeTab, setActiveTab] = useState<ModuleLibraryDomainTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const sortedDefs = useMemo(() => Object.values(registry).sort((left, right) => {
     const leftIsComposite = 'kind' in left && left.kind === 'composite';
@@ -111,9 +166,30 @@ export function PrimitivePalette({
     return leftIsComposite ? 1 : -1;
   }), [registry]);
 
+  const normalizedSearchQuery = useMemo(() => normalizePaletteSearchQuery(searchQuery), [searchQuery]);
+  const searchActive = normalizedSearchQuery.length > 0;
+  const sortOrderIndex = useMemo(
+    () => new Map(sortedDefs.map((definition, index) => [definition.id, index])),
+    [sortedDefs],
+  );
+
   const visibleDefs = sortedDefs.filter((def) => {
-    return matchesModuleDomainTab(def, activeTab) && matchesModuleSearch(def, searchQuery);
+    return matchesModuleDomainTab(def, activeTab) && matchesModuleSearch(def, normalizedSearchQuery);
   });
+
+  const rankedVisibleDefs = useMemo(
+    () =>
+      [...visibleDefs].sort((left, right) => {
+        const rankDifference =
+          getPaletteSearchRank(right, normalizedSearchQuery) - getPaletteSearchRank(left, normalizedSearchQuery);
+        if (rankDifference !== 0) {
+          return rankDifference;
+        }
+
+        return (sortOrderIndex.get(left.id) ?? 0) - (sortOrderIndex.get(right.id) ?? 0);
+      }),
+    [normalizedSearchQuery, sortOrderIndex, visibleDefs],
+  );
 
   const primitiveSections = useMemo(
     () =>
@@ -126,11 +202,60 @@ export function PrimitivePalette({
     [visibleDefs],
   );
 
+  useEffect(() => {
+    const handleWindowKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+
+      const target = event.target;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    };
+
+    window.addEventListener('keydown', handleWindowKeyDown);
+    return () => window.removeEventListener('keydown', handleWindowKeyDown);
+  }, []);
+
+  const handleSearchKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    event.stopPropagation();
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setSearchQuery('');
+    }
+  };
+
   return (
     <aside className={viewMode === 'compact' ? 'panel palette-panel palette-panel-compact' : 'panel palette-panel'}>
       <div className="panel-head">
         <p className="panel-label">Palette</p>
         <h2>Module Library</h2>
+        <label className="palette-search">
+          <span className="meta-label">Search Library</span>
+          <input
+            ref={searchInputRef}
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            placeholder={
+              activeTab === 'composites'
+                ? 'Search composites and iterators by name or id'
+                : 'Search by name, id, purpose, or keyword'
+            }
+          />
+        </label>
         <label className="palette-filter">
           <span className="meta-label">Filter</span>
           <select value={activeTab} onChange={(event) => setActiveTab(event.target.value as ModuleLibraryDomainTab)}>
@@ -176,20 +301,32 @@ export function PrimitivePalette({
           </div>
         )}
       </div>
-      <label className="palette-search">
-        <span className="meta-label">Search Library</span>
-        <input
-          type="search"
-          value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder={
-            activeTab === 'composites'
-              ? 'Search composites and iterators by name or id'
-              : 'Search by name, purpose, or keyword'
-          }
-        />
-      </label>
-      {activeTab !== 'composites' ? (
+      {searchActive ? (
+        <div className="primitive-sections primitive-search-results" role="list" aria-label="Palette search results">
+          <div className="primitive-search-summary">
+            <p className="panel-label">Results</p>
+            <p className="primitive-search-copy">
+              {rankedVisibleDefs.length} match{rankedVisibleDefs.length === 1 ? '' : 'es'} for “{searchQuery.trim()}”
+            </p>
+          </div>
+          <ul className="primitive-list">
+            {rankedVisibleDefs.map((def) => (
+              <ModuleLibraryCard
+                key={def.id}
+                def={def}
+                viewMode={viewMode}
+                usageCount={compositeUsageCountById[def.id] ?? 0}
+                isBuiltInReusable={builtInReusableIds.includes(def.id)}
+                onAddModule={onAddModule}
+                onOpenComposite={onOpenComposite}
+                onDuplicateReusable={onDuplicateReusable}
+                onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
+                onRemoveComposite={onRemoveComposite}
+              />
+            ))}
+          </ul>
+        </div>
+      ) : activeTab !== 'composites' ? (
         <div className="primitive-sections">
           {primitiveSections.map((section) => (
             <section key={section.id} className="primitive-section">
@@ -289,9 +426,13 @@ export function PrimitivePalette({
       )}
       {visibleDefs.length === 0 ? (
         <p className="empty-state">
-          {activeTab === 'composites'
-            ? 'No built-in architectures or personal composites match this search.'
-            : 'No primitive modules match this search.'}
+          {searchActive
+            ? activeTab === 'composites'
+              ? 'No composites or iterators match this search. Press Escape to clear and browse again.'
+              : 'No modules match this search. Press Escape to clear and browse again.'
+            : activeTab === 'composites'
+              ? 'No built-in architectures or personal composites match this search.'
+              : 'No primitive modules match this search.'}
         </p>
       ) : null}
     </aside>

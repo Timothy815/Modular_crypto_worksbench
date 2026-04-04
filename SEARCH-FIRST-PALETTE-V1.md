@@ -70,7 +70,7 @@ This slice may include:
 - a compact search-results view inside the palette
 - clearer empty-state and no-results guidance
 - lightweight section suppression/collapse behavior when search is active
-- optional keyboard focus affordance for the palette search field
+- keyboard focus affordances for the palette search field
 
 ## Desired Shape
 
@@ -89,7 +89,7 @@ The palette should support two honest modes:
 
 When search is active:
 - the palette should prioritize matched results over category storytelling
-- section noise should drop
+- section headers should disappear entirely
 - search should feel immediate and local
 
 When search is empty:
@@ -123,10 +123,31 @@ When search is empty:
 
 7. **Keyboard friendliness**
 - the user should be able to focus and use palette search quickly
-- exact shortcut choice is optional in V1, but a clean focus path is required
+- `/` should focus the palette search field when the user is not already typing in another input
+- `Escape` should clear the query and return the palette to browse mode
+- typing inside the search field must not leak global shortcuts into the rest of the shell
 
 8. **No new persistence contract**
 - search-first behavior may remember the last query locally if useful, but no project/schema changes are allowed
+
+9. **Result flattening**
+- when the search query is non-empty, the palette must show one flattened ranked result list
+- category and section headers must be suppressed while search is active
+
+10. **Weighted ranking**
+- matches must be ranked with clear priority:
+  - exact name or id match first
+  - partial name or id match second
+  - purpose, detail, section, and keyword matches after that
+- search should not allow a weak descriptive hit to outrank a direct module-name hit
+
+11. **Search-first focus order**
+- the search field should be the first practical focus target in the palette
+- filter controls and view toggles should read as secondary controls
+
+12. **Compact density**
+- when compact view is active and search is non-empty, search results should remain especially vertically dense
+- search mode should not reintroduce tall browse-style section chrome
 
 ## Non-Goals
 
@@ -138,6 +159,7 @@ Do not include:
 - major palette visual redesign unrelated to discovery speed
 - a new detached-window model
 - AI-assisted search or recommendation logic
+- fuzzy result ranking complex enough to require a new search subsystem
 
 ## Success Criteria
 
@@ -147,6 +169,7 @@ This contract is successful when:
 - search results are compact and high-signal
 - browsing still works without feeling broken or second-class
 - the implementation remains bounded to the palette surface
+- a search for `xor` or `rotor` clearly promotes the directly named module above weaker descriptive matches
 
 ## Suggested Validation Questions
 
