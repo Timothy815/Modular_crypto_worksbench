@@ -2160,6 +2160,15 @@ body.dock-resizing {
   margin: 0;
 }
 
+.inspector-raw-editor {
+  display: grid;
+  gap: 8px;
+}
+
+.inspector-raw-toggle {
+  justify-self: start;
+}
+
 .sbox-editor-raw textarea {
   min-height: 96px;
   font-family: var(--mono);

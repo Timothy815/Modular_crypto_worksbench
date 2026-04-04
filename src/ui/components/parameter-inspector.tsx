@@ -510,6 +510,7 @@ export function ParameterInspector({
   const [requestedStepperMode, setRequestedStepperMode] = useState<'top-level' | 'nested'>('top-level');
   const [requestedNestedStepIndex, setRequestedNestedStepIndex] = useState<number | null>(null);
   const [requestedLookupChunkIndex, setRequestedLookupChunkIndex] = useState(0);
+  const [expandedRawEditors, setExpandedRawEditors] = useState<Record<string, boolean>>({});
   const [sinkRepresentationsByModuleId, setSinkRepresentationsByModuleId] = useState<
     Record<string, SinkRepresentation>
   >({});
@@ -996,6 +997,17 @@ export function ParameterInspector({
       {renderParameterComparisonChip(fieldKey)}
     </span>
   );
+
+  const isRawEditorExpanded = (moduleId: string, fieldKey: string) =>
+    expandedRawEditors[`${moduleId}:${fieldKey}`] ?? false;
+
+  const toggleRawEditor = (moduleId: string, fieldKey: string) => {
+    const rawEditorKey = `${moduleId}:${fieldKey}`;
+    setExpandedRawEditors((current) => ({
+      ...current,
+      [rawEditorKey]: !(current[rawEditorKey] ?? false),
+    }));
+  };
 
   return (
     <aside className="panel inspector-panel">
@@ -2645,21 +2657,34 @@ export function ParameterInspector({
                                 })}
                               </div>
                             </div>
-                            <label className="param-field permutation-editor-raw">
-                              <span>Raw Wiring</span>
-                              <textarea
-                                value={renderedValue}
-                                onChange={(event) => {
-                                  const rawValue = event.target.value;
-                                  onParamDraftChange(moduleInstance.id, field.key, rawValue);
-                                  const parsed = parseParamValue(rawValue, field);
-                                  if (parsed.ok) {
-                                    onParamChange(moduleInstance.id, field.key, parsed.value);
-                                  }
-                                }}
-                              />
-                              {fieldError ? <p className="field-error">{fieldError}</p> : null}
-                            </label>
+                            <div className="inspector-raw-editor">
+                              <button
+                                type="button"
+                                className="mini-action-button inspector-raw-toggle"
+                                onClick={() => toggleRawEditor(moduleInstance.id, field.key)}
+                              >
+                                {isRawEditorExpanded(moduleInstance.id, field.key) ? 'Hide Raw Wiring' : 'Show Raw Wiring'}
+                              </button>
+                              {isRawEditorExpanded(moduleInstance.id, field.key) ? (
+                                <label className="param-field permutation-editor-raw">
+                                  <span>Raw Wiring</span>
+                                  <textarea
+                                    value={renderedValue}
+                                    onChange={(event) => {
+                                      const rawValue = event.target.value;
+                                      onParamDraftChange(moduleInstance.id, field.key, rawValue);
+                                      const parsed = parseParamValue(rawValue, field);
+                                      if (parsed.ok) {
+                                        onParamChange(moduleInstance.id, field.key, parsed.value);
+                                      }
+                                    }}
+                                  />
+                                  {fieldError ? <p className="field-error">{fieldError}</p> : null}
+                                </label>
+                              ) : fieldError ? (
+                                <p className="field-error">{fieldError}</p>
+                              ) : null}
+                            </div>
                           </div>
                         ) : (
                           <>
@@ -2840,21 +2865,34 @@ export function ParameterInspector({
                                 );
                               })}
                             </div>
-                            <label className="param-field reflector-editor-raw">
-                              <span>Raw Wiring</span>
-                              <textarea
-                                value={renderedValue}
-                                onChange={(event) => {
-                                  const rawValue = event.target.value;
-                                  onParamDraftChange(moduleInstance.id, field.key, rawValue);
-                                  const parsed = parseParamValue(rawValue, field);
-                                  if (parsed.ok) {
-                                    onParamChange(moduleInstance.id, field.key, parsed.value);
-                                  }
-                                }}
-                              />
-                              {fieldError ? <p className="field-error">{fieldError}</p> : null}
-                            </label>
+                            <div className="inspector-raw-editor">
+                              <button
+                                type="button"
+                                className="mini-action-button inspector-raw-toggle"
+                                onClick={() => toggleRawEditor(moduleInstance.id, field.key)}
+                              >
+                                {isRawEditorExpanded(moduleInstance.id, field.key) ? 'Hide Raw Wiring' : 'Show Raw Wiring'}
+                              </button>
+                              {isRawEditorExpanded(moduleInstance.id, field.key) ? (
+                                <label className="param-field reflector-editor-raw">
+                                  <span>Raw Wiring</span>
+                                  <textarea
+                                    value={renderedValue}
+                                    onChange={(event) => {
+                                      const rawValue = event.target.value;
+                                      onParamDraftChange(moduleInstance.id, field.key, rawValue);
+                                      const parsed = parseParamValue(rawValue, field);
+                                      if (parsed.ok) {
+                                        onParamChange(moduleInstance.id, field.key, parsed.value);
+                                      }
+                                    }}
+                                  />
+                                  {fieldError ? <p className="field-error">{fieldError}</p> : null}
+                                </label>
+                              ) : fieldError ? (
+                                <p className="field-error">{fieldError}</p>
+                              ) : null}
+                            </div>
                           </div>
                         ) : (
                           <>
@@ -2970,21 +3008,34 @@ export function ParameterInspector({
                                 </button>
                               ))}
                             </div>
-                            <label className="param-field reflector-editor-raw">
-                              <span>Raw Wiring</span>
-                              <textarea
-                                value={renderedValue}
-                                onChange={(event) => {
-                                  const rawValue = event.target.value;
-                                  onParamDraftChange(moduleInstance.id, field.key, rawValue);
-                                  const parsed = parseParamValue(rawValue, field);
-                                  if (parsed.ok) {
-                                    onParamChange(moduleInstance.id, field.key, parsed.value);
-                                  }
-                                }}
-                              />
-                              {fieldError ? <p className="field-error">{fieldError}</p> : null}
-                            </label>
+                            <div className="inspector-raw-editor">
+                              <button
+                                type="button"
+                                className="mini-action-button inspector-raw-toggle"
+                                onClick={() => toggleRawEditor(moduleInstance.id, field.key)}
+                              >
+                                {isRawEditorExpanded(moduleInstance.id, field.key) ? 'Hide Raw Wiring' : 'Show Raw Wiring'}
+                              </button>
+                              {isRawEditorExpanded(moduleInstance.id, field.key) ? (
+                                <label className="param-field reflector-editor-raw">
+                                  <span>Raw Wiring</span>
+                                  <textarea
+                                    value={renderedValue}
+                                    onChange={(event) => {
+                                      const rawValue = event.target.value;
+                                      onParamDraftChange(moduleInstance.id, field.key, rawValue);
+                                      const parsed = parseParamValue(rawValue, field);
+                                      if (parsed.ok) {
+                                        onParamChange(moduleInstance.id, field.key, parsed.value);
+                                      }
+                                    }}
+                                  />
+                                  {fieldError ? <p className="field-error">{fieldError}</p> : null}
+                                </label>
+                              ) : fieldError ? (
+                                <p className="field-error">{fieldError}</p>
+                              ) : null}
+                            </div>
                           </div>
                         ) : (
                           <>
@@ -3323,21 +3374,34 @@ export function ParameterInspector({
                               </select>
                             </label>
                           </div>
-                          <label className="param-field sbox-editor-raw">
-                            <span>Raw CSV Table</span>
-                            <textarea
-                              value={renderedValue}
-                              onChange={(event) => {
-                                const rawValue = event.target.value;
-                                onParamDraftChange(moduleInstance.id, field.key, rawValue);
-                                const parsed = parseParamValue(rawValue, field);
-                                if (parsed.ok) {
-                                  onParamChange(moduleInstance.id, field.key, parsed.value);
-                                }
-                              }}
-                            />
-                            {fieldError ? <p className="field-error">{fieldError}</p> : null}
-                          </label>
+                          <div className="inspector-raw-editor">
+                            <button
+                              type="button"
+                              className="mini-action-button inspector-raw-toggle"
+                              onClick={() => toggleRawEditor(moduleInstance.id, field.key)}
+                            >
+                              {isRawEditorExpanded(moduleInstance.id, field.key) ? 'Hide Raw CSV Table' : 'Show Raw CSV Table'}
+                            </button>
+                            {isRawEditorExpanded(moduleInstance.id, field.key) ? (
+                              <label className="param-field sbox-editor-raw">
+                                <span>Raw CSV Table</span>
+                                <textarea
+                                  value={renderedValue}
+                                  onChange={(event) => {
+                                    const rawValue = event.target.value;
+                                    onParamDraftChange(moduleInstance.id, field.key, rawValue);
+                                    const parsed = parseParamValue(rawValue, field);
+                                    if (parsed.ok) {
+                                      onParamChange(moduleInstance.id, field.key, parsed.value);
+                                    }
+                                  }}
+                                />
+                                {fieldError ? <p className="field-error">{fieldError}</p> : null}
+                              </label>
+                            ) : fieldError ? (
+                              <p className="field-error">{fieldError}</p>
+                            ) : null}
+                          </div>
                         </div>
                       ) : (
                         <>
@@ -3548,21 +3612,34 @@ export function ParameterInspector({
                               </div>
                             </div>
                           ) : null}
-                          <label className="param-field permutation-editor-raw">
-                            <span>Raw CSV Order</span>
-                            <textarea
-                              value={renderedValue}
-                              onChange={(event) => {
-                                const rawValue = event.target.value;
-                                onParamDraftChange(moduleInstance.id, field.key, rawValue);
-                                const parsed = parseParamValue(rawValue, field);
-                                if (parsed.ok) {
-                                  onParamChange(moduleInstance.id, field.key, parsed.value);
-                                }
-                              }}
-                            />
-                            {fieldError ? <p className="field-error">{fieldError}</p> : null}
-                          </label>
+                          <div className="inspector-raw-editor">
+                            <button
+                              type="button"
+                              className="mini-action-button inspector-raw-toggle"
+                              onClick={() => toggleRawEditor(moduleInstance.id, field.key)}
+                            >
+                              {isRawEditorExpanded(moduleInstance.id, field.key) ? 'Hide Raw CSV Order' : 'Show Raw CSV Order'}
+                            </button>
+                            {isRawEditorExpanded(moduleInstance.id, field.key) ? (
+                              <label className="param-field permutation-editor-raw">
+                                <span>Raw CSV Order</span>
+                                <textarea
+                                  value={renderedValue}
+                                  onChange={(event) => {
+                                    const rawValue = event.target.value;
+                                    onParamDraftChange(moduleInstance.id, field.key, rawValue);
+                                    const parsed = parseParamValue(rawValue, field);
+                                    if (parsed.ok) {
+                                      onParamChange(moduleInstance.id, field.key, parsed.value);
+                                    }
+                                  }}
+                                />
+                                {fieldError ? <p className="field-error">{fieldError}</p> : null}
+                              </label>
+                            ) : fieldError ? (
+                              <p className="field-error">{fieldError}</p>
+                            ) : null}
+                          </div>
                         </div>
                       ) : (
                         <>
