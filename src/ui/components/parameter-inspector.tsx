@@ -196,6 +196,7 @@ type InspectorIconName =
   | 'delete'
   | 'copy'
   | 'rename'
+  | 'bypass'
   | 'configure'
   | 'analyze'
   | 'compare';
@@ -323,6 +324,41 @@ function InspectorIcon({ name }: { name: InspectorIconName }) {
             stroke="currentColor"
             strokeWidth="1.8"
             strokeLinecap="round"
+          />
+        </svg>
+      );
+    case 'bypass':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path
+            d="M4 6h5.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M10.5 6h5.5v8H10.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M10.5 14H4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M7.8 6l2.7 4-2.7 4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
         </svg>
       );
@@ -2236,13 +2272,11 @@ export function ParameterInspector({
               />
             ) : null}
             {!isReadOnlyMode && canBypassSelectedModule ? (
-              <button
-                type="button"
-                className={moduleInstance.bypass ? 'mini-action-button' : 'mini-action-button'}
+              <InspectorIconButton
+                icon="bypass"
+                label={moduleInstance.bypass ? 'Disable Bypass' : 'Enable Bypass'}
                 onClick={() => onSetModuleBypass(moduleInstance.id, !moduleInstance.bypass)}
-              >
-                {moduleInstance.bypass ? 'Disable Bypass' : 'Enable Bypass'}
-              </button>
+              />
             ) : null}
             {!isReadOnlyMode && onRotateModuleClockwise ? (
               <InspectorIconButton
