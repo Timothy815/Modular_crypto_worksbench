@@ -2416,6 +2416,38 @@ body.dock-resizing {
   margin-top: 12px;
 }
 
+.palette-view-toggle-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-button);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease,
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.palette-view-toggle-button:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--line));
+  background: color-mix(in srgb, var(--surface-button) 82%, var(--accent) 18%);
+}
+
+.palette-view-toggle-button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  vector-effect: non-scaling-stroke;
+}
+
 .palette-search {
   display: grid;
   gap: 6px;

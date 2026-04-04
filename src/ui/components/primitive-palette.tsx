@@ -28,6 +28,50 @@ interface PrimitivePaletteProps {
   builtInReusableIds: string[];
 }
 
+function PaletteViewModeIcon({ viewMode }: { viewMode: 'compact' | 'expanded' }) {
+  if (viewMode === 'compact') {
+    return (
+      <svg viewBox="0 0 20 20" aria-hidden="true">
+        <path
+          d="M7 4.5H4.5V7M13 4.5h2.5V7M7 15.5H4.5V13M13 15.5h2.5V13"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M8 8l-3 3M12 8l3 3M8 12l-3-3M12 12l3-3"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        d="M8 8l-3-3M12 8l3-3M8 12l-3 3M12 12l3 3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <path
+        d="M7 4.5H4.5V7M13 4.5h2.5V7M7 15.5H4.5V13M13 15.5h2.5V13"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function PrimitivePalette({
   registry,
   viewMode,
@@ -103,10 +147,12 @@ export function PrimitivePalette({
           <div className="palette-toolbar">
             <button
               type="button"
-              className="mini-action-button"
+              className="palette-view-toggle-button"
+              title={viewMode === 'compact' ? 'Expanded View' : 'Compact View'}
+              aria-label={viewMode === 'compact' ? 'Switch to expanded palette view' : 'Switch to compact palette view'}
               onClick={onToggleViewMode}
             >
-              {viewMode === 'compact' ? 'Expanded View' : 'Compact View'}
+              <PaletteViewModeIcon viewMode={viewMode} />
             </button>
             <button
               type="button"
@@ -120,10 +166,12 @@ export function PrimitivePalette({
           <div className="palette-toolbar">
             <button
               type="button"
-              className="mini-action-button"
+              className="palette-view-toggle-button"
+              title={viewMode === 'compact' ? 'Expanded View' : 'Compact View'}
+              aria-label={viewMode === 'compact' ? 'Switch to expanded palette view' : 'Switch to compact palette view'}
               onClick={onToggleViewMode}
             >
-              {viewMode === 'compact' ? 'Expanded View' : 'Compact View'}
+              <PaletteViewModeIcon viewMode={viewMode} />
             </button>
           </div>
         )}
