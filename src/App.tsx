@@ -1600,6 +1600,23 @@ function MainApp() {
     setImportError(null);
   }
 
+  function handleDuplicateSingleModule(moduleId: string) {
+    if (state.compositeEditor) {
+      return;
+    }
+
+    dispatch({
+      type: 'selectModules',
+      projectId: activeProjectDefinition.id,
+      moduleIds: [moduleId],
+    });
+    dispatch({
+      type: 'duplicateSelectedCluster',
+      projectId: activeProjectDefinition.id,
+    });
+    setImportError(null);
+  }
+
   function handleDeleteCurrentWorkspace() {
     const existingWorkspace = state.userWorkspaceLibrary.find(
       (workspace) => workspace.id === activeProjectDefinition.id,
@@ -3331,6 +3348,11 @@ function MainApp() {
                           projectId: activeProjectDefinition.id,
                           moduleId,
                         })
+                }
+                onDuplicateModule={
+                  isCompositeDrilldownActive || state.compositeEditor
+                    ? undefined
+                    : handleDuplicateSingleModule
                 }
                 onRenameModuleInstance={(moduleId, nextModuleId) =>
                   isCompositeDrilldownActive
