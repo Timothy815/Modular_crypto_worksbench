@@ -142,9 +142,14 @@ describe('workspace persistence', () => {
       type: 'addGroupBox',
       projectId: 'my-scratchpad',
     });
+    const stateWithGuideRail = uiReducer(stateWithGroupBox, {
+      type: 'addGuideRail',
+      projectId: 'my-scratchpad',
+      axis: 'horizontal',
+    });
     const storage = new MemoryStorage();
 
-    saveWorkspaceToStorage(stateWithGroupBox, {}, storage);
+    saveWorkspaceToStorage(stateWithGuideRail, {}, storage);
     const restored = loadWorkspaceFromStorage(demoProjects, storage);
 
     expect(restored?.userWorkspaceLibrary).toEqual([
@@ -173,6 +178,14 @@ describe('workspace persistence', () => {
         height: 180,
         title: 'Group',
         variant: 'stage',
+      },
+    ]);
+    expect(restored?.documentsByProjectId['my-scratchpad']?.ui.guideRails).toEqual([
+      {
+        id: 'rail-1',
+        axis: 'horizontal',
+        position: 140,
+        title: 'Horizontal Rail',
       },
     ]);
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.showOverviewNavigator).toBe(false);
@@ -246,6 +259,14 @@ describe('parseShareableLabPack', () => {
         ui: {
           layout: {},
           annotations: [],
+          guideRails: [
+            {
+              id: 'rail-1',
+              axis: 'vertical',
+              position: 188,
+              title: 'Signal Rail',
+            },
+          ],
           layoutDirection: 'vertical',
           routingMode: 'orthogonal',
           connectionLayout: {

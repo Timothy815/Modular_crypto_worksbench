@@ -49,6 +49,7 @@ import {
 import type {
   WorkbenchAnnotation,
   WorkbenchConnectionLayout,
+  WorkbenchGuideRail,
   WorkbenchGroupBox,
   WorkbenchGroupBoxVariant,
   WorkbenchLayoutDirection,
@@ -203,6 +204,7 @@ interface WorkbenchPanelProps {
   connectionLayout: Record<string, WorkbenchConnectionLayout>;
   annotations: WorkbenchAnnotation[];
   groupBoxes: WorkbenchGroupBox[];
+  guideRails: WorkbenchGuideRail[];
   showOverviewNavigator: boolean;
   showGrid: boolean;
   snapToGrid: boolean;
@@ -246,6 +248,10 @@ interface WorkbenchPanelProps {
   onAddAnnotation: () => void;
   onAddGroupBox: () => void;
   onAddGroupBoxFromSelection: () => void;
+  onAddGuideRail: (axis: 'horizontal' | 'vertical') => void;
+  onMoveGuideRail: (guideRailId: string, position: number) => void;
+  onUpdateGuideRailTitle: (guideRailId: string, title: string) => void;
+  onRemoveGuideRail: (guideRailId: string) => void;
   onMoveGroupBox: (groupBoxId: string, x: number, y: number) => void;
   onResizeGroupBox: (groupBoxId: string, width: number, height: number) => void;
   onUpdateGroupBoxTitle: (groupBoxId: string, title: string) => void;
@@ -335,6 +341,7 @@ export function WorkbenchPanel({
   connectionLayout,
   annotations,
   groupBoxes,
+  guideRails,
   showOverviewNavigator,
   showGrid,
   snapToGrid,
@@ -378,6 +385,10 @@ export function WorkbenchPanel({
   onAddAnnotation,
   onAddGroupBox,
   onAddGroupBoxFromSelection,
+  onAddGuideRail,
+  onMoveGuideRail,
+  onUpdateGuideRailTitle,
+  onRemoveGuideRail,
   onMoveGroupBox,
   onResizeGroupBox,
   onUpdateGroupBoxTitle,
@@ -447,6 +458,7 @@ export function WorkbenchPanel({
     currentY: number;
   } | null>(null);
   const [selectedGroupBoxId, setSelectedGroupBoxId] = useState<string | null>(null);
+  const [selectedGuideRailId, setSelectedGuideRailId] = useState<string | null>(null);
   const [groupBoxDragState, setGroupBoxDragState] = useState<{
     groupBoxId: string;
     pointerOffsetX: number;
@@ -464,6 +476,13 @@ export function WorkbenchPanel({
     initialHeight: number;
     currentWidth: number;
     currentHeight: number;
+  } | null>(null);
+  const [guideRailDragState, setGuideRailDragState] = useState<{
+    guideRailId: string;
+    axis: 'horizontal' | 'vertical';
+    pointerOffset: number;
+    initialPosition: number;
+    currentPosition: number;
   } | null>(null);
   const [pendingConnection, setPendingConnection] =
     useState<PendingConnection | null>(null);
@@ -512,6 +531,13 @@ export function WorkbenchPanel({
         : null,
     [groupBoxes, selectedGroupBoxId],
   );
+  const effectiveSelectedGuideRailId = useMemo(
+    () =>
+      selectedGuideRailId && guideRails.some((guideRail) => guideRail.id === selectedGuideRailId)
+        ? selectedGuideRailId
+        : null,
+    [guideRails, selectedGuideRailId],
+  );
   const [canvasHeightResizeState, setCanvasHeightResizeState] = useState<{
     originY: number;
     originHeight: number;
@@ -546,41 +572,6 @@ export function WorkbenchPanel({
     [comparisonVersionId, workspaceVersions],
   );
 
-  const canvasWidth = Math.max(
-    980,
-    ...Object.values(layout).map((position) => position.x + 180),
-  );
-  const canvasHeight = Math.max(
-    360,
-    ...Object.values(layout).map((position) => position.y + 140),
-  );
-  const minimapMetrics = useMemo(() => {
-    const availableWidth = MINIMAP_WIDTH - MINIMAP_PADDING * 2;
-    const availableHeight = MINIMAP_HEIGHT - MINIMAP_PADDING * 2;
-    const scale = Math.min(
-      availableWidth / Math.max(1, canvasWidth),
-      availableHeight / Math.max(1, canvasHeight),
-    );
-    const contentWidth = canvasWidth * scale;
-    const contentHeight = canvasHeight * scale;
-    return {
-      scale,
-      offsetX: (MINIMAP_WIDTH - contentWidth) / 2,
-      offsetY: (MINIMAP_HEIGHT - contentHeight) / 2,
-      contentWidth,
-      contentHeight,
-    };
-  }, [canvasHeight, canvasWidth]);
-  const minimapViewportRect = useMemo(() => {
-    const safeZoom = workspaceZoom > 0 ? workspaceZoom : DEFAULT_WORKSPACE_ZOOM;
-    return {
-      left: minimapMetrics.offsetX + (viewportMetrics.scrollLeft / safeZoom) * minimapMetrics.scale,
-      top: minimapMetrics.offsetY + (viewportMetrics.scrollTop / safeZoom) * minimapMetrics.scale,
-      width: (viewportMetrics.clientWidth / safeZoom) * minimapMetrics.scale,
-      height: (viewportMetrics.clientHeight / safeZoom) * minimapMetrics.scale,
-    };
-  }, [minimapMetrics, viewportMetrics, workspaceZoom]);
-
   const visibleProjects = useMemo(
     () =>
       projects
@@ -611,6 +602,100 @@ export function WorkbenchPanel({
       ) as Record<string, WorkbenchPosition>,
     [dragState?.currentPositions, layout],
   );
+  const contentBounds = useMemo(() => {
+    const maxModuleX = Math.max(
+      0,
+      ...Object.values(effectiveLayout).map((position) => position.x + 180),
+    );
+    const maxModuleY = Math.max(
+      0,
+      ...Object.values(effectiveLayout).map((position) => position.y + 140),
+    );
+    const maxAnnotationX = Math.max(
+      0,
+      ...annotations.map((annotation) =>
+        (annotationDragState?.annotationId === annotation.id
+          ? annotationDragState.currentX
+          : annotation.x) + 260,
+      ),
+    );
+    const maxAnnotationY = Math.max(
+      0,
+      ...annotations.map((annotation) =>
+        (annotationDragState?.annotationId === annotation.id
+          ? annotationDragState.currentY
+          : annotation.y) + 170,
+      ),
+    );
+    const maxGroupBoxX = Math.max(
+      0,
+      ...groupBoxes.map((groupBox) => {
+        const x =
+          groupBoxDragState?.groupBoxId === groupBox.id
+            ? groupBoxDragState.currentX
+            : groupBox.x;
+        const width =
+          groupBoxResizeState?.groupBoxId === groupBox.id
+            ? groupBoxResizeState.currentWidth
+            : groupBox.width;
+        return x + width + 32;
+      }),
+    );
+    const maxGroupBoxY = Math.max(
+      0,
+      ...groupBoxes.map((groupBox) => {
+        const y =
+          groupBoxDragState?.groupBoxId === groupBox.id
+            ? groupBoxDragState.currentY
+            : groupBox.y;
+        const height =
+          groupBoxResizeState?.groupBoxId === groupBox.id
+            ? groupBoxResizeState.currentHeight
+            : groupBox.height;
+        return y + height + 32;
+      }),
+    );
+
+    return {
+      width: Math.max(980, maxModuleX, maxAnnotationX, maxGroupBoxX),
+      height: Math.max(360, maxModuleY, maxAnnotationY, maxGroupBoxY),
+    };
+  }, [
+    annotations,
+    annotationDragState,
+    effectiveLayout,
+    groupBoxDragState,
+    groupBoxResizeState,
+    groupBoxes,
+  ]);
+  const canvasWidth = contentBounds.width;
+  const canvasHeight = contentBounds.height;
+  const minimapMetrics = useMemo(() => {
+    const availableWidth = MINIMAP_WIDTH - MINIMAP_PADDING * 2;
+    const availableHeight = MINIMAP_HEIGHT - MINIMAP_PADDING * 2;
+    const scale = Math.min(
+      availableWidth / Math.max(1, canvasWidth),
+      availableHeight / Math.max(1, canvasHeight),
+    );
+    const contentWidth = canvasWidth * scale;
+    const contentHeight = canvasHeight * scale;
+    return {
+      scale,
+      offsetX: (MINIMAP_WIDTH - contentWidth) / 2,
+      offsetY: (MINIMAP_HEIGHT - contentHeight) / 2,
+      contentWidth,
+      contentHeight,
+    };
+  }, [canvasHeight, canvasWidth]);
+  const minimapViewportRect = useMemo(() => {
+    const safeZoom = workspaceZoom > 0 ? workspaceZoom : DEFAULT_WORKSPACE_ZOOM;
+    return {
+      left: minimapMetrics.offsetX + (viewportMetrics.scrollLeft / safeZoom) * minimapMetrics.scale,
+      top: minimapMetrics.offsetY + (viewportMetrics.scrollTop / safeZoom) * minimapMetrics.scale,
+      width: (viewportMetrics.clientWidth / safeZoom) * minimapMetrics.scale,
+      height: (viewportMetrics.clientHeight / safeZoom) * minimapMetrics.scale,
+    };
+  }, [minimapMetrics, viewportMetrics, workspaceZoom]);
   const workspaceLandmarks = useMemo(
     () => deriveWorkspaceLandmarks(activeProjectState, registry, effectiveLayout),
     [activeProjectState, effectiveLayout, registry],
@@ -825,6 +910,7 @@ export function WorkbenchPanel({
     if (
       !dragState &&
       !annotationDragState &&
+      !guideRailDragState &&
       !groupBoxDragState &&
       !groupBoxResizeState &&
       !bendDragState &&
@@ -933,6 +1019,31 @@ export function WorkbenchPanel({
                 ...prev,
                 currentX: nextX,
                 currentY: nextY,
+              }
+            : null,
+        );
+      }
+
+      if (guideRailDragState) {
+        const pointer = getCanvasViewportPoint({
+          clientX: event.clientX,
+          clientY: event.clientY,
+          canvasLeft: canvasRect.left,
+          canvasTop: canvasRect.top,
+          scrollLeft: canvasSurface.scrollLeft,
+          scrollTop: canvasSurface.scrollTop,
+          zoom: workspaceZoom,
+        });
+        const nextPosition = Math.max(
+          16,
+          (guideRailDragState.axis === 'vertical' ? pointer.x : pointer.y) -
+            guideRailDragState.pointerOffset,
+        );
+        setGuideRailDragState((prev) =>
+          prev
+            ? {
+                ...prev,
+                currentPosition: nextPosition,
               }
             : null,
         );
@@ -1053,6 +1164,12 @@ export function WorkbenchPanel({
         }
       }
 
+      if (guideRailDragState) {
+        if (guideRailDragState.currentPosition !== guideRailDragState.initialPosition) {
+          onMoveGuideRail(guideRailDragState.guideRailId, guideRailDragState.currentPosition);
+        }
+      }
+
       if (groupBoxResizeState) {
         if (
           groupBoxResizeState.currentWidth !== groupBoxResizeState.initialWidth ||
@@ -1092,6 +1209,7 @@ export function WorkbenchPanel({
       }
       setDragState(null);
       setAnnotationDragState(null);
+      setGuideRailDragState(null);
       setGroupBoxDragState(null);
       setGroupBoxResizeState(null);
       setBendDragState(null);
@@ -1111,11 +1229,13 @@ export function WorkbenchPanel({
     bendDragState,
     dragState,
     effectiveLayout,
+    guideRailDragState,
     groupBoxDragState,
     groupBoxResizeState,
     layout,
     onClearConnectionOrthogonalBend,
     onMoveAnnotation,
+    onMoveGuideRail,
     onMoveGroupBox,
     onMoveModule,
     onMoveModules,
@@ -1258,6 +1378,7 @@ export function WorkbenchPanel({
     portIndex: number,
   ) {
     setSelectedConnectionIndex(null);
+    setSelectedGuideRailId(null);
     const pos = layout[moduleId];
     if (!pos) return;
     const orientation = getNodeOrientation(pos.orientation, layoutDirection);
@@ -1286,6 +1407,7 @@ export function WorkbenchPanel({
 
   function startConnectionRewireFromInput(moduleId: string, portName: string) {
     setSelectedConnectionIndex(null);
+    setSelectedGuideRailId(null);
     const connectionIndex = findIncomingConnectionIndex(activeProjectState, moduleId, portName);
     if (connectionIndex < 0) {
       return;
@@ -1386,6 +1508,7 @@ export function WorkbenchPanel({
       top: target.top,
       behavior: 'smooth',
     });
+    setSelectedGuideRailId(null);
     setSelectedConnectionIndex(null);
     onSelectModule(moduleId, false);
   }
@@ -1554,6 +1677,8 @@ export function WorkbenchPanel({
           onMouseLeave={() => setHoveredConnectionIndex(null)}
           onClick={(event) => {
             event.stopPropagation();
+            setSelectedGuideRailId(null);
+            setSelectedGroupBoxId(null);
             setSelectedConnectionIndex((current) => (current === connectionIndex ? null : connectionIndex));
           }}
         />
@@ -1674,6 +1799,7 @@ export function WorkbenchPanel({
           onRequestArrangeSelection={onRequestArrangeSelection}
           onRequestAddGroupBox={onAddGroupBox}
           onRequestAddGroupBoxFromSelection={onAddGroupBoxFromSelection}
+          onRequestAddGuideRail={onAddGuideRail}
           onRequestDuplicateSelection={onRequestDuplicateSelection}
           onRequestDeleteSelection={onRequestDeleteSelection}
           onRequestDeleteWire={() => {
@@ -1935,6 +2061,7 @@ export function WorkbenchPanel({
 
             event.preventDefault();
             setSelectedGroupBoxId(null);
+            setSelectedGuideRailId(null);
             setSelectedConnectionIndex(null);
             setSelectionBox({
               startX: pointer.x,
@@ -1945,6 +2072,88 @@ export function WorkbenchPanel({
             });
           }}
         >
+          {guideRails.map((guideRail) => {
+            const railPosition =
+              guideRailDragState?.guideRailId === guideRail.id
+                ? guideRailDragState.currentPosition
+                : guideRail.position;
+            const isSelected = effectiveSelectedGuideRailId === guideRail.id;
+
+            return (
+              <div
+                key={guideRail.id}
+                className={`canvas-guide-rail canvas-guide-rail-${guideRail.axis}${
+                  isSelected ? ' selected' : ''
+                }`}
+                style={
+                  guideRail.axis === 'vertical'
+                    ? ({ left: `${railPosition}px`, top: '0', height: `${canvasHeight}px` } as CSSProperties)
+                    : ({ top: `${railPosition}px`, left: '0', width: `${canvasWidth}px` } as CSSProperties)
+                }
+                onMouseDown={(event) => {
+                  event.stopPropagation();
+                  const pointer = getCanvasPointerFromClient(event.clientX, event.clientY);
+                  if (!pointer) {
+                    return;
+                  }
+                  setSelectedGuideRailId(guideRail.id);
+                  setSelectedGroupBoxId(null);
+                  setSelectedConnectionIndex(null);
+                  setGuideRailDragState({
+                    guideRailId: guideRail.id,
+                    axis: guideRail.axis,
+                    pointerOffset:
+                      (guideRail.axis === 'vertical' ? pointer.x : pointer.y) - railPosition,
+                    initialPosition: railPosition,
+                    currentPosition: railPosition,
+                  });
+                }}
+              >
+                <div
+                  className={`canvas-guide-rail-hitbox canvas-guide-rail-hitbox-${guideRail.axis}`}
+                />
+                <div
+                  className={`canvas-guide-rail-label canvas-guide-rail-label-${guideRail.axis}`}
+                  onMouseDown={(event) => {
+                    event.stopPropagation();
+                    setSelectedGuideRailId(guideRail.id);
+                    setSelectedGroupBoxId(null);
+                    setSelectedConnectionIndex(null);
+                  }}
+                >
+                  {isSelected ? (
+                    <>
+                      <input
+                        className="canvas-guide-rail-title-input"
+                        value={guideRail.title}
+                        onChange={(event) =>
+                          onUpdateGuideRailTitle(guideRail.id, event.target.value)
+                        }
+                        onMouseDown={(event) => event.stopPropagation()}
+                      />
+                      <button
+                        type="button"
+                        className="annotation-delete-button"
+                        aria-label={`Delete ${guideRail.title || 'guide rail'}`}
+                        title="Delete guide rail"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onRemoveGuideRail(guideRail.id);
+                          setSelectedGuideRailId((current) =>
+                            current === guideRail.id ? null : current,
+                          );
+                        }}
+                      >
+                        ×
+                      </button>
+                    </>
+                  ) : (
+                    <span className="canvas-guide-rail-title">{guideRail.title}</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
           {groupBoxes.map((groupBox) => {
             const groupBoxX =
               groupBoxDragState?.groupBoxId === groupBox.id
@@ -1979,6 +2188,7 @@ export function WorkbenchPanel({
                 onMouseDown={(event) => {
                   event.stopPropagation();
                   setSelectedGroupBoxId(groupBox.id);
+                  setSelectedGuideRailId(null);
                   setSelectedConnectionIndex(null);
                 }}
               >
@@ -1991,6 +2201,7 @@ export function WorkbenchPanel({
                       return;
                     }
                     setSelectedGroupBoxId(groupBox.id);
+                    setSelectedGuideRailId(null);
                     setGroupBoxDragState({
                       groupBoxId: groupBox.id,
                       pointerOffsetX: pointer.x - groupBoxX,
@@ -2157,11 +2368,13 @@ export function WorkbenchPanel({
                     if (!pointer) return;
                     const isAdditiveSelection = event.shiftKey || event.metaKey || event.ctrlKey;
                     if (isAdditiveSelection) {
+                      setSelectedGuideRailId(null);
                       setSelectedConnectionIndex(null);
                       onSelectModule(moduleInstance.id, true);
                       return;
                     }
                     if (isObservationMode) {
+                      setSelectedGuideRailId(null);
                       setSelectedConnectionIndex(null);
                       onSelectModule(moduleInstance.id, false);
                       return;
@@ -2173,6 +2386,7 @@ export function WorkbenchPanel({
                       ? selectedModuleIds
                       : [moduleInstance.id];
                     if (!isDraggingExistingSelection) {
+                      setSelectedGuideRailId(null);
                       setSelectedConnectionIndex(null);
                       onSelectModule(moduleInstance.id, false);
                     }
@@ -2505,6 +2719,7 @@ export function WorkbenchPanel({
                     return;
                   }
 
+                  setSelectedGuideRailId(null);
                   setAnnotationDragState({
                     annotationId: annotation.id,
                     pointerOffsetX: pointer.x - annotation.x,

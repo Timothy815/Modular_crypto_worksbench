@@ -105,6 +105,11 @@ The next orthogonal-routing follow-on after that is now implemented locally as:
 - a bounded per-connection lane-bias slice for orthogonal auto routing
 - keeps the slice in workspace UI metadata only and stops short of pathfinding or arbitrary wire editing
 
+The next structured-layout follow-on after that is now implemented locally as:
+- `GUIDE-RAILS-V1.md`
+- a bounded visual guide-rail slice for horizontal and vertical workspace alignment aids
+- keeps rails in workspace UI metadata only with no snapping solver or graph semantics in V1
+
 Current `main` now also includes:
 - Python export foundations:
   - one workspace-local `Export Python` action beside JSON export

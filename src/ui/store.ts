@@ -19,6 +19,7 @@ import type {
   UserWorkspaceMetadata,
   WorkbenchAnnotation,
   WorkbenchConnectionLayout,
+  WorkbenchGuideRail,
   WorkbenchGroupBox,
   WorkbenchGroupBoxVariant,
   WorkbenchLayoutDirection,
@@ -64,6 +65,7 @@ export interface UiState {
   layoutByProject: Record<string, Record<string, WorkbenchPosition>>;
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
   groupBoxesByProject: Record<string, WorkbenchGroupBox[]>;
+  guideRailsByProject: Record<string, WorkbenchGuideRail[]>;
   showOverviewNavigatorByProject: Record<string, boolean>;
   showGridByProject: Record<string, boolean>;
   snapToGridByProject: Record<string, boolean>;
@@ -174,6 +176,10 @@ export type UiAction =
   | { type: 'removeAnnotation'; projectId: string; annotationId: string }
   | { type: 'addGroupBox'; projectId: string }
   | { type: 'addGroupBoxFromSelection'; projectId: string }
+  | { type: 'addGuideRail'; projectId: string; axis: 'horizontal' | 'vertical' }
+  | { type: 'moveGuideRail'; projectId: string; guideRailId: string; position: number }
+  | { type: 'updateGuideRailTitle'; projectId: string; guideRailId: string; title: string }
+  | { type: 'removeGuideRail'; projectId: string; guideRailId: string }
   | { type: 'moveGroupBox'; projectId: string; groupBoxId: string; x: number; y: number }
   | {
       type: 'resizeGroupBox';
@@ -331,6 +337,18 @@ function createGroupBoxId(groupBoxes: WorkbenchGroupBox[]) {
   while (groupBoxes.some((groupBox) => groupBox.id === candidate)) {
     index += 1;
     candidate = `group-${index}`;
+  }
+
+  return candidate;
+}
+
+function createGuideRailId(guideRails: WorkbenchGuideRail[]) {
+  let index = guideRails.length + 1;
+  let candidate = `rail-${index}`;
+
+  while (guideRails.some((guideRail) => guideRail.id === candidate)) {
+    index += 1;
+    candidate = `rail-${index}`;
   }
 
   return candidate;
@@ -749,6 +767,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     groupBoxesByProject: Object.fromEntries(
       projects.map((project) => [project.id, []]),
     ),
+    guideRailsByProject: Object.fromEntries(
+      projects.map((project) => [project.id, []]),
+    ),
     showOverviewNavigatorByProject: Object.fromEntries(
       projects.map((project) => [project.id, isLargeWorkspace(project.project)]),
     ),
@@ -907,6 +928,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.groupBoxesByProject,
           [action.workspaceId]: [],
         },
+        guideRailsByProject: {
+          ...state.guideRailsByProject,
+          [action.workspaceId]: [],
+        },
         showOverviewNavigatorByProject: {
           ...state.showOverviewNavigatorByProject,
           [action.workspaceId]: false,
@@ -1018,6 +1043,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       const sourceLayout = state.layoutByProject[action.sourceProjectId];
       const sourceAnnotations = state.annotationsByProject[action.sourceProjectId] ?? [];
       const sourceGroupBoxes = state.groupBoxesByProject[action.sourceProjectId] ?? [];
+      const sourceGuideRails = state.guideRailsByProject[action.sourceProjectId] ?? [];
       const sourceShowOverviewNavigator =
         state.showOverviewNavigatorByProject[action.sourceProjectId] ?? false;
       const sourceShowGrid = state.showGridByProject[action.sourceProjectId] ?? false;
@@ -1058,6 +1084,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         groupBoxesByProject: {
           ...state.groupBoxesByProject,
           [action.workspaceId]: sourceGroupBoxes.map((groupBox) => ({ ...groupBox })),
+        },
+        guideRailsByProject: {
+          ...state.guideRailsByProject,
+          [action.workspaceId]: sourceGuideRails.map((guideRail) => ({ ...guideRail })),
         },
         showOverviewNavigatorByProject: {
           ...state.showOverviewNavigatorByProject,
@@ -1198,6 +1228,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         layoutByProject: removeProjectEntry(state.layoutByProject, action.workspaceId),
         annotationsByProject: removeProjectEntry(state.annotationsByProject, action.workspaceId),
         groupBoxesByProject: removeProjectEntry(state.groupBoxesByProject, action.workspaceId),
+        guideRailsByProject: removeProjectEntry(state.guideRailsByProject, action.workspaceId),
         showOverviewNavigatorByProject: removeProjectEntry(
           state.showOverviewNavigatorByProject,
           action.workspaceId,
@@ -1897,6 +1928,78 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.groupBoxesByProject,
           [action.projectId]: currentGroupBoxes.filter(
             (groupBox) => groupBox.id !== action.groupBoxId,
+          ),
+        },
+      };
+    }
+    case 'addGuideRail': {
+      const currentGuideRails = state.guideRailsByProject[action.projectId] ?? [];
+      const nextGuideRailId = createGuideRailId(currentGuideRails);
+
+      return {
+        ...state,
+        guideRailsByProject: {
+          ...state.guideRailsByProject,
+          [action.projectId]: [
+            ...currentGuideRails,
+            {
+              id: nextGuideRailId,
+              axis: action.axis,
+              position: action.axis === 'vertical' ? 180 : 140,
+              title: action.axis === 'vertical' ? 'Vertical Rail' : 'Horizontal Rail',
+            },
+          ],
+        },
+      };
+    }
+    case 'moveGuideRail': {
+      const currentGuideRails = state.guideRailsByProject[action.projectId];
+      if (!currentGuideRails) {
+        return state;
+      }
+
+      return {
+        ...state,
+        guideRailsByProject: {
+          ...state.guideRailsByProject,
+          [action.projectId]: currentGuideRails.map((guideRail) =>
+            guideRail.id === action.guideRailId
+              ? { ...guideRail, position: Math.max(16, action.position) }
+              : guideRail,
+          ),
+        },
+      };
+    }
+    case 'updateGuideRailTitle': {
+      const currentGuideRails = state.guideRailsByProject[action.projectId];
+      if (!currentGuideRails) {
+        return state;
+      }
+
+      return {
+        ...state,
+        guideRailsByProject: {
+          ...state.guideRailsByProject,
+          [action.projectId]: currentGuideRails.map((guideRail) =>
+            guideRail.id === action.guideRailId
+              ? { ...guideRail, title: action.title }
+              : guideRail,
+          ),
+        },
+      };
+    }
+    case 'removeGuideRail': {
+      const currentGuideRails = state.guideRailsByProject[action.projectId];
+      if (!currentGuideRails) {
+        return state;
+      }
+
+      return {
+        ...state,
+        guideRailsByProject: {
+          ...state.guideRailsByProject,
+          [action.projectId]: currentGuideRails.filter(
+            (guideRail) => guideRail.id !== action.guideRailId,
           ),
         },
       };
@@ -2627,6 +2730,9 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       const nextGroupBoxes = (action.document.ui.groupBoxes ?? []).map((groupBox) => ({
         ...groupBox,
       }));
+      const nextGuideRails = (action.document.ui.guideRails ?? []).map((guideRail) => ({
+        ...guideRail,
+      }));
       const nextDrafts = Object.fromEntries(
         Object.entries(state.paramDrafts).filter(
           ([key]) => !key.startsWith(`${action.projectId}:`),
@@ -2650,6 +2756,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         groupBoxesByProject: {
           ...state.groupBoxesByProject,
           [action.projectId]: nextGroupBoxes,
+        },
+        guideRailsByProject: {
+          ...state.guideRailsByProject,
+          [action.projectId]: nextGuideRails,
         },
         showOverviewNavigatorByProject: {
           ...state.showOverviewNavigatorByProject,

@@ -343,6 +343,10 @@ function MainApp() {
     () => state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
     [activeProjectDefinition.id, state.groupBoxesByProject],
   );
+  const activeGuideRails = useMemo(
+    () => state.guideRailsByProject[activeProjectDefinition.id] ?? [],
+    [activeProjectDefinition.id, state.guideRailsByProject],
+  );
   const activeShowOverviewNavigator =
     state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false;
   const activeShowGrid = state.showGridByProject[activeProjectDefinition.id] ?? false;
@@ -908,6 +912,7 @@ function MainApp() {
         layout: activeLayout,
         annotations: activeAnnotations,
         groupBoxes: activeGroupBoxes,
+        guideRails: activeGuideRails,
         showOverviewNavigator: activeShowOverviewNavigator,
         showGrid: activeShowGrid,
         snapToGrid: activeSnapToGrid,
@@ -924,6 +929,7 @@ function MainApp() {
   }, [
     activeAnnotations,
     activeGroupBoxes,
+    activeGuideRails,
     activeShowOverviewNavigator,
     activeShowGrid,
     activeSnapToGrid,
@@ -1616,6 +1622,7 @@ function MainApp() {
             layout: pasted.layout,
             annotations: activeAnnotations,
             groupBoxes: activeGroupBoxes,
+            guideRails: activeGuideRails,
             showOverviewNavigator: activeShowOverviewNavigator,
             showGrid: activeShowGrid,
             snapToGrid: activeSnapToGrid,
@@ -1812,6 +1819,9 @@ function MainApp() {
             groupBoxes: state.compositeEditor
               ? []
               : state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
+            guideRails: state.compositeEditor
+              ? []
+              : state.guideRailsByProject[activeProjectDefinition.id] ?? [],
             showOverviewNavigator: state.compositeEditor
               ? false
               : state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
@@ -1851,6 +1861,7 @@ function MainApp() {
       state.annotationsByProject,
       state.compositeEditor,
       state.compositeLibrary,
+      state.guideRailsByProject,
       state.groupBoxesByProject,
       state.showOverviewNavigatorByProject,
     ],
@@ -2514,6 +2525,7 @@ function MainApp() {
             }
             annotations={isCompositeDrilldownActive ? [] : activeAnnotations}
             groupBoxes={isCompositeDrilldownActive ? [] : activeGroupBoxes}
+            guideRails={isCompositeDrilldownActive ? [] : activeGuideRails}
             showOverviewNavigator={isCompositeDrilldownActive ? false : activeShowOverviewNavigator}
             showGrid={isCompositeDrilldownActive ? false : activeShowGrid}
             snapToGrid={isCompositeDrilldownActive ? false : activeSnapToGrid}
@@ -2630,6 +2642,44 @@ function MainApp() {
                 : dispatch({
                     type: 'addGroupBoxFromSelection',
                     projectId: activeProjectDefinition.id,
+                  })
+            }
+            onAddGuideRail={(axis) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'addGuideRail',
+                    projectId: activeProjectDefinition.id,
+                    axis,
+                  })
+            }
+            onMoveGuideRail={(guideRailId, position) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'moveGuideRail',
+                    projectId: activeProjectDefinition.id,
+                    guideRailId,
+                    position,
+                  })
+            }
+            onUpdateGuideRailTitle={(guideRailId, title) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'updateGuideRailTitle',
+                    projectId: activeProjectDefinition.id,
+                    guideRailId,
+                    title,
+                  })
+            }
+            onRemoveGuideRail={(guideRailId) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'removeGuideRail',
+                    projectId: activeProjectDefinition.id,
+                    guideRailId,
                   })
             }
             onMoveGroupBox={(groupBoxId, x, y) =>
@@ -2905,6 +2955,9 @@ function MainApp() {
                   groupBoxes: state.compositeEditor
                     ? []
                     : state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
+                  guideRails: state.compositeEditor
+                    ? []
+                    : state.guideRailsByProject[activeProjectDefinition.id] ?? [],
                   showOverviewNavigator: state.compositeEditor
                     ? false
                     : state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
@@ -3893,6 +3946,7 @@ function MainApp() {
                           layout: replacement.layout,
                           annotations: state.annotationsByProject[activeProjectDefinition.id] ?? [],
                           groupBoxes: state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
+                          guideRails: state.guideRailsByProject[activeProjectDefinition.id] ?? [],
                           showOverviewNavigator:
                             state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
                           showGrid:
@@ -4000,6 +4054,7 @@ function MainApp() {
                           selectedChallenge.startingLayout ?? selectedChallengeProjectDefinition.layout,
                         annotations: [],
                         groupBoxes: [],
+                        guideRails: [],
                         showOverviewNavigator:
                           state.showOverviewNavigatorByProject[selectedChallengeProjectId] ?? false,
                         showGrid:

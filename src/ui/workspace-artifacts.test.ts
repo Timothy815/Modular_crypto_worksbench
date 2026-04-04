@@ -49,6 +49,14 @@ describe('workspace-artifacts', () => {
           variant: 'stage',
         },
       ],
+      guideRails: [
+        {
+          id: 'rail-1',
+          axis: 'vertical',
+          position: 172,
+          title: 'Round Rail',
+        },
+      ],
       showOverviewNavigator: true,
       showGrid: true,
       snapToGrid: true,
@@ -107,6 +115,14 @@ describe('workspace-artifacts', () => {
         height: 160,
         title: 'Round 1',
         variant: 'stage',
+      },
+    ]);
+    expect(prepared.document.ui.guideRails).toEqual([
+      {
+        id: 'rail-1',
+        axis: 'vertical',
+        position: 172,
+        title: 'Round Rail',
       },
     ]);
     expect(prepared.document.ui.showOverviewNavigator).toBe(true);

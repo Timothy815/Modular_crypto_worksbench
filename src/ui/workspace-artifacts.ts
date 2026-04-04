@@ -19,6 +19,7 @@ import type {
   ShareableLabPack,
   WorkbenchAnnotation,
   WorkbenchDocument,
+  WorkbenchGuideRail,
   WorkbenchGroupBox,
   WorkbenchPosition,
 } from './workbench-document';
@@ -90,6 +91,10 @@ function cloneAnnotations(annotations: WorkbenchAnnotation[]) {
 
 function cloneGroupBoxes(groupBoxes: WorkbenchGroupBox[]) {
   return groupBoxes.map((groupBox) => ({ ...groupBox }));
+}
+
+function cloneGuideRails(guideRails: WorkbenchGuideRail[]) {
+  return guideRails.map((guideRail) => ({ ...guideRail }));
 }
 
 function cloneComparisonBaseline(
@@ -190,6 +195,13 @@ export function hydrateInitialUiState(projects: DemoProject[]): UiState {
       allProjects.map((project) => [
         project.id,
         persistedWorkspace.documentsByProjectId[project.id]?.ui.groupBoxes ?? initialState.groupBoxesByProject[project.id],
+      ]),
+    ),
+    guideRailsByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.documentsByProjectId[project.id]?.ui.guideRails ??
+          initialState.guideRailsByProject[project.id],
       ]),
     ),
     showOverviewNavigatorByProject: Object.fromEntries(
@@ -396,6 +408,7 @@ export interface BuildShareableLabPackArgs {
   layout: Record<string, { x: number; y: number }>;
   annotations: WorkbenchAnnotation[];
   groupBoxes?: WorkbenchGroupBox[];
+  guideRails?: WorkbenchGuideRail[];
   showOverviewNavigator?: boolean;
   showGrid?: boolean;
   snapToGrid?: boolean;
@@ -422,6 +435,7 @@ export function buildShareableLabPack({
   layout,
   annotations,
   groupBoxes = [],
+  guideRails = [],
   showOverviewNavigator = false,
   showGrid = false,
   snapToGrid = false,
@@ -450,6 +464,7 @@ export function buildShareableLabPack({
         layout: cloneLayout(layout),
         annotations: cloneAnnotations(annotations),
         groupBoxes: cloneGroupBoxes(groupBoxes),
+        guideRails: cloneGuideRails(guideRails),
         showOverviewNavigator,
         showGrid,
         snapToGrid,
@@ -576,6 +591,7 @@ export function prepareImportedLabPack({
         layout: cloneLayout(pack.workspace.ui.layout),
         annotations: cloneAnnotations(pack.workspace.ui.annotations),
         groupBoxes: cloneGroupBoxes(pack.workspace.ui.groupBoxes ?? []),
+        guideRails: cloneGuideRails(pack.workspace.ui.guideRails ?? []),
         showOverviewNavigator:
           pack.workspace.ui.showOverviewNavigator ?? isLargeWorkspace(pack.workspace.project),
         showGrid: pack.workspace.ui.showGrid ?? false,

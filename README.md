@@ -115,6 +115,11 @@ The next orthogonal-routing follow-on after that is now implemented locally as:
 - adds one bounded per-connection lane preference for orthogonal auto routing
 - keeps the slice in workspace UI metadata only and stops short of pathfinding or arbitrary wire editing
 
+The next structured-layout follow-on after that is now implemented locally as:
+- `GUIDE-RAILS-V1.md`
+- adds persistent horizontal and vertical guide rails as lightweight visual alignment aids
+- keeps the slice visual-only in workspace UI metadata with no solver or graph semantics
+
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - now shipped as the first bounded verification-station refinement inside the compare/analyze line

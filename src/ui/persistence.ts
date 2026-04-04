@@ -20,6 +20,7 @@ import type {
   PersistedWorkspaceDocument,
   UserWorkspaceMetadata,
   WorkbenchAnnotation,
+  WorkbenchGuideRail,
   WorkbenchGroupBox,
   WorkbenchDocument,
   WorkspaceVersionDocument,
@@ -63,6 +64,10 @@ function cloneAnnotations(annotations: WorkbenchAnnotation[]): WorkbenchAnnotati
 
 function cloneGroupBoxes(groupBoxes: WorkbenchGroupBox[]): WorkbenchGroupBox[] {
   return groupBoxes.map((groupBox) => ({ ...groupBox }));
+}
+
+function cloneGuideRails(guideRails: WorkbenchGuideRail[]): WorkbenchGuideRail[] {
+  return guideRails.map((guideRail) => ({ ...guideRail }));
 }
 
 function cloneComparisonBaseline(
@@ -159,6 +164,7 @@ function cloneWorkspaceDocument(document: WorkbenchDocument): WorkbenchDocument 
       ),
       annotations: cloneAnnotations(document.ui.annotations),
       groupBoxes: cloneGroupBoxes(document.ui.groupBoxes ?? []),
+      guideRails: cloneGuideRails(document.ui.guideRails ?? []),
       showOverviewNavigator: document.ui.showOverviewNavigator ?? false,
       showGrid: document.ui.showGrid ?? false,
       snapToGrid: document.ui.snapToGrid ?? false,
@@ -204,6 +210,7 @@ function buildDefaultDocument(project: DemoProject): WorkbenchDocument {
       ),
       annotations: [],
       groupBoxes: [],
+      guideRails: [],
       showOverviewNavigator: false,
       showGrid: false,
       snapToGrid: false,
@@ -246,6 +253,7 @@ export function buildPersistedWorkspace(
             ),
             annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
             groupBoxes: cloneGroupBoxes(state.groupBoxesByProject[projectId] ?? []),
+            guideRails: cloneGuideRails(state.guideRailsByProject[projectId] ?? []),
             showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
             showGrid: state.showGridByProject[projectId] ?? false,
             snapToGrid: state.snapToGridByProject[projectId] ?? false,
@@ -901,6 +909,18 @@ function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
               groupBox.variant === 'stage' ||
               groupBox.variant === 'feedback' ||
               groupBox.variant === 'emphasis')))) &&
+    (candidate.ui.guideRails === undefined ||
+      (Array.isArray(candidate.ui.guideRails) &&
+        candidate.ui.guideRails.every(
+          (guideRail) =>
+            typeof guideRail === 'object' &&
+            guideRail !== null &&
+            typeof guideRail.id === 'string' &&
+            (guideRail.axis === 'horizontal' || guideRail.axis === 'vertical') &&
+            typeof guideRail.position === 'number' &&
+            Number.isFinite(guideRail.position) &&
+            typeof guideRail.title === 'string',
+        ))) &&
     (candidate.ui.showOverviewNavigator === undefined ||
       typeof candidate.ui.showOverviewNavigator === 'boolean') &&
     (candidate.ui.showGrid === undefined || typeof candidate.ui.showGrid === 'boolean') &&

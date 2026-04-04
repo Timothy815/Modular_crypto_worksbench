@@ -51,6 +51,7 @@ interface WorkbenchActionsProps {
   ) => void;
   onRequestAddGroupBox: () => void;
   onRequestAddGroupBoxFromSelection: () => void;
+  onRequestAddGuideRail: (axis: 'horizontal' | 'vertical') => void;
   onRequestDuplicateSelection: () => void;
   onRequestDeleteSelection: () => void;
   onRequestDeleteWire: () => void;
@@ -403,6 +404,7 @@ export function WorkbenchActions({
   onRequestArrangeSelection,
   onRequestAddGroupBox,
   onRequestAddGroupBoxFromSelection,
+  onRequestAddGuideRail,
   onRequestDuplicateSelection,
   onRequestDeleteSelection,
   onRequestDeleteWire,
@@ -650,6 +652,14 @@ export function WorkbenchActions({
               disabled={!hasSelection}
             />
             <WorkbenchMenuActionButton label="Add Group Box" onSelect={onRequestAddGroupBox} />
+            <WorkbenchMenuActionButton
+              label="Add Vertical Rail"
+              onSelect={() => onRequestAddGuideRail('vertical')}
+            />
+            <WorkbenchMenuActionButton
+              label="Add Horizontal Rail"
+              onSelect={() => onRequestAddGuideRail('horizontal')}
+            />
             <WorkbenchMenuActionButton
               label="Group Selection"
               onSelect={onRequestAddGroupBoxFromSelection}

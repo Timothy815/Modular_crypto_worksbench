@@ -31,6 +31,15 @@ export interface WorkbenchGroupBox {
   variant?: WorkbenchGroupBoxVariant;
 }
 
+export type WorkbenchGuideRailAxis = 'horizontal' | 'vertical';
+
+export interface WorkbenchGuideRail {
+  id: string;
+  axis: WorkbenchGuideRailAxis;
+  position: number;
+  title: string;
+}
+
 export type WorkbenchConnectionBendAxis = 'x' | 'y';
 export type WorkbenchConnectionLanePreference = 'negative' | 'positive';
 
@@ -50,6 +59,7 @@ export interface WorkbenchUiMetadata {
   layout: Record<string, WorkbenchPosition>;
   annotations: WorkbenchAnnotation[];
   groupBoxes?: WorkbenchGroupBox[];
+  guideRails?: WorkbenchGuideRail[];
   showOverviewNavigator?: boolean;
   showGrid?: boolean;
   snapToGrid?: boolean;

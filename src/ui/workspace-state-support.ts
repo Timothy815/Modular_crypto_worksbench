@@ -4,6 +4,7 @@ import type {
   ComparisonBaselineDocument,
   WorkbenchAnnotation,
   WorkbenchConnectionLayout,
+  WorkbenchGuideRail,
   WorkbenchGroupBox,
   WorkbenchLayoutDirection,
   WorkbenchPosition,
@@ -17,6 +18,7 @@ export interface WorkspaceHistorySnapshot {
   layout: Record<string, WorkbenchPosition>;
   annotations: WorkbenchAnnotation[];
   groupBoxes: WorkbenchGroupBox[];
+  guideRails: WorkbenchGuideRail[];
   showOverviewNavigator: boolean;
   showGrid: boolean;
   snapToGrid: boolean;
@@ -40,6 +42,7 @@ interface WorkspaceSnapshotState {
   layoutByProject: Record<string, Record<string, CompositeLayoutPosition>>;
   annotationsByProject: Record<string, WorkbenchAnnotation[]>;
   groupBoxesByProject: Record<string, WorkbenchGroupBox[]>;
+  guideRailsByProject: Record<string, WorkbenchGuideRail[]>;
   showOverviewNavigatorByProject: Record<string, boolean>;
   showGridByProject: Record<string, boolean>;
   snapToGridByProject: Record<string, boolean>;
@@ -70,6 +73,10 @@ export function cloneAnnotations(annotations: WorkbenchAnnotation[]): WorkbenchA
 
 export function cloneGroupBoxes(groupBoxes: WorkbenchGroupBox[]): WorkbenchGroupBox[] {
   return groupBoxes.map((groupBox) => ({ ...groupBox }));
+}
+
+export function cloneGuideRails(guideRails: WorkbenchGuideRail[]): WorkbenchGuideRail[] {
+  return guideRails.map((guideRail) => ({ ...guideRail }));
 }
 
 export function cloneLayout(
@@ -117,6 +124,7 @@ export function cloneWorkspaceHistorySnapshot(
     layout: cloneLayout(snapshot.layout),
     annotations: cloneAnnotations(snapshot.annotations),
     groupBoxes: cloneGroupBoxes(snapshot.groupBoxes),
+    guideRails: cloneGuideRails(snapshot.guideRails),
     showOverviewNavigator: snapshot.showOverviewNavigator,
     showGrid: snapshot.showGrid,
     snapToGrid: snapshot.snapToGrid,
@@ -146,6 +154,7 @@ export function buildWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
     layout: cloneLayout(layout),
     annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
     groupBoxes: cloneGroupBoxes(state.groupBoxesByProject[projectId] ?? []),
+    guideRails: cloneGuideRails(state.guideRailsByProject[projectId] ?? []),
     showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
     showGrid: state.showGridByProject[projectId] ?? false,
     snapToGrid: state.snapToGridByProject[projectId] ?? false,
@@ -186,6 +195,10 @@ export function applyWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
     groupBoxesByProject: {
       ...state.groupBoxesByProject,
       [projectId]: cloneGroupBoxes(snapshot.groupBoxes),
+    },
+    guideRailsByProject: {
+      ...state.guideRailsByProject,
+      [projectId]: cloneGuideRails(snapshot.guideRails),
     },
     showOverviewNavigatorByProject: {
       ...state.showOverviewNavigatorByProject,
@@ -263,6 +276,7 @@ export function buildWorkspaceVersionDocument<State extends WorkspaceVersionHost
         layout: cloneLayout(layout),
         annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
         groupBoxes: cloneGroupBoxes(state.groupBoxesByProject[projectId] ?? []),
+        guideRails: cloneGuideRails(state.guideRailsByProject[projectId] ?? []),
         showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
         showGrid: state.showGridByProject[projectId] ?? false,
         snapToGrid: state.snapToGridByProject[projectId] ?? false,
@@ -389,6 +403,10 @@ export function applyRestoreWorkspaceVersion<State extends WorkspaceVersionHostS
     groupBoxesByProject: {
       ...state.groupBoxesByProject,
       [projectId]: cloneGroupBoxes(version.document.ui.groupBoxes ?? []),
+    },
+    guideRailsByProject: {
+      ...state.guideRailsByProject,
+      [projectId]: cloneGuideRails(version.document.ui.guideRails ?? []),
     },
     showOverviewNavigatorByProject: {
       ...state.showOverviewNavigatorByProject,

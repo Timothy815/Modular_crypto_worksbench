@@ -187,6 +187,52 @@ describe('uiReducer', () => {
     ]);
   });
 
+  it('adds, moves, renames, and removes guide rails', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+
+    const withVerticalRail = uiReducer(initialState, {
+      type: 'addGuideRail',
+      projectId,
+      axis: 'vertical',
+    });
+    const movedRail = uiReducer(withVerticalRail, {
+      type: 'moveGuideRail',
+      projectId,
+      guideRailId: 'rail-1',
+      position: 264,
+    });
+    const renamedRail = uiReducer(movedRail, {
+      type: 'updateGuideRailTitle',
+      projectId,
+      guideRailId: 'rail-1',
+      title: 'State Lane',
+    });
+    const removedRail = uiReducer(renamedRail, {
+      type: 'removeGuideRail',
+      projectId,
+      guideRailId: 'rail-1',
+    });
+
+    expect(withVerticalRail.guideRailsByProject[projectId]).toEqual([
+      {
+        id: 'rail-1',
+        axis: 'vertical',
+        position: 180,
+        title: 'Vertical Rail',
+      },
+    ]);
+    expect(renamedRail.guideRailsByProject[projectId]).toEqual([
+      {
+        id: 'rail-1',
+        axis: 'vertical',
+        position: 264,
+        title: 'State Lane',
+      },
+    ]);
+    expect(removedRail.guideRailsByProject[projectId]).toEqual([]);
+  });
+
   it('toggles the overview navigator per workspace', () => {
     const initialState = createInitialUiState(demoProjects);
     const projectId = 'sequential';
