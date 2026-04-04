@@ -2801,36 +2801,43 @@ body.canvas-resizing {
   stroke: color-mix(in srgb, #b84b00 94%, white);
 }
 
-.connection-group.connection-group-color-red path:not(.connection-hit-area) {
-  stroke: #d33e52;
+.connection-group[class*='connection-group-color-'] path:not(.connection-hit-area) {
+  stroke: var(--connection-custom-color);
+  stroke-width: 3.35;
+  stroke-opacity: 0.98;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--connection-custom-color) 20%, transparent));
 }
 
-.connection-group.connection-group-color-orange path:not(.connection-hit-area) {
-  stroke: #df6b1d;
+.connection-group.connection-group-color-red {
+  --connection-custom-color: #d33e52;
 }
 
-.connection-group.connection-group-color-gold path:not(.connection-hit-area) {
-  stroke: #c89212;
+.connection-group.connection-group-color-orange {
+  --connection-custom-color: #df6b1d;
 }
 
-.connection-group.connection-group-color-green path:not(.connection-hit-area) {
-  stroke: #2d9860;
+.connection-group.connection-group-color-gold {
+  --connection-custom-color: #c89212;
 }
 
-.connection-group.connection-group-color-teal path:not(.connection-hit-area) {
-  stroke: #14868c;
+.connection-group.connection-group-color-green {
+  --connection-custom-color: #2d9860;
 }
 
-.connection-group.connection-group-color-blue path:not(.connection-hit-area) {
-  stroke: #2f73d9;
+.connection-group.connection-group-color-teal {
+  --connection-custom-color: #14868c;
 }
 
-.connection-group.connection-group-color-violet path:not(.connection-hit-area) {
-  stroke: #7057d7;
+.connection-group.connection-group-color-blue {
+  --connection-custom-color: #2f73d9;
 }
 
-.connection-group.connection-group-color-rose path:not(.connection-hit-area) {
-  stroke: #c94f87;
+.connection-group.connection-group-color-violet {
+  --connection-custom-color: #7057d7;
+}
+
+.connection-group.connection-group-color-rose {
+  --connection-custom-color: #c94f87;
 }
 
 .connection-group:hover path:not(.connection-hit-area) {
