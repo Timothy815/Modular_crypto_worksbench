@@ -539,6 +539,13 @@ export function ParameterInspector({
     moduleId: null,
     mode: 'select',
   });
+  const [hoveredSBoxSwapTarget, setHoveredSBoxSwapTarget] = useState<{
+    moduleId: string | null;
+    index: number | null;
+  }>({
+    moduleId: null,
+    index: null,
+  });
   const [draggedSBoxAxis, setDraggedSBoxAxis] = useState<{
     axis: 'row' | 'column';
     index: number;
@@ -3124,6 +3131,10 @@ export function ParameterInspector({
                     sboxCellInteractionState.moduleId === moduleInstance.id
                       ? sboxCellInteractionState.mode
                       : 'select';
+                  const hoveredSwapTargetIndex =
+                    hoveredSBoxSwapTarget.moduleId === moduleInstance.id
+                      ? hoveredSBoxSwapTarget.index
+                      : null;
                   const applyNextTable = (nextTable: number[]) => {
                     const serialized = serializeSBoxTable(nextTable);
                     onParamDraftChange(moduleInstance.id, field.key, serialized);
@@ -3381,7 +3392,11 @@ export function ParameterInspector({
                                 <button
                                   type="button"
                                   className={
-                                    index === selectedEntryIndex
+                                    currentSBoxCellMode === 'swap' &&
+                                    index === hoveredSwapTargetIndex &&
+                                    index !== selectedEntryIndex
+                                      ? 'sbox-table-cell swap-preview sbox-editor-cell'
+                                      : index === selectedEntryIndex
                                       ? currentSBoxCellMode === 'swap'
                                         ? 'sbox-table-cell active swap-armed sbox-editor-cell'
                                         : 'sbox-table-cell active sbox-editor-cell'
@@ -3396,9 +3411,29 @@ export function ParameterInspector({
                                         swapSBoxEntry(currentEditableTable, selectedEntryIndex, entryValue),
                                       );
                                       setRequestedSBoxEditIndex(index);
+                                      setHoveredSBoxSwapTarget({
+                                        moduleId: moduleInstance.id,
+                                        index: null,
+                                      });
                                       return;
                                     }
                                     setRequestedSBoxEditIndex(index);
+                                  }}
+                                  onMouseEnter={() => {
+                                    if (currentSBoxCellMode === 'swap' && index !== selectedEntryIndex) {
+                                      setHoveredSBoxSwapTarget({
+                                        moduleId: moduleInstance.id,
+                                        index,
+                                      });
+                                    }
+                                  }}
+                                  onMouseLeave={() => {
+                                    if (hoveredSwapTargetIndex === index) {
+                                      setHoveredSBoxSwapTarget({
+                                        moduleId: moduleInstance.id,
+                                        index: null,
+                                      });
+                                    }
                                   }}
                                   title={
                                     currentSBoxCellMode === 'swap'
@@ -3428,6 +3463,23 @@ export function ParameterInspector({
                                   ? `current output 0x${formatSBoxHexValue(selectedEntryValue, 8)} · decimal ${selectedEntryValue}`
                                   : `current output ${selectedEntryValue}`}
                               </span>
+                              {currentSBoxCellMode === 'swap' &&
+                              hoveredSwapTargetIndex !== null &&
+                              hoveredSwapTargetIndex !== selectedEntryIndex ? (
+                                <span className="sbox-detail-metric sbox-swap-preview-copy">
+                                  Preview swap with{' '}
+                                  {usesHexGrid
+                                    ? `table[0x${formatSBoxHexValue(hoveredSwapTargetIndex, 8)}]`
+                                    : `table[${hoveredSwapTargetIndex}]`}{' '}
+                                  →{' '}
+                                  {usesHexGrid
+                                    ? `0x${formatSBoxHexValue(
+                                        currentEditableTable[hoveredSwapTargetIndex] ?? 0,
+                                        8,
+                                      )}`
+                                    : currentEditableTable[hoveredSwapTargetIndex] ?? 0}
+                                </span>
+                              ) : null}
                               <div className="sbox-cell-mode-toggle" role="group" aria-label="S-box cell interaction mode">
                                 <button
                                   type="button"
@@ -3467,7 +3519,7 @@ export function ParameterInspector({
                               <span className="meta-label">Cell Interaction</span>
                               <span className="sbox-detail-metric">
                                 {currentSBoxCellMode === 'swap'
-                                  ? 'Click another cell in the table to swap outputs with the selected entry.'
+                                  ? 'Hover another cell to preview the target, then click to swap outputs.'
                                   : 'Click cells to inspect them. Turn on swap mode to exchange two outputs directly.'}
                               </span>
                             </div>
