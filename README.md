@@ -165,6 +165,11 @@ The next wire-legibility polish follow-on after that is now implemented locally 
 - surfaces current selected-wire path, lane, and color state directly in the toolbar and menu
 - keeps the slice UI-only and bounded to clarity rather than new wire semantics
 
+The next wire-readability follow-on after that is now implemented locally as:
+- `SELECTED-WIRE-DETAILS-V1.md`
+- adds a compact selected-wire details card with source, target, and current state
+- keeps the slice UI-only and avoids adding a second inspector surface
+
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - now shipped as the first bounded verification-station refinement inside the compare/analyze line

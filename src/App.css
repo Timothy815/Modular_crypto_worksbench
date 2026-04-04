@@ -1486,6 +1486,53 @@ body.dock-resizing {
   color: color-mix(in srgb, var(--accent) 72%, var(--ink));
 }
 
+.workbench-wire-tools-group {
+  display: grid;
+  gap: 10px;
+}
+
+.workbench-wire-details-card {
+  display: grid;
+  gap: 8px;
+  min-width: min(420px, 100%);
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-panel) 94%, white);
+}
+
+.workbench-wire-details-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.workbench-wire-details-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.workbench-wire-details-label {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.workbench-wire-details-value {
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-button) 86%, white);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
 .workbench-quick-actions .workbench-inline-toolbar-group + .workbench-inline-toolbar-group {
   position: relative;
   margin-left: 6px;
@@ -2829,36 +2876,41 @@ body.canvas-resizing {
   filter: drop-shadow(0 0 3px color-mix(in srgb, var(--connection-custom-color) 20%, transparent));
 }
 
+.connection-group-wire-mode-high-contrast[class*='connection-group-color-'] path:not(.connection-hit-area) {
+  stroke-width: 3.7;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--connection-custom-color) 30%, transparent));
+}
+
 .connection-group.connection-group-color-red {
-  --connection-custom-color: #d33e52;
+  --connection-custom-color: #e53935;
 }
 
 .connection-group.connection-group-color-orange {
-  --connection-custom-color: #df6b1d;
+  --connection-custom-color: #fb8c00;
 }
 
 .connection-group.connection-group-color-gold {
-  --connection-custom-color: #c89212;
+  --connection-custom-color: #f6b000;
 }
 
 .connection-group.connection-group-color-green {
-  --connection-custom-color: #2d9860;
+  --connection-custom-color: #1f9d55;
 }
 
 .connection-group.connection-group-color-teal {
-  --connection-custom-color: #14868c;
+  --connection-custom-color: #008b8b;
 }
 
 .connection-group.connection-group-color-blue {
-  --connection-custom-color: #2f73d9;
+  --connection-custom-color: #1e88e5;
 }
 
 .connection-group.connection-group-color-violet {
-  --connection-custom-color: #7057d7;
+  --connection-custom-color: #7c4dff;
 }
 
 .connection-group.connection-group-color-rose {
-  --connection-custom-color: #c94f87;
+  --connection-custom-color: #d81b60;
 }
 
 .connection-group:hover path:not(.connection-hit-area) {

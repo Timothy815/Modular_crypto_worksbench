@@ -154,6 +154,11 @@ The next wire-legibility polish follow-on after that is now implemented locally 
 - a bounded toolbar/menu clarity pass for current selected-wire path, lane, and color state
 - keeps the slice UI-only and avoids new routing or color semantics
 
+The next wire-readability follow-on after that is now implemented locally as:
+- `SELECTED-WIRE-DETAILS-V1.md`
+- a bounded selected-wire details card for source, target, and current state
+- keeps the slice UI-only and avoids adding a second inspector surface
+
 Current `main` now also includes:
 - Python export foundations:
   - one workspace-local `Export Python` action beside JSON export

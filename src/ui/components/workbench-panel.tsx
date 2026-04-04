@@ -824,6 +824,31 @@ export function WorkbenchPanel({
       : null;
   const selectedConnectionColorOverride =
     selectedConnectionKey ? connectionLayout[selectedConnectionKey]?.colorOverride ?? null : null;
+  const selectedConnection = useMemo(
+    () =>
+      effectiveSelectedConnectionIndex !== null
+        ? activeProjectState.connections[effectiveSelectedConnectionIndex] ?? null
+        : null,
+    [activeProjectState.connections, effectiveSelectedConnectionIndex],
+  );
+  const selectedConnectionSourceLabel = selectedConnection
+    ? `${selectedConnection.from.moduleId}.${selectedConnection.from.port}`
+    : null;
+  const selectedConnectionTargetLabel = selectedConnection
+    ? `${selectedConnection.to.moduleId}.${selectedConnection.to.port}`
+    : null;
+  const selectedConnectionDomainTone = useMemo(() => {
+    if (!selectedConnection) {
+      return null;
+    }
+
+    const sourceModule = activeProjectState.modules.find(
+      (moduleInstance) => moduleInstance.id === selectedConnection.from.moduleId,
+    );
+    const sourceDef = sourceModule ? registry[sourceModule.defId] : null;
+    const sourcePort = sourceDef?.outputs.find((port) => port.name === selectedConnection.from.port);
+    return sourcePort?.type === 'bits' ? 'bits' : sourcePort?.type === 'symbol' ? 'symbol' : null;
+  }, [activeProjectState.modules, registry, selectedConnection]);
   const selectedConnectionLaneAxis = useMemo(() => {
     if (routingMode !== 'orthogonal' || effectiveSelectedConnectionIndex === null) {
       return null;
@@ -1932,6 +1957,9 @@ export function WorkbenchPanel({
           selectedModuleIds={selectedModuleIds}
           effectiveSelectedConnectionIndex={effectiveSelectedConnectionIndex}
           selectedConnectionHasManualPath={selectedConnectionHasManualPath}
+          selectedConnectionSourceLabel={selectedConnectionSourceLabel}
+          selectedConnectionTargetLabel={selectedConnectionTargetLabel}
+          selectedConnectionDomainTone={selectedConnectionDomainTone}
           selectedConnectionLaneAxis={selectedConnectionLaneAxis}
           selectedConnectionLanePreference={selectedConnectionLanePreference}
           selectedConnectionColorOverride={selectedConnectionColorOverride}
