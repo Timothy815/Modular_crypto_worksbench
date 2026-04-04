@@ -134,6 +134,11 @@ The next guide/stage snap follow-on after that is now implemented locally as:
 - a bounded snap expansion for stage-label anchors and group-box edge/center lines
 - keeps the slice focused on module placement and drag cues with no solver or wire snapping
 
+The next workspace coherence follow-on after that is now implemented locally as:
+- `WORKSPACE-POLISH-V3.md`
+- a bounded polish pass for clearer quick-action grouping and quieter non-selected layout furniture
+- keeps the slice UI-only with no new layout semantics or persistence
+
 The next wire-legibility follow-on after that is now implemented locally as:
 - `WIRE-COLOR-CUSTOMIZATION-V1.md`
 - a bounded workspace-level wire-color mode slice for `domain`, `neutral`, and `high-contrast`

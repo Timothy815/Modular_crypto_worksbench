@@ -486,109 +486,117 @@ export function WorkbenchActions({
       ) : !isCompositeEditor ? (
         <>
           <div className="workbench-inline-toolbar workbench-quick-actions" aria-label="Quick workbench actions">
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="zoom-out" />}
-              title="Zoom Out"
-              onSelect={onZoomOut}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="zoom-in" />}
-              title="Zoom In"
-              onSelect={onZoomIn}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="fit-view" />}
-              title="Fit View"
-              onSelect={onFitView}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="reset-view" />}
-              title="Reset View"
-              onSelect={onResetView}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="undo" />}
-              title="Undo"
-              onSelect={onRequestUndo}
-              disabled={!canUndo}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="redo" />}
-              title="Redo"
-              onSelect={onRequestRedo}
-              disabled={!canRedo}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="layout-horizontal" />}
-              title="Horizontal Layout"
-              onSelect={() => onSetLayoutDirection('horizontal')}
-              active={layoutDirection === 'horizontal'}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="layout-vertical" />}
-              title="Vertical Layout"
-              onSelect={() => onSetLayoutDirection('vertical')}
-              active={layoutDirection === 'vertical'}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="routing-curved" />}
-              title="Curved Routing"
-              onSelect={() => onSetRoutingMode('curved')}
-              active={routingMode === 'curved'}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="routing-orthogonal" />}
-              title="Orthogonal Routing"
-              onSelect={() => onSetRoutingMode('orthogonal')}
-              active={routingMode === 'orthogonal'}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="wire-color-domain" />}
-              title="Domain Wire Colors"
-              onSelect={() => onSetWireColorMode('domain')}
-              active={wireColorMode === 'domain'}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="wire-color-neutral" />}
-              title="Neutral Wire Colors"
-              onSelect={() => onSetWireColorMode('neutral')}
-              active={wireColorMode === 'neutral'}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="wire-color-high-contrast" />}
-              title="High Contrast Wire Colors"
-              onSelect={() => onSetWireColorMode('high-contrast')}
-              active={wireColorMode === 'high-contrast'}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="overview" />}
-              title={showOverviewNavigator ? 'Hide Overview Navigator' : 'Show Overview Navigator'}
-              onSelect={() => onToggleOverviewNavigator(!showOverviewNavigator)}
-              active={showOverviewNavigator}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="grid" />}
-              title={showGrid ? 'Hide Grid' : 'Show Grid'}
-              onSelect={() => onToggleGrid(!showGrid)}
-              active={showGrid}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="snap" />}
-              title={snapToGrid ? 'Disable Snap To Grid' : 'Enable Snap To Grid'}
-              onSelect={() => onToggleSnapToGrid(!snapToGrid)}
-              active={snapToGrid}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="snap-guides" />}
-              title={snapToGuides ? 'Disable Snap To Guides' : 'Enable Snap To Guides'}
-              onSelect={() => onToggleSnapToGuides(!snapToGuides)}
-              active={snapToGuides}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="save-version" />}
-              title="Save Version"
-              onSelect={onRequestSaveVersion}
-            />
+            <div className="workbench-inline-toolbar-group" aria-label="Navigation tools">
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="zoom-out" />}
+                title="Zoom Out"
+                onSelect={onZoomOut}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="zoom-in" />}
+                title="Zoom In"
+                onSelect={onZoomIn}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="fit-view" />}
+                title="Fit View"
+                onSelect={onFitView}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="reset-view" />}
+                title="Reset View"
+                onSelect={onResetView}
+              />
+            </div>
+            <div className="workbench-inline-toolbar-group" aria-label="History tools">
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="undo" />}
+                title="Undo"
+                onSelect={onRequestUndo}
+                disabled={!canUndo}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="redo" />}
+                title="Redo"
+                onSelect={onRequestRedo}
+                disabled={!canRedo}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="save-version" />}
+                title="Save Version"
+                onSelect={onRequestSaveVersion}
+              />
+            </div>
+            <div className="workbench-inline-toolbar-group" aria-label="Layout mode tools">
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="layout-horizontal" />}
+                title="Horizontal Layout"
+                onSelect={() => onSetLayoutDirection('horizontal')}
+                active={layoutDirection === 'horizontal'}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="layout-vertical" />}
+                title="Vertical Layout"
+                onSelect={() => onSetLayoutDirection('vertical')}
+                active={layoutDirection === 'vertical'}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="routing-curved" />}
+                title="Curved Routing"
+                onSelect={() => onSetRoutingMode('curved')}
+                active={routingMode === 'curved'}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="routing-orthogonal" />}
+                title="Orthogonal Routing"
+                onSelect={() => onSetRoutingMode('orthogonal')}
+                active={routingMode === 'orthogonal'}
+              />
+            </div>
+            <div className="workbench-inline-toolbar-group" aria-label="View aid tools">
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="wire-color-domain" />}
+                title="Domain Wire Colors"
+                onSelect={() => onSetWireColorMode('domain')}
+                active={wireColorMode === 'domain'}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="wire-color-neutral" />}
+                title="Neutral Wire Colors"
+                onSelect={() => onSetWireColorMode('neutral')}
+                active={wireColorMode === 'neutral'}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="wire-color-high-contrast" />}
+                title="High Contrast Wire Colors"
+                onSelect={() => onSetWireColorMode('high-contrast')}
+                active={wireColorMode === 'high-contrast'}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="overview" />}
+                title={showOverviewNavigator ? 'Hide Overview Navigator' : 'Show Overview Navigator'}
+                onSelect={() => onToggleOverviewNavigator(!showOverviewNavigator)}
+                active={showOverviewNavigator}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="grid" />}
+                title={showGrid ? 'Hide Grid' : 'Show Grid'}
+                onSelect={() => onToggleGrid(!showGrid)}
+                active={showGrid}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="snap" />}
+                title={snapToGrid ? 'Disable Snap To Grid' : 'Enable Snap To Grid'}
+                onSelect={() => onToggleSnapToGrid(!snapToGrid)}
+                active={snapToGrid}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="snap-guides" />}
+                title={snapToGuides ? 'Disable Snap To Guides' : 'Enable Snap To Guides'}
+                onSelect={() => onToggleSnapToGuides(!snapToGuides)}
+                active={snapToGuides}
+              />
+            </div>
           </div>
 
           <div className="workbench-inline-toolbar" aria-label="Layout tools">

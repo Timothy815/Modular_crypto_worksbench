@@ -145,6 +145,11 @@ The next guide/stage snap follow-on after that is now implemented locally as:
 - expands module snap and drag guides to include stage-label anchors and group-box edges/centers
 - keeps the slice bounded to existing visual metadata with no solver or wire snapping
 
+The next workspace coherence follow-on after that is now implemented locally as:
+- `WORKSPACE-POLISH-V3.md`
+- groups the quick-actions strip into clearer chunks and further quiets non-selected rails, boxes, and stage labels
+- keeps the slice UI-only and bounded to interaction/readability polish
+
 The next wire-legibility follow-on after that is now implemented locally as:
 - `WIRE-COLOR-CUSTOMIZATION-V1.md`
 - adds bounded workspace-level wire color modes for `domain`, `neutral`, and `high-contrast`
