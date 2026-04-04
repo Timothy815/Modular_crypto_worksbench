@@ -3012,6 +3012,21 @@ function MainApp() {
                 connectionKey,
               })
             }
+            onSetConnectionColorOverride={(connectionKey, color) =>
+              dispatch({
+                type: 'setConnectionColorOverride',
+                projectId: activeProjectDefinition.id,
+                connectionKey,
+                color,
+              })
+            }
+            onClearConnectionColorOverride={(connectionKey) =>
+              dispatch({
+                type: 'clearConnectionColorOverride',
+                projectId: activeProjectDefinition.id,
+                connectionKey,
+              })
+            }
             onExportDocument={() => {
               if (isCompositeDrilldownActive) {
                 return;

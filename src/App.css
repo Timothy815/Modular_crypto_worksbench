@@ -1458,6 +1458,13 @@ body.dock-resizing {
   gap: 6px;
 }
 
+.workbench-inline-toolbar-divider {
+  width: 1px;
+  align-self: stretch;
+  margin: 0 2px;
+  background: color-mix(in srgb, var(--line) 76%, transparent);
+}
+
 .workbench-quick-actions .workbench-inline-toolbar-group + .workbench-inline-toolbar-group {
   position: relative;
   margin-left: 6px;
@@ -1506,6 +1513,46 @@ body.dock-resizing {
 .workbench-inline-action-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.workbench-wire-color-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, rgba(255, 255, 255, 0.72) 35%, rgba(0, 0, 0, 0.22));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.workbench-wire-color-swatch-red {
+  background: #d33e52;
+}
+
+.workbench-wire-color-swatch-orange {
+  background: #df6b1d;
+}
+
+.workbench-wire-color-swatch-gold {
+  background: #c89212;
+}
+
+.workbench-wire-color-swatch-green {
+  background: #2d9860;
+}
+
+.workbench-wire-color-swatch-teal {
+  background: #14868c;
+}
+
+.workbench-wire-color-swatch-blue {
+  background: #2f73d9;
+}
+
+.workbench-wire-color-swatch-violet {
+  background: #7057d7;
+}
+
+.workbench-wire-color-swatch-rose {
+  background: #c94f87;
 }
 
 .workbench-inline-action-icon {
@@ -2752,6 +2799,38 @@ body.canvas-resizing {
 
 .connection-group-wire-mode-high-contrast.connection-group-domain-symbol path:not(.connection-hit-area) {
   stroke: color-mix(in srgb, #b84b00 94%, white);
+}
+
+.connection-group.connection-group-color-red path:not(.connection-hit-area) {
+  stroke: #d33e52;
+}
+
+.connection-group.connection-group-color-orange path:not(.connection-hit-area) {
+  stroke: #df6b1d;
+}
+
+.connection-group.connection-group-color-gold path:not(.connection-hit-area) {
+  stroke: #c89212;
+}
+
+.connection-group.connection-group-color-green path:not(.connection-hit-area) {
+  stroke: #2d9860;
+}
+
+.connection-group.connection-group-color-teal path:not(.connection-hit-area) {
+  stroke: #14868c;
+}
+
+.connection-group.connection-group-color-blue path:not(.connection-hit-area) {
+  stroke: #2f73d9;
+}
+
+.connection-group.connection-group-color-violet path:not(.connection-hit-area) {
+  stroke: #7057d7;
+}
+
+.connection-group.connection-group-color-rose path:not(.connection-hit-area) {
+  stroke: #c94f87;
 }
 
 .connection-group:hover path:not(.connection-hit-area) {

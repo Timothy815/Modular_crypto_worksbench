@@ -447,6 +447,7 @@ export interface BuildShareableLabPackArgs {
     {
       orthogonalBend?: { axis: 'x' | 'y'; value: number };
       orthogonalLanePreference?: 'negative' | 'positive';
+      colorOverride?: 'red' | 'orange' | 'gold' | 'green' | 'teal' | 'blue' | 'violet' | 'rose';
     }
   >;
   comparisonBaseline: ComparisonBaselineDocument | null;
@@ -512,6 +513,7 @@ export function buildShareableLabPack({
               ...(layout.orthogonalLanePreference
                 ? { orthogonalLanePreference: layout.orthogonalLanePreference }
                 : {}),
+              ...(layout.colorOverride ? { colorOverride: layout.colorOverride } : {}),
             },
           ]),
         ),
@@ -644,6 +646,7 @@ export function prepareImportedLabPack({
                 ...(layout.orthogonalLanePreference
                   ? { orthogonalLanePreference: layout.orthogonalLanePreference }
                   : {}),
+                ...(layout.colorOverride ? { colorOverride: layout.colorOverride } : {}),
               },
             ],
           ),

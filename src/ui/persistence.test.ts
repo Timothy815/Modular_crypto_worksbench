@@ -304,6 +304,7 @@ describe('parseShareableLabPack', () => {
             'a:out->b:in': {
               orthogonalBend: { axis: 'x', value: 144 },
               orthogonalLanePreference: 'positive',
+              colorOverride: 'teal',
             },
           },
         },
@@ -322,6 +323,29 @@ describe('parseShareableLabPack', () => {
     };
 
     expect(parseShareableLabPack(JSON.stringify(pack))).toEqual(pack);
+  });
+
+  it('persists connection color overrides in storage', () => {
+    const state = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const connectionKey = 'clock:out->output:in';
+    const storage = new MemoryStorage();
+
+    const coloredState = uiReducer(state, {
+      type: 'setConnectionColorOverride',
+      projectId,
+      connectionKey,
+      color: 'rose',
+    });
+
+    saveWorkspaceToStorage(coloredState, {}, storage);
+    const restored = loadWorkspaceFromStorage(demoProjects, storage);
+
+    expect(restored?.documentsByProjectId[projectId]?.ui.connectionLayout).toEqual({
+      [connectionKey]: {
+        colorOverride: 'rose',
+      },
+    });
   });
 });
 

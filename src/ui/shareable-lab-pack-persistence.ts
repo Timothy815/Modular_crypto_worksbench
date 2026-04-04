@@ -86,12 +86,22 @@ function isConnectionLayoutMap(value: unknown) {
           .orthogonalBend;
         const lanePreference = (layout as { orthogonalLanePreference?: unknown })
           .orthogonalLanePreference;
+        const colorOverride = (layout as { colorOverride?: unknown }).colorOverride;
         return (
           (bend === undefined ||
             ((bend.axis === 'x' || bend.axis === 'y') && typeof bend.value === 'number')) &&
           (lanePreference === undefined ||
             lanePreference === 'negative' ||
-            lanePreference === 'positive')
+            lanePreference === 'positive') &&
+          (colorOverride === undefined ||
+            colorOverride === 'red' ||
+            colorOverride === 'orange' ||
+            colorOverride === 'gold' ||
+            colorOverride === 'green' ||
+            colorOverride === 'teal' ||
+            colorOverride === 'blue' ||
+            colorOverride === 'violet' ||
+            colorOverride === 'rose')
         );
       }))
   );

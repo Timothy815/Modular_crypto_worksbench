@@ -123,6 +123,11 @@ function cloneConnectionLayout(
               orthogonalLanePreference: layout.orthogonalLanePreference,
             }
           : {}),
+        ...(layout.colorOverride
+          ? {
+              colorOverride: layout.colorOverride,
+            }
+          : {}),
       },
     ]),
   );

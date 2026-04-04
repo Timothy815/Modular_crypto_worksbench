@@ -1506,6 +1506,52 @@ describe('uiReducer', () => {
     expect(preferenceCleared.connectionLayoutByProject[projectId]?.[connectionKey]).toBeUndefined();
   });
 
+  it('stores wire color overrides independently from manual bends and lane preference', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const connectionKey = 'clock:out->output:in';
+
+    const withColor = uiReducer(initialState, {
+      type: 'setConnectionColorOverride',
+      projectId,
+      connectionKey,
+      color: 'violet',
+    });
+    expect(withColor.connectionLayoutByProject[projectId]?.[connectionKey]).toEqual({
+      colorOverride: 'violet',
+    });
+
+    const withPreference = uiReducer(withColor, {
+      type: 'setConnectionLanePreference',
+      projectId,
+      connectionKey,
+      preference: 'positive',
+    });
+    const withBend = uiReducer(withPreference, {
+      type: 'setConnectionOrthogonalBend',
+      projectId,
+      connectionKey,
+      axis: 'y',
+      value: 144,
+    });
+
+    expect(withBend.connectionLayoutByProject[projectId]?.[connectionKey]).toEqual({
+      colorOverride: 'violet',
+      orthogonalBend: { axis: 'y', value: 144 },
+      orthogonalLanePreference: 'positive',
+    });
+
+    const colorCleared = uiReducer(withBend, {
+      type: 'clearConnectionColorOverride',
+      projectId,
+      connectionKey,
+    });
+    expect(colorCleared.connectionLayoutByProject[projectId]?.[connectionKey]).toEqual({
+      orthogonalBend: { axis: 'y', value: 144 },
+      orthogonalLanePreference: 'positive',
+    });
+  });
+
   it('creates a blank personal workspace in build mode', () => {
     const initialState = createInitialUiState(demoProjects);
 

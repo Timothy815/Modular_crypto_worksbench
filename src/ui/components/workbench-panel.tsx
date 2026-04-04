@@ -48,6 +48,7 @@ import {
 } from '../workspace-viewport';
 import type {
   WorkbenchAnnotation,
+  WorkbenchConnectionColorOverride,
   WorkbenchConnectionLayout,
   WorkbenchGuideRail,
   WorkbenchGroupBox,
@@ -330,6 +331,11 @@ interface WorkbenchPanelProps {
     preference: 'negative' | 'positive',
   ) => void;
   onClearConnectionLanePreference: (connectionKey: string) => void;
+  onSetConnectionColorOverride: (
+    connectionKey: string,
+    color: WorkbenchConnectionColorOverride,
+  ) => void;
+  onClearConnectionColorOverride: (connectionKey: string) => void;
   onExportDocument: () => void;
   onExportLabPack: () => void;
   onExportPython: () => void;
@@ -448,6 +454,8 @@ export function WorkbenchPanel({
   onClearConnectionOrthogonalBend,
   onSetConnectionLanePreference,
   onClearConnectionLanePreference,
+  onSetConnectionColorOverride,
+  onClearConnectionColorOverride,
   onExportDocument,
   onExportLabPack,
   onExportPython,
@@ -814,6 +822,8 @@ export function WorkbenchPanel({
     selectedConnectionKey
       ? connectionLayout[selectedConnectionKey]?.orthogonalLanePreference ?? null
       : null;
+  const selectedConnectionColorOverride =
+    selectedConnectionKey ? connectionLayout[selectedConnectionKey]?.colorOverride ?? null : null;
   const selectedConnectionLaneAxis = useMemo(() => {
     if (routingMode !== 'orthogonal' || effectiveSelectedConnectionIndex === null) {
       return null;
@@ -1792,6 +1802,9 @@ export function WorkbenchPanel({
           'connection-group',
           `connection-group-wire-mode-${wireColorMode}`,
           connectionDomainTone ? `connection-group-domain-${connectionDomainTone}` : '',
+          connectionLayout[connectionKey]?.colorOverride
+            ? `connection-group-color-${connectionLayout[connectionKey]?.colorOverride}`
+            : '',
           validationIssues.some(
             (issue) =>
               issue.connection?.from.moduleId === connection.from.moduleId &&
@@ -1921,6 +1934,7 @@ export function WorkbenchPanel({
           selectedConnectionHasManualPath={selectedConnectionHasManualPath}
           selectedConnectionLaneAxis={selectedConnectionLaneAxis}
           selectedConnectionLanePreference={selectedConnectionLanePreference}
+          selectedConnectionColorOverride={selectedConnectionColorOverride}
           showTutorialToggle={showTutorialToggle}
           tutorialNotesVisible={tutorialNotesVisible}
           onAddAnnotation={onAddAnnotation}
@@ -1972,6 +1986,16 @@ export function WorkbenchPanel({
           onRequestClearWireLanePreference={() => {
             if (selectedConnectionKey) {
               onClearConnectionLanePreference(selectedConnectionKey);
+            }
+          }}
+          onRequestSetWireColorOverride={(color) => {
+            if (selectedConnectionKey) {
+              onSetConnectionColorOverride(selectedConnectionKey, color);
+            }
+          }}
+          onRequestClearWireColorOverride={() => {
+            if (selectedConnectionKey) {
+              onClearConnectionColorOverride(selectedConnectionKey);
             }
           }}
           onRequestImport={() => importInputRef.current?.click()}

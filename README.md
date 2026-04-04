@@ -153,7 +153,12 @@ The next workspace coherence follow-on after that is now implemented locally as:
 The next wire-legibility follow-on after that is now implemented locally as:
 - `WIRE-COLOR-CUSTOMIZATION-V1.md`
 - adds bounded workspace-level wire color modes for `domain`, `neutral`, and `high-contrast`
-- keeps the slice workspace-local and stops short of arbitrary per-wire recoloring
+- keeps the slice workspace-local and establishes the base modes for later per-wire overrides
+
+The next wire-legibility follow-on after that is now implemented locally as:
+- `ARBITRARY-WIRE-COLORING-V1.md`
+- adds bounded per-connection wire recoloring from a curated palette
+- keeps the slice in workspace UI metadata only and preserves selected/trace/error emphasis as authoritative
 
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`

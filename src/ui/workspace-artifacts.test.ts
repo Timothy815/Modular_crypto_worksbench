@@ -22,6 +22,7 @@ describe('workspace-artifacts', () => {
             'a:out->b:in': {
               orthogonalBend: { axis: 'x', value: 120 },
               orthogonalLanePreference: 'negative',
+              colorOverride: 'blue',
             },
           },
         },
@@ -77,6 +78,7 @@ describe('workspace-artifacts', () => {
         'a:out->b:in': {
           orthogonalBend: { axis: 'x', value: 120 },
           orthogonalLanePreference: 'negative',
+          colorOverride: 'blue',
         },
       },
       comparisonBaseline: null,
@@ -153,6 +155,7 @@ describe('workspace-artifacts', () => {
       'a:out->b:in': {
         orthogonalBend: { axis: 'x', value: 120 },
         orthogonalLanePreference: 'negative',
+        colorOverride: 'blue',
       },
     });
   });

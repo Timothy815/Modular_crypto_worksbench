@@ -172,6 +172,17 @@ export type UiAction =
       mode: WorkbenchWireColorMode;
     }
   | {
+      type: 'setConnectionColorOverride';
+      projectId: string;
+      connectionKey: string;
+      color: NonNullable<WorkbenchConnectionLayout['colorOverride']>;
+    }
+  | {
+      type: 'clearConnectionColorOverride';
+      projectId: string;
+      connectionKey: string;
+    }
+  | {
       type: 'moveModules';
       projectId: string;
       positions: Record<string, { x: number; y: number }>;
@@ -1192,6 +1203,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
                   ...(layout.orthogonalLanePreference
                     ? { orthogonalLanePreference: layout.orthogonalLanePreference }
                     : {}),
+                  ...(layout.colorOverride ? { colorOverride: layout.colorOverride } : {}),
                 },
               ],
             ),
@@ -1611,6 +1623,65 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         wireColorModeByProject: {
           ...state.wireColorModeByProject,
           [action.projectId]: action.mode,
+        },
+      };
+    }
+    case 'setConnectionColorOverride': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentLayout = state.connectionLayoutByProject[action.projectId] ?? {};
+      const currentColor = currentLayout[action.connectionKey]?.colorOverride;
+      if (currentColor === action.color) {
+        return state;
+      }
+
+      return {
+        ...state,
+        connectionLayoutByProject: {
+          ...state.connectionLayoutByProject,
+          [action.projectId]: {
+            ...currentLayout,
+            [action.connectionKey]: {
+              ...currentLayout[action.connectionKey],
+              colorOverride: action.color,
+            },
+          },
+        },
+      };
+    }
+    case 'clearConnectionColorOverride': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentLayout = state.connectionLayoutByProject[action.projectId] ?? {};
+      const currentConnectionLayout = currentLayout[action.connectionKey];
+      if (!currentConnectionLayout?.colorOverride) {
+        return state;
+      }
+
+      const nextConnectionLayout = { ...currentLayout };
+      const nextLayoutEntry = {
+        ...(currentConnectionLayout.orthogonalBend
+          ? { orthogonalBend: currentConnectionLayout.orthogonalBend }
+          : {}),
+        ...(currentConnectionLayout.orthogonalLanePreference
+          ? { orthogonalLanePreference: currentConnectionLayout.orthogonalLanePreference }
+          : {}),
+      };
+      if (Object.keys(nextLayoutEntry).length > 0) {
+        nextConnectionLayout[action.connectionKey] = nextLayoutEntry;
+      } else {
+        delete nextConnectionLayout[action.connectionKey];
+      }
+
+      return {
+        ...state,
+        connectionLayoutByProject: {
+          ...state.connectionLayoutByProject,
+          [action.projectId]: nextConnectionLayout,
         },
       };
     }
@@ -3013,6 +3084,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
                   ...(layout.orthogonalLanePreference
                     ? { orthogonalLanePreference: layout.orthogonalLanePreference }
                     : {}),
+                  ...(layout.colorOverride ? { colorOverride: layout.colorOverride } : {}),
                 },
               ],
             ),

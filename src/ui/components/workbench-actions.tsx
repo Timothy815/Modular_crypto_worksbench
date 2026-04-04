@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import type {
+  WorkbenchConnectionColorOverride,
   WorkbenchLayoutDirection,
   WorkbenchRoutingMode,
   WorkbenchWireColorMode,
@@ -24,6 +25,7 @@ interface WorkbenchActionsProps {
   selectedConnectionHasManualPath: boolean;
   selectedConnectionLaneAxis: 'x' | 'y' | null;
   selectedConnectionLanePreference: 'negative' | 'positive' | null;
+  selectedConnectionColorOverride: WorkbenchConnectionColorOverride | null;
   showTutorialToggle: boolean;
   tutorialNotesVisible: boolean;
   onAddAnnotation: () => void;
@@ -69,6 +71,8 @@ interface WorkbenchActionsProps {
   onRequestResetWirePath: () => void;
   onRequestSetWireLanePreference: (preference: 'negative' | 'positive') => void;
   onRequestClearWireLanePreference: () => void;
+  onRequestSetWireColorOverride: (color: WorkbenchConnectionColorOverride) => void;
+  onRequestClearWireColorOverride: () => void;
   onRequestImport: () => void;
   onRequestImportLabPack: () => void;
   onRequestCreateComposite: () => void;
@@ -81,6 +85,20 @@ interface WorkbenchMenuAction {
   disabled?: boolean;
   title?: string;
 }
+
+const WIRE_COLOR_OVERRIDE_OPTIONS: Array<{
+  color: WorkbenchConnectionColorOverride;
+  label: string;
+}> = [
+  { color: 'red', label: 'Red Wire' },
+  { color: 'orange', label: 'Orange Wire' },
+  { color: 'gold', label: 'Gold Wire' },
+  { color: 'green', label: 'Green Wire' },
+  { color: 'teal', label: 'Teal Wire' },
+  { color: 'blue', label: 'Blue Wire' },
+  { color: 'violet', label: 'Violet Wire' },
+  { color: 'rose', label: 'Rose Wire' },
+];
 
 interface WorkbenchActionMenuProps {
   label: string;
@@ -417,6 +435,10 @@ function WorkbenchInlineIcon({ name }: { name: WorkbenchInlineIconName }) {
   }
 }
 
+function WorkbenchWireColorSwatch({ color }: { color: WorkbenchConnectionColorOverride }) {
+  return <span className={`workbench-wire-color-swatch workbench-wire-color-swatch-${color}`} />;
+}
+
 export function WorkbenchActions({
   isCompositeEditor,
   isObservationMode = false,
@@ -435,6 +457,7 @@ export function WorkbenchActions({
   selectedConnectionHasManualPath,
   selectedConnectionLaneAxis,
   selectedConnectionLanePreference,
+  selectedConnectionColorOverride,
   showTutorialToggle,
   tutorialNotesVisible,
   onAddAnnotation,
@@ -468,6 +491,8 @@ export function WorkbenchActions({
   onRequestResetWirePath,
   onRequestSetWireLanePreference,
   onRequestClearWireLanePreference,
+  onRequestSetWireColorOverride,
+  onRequestClearWireColorOverride,
   onRequestImport,
   onRequestImportLabPack,
   onRequestCreateComposite,
@@ -714,6 +739,22 @@ export function WorkbenchActions({
                 onSelect={() => onRequestSetWireLanePreference('positive')}
                 disabled={!canAdjustWireLane || selectedConnectionLanePreference === 'positive'}
               />
+              <span className="workbench-inline-toolbar-divider" aria-hidden="true" />
+              {WIRE_COLOR_OVERRIDE_OPTIONS.map(({ color, label }) => (
+                <WorkbenchInlineActionButton
+                  key={color}
+                  content={<WorkbenchWireColorSwatch color={color} />}
+                  title={label}
+                  onSelect={() => onRequestSetWireColorOverride(color)}
+                  active={selectedConnectionColorOverride === color}
+                />
+              ))}
+              <WorkbenchInlineActionButton
+                content="Auto"
+                title="Reset To Workspace Wire Colors"
+                onSelect={onRequestClearWireColorOverride}
+                disabled={selectedConnectionColorOverride === null}
+              />
             </div>
           ) : null}
 
@@ -844,6 +885,19 @@ export function WorkbenchActions({
               label="Reset Wire Path"
               onSelect={onRequestResetWirePath}
               disabled={!selectedConnectionHasManualPath}
+            />
+            {WIRE_COLOR_OVERRIDE_OPTIONS.map(({ color, label }) => (
+              <WorkbenchMenuActionButton
+                key={color}
+                label={label}
+                onSelect={() => onRequestSetWireColorOverride(color)}
+                disabled={!canDeleteWire || selectedConnectionColorOverride === color}
+              />
+            ))}
+            <WorkbenchMenuActionButton
+              label="Reset To Workspace Wire Colors"
+              onSelect={onRequestClearWireColorOverride}
+              disabled={!canDeleteWire || selectedConnectionColorOverride === null}
             />
           </WorkbenchActionMenu>
 

@@ -142,7 +142,12 @@ The next workspace coherence follow-on after that is now implemented locally as:
 The next wire-legibility follow-on after that is now implemented locally as:
 - `WIRE-COLOR-CUSTOMIZATION-V1.md`
 - a bounded workspace-level wire-color mode slice for `domain`, `neutral`, and `high-contrast`
-- keeps the slice in workspace UI metadata only and stops short of arbitrary per-wire recoloring
+- keeps the slice in workspace UI metadata only and establishes the base modes for later per-wire overrides
+
+The next wire-legibility follow-on after that is now implemented locally as:
+- `ARBITRARY-WIRE-COLORING-V1.md`
+- a bounded per-connection recoloring slice using a curated palette
+- keeps the slice in workspace UI metadata only and preserves selected/trace/error emphasis as authoritative
 
 Current `main` now also includes:
 - Python export foundations:

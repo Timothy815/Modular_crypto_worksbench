@@ -49,6 +49,15 @@ export interface WorkbenchGuideRail {
 
 export type WorkbenchConnectionBendAxis = 'x' | 'y';
 export type WorkbenchConnectionLanePreference = 'negative' | 'positive';
+export type WorkbenchConnectionColorOverride =
+  | 'red'
+  | 'orange'
+  | 'gold'
+  | 'green'
+  | 'teal'
+  | 'blue'
+  | 'violet'
+  | 'rose';
 
 export interface WorkbenchConnectionLayout {
   orthogonalBend?: {
@@ -56,6 +65,7 @@ export interface WorkbenchConnectionLayout {
     value: number;
   };
   orthogonalLanePreference?: WorkbenchConnectionLanePreference;
+  colorOverride?: WorkbenchConnectionColorOverride;
 }
 
 export type WorkbenchLayoutDirection = 'horizontal' | 'vertical';
