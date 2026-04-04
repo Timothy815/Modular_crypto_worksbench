@@ -43,6 +43,30 @@ export function buildReversePermutationOrder(length: number): number[] {
   return Array.from({ length }, (_, index) => length - 1 - index);
 }
 
+export function rotatePermutationOrder(
+  order: number[],
+  direction: 'left' | 'right',
+  amount = 1,
+): number[] {
+  if (order.length === 0) {
+    return [];
+  }
+
+  const normalizedAmount = ((amount % order.length) + order.length) % order.length;
+  if (normalizedAmount === 0) {
+    return [...order];
+  }
+
+  if (direction === 'left') {
+    return [...order.slice(normalizedAmount), ...order.slice(0, normalizedAmount)];
+  }
+
+  return [
+    ...order.slice(order.length - normalizedAmount),
+    ...order.slice(0, order.length - normalizedAmount),
+  ];
+}
+
 export function buildInversePermutationOrder(order: number[]): number[] {
   const inverse = new Array<number>(order.length);
 

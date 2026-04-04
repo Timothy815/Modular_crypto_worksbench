@@ -47,6 +47,7 @@ import {
   buildInversePermutationOrder,
   buildIdentityPermutationOrder,
   buildReversePermutationOrder,
+  rotatePermutationOrder,
   serializePermutationOrder,
   swapPermutationOrderPositions,
 } from '../../engine/modules/permutation';
@@ -192,11 +193,16 @@ interface ParameterInspectorProps {
 
 type InspectorIconName =
   | 'rotate'
+  | 'rotate-left'
+  | 'rotate-right'
   | 'duplicate'
   | 'delete'
   | 'copy'
   | 'rename'
   | 'bypass'
+  | 'identity'
+  | 'reverse'
+  | 'inverse'
   | 'configure'
   | 'analyze'
   | 'compare';
@@ -216,6 +222,64 @@ function InspectorIcon({ name }: { name: InspectorIconName }) {
           />
           <path
             d="M12.8 2.9h3.8v3.8"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case 'rotate-left':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path
+            d="M14.2 10.2a4.4 4.4 0 1 1-4.4-4.4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M9.2 5.8H5.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M7.2 4.1 5 5.8l2.2 1.7"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case 'rotate-right':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path
+            d="M5.8 10.2a4.4 4.4 0 1 0 4.4-4.4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M10.8 5.8h3.7"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="m12.8 4.1 2.2 1.7-2.2 1.7"
             fill="none"
             stroke="currentColor"
             strokeWidth="1.8"
@@ -354,6 +418,100 @@ function InspectorIcon({ name }: { name: InspectorIconName }) {
           />
           <path
             d="M7.8 6l2.7 4-2.7 4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case 'identity':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <circle cx="4.2" cy="5.3" r="1.1" fill="currentColor" stroke="none" />
+          <circle cx="4.2" cy="10" r="1.1" fill="currentColor" stroke="none" />
+          <circle cx="4.2" cy="14.7" r="1.1" fill="currentColor" stroke="none" />
+          <circle cx="15.8" cy="5.3" r="1.1" fill="currentColor" stroke="none" />
+          <circle cx="15.8" cy="10" r="1.1" fill="currentColor" stroke="none" />
+          <circle cx="15.8" cy="14.7" r="1.1" fill="currentColor" stroke="none" />
+          <path
+            d="M5.8 5.3h8.4M5.8 10h8.4M5.8 14.7h8.4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case 'reverse':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <circle cx="4.2" cy="5.3" r="1.1" fill="currentColor" stroke="none" />
+          <circle cx="4.2" cy="10" r="1.1" fill="currentColor" stroke="none" />
+          <circle cx="4.2" cy="14.7" r="1.1" fill="currentColor" stroke="none" />
+          <circle cx="15.8" cy="5.3" r="1.1" fill="currentColor" stroke="none" />
+          <circle cx="15.8" cy="10" r="1.1" fill="currentColor" stroke="none" />
+          <circle cx="15.8" cy="14.7" r="1.1" fill="currentColor" stroke="none" />
+          <path
+            d="M5.8 5.3h2.7c2.8 0 5 2.2 5.7 4.7"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M5.8 10h8.4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M5.8 14.7h2.7c2.8 0 5-2.2 5.7-4.7"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case 'inverse':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path
+            d="M6 4.8v10.4M14 4.8v10.4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M7.4 7.2h5.2"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M10.2 5l2.2 2.2-2.2 2.2"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M12.6 12.8H7.4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M9.8 15l-2.2-2.2 2.2-2.2"
             fill="none"
             stroke="currentColor"
             strokeWidth="1.8"
@@ -560,6 +718,8 @@ export function ParameterInspector({
   });
   const [showCollectedOutput, setShowCollectedOutput] = useState(true);
   const [draggedPermutationInputIndex, setDraggedPermutationInputIndex] = useState<number | null>(null);
+  const [hoveredPermutationOutputIndex, setHoveredPermutationOutputIndex] = useState<number | null>(null);
+  const [armedPermutationInputIndex, setArmedPermutationInputIndex] = useState<number | null>(null);
   const [draggedRotorInputIndex, setDraggedRotorInputIndex] = useState<number | null>(null);
   const [selectedPlugboardLetter, setSelectedPlugboardLetter] = useState<string | null>(null);
   const [selectedReflectorLetter, setSelectedReflectorLetter] = useState<string | null>(null);
@@ -2624,7 +2784,14 @@ export function ParameterInspector({
                                         ? 'permutation-port permutation-port-input active'
                                         : 'permutation-port permutation-port-input'
                                     }
-                                    onDragStart={() => setDraggedRotorInputIndex(inputIndex)}
+                                    onDragStart={(event) => {
+                                      event.dataTransfer.effectAllowed = 'move';
+                                      event.dataTransfer.setData(
+                                        'text/plain',
+                                        `rotor-input:${inputIndex}`,
+                                      );
+                                      setDraggedRotorInputIndex(inputIndex);
+                                    }}
                                     onDragEnd={() => setDraggedRotorInputIndex(null)}
                                   >
                                     <strong className="permutation-slot-value">{letter}</strong>
@@ -3765,6 +3932,8 @@ export function ParameterInspector({
                   const baselineOrder = getEditablePermutationOrder(baselineValue);
                   const canUseVisualPermutationEditor =
                     editableOrder ? isSimplePermutationOrder(editableOrder) : false;
+                  const activePermutationInputIndex =
+                    draggedPermutationInputIndex ?? armedPermutationInputIndex;
                   const permutationSvgHeight =
                     permutationWireLayout?.height ??
                     (editableOrder && canUseVisualPermutationEditor
@@ -3782,10 +3951,26 @@ export function ParameterInspector({
                       ) : null}
                       {editableOrder ? (
                         <div className="permutation-editor">
-                          <div className="permutation-editor-actions">
-                            <button
-                              type="button"
-                              className="mini-action-button"
+                          <div className="permutation-editor-meta">
+                            <span className="content-status-chip">{editableOrder.length} output slots</span>
+                            <span className="content-status-chip">
+                              {canUseVisualPermutationEditor
+                                ? 'Drag an input wire onto an output slot, or click an input then click an output to replug the routing'
+                                : 'Raw CSV remains available until the permutation order parses again'}
+                            </span>
+                            {activePermutationInputIndex !== null ? (
+                              <span className="content-status-chip">
+                                {draggedPermutationInputIndex !== null ? 'Dragging' : 'Armed'} input {activePermutationInputIndex}
+                                {hoveredPermutationOutputIndex !== null
+                                  ? ` → output ${hoveredPermutationOutputIndex}`
+                                : ''}
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="permutation-inline-tools" role="group" aria-label="Permutation tools">
+                            <InspectorIconButton
+                              icon="identity"
+                              label="Reset To Identity"
                               onClick={() => {
                                 const nextValue = serializePermutationOrder(
                                   buildIdentityPermutationOrder(editableOrder.length),
@@ -3793,12 +3978,10 @@ export function ParameterInspector({
                                 onParamDraftChange(moduleInstance.id, field.key, nextValue);
                                 onParamChange(moduleInstance.id, field.key, nextValue);
                               }}
-                            >
-                              Reset To Identity
-                            </button>
-                            <button
-                              type="button"
-                              className="mini-action-button"
+                            />
+                            <InspectorIconButton
+                              icon="reverse"
+                              label="Reset To Reverse"
                               onClick={() => {
                                 const nextValue = serializePermutationOrder(
                                   buildReversePermutationOrder(editableOrder.length),
@@ -3806,13 +3989,32 @@ export function ParameterInspector({
                                 onParamDraftChange(moduleInstance.id, field.key, nextValue);
                                 onParamChange(moduleInstance.id, field.key, nextValue);
                               }}
-                            >
-                              Reset To Reverse
-                            </button>
-                            <button
-                              type="button"
-                              className="mini-action-button"
-                              title="Build the permutation that undoes the current routing"
+                            />
+                            <InspectorIconButton
+                              icon="rotate-left"
+                              label="Rotate Left"
+                              onClick={() => {
+                                const nextValue = serializePermutationOrder(
+                                  rotatePermutationOrder(editableOrder, 'left'),
+                                );
+                                onParamDraftChange(moduleInstance.id, field.key, nextValue);
+                                onParamChange(moduleInstance.id, field.key, nextValue);
+                              }}
+                            />
+                            <InspectorIconButton
+                              icon="rotate-right"
+                              label="Rotate Right"
+                              onClick={() => {
+                                const nextValue = serializePermutationOrder(
+                                  rotatePermutationOrder(editableOrder, 'right'),
+                                );
+                                onParamDraftChange(moduleInstance.id, field.key, nextValue);
+                                onParamChange(moduleInstance.id, field.key, nextValue);
+                              }}
+                            />
+                            <InspectorIconButton
+                              icon="inverse"
+                              label="Build Inverse"
                               onClick={() => {
                                 const nextValue = serializePermutationOrder(
                                   buildInversePermutationOrder(editableOrder),
@@ -3820,20 +4022,16 @@ export function ParameterInspector({
                                 onParamDraftChange(moduleInstance.id, field.key, nextValue);
                                 onParamChange(moduleInstance.id, field.key, nextValue);
                               }}
-                            >
-                              Build Inverse
-                            </button>
-                          </div>
-                          <div className="permutation-editor-meta">
-                            <span className="content-status-chip">{editableOrder.length} output slots</span>
-                            <span className="content-status-chip">
-                              {canUseVisualPermutationEditor
-                                ? 'Drag an input wire onto an output slot to replug the routing'
-                                : 'Raw CSV remains available until the permutation order parses again'}
-                            </span>
+                            />
                           </div>
                           {canUseVisualPermutationEditor ? (
-                            <div className="permutation-wire-editor">
+                            <div
+                              className={
+                                activePermutationInputIndex !== null
+                                  ? 'permutation-wire-editor permutation-wire-editor-dragging'
+                                  : 'permutation-wire-editor'
+                              }
+                            >
                               <div className="permutation-wire-lane" ref={permutationInputLaneRef}>
                                 {editableOrder.map((_, inputIndex) => (
                                   <button
@@ -3844,12 +4042,28 @@ export function ParameterInspector({
                                     }}
                                     draggable
                                     className={
-                                      draggedPermutationInputIndex === inputIndex
+                                      activePermutationInputIndex === inputIndex
                                         ? 'permutation-port permutation-port-input active'
                                         : 'permutation-port permutation-port-input'
                                     }
-                                    onDragStart={() => setDraggedPermutationInputIndex(inputIndex)}
-                                    onDragEnd={() => setDraggedPermutationInputIndex(null)}
+                                    onClick={() =>
+                                      setArmedPermutationInputIndex((current) =>
+                                        current === inputIndex ? null : inputIndex,
+                                      )
+                                    }
+                                    onDragStart={(event) => {
+                                      event.dataTransfer.effectAllowed = 'move';
+                                      event.dataTransfer.setData(
+                                        'text/plain',
+                                        `permutation-input:${inputIndex}`,
+                                      );
+                                      setArmedPermutationInputIndex(null);
+                                      setDraggedPermutationInputIndex(inputIndex);
+                                    }}
+                                    onDragEnd={() => {
+                                      setDraggedPermutationInputIndex(null);
+                                      setHoveredPermutationOutputIndex(null);
+                                    }}
                                   >
                                     <span className="meta-label">Input</span>
                                     <strong className="permutation-slot-value">{inputIndex}</strong>
@@ -3907,19 +4121,35 @@ export function ParameterInspector({
                                     ref={(node) => {
                                       permutationOutputRefs.current[outputIndex] = node;
                                     }}
-                                    className="permutation-port permutation-port-output"
-                                    onDragOver={(event) => event.preventDefault()}
+                                    className={
+                                      activePermutationInputIndex !== null &&
+                                      hoveredPermutationOutputIndex === outputIndex
+                                        ? 'permutation-port permutation-port-output drop-target'
+                                        : 'permutation-port permutation-port-output'
+                                    }
+                                    onDragOver={(event) => {
+                                      event.preventDefault();
+                                      if (activePermutationInputIndex !== null) {
+                                        setHoveredPermutationOutputIndex(outputIndex);
+                                      }
+                                    }}
+                                    onDragLeave={() => {
+                                      if (hoveredPermutationOutputIndex === outputIndex) {
+                                        setHoveredPermutationOutputIndex(null);
+                                      }
+                                    }}
                                     onDrop={(event) => {
                                       event.preventDefault();
-                                      if (draggedPermutationInputIndex === null) {
+                                      if (activePermutationInputIndex === null) {
                                         return;
                                       }
 
                                       const sourceOutputIndex = editableOrder.findIndex(
-                                        (entry) => entry === draggedPermutationInputIndex,
+                                        (entry) => entry === activePermutationInputIndex,
                                       );
                                       if (sourceOutputIndex < 0) {
                                         setDraggedPermutationInputIndex(null);
+                                        setArmedPermutationInputIndex(null);
                                         return;
                                       }
 
@@ -3930,6 +4160,31 @@ export function ParameterInspector({
                                       );
                                       const serialized = serializePermutationOrder(nextOrder);
                                       setDraggedPermutationInputIndex(null);
+                                      setArmedPermutationInputIndex(null);
+                                      setHoveredPermutationOutputIndex(null);
+                                      onParamDraftChange(moduleInstance.id, field.key, serialized);
+                                      onParamChange(moduleInstance.id, field.key, serialized);
+                                    }}
+                                    onClick={() => {
+                                      if (activePermutationInputIndex === null) {
+                                        return;
+                                      }
+                                      const sourceOutputIndex = editableOrder.findIndex(
+                                        (entry) => entry === activePermutationInputIndex,
+                                      );
+                                      if (sourceOutputIndex < 0) {
+                                        setArmedPermutationInputIndex(null);
+                                        return;
+                                      }
+                                      const nextOrder = swapPermutationOrderPositions(
+                                        editableOrder,
+                                        sourceOutputIndex,
+                                        outputIndex,
+                                      );
+                                      const serialized = serializePermutationOrder(nextOrder);
+                                      setDraggedPermutationInputIndex(null);
+                                      setArmedPermutationInputIndex(null);
+                                      setHoveredPermutationOutputIndex(null);
                                       onParamDraftChange(moduleInstance.id, field.key, serialized);
                                       onParamChange(moduleInstance.id, field.key, serialized);
                                     }}

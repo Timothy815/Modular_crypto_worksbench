@@ -89,6 +89,7 @@ import {
   buildInversePermutationOrder,
   buildIdentityPermutationOrder,
   buildReversePermutationOrder,
+  rotatePermutationOrder,
   serializePermutationOrder,
   swapPermutationOrderPositions,
 } from './permutation';
@@ -1100,6 +1101,11 @@ describe('Permutation', () => {
 
   it('builds inverse routing for a one-to-one permutation order', () => {
     expect(buildInversePermutationOrder([3, 0, 4, 1, 2])).toEqual([1, 3, 4, 0, 2]);
+  });
+
+  it('rotates permutation orders left and right', () => {
+    expect(rotatePermutationOrder([0, 2, 1, 3], 'left')).toEqual([2, 1, 3, 0]);
+    expect(rotatePermutationOrder([0, 2, 1, 3], 'right')).toEqual([3, 0, 2, 1]);
   });
 });
 
