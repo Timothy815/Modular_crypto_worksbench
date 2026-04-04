@@ -78,11 +78,6 @@ import {
   uiReducer,
 } from './ui/store';
 import { resolveWorkspaceExecution } from './ui/workspace-execution';
-import {
-  buildWorkspaceClipboardSnapshot,
-  pasteWorkspaceClipboardSnapshot,
-  type WorkspaceClipboardSnapshot,
-} from './ui/workspace-clipboard';
 import type { WorkspaceMode } from './ui/workspace-mode';
 import {
   createUniqueWorkspaceId,
@@ -297,8 +292,6 @@ function MainApp() {
   const [activeAnalysisTraceEntry, setActiveAnalysisTraceEntry] =
     useState<ExecutionTraceEntry | null>(null);
   const [paletteViewMode, setPaletteViewMode] = useState<'compact' | 'expanded'>('expanded');
-  const [workspaceClipboardSnapshot, setWorkspaceClipboardSnapshot] =
-    useState<WorkspaceClipboardSnapshot | null>(null);
   const [requestedWorkspaceFocusModuleId, setRequestedWorkspaceFocusModuleId] =
     useState<string | null>(null);
   const [compositeDrilldown, setCompositeDrilldown] = useState<CompositeDrilldownState | null>(null);
@@ -1590,84 +1583,6 @@ function MainApp() {
     [availableProjects, state.compositeEditor, state.userWorkspaceLibrary],
   );
 
-  function handleCopySelectedCluster() {
-    if (state.compositeEditor) {
-      return;
-    }
-
-    const snapshot = buildWorkspaceClipboardSnapshot({
-      project: activeProjectState,
-      layout: activeLayout,
-      selectedModuleIds: effectiveSelectedModuleIds,
-    });
-    if (!snapshot) {
-      window.alert('Select one or more modules before copying.');
-      return;
-    }
-
-    setWorkspaceClipboardSnapshot(snapshot);
-    setImportError(null);
-  }
-
-  function handlePasteSelectedCluster() {
-    if (state.compositeEditor) {
-      return;
-    }
-
-    if (!workspaceClipboardSnapshot) {
-      window.alert('Copy a module cluster before pasting.');
-      return;
-    }
-
-    const pasted = pasteWorkspaceClipboardSnapshot({
-      targetProject: activeProjectState,
-      targetLayout: activeLayout,
-      snapshot: workspaceClipboardSnapshot,
-    });
-
-    dispatch({
-      type: 'loadDocument',
-      projectId: activeProjectDefinition.id,
-      document: {
-        version: 1,
-        project: pasted.project,
-          ui: {
-            layout: pasted.layout,
-            annotations: activeAnnotations,
-            stageLabels: activeStageLabels,
-            groupBoxes: activeGroupBoxes,
-            guideRails: activeGuideRails,
-            showOverviewNavigator: activeShowOverviewNavigator,
-            showGrid: activeShowGrid,
-            snapToGrid: activeSnapToGrid,
-            snapToGuides: activeSnapToGuides,
-            layoutDirection: activeLayoutDirection,
-            routingMode: activeRoutingMode,
-            wireColorMode: activeWireColorMode,
-            connectionLayout: activeConnectionLayout,
-          },
-        },
-    });
-    setImportError(null);
-
-    const [firstModuleId, ...restModuleIds] = pasted.pastedModuleIds;
-    if (firstModuleId) {
-      dispatch({
-        type: 'selectModule',
-        projectId: activeProjectDefinition.id,
-        moduleId: firstModuleId,
-      });
-      for (const selectedModuleId of restModuleIds) {
-        dispatch({
-          type: 'selectModule',
-          projectId: activeProjectDefinition.id,
-          moduleId: selectedModuleId,
-          additive: true,
-        });
-      }
-    }
-  }
-
   function handleDuplicateSelectedCluster() {
     if (state.compositeEditor) {
       return;
@@ -2278,98 +2193,10 @@ function MainApp() {
               onChange={(event) => {
                 const value = event.target.value;
                 setHeaderWorkspaceAction('');
-                if (value === 'toggle-theme') {
-                  setTheme((currentTheme) => (currentTheme === 'light' ? 'dark' : 'light'));
-                } else if (value === 'toggle-palette') {
-                  dispatch({ type: 'togglePalette' });
-                } else if (value === 'toggle-palette-view') {
-                  setPaletteViewMode((currentMode) =>
-                    currentMode === 'expanded' ? 'compact' : 'expanded',
-                  );
-                } else if (value === 'toggle-inspector') {
-                  dispatch({ type: 'toggleInspector' });
-                } else if (value === 'toggle-step-notes') {
-                  dispatch({
-                    type: 'setTutorialNotesVisible',
-                    projectId: activeProjectDefinition.id,
-                    visible: !tutorialNotesVisible,
-                  });
-                } else if (value === 'new-blank-workspace') {
+                if (value === 'new-blank-workspace') {
                   handleCreateBlankWorkspace();
                 } else if (value === 'duplicate-current-workspace') {
                   handleDuplicateCurrentWorkspace();
-                } else if (value === 'copy-selected-cluster') {
-                  handleCopySelectedCluster();
-                } else if (value === 'paste-selected-cluster') {
-                  handlePasteSelectedCluster();
-                } else if (value === 'duplicate-selected-cluster') {
-                  handleDuplicateSelectedCluster();
-                } else if (value === 'delete-selected-cluster') {
-                  handleDeleteSelectedCluster();
-                } else if (value === 'arrange-selected-stage-row') {
-                  dispatch({
-                    type: 'arrangeSelectedModules',
-                    projectId: activeProjectDefinition.id,
-                    mode: 'stage-row',
-                  });
-                } else if (value === 'stack-selected-stage-column') {
-                  dispatch({
-                    type: 'arrangeSelectedModules',
-                    projectId: activeProjectDefinition.id,
-                    mode: 'stage-column',
-                  });
-                } else if (value === 'align-left') {
-                  dispatch({
-                    type: 'arrangeSelectedModules',
-                    projectId: activeProjectDefinition.id,
-                    mode: 'align-left',
-                  });
-                } else if (value === 'align-right') {
-                  dispatch({
-                    type: 'arrangeSelectedModules',
-                    projectId: activeProjectDefinition.id,
-                    mode: 'align-right',
-                  });
-                } else if (value === 'align-top') {
-                  dispatch({
-                    type: 'arrangeSelectedModules',
-                    projectId: activeProjectDefinition.id,
-                    mode: 'align-top',
-                  });
-                } else if (value === 'align-bottom') {
-                  dispatch({
-                    type: 'arrangeSelectedModules',
-                    projectId: activeProjectDefinition.id,
-                    mode: 'align-bottom',
-                  });
-                } else if (value === 'align-horizontal-center') {
-                  dispatch({
-                    type: 'arrangeSelectedModules',
-                    projectId: activeProjectDefinition.id,
-                    mode: 'align-horizontal-center',
-                  });
-                } else if (value === 'align-vertical-center') {
-                  dispatch({
-                    type: 'arrangeSelectedModules',
-                    projectId: activeProjectDefinition.id,
-                    mode: 'align-vertical-center',
-                  });
-                } else if (value === 'distribute-horizontal') {
-                  dispatch({
-                    type: 'arrangeSelectedModules',
-                    projectId: activeProjectDefinition.id,
-                    mode: 'distribute-horizontal',
-                  });
-                } else if (value === 'distribute-vertical') {
-                  dispatch({
-                    type: 'arrangeSelectedModules',
-                    projectId: activeProjectDefinition.id,
-                    mode: 'distribute-vertical',
-                  });
-                } else if (value === 'undo-workspace-history') {
-                  handleUndoWorkspaceHistory();
-                } else if (value === 'redo-workspace-history') {
-                  handleRedoWorkspaceHistory();
                 } else if (value === 'save-current-workspace') {
                   handleSaveCurrentWorkspace();
                 } else if (value === 'save-workspace-version') {
@@ -2379,29 +2206,9 @@ function MainApp() {
                 }
               }}
             >
-              <option value="">Actions…</option>
+              <option value="">Manage…</option>
               <option value="new-blank-workspace">New Blank Workspace</option>
               <option value="duplicate-current-workspace">Duplicate Workspace</option>
-              <option value="undo-workspace-history" disabled={!canUndoWorkspaceHistory}>
-                Undo
-              </option>
-              <option value="redo-workspace-history" disabled={!canRedoWorkspaceHistory}>
-                Redo
-              </option>
-              <option value="duplicate-selected-cluster">Duplicate Selected Cluster</option>
-              <option value="delete-selected-cluster">Delete Selected Cluster</option>
-              <option value="arrange-selected-stage-row">Arrange Selected Stage Row</option>
-              <option value="stack-selected-stage-column">Stack Selected Stage Column</option>
-              <option value="align-left">Align Left</option>
-              <option value="align-right">Align Right</option>
-              <option value="align-top">Align Top</option>
-              <option value="align-bottom">Align Bottom</option>
-              <option value="align-horizontal-center">Align Horizontal Center</option>
-              <option value="align-vertical-center">Align Vertical Center</option>
-              <option value="distribute-horizontal">Distribute Horizontally</option>
-              <option value="distribute-vertical">Distribute Vertically</option>
-              <option value="copy-selected-cluster">Copy Selected Cluster</option>
-              <option value="paste-selected-cluster">Paste Selected Cluster</option>
               <option value="save-current-workspace">Save Current Workspace</option>
               <option value="save-workspace-version">Save Version</option>
               {state.userWorkspaceLibrary.some(
@@ -2409,23 +2216,6 @@ function MainApp() {
               ) ? (
                 <option value="delete-current-workspace">Delete Workspace</option>
               ) : null}
-              <option value="toggle-theme">
-                {theme === 'dark' ? 'Switch To Light' : 'Switch To Dark'}
-              </option>
-              <option value="toggle-palette">
-                {state.showPalette ? 'Hide Tools' : 'Show Tools'}
-              </option>
-              {state.showPalette ? (
-                <option value="toggle-palette-view">
-                  {paletteViewMode === 'expanded' ? 'Compact Tools' : 'Expand Tools'}
-                </option>
-              ) : null}
-              <option value="toggle-inspector">
-                {state.showInspector ? 'Hide Inspector' : 'Show Inspector'}
-              </option>
-              <option value="toggle-step-notes">
-                {tutorialNotesVisible ? 'Hide Step Notes' : 'Show Step Notes'}
-              </option>
             </select>
           </label>
           <label className="header-menu-select">
