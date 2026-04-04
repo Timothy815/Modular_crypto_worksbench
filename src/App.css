@@ -2109,10 +2109,34 @@ body.dock-resizing {
   gap: 6px;
 }
 
+.structured-editor-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .sbox-editor-utility-strip {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 10px;
+}
+
+.structured-editor-utility-strip {
+  display: grid;
+  gap: 10px;
+}
+
+.structured-editor-utility-card {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-soft) 82%, var(--surface-panel));
+}
+
+.structured-editor-copy {
+  margin: 0;
 }
 
 .sbox-editor-utility-card {
