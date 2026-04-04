@@ -2104,6 +2104,21 @@ body.dock-resizing {
   gap: 6px;
 }
 
+.sbox-editor-utility-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.sbox-editor-utility-card {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-soft) 82%, var(--surface-panel));
+}
+
 .sbox-generate-controls {
   display: flex;
   flex-wrap: wrap;
@@ -2135,11 +2150,16 @@ body.dock-resizing {
   background: var(--surface-panel);
 }
 
+.sbox-editor-grid-interactive {
+  align-items: stretch;
+}
+
 .sbox-editor-cell {
   border: 0;
   border-radius: 0;
   min-height: 38px;
   background: transparent;
+  color: var(--ink);
   cursor: pointer;
 }
 
@@ -2150,6 +2170,132 @@ body.dock-resizing {
 .sbox-editor-detail {
   display: grid;
   gap: 10px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(220px, 0.9fr);
+  align-items: start;
+}
+
+.sbox-table-header-shell {
+  position: relative;
+  min-height: 58px;
+  display: flex;
+  background: color-mix(in srgb, var(--surface-soft) 82%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  overflow: visible;
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
+}
+
+.sbox-table-header-shell.active {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-soft));
+}
+
+.sbox-table-header-shell.dragging {
+  opacity: 0.68;
+}
+
+.sbox-table-header-shell .sbox-table-header {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.sbox-table-row-header {
+  justify-content: flex-end;
+  padding-right: 12px;
+}
+
+.sbox-table-column-header {
+  justify-content: center;
+  align-items: center;
+  padding-top: 6px;
+  padding-bottom: 8px;
+}
+
+.sbox-axis-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6em;
+}
+
+.sbox-axis-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  z-index: 2;
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 88%, var(--surface-soft));
+  box-shadow: 0 8px 20px color-mix(in srgb, black 12%, transparent);
+  opacity: 0.82;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.sbox-axis-actions-row {
+  position: static;
+  margin-right: 8px;
+  align-self: center;
+}
+
+.sbox-axis-actions-column {
+  position: static;
+  margin: 6px auto 0;
+  align-self: center;
+}
+
+.sbox-table-header-shell.active .sbox-axis-actions,
+.sbox-table-header-shell:hover .sbox-axis-actions {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--line));
+  background: color-mix(in srgb, var(--surface) 94%, var(--surface-soft));
+}
+
+.sbox-table-column-header {
+  flex: 1 1 auto;
+}
+
+.sbox-table-row-header {
+  flex: 1 1 auto;
+}
+
+.sbox-table-header-shell:has(.sbox-axis-actions-column) {
+  flex-direction: column;
+}
+
+.sbox-table-header-shell:has(.sbox-axis-actions-row) {
+  flex-direction: row;
+  align-items: center;
+}
+
+.sbox-axis-button {
+  min-width: 26px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.sbox-axis-button + .sbox-axis-button {
+  border-left: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
+}
+
+.sbox-axis-button:hover {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
 }
 
 .sbox-editor-select {
@@ -2173,6 +2319,12 @@ body.dock-resizing {
   min-height: 96px;
   font-family: var(--mono);
   font-size: 0.88rem;
+}
+
+@media (max-width: 900px) {
+  .sbox-editor-detail {
+    grid-template-columns: 1fr;
+  }
 }
 
 .permutation-editor {
@@ -5139,6 +5291,14 @@ body.canvas-resizing {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
+.sbox-table-cell.swap-armed {
+  background: color-mix(in srgb, var(--accent-strong) 18%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent-strong) 58%, var(--line));
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--accent-strong) 22%, transparent),
+    0 0 18px color-mix(in srgb, var(--accent-strong) 16%, transparent);
+}
+
 .sbox-table-corner,
 .sbox-table-header {
   min-height: 34px;
@@ -5157,15 +5317,12 @@ body.canvas-resizing {
   border-radius: 8px;
 }
 
-.sbox-table-row-header {
-  justify-content: flex-end;
-  padding-right: 8px;
-}
-
 .sbox-table-value {
   font-family: var(--mono);
   font-size: 0.82rem;
   line-height: 1;
+  font-weight: 700;
+  color: var(--ink);
 }
 
 .sbox-lookup-banner {
@@ -5201,6 +5358,30 @@ body.canvas-resizing {
   margin-top: 6px;
   color: var(--muted);
   font-size: 0.84rem;
+}
+
+.sbox-cell-mode-toggle {
+  display: inline-flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.sbox-mode-button {
+  min-height: 30px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sbox-mode-button.active {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--line));
+  color: var(--ink);
 }
 
 .sbox-chunk-grid {
