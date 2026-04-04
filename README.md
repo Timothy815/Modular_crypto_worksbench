@@ -44,10 +44,15 @@ The older `v2.1` builder-power queue is now largely present on `main` as shipped
 That means the next docket should now be chosen from bounded product-facing slices rather than the older authoring-power queue.
 
 The clearest immediate next candidate is now:
+- `WIRE-LEGIBILITY-BUNDLE-DISCIPLINE-V1.md`
+- a bounded dense-workspace readability pass focused on wire clutter reduction
+- intended to make complex systems read more simply without changing routing semantics
+- bounded to visual discipline rather than a routing rewrite or graph-layout solver
+
+The previous immediate discovery bottleneck is now already shipped as:
 - `SEARCH-FIRST-PALETTE-V1.md`
-- a search-first primitive-discovery pass inside the existing palette surface
-- intended to reduce scroll-heavy lookup without widening into a global command palette
-- bounded to palette-local discovery speed rather than broader command-system redesign
+- flattened ranked palette search with keyboard-first focus/clear behavior
+- bounded to palette-local discovery rather than broader command-system redesign
 
 Another shipped bounded readability slice after that is:
 - `COMPOSITE-INSTANCE-DRILLDOWN-V1.md`
