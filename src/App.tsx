@@ -907,7 +907,7 @@ function MainApp() {
 
     const [{ downloadShareableLabPack }, { buildShareableLabPack }] = await Promise.all([
       import('./ui/shareable-lab-pack-persistence'),
-      import('./ui/workspace-artifacts'),
+      import('./ui/workspace-artifact-actions'),
     ]);
     downloadShareableLabPack(
       fileNameStem,
@@ -979,7 +979,7 @@ function MainApp() {
         return;
       }
 
-      const { prepareImportedLabPack } = await import('./ui/workspace-artifacts');
+      const { prepareImportedLabPack } = await import('./ui/workspace-artifact-actions');
       const plan = prepareImportedLabPack({
         pack,
         availableProjects,
@@ -3051,7 +3051,7 @@ function MainApp() {
               if (isCompositeDrilldownActive) {
                 return;
               }
-              const { exportPythonWorkspaceBundle } = await import('./ui/workspace-artifacts');
+              const { exportPythonWorkspaceBundle } = await import('./ui/workspace-artifact-actions');
               const error = await exportPythonWorkspaceBundle({
                 project: activeProjectState,
                 registry: effectiveRegistry,
@@ -3065,7 +3065,7 @@ function MainApp() {
                 return;
               }
               const rawValue = await file.text();
-              const { parseWorkspaceArtifact } = await import('./ui/workspace-artifacts');
+              const { parseWorkspaceArtifact } = await import('./ui/workspace-artifact-actions');
               const artifact = parseWorkspaceArtifact(rawValue);
               if (artifact?.kind === 'workbench') {
                 dispatch({

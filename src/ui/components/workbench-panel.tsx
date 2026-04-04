@@ -736,10 +736,12 @@ export function WorkbenchPanel({
       dragState.moduleIds,
       layout,
       guideRails,
+      stageLabels,
+      groupBoxes,
       NODE_WIDTH,
       NODE_HEIGHT,
     );
-  }, [dragState, guideRails, layout]);
+  }, [dragState, guideRails, groupBoxes, layout, stageLabels]);
   const minimapMetrics = useMemo(() => {
     const availableWidth = MINIMAP_WIDTH - MINIMAP_PADDING * 2;
     const availableHeight = MINIMAP_HEIGHT - MINIMAP_PADDING * 2;
@@ -1012,11 +1014,13 @@ export function WorkbenchPanel({
         if (dragState.moduleIds.length <= 1) {
           const snappedPosition = snapToGuides
             ? snapModulePositionToGuideRails(
-                snapToGrid ? snapPointToGrid({ x: nextX, y: nextY }) : { x: nextX, y: nextY },
-                guideRails,
-                NODE_WIDTH,
-                NODE_HEIGHT,
-              )
+              snapToGrid ? snapPointToGrid({ x: nextX, y: nextY }) : { x: nextX, y: nextY },
+              guideRails,
+              stageLabels,
+              groupBoxes,
+              NODE_WIDTH,
+              NODE_HEIGHT,
+            )
             : snapToGrid
               ? snapPointToGrid({ x: nextX, y: nextY })
               : { x: nextX, y: nextY };
@@ -1033,11 +1037,13 @@ export function WorkbenchPanel({
         } else {
           const anchorPosition = snapToGuides
             ? snapModulePositionToGuideRails(
-                snapToGrid ? snapPointToGrid({ x: nextX, y: nextY }) : { x: nextX, y: nextY },
-                guideRails,
-                NODE_WIDTH,
-                NODE_HEIGHT,
-              )
+              snapToGrid ? snapPointToGrid({ x: nextX, y: nextY }) : { x: nextX, y: nextY },
+              guideRails,
+              stageLabels,
+              groupBoxes,
+              NODE_WIDTH,
+              NODE_HEIGHT,
+            )
             : snapToGrid
               ? snapPointToGrid({ x: nextX, y: nextY })
               : { x: nextX, y: nextY };
@@ -1354,6 +1360,7 @@ export function WorkbenchPanel({
     dragState,
     effectiveLayout,
     guideRailDragState,
+    groupBoxes,
     groupBoxDragState,
     groupBoxResizeState,
     layout,
@@ -1368,6 +1375,7 @@ export function WorkbenchPanel({
     onSetConnectionOrthogonalBend,
     onSelectModules,
     selectionBox,
+    stageLabels,
     stageLabelDragState,
     guideRails,
     snapToGrid,

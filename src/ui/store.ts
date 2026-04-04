@@ -386,6 +386,8 @@ function createGuideRailId(guideRails: WorkbenchGuideRail[]) {
 function findNextModulePlacement(
   layout: Record<string, CompositeLayoutPosition>,
   guideRails: WorkbenchGuideRail[],
+  stageLabels: WorkbenchStageLabel[],
+  groupBoxes: WorkbenchGroupBox[],
   direction: WorkbenchLayoutDirection,
   selectedModuleId: string | null,
   snapToGrid: boolean,
@@ -418,6 +420,8 @@ function findNextModulePlacement(
     ? snapModulePositionToGuideRails(
         snappedToGrid,
         guideRails,
+        stageLabels,
+        groupBoxes,
         CANVAS_NODE_WIDTH,
         CANVAS_NODE_HEIGHT,
       )
@@ -1462,14 +1466,16 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
             [action.moduleId]: {
               ...currentLayout[action.moduleId],
               ...((state.snapToGuidesByProject[action.projectId] ?? false)
-                ? snapModulePositionToGuideRails(
-                    (state.snapToGridByProject[action.projectId] ?? false)
-                      ? snapPointToGrid({ x: action.x, y: action.y })
-                      : { x: action.x, y: action.y },
-                    state.guideRailsByProject[action.projectId] ?? [],
-                    CANVAS_NODE_WIDTH,
-                    CANVAS_NODE_HEIGHT,
-                  )
+                  ? snapModulePositionToGuideRails(
+                      (state.snapToGridByProject[action.projectId] ?? false)
+                        ? snapPointToGrid({ x: action.x, y: action.y })
+                        : { x: action.x, y: action.y },
+                      state.guideRailsByProject[action.projectId] ?? [],
+                      state.stageLabelsByProject[action.projectId] ?? [],
+                      state.groupBoxesByProject[action.projectId] ?? [],
+                      CANVAS_NODE_WIDTH,
+                      CANVAS_NODE_HEIGHT,
+                    )
                 : (state.snapToGridByProject[action.projectId] ?? false)
                   ? snapPointToGrid({ x: action.x, y: action.y })
                   : { x: action.x, y: action.y }),
@@ -1775,6 +1781,8 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
                             ? snapPointToGrid(position)
                             : position,
                           state.guideRailsByProject[action.projectId] ?? [],
+                          state.stageLabelsByProject[action.projectId] ?? [],
+                          state.groupBoxesByProject[action.projectId] ?? [],
                           CANVAS_NODE_WIDTH,
                           CANVAS_NODE_HEIGHT,
                         )
@@ -2278,6 +2286,8 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       const { x: newX, y: newY } = findNextModulePlacement(
         currentLayout,
         state.guideRailsByProject[action.projectId] ?? [],
+        state.stageLabelsByProject[action.projectId] ?? [],
+        state.groupBoxesByProject[action.projectId] ?? [],
         currentLayoutDirection,
         state.selectedModuleIdByProject[action.projectId] ?? null,
         state.snapToGridByProject[action.projectId] ?? false,

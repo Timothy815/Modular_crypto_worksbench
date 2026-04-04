@@ -4,7 +4,9 @@ import type { PortSide } from './node-orientation';
 import type {
   WorkbenchConnectionLayout,
   WorkbenchGuideRail,
+  WorkbenchGroupBox,
   WorkbenchPosition,
+  WorkbenchStageLabel,
 } from './workbench-document';
 
 const ORTHOGONAL_STEP_BACK_PX = 20;
@@ -18,7 +20,7 @@ const DRAG_ALIGNMENT_GUIDE_THRESHOLD_PX = 16;
 export interface DragAlignmentGuide {
   axis: 'x' | 'y';
   position: number;
-  kind: 'module' | 'guide-rail';
+  kind: 'module' | 'guide-rail' | 'stage-label' | 'group-box';
 }
 
 export function getAnchorPosition(
@@ -47,6 +49,8 @@ export function getAnchorPosition(
 export function snapModulePositionToGuideRails(
   position: { x: number; y: number },
   guideRails: WorkbenchGuideRail[],
+  stageLabels: WorkbenchStageLabel[],
+  groupBoxes: WorkbenchGroupBox[],
   nodeWidth: number,
   nodeHeight: number,
 ) {
@@ -84,6 +88,65 @@ export function snapModulePositionToGuideRails(
     }
   }
 
+  for (const stageLabel of stageLabels) {
+    for (const offset of xOffsets) {
+      const distance = Math.abs(position.x + offset - stageLabel.x);
+      if (!bestX || distance < bestX.distance) {
+        bestX = {
+          distance,
+          snappedX: stageLabel.x - offset,
+        };
+      }
+    }
+
+    for (const offset of yOffsets) {
+      const distance = Math.abs(position.y + offset - stageLabel.y);
+      if (!bestY || distance < bestY.distance) {
+        bestY = {
+          distance,
+          snappedY: stageLabel.y - offset,
+        };
+      }
+    }
+  }
+
+  for (const groupBox of groupBoxes) {
+    const candidateXPositions = [
+      groupBox.x,
+      groupBox.x + groupBox.width / 2,
+      groupBox.x + groupBox.width,
+    ];
+    const candidateYPositions = [
+      groupBox.y,
+      groupBox.y + groupBox.height / 2,
+      groupBox.y + groupBox.height,
+    ];
+
+    for (const candidateX of candidateXPositions) {
+      for (const offset of xOffsets) {
+        const distance = Math.abs(position.x + offset - candidateX);
+        if (!bestX || distance < bestX.distance) {
+          bestX = {
+            distance,
+            snappedX: candidateX - offset,
+          };
+        }
+      }
+    }
+
+    for (const candidateY of candidateYPositions) {
+      for (const offset of yOffsets) {
+        const distance = Math.abs(position.y + offset - candidateY);
+        if (!bestY || distance < bestY.distance) {
+          bestY = {
+            distance,
+            snappedY: candidateY - offset,
+          };
+        }
+      }
+    }
+  }
+
   if (bestX && bestX.distance <= GUIDE_SNAP_THRESHOLD_PX) {
     nextPosition.x = Math.max(16, bestX.snappedX);
   }
@@ -100,6 +163,8 @@ export function getModuleDragAlignmentGuides(
   draggedModuleIds: string[],
   layout: Record<string, WorkbenchPosition>,
   guideRails: WorkbenchGuideRail[],
+  stageLabels: WorkbenchStageLabel[],
+  groupBoxes: WorkbenchGroupBox[],
   nodeWidth: number,
   nodeHeight: number,
 ) {
@@ -107,8 +172,20 @@ export function getModuleDragAlignmentGuides(
   const yOffsets = [0, nodeHeight / 2, nodeHeight];
   const draggedIds = new Set(draggedModuleIds);
 
-  let bestX: { distance: number; position: number; kind: 'module' | 'guide-rail' } | null = null;
-  let bestY: { distance: number; position: number; kind: 'module' | 'guide-rail' } | null = null;
+  let bestX:
+    | {
+        distance: number;
+        position: number;
+        kind: 'module' | 'guide-rail' | 'stage-label' | 'group-box';
+      }
+    | null = null;
+  let bestY:
+    | {
+        distance: number;
+        position: number;
+        kind: 'module' | 'guide-rail' | 'stage-label' | 'group-box';
+      }
+    | null = null;
 
   for (const guideRail of guideRails) {
     if (guideRail.axis === 'vertical') {
@@ -123,6 +200,53 @@ export function getModuleDragAlignmentGuides(
         const distance = Math.abs(position.y + offset - guideRail.position);
         if (!bestY || distance < bestY.distance) {
           bestY = { distance, position: guideRail.position, kind: 'guide-rail' };
+        }
+      }
+    }
+  }
+
+  for (const stageLabel of stageLabels) {
+    for (const offset of xOffsets) {
+      const distance = Math.abs(position.x + offset - stageLabel.x);
+      if (!bestX || distance < bestX.distance) {
+        bestX = { distance, position: stageLabel.x, kind: 'stage-label' };
+      }
+    }
+
+    for (const offset of yOffsets) {
+      const distance = Math.abs(position.y + offset - stageLabel.y);
+      if (!bestY || distance < bestY.distance) {
+        bestY = { distance, position: stageLabel.y, kind: 'stage-label' };
+      }
+    }
+  }
+
+  for (const groupBox of groupBoxes) {
+    const candidateXPositions = [
+      groupBox.x,
+      groupBox.x + groupBox.width / 2,
+      groupBox.x + groupBox.width,
+    ];
+    const candidateYPositions = [
+      groupBox.y,
+      groupBox.y + groupBox.height / 2,
+      groupBox.y + groupBox.height,
+    ];
+
+    for (const candidateX of candidateXPositions) {
+      for (const offset of xOffsets) {
+        const distance = Math.abs(position.x + offset - candidateX);
+        if (!bestX || distance < bestX.distance) {
+          bestX = { distance, position: candidateX, kind: 'group-box' };
+        }
+      }
+    }
+
+    for (const candidateY of candidateYPositions) {
+      for (const offset of yOffsets) {
+        const distance = Math.abs(position.y + offset - candidateY);
+        if (!bestY || distance < bestY.distance) {
+          bestY = { distance, position: candidateY, kind: 'group-box' };
         }
       }
     }

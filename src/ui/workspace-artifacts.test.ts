@@ -4,7 +4,7 @@ import {
   buildShareableLabPack,
   prepareImportedLabPack,
   parseWorkspaceArtifact,
-} from './workspace-artifacts';
+} from './workspace-artifact-actions';
 
 describe('workspace-artifacts', () => {
   it('parses workbench documents before lab-pack import logic runs', () => {

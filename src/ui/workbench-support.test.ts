@@ -69,6 +69,8 @@ describe('workbench-support orthogonal routing', () => {
         { id: 'rail-1', axis: 'vertical', position: 188, title: 'Signal Rail' },
         { id: 'rail-2', axis: 'horizontal', position: 140, title: 'Stage Rail' },
       ],
+      [],
+      [],
       120,
       80,
     );
@@ -85,6 +87,8 @@ describe('workbench-support orthogonal routing', () => {
         target: { x: 100, y: 220 },
       },
       [],
+      [],
+      [],
       120,
       80,
     );
@@ -100,10 +104,65 @@ describe('workbench-support orthogonal routing', () => {
         dragged: { x: 142, y: 60 },
       },
       [{ id: 'rail-1', axis: 'vertical', position: 150, title: 'Main Rail' }],
+      [],
+      [],
       120,
       80,
     );
 
     expect(guides).toContainEqual({ axis: 'x', position: 150, kind: 'guide-rail' });
+  });
+
+  it('snaps toward nearby stage label anchors and group box structure', () => {
+    const snapped = snapModulePositionToGuideRails(
+      { x: 234, y: 128 },
+      [],
+      [{ id: 'label-1', x: 240, y: 140, text: 'Round 1' }],
+      [{ id: 'group-1', x: 80, y: 120, width: 160, height: 100, title: 'Round Box' }],
+      120,
+      80,
+    );
+
+    expect(snapped).toEqual({ x: 240, y: 130 });
+  });
+
+  it('surfaces temporary drag guides for stage labels and group boxes', () => {
+    const stageLabelGuides = getModuleDragAlignmentGuides(
+      { x: 114, y: 60 },
+      ['dragged'],
+      {
+        dragged: { x: 114, y: 60 },
+      },
+      [],
+      [{ id: 'label-1', x: 120, y: 200, text: 'Output' }],
+      [],
+      120,
+      80,
+    );
+
+    expect(stageLabelGuides).toContainEqual({
+      axis: 'x',
+      position: 120,
+      kind: 'stage-label',
+    });
+
+    const groupBoxGuides = getModuleDragAlignmentGuides(
+      { x: 80, y: 114 },
+      ['dragged'],
+      {
+        dragged: { x: 80, y: 114 },
+      },
+      [],
+      [],
+      [{ id: 'group-1', x: 60, y: 120, width: 240, height: 180, title: 'Stage Area' }],
+      120,
+      80,
+    );
+
+    expect(groupBoxGuides).toContainEqual({
+      axis: 'y',
+      position: 120,
+      kind: 'group-box',
+    });
   });
 });

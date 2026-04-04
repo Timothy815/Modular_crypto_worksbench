@@ -129,6 +129,11 @@ The next drag-feedback follow-on after that is now implemented locally as:
 - a bounded visual drag-guide pass for temporary module and guide-rail alignment cues
 - keeps the slice visual-only with no new persistence or snapping semantics
 
+The next guide/stage snap follow-on after that is now implemented locally as:
+- `GUIDE-STAGE-SNAP-EXPANSION-V1.md`
+- a bounded snap expansion for stage-label anchors and group-box edge/center lines
+- keeps the slice focused on module placement and drag cues with no solver or wire snapping
+
 The next wire-legibility follow-on after that is now implemented locally as:
 - `WIRE-COLOR-CUSTOMIZATION-V1.md`
 - a bounded workspace-level wire-color mode slice for `domain`, `neutral`, and `high-contrast`
