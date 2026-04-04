@@ -44,7 +44,7 @@ The older `v2.1` builder-power queue is now largely present on `main` as shipped
 That means the next docket should now be chosen from bounded product-facing slices rather than the older authoring-power queue.
 
 The clearest immediate next candidate is now:
-- `WIRE-LEGIBILITY-BUNDLE-DISCIPLINE-V1.md`
+- `WIRE-LEGIBILITY-VISUAL-DISCIPLINE-V1.md`
 - a bounded dense-workspace readability pass focused on wire clutter reduction
 - intended to make complex systems read more simply without changing routing semantics
 - bounded to visual discipline rather than a routing rewrite or graph-layout solver

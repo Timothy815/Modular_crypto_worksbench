@@ -1059,8 +1059,8 @@ Post-`v1.26.0` work merged to `main`:
 ## Safe Next Tasks
 
 Immediate bounded next product slice:
-- `WIRE-LEGIBILITY-BUNDLE-DISCIPLINE-V1.md`
-- focus on dense-workspace wire readability, bundle discipline, and clutter reduction
+- `WIRE-LEGIBILITY-VISUAL-DISCIPLINE-V1.md`
+- focus on dense-workspace wire readability, visual discipline, and clutter reduction
 - keep the work UI-only and presentation-focused, with no routing rewrite or graph-semantics change
 
 ### Claude

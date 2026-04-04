@@ -197,6 +197,23 @@ function getPendingConnectionPath(
   return `M ${sourceAnchor.x} ${sourceAnchor.y} C ${sourceControl.x} ${sourceControl.y}, ${targetControl.x} ${targetControl.y}, ${targetPoint.x} ${targetPoint.y}`;
 }
 
+function getOrthogonalConnectionVisualOffset(
+  sourceSide: PortSide,
+  sourceIndex: number,
+  targetIndex: number,
+) {
+  const laneSlot = ((sourceIndex * 3 + targetIndex) % 3) - 1;
+  const magnitude = laneSlot * 0.8;
+
+  if (magnitude === 0) {
+    return null;
+  }
+
+  return sourceSide === 'left' || sourceSide === 'right'
+    ? { x: 0, y: magnitude }
+    : { x: magnitude, y: 0 };
+}
+
 interface WorkbenchPanelProps {
   activeProject: DemoProject;
   title?: string;
@@ -1868,6 +1885,10 @@ export function WorkbenchPanel({
       focusedModuleId: selectedModuleId,
       traceFocusedModuleId,
     });
+    const visualOffset =
+      routingMode === 'orthogonal' && layer === 'base'
+        ? getOrthogonalConnectionVisualOffset(sourceSide, sourceIndex, targetIndex)
+        : null;
 
     return (
       <g
@@ -1913,7 +1934,24 @@ export function WorkbenchPanel({
             setSelectedConnectionIndex((current) => (current === connectionIndex ? null : connectionIndex));
           }}
         />
-        <path d={pathD} />
+        <path
+          className="connection-visible-underlay"
+          d={pathD}
+          style={
+            visualOffset
+              ? ({ transform: `translate(${visualOffset.x}px, ${visualOffset.y}px)` } as CSSProperties)
+              : undefined
+          }
+        />
+        <path
+          className="connection-visible-path"
+          d={pathD}
+          style={
+            visualOffset
+              ? ({ transform: `translate(${visualOffset.x}px, ${visualOffset.y}px)` } as CSSProperties)
+              : undefined
+          }
+        />
         {routingMode === 'orthogonal' &&
         !isObservationMode &&
         !isCompositeEditor &&

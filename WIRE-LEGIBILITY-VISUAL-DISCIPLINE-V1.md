@@ -1,4 +1,4 @@
-# WIRE-LEGIBILITY-BUNDLE-DISCIPLINE-V1
+# WIRE-LEGIBILITY-VISUAL-DISCIPLINE-V1
 
 Last updated: April 4, 2026
 
@@ -63,7 +63,7 @@ Nothing should be hidden, collapsed, or semantically bundled.
 
 ## V1 Scope
 
-`WIRE-LEGIBILITY-BUNDLE-DISCIPLINE-V1` should stay bounded to visual treatment only.
+`WIRE-LEGIBILITY-VISUAL-DISCIPLINE-V1` should stay bounded to visual treatment only.
 
 The slice should include:
 - stronger visual priority for the selected wire and its immediate local run
@@ -72,7 +72,7 @@ The slice should include:
 - cleaner crossing hierarchy so important paths do not visually dissolve into the background
 - no change to execution, validation, or workspace document semantics
 
-This can include modest stroke, opacity, halo, or spacing adjustments.
+This can include modest stroke, opacity, underlay, or spacing adjustments.
 It may also include local heuristics for how nearby parallel segments are visually offset or separated, as long as those heuristics stay presentation-only.
 
 ---
@@ -92,6 +92,13 @@ It may also include local heuristics for how nearby parallel segments are visual
    - wire color modes
    - per-wire color overrides
 7. Selected, trace, compare, and invalid states must remain visually authoritative.
+8. Active path dominance must be preserved through layering so selected and other authoritative states are never visually buried by background treatments.
+9. Any visual separation of nearby orthogonal runs must be deterministic and derived from existing connection-local data so paths do not jitter during dragging or refresh.
+10. The slice must read clearly in all shipped wire color modes:
+    - `Domain`
+    - `Neutral`
+    - `High Contrast`
+11. Even when visual treatment makes nearby wires read more distinctly, each connection must remain individually selectable and keep its discrete source/target identity.
 
 ---
 
@@ -118,11 +125,13 @@ Good implementation directions:
 - give non-selected wires more disciplined fade behavior without making them disappear
 - improve how parallel orthogonal segments visually separate when they are very close
 - treat wire crossings so the active or more relevant path reads first
+- keep any crossing treatment crisp and light-weight rather than blurry or filter-heavy
 
 Bad implementation directions:
 - inventing a hidden routing layer
 - adding global “bundle mode” complexity
 - creating a second wire semantics system in CSS or state
+- relying on heavy SVG filter stacks that create blur corridors or obvious performance drag
 
 ---
 
