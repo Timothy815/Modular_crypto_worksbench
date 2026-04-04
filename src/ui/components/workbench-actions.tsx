@@ -15,6 +15,8 @@ interface WorkbenchActionsProps {
   selectedModuleIds: string[];
   effectiveSelectedConnectionIndex: number | null;
   selectedConnectionHasManualPath: boolean;
+  selectedConnectionLaneAxis: 'x' | 'y' | null;
+  selectedConnectionLanePreference: 'negative' | 'positive' | null;
   showTutorialToggle: boolean;
   tutorialNotesVisible: boolean;
   onAddAnnotation: () => void;
@@ -53,6 +55,8 @@ interface WorkbenchActionsProps {
   onRequestDeleteSelection: () => void;
   onRequestDeleteWire: () => void;
   onRequestResetWirePath: () => void;
+  onRequestSetWireLanePreference: (preference: 'negative' | 'positive') => void;
+  onRequestClearWireLanePreference: () => void;
   onRequestImport: () => void;
   onRequestImportLabPack: () => void;
   onRequestCreateComposite: () => void;
@@ -375,6 +379,8 @@ export function WorkbenchActions({
   selectedModuleIds,
   effectiveSelectedConnectionIndex,
   selectedConnectionHasManualPath,
+  selectedConnectionLaneAxis,
+  selectedConnectionLanePreference,
   showTutorialToggle,
   tutorialNotesVisible,
   onAddAnnotation,
@@ -401,6 +407,8 @@ export function WorkbenchActions({
   onRequestDeleteSelection,
   onRequestDeleteWire,
   onRequestResetWirePath,
+  onRequestSetWireLanePreference,
+  onRequestClearWireLanePreference,
   onRequestImport,
   onRequestImportLabPack,
   onRequestCreateComposite,
@@ -408,6 +416,11 @@ export function WorkbenchActions({
 }: WorkbenchActionsProps) {
   const hasSelection = selectedModuleIds.length > 0;
   const canDeleteWire = effectiveSelectedConnectionIndex !== null;
+  const canAdjustWireLane = effectiveSelectedConnectionIndex !== null && selectedConnectionLaneAxis !== null;
+  const negativeLaneLabel =
+    selectedConnectionLaneAxis === 'x' ? 'Prefer Left Lane' : 'Prefer Upper Lane';
+  const positiveLaneLabel =
+    selectedConnectionLaneAxis === 'x' ? 'Prefer Right Lane' : 'Prefer Lower Lane';
   const canAlignSelection = selectedModuleIds.length >= 2;
   const canDistributeSelection = selectedModuleIds.length >= 3;
 
@@ -655,6 +668,21 @@ export function WorkbenchActions({
           </WorkbenchActionMenu>
 
           <WorkbenchActionMenu label="Wire" description="Connection cleanup">
+            <WorkbenchMenuActionButton
+              label={negativeLaneLabel}
+              onSelect={() => onRequestSetWireLanePreference('negative')}
+              disabled={!canAdjustWireLane || selectedConnectionLanePreference === 'negative'}
+            />
+            <WorkbenchMenuActionButton
+              label="Neutral Lane"
+              onSelect={onRequestClearWireLanePreference}
+              disabled={!canAdjustWireLane || selectedConnectionLanePreference === null}
+            />
+            <WorkbenchMenuActionButton
+              label={positiveLaneLabel}
+              onSelect={() => onRequestSetWireLanePreference('positive')}
+              disabled={!canAdjustWireLane || selectedConnectionLanePreference === 'positive'}
+            />
             <WorkbenchMenuActionButton
               label="Delete Wire"
               onSelect={onRequestDeleteWire}

@@ -1361,6 +1361,50 @@ describe('uiReducer', () => {
     expect(clearedState.connectionLayoutByProject[projectId]?.[connectionKey]).toBeUndefined();
   });
 
+  it('stores lane preference independently from orthogonal bends', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const connectionKey = 'clock:out->output:in';
+
+    const withPreference = uiReducer(initialState, {
+      type: 'setConnectionLanePreference',
+      projectId,
+      connectionKey,
+      preference: 'negative',
+    });
+    expect(withPreference.connectionLayoutByProject[projectId]?.[connectionKey]).toEqual({
+      orthogonalLanePreference: 'negative',
+    });
+
+    const withBend = uiReducer(withPreference, {
+      type: 'setConnectionOrthogonalBend',
+      projectId,
+      connectionKey,
+      axis: 'x',
+      value: 180,
+    });
+    expect(withBend.connectionLayoutByProject[projectId]?.[connectionKey]).toEqual({
+      orthogonalBend: { axis: 'x', value: 180 },
+      orthogonalLanePreference: 'negative',
+    });
+
+    const bendCleared = uiReducer(withBend, {
+      type: 'clearConnectionOrthogonalBend',
+      projectId,
+      connectionKey,
+    });
+    expect(bendCleared.connectionLayoutByProject[projectId]?.[connectionKey]).toEqual({
+      orthogonalLanePreference: 'negative',
+    });
+
+    const preferenceCleared = uiReducer(bendCleared, {
+      type: 'clearConnectionLanePreference',
+      projectId,
+      connectionKey,
+    });
+    expect(preferenceCleared.connectionLayoutByProject[projectId]?.[connectionKey]).toBeUndefined();
+  });
+
   it('creates a blank personal workspace in build mode', () => {
     const initialState = createInitialUiState(demoProjects);
 

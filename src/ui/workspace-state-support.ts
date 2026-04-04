@@ -93,11 +93,18 @@ function cloneConnectionLayout(
   return Object.fromEntries(
     Object.entries(connectionLayout).map(([connectionKey, layout]) => [
       connectionKey,
-      layout.orthogonalBend
-        ? {
-            orthogonalBend: { ...layout.orthogonalBend },
-          }
-        : {},
+      {
+        ...(layout.orthogonalBend
+          ? {
+              orthogonalBend: { ...layout.orthogonalBend },
+            }
+          : {}),
+        ...(layout.orthogonalLanePreference
+          ? {
+              orthogonalLanePreference: layout.orthogonalLanePreference,
+            }
+          : {}),
+      },
     ]),
   );
 }

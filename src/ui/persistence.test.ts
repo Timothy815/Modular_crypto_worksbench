@@ -251,6 +251,7 @@ describe('parseShareableLabPack', () => {
           connectionLayout: {
             'a:out->b:in': {
               orthogonalBend: { axis: 'x', value: 144 },
+              orthogonalLanePreference: 'positive',
             },
           },
         },

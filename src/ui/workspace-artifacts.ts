@@ -401,7 +401,13 @@ export interface BuildShareableLabPackArgs {
   snapToGrid?: boolean;
   layoutDirection: 'horizontal' | 'vertical';
   routingMode: 'curved' | 'orthogonal';
-  connectionLayout?: Record<string, { orthogonalBend?: { axis: 'x' | 'y'; value: number } }>;
+  connectionLayout?: Record<
+    string,
+    {
+      orthogonalBend?: { axis: 'x' | 'y'; value: number };
+      orthogonalLanePreference?: 'negative' | 'positive';
+    }
+  >;
   comparisonBaseline: ComparisonBaselineDocument | null;
   verificationCases: VerificationCase[];
   tutorial?: GuidedTutorial;
@@ -452,7 +458,12 @@ export function buildShareableLabPack({
         connectionLayout: Object.fromEntries(
           Object.entries(connectionLayout).map(([connectionKey, layout]) => [
             connectionKey,
-            layout.orthogonalBend ? { orthogonalBend: { ...layout.orthogonalBend } } : {},
+            {
+              ...(layout.orthogonalBend ? { orthogonalBend: { ...layout.orthogonalBend } } : {}),
+              ...(layout.orthogonalLanePreference
+                ? { orthogonalLanePreference: layout.orthogonalLanePreference }
+                : {}),
+            },
           ]),
         ),
       },
@@ -575,7 +586,12 @@ export function prepareImportedLabPack({
           Object.entries(pack.workspace.ui.connectionLayout ?? {}).map(
             ([connectionKey, layout]) => [
               connectionKey,
-              layout.orthogonalBend ? { orthogonalBend: { ...layout.orthogonalBend } } : {},
+              {
+                ...(layout.orthogonalBend ? { orthogonalBend: { ...layout.orthogonalBend } } : {}),
+                ...(layout.orthogonalLanePreference
+                  ? { orthogonalLanePreference: layout.orthogonalLanePreference }
+                  : {}),
+              },
             ],
           ),
         ),

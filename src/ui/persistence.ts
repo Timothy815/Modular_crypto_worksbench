@@ -167,7 +167,12 @@ function cloneWorkspaceDocument(document: WorkbenchDocument): WorkbenchDocument 
       connectionLayout: Object.fromEntries(
         Object.entries(document.ui.connectionLayout ?? {}).map(([connectionKey, layout]) => [
           connectionKey,
-          layout.orthogonalBend ? { orthogonalBend: { ...layout.orthogonalBend } } : {},
+          {
+            ...(layout.orthogonalBend ? { orthogonalBend: { ...layout.orthogonalBend } } : {}),
+            ...(layout.orthogonalLanePreference
+              ? { orthogonalLanePreference: layout.orthogonalLanePreference }
+              : {}),
+          },
         ]),
       ),
     },
@@ -250,7 +255,14 @@ export function buildPersistedWorkspace(
               Object.entries(state.connectionLayoutByProject[projectId] ?? {}).map(
                 ([connectionKey, layout]) => [
                   connectionKey,
-                  layout.orthogonalBend ? { orthogonalBend: { ...layout.orthogonalBend } } : {},
+                  {
+                    ...(layout.orthogonalBend
+                      ? { orthogonalBend: { ...layout.orthogonalBend } }
+                      : {}),
+                    ...(layout.orthogonalLanePreference
+                      ? { orthogonalLanePreference: layout.orthogonalLanePreference }
+                      : {}),
+                  },
                 ],
               ),
             ),
@@ -915,9 +927,14 @@ function isConnectionLayoutMap(value: unknown) {
 
         const bend = (layout as { orthogonalBend?: { axis?: unknown; value?: unknown } })
           .orthogonalBend;
+        const lanePreference = (layout as { orthogonalLanePreference?: unknown })
+          .orthogonalLanePreference;
         return (
-          bend === undefined ||
-          ((bend.axis === 'x' || bend.axis === 'y') && typeof bend.value === 'number')
+          (bend === undefined ||
+            ((bend.axis === 'x' || bend.axis === 'y') && typeof bend.value === 'number')) &&
+          (lanePreference === undefined ||
+            lanePreference === 'negative' ||
+            lanePreference === 'positive')
         );
       }))
   );

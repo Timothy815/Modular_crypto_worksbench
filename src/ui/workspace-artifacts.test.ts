@@ -20,6 +20,7 @@ describe('workspace-artifacts', () => {
           connectionLayout: {
             'a:out->b:in': {
               orthogonalBend: { axis: 'x', value: 120 },
+              orthogonalLanePreference: 'negative',
             },
           },
         },
@@ -56,6 +57,7 @@ describe('workspace-artifacts', () => {
       connectionLayout: {
         'a:out->b:in': {
           orthogonalBend: { axis: 'x', value: 120 },
+          orthogonalLanePreference: 'negative',
         },
       },
       comparisonBaseline: null,
@@ -113,6 +115,7 @@ describe('workspace-artifacts', () => {
     expect(prepared.document.ui.connectionLayout).toEqual({
       'a:out->b:in': {
         orthogonalBend: { axis: 'x', value: 120 },
+        orthogonalLanePreference: 'negative',
       },
     });
   });

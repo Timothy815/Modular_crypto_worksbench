@@ -305,6 +305,11 @@ interface WorkbenchPanelProps {
     value: number,
   ) => void;
   onClearConnectionOrthogonalBend: (connectionKey: string) => void;
+  onSetConnectionLanePreference: (
+    connectionKey: string,
+    preference: 'negative' | 'positive',
+  ) => void;
+  onClearConnectionLanePreference: (connectionKey: string) => void;
   onExportDocument: () => void;
   onExportLabPack: () => void;
   onExportPython: () => void;
@@ -405,6 +410,8 @@ export function WorkbenchPanel({
   onRemoveConnection,
   onSetConnectionOrthogonalBend,
   onClearConnectionOrthogonalBend,
+  onSetConnectionLanePreference,
+  onClearConnectionLanePreference,
   onExportDocument,
   onExportLabPack,
   onExportPython,
@@ -642,6 +649,38 @@ export function WorkbenchPanel({
   const selectedConnectionHasManualPath = Boolean(
     selectedConnectionKey && connectionLayout[selectedConnectionKey]?.orthogonalBend,
   );
+  const selectedConnectionLanePreference =
+    selectedConnectionKey
+      ? connectionLayout[selectedConnectionKey]?.orthogonalLanePreference ?? null
+      : null;
+  const selectedConnectionLaneAxis = useMemo(() => {
+    if (routingMode !== 'orthogonal' || effectiveSelectedConnectionIndex === null) {
+      return null;
+    }
+
+    const selectedConnection = activeProjectState.connections[effectiveSelectedConnectionIndex];
+    const from = effectiveLayout[selectedConnection.from.moduleId];
+    const sourceDef = registry[
+      activeProjectState.modules.find((moduleInstance) => moduleInstance.id === selectedConnection.from.moduleId)
+        ?.defId ?? ''
+    ];
+
+    if (!from || !sourceDef) {
+      return null;
+    }
+
+    const sourceOrientation = getNodeOrientation(from.orientation, layoutDirection);
+    const sourceSide = getPortSideForOrientation(sourceOrientation, 'out');
+    return sourceSide === 'left' || sourceSide === 'right' ? 'x' : 'y';
+  }, [
+    activeProjectState.connections,
+    activeProjectState.modules,
+    effectiveLayout,
+    effectiveSelectedConnectionIndex,
+    layoutDirection,
+    registry,
+    routingMode,
+  ]);
 
   function getCanvasPointerFromClient(clientX: number, clientY: number) {
     const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
@@ -1608,6 +1647,8 @@ export function WorkbenchPanel({
           selectedModuleIds={selectedModuleIds}
           effectiveSelectedConnectionIndex={effectiveSelectedConnectionIndex}
           selectedConnectionHasManualPath={selectedConnectionHasManualPath}
+          selectedConnectionLaneAxis={selectedConnectionLaneAxis}
+          selectedConnectionLanePreference={selectedConnectionLanePreference}
           showTutorialToggle={showTutorialToggle}
           tutorialNotesVisible={tutorialNotesVisible}
           onAddAnnotation={onAddAnnotation}
@@ -1644,6 +1685,16 @@ export function WorkbenchPanel({
           onRequestResetWirePath={() => {
             if (selectedConnectionKey) {
               onClearConnectionOrthogonalBend(selectedConnectionKey);
+            }
+          }}
+          onRequestSetWireLanePreference={(preference) => {
+            if (selectedConnectionKey) {
+              onSetConnectionLanePreference(selectedConnectionKey, preference);
+            }
+          }}
+          onRequestClearWireLanePreference={() => {
+            if (selectedConnectionKey) {
+              onClearConnectionLanePreference(selectedConnectionKey);
             }
           }}
           onRequestImport={() => importInputRef.current?.click()}

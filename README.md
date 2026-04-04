@@ -110,6 +110,11 @@ The next manual-layout refinement after that is now implemented locally as:
 - adds per-workspace soft grid visibility and optional snap-to-grid placement
 - keeps the first slice bounded to module placement only
 
+The next orthogonal-routing follow-on after that is now implemented locally as:
+- `WIRE-LANE-PREFERENCE-V1.md`
+- adds one bounded per-connection lane preference for orthogonal auto routing
+- keeps the slice in workspace UI metadata only and stops short of pathfinding or arbitrary wire editing
+
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - now shipped as the first bounded verification-station refinement inside the compare/analyze line

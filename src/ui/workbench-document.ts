@@ -32,12 +32,14 @@ export interface WorkbenchGroupBox {
 }
 
 export type WorkbenchConnectionBendAxis = 'x' | 'y';
+export type WorkbenchConnectionLanePreference = 'negative' | 'positive';
 
 export interface WorkbenchConnectionLayout {
   orthogonalBend?: {
     axis: WorkbenchConnectionBendAxis;
     value: number;
   };
+  orthogonalLanePreference?: WorkbenchConnectionLanePreference;
 }
 
 export type WorkbenchLayoutDirection = 'horizontal' | 'vertical';

@@ -100,6 +100,11 @@ The next manual-layout refinement after that is now implemented locally as:
 - adds per-workspace soft grid visibility and optional snap-to-grid placement
 - keeps the first slice bounded to module placement only
 
+The next orthogonal-routing follow-on after that is now implemented locally as:
+- `WIRE-LANE-PREFERENCE-V1.md`
+- a bounded per-connection lane-bias slice for orthogonal auto routing
+- keeps the slice in workspace UI metadata only and stops short of pathfinding or arbitrary wire editing
+
 Current `main` now also includes:
 - Python export foundations:
   - one workspace-local `Export Python` action beside JSON export

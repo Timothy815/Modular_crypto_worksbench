@@ -5,6 +5,7 @@ import type { WorkbenchConnectionLayout } from './workbench-document';
 
 const ORTHOGONAL_STEP_BACK_PX = 20;
 const ORTHOGONAL_LANE_OFFSET_PX = 6;
+const ORTHOGONAL_LANE_PREFERENCE_OFFSET_PX = 48;
 const ORTHOGONAL_CORNER_RADIUS_PX = 8;
 const ORTHOGONAL_BEND_NO_OP_EPSILON_PX = 2;
 
@@ -47,6 +48,18 @@ function getSideVector(side: PortSide) {
 function getLaneOffset(sourceIndex: number, targetIndex: number) {
   const laneSeed = ((sourceIndex + 1) * 31 + (targetIndex + 1) * 17) % 5;
   return (laneSeed - 2) * ORTHOGONAL_LANE_OFFSET_PX;
+}
+
+function getLanePreferenceOffset(
+  lanePreference: WorkbenchConnectionLayout['orthogonalLanePreference'] | undefined,
+) {
+  if (lanePreference === 'negative') {
+    return -ORTHOGONAL_LANE_PREFERENCE_OFFSET_PX;
+  }
+  if (lanePreference === 'positive') {
+    return ORTHOGONAL_LANE_PREFERENCE_OFFSET_PX;
+  }
+  return 0;
 }
 
 function buildRoundedOrthogonalPath(points: Array<{ x: number; y: number }>) {
@@ -151,7 +164,10 @@ export function getOrthogonalPathData(
   }
 
   if (sourceSide === 'left' || sourceSide === 'right') {
-    const autoValue = (sourceExit.x + targetEntry.x) / 2 + laneOffset;
+    const autoValue =
+      (sourceExit.x + targetEntry.x) / 2
+      + laneOffset
+      + getLanePreferenceOffset(connectionLayout?.orthogonalLanePreference);
     const bendValue =
       connectionLayout?.orthogonalBend?.axis === 'x' &&
       Number.isFinite(connectionLayout.orthogonalBend.value)
@@ -176,7 +192,10 @@ export function getOrthogonalPathData(
     };
   }
 
-  const autoValue = (sourceExit.y + targetEntry.y) / 2 + laneOffset;
+  const autoValue =
+    (sourceExit.y + targetEntry.y) / 2
+    + laneOffset
+    + getLanePreferenceOffset(connectionLayout?.orthogonalLanePreference);
   const bendValue =
     connectionLayout?.orthogonalBend?.axis === 'y' &&
     Number.isFinite(connectionLayout.orthogonalBend.value)

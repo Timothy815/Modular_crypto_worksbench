@@ -226,7 +226,14 @@ export type UiAction =
       axis: 'x' | 'y';
       value: number;
     }
+  | {
+      type: 'setConnectionLanePreference';
+      projectId: string;
+      connectionKey: string;
+      preference: 'negative' | 'positive';
+    }
   | { type: 'clearConnectionOrthogonalBend'; projectId: string; connectionKey: string }
+  | { type: 'clearConnectionLanePreference'; projectId: string; connectionKey: string }
   | {
       type: 'applyCopiedParams';
       projectId: string;
@@ -476,7 +483,9 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'removeConnection',
   'replaceConnection',
   'setConnectionOrthogonalBend',
+  'setConnectionLanePreference',
   'clearConnectionOrthogonalBend',
+  'clearConnectionLanePreference',
   'applyCopiedParams',
   'updateParam',
   'setModuleBypass',
@@ -1076,9 +1085,14 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
             Object.entries(state.connectionLayoutByProject[action.sourceProjectId] ?? {}).map(
               ([connectionKey, layout]) => [
                 connectionKey,
-                layout.orthogonalBend
-                  ? { orthogonalBend: { ...layout.orthogonalBend } }
-                  : {},
+                {
+                  ...(layout.orthogonalBend
+                    ? { orthogonalBend: { ...layout.orthogonalBend } }
+                    : {}),
+                  ...(layout.orthogonalLanePreference
+                    ? { orthogonalLanePreference: layout.orthogonalLanePreference }
+                    : {}),
+                },
               ],
             ),
           ),
@@ -1490,6 +1504,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           [action.projectId]: {
             ...currentLayout,
             [action.connectionKey]: {
+              ...currentLayout[action.connectionKey],
               orthogonalBend: {
                 axis: action.axis,
                 value: action.value,
@@ -1505,12 +1520,72 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       }
 
       const currentLayout = state.connectionLayoutByProject[action.projectId] ?? {};
-      if (!(action.connectionKey in currentLayout)) {
+      const currentConnectionLayout = currentLayout[action.connectionKey];
+      if (!currentConnectionLayout?.orthogonalBend) {
         return state;
       }
 
       const nextConnectionLayout = { ...currentLayout };
-      delete nextConnectionLayout[action.connectionKey];
+      if (currentConnectionLayout.orthogonalLanePreference) {
+        nextConnectionLayout[action.connectionKey] = {
+          orthogonalLanePreference: currentConnectionLayout.orthogonalLanePreference,
+        };
+      } else {
+        delete nextConnectionLayout[action.connectionKey];
+      }
+
+      return {
+        ...state,
+        connectionLayoutByProject: {
+          ...state.connectionLayoutByProject,
+          [action.projectId]: nextConnectionLayout,
+        },
+      };
+    }
+    case 'setConnectionLanePreference': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentLayout = state.connectionLayoutByProject[action.projectId] ?? {};
+      const currentPreference = currentLayout[action.connectionKey]?.orthogonalLanePreference;
+      if (currentPreference === action.preference) {
+        return state;
+      }
+
+      return {
+        ...state,
+        connectionLayoutByProject: {
+          ...state.connectionLayoutByProject,
+          [action.projectId]: {
+            ...currentLayout,
+            [action.connectionKey]: {
+              ...currentLayout[action.connectionKey],
+              orthogonalLanePreference: action.preference,
+            },
+          },
+        },
+      };
+    }
+    case 'clearConnectionLanePreference': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentLayout = state.connectionLayoutByProject[action.projectId] ?? {};
+      const currentConnectionLayout = currentLayout[action.connectionKey];
+      if (!currentConnectionLayout?.orthogonalLanePreference) {
+        return state;
+      }
+
+      const nextConnectionLayout = { ...currentLayout };
+      if (currentConnectionLayout.orthogonalBend) {
+        nextConnectionLayout[action.connectionKey] = {
+          orthogonalBend: currentConnectionLayout.orthogonalBend,
+        };
+      } else {
+        delete nextConnectionLayout[action.connectionKey];
+      }
 
       return {
         ...state,
@@ -2602,9 +2677,14 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
             Object.entries(action.document.ui.connectionLayout ?? {}).map(
               ([connectionKey, layout]) => [
                 connectionKey,
-                layout.orthogonalBend
-                  ? { orthogonalBend: { ...layout.orthogonalBend } }
-                  : {},
+                {
+                  ...(layout.orthogonalBend
+                    ? { orthogonalBend: { ...layout.orthogonalBend } }
+                    : {}),
+                  ...(layout.orthogonalLanePreference
+                    ? { orthogonalLanePreference: layout.orthogonalLanePreference }
+                    : {}),
+                },
               ],
             ),
           ),

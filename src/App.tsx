@@ -2875,6 +2875,21 @@ function MainApp() {
                 connectionKey,
               })
             }
+            onSetConnectionLanePreference={(connectionKey, preference) =>
+              dispatch({
+                type: 'setConnectionLanePreference',
+                projectId: activeProjectDefinition.id,
+                connectionKey,
+                preference,
+              })
+            }
+            onClearConnectionLanePreference={(connectionKey) =>
+              dispatch({
+                type: 'clearConnectionLanePreference',
+                projectId: activeProjectDefinition.id,
+                connectionKey,
+              })
+            }
             onExportDocument={() => {
               if (isCompositeDrilldownActive) {
                 return;

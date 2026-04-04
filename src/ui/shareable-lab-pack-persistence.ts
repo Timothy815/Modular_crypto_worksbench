@@ -84,9 +84,14 @@ function isConnectionLayoutMap(value: unknown) {
 
         const bend = (layout as { orthogonalBend?: { axis?: unknown; value?: unknown } })
           .orthogonalBend;
+        const lanePreference = (layout as { orthogonalLanePreference?: unknown })
+          .orthogonalLanePreference;
         return (
-          bend === undefined ||
-          ((bend.axis === 'x' || bend.axis === 'y') && typeof bend.value === 'number')
+          (bend === undefined ||
+            ((bend.axis === 'x' || bend.axis === 'y') && typeof bend.value === 'number')) &&
+          (lanePreference === undefined ||
+            lanePreference === 'negative' ||
+            lanePreference === 'positive')
         );
       }))
   );
