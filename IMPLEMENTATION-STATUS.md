@@ -169,6 +169,11 @@ The next selection-coherence follow-on after that is now implemented locally as:
 - a bounded shared selection-details section for wires and layout furniture
 - keeps the slice UI-only and preserves existing selection behavior
 
+The next workspace-chrome simplification follow-on after that is now implemented locally as:
+- `WORKBENCH-CONTROL-SIMPLIFICATION-V1.md`
+- a bounded trim pass for duplicated high-frequency menu entries
+- keeps menus focused on lower-frequency structure, version, and import/export actions
+
 Current `main` now also includes:
 - Python export foundations:
   - one workspace-local `Export Python` action beside JSON export

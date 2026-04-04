@@ -180,6 +180,11 @@ The next selection-coherence follow-on after that is now implemented locally as:
 - unifies wire and layout-furniture readouts into one shared selection-details section
 - keeps the slice UI-only and preserves existing selection behavior
 
+The next workspace-chrome simplification follow-on after that is now implemented locally as:
+- `WORKBENCH-CONTROL-SIMPLIFICATION-V1.md`
+- trims duplicated high-frequency menu entries now covered well by the icon strip
+- keeps menus focused on lower-frequency structure, version, and import/export actions
+
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - now shipped as the first bounded verification-station refinement inside the compare/analyze line
