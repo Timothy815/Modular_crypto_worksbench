@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  getModuleDragAlignmentGuides,
   getOrthogonalPath,
   getOrthogonalPathData,
   getOrthogonalPendingPath,
@@ -73,5 +74,36 @@ describe('workbench-support orthogonal routing', () => {
     );
 
     expect(snapped).toEqual({ x: 188, y: 100 });
+  });
+
+  it('surfaces temporary drag guides for nearby module alignment', () => {
+    const guides = getModuleDragAlignmentGuides(
+      { x: 96, y: 100 },
+      ['dragged'],
+      {
+        dragged: { x: 96, y: 100 },
+        target: { x: 100, y: 220 },
+      },
+      [],
+      120,
+      80,
+    );
+
+    expect(guides).toContainEqual({ axis: 'x', position: 100, kind: 'module' });
+  });
+
+  it('surfaces temporary drag guides for nearby guide rails', () => {
+    const guides = getModuleDragAlignmentGuides(
+      { x: 142, y: 60 },
+      ['dragged'],
+      {
+        dragged: { x: 142, y: 60 },
+      },
+      [{ id: 'rail-1', axis: 'vertical', position: 150, title: 'Main Rail' }],
+      120,
+      80,
+    );
+
+    expect(guides).toContainEqual({ axis: 'x', position: 150, kind: 'guide-rail' });
   });
 });

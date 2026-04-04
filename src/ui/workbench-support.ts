@@ -1,7 +1,11 @@
 import type { ExecutionResult, ExecutionTraceEntry, ValidationIssue } from '../engine/types';
 import type { TargetPortState } from './connection-authoring';
 import type { PortSide } from './node-orientation';
-import type { WorkbenchConnectionLayout, WorkbenchGuideRail } from './workbench-document';
+import type {
+  WorkbenchConnectionLayout,
+  WorkbenchGuideRail,
+  WorkbenchPosition,
+} from './workbench-document';
 
 const ORTHOGONAL_STEP_BACK_PX = 20;
 const ORTHOGONAL_LANE_OFFSET_PX = 6;
@@ -9,6 +13,13 @@ const ORTHOGONAL_LANE_PREFERENCE_OFFSET_PX = 48;
 const ORTHOGONAL_CORNER_RADIUS_PX = 8;
 const ORTHOGONAL_BEND_NO_OP_EPSILON_PX = 2;
 const GUIDE_SNAP_THRESHOLD_PX = 30;
+const DRAG_ALIGNMENT_GUIDE_THRESHOLD_PX = 16;
+
+export interface DragAlignmentGuide {
+  axis: 'x' | 'y';
+  position: number;
+  kind: 'module' | 'guide-rail';
+}
 
 export function getAnchorPosition(
   x: number,
@@ -82,6 +93,72 @@ export function snapModulePositionToGuideRails(
   }
 
   return nextPosition;
+}
+
+export function getModuleDragAlignmentGuides(
+  position: { x: number; y: number },
+  draggedModuleIds: string[],
+  layout: Record<string, WorkbenchPosition>,
+  guideRails: WorkbenchGuideRail[],
+  nodeWidth: number,
+  nodeHeight: number,
+) {
+  const xOffsets = [0, nodeWidth / 2, nodeWidth];
+  const yOffsets = [0, nodeHeight / 2, nodeHeight];
+  const draggedIds = new Set(draggedModuleIds);
+
+  let bestX: { distance: number; position: number; kind: 'module' | 'guide-rail' } | null = null;
+  let bestY: { distance: number; position: number; kind: 'module' | 'guide-rail' } | null = null;
+
+  for (const guideRail of guideRails) {
+    if (guideRail.axis === 'vertical') {
+      for (const offset of xOffsets) {
+        const distance = Math.abs(position.x + offset - guideRail.position);
+        if (!bestX || distance < bestX.distance) {
+          bestX = { distance, position: guideRail.position, kind: 'guide-rail' };
+        }
+      }
+    } else {
+      for (const offset of yOffsets) {
+        const distance = Math.abs(position.y + offset - guideRail.position);
+        if (!bestY || distance < bestY.distance) {
+          bestY = { distance, position: guideRail.position, kind: 'guide-rail' };
+        }
+      }
+    }
+  }
+
+  for (const [moduleId, modulePosition] of Object.entries(layout)) {
+    if (draggedIds.has(moduleId)) {
+      continue;
+    }
+
+    for (const offset of xOffsets) {
+      const distance = Math.abs(position.x + offset - (modulePosition.x + offset));
+      if (!bestX || distance < bestX.distance) {
+        bestX = { distance, position: modulePosition.x + offset, kind: 'module' };
+      }
+    }
+
+    for (const offset of yOffsets) {
+      const distance = Math.abs(position.y + offset - (modulePosition.y + offset));
+      if (!bestY || distance < bestY.distance) {
+        bestY = { distance, position: modulePosition.y + offset, kind: 'module' };
+      }
+    }
+  }
+
+  const guides: DragAlignmentGuide[] = [];
+
+  if (bestX && bestX.distance <= DRAG_ALIGNMENT_GUIDE_THRESHOLD_PX) {
+    guides.push({ axis: 'x', position: bestX.position, kind: bestX.kind });
+  }
+
+  if (bestY && bestY.distance <= DRAG_ALIGNMENT_GUIDE_THRESHOLD_PX) {
+    guides.push({ axis: 'y', position: bestY.position, kind: bestY.kind });
+  }
+
+  return guides;
 }
 
 function getSideVector(side: PortSide) {

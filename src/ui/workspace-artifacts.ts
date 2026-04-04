@@ -256,6 +256,12 @@ export function hydrateInitialUiState(projects: DemoProject[]): UiState {
         persistedWorkspace.documentsByProjectId[project.id]?.ui.routingMode ?? 'curved',
       ]),
     ),
+    wireColorModeByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.documentsByProjectId[project.id]?.ui.wireColorMode ?? 'domain',
+      ]),
+    ),
     connectionLayoutByProject: Object.fromEntries(
       allProjects.map((project) => [
         project.id,
@@ -435,6 +441,7 @@ export interface BuildShareableLabPackArgs {
   snapToGuides?: boolean;
   layoutDirection: 'horizontal' | 'vertical';
   routingMode: 'curved' | 'orthogonal';
+  wireColorMode?: 'domain' | 'neutral' | 'high-contrast';
   connectionLayout?: Record<
     string,
     {
@@ -464,6 +471,7 @@ export function buildShareableLabPack({
   snapToGuides = false,
   layoutDirection,
   routingMode,
+  wireColorMode = 'domain',
   connectionLayout = {},
   comparisonBaseline,
   verificationCases,
@@ -495,6 +503,7 @@ export function buildShareableLabPack({
         snapToGuides,
         layoutDirection,
         routingMode,
+        wireColorMode,
         connectionLayout: Object.fromEntries(
           Object.entries(connectionLayout).map(([connectionKey, layout]) => [
             connectionKey,
@@ -625,6 +634,7 @@ export function prepareImportedLabPack({
         snapToGuides: pack.workspace.ui.snapToGuides ?? false,
         layoutDirection: pack.workspace.ui.layoutDirection ?? 'horizontal',
         routingMode: pack.workspace.ui.routingMode ?? 'curved',
+        wireColorMode: pack.workspace.ui.wireColorMode ?? 'domain',
         connectionLayout: Object.fromEntries(
           Object.entries(pack.workspace.ui.connectionLayout ?? {}).map(
             ([connectionKey, layout]) => [

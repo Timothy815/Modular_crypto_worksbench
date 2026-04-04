@@ -61,6 +61,7 @@ export interface WorkbenchConnectionLayout {
 export type WorkbenchLayoutDirection = 'horizontal' | 'vertical';
 export type WorkbenchNodeOrientation = 'east' | 'south' | 'west' | 'north';
 export type WorkbenchRoutingMode = 'curved' | 'orthogonal';
+export type WorkbenchWireColorMode = 'domain' | 'neutral' | 'high-contrast';
 
 export interface WorkbenchUiMetadata {
   layout: Record<string, WorkbenchPosition>;
@@ -74,6 +75,7 @@ export interface WorkbenchUiMetadata {
   snapToGuides?: boolean;
   layoutDirection?: WorkbenchLayoutDirection;
   routingMode?: WorkbenchRoutingMode;
+  wireColorMode?: WorkbenchWireColorMode;
   connectionLayout?: Record<string, WorkbenchConnectionLayout>;
 }
 

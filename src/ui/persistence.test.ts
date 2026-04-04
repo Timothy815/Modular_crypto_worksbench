@@ -138,7 +138,12 @@ describe('workspace persistence', () => {
       projectId: 'my-scratchpad',
       mode: 'orthogonal',
     });
-    const stateWithGroupBox = uiReducer(stateWithWorkspace, {
+    const stateWithWireColors = uiReducer(stateWithWorkspace, {
+      type: 'setWireColorMode',
+      projectId: 'my-scratchpad',
+      mode: 'high-contrast',
+    });
+    const stateWithGroupBox = uiReducer(stateWithWireColors, {
       type: 'addGroupBox',
       projectId: 'my-scratchpad',
     });
@@ -180,6 +185,9 @@ describe('workspace persistence', () => {
     });
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.layoutDirection).toBe('vertical');
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.routingMode).toBe('orthogonal');
+    expect(restored?.documentsByProjectId['my-scratchpad']?.ui.wireColorMode).toBe(
+      'high-contrast',
+    );
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.connectionLayout).toEqual({});
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.groupBoxes).toEqual([
       {
@@ -291,6 +299,7 @@ describe('parseShareableLabPack', () => {
           snapToGuides: true,
           layoutDirection: 'vertical',
           routingMode: 'orthogonal',
+          wireColorMode: 'neutral',
           connectionLayout: {
             'a:out->b:in': {
               orthogonalBend: { axis: 'x', value: 144 },

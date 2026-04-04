@@ -331,6 +331,8 @@ function MainApp() {
     state.layoutDirectionByProject[activeProjectDefinition.id] ?? 'horizontal';
   const activeRoutingMode =
     state.routingModeByProject[activeProjectDefinition.id] ?? 'curved';
+  const activeWireColorMode =
+    state.wireColorModeByProject[activeProjectDefinition.id] ?? 'domain';
   const activeConnectionLayout = useMemo(
     () => state.connectionLayoutByProject[activeProjectDefinition.id] ?? {},
     [activeProjectDefinition.id, state.connectionLayoutByProject],
@@ -925,6 +927,7 @@ function MainApp() {
         snapToGuides: activeSnapToGuides,
         layoutDirection: activeLayoutDirection,
         routingMode: activeRoutingMode,
+        wireColorMode: activeWireColorMode,
         connectionLayout: activeConnectionLayout,
         comparisonBaseline,
         verificationCases,
@@ -945,6 +948,7 @@ function MainApp() {
     activeLayout,
     activeLayoutDirection,
     activeRoutingMode,
+    activeWireColorMode,
     activeConnectionLayout,
     activeProjectDefinition.id,
     activeProjectDefinition.name,
@@ -1639,6 +1643,7 @@ function MainApp() {
             snapToGuides: activeSnapToGuides,
             layoutDirection: activeLayoutDirection,
             routingMode: activeRoutingMode,
+            wireColorMode: activeWireColorMode,
             connectionLayout: activeConnectionLayout,
           },
         },
@@ -1838,6 +1843,7 @@ function MainApp() {
               : state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
             layoutDirection: activeLayoutDirection,
             routingMode: activeRoutingMode,
+            wireColorMode: activeWireColorMode,
             connectionLayout: activeConnectionLayout,
           },
         },
@@ -1865,6 +1871,7 @@ function MainApp() {
       activeLayout,
       activeLayoutDirection,
       activeRoutingMode,
+      activeWireColorMode,
       activeConnectionLayout,
       activeProjectDefinition.id,
       activeProjectState,
@@ -2529,6 +2536,7 @@ function MainApp() {
             layout={compositeDrilldownContext?.layout ?? activeLayout}
             layoutDirection={activeLayoutDirection}
             routingMode={activeRoutingMode}
+            wireColorMode={activeWireColorMode}
             connectionLayout={
               isCompositeDrilldownActive
                 ? {}
@@ -3032,6 +3040,7 @@ function MainApp() {
                     : state.snapToGuidesByProject[activeProjectDefinition.id] ?? false,
                   layoutDirection: activeLayoutDirection,
                   routingMode: activeRoutingMode,
+                  wireColorMode: activeWireColorMode,
                   connectionLayout: activeConnectionLayout,
                 },
               });
@@ -3102,6 +3111,15 @@ function MainApp() {
                 ? undefined
                 : dispatch({
                     type: 'setRoutingMode',
+                    projectId: activeProjectDefinition.id,
+                    mode,
+                  })
+            }
+            onSetWireColorMode={(mode) =>
+              isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'setWireColorMode',
                     projectId: activeProjectDefinition.id,
                     mode,
                   })
@@ -4021,6 +4039,7 @@ function MainApp() {
                             state.snapToGuidesByProject[activeProjectDefinition.id] ?? false,
                           layoutDirection: activeLayoutDirection,
                           routingMode: activeRoutingMode,
+                          wireColorMode: activeWireColorMode,
                           connectionLayout: activeConnectionLayout,
                         },
                       },
@@ -4135,6 +4154,8 @@ function MainApp() {
                           'horizontal',
                         routingMode:
                           state.routingModeByProject[selectedChallengeProjectId] ?? 'curved',
+                        wireColorMode:
+                          state.wireColorModeByProject[selectedChallengeProjectId] ?? 'domain',
                         connectionLayout:
                           state.connectionLayoutByProject[selectedChallengeProjectId] ?? {},
                       },

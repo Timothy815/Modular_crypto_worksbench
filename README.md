@@ -130,6 +130,21 @@ The next readability follow-on after that is now implemented locally as:
 - adds lightweight persistent stage labels directly on the workspace canvas
 - keeps the slice visual-only and intentionally lighter than sticky notes or group boxes
 
+The next interaction-coherence follow-on after that is now implemented locally as:
+- `WORKSPACE-POLISH-V2.md`
+- calms stage-label controls and makes the quick-actions strip more context-sensitive
+- keeps the slice UI-only and bounded to polish rather than new layout semantics
+
+The next drag-feedback follow-on after that is now implemented locally as:
+- `DRAG-ALIGNMENT-GUIDES-V1.md`
+- adds temporary module and guide-rail alignment cues while dragging
+- keeps the slice visual-only with no new persistence or snapping semantics
+
+The next wire-legibility follow-on after that is now implemented locally as:
+- `WIRE-COLOR-CUSTOMIZATION-V1.md`
+- adds bounded workspace-level wire color modes for `domain`, `neutral`, and `high-contrast`
+- keeps the slice workspace-local and stops short of arbitrary per-wire recoloring
+
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - now shipped as the first bounded verification-station refinement inside the compare/analyze line

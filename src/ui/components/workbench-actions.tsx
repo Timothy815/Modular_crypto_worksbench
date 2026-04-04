@@ -1,12 +1,17 @@
 import type { ReactNode } from 'react';
 
-import type { WorkbenchLayoutDirection, WorkbenchRoutingMode } from '../workbench-document';
+import type {
+  WorkbenchLayoutDirection,
+  WorkbenchRoutingMode,
+  WorkbenchWireColorMode,
+} from '../workbench-document';
 
 interface WorkbenchActionsProps {
   isCompositeEditor: boolean;
   isObservationMode?: boolean;
   layoutDirection: WorkbenchLayoutDirection;
   routingMode: WorkbenchRoutingMode;
+  wireColorMode: WorkbenchWireColorMode;
   showOverviewNavigator: boolean;
   showGrid: boolean;
   snapToGrid: boolean;
@@ -28,6 +33,7 @@ interface WorkbenchActionsProps {
   onTidyLayout: () => void;
   onSetLayoutDirection: (direction: WorkbenchLayoutDirection) => void;
   onSetRoutingMode: (mode: WorkbenchRoutingMode) => void;
+  onSetWireColorMode: (mode: WorkbenchWireColorMode) => void;
   onToggleOverviewNavigator: (visible: boolean) => void;
   onToggleGrid: (visible: boolean) => void;
   onToggleSnapToGrid: (enabled: boolean) => void;
@@ -155,6 +161,9 @@ type WorkbenchInlineIconName =
   | 'layout-vertical'
   | 'routing-curved'
   | 'routing-orthogonal'
+  | 'wire-color-domain'
+  | 'wire-color-neutral'
+  | 'wire-color-high-contrast'
   | 'overview'
   | 'grid'
   | 'snap'
@@ -239,6 +248,27 @@ function WorkbenchInlineIcon({ name }: { name: WorkbenchInlineIconName }) {
       return (
         <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
           <path d="M4 14V8h6V4h6" />
+        </svg>
+      );
+    case 'wire-color-domain':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M3 6h14M3 14h14" />
+          <circle cx="7" cy="6" r="1.5" fill="currentColor" stroke="none" />
+          <circle cx="13" cy="14" r="1.5" fill="currentColor" stroke="none" />
+        </svg>
+      );
+    case 'wire-color-neutral':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M3 10h14" />
+          <circle cx="10" cy="10" r="1.5" fill="currentColor" stroke="none" />
+        </svg>
+      );
+    case 'wire-color-high-contrast':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M3 6h14M3 14h14M10 4v12" />
         </svg>
       );
     case 'overview':
@@ -383,6 +413,7 @@ export function WorkbenchActions({
   isObservationMode = false,
   layoutDirection,
   routingMode,
+  wireColorMode,
   showOverviewNavigator,
   showGrid,
   snapToGrid,
@@ -404,6 +435,7 @@ export function WorkbenchActions({
   onTidyLayout,
   onSetLayoutDirection,
   onSetRoutingMode,
+  onSetWireColorMode,
   onToggleOverviewNavigator,
   onToggleGrid,
   onToggleSnapToGrid,
@@ -439,6 +471,8 @@ export function WorkbenchActions({
     selectedConnectionLaneAxis === 'x' ? 'Prefer Right Lane' : 'Prefer Lower Lane';
   const canAlignSelection = selectedModuleIds.length >= 2;
   const canDistributeSelection = selectedModuleIds.length >= 3;
+  const showSelectionToolbar = canAlignSelection;
+  const showWireToolbar = canDeleteWire;
 
   return (
     <div className="project-actions">
@@ -509,6 +543,24 @@ export function WorkbenchActions({
               active={routingMode === 'orthogonal'}
             />
             <WorkbenchInlineActionButton
+              content={<WorkbenchInlineIcon name="wire-color-domain" />}
+              title="Domain Wire Colors"
+              onSelect={() => onSetWireColorMode('domain')}
+              active={wireColorMode === 'domain'}
+            />
+            <WorkbenchInlineActionButton
+              content={<WorkbenchInlineIcon name="wire-color-neutral" />}
+              title="Neutral Wire Colors"
+              onSelect={() => onSetWireColorMode('neutral')}
+              active={wireColorMode === 'neutral'}
+            />
+            <WorkbenchInlineActionButton
+              content={<WorkbenchInlineIcon name="wire-color-high-contrast" />}
+              title="High Contrast Wire Colors"
+              onSelect={() => onSetWireColorMode('high-contrast')}
+              active={wireColorMode === 'high-contrast'}
+            />
+            <WorkbenchInlineActionButton
               content={<WorkbenchInlineIcon name="overview" />}
               title={showOverviewNavigator ? 'Hide Overview Navigator' : 'Show Overview Navigator'}
               onSelect={() => onToggleOverviewNavigator(!showOverviewNavigator)}
@@ -537,87 +589,109 @@ export function WorkbenchActions({
               title="Save Version"
               onSelect={onRequestSaveVersion}
             />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="delete-wire" />}
-              title="Delete Selected Wire"
-              onSelect={onRequestDeleteWire}
-              disabled={!canDeleteWire}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="reset-wire" />}
-              title="Reset Selected Wire Path"
-              onSelect={onRequestResetWirePath}
-              disabled={!selectedConnectionHasManualPath}
-            />
           </div>
 
-          <div className="workbench-inline-toolbar" aria-label="Selection layout tools">
+          <div className="workbench-inline-toolbar" aria-label="Layout tools">
+            <span className="meta-label">Layout</span>
             <WorkbenchInlineActionButton
               content="Tidy"
               title="Tidy Layout"
               onSelect={onTidyLayout}
             />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="stage-row" />}
-              title="Arrange Selected Stage Row"
-              onSelect={() => onRequestArrangeSelection('stage-row')}
-              disabled={!canAlignSelection}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="stage-column" />}
-              title="Stack Selected Stage Column"
-              onSelect={() => onRequestArrangeSelection('stage-column')}
-              disabled={!canAlignSelection}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="align-left" />}
-              title="Align Left"
-              onSelect={() => onRequestArrangeSelection('align-left')}
-              disabled={!canAlignSelection}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="align-right" />}
-              title="Align Right"
-              onSelect={() => onRequestArrangeSelection('align-right')}
-              disabled={!canAlignSelection}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="align-top" />}
-              title="Align Top"
-              onSelect={() => onRequestArrangeSelection('align-top')}
-              disabled={!canAlignSelection}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="align-bottom" />}
-              title="Align Bottom"
-              onSelect={() => onRequestArrangeSelection('align-bottom')}
-              disabled={!canAlignSelection}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="align-horizontal-center" />}
-              title="Align Horizontal Center"
-              onSelect={() => onRequestArrangeSelection('align-horizontal-center')}
-              disabled={!canAlignSelection}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="align-vertical-center" />}
-              title="Align Vertical Center"
-              onSelect={() => onRequestArrangeSelection('align-vertical-center')}
-              disabled={!canAlignSelection}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="distribute-horizontal" />}
-              title="Distribute Horizontally"
-              onSelect={() => onRequestArrangeSelection('distribute-horizontal')}
-              disabled={!canDistributeSelection}
-            />
-            <WorkbenchInlineActionButton
-              content={<WorkbenchInlineIcon name="distribute-vertical" />}
-              title="Distribute Vertically"
-              onSelect={() => onRequestArrangeSelection('distribute-vertical')}
-              disabled={!canDistributeSelection}
-            />
           </div>
+
+          {showSelectionToolbar ? (
+            <div className="workbench-inline-toolbar" aria-label="Selection layout tools">
+              <span className="meta-label">Selection</span>
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="stage-row" />}
+                title="Arrange Selected Stage Row"
+                onSelect={() => onRequestArrangeSelection('stage-row')}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="stage-column" />}
+                title="Stack Selected Stage Column"
+                onSelect={() => onRequestArrangeSelection('stage-column')}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="align-left" />}
+                title="Align Left"
+                onSelect={() => onRequestArrangeSelection('align-left')}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="align-right" />}
+                title="Align Right"
+                onSelect={() => onRequestArrangeSelection('align-right')}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="align-top" />}
+                title="Align Top"
+                onSelect={() => onRequestArrangeSelection('align-top')}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="align-bottom" />}
+                title="Align Bottom"
+                onSelect={() => onRequestArrangeSelection('align-bottom')}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="align-horizontal-center" />}
+                title="Align Horizontal Center"
+                onSelect={() => onRequestArrangeSelection('align-horizontal-center')}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="align-vertical-center" />}
+                title="Align Vertical Center"
+                onSelect={() => onRequestArrangeSelection('align-vertical-center')}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="distribute-horizontal" />}
+                title="Distribute Horizontally"
+                onSelect={() => onRequestArrangeSelection('distribute-horizontal')}
+                disabled={!canDistributeSelection}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="distribute-vertical" />}
+                title="Distribute Vertically"
+                onSelect={() => onRequestArrangeSelection('distribute-vertical')}
+                disabled={!canDistributeSelection}
+              />
+            </div>
+          ) : null}
+
+          {showWireToolbar ? (
+            <div className="workbench-inline-toolbar" aria-label="Wire tools">
+              <span className="meta-label">Wire</span>
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="delete-wire" />}
+                title="Delete Selected Wire"
+                onSelect={onRequestDeleteWire}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="reset-wire" />}
+                title="Reset Selected Wire Path"
+                onSelect={onRequestResetWirePath}
+                disabled={!selectedConnectionHasManualPath}
+              />
+              <WorkbenchInlineActionButton
+                content={negativeLaneLabel}
+                title={negativeLaneLabel}
+                onSelect={() => onRequestSetWireLanePreference('negative')}
+                disabled={!canAdjustWireLane || selectedConnectionLanePreference === 'negative'}
+              />
+              <WorkbenchInlineActionButton
+                content="Neutral"
+                title="Neutral Lane"
+                onSelect={onRequestClearWireLanePreference}
+                disabled={!canAdjustWireLane || selectedConnectionLanePreference === null}
+              />
+              <WorkbenchInlineActionButton
+                content={positiveLaneLabel}
+                title={positiveLaneLabel}
+                onSelect={() => onRequestSetWireLanePreference('positive')}
+                disabled={!canAdjustWireLane || selectedConnectionLanePreference === 'positive'}
+              />
+            </div>
+          ) : null}
 
           <WorkbenchActionMenu label="View" description="Zoom and navigate">
             <WorkbenchMenuActionButton label="Zoom Out" onSelect={onZoomOut} />
@@ -643,6 +717,21 @@ export function WorkbenchActions({
               label="Ortho"
               onSelect={() => onSetRoutingMode('orthogonal')}
               disabled={routingMode === 'orthogonal'}
+            />
+            <WorkbenchMenuActionButton
+              label="Domain Wire Colors"
+              onSelect={() => onSetWireColorMode('domain')}
+              disabled={wireColorMode === 'domain'}
+            />
+            <WorkbenchMenuActionButton
+              label="Neutral Wire Colors"
+              onSelect={() => onSetWireColorMode('neutral')}
+              disabled={wireColorMode === 'neutral'}
+            />
+            <WorkbenchMenuActionButton
+              label="High Contrast Wire Colors"
+              onSelect={() => onSetWireColorMode('high-contrast')}
+              disabled={wireColorMode === 'high-contrast'}
             />
             <WorkbenchMenuActionButton
               label={showOverviewNavigator ? 'Hide Overview' : 'Show Overview'}

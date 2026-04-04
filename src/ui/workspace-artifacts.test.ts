@@ -17,6 +17,7 @@ describe('workspace-artifacts', () => {
           annotations: [],
           layoutDirection: 'vertical',
           routingMode: 'orthogonal',
+          wireColorMode: 'neutral',
           connectionLayout: {
             'a:out->b:in': {
               orthogonalBend: { axis: 'x', value: 120 },
@@ -71,6 +72,7 @@ describe('workspace-artifacts', () => {
       snapToGuides: true,
       layoutDirection: 'vertical',
       routingMode: 'orthogonal',
+      wireColorMode: 'high-contrast',
       connectionLayout: {
         'a:out->b:in': {
           orthogonalBend: { axis: 'x', value: 120 },
@@ -115,6 +117,7 @@ describe('workspace-artifacts', () => {
     expect(prepared.learningPanelTab).toBe('challenge');
     expect(prepared.document.ui.layoutDirection).toBe('vertical');
     expect(prepared.document.ui.routingMode).toBe('orthogonal');
+    expect(prepared.document.ui.wireColorMode).toBe('high-contrast');
     expect(prepared.document.ui.groupBoxes).toEqual([
       {
         id: 'group-box-1',

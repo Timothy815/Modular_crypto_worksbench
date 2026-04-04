@@ -1425,6 +1425,19 @@ describe('uiReducer', () => {
     expect(nextState.routingModeByProject[projectId]).toBe('orthogonal');
   });
 
+  it('stores wire color mode per workspace', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+
+    const nextState = uiReducer(initialState, {
+      type: 'setWireColorMode',
+      projectId,
+      mode: 'high-contrast',
+    });
+
+    expect(nextState.wireColorModeByProject[projectId]).toBe('high-contrast');
+  });
+
   it('stores and clears orthogonal bend overrides per connection', () => {
     const initialState = createInitialUiState(demoProjects);
     const projectId = 'sequential';

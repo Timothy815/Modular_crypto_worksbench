@@ -177,6 +177,7 @@ function cloneWorkspaceDocument(document: WorkbenchDocument): WorkbenchDocument 
       snapToGuides: document.ui.snapToGuides ?? false,
       layoutDirection: document.ui.layoutDirection ?? 'horizontal',
       routingMode: document.ui.routingMode ?? 'curved',
+      wireColorMode: document.ui.wireColorMode ?? 'domain',
       connectionLayout: Object.fromEntries(
         Object.entries(document.ui.connectionLayout ?? {}).map(([connectionKey, layout]) => [
           connectionKey,
@@ -225,6 +226,7 @@ function buildDefaultDocument(project: DemoProject): WorkbenchDocument {
       snapToGuides: false,
       layoutDirection: 'horizontal',
       routingMode: 'curved',
+      wireColorMode: 'domain',
       connectionLayout: {},
     },
   };
@@ -270,6 +272,7 @@ export function buildPersistedWorkspace(
             snapToGuides: state.snapToGuidesByProject[projectId] ?? false,
             layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
             routingMode: state.routingModeByProject[projectId] ?? 'curved',
+            wireColorMode: state.wireColorModeByProject[projectId] ?? 'domain',
             connectionLayout: Object.fromEntries(
               Object.entries(state.connectionLayoutByProject[projectId] ?? {}).map(
                 ([connectionKey, layout]) => [
@@ -963,6 +966,10 @@ function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
     (candidate.ui.routingMode === undefined ||
       candidate.ui.routingMode === 'curved' ||
       candidate.ui.routingMode === 'orthogonal') &&
+    (candidate.ui.wireColorMode === undefined ||
+      candidate.ui.wireColorMode === 'domain' ||
+      candidate.ui.wireColorMode === 'neutral' ||
+      candidate.ui.wireColorMode === 'high-contrast') &&
     isConnectionLayoutMap(candidate.ui.connectionLayout)
   );
 }

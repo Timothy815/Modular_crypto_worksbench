@@ -118,7 +118,21 @@ The next guide-rail follow-on after that is now implemented locally as:
 The next readability follow-on after that is now implemented locally as:
 - `ON-CANVAS-STAGE-LABELS-V1.md`
 - a bounded stage-label slice for lightweight on-canvas rounds, outputs, and feedback markers
+
+The next interaction-coherence follow-on after that is now implemented locally as:
+- `WORKSPACE-POLISH-V2.md`
+- a bounded workspace polish pass for calmer stage-label affordances and more context-sensitive quick actions
 - keeps the labels visual-only and intentionally lighter than notes or group boxes
+
+The next drag-feedback follow-on after that is now implemented locally as:
+- `DRAG-ALIGNMENT-GUIDES-V1.md`
+- a bounded visual drag-guide pass for temporary module and guide-rail alignment cues
+- keeps the slice visual-only with no new persistence or snapping semantics
+
+The next wire-legibility follow-on after that is now implemented locally as:
+- `WIRE-COLOR-CUSTOMIZATION-V1.md`
+- a bounded workspace-level wire-color mode slice for `domain`, `neutral`, and `high-contrast`
+- keeps the slice in workspace UI metadata only and stops short of arbitrary per-wire recoloring
 
 Current `main` now also includes:
 - Python export foundations:

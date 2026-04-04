@@ -24,6 +24,7 @@ import type {
   WorkbenchGroupBoxVariant,
   WorkbenchLayoutDirection,
   WorkbenchRoutingMode,
+  WorkbenchWireColorMode,
   WorkbenchPosition,
   WorkbenchStageLabel,
   WorkbenchDocument,
@@ -76,6 +77,7 @@ export interface UiState {
   snapToGuidesByProject: Record<string, boolean>;
   layoutDirectionByProject: Record<string, WorkbenchLayoutDirection>;
   routingModeByProject: Record<string, WorkbenchRoutingMode>;
+  wireColorModeByProject: Record<string, WorkbenchWireColorMode>;
   connectionLayoutByProject: Record<string, Record<string, WorkbenchConnectionLayout>>;
   comparisonBaselinesByProject: Record<string, ComparisonBaselineDocument | null>;
   activeChallengeIdByProject: Record<string, string | null>;
@@ -163,6 +165,11 @@ export type UiAction =
       type: 'setRoutingMode';
       projectId: string;
       mode: WorkbenchRoutingMode;
+    }
+  | {
+      type: 'setWireColorMode';
+      projectId: string;
+      mode: WorkbenchWireColorMode;
     }
   | {
       type: 'moveModules';
@@ -822,6 +829,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     ),
     routingModeByProject: Object.fromEntries(
       projects.map((project) => [project.id, 'curved' as const]),
+    ),
+    wireColorModeByProject: Object.fromEntries(
+      projects.map((project) => [project.id, 'domain' as const]),
     ),
     connectionLayoutByProject: Object.fromEntries(
       projects.map((project) => [project.id, {}]),
@@ -1577,6 +1587,23 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         ...state,
         routingModeByProject: {
           ...state.routingModeByProject,
+          [action.projectId]: action.mode,
+        },
+      };
+    }
+    case 'setWireColorMode': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      if ((state.wireColorModeByProject[action.projectId] ?? 'domain') === action.mode) {
+        return state;
+      }
+
+      return {
+        ...state,
+        wireColorModeByProject: {
+          ...state.wireColorModeByProject,
           [action.projectId]: action.mode,
         },
       };
@@ -2958,6 +2985,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         routingModeByProject: {
           ...state.routingModeByProject,
           [action.projectId]: action.document.ui.routingMode ?? 'curved',
+        },
+        wireColorModeByProject: {
+          ...state.wireColorModeByProject,
+          [action.projectId]: action.document.ui.wireColorMode ?? 'domain',
         },
         connectionLayoutByProject: {
           ...state.connectionLayoutByProject,

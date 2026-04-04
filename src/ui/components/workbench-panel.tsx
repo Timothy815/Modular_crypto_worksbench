@@ -55,6 +55,7 @@ import type {
   WorkbenchLayoutDirection,
   WorkbenchPosition,
   WorkbenchRoutingMode,
+  WorkbenchWireColorMode,
   WorkbenchStageLabel,
   WorkspaceVersionDocument,
 } from '../workbench-document';
@@ -72,6 +73,7 @@ import {
   buildModuleIssueCountById,
   formatVersionTimestamp,
   getAnchorPosition,
+  getModuleDragAlignmentGuides,
   getInputAnchorClassName,
   getOrthogonalPathData,
   getOrthogonalPendingPath,
@@ -203,6 +205,7 @@ interface WorkbenchPanelProps {
   layout: Record<string, WorkbenchPosition>;
   layoutDirection: WorkbenchLayoutDirection;
   routingMode: WorkbenchRoutingMode;
+  wireColorMode: WorkbenchWireColorMode;
   connectionLayout: Record<string, WorkbenchConnectionLayout>;
   annotations: WorkbenchAnnotation[];
   stageLabels: WorkbenchStageLabel[];
@@ -333,6 +336,7 @@ interface WorkbenchPanelProps {
   onTidyLayout: () => void;
   onSetLayoutDirection: (direction: WorkbenchLayoutDirection) => void;
   onSetRoutingMode: (mode: WorkbenchRoutingMode) => void;
+  onSetWireColorMode: (mode: WorkbenchWireColorMode) => void;
   onSetTutorialStep?: (stepIndex: number) => void;
   onSetTutorialNotesVisible?: (visible: boolean) => void;
   projects: DemoProject[];
@@ -347,6 +351,7 @@ export function WorkbenchPanel({
   layout,
   layoutDirection,
   routingMode,
+  wireColorMode,
   connectionLayout,
   annotations,
   stageLabels,
@@ -447,6 +452,7 @@ export function WorkbenchPanel({
   onTidyLayout,
   onSetLayoutDirection,
   onSetRoutingMode,
+  onSetWireColorMode,
   onSetTutorialStep,
   onSetTutorialNotesVisible,
   projects,
@@ -482,6 +488,7 @@ export function WorkbenchPanel({
     currentX: number;
     currentY: number;
   } | null>(null);
+  const [selectedStageLabelId, setSelectedStageLabelId] = useState<string | null>(null);
   const [selectedGroupBoxId, setSelectedGroupBoxId] = useState<string | null>(null);
   const [selectedGuideRailId, setSelectedGuideRailId] = useState<string | null>(null);
   const [groupBoxDragState, setGroupBoxDragState] = useState<{
@@ -562,6 +569,13 @@ export function WorkbenchPanel({
         ? selectedGuideRailId
         : null,
     [guideRails, selectedGuideRailId],
+  );
+  const effectiveSelectedStageLabelId = useMemo(
+    () =>
+      selectedStageLabelId && stageLabels.some((stageLabel) => stageLabel.id === selectedStageLabelId)
+        ? selectedStageLabelId
+        : null,
+    [selectedStageLabelId, stageLabels],
   );
   const [canvasHeightResizeState, setCanvasHeightResizeState] = useState<{
     originY: number;
@@ -707,6 +721,25 @@ export function WorkbenchPanel({
   ]);
   const canvasWidth = contentBounds.width;
   const canvasHeight = contentBounds.height;
+  const dragAlignmentGuides = useMemo(() => {
+    if (!dragState) {
+      return [];
+    }
+
+    const anchorPosition = dragState.currentPositions[dragState.moduleId];
+    if (!anchorPosition) {
+      return [];
+    }
+
+    return getModuleDragAlignmentGuides(
+      anchorPosition,
+      dragState.moduleIds,
+      layout,
+      guideRails,
+      NODE_WIDTH,
+      NODE_HEIGHT,
+    );
+  }, [dragState, guideRails, layout]);
   const minimapMetrics = useMemo(() => {
     const availableWidth = MINIMAP_WIDTH - MINIMAP_PADDING * 2;
     const availableHeight = MINIMAP_HEIGHT - MINIMAP_PADDING * 2;
@@ -1474,6 +1507,7 @@ export function WorkbenchPanel({
   ) {
     setSelectedConnectionIndex(null);
     setSelectedGuideRailId(null);
+    setSelectedStageLabelId(null);
     const pos = layout[moduleId];
     if (!pos) return;
     const orientation = getNodeOrientation(pos.orientation, layoutDirection);
@@ -1503,6 +1537,7 @@ export function WorkbenchPanel({
   function startConnectionRewireFromInput(moduleId: string, portName: string) {
     setSelectedConnectionIndex(null);
     setSelectedGuideRailId(null);
+    setSelectedStageLabelId(null);
     const connectionIndex = findIncomingConnectionIndex(activeProjectState, moduleId, portName);
     if (connectionIndex < 0) {
       return;
@@ -1604,6 +1639,7 @@ export function WorkbenchPanel({
       behavior: 'smooth',
     });
     setSelectedGuideRailId(null);
+    setSelectedStageLabelId(null);
     setSelectedConnectionIndex(null);
     onSelectModule(moduleId, false);
   }
@@ -1742,6 +1778,7 @@ export function WorkbenchPanel({
         key={`${layer}:${connection.from.moduleId}:${connection.from.port}-${connection.to.moduleId}:${connection.to.port}`}
         className={[
           'connection-group',
+          `connection-group-wire-mode-${wireColorMode}`,
           connectionDomainTone ? `connection-group-domain-${connectionDomainTone}` : '',
           validationIssues.some(
             (issue) =>
@@ -1859,6 +1896,7 @@ export function WorkbenchPanel({
           isObservationMode={isObservationMode}
           layoutDirection={layoutDirection}
           routingMode={routingMode}
+          wireColorMode={wireColorMode}
           showOverviewNavigator={showOverviewNavigator}
           showGrid={showGrid}
           snapToGrid={snapToGrid}
@@ -1880,6 +1918,7 @@ export function WorkbenchPanel({
           onTidyLayout={onTidyLayout}
           onSetLayoutDirection={onSetLayoutDirection}
           onSetRoutingMode={onSetRoutingMode}
+          onSetWireColorMode={onSetWireColorMode}
           onToggleOverviewNavigator={onSetOverviewNavigatorVisible}
           onToggleGrid={onSetGridVisible}
           onToggleSnapToGrid={onSetSnapToGrid}
@@ -2160,6 +2199,7 @@ export function WorkbenchPanel({
             event.preventDefault();
             setSelectedGroupBoxId(null);
             setSelectedGuideRailId(null);
+            setSelectedStageLabelId(null);
             setSelectedConnectionIndex(null);
             setSelectionBox({
               startX: pointer.x,
@@ -2196,6 +2236,7 @@ export function WorkbenchPanel({
                   }
                   setSelectedGuideRailId(guideRail.id);
                   setSelectedGroupBoxId(null);
+                  setSelectedStageLabelId(null);
                   setSelectedConnectionIndex(null);
                   setGuideRailDragState({
                     guideRailId: guideRail.id,
@@ -2216,6 +2257,7 @@ export function WorkbenchPanel({
                     event.stopPropagation();
                     setSelectedGuideRailId(guideRail.id);
                     setSelectedGroupBoxId(null);
+                    setSelectedStageLabelId(null);
                     setSelectedConnectionIndex(null);
                   }}
                 >
@@ -2252,6 +2294,17 @@ export function WorkbenchPanel({
               </div>
             );
           })}
+          {dragAlignmentGuides.map((guide, index) => (
+            <div
+              key={`drag-guide-${guide.axis}-${guide.position}-${index}`}
+              className={`canvas-drag-alignment-guide canvas-drag-alignment-guide-${guide.axis} canvas-drag-alignment-guide-${guide.kind}`}
+              style={
+                guide.axis === 'x'
+                  ? ({ left: `${guide.position}px`, top: '0', height: `${canvasHeight}px` } as CSSProperties)
+                  : ({ top: `${guide.position}px`, left: '0', width: `${canvasWidth}px` } as CSSProperties)
+              }
+            />
+          ))}
           {groupBoxes.map((groupBox) => {
             const groupBoxX =
               groupBoxDragState?.groupBoxId === groupBox.id
@@ -2287,6 +2340,7 @@ export function WorkbenchPanel({
                   event.stopPropagation();
                   setSelectedGroupBoxId(groupBox.id);
                   setSelectedGuideRailId(null);
+                  setSelectedStageLabelId(null);
                   setSelectedConnectionIndex(null);
                 }}
               >
@@ -2300,6 +2354,7 @@ export function WorkbenchPanel({
                     }
                     setSelectedGroupBoxId(groupBox.id);
                     setSelectedGuideRailId(null);
+                    setSelectedStageLabelId(null);
                     setGroupBoxDragState({
                       groupBoxId: groupBox.id,
                       pointerOffsetX: pointer.x - groupBoxX,
@@ -2467,12 +2522,14 @@ export function WorkbenchPanel({
                     const isAdditiveSelection = event.shiftKey || event.metaKey || event.ctrlKey;
                     if (isAdditiveSelection) {
                       setSelectedGuideRailId(null);
+                      setSelectedStageLabelId(null);
                       setSelectedConnectionIndex(null);
                       onSelectModule(moduleInstance.id, true);
                       return;
                     }
                     if (isObservationMode) {
                       setSelectedGuideRailId(null);
+                      setSelectedStageLabelId(null);
                       setSelectedConnectionIndex(null);
                       onSelectModule(moduleInstance.id, false);
                       return;
@@ -2485,6 +2542,7 @@ export function WorkbenchPanel({
                       : [moduleInstance.id];
                     if (!isDraggingExistingSelection) {
                       setSelectedGuideRailId(null);
+                      setSelectedStageLabelId(null);
                       setSelectedConnectionIndex(null);
                       onSelectModule(moduleInstance.id, false);
                     }
@@ -2552,6 +2610,7 @@ export function WorkbenchPanel({
                       onClick={(event) => {
                         event.stopPropagation();
                         setSelectedConnectionIndex(null);
+                        setSelectedStageLabelId(null);
                         onToggleProbe(moduleInstance.id);
                       }}
                     >
@@ -2799,59 +2858,62 @@ export function WorkbenchPanel({
                   : annotation.y;
 
               return (
-            <div
-              key={annotation.id}
-              className="canvas-annotation"
-              style={{ left: `${annotationX}px`, top: `${annotationY}px` }}
-            >
-              <div
-                className="canvas-annotation-handle"
-                onMouseDown={(event) => {
-                  if (isObservationMode) {
-                    return;
-                  }
-                  event.preventDefault();
-                  event.stopPropagation();
-                  const pointer = getCanvasPointerFromClient(event.clientX, event.clientY);
-                  if (!pointer) {
-                    return;
-                  }
-
-                  setSelectedGuideRailId(null);
-                  setAnnotationDragState({
-                    annotationId: annotation.id,
-                    pointerOffsetX: pointer.x - annotation.x,
-                    pointerOffsetY: pointer.y - annotation.y,
-                    initialX: annotation.x,
-                    initialY: annotation.y,
-                    currentX: annotation.x,
-                    currentY: annotation.y,
-                  });
-                }}
-              >
-                Note
-                <button
-                  type="button"
-                  className="annotation-delete-button"
-                  onClick={(event) => {
-                    if (isObservationMode) {
-                      return;
-                    }
-                    event.stopPropagation();
-                    onRemoveAnnotation(annotation.id);
-                  }}
+                <div
+                  key={annotation.id}
+                  className="canvas-annotation"
+                  style={{ left: `${annotationX}px`, top: `${annotationY}px` }}
                 >
-                  ×
-                </button>
-              </div>
-              <textarea
-                value={annotation.text}
-                readOnly={isObservationMode}
-                onChange={(event) =>
-                  onUpdateAnnotationText(annotation.id, event.target.value)
-                }
-              />
-            </div>
+                  <div
+                    className="canvas-annotation-handle"
+                    onMouseDown={(event) => {
+                      if (isObservationMode) {
+                        return;
+                      }
+                      event.preventDefault();
+                      event.stopPropagation();
+                      const pointer = getCanvasPointerFromClient(event.clientX, event.clientY);
+                      if (!pointer) {
+                        return;
+                      }
+
+                      setSelectedGuideRailId(null);
+                      setSelectedGroupBoxId(null);
+                      setSelectedStageLabelId(null);
+                      setSelectedConnectionIndex(null);
+                      setAnnotationDragState({
+                        annotationId: annotation.id,
+                        pointerOffsetX: pointer.x - annotation.x,
+                        pointerOffsetY: pointer.y - annotation.y,
+                        initialX: annotation.x,
+                        initialY: annotation.y,
+                        currentX: annotation.x,
+                        currentY: annotation.y,
+                      });
+                    }}
+                  >
+                    Note
+                    <button
+                      type="button"
+                      className="annotation-delete-button"
+                      onClick={(event) => {
+                        if (isObservationMode) {
+                          return;
+                        }
+                        event.stopPropagation();
+                        onRemoveAnnotation(annotation.id);
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <textarea
+                    value={annotation.text}
+                    readOnly={isObservationMode}
+                    onChange={(event) =>
+                      onUpdateAnnotationText(annotation.id, event.target.value)
+                    }
+                  />
+                </div>
               );
             })()
           ))}
@@ -2865,12 +2927,20 @@ export function WorkbenchPanel({
               stageLabelDragState?.stageLabelId === stageLabel.id
                 ? stageLabelDragState.currentY
                 : stageLabel.y;
+            const isSelected = effectiveSelectedStageLabelId === stageLabel.id;
 
             return (
               <div
                 key={stageLabel.id}
-                className="canvas-stage-label"
+                className={`canvas-stage-label${isSelected ? ' selected' : ''}`}
                 style={{ left: `${stageLabelX}px`, top: `${stageLabelY}px` }}
+                onMouseDown={(event) => {
+                  event.stopPropagation();
+                  setSelectedStageLabelId(stageLabel.id);
+                  setSelectedGuideRailId(null);
+                  setSelectedGroupBoxId(null);
+                  setSelectedConnectionIndex(null);
+                }}
               >
                 <div
                   className="canvas-stage-label-handle"
@@ -2884,7 +2954,10 @@ export function WorkbenchPanel({
                     if (!pointer) {
                       return;
                     }
+                    setSelectedStageLabelId(stageLabel.id);
                     setSelectedGuideRailId(null);
+                    setSelectedGroupBoxId(null);
+                    setSelectedConnectionIndex(null);
                     setStageLabelDragState({
                       stageLabelId: stageLabel.id,
                       pointerOffsetX: pointer.x - stageLabel.x,
@@ -2896,27 +2969,37 @@ export function WorkbenchPanel({
                     });
                   }}
                 >
-                  Stage
-                  <button
-                    type="button"
-                    className="annotation-delete-button"
-                    onClick={(event) => {
-                      if (isObservationMode) {
-                        return;
-                      }
-                      event.stopPropagation();
-                      onRemoveStageLabel(stageLabel.id);
-                    }}
-                  >
-                    ×
-                  </button>
+                  <span className="canvas-stage-label-chip">Stage</span>
+                  {isSelected ? (
+                    <button
+                      type="button"
+                      className="annotation-delete-button"
+                      onClick={(event) => {
+                        if (isObservationMode) {
+                          return;
+                        }
+                        event.stopPropagation();
+                        onRemoveStageLabel(stageLabel.id);
+                        setSelectedStageLabelId((current) =>
+                          current === stageLabel.id ? null : current,
+                        );
+                      }}
+                    >
+                      ×
+                    </button>
+                  ) : null}
                 </div>
-                <input
-                  type="text"
-                  value={stageLabel.text}
-                  readOnly={isObservationMode}
-                  onChange={(event) => onUpdateStageLabelText(stageLabel.id, event.target.value)}
-                />
+                {isSelected ? (
+                  <input
+                    type="text"
+                    value={stageLabel.text}
+                    readOnly={isObservationMode}
+                    onChange={(event) => onUpdateStageLabelText(stageLabel.id, event.target.value)}
+                    onMouseDown={(event) => event.stopPropagation()}
+                  />
+                ) : (
+                  <span className="canvas-stage-label-title">{stageLabel.text}</span>
+                )}
               </div>
             );
           })}

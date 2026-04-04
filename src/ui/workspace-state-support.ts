@@ -9,6 +9,7 @@ import type {
   WorkbenchLayoutDirection,
   WorkbenchPosition,
   WorkbenchRoutingMode,
+  WorkbenchWireColorMode,
   WorkbenchStageLabel,
   WorkspaceVersionDocument,
 } from './workbench-document';
@@ -27,6 +28,7 @@ export interface WorkspaceHistorySnapshot {
   snapToGuides: boolean;
   layoutDirection: WorkbenchLayoutDirection;
   routingMode: WorkbenchRoutingMode;
+  wireColorMode: WorkbenchWireColorMode;
   connectionLayout: Record<string, WorkbenchConnectionLayout>;
   selectedModuleIds: string[];
   probedModuleIds: string[];
@@ -53,6 +55,7 @@ interface WorkspaceSnapshotState {
   snapToGuidesByProject: Record<string, boolean>;
   layoutDirectionByProject: Record<string, WorkbenchLayoutDirection>;
   routingModeByProject: Record<string, WorkbenchRoutingMode>;
+  wireColorModeByProject: Record<string, WorkbenchWireColorMode>;
   connectionLayoutByProject: Record<string, Record<string, WorkbenchConnectionLayout>>;
   selectedModuleIdByProject: Record<string, string | null>;
   selectedModuleIdsByProject: Record<string, string[]>;
@@ -141,6 +144,7 @@ export function cloneWorkspaceHistorySnapshot(
     snapToGuides: snapshot.snapToGuides,
     layoutDirection: snapshot.layoutDirection,
     routingMode: snapshot.routingMode,
+    wireColorMode: snapshot.wireColorMode,
     connectionLayout: cloneConnectionLayout(snapshot.connectionLayout),
     selectedModuleIds: [...snapshot.selectedModuleIds],
     probedModuleIds: [...snapshot.probedModuleIds],
@@ -173,6 +177,7 @@ export function buildWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
     snapToGuides: state.snapToGuidesByProject[projectId] ?? false,
     layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
     routingMode: state.routingModeByProject[projectId] ?? 'curved',
+    wireColorMode: state.wireColorModeByProject[projectId] ?? 'domain',
     connectionLayout: cloneConnectionLayout(state.connectionLayoutByProject[projectId] ?? {}),
     selectedModuleIds: [...(state.selectedModuleIdsByProject[projectId] ?? [])],
     probedModuleIds: [...(state.probedModuleIdsByProject[projectId] ?? [])],
@@ -241,6 +246,10 @@ export function applyWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
       ...state.routingModeByProject,
       [projectId]: snapshot.routingMode,
     },
+    wireColorModeByProject: {
+      ...state.wireColorModeByProject,
+      [projectId]: snapshot.wireColorMode,
+    },
     connectionLayoutByProject: {
       ...state.connectionLayoutByProject,
       [projectId]: cloneConnectionLayout(snapshot.connectionLayout),
@@ -305,6 +314,7 @@ export function buildWorkspaceVersionDocument<State extends WorkspaceVersionHost
         snapToGuides: state.snapToGuidesByProject[projectId] ?? false,
         layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
         routingMode: state.routingModeByProject[projectId] ?? 'curved',
+        wireColorMode: state.wireColorModeByProject[projectId] ?? 'domain',
         connectionLayout: cloneConnectionLayout(state.connectionLayoutByProject[projectId] ?? {}),
       },
     },
@@ -458,6 +468,10 @@ export function applyRestoreWorkspaceVersion<State extends WorkspaceVersionHostS
     routingModeByProject: {
       ...state.routingModeByProject,
       [projectId]: version.document.ui.routingMode ?? 'curved',
+    },
+    wireColorModeByProject: {
+      ...state.wireColorModeByProject,
+      [projectId]: version.document.ui.wireColorMode ?? 'domain',
     },
     connectionLayoutByProject: {
       ...state.connectionLayoutByProject,
