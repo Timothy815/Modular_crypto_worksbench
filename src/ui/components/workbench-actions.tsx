@@ -140,9 +140,8 @@ interface WorkbenchActionMenuProps {
 function WorkbenchActionMenu({ label, description, children }: WorkbenchActionMenuProps) {
   return (
     <details className="workbench-action-menu">
-      <summary className="workbench-action-menu-trigger">
+      <summary className="workbench-action-menu-trigger" title={description}>
         <span className="workbench-action-menu-label">{label}</span>
-        {description ? <span className="workbench-action-menu-note">{description}</span> : null}
       </summary>
       <div className="workbench-action-menu-panel">{children}</div>
     </details>
@@ -629,6 +628,7 @@ export function WorkbenchActions({
   const canDistributeSelection = selectedModuleIds.length >= 3;
   const showSelectionToolbar = canAlignSelection;
   const showWireToolbar = canDeleteWire;
+  const showViewMenu = showTutorialToggle;
   const currentDomainLabel =
     selectedConnectionDomainTone === 'bits'
       ? 'Domain Bits'
@@ -934,73 +934,14 @@ export function WorkbenchActions({
             </WorkbenchSelectionDetailsSection>
           ) : null}
 
-          <WorkbenchActionMenu label="View" description="Zoom and navigate">
-            <WorkbenchMenuActionButton
-              label={theme === 'dark' ? 'Switch To Light' : 'Switch To Dark'}
-              onSelect={onToggleTheme}
-            />
-            <WorkbenchMenuActionButton label="Zoom Out" onSelect={onZoomOut} />
-            <WorkbenchMenuActionButton label="Zoom In" onSelect={onZoomIn} />
-            <WorkbenchMenuActionButton label="Reset View" onSelect={onResetView} />
-            <WorkbenchMenuActionButton label="Fit View" onSelect={onFitView} />
-            <WorkbenchMenuActionButton
-              label="Horizontal Layout"
-              onSelect={() => onSetLayoutDirection('horizontal')}
-              disabled={layoutDirection === 'horizontal'}
-            />
-            <WorkbenchMenuActionButton
-              label="Vertical Layout"
-              onSelect={() => onSetLayoutDirection('vertical')}
-              disabled={layoutDirection === 'vertical'}
-            />
-            <WorkbenchMenuActionButton
-              label="Curve"
-              onSelect={() => onSetRoutingMode('curved')}
-              disabled={routingMode === 'curved'}
-            />
-            <WorkbenchMenuActionButton
-              label="Ortho"
-              onSelect={() => onSetRoutingMode('orthogonal')}
-              disabled={routingMode === 'orthogonal'}
-            />
-            <WorkbenchMenuActionButton
-              label="Domain Wire Colors"
-              onSelect={() => onSetWireColorMode('domain')}
-              disabled={wireColorMode === 'domain'}
-            />
-            <WorkbenchMenuActionButton
-              label="Neutral Wire Colors"
-              onSelect={() => onSetWireColorMode('neutral')}
-              disabled={wireColorMode === 'neutral'}
-            />
-            <WorkbenchMenuActionButton
-              label="High Contrast Wire Colors"
-              onSelect={() => onSetWireColorMode('high-contrast')}
-              disabled={wireColorMode === 'high-contrast'}
-            />
-            <WorkbenchMenuActionButton
-              label={showOverviewNavigator ? 'Hide Overview' : 'Show Overview'}
-              onSelect={() => onToggleOverviewNavigator(!showOverviewNavigator)}
-            />
-            <WorkbenchMenuActionButton
-              label={showGrid ? 'Hide Grid' : 'Show Grid'}
-              onSelect={() => onToggleGrid(!showGrid)}
-            />
-            <WorkbenchMenuActionButton
-              label={snapToGrid ? 'Disable Snap To Grid' : 'Enable Snap To Grid'}
-              onSelect={() => onToggleSnapToGrid(!snapToGrid)}
-            />
-            <WorkbenchMenuActionButton
-              label={snapToGuides ? 'Disable Snap To Guides' : 'Enable Snap To Guides'}
-              onSelect={() => onToggleSnapToGuides(!snapToGuides)}
-            />
-            {showTutorialToggle ? (
+          {showViewMenu ? (
+            <WorkbenchActionMenu label="View" description="Optional overlays">
               <WorkbenchMenuActionButton
                 label={tutorialNotesVisible ? 'Hide Step Notes' : 'Show Step Notes'}
                 onSelect={() => onToggleTutorialNotes?.(!tutorialNotesVisible)}
               />
-            ) : null}
-          </WorkbenchActionMenu>
+            </WorkbenchActionMenu>
+          ) : null}
 
           <WorkbenchActionMenu label="Structure" description="Author and group">
             <WorkbenchMenuActionButton label="Add Note" onSelect={onAddAnnotation} />
@@ -1036,53 +977,7 @@ export function WorkbenchActions({
             />
           </WorkbenchActionMenu>
 
-          <WorkbenchActionMenu label="Wire" description="Connection cleanup">
-            <WorkbenchMenuActionButton
-              label={negativeLaneLabel}
-              onSelect={() => onRequestSetWireLanePreference('negative')}
-              disabled={!canAdjustWireLane || selectedConnectionLanePreference === 'negative'}
-            />
-            <WorkbenchMenuActionButton
-              label="Neutral Lane"
-              onSelect={onRequestClearWireLanePreference}
-              disabled={!canAdjustWireLane || selectedConnectionLanePreference === null}
-            />
-            <WorkbenchMenuActionButton
-              label={positiveLaneLabel}
-              onSelect={() => onRequestSetWireLanePreference('positive')}
-              disabled={!canAdjustWireLane || selectedConnectionLanePreference === 'positive'}
-            />
-            <WorkbenchMenuActionButton
-              label="Delete Wire"
-              onSelect={onRequestDeleteWire}
-              disabled={!canDeleteWire}
-            />
-            <WorkbenchMenuActionButton label={currentPathLabel} onSelect={() => {}} disabled />
-            <WorkbenchMenuActionButton label={currentLaneLabel} onSelect={() => {}} disabled />
-            <WorkbenchMenuActionButton label={currentColorLabel} onSelect={() => {}} disabled />
-            <WorkbenchMenuActionButton
-              label="Reset Wire Path"
-              onSelect={onRequestResetWirePath}
-              disabled={!selectedConnectionHasManualPath}
-            />
-            {WIRE_COLOR_OVERRIDE_OPTIONS.map(({ color, label }) => (
-              <WorkbenchMenuActionButton
-                key={color}
-                label={label}
-                onSelect={() => onRequestSetWireColorOverride(color)}
-                disabled={!canDeleteWire || selectedConnectionColorOverride === color}
-              />
-            ))}
-            <WorkbenchMenuActionButton
-              label="Reset To Workspace Wire Colors"
-              onSelect={onRequestClearWireColorOverride}
-              disabled={!canDeleteWire || selectedConnectionColorOverride === null}
-            />
-          </WorkbenchActionMenu>
-
           <WorkbenchActionMenu label="Project" description="Save and recover">
-            <WorkbenchMenuActionButton label="Undo" onSelect={onRequestUndo} disabled={!canUndo} />
-            <WorkbenchMenuActionButton label="Redo" onSelect={onRequestRedo} disabled={!canRedo} />
             <WorkbenchMenuActionButton label="Save Version" onSelect={onRequestSaveVersion} />
           </WorkbenchActionMenu>
 

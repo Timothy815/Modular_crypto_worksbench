@@ -1712,11 +1712,6 @@ body.dock-resizing {
   font-weight: 700;
 }
 
-.workbench-action-menu-note {
-  font-size: 0.78rem;
-  color: var(--muted);
-}
-
 .workbench-action-menu-panel {
   position: absolute;
   top: calc(100% + 8px);
