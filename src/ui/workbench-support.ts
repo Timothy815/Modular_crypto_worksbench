@@ -1,13 +1,14 @@
 import type { ExecutionResult, ExecutionTraceEntry, ValidationIssue } from '../engine/types';
 import type { TargetPortState } from './connection-authoring';
 import type { PortSide } from './node-orientation';
-import type { WorkbenchConnectionLayout } from './workbench-document';
+import type { WorkbenchConnectionLayout, WorkbenchGuideRail } from './workbench-document';
 
 const ORTHOGONAL_STEP_BACK_PX = 20;
 const ORTHOGONAL_LANE_OFFSET_PX = 6;
 const ORTHOGONAL_LANE_PREFERENCE_OFFSET_PX = 48;
 const ORTHOGONAL_CORNER_RADIUS_PX = 8;
 const ORTHOGONAL_BEND_NO_OP_EPSILON_PX = 2;
+const GUIDE_SNAP_THRESHOLD_PX = 30;
 
 export function getAnchorPosition(
   x: number,
@@ -30,6 +31,57 @@ export function getAnchorPosition(
     x: side === 'left' ? x : x + nodeWidth,
     y: y + portStartY + portIndex * portGap,
   };
+}
+
+export function snapModulePositionToGuideRails(
+  position: { x: number; y: number },
+  guideRails: WorkbenchGuideRail[],
+  nodeWidth: number,
+  nodeHeight: number,
+) {
+  const nextPosition = { ...position };
+  const xOffsets = [0, nodeWidth / 2, nodeWidth];
+  const yOffsets = [0, nodeHeight / 2, nodeHeight];
+
+  let bestX: { distance: number; snappedX: number } | null = null;
+  let bestY: { distance: number; snappedY: number } | null = null;
+
+  for (const guideRail of guideRails) {
+    if (guideRail.axis === 'vertical') {
+      for (const offset of xOffsets) {
+        const candidateEdge = position.x + offset;
+        const distance = Math.abs(candidateEdge - guideRail.position);
+        if (!bestX || distance < bestX.distance) {
+          bestX = {
+            distance,
+            snappedX: guideRail.position - offset,
+          };
+        }
+      }
+      continue;
+    }
+
+    for (const offset of yOffsets) {
+      const candidateEdge = position.y + offset;
+      const distance = Math.abs(candidateEdge - guideRail.position);
+      if (!bestY || distance < bestY.distance) {
+        bestY = {
+          distance,
+          snappedY: guideRail.position - offset,
+        };
+      }
+    }
+  }
+
+  if (bestX && bestX.distance <= GUIDE_SNAP_THRESHOLD_PX) {
+    nextPosition.x = Math.max(16, bestX.snappedX);
+  }
+
+  if (bestY && bestY.distance <= GUIDE_SNAP_THRESHOLD_PX) {
+    nextPosition.y = Math.max(16, bestY.snappedY);
+  }
+
+  return nextPosition;
 }
 
 function getSideVector(side: PortSide) {

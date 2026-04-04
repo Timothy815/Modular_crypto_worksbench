@@ -168,6 +168,7 @@ function cloneWorkspaceDocument(document: WorkbenchDocument): WorkbenchDocument 
       showOverviewNavigator: document.ui.showOverviewNavigator ?? false,
       showGrid: document.ui.showGrid ?? false,
       snapToGrid: document.ui.snapToGrid ?? false,
+      snapToGuides: document.ui.snapToGuides ?? false,
       layoutDirection: document.ui.layoutDirection ?? 'horizontal',
       routingMode: document.ui.routingMode ?? 'curved',
       connectionLayout: Object.fromEntries(
@@ -214,6 +215,7 @@ function buildDefaultDocument(project: DemoProject): WorkbenchDocument {
       showOverviewNavigator: false,
       showGrid: false,
       snapToGrid: false,
+      snapToGuides: false,
       layoutDirection: 'horizontal',
       routingMode: 'curved',
       connectionLayout: {},
@@ -257,6 +259,7 @@ export function buildPersistedWorkspace(
             showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
             showGrid: state.showGridByProject[projectId] ?? false,
             snapToGrid: state.snapToGridByProject[projectId] ?? false,
+            snapToGuides: state.snapToGuidesByProject[projectId] ?? false,
             layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
             routingMode: state.routingModeByProject[projectId] ?? 'curved',
             connectionLayout: Object.fromEntries(
@@ -925,6 +928,7 @@ function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
       typeof candidate.ui.showOverviewNavigator === 'boolean') &&
     (candidate.ui.showGrid === undefined || typeof candidate.ui.showGrid === 'boolean') &&
     (candidate.ui.snapToGrid === undefined || typeof candidate.ui.snapToGrid === 'boolean') &&
+    (candidate.ui.snapToGuides === undefined || typeof candidate.ui.snapToGuides === 'boolean') &&
     (candidate.ui.layoutDirection === undefined ||
       candidate.ui.layoutDirection === 'horizontal' ||
       candidate.ui.layoutDirection === 'vertical') &&

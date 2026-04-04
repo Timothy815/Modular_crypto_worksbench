@@ -60,6 +60,7 @@ describe('workspace-artifacts', () => {
       showOverviewNavigator: true,
       showGrid: true,
       snapToGrid: true,
+      snapToGuides: true,
       layoutDirection: 'vertical',
       routingMode: 'orthogonal',
       connectionLayout: {
@@ -128,6 +129,7 @@ describe('workspace-artifacts', () => {
     expect(prepared.document.ui.showOverviewNavigator).toBe(true);
     expect(prepared.document.ui.showGrid).toBe(true);
     expect(prepared.document.ui.snapToGrid).toBe(true);
+    expect(prepared.document.ui.snapToGuides).toBe(true);
     expect(prepared.document.ui.connectionLayout).toEqual({
       'a:out->b:in': {
         orthogonalBend: { axis: 'x', value: 120 },

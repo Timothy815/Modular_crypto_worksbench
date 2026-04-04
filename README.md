@@ -105,20 +105,25 @@ The next workbench-chrome refinement after that is now shipped as:
 - adds a compact icon-first quick-actions strip for high-frequency canvas controls
 - keeps grouped dropdown menus intact as the complete fallback path
 
-The next manual-layout refinement after that is now implemented locally as:
+The next manual-layout refinement after that is now shipped as:
 - `SOFT-GRID-SNAP-V1.md`
 - adds per-workspace soft grid visibility and optional snap-to-grid placement
 - keeps the first slice bounded to module placement only
 
-The next orthogonal-routing follow-on after that is now implemented locally as:
+The next orthogonal-routing follow-on after that is now shipped as:
 - `WIRE-LANE-PREFERENCE-V1.md`
 - adds one bounded per-connection lane preference for orthogonal auto routing
 - keeps the slice in workspace UI metadata only and stops short of pathfinding or arbitrary wire editing
 
-The next structured-layout follow-on after that is now implemented locally as:
+The next structured-layout follow-on after that is now shipped as:
 - `GUIDE-RAILS-V1.md`
 - adds persistent horizontal and vertical guide rails as lightweight visual alignment aids
 - keeps the slice visual-only in workspace UI metadata with no solver or graph semantics
+
+The next guide-rail follow-on after that is now implemented locally as:
+- `GUIDE-SNAP-V1.md`
+- adds per-workspace snap-to-guides for module placement and dragging
+- keeps the slice bounded to nearby rail snapping with no solver, wire snapping, or note/group-box snapping
 
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`

@@ -225,6 +225,13 @@ export function hydrateInitialUiState(projects: DemoProject[]): UiState {
           initialState.snapToGridByProject[project.id],
       ]),
     ),
+    snapToGuidesByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.documentsByProjectId[project.id]?.ui.snapToGuides ??
+          initialState.snapToGuidesByProject[project.id],
+      ]),
+    ),
     layoutDirectionByProject: Object.fromEntries(
       allProjects.map((project) => [
         project.id,
@@ -412,6 +419,7 @@ export interface BuildShareableLabPackArgs {
   showOverviewNavigator?: boolean;
   showGrid?: boolean;
   snapToGrid?: boolean;
+  snapToGuides?: boolean;
   layoutDirection: 'horizontal' | 'vertical';
   routingMode: 'curved' | 'orthogonal';
   connectionLayout?: Record<
@@ -439,6 +447,7 @@ export function buildShareableLabPack({
   showOverviewNavigator = false,
   showGrid = false,
   snapToGrid = false,
+  snapToGuides = false,
   layoutDirection,
   routingMode,
   connectionLayout = {},
@@ -468,6 +477,7 @@ export function buildShareableLabPack({
         showOverviewNavigator,
         showGrid,
         snapToGrid,
+        snapToGuides,
         layoutDirection,
         routingMode,
         connectionLayout: Object.fromEntries(
@@ -596,6 +606,7 @@ export function prepareImportedLabPack({
           pack.workspace.ui.showOverviewNavigator ?? isLargeWorkspace(pack.workspace.project),
         showGrid: pack.workspace.ui.showGrid ?? false,
         snapToGrid: pack.workspace.ui.snapToGrid ?? false,
+        snapToGuides: pack.workspace.ui.snapToGuides ?? false,
         layoutDirection: pack.workspace.ui.layoutDirection ?? 'horizontal',
         routingMode: pack.workspace.ui.routingMode ?? 'curved',
         connectionLayout: Object.fromEntries(

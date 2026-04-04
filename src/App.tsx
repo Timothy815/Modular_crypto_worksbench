@@ -351,6 +351,7 @@ function MainApp() {
     state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false;
   const activeShowGrid = state.showGridByProject[activeProjectDefinition.id] ?? false;
   const activeSnapToGrid = state.snapToGridByProject[activeProjectDefinition.id] ?? false;
+  const activeSnapToGuides = state.snapToGuidesByProject[activeProjectDefinition.id] ?? false;
   const activeCompositeEntry = state.compositeEditor
     ? state.compositeLibrary.find((entry) => entry.id === state.compositeEditor?.entryId) ?? null
     : null;
@@ -916,6 +917,7 @@ function MainApp() {
         showOverviewNavigator: activeShowOverviewNavigator,
         showGrid: activeShowGrid,
         snapToGrid: activeSnapToGrid,
+        snapToGuides: activeSnapToGuides,
         layoutDirection: activeLayoutDirection,
         routingMode: activeRoutingMode,
         connectionLayout: activeConnectionLayout,
@@ -933,6 +935,7 @@ function MainApp() {
     activeShowOverviewNavigator,
     activeShowGrid,
     activeSnapToGrid,
+    activeSnapToGuides,
     activeLayout,
     activeLayoutDirection,
     activeRoutingMode,
@@ -1626,6 +1629,7 @@ function MainApp() {
             showOverviewNavigator: activeShowOverviewNavigator,
             showGrid: activeShowGrid,
             snapToGrid: activeSnapToGrid,
+            snapToGuides: activeSnapToGuides,
             layoutDirection: activeLayoutDirection,
             routingMode: activeRoutingMode,
             connectionLayout: activeConnectionLayout,
@@ -2529,6 +2533,7 @@ function MainApp() {
             showOverviewNavigator={isCompositeDrilldownActive ? false : activeShowOverviewNavigator}
             showGrid={isCompositeDrilldownActive ? false : activeShowGrid}
             snapToGrid={isCompositeDrilldownActive ? false : activeSnapToGrid}
+            snapToGuides={isCompositeDrilldownActive ? false : activeSnapToGuides}
             execution={compositeDrilldownContext?.execution ?? execution}
             executionError={isCompositeDrilldownActive ? compositeDrilldownExecutionError : executionError}
             validationIssues={isCompositeDrilldownActive ? compositeDrilldownValidationIssues : validationIssues}
@@ -2760,6 +2765,15 @@ function MainApp() {
                     enabled,
                   })
             }
+            onSetSnapToGuides={(enabled) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'setSnapToGuides',
+                    projectId: activeProjectDefinition.id,
+                    enabled,
+                  })
+            }
             onMoveAnnotation={(annotationId, x, y) =>
               state.compositeEditor
                 ? undefined
@@ -2967,6 +2981,9 @@ function MainApp() {
                   snapToGrid: state.compositeEditor
                     ? false
                     : state.snapToGridByProject[activeProjectDefinition.id] ?? false,
+                  snapToGuides: state.compositeEditor
+                    ? false
+                    : state.snapToGuidesByProject[activeProjectDefinition.id] ?? false,
                   layoutDirection: activeLayoutDirection,
                   routingMode: activeRoutingMode,
                   connectionLayout: activeConnectionLayout,
@@ -3953,6 +3970,8 @@ function MainApp() {
                             state.showGridByProject[activeProjectDefinition.id] ?? false,
                           snapToGrid:
                             state.snapToGridByProject[activeProjectDefinition.id] ?? false,
+                          snapToGuides:
+                            state.snapToGuidesByProject[activeProjectDefinition.id] ?? false,
                           layoutDirection: activeLayoutDirection,
                           routingMode: activeRoutingMode,
                           connectionLayout: activeConnectionLayout,
@@ -4061,6 +4080,8 @@ function MainApp() {
                           state.showGridByProject[selectedChallengeProjectId] ?? false,
                         snapToGrid:
                           state.snapToGridByProject[selectedChallengeProjectId] ?? false,
+                        snapToGuides:
+                          state.snapToGuidesByProject[selectedChallengeProjectId] ?? false,
                         layoutDirection:
                           state.layoutDirectionByProject[selectedChallengeProjectId] ??
                           'horizontal',

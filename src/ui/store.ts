@@ -52,6 +52,7 @@ import {
 } from './node-orientation';
 import { CANVAS_NODE_HEIGHT, CANVAS_NODE_WIDTH } from './canvas-selection';
 import { isLargeWorkspace } from './workspace-landmarks';
+import { snapModulePositionToGuideRails } from './workbench-support';
 
 export interface UiState {
   activeProjectId: string;
@@ -69,6 +70,7 @@ export interface UiState {
   showOverviewNavigatorByProject: Record<string, boolean>;
   showGridByProject: Record<string, boolean>;
   snapToGridByProject: Record<string, boolean>;
+  snapToGuidesByProject: Record<string, boolean>;
   layoutDirectionByProject: Record<string, WorkbenchLayoutDirection>;
   routingModeByProject: Record<string, WorkbenchRoutingMode>;
   connectionLayoutByProject: Record<string, Record<string, WorkbenchConnectionLayout>>;
@@ -148,6 +150,7 @@ export type UiAction =
   | { type: 'moveModule'; projectId: string; moduleId: string; x: number; y: number }
   | { type: 'setGridVisible'; projectId: string; visible: boolean }
   | { type: 'setSnapToGrid'; projectId: string; enabled: boolean }
+  | { type: 'setSnapToGuides'; projectId: string; enabled: boolean }
   | {
       type: 'setLayoutDirection';
       projectId: string;
@@ -356,9 +359,11 @@ function createGuideRailId(guideRails: WorkbenchGuideRail[]) {
 
 function findNextModulePlacement(
   layout: Record<string, CompositeLayoutPosition>,
+  guideRails: WorkbenchGuideRail[],
   direction: WorkbenchLayoutDirection,
   selectedModuleId: string | null,
   snapToGrid: boolean,
+  snapToGuides: boolean,
 ): CompositeLayoutPosition {
   const occupiedSet = new Set(Object.values(layout).map((position) => `${position.x},${position.y}`));
   const selectedPosition = selectedModuleId ? layout[selectedModuleId] : undefined;
@@ -382,7 +387,15 @@ function findNextModulePlacement(
         : { x: candidate.x, y: candidate.y + 148 };
   }
 
-  return snapToGrid ? snapPointToGrid(candidate) : candidate;
+  const snappedToGrid = snapToGrid ? snapPointToGrid(candidate) : candidate;
+  return snapToGuides
+    ? snapModulePositionToGuideRails(
+        snappedToGrid,
+        guideRails,
+        CANVAS_NODE_WIDTH,
+        CANVAS_NODE_HEIGHT,
+      )
+    : snappedToGrid;
 }
 
 export const WORKBENCH_GRID_SIZE = 24;
@@ -779,6 +792,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     snapToGridByProject: Object.fromEntries(
       projects.map((project) => [project.id, false]),
     ),
+    snapToGuidesByProject: Object.fromEntries(
+      projects.map((project) => [project.id, false]),
+    ),
     layoutDirectionByProject: Object.fromEntries(
       projects.map((project) => [project.id, 'horizontal' as const]),
     ),
@@ -944,6 +960,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.snapToGridByProject,
           [action.workspaceId]: false,
         },
+        snapToGuidesByProject: {
+          ...state.snapToGuidesByProject,
+          [action.workspaceId]: false,
+        },
         layoutDirectionByProject: {
           ...state.layoutDirectionByProject,
           [action.workspaceId]: 'horizontal',
@@ -1048,6 +1068,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         state.showOverviewNavigatorByProject[action.sourceProjectId] ?? false;
       const sourceShowGrid = state.showGridByProject[action.sourceProjectId] ?? false;
       const sourceSnapToGrid = state.snapToGridByProject[action.sourceProjectId] ?? false;
+      const sourceSnapToGuides = state.snapToGuidesByProject[action.sourceProjectId] ?? false;
       const sourceLayoutDirection =
         state.layoutDirectionByProject[action.sourceProjectId] ?? 'horizontal';
       const sourceRoutingMode = state.routingModeByProject[action.sourceProjectId] ?? 'curved';
@@ -1100,6 +1121,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         snapToGridByProject: {
           ...state.snapToGridByProject,
           [action.workspaceId]: sourceSnapToGrid,
+        },
+        snapToGuidesByProject: {
+          ...state.snapToGuidesByProject,
+          [action.workspaceId]: sourceSnapToGuides,
         },
         layoutDirectionByProject: {
           ...state.layoutDirectionByProject,
@@ -1235,6 +1260,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         ),
         showGridByProject: removeProjectEntry(state.showGridByProject, action.workspaceId),
         snapToGridByProject: removeProjectEntry(state.snapToGridByProject, action.workspaceId),
+        snapToGuidesByProject: removeProjectEntry(state.snapToGuidesByProject, action.workspaceId),
         layoutDirectionByProject: removeProjectEntry(
           state.layoutDirectionByProject,
           action.workspaceId,
@@ -1393,9 +1419,18 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
             ...currentLayout,
             [action.moduleId]: {
               ...currentLayout[action.moduleId],
-              ...((state.snapToGridByProject[action.projectId] ?? false)
-                ? snapPointToGrid({ x: action.x, y: action.y })
-                : { x: action.x, y: action.y }),
+              ...((state.snapToGuidesByProject[action.projectId] ?? false)
+                ? snapModulePositionToGuideRails(
+                    (state.snapToGridByProject[action.projectId] ?? false)
+                      ? snapPointToGrid({ x: action.x, y: action.y })
+                      : { x: action.x, y: action.y },
+                    state.guideRailsByProject[action.projectId] ?? [],
+                    CANVAS_NODE_WIDTH,
+                    CANVAS_NODE_HEIGHT,
+                  )
+                : (state.snapToGridByProject[action.projectId] ?? false)
+                  ? snapPointToGrid({ x: action.x, y: action.y })
+                  : { x: action.x, y: action.y }),
             },
           },
         },
@@ -1431,6 +1466,23 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         ...state,
         snapToGridByProject: {
           ...state.snapToGridByProject,
+          [action.projectId]: action.enabled,
+        },
+      };
+    }
+    case 'setSnapToGuides': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      if ((state.snapToGuidesByProject[action.projectId] ?? false) === action.enabled) {
+        return state;
+      }
+
+      return {
+        ...state,
+        snapToGuidesByProject: {
+          ...state.snapToGuidesByProject,
           [action.projectId]: action.enabled,
         },
       };
@@ -1658,9 +1710,18 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
               moduleId in action.positions
                 ? {
                     ...currentLayout[moduleId],
-                    ...((state.snapToGridByProject[action.projectId] ?? false)
-                      ? snapPointToGrid(position)
-                      : position),
+                    ...((state.snapToGuidesByProject[action.projectId] ?? false)
+                      ? snapModulePositionToGuideRails(
+                          (state.snapToGridByProject[action.projectId] ?? false)
+                            ? snapPointToGrid(position)
+                            : position,
+                          state.guideRailsByProject[action.projectId] ?? [],
+                          CANVAS_NODE_WIDTH,
+                          CANVAS_NODE_HEIGHT,
+                        )
+                      : (state.snapToGridByProject[action.projectId] ?? false)
+                        ? snapPointToGrid(position)
+                        : position),
                   }
                 : position,
             ]),
@@ -2085,9 +2146,11 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
 
       const { x: newX, y: newY } = findNextModulePlacement(
         currentLayout,
+        state.guideRailsByProject[action.projectId] ?? [],
         currentLayoutDirection,
         state.selectedModuleIdByProject[action.projectId] ?? null,
         state.snapToGridByProject[action.projectId] ?? false,
+        state.snapToGuidesByProject[action.projectId] ?? false,
       );
 
       return {
@@ -2772,6 +2835,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         snapToGridByProject: {
           ...state.snapToGridByProject,
           [action.projectId]: action.document.ui.snapToGrid ?? false,
+        },
+        snapToGuidesByProject: {
+          ...state.snapToGuidesByProject,
+          [action.projectId]: action.document.ui.snapToGuides ?? false,
         },
         layoutDirectionByProject: {
           ...state.layoutDirectionByProject,

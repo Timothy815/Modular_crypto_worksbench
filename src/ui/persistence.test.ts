@@ -147,9 +147,14 @@ describe('workspace persistence', () => {
       projectId: 'my-scratchpad',
       axis: 'horizontal',
     });
+    const stateWithGuideSnap = uiReducer(stateWithGuideRail, {
+      type: 'setSnapToGuides',
+      projectId: 'my-scratchpad',
+      enabled: true,
+    });
     const storage = new MemoryStorage();
 
-    saveWorkspaceToStorage(stateWithGuideRail, {}, storage);
+    saveWorkspaceToStorage(stateWithGuideSnap, {}, storage);
     const restored = loadWorkspaceFromStorage(demoProjects, storage);
 
     expect(restored?.userWorkspaceLibrary).toEqual([
@@ -191,6 +196,7 @@ describe('workspace persistence', () => {
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.showOverviewNavigator).toBe(false);
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.showGrid).toBe(false);
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.snapToGrid).toBe(false);
+    expect(restored?.documentsByProjectId['my-scratchpad']?.ui.snapToGuides).toBe(true);
   });
 
   it('round-trips node orientation through storage', () => {
@@ -267,6 +273,7 @@ describe('parseShareableLabPack', () => {
               title: 'Signal Rail',
             },
           ],
+          snapToGuides: true,
           layoutDirection: 'vertical',
           routingMode: 'orthogonal',
           connectionLayout: {

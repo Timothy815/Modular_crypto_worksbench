@@ -95,20 +95,25 @@ The next workbench-chrome refinement after that is now shipped as:
 - a bounded quick-access strip for high-frequency canvas controls
 - keeps grouped dropdown menus intact as the full fallback path
 
-The next manual-layout refinement after that is now implemented locally as:
+The next manual-layout refinement after that is now shipped as:
 - `SOFT-GRID-SNAP-V1.md`
 - adds per-workspace soft grid visibility and optional snap-to-grid placement
 - keeps the first slice bounded to module placement only
 
-The next orthogonal-routing follow-on after that is now implemented locally as:
+The next orthogonal-routing follow-on after that is now shipped as:
 - `WIRE-LANE-PREFERENCE-V1.md`
 - a bounded per-connection lane-bias slice for orthogonal auto routing
 - keeps the slice in workspace UI metadata only and stops short of pathfinding or arbitrary wire editing
 
-The next structured-layout follow-on after that is now implemented locally as:
+The next structured-layout follow-on after that is now shipped as:
 - `GUIDE-RAILS-V1.md`
 - a bounded visual guide-rail slice for horizontal and vertical workspace alignment aids
 - keeps rails in workspace UI metadata only with no snapping solver or graph semantics in V1
+
+The next guide-rail follow-on after that is now implemented locally as:
+- `GUIDE-SNAP-V1.md`
+- a bounded snap-to-guides slice for module placement and dragging
+- keeps the slice focused on nearby rail alignment with no solver, wire snapping, or note/group-box snapping
 
 Current `main` now also includes:
 - Python export foundations:

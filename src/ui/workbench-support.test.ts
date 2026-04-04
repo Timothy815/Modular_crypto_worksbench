@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { getOrthogonalPath, getOrthogonalPathData, getOrthogonalPendingPath } from './workbench-support';
+import {
+  getOrthogonalPath,
+  getOrthogonalPathData,
+  getOrthogonalPendingPath,
+  snapModulePositionToGuideRails,
+} from './workbench-support';
 
 describe('workbench-support orthogonal routing', () => {
   it('starts with a fixed step-back from the source anchor', () => {
@@ -54,5 +59,19 @@ describe('workbench-support orthogonal routing', () => {
     expect(preferred.bendHandle?.axis).toBe('x');
     expect(neutral.bendHandle?.axis).toBe('x');
     expect(preferred.bendHandle?.autoValue).toBeGreaterThan(neutral.bendHandle?.autoValue ?? 0);
+  });
+
+  it('snaps the nearest module edge or center toward the guide rail instead of away from it', () => {
+    const snapped = snapModulePositionToGuideRails(
+      { x: 182, y: 92 },
+      [
+        { id: 'rail-1', axis: 'vertical', position: 188, title: 'Signal Rail' },
+        { id: 'rail-2', axis: 'horizontal', position: 140, title: 'Stage Rail' },
+      ],
+      120,
+      80,
+    );
+
+    expect(snapped).toEqual({ x: 188, y: 100 });
   });
 });

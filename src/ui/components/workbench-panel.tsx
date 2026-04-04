@@ -74,6 +74,7 @@ import {
   getInputAnchorClassName,
   getOrthogonalPathData,
   getOrthogonalPendingPath,
+  snapModulePositionToGuideRails,
   shouldClearOrthogonalBendOverride,
 } from '../workbench-support';
 import { WORKBENCH_GRID_SIZE } from '../store';
@@ -208,6 +209,7 @@ interface WorkbenchPanelProps {
   showOverviewNavigator: boolean;
   showGrid: boolean;
   snapToGrid: boolean;
+  snapToGuides: boolean;
   execution: ExecutionResult | null;
   executionError: string | null;
   validationIssues: ValidationIssue[];
@@ -260,6 +262,7 @@ interface WorkbenchPanelProps {
   onSetOverviewNavigatorVisible: (visible: boolean) => void;
   onSetGridVisible: (visible: boolean) => void;
   onSetSnapToGrid: (enabled: boolean) => void;
+  onSetSnapToGuides: (enabled: boolean) => void;
   onMoveAnnotation: (annotationId: string, x: number, y: number) => void;
   onUpdateAnnotationText: (annotationId: string, text: string) => void;
   onRemoveAnnotation: (annotationId: string) => void;
@@ -345,6 +348,7 @@ export function WorkbenchPanel({
   showOverviewNavigator,
   showGrid,
   snapToGrid,
+  snapToGuides,
   execution,
   executionError,
   validationIssues,
@@ -397,6 +401,7 @@ export function WorkbenchPanel({
   onSetOverviewNavigatorVisible,
   onSetGridVisible,
   onSetSnapToGrid,
+  onSetSnapToGuides,
   onMoveAnnotation,
   onUpdateAnnotationText,
   onRemoveAnnotation,
@@ -939,7 +944,16 @@ export function WorkbenchPanel({
         const nextX = Math.max(16, pointer.x - dragState.pointerOffsetX);
         const nextY = Math.max(16, pointer.y - dragState.pointerOffsetY);
         if (dragState.moduleIds.length <= 1) {
-          const snappedPosition = snapToGrid ? snapPointToGrid({ x: nextX, y: nextY }) : { x: nextX, y: nextY };
+          const snappedPosition = snapToGuides
+            ? snapModulePositionToGuideRails(
+                snapToGrid ? snapPointToGrid({ x: nextX, y: nextY }) : { x: nextX, y: nextY },
+                guideRails,
+                NODE_WIDTH,
+                NODE_HEIGHT,
+              )
+            : snapToGrid
+              ? snapPointToGrid({ x: nextX, y: nextY })
+              : { x: nextX, y: nextY };
           setDragState((prev) =>
             prev
               ? {
@@ -951,9 +965,16 @@ export function WorkbenchPanel({
               : null,
           );
         } else {
-          const anchorPosition = snapToGrid
-            ? snapPointToGrid({ x: nextX, y: nextY })
-            : { x: nextX, y: nextY };
+          const anchorPosition = snapToGuides
+            ? snapModulePositionToGuideRails(
+                snapToGrid ? snapPointToGrid({ x: nextX, y: nextY }) : { x: nextX, y: nextY },
+                guideRails,
+                NODE_WIDTH,
+                NODE_HEIGHT,
+              )
+            : snapToGrid
+              ? snapPointToGrid({ x: nextX, y: nextY })
+              : { x: nextX, y: nextY };
           const deltaX = anchorPosition.x - dragState.anchorStartX;
           const deltaY = anchorPosition.y - dragState.anchorStartY;
           setDragState((prev) =>
@@ -1243,7 +1264,9 @@ export function WorkbenchPanel({
     onSetConnectionOrthogonalBend,
     onSelectModules,
     selectionBox,
+    guideRails,
     snapToGrid,
+    snapToGuides,
     workspaceZoom,
   ]);
 
@@ -1767,6 +1790,7 @@ export function WorkbenchPanel({
           showOverviewNavigator={showOverviewNavigator}
           showGrid={showGrid}
           snapToGrid={snapToGrid}
+          snapToGuides={snapToGuides}
           canUndo={canUndo}
           canRedo={canRedo}
           selectedModuleIds={selectedModuleIds}
@@ -1786,6 +1810,7 @@ export function WorkbenchPanel({
           onToggleOverviewNavigator={onSetOverviewNavigatorVisible}
           onToggleGrid={onSetGridVisible}
           onToggleSnapToGrid={onSetSnapToGrid}
+          onToggleSnapToGuides={onSetSnapToGuides}
           onRequestUndo={onRequestUndo}
           onRequestRedo={onRequestRedo}
           onZoomOut={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'out'))}

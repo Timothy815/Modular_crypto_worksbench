@@ -10,6 +10,7 @@ interface WorkbenchActionsProps {
   showOverviewNavigator: boolean;
   showGrid: boolean;
   snapToGrid: boolean;
+  snapToGuides: boolean;
   canUndo: boolean;
   canRedo: boolean;
   selectedModuleIds: string[];
@@ -29,6 +30,7 @@ interface WorkbenchActionsProps {
   onToggleOverviewNavigator: (visible: boolean) => void;
   onToggleGrid: (visible: boolean) => void;
   onToggleSnapToGrid: (enabled: boolean) => void;
+  onToggleSnapToGuides: (enabled: boolean) => void;
   onRequestUndo: () => void;
   onRequestRedo: () => void;
   onZoomOut: () => void;
@@ -155,6 +157,7 @@ type WorkbenchInlineIconName =
   | 'overview'
   | 'grid'
   | 'snap'
+  | 'snap-guides'
   | 'save-version'
   | 'delete-wire'
   | 'reset-wire'
@@ -255,6 +258,13 @@ function WorkbenchInlineIcon({ name }: { name: WorkbenchInlineIconName }) {
       return (
         <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
           <path d="M10 3v5M7.5 5.5h5M10 17v-4M14.5 10H17M3 10h4M5.3 5.3l2.8 2.8M11.9 11.9l2.8 2.8M14.7 5.3l-2.8 2.8M8.1 11.9l-2.8 2.8" />
+          <rect x="8" y="8" width="4" height="4" rx="0.9" />
+        </svg>
+      );
+    case 'snap-guides':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M6 3v14M14 3v14M3 10h14" />
           <rect x="8" y="8" width="4" height="4" rx="0.9" />
         </svg>
       );
@@ -375,6 +385,7 @@ export function WorkbenchActions({
   showOverviewNavigator,
   showGrid,
   snapToGrid,
+  snapToGuides,
   canUndo,
   canRedo,
   selectedModuleIds,
@@ -394,6 +405,7 @@ export function WorkbenchActions({
   onToggleOverviewNavigator,
   onToggleGrid,
   onToggleSnapToGrid,
+  onToggleSnapToGuides,
   onRequestUndo,
   onRequestRedo,
   onZoomOut,
@@ -511,6 +523,12 @@ export function WorkbenchActions({
               title={snapToGrid ? 'Disable Snap To Grid' : 'Enable Snap To Grid'}
               onSelect={() => onToggleSnapToGrid(!snapToGrid)}
               active={snapToGrid}
+            />
+            <WorkbenchInlineActionButton
+              content={<WorkbenchInlineIcon name="snap-guides" />}
+              title={snapToGuides ? 'Disable Snap To Guides' : 'Enable Snap To Guides'}
+              onSelect={() => onToggleSnapToGuides(!snapToGuides)}
+              active={snapToGuides}
             />
             <WorkbenchInlineActionButton
               content={<WorkbenchInlineIcon name="save-version" />}
@@ -635,6 +653,10 @@ export function WorkbenchActions({
             <WorkbenchMenuActionButton
               label={snapToGrid ? 'Disable Snap To Grid' : 'Enable Snap To Grid'}
               onSelect={() => onToggleSnapToGrid(!snapToGrid)}
+            />
+            <WorkbenchMenuActionButton
+              label={snapToGuides ? 'Disable Snap To Guides' : 'Enable Snap To Guides'}
+              onSelect={() => onToggleSnapToGuides(!snapToGuides)}
             />
             {showTutorialToggle ? (
               <WorkbenchMenuActionButton

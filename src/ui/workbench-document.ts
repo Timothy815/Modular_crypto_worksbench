@@ -63,6 +63,7 @@ export interface WorkbenchUiMetadata {
   showOverviewNavigator?: boolean;
   showGrid?: boolean;
   snapToGrid?: boolean;
+  snapToGuides?: boolean;
   layoutDirection?: WorkbenchLayoutDirection;
   routingMode?: WorkbenchRoutingMode;
   connectionLayout?: Record<string, WorkbenchConnectionLayout>;

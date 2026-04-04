@@ -22,6 +22,7 @@ export interface WorkspaceHistorySnapshot {
   showOverviewNavigator: boolean;
   showGrid: boolean;
   snapToGrid: boolean;
+  snapToGuides: boolean;
   layoutDirection: WorkbenchLayoutDirection;
   routingMode: WorkbenchRoutingMode;
   connectionLayout: Record<string, WorkbenchConnectionLayout>;
@@ -46,6 +47,7 @@ interface WorkspaceSnapshotState {
   showOverviewNavigatorByProject: Record<string, boolean>;
   showGridByProject: Record<string, boolean>;
   snapToGridByProject: Record<string, boolean>;
+  snapToGuidesByProject: Record<string, boolean>;
   layoutDirectionByProject: Record<string, WorkbenchLayoutDirection>;
   routingModeByProject: Record<string, WorkbenchRoutingMode>;
   connectionLayoutByProject: Record<string, Record<string, WorkbenchConnectionLayout>>;
@@ -128,6 +130,7 @@ export function cloneWorkspaceHistorySnapshot(
     showOverviewNavigator: snapshot.showOverviewNavigator,
     showGrid: snapshot.showGrid,
     snapToGrid: snapshot.snapToGrid,
+    snapToGuides: snapshot.snapToGuides,
     layoutDirection: snapshot.layoutDirection,
     routingMode: snapshot.routingMode,
     connectionLayout: cloneConnectionLayout(snapshot.connectionLayout),
@@ -158,6 +161,7 @@ export function buildWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
     showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
     showGrid: state.showGridByProject[projectId] ?? false,
     snapToGrid: state.snapToGridByProject[projectId] ?? false,
+    snapToGuides: state.snapToGuidesByProject[projectId] ?? false,
     layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
     routingMode: state.routingModeByProject[projectId] ?? 'curved',
     connectionLayout: cloneConnectionLayout(state.connectionLayoutByProject[projectId] ?? {}),
@@ -211,6 +215,10 @@ export function applyWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
     snapToGridByProject: {
       ...state.snapToGridByProject,
       [projectId]: snapshot.snapToGrid,
+    },
+    snapToGuidesByProject: {
+      ...state.snapToGuidesByProject,
+      [projectId]: snapshot.snapToGuides,
     },
     layoutDirectionByProject: {
       ...state.layoutDirectionByProject,
@@ -280,6 +288,7 @@ export function buildWorkspaceVersionDocument<State extends WorkspaceVersionHost
         showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
         showGrid: state.showGridByProject[projectId] ?? false,
         snapToGrid: state.snapToGridByProject[projectId] ?? false,
+        snapToGuides: state.snapToGuidesByProject[projectId] ?? false,
         layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
         routingMode: state.routingModeByProject[projectId] ?? 'curved',
         connectionLayout: cloneConnectionLayout(state.connectionLayoutByProject[projectId] ?? {}),
@@ -411,6 +420,30 @@ export function applyRestoreWorkspaceVersion<State extends WorkspaceVersionHostS
     showOverviewNavigatorByProject: {
       ...state.showOverviewNavigatorByProject,
       [projectId]: version.document.ui.showOverviewNavigator ?? false,
+    },
+    showGridByProject: {
+      ...state.showGridByProject,
+      [projectId]: version.document.ui.showGrid ?? false,
+    },
+    snapToGridByProject: {
+      ...state.snapToGridByProject,
+      [projectId]: version.document.ui.snapToGrid ?? false,
+    },
+    snapToGuidesByProject: {
+      ...state.snapToGuidesByProject,
+      [projectId]: version.document.ui.snapToGuides ?? false,
+    },
+    layoutDirectionByProject: {
+      ...state.layoutDirectionByProject,
+      [projectId]: version.document.ui.layoutDirection ?? 'horizontal',
+    },
+    routingModeByProject: {
+      ...state.routingModeByProject,
+      [projectId]: version.document.ui.routingMode ?? 'curved',
+    },
+    connectionLayoutByProject: {
+      ...state.connectionLayoutByProject,
+      [projectId]: cloneConnectionLayout(version.document.ui.connectionLayout ?? {}),
     },
     comparisonBaselinesByProject: {
       ...state.comparisonBaselinesByProject,
