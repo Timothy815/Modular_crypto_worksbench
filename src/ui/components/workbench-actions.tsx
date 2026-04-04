@@ -100,6 +100,30 @@ const WIRE_COLOR_OVERRIDE_OPTIONS: Array<{
   { color: 'rose', label: 'Rose Wire' },
 ];
 
+function getLaneStateLabel(
+  axis: 'x' | 'y' | null,
+  preference: 'negative' | 'positive' | null,
+): string {
+  if (axis === null || preference === null) {
+    return 'Lane Neutral';
+  }
+
+  if (axis === 'x') {
+    return preference === 'negative' ? 'Lane Left' : 'Lane Right';
+  }
+
+  return preference === 'negative' ? 'Lane Upper' : 'Lane Lower';
+}
+
+function getWireColorStateLabel(color: WorkbenchConnectionColorOverride | null): string {
+  if (color === null) {
+    return 'Color Auto';
+  }
+
+  const option = WIRE_COLOR_OVERRIDE_OPTIONS.find((candidate) => candidate.color === color);
+  return option ? `Color ${option.label.replace(' Wire', '')}` : 'Color Custom';
+}
+
 interface WorkbenchActionMenuProps {
   label: string;
   description?: string;
@@ -439,6 +463,18 @@ function WorkbenchWireColorSwatch({ color }: { color: WorkbenchConnectionColorOv
   return <span className={`workbench-wire-color-swatch workbench-wire-color-swatch-${color}`} />;
 }
 
+function WorkbenchInlineStateChip({
+  label,
+  tone = 'neutral',
+}: {
+  label: string;
+  tone?: 'neutral' | 'active';
+}) {
+  return (
+    <span className={`workbench-inline-state-chip${tone === 'active' ? ' active' : ''}`}>{label}</span>
+  );
+}
+
 export function WorkbenchActions({
   isCompositeEditor,
   isObservationMode = false,
@@ -505,6 +541,12 @@ export function WorkbenchActions({
     selectedConnectionLaneAxis === 'x' ? 'Prefer Left Lane' : 'Prefer Upper Lane';
   const positiveLaneLabel =
     selectedConnectionLaneAxis === 'x' ? 'Prefer Right Lane' : 'Prefer Lower Lane';
+  const currentPathLabel = selectedConnectionHasManualPath ? 'Path Manual' : 'Path Auto';
+  const currentLaneLabel = getLaneStateLabel(
+    selectedConnectionLaneAxis,
+    selectedConnectionLanePreference,
+  );
+  const currentColorLabel = getWireColorStateLabel(selectedConnectionColorOverride);
   const canAlignSelection = selectedModuleIds.length >= 2;
   const canDistributeSelection = selectedModuleIds.length >= 3;
   const showSelectionToolbar = canAlignSelection;
@@ -710,6 +752,19 @@ export function WorkbenchActions({
           {showWireToolbar ? (
             <div className="workbench-inline-toolbar" aria-label="Wire tools">
               <span className="meta-label">Wire</span>
+              <WorkbenchInlineStateChip
+                label={currentPathLabel}
+                tone={selectedConnectionHasManualPath ? 'active' : 'neutral'}
+              />
+              <WorkbenchInlineStateChip
+                label={currentLaneLabel}
+                tone={selectedConnectionLanePreference ? 'active' : 'neutral'}
+              />
+              <WorkbenchInlineStateChip
+                label={currentColorLabel}
+                tone={selectedConnectionColorOverride ? 'active' : 'neutral'}
+              />
+              <span className="workbench-inline-toolbar-divider" aria-hidden="true" />
               <WorkbenchInlineActionButton
                 content={<WorkbenchInlineIcon name="delete-wire" />}
                 title="Delete Selected Wire"
@@ -881,6 +936,9 @@ export function WorkbenchActions({
               onSelect={onRequestDeleteWire}
               disabled={!canDeleteWire}
             />
+            <WorkbenchMenuActionButton label={currentPathLabel} onSelect={() => {}} disabled />
+            <WorkbenchMenuActionButton label={currentLaneLabel} onSelect={() => {}} disabled />
+            <WorkbenchMenuActionButton label={currentColorLabel} onSelect={() => {}} disabled />
             <WorkbenchMenuActionButton
               label="Reset Wire Path"
               onSelect={onRequestResetWirePath}

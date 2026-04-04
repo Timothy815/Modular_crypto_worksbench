@@ -160,6 +160,11 @@ The next wire-legibility follow-on after that is now implemented locally as:
 - adds bounded per-connection wire recoloring from a curated palette
 - keeps the slice in workspace UI metadata only and preserves selected/trace/error emphasis as authoritative
 
+The next wire-legibility polish follow-on after that is now implemented locally as:
+- `WIRE-POLISH-V1.md`
+- surfaces current selected-wire path, lane, and color state directly in the toolbar and menu
+- keeps the slice UI-only and bounded to clarity rather than new wire semantics
+
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - now shipped as the first bounded verification-station refinement inside the compare/analyze line

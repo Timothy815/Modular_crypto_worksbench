@@ -149,6 +149,11 @@ The next wire-legibility follow-on after that is now implemented locally as:
 - a bounded per-connection recoloring slice using a curated palette
 - keeps the slice in workspace UI metadata only and preserves selected/trace/error emphasis as authoritative
 
+The next wire-legibility polish follow-on after that is now implemented locally as:
+- `WIRE-POLISH-V1.md`
+- a bounded toolbar/menu clarity pass for current selected-wire path, lane, and color state
+- keeps the slice UI-only and avoids new routing or color semantics
+
 Current `main` now also includes:
 - Python export foundations:
   - one workspace-local `Export Python` action beside JSON export
