@@ -49,10 +49,10 @@ Current active sequencing should now be read as:
 - keep future work explicit, bounded, and evidence-driven
 
 The clearest immediate next candidate is now:
-- `PILOT-POLISH-V1.md`
-- a short evidence-driven friction-removal loop for classroom-readiness and first-use smoothness
-- meant to tighten existing surfaces rather than open another major feature family
-- bounded by zero schema drift and a small fixed set of named friction fixes
+- `SEARCH-FIRST-PALETTE-V1.md`
+- a search-first primitive-discovery pass inside the existing palette surface
+- intended to reduce scroll-heavy lookup without widening into a global command palette
+- bounded to palette-local discovery speed rather than broader command-system redesign
 
 Another shipped bounded readability slice after that is:
 - `COMPOSITE-INSTANCE-DRILLDOWN-V1.md`
@@ -173,6 +173,11 @@ The next workspace-chrome simplification follow-on after that is now shipped as:
 - `WORKBENCH-CONTROL-SIMPLIFICATION-V1.md`
 - a bounded trim pass for duplicated high-frequency menu entries
 - keeps menus focused on lower-frequency structure, version, and import/export actions
+
+The next bounded discovery candidate is now:
+- `SEARCH-FIRST-PALETTE-V1.md`
+- a search-first primitive-discovery pass inside the existing palette surface
+- intended to reduce scroll-heavy lookup without widening into a global command palette
 
 The next structured-primitive inspector follow-ons after that are now shipped as:
 - `PERMUTATION-INSPECTOR-POLISH-V1.md`
