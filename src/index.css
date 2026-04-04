@@ -15,6 +15,7 @@
     radial-gradient(circle at top left, rgba(231, 111, 81, 0.18), transparent 32%),
     radial-gradient(circle at bottom right, rgba(38, 70, 83, 0.16), transparent 28%),
     linear-gradient(145deg, rgba(255, 248, 238, 0.96), rgba(245, 239, 227, 0.9));
+  --canvas-surface-fill: linear-gradient(180deg, rgba(255, 255, 255, 0.65), rgba(244, 239, 230, 0.3));
   --canvas-background:
     linear-gradient(rgba(33, 53, 71, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(33, 53, 71, 0.05) 1px, transparent 1px),
@@ -91,6 +92,7 @@
     radial-gradient(circle at top left, rgba(240, 141, 105, 0.18), transparent 32%),
     radial-gradient(circle at bottom right, rgba(82, 145, 186, 0.16), transparent 28%),
     linear-gradient(145deg, rgba(21, 31, 40, 0.98), rgba(18, 26, 34, 0.95));
+  --canvas-surface-fill: linear-gradient(180deg, rgba(18, 27, 36, 0.94), rgba(14, 22, 31, 0.98));
   --canvas-background:
     linear-gradient(rgba(202, 216, 232, 0.06) 1px, transparent 1px),
     linear-gradient(90deg, rgba(202, 216, 232, 0.06) 1px, transparent 1px),

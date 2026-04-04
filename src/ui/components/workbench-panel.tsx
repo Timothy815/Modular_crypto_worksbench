@@ -1854,11 +1854,15 @@ export function WorkbenchPanel({
       >
         <div
           className="graph-viewport"
-          style={{
-            width: `${canvasWidth * workspaceZoom}px`,
-            height: `${canvasHeight * workspaceZoom}px`,
-          }}
+          style={
+            {
+              width: `${canvasWidth * workspaceZoom}px`,
+              height: `${Math.max(canvasHeight * workspaceZoom, canvasViewportHeight)}px`,
+              '--workspace-zoom': workspaceZoom,
+            } as CSSProperties
+          }
         >
+        {showGrid ? <div className="graph-grid-overlay" /> : null}
         <div
           className="graph-canvas"
           style={
@@ -1890,7 +1894,6 @@ export function WorkbenchPanel({
             });
           }}
         >
-          {showGrid ? <div className="graph-grid-overlay" /> : null}
           {groupBoxes.map((groupBox) => {
             const groupBoxX =
               groupBoxDragState?.groupBoxId === groupBox.id
