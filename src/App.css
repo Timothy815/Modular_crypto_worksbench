@@ -185,6 +185,63 @@
   margin-bottom: 14px;
 }
 
+.inspector-tab-strip {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.inspector-tab-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-button);
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease,
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.inspector-tab-button:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+  background: color-mix(in srgb, var(--surface-button) 82%, var(--accent) 18%);
+}
+
+.inspector-tab-button.active {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+  background: color-mix(in srgb, var(--surface-button) 72%, var(--accent) 28%);
+  color: var(--ink-strong);
+}
+
+.inspector-tab-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  vector-effect: non-scaling-stroke;
+}
+
+@container (max-width: 360px) {
+  .inspector-tab-button {
+    justify-content: center;
+    min-width: 0;
+    padding-inline: 10px;
+  }
+
+  .inspector-tab-button span {
+    display: none;
+  }
+}
+
 .header-menu-select select,
 .inspector-section-select select {
   width: 100%;
@@ -366,6 +423,10 @@ body.dock-resizing {
 .inspector-panel {
   max-height: calc(100vh - 110px);
   overflow: auto;
+}
+
+.inspector-panel {
+  container-type: inline-size;
 }
 
 .panel {
@@ -2871,24 +2932,50 @@ body.canvas-resizing {
   pointer-events: none;
 }
 
+.connection-group-wire-mode-domain path:not(.connection-hit-area) {
+  stroke: color-mix(in srgb, var(--connection-stroke) 78%, white 22%);
+  stroke-width: 3.2;
+  stroke-opacity: 0.98;
+}
+
 .connection-group-wire-mode-domain.connection-group-domain-bits path:not(.connection-hit-area) {
-  stroke: color-mix(in srgb, #0f74d1 88%, var(--connection-stroke));
+  stroke: color-mix(in srgb, #0f74d1 94%, var(--connection-stroke));
+  filter: drop-shadow(0 0 2px color-mix(in srgb, #0f74d1 18%, transparent));
 }
 
 .connection-group-wire-mode-domain.connection-group-domain-symbol path:not(.connection-hit-area) {
-  stroke: color-mix(in srgb, #c46a12 88%, var(--connection-stroke));
+  stroke: color-mix(in srgb, #c46a12 94%, var(--connection-stroke));
+  filter: drop-shadow(0 0 2px color-mix(in srgb, #c46a12 18%, transparent));
 }
 
 .connection-group-wire-mode-neutral path:not(.connection-hit-area) {
-  stroke: color-mix(in srgb, var(--connection-stroke) 86%, white);
+  stroke: color-mix(in srgb, var(--connection-stroke) 58%, white 42%);
+  stroke-width: 2.35;
+  stroke-opacity: 0.7;
+  filter: none;
+}
+
+.connection-group-wire-mode-high-contrast path:not(.connection-hit-area) {
+  stroke: color-mix(in srgb, var(--connection-stroke) 6%, white 94%);
+  stroke-width: 4.6;
+  stroke-opacity: 1;
+  filter:
+    drop-shadow(0 0 6px color-mix(in srgb, var(--connection-stroke) 34%, transparent))
+    drop-shadow(0 0 10px color-mix(in srgb, white 12%, transparent));
 }
 
 .connection-group-wire-mode-high-contrast.connection-group-domain-bits path:not(.connection-hit-area) {
-  stroke: color-mix(in srgb, #0051d6 94%, white);
+  stroke: #0a67ff;
+  filter:
+    drop-shadow(0 0 6px color-mix(in srgb, #0a67ff 38%, transparent))
+    drop-shadow(0 0 10px color-mix(in srgb, #0a67ff 16%, transparent));
 }
 
 .connection-group-wire-mode-high-contrast.connection-group-domain-symbol path:not(.connection-hit-area) {
-  stroke: color-mix(in srgb, #b84b00 94%, white);
+  stroke: #ff6b00;
+  filter:
+    drop-shadow(0 0 6px color-mix(in srgb, #ff6b00 38%, transparent))
+    drop-shadow(0 0 10px color-mix(in srgb, #ff6b00 16%, transparent));
 }
 
 .connection-group[class*='connection-group-color-'] path:not(.connection-hit-area) {
@@ -4393,6 +4480,49 @@ body.canvas-resizing {
 .mini-action-button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+.inspector-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-button);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease,
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.inspector-icon-button:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--line));
+  background: color-mix(in srgb, var(--surface-button) 82%, var(--accent) 18%);
+}
+
+.inspector-icon-button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  vector-effect: non-scaling-stroke;
+}
+
+.inspector-icon-button-danger {
+  color: var(--danger-text);
+  background: var(--danger-bg);
+  border-color: color-mix(in srgb, var(--danger-text) 22%, var(--line));
+}
+
+.inspector-icon-button-danger:hover {
+  border-color: color-mix(in srgb, var(--danger-text) 42%, var(--line));
+  background: color-mix(in srgb, var(--danger-bg) 78%, white 22%);
 }
 
 .hidden-file-input {

@@ -190,6 +190,262 @@ interface ParameterInspectorProps {
   onClearProbes: () => void;
 }
 
+type InspectorIconName =
+  | 'rotate'
+  | 'duplicate'
+  | 'delete'
+  | 'copy'
+  | 'rename'
+  | 'configure'
+  | 'analyze'
+  | 'compare';
+
+function InspectorIcon({ name }: { name: InspectorIconName }) {
+  switch (name) {
+    case 'rotate':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path
+            d="M13.8 4.4a5.9 5.9 0 1 0 1.7 7.4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M12.8 2.9h3.8v3.8"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case 'duplicate':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <rect
+            x="6.5"
+            y="4.5"
+            width="8"
+            height="8"
+            rx="1.6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          />
+          <rect
+            x="3.5"
+            y="7.5"
+            width="8"
+            height="8"
+            rx="1.6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          />
+        </svg>
+      );
+    case 'delete':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path
+            d="M5.5 6.2h9"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M8 6.2V4.7h4v1.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M7.2 6.2l.5 8h4.6l.5-8"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M9 8.5v3.8M11 8.5v3.8"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case 'copy':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <rect
+            x="6.5"
+            y="4"
+            width="8"
+            height="10"
+            rx="1.8"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          />
+          <path
+            d="M5 7.2H4.4A1.4 1.4 0 0 0 3 8.6v6A1.4 1.4 0 0 0 4.4 16h6A1.4 1.4 0 0 0 11.8 14.6V14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case 'rename':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path
+            d="M4.5 14.3l.6-2.8 6.8-6.8 2.2 2.2-6.8 6.8-2.8.6z"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M10.9 5.8l2.2 2.2"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case 'configure':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path
+            d="M5 5.2h10M5 10h10M5 14.8h10"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <circle cx="7.2" cy="5.2" r="1.6" fill="currentColor" stroke="none" />
+          <circle cx="12.8" cy="10" r="1.6" fill="currentColor" stroke="none" />
+          <circle cx="9.2" cy="14.8" r="1.6" fill="currentColor" stroke="none" />
+        </svg>
+      );
+    case 'analyze':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <circle
+            cx="8.5"
+            cy="8.5"
+            r="4.2"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          />
+          <path
+            d="M11.7 11.7L15.5 15.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M6.6 8.7l1.4 1.5 2.5-3"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case 'compare':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <rect
+            x="3.5"
+            y="4.5"
+            width="5.5"
+            height="11"
+            rx="1.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          />
+          <rect
+            x="11"
+            y="4.5"
+            width="5.5"
+            height="11"
+            rx="1.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          />
+        </svg>
+      );
+  }
+}
+
+interface InspectorIconButtonProps {
+  icon: InspectorIconName;
+  label: string;
+  onClick: () => void;
+  tone?: 'default' | 'danger';
+}
+
+function InspectorIconButton({
+  icon,
+  label,
+  onClick,
+  tone = 'default',
+}: InspectorIconButtonProps) {
+  return (
+    <button
+      type="button"
+      className={`inspector-icon-button inspector-icon-button-${tone}`}
+      title={label}
+      aria-label={label}
+      onClick={onClick}
+    >
+      <InspectorIcon name={icon} />
+    </button>
+  );
+}
+
+interface InspectorTabButtonProps {
+  icon: Extract<InspectorIconName, 'configure' | 'analyze' | 'compare'>;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}
+
+function InspectorTabButton({ icon, label, active, onClick }: InspectorTabButtonProps) {
+  return (
+    <button
+      type="button"
+      className={`inspector-tab-button${active ? ' active' : ''}`}
+      aria-pressed={active}
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+    >
+      <InspectorIcon name={icon} />
+      <span>{label}</span>
+    </button>
+  );
+}
+
 export function ParameterInspector({
   execution,
   registry,
@@ -748,19 +1004,26 @@ export function ParameterInspector({
         <h2>Inspector</h2>
       </div>
 
-      <label className="inspector-section-select">
-        <span className="meta-label">View</span>
-        <select
-          value={inspectorTab}
-          onChange={(event) =>
-            setInspectorTab(event.target.value as 'configure' | 'analyze' | 'compare')
-          }
-        >
-          <option value="configure">Configure</option>
-          <option value="analyze">Analyze</option>
-          <option value="compare">Compare</option>
-        </select>
-      </label>
+      <div className="inspector-tab-strip" role="tablist" aria-label="Inspector View">
+        <InspectorTabButton
+          icon="configure"
+          label="Configure"
+          active={inspectorTab === 'configure'}
+          onClick={() => setInspectorTab('configure')}
+        />
+        <InspectorTabButton
+          icon="analyze"
+          label="Analyze"
+          active={inspectorTab === 'analyze'}
+          onClick={() => setInspectorTab('analyze')}
+        />
+        <InspectorTabButton
+          icon="compare"
+          label="Compare"
+          active={inspectorTab === 'compare'}
+          onClick={() => setInspectorTab('compare')}
+        />
+      </div>
 
       <div className={`trace-summary inspector-output-summary${isOutputSummaryCollapsed ? ' collapsed' : ''}`}>
         <div className="inspector-output-summary-head">
@@ -1887,13 +2150,11 @@ export function ParameterInspector({
           )}
           <div className="selected-module-actions">
             {!isReadOnlyMode && Object.values(moduleDef.paramSchema).length > 0 ? (
-              <button
-                type="button"
-                className="mini-action-button"
+              <InspectorIconButton
+                icon="copy"
+                label="Copy Params"
                 onClick={() => onCopyParams(moduleInstance.id)}
-              >
-                Copy Params
-              </button>
+              />
             ) : null}
             {!isReadOnlyMode && parameterClipboard &&
             parameterClipboard.sourceModuleId === moduleInstance.id &&
@@ -1916,13 +2177,9 @@ export function ParameterInspector({
               </button>
             ) : null}
             {!isReadOnlyMode && canRenameModuleIds && onRenameModuleInstance ? (
-              <button
-                type="button"
-                className="mini-action-button"
-                disabled={
-                  normalizeModuleInstanceIdCandidate(effectiveRenameDraft) === moduleInstance.id ||
-                  Boolean(renameValidationError)
-                }
+              <InspectorIconButton
+                icon="rename"
+                label="Rename Module"
                 onClick={() => {
                   const nextModuleId = normalizeModuleInstanceIdCandidate(effectiveRenameDraft);
                   const validationError = getModuleInstanceIdValidationError(
@@ -1946,9 +2203,7 @@ export function ParameterInspector({
                     error: null,
                   });
                 }}
-              >
-                Rename Module
-              </button>
+              />
             ) : null}
             {!isReadOnlyMode && canBypassSelectedModule ? (
               <button
@@ -1960,22 +2215,18 @@ export function ParameterInspector({
               </button>
             ) : null}
             {!isReadOnlyMode && onRotateModuleClockwise ? (
-              <button
-                type="button"
-                className="mini-action-button"
+              <InspectorIconButton
+                icon="rotate"
+                label="Rotate 90°"
                 onClick={() => onRotateModuleClockwise(moduleInstance.id)}
-              >
-                Rotate 90°
-              </button>
+              />
             ) : null}
             {!isReadOnlyMode && onDuplicateModule ? (
-              <button
-                type="button"
-                className="mini-action-button"
+              <InspectorIconButton
+                icon="duplicate"
+                label="Duplicate Module"
                 onClick={() => onDuplicateModule(moduleInstance.id)}
-              >
-                Duplicate Module
-              </button>
+              />
             ) : null}
             {!isReadOnlyMode && isCompositeDefinition(moduleDef) && onOpenCompositeInstanceDrilldown ? (
               <button
@@ -1996,13 +2247,12 @@ export function ParameterInspector({
               </button>
             ) : null}
             {!isReadOnlyMode ? (
-              <button
-                type="button"
-                className="delete-module-button"
+              <InspectorIconButton
+                icon="delete"
+                label="Delete Module"
+                tone="danger"
                 onClick={() => onDeleteModule(moduleInstance.id)}
-              >
-                Delete Module
-              </button>
+              />
             ) : null}
             {isReadOnlyMode && isCompositeDefinition(moduleDef) && onOpenCompositeDefinition ? (
               <button
