@@ -586,6 +586,10 @@ export function ParameterInspector({
     axis: 'row' | 'column';
     index: number;
   } | null>(null);
+  const [hoveredSBoxAxisDropTarget, setHoveredSBoxAxisDropTarget] = useState<{
+    axis: 'row' | 'column';
+    index: number;
+  } | null>(null);
   const [sboxGenerationState, setSboxGenerationState] = useState<{
     moduleId: string | null;
     size: 16 | 256;
@@ -3204,6 +3208,7 @@ export function ParameterInspector({
                       focusSBoxRow(targetRow);
                     }
                     setDraggedSBoxAxis(null);
+                    setHoveredSBoxAxisDropTarget(null);
                   };
                   const handleSBoxColumnDrop = (targetColumn: number) => {
                     if (!draggedSBoxAxis || draggedSBoxAxis.axis !== 'column') {
@@ -3221,6 +3226,7 @@ export function ParameterInspector({
                       focusSBoxColumn(targetColumn);
                     }
                     setDraggedSBoxAxis(null);
+                    setHoveredSBoxAxisDropTarget(null);
                   };
 
                   return (
@@ -3232,7 +3238,13 @@ export function ParameterInspector({
                         </span>
                       ) : null}
                       {editableTable ? (
-                        <div className="sbox-editor">
+                        <div
+                          className={
+                            currentSBoxCellMode === 'swap'
+                              ? 'sbox-editor sbox-editor-swap-mode'
+                              : 'sbox-editor'
+                          }
+                        >
                           <div className="sbox-editor-meta">
                             <span className="content-status-chip">{editableTable.length} entries</span>
                             <span className="content-status-chip">
@@ -3258,6 +3270,14 @@ export function ParameterInspector({
                               <div
                                 key={`sbox-editor-col-${columnIndex}`}
                                 className={
+                                  hoveredSBoxAxisDropTarget?.axis === 'column' &&
+                                  hoveredSBoxAxisDropTarget.index === columnIndex &&
+                                  draggedSBoxAxis?.axis === 'column' &&
+                                  draggedSBoxAxis.index !== columnIndex
+                                    ? selectedColumn === columnIndex
+                                      ? 'sbox-table-header-shell active drop-target'
+                                      : 'sbox-table-header-shell drop-target'
+                                    :
                                   draggedSBoxAxis?.axis === 'column' &&
                                   draggedSBoxAxis.index === columnIndex
                                     ? selectedColumn === columnIndex
@@ -3321,6 +3341,23 @@ export function ParameterInspector({
                                   onDragOver={(event) => {
                                     if (draggedSBoxAxis?.axis === 'column') {
                                       event.preventDefault();
+                                      if (
+                                        hoveredSBoxAxisDropTarget?.axis !== 'column' ||
+                                        hoveredSBoxAxisDropTarget.index !== columnIndex
+                                      ) {
+                                        setHoveredSBoxAxisDropTarget({
+                                          axis: 'column',
+                                          index: columnIndex,
+                                        });
+                                      }
+                                    }
+                                  }}
+                                  onDragLeave={() => {
+                                    if (
+                                      hoveredSBoxAxisDropTarget?.axis === 'column' &&
+                                      hoveredSBoxAxisDropTarget.index === columnIndex
+                                    ) {
+                                      setHoveredSBoxAxisDropTarget(null);
                                     }
                                   }}
                                   onDrop={(event) => {
@@ -3340,6 +3377,14 @@ export function ParameterInspector({
                                 {index % gridColumns === 0 ? (
                                   <div
                                     className={
+                                      hoveredSBoxAxisDropTarget?.axis === 'row' &&
+                                      hoveredSBoxAxisDropTarget.index === Math.floor(index / gridColumns) &&
+                                      draggedSBoxAxis?.axis === 'row' &&
+                                      draggedSBoxAxis.index !== Math.floor(index / gridColumns)
+                                        ? Math.floor(index / gridColumns) === selectedRow
+                                          ? 'sbox-table-header-shell active drop-target'
+                                          : 'sbox-table-header-shell drop-target'
+                                        :
                                       draggedSBoxAxis?.axis === 'row' &&
                                       draggedSBoxAxis.index === Math.floor(index / gridColumns)
                                         ? Math.floor(index / gridColumns) === selectedRow
@@ -3366,6 +3411,25 @@ export function ParameterInspector({
                                       onDragOver={(event) => {
                                         if (draggedSBoxAxis?.axis === 'row') {
                                           event.preventDefault();
+                                          const rowIndex = Math.floor(index / gridColumns);
+                                          if (
+                                            hoveredSBoxAxisDropTarget?.axis !== 'row' ||
+                                            hoveredSBoxAxisDropTarget.index !== rowIndex
+                                          ) {
+                                            setHoveredSBoxAxisDropTarget({
+                                              axis: 'row',
+                                              index: rowIndex,
+                                            });
+                                          }
+                                        }
+                                      }}
+                                      onDragLeave={() => {
+                                        const rowIndex = Math.floor(index / gridColumns);
+                                        if (
+                                          hoveredSBoxAxisDropTarget?.axis === 'row' &&
+                                          hoveredSBoxAxisDropTarget.index === rowIndex
+                                        ) {
+                                          setHoveredSBoxAxisDropTarget(null);
                                         }
                                       }}
                                       onDrop={(event) => {
