@@ -523,6 +523,29 @@ function WorkbenchFurnitureDetailsCard({
   );
 }
 
+function WorkbenchSelectionDetailsSection({
+  kindLabel,
+  toneLabel,
+  children,
+}: {
+  kindLabel: string;
+  toneLabel?: string | null;
+  children: ReactNode;
+}) {
+  return (
+    <section className="workbench-selection-details" aria-label="Selection details">
+      <div className="workbench-selection-details-head">
+        <span className="meta-label">Selection</span>
+        <div className="workbench-selection-details-chips">
+          <WorkbenchInlineStateChip label={kindLabel} tone="active" />
+          {toneLabel ? <WorkbenchInlineStateChip label={toneLabel} tone="neutral" /> : null}
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 export function WorkbenchActions({
   isCompositeEditor,
   isObservationMode = false,
@@ -612,6 +635,7 @@ export function WorkbenchActions({
       : selectedConnectionDomainTone === 'symbol'
         ? 'Domain Symbol'
         : 'Domain Mixed';
+  const hasSelectionDetails = Boolean(selectedFurnitureKind && selectedFurnitureTitle) || showWireToolbar;
 
   return (
     <div className="project-actions">
@@ -810,96 +834,104 @@ export function WorkbenchActions({
             </div>
           ) : null}
 
-          {selectedFurnitureKind && selectedFurnitureTitle ? (
-            <WorkbenchFurnitureDetailsCard
-              kind={selectedFurnitureKind}
-              title={selectedFurnitureTitle}
-              detailPrimary={selectedFurnitureDetailPrimary}
-              detailSecondary={selectedFurnitureDetailSecondary}
-            />
-          ) : null}
+          {hasSelectionDetails ? (
+            <WorkbenchSelectionDetailsSection
+              kindLabel={
+                showWireToolbar
+                  ? 'Wire'
+                  : selectedFurnitureKind === 'stage-label'
+                    ? 'Stage Label'
+                    : selectedFurnitureKind === 'group-box'
+                      ? 'Group Box'
+                      : 'Guide Rail'
+              }
+              toneLabel={showWireToolbar ? currentDomainLabel : null}
+            >
+              {selectedFurnitureKind && selectedFurnitureTitle ? (
+                <WorkbenchFurnitureDetailsCard
+                  kind={selectedFurnitureKind}
+                  title={selectedFurnitureTitle}
+                  detailPrimary={selectedFurnitureDetailPrimary}
+                  detailSecondary={selectedFurnitureDetailSecondary}
+                />
+              ) : null}
 
-          {showWireToolbar ? (
-            <div className="workbench-wire-tools-group">
-              <div className="workbench-inline-toolbar" aria-label="Wire tools">
-                <span className="meta-label">Wire</span>
-                <WorkbenchInlineStateChip
-                  label={currentPathLabel}
-                  tone={selectedConnectionHasManualPath ? 'active' : 'neutral'}
-                />
-                <WorkbenchInlineStateChip
-                  label={currentLaneLabel}
-                  tone={selectedConnectionLanePreference ? 'active' : 'neutral'}
-                />
-                <WorkbenchInlineStateChip
-                  label={currentColorLabel}
-                  tone={selectedConnectionColorOverride ? 'active' : 'neutral'}
-                />
-                <span className="workbench-inline-toolbar-divider" aria-hidden="true" />
-                <WorkbenchInlineActionButton
-                  content={<WorkbenchInlineIcon name="delete-wire" />}
-                  title="Delete Selected Wire"
-                  onSelect={onRequestDeleteWire}
-                />
-                <WorkbenchInlineActionButton
-                  content={<WorkbenchInlineIcon name="reset-wire" />}
-                  title="Reset Selected Wire Path"
-                  onSelect={onRequestResetWirePath}
-                  disabled={!selectedConnectionHasManualPath}
-                />
-                <WorkbenchInlineActionButton
-                  content={negativeLaneLabel}
-                  title={negativeLaneLabel}
-                  onSelect={() => onRequestSetWireLanePreference('negative')}
-                  disabled={!canAdjustWireLane || selectedConnectionLanePreference === 'negative'}
-                />
-                <WorkbenchInlineActionButton
-                  content="Neutral"
-                  title="Neutral Lane"
-                  onSelect={onRequestClearWireLanePreference}
-                  disabled={!canAdjustWireLane || selectedConnectionLanePreference === null}
-                />
-                <WorkbenchInlineActionButton
-                  content={positiveLaneLabel}
-                  title={positiveLaneLabel}
-                  onSelect={() => onRequestSetWireLanePreference('positive')}
-                  disabled={!canAdjustWireLane || selectedConnectionLanePreference === 'positive'}
-                />
-                <span className="workbench-inline-toolbar-divider" aria-hidden="true" />
-                {WIRE_COLOR_OVERRIDE_OPTIONS.map(({ color, label }) => (
-                  <WorkbenchInlineActionButton
-                    key={color}
-                    content={<WorkbenchWireColorSwatch color={color} />}
-                    title={label}
-                    onSelect={() => onRequestSetWireColorOverride(color)}
-                    active={selectedConnectionColorOverride === color}
-                  />
-                ))}
-                <WorkbenchInlineActionButton
-                  content="Auto"
-                  title="Reset To Workspace Wire Colors"
-                  onSelect={onRequestClearWireColorOverride}
-                  disabled={selectedConnectionColorOverride === null}
-                />
-              </div>
-              <div className="workbench-wire-details-card" aria-label="Selected wire details">
-                <div className="workbench-wire-details-head">
-                  <span className="meta-label">Selected Wire</span>
-                  <WorkbenchInlineStateChip
-                    label={currentDomainLabel}
-                    tone={selectedConnectionDomainTone ? 'active' : 'neutral'}
-                  />
+              {showWireToolbar ? (
+                <div className="workbench-wire-tools-group">
+                  <div className="workbench-inline-toolbar" aria-label="Wire tools">
+                    <span className="meta-label">Wire</span>
+                    <WorkbenchInlineStateChip
+                      label={currentPathLabel}
+                      tone={selectedConnectionHasManualPath ? 'active' : 'neutral'}
+                    />
+                    <WorkbenchInlineStateChip
+                      label={currentLaneLabel}
+                      tone={selectedConnectionLanePreference ? 'active' : 'neutral'}
+                    />
+                    <WorkbenchInlineStateChip
+                      label={currentColorLabel}
+                      tone={selectedConnectionColorOverride ? 'active' : 'neutral'}
+                    />
+                    <span className="workbench-inline-toolbar-divider" aria-hidden="true" />
+                    <WorkbenchInlineActionButton
+                      content={<WorkbenchInlineIcon name="delete-wire" />}
+                      title="Delete Selected Wire"
+                      onSelect={onRequestDeleteWire}
+                    />
+                    <WorkbenchInlineActionButton
+                      content={<WorkbenchInlineIcon name="reset-wire" />}
+                      title="Reset Selected Wire Path"
+                      onSelect={onRequestResetWirePath}
+                      disabled={!selectedConnectionHasManualPath}
+                    />
+                    <WorkbenchInlineActionButton
+                      content={negativeLaneLabel}
+                      title={negativeLaneLabel}
+                      onSelect={() => onRequestSetWireLanePreference('negative')}
+                      disabled={!canAdjustWireLane || selectedConnectionLanePreference === 'negative'}
+                    />
+                    <WorkbenchInlineActionButton
+                      content="Neutral"
+                      title="Neutral Lane"
+                      onSelect={onRequestClearWireLanePreference}
+                      disabled={!canAdjustWireLane || selectedConnectionLanePreference === null}
+                    />
+                    <WorkbenchInlineActionButton
+                      content={positiveLaneLabel}
+                      title={positiveLaneLabel}
+                      onSelect={() => onRequestSetWireLanePreference('positive')}
+                      disabled={!canAdjustWireLane || selectedConnectionLanePreference === 'positive'}
+                    />
+                    <span className="workbench-inline-toolbar-divider" aria-hidden="true" />
+                    {WIRE_COLOR_OVERRIDE_OPTIONS.map(({ color, label }) => (
+                      <WorkbenchInlineActionButton
+                        key={color}
+                        content={<WorkbenchWireColorSwatch color={color} />}
+                        title={label}
+                        onSelect={() => onRequestSetWireColorOverride(color)}
+                        active={selectedConnectionColorOverride === color}
+                      />
+                    ))}
+                    <WorkbenchInlineActionButton
+                      content="Auto"
+                      title="Reset To Workspace Wire Colors"
+                      onSelect={onRequestClearWireColorOverride}
+                      disabled={selectedConnectionColorOverride === null}
+                    />
+                  </div>
+                  <div className="workbench-wire-details-card" aria-label="Selected wire details">
+                    <WorkbenchWireDetailsRow
+                      label="From"
+                      value={selectedConnectionSourceLabel ?? 'n/a'}
+                    />
+                    <WorkbenchWireDetailsRow
+                      label="To"
+                      value={selectedConnectionTargetLabel ?? 'n/a'}
+                    />
+                  </div>
                 </div>
-                <WorkbenchWireDetailsRow
-                  label="From"
-                  value={selectedConnectionSourceLabel ?? 'n/a'}
-                />
-                <WorkbenchWireDetailsRow
-                  label="To"
-                  value={selectedConnectionTargetLabel ?? 'n/a'}
-                />
-              </div>
-            </div>
+              ) : null}
+            </WorkbenchSelectionDetailsSection>
           ) : null}
 
           <WorkbenchActionMenu label="View" description="Zoom and navigate">

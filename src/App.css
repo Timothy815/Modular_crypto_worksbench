@@ -1491,14 +1491,37 @@ body.dock-resizing {
   gap: 10px;
 }
 
+.workbench-selection-details {
+  display: grid;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-panel) 95%, white);
+}
+
+.workbench-selection-details-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.workbench-selection-details-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
 .workbench-wire-details-card {
   display: grid;
   gap: 8px;
   min-width: min(420px, 100%);
   padding: 10px 12px;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
   border-radius: 14px;
-  background: color-mix(in srgb, var(--surface-panel) 94%, white);
+  background: color-mix(in srgb, var(--surface-button) 90%, white);
 }
 
 .workbench-wire-details-head {

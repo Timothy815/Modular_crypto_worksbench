@@ -164,6 +164,11 @@ The next workspace-readability symmetry follow-on after that is now implemented 
 - a bounded details-card pass for selected stage labels, group boxes, and guide rails
 - keeps the slice UI-only and adjacent to the existing layout tools
 
+The next selection-coherence follow-on after that is now implemented locally as:
+- `SELECTION-DETAILS-UNIFICATION-V1.md`
+- a bounded shared selection-details section for wires and layout furniture
+- keeps the slice UI-only and preserves existing selection behavior
+
 Current `main` now also includes:
 - Python export foundations:
   - one workspace-local `Export Python` action beside JSON export

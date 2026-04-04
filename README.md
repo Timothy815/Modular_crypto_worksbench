@@ -175,6 +175,11 @@ The next workspace-readability symmetry follow-on after that is now implemented 
 - adds a compact details card for selected stage labels, group boxes, and guide rails
 - keeps the slice UI-only and adjacent to the existing layout tools
 
+The next selection-coherence follow-on after that is now implemented locally as:
+- `SELECTION-DETAILS-UNIFICATION-V1.md`
+- unifies wire and layout-furniture readouts into one shared selection-details section
+- keeps the slice UI-only and preserves existing selection behavior
+
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
 - now shipped as the first bounded verification-station refinement inside the compare/analyze line
