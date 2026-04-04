@@ -120,70 +120,76 @@ The next structured-layout follow-on after that is now shipped as:
 - adds persistent horizontal and vertical guide rails as lightweight visual alignment aids
 - keeps the slice visual-only in workspace UI metadata with no solver or graph semantics
 
-The next guide-rail follow-on after that is now implemented locally as:
+The next guide-rail follow-on after that is now shipped as:
 - `GUIDE-SNAP-V1.md`
 - adds per-workspace snap-to-guides for module placement and dragging
 - keeps the slice bounded to nearby rail snapping with no solver, wire snapping, or note/group-box snapping
 
-The next readability follow-on after that is now implemented locally as:
+The next readability follow-on after that is now shipped as:
 - `ON-CANVAS-STAGE-LABELS-V1.md`
 - adds lightweight persistent stage labels directly on the workspace canvas
 - keeps the slice visual-only and intentionally lighter than sticky notes or group boxes
 
-The next interaction-coherence follow-on after that is now implemented locally as:
+The next interaction-coherence follow-on after that is now shipped as:
 - `WORKSPACE-POLISH-V2.md`
 - calms stage-label controls and makes the quick-actions strip more context-sensitive
 - keeps the slice UI-only and bounded to polish rather than new layout semantics
 
-The next drag-feedback follow-on after that is now implemented locally as:
+The next drag-feedback follow-on after that is now shipped as:
 - `DRAG-ALIGNMENT-GUIDES-V1.md`
 - adds temporary module and guide-rail alignment cues while dragging
 - keeps the slice visual-only with no new persistence or snapping semantics
 
-The next guide/stage snap follow-on after that is now implemented locally as:
+The next guide/stage snap follow-on after that is now shipped as:
 - `GUIDE-STAGE-SNAP-EXPANSION-V1.md`
 - expands module snap and drag guides to include stage-label anchors and group-box edges/centers
 - keeps the slice bounded to existing visual metadata with no solver or wire snapping
 
-The next workspace coherence follow-on after that is now implemented locally as:
+The next workspace coherence follow-on after that is now shipped as:
 - `WORKSPACE-POLISH-V3.md`
 - groups the quick-actions strip into clearer chunks and further quiets non-selected rails, boxes, and stage labels
 - keeps the slice UI-only and bounded to interaction/readability polish
 
-The next wire-legibility follow-on after that is now implemented locally as:
+The next wire-legibility follow-on after that is now shipped as:
 - `WIRE-COLOR-CUSTOMIZATION-V1.md`
 - adds bounded workspace-level wire color modes for `domain`, `neutral`, and `high-contrast`
 - keeps the slice workspace-local and establishes the base modes for later per-wire overrides
 
-The next wire-legibility follow-on after that is now implemented locally as:
+The next wire-legibility follow-on after that is now shipped as:
 - `ARBITRARY-WIRE-COLORING-V1.md`
 - adds bounded per-connection wire recoloring from a curated palette
 - keeps the slice in workspace UI metadata only and preserves selected/trace/error emphasis as authoritative
 
-The next wire-legibility polish follow-on after that is now implemented locally as:
+The next wire-legibility polish follow-on after that is now shipped as:
 - `WIRE-POLISH-V1.md`
 - surfaces current selected-wire path, lane, and color state directly in the toolbar and menu
 - keeps the slice UI-only and bounded to clarity rather than new wire semantics
 
-The next wire-readability follow-on after that is now implemented locally as:
+The next wire-readability follow-on after that is now shipped as:
 - `SELECTED-WIRE-DETAILS-V1.md`
 - adds a compact selected-wire details card with source, target, and current state
 - keeps the slice UI-only and avoids adding a second inspector surface
 
-The next workspace-readability symmetry follow-on after that is now implemented locally as:
+The next workspace-readability symmetry follow-on after that is now shipped as:
 - `LAYOUT-FURNITURE-DETAILS-V1.md`
 - adds a compact details card for selected stage labels, group boxes, and guide rails
 - keeps the slice UI-only and adjacent to the existing layout tools
 
-The next selection-coherence follow-on after that is now implemented locally as:
+The next selection-coherence follow-on after that is now shipped as:
 - `SELECTION-DETAILS-UNIFICATION-V1.md`
 - unifies wire and layout-furniture readouts into one shared selection-details section
 - keeps the slice UI-only and preserves existing selection behavior
 
-The next workspace-chrome simplification follow-on after that is now implemented locally as:
+The next workspace-chrome simplification follow-on after that is now shipped as:
 - `WORKBENCH-CONTROL-SIMPLIFICATION-V1.md`
 - trims duplicated high-frequency menu entries now covered well by the icon strip
 - keeps menus focused on lower-frequency structure, version, and import/export actions
+
+The next structured-primitive authoring follow-ons after that are now shipped as:
+- `PERMUTATION-INSPECTOR-POLISH-V1.md`
+- `ROTOR-INSPECTOR-POLISH-V1.md`
+- `STRUCTURED-EDITOR-UNIFICATION-V1.md`
+- together they make permutation and rotor authoring more direct and bring the structured primitive editors into a more coherent shared inspector language
 
 The current implementation-ready trust follow-on after that is:
 - `VERIFIED-MACHINE-WORKFLOW-V1.md`
