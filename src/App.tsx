@@ -2533,6 +2533,7 @@ function MainApp() {
                   : undefined
             }
             activeProjectState={compositeDrilldownContext?.project ?? activeProjectState}
+            theme={theme}
             layout={compositeDrilldownContext?.layout ?? activeLayout}
             layoutDirection={activeLayoutDirection}
             routingMode={activeRoutingMode}
@@ -2912,6 +2913,9 @@ function MainApp() {
             onRequestDeleteSelection={isCompositeDrilldownActive ? () => undefined : handleDeleteSelectedCluster}
             onRequestUndo={handleUndoWorkspaceHistory}
             onRequestRedo={handleRedoWorkspaceHistory}
+            onToggleTheme={() =>
+              setTheme((currentTheme) => (currentTheme === 'light' ? 'dark' : 'light'))
+            }
             canUndo={isCompositeDrilldownActive ? false : canUndoWorkspaceHistory}
             canRedo={isCompositeDrilldownActive ? false : canRedoWorkspaceHistory}
             workspaceVersions={isCompositeDrilldownActive ? [] : activeWorkspaceVersions}

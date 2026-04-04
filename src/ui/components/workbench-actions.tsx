@@ -9,6 +9,7 @@ import type {
 interface WorkbenchActionsProps {
   isCompositeEditor: boolean;
   isObservationMode?: boolean;
+  theme: 'light' | 'dark';
   layoutDirection: WorkbenchLayoutDirection;
   routingMode: WorkbenchRoutingMode;
   wireColorMode: WorkbenchWireColorMode;
@@ -40,6 +41,7 @@ interface WorkbenchActionsProps {
   onToggleSnapToGuides: (enabled: boolean) => void;
   onRequestUndo: () => void;
   onRequestRedo: () => void;
+  onToggleTheme: () => void;
   onZoomOut: () => void;
   onZoomIn: () => void;
   onResetView: () => void;
@@ -153,6 +155,7 @@ function WorkbenchInlineActionButton({
 type WorkbenchInlineIconName =
   | 'zoom-out'
   | 'zoom-in'
+  | 'theme-toggle'
   | 'fit-view'
   | 'reset-view'
   | 'undo'
@@ -196,6 +199,12 @@ function WorkbenchInlineIcon({ name }: { name: WorkbenchInlineIconName }) {
         <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
           <circle cx="8.5" cy="8.5" r="4.5" />
           <path d="M5.5 8.5h6M8.5 5.5v6M12 12l4 4" />
+        </svg>
+      );
+    case 'theme-toggle':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M10 3.2a6.8 6.8 0 1 0 6.8 6.8A5.7 5.7 0 0 1 10 3.2Z" />
         </svg>
       );
     case 'fit-view':
@@ -411,6 +420,7 @@ function WorkbenchInlineIcon({ name }: { name: WorkbenchInlineIconName }) {
 export function WorkbenchActions({
   isCompositeEditor,
   isObservationMode = false,
+  theme,
   layoutDirection,
   routingMode,
   wireColorMode,
@@ -442,6 +452,7 @@ export function WorkbenchActions({
   onToggleSnapToGuides,
   onRequestUndo,
   onRequestRedo,
+  onToggleTheme,
   onZoomOut,
   onZoomIn,
   onResetView,
@@ -487,6 +498,11 @@ export function WorkbenchActions({
         <>
           <div className="workbench-inline-toolbar workbench-quick-actions" aria-label="Quick workbench actions">
             <div className="workbench-inline-toolbar-group" aria-label="Navigation tools">
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="theme-toggle" />}
+                title={theme === 'dark' ? 'Switch To Light Mode' : 'Switch To Dark Mode'}
+                onSelect={onToggleTheme}
+              />
               <WorkbenchInlineActionButton
                 content={<WorkbenchInlineIcon name="zoom-out" />}
                 title="Zoom Out"
@@ -702,6 +718,10 @@ export function WorkbenchActions({
           ) : null}
 
           <WorkbenchActionMenu label="View" description="Zoom and navigate">
+            <WorkbenchMenuActionButton
+              label={theme === 'dark' ? 'Switch To Light' : 'Switch To Dark'}
+              onSelect={onToggleTheme}
+            />
             <WorkbenchMenuActionButton label="Zoom Out" onSelect={onZoomOut} />
             <WorkbenchMenuActionButton label="Zoom In" onSelect={onZoomIn} />
             <WorkbenchMenuActionButton label="Reset View" onSelect={onResetView} />

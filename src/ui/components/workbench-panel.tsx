@@ -202,6 +202,7 @@ interface WorkbenchPanelProps {
   summary?: string;
   pipelineLabel?: string;
   activeProjectState: Project;
+  theme: 'light' | 'dark';
   layout: Record<string, WorkbenchPosition>;
   layoutDirection: WorkbenchLayoutDirection;
   routingMode: WorkbenchRoutingMode;
@@ -282,6 +283,7 @@ interface WorkbenchPanelProps {
   onRequestDeleteSelection: () => void;
   onRequestUndo: () => void;
   onRequestRedo: () => void;
+  onToggleTheme: () => void;
   canUndo: boolean;
   canRedo: boolean;
   workspaceVersions: WorkspaceVersionDocument[];
@@ -348,6 +350,7 @@ export function WorkbenchPanel({
   summary,
   pipelineLabel,
   activeProjectState,
+  theme,
   layout,
   layoutDirection,
   routingMode,
@@ -428,6 +431,7 @@ export function WorkbenchPanel({
   onRequestDeleteSelection,
   onRequestUndo,
   onRequestRedo,
+  onToggleTheme,
   canUndo,
   canRedo,
   workspaceVersions,
@@ -1902,6 +1906,7 @@ export function WorkbenchPanel({
         <WorkbenchActions
           isCompositeEditor={isCompositeEditor}
           isObservationMode={isObservationMode}
+          theme={theme}
           layoutDirection={layoutDirection}
           routingMode={routingMode}
           wireColorMode={wireColorMode}
@@ -1933,6 +1938,7 @@ export function WorkbenchPanel({
           onToggleSnapToGuides={onSetSnapToGuides}
           onRequestUndo={onRequestUndo}
           onRequestRedo={onRequestRedo}
+          onToggleTheme={onToggleTheme}
           onZoomOut={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'out'))}
           onZoomIn={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'in'))}
           onResetView={() => {
