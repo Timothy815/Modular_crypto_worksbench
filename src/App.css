@@ -3561,6 +3561,24 @@ body.canvas-resizing {
   -webkit-backdrop-filter: blur(3px);
 }
 
+.graph-node--compact {
+  width: 120px;
+}
+
+.graph-node--compact .graph-node-body {
+  min-height: 90px;
+  padding: 12px 14px 10px;
+}
+
+.graph-node--roomy {
+  width: 172px;
+}
+
+.graph-node--roomy .graph-node-body {
+  min-height: 150px;
+  padding: 18px 18px 16px;
+}
+
 .graph-selection-box {
   position: absolute;
   border: 1.5px solid color-mix(in srgb, var(--role-bridge-strong) 78%, white);

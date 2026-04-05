@@ -99,6 +99,27 @@ const NODE_WIDTH = CANVAS_NODE_WIDTH;
 const NODE_HEIGHT = CANVAS_NODE_HEIGHT;
 const PORT_GAP = 18;
 const PORT_START_Y = 38;
+
+type NodeSizeClass = 'compact' | 'standard' | 'roomy';
+
+interface NodeSizeConfig {
+  width: number;
+  height: number;
+  portStartY: number;
+  portGap: number;
+}
+
+const NODE_SIZE_CONFIGS: Record<NodeSizeClass, NodeSizeConfig> = {
+  compact: { width: 120, height: 90, portStartY: 28, portGap: 18 },
+  standard: { width: NODE_WIDTH, height: NODE_HEIGHT, portStartY: PORT_START_Y, portGap: PORT_GAP },
+  roomy: { width: 172, height: 150, portStartY: 44, portGap: 20 },
+};
+
+function getNodeSizeClass(totalPorts: number): NodeSizeClass {
+  if (totalPorts <= 1) return 'compact';
+  if (totalPorts >= 5) return 'roomy';
+  return 'standard';
+}
 const PENDING_TARGET_HIT_HALF_WIDTH = 22;
 const PENDING_TARGET_HIT_HALF_HEIGHT = 16;
 const ANCHOR_INSERTION_HIT_TOLERANCE = 18;
@@ -150,8 +171,12 @@ interface PendingConnection {
   excludedConnectionIndex: number | null;
 }
 
-function getPortAnchorStyle(side: PortSide, portIndex: number): CSSProperties {
-  const offset = PORT_START_Y + portIndex * PORT_GAP;
+function getPortAnchorStyle(
+  side: PortSide,
+  portIndex: number,
+  config: NodeSizeConfig = NODE_SIZE_CONFIGS.standard,
+): CSSProperties {
+  const offset = config.portStartY + portIndex * config.portGap;
   if (side === 'top' || side === 'bottom') {
     return { left: `${offset}px` };
   }
@@ -953,6 +978,16 @@ export function WorkbenchPanel({
     () => buildIncomingConnectionIndexByInputKey(activeProjectState.connections),
     [activeProjectState.connections],
   );
+  const nodeSizeByModuleId = useMemo(() => {
+    const map: Record<string, { sizeClass: NodeSizeClass; config: NodeSizeConfig }> = {};
+    for (const moduleInstance of activeProjectState.modules) {
+      const def = registry[moduleInstance.defId];
+      const totalPorts = def ? def.inputs.length + def.outputs.length : 0;
+      const sizeClass = getNodeSizeClass(totalPorts);
+      map[moduleInstance.id] = { sizeClass, config: NODE_SIZE_CONFIGS[sizeClass] };
+    }
+    return map;
+  }, [activeProjectState.modules, registry]);
   const workspaceComparison = useMemo(
     () =>
       activeComparisonVersion
@@ -1789,6 +1824,7 @@ export function WorkbenchPanel({
           'in',
           port.name,
         );
+        const targetSizeConfig = nodeSizeByModuleId[moduleInstance.id]?.config ?? NODE_SIZE_CONFIGS.standard;
         anchors.push({
           key: `${moduleInstance.id}:${port.name}`,
           anchor: getAnchorPosition(
@@ -1796,10 +1832,10 @@ export function WorkbenchPanel({
             position.y,
             inputSide,
             sideIndex,
-            NODE_WIDTH,
-            NODE_HEIGHT,
-            PORT_START_Y,
-            PORT_GAP,
+            targetSizeConfig.width,
+            targetSizeConfig.height,
+            targetSizeConfig.portStartY,
+            targetSizeConfig.portGap,
           ),
           side: inputSide,
         });
@@ -1807,7 +1843,7 @@ export function WorkbenchPanel({
     }
 
     return anchors;
-  }, [activeProjectState.modules, effectiveLayout, layoutDirection, pendingConnection, registry]);
+  }, [activeProjectState.modules, effectiveLayout, layoutDirection, nodeSizeByModuleId, pendingConnection, registry]);
   useEffect(() => {
     if (!pendingConnection) {
       return undefined;
@@ -2015,15 +2051,16 @@ export function WorkbenchPanel({
       'out',
       portName,
     );
+    const sourceSizeConfig = nodeSizeByModuleId[moduleId]?.config ?? NODE_SIZE_CONFIGS.standard;
     const anchor = getAnchorPosition(
       pos.x,
       pos.y,
       sourceSide,
       sideIndex,
-      NODE_WIDTH,
-      NODE_HEIGHT,
-      PORT_START_Y,
-      PORT_GAP,
+      sourceSizeConfig.width,
+      sourceSizeConfig.height,
+      sourceSizeConfig.portStartY,
+      sourceSizeConfig.portGap,
     );
     setConnectionFeedback(null);
     setHoveredPortHintKey(null);
@@ -2073,15 +2110,16 @@ export function WorkbenchPanel({
       'out',
       connection.from.port,
     );
+    const rewireSizeConfig = nodeSizeByModuleId[connection.from.moduleId]?.config ?? NODE_SIZE_CONFIGS.standard;
     const sourceAnchor = getAnchorPosition(
       sourcePosition.x,
       sourcePosition.y,
       sourceSide,
       sourceAnchorIndex,
-      NODE_WIDTH,
-      NODE_HEIGHT,
-      PORT_START_Y,
-      PORT_GAP,
+      rewireSizeConfig.width,
+      rewireSizeConfig.height,
+      rewireSizeConfig.portStartY,
+      rewireSizeConfig.portGap,
     );
 
     setConnectionFeedback(null);
@@ -2253,25 +2291,27 @@ export function WorkbenchPanel({
       connection.to.port,
     );
     const connectionKey = getConnectionComparisonKey(connection);
+    const connSourceConfig = nodeSizeByModuleId[connection.from.moduleId]?.config ?? NODE_SIZE_CONFIGS.standard;
+    const connTargetConfig = nodeSizeByModuleId[connection.to.moduleId]?.config ?? NODE_SIZE_CONFIGS.standard;
     const sourceAnchor = getAnchorPosition(
       from.x,
       from.y,
       sourceSide,
       sourceAnchorIndex,
-      NODE_WIDTH,
-      NODE_HEIGHT,
-      PORT_START_Y,
-      PORT_GAP,
+      connSourceConfig.width,
+      connSourceConfig.height,
+      connSourceConfig.portStartY,
+      connSourceConfig.portGap,
     );
     const targetAnchor = getAnchorPosition(
       to.x,
       to.y,
       targetSide,
       targetAnchorIndex,
-      NODE_WIDTH,
-      NODE_HEIGHT,
-      PORT_START_Y,
-      PORT_GAP,
+      connTargetConfig.width,
+      connTargetConfig.height,
+      connTargetConfig.portStartY,
+      connTargetConfig.portGap,
     );
     const temporaryConnectionLayout =
       bendDragState?.connectionKey === connectionKey
@@ -2556,25 +2596,27 @@ export function WorkbenchPanel({
       connection.to.port,
     );
 
+    const hoverSourceConfig = nodeSizeByModuleId[connection.from.moduleId]?.config ?? NODE_SIZE_CONFIGS.standard;
+    const hoverTargetConfig = nodeSizeByModuleId[connection.to.moduleId]?.config ?? NODE_SIZE_CONFIGS.standard;
     const sourceAnchor = getAnchorPosition(
       from.x,
       from.y,
       sourceSide,
       sourceAnchorIndex,
-      NODE_WIDTH,
-      NODE_HEIGHT,
-      PORT_START_Y,
-      PORT_GAP,
+      hoverSourceConfig.width,
+      hoverSourceConfig.height,
+      hoverSourceConfig.portStartY,
+      hoverSourceConfig.portGap,
     );
     const targetAnchor = getAnchorPosition(
       to.x,
       to.y,
       targetSide,
       targetAnchorIndex,
-      NODE_WIDTH,
-      NODE_HEIGHT,
-      PORT_START_Y,
-      PORT_GAP,
+      hoverTargetConfig.width,
+      hoverTargetConfig.height,
+      hoverTargetConfig.portStartY,
+      hoverTargetConfig.portGap,
     );
 
     const midpointX = (sourceAnchor.x + targetAnchor.x) / 2;
@@ -3304,12 +3346,15 @@ export function WorkbenchPanel({
               position,
               orientation,
             );
+            const { sizeClass: nodeSizeClass, config: nodeSizeConfig } =
+              nodeSizeByModuleId[moduleInstance.id] ?? { sizeClass: 'standard', config: NODE_SIZE_CONFIGS.standard };
 
             return (
             <div
               key={moduleInstance.id}
                 className={
                   `graph-node graph-node-${category}` +
+                  (nodeSizeClass !== 'standard' ? ` graph-node--${nodeSizeClass}` : '') +
                   (moduleInstance.bypass ? ' graph-node-bypassed' : '') +
                   (selectedModuleIds.includes(moduleInstance.id) ? ' graph-node-selected' : '') +
                   (moduleInstance.id === selectedModuleId ? ' graph-node-primary-selected' : '') +
@@ -3561,7 +3606,7 @@ export function WorkbenchPanel({
                               ? ' graph-port-anchor-emphasized'
                               : ''
                           }`}
-                          style={getPortAnchorStyle(side, sideIndex)}
+                          style={getPortAnchorStyle(side, sideIndex, nodeSizeConfig)}
                           title={title}
                           onMouseEnter={() => {
                             if (!pendingConnection) {
@@ -3637,7 +3682,7 @@ export function WorkbenchPanel({
                             ? ' graph-port-anchor-emphasized'
                             : ''
                         }`}
-                        style={getPortAnchorStyle(side, sideIndex)}
+                        style={getPortAnchorStyle(side, sideIndex, nodeSizeConfig)}
                         title={
                           isCompositePortHintEligible(def) ? undefined : `${port.name}: ${port.type}`
                         }
