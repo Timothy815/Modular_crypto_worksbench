@@ -62,6 +62,11 @@ The route should become easier to organize without turning MCW into a CAD tool.
 - reset-to-auto-route behavior that clears all anchors
 - anchor cleanup when a wire is deleted
 
+V1 should stay intentionally small:
+- support up to 4 anchors per wire
+- stay on the existing selected-wire surface
+- avoid adding a second path editor or anchor-management panel
+
 This slice is for orthogonal routing only.
 
 ---
@@ -75,13 +80,13 @@ The feature only activates for the currently selected wire.
 ### Waypoint Mode
 
 When `Waypoint Mode` is on for a selected orthogonal wire:
-- clicking on the wire path inserts an anchor at that location
+- clicking near the selected wire inserts an anchor on the nearest valid orthogonal segment
 - clicking additional points on the wire can insert more anchors
 - dragging an anchor moves it
 - the path updates live while preserving orthogonal structure
 
 When `Waypoint Mode` is off:
-- anchors may be hidden
+- anchors are hidden
 - the authored path still remains in effect
 
 Do not overload the mode toggle with reset behavior.
@@ -90,16 +95,16 @@ Resetting to the automatic route should remain a separate explicit action.
 ### Anchor Editing
 
 Anchors must:
+- be visible only for the selected wire
+- be fully interactive only while `Waypoint Mode` is active
 - be visually obvious when the selected wire is editable
 - be individually draggable
 - remain snapped to the existing workspace grid
 
-V1 may allow anchor removal through either:
-- selecting an anchor and using delete/backspace
-- clicking an explicit small remove affordance
-- or a selected-wire action such as `Remove Last Anchor`
+V1 anchor removal should be single and explicit:
+- selecting an anchor and using `Backspace` / `Delete` removes that anchor
 
-The exact removal gesture may be chosen during implementation, but it must be discoverable.
+Do not introduce multiple competing removal gestures in V1.
 
 ---
 
@@ -112,8 +117,10 @@ The exact removal gesture may be chosen during implementation, but it must be di
    - zero or more authored anchors
    - target anchor
 4. The rendering logic must preserve a predictable orthogonal chain between those points.
-5. Anchor positions must be deterministic and grid-snapped.
-6. Existing lane preference should continue to matter only for unanchored or reset paths.
+5. Clicking near the selected wire must resolve deterministically to the nearest valid segment.
+6. The same click location on the same path should produce the same inserted segment choice.
+7. Anchor positions must be stored as an ordered per-connection anchor list.
+8. Existing lane preference should continue to matter only for unanchored or reset paths.
 
 ---
 
@@ -128,6 +135,13 @@ The exact removal gesture may be chosen during implementation, but it must be di
    - deleting a wire deletes all of its anchors
 7. It must not destabilize the reconnect flow that was just repaired.
 8. It must work with the existing selected-wire toolbar model.
+9. It must not reintroduce hover-driven reconnect instability; reconnect targeting must remain geometry-stable.
+10. Anchor insertion must use a bounded hit tolerance so it feels forgiving without causing accidental insertions.
+11. V1 must not exceed 4 anchors per wire.
+12. The selected-wire toolbar must stay minimal:
+   - `Waypoint Mode`
+   - `Reset Path`
+   - no separate anchor-management palette
 
 ---
 
@@ -165,12 +179,14 @@ Good directions:
 - keep the selected-wire toolbar as the entry point for mode toggling and reset
 - make anchor visibility and editability obvious only when relevant
 - preserve the stable reconnect targeting behavior already repaired
+- keep the first implementation small enough that it still feels like wire authoring, not path programming
 
 Bad directions:
 - reintroducing a hidden placement mode that finalizes unexpectedly
 - requiring the user to hunt for a tiny handle before anything meaningful happens
 - making the path-authoring interaction more abstract than the wire itself
 - broadening into generic CAD behavior
+- adding multiple overlapping ways to add, remove, or manage anchors
 
 ---
 
