@@ -1380,6 +1380,72 @@ describe('uiReducer', () => {
     expect(tidiedState.layoutByProject[projectId]?.output?.y).toBe(516);
   });
 
+  it('does nothing when tidying a selection with fewer than two modules', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const selectedState = uiReducer(initialState, {
+      type: 'selectModule',
+      projectId,
+      moduleId: 'clock',
+    });
+
+    const nextState = uiReducer(selectedState, {
+      type: 'tidySelectedModules',
+      projectId,
+    });
+
+    expect(nextState).toBe(selectedState);
+  });
+
+  it('tidies only the selected modules while keeping the lead selection anchored', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const scrambledState = uiReducer(initialState, {
+      type: 'moveModules',
+      projectId,
+      positions: {
+        clock: { x: 320, y: 180 },
+        lfsr: { x: 495, y: 264 },
+        decode: { x: 418, y: 338 },
+      },
+    });
+    const selectedState = uiReducer(
+      uiReducer(
+        uiReducer(scrambledState, {
+          type: 'selectModule',
+          projectId,
+          moduleId: 'clock',
+        }),
+        {
+          type: 'selectModule',
+          projectId,
+          moduleId: 'lfsr',
+          additive: true,
+        },
+      ),
+      {
+        type: 'selectModule',
+        projectId,
+        moduleId: 'decode',
+        additive: true,
+      },
+    );
+
+    const nextState = uiReducer(selectedState, {
+      type: 'tidySelectedModules',
+      projectId,
+    });
+
+    expect(nextState.layoutByProject[projectId]?.clock).toEqual({ x: -70, y: 338 });
+    expect(nextState.layoutByProject[projectId]?.lfsr).toEqual({ x: 174, y: 338 });
+    expect(nextState.layoutByProject[projectId]?.decode).toEqual({ x: 418, y: 338 });
+    expect(nextState.layoutByProject[projectId]?.output).toEqual(
+      selectedState.layoutByProject[projectId]?.output,
+    );
+    expect(nextState.selectedModuleIdByProject[projectId]).toBe('decode');
+    expect(nextState.selectedModuleIdsByProject[projectId]).toEqual(['clock', 'lfsr', 'decode']);
+  });
+
   it('adds modules below the selected module in vertical mode', () => {
     const initialState = createInitialUiState(demoProjects);
     const projectId = 'sequential';

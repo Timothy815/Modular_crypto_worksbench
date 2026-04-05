@@ -2923,6 +2923,14 @@ function MainApp() {
                     projectId: activeProjectDefinition.id,
                   })
             }
+            onTidySelection={() =>
+              isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'tidySelectedModules',
+                    projectId: activeProjectDefinition.id,
+                  })
+            }
             onSetLayoutDirection={(direction) =>
               isCompositeDrilldownActive
                 ? undefined

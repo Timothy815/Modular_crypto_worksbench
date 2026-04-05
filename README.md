@@ -44,10 +44,15 @@ The older `v2.1` builder-power queue is now largely present on `main` as shipped
 That means the next docket should now be chosen from bounded product-facing slices rather than the older authoring-power queue.
 
 The clearest immediate next candidate is now:
+- `LOCAL-WIRE-TIDY-V1.md`
+- a bounded selected-subgraph cleanup pass for improving local wire readability without disturbing the whole workspace
+- intended to reuse the existing tidy language on the current selection only
+- bounded to selection-scoped layout cleanup rather than a global auto-layout rewrite
+
+The previous dense-workspace crossing follow-on is now already shipped as:
 - `WIRE-CROSSING-DISCIPLINE-V1.md`
-- a bounded dense-workspace readability follow-on focused on making wire crossings easier to parse
-- intended to strengthen active-path hierarchy at intersections without changing routing semantics
-- bounded to presentation-layer crossing discipline rather than a routing rewrite
+- a bounded readability pass focused on stronger visual hierarchy at wire intersections
+- keeps the work presentation-only and stops short of routing or graph-layout changes
 
 The previous dense-workspace readability pass is now already shipped as:
 - `WIRE-LEGIBILITY-VISUAL-DISCIPLINE-V1.md`

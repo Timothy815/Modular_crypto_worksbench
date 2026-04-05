@@ -359,6 +359,7 @@ interface WorkbenchPanelProps {
   onImportDocument: (file: File) => void;
   onImportLabPack: (file: File) => void;
   onTidyLayout: () => void;
+  onTidySelection: () => void;
   onSetLayoutDirection: (direction: WorkbenchLayoutDirection) => void;
   onSetRoutingMode: (mode: WorkbenchRoutingMode) => void;
   onSetWireColorMode: (mode: WorkbenchWireColorMode) => void;
@@ -479,6 +480,7 @@ export function WorkbenchPanel({
   onImportDocument,
   onImportLabPack,
   onTidyLayout,
+  onTidySelection,
   onSetLayoutDirection,
   onSetRoutingMode,
   onSetWireColorMode,
@@ -2062,6 +2064,7 @@ export function WorkbenchPanel({
           onExportLabPack={onExportLabPack}
           onExportPython={onExportPython}
           onTidyLayout={onTidyLayout}
+          onTidySelection={onTidySelection}
           onSetLayoutDirection={onSetLayoutDirection}
           onSetRoutingMode={onSetRoutingMode}
           onSetWireColorMode={onSetWireColorMode}

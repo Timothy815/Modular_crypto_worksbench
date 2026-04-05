@@ -189,6 +189,7 @@ export type UiAction =
     }
   | { type: 'rotateModuleClockwise'; projectId: string; moduleId: string }
   | { type: 'tidyLayout'; projectId: string }
+  | { type: 'tidySelectedModules'; projectId: string }
   | {
       type: 'arrangeSelectedModules';
       projectId: string;
@@ -566,6 +567,7 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'moveModules',
   'rotateModuleClockwise',
   'tidyLayout',
+  'tidySelectedModules',
   'arrangeSelectedModules',
   'setOverviewNavigatorVisible',
   'restoreWorkspaceVersion',
@@ -1897,6 +1899,57 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
             currentLayout,
             state.layoutDirectionByProject[action.projectId] ?? 'horizontal',
           ),
+        },
+      };
+    }
+    case 'tidySelectedModules': {
+      if (state.compositeEditor) {
+        const nextLayout = createTidiedSelectedLayout(
+          state.compositeEditor.project,
+          state.compositeEditor.layout,
+          state.compositeEditor.selectedModuleIds,
+          state.compositeEditor.selectedModuleId,
+          'horizontal',
+        );
+
+        if (nextLayout === state.compositeEditor.layout) {
+          return state;
+        }
+
+        return {
+          ...state,
+          compositeEditor: {
+            ...state.compositeEditor,
+            layout: nextLayout,
+          },
+        };
+      }
+
+      const currentProject = state.projectStates[action.projectId];
+      const currentLayout = state.layoutByProject[action.projectId];
+      const selectedModuleIds = state.selectedModuleIdsByProject[action.projectId] ?? [];
+      const selectedModuleId = state.selectedModuleIdByProject[action.projectId] ?? null;
+      if (!currentProject || !currentLayout) {
+        return state;
+      }
+
+      const nextLayout = createTidiedSelectedLayout(
+        currentProject,
+        currentLayout,
+        selectedModuleIds,
+        selectedModuleId,
+        state.layoutDirectionByProject[action.projectId] ?? 'horizontal',
+      );
+
+      if (nextLayout === currentLayout) {
+        return state;
+      }
+
+      return {
+        ...state,
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: nextLayout,
         },
       };
     }
@@ -3822,6 +3875,81 @@ function createTidiedLayout(
         ]),
     ),
   );
+}
+
+function createTidiedSelectedLayout(
+  project: Project,
+  currentLayout: Record<string, CompositeLayoutPosition>,
+  selectedModuleIds: string[],
+  anchorModuleId: string | null,
+  direction: WorkbenchLayoutDirection,
+): Record<string, CompositeLayoutPosition> {
+  const normalizedSelectedModuleIds = selectedModuleIds.filter((moduleId) => currentLayout[moduleId]);
+  if (normalizedSelectedModuleIds.length < 2) {
+    return currentLayout;
+  }
+
+  const selectedModuleIdSet = new Set(normalizedSelectedModuleIds);
+  const selectedProject: Project = {
+    modules: project.modules.filter((moduleInstance) => selectedModuleIdSet.has(moduleInstance.id)),
+    connections: project.connections.filter(
+      (connection) =>
+        selectedModuleIdSet.has(connection.from.moduleId) &&
+        selectedModuleIdSet.has(connection.to.moduleId),
+    ),
+  };
+
+  if (selectedProject.modules.length < 2) {
+    return currentLayout;
+  }
+
+  const tidiedSelectedLayout = createTidiedLayout(selectedProject, currentLayout, direction);
+  const effectiveAnchorModuleId =
+    (anchorModuleId && selectedModuleIdSet.has(anchorModuleId) ? anchorModuleId : null) ??
+    normalizedSelectedModuleIds[0] ??
+    null;
+
+  const anchorId =
+    effectiveAnchorModuleId && tidiedSelectedLayout[effectiveAnchorModuleId]
+      ? effectiveAnchorModuleId
+      : selectedProject.modules[0]?.id ?? null;
+  if (!anchorId) {
+    return currentLayout;
+  }
+
+  const currentAnchorPosition = currentLayout[anchorId];
+  const tidiedAnchorPosition = tidiedSelectedLayout[anchorId];
+  if (!currentAnchorPosition || !tidiedAnchorPosition) {
+    return currentLayout;
+  }
+
+  const deltaX = currentAnchorPosition.x - tidiedAnchorPosition.x;
+  const deltaY = currentAnchorPosition.y - tidiedAnchorPosition.y;
+
+  let changed = false;
+  const nextLayout = { ...currentLayout };
+  for (const moduleId of normalizedSelectedModuleIds) {
+    const nextPosition = tidiedSelectedLayout[moduleId];
+    if (!nextPosition) {
+      continue;
+    }
+    const adjustedPosition = {
+      ...nextPosition,
+      x: nextPosition.x + deltaX,
+      y: nextPosition.y + deltaY,
+    };
+    const currentPosition = currentLayout[moduleId];
+    if (
+      !currentPosition ||
+      Math.abs(currentPosition.x - adjustedPosition.x) > 0.001 ||
+      Math.abs(currentPosition.y - adjustedPosition.y) > 0.001
+    ) {
+      changed = true;
+      nextLayout[moduleId] = adjustedPosition;
+    }
+  }
+
+  return changed ? nextLayout : currentLayout;
 }
 
 function applyCompositeEditorSelection(

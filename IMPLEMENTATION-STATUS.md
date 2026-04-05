@@ -1059,9 +1059,9 @@ Post-`v1.26.0` work merged to `main`:
 ## Safe Next Tasks
 
 Immediate bounded next product slice:
-- `WIRE-CROSSING-DISCIPLINE-V1.md`
-- focus on making dense wire crossings easier to parse through stronger visual hierarchy
-- keep the work UI-only and presentation-focused, with no routing rewrite or graph-semantics change
+- `LOCAL-WIRE-TIDY-V1.md`
+- focus on selection-scoped cleanup for dense subgraphs without disturbing the whole workspace
+- keep the work layout-local and history-safe, with no routing rewrite or graph-semantics change
 
 ### Claude
 

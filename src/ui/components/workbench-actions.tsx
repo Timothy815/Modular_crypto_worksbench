@@ -41,6 +41,7 @@ interface WorkbenchActionsProps {
   onExportLabPack: () => void;
   onExportPython: () => void;
   onTidyLayout: () => void;
+  onTidySelection: () => void;
   onSetLayoutDirection: (direction: WorkbenchLayoutDirection) => void;
   onSetRoutingMode: (mode: WorkbenchRoutingMode) => void;
   onSetWireColorMode: (mode: WorkbenchWireColorMode) => void;
@@ -579,6 +580,7 @@ export function WorkbenchActions({
   onExportLabPack,
   onExportPython,
   onTidyLayout,
+  onTidySelection,
   onSetLayoutDirection,
   onSetRoutingMode,
   onSetWireColorMode,
@@ -788,6 +790,11 @@ export function WorkbenchActions({
                 content={<WorkbenchInlineIcon name="stage-column" />}
                 title="Stack Selected Stage Column"
                 onSelect={() => onRequestArrangeSelection('stage-column')}
+              />
+              <WorkbenchInlineActionButton
+                content="Tidy"
+                title="Tidy Selection"
+                onSelect={onTidySelection}
               />
               <WorkbenchInlineActionButton
                 content={<WorkbenchInlineIcon name="align-left" />}
