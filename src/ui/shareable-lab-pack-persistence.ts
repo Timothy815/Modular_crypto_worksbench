@@ -84,12 +84,26 @@ function isConnectionLayoutMap(value: unknown) {
 
         const bend = (layout as { orthogonalBend?: { axis?: unknown; value?: unknown } })
           .orthogonalBend;
+        const anchors = (layout as { orthogonalAnchors?: Array<{ x?: unknown; y?: unknown }> })
+          .orthogonalAnchors;
         const lanePreference = (layout as { orthogonalLanePreference?: unknown })
           .orthogonalLanePreference;
         const colorOverride = (layout as { colorOverride?: unknown }).colorOverride;
         return (
           (bend === undefined ||
             ((bend.axis === 'x' || bend.axis === 'y') && typeof bend.value === 'number')) &&
+          (anchors === undefined ||
+            (Array.isArray(anchors) &&
+              anchors.length <= 4 &&
+              anchors.every(
+                (anchor) =>
+                  typeof anchor === 'object' &&
+                  anchor !== null &&
+                  typeof anchor.x === 'number' &&
+                  Number.isFinite(anchor.x) &&
+                  typeof anchor.y === 'number' &&
+                  Number.isFinite(anchor.y),
+              ))) &&
           (lanePreference === undefined ||
             lanePreference === 'negative' ||
             lanePreference === 'positive') &&

@@ -27,6 +27,7 @@ interface WorkbenchActionsProps {
   selectedFurnitureDetailSecondary: string | null;
   effectiveSelectedConnectionIndex: number | null;
   selectedConnectionHasManualPath: boolean;
+  selectedConnectionWaypointMode: boolean;
   selectedConnectionSourceLabel: string | null;
   selectedConnectionTargetLabel: string | null;
   selectedConnectionDomainTone: 'bits' | 'symbol' | null;
@@ -76,6 +77,7 @@ interface WorkbenchActionsProps {
   onRequestDuplicateSelection: () => void;
   onRequestDeleteSelection: () => void;
   onRequestDeleteWire: () => void;
+  onRequestToggleWireWaypointMode: () => void;
   onRequestResetWirePath: () => void;
   onRequestSetWireLanePreference: (preference: 'negative' | 'positive') => void;
   onRequestClearWireLanePreference: () => void;
@@ -566,6 +568,7 @@ export function WorkbenchActions({
   selectedFurnitureDetailSecondary,
   effectiveSelectedConnectionIndex,
   selectedConnectionHasManualPath,
+  selectedConnectionWaypointMode,
   selectedConnectionSourceLabel,
   selectedConnectionTargetLabel,
   selectedConnectionDomainTone,
@@ -603,6 +606,7 @@ export function WorkbenchActions({
   onRequestDuplicateSelection,
   onRequestDeleteSelection,
   onRequestDeleteWire,
+  onRequestToggleWireWaypointMode,
   onRequestResetWirePath,
   onRequestSetWireLanePreference,
   onRequestClearWireLanePreference,
@@ -880,6 +884,15 @@ export function WorkbenchActions({
                       tone={selectedConnectionColorOverride ? 'active' : 'neutral'}
                     />
                     <span className="workbench-inline-toolbar-divider" aria-hidden="true" />
+                    <WorkbenchInlineActionButton
+                      content="Waypoints"
+                      title={
+                        selectedConnectionWaypointMode ? 'Exit Waypoint Mode' : 'Enter Waypoint Mode'
+                      }
+                      onSelect={onRequestToggleWireWaypointMode}
+                      active={selectedConnectionWaypointMode}
+                      disabled={!canAdjustWireLane}
+                    />
                     <WorkbenchInlineActionButton
                       content={<WorkbenchInlineIcon name="delete-wire" />}
                       title="Delete Selected Wire"

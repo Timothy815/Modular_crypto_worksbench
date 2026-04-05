@@ -3492,6 +3492,19 @@ body.canvas-resizing {
   fill: color-mix(in srgb, var(--accent) 16%, white);
 }
 
+.connection-anchor-handle {
+  fill: color-mix(in srgb, var(--surface-panel) 88%, white);
+  stroke: color-mix(in srgb, var(--accent) 78%, var(--line));
+  stroke-width: 2;
+  cursor: move;
+  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--accent) 18%, transparent));
+}
+
+.connection-anchor-handle-selected {
+  fill: color-mix(in srgb, var(--accent) 18%, white);
+  stroke: color-mix(in srgb, var(--accent) 92%, white);
+}
+
 .pending-connection {
   stroke: var(--danger-text);
   stroke-width: 2.5;

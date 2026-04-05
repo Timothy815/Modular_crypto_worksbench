@@ -58,6 +58,7 @@ import {
 import { CANVAS_NODE_HEIGHT, CANVAS_NODE_WIDTH } from './canvas-selection';
 import { isLargeWorkspace } from './workspace-landmarks';
 import { clonePortOrder, movePortInOrder, type OrderedPortDirection } from './port-ordering';
+import { getConnectionComparisonKey } from './workspace-comparison';
 import { snapModulePositionToGuideRails } from './workbench-support';
 
 export interface UiState {
@@ -279,12 +280,25 @@ export type UiAction =
       value: number;
     }
   | {
+      type: 'setConnectionOrthogonalAnchors';
+      projectId: string;
+      connectionKey: string;
+      anchors: Array<{ x: number; y: number }>;
+    }
+  | {
       type: 'setConnectionLanePreference';
       projectId: string;
       connectionKey: string;
       preference: 'negative' | 'positive';
     }
   | { type: 'clearConnectionOrthogonalBend'; projectId: string; connectionKey: string }
+  | {
+      type: 'removeConnectionOrthogonalAnchor';
+      projectId: string;
+      connectionKey: string;
+      anchorIndex: number;
+    }
+  | { type: 'clearConnectionOrthogonalPathEdits'; projectId: string; connectionKey: string }
   | { type: 'clearConnectionLanePreference'; projectId: string; connectionKey: string }
   | {
       type: 'applyCopiedParams';
@@ -573,8 +587,11 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'removeConnection',
   'replaceConnection',
   'setConnectionOrthogonalBend',
+  'setConnectionOrthogonalAnchors',
   'setConnectionLanePreference',
   'clearConnectionOrthogonalBend',
+  'removeConnectionOrthogonalAnchor',
+  'clearConnectionOrthogonalPathEdits',
   'clearConnectionLanePreference',
   'applyCopiedParams',
   'updateParam',
@@ -1227,6 +1244,11 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
                   ...(layout.orthogonalBend
                     ? { orthogonalBend: { ...layout.orthogonalBend } }
                     : {}),
+                  ...(layout.orthogonalAnchors
+                    ? {
+                        orthogonalAnchors: layout.orthogonalAnchors.map((anchor) => ({ ...anchor })),
+                      }
+                    : {}),
                   ...(layout.orthogonalLanePreference
                     ? { orthogonalLanePreference: layout.orthogonalLanePreference }
                     : {}),
@@ -1772,6 +1794,13 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         ...(currentConnectionLayout.orthogonalBend
           ? { orthogonalBend: currentConnectionLayout.orthogonalBend }
           : {}),
+        ...(currentConnectionLayout.orthogonalAnchors?.length
+          ? {
+              orthogonalAnchors: currentConnectionLayout.orthogonalAnchors.map((anchor) => ({
+                ...anchor,
+              })),
+            }
+          : {}),
         ...(currentConnectionLayout.orthogonalLanePreference
           ? { orthogonalLanePreference: currentConnectionLayout.orthogonalLanePreference }
           : {}),
@@ -1838,6 +1867,55 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         },
       };
     }
+    case 'setConnectionOrthogonalAnchors': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const nextAnchors = action.anchors
+        .slice(0, 4)
+        .map((anchor) => ({ x: anchor.x, y: anchor.y }));
+      const currentLayout = state.connectionLayoutByProject[action.projectId] ?? {};
+      const currentAnchors = currentLayout[action.connectionKey]?.orthogonalAnchors ?? [];
+      if (
+        currentAnchors.length === nextAnchors.length &&
+        currentAnchors.every(
+          (anchor, index) =>
+            Math.abs(anchor.x - nextAnchors[index].x) < 0.001 &&
+            Math.abs(anchor.y - nextAnchors[index].y) < 0.001,
+        )
+      ) {
+        return state;
+      }
+
+      const nextProjectLayout = { ...currentLayout };
+      const nextEntry = {
+        ...(currentLayout[action.connectionKey]?.orthogonalLanePreference
+          ? {
+              orthogonalLanePreference:
+                currentLayout[action.connectionKey]?.orthogonalLanePreference,
+            }
+          : {}),
+        ...(currentLayout[action.connectionKey]?.colorOverride
+          ? { colorOverride: currentLayout[action.connectionKey]?.colorOverride }
+          : {}),
+        ...(nextAnchors.length > 0 ? { orthogonalAnchors: nextAnchors } : {}),
+      };
+
+      if (Object.keys(nextEntry).length > 0) {
+        nextProjectLayout[action.connectionKey] = nextEntry;
+      } else {
+        delete nextProjectLayout[action.connectionKey];
+      }
+
+      return {
+        ...state,
+        connectionLayoutByProject: {
+          ...state.connectionLayoutByProject,
+          [action.projectId]: nextProjectLayout,
+        },
+      };
+    }
     case 'clearConnectionOrthogonalBend': {
       if (state.compositeEditor) {
         return state;
@@ -1850,9 +1928,108 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       }
 
       const nextConnectionLayout = { ...currentLayout };
-      if (currentConnectionLayout.orthogonalLanePreference) {
+      if (
+        currentConnectionLayout.orthogonalLanePreference ||
+        currentConnectionLayout.colorOverride ||
+        currentConnectionLayout.orthogonalAnchors?.length
+      ) {
         nextConnectionLayout[action.connectionKey] = {
-          orthogonalLanePreference: currentConnectionLayout.orthogonalLanePreference,
+          ...(currentConnectionLayout.orthogonalAnchors?.length
+            ? {
+                orthogonalAnchors: currentConnectionLayout.orthogonalAnchors.map((anchor) => ({
+                  ...anchor,
+                })),
+              }
+            : {}),
+          ...(currentConnectionLayout.orthogonalLanePreference
+            ? { orthogonalLanePreference: currentConnectionLayout.orthogonalLanePreference }
+            : {}),
+          ...(currentConnectionLayout.colorOverride
+            ? { colorOverride: currentConnectionLayout.colorOverride }
+            : {}),
+        };
+      } else {
+        delete nextConnectionLayout[action.connectionKey];
+      }
+
+      return {
+        ...state,
+        connectionLayoutByProject: {
+          ...state.connectionLayoutByProject,
+          [action.projectId]: nextConnectionLayout,
+        },
+      };
+    }
+    case 'removeConnectionOrthogonalAnchor': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentLayout = state.connectionLayoutByProject[action.projectId] ?? {};
+      const currentConnectionLayout = currentLayout[action.connectionKey];
+      const currentAnchors = currentConnectionLayout?.orthogonalAnchors ?? [];
+      if (
+        action.anchorIndex < 0 ||
+        action.anchorIndex >= currentAnchors.length
+      ) {
+        return state;
+      }
+
+      const nextAnchors = currentAnchors.filter((_, index) => index !== action.anchorIndex);
+      const nextConnectionLayout = { ...currentLayout };
+      if (
+        nextAnchors.length > 0 ||
+        currentConnectionLayout?.orthogonalLanePreference ||
+        currentConnectionLayout?.colorOverride
+      ) {
+        nextConnectionLayout[action.connectionKey] = {
+          ...(nextAnchors.length > 0 ? { orthogonalAnchors: nextAnchors } : {}),
+          ...(currentConnectionLayout?.orthogonalLanePreference
+            ? { orthogonalLanePreference: currentConnectionLayout.orthogonalLanePreference }
+            : {}),
+          ...(currentConnectionLayout?.colorOverride
+            ? { colorOverride: currentConnectionLayout.colorOverride }
+            : {}),
+        };
+      } else {
+        delete nextConnectionLayout[action.connectionKey];
+      }
+
+      return {
+        ...state,
+        connectionLayoutByProject: {
+          ...state.connectionLayoutByProject,
+          [action.projectId]: nextConnectionLayout,
+        },
+      };
+    }
+    case 'clearConnectionOrthogonalPathEdits': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentLayout = state.connectionLayoutByProject[action.projectId] ?? {};
+      const currentConnectionLayout = currentLayout[action.connectionKey];
+      if (
+        !currentConnectionLayout?.orthogonalBend &&
+        (!currentConnectionLayout?.orthogonalAnchors ||
+          currentConnectionLayout.orthogonalAnchors.length === 0)
+      ) {
+        return state;
+      }
+
+      const nextConnectionLayout = { ...currentLayout };
+      if (
+        currentConnectionLayout.orthogonalLanePreference ||
+        currentConnectionLayout.colorOverride
+      ) {
+        nextConnectionLayout[action.connectionKey] = {
+          ...(currentConnectionLayout.orthogonalLanePreference
+            ? { orthogonalLanePreference: currentConnectionLayout.orthogonalLanePreference }
+            : {}),
+          ...(currentConnectionLayout.colorOverride
+            ? { colorOverride: currentConnectionLayout.colorOverride }
+            : {}),
         };
       } else {
         delete nextConnectionLayout[action.connectionKey];
@@ -1903,9 +2080,25 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       }
 
       const nextConnectionLayout = { ...currentLayout };
-      if (currentConnectionLayout.orthogonalBend) {
+      if (
+        currentConnectionLayout.orthogonalBend ||
+        currentConnectionLayout.orthogonalAnchors?.length ||
+        currentConnectionLayout.colorOverride
+      ) {
         nextConnectionLayout[action.connectionKey] = {
-          orthogonalBend: currentConnectionLayout.orthogonalBend,
+          ...(currentConnectionLayout.orthogonalBend
+            ? { orthogonalBend: currentConnectionLayout.orthogonalBend }
+            : {}),
+          ...(currentConnectionLayout.orthogonalAnchors?.length
+            ? {
+                orthogonalAnchors: currentConnectionLayout.orthogonalAnchors.map((anchor) => ({
+                  ...anchor,
+                })),
+              }
+            : {}),
+          ...(currentConnectionLayout.colorOverride
+            ? { colorOverride: currentConnectionLayout.colorOverride }
+            : {}),
         };
       } else {
         delete nextConnectionLayout[action.connectionKey];
@@ -2909,12 +3102,22 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       }
 
       const nextProject = cloneProject(currentProject);
-      nextProject.connections = nextProject.connections.filter(
-        (_, i) => i !== action.connectionIndex,
-      );
+      const removedConnection = nextProject.connections[action.connectionIndex];
+      nextProject.connections = nextProject.connections.filter((_, i) => i !== action.connectionIndex);
+      const nextConnectionLayoutByProject = { ...state.connectionLayoutByProject };
+      if (removedConnection) {
+        const currentLayout = nextConnectionLayoutByProject[action.projectId] ?? {};
+        const removedKey = getConnectionComparisonKey(removedConnection);
+        if (removedKey in currentLayout) {
+          const nextLayout = { ...currentLayout };
+          delete nextLayout[removedKey];
+          nextConnectionLayoutByProject[action.projectId] = nextLayout;
+        }
+      }
 
       return {
         ...state,
+        connectionLayoutByProject: nextConnectionLayoutByProject,
         projectStates: {
           ...state.projectStates,
           [action.projectId]: nextProject,
@@ -2952,6 +3155,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       }
 
       const uniqueRemovals = [...new Set(action.removeConnectionIndices)].sort((a, b) => a - b);
+      const removedKeys = uniqueRemovals
+        .map((index) => currentProject.connections[index])
+        .filter((connection): connection is Project['connections'][number] => Boolean(connection))
+        .map((connection) => getConnectionComparisonKey(connection));
       const nextConnections = currentProject.connections.filter(
         (_, index) => !uniqueRemovals.includes(index),
       );
@@ -2974,9 +3181,18 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           to: { moduleId: action.toModuleId, port: action.toPort },
         },
       ];
+      const currentLayout = state.connectionLayoutByProject[action.projectId] ?? {};
+      const nextLayout = { ...currentLayout };
+      removedKeys.forEach((key) => {
+        delete nextLayout[key];
+      });
 
       return {
         ...state,
+        connectionLayoutByProject: {
+          ...state.connectionLayoutByProject,
+          [action.projectId]: nextLayout,
+        },
         projectStates: {
           ...state.projectStates,
           [action.projectId]: nextProject,
@@ -3244,6 +3460,11 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
                 {
                   ...(layout.orthogonalBend
                     ? { orthogonalBend: { ...layout.orthogonalBend } }
+                    : {}),
+                  ...(layout.orthogonalAnchors
+                    ? {
+                        orthogonalAnchors: layout.orthogonalAnchors.map((anchor) => ({ ...anchor })),
+                      }
                     : {}),
                   ...(layout.orthogonalLanePreference
                     ? { orthogonalLanePreference: layout.orthogonalLanePreference }

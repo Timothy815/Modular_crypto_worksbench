@@ -17,6 +17,19 @@ const ORTHOGONAL_BEND_NO_OP_EPSILON_PX = 2;
 const GUIDE_SNAP_THRESHOLD_PX = 30;
 const DRAG_ALIGNMENT_GUIDE_THRESHOLD_PX = 16;
 
+export interface OrthogonalEditableSegment {
+  index: number;
+  insertIndex: number;
+  start: { x: number; y: number };
+  end: { x: number; y: number };
+}
+
+export interface OrthogonalAnchorHandle {
+  index: number;
+  x: number;
+  y: number;
+}
+
 export interface DragAlignmentGuide {
   axis: 'x' | 'y';
   position: number;
@@ -370,6 +383,228 @@ function buildRoundedOrthogonalPath(points: Array<{ x: number; y: number }>) {
   return commands.join(' ');
 }
 
+function appendOrthogonalSegment(
+  points: Array<{ x: number; y: number }>,
+  end: { x: number; y: number },
+  preferredAxis: 'x' | 'y',
+) {
+  const current = points.at(-1);
+  if (!current) {
+    points.push(end);
+    return;
+  }
+
+  if (current.x === end.x && current.y === end.y) {
+    return;
+  }
+
+  if (current.x === end.x || current.y === end.y) {
+    points.push(end);
+    return;
+  }
+
+  const previous = points.length >= 2 ? points[points.length - 2] : null;
+  let elbow: { x: number; y: number };
+
+  if (previous) {
+    const previousAxis = previous.x === current.x ? 'y' : 'x';
+    elbow =
+      previousAxis === 'x'
+        ? { x: current.x, y: end.y }
+        : { x: end.x, y: current.y };
+  } else {
+    elbow =
+      preferredAxis === 'x'
+        ? { x: end.x, y: current.y }
+        : { x: current.x, y: end.y };
+  }
+
+  if (elbow.x !== current.x || elbow.y !== current.y) {
+    points.push(elbow);
+  }
+  points.push(end);
+}
+
+function getOrthogonalChainPoints(
+  sourceAnchor: { x: number; y: number },
+  sourceSide: PortSide,
+  targetAnchor: { x: number; y: number },
+  targetSide: PortSide,
+  sourceIndex: number,
+  targetIndex: number,
+  connectionLayout?: WorkbenchConnectionLayout | null,
+) {
+  const sourceVector = getSideVector(sourceSide);
+  const targetVector = getSideVector(targetSide);
+  const laneOffset = getLaneOffset(sourceIndex, targetIndex);
+  const sourceExit = {
+    x: sourceAnchor.x + sourceVector.x * ORTHOGONAL_STEP_BACK_PX,
+    y: sourceAnchor.y + sourceVector.y * ORTHOGONAL_STEP_BACK_PX,
+  };
+  const targetEntry = {
+    x: targetAnchor.x + targetVector.x * ORTHOGONAL_STEP_BACK_PX,
+    y: targetAnchor.y + targetVector.y * ORTHOGONAL_STEP_BACK_PX,
+  };
+  const anchorPoints =
+    connectionLayout?.orthogonalAnchors?.map((anchor) => ({ x: anchor.x, y: anchor.y })) ?? [];
+
+  if (anchorPoints.length === 0) {
+    if (sourceExit.x === targetEntry.x || sourceExit.y === targetEntry.y) {
+      return {
+        points: [sourceAnchor, sourceExit, targetEntry, targetAnchor],
+        bendHandle: null,
+        anchorHandles: [] as OrthogonalAnchorHandle[],
+        editableSegments: [
+          {
+            index: 0,
+            insertIndex: 0,
+            start: sourceExit,
+            end: targetEntry,
+          },
+        ] as OrthogonalEditableSegment[],
+      };
+    }
+
+    if (sourceSide === 'left' || sourceSide === 'right') {
+      const autoValue =
+        (sourceExit.x + targetEntry.x) / 2
+        + laneOffset
+        + getLanePreferenceOffset(connectionLayout?.orthogonalLanePreference);
+      const bendValue =
+        connectionLayout?.orthogonalBend?.axis === 'x' &&
+        Number.isFinite(connectionLayout.orthogonalBend.value)
+          ? connectionLayout.orthogonalBend.value
+          : autoValue;
+      return {
+        points: [
+          sourceAnchor,
+          sourceExit,
+          { x: bendValue, y: sourceExit.y },
+          { x: bendValue, y: targetEntry.y },
+          targetEntry,
+          targetAnchor,
+        ],
+        bendHandle: {
+          axis: 'x' as const,
+          value: bendValue,
+          autoValue,
+          x: bendValue,
+          y: (sourceExit.y + targetEntry.y) / 2,
+        },
+        anchorHandles: [] as OrthogonalAnchorHandle[],
+        editableSegments: [
+          {
+            index: 0,
+            insertIndex: 0,
+            start: sourceExit,
+            end: { x: bendValue, y: sourceExit.y },
+          },
+          {
+            index: 1,
+            insertIndex: 0,
+            start: { x: bendValue, y: sourceExit.y },
+            end: { x: bendValue, y: targetEntry.y },
+          },
+          {
+            index: 2,
+            insertIndex: 0,
+            start: { x: bendValue, y: targetEntry.y },
+            end: targetEntry,
+          },
+        ] as OrthogonalEditableSegment[],
+      };
+    }
+
+    const autoValue =
+      (sourceExit.y + targetEntry.y) / 2
+      + laneOffset
+      + getLanePreferenceOffset(connectionLayout?.orthogonalLanePreference);
+    const bendValue =
+      connectionLayout?.orthogonalBend?.axis === 'y' &&
+      Number.isFinite(connectionLayout.orthogonalBend.value)
+        ? connectionLayout.orthogonalBend.value
+        : autoValue;
+    return {
+      points: [
+        sourceAnchor,
+        sourceExit,
+        { x: sourceExit.x, y: bendValue },
+        { x: targetEntry.x, y: bendValue },
+        targetEntry,
+        targetAnchor,
+      ],
+      bendHandle: {
+        axis: 'y' as const,
+        value: bendValue,
+        autoValue,
+        x: (sourceExit.x + targetEntry.x) / 2,
+        y: bendValue,
+      },
+      anchorHandles: [] as OrthogonalAnchorHandle[],
+      editableSegments: [
+        {
+          index: 0,
+          insertIndex: 0,
+          start: sourceExit,
+          end: { x: sourceExit.x, y: bendValue },
+        },
+        {
+          index: 1,
+          insertIndex: 0,
+          start: { x: sourceExit.x, y: bendValue },
+          end: { x: targetEntry.x, y: bendValue },
+        },
+        {
+          index: 2,
+          insertIndex: 0,
+          start: { x: targetEntry.x, y: bendValue },
+          end: targetEntry,
+        },
+      ] as OrthogonalEditableSegment[],
+    };
+  }
+
+  const points = [sourceAnchor, sourceExit];
+  for (const anchor of anchorPoints) {
+    appendOrthogonalSegment(points, anchor, sourceSide === 'left' || sourceSide === 'right' ? 'x' : 'y');
+  }
+  appendOrthogonalSegment(
+    points,
+    targetEntry,
+    sourceSide === 'left' || sourceSide === 'right' ? 'x' : 'y',
+  );
+  points.push(targetAnchor);
+
+  const editableSegments: OrthogonalEditableSegment[] = [];
+  let insertIndex = 0;
+  for (let index = 1; index < points.length - 2; index += 1) {
+    const start = points[index];
+    const end = points[index + 1];
+    if (start.x === end.x || start.y === end.y) {
+      editableSegments.push({
+        index: editableSegments.length,
+        insertIndex,
+        start,
+        end,
+      });
+    }
+    if (anchorPoints.some((anchor) => anchor.x === end.x && anchor.y === end.y)) {
+      insertIndex += 1;
+    }
+  }
+
+  return {
+    points,
+    bendHandle: null,
+    anchorHandles: anchorPoints.map((anchor, index) => ({
+      index,
+      x: anchor.x,
+      y: anchor.y,
+    })),
+    editableSegments,
+  };
+}
+
 export function getOrthogonalPath(
   sourceAnchor: { x: number; y: number },
   sourceSide: PortSide,
@@ -397,79 +632,21 @@ export function getOrthogonalPathData(
   targetIndex: number,
   connectionLayout?: WorkbenchConnectionLayout | null,
 ) {
-  const sourceVector = getSideVector(sourceSide);
-  const targetVector = getSideVector(targetSide);
-  const laneOffset = getLaneOffset(sourceIndex, targetIndex);
-  const sourceExit = {
-    x: sourceAnchor.x + sourceVector.x * ORTHOGONAL_STEP_BACK_PX,
-    y: sourceAnchor.y + sourceVector.y * ORTHOGONAL_STEP_BACK_PX,
-  };
-  const targetEntry = {
-    x: targetAnchor.x + targetVector.x * ORTHOGONAL_STEP_BACK_PX,
-    y: targetAnchor.y + targetVector.y * ORTHOGONAL_STEP_BACK_PX,
-  };
+  const chain = getOrthogonalChainPoints(
+    sourceAnchor,
+    sourceSide,
+    targetAnchor,
+    targetSide,
+    sourceIndex,
+    targetIndex,
+    connectionLayout,
+  );
 
-  if (sourceExit.x === targetEntry.x || sourceExit.y === targetEntry.y) {
-    return {
-      path: buildRoundedOrthogonalPath([sourceAnchor, sourceExit, targetEntry, targetAnchor]),
-      bendHandle: null,
-    };
-  }
-
-  if (sourceSide === 'left' || sourceSide === 'right') {
-    const autoValue =
-      (sourceExit.x + targetEntry.x) / 2
-      + laneOffset
-      + getLanePreferenceOffset(connectionLayout?.orthogonalLanePreference);
-    const bendValue =
-      connectionLayout?.orthogonalBend?.axis === 'x' &&
-      Number.isFinite(connectionLayout.orthogonalBend.value)
-        ? connectionLayout.orthogonalBend.value
-        : autoValue;
-    return {
-      path: buildRoundedOrthogonalPath([
-        sourceAnchor,
-        sourceExit,
-        { x: bendValue, y: sourceExit.y },
-        { x: bendValue, y: targetEntry.y },
-        targetEntry,
-        targetAnchor,
-      ]),
-      bendHandle: {
-        axis: 'x' as const,
-        value: bendValue,
-        autoValue,
-        x: bendValue,
-        y: (sourceExit.y + targetEntry.y) / 2,
-      },
-    };
-  }
-
-  const autoValue =
-    (sourceExit.y + targetEntry.y) / 2
-    + laneOffset
-    + getLanePreferenceOffset(connectionLayout?.orthogonalLanePreference);
-  const bendValue =
-    connectionLayout?.orthogonalBend?.axis === 'y' &&
-    Number.isFinite(connectionLayout.orthogonalBend.value)
-      ? connectionLayout.orthogonalBend.value
-      : autoValue;
   return {
-    path: buildRoundedOrthogonalPath([
-      sourceAnchor,
-      sourceExit,
-      { x: sourceExit.x, y: bendValue },
-      { x: targetEntry.x, y: bendValue },
-      targetEntry,
-      targetAnchor,
-    ]),
-    bendHandle: {
-      axis: 'y' as const,
-      value: bendValue,
-      autoValue,
-      x: (sourceExit.x + targetEntry.x) / 2,
-      y: bendValue,
-    },
+    path: buildRoundedOrthogonalPath(chain.points),
+    bendHandle: chain.bendHandle,
+    anchorHandles: chain.anchorHandles,
+    editableSegments: chain.editableSegments,
   };
 }
 

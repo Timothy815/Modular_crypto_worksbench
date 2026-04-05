@@ -100,6 +100,7 @@ const PORT_GAP = 18;
 const PORT_START_Y = 34;
 const PENDING_TARGET_HIT_HALF_WIDTH = 22;
 const PENDING_TARGET_HIT_HALF_HEIGHT = 16;
+const ANCHOR_INSERTION_HIT_TOLERANCE = 18;
 const DEFAULT_CANVAS_VIEWPORT_HEIGHT = 520;
 const MIN_CANVAS_VIEWPORT_HEIGHT = 360;
 const MAX_CANVAS_VIEWPORT_HEIGHT = 1200;
@@ -233,6 +234,31 @@ function getOrthogonalConnectionVisualOffset(
   return sourceSide === 'left' || sourceSide === 'right'
     ? { x: 0, y: magnitude }
     : { x: magnitude, y: 0 };
+}
+
+function getNearestPointOnOrthogonalSegment(
+  point: { x: number; y: number },
+  segment: { start: { x: number; y: number }; end: { x: number; y: number } },
+) {
+  if (segment.start.x === segment.end.x) {
+    const minY = Math.min(segment.start.y, segment.end.y);
+    const maxY = Math.max(segment.start.y, segment.end.y);
+    const y = Math.max(minY, Math.min(maxY, point.y));
+    return {
+      x: segment.start.x,
+      y,
+      distance: Math.abs(point.x - segment.start.x),
+    };
+  }
+
+  const minX = Math.min(segment.start.x, segment.end.x);
+  const maxX = Math.max(segment.start.x, segment.end.x);
+  const x = Math.max(minX, Math.min(maxX, point.x));
+  return {
+    x,
+    y: segment.start.y,
+    distance: Math.abs(point.y - segment.start.y),
+  };
 }
 
 function getOrderedModulePorts(
@@ -374,7 +400,13 @@ interface WorkbenchPanelProps {
     axis: 'x' | 'y',
     value: number,
   ) => void;
+  onSetConnectionOrthogonalAnchors: (
+    connectionKey: string,
+    anchors: Array<{ x: number; y: number }>,
+  ) => void;
+  onRemoveConnectionOrthogonalAnchor: (connectionKey: string, anchorIndex: number) => void;
   onClearConnectionOrthogonalBend: (connectionKey: string) => void;
+  onClearConnectionOrthogonalPathEdits: (connectionKey: string) => void;
   onSetConnectionLanePreference: (
     connectionKey: string,
     preference: 'negative' | 'positive',
@@ -501,7 +533,10 @@ export function WorkbenchPanel({
   onReplaceConnection,
   onRemoveConnection,
   onSetConnectionOrthogonalBend,
+  onSetConnectionOrthogonalAnchors,
+  onRemoveConnectionOrthogonalAnchor,
   onClearConnectionOrthogonalBend,
+  onClearConnectionOrthogonalPathEdits,
   onSetConnectionLanePreference,
   onClearConnectionLanePreference,
   onSetConnectionColorOverride,
@@ -590,6 +625,16 @@ export function WorkbenchPanel({
     axis: 'x' | 'y';
     autoValue: number;
     currentValue: number;
+  } | null>(null);
+  const [waypointModeConnectionKey, setWaypointModeConnectionKey] = useState<string | null>(null);
+  const [selectedConnectionAnchorIndex, setSelectedConnectionAnchorIndex] = useState<number | null>(
+    null,
+  );
+  const [anchorDragState, setAnchorDragState] = useState<{
+    connectionKey: string;
+    anchorIndex: number;
+    currentX: number;
+    currentY: number;
   } | null>(null);
   const [selectionBox, setSelectionBox] = useState<{
     startX: number;
@@ -867,8 +912,24 @@ export function WorkbenchPanel({
     effectiveSelectedConnectionIndex !== null
       ? getConnectionComparisonKey(activeProjectState.connections[effectiveSelectedConnectionIndex])
       : null;
+  const selectedConnectionWaypointMode =
+    routingMode === 'orthogonal' &&
+    selectedConnectionKey !== null &&
+    waypointModeConnectionKey === selectedConnectionKey;
+  const selectedConnectionAnchors =
+    selectedConnectionKey !== null
+      ? connectionLayout[selectedConnectionKey]?.orthogonalAnchors ?? []
+      : [];
+  const effectiveSelectedConnectionAnchorIndex =
+    selectedConnectionAnchorIndex !== null &&
+    selectedConnectionAnchorIndex >= 0 &&
+    selectedConnectionAnchorIndex < selectedConnectionAnchors.length
+      ? selectedConnectionAnchorIndex
+      : null;
   const selectedConnectionHasManualPath = Boolean(
-    selectedConnectionKey && connectionLayout[selectedConnectionKey]?.orthogonalBend,
+    selectedConnectionKey &&
+      (connectionLayout[selectedConnectionKey]?.orthogonalBend ||
+        (connectionLayout[selectedConnectionKey]?.orthogonalAnchors?.length ?? 0) > 0),
   );
   const selectedConnectionLanePreference =
     selectedConnectionKey
@@ -1131,6 +1192,7 @@ export function WorkbenchPanel({
       !groupBoxDragState &&
       !groupBoxResizeState &&
       !bendDragState &&
+      !anchorDragState &&
       !selectionBox
     ) {
       return undefined;
@@ -1350,6 +1412,27 @@ export function WorkbenchPanel({
         );
       }
 
+      if (anchorDragState) {
+        const pointer = getCanvasViewportPoint({
+          clientX: event.clientX,
+          clientY: event.clientY,
+          canvasLeft: canvasRect.left,
+          canvasTop: canvasRect.top,
+          scrollLeft: canvasSurface.scrollLeft,
+          scrollTop: canvasSurface.scrollTop,
+          zoom: workspaceZoom,
+        });
+        setAnchorDragState((prev) =>
+          prev
+            ? {
+                ...prev,
+                currentX: snapCoordinateToGrid(pointer.x),
+                currentY: snapCoordinateToGrid(pointer.y),
+              }
+            : null,
+        );
+      }
+
       if (selectionBox) {
         const pointer = getCanvasViewportPoint({
           clientX: event.clientX,
@@ -1480,6 +1563,15 @@ export function WorkbenchPanel({
           );
         }
       }
+      if (anchorDragState) {
+        const currentAnchors = connectionLayout[anchorDragState.connectionKey]?.orthogonalAnchors ?? [];
+        const nextAnchors = currentAnchors.map((anchor, index) =>
+          index === anchorDragState.anchorIndex
+            ? { x: anchorDragState.currentX, y: anchorDragState.currentY }
+            : anchor,
+        );
+        onSetConnectionOrthogonalAnchors(anchorDragState.connectionKey, nextAnchors);
+      }
       setDragState(null);
       setAnnotationDragState(null);
       setStageLabelDragState(null);
@@ -1487,6 +1579,7 @@ export function WorkbenchPanel({
       setGroupBoxDragState(null);
       setGroupBoxResizeState(null);
       setBendDragState(null);
+      setAnchorDragState(null);
       setSelectionBox(null);
     }
 
@@ -1500,7 +1593,9 @@ export function WorkbenchPanel({
   }, [
     activeProjectState.modules,
     annotationDragState,
+    anchorDragState,
     bendDragState,
+    connectionLayout,
     dragState,
     effectiveLayout,
     guideRailDragState,
@@ -1516,6 +1611,7 @@ export function WorkbenchPanel({
     onMoveModule,
     onMoveModules,
     onResizeGroupBox,
+    onSetConnectionOrthogonalAnchors,
     onSetConnectionOrthogonalBend,
     onSelectModules,
     selectionBox,
@@ -1735,6 +1831,46 @@ export function WorkbenchPanel({
       hoveredTargetState,
     };
   }, [hoveredPendingTargetKey, pendingConnection, targetPortStates]);
+
+  useEffect(() => {
+    if (
+      !selectedConnectionWaypointMode ||
+      !selectedConnectionKey ||
+      effectiveSelectedConnectionAnchorIndex === null
+    ) {
+      return undefined;
+    }
+    const activeConnectionKey = selectedConnectionKey;
+    const activeAnchorIndex = effectiveSelectedConnectionAnchorIndex;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Backspace' && event.key !== 'Delete') {
+        return;
+      }
+
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      onRemoveConnectionOrthogonalAnchor(activeConnectionKey, activeAnchorIndex);
+      setSelectedConnectionAnchorIndex(null);
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    onRemoveConnectionOrthogonalAnchor,
+    selectedConnectionKey,
+    selectedConnectionWaypointMode,
+    effectiveSelectedConnectionAnchorIndex,
+  ]);
 
   const moduleIssueCountById = useMemo(() => buildModuleIssueCountById(validationIssues), [validationIssues]);
 
@@ -2007,6 +2143,27 @@ export function WorkbenchPanel({
       PORT_START_Y,
       PORT_GAP,
     );
+    const temporaryConnectionLayout =
+      bendDragState?.connectionKey === connectionKey
+        ? {
+            ...(connectionLayout[connectionKey] ?? {}),
+            orthogonalBend: {
+              axis: bendDragState.axis,
+              value: bendDragState.currentValue,
+            },
+          }
+        : anchorDragState?.connectionKey === connectionKey
+          ? {
+              ...(connectionLayout[connectionKey] ?? {}),
+              orthogonalAnchors: (
+                connectionLayout[connectionKey]?.orthogonalAnchors ?? []
+              ).map((anchor, index) =>
+                index === anchorDragState.anchorIndex
+                  ? { x: anchorDragState.currentX, y: anchorDragState.currentY }
+                  : anchor,
+              ),
+            }
+          : connectionLayout[connectionKey];
     const orthogonalPathData =
       routingMode === 'orthogonal'
         ? getOrthogonalPathData(
@@ -2016,18 +2173,12 @@ export function WorkbenchPanel({
             targetSide,
             sourceIndex,
             targetIndex,
-            bendDragState?.connectionKey === connectionKey
-              ? {
-                  orthogonalBend: {
-                    axis: bendDragState.axis,
-                    value: bendDragState.currentValue,
-                  },
-                }
-              : connectionLayout[connectionKey],
+            temporaryConnectionLayout,
           )
         : null;
     const pathD =
       orthogonalPathData?.path ?? getConnectionPath(sourceAnchor, sourceSide, targetAnchor, targetSide);
+    const bendHandle = orthogonalPathData?.bendHandle ?? null;
     const showConnectionLabel =
       hoveredConnectionIndex === connectionIndex || effectiveSelectedConnectionIndex === connectionIndex;
     const midpointX = (sourceAnchor.x + targetAnchor.x) / 2;
@@ -2088,9 +2239,51 @@ export function WorkbenchPanel({
           onMouseLeave={() => setHoveredConnectionIndex(null)}
           onClick={(event) => {
             event.stopPropagation();
+            if (
+              routingMode === 'orthogonal' &&
+              selectedConnectionWaypointMode &&
+              isSelectedConnection &&
+              orthogonalPathData &&
+              (temporaryConnectionLayout?.orthogonalAnchors?.length ?? 0) < 4
+            ) {
+              const pointer = getCanvasPointerFromClient(event.clientX, event.clientY);
+              if (pointer) {
+                let bestSegment: (typeof orthogonalPathData.editableSegments)[number] | null = null;
+                let bestProjection:
+                  | {
+                      x: number;
+                      y: number;
+                      distance: number;
+                    }
+                  | null = null;
+
+                for (const segment of orthogonalPathData.editableSegments) {
+                  const projection = getNearestPointOnOrthogonalSegment(pointer, segment);
+                  if (
+                    projection.distance <= ANCHOR_INSERTION_HIT_TOLERANCE &&
+                    (!bestProjection || projection.distance < bestProjection.distance)
+                  ) {
+                    bestSegment = segment;
+                    bestProjection = projection;
+                  }
+                }
+
+                if (bestSegment && bestProjection) {
+                  const nextAnchor = snapPointToGrid(bestProjection);
+                  const currentAnchors = temporaryConnectionLayout?.orthogonalAnchors ?? [];
+                  const nextAnchors = [...currentAnchors];
+                  nextAnchors.splice(bestSegment.insertIndex, 0, nextAnchor);
+                  onSetConnectionOrthogonalAnchors(connectionKey, nextAnchors);
+                  setSelectedConnectionAnchorIndex(bestSegment.insertIndex);
+                  return;
+                }
+              }
+              return;
+            }
             setSelectedGuideRailId(null);
             setSelectedGroupBoxId(null);
             setSelectedConnectionIndex((current) => (current === connectionIndex ? null : connectionIndex));
+            setSelectedConnectionAnchorIndex(null);
           }}
         />
         <path
@@ -2115,24 +2308,59 @@ export function WorkbenchPanel({
         !isObservationMode &&
         !isCompositeEditor &&
         isSelectedConnection &&
-        orthogonalPathData?.bendHandle &&
+        !selectedConnectionWaypointMode &&
+        bendHandle &&
         layer === 'overlay' ? (
           <circle
-            className={`connection-bend-handle connection-bend-handle-${orthogonalPathData.bendHandle.axis}`}
-            cx={orthogonalPathData.bendHandle.x}
-            cy={orthogonalPathData.bendHandle.y}
+            className={`connection-bend-handle connection-bend-handle-${bendHandle.axis}`}
+            cx={bendHandle.x}
+            cy={bendHandle.y}
             r={7}
             onMouseDown={(event) => {
               event.stopPropagation();
               setBendDragState({
                 connectionKey,
-                axis: orthogonalPathData.bendHandle.axis,
-                autoValue: orthogonalPathData.bendHandle.autoValue,
-                currentValue: orthogonalPathData.bendHandle.value,
+                axis: bendHandle.axis,
+                autoValue: bendHandle.autoValue,
+                currentValue: bendHandle.value,
               });
             }}
           />
         ) : null}
+        {routingMode === 'orthogonal' &&
+        !isObservationMode &&
+        !isCompositeEditor &&
+        isSelectedConnection &&
+        selectedConnectionWaypointMode &&
+        layer === 'overlay'
+          ? orthogonalPathData?.anchorHandles.map((anchorHandle) => (
+              <circle
+                key={`anchor-${connectionKey}-${anchorHandle.index}`}
+                className={`connection-anchor-handle${
+                  effectiveSelectedConnectionAnchorIndex === anchorHandle.index
+                    ? ' connection-anchor-handle-selected'
+                    : ''
+                }`}
+                cx={anchorHandle.x}
+                cy={anchorHandle.y}
+                r={8}
+                onMouseDown={(event) => {
+                  event.stopPropagation();
+                  setSelectedConnectionAnchorIndex(anchorHandle.index);
+                  setAnchorDragState({
+                    connectionKey,
+                    anchorIndex: anchorHandle.index,
+                    currentX: anchorHandle.x,
+                    currentY: anchorHandle.y,
+                  });
+                }}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setSelectedConnectionAnchorIndex(anchorHandle.index);
+                }}
+              />
+            ))
+          : null}
         {showConnectionLabel ? (
           <g
             className="connection-hover-label"
@@ -2207,6 +2435,7 @@ export function WorkbenchPanel({
           selectedFurnitureDetailSecondary={selectedFurnitureDetailSecondary}
           effectiveSelectedConnectionIndex={effectiveSelectedConnectionIndex}
           selectedConnectionHasManualPath={selectedConnectionHasManualPath}
+          selectedConnectionWaypointMode={selectedConnectionWaypointMode}
           selectedConnectionSourceLabel={selectedConnectionSourceLabel}
           selectedConnectionTargetLabel={selectedConnectionTargetLabel}
           selectedConnectionDomainTone={selectedConnectionDomainTone}
@@ -2250,11 +2479,24 @@ export function WorkbenchPanel({
             if (effectiveSelectedConnectionIndex !== null) {
               onRemoveConnection(effectiveSelectedConnectionIndex);
               setSelectedConnectionIndex(null);
+              setSelectedConnectionAnchorIndex(null);
+              setWaypointModeConnectionKey(null);
             }
+          }}
+          onRequestToggleWireWaypointMode={() => {
+            if (!selectedConnectionKey || routingMode !== 'orthogonal') {
+              return;
+            }
+            setSelectedConnectionAnchorIndex(null);
+            setWaypointModeConnectionKey((current) =>
+              current === selectedConnectionKey ? null : selectedConnectionKey,
+            );
           }}
           onRequestResetWirePath={() => {
             if (selectedConnectionKey) {
-              onClearConnectionOrthogonalBend(selectedConnectionKey);
+              onClearConnectionOrthogonalPathEdits(selectedConnectionKey);
+              setSelectedConnectionAnchorIndex(null);
+              setWaypointModeConnectionKey(null);
             }
           }}
           onRequestSetWireLanePreference={(preference) => {

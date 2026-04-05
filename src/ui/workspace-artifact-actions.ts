@@ -125,6 +125,7 @@ export interface BuildShareableLabPackArgs {
     string,
     {
       orthogonalBend?: { axis: 'x' | 'y'; value: number };
+      orthogonalAnchors?: Array<{ x: number; y: number }>;
       orthogonalLanePreference?: 'negative' | 'positive';
       colorOverride?: 'red' | 'orange' | 'gold' | 'green' | 'teal' | 'blue' | 'violet' | 'rose';
     }
@@ -190,6 +191,13 @@ export function buildShareableLabPack({
             {
               ...(layoutValue.orthogonalBend
                 ? { orthogonalBend: { ...layoutValue.orthogonalBend } }
+                : {}),
+              ...(layoutValue.orthogonalAnchors
+                ? {
+                    orthogonalAnchors: layoutValue.orthogonalAnchors.map((anchor) => ({
+                      ...anchor,
+                    })),
+                  }
                 : {}),
               ...(layoutValue.orthogonalLanePreference
                 ? { orthogonalLanePreference: layoutValue.orthogonalLanePreference }
@@ -325,6 +333,13 @@ export function prepareImportedLabPack({
               {
                 ...(layoutValue.orthogonalBend
                   ? { orthogonalBend: { ...layoutValue.orthogonalBend } }
+                  : {}),
+                ...(layoutValue.orthogonalAnchors
+                  ? {
+                      orthogonalAnchors: layoutValue.orthogonalAnchors.map((anchor) => ({
+                        ...anchor,
+                      })),
+                    }
                   : {}),
                 ...(layoutValue.orthogonalLanePreference
                   ? { orthogonalLanePreference: layoutValue.orthogonalLanePreference }

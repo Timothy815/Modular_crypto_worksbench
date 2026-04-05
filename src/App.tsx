@@ -2798,9 +2798,32 @@ function MainApp() {
                 value,
               })
             }
+            onSetConnectionOrthogonalAnchors={(connectionKey, anchors) =>
+              dispatch({
+                type: 'setConnectionOrthogonalAnchors',
+                projectId: activeProjectDefinition.id,
+                connectionKey,
+                anchors,
+              })
+            }
+            onRemoveConnectionOrthogonalAnchor={(connectionKey, anchorIndex) =>
+              dispatch({
+                type: 'removeConnectionOrthogonalAnchor',
+                projectId: activeProjectDefinition.id,
+                connectionKey,
+                anchorIndex,
+              })
+            }
             onClearConnectionOrthogonalBend={(connectionKey) =>
               dispatch({
                 type: 'clearConnectionOrthogonalBend',
+                projectId: activeProjectDefinition.id,
+                connectionKey,
+              })
+            }
+            onClearConnectionOrthogonalPathEdits={(connectionKey) =>
+              dispatch({
+                type: 'clearConnectionOrthogonalPathEdits',
                 projectId: activeProjectDefinition.id,
                 connectionKey,
               })

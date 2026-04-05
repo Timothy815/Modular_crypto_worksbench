@@ -62,11 +62,17 @@ export type WorkbenchConnectionColorOverride =
   | 'violet'
   | 'rose';
 
+export interface WorkbenchConnectionAnchor {
+  x: number;
+  y: number;
+}
+
 export interface WorkbenchConnectionLayout {
   orthogonalBend?: {
     axis: WorkbenchConnectionBendAxis;
     value: number;
   };
+  orthogonalAnchors?: WorkbenchConnectionAnchor[];
   orthogonalLanePreference?: WorkbenchConnectionLanePreference;
   colorOverride?: WorkbenchConnectionColorOverride;
 }

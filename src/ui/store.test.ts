@@ -1661,6 +1661,52 @@ describe('uiReducer', () => {
     expect(preferenceCleared.connectionLayoutByProject[projectId]?.[connectionKey]).toBeUndefined();
   });
 
+  it('stores orthogonal anchors and clears authored path edits without clearing lane or color', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const connectionKey = 'clock:out->output:in';
+
+    const withAnchors = uiReducer(initialState, {
+      type: 'setConnectionOrthogonalAnchors',
+      projectId,
+      connectionKey,
+      anchors: [
+        { x: 120, y: 180 },
+        { x: 180, y: 240 },
+      ],
+    });
+    expect(withAnchors.connectionLayoutByProject[projectId]?.[connectionKey]).toEqual({
+      orthogonalAnchors: [
+        { x: 120, y: 180 },
+        { x: 180, y: 240 },
+      ],
+    });
+
+    const withLane = uiReducer(withAnchors, {
+      type: 'setConnectionLanePreference',
+      projectId,
+      connectionKey,
+      preference: 'positive',
+    });
+    const withColor = uiReducer(withLane, {
+      type: 'setConnectionColorOverride',
+      projectId,
+      connectionKey,
+      color: 'teal',
+    });
+
+    const pathCleared = uiReducer(withColor, {
+      type: 'clearConnectionOrthogonalPathEdits',
+      projectId,
+      connectionKey,
+    });
+
+    expect(pathCleared.connectionLayoutByProject[projectId]?.[connectionKey]).toEqual({
+      orthogonalLanePreference: 'positive',
+      colorOverride: 'teal',
+    });
+  });
+
   it('stores wire color overrides independently from manual bends and lane preference', () => {
     const initialState = createInitialUiState(demoProjects);
     const projectId = 'sequential';

@@ -51,7 +51,7 @@ describe('shouldShowCompositePortHint', () => {
     ).toBe(true);
   });
 
-  it('shows input hints for the hovered composite while a connection is pending', () => {
+  it('suppresses hints while a connection is pending', () => {
     expect(
       shouldShowCompositePortHint({
         definition: compositeDefinition,
@@ -62,7 +62,7 @@ describe('shouldShowCompositePortHint', () => {
         moduleId: 'round-1',
         portName: 'leftIn',
       }),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       shouldShowCompositePortHint({
         definition: compositeDefinition,

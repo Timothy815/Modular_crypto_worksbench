@@ -130,6 +130,11 @@ function cloneConnectionLayout(
               orthogonalBend: { ...layout.orthogonalBend },
             }
           : {}),
+        ...(layout.orthogonalAnchors
+          ? {
+              orthogonalAnchors: layout.orthogonalAnchors.map((anchor) => ({ ...anchor })),
+            }
+          : {}),
         ...(layout.orthogonalLanePreference
           ? {
               orthogonalLanePreference: layout.orthogonalLanePreference,
