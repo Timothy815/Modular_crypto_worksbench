@@ -1059,8 +1059,8 @@ Post-`v1.26.0` work merged to `main`:
 ## Safe Next Tasks
 
 Immediate bounded next product slice:
-- `WIRE-LEGIBILITY-VISUAL-DISCIPLINE-V1.md`
-- focus on dense-workspace wire readability, visual discipline, and clutter reduction
+- `WIRE-CROSSING-DISCIPLINE-V1.md`
+- focus on making dense wire crossings easier to parse through stronger visual hierarchy
 - keep the work UI-only and presentation-focused, with no routing rewrite or graph-semantics change
 
 ### Claude

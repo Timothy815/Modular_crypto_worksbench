@@ -44,10 +44,15 @@ The older `v2.1` builder-power queue is now largely present on `main` as shipped
 That means the next docket should now be chosen from bounded product-facing slices rather than the older authoring-power queue.
 
 The clearest immediate next candidate is now:
+- `WIRE-CROSSING-DISCIPLINE-V1.md`
+- a bounded dense-workspace readability follow-on focused on making wire crossings easier to parse
+- intended to strengthen active-path hierarchy at intersections without changing routing semantics
+- bounded to presentation-layer crossing discipline rather than a routing rewrite
+
+The previous dense-workspace readability pass is now already shipped as:
 - `WIRE-LEGIBILITY-VISUAL-DISCIPLINE-V1.md`
-- a bounded dense-workspace readability pass focused on wire clutter reduction
-- intended to make complex systems read more simply without changing routing semantics
-- bounded to visual discipline rather than a routing rewrite or graph-layout solver
+- a bounded visual-discipline pass for reducing wire clutter in crowded workspaces
+- keeps the work presentation-only and stops short of routing or graph-layout changes
 
 The previous immediate discovery bottleneck is now already shipped as:
 - `SEARCH-FIRST-PALETTE-V1.md`

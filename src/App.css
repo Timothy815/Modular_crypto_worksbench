@@ -3197,6 +3197,7 @@ body.canvas-resizing {
   stroke: var(--connection-stroke);
   stroke-width: 3;
   stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .connection-group {
@@ -3322,7 +3323,15 @@ body.canvas-resizing {
 
 .connection-group:hover .connection-visible-path {
   stroke: var(--danger-text);
-  stroke-width: 3.5;
+  stroke-width: 3.7;
+  opacity: 1;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--danger-text) 12%, transparent));
+}
+
+.connection-group:hover .connection-visible-underlay {
+  stroke: color-mix(in srgb, var(--surface-app) 94%, white);
+  stroke-width: 6.4;
+  opacity: 1;
 }
 
 .connection-group-selected .connection-visible-underlay,
@@ -3335,7 +3344,7 @@ body.canvas-resizing {
 }
 
 .connection-group-selected .connection-visible-underlay {
-  stroke-width: 8.6;
+  stroke-width: 10;
 }
 
 .connection-group-selected .connection-visible-path {
@@ -3346,7 +3355,7 @@ body.canvas-resizing {
 }
 
 .connection-group-emphasized .connection-visible-underlay {
-  stroke-width: 6.8;
+  stroke-width: 7.6;
 }
 
 .connection-group-emphasized .connection-visible-path {
@@ -3356,21 +3365,24 @@ body.canvas-resizing {
 }
 
 .connection-group-trace .connection-visible-underlay {
-  stroke-width: 6.4;
+  stroke-width: 7.4;
 }
 
 .connection-group-trace .connection-visible-path {
   stroke: color-mix(in srgb, var(--link-primary-bg) 56%, var(--connection-stroke));
   stroke-width: 3.4;
   opacity: 1;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--link-primary-bg) 12%, transparent));
 }
 
 .connection-group-compare-added .connection-visible-underlay {
-  stroke-width: 6.4;
+  stroke-width: 7.4;
 }
 
 .connection-group-compare-added .connection-visible-path {
   stroke: color-mix(in srgb, #1c9d62 72%, var(--connection-stroke));
+  opacity: 1;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, #1c9d62 12%, transparent));
 }
 
 .connection-group-compare-unchanged .connection-visible-path {
@@ -3378,14 +3390,14 @@ body.canvas-resizing {
 }
 
 .connection-group-dimmed .connection-visible-path {
-  stroke-width: 2.05;
-  opacity: 0.14;
+  stroke-width: 1.9;
+  opacity: 0.11;
   filter: none;
 }
 
 .connection-group-invalid .connection-visible-underlay {
   stroke: color-mix(in srgb, var(--surface-app) 92%, white);
-  stroke-width: 6.8;
+  stroke-width: 7.8;
   opacity: 1;
 }
 
@@ -3396,18 +3408,18 @@ body.canvas-resizing {
 }
 
 .connection-group-wire-mode-domain.connection-group-dimmed .connection-visible-path {
-  stroke-width: 2.3;
-  opacity: 0.18;
+  stroke-width: 2.15;
+  opacity: 0.15;
 }
 
 .connection-group-wire-mode-neutral.connection-group-dimmed .connection-visible-path {
-  stroke-width: 1.8;
-  opacity: 0.12;
+  stroke-width: 1.7;
+  opacity: 0.1;
 }
 
 .connection-group-wire-mode-high-contrast.connection-group-dimmed .connection-visible-path {
-  stroke-width: 2.8;
-  opacity: 0.2;
+  stroke-width: 2.45;
+  opacity: 0.15;
   filter: none;
 }
 
