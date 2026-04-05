@@ -9,6 +9,7 @@ import type {
   ValidationIssue,
 } from '../../engine/types';
 import { isOutputSinkDefId } from '../../engine/output-sinks';
+import type { AutoWireMode } from '../autowire-selection';
 import {
   isCompositePortHintEligible,
   shouldShowCompositePortHint,
@@ -412,6 +413,7 @@ interface WorkbenchPanelProps {
   onSelectModule: (moduleId: string, additive?: boolean) => void;
   onSelectModules: (moduleIds: string[], additive?: boolean) => void;
   onRequestCreateComposite: () => void;
+  onRequestAutoWire: (mode: AutoWireMode) => void;
   onRequestDuplicateSelection: () => void;
   onRequestDeleteSelection: () => void;
   onRequestUndo: () => void;
@@ -572,6 +574,7 @@ export function WorkbenchPanel({
   onSelectModule,
   onSelectModules,
   onRequestCreateComposite,
+  onRequestAutoWire,
   onRequestDuplicateSelection,
   onRequestDeleteSelection,
   onRequestUndo,
@@ -2742,6 +2745,7 @@ export function WorkbenchPanel({
           onRequestImport={() => importInputRef.current?.click()}
           onRequestImportLabPack={() => importLabPackInputRef.current?.click()}
           onRequestCreateComposite={onRequestCreateComposite}
+          onRequestAutoWire={onRequestAutoWire}
           onToggleFurnitureVisible={setFurnitureVisible}
           onToggleTutorialNotes={onSetTutorialNotesVisible}
         />

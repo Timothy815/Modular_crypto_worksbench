@@ -88,6 +88,7 @@ import {
 } from './ui/workspace-artifacts';
 import { getPrimitiveMicroDemo } from './ui/primitive-micro-demos';
 import { buildCompositeInstanceDrilldownContext } from './ui/composite-instance-drilldown';
+import { computeAutoWireConnections, type AutoWireMode } from './ui/autowire-selection';
 
 const MIN_LEFT_DOCK_WIDTH = 220;
 const MAX_LEFT_DOCK_WIDTH = 520;
@@ -1618,6 +1619,35 @@ function MainApp() {
     setImportError(null);
   }
 
+  function handleAutoWireSelection(mode: AutoWireMode) {
+    if (!activeProjectDefinition) {
+      return;
+    }
+    const project =
+      state.compositeEditor?.project ?? state.projectStates[activeProjectDefinition.id];
+    const layout = state.layoutByProject[activeProjectDefinition.id] ?? {};
+    const selectedModuleIds =
+      state.selectedModuleIdsByProject[activeProjectDefinition.id] ?? [];
+    if (!project || selectedModuleIds.length < 2) {
+      return;
+    }
+    const connections = computeAutoWireConnections(
+      project,
+      effectiveRegistry,
+      selectedModuleIds,
+      layout,
+      mode,
+    );
+    if (connections.length === 0) {
+      return;
+    }
+    dispatch({
+      type: 'autoWireSelection',
+      projectId: activeProjectDefinition.id,
+      connections,
+    });
+  }
+
   function handleDeleteCurrentWorkspace() {
     const existingWorkspace = state.userWorkspaceLibrary.find(
       (workspace) => workspace.id === activeProjectDefinition.id,
@@ -2717,6 +2747,7 @@ function MainApp() {
               setReplaceSelectionAfterCreate(!state.compositeEditor);
               setIsCompositeDialogOpen(true);
             }}
+            onRequestAutoWire={handleAutoWireSelection}
             onRequestDuplicateSelection={isCompositeDrilldownActive ? () => undefined : handleDuplicateSelectedCluster}
             onRequestDeleteSelection={isCompositeDrilldownActive ? () => undefined : handleDeleteSelectedCluster}
             onRequestUndo={handleUndoWorkspaceHistory}

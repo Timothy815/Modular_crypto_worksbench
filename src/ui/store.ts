@@ -271,6 +271,16 @@ export type UiAction =
       toModuleId: string;
       toPort: string;
     }
+  | {
+      type: 'autoWireSelection';
+      projectId: string;
+      connections: ReadonlyArray<{
+        fromModuleId: string;
+        fromPort: string;
+        toModuleId: string;
+        toPort: string;
+      }>;
+    }
   | { type: 'removeConnection'; projectId: string; connectionIndex: number }
   | {
       type: 'replaceConnection';
@@ -593,6 +603,7 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'deleteSelectedCluster',
   'removeModule',
   'addConnection',
+  'autoWireSelection',
   'removeConnection',
   'replaceConnection',
   'setConnectionOrthogonalBend',
@@ -3120,6 +3131,74 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           to: { moduleId: action.toModuleId, port: action.toPort },
         },
       ];
+
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: nextProject,
+        },
+      };
+    }
+    case 'autoWireSelection': {
+      if (action.connections.length === 0) {
+        return state;
+      }
+
+      if (state.compositeEditor) {
+        let editor = state.compositeEditor;
+        for (const conn of action.connections) {
+          const alreadyExists = editor.project.connections.some(
+            (c) =>
+              c.from.moduleId === conn.fromModuleId &&
+              c.from.port === conn.fromPort &&
+              c.to.moduleId === conn.toModuleId &&
+              c.to.port === conn.toPort,
+          );
+          if (!alreadyExists) {
+            editor = {
+              ...editor,
+              project: {
+                ...cloneProject(editor.project),
+                connections: [
+                  ...editor.project.connections,
+                  {
+                    from: { moduleId: conn.fromModuleId, port: conn.fromPort },
+                    to: { moduleId: conn.toModuleId, port: conn.toPort },
+                  },
+                ],
+              },
+              saveError: null,
+            };
+          }
+        }
+        return { ...state, compositeEditor: editor };
+      }
+
+      const currentProject = state.projectStates[action.projectId];
+      if (!currentProject) {
+        return state;
+      }
+
+      const nextProject = cloneProject(currentProject);
+      for (const conn of action.connections) {
+        const alreadyExists = nextProject.connections.some(
+          (c) =>
+            c.from.moduleId === conn.fromModuleId &&
+            c.from.port === conn.fromPort &&
+            c.to.moduleId === conn.toModuleId &&
+            c.to.port === conn.toPort,
+        );
+        if (!alreadyExists) {
+          nextProject.connections = [
+            ...nextProject.connections,
+            {
+              from: { moduleId: conn.fromModuleId, port: conn.fromPort },
+              to: { moduleId: conn.toModuleId, port: conn.toPort },
+            },
+          ];
+        }
+      }
 
       return {
         ...state,

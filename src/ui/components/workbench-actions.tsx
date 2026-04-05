@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import type { AutoWireMode } from '../autowire-selection';
 import type {
   WorkbenchConnectionColorOverride,
   WorkbenchLayoutDirection,
@@ -75,6 +76,7 @@ interface WorkbenchActionsProps {
   onRequestAddGroupBox: () => void;
   onRequestAddGroupBoxFromSelection: () => void;
   onRequestAddGuideRail: (axis: 'horizontal' | 'vertical') => void;
+  onRequestAutoWire: (mode: AutoWireMode) => void;
   onRequestDuplicateSelection: () => void;
   onRequestDeleteSelection: () => void;
   onRequestDeleteWire: () => void;
@@ -225,6 +227,9 @@ type WorkbenchInlineIconName =
   | 'snap'
   | 'snap-guides'
   | 'hide-furniture'
+  | 'autowire-match'
+  | 'autowire-ltr'
+  | 'autowire-ttb'
   | 'save-version'
   | 'delete-wire'
   | 'reset-wire'
@@ -368,6 +373,31 @@ function WorkbenchInlineIcon({ name }: { name: WorkbenchInlineIconName }) {
           <rect x="3" y="6" width="14" height="10" rx="1.5" strokeDasharray="3 1.5" />
           <rect x="3" y="4" width="5" height="3" rx="0.8" fill="currentColor" stroke="none" />
           <path d="M6 9h8M6 12h5" />
+        </svg>
+      );
+    case 'autowire-match':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <rect x="2" y="5" width="5" height="10" rx="1.2" />
+          <rect x="13" y="5" width="5" height="10" rx="1.2" />
+          <path d="M7 8h2.5M7 12h2.5M10.5 8H13M10.5 12H13" />
+          <path d="M9.5 8v4" strokeDasharray="2 1" />
+        </svg>
+      );
+    case 'autowire-ltr':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <rect x="2" y="6" width="5" height="8" rx="1.2" />
+          <rect x="13" y="6" width="5" height="8" rx="1.2" />
+          <path d="M7 10h6M11 8l2 2-2 2" />
+        </svg>
+      );
+    case 'autowire-ttb':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <rect x="6" y="2" width="8" height="5" rx="1.2" />
+          <rect x="6" y="13" width="8" height="5" rx="1.2" />
+          <path d="M10 7v6M8 11l2 2 2-2" />
         </svg>
       );
     case 'save-version':
@@ -615,6 +645,7 @@ export function WorkbenchActions({
   onRequestAddGroupBox,
   onRequestAddGroupBoxFromSelection,
   onRequestAddGuideRail,
+  onRequestAutoWire,
   onRequestDuplicateSelection,
   onRequestDeleteSelection,
   onRequestDeleteWire,
@@ -860,6 +891,27 @@ export function WorkbenchActions({
                 title="Distribute Vertically"
                 onSelect={() => onRequestArrangeSelection('distribute-vertical')}
                 disabled={!canDistributeSelection}
+              />
+            </div>
+          ) : null}
+
+          {canAlignSelection ? (
+            <div className="workbench-inline-toolbar" aria-label="Auto-wire tools">
+              <span className="meta-label">Wire</span>
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="autowire-match" />}
+                title="Connect Matching Ports (fill missing connections by exact port-name match)"
+                onSelect={() => onRequestAutoWire('matching-ports')}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="autowire-ltr" />}
+                title="Connect Left-to-Right (connect adjacent modules sorted by horizontal position)"
+                onSelect={() => onRequestAutoWire('left-to-right')}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="autowire-ttb" />}
+                title="Connect Top-to-Bottom (connect adjacent modules sorted by vertical position)"
+                onSelect={() => onRequestAutoWire('top-to-bottom')}
               />
             </div>
           ) : null}
