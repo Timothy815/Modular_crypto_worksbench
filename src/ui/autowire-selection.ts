@@ -13,11 +13,18 @@ export interface AutoWireCandidate {
 /**
  * Compute which connections to create for the selected modules.
  *
- * Rules:
- * - Only connects output ports to input ports with an exact name + type match.
- * - Only fills currently unconnected input ports (never overwrites existing connections).
- * - Respects validation rules including cycle detection.
- * - Returns a deterministic list that can be dispatched as a single undo step.
+ * matching-ports: connects outputs to inputs with an exact port-name + type match.
+ *   Useful when ports have been deliberately named to align.
+ *
+ * left-to-right / top-to-bottom: sorts adjacent pairs by position then connects
+ *   each output of the earlier module to the first unconnected input of the later
+ *   module with a compatible signal type (positional pairing, ignores port names).
+ *   This is the common case — e.g. XOR.out → Register.a.
+ *
+ * All modes:
+ * - Only fill unconnected input ports (never overwrite existing connections).
+ * - Respect validation rules including cycle detection.
+ * - Return a deterministic list for dispatch as a single undo step.
  */
 export function computeAutoWireConnections(
   project: Project,
@@ -33,7 +40,7 @@ export function computeAutoWireConnections(
   const pairs = buildPairs(selectedModuleIds, layout, mode);
   const results: AutoWireCandidate[] = [];
 
-  // Track which input ports have already been scheduled so we don't assign two sources.
+  // Track which input ports have been scheduled so we don't assign two sources.
   const scheduledInputs = new Set<string>();
 
   // Maintain an incremental project for cycle detection across candidates.
@@ -48,50 +55,77 @@ export function computeAutoWireConnections(
     const toDef = registry[toInstance.defId];
     if (!fromDef || !toDef) continue;
 
-    for (const outputPort of fromDef.outputs) {
-      const matchingInput = toDef.inputs.find(
-        (inputPort) => inputPort.name === outputPort.name && inputPort.type === outputPort.type,
-      );
-      if (!matchingInput) continue;
+    if (mode === 'matching-ports') {
+      // Name-based: output port name must exactly match input port name.
+      for (const outputPort of fromDef.outputs) {
+        const matchingInput = toDef.inputs.find(
+          (inputPort) => inputPort.name === outputPort.name && inputPort.type === outputPort.type,
+        );
+        if (!matchingInput) continue;
 
-      const inputKey = `${toModuleId}:${matchingInput.name}`;
-      if (scheduledInputs.has(inputKey)) continue;
+        const inputKey = `${toModuleId}:${matchingInput.name}`;
+        if (scheduledInputs.has(inputKey)) continue;
 
-      const portState = getTargetPortState(
-        effectiveProject,
-        registry,
-        fromModuleId,
-        outputPort.name,
-        toModuleId,
-        matchingInput.name,
-      );
+        const portState = getTargetPortState(
+          effectiveProject,
+          registry,
+          fromModuleId,
+          outputPort.name,
+          toModuleId,
+          matchingInput.name,
+        );
+        if (!portState.valid || portState.mode !== 'new') continue;
 
-      // Only create new connections — never replace existing valid inputs.
-      if (!portState.valid || portState.mode !== 'new') continue;
+        results.push({ fromModuleId, fromPort: outputPort.name, toModuleId, toPort: matchingInput.name });
+        scheduledInputs.add(inputKey);
+        effectiveProject = addToEffectiveProject(effectiveProject, fromModuleId, outputPort.name, toModuleId, matchingInput.name);
+      }
+    } else {
+      // Positional: pair each output with the first available unconnected input of matching type.
+      // Port names are irrelevant — this is what connects XOR.out → Register.a.
+      for (const outputPort of fromDef.outputs) {
+        for (const inputPort of toDef.inputs) {
+          if (inputPort.type !== outputPort.type) continue;
 
-      results.push({
-        fromModuleId,
-        fromPort: outputPort.name,
-        toModuleId,
-        toPort: matchingInput.name,
-      });
-      scheduledInputs.add(inputKey);
+          const inputKey = `${toModuleId}:${inputPort.name}`;
+          if (scheduledInputs.has(inputKey)) continue;
 
-      // Update the effective project so subsequent cycle checks see this connection.
-      effectiveProject = {
-        ...effectiveProject,
-        connections: [
-          ...effectiveProject.connections,
-          {
-            from: { moduleId: fromModuleId, port: outputPort.name },
-            to: { moduleId: toModuleId, port: matchingInput.name },
-          },
-        ],
-      };
+          const portState = getTargetPortState(
+            effectiveProject,
+            registry,
+            fromModuleId,
+            outputPort.name,
+            toModuleId,
+            inputPort.name,
+          );
+          if (!portState.valid || portState.mode !== 'new') continue;
+
+          results.push({ fromModuleId, fromPort: outputPort.name, toModuleId, toPort: inputPort.name });
+          scheduledInputs.add(inputKey);
+          effectiveProject = addToEffectiveProject(effectiveProject, fromModuleId, outputPort.name, toModuleId, inputPort.name);
+          break; // move on to the next output port
+        }
+      }
     }
   }
 
   return results;
+}
+
+function addToEffectiveProject(
+  project: Project,
+  fromModuleId: string,
+  fromPort: string,
+  toModuleId: string,
+  toPort: string,
+): Project {
+  return {
+    ...project,
+    connections: [
+      ...project.connections,
+      { from: { moduleId: fromModuleId, port: fromPort }, to: { moduleId: toModuleId, port: toPort } },
+    ],
+  };
 }
 
 function buildPairs(
@@ -112,7 +146,7 @@ function buildPairs(
     return pairs;
   }
 
-  // Directional modes: sort by position, then only connect adjacent pairs.
+  // Directional modes: sort by position, then connect adjacent pairs only.
   const sorted = [...selectedModuleIds].sort((a, b) => {
     const posA = layout[a] ?? { x: 0, y: 0 };
     const posB = layout[b] ?? { x: 0, y: 0 };
