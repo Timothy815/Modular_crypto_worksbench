@@ -48,6 +48,11 @@ The next dense-workspace node-legibility slice is now shipped as:
 - a bounded per-instance port-order authoring slice for reducing local crossings and card clutter
 - keeps the work in workspace UI metadata only and stops short of per-port side placement or engine-level port-definition changes
 
+The next dense-workspace node-legibility follow-on is now also shipped as:
+- `PORT-SIDE-LAYOUT-PRESETS-V1.md`
+- a bounded per-instance visual port posture slice with `Default`, `Horizontal`, and `Vertical`
+- keeps the work in workspace UI metadata only and stops short of arbitrary per-port side placement
+
 The previous dense-workspace crossing follow-on is now already shipped as:
 - `WIRE-CROSSING-DISCIPLINE-V1.md`
 - a bounded readability pass focused on stronger visual hierarchy at wire intersections

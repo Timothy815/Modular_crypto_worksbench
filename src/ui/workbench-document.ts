@@ -10,6 +10,7 @@ export interface WorkbenchPosition {
   x: number;
   y: number;
   orientation?: WorkbenchNodeOrientation;
+  portLayoutPreset?: WorkbenchPortLayoutPreset;
   inputOrder?: string[];
   outputOrder?: string[];
 }
@@ -72,6 +73,7 @@ export interface WorkbenchConnectionLayout {
 
 export type WorkbenchLayoutDirection = 'horizontal' | 'vertical';
 export type WorkbenchNodeOrientation = 'east' | 'south' | 'west' | 'north';
+export type WorkbenchPortLayoutPreset = 'horizontal' | 'vertical';
 export type WorkbenchRoutingMode = 'curved' | 'orthogonal';
 export type WorkbenchWireColorMode = 'domain' | 'neutral' | 'high-contrast';
 

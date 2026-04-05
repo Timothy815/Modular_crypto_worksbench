@@ -24,6 +24,7 @@ import type {
   WorkbenchGroupBox,
   WorkbenchGroupBoxVariant,
   WorkbenchLayoutDirection,
+  WorkbenchPortLayoutPreset,
   WorkbenchRoutingMode,
   WorkbenchWireColorMode,
   WorkbenchPosition,
@@ -190,6 +191,12 @@ export type UiAction =
       positions: Record<string, { x: number; y: number }>;
     }
   | { type: 'rotateModuleClockwise'; projectId: string; moduleId: string }
+  | {
+      type: 'setModulePortLayoutPreset';
+      projectId: string;
+      moduleId: string;
+      preset: WorkbenchPortLayoutPreset | null;
+    }
   | {
       type: 'moveModulePortOrder';
       projectId: string;
@@ -1591,6 +1598,39 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
               ...currentLayout[action.moduleId],
               orientation: getNextNodeOrientationClockwise(currentOrientation),
             },
+          },
+        },
+      };
+    }
+    case 'setModulePortLayoutPreset': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentLayout = state.layoutByProject[action.projectId];
+      const currentPosition = currentLayout?.[action.moduleId];
+      if (!currentLayout || !currentPosition) {
+        return state;
+      }
+
+      if ((currentPosition.portLayoutPreset ?? null) === action.preset) {
+        return state;
+      }
+
+      const nextPosition = { ...currentPosition };
+      if (action.preset) {
+        nextPosition.portLayoutPreset = action.preset;
+      } else {
+        delete nextPosition.portLayoutPreset;
+      }
+
+      return {
+        ...state,
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: {
+            ...currentLayout,
+            [action.moduleId]: nextPosition,
           },
         },
       };

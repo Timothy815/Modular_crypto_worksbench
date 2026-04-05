@@ -141,6 +141,42 @@ describe('uiReducer', () => {
     ]);
   });
 
+  it('stores and clears per-instance port layout presets as workspace-local metadata', () => {
+    const initialState = createInitialUiState(demoProjects);
+
+    const withPrimitivePreset = uiReducer(initialState, {
+      type: 'setModulePortLayoutPreset',
+      projectId: 'lorenz-foundation',
+      moduleId: 'xor',
+      preset: 'vertical',
+    });
+
+    const withCompositePreset = uiReducer(withPrimitivePreset, {
+      type: 'setModulePortLayoutPreset',
+      projectId: 'advanced-rotor-stepping',
+      moduleId: 'middle-step-control',
+      preset: 'horizontal',
+    });
+
+    const clearedPrimitivePreset = uiReducer(withCompositePreset, {
+      type: 'setModulePortLayoutPreset',
+      projectId: 'lorenz-foundation',
+      moduleId: 'xor',
+      preset: null,
+    });
+
+    expect(withPrimitivePreset.layoutByProject['lorenz-foundation']?.xor?.portLayoutPreset).toBe(
+      'vertical',
+    );
+    expect(
+      withCompositePreset.layoutByProject['advanced-rotor-stepping']?.['middle-step-control']
+        ?.portLayoutPreset,
+    ).toBe('horizontal');
+    expect(clearedPrimitivePreset.layoutByProject['lorenz-foundation']?.xor?.portLayoutPreset).toBe(
+      undefined,
+    );
+  });
+
   it('creates a stage group box around the selected cluster bounds', () => {
     const initialState = createInitialUiState(demoProjects);
     const projectId = 'sequential';

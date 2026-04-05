@@ -36,7 +36,11 @@ import {
 } from '../parameter-comparison';
 import type { TutorialStep } from '../tutorials';
 import { ComparisonPanel } from './comparison-panel';
-import type { ComparisonBaselineDocument, WorkbenchPosition } from '../workbench-document';
+import type {
+  ComparisonBaselineDocument,
+  WorkbenchPortLayoutPreset,
+  WorkbenchPosition,
+} from '../workbench-document';
 import type { ExecutionComparison } from '../execution-compare';
 import { getOrderedPorts } from '../port-ordering';
 import type {
@@ -159,6 +163,10 @@ interface ParameterInspectorProps {
   onParamChange: (moduleId: string, key: string, value: unknown) => void;
   onSetModuleBypass: (moduleId: string, bypass: boolean) => void;
   onRotateModuleClockwise?: (moduleId: string) => void;
+  onSetModulePortLayoutPreset?: (
+    moduleId: string,
+    preset: WorkbenchPortLayoutPreset | null,
+  ) => void;
   onMoveModulePortOrder?: (
     moduleId: string,
     direction: 'input' | 'output',
@@ -215,7 +223,10 @@ type InspectorIconName =
   | 'inverse'
   | 'configure'
   | 'analyze'
-  | 'compare';
+  | 'compare'
+  | 'ports-default'
+  | 'ports-horizontal'
+  | 'ports-vertical';
 
 function InspectorIcon({ name }: { name: InspectorIconName }) {
   switch (name) {
@@ -638,6 +649,72 @@ function InspectorIcon({ name }: { name: InspectorIconName }) {
           />
         </svg>
       );
+    case 'ports-default':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path
+            d="M4.5 6.5h4M11.5 6.5h4M4.5 13.5h4M11.5 13.5h4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <rect
+            x="8.2"
+            y="5"
+            width="3.6"
+            height="10"
+            rx="1.2"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          />
+        </svg>
+      );
+    case 'ports-horizontal':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path
+            d="M3.5 6.5h3M13.5 6.5h3M3.5 13.5h3M13.5 13.5h3"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <rect
+            x="6.5"
+            y="4.7"
+            width="7"
+            height="10.6"
+            rx="1.6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          />
+        </svg>
+      );
+    case 'ports-vertical':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path
+            d="M6.5 3.5v3M13.5 3.5v3M6.5 13.5v3M13.5 13.5v3"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <rect
+            x="4.7"
+            y="6.5"
+            width="10.6"
+            height="7"
+            rx="1.6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          />
+        </svg>
+      );
   }
 }
 
@@ -757,6 +834,7 @@ export function ParameterInspector({
   onParamChange,
   onSetModuleBypass,
   onRotateModuleClockwise,
+  onSetModulePortLayoutPreset,
   onMoveModulePortOrder,
   onDuplicateModule,
   onRenameModuleInstance,
@@ -1160,6 +1238,7 @@ export function ParameterInspector({
         : [],
     [moduleDef, modulePosition],
   );
+  const activePortLayoutPreset = modulePosition?.portLayoutPreset ?? null;
   const bypassIneligibilityReason =
     moduleDef && !canBypassSelectedModule ? getBypassIneligibilityReason(moduleDef) : null;
   const effectiveLookupChunkIndex =
@@ -4517,6 +4596,49 @@ export function ParameterInspector({
           </div>
 
           <div className="selected-ports">
+            {moduleInstance && onSetModulePortLayoutPreset ? (
+              <div className="port-layout-presets">
+                <span className="meta-label">Port Layout</span>
+                <div className="port-layout-preset-controls">
+                  <button
+                    type="button"
+                    className={`port-layout-preset-button${
+                      activePortLayoutPreset === null ? ' active' : ''
+                    }`}
+                    aria-pressed={activePortLayoutPreset === null}
+                    title="Default port layout"
+                    onClick={() => onSetModulePortLayoutPreset(moduleInstance.id, null)}
+                  >
+                    <InspectorIcon name="ports-default" />
+                    <span>Default</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`port-layout-preset-button${
+                      activePortLayoutPreset === 'horizontal' ? ' active' : ''
+                    }`}
+                    aria-pressed={activePortLayoutPreset === 'horizontal'}
+                    title="Inputs left, outputs right"
+                    onClick={() => onSetModulePortLayoutPreset(moduleInstance.id, 'horizontal')}
+                  >
+                    <InspectorIcon name="ports-horizontal" />
+                    <span>Horizontal</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`port-layout-preset-button${
+                      activePortLayoutPreset === 'vertical' ? ' active' : ''
+                    }`}
+                    aria-pressed={activePortLayoutPreset === 'vertical'}
+                    title="Inputs top, outputs bottom"
+                    onClick={() => onSetModulePortLayoutPreset(moduleInstance.id, 'vertical')}
+                  >
+                    <InspectorIcon name="ports-vertical" />
+                    <span>Vertical</span>
+                  </button>
+                </div>
+              </div>
+            ) : null}
             <div className="port-group">
               <span className="meta-label">Inputs</span>
               {moduleDef.inputs.length === 0 ? (

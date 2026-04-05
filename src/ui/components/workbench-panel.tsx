@@ -62,7 +62,7 @@ import type {
 } from '../workbench-document';
 import {
   getNodeOrientation,
-  getPortSideForOrientation,
+  getPortSideForNodePresentation,
   isVerticalPortSide,
   type PortSide,
 } from '../node-orientation';
@@ -947,7 +947,11 @@ export function WorkbenchPanel({
     }
 
     const sourceOrientation = getNodeOrientation(from.orientation, layoutDirection);
-    const sourceSide = getPortSideForOrientation(sourceOrientation, 'out');
+    const sourceSide = getPortSideForNodePresentation(
+      sourceOrientation,
+      'out',
+      from.portLayoutPreset,
+    );
     return sourceSide === 'left' || sourceSide === 'right' ? 'x' : 'y';
   }, [
     activeProjectState.connections,
@@ -1668,7 +1672,7 @@ export function WorkbenchPanel({
     const pos = layout[moduleId];
     if (!pos) return;
     const orientation = getNodeOrientation(pos.orientation, layoutDirection);
-    const sourceSide = getPortSideForOrientation(orientation, 'out');
+    const sourceSide = getPortSideForNodePresentation(orientation, 'out', pos.portLayoutPreset);
     const anchor = getAnchorPosition(
       pos.x,
       pos.y,
@@ -1718,7 +1722,11 @@ export function WorkbenchPanel({
     }
 
     const sourceOrientation = getNodeOrientation(sourcePosition.orientation, layoutDirection);
-    const sourceSide = getPortSideForOrientation(sourceOrientation, 'out');
+    const sourceSide = getPortSideForNodePresentation(
+      sourceOrientation,
+      'out',
+      sourcePosition.portLayoutPreset,
+    );
     const sourceAnchor = getAnchorPosition(
       sourcePosition.x,
       sourcePosition.y,
@@ -1880,8 +1888,16 @@ export function WorkbenchPanel({
 
     const sourceOrientation = getNodeOrientation(from.orientation, layoutDirection);
     const targetOrientation = getNodeOrientation(to.orientation, layoutDirection);
-    const sourceSide = getPortSideForOrientation(sourceOrientation, 'out');
-    const targetSide = getPortSideForOrientation(targetOrientation, 'in');
+    const sourceSide = getPortSideForNodePresentation(
+      sourceOrientation,
+      'out',
+      from.portLayoutPreset,
+    );
+    const targetSide = getPortSideForNodePresentation(
+      targetOrientation,
+      'in',
+      to.portLayoutPreset,
+    );
     const connectionKey = getConnectionComparisonKey(connection);
     const sourceAnchor = getAnchorPosition(
       from.x,
@@ -2709,8 +2725,16 @@ export function WorkbenchPanel({
             const def = registry[moduleInstance.defId];
             const category = def ? getModuleCategory(def) : getModuleCategory(moduleInstance.defId);
             const orientation = getNodeOrientation(position.orientation, layoutDirection);
-            const inputSide = getPortSideForOrientation(orientation, 'in');
-            const outputSide = getPortSideForOrientation(orientation, 'out');
+            const inputSide = getPortSideForNodePresentation(
+              orientation,
+              'in',
+              position.portLayoutPreset,
+            );
+            const outputSide = getPortSideForNodePresentation(
+              orientation,
+              'out',
+              position.portLayoutPreset,
+            );
             const sequentialRole = isTickedMode
               ? getSequentialRole(moduleInstance.defId, def)
               : null;

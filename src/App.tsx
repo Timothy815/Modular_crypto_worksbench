@@ -3359,6 +3359,17 @@ function MainApp() {
                           moduleId,
                         })
                 }
+                onSetModulePortLayoutPreset={
+                  isCompositeDrilldownActive || state.compositeEditor
+                    ? undefined
+                    : (moduleId, preset) =>
+                        dispatch({
+                          type: 'setModulePortLayoutPreset',
+                          projectId: activeProjectDefinition.id,
+                          moduleId,
+                          preset,
+                        })
+                }
                 onMoveModulePortOrder={
                   isCompositeDrilldownActive || state.compositeEditor
                     ? undefined

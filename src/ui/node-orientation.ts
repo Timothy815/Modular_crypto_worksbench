@@ -1,6 +1,7 @@
 import type {
   WorkbenchLayoutDirection,
   WorkbenchNodeOrientation,
+  WorkbenchPortLayoutPreset,
 } from './workbench-document';
 
 export type PortSide = 'left' | 'right' | 'top' | 'bottom';
@@ -60,6 +61,22 @@ export function getPortSideForOrientation(
     case 'north':
       return 'top';
   }
+}
+
+export function getPortSideForNodePresentation(
+  orientation: WorkbenchNodeOrientation,
+  direction: 'in' | 'out',
+  preset?: WorkbenchPortLayoutPreset,
+): PortSide {
+  if (preset === 'horizontal') {
+    return direction === 'in' ? 'left' : 'right';
+  }
+
+  if (preset === 'vertical') {
+    return direction === 'in' ? 'top' : 'bottom';
+  }
+
+  return getPortSideForOrientation(orientation, direction);
 }
 
 export function isVerticalPortSide(side: PortSide) {
