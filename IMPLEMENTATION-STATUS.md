@@ -58,6 +58,11 @@ The next dense-workspace node-legibility follow-on is now also shipped as:
 - a bounded per-instance visual port posture pass with `Default`, `Horizontal`, and `Vertical`
 - keeps the work in workspace UI metadata only and stops short of arbitrary per-port side placement
 
+The next dense-workspace wire-authoring candidate is now:
+- `MULTI-ANCHOR-ORTHOGONAL-WIRE-AUTHORING-V1.md`
+- a bounded selected-wire multi-anchor authoring model for orthogonal paths
+- intended to feel closer to drawing while staying grid-snapped, orthogonal, and UI-only
+
 Another shipped bounded readability slice after that is:
 - `COMPOSITE-INSTANCE-DRILLDOWN-V1.md`
 - instance-scoped composite inspection in a transient drill-down view

@@ -63,6 +63,11 @@ The previous dense-workspace readability pass is now already shipped as:
 - a bounded visual-discipline pass for reducing wire clutter in crowded workspaces
 - keeps the work presentation-only and stops short of routing or graph-layout changes
 
+The next dense-workspace wire-authoring candidate is now:
+- `MULTI-ANCHOR-ORTHOGONAL-WIRE-AUTHORING-V1.md`
+- a bounded selected-wire multi-anchor authoring model for orthogonal paths
+- intended to feel closer to drawing while staying grid-snapped, orthogonal, and UI-only
+
 The previous immediate discovery bottleneck is now already shipped as:
 - `SEARCH-FIRST-PALETTE-V1.md`
 - flattened ranked palette search with keyboard-first focus/clear behavior
