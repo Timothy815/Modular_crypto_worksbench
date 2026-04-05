@@ -34,6 +34,7 @@ interface WorkbenchActionsProps {
   selectedConnectionLaneAxis: 'x' | 'y' | null;
   selectedConnectionLanePreference: 'negative' | 'positive' | null;
   selectedConnectionColorOverride: WorkbenchConnectionColorOverride | null;
+  furnitureVisible: boolean;
   showTutorialToggle: boolean;
   tutorialNotesVisible: boolean;
   onAddAnnotation: () => void;
@@ -86,6 +87,7 @@ interface WorkbenchActionsProps {
   onRequestImport: () => void;
   onRequestImportLabPack: () => void;
   onRequestCreateComposite: () => void;
+  onToggleFurnitureVisible: (visible: boolean) => void;
   onToggleTutorialNotes?: (visible: boolean) => void;
 }
 
@@ -222,6 +224,7 @@ type WorkbenchInlineIconName =
   | 'grid'
   | 'snap'
   | 'snap-guides'
+  | 'hide-furniture'
   | 'save-version'
   | 'delete-wire'
   | 'reset-wire'
@@ -357,6 +360,14 @@ function WorkbenchInlineIcon({ name }: { name: WorkbenchInlineIconName }) {
         <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
           <path d="M6 3v14M14 3v14M3 10h14" />
           <rect x="8" y="8" width="4" height="4" rx="0.9" />
+        </svg>
+      );
+    case 'hide-furniture':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <rect x="3" y="6" width="14" height="10" rx="1.5" strokeDasharray="3 1.5" />
+          <rect x="3" y="4" width="5" height="3" rx="0.8" fill="currentColor" stroke="none" />
+          <path d="M6 9h8M6 12h5" />
         </svg>
       );
     case 'save-version':
@@ -575,6 +586,7 @@ export function WorkbenchActions({
   selectedConnectionLaneAxis,
   selectedConnectionLanePreference,
   selectedConnectionColorOverride,
+  furnitureVisible,
   showTutorialToggle,
   tutorialNotesVisible,
   onAddAnnotation,
@@ -615,6 +627,7 @@ export function WorkbenchActions({
   onRequestImport,
   onRequestImportLabPack,
   onRequestCreateComposite,
+  onToggleFurnitureVisible,
   onToggleTutorialNotes,
 }: WorkbenchActionsProps) {
   const hasSelection = selectedModuleIds.length > 0;
@@ -769,6 +782,12 @@ export function WorkbenchActions({
                 title={snapToGuides ? 'Disable Snap To Guides' : 'Enable Snap To Guides'}
                 onSelect={() => onToggleSnapToGuides(!snapToGuides)}
                 active={snapToGuides}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="hide-furniture" />}
+                title={furnitureVisible ? 'Hide Furniture' : 'Show Furniture'}
+                onSelect={() => onToggleFurnitureVisible(!furnitureVisible)}
+                active={!furnitureVisible}
               />
             </div>
           </div>
