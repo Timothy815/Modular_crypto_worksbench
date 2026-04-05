@@ -1941,6 +1941,46 @@ export function WorkbenchPanel({
     [activeAnalysisOwnerModuleId, activeAnalysisTraceEntry],
   );
   const traceFocusedModuleId = activeAnalysisOwnerModuleId ?? steppedModuleId ?? null;
+  const emphasizedConnectionPortKeys = useMemo(() => {
+    const keys = new Set<string>();
+    const candidateIndices = [
+      hoveredConnectionIndex,
+      effectiveSelectedConnectionIndex,
+      ...activeProjectState.connections
+        .map((connection, index) =>
+          deriveConnectionLegibilityState({
+            connection,
+            connectionIndex: index,
+            selectedConnectionIndex: effectiveSelectedConnectionIndex,
+            focusedModuleId: selectedModuleId,
+            traceFocusedModuleId,
+          }).traceEmphasized
+            ? index
+            : null,
+        )
+        .filter((value): value is number => value !== null),
+    ];
+
+    candidateIndices.forEach((connectionIndex) => {
+      if (connectionIndex === null || connectionIndex < 0) {
+        return;
+      }
+      const connection = activeProjectState.connections[connectionIndex];
+      if (!connection) {
+        return;
+      }
+      keys.add(`out:${connection.from.moduleId}:${connection.from.port}`);
+      keys.add(`in:${connection.to.moduleId}:${connection.to.port}`);
+    });
+
+    return keys;
+  }, [
+    activeProjectState.connections,
+    effectiveSelectedConnectionIndex,
+    hoveredConnectionIndex,
+    selectedModuleId,
+    traceFocusedModuleId,
+  ]);
 
   function startConnectionFromOutput(
     moduleId: string,
@@ -2934,7 +2974,9 @@ export function WorkbenchPanel({
         >
         {showGrid ? <div className="graph-grid-overlay" /> : null}
         <div
-          className={`graph-canvas${pendingConnection ? ' graph-canvas-wiring-active' : ''}`}
+          className={`graph-canvas${pendingConnection ? ' graph-canvas-wiring-active' : ''}${
+            effectiveSelectedConnectionIndex !== null ? ' graph-canvas-has-selected-connection' : ''
+          }`}
           style={
             {
               '--canvas-width': `${canvasWidth}px`,
@@ -3500,7 +3542,11 @@ export function WorkbenchPanel({
                             pendingConnection,
                             targetPortStates[inputKey],
                             hasIncomingConnection,
-                          )} graph-port-anchor-${side}`}
+                          )} graph-port-anchor-${side}${
+                            emphasizedConnectionPortKeys.has(`in:${moduleInstance.id}:${port.name}`)
+                              ? ' graph-port-anchor-emphasized'
+                              : ''
+                          }`}
                           style={getPortAnchorStyle(side, sideIndex)}
                           title={title}
                           onMouseEnter={() => {
@@ -3572,7 +3618,11 @@ export function WorkbenchPanel({
                           pendingConnection.fromPort === port.name
                             ? 'graph-port-anchor graph-port-anchor-out graph-port-anchor-active'
                             : 'graph-port-anchor graph-port-anchor-out'
-                        } graph-port-anchor-${side}`}
+                        } graph-port-anchor-${side}${
+                          emphasizedConnectionPortKeys.has(`out:${moduleInstance.id}:${port.name}`)
+                            ? ' graph-port-anchor-emphasized'
+                            : ''
+                        }`}
                         style={getPortAnchorStyle(side, sideIndex)}
                         title={
                           isCompositePortHintEligible(def) ? undefined : `${port.name}: ${port.type}`
