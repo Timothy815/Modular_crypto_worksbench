@@ -22,6 +22,7 @@ import type {
   WorkbenchPosition,
   WorkbenchStageLabel,
 } from './workbench-document';
+import { clonePortOrder } from './port-ordering';
 import {
   createUniqueImportedLearningId,
   createUniqueWorkspaceId,
@@ -31,7 +32,14 @@ import {
 
 function cloneLayout(layout: Record<string, WorkbenchPosition>) {
   return Object.fromEntries(
-    Object.entries(layout).map(([moduleId, position]) => [moduleId, { ...position }]),
+    Object.entries(layout).map(([moduleId, position]) => [
+      moduleId,
+      {
+        ...position,
+        ...(Array.isArray(position.inputOrder) ? { inputOrder: clonePortOrder(position.inputOrder) } : {}),
+        ...(Array.isArray(position.outputOrder) ? { outputOrder: clonePortOrder(position.outputOrder) } : {}),
+      },
+    ]),
   );
 }
 

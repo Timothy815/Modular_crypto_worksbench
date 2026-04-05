@@ -4,6 +4,7 @@ import {
   type CompositeLibraryEntry,
   type CompositeLayoutPosition,
 } from '../engine/composites';
+import { V1_REGISTRY } from '../engine/modules';
 import type { ModuleDefinition, ModuleInstance, ModuleRegistry, Project } from '../engine/types';
 import type { GuidedChallenge } from './challenges';
 import type { CryptanalysisMode } from './cryptanalysis-mode';
@@ -55,6 +56,7 @@ import {
 } from './node-orientation';
 import { CANVAS_NODE_HEIGHT, CANVAS_NODE_WIDTH } from './canvas-selection';
 import { isLargeWorkspace } from './workspace-landmarks';
+import { clonePortOrder, movePortInOrder, type OrderedPortDirection } from './port-ordering';
 import { snapModulePositionToGuideRails } from './workbench-support';
 
 export interface UiState {
@@ -188,6 +190,14 @@ export type UiAction =
       positions: Record<string, { x: number; y: number }>;
     }
   | { type: 'rotateModuleClockwise'; projectId: string; moduleId: string }
+  | {
+      type: 'moveModulePortOrder';
+      projectId: string;
+      moduleId: string;
+      direction: OrderedPortDirection;
+      portName: string;
+      delta: -1 | 1;
+    }
   | { type: 'tidyLayout'; projectId: string }
   | { type: 'tidySelectedModules'; projectId: string }
   | {
@@ -812,7 +822,15 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
         Object.fromEntries(
           Object.entries(project.layout).map(([moduleId, position]) => [
             moduleId,
-            { ...position },
+            {
+              ...position,
+              ...('inputOrder' in position && Array.isArray(position.inputOrder)
+                ? { inputOrder: clonePortOrder(position.inputOrder) }
+                : {}),
+              ...('outputOrder' in position && Array.isArray(position.outputOrder)
+                ? { outputOrder: clonePortOrder(position.outputOrder) }
+                : {}),
+            },
           ]),
         ),
       ]),
@@ -1572,6 +1590,51 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
             [action.moduleId]: {
               ...currentLayout[action.moduleId],
               orientation: getNextNodeOrientationClockwise(currentOrientation),
+            },
+          },
+        },
+      };
+    }
+    case 'moveModulePortOrder': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentLayout = state.layoutByProject[action.projectId];
+      const currentPosition = currentLayout?.[action.moduleId];
+      const project = state.projectStates[action.projectId];
+      const moduleInstance = project?.modules.find((candidate) => candidate.id === action.moduleId);
+      const effectiveRegistry = getEffectiveRegistry(V1_REGISTRY, state.compositeLibrary);
+      const moduleDef = moduleInstance ? effectiveRegistry[moduleInstance.defId] : null;
+      if (!currentLayout || !currentPosition || !moduleDef) {
+        return state;
+      }
+
+      const portNames = (action.direction === 'input' ? moduleDef.inputs : moduleDef.outputs).map(
+        (port) => port.name,
+      );
+      const currentOrder =
+        action.direction === 'input' ? currentPosition.inputOrder : currentPosition.outputOrder;
+      const nextOrder = movePortInOrder(portNames, currentOrder, action.portName, action.delta);
+      const changed =
+        (currentOrder?.length ?? 0) !== (nextOrder?.length ?? 0)
+        || (currentOrder ?? []).some((portName, index) => portName !== nextOrder?.[index])
+        || (nextOrder ?? []).some((portName, index) => portName !== currentOrder?.[index]);
+      if (!changed) {
+        return state;
+      }
+
+      return {
+        ...state,
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: {
+            ...currentLayout,
+            [action.moduleId]: {
+              ...currentPosition,
+              ...(action.direction === 'input'
+                ? { inputOrder: nextOrder }
+                : { outputOrder: nextOrder }),
             },
           },
         },
@@ -3049,7 +3112,15 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       const nextLayout = Object.fromEntries(
         Object.entries(action.document.ui.layout).map(([moduleId, position]) => [
           moduleId,
-          { ...position },
+          {
+            ...position,
+            ...('inputOrder' in position && Array.isArray(position.inputOrder)
+              ? { inputOrder: clonePortOrder(position.inputOrder) }
+              : {}),
+            ...('outputOrder' in position && Array.isArray(position.outputOrder)
+              ? { outputOrder: clonePortOrder(position.outputOrder) }
+              : {}),
+          },
         ]),
       );
       const nextAnnotations = action.document.ui.annotations.map((annotation) => ({

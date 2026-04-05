@@ -36,8 +36,9 @@ import {
 } from '../parameter-comparison';
 import type { TutorialStep } from '../tutorials';
 import { ComparisonPanel } from './comparison-panel';
-import type { ComparisonBaselineDocument } from '../workbench-document';
+import type { ComparisonBaselineDocument, WorkbenchPosition } from '../workbench-document';
 import type { ExecutionComparison } from '../execution-compare';
+import { getOrderedPorts } from '../port-ordering';
 import type {
   VerificationCase,
   VerificationCaseResult,
@@ -137,6 +138,7 @@ interface ParameterInspectorProps {
   baselineModuleInstance: ModuleInstance | null;
   moduleDef: ModuleDefinition | null;
   moduleInstance: ModuleInstance | null;
+  modulePosition?: WorkbenchPosition | null;
   selectedModuleIds: string[];
   parameterClipboard: {
     sourceModuleId: string;
@@ -157,6 +159,12 @@ interface ParameterInspectorProps {
   onParamChange: (moduleId: string, key: string, value: unknown) => void;
   onSetModuleBypass: (moduleId: string, bypass: boolean) => void;
   onRotateModuleClockwise?: (moduleId: string) => void;
+  onMoveModulePortOrder?: (
+    moduleId: string,
+    direction: 'input' | 'output',
+    portName: string,
+    delta: -1 | 1,
+  ) => void;
   onDuplicateModule?: (moduleId: string) => void;
   onRenameModuleInstance?: (moduleId: string, nextModuleId: string) => void;
   onDeleteModule: (moduleId: string) => void;
@@ -200,6 +208,8 @@ type InspectorIconName =
   | 'copy'
   | 'rename'
   | 'bypass'
+  | 'move-up'
+  | 'move-down'
   | 'identity'
   | 'reverse'
   | 'inverse'
@@ -426,6 +436,46 @@ function InspectorIcon({ name }: { name: InspectorIconName }) {
           />
         </svg>
       );
+    case 'move-up':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path
+            d="M10 15V5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M6.8 8.2 10 5l3.2 3.2"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case 'move-down':
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path
+            d="M10 5v10"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M6.8 11.8 10 15l3.2-3.2"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
     case 'identity':
       return (
         <svg viewBox="0 0 20 20" aria-hidden="true">
@@ -596,6 +646,7 @@ interface InspectorIconButtonProps {
   label: string;
   onClick: () => void;
   tone?: 'default' | 'danger';
+  disabled?: boolean;
 }
 
 function InspectorIconButton({
@@ -603,6 +654,7 @@ function InspectorIconButton({
   label,
   onClick,
   tone = 'default',
+  disabled = false,
 }: InspectorIconButtonProps) {
   return (
     <button
@@ -610,6 +662,7 @@ function InspectorIconButton({
       className={`inspector-icon-button inspector-icon-button-${tone}`}
       title={label}
       aria-label={label}
+      disabled={disabled}
       onClick={onClick}
     >
       <InspectorIcon name={icon} />
@@ -694,6 +747,7 @@ export function ParameterInspector({
   baselineModuleInstance,
   moduleDef,
   moduleInstance,
+  modulePosition = null,
   selectedModuleIds,
   parameterClipboard,
   getParamDraft,
@@ -703,6 +757,7 @@ export function ParameterInspector({
   onParamChange,
   onSetModuleBypass,
   onRotateModuleClockwise,
+  onMoveModulePortOrder,
   onDuplicateModule,
   onRenameModuleInstance,
   onDeleteModule,
@@ -1091,6 +1146,20 @@ export function ParameterInspector({
     ? getTransformationView(activeTransformationEntry, project, registry)
     : null;
   const canBypassSelectedModule = moduleDef ? isBypassEligibleDefinition(moduleDef) : false;
+  const orderedInputPorts = useMemo(
+    () =>
+      moduleDef
+        ? getOrderedPorts(moduleDef.inputs, modulePosition?.inputOrder)
+        : [],
+    [moduleDef, modulePosition],
+  );
+  const orderedOutputPorts = useMemo(
+    () =>
+      moduleDef
+        ? getOrderedPorts(moduleDef.outputs, modulePosition?.outputOrder)
+        : [],
+    [moduleDef, modulePosition],
+  );
   const bypassIneligibilityReason =
     moduleDef && !canBypassSelectedModule ? getBypassIneligibilityReason(moduleDef) : null;
   const effectiveLookupChunkIndex =
@@ -4454,10 +4523,34 @@ export function ParameterInspector({
                 <p className="empty-state">No input ports</p>
               ) : (
                 <ul className="port-list">
-                  {moduleDef.inputs.map((port) => (
+                  {orderedInputPorts.map((port, index) => (
                     <li key={port.name}>
-                      <strong>{port.name}</strong>
-                      <span>{port.type}</span>
+                      <div className="port-list-entry">
+                        <div className="port-list-copy">
+                          <strong>{port.name}</strong>
+                          <span>{port.type}</span>
+                        </div>
+                        {onMoveModulePortOrder && moduleInstance && orderedInputPorts.length > 1 ? (
+                          <div className="port-order-controls">
+                            <InspectorIconButton
+                              icon="move-up"
+                              label={`Move ${port.name} up`}
+                              onClick={() =>
+                                onMoveModulePortOrder(moduleInstance.id, 'input', port.name, -1)
+                              }
+                              disabled={index === 0}
+                            />
+                            <InspectorIconButton
+                              icon="move-down"
+                              label={`Move ${port.name} down`}
+                              onClick={() =>
+                                onMoveModulePortOrder(moduleInstance.id, 'input', port.name, 1)
+                              }
+                              disabled={index === orderedInputPorts.length - 1}
+                            />
+                          </div>
+                        ) : null}
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -4469,10 +4562,34 @@ export function ParameterInspector({
                 <p className="empty-state">No output ports</p>
               ) : (
                 <ul className="port-list">
-                  {moduleDef.outputs.map((port) => (
+                  {orderedOutputPorts.map((port, index) => (
                     <li key={port.name}>
-                      <strong>{port.name}</strong>
-                      <span>{port.type}</span>
+                      <div className="port-list-entry">
+                        <div className="port-list-copy">
+                          <strong>{port.name}</strong>
+                          <span>{port.type}</span>
+                        </div>
+                        {onMoveModulePortOrder && moduleInstance && orderedOutputPorts.length > 1 ? (
+                          <div className="port-order-controls">
+                            <InspectorIconButton
+                              icon="move-up"
+                              label={`Move ${port.name} up`}
+                              onClick={() =>
+                                onMoveModulePortOrder(moduleInstance.id, 'output', port.name, -1)
+                              }
+                              disabled={index === 0}
+                            />
+                            <InspectorIconButton
+                              icon="move-down"
+                              label={`Move ${port.name} down`}
+                              onClick={() =>
+                                onMoveModulePortOrder(moduleInstance.id, 'output', port.name, 1)
+                              }
+                              disabled={index === orderedOutputPorts.length - 1}
+                            />
+                          </div>
+                        ) : null}
+                      </div>
                     </li>
                   ))}
                 </ul>

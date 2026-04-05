@@ -66,6 +66,7 @@ import {
   isVerticalPortSide,
   type PortSide,
 } from '../node-orientation';
+import { getOrderedPorts } from '../port-ordering';
 import type { TutorialStep } from '../tutorials';
 import {
   buildActiveAnalysisSignalByModuleId,
@@ -212,6 +213,17 @@ function getOrthogonalConnectionVisualOffset(
   return sourceSide === 'left' || sourceSide === 'right'
     ? { x: 0, y: magnitude }
     : { x: magnitude, y: 0 };
+}
+
+function getOrderedModulePorts(
+  definition: ModuleDefinition,
+  position: WorkbenchPosition | undefined,
+  direction: 'input' | 'output',
+) {
+  return getOrderedPorts(
+    direction === 'input' ? definition.inputs : definition.outputs,
+    direction === 'input' ? position?.inputOrder : position?.outputOrder,
+  );
 }
 
 interface WorkbenchPanelProps {
@@ -1695,8 +1707,10 @@ export function WorkbenchPanel({
       (moduleInstance) => moduleInstance.id === connection.from.moduleId,
     );
     const sourceDef = sourceInstance ? registry[sourceInstance.defId] : undefined;
+    const orderedSourcePorts =
+      sourceDef ? getOrderedModulePorts(sourceDef, sourcePosition, 'output') : [];
     const sourcePortIndex = sourceDef
-      ? sourceDef.outputs.findIndex((port) => port.name === connection.from.port)
+      ? orderedSourcePorts.findIndex((port) => port.name === connection.from.port)
       : -1;
 
     if (!sourcePosition || !sourceDef || sourcePortIndex < 0) {
@@ -1841,6 +1855,12 @@ export function WorkbenchPanel({
       activeProjectState.modules.find((moduleInstance) => moduleInstance.id === connection.to.moduleId)?.defId ??
         ''
     ];
+    const orderedSourcePorts = sourceDef
+      ? getOrderedModulePorts(sourceDef, from, 'output')
+      : [];
+    const orderedTargetPorts = targetDef
+      ? getOrderedModulePorts(targetDef, to, 'input')
+      : [];
 
     if (!from || !to || !sourceDef || !targetDef) {
       return null;
@@ -1848,13 +1868,13 @@ export function WorkbenchPanel({
 
     const sourceIndex = Math.max(
       0,
-      sourceDef.outputs.findIndex((port) => port.name === connection.from.port),
+      orderedSourcePorts.findIndex((port) => port.name === connection.from.port),
     );
     const targetIndex = Math.max(
       0,
-      targetDef.inputs.findIndex((port) => port.name === connection.to.port),
+      orderedTargetPorts.findIndex((port) => port.name === connection.to.port),
     );
-    const sourcePort = sourceDef.outputs[sourceIndex];
+    const sourcePort = orderedSourcePorts[sourceIndex];
     const connectionDomainTone =
       sourcePort?.type === 'bits' ? 'bits' : sourcePort?.type === 'symbol' ? 'symbol' : '';
 
@@ -2694,10 +2714,12 @@ export function WorkbenchPanel({
             const sequentialRole = isTickedMode
               ? getSequentialRole(moduleInstance.defId, def)
               : null;
+            const orderedInputPorts = def ? getOrderedModulePorts(def, position, 'input') : [];
+            const orderedOutputPorts = def ? getOrderedModulePorts(def, position, 'output') : [];
 
             return (
-              <div
-                key={moduleInstance.id}
+            <div
+              key={moduleInstance.id}
                 className={
                   `graph-node graph-node-${category}` +
                   (moduleInstance.bypass ? ' graph-node-bypassed' : '') +
@@ -2919,7 +2941,7 @@ export function WorkbenchPanel({
                 <div
                   className={`graph-node-anchor-group graph-node-anchor-group-${inputSide}`}
                 >
-                  {(def?.inputs ?? []).map((port, index) => (
+                  {orderedInputPorts.map((port, index) => (
                     (() => {
                       const inputKey = `${moduleInstance.id}:${port.name}`;
                       const incomingConnectionIndex = incomingConnectionIndexByInputKey[inputKey];
@@ -2984,7 +3006,7 @@ export function WorkbenchPanel({
                 <div
                   className={`graph-node-anchor-group graph-node-anchor-group-${outputSide}`}
                 >
-                  {(def?.outputs ?? []).map((port, index) => (
+                  {orderedOutputPorts.map((port, index) => (
                     <span
                       key={port.name}
                       className={`${
@@ -3026,9 +3048,9 @@ export function WorkbenchPanel({
                         portType: port.type,
                       })}
                     </span>
-          ))}
-        </div>
-      </div>
+                  ))}
+                </div>
+              </div>
             );
           })}
 

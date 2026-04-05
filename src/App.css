@@ -5710,15 +5710,38 @@ body.canvas-resizing {
 }
 
 .port-list li {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
   padding: 6px 0;
   color: var(--muted);
 }
 
+.port-list-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.port-list-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .port-list li strong {
   color: var(--ink);
+}
+
+.port-order-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.port-order-controls .inspector-icon-button {
+  width: 26px;
+  height: 26px;
 }
 
 @media (max-width: 900px) {

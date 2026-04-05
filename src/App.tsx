@@ -373,6 +373,7 @@ function MainApp() {
   const selectedModuleDef = selectedModule
     ? (effectiveRegistry[selectedModule.defId] ?? null)
     : null;
+  const selectedModulePosition = selectedModule ? activeLayout[selectedModule.id] ?? null : null;
   const selectedModuleParamKeys = useMemo(
     () =>
       selectedModuleDef
@@ -3274,6 +3275,7 @@ function MainApp() {
                 baselineExecutionError={isCompositeDrilldownActive ? null : baselineExecutionError}
                 moduleDef={compositeDrilldownSelectedModuleDef ?? selectedModuleDef}
                 moduleInstance={compositeDrilldownSelectedModule ?? selectedModule}
+                modulePosition={isCompositeDrilldownActive ? null : selectedModulePosition}
                 selectedModuleIds={compositeDrilldown?.selectedModuleIds ?? effectiveSelectedModuleIds}
                 parameterClipboard={parameterClipboard}
                 getParamDraft={(moduleId, key) =>
@@ -3355,6 +3357,19 @@ function MainApp() {
                           type: 'rotateModuleClockwise',
                           projectId: activeProjectDefinition.id,
                           moduleId,
+                        })
+                }
+                onMoveModulePortOrder={
+                  isCompositeDrilldownActive || state.compositeEditor
+                    ? undefined
+                    : (moduleId, direction, portName, delta) =>
+                        dispatch({
+                          type: 'moveModulePortOrder',
+                          projectId: activeProjectDefinition.id,
+                          moduleId,
+                          direction,
+                          portName,
+                          delta,
                         })
                 }
                 onDuplicateModule={

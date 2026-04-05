@@ -14,6 +14,7 @@ import type {
   WorkspaceVersionDocument,
 } from './workbench-document';
 import { cloneProject } from './project-clone';
+import { clonePortOrder } from './port-ordering';
 
 export interface WorkspaceHistorySnapshot {
   project: Project;
@@ -91,12 +92,23 @@ export function cloneGuideRails(guideRails: WorkbenchGuideRail[]): WorkbenchGuid
   return guideRails.map((guideRail) => ({ ...guideRail }));
 }
 
-export function cloneLayout(
-  layout: Record<string, CompositeLayoutPosition>,
-): Record<string, CompositeLayoutPosition> {
+export function cloneLayout<TPosition extends CompositeLayoutPosition | WorkbenchPosition>(
+  layout: Record<string, TPosition>,
+): Record<string, TPosition> {
   return Object.fromEntries(
-    Object.entries(layout).map(([moduleId, position]) => [moduleId, { ...position }]),
-  );
+    Object.entries(layout).map(([moduleId, position]) => [
+      moduleId,
+      {
+        ...position,
+        ...('inputOrder' in position && Array.isArray(position.inputOrder)
+          ? { inputOrder: clonePortOrder(position.inputOrder) }
+          : {}),
+        ...('outputOrder' in position && Array.isArray(position.outputOrder)
+          ? { outputOrder: clonePortOrder(position.outputOrder) }
+          : {}),
+      },
+    ]),
+  ) as Record<string, TPosition>;
 }
 
 export function createEmptyWorkspaceHistoryState(): WorkspaceHistoryState {

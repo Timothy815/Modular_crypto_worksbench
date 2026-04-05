@@ -48,11 +48,10 @@ Current active sequencing should now be read as:
 - choose the next product-facing slice from the remaining unshipped contracts
 - keep future work explicit, bounded, and evidence-driven
 
-The clearest immediate next candidate is now:
-- `SEARCH-FIRST-PALETTE-V1.md`
-- a search-first primitive-discovery pass inside the existing palette surface
-- intended to reduce scroll-heavy lookup without widening into a global command palette
-- bounded to palette-local discovery speed rather than broader command-system redesign
+The next dense-workspace node-legibility slice is now shipped as:
+- `PORT-ORDER-AUTHORING-V1.md`
+- a bounded per-instance port-order authoring pass for reducing local crossings and card clutter
+- keeps the work in workspace UI metadata only and stops short of per-port side placement or engine-level port-definition changes
 
 Another shipped bounded readability slice after that is:
 - `COMPOSITE-INSTANCE-DRILLDOWN-V1.md`

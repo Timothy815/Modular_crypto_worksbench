@@ -14,6 +14,7 @@ import { STARTER_CHALLENGES } from './starter-challenges';
 import { STARTER_TUTORIALS } from './starter-tutorials';
 import { generateAiToolkitDocument, getAiToolkitFileName } from './ai-toolkit';
 import type { UiState } from './store';
+import { clonePortOrder } from './port-ordering';
 import type {
   ComparisonBaselineDocument,
   CompositeLibraryDocument,
@@ -164,7 +165,15 @@ function cloneWorkspaceDocument(document: WorkbenchDocument): WorkbenchDocument 
       layout: Object.fromEntries(
         Object.entries(document.ui.layout).map(([moduleId, position]) => [
           moduleId,
-          { ...position },
+          {
+            ...position,
+            ...('inputOrder' in position && Array.isArray(position.inputOrder)
+              ? { inputOrder: clonePortOrder(position.inputOrder) }
+              : {}),
+            ...('outputOrder' in position && Array.isArray(position.outputOrder)
+              ? { outputOrder: clonePortOrder(position.outputOrder) }
+              : {}),
+          },
         ]),
       ),
       annotations: cloneAnnotations(document.ui.annotations),
@@ -214,7 +223,15 @@ function buildDefaultDocument(project: DemoProject): WorkbenchDocument {
       layout: Object.fromEntries(
         Object.entries(project.layout).map(([moduleId, position]) => [
           moduleId,
-          { ...position },
+          {
+            ...position,
+            ...('inputOrder' in position && Array.isArray(position.inputOrder)
+              ? { inputOrder: clonePortOrder(position.inputOrder) }
+              : {}),
+            ...('outputOrder' in position && Array.isArray(position.outputOrder)
+              ? { outputOrder: clonePortOrder(position.outputOrder) }
+              : {}),
+          },
         ]),
       ),
       annotations: [],
@@ -260,7 +277,18 @@ export function buildPersistedWorkspace(
           ui: {
             layout: Object.fromEntries(
               Object.entries(state.layoutByProject[projectId] ?? {}).map(
-                ([moduleId, position]) => [moduleId, { ...position }],
+                ([moduleId, position]) => [
+                  moduleId,
+                  {
+                    ...position,
+                    ...('inputOrder' in position && Array.isArray(position.inputOrder)
+                      ? { inputOrder: clonePortOrder(position.inputOrder) }
+                      : {}),
+                    ...('outputOrder' in position && Array.isArray(position.outputOrder)
+                      ? { outputOrder: clonePortOrder(position.outputOrder) }
+                      : {}),
+                  },
+                ],
               ),
             ),
             annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),

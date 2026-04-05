@@ -10,6 +10,8 @@ export interface WorkbenchPosition {
   x: number;
   y: number;
   orientation?: WorkbenchNodeOrientation;
+  inputOrder?: string[];
+  outputOrder?: string[];
 }
 
 export interface WorkbenchAnnotation {

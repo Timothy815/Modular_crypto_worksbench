@@ -88,6 +88,59 @@ describe('uiReducer', () => {
     expect(nextState.projectStates[projectId]).toEqual(initialState.projectStates[projectId]);
   });
 
+  it('reorders module input and output ports as workspace-local metadata', () => {
+    const initialState = createInitialUiState(demoProjects);
+
+    const withInputOrder = uiReducer(initialState, {
+      type: 'moveModulePortOrder',
+      projectId: 'lorenz-foundation',
+      moduleId: 'xor',
+      direction: 'input',
+      portName: 'b',
+      delta: -1,
+    });
+
+    const withOutputOrder = uiReducer(withInputOrder, {
+      type: 'moveModulePortOrder',
+      projectId: 'rotor-return-path',
+      moduleId: 'rotor-fwd',
+      direction: 'output',
+      portName: 'turnover',
+      delta: -1,
+    });
+
+    expect(withInputOrder.layoutByProject['lorenz-foundation']?.xor?.inputOrder).toEqual(['b', 'a']);
+    expect(withOutputOrder.layoutByProject['rotor-return-path']?.['rotor-fwd']?.outputOrder).toEqual([
+      'turnover',
+      'out',
+    ]);
+    expect(withOutputOrder.projectStates['lorenz-foundation']).toEqual(
+      initialState.projectStates['lorenz-foundation'],
+    );
+    expect(withOutputOrder.projectStates['rotor-return-path']).toEqual(
+      initialState.projectStates['rotor-return-path'],
+    );
+  });
+
+  it('reorders composite module ports using the effective registry', () => {
+    const initialState = createInitialUiState(demoProjects);
+
+    const nextState = uiReducer(initialState, {
+      type: 'moveModulePortOrder',
+      projectId: 'advanced-rotor-stepping',
+      moduleId: 'middle-step-control',
+      direction: 'input',
+      portName: 'turnoverB',
+      delta: -1,
+    });
+
+    expect(nextState.layoutByProject['advanced-rotor-stepping']?.['middle-step-control']?.inputOrder).toEqual([
+      'pulse',
+      'turnoverB',
+      'turnoverA',
+    ]);
+  });
+
   it('creates a stage group box around the selected cluster bounds', () => {
     const initialState = createInitialUiState(demoProjects);
     const projectId = 'sequential';
