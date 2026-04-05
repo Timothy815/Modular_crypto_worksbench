@@ -2265,6 +2265,12 @@ export function WorkbenchPanel({
       focusedModuleId: selectedModuleId,
       traceFocusedModuleId,
     });
+    const isHoveredConnection = hoveredConnectionIndex === connectionIndex;
+    const shouldShowDirectionCues =
+      layer === 'overlay'
+        ? isSelectedConnection
+        : !isSelectedConnection && (isHoveredConnection || legibilityState.traceEmphasized);
+    const directionCuePathId = `connection-direction-path-${layer}-${connectionIndex}`;
     const visualOffset =
       routingMode === 'orthogonal' && layer === 'base'
         ? getOrthogonalConnectionVisualOffset(sourceSide, sourceIndex, targetIndex)
@@ -2368,6 +2374,7 @@ export function WorkbenchPanel({
         />
         <path
           className="connection-visible-path"
+          id={shouldShowDirectionCues ? directionCuePathId : undefined}
           d={pathD}
           style={
             visualOffset
@@ -2375,6 +2382,25 @@ export function WorkbenchPanel({
               : undefined
           }
         />
+        {shouldShowDirectionCues ? (
+          <text
+            className={[
+              'connection-direction-cues',
+              isSelectedConnection ? 'connection-direction-cues-selected' : '',
+              !isSelectedConnection && isHoveredConnection ? 'connection-direction-cues-hovered' : '',
+              !isSelectedConnection && legibilityState.traceEmphasized
+                ? 'connection-direction-cues-trace'
+                : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            dy="-7"
+          >
+            <textPath href={`#${directionCuePathId}`} startOffset="50%" textAnchor="middle">
+              {'➜   ➜   ➜'}
+            </textPath>
+          </text>
+        ) : null}
         {routingMode === 'orthogonal' &&
         !isObservationMode &&
         !isCompositeEditor &&
@@ -2511,7 +2537,7 @@ export function WorkbenchPanel({
       <g
         key={`hover-label:${connection.from.moduleId}:${connection.from.port}-${connection.to.moduleId}:${connection.to.port}`}
         className="connection-hover-label"
-        transform={`translate(${midpointX - labelWidth / 2} ${midpointY - labelHeight - 10})`}
+        transform={`translate(${midpointX - labelWidth / 2} ${midpointY - labelHeight - 24})`}
       >
         <rect width={labelWidth} height={labelHeight} rx="10" ry="10" />
         <text x={10} y={15}>

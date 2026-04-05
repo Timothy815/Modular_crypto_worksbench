@@ -58,10 +58,10 @@ The next dense-workspace node-legibility candidate after that is now also shippe
 - a bounded per-instance individual-port side assignment slice with `Left`, `Right`, `Top`, and `Bottom`
 - now solves real local crossover cases without drifting into arbitrary per-port free placement
 
-The next dense-workspace signal-reading candidate after that is now:
+The next dense-workspace signal-reading candidate after that is now also shipped as:
 - `BOUNDED-WIRE-DIRECTION-CUES-V1.md`
 - a bounded active-only wire-direction slice for hovered, selected, and traced wires
-- intended to improve path reading without turning the canvas into a permanently arrowed traffic map
+- now improves path reading without turning the canvas into a permanently arrowed traffic map
 
 The previous dense-workspace crossing follow-on is now already shipped as:
 - `WIRE-CROSSING-DISCIPLINE-V1.md`

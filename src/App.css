@@ -3481,6 +3481,32 @@ body.canvas-resizing {
   letter-spacing: 0;
 }
 
+.connection-direction-cues {
+  fill: color-mix(in srgb, var(--ink) 82%, transparent);
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.5em;
+  pointer-events: none;
+  user-select: none;
+  paint-order: stroke fill;
+  stroke: color-mix(in srgb, var(--surface-app) 78%, white);
+  stroke-width: 1.4px;
+}
+
+.connection-direction-cues-hovered {
+  fill: color-mix(in srgb, var(--accent) 86%, var(--ink));
+}
+
+.connection-direction-cues-selected {
+  fill: color-mix(in srgb, var(--accent) 92%, white);
+  stroke-width: 1.8px;
+}
+
+.connection-direction-cues-trace {
+  fill: color-mix(in srgb, var(--connection-trace) 88%, var(--ink));
+}
+
 .connection-bend-handle {
   fill: color-mix(in srgb, var(--surface-panel) 90%, white);
   stroke: color-mix(in srgb, var(--accent) 72%, var(--line));
