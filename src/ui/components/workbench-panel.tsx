@@ -62,7 +62,7 @@ import type {
 } from '../workbench-document';
 import {
   getNodeOrientation,
-  getPortSideForNodePresentation,
+  getPortSideForModulePort,
   isVerticalPortSide,
   type PortSide,
 } from '../node-orientation';
@@ -270,6 +270,63 @@ function getOrderedModulePorts(
     direction === 'input' ? definition.inputs : definition.outputs,
     direction === 'input' ? position?.inputOrder : position?.outputOrder,
   );
+}
+
+function buildSidePortGroups(
+  inputPorts: Array<{ name: string; type: string }>,
+  outputPorts: Array<{ name: string; type: string }>,
+  position: WorkbenchPosition | undefined,
+  orientation: ReturnType<typeof getNodeOrientation>,
+) {
+  const grouped: Record<
+    PortSide,
+    {
+      inputs: Array<{ name: string; type: string }>;
+      outputs: Array<{ name: string; type: string }>;
+    }
+  > = {
+    left: { inputs: [], outputs: [] },
+    right: { inputs: [], outputs: [] },
+    top: { inputs: [], outputs: [] },
+    bottom: { inputs: [], outputs: [] },
+  };
+
+  inputPorts.forEach((port) => {
+    const side = getPortSideForModulePort(position, orientation, 'in', port.name);
+    grouped[side].inputs.push({ ...port });
+  });
+
+  outputPorts.forEach((port) => {
+    const side = getPortSideForModulePort(position, orientation, 'out', port.name);
+    grouped[side].outputs.push({ ...port });
+  });
+
+  return grouped;
+}
+
+function getPortPlacementForModulePort(
+  inputPorts: Array<{ name: string; type: string }>,
+  outputPorts: Array<{ name: string; type: string }>,
+  position: WorkbenchPosition | undefined,
+  orientation: ReturnType<typeof getNodeOrientation>,
+  direction: 'in' | 'out',
+  portName: string,
+) {
+  const grouped = buildSidePortGroups(inputPorts, outputPorts, position, orientation);
+  const side = getPortSideForModulePort(position, orientation, direction, portName);
+  const sideGroup = grouped[side];
+  const sidePorts = direction === 'in' ? sideGroup.inputs : sideGroup.outputs;
+  const portIndex = sidePorts.findIndex((port) => port.name === portName);
+  if (portIndex === -1) {
+    return { side, sideIndex: 0 };
+  }
+
+  const opposingCount = direction === 'in' ? 0 : sideGroup.inputs.length;
+  const gapOffset = direction === 'out' && sideGroup.inputs.length > 0 ? 1 : 0;
+  return {
+    side,
+    sideIndex: opposingCount + gapOffset + portIndex,
+  };
 }
 
 interface WorkbenchPanelProps {
@@ -1028,10 +1085,11 @@ export function WorkbenchPanel({
     }
 
     const sourceOrientation = getNodeOrientation(from.orientation, layoutDirection);
-    const sourceSide = getPortSideForNodePresentation(
+    const sourceSide = getPortSideForModulePort(
+      from,
       sourceOrientation,
       'out',
-      from.portLayoutPreset,
+      selectedConnection.from.port,
     );
     return sourceSide === 'left' || sourceSide === 'right' ? 'x' : 'y';
   }, [
@@ -1711,20 +1769,22 @@ export function WorkbenchPanel({
 
       const orderedInputPorts = getOrderedModulePorts(targetDef, position, 'input');
       const orientation = getNodeOrientation(position.orientation, layoutDirection);
-      const inputSide = getPortSideForNodePresentation(
-        orientation,
-        'in',
-        position.portLayoutPreset,
-      );
-
-      orderedInputPorts.forEach((port, index) => {
+      orderedInputPorts.forEach((port) => {
+        const { side: inputSide, sideIndex } = getPortPlacementForModulePort(
+          orderedInputPorts,
+          [],
+          position,
+          orientation,
+          'in',
+          port.name,
+        );
         anchors.push({
           key: `${moduleInstance.id}:${port.name}`,
           anchor: getAnchorPosition(
             position.x,
             position.y,
             inputSide,
-            index,
+            sideIndex,
             NODE_WIDTH,
             NODE_HEIGHT,
             PORT_START_Y,
@@ -1885,7 +1945,6 @@ export function WorkbenchPanel({
   function startConnectionFromOutput(
     moduleId: string,
     portName: string,
-    portIndex: number,
   ) {
     setSelectedConnectionIndex(null);
     setSelectedGuideRailId(null);
@@ -1893,12 +1952,23 @@ export function WorkbenchPanel({
     const pos = layout[moduleId];
     if (!pos) return;
     const orientation = getNodeOrientation(pos.orientation, layoutDirection);
-    const sourceSide = getPortSideForNodePresentation(orientation, 'out', pos.portLayoutPreset);
+    const sourceDef = registry[
+      activeProjectState.modules.find((moduleInstance) => moduleInstance.id === moduleId)?.defId ?? ''
+    ];
+    const orderedOutputPorts = sourceDef ? getOrderedModulePorts(sourceDef, pos, 'output') : [];
+    const { side: sourceSide, sideIndex } = getPortPlacementForModulePort(
+      [],
+      orderedOutputPorts,
+      pos,
+      orientation,
+      'out',
+      portName,
+    );
     const anchor = getAnchorPosition(
       pos.x,
       pos.y,
       sourceSide,
-      portIndex,
+      sideIndex,
       NODE_WIDTH,
       NODE_HEIGHT,
       PORT_START_Y,
@@ -1944,16 +2014,19 @@ export function WorkbenchPanel({
     }
 
     const sourceOrientation = getNodeOrientation(sourcePosition.orientation, layoutDirection);
-    const sourceSide = getPortSideForNodePresentation(
+    const { side: sourceSide, sideIndex: sourceAnchorIndex } = getPortPlacementForModulePort(
+      [],
+      orderedSourcePorts,
+      sourcePosition,
       sourceOrientation,
       'out',
-      sourcePosition.portLayoutPreset,
+      connection.from.port,
     );
     const sourceAnchor = getAnchorPosition(
       sourcePosition.x,
       sourcePosition.y,
       sourceSide,
-      sourcePortIndex,
+      sourceAnchorIndex,
       NODE_WIDTH,
       NODE_HEIGHT,
       PORT_START_Y,
@@ -2112,22 +2185,28 @@ export function WorkbenchPanel({
 
     const sourceOrientation = getNodeOrientation(from.orientation, layoutDirection);
     const targetOrientation = getNodeOrientation(to.orientation, layoutDirection);
-    const sourceSide = getPortSideForNodePresentation(
+    const { side: sourceSide, sideIndex: sourceAnchorIndex } = getPortPlacementForModulePort(
+      [],
+      orderedSourcePorts,
+      from,
       sourceOrientation,
       'out',
-      from.portLayoutPreset,
+      connection.from.port,
     );
-    const targetSide = getPortSideForNodePresentation(
+    const { side: targetSide, sideIndex: targetAnchorIndex } = getPortPlacementForModulePort(
+      orderedTargetPorts,
+      [],
+      to,
       targetOrientation,
       'in',
-      to.portLayoutPreset,
+      connection.to.port,
     );
     const connectionKey = getConnectionComparisonKey(connection);
     const sourceAnchor = getAnchorPosition(
       from.x,
       from.y,
       sourceSide,
-      sourceIndex,
+      sourceAnchorIndex,
       NODE_WIDTH,
       NODE_HEIGHT,
       PORT_START_Y,
@@ -2137,7 +2216,7 @@ export function WorkbenchPanel({
       to.x,
       to.y,
       targetSide,
-      targetIndex,
+      targetAnchorIndex,
       NODE_WIDTH,
       NODE_HEIGHT,
       PORT_START_Y,
@@ -2179,14 +2258,6 @@ export function WorkbenchPanel({
     const pathD =
       orthogonalPathData?.path ?? getConnectionPath(sourceAnchor, sourceSide, targetAnchor, targetSide);
     const bendHandle = orthogonalPathData?.bendHandle ?? null;
-    const showConnectionLabel =
-      hoveredConnectionIndex === connectionIndex || effectiveSelectedConnectionIndex === connectionIndex;
-    const midpointX = (sourceAnchor.x + targetAnchor.x) / 2;
-    const midpointY = (sourceAnchor.y + targetAnchor.y) / 2;
-    const sourceLabel = `${connection.from.moduleId}.${connection.from.port}`;
-    const targetLabel = `${connection.to.moduleId}.${connection.to.port}`;
-    const labelWidth = Math.max(sourceLabel.length, targetLabel.length) * 7 + 20;
-    const labelHeight = 40;
     const legibilityState = deriveConnectionLegibilityState({
       connection,
       connectionIndex,
@@ -2361,22 +2432,96 @@ export function WorkbenchPanel({
               />
             ))
           : null}
-        {showConnectionLabel ? (
-          <g
-            className="connection-hover-label"
-            transform={`translate(${midpointX - labelWidth / 2} ${midpointY - labelHeight - 10})`}
-          >
-            <rect width={labelWidth} height={labelHeight} rx="10" ry="10" />
-            <text x={10} y={15}>
-              <tspan x={10} dy="0">
-                {sourceLabel}
-              </tspan>
-              <tspan x={10} dy="14">
-                {targetLabel}
-              </tspan>
-            </text>
-          </g>
-        ) : null}
+      </g>
+    );
+  }
+
+  function renderConnectionHoverLabel(connection: Project['connections'][number], connectionIndex: number) {
+    if (
+      hoveredConnectionIndex !== connectionIndex &&
+      effectiveSelectedConnectionIndex !== connectionIndex
+    ) {
+      return null;
+    }
+
+    const from = effectiveLayout[connection.from.moduleId];
+    const to = effectiveLayout[connection.to.moduleId];
+    const sourceInstance = activeProjectState.modules.find(
+      (moduleInstance) => moduleInstance.id === connection.from.moduleId,
+    );
+    const targetInstance = activeProjectState.modules.find(
+      (moduleInstance) => moduleInstance.id === connection.to.moduleId,
+    );
+    const sourceDef = sourceInstance ? registry[sourceInstance.defId] : undefined;
+    const targetDef = targetInstance ? registry[targetInstance.defId] : undefined;
+    if (!from || !to || !sourceDef || !targetDef) {
+      return null;
+    }
+
+    const orderedSourcePorts = getOrderedModulePorts(sourceDef, from, 'output');
+    const orderedTargetPorts = getOrderedModulePorts(targetDef, to, 'input');
+    const sourceOrientation = getNodeOrientation(from.orientation, layoutDirection);
+    const targetOrientation = getNodeOrientation(to.orientation, layoutDirection);
+    const { side: sourceSide, sideIndex: sourceAnchorIndex } = getPortPlacementForModulePort(
+      [],
+      orderedSourcePorts,
+      from,
+      sourceOrientation,
+      'out',
+      connection.from.port,
+    );
+    const { side: targetSide, sideIndex: targetAnchorIndex } = getPortPlacementForModulePort(
+      orderedTargetPorts,
+      [],
+      to,
+      targetOrientation,
+      'in',
+      connection.to.port,
+    );
+
+    const sourceAnchor = getAnchorPosition(
+      from.x,
+      from.y,
+      sourceSide,
+      sourceAnchorIndex,
+      NODE_WIDTH,
+      NODE_HEIGHT,
+      PORT_START_Y,
+      PORT_GAP,
+    );
+    const targetAnchor = getAnchorPosition(
+      to.x,
+      to.y,
+      targetSide,
+      targetAnchorIndex,
+      NODE_WIDTH,
+      NODE_HEIGHT,
+      PORT_START_Y,
+      PORT_GAP,
+    );
+
+    const midpointX = (sourceAnchor.x + targetAnchor.x) / 2;
+    const midpointY = (sourceAnchor.y + targetAnchor.y) / 2;
+    const sourceLabel = `${connection.from.moduleId}.${connection.from.port}`;
+    const targetLabel = `${connection.to.moduleId}.${connection.to.port}`;
+    const labelWidth = Math.max(sourceLabel.length, targetLabel.length) * 7 + 20;
+    const labelHeight = 40;
+
+    return (
+      <g
+        key={`hover-label:${connection.from.moduleId}:${connection.from.port}-${connection.to.moduleId}:${connection.to.port}`}
+        className="connection-hover-label"
+        transform={`translate(${midpointX - labelWidth / 2} ${midpointY - labelHeight - 10})`}
+      >
+        <rect width={labelWidth} height={labelHeight} rx="10" ry="10" />
+        <text x={10} y={15}>
+          <tspan x={10} dy="0">
+            {sourceLabel}
+          </tspan>
+          <tspan x={10} dy="14">
+            {targetLabel}
+          </tspan>
+        </text>
       </g>
     );
   }
@@ -3051,26 +3196,32 @@ export function WorkbenchPanel({
             })() : null}
           </svg>
 
+          <svg
+            className="graph-connections graph-connections-labels"
+            viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
+            preserveAspectRatio="none"
+          >
+            {activeProjectState.connections.map((connection, connectionIndex) =>
+              renderConnectionHoverLabel(connection, connectionIndex),
+            )}
+          </svg>
+
           {activeProjectState.modules.map((moduleInstance) => {
             const position = effectiveLayout[moduleInstance.id] ?? { x: 24, y: 24 };
             const def = registry[moduleInstance.defId];
             const category = def ? getModuleCategory(def) : getModuleCategory(moduleInstance.defId);
             const orientation = getNodeOrientation(position.orientation, layoutDirection);
-            const inputSide = getPortSideForNodePresentation(
-              orientation,
-              'in',
-              position.portLayoutPreset,
-            );
-            const outputSide = getPortSideForNodePresentation(
-              orientation,
-              'out',
-              position.portLayoutPreset,
-            );
             const sequentialRole = isTickedMode
               ? getSequentialRole(moduleInstance.defId, def)
               : null;
             const orderedInputPorts = def ? getOrderedModulePorts(def, position, 'input') : [];
             const orderedOutputPorts = def ? getOrderedModulePorts(def, position, 'output') : [];
+            const sidePortGroups = buildSidePortGroups(
+              orderedInputPorts,
+              orderedOutputPorts,
+              position,
+              orientation,
+            );
 
             return (
             <div
@@ -3293,11 +3444,20 @@ export function WorkbenchPanel({
                   </div>
                 </div>
 
-                <div
-                  className={`graph-node-anchor-group graph-node-anchor-group-${inputSide}`}
-                >
-                  {orderedInputPorts.map((port, index) => (
-                    (() => {
+                {(['left', 'right', 'top', 'bottom'] as PortSide[]).map((side) => (
+                  <div
+                    key={`ports-${side}`}
+                    className={`graph-node-anchor-group graph-node-anchor-group-${side}`}
+                  >
+                    {sidePortGroups[side].inputs.map((port) => {
+                      const { sideIndex } = getPortPlacementForModulePort(
+                        orderedInputPorts,
+                        orderedOutputPorts,
+                        position,
+                        orientation,
+                        'in',
+                        port.name,
+                      );
                       const inputKey = `${moduleInstance.id}:${port.name}`;
                       const incomingConnectionIndex = incomingConnectionIndexByInputKey[inputKey];
                       const hasIncomingConnection = incomingConnectionIndex !== undefined;
@@ -3314,8 +3474,8 @@ export function WorkbenchPanel({
                             pendingConnection,
                             targetPortStates[inputKey],
                             hasIncomingConnection,
-                          )} graph-port-anchor-${inputSide}`}
-                          style={getPortAnchorStyle(inputSide, index)}
+                          )} graph-port-anchor-${side}`}
+                          style={getPortAnchorStyle(side, sideIndex)}
                           title={title}
                           onMouseEnter={() => {
                             if (!pendingConnection) {
@@ -3363,65 +3523,71 @@ export function WorkbenchPanel({
                             portName: port.name,
                             portType: port.type,
                           })}
+                          <span className="graph-port-direction">IN</span>
                           <span className="graph-port-dot" />
                           <span className="graph-port-label">{port.name}</span>
                         </span>
                       );
-                    })()
-                  ))}
-                </div>
-
-                <div
-                  className={`graph-node-anchor-group graph-node-anchor-group-${outputSide}`}
-                >
-                  {orderedOutputPorts.map((port, index) => (
-                    <span
-                      key={port.name}
-                      className={`${
-                        pendingConnection?.fromModuleId === moduleInstance.id &&
-                        pendingConnection.fromPort === port.name
-                          ? 'graph-port-anchor graph-port-anchor-out graph-port-anchor-active'
-                          : 'graph-port-anchor graph-port-anchor-out'
-                      } graph-port-anchor-${outputSide}`}
-                      style={getPortAnchorStyle(outputSide, index)}
-                      title={
-                        isCompositePortHintEligible(def) ? undefined : `${port.name}: ${port.type}`
-                      }
-                      onMouseEnter={() => {
-                        if (!pendingConnection) {
-                          setHoveredPortHintKey(`${moduleInstance.id}:out:${port.name}`);
+                    })}
+                    {sidePortGroups[side].outputs.map((port) => {
+                      const { sideIndex } = getPortPlacementForModulePort(
+                        orderedInputPorts,
+                        orderedOutputPorts,
+                        position,
+                        orientation,
+                        'out',
+                        port.name,
+                      );
+                      return (
+                      <span
+                        key={port.name}
+                        className={`${
+                          pendingConnection?.fromModuleId === moduleInstance.id &&
+                          pendingConnection.fromPort === port.name
+                            ? 'graph-port-anchor graph-port-anchor-out graph-port-anchor-active'
+                            : 'graph-port-anchor graph-port-anchor-out'
+                        } graph-port-anchor-${side}`}
+                        style={getPortAnchorStyle(side, sideIndex)}
+                        title={
+                          isCompositePortHintEligible(def) ? undefined : `${port.name}: ${port.type}`
                         }
-                      }}
-                      onMouseLeave={() =>
-                        setHoveredPortHintKey((current) =>
-                          current === `${moduleInstance.id}:out:${port.name}` ? null : current,
-                        )
-                      }
-                      onMouseDown={(event) => {
-                        if (isObservationMode) {
-                          return;
+                        onMouseEnter={() => {
+                          if (!pendingConnection) {
+                            setHoveredPortHintKey(`${moduleInstance.id}:out:${port.name}`);
+                          }
+                        }}
+                        onMouseLeave={() =>
+                          setHoveredPortHintKey((current) =>
+                            current === `${moduleInstance.id}:out:${port.name}` ? null : current,
+                          )
                         }
-                        event.preventDefault();
-                        event.stopPropagation();
-                        startConnectionFromOutput(
-                          moduleInstance.id,
-                          port.name,
-                          index,
-                        );
-                      }}
-                    >
-                      <span className="graph-port-label">{port.name}</span>
-                      <span className="graph-port-dot" />
-                      {renderCompositePortHint({
-                        definition: def,
-                        moduleId: moduleInstance.id,
-                        direction: 'out',
-                        portName: port.name,
-                        portType: port.type,
-                      })}
-                    </span>
-                  ))}
-                </div>
+                        onMouseDown={(event) => {
+                          if (isObservationMode) {
+                            return;
+                          }
+                          event.preventDefault();
+                          event.stopPropagation();
+                          startConnectionFromOutput(
+                            moduleInstance.id,
+                            port.name,
+                          );
+                        }}
+                      >
+                        <span className="graph-port-direction">OUT</span>
+                        <span className="graph-port-label">{port.name}</span>
+                        <span className="graph-port-dot" />
+                        {renderCompositePortHint({
+                          definition: def,
+                          moduleId: moduleInstance.id,
+                          direction: 'out',
+                          portName: port.name,
+                          portType: port.type,
+                        })}
+                      </span>
+                    );
+                    })}
+                  </div>
+                ))}
               </div>
             );
           })}

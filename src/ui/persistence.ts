@@ -173,6 +173,12 @@ function cloneWorkspaceDocument(document: WorkbenchDocument): WorkbenchDocument 
             ...('outputOrder' in position && Array.isArray(position.outputOrder)
               ? { outputOrder: clonePortOrder(position.outputOrder) }
               : {}),
+            ...('inputPortSides' in position && position.inputPortSides
+              ? { inputPortSides: { ...position.inputPortSides } }
+              : {}),
+            ...('outputPortSides' in position && position.outputPortSides
+              ? { outputPortSides: { ...position.outputPortSides } }
+              : {}),
           },
         ]),
       ),
@@ -234,6 +240,12 @@ function buildDefaultDocument(project: DemoProject): WorkbenchDocument {
             ...('outputOrder' in position && Array.isArray(position.outputOrder)
               ? { outputOrder: clonePortOrder(position.outputOrder) }
               : {}),
+            ...('inputPortSides' in position && position.inputPortSides
+              ? { inputPortSides: { ...position.inputPortSides } }
+              : {}),
+            ...('outputPortSides' in position && position.outputPortSides
+              ? { outputPortSides: { ...position.outputPortSides } }
+              : {}),
           },
         ]),
       ),
@@ -289,6 +301,12 @@ export function buildPersistedWorkspace(
                       : {}),
                     ...('outputOrder' in position && Array.isArray(position.outputOrder)
                       ? { outputOrder: clonePortOrder(position.outputOrder) }
+                      : {}),
+                    ...('inputPortSides' in position && position.inputPortSides
+                      ? { inputPortSides: { ...position.inputPortSides } }
+                      : {}),
+                    ...('outputPortSides' in position && position.outputPortSides
+                      ? { outputPortSides: { ...position.outputPortSides } }
                       : {}),
                   },
                 ],

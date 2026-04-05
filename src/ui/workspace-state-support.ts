@@ -106,6 +106,12 @@ export function cloneLayout<TPosition extends CompositeLayoutPosition | Workbenc
         ...('outputOrder' in position && Array.isArray(position.outputOrder)
           ? { outputOrder: clonePortOrder(position.outputOrder) }
           : {}),
+        ...('inputPortSides' in position && position.inputPortSides
+          ? { inputPortSides: { ...position.inputPortSides } }
+          : {}),
+        ...('outputPortSides' in position && position.outputPortSides
+          ? { outputPortSides: { ...position.outputPortSides } }
+          : {}),
       },
     ]),
   ) as Record<string, TPosition>;

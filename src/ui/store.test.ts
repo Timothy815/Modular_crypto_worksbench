@@ -177,6 +177,49 @@ describe('uiReducer', () => {
     );
   });
 
+  it('stores and clears per-instance port side overrides as workspace-local metadata', () => {
+    const initialState = createInitialUiState(demoProjects);
+
+    const withInputSide = uiReducer(initialState, {
+      type: 'setModulePortSide',
+      projectId: 'advanced-rotor-stepping',
+      moduleId: 'middle-step-control',
+      direction: 'input',
+      portName: 'turnoverA',
+      side: 'top',
+    });
+
+    const withOutputSide = uiReducer(withInputSide, {
+      type: 'setModulePortSide',
+      projectId: 'rotor-return-path',
+      moduleId: 'rotor-fwd',
+      direction: 'output',
+      portName: 'turnover',
+      side: 'left',
+    });
+
+    const clearedInputSide = uiReducer(withOutputSide, {
+      type: 'setModulePortSide',
+      projectId: 'advanced-rotor-stepping',
+      moduleId: 'middle-step-control',
+      direction: 'input',
+      portName: 'turnoverA',
+      side: null,
+    });
+
+    expect(
+      withInputSide.layoutByProject['advanced-rotor-stepping']?.['middle-step-control']?.inputPortSides
+        ?.turnoverA,
+    ).toBe('top');
+    expect(
+      withOutputSide.layoutByProject['rotor-return-path']?.['rotor-fwd']?.outputPortSides?.turnover,
+    ).toBe('left');
+    expect(
+      clearedInputSide.layoutByProject['advanced-rotor-stepping']?.['middle-step-control']
+        ?.inputPortSides?.turnoverA,
+    ).toBeUndefined();
+  });
+
   it('creates a stage group box around the selected cluster bounds', () => {
     const initialState = createInitialUiState(demoProjects);
     const projectId = 'sequential';

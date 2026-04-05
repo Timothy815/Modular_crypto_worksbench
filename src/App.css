@@ -3459,6 +3459,14 @@ body.canvas-resizing {
   pointer-events: none;
 }
 
+.graph-connections-labels {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  overflow: visible;
+  pointer-events: none;
+}
+
 .connection-hover-label rect {
   fill: color-mix(in srgb, var(--surface-panel) 94%, white);
   stroke: color-mix(in srgb, var(--line) 78%, var(--accent));
@@ -4209,6 +4217,23 @@ body.canvas-resizing {
     filter 120ms ease;
 }
 
+.graph-port-direction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  min-height: 16px;
+  padding: 0 5px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+  background: color-mix(in srgb, var(--surface-panel) 88%, white);
+  color: var(--muted);
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1;
+}
+
 .graph-port-anchor-left {
   left: 0;
   flex-direction: row;
@@ -4232,6 +4257,16 @@ body.canvas-resizing {
 .graph-port-anchor-active {
   color: color-mix(in srgb, var(--accent) 78%, var(--ink));
   filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 18%, transparent));
+}
+
+.graph-port-anchor-in .graph-port-direction {
+  border-color: color-mix(in srgb, var(--success-text) 34%, var(--line));
+  color: color-mix(in srgb, var(--success-text) 82%, var(--ink));
+}
+
+.graph-port-anchor-out .graph-port-direction {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--line));
+  color: color-mix(in srgb, var(--accent) 76%, var(--ink));
 }
 
 .graph-port-anchor-occupied {
@@ -4291,6 +4326,16 @@ body.canvas-resizing {
   background: var(--ink);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.88);
   transition: box-shadow 120ms ease;
+}
+
+.graph-port-anchor-in .graph-port-dot {
+  background: transparent;
+  border: 2px solid color-mix(in srgb, var(--success-text) 68%, var(--ink));
+  box-sizing: border-box;
+}
+
+.graph-port-anchor-out .graph-port-dot {
+  background: color-mix(in srgb, var(--accent) 76%, var(--ink));
 }
 
 .graph-port-dot:hover {
@@ -5726,6 +5771,92 @@ body.canvas-resizing {
   background: var(--surface-soft);
 }
 
+.port-side-authoring {
+  grid-column: 1 / -1;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface-soft);
+}
+
+.port-side-sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.port-side-section {
+  display: grid;
+  gap: 8px;
+}
+
+.port-side-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.port-side-bin {
+  min-height: 74px;
+  padding: 10px;
+  border: 1px dashed color-mix(in srgb, var(--line) 78%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-elevated) 86%, transparent);
+}
+
+.port-side-bin-targetable {
+  border-color: color-mix(in srgb, var(--accent-soft) 72%, var(--line));
+}
+
+.port-side-bin-label {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.port-side-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.port-side-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 88%, var(--surface-elevated));
+  color: var(--ink);
+  cursor: grab;
+}
+
+.port-side-chip.dragging {
+  opacity: 0.6;
+}
+
+.port-side-chip-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.port-side-chip-reset {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .port-layout-preset-controls {
   display: flex;
   flex-wrap: wrap;
@@ -5877,6 +6008,10 @@ body.canvas-resizing {
   }
 
   .selected-ports {
+    grid-template-columns: 1fr;
+  }
+
+  .port-side-sections {
     grid-template-columns: 1fr;
   }
 

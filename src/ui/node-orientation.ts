@@ -2,9 +2,11 @@ import type {
   WorkbenchLayoutDirection,
   WorkbenchNodeOrientation,
   WorkbenchPortLayoutPreset,
+  WorkbenchPortSide,
+  WorkbenchPosition,
 } from './workbench-document';
 
-export type PortSide = 'left' | 'right' | 'top' | 'bottom';
+export type PortSide = WorkbenchPortSide;
 
 export function getDefaultNodeOrientation(
   layoutDirection: WorkbenchLayoutDirection,
@@ -77,6 +79,24 @@ export function getPortSideForNodePresentation(
   }
 
   return getPortSideForOrientation(orientation, direction);
+}
+
+export function getPortSideForModulePort(
+  position: WorkbenchPosition | undefined,
+  orientation: WorkbenchNodeOrientation,
+  direction: 'in' | 'out',
+  portName: string,
+): PortSide {
+  const explicitSide =
+    direction === 'in'
+      ? position?.inputPortSides?.[portName]
+      : position?.outputPortSides?.[portName];
+
+  if (explicitSide) {
+    return explicitSide;
+  }
+
+  return getPortSideForNodePresentation(orientation, direction, position?.portLayoutPreset);
 }
 
 export function isVerticalPortSide(side: PortSide) {

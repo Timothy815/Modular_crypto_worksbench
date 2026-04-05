@@ -3299,6 +3299,7 @@ function MainApp() {
                 moduleDef={compositeDrilldownSelectedModuleDef ?? selectedModuleDef}
                 moduleInstance={compositeDrilldownSelectedModule ?? selectedModule}
                 modulePosition={isCompositeDrilldownActive ? null : selectedModulePosition}
+                layoutDirection={activeLayoutDirection}
                 selectedModuleIds={compositeDrilldown?.selectedModuleIds ?? effectiveSelectedModuleIds}
                 parameterClipboard={parameterClipboard}
                 getParamDraft={(moduleId, key) =>
@@ -3404,6 +3405,19 @@ function MainApp() {
                           direction,
                           portName,
                           delta,
+                        })
+                }
+                onSetModulePortSide={
+                  isCompositeDrilldownActive || state.compositeEditor
+                    ? undefined
+                    : (moduleId, direction, portName, side) =>
+                        dispatch({
+                          type: 'setModulePortSide',
+                          projectId: activeProjectDefinition.id,
+                          moduleId,
+                          direction,
+                          portName,
+                          side,
                         })
                 }
                 onDuplicateModule={

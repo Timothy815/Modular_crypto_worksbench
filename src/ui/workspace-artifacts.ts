@@ -89,6 +89,8 @@ function cloneLayout(layout: Record<string, WorkbenchPosition>) {
         ...position,
         ...(Array.isArray(position.inputOrder) ? { inputOrder: clonePortOrder(position.inputOrder) } : {}),
         ...(Array.isArray(position.outputOrder) ? { outputOrder: clonePortOrder(position.outputOrder) } : {}),
+        ...(position.inputPortSides ? { inputPortSides: { ...position.inputPortSides } } : {}),
+        ...(position.outputPortSides ? { outputPortSides: { ...position.outputPortSides } } : {}),
       },
     ]),
   );

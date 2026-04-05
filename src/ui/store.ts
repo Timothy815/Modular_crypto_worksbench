@@ -25,6 +25,7 @@ import type {
   WorkbenchGroupBoxVariant,
   WorkbenchLayoutDirection,
   WorkbenchPortLayoutPreset,
+  WorkbenchPortSide,
   WorkbenchRoutingMode,
   WorkbenchWireColorMode,
   WorkbenchPosition,
@@ -205,6 +206,14 @@ export type UiAction =
       direction: OrderedPortDirection;
       portName: string;
       delta: -1 | 1;
+    }
+  | {
+      type: 'setModulePortSide';
+      projectId: string;
+      moduleId: string;
+      direction: OrderedPortDirection;
+      portName: string;
+      side: WorkbenchPortSide | null;
     }
   | { type: 'tidyLayout'; projectId: string }
   | { type: 'tidySelectedModules'; projectId: string }
@@ -600,6 +609,7 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'moveModule',
   'moveModules',
   'rotateModuleClockwise',
+  'setModulePortSide',
   'tidyLayout',
   'tidySelectedModules',
   'arrangeSelectedModules',
@@ -1698,6 +1708,57 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
                 ? { inputOrder: nextOrder }
                 : { outputOrder: nextOrder }),
             },
+          },
+        },
+      };
+    }
+    case 'setModulePortSide': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentLayout = state.layoutByProject[action.projectId];
+      const currentPosition = currentLayout?.[action.moduleId];
+      if (!currentLayout || !currentPosition) {
+        return state;
+      }
+
+      const currentPortSides =
+        action.direction === 'input'
+          ? currentPosition.inputPortSides ?? {}
+          : currentPosition.outputPortSides ?? {};
+      const currentSide = currentPortSides[action.portName] ?? null;
+      if (currentSide === action.side) {
+        return state;
+      }
+
+      const nextPortSides = { ...currentPortSides };
+      if (action.side) {
+        nextPortSides[action.portName] = action.side;
+      } else {
+        delete nextPortSides[action.portName];
+      }
+
+      const nextPosition = { ...currentPosition };
+      if (action.direction === 'input') {
+        if (Object.keys(nextPortSides).length > 0) {
+          nextPosition.inputPortSides = nextPortSides;
+        } else {
+          delete nextPosition.inputPortSides;
+        }
+      } else if (Object.keys(nextPortSides).length > 0) {
+        nextPosition.outputPortSides = nextPortSides;
+      } else {
+        delete nextPosition.outputPortSides;
+      }
+
+      return {
+        ...state,
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: {
+            ...currentLayout,
+            [action.moduleId]: nextPosition,
           },
         },
       };

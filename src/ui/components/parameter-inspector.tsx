@@ -38,10 +38,16 @@ import type { TutorialStep } from '../tutorials';
 import { ComparisonPanel } from './comparison-panel';
 import type {
   ComparisonBaselineDocument,
+  WorkbenchLayoutDirection,
   WorkbenchPortLayoutPreset,
+  WorkbenchPortSide,
   WorkbenchPosition,
 } from '../workbench-document';
 import type { ExecutionComparison } from '../execution-compare';
+import {
+  getNodeOrientation,
+  getPortSideForModulePort,
+} from '../node-orientation';
 import { getOrderedPorts } from '../port-ordering';
 import type {
   VerificationCase,
@@ -143,6 +149,7 @@ interface ParameterInspectorProps {
   moduleDef: ModuleDefinition | null;
   moduleInstance: ModuleInstance | null;
   modulePosition?: WorkbenchPosition | null;
+  layoutDirection?: WorkbenchLayoutDirection;
   selectedModuleIds: string[];
   parameterClipboard: {
     sourceModuleId: string;
@@ -172,6 +179,12 @@ interface ParameterInspectorProps {
     direction: 'input' | 'output',
     portName: string,
     delta: -1 | 1,
+  ) => void;
+  onSetModulePortSide?: (
+    moduleId: string,
+    direction: 'input' | 'output',
+    portName: string,
+    side: WorkbenchPortSide | null,
   ) => void;
   onDuplicateModule?: (moduleId: string) => void;
   onRenameModuleInstance?: (moduleId: string, nextModuleId: string) => void;
@@ -206,6 +219,8 @@ interface ParameterInspectorProps {
   onToggleProbe: (moduleId: string) => void;
   onClearProbes: () => void;
 }
+
+const PORT_SIDE_ORDER: WorkbenchPortSide[] = ['left', 'right', 'top', 'bottom'];
 
 type InspectorIconName =
   | 'rotate'
@@ -825,6 +840,7 @@ export function ParameterInspector({
   moduleDef,
   moduleInstance,
   modulePosition = null,
+  layoutDirection = 'horizontal',
   selectedModuleIds,
   parameterClipboard,
   getParamDraft,
@@ -836,6 +852,7 @@ export function ParameterInspector({
   onRotateModuleClockwise,
   onSetModulePortLayoutPreset,
   onMoveModulePortOrder,
+  onSetModulePortSide,
   onDuplicateModule,
   onRenameModuleInstance,
   onDeleteModule,
@@ -1239,6 +1256,41 @@ export function ParameterInspector({
     [moduleDef, modulePosition],
   );
   const activePortLayoutPreset = modulePosition?.portLayoutPreset ?? null;
+  const activeNodeOrientation = getNodeOrientation(modulePosition?.orientation, layoutDirection);
+  const [draggingPortSide, setDraggingPortSide] = useState<{
+    direction: 'input' | 'output';
+    portName: string;
+  } | null>(null);
+  const inputPortsBySide = useMemo(
+    () =>
+      Object.fromEntries(
+        PORT_SIDE_ORDER.map((side) => [
+          side,
+          orderedInputPorts.filter(
+            (port) =>
+              getPortSideForModulePort(modulePosition ?? undefined, activeNodeOrientation, 'in', port.name) ===
+              side,
+          ),
+        ]),
+      ) as Record<WorkbenchPortSide, typeof orderedInputPorts>,
+    [activeNodeOrientation, modulePosition, orderedInputPorts],
+  );
+  const outputPortsBySide = useMemo(
+    () =>
+      Object.fromEntries(
+        PORT_SIDE_ORDER.map((side) => [
+          side,
+          orderedOutputPorts.filter(
+            (port) =>
+              getPortSideForModulePort(modulePosition ?? undefined, activeNodeOrientation, 'out', port.name) ===
+              side,
+          ),
+        ]),
+      ) as Record<WorkbenchPortSide, typeof orderedOutputPorts>,
+    [activeNodeOrientation, modulePosition, orderedOutputPorts],
+  );
+  const explicitInputPortSides = modulePosition?.inputPortSides ?? {};
+  const explicitOutputPortSides = modulePosition?.outputPortSides ?? {};
   const bypassIneligibilityReason =
     moduleDef && !canBypassSelectedModule ? getBypassIneligibilityReason(moduleDef) : null;
   const effectiveLookupChunkIndex =
@@ -4636,6 +4688,151 @@ export function ParameterInspector({
                     <InspectorIcon name="ports-vertical" />
                     <span>Vertical</span>
                   </button>
+                </div>
+              </div>
+            ) : null}
+            {moduleInstance && onSetModulePortSide ? (
+              <div className="port-side-authoring">
+                <span className="meta-label">Port Sides</span>
+                <div className="port-side-sections">
+                  <div className="port-side-section">
+                    <span className="meta-label">Inputs</span>
+                    <div className="port-side-grid">
+                      {PORT_SIDE_ORDER.map((side) => (
+                        <div
+                          key={`input-${side}`}
+                          className={`port-side-bin${
+                            draggingPortSide?.direction === 'input' ? ' port-side-bin-targetable' : ''
+                          }`}
+                          onDragOver={(event) => {
+                            if (draggingPortSide?.direction !== 'input') {
+                              return;
+                            }
+                            event.preventDefault();
+                          }}
+                          onDrop={(event) => {
+                            if (draggingPortSide?.direction !== 'input') {
+                              return;
+                            }
+                            event.preventDefault();
+                            onSetModulePortSide(
+                              moduleInstance.id,
+                              'input',
+                              draggingPortSide.portName,
+                              side,
+                            );
+                            setDraggingPortSide(null);
+                          }}
+                        >
+                          <span className="port-side-bin-label">{side}</span>
+                          <div className="port-side-chip-list">
+                            {inputPortsBySide[side].map((port) => (
+                              <span
+                                key={`${side}-input-${port.name}`}
+                                className={`port-side-chip${
+                                  draggingPortSide?.direction === 'input' &&
+                                  draggingPortSide.portName === port.name
+                                    ? ' dragging'
+                                    : ''
+                                }`}
+                                draggable
+                                onDragStart={(event) => {
+                                  event.dataTransfer.effectAllowed = 'move';
+                                  event.dataTransfer.setData('text/plain', port.name);
+                                  setDraggingPortSide({ direction: 'input', portName: port.name });
+                                }}
+                                onDragEnd={() => setDraggingPortSide(null)}
+                              >
+                                <span className="port-side-chip-name">{port.name}</span>
+                                {explicitInputPortSides[port.name] ? (
+                                  <button
+                                    type="button"
+                                    className="port-side-chip-reset"
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      event.stopPropagation();
+                                      onSetModulePortSide(moduleInstance.id, 'input', port.name, null);
+                                    }}
+                                  >
+                                    Auto
+                                  </button>
+                                ) : null}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="port-side-section">
+                    <span className="meta-label">Outputs</span>
+                    <div className="port-side-grid">
+                      {PORT_SIDE_ORDER.map((side) => (
+                        <div
+                          key={`output-${side}`}
+                          className={`port-side-bin${
+                            draggingPortSide?.direction === 'output' ? ' port-side-bin-targetable' : ''
+                          }`}
+                          onDragOver={(event) => {
+                            if (draggingPortSide?.direction !== 'output') {
+                              return;
+                            }
+                            event.preventDefault();
+                          }}
+                          onDrop={(event) => {
+                            if (draggingPortSide?.direction !== 'output') {
+                              return;
+                            }
+                            event.preventDefault();
+                            onSetModulePortSide(
+                              moduleInstance.id,
+                              'output',
+                              draggingPortSide.portName,
+                              side,
+                            );
+                            setDraggingPortSide(null);
+                          }}
+                        >
+                          <span className="port-side-bin-label">{side}</span>
+                          <div className="port-side-chip-list">
+                            {outputPortsBySide[side].map((port) => (
+                              <span
+                                key={`${side}-output-${port.name}`}
+                                className={`port-side-chip${
+                                  draggingPortSide?.direction === 'output' &&
+                                  draggingPortSide.portName === port.name
+                                    ? ' dragging'
+                                    : ''
+                                }`}
+                                draggable
+                                onDragStart={(event) => {
+                                  event.dataTransfer.effectAllowed = 'move';
+                                  event.dataTransfer.setData('text/plain', port.name);
+                                  setDraggingPortSide({ direction: 'output', portName: port.name });
+                                }}
+                                onDragEnd={() => setDraggingPortSide(null)}
+                              >
+                                <span className="port-side-chip-name">{port.name}</span>
+                                {explicitOutputPortSides[port.name] ? (
+                                  <button
+                                    type="button"
+                                    className="port-side-chip-reset"
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      event.stopPropagation();
+                                      onSetModulePortSide(moduleInstance.id, 'output', port.name, null);
+                                    }}
+                                  >
+                                    Auto
+                                  </button>
+                                ) : null}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : null}

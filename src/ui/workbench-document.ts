@@ -13,6 +13,8 @@ export interface WorkbenchPosition {
   portLayoutPreset?: WorkbenchPortLayoutPreset;
   inputOrder?: string[];
   outputOrder?: string[];
+  inputPortSides?: Record<string, WorkbenchPortSide>;
+  outputPortSides?: Record<string, WorkbenchPortSide>;
 }
 
 export interface WorkbenchAnnotation {
@@ -80,6 +82,7 @@ export interface WorkbenchConnectionLayout {
 export type WorkbenchLayoutDirection = 'horizontal' | 'vertical';
 export type WorkbenchNodeOrientation = 'east' | 'south' | 'west' | 'north';
 export type WorkbenchPortLayoutPreset = 'horizontal' | 'vertical';
+export type WorkbenchPortSide = 'left' | 'right' | 'top' | 'bottom';
 export type WorkbenchRoutingMode = 'curved' | 'orthogonal';
 export type WorkbenchWireColorMode = 'domain' | 'neutral' | 'high-contrast';
 
