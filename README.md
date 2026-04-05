@@ -53,6 +53,11 @@ The next dense-workspace node-legibility follow-on is now also shipped as:
 - a bounded per-instance visual port posture slice with `Default`, `Horizontal`, and `Vertical`
 - keeps the work in workspace UI metadata only and stops short of arbitrary per-port side placement
 
+The next dense-workspace node-legibility candidate after that is now:
+- `PER-PORT-SIDE-AUTHORING-V1.md`
+- a bounded per-instance individual-port side assignment slice with `Left`, `Right`, `Top`, and `Bottom`
+- intended to solve real local crossover cases without drifting into arbitrary per-port free placement
+
 The previous dense-workspace crossing follow-on is now already shipped as:
 - `WIRE-CROSSING-DISCIPLINE-V1.md`
 - a bounded readability pass focused on stronger visual hierarchy at wire intersections
