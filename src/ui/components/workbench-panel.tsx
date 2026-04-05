@@ -552,6 +552,7 @@ export function WorkbenchPanel({
   const [connectionFeedback, setConnectionFeedback] = useState<string | null>(null);
   const [selectedConnectionIndex, setSelectedConnectionIndex] = useState<number | null>(null);
   const [hoveredConnectionIndex, setHoveredConnectionIndex] = useState<number | null>(null);
+  const [hoveredPendingTargetKey, setHoveredPendingTargetKey] = useState<string | null>(null);
   const [bendDragState, setBendDragState] = useState<{
     connectionKey: string;
     axis: 'x' | 'y';
@@ -1604,6 +1605,35 @@ export function WorkbenchPanel({
 
     return nextStates;
   }, [activeProjectState, pendingConnection, registry]);
+  const pendingTargetSummary = useMemo(() => {
+    if (!pendingConnection) {
+      return null;
+    }
+
+    let validCount = 0;
+    let replaceCount = 0;
+    for (const targetState of Object.values(targetPortStates)) {
+      if (!targetState.valid) {
+        continue;
+      }
+      if (targetState.mode === 'replace') {
+        replaceCount += 1;
+      } else {
+        validCount += 1;
+      }
+    }
+
+    const hoveredTargetState = hoveredPendingTargetKey
+      ? targetPortStates[hoveredPendingTargetKey] ?? null
+      : null;
+
+    return {
+      validCount,
+      replaceCount,
+      hoveredTargetKey: hoveredPendingTargetKey,
+      hoveredTargetState,
+    };
+  }, [hoveredPendingTargetKey, pendingConnection, targetPortStates]);
 
   const moduleIssueCountById = useMemo(() => buildModuleIssueCountById(validationIssues), [validationIssues]);
 
@@ -1638,6 +1668,7 @@ export function WorkbenchPanel({
       PORT_GAP,
     );
     setConnectionFeedback(null);
+    setHoveredPendingTargetKey(null);
     setPendingConnection({
       fromModuleId: moduleId,
       fromPort: portName,
@@ -1727,6 +1758,7 @@ export function WorkbenchPanel({
       );
     }
     setConnectionFeedback(null);
+    setHoveredPendingTargetKey(null);
     setPendingConnection(null);
     setSelectedConnectionIndex(null);
   }
@@ -2220,7 +2252,33 @@ export function WorkbenchPanel({
         <p className="connection-status">
           {pendingConnection.excludedConnectionIndex !== null ? 'Rewiring' : 'Wiring from'}{' '}
           <strong>{pendingConnection.fromModuleId}.{pendingConnection.fromPort}</strong>.
-          Valid inputs glow teal. Replacement targets glow gold. Invalid targets glow red.
+          {pendingTargetSummary ? (
+            <>
+              {' '}
+              <span className="connection-status-chip connection-status-chip-valid">
+                {pendingTargetSummary.validCount} valid
+              </span>
+              <span className="connection-status-chip connection-status-chip-replace">
+                {pendingTargetSummary.replaceCount} replace
+              </span>
+              {' '}
+              {pendingTargetSummary.hoveredTargetKey && pendingTargetSummary.hoveredTargetState ? (
+                <span className="connection-status-detail">
+                  Target{' '}
+                  <strong>{pendingTargetSummary.hoveredTargetKey.replace(':', '.')}</strong>{' '}
+                  {pendingTargetSummary.hoveredTargetState.valid
+                    ? pendingTargetSummary.hoveredTargetState.mode === 'replace'
+                      ? 'will replace the existing input connection.'
+                      : 'is ready to connect.'
+                    : pendingTargetSummary.hoveredTargetState.reason ?? 'is blocked.'}
+                </span>
+              ) : (
+                <span className="connection-status-detail">
+                  Valid inputs glow teal. Replacement targets glow gold. Blocked targets glow red.
+                </span>
+              )}
+            </>
+          ) : null}
         </p>
       ) : connectionFeedback ? (
         <p className="connection-status connection-status-warning">{connectionFeedback}</p>
@@ -2882,12 +2940,20 @@ export function WorkbenchPanel({
                           )} graph-port-anchor-${inputSide}`}
                           style={getPortAnchorStyle(inputSide, index)}
                           title={title}
-                          onMouseEnter={() => setHoveredPortHintKey(`${moduleInstance.id}:in:${port.name}`)}
-                          onMouseLeave={() =>
+                          onMouseEnter={() => {
+                            setHoveredPortHintKey(`${moduleInstance.id}:in:${port.name}`);
+                            if (pendingConnection) {
+                              setHoveredPendingTargetKey(`${moduleInstance.id}:${port.name}`);
+                            }
+                          }}
+                          onMouseLeave={() => {
                             setHoveredPortHintKey((current) =>
                               current === `${moduleInstance.id}:in:${port.name}` ? null : current,
-                            )
-                          }
+                            );
+                            setHoveredPendingTargetKey((current) =>
+                              current === `${moduleInstance.id}:${port.name}` ? null : current,
+                            );
+                          }}
                           onMouseDown={(event) => {
                             if (isObservationMode || pendingConnection || !hasIncomingConnection) {
                               return;

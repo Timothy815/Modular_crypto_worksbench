@@ -283,6 +283,32 @@
   color: var(--danger-text);
 }
 
+.connection-status-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.35rem;
+  margin-left: 6px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.connection-status-chip-valid {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.connection-status-chip-replace {
+  background: color-mix(in srgb, #d6b14d 24%, transparent);
+  color: #9b6a11;
+}
+
+.connection-status-detail {
+  margin-left: 8px;
+}
+
 .workbench-shell {
   --left-dock-width: 320px;
   --right-dock-width: 360px;
@@ -4160,7 +4186,8 @@ body.canvas-resizing {
   transition:
     transform 120ms ease,
     color 120ms ease,
-    opacity 120ms ease;
+    opacity 120ms ease,
+    filter 120ms ease;
 }
 
 .graph-port-anchor-left {
@@ -4184,7 +4211,9 @@ body.canvas-resizing {
 }
 
 .graph-port-anchor-active {
-  transform: scale(1.04);
+  transform: scale(1.06);
+  color: color-mix(in srgb, var(--accent) 78%, var(--ink));
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 18%, transparent));
 }
 
 .graph-port-anchor-occupied {
@@ -4199,31 +4228,44 @@ body.canvas-resizing {
   box-shadow: 0 0 0 3px var(--danger-bg-strong);
 }
 
+.graph-port-droppable {
+  opacity: 1;
+}
+
 .graph-port-valid {
   color: var(--success-text);
+  transform: scale(1.04);
 }
 
 .graph-port-valid .graph-port-dot {
   background: var(--success-text);
-  box-shadow: 0 0 0 4px var(--success-bg);
+  box-shadow:
+    0 0 0 4px var(--success-bg),
+    0 0 0 8px color-mix(in srgb, var(--success-bg) 34%, transparent);
 }
 
 .graph-port-invalid {
   color: var(--danger-text);
+  opacity: 0.96;
 }
 
 .graph-port-invalid .graph-port-dot {
   background: var(--danger-text);
-  box-shadow: 0 0 0 4px var(--danger-bg-strong);
+  box-shadow:
+    0 0 0 4px var(--danger-bg-strong),
+    0 0 0 8px color-mix(in srgb, var(--danger-bg-strong) 24%, transparent);
 }
 
 .graph-port-replace {
   color: #9b6a11;
+  transform: scale(1.04);
 }
 
 .graph-port-replace .graph-port-dot {
   background: #9b6a11;
-  box-shadow: 0 0 0 4px color-mix(in srgb, #d6b14d 38%, transparent);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, #d6b14d 38%, transparent),
+    0 0 0 8px color-mix(in srgb, #d6b14d 18%, transparent);
 }
 
 .graph-port-dot {
