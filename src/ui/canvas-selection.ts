@@ -5,8 +5,8 @@ export interface SelectionBoxRect {
   bottom: number;
 }
 
-export const CANVAS_NODE_WIDTH = 132;
-export const CANVAS_NODE_HEIGHT = 112;
+export const CANVAS_NODE_WIDTH = 144;
+export const CANVAS_NODE_HEIGHT = 120;
 
 export function normalizeSelectionBoxRect({
   startX,

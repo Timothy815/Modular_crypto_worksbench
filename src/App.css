@@ -3522,7 +3522,7 @@ body.canvas-resizing {
 
 .graph-node {
   position: absolute;
-  width: 132px;
+  width: 144px;
   text-align: left;
   overflow: visible;
   z-index: 1;
@@ -3906,7 +3906,7 @@ body.canvas-resizing {
 .graph-node-type {
   min-width: 0;
   display: block;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -3922,8 +3922,8 @@ body.canvas-resizing {
   display: block;
   max-width: 100%;
   margin: 0;
-  font-size: 0.98rem;
-  line-height: 1.22;
+  font-size: 1rem;
+  line-height: 1.26;
   color: var(--ink-strong);
   white-space: normal;
   overflow-wrap: anywhere;
@@ -3933,13 +3933,13 @@ body.canvas-resizing {
 
 .graph-node-meta-row {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 5px;
 }
 
 .graph-node-role-row {
   display: flex;
   justify-content: flex-start;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
 }
 
 .graph-node-role-badge {
@@ -3976,15 +3976,16 @@ body.canvas-resizing {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 14px;
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--muted);
 }
 
 .graph-node-body {
   position: relative;
-  padding: 14px 14px 12px;
+  min-height: 120px;
+  padding: 16px 16px 14px;
   cursor: grab;
   user-select: none;
   border-radius: inherit;
@@ -6093,17 +6094,17 @@ body.canvas-resizing {
 .graph-node-tick-state {
   display: block;
   font-family: var(--mono);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   color: var(--accent);
   opacity: 0.85;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .graph-node-history {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .graph-node-history-chip {
