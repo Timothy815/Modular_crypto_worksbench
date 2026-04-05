@@ -1082,6 +1082,11 @@ Immediate bounded next product slice:
 - focus on selection-scoped cleanup for dense subgraphs without disturbing the whole workspace
 - keep the work layout-local and history-safe, with no routing rewrite or graph-semantics change
 
+Recent dense-workspace follow-on now shipped:
+- `COMPLEX-WORKSPACE-TIDY-V2.md`
+- refines `Tidy Selection` so dense selected fragments stay more compact and local
+- keeps whole-workspace tidy behavior unchanged
+
 ### Claude
 
 Safe to begin:

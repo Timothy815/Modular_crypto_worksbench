@@ -621,6 +621,10 @@ const STAGE_ROW_GAP = 244;
 const STAGE_COLUMN_GAP = 148;
 const NODE_CENTER_X_OFFSET = CANVAS_NODE_WIDTH / 2;
 const NODE_CENTER_Y_OFFSET = CANVAS_NODE_HEIGHT / 2;
+const TIDY_COLUMN_GAP = 244;
+const TIDY_ROW_GAP = 148;
+const LOCAL_TIDY_MIN_PRIMARY_GAP = 176;
+const LOCAL_TIDY_MIN_SECONDARY_GAP = 136;
 const DEFAULT_GROUP_BOX_WIDTH = 280;
 const DEFAULT_GROUP_BOX_HEIGHT = 180;
 const GROUP_BOX_SELECTION_PADDING = 36;
@@ -4142,6 +4146,10 @@ function createTidiedLayout(
   project: Project,
   currentLayout: Record<string, CompositeLayoutPosition>,
   direction: WorkbenchLayoutDirection,
+  options?: {
+    columnGap?: number;
+    rowGap?: number;
+  },
 ): Record<string, CompositeLayoutPosition> {
   const adjacency = new Map<string, string[]>();
   const indegree = new Map<string, number>();
@@ -4222,8 +4230,8 @@ function createTidiedLayout(
 
   const columnXStart = 48;
   const rowYStart = 72;
-  const columnGap = 244;
-  const rowGap = 148;
+  const columnGap = options?.columnGap ?? TIDY_COLUMN_GAP;
+  const rowGap = options?.rowGap ?? TIDY_ROW_GAP;
 
   const sortedLayers = [...modulesByLayer.entries()].sort(
     ([leftLayer], [rightLayer]) => leftLayer - rightLayer,
@@ -4296,7 +4304,63 @@ function createTidiedSelectedLayout(
     return currentLayout;
   }
 
-  const tidiedSelectedLayout = createTidiedLayout(selectedProject, currentLayout, direction);
+  const selectedBounds = normalizedSelectedModuleIds.reduce(
+    (bounds, moduleId) => {
+      const position = currentLayout[moduleId];
+      if (!position) {
+        return bounds;
+      }
+      return {
+        minX: Math.min(bounds.minX, position.x),
+        maxX: Math.max(bounds.maxX, position.x),
+        minY: Math.min(bounds.minY, position.y),
+        maxY: Math.max(bounds.maxY, position.y),
+      };
+    },
+    {
+      minX: Number.POSITIVE_INFINITY,
+      maxX: Number.NEGATIVE_INFINITY,
+      minY: Number.POSITIVE_INFINITY,
+      maxY: Number.NEGATIVE_INFINITY,
+    },
+  );
+
+  const selectedSpanX =
+    Number.isFinite(selectedBounds.minX) && Number.isFinite(selectedBounds.maxX)
+      ? selectedBounds.maxX - selectedBounds.minX
+      : 0;
+  const selectedSpanY =
+    Number.isFinite(selectedBounds.minY) && Number.isFinite(selectedBounds.maxY)
+      ? selectedBounds.maxY - selectedBounds.minY
+      : 0;
+
+  const initialTidiedSelectedLayout = createTidiedLayout(selectedProject, currentLayout, direction);
+  const uniqueTidiedX = new Set(
+    Object.values(initialTidiedSelectedLayout).map((position) => Math.round(position.x)),
+  ).size;
+  const uniqueTidiedY = new Set(
+    Object.values(initialTidiedSelectedLayout).map((position) => Math.round(position.y)),
+  ).size;
+
+  const compactColumnGap = Math.min(
+    TIDY_COLUMN_GAP,
+    Math.max(
+      LOCAL_TIDY_MIN_PRIMARY_GAP,
+      uniqueTidiedX > 1 ? selectedSpanX / (uniqueTidiedX - 1) : TIDY_COLUMN_GAP,
+    ),
+  );
+  const compactRowGap = Math.min(
+    TIDY_ROW_GAP,
+    Math.max(
+      LOCAL_TIDY_MIN_SECONDARY_GAP,
+      uniqueTidiedY > 1 ? selectedSpanY / (uniqueTidiedY - 1) : TIDY_ROW_GAP,
+    ),
+  );
+
+  const tidiedSelectedLayout = createTidiedLayout(selectedProject, currentLayout, direction, {
+    columnGap: compactColumnGap,
+    rowGap: compactRowGap,
+  });
   const effectiveAnchorModuleId =
     (anchorModuleId && selectedModuleIdSet.has(anchorModuleId) ? anchorModuleId : null) ??
     normalizedSelectedModuleIds[0] ??

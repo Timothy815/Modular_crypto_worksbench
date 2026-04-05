@@ -63,6 +63,11 @@ The next dense-workspace signal-reading candidate after that is now also shipped
 - a bounded active-only wire-direction slice for hovered, selected, and traced wires
 - now improves path reading without turning the canvas into a permanently arrowed traffic map
 
+The next dense-workspace local-cleanup follow-on is now shipped as:
+- `COMPLEX-WORKSPACE-TIDY-V2.md`
+- a bounded footprint-aware refinement of `Tidy Selection`
+- keeps local cleanup compact instead of expanding selected fragments toward whole-workspace spacing
+
 The previous dense-workspace crossing follow-on is now already shipped as:
 - `WIRE-CROSSING-DISCIPLINE-V1.md`
 - a bounded readability pass focused on stronger visual hierarchy at wire intersections

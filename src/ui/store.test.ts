@@ -1568,14 +1568,64 @@ describe('uiReducer', () => {
       projectId,
     });
 
-    expect(nextState.layoutByProject[projectId]?.clock).toEqual({ x: -70, y: 338 });
-    expect(nextState.layoutByProject[projectId]?.lfsr).toEqual({ x: 174, y: 338 });
-    expect(nextState.layoutByProject[projectId]?.decode).toEqual({ x: 418, y: 338 });
+    const nextLayout = nextState.layoutByProject[projectId];
+    expect(nextLayout?.decode).toEqual({ x: 418, y: 338 });
+    expect(nextLayout?.clock?.y).toBe(338);
+    expect(nextLayout?.lfsr?.y).toBe(338);
+    expect(nextLayout?.decode?.y).toBe(338);
+    expect((nextLayout?.lfsr?.x ?? 0) - (nextLayout?.clock?.x ?? 0)).toBe(176);
+    expect((nextLayout?.decode?.x ?? 0) - (nextLayout?.lfsr?.x ?? 0)).toBe(176);
     expect(nextState.layoutByProject[projectId]?.output).toEqual(
       selectedState.layoutByProject[projectId]?.output,
     );
     expect(nextState.selectedModuleIdByProject[projectId]).toBe('decode');
     expect(nextState.selectedModuleIdsByProject[projectId]).toEqual(['clock', 'lfsr', 'decode']);
+  });
+
+  it('keeps selected tidy compact instead of expanding to whole-layout spacing', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const scrambledState = uiReducer(initialState, {
+      type: 'moveModules',
+      projectId,
+      positions: {
+        clock: { x: 320, y: 180 },
+        lfsr: { x: 495, y: 264 },
+        decode: { x: 418, y: 338 },
+      },
+    });
+    const selectedState = uiReducer(
+      uiReducer(
+        uiReducer(scrambledState, {
+          type: 'selectModule',
+          projectId,
+          moduleId: 'clock',
+        }),
+        {
+          type: 'selectModule',
+          projectId,
+          moduleId: 'lfsr',
+          additive: true,
+        },
+      ),
+      {
+        type: 'selectModule',
+        projectId,
+        moduleId: 'decode',
+        additive: true,
+      },
+    );
+
+    const nextState = uiReducer(selectedState, {
+      type: 'tidySelectedModules',
+      projectId,
+    });
+
+    const clockX = nextState.layoutByProject[projectId]?.clock?.x ?? 0;
+    const decodeX = nextState.layoutByProject[projectId]?.decode?.x ?? 0;
+
+    expect(decodeX - clockX).toBe(352);
+    expect(decodeX - clockX).toBeLessThan(488);
   });
 
   it('adds modules below the selected module in vertical mode', () => {
