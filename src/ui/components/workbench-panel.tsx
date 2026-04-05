@@ -3654,8 +3654,8 @@ export function WorkbenchPanel({
                             portName: port.name,
                             portType: port.type,
                           })}
+                          <span className="graph-port-direction">IN</span>
                           <span className="graph-port-dot" />
-                          <span className="graph-port-label">{port.name}</span>
                         </span>
                       );
                     })}
@@ -3707,7 +3707,7 @@ export function WorkbenchPanel({
                           );
                         }}
                       >
-                        <span className="graph-port-label">{port.name}</span>
+                        <span className="graph-port-direction">OUT</span>
                         <span className="graph-port-dot" />
                         {renderCompositePortHint({
                           definition: def,
