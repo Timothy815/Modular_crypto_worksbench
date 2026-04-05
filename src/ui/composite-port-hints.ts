@@ -16,7 +16,6 @@ export function shouldShowCompositePortHint({
   definition,
   direction,
   pendingConnection,
-  hoveredHintModuleId,
   hoveredPortHintKey,
   moduleId,
   portName,
@@ -29,16 +28,16 @@ export function shouldShowCompositePortHint({
   moduleId: string;
   portName: string;
 }) {
+  if (pendingConnection) {
+    return false;
+  }
+
   if (!isCompositePortHintEligible(definition)) {
     return false;
   }
 
   const portHintKey = `${moduleId}:${direction}:${portName}`;
   if (hoveredPortHintKey === portHintKey) {
-    return true;
-  }
-
-  if (pendingConnection && direction === 'in' && hoveredHintModuleId === moduleId) {
     return true;
   }
 

@@ -98,6 +98,8 @@ const NODE_WIDTH = CANVAS_NODE_WIDTH;
 const NODE_HEIGHT = CANVAS_NODE_HEIGHT;
 const PORT_GAP = 18;
 const PORT_START_Y = 34;
+const PENDING_TARGET_HIT_HALF_WIDTH = 22;
+const PENDING_TARGET_HIT_HALF_HEIGHT = 16;
 const DEFAULT_CANVAS_VIEWPORT_HEIGHT = 520;
 const MIN_CANVAS_VIEWPORT_HEIGHT = 360;
 const MAX_CANVAS_VIEWPORT_HEIGHT = 1200;
@@ -115,6 +117,24 @@ function snapPointToGrid(position: { x: number; y: number }) {
     x: snapCoordinateToGrid(position.x),
     y: snapCoordinateToGrid(position.y),
   };
+}
+
+function isPointerNearPortAnchor(
+  pointer: { x: number; y: number },
+  anchor: { x: number; y: number },
+  side: PortSide,
+) {
+  if (isVerticalPortSide(side)) {
+    return (
+      Math.abs(pointer.x - anchor.x) <= PENDING_TARGET_HIT_HALF_WIDTH &&
+      Math.abs(pointer.y - anchor.y) <= PENDING_TARGET_HIT_HALF_HEIGHT
+    );
+  }
+
+  return (
+    Math.abs(pointer.x - anchor.x) <= PENDING_TARGET_HIT_HALF_HEIGHT &&
+    Math.abs(pointer.y - anchor.y) <= PENDING_TARGET_HIT_HALF_WIDTH
+  );
 }
 const MINIMAP_PADDING = 10;
 
@@ -1507,52 +1527,6 @@ export function WorkbenchPanel({
     workspaceZoom,
   ]);
 
-  useEffect(() => {
-    if (!pendingConnection) {
-      return undefined;
-    }
-
-    function handleConnectionMove(event: MouseEvent) {
-      const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
-      const canvasSurface = canvasSurfaceRef.current;
-      if (!canvasRect || !canvasSurface) {
-        return;
-      }
-      const pointer = getCanvasViewportPoint({
-        clientX: event.clientX,
-        clientY: event.clientY,
-        canvasLeft: canvasRect.left,
-        canvasTop: canvasRect.top,
-        scrollLeft: canvasSurface.scrollLeft,
-        scrollTop: canvasSurface.scrollTop,
-        zoom: workspaceZoom,
-      });
-
-      setPendingConnection((prev) =>
-        prev
-          ? {
-              ...prev,
-              mouseX: pointer.x,
-              mouseY: pointer.y,
-            }
-          : null,
-      );
-    }
-
-    function handleConnectionUp() {
-      setPendingConnection(null);
-      setHoveredCompositeHintModuleId(null);
-    }
-
-    window.addEventListener('mousemove', handleConnectionMove);
-    window.addEventListener('mouseup', handleConnectionUp);
-
-    return () => {
-      window.removeEventListener('mousemove', handleConnectionMove);
-      window.removeEventListener('mouseup', handleConnectionUp);
-    };
-  }, [pendingConnection, workspaceZoom]);
-
   function renderCompositePortHint({
     definition,
     moduleId,
@@ -1621,6 +1595,117 @@ export function WorkbenchPanel({
 
     return nextStates;
   }, [activeProjectState, pendingConnection, registry]);
+  const pendingTargetAnchors = useMemo(() => {
+    if (!pendingConnection) {
+      return [];
+    }
+
+    const anchors: Array<{
+      key: string;
+      anchor: { x: number; y: number };
+      side: PortSide;
+    }> = [];
+
+    for (const moduleInstance of activeProjectState.modules) {
+      const targetDef = registry[moduleInstance.defId];
+      const position = effectiveLayout[moduleInstance.id];
+      if (!targetDef || !position) {
+        continue;
+      }
+
+      const orderedInputPorts = getOrderedModulePorts(targetDef, position, 'input');
+      const orientation = getNodeOrientation(position.orientation, layoutDirection);
+      const inputSide = getPortSideForNodePresentation(
+        orientation,
+        'in',
+        position.portLayoutPreset,
+      );
+
+      orderedInputPorts.forEach((port, index) => {
+        anchors.push({
+          key: `${moduleInstance.id}:${port.name}`,
+          anchor: getAnchorPosition(
+            position.x,
+            position.y,
+            inputSide,
+            index,
+            NODE_WIDTH,
+            NODE_HEIGHT,
+            PORT_START_Y,
+            PORT_GAP,
+          ),
+          side: inputSide,
+        });
+      });
+    }
+
+    return anchors;
+  }, [activeProjectState.modules, effectiveLayout, layoutDirection, pendingConnection, registry]);
+  useEffect(() => {
+    if (!pendingConnection) {
+      return undefined;
+    }
+
+    function handleConnectionMove(event: MouseEvent) {
+      const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
+      const canvasSurface = canvasSurfaceRef.current;
+      if (!canvasRect || !canvasSurface) {
+        return;
+      }
+      const pointer = getCanvasViewportPoint({
+        clientX: event.clientX,
+        clientY: event.clientY,
+        canvasLeft: canvasRect.left,
+        canvasTop: canvasRect.top,
+        scrollLeft: canvasSurface.scrollLeft,
+        scrollTop: canvasSurface.scrollTop,
+        zoom: workspaceZoom,
+      });
+
+      let nextHoveredTargetKey: string | null = null;
+      let bestDistance = Number.POSITIVE_INFINITY;
+      for (const candidate of pendingTargetAnchors) {
+        if (!isPointerNearPortAnchor(pointer, candidate.anchor, candidate.side)) {
+          continue;
+        }
+
+        const dx = pointer.x - candidate.anchor.x;
+        const dy = pointer.y - candidate.anchor.y;
+        const distance = dx * dx + dy * dy;
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          nextHoveredTargetKey = candidate.key;
+        }
+      }
+
+      setHoveredPendingTargetKey(nextHoveredTargetKey);
+
+      setPendingConnection((prev) =>
+        prev
+          ? {
+              ...prev,
+              mouseX: pointer.x,
+              mouseY: pointer.y,
+            }
+          : null,
+      );
+    }
+
+    function handleConnectionUp() {
+      setPendingConnection(null);
+      setHoveredCompositeHintModuleId(null);
+      setHoveredPortHintKey(null);
+      setHoveredPendingTargetKey(null);
+    }
+
+    window.addEventListener('mousemove', handleConnectionMove);
+    window.addEventListener('mouseup', handleConnectionUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleConnectionMove);
+      window.removeEventListener('mouseup', handleConnectionUp);
+    };
+  }, [pendingConnection, pendingTargetAnchors, workspaceZoom]);
   const pendingTargetSummary = useMemo(() => {
     if (!pendingConnection) {
       return null;
@@ -1684,6 +1769,7 @@ export function WorkbenchPanel({
       PORT_GAP,
     );
     setConnectionFeedback(null);
+    setHoveredPortHintKey(null);
     setHoveredPendingTargetKey(null);
     setPendingConnection({
       fromModuleId: moduleId,
@@ -1739,6 +1825,8 @@ export function WorkbenchPanel({
     );
 
     setConnectionFeedback(null);
+    setHoveredPortHintKey(null);
+    setHoveredPendingTargetKey(null);
     setPendingConnection({
       fromModuleId: connection.from.moduleId,
       fromPort: connection.from.port,
@@ -1995,6 +2083,7 @@ export function WorkbenchPanel({
         <path
           className="connection-hit-area"
           d={pathD}
+          style={pendingConnection ? ({ pointerEvents: 'none' } as CSSProperties) : undefined}
           onMouseEnter={() => setHoveredConnectionIndex(connectionIndex)}
           onMouseLeave={() => setHoveredConnectionIndex(null)}
           onClick={(event) => {
@@ -2432,7 +2521,7 @@ export function WorkbenchPanel({
         >
         {showGrid ? <div className="graph-grid-overlay" /> : null}
         <div
-          className="graph-canvas"
+          className={`graph-canvas${pendingConnection ? ' graph-canvas-wiring-active' : ''}`}
           style={
             {
               '--canvas-width': `${canvasWidth}px`,
@@ -2987,26 +3076,39 @@ export function WorkbenchPanel({
                           style={getPortAnchorStyle(inputSide, index)}
                           title={title}
                           onMouseEnter={() => {
-                            setHoveredPortHintKey(`${moduleInstance.id}:in:${port.name}`);
-                            if (pendingConnection) {
-                              setHoveredPendingTargetKey(`${moduleInstance.id}:${port.name}`);
+                            if (!pendingConnection) {
+                              setHoveredPortHintKey(`${moduleInstance.id}:in:${port.name}`);
                             }
                           }}
                           onMouseLeave={() => {
                             setHoveredPortHintKey((current) =>
                               current === `${moduleInstance.id}:in:${port.name}` ? null : current,
                             );
-                            setHoveredPendingTargetKey((current) =>
-                              current === `${moduleInstance.id}:${port.name}` ? null : current,
-                            );
                           }}
                           onMouseDown={(event) => {
-                            if (isObservationMode || pendingConnection || !hasIncomingConnection) {
+                            if (isObservationMode) {
+                              return;
+                            }
+                            if (pendingConnection) {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              completeConnectionOnInput(moduleInstance.id, port.name);
+                              return;
+                            }
+                            if (!hasIncomingConnection) {
                               return;
                             }
                             event.preventDefault();
                             event.stopPropagation();
                             startConnectionRewireFromInput(moduleInstance.id, port.name);
+                          }}
+                          onClick={(event) => {
+                            if (!pendingConnection) {
+                              return;
+                            }
+                            event.preventDefault();
+                            event.stopPropagation();
+                            completeConnectionOnInput(moduleInstance.id, port.name);
                           }}
                           onMouseUp={() =>
                             completeConnectionOnInput(moduleInstance.id, port.name)
@@ -3043,7 +3145,11 @@ export function WorkbenchPanel({
                       title={
                         isCompositePortHintEligible(def) ? undefined : `${port.name}: ${port.type}`
                       }
-                      onMouseEnter={() => setHoveredPortHintKey(`${moduleInstance.id}:out:${port.name}`)}
+                      onMouseEnter={() => {
+                        if (!pendingConnection) {
+                          setHoveredPortHintKey(`${moduleInstance.id}:out:${port.name}`);
+                        }
+                      }}
                       onMouseLeave={() =>
                         setHoveredPortHintKey((current) =>
                           current === `${moduleInstance.id}:out:${port.name}` ? null : current,
