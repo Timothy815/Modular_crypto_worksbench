@@ -1087,6 +1087,11 @@ Recent dense-workspace follow-on now shipped:
 - refines `Tidy Selection` so dense selected fragments stay more compact and local
 - keeps whole-workspace tidy behavior unchanged
 
+Next bounded workspace/product candidates now drafted:
+- `ADAPTIVE-NODE-CARD-SIZING-V1.md`
+- `WORKSPACE-FURNITURE-VISIBILITY-V1.md`
+- `STRUCTURAL-AUTOWIRE-MACROS-V1.md`
+
 ### Claude
 
 Safe to begin:

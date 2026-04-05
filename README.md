@@ -68,6 +68,21 @@ The next dense-workspace local-cleanup follow-on is now shipped as:
 - a bounded footprint-aware refinement of `Tidy Selection`
 - keeps local cleanup compact instead of expanding selected fragments toward whole-workspace spacing
 
+The next bounded readability candidate after that is now drafted as:
+- `ADAPTIVE-NODE-CARD-SIZING-V1.md`
+- a bounded adaptive card-sizing pass so simple nodes feel lighter and dense nodes gain a little more breathing room
+- keeps the work presentation-only and stops short of manual node resizing or card-family redesign
+
+The next bounded workspace-calm candidate after that is now drafted as:
+- `WORKSPACE-FURNITURE-VISIBILITY-V1.md`
+- a bounded visibility-control slice for stage labels, group boxes, rails, annotations, and related canvas furniture
+- keeps authored structure intact while enabling a cleaner presentation/readability mode
+
+The next bounded repeated-authoring candidate after that is now drafted as:
+- `STRUCTURAL-AUTOWIRE-MACROS-V1.md`
+- a bounded selection-scoped helper slice for obvious repeated connection work
+- keeps the work explicit and deterministic rather than drifting into hidden macro inference
+
 The previous dense-workspace crossing follow-on is now already shipped as:
 - `WIRE-CROSSING-DISCIPLINE-V1.md`
 - a bounded readability pass focused on stronger visual hierarchy at wire intersections
