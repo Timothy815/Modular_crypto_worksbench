@@ -537,6 +537,7 @@ export function getModuleLibrarySortOrder(definition: ModuleDefinition): number 
 
 export function getModulePurpose(definition: ModuleDefinition): string {
   if (isCompositeDefinition(definition)) {
+    if (definition.purpose) return definition.purpose;
     return `Composite module with ${definition.inputs.length} input${definition.inputs.length === 1 ? '' : 's'} and ${definition.outputs.length} output${definition.outputs.length === 1 ? '' : 's'}.`;
   }
   if (isIteratorDefinition(definition)) {
@@ -551,6 +552,7 @@ export function getModulePurpose(definition: ModuleDefinition): string {
 
 export function getModuleDetail(definition: ModuleDefinition): string {
   if (isCompositeDefinition(definition)) {
+    if (definition.purpose) return definition.purpose;
     return 'Composite module captured from a workbench subgraph. Open it to inspect or edit its internals.';
   }
   if (isIteratorDefinition(definition)) {

@@ -15,6 +15,7 @@ interface CreateCompositeFromSelectionArgs {
   selectedModuleIds: string[];
   excludedBoundaryPortKeys?: string[];
   portNameOverrides?: Record<string, string>;
+  purpose?: string;
 }
 
 interface ReplaceSelectionWithCompositeArgs {
@@ -82,6 +83,7 @@ export function createCompositeFromSelection({
   selectedModuleIds,
   excludedBoundaryPortKeys = [],
   portNameOverrides = {},
+  purpose,
 }: CreateCompositeFromSelectionArgs): CreateCompositeResult {
   const trimmedName = name.trim();
   const trimmedId = id.trim();
@@ -120,6 +122,7 @@ export function createCompositeFromSelection({
     return { ok: false, error: selection.error };
   }
 
+  const trimmedPurpose = purpose?.trim();
   const definition: CompositeDef = {
     id: trimmedId,
     name: trimmedName,
@@ -134,6 +137,7 @@ export function createCompositeFromSelection({
     },
     inputBindings: selection.inputBindings,
     outputBindings: selection.outputBindings,
+    ...(trimmedPurpose ? { purpose: trimmedPurpose } : {}),
   };
 
   const entry: CompositeLibraryEntry = {

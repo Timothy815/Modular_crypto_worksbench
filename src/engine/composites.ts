@@ -29,6 +29,7 @@ export interface CompositeDef {
   inputBindings: CompositePortBinding[];
   outputBindings: CompositePortBinding[];
   forwardedParams?: ForwardedParamBinding[];
+  purpose?: string;
   version: number;
 }
 

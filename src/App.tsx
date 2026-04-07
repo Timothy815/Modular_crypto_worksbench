@@ -275,6 +275,7 @@ function MainApp() {
   const [compositeDialogError, setCompositeDialogError] = useState<string | null>(null);
   const [excludedCompositeBoundaryPortKeys, setExcludedCompositeBoundaryPortKeys] = useState<string[]>([]);
   const [compositePortNameOverrides, setCompositePortNameOverrides] = useState<Record<string, string>>({});
+  const [compositePurpose, setCompositePurpose] = useState('');
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
   const [isChallengeResetConfirmOpen, setIsChallengeResetConfirmOpen] = useState(false);
   const [isChallengeCaptureOpen, setIsChallengeCaptureOpen] = useState(false);
@@ -3766,6 +3767,7 @@ function MainApp() {
             setCompositeDialogError(null);
             setExcludedCompositeBoundaryPortKeys([]);
             setCompositePortNameOverrides({});
+            setCompositePurpose('');
           }}
         >
           <div
@@ -3945,6 +3947,17 @@ function MainApp() {
               />
             </label>
 
+            <label className="param-field">
+              <span>Description</span>
+              <textarea
+                className="composite-purpose-textarea"
+                value={compositePurpose}
+                onChange={(event) => setCompositePurpose(event.target.value)}
+                placeholder="Describe what this composite does, what it's for, and how to use it. This appears in the ? info panel on the palette card."
+                rows={3}
+              />
+            </label>
+
             <label className="checkbox-field">
               <input
                 type="checkbox"
@@ -3973,6 +3986,7 @@ function MainApp() {
                   setCompositeDialogError(null);
                   setExcludedCompositeBoundaryPortKeys([]);
                   setCompositePortNameOverrides({});
+                  setCompositePurpose('');
                 }}
               >
                 Cancel
@@ -3989,6 +4003,7 @@ function MainApp() {
                     selectedModuleIds: effectiveSelectedModuleIds,
                     excludedBoundaryPortKeys: excludedCompositeBoundaryPortKeys,
                     portNameOverrides: effectivePortNameOverrides,
+                    purpose: compositePurpose,
                   });
 
                   if (!result.ok || !result.entry) {
@@ -4049,6 +4064,7 @@ function MainApp() {
                   setCompositeDialogError(null);
                   setExcludedCompositeBoundaryPortKeys([]);
                   setCompositePortNameOverrides({});
+                  setCompositePurpose('');
                 }}
               >
                 Create Composite

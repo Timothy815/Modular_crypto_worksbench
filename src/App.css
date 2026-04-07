@@ -5043,6 +5043,28 @@ body.canvas-resizing {
   color: var(--muted);
 }
 
+.composite-purpose-textarea {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--surface-base);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  width: 100%;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.composite-purpose-textarea::placeholder {
+  color: var(--muted);
+}
+
+.composite-purpose-textarea:focus {
+  outline: none;
+  border-color: var(--link-primary-bg);
+}
+
 .port-name-field {
   display: flex;
   flex-direction: column;
