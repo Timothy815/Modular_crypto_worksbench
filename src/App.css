@@ -5293,11 +5293,15 @@ body.canvas-resizing {
 
 .dialog-panel {
   width: min(520px, 100%);
+  max-height: calc(100vh - 48px);
   padding: 24px;
   border: 1px solid var(--line);
   border-radius: 24px;
   background: var(--surface-panel);
   box-shadow: 0 22px 60px rgba(16, 20, 28, 0.24);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .dialog-copy,
@@ -5342,7 +5346,11 @@ body.canvas-resizing {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 18px;
+  margin-top: auto;
+  padding-top: 18px;
+  position: sticky;
+  bottom: 0;
+  background: var(--surface-panel);
 }
 
 .primary-dialog-button,
