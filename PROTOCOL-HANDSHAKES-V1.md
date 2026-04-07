@@ -2,7 +2,7 @@
 
 ## Status
 
-Framed for `v1.44.0`.
+Shipped in `v1.44.0`.
 
 ## Purpose
 

@@ -2,6 +2,8 @@
 
 Last updated: March 24, 2026
 
+Status: Shipped on `main`.
+
 ## Purpose
 
 This contract defines the first bounded way for composites and iterators to expose selected internal controls to the outside world.

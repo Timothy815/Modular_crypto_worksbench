@@ -2,6 +2,8 @@
 
 Last updated: March 27, 2026
 
+Status: Shipped on `main`.
+
 ---
 
 ## Purpose

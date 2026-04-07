@@ -1,5 +1,7 @@
 # BOUNDED-WIRE-DIRECTION-CUES-V1
 
+Status: Shipped on `main`.
+
 ## Goal
 
 Improve signal-flow readability in dense workspaces by showing **direction cues only when a wire is under active attention**.
