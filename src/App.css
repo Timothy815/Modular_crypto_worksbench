@@ -3486,7 +3486,7 @@ body.canvas-resizing {
 }
 
 .connection-direction-cues {
-  fill: color-mix(in srgb, var(--ink) 82%, transparent);
+  fill: color-mix(in srgb, var(--ink) 88%, transparent);
   font-family: var(--mono);
   font-size: 18px;
   font-weight: 900;
@@ -3494,8 +3494,8 @@ body.canvas-resizing {
   pointer-events: none;
   user-select: none;
   paint-order: stroke fill;
-  stroke: color-mix(in srgb, var(--surface-app) 78%, white);
-  stroke-width: 1.4px;
+  stroke: color-mix(in srgb, var(--paper) 92%, transparent);
+  stroke-width: 2.5px;
 }
 
 .connection-direction-cues-hovered {
