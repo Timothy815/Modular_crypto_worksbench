@@ -5043,6 +5043,136 @@ body.canvas-resizing {
   color: var(--muted);
 }
 
+.port-name-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.port-name-input {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface-base);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 7px;
+  width: 100%;
+  min-width: 0;
+}
+
+.port-name-input::placeholder {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.port-name-input:focus {
+  outline: none;
+  border-color: var(--link-primary-bg);
+}
+
+.port-source-hint {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  display: block;
+  padding-left: 2px;
+}
+
+.port-type-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface-soft);
+  border-radius: 4px;
+  padding: 2px 5px;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* Composite shape preview */
+.composite-shape-preview {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.shape-preview-node {
+  display: flex;
+  align-items: stretch;
+  min-height: 48px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-base);
+  overflow: hidden;
+}
+
+.shape-preview-ports {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 8px;
+}
+
+.shape-preview-inputs {
+  border-right: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-soft) 60%, transparent);
+}
+
+.shape-preview-outputs {
+  border-left: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-soft) 60%, transparent);
+}
+
+.shape-preview-port {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.shape-preview-port-right {
+  flex-direction: row-reverse;
+}
+
+.shape-preview-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--link-primary-bg);
+  flex-shrink: 0;
+}
+
+.shape-preview-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink);
+  white-space: nowrap;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shape-preview-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+}
+
+.shape-preview-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: center;
+  word-break: break-word;
+}
+
 .bits-editor,
 .wiring-editor {
   display: grid;

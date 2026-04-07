@@ -274,6 +274,7 @@ function MainApp() {
   const [compositeId, setCompositeId] = useState('');
   const [compositeDialogError, setCompositeDialogError] = useState<string | null>(null);
   const [excludedCompositeBoundaryPortKeys, setExcludedCompositeBoundaryPortKeys] = useState<string[]>([]);
+  const [compositePortNameOverrides, setCompositePortNameOverrides] = useState<Record<string, string>>({});
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
   const [isChallengeResetConfirmOpen, setIsChallengeResetConfirmOpen] = useState(false);
   const [isChallengeCaptureOpen, setIsChallengeCaptureOpen] = useState(false);
@@ -412,6 +413,15 @@ function MainApp() {
     state.workspaceVersionsByProject[activeProjectDefinition.id] ?? [];
   const canUndoWorkspaceHistory = !state.compositeEditor && activeWorkspaceHistory.past.length > 0;
   const canRedoWorkspaceHistory = !state.compositeEditor && activeWorkspaceHistory.future.length > 0;
+  const effectivePortNameOverrides = useMemo(() => {
+    const result: Record<string, string> = {};
+    for (const [key, value] of Object.entries(compositePortNameOverrides)) {
+      const trimmed = value.trim();
+      if (trimmed) result[key] = trimmed;
+    }
+    return result;
+  }, [compositePortNameOverrides]);
+
   const compositeSelectionPreview = useMemo(
     () =>
       previewCompositeSelection({
@@ -419,8 +429,9 @@ function MainApp() {
         registry: effectiveRegistry,
         selectedModuleIds: effectiveSelectedModuleIds,
         excludedBoundaryPortKeys: excludedCompositeBoundaryPortKeys,
+        portNameOverrides: effectivePortNameOverrides,
       }),
-    [activeProjectState, effectiveRegistry, effectiveSelectedModuleIds, excludedCompositeBoundaryPortKeys],
+    [activeProjectState, effectiveRegistry, effectiveSelectedModuleIds, excludedCompositeBoundaryPortKeys, effectivePortNameOverrides],
   );
 
   let execution: ExecutionResult | null = null;
@@ -3754,6 +3765,7 @@ function MainApp() {
             setIsCompositeDialogOpen(false);
             setCompositeDialogError(null);
             setExcludedCompositeBoundaryPortKeys([]);
+            setCompositePortNameOverrides({});
           }}
         >
           <div
@@ -3808,11 +3820,21 @@ function MainApp() {
                                 });
                               }}
                             />
-                            <span>
-                              <strong>{port.name}</strong> <em>{port.internalModuleId}.{port.internalPort}</em>
+                            <span className="port-name-field">
+                              <input
+                                type="text"
+                                className="port-name-input"
+                                value={compositePortNameOverrides[port.key] ?? ''}
+                                placeholder={port.name}
+                                onChange={(event) => {
+                                  const val = event.target.value;
+                                  setCompositePortNameOverrides((prev) => ({ ...prev, [port.key]: val }));
+                                }}
+                              />
+                              <span className="port-source-hint">{port.internalPort}</span>
                             </span>
                           </label>
-                          <span>{port.type}</span>
+                          <span className="port-type-badge">{port.type}</span>
                         </li>
                       ))}
                     </ul>
@@ -3842,17 +3864,59 @@ function MainApp() {
                                 });
                               }}
                             />
-                            <span>
-                              <strong>{port.name}</strong> <em>{port.internalModuleId}.{port.internalPort}</em>
+                            <span className="port-name-field">
+                              <input
+                                type="text"
+                                className="port-name-input"
+                                value={compositePortNameOverrides[port.key] ?? ''}
+                                placeholder={port.name}
+                                onChange={(event) => {
+                                  const val = event.target.value;
+                                  setCompositePortNameOverrides((prev) => ({ ...prev, [port.key]: val }));
+                                }}
+                              />
+                              <span className="port-source-hint">{port.internalPort}</span>
                             </span>
                           </label>
-                          <span>{port.type}</span>
+                          <span className="port-type-badge">{port.type}</span>
                         </li>
                       ))}
                     </ul>
                   )}
                 </div>
               </div>
+
+              {(compositeSelectionPreview.inputCandidates.some((p) => p.included) ||
+                compositeSelectionPreview.outputCandidates.some((p) => p.included)) && (
+                <div className="composite-shape-preview">
+                  <span className="meta-label">Node Preview</span>
+                  <div className="shape-preview-node">
+                    <div className="shape-preview-ports shape-preview-inputs">
+                      {compositeSelectionPreview.inputCandidates
+                        .filter((p) => p.included)
+                        .map((port) => (
+                          <div key={port.key} className="shape-preview-port">
+                            <div className="shape-preview-dot" />
+                            <span className="shape-preview-label">{port.name}</span>
+                          </div>
+                        ))}
+                    </div>
+                    <div className="shape-preview-center">
+                      <span className="shape-preview-name">{compositeName || 'New Composite'}</span>
+                    </div>
+                    <div className="shape-preview-ports shape-preview-outputs">
+                      {compositeSelectionPreview.outputCandidates
+                        .filter((p) => p.included)
+                        .map((port) => (
+                          <div key={port.key} className="shape-preview-port shape-preview-port-right">
+                            <span className="shape-preview-label">{port.name}</span>
+                            <div className="shape-preview-dot" />
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <label className="param-field">
@@ -3908,6 +3972,7 @@ function MainApp() {
                   setIsCompositeDialogOpen(false);
                   setCompositeDialogError(null);
                   setExcludedCompositeBoundaryPortKeys([]);
+                  setCompositePortNameOverrides({});
                 }}
               >
                 Cancel
@@ -3923,6 +3988,7 @@ function MainApp() {
                     id: compositeId,
                     selectedModuleIds: effectiveSelectedModuleIds,
                     excludedBoundaryPortKeys: excludedCompositeBoundaryPortKeys,
+                    portNameOverrides: effectivePortNameOverrides,
                   });
 
                   if (!result.ok || !result.entry) {
@@ -3982,6 +4048,7 @@ function MainApp() {
                   setIsCompositeDialogOpen(false);
                   setCompositeDialogError(null);
                   setExcludedCompositeBoundaryPortKeys([]);
+                  setCompositePortNameOverrides({});
                 }}
               >
                 Create Composite

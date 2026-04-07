@@ -14,6 +14,7 @@ interface CreateCompositeFromSelectionArgs {
   id: string;
   selectedModuleIds: string[];
   excludedBoundaryPortKeys?: string[];
+  portNameOverrides?: Record<string, string>;
 }
 
 interface ReplaceSelectionWithCompositeArgs {
@@ -80,6 +81,7 @@ export function createCompositeFromSelection({
   id,
   selectedModuleIds,
   excludedBoundaryPortKeys = [],
+  portNameOverrides = {},
 }: CreateCompositeFromSelectionArgs): CreateCompositeResult {
   const trimmedName = name.trim();
   const trimmedId = id.trim();
@@ -111,6 +113,7 @@ export function createCompositeFromSelection({
     registry,
     selectedModuleIds,
     excludedBoundaryPortKeys,
+    portNameOverrides,
   });
 
   if (!selection.ok || !selection.selectedModules || !selection.internalConnections) {
@@ -161,15 +164,17 @@ export function previewCompositeSelection({
   registry,
   selectedModuleIds,
   excludedBoundaryPortKeys = [],
+  portNameOverrides = {},
 }: Pick<
   CreateCompositeFromSelectionArgs,
-  'project' | 'registry' | 'selectedModuleIds' | 'excludedBoundaryPortKeys'
+  'project' | 'registry' | 'selectedModuleIds' | 'excludedBoundaryPortKeys' | 'portNameOverrides'
 >): CompositeSelectionPreview {
   const selection = deriveCompositeSelection({
     project,
     registry,
     selectedModuleIds,
     excludedBoundaryPortKeys,
+    portNameOverrides,
   });
 
   return {
@@ -440,6 +445,7 @@ function buildBoundaryPorts(
   candidates: CompositeBoundaryPortPreview[],
   selectedModules: Project['modules'],
   excludedBoundaryPortKeys: Set<string>,
+  portNameOverrides: Record<string, string> = {},
 ) {
   const ports: Array<{ name: string; type: 'symbol' | 'bits' }> = [];
   const usedNames = new Set<string>();
@@ -473,10 +479,11 @@ function buildBoundaryPorts(
       continue;
     }
 
-    const externalPort = createUniquePortName(
-      `${moduleInstance.id}_${targetPortName}`,
-      usedNames,
-    );
+    const overrideName = portNameOverrides[boundaryPortKey]?.trim();
+    const baseName = overrideName
+      ? sanitizePortName(overrideName) || `${moduleInstance.id}_${targetPortName}`
+      : `${moduleInstance.id}_${targetPortName}`;
+    const externalPort = createUniquePortName(baseName, usedNames);
 
     const included = !excludedBoundaryPortKeys.has(boundaryPortKey);
     candidates.push({
@@ -535,9 +542,10 @@ function deriveCompositeSelection({
   registry,
   selectedModuleIds,
   excludedBoundaryPortKeys = [],
+  portNameOverrides = {},
 }: Pick<
   CreateCompositeFromSelectionArgs,
-  'project' | 'registry' | 'selectedModuleIds' | 'excludedBoundaryPortKeys'
+  'project' | 'registry' | 'selectedModuleIds' | 'excludedBoundaryPortKeys' | 'portNameOverrides'
 >): {
   ok: boolean;
   selectedModules?: Project['modules'];
@@ -616,6 +624,7 @@ function deriveCompositeSelection({
     inputCandidates,
     selectedModules,
     excludedBoundaryPortKeySet,
+    portNameOverrides,
   );
   const outputs = buildBoundaryPorts(
     outgoingBoundaryConnections,
@@ -625,6 +634,7 @@ function deriveCompositeSelection({
     outputCandidates,
     selectedModules,
     excludedBoundaryPortKeySet,
+    portNameOverrides,
   );
 
   if (inputs.length === 0 && outputs.length === 0) {
