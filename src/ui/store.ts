@@ -634,8 +634,10 @@ const NODE_CENTER_X_OFFSET = CANVAS_NODE_WIDTH / 2;
 const NODE_CENTER_Y_OFFSET = CANVAS_NODE_HEIGHT / 2;
 const TIDY_COLUMN_GAP = 244;
 const TIDY_ROW_GAP = 148;
-const LOCAL_TIDY_MIN_PRIMARY_GAP = 176;
-const LOCAL_TIDY_MIN_SECONDARY_GAP = 136;
+const LOCAL_TIDY_MAX_PRIMARY_GAP = 192;
+const LOCAL_TIDY_MAX_SECONDARY_GAP = 148;
+const LOCAL_TIDY_MIN_PRIMARY_GAP = 164;
+const LOCAL_TIDY_MIN_SECONDARY_GAP = 124;
 const DEFAULT_GROUP_BOX_WIDTH = 280;
 const DEFAULT_GROUP_BOX_HEIGHT = 180;
 const GROUP_BOX_SELECTION_PADDING = 36;
@@ -4422,17 +4424,17 @@ function createTidiedSelectedLayout(
   ).size;
 
   const compactColumnGap = Math.min(
-    TIDY_COLUMN_GAP,
+    LOCAL_TIDY_MAX_PRIMARY_GAP,
     Math.max(
       LOCAL_TIDY_MIN_PRIMARY_GAP,
-      uniqueTidiedX > 1 ? selectedSpanX / (uniqueTidiedX - 1) : TIDY_COLUMN_GAP,
+      uniqueTidiedX > 1 ? selectedSpanX / (uniqueTidiedX - 1) : LOCAL_TIDY_MAX_PRIMARY_GAP,
     ),
   );
   const compactRowGap = Math.min(
-    TIDY_ROW_GAP,
+    LOCAL_TIDY_MAX_SECONDARY_GAP,
     Math.max(
       LOCAL_TIDY_MIN_SECONDARY_GAP,
-      uniqueTidiedY > 1 ? selectedSpanY / (uniqueTidiedY - 1) : TIDY_ROW_GAP,
+      uniqueTidiedY > 1 ? selectedSpanY / (uniqueTidiedY - 1) : LOCAL_TIDY_MAX_SECONDARY_GAP,
     ),
   );
 

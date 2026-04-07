@@ -1573,8 +1573,8 @@ describe('uiReducer', () => {
     expect(nextLayout?.clock?.y).toBe(338);
     expect(nextLayout?.lfsr?.y).toBe(338);
     expect(nextLayout?.decode?.y).toBe(338);
-    expect((nextLayout?.lfsr?.x ?? 0) - (nextLayout?.clock?.x ?? 0)).toBe(176);
-    expect((nextLayout?.decode?.x ?? 0) - (nextLayout?.lfsr?.x ?? 0)).toBe(176);
+    expect((nextLayout?.lfsr?.x ?? 0) - (nextLayout?.clock?.x ?? 0)).toBe(164);
+    expect((nextLayout?.decode?.x ?? 0) - (nextLayout?.lfsr?.x ?? 0)).toBe(164);
     expect(nextState.layoutByProject[projectId]?.output).toEqual(
       selectedState.layoutByProject[projectId]?.output,
     );
@@ -1624,7 +1624,7 @@ describe('uiReducer', () => {
     const clockX = nextState.layoutByProject[projectId]?.clock?.x ?? 0;
     const decodeX = nextState.layoutByProject[projectId]?.decode?.x ?? 0;
 
-    expect(decodeX - clockX).toBe(352);
+    expect(decodeX - clockX).toBe(328);
     expect(decodeX - clockX).toBeLessThan(488);
   });
 
