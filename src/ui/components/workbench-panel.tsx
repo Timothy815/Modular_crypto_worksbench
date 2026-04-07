@@ -1988,6 +1988,15 @@ export function WorkbenchPanel({
     [activeAnalysisOwnerModuleId, activeAnalysisTraceEntry],
   );
   const traceFocusedModuleId = activeAnalysisOwnerModuleId ?? steppedModuleId ?? null;
+  const traceNeighborModuleIds = useMemo(() => {
+    if (!traceFocusedModuleId) return new Set<string>();
+    const neighbors = new Set<string>();
+    for (const connection of activeProjectState.connections) {
+      if (connection.from.moduleId === traceFocusedModuleId) neighbors.add(connection.to.moduleId);
+      if (connection.to.moduleId === traceFocusedModuleId) neighbors.add(connection.from.moduleId);
+    }
+    return neighbors;
+  }, [traceFocusedModuleId, activeProjectState.connections]);
   const emphasizedConnectionPortKeys = useMemo(() => {
     const keys = new Set<string>();
     const candidateIndices = [
@@ -3032,7 +3041,7 @@ export function WorkbenchPanel({
         <div
           className={`graph-canvas${pendingConnection ? ' graph-canvas-wiring-active' : ''}${
             effectiveSelectedConnectionIndex !== null ? ' graph-canvas-has-selected-connection' : ''
-          }`}
+          }${traceFocusedModuleId !== null ? ' graph-canvas-has-active-trace' : ''}`}
           style={
             {
               '--canvas-width': `${canvasWidth}px`,
@@ -3363,6 +3372,7 @@ export function WorkbenchPanel({
                   moduleInstance.id === activeAnalysisOwnerModuleId
                     ? ' graph-node-stepped'
                     : '') +
+                  (traceNeighborModuleIds.has(moduleInstance.id) ? ' graph-node-trace-neighbor' : '') +
                   (moduleInstance.id === divergenceModuleId ? ' graph-node-divergence' : '') +
                   (moduleInstance.id === tutorialStep?.focusModuleId ? ' graph-node-tutorial-focus' : '') +
                   (probedModuleIds.includes(moduleInstance.id) ? ' graph-node-probed' : '') +

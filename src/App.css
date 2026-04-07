@@ -3893,6 +3893,29 @@ body.canvas-resizing {
     0 10px 28px color-mix(in srgb, var(--link-primary-bg) 28%, transparent);
 }
 
+/* Trace bridging: neighbor nodes of the active stepped node */
+.graph-node-trace-neighbor {
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--link-primary-bg) 32%, transparent),
+    0 4px 12px color-mix(in srgb, var(--link-primary-bg) 8%, transparent);
+}
+
+/* Trace bridging: dim unrelated nodes when a trace step is active */
+.graph-canvas-has-active-trace .graph-node:not(.graph-node-stepped):not(.graph-node-trace-neighbor) {
+  opacity: 0.48;
+  transition: opacity 160ms ease;
+}
+
+.graph-canvas-has-active-trace .graph-node-stepped,
+.graph-canvas-has-active-trace .graph-node-trace-neighbor {
+  transition: opacity 160ms ease;
+}
+
+/* Trace bridging: tighten dimmed wire opacity further when trace is active */
+.graph-canvas-has-active-trace .connection-group-dimmed .connection-visible-path {
+  opacity: 0.06;
+}
+
 .graph-node-divergence {
   transform: translateY(-2px);
   box-shadow:
