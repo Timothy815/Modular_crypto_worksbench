@@ -65,6 +65,7 @@ import {
 import { Permutation } from './permutation';
 import { SymbolPermutation } from './symbol-permutation';
 import { SymbolWindow } from './symbol-window';
+import { RepeatSymbolToLength } from './repeat-symbol-to-length';
 import { BitShifter } from './bit-shifter';
 import { ByteRotate } from './byte-rotate';
 import { ByteSwap } from './byte-swap';
@@ -73,6 +74,8 @@ import { BitSplit } from './bit-split';
 import { BitPad } from './bit-pad';
 import { BitUnpad } from './bit-unpad';
 import { BitWindow } from './bit-window';
+import { RepeatBitsToLength } from './repeat-bits-to-length';
+import { BroadcastBits } from './broadcast-bits';
 import { GreaterThan } from './greater-than';
 import { ModExp } from './mod-exp';
 import { ModInverse } from './mod-inverse';
@@ -217,6 +220,61 @@ describe('Majority', () => {
         {},
       ),
     ).toThrow(/1-bit word/i);
+  });
+});
+
+describe('RepeatSymbolToLength', () => {
+  it('repeats a short symbol key until the configured length', () => {
+    const result = RepeatSymbolToLength.evaluate(
+      { in: { type: 'symbol', value: 'KEY' } },
+      { targetLength: 10 },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'KEYKEYKEYK' });
+  });
+
+  it('throws on an empty symbol sequence', () => {
+    expect(() =>
+      RepeatSymbolToLength.evaluate(
+        { in: { type: 'symbol', value: '' } },
+        { targetLength: 5 },
+      ),
+    ).toThrow(/empty symbol sequence/i);
+  });
+});
+
+describe('RepeatBitsToLength', () => {
+  it('repeats a bit mask until the configured width', () => {
+    const result = RepeatBitsToLength.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1] } },
+      { targetLength: 8 },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1, 1, 0, 1, 1, 0] });
+  });
+
+  it('throws on an empty bit sequence', () => {
+    expect(() =>
+      RepeatBitsToLength.evaluate(
+        { in: { type: 'bits', value: [] } },
+        { targetLength: 8 },
+      ),
+    ).toThrow(/empty bit sequence/i);
+  });
+});
+
+describe('BroadcastBits', () => {
+  it('repeats the full bit pattern by copy count', () => {
+    const result = BroadcastBits.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 0, 1, 1, 0, 0] } },
+      { copies: 3 },
+    );
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [
+        1, 0, 1, 0, 1, 1, 0, 0,
+        1, 0, 1, 0, 1, 1, 0, 0,
+        1, 0, 1, 0, 1, 1, 0, 0,
+      ],
+    });
   });
 });
 

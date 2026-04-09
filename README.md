@@ -88,7 +88,7 @@ The next bounded temporal-transparency candidate after that is now shipped as:
 - a bounded live-state visibility slice for rotors, counters, iterators, and other tick-driven modules
 - keeps the work read-only and truthful while making state evolution more visible than configuration alone
 
-The next bounded mismatch-alignment candidate after that is now drafted as:
+The next bounded mismatch-alignment candidate after that is now shipped as:
 - `EXPLICIT-REPETITION-AND-BROADCAST-V1.md`
 - a bounded explicit helper-module slice for repeated keys, repeated-byte XOR, and similar short-source / long-target cases
 - keeps mismatch policy visible in the graph and avoids hidden coercion inside existing modules

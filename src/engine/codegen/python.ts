@@ -34,6 +34,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'BaudotOutput',
   'SymbolPermutation',
   'SymbolWindow',
+  'RepeatSymbolToLength',
   'SymbolToBits',
   'BitsToSymbol',
   'PolluxFractionation',
@@ -69,6 +70,8 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'BitPad',
   'BitUnpad',
   'BitWindow',
+  'RepeatBitsToLength',
+  'BroadcastBits',
   'BitShifter',
   'Clock',
   'Counter',
@@ -139,6 +142,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'ascii_to_hex',
   'symbol_permutation',
   'symbol_window',
+  'repeat_symbol_to_length',
   'xor_bits',
   'and_bits',
   'or_bits',
@@ -166,6 +170,8 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'bit_pad',
   'bit_unpad',
   'bit_window',
+  'repeat_bits_to_length',
+  'broadcast_bits',
   'bit_shifter_bits',
   'clock_tick',
   'counter_init',
@@ -661,6 +667,17 @@ def symbol_window(signal, start, width):
     return {"out": "".join(characters[start:start + width])}
 
 
+def repeat_symbol_to_length(signal, target_length):
+    symbol = str(signal)
+    characters = list(symbol)
+    target_length = int(target_length)
+    if target_length < 1:
+        raise ValueError("RepeatSymbolToLength target length must be a positive integer.")
+    if len(characters) == 0:
+        raise ValueError("RepeatSymbolToLength cannot repeat an empty symbol sequence")
+    return {"out": "".join(characters[index % len(characters)] for index in range(target_length))}
+
+
 def xor_bits(a, b):
     left = _expect_bits(a, "XOR")
     right = _expect_bits(b, "XOR")
@@ -981,6 +998,26 @@ def bit_window(signal, start, width):
     if start + width > len(bits):
         raise ValueError(f"BitWindow range ({start}-{start + width - 1}) exceeds input length ({len(bits)})")
     return {"out": bits[start:start + width]}
+
+
+def repeat_bits_to_length(signal, target_length):
+    bits = _expect_bits(signal, "RepeatBitsToLength")
+    target_length = int(target_length)
+    if target_length < 1:
+        raise ValueError("RepeatBitsToLength target length must be a positive integer.")
+    if len(bits) == 0:
+        raise ValueError("RepeatBitsToLength cannot repeat an empty bit sequence")
+    return {"out": [bits[index % len(bits)] for index in range(target_length)]}
+
+
+def broadcast_bits(signal, copies):
+    bits = _expect_bits(signal, "BroadcastBits")
+    copies = int(copies)
+    if copies < 1:
+        raise ValueError("BroadcastBits copies must be a positive integer.")
+    if len(bits) == 0:
+        raise ValueError("BroadcastBits cannot broadcast an empty bit pattern")
+    return {"out": bits * copies}
 
 
 def bit_shift(signal, amount, mode):
@@ -1799,6 +1836,8 @@ function buildModuleExpression(
       return `symbol_permutation(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'order')})`;
     case 'SymbolWindow':
       return `symbol_window(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'start')}, ${expressionContext.getParamExpression(moduleInstance, def, 'width')})`;
+    case 'RepeatSymbolToLength':
+      return `repeat_symbol_to_length(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetLength')})`;
     case 'Reflector':
       return `{"out": reflector_traverse(${expressionContext.getInputExpression(moduleId, 'in')}, _parse_reflector_wiring(${expressionContext.getParamExpression(moduleInstance, def, 'wiring')}))}`;
     case 'Plugboard':
@@ -1875,6 +1914,10 @@ function buildModuleExpression(
       return `bit_unpad(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'originalWidth')}, ${expressionContext.getParamExpression(moduleInstance, def, 'side')})`;
     case 'BitWindow':
       return `bit_window(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'start')}, ${expressionContext.getParamExpression(moduleInstance, def, 'width')})`;
+    case 'RepeatBitsToLength':
+      return `repeat_bits_to_length(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetLength')})`;
+    case 'BroadcastBits':
+      return `broadcast_bits(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'copies')})`;
     case 'BitShifter':
       return `bit_shift(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'amount')}, ${expressionContext.getParamExpression(moduleInstance, def, 'mode')})`;
     default:

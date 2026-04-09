@@ -324,6 +324,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when one visible symbol message should feed different submessages into different branches without hidden chunking logic.',
     searchTerms: ['symbol window', 'message window', 'slice', 'submessage', 'extract', 'symbol', 'message'],
   },
+  RepeatSymbolToLength: {
+    sectionId: 'symbol-domain',
+    sortOrder: 55,
+    purpose: 'Repeats a visible symbol sequence until it reaches an explicit output length.',
+    detail: 'Use this for Vigenere-style repeated keys and other classical cycling behaviors when the graph should show repetition explicitly instead of manually unrolling the key.',
+    searchTerms: ['repeat symbol', 'repeat key', 'vigenere', 'cycle key', 'repeat to length', 'symbol', 'message'],
+  },
   BitShifter: {
     sectionId: 'word-diffusion',
     sortOrder: 20,
@@ -379,6 +386,20 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Extracts one contiguous bit window from a larger key bus or bit vector.',
     detail: 'Use this when one visible key bus should feed different sub-keys into different rounds without hiding the routing in iterator magic.',
     searchTerms: ['window', 'slice', 'sub-key', 'key bus', 'extract', 'bits', 'schedule', 'framing', 'routing'],
+  },
+  RepeatBitsToLength: {
+    sectionId: 'framing-routing',
+    sortOrder: 55,
+    purpose: 'Repeats a visible bit pattern until it reaches an explicit output width.',
+    detail: 'Use this when a short mask, pad, or key word should repeat visibly across a longer bitstring instead of forcing manual duplication.',
+    searchTerms: ['repeat bits', 'repeat to length', 'cycle bits', 'mask repeat', 'pad repeat', 'bits', 'framing'],
+  },
+  BroadcastBits: {
+    sectionId: 'framing-routing',
+    sortOrder: 56,
+    purpose: 'Repeats an entire bit pattern by an explicit copy count.',
+    detail: 'Use this when one visible byte or word should be broadcast across multiple repeated lanes, such as repeated-byte XOR experiments.',
+    searchTerms: ['broadcast bits', 'repeat byte', 'repeat word', 'copies', 'byte xor', 'bits', 'framing'],
   },
   SBox: {
     sectionId: 'word-diffusion',

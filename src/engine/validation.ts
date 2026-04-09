@@ -34,7 +34,10 @@ import { validateBitPadParam } from './modules/bit-pad';
 import { validateBitUnpadParam } from './modules/bit-unpad';
 import { validateBitWindowParam } from './modules/bit-window';
 import { validateByteRotateParam } from './modules/byte-rotate';
+import { validateBroadcastBitsParam } from './modules/broadcast-bits';
 import { parsePolluxAlphabet, validatePolluxFractionationParam } from './modules/pollux-fractionation';
+import { validateRepeatBitsToLengthParam } from './modules/repeat-bits-to-length';
+import { validateRepeatSymbolToLengthParam } from './modules/repeat-symbol-to-length';
 import { isBypassEligibleDefinition } from './bypass';
 import {
   validateProtocolMaterialParam,
@@ -225,6 +228,18 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'BitWindow') {
     return validateBitWindowParam(field.key, value);
+  }
+
+  if (def.id === 'RepeatBitsToLength') {
+    return validateRepeatBitsToLengthParam(field.key, value);
+  }
+
+  if (def.id === 'RepeatSymbolToLength') {
+    return validateRepeatSymbolToLengthParam(field.key, value);
+  }
+
+  if (def.id === 'BroadcastBits') {
+    return validateBroadcastBitsParam(field.key, value);
   }
 
   if (def.id === 'ByteRotate') {

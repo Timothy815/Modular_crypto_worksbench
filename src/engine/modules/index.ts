@@ -51,6 +51,7 @@ import { Plugboard } from './plugboard';
 import { Permutation } from './permutation';
 import { SymbolPermutation } from './symbol-permutation';
 import { SymbolWindow } from './symbol-window';
+import { RepeatSymbolToLength } from './repeat-symbol-to-length';
 import { BitShifter } from './bit-shifter';
 import { ByteRotate } from './byte-rotate';
 import { ByteSwap } from './byte-swap';
@@ -59,6 +60,8 @@ import { BitSplit } from './bit-split';
 import { BitPad } from './bit-pad';
 import { BitUnpad } from './bit-unpad';
 import { BitWindow } from './bit-window';
+import { RepeatBitsToLength } from './repeat-bits-to-length';
+import { BroadcastBits } from './broadcast-bits';
 import { LFSR } from './lfsr';
 import { SBox } from './s-box';
 import { Clock } from './clock';
@@ -114,6 +117,7 @@ export {
   Permutation,
   SymbolPermutation,
   SymbolWindow,
+  RepeatSymbolToLength,
   BitShifter,
   ByteRotate,
   ByteSwap,
@@ -122,6 +126,8 @@ export {
   BitPad,
   BitUnpad,
   BitWindow,
+  RepeatBitsToLength,
+  BroadcastBits,
   LFSR,
   SBox,
   Clock,
@@ -178,6 +184,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [Permutation.id]: Permutation,
   [SymbolPermutation.id]: SymbolPermutation,
   [SymbolWindow.id]: SymbolWindow,
+  [RepeatSymbolToLength.id]: RepeatSymbolToLength,
   [BitShifter.id]: BitShifter,
   [ByteRotate.id]: ByteRotate,
   [ByteSwap.id]: ByteSwap,
@@ -186,6 +193,8 @@ export const V1_REGISTRY: ModuleRegistry = {
   [BitPad.id]: BitPad,
   [BitUnpad.id]: BitUnpad,
   [BitWindow.id]: BitWindow,
+  [RepeatBitsToLength.id]: RepeatBitsToLength,
+  [BroadcastBits.id]: BroadcastBits,
   [LFSR.id]: LFSR,
   [SBox.id]: SBox,
   [Clock.id]: Clock,
