@@ -116,6 +116,7 @@ export interface BuildShareableLabPackArgs {
   stageLabels?: WorkbenchStageLabel[];
   groupBoxes?: WorkbenchGroupBox[];
   guideRails?: WorkbenchGuideRail[];
+  showFurniture?: boolean;
   showOverviewNavigator?: boolean;
   showGrid?: boolean;
   snapToGrid?: boolean;
@@ -148,6 +149,7 @@ export function buildShareableLabPack({
   stageLabels = [],
   groupBoxes = [],
   guideRails = [],
+  showFurniture = true,
   showOverviewNavigator = false,
   showGrid = false,
   snapToGrid = false,
@@ -180,6 +182,7 @@ export function buildShareableLabPack({
         stageLabels: cloneStageLabels(stageLabels),
         groupBoxes: cloneGroupBoxes(groupBoxes),
         guideRails: cloneGuideRails(guideRails),
+        showFurniture,
         showOverviewNavigator,
         showGrid,
         snapToGrid,

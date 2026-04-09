@@ -186,6 +186,7 @@ function cloneWorkspaceDocument(document: WorkbenchDocument): WorkbenchDocument 
       stageLabels: cloneStageLabels(document.ui.stageLabels ?? []),
       groupBoxes: cloneGroupBoxes(document.ui.groupBoxes ?? []),
       guideRails: cloneGuideRails(document.ui.guideRails ?? []),
+      showFurniture: document.ui.showFurniture ?? true,
       showOverviewNavigator: document.ui.showOverviewNavigator ?? false,
       showGrid: document.ui.showGrid ?? false,
       snapToGrid: document.ui.snapToGrid ?? false,
@@ -253,6 +254,7 @@ function buildDefaultDocument(project: DemoProject): WorkbenchDocument {
       stageLabels: [],
       groupBoxes: [],
       guideRails: [],
+      showFurniture: true,
       showOverviewNavigator: false,
       showGrid: false,
       snapToGrid: false,
@@ -316,6 +318,7 @@ export function buildPersistedWorkspace(
             stageLabels: cloneStageLabels(state.stageLabelsByProject[projectId] ?? []),
             groupBoxes: cloneGroupBoxes(state.groupBoxesByProject[projectId] ?? []),
             guideRails: cloneGuideRails(state.guideRailsByProject[projectId] ?? []),
+            showFurniture: state.showFurnitureByProject[projectId] ?? true,
             showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
             showGrid: state.showGridByProject[projectId] ?? false,
             snapToGrid: state.snapToGridByProject[projectId] ?? false,
@@ -1011,6 +1014,7 @@ function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
             Number.isFinite(guideRail.position) &&
             typeof guideRail.title === 'string',
         ))) &&
+    (candidate.ui.showFurniture === undefined || typeof candidate.ui.showFurniture === 'boolean') &&
     (candidate.ui.showOverviewNavigator === undefined ||
       typeof candidate.ui.showOverviewNavigator === 'boolean') &&
     (candidate.ui.showGrid === undefined || typeof candidate.ui.showGrid === 'boolean') &&

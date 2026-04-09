@@ -372,6 +372,7 @@ interface WorkbenchPanelProps {
   stageLabels: WorkbenchStageLabel[];
   groupBoxes: WorkbenchGroupBox[];
   guideRails: WorkbenchGuideRail[];
+  showFurniture: boolean;
   showOverviewNavigator: boolean;
   showGrid: boolean;
   snapToGrid: boolean;
@@ -426,6 +427,7 @@ interface WorkbenchPanelProps {
   onUpdateGroupBoxTitle: (groupBoxId: string, title: string) => void;
   onSetGroupBoxVariant: (groupBoxId: string, variant: WorkbenchGroupBoxVariant) => void;
   onRemoveGroupBox: (groupBoxId: string) => void;
+  onSetFurnitureVisible: (visible: boolean) => void;
   onSetOverviewNavigatorVisible: (visible: boolean) => void;
   onSetGridVisible: (visible: boolean) => void;
   onSetSnapToGrid: (enabled: boolean) => void;
@@ -533,6 +535,7 @@ export function WorkbenchPanel({
   stageLabels,
   groupBoxes,
   guideRails,
+  showFurniture,
   showOverviewNavigator,
   showGrid,
   snapToGrid,
@@ -587,6 +590,7 @@ export function WorkbenchPanel({
   onUpdateGroupBoxTitle,
   onSetGroupBoxVariant,
   onRemoveGroupBox,
+  onSetFurnitureVisible,
   onSetOverviewNavigatorVisible,
   onSetGridVisible,
   onSetSnapToGrid,
@@ -675,7 +679,6 @@ export function WorkbenchPanel({
   const [selectedStageLabelId, setSelectedStageLabelId] = useState<string | null>(null);
   const [selectedGroupBoxId, setSelectedGroupBoxId] = useState<string | null>(null);
   const [selectedGuideRailId, setSelectedGuideRailId] = useState<string | null>(null);
-  const [furnitureVisible, setFurnitureVisible] = useState(true);
   const [groupBoxDragState, setGroupBoxDragState] = useState<{
     groupBoxId: string;
     pointerOffsetX: number;
@@ -754,24 +757,30 @@ export function WorkbenchPanel({
 
   const effectiveSelectedGroupBoxId = useMemo(
     () =>
-      selectedGroupBoxId && groupBoxes.some((groupBox) => groupBox.id === selectedGroupBoxId)
+      showFurniture &&
+      selectedGroupBoxId &&
+      groupBoxes.some((groupBox) => groupBox.id === selectedGroupBoxId)
         ? selectedGroupBoxId
         : null,
-    [groupBoxes, selectedGroupBoxId],
+    [groupBoxes, selectedGroupBoxId, showFurniture],
   );
   const effectiveSelectedGuideRailId = useMemo(
     () =>
-      selectedGuideRailId && guideRails.some((guideRail) => guideRail.id === selectedGuideRailId)
+      showFurniture &&
+      selectedGuideRailId &&
+      guideRails.some((guideRail) => guideRail.id === selectedGuideRailId)
         ? selectedGuideRailId
         : null,
-    [guideRails, selectedGuideRailId],
+    [guideRails, selectedGuideRailId, showFurniture],
   );
   const effectiveSelectedStageLabelId = useMemo(
     () =>
-      selectedStageLabelId && stageLabels.some((stageLabel) => stageLabel.id === selectedStageLabelId)
+      showFurniture &&
+      selectedStageLabelId &&
+      stageLabels.some((stageLabel) => stageLabel.id === selectedStageLabelId)
         ? selectedStageLabelId
         : null,
-    [selectedStageLabelId, stageLabels],
+    [selectedStageLabelId, showFurniture, stageLabels],
   );
   const [canvasHeightResizeState, setCanvasHeightResizeState] = useState<{
     originY: number;
@@ -2709,7 +2718,7 @@ export function WorkbenchPanel({
           selectedConnectionLaneAxis={selectedConnectionLaneAxis}
           selectedConnectionLanePreference={selectedConnectionLanePreference}
           selectedConnectionColorOverride={selectedConnectionColorOverride}
-          furnitureVisible={furnitureVisible}
+          furnitureVisible={showFurniture}
           showTutorialToggle={showTutorialToggle}
           tutorialNotesVisible={tutorialNotesVisible}
           onAddAnnotation={onAddAnnotation}
@@ -2791,7 +2800,7 @@ export function WorkbenchPanel({
           onRequestImportLabPack={() => importLabPackInputRef.current?.click()}
           onRequestCreateComposite={onRequestCreateComposite}
           onRequestAutoWire={onRequestAutoWire}
-          onToggleFurnitureVisible={setFurnitureVisible}
+          onToggleFurnitureVisible={onSetFurnitureVisible}
           onToggleTutorialNotes={onSetTutorialNotesVisible}
         />
       </Suspense>
@@ -3067,7 +3076,7 @@ export function WorkbenchPanel({
             });
           }}
         >
-          {furnitureVisible && guideRails.map((guideRail) => {
+          {showFurniture && guideRails.map((guideRail) => {
             const railPosition =
               guideRailDragState?.guideRailId === guideRail.id
                 ? guideRailDragState.currentPosition
@@ -3162,7 +3171,7 @@ export function WorkbenchPanel({
               }
             />
           ))}
-          {furnitureVisible && groupBoxes.map((groupBox) => {
+          {showFurniture && groupBoxes.map((groupBox) => {
             const groupBoxX =
               groupBoxDragState?.groupBoxId === groupBox.id
                 ? groupBoxDragState.currentX
@@ -3781,7 +3790,7 @@ export function WorkbenchPanel({
             );
           })() : null}
 
-          {furnitureVisible && annotations.map((annotation) => (
+          {showFurniture && annotations.map((annotation) => (
             (() => {
               const annotationX =
                 annotationDragState?.annotationId === annotation.id
@@ -3853,7 +3862,7 @@ export function WorkbenchPanel({
             })()
           ))}
 
-          {furnitureVisible && stageLabels.map((stageLabel) => {
+          {showFurniture && stageLabels.map((stageLabel) => {
             const stageLabelX =
               stageLabelDragState?.stageLabelId === stageLabel.id
                 ? stageLabelDragState.currentX
@@ -3986,7 +3995,7 @@ export function WorkbenchPanel({
                 top: `${minimapMetrics.offsetY}px`,
               }}
             >
-              {furnitureVisible && groupBoxes.map((groupBox) => (
+              {showFurniture && groupBoxes.map((groupBox) => (
                 <div
                   key={groupBox.id}
                   className={`workbench-minimap-group workbench-minimap-group-${groupBox.variant ?? 'stage'}`}
@@ -4012,7 +4021,7 @@ export function WorkbenchPanel({
                   }}
                 />
               ))}
-              {furnitureVisible && annotations.map((annotation) => (
+              {showFurniture && annotations.map((annotation) => (
                 <div
                   key={annotation.id}
                   className="workbench-minimap-annotation"
@@ -4022,7 +4031,7 @@ export function WorkbenchPanel({
                   }}
                 />
               ))}
-              {furnitureVisible && stageLabels.map((stageLabel) => (
+              {showFurniture && stageLabels.map((stageLabel) => (
                 <div
                   key={stageLabel.id}
                   className="workbench-minimap-stage-label"

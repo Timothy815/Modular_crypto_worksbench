@@ -92,6 +92,7 @@ export interface WorkbenchUiMetadata {
   stageLabels?: WorkbenchStageLabel[];
   groupBoxes?: WorkbenchGroupBox[];
   guideRails?: WorkbenchGuideRail[];
+  showFurniture?: boolean;
   showOverviewNavigator?: boolean;
   showGrid?: boolean;
   snapToGrid?: boolean;

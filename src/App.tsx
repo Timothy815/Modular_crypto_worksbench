@@ -345,6 +345,7 @@ function MainApp() {
     () => state.guideRailsByProject[activeProjectDefinition.id] ?? [],
     [activeProjectDefinition.id, state.guideRailsByProject],
   );
+  const activeShowFurniture = state.showFurnitureByProject[activeProjectDefinition.id] ?? true;
   const activeShowOverviewNavigator =
     state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false;
   const activeShowGrid = state.showGridByProject[activeProjectDefinition.id] ?? false;
@@ -928,6 +929,7 @@ function MainApp() {
         stageLabels: activeStageLabels,
         groupBoxes: activeGroupBoxes,
         guideRails: activeGuideRails,
+        showFurniture: activeShowFurniture,
         showOverviewNavigator: activeShowOverviewNavigator,
         showGrid: activeShowGrid,
         snapToGrid: activeSnapToGrid,
@@ -948,6 +950,7 @@ function MainApp() {
     activeStageLabels,
     activeGroupBoxes,
     activeGuideRails,
+    activeShowFurniture,
     activeShowOverviewNavigator,
     activeShowGrid,
     activeSnapToGrid,
@@ -1813,6 +1816,9 @@ function MainApp() {
             guideRails: state.compositeEditor
               ? []
               : state.guideRailsByProject[activeProjectDefinition.id] ?? [],
+            showFurniture: state.compositeEditor
+              ? true
+              : state.showFurnitureByProject[activeProjectDefinition.id] ?? true,
             showOverviewNavigator: state.compositeEditor
               ? false
               : state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
@@ -1856,6 +1862,7 @@ function MainApp() {
       state.compositeLibrary,
       state.guideRailsByProject,
       state.groupBoxesByProject,
+      state.showFurnitureByProject,
       state.showOverviewNavigatorByProject,
     ],
   );
@@ -2397,6 +2404,7 @@ function MainApp() {
             stageLabels={isCompositeDrilldownActive ? [] : activeStageLabels}
             groupBoxes={isCompositeDrilldownActive ? [] : activeGroupBoxes}
             guideRails={isCompositeDrilldownActive ? [] : activeGuideRails}
+            showFurniture={isCompositeDrilldownActive ? true : activeShowFurniture}
             showOverviewNavigator={isCompositeDrilldownActive ? false : activeShowOverviewNavigator}
             showGrid={isCompositeDrilldownActive ? false : activeShowGrid}
             snapToGrid={isCompositeDrilldownActive ? false : activeSnapToGrid}
@@ -2618,6 +2626,15 @@ function MainApp() {
                 ? undefined
                 : dispatch({
                     type: 'setOverviewNavigatorVisible',
+                    projectId: activeProjectDefinition.id,
+                    visible,
+                  })
+            }
+            onSetFurnitureVisible={(visible) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'setFurnitureVisible',
                     projectId: activeProjectDefinition.id,
                     visible,
                   })
@@ -2919,6 +2936,9 @@ function MainApp() {
                   guideRails: state.compositeEditor
                     ? []
                     : state.guideRailsByProject[activeProjectDefinition.id] ?? [],
+                  showFurniture: state.compositeEditor
+                    ? true
+                    : state.showFurnitureByProject[activeProjectDefinition.id] ?? true,
                   showOverviewNavigator: state.compositeEditor
                     ? false
                     : state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
@@ -4043,6 +4063,8 @@ function MainApp() {
                           stageLabels: state.stageLabelsByProject[activeProjectDefinition.id] ?? [],
                           groupBoxes: state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
                           guideRails: state.guideRailsByProject[activeProjectDefinition.id] ?? [],
+                          showFurniture:
+                            state.showFurnitureByProject[activeProjectDefinition.id] ?? true,
                           showOverviewNavigator:
                             state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
                           showGrid:
@@ -4157,6 +4179,8 @@ function MainApp() {
                         stageLabels: [],
                         groupBoxes: [],
                         guideRails: [],
+                        showFurniture:
+                          state.showFurnitureByProject[selectedChallengeProjectId] ?? true,
                         showOverviewNavigator:
                           state.showOverviewNavigatorByProject[selectedChallengeProjectId] ?? false,
                         showGrid:

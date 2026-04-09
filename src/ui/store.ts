@@ -76,6 +76,7 @@ export interface UiState {
   stageLabelsByProject: Record<string, WorkbenchStageLabel[]>;
   groupBoxesByProject: Record<string, WorkbenchGroupBox[]>;
   guideRailsByProject: Record<string, WorkbenchGuideRail[]>;
+  showFurnitureByProject: Record<string, boolean>;
   showOverviewNavigatorByProject: Record<string, boolean>;
   showGridByProject: Record<string, boolean>;
   snapToGridByProject: Record<string, boolean>;
@@ -159,6 +160,7 @@ export type UiAction =
   | { type: 'selectModules'; projectId: string; moduleIds: string[]; additive?: boolean }
   | { type: 'moveModule'; projectId: string; moduleId: string; x: number; y: number }
   | { type: 'setGridVisible'; projectId: string; visible: boolean }
+  | { type: 'setFurnitureVisible'; projectId: string; visible: boolean }
   | { type: 'setSnapToGrid'; projectId: string; enabled: boolean }
   | { type: 'setSnapToGuides'; projectId: string; enabled: boolean }
   | {
@@ -898,6 +900,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     guideRailsByProject: Object.fromEntries(
       projects.map((project) => [project.id, []]),
     ),
+    showFurnitureByProject: Object.fromEntries(
+      projects.map((project) => [project.id, true]),
+    ),
     showOverviewNavigatorByProject: Object.fromEntries(
       projects.map((project) => [project.id, isLargeWorkspace(project.project)]),
     ),
@@ -1070,6 +1075,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.guideRailsByProject,
           [action.workspaceId]: [],
         },
+        showFurnitureByProject: {
+          ...state.showFurnitureByProject,
+          [action.workspaceId]: true,
+        },
         showOverviewNavigatorByProject: {
           ...state.showOverviewNavigatorByProject,
           [action.workspaceId]: false,
@@ -1187,6 +1196,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       const sourceStageLabels = state.stageLabelsByProject[action.sourceProjectId] ?? [];
       const sourceGroupBoxes = state.groupBoxesByProject[action.sourceProjectId] ?? [];
       const sourceGuideRails = state.guideRailsByProject[action.sourceProjectId] ?? [];
+      const sourceShowFurniture = state.showFurnitureByProject[action.sourceProjectId] ?? true;
       const sourceShowOverviewNavigator =
         state.showOverviewNavigatorByProject[action.sourceProjectId] ?? false;
       const sourceShowGrid = state.showGridByProject[action.sourceProjectId] ?? false;
@@ -1236,6 +1246,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         guideRailsByProject: {
           ...state.guideRailsByProject,
           [action.workspaceId]: sourceGuideRails.map((guideRail) => ({ ...guideRail })),
+        },
+        showFurnitureByProject: {
+          ...state.showFurnitureByProject,
+          [action.workspaceId]: sourceShowFurniture,
         },
         showOverviewNavigatorByProject: {
           ...state.showOverviewNavigatorByProject,
@@ -1388,6 +1402,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         stageLabelsByProject: removeProjectEntry(state.stageLabelsByProject, action.workspaceId),
         groupBoxesByProject: removeProjectEntry(state.groupBoxesByProject, action.workspaceId),
         guideRailsByProject: removeProjectEntry(state.guideRailsByProject, action.workspaceId),
+        showFurnitureByProject: removeProjectEntry(state.showFurnitureByProject, action.workspaceId),
         showOverviewNavigatorByProject: removeProjectEntry(
           state.showOverviewNavigatorByProject,
           action.workspaceId,
@@ -1585,6 +1600,23 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         ...state,
         showGridByProject: {
           ...state.showGridByProject,
+          [action.projectId]: action.visible,
+        },
+      };
+    }
+    case 'setFurnitureVisible': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      if ((state.showFurnitureByProject[action.projectId] ?? true) === action.visible) {
+        return state;
+      }
+
+      return {
+        ...state,
+        showFurnitureByProject: {
+          ...state.showFurnitureByProject,
           [action.projectId]: action.visible,
         },
       };
@@ -3568,6 +3600,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         guideRailsByProject: {
           ...state.guideRailsByProject,
           [action.projectId]: nextGuideRails,
+        },
+        showFurnitureByProject: {
+          ...state.showFurnitureByProject,
+          [action.projectId]: action.document.ui.showFurniture ?? true,
         },
         showOverviewNavigatorByProject: {
           ...state.showOverviewNavigatorByProject,

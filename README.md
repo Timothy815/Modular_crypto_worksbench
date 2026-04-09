@@ -68,12 +68,12 @@ The next dense-workspace local-cleanup follow-on is now shipped as:
 - a bounded footprint-aware refinement of `Tidy Selection`
 - keeps local cleanup compact instead of expanding selected fragments toward whole-workspace spacing
 
-The next bounded readability candidate after that is now drafted as:
+The next bounded readability candidate after that is now shipped as:
 - `ADAPTIVE-NODE-CARD-SIZING-V1.md`
 - a bounded adaptive card-sizing pass so simple nodes feel lighter and dense nodes gain a little more breathing room
 - keeps the work presentation-only and stops short of manual node resizing or card-family redesign
 
-The next bounded workspace-calm candidate after that is now drafted as:
+The next bounded workspace-calm candidate after that is now shipped as:
 - `WORKSPACE-FURNITURE-VISIBILITY-V1.md`
 - a bounded visibility-control slice for stage labels, group boxes, rails, annotations, and related canvas furniture
 - keeps authored structure intact while enabling a cleaner presentation/readability mode
@@ -85,7 +85,7 @@ The next bounded repeated-authoring candidate after that is now drafted as:
 
 The next bounded temporal-transparency candidate after that is now shipped as:
 - `STATEFUL-MODULE-LIVE-STATE-V1.md`
-- a bounded live-state visibility slice for rotors, counters, iterators, and other tick-driven modules
+- a bounded live-state visibility slice for rotors, counters, LFSRs, and other bounded stateful modules
 - keeps the work read-only and truthful while making state evolution more visible than configuration alone
 
 The next bounded mismatch-alignment candidate after that is now shipped as:

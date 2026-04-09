@@ -23,6 +23,7 @@ export interface WorkspaceHistorySnapshot {
   stageLabels: WorkbenchStageLabel[];
   groupBoxes: WorkbenchGroupBox[];
   guideRails: WorkbenchGuideRail[];
+  showFurniture: boolean;
   showOverviewNavigator: boolean;
   showGrid: boolean;
   snapToGrid: boolean;
@@ -50,6 +51,7 @@ interface WorkspaceSnapshotState {
   stageLabelsByProject: Record<string, WorkbenchStageLabel[]>;
   groupBoxesByProject: Record<string, WorkbenchGroupBox[]>;
   guideRailsByProject: Record<string, WorkbenchGuideRail[]>;
+  showFurnitureByProject: Record<string, boolean>;
   showOverviewNavigatorByProject: Record<string, boolean>;
   showGridByProject: Record<string, boolean>;
   snapToGridByProject: Record<string, boolean>;
@@ -166,6 +168,7 @@ export function cloneWorkspaceHistorySnapshot(
     stageLabels: cloneStageLabels(snapshot.stageLabels),
     groupBoxes: cloneGroupBoxes(snapshot.groupBoxes),
     guideRails: cloneGuideRails(snapshot.guideRails),
+    showFurniture: snapshot.showFurniture,
     showOverviewNavigator: snapshot.showOverviewNavigator,
     showGrid: snapshot.showGrid,
     snapToGrid: snapshot.snapToGrid,
@@ -199,6 +202,7 @@ export function buildWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
     stageLabels: cloneStageLabels(state.stageLabelsByProject[projectId] ?? []),
     groupBoxes: cloneGroupBoxes(state.groupBoxesByProject[projectId] ?? []),
     guideRails: cloneGuideRails(state.guideRailsByProject[projectId] ?? []),
+    showFurniture: state.showFurnitureByProject[projectId] ?? true,
     showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
     showGrid: state.showGridByProject[projectId] ?? false,
     snapToGrid: state.snapToGridByProject[projectId] ?? false,
@@ -249,6 +253,10 @@ export function applyWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
     guideRailsByProject: {
       ...state.guideRailsByProject,
       [projectId]: cloneGuideRails(snapshot.guideRails),
+    },
+    showFurnitureByProject: {
+      ...state.showFurnitureByProject,
+      [projectId]: snapshot.showFurniture,
     },
     showOverviewNavigatorByProject: {
       ...state.showOverviewNavigatorByProject,
@@ -336,6 +344,7 @@ export function buildWorkspaceVersionDocument<State extends WorkspaceVersionHost
         stageLabels: cloneStageLabels(state.stageLabelsByProject[projectId] ?? []),
         groupBoxes: cloneGroupBoxes(state.groupBoxesByProject[projectId] ?? []),
         guideRails: cloneGuideRails(state.guideRailsByProject[projectId] ?? []),
+        showFurniture: state.showFurnitureByProject[projectId] ?? true,
         showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
         showGrid: state.showGridByProject[projectId] ?? false,
         snapToGrid: state.snapToGridByProject[projectId] ?? false,
@@ -472,6 +481,10 @@ export function applyRestoreWorkspaceVersion<State extends WorkspaceVersionHostS
     guideRailsByProject: {
       ...state.guideRailsByProject,
       [projectId]: cloneGuideRails(version.document.ui.guideRails ?? []),
+    },
+    showFurnitureByProject: {
+      ...state.showFurnitureByProject,
+      [projectId]: version.document.ui.showFurniture ?? true,
     },
     showOverviewNavigatorByProject: {
       ...state.showOverviewNavigatorByProject,

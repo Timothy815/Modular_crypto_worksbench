@@ -2,7 +2,7 @@
 
 Last updated: April 5, 2026
 
-Status: Drafted for review before implementation
+Status: Implemented on `main`
 
 ## Purpose
 
@@ -100,4 +100,3 @@ This contract is successful when:
 - authored furniture remains safe and recoverable
 - the machine logic becomes easier to present and read
 - the visibility control is compact enough to feel like a quick win rather than a new subsystem
-

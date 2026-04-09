@@ -1087,14 +1087,20 @@ Recent dense-workspace follow-on now shipped:
 - refines `Tidy Selection` so dense selected fragments stay more compact and local
 - keeps whole-workspace tidy behavior unchanged
 
-Next bounded workspace/product candidates now drafted:
+Recent bounded readability follow-on now shipped:
 - `ADAPTIVE-NODE-CARD-SIZING-V1.md`
+- makes simple nodes lighter and dense nodes roomier using deterministic presentation sizing
+
+Recent bounded workspace-calm follow-on now shipped:
 - `WORKSPACE-FURNITURE-VISIBILITY-V1.md`
+- adds workspace-local furniture visibility control without deleting authored structure
+
+Next bounded workspace/product candidate now drafted:
 - `STRUCTURAL-AUTOWIRE-MACROS-V1.md`
 
 Recent temporal-transparency follow-on now shipped:
 - `STATEFUL-MODULE-LIVE-STATE-V1.md`
-- formalizes and generalizes live-state visibility for bounded stateful modules
+- formalizes and generalizes live-state visibility for rotors, counters, and LFSRs
 - keeps the work read-only and defers iterator-internal state to a later slice
 
 Recent bounded alignment/helper slice now shipped:

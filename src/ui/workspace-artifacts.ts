@@ -226,6 +226,13 @@ export function hydrateInitialUiState(projects: DemoProject[]): UiState {
           initialState.guideRailsByProject[project.id],
       ]),
     ),
+    showFurnitureByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.documentsByProjectId[project.id]?.ui.showFurniture ??
+          initialState.showFurnitureByProject[project.id],
+      ]),
+    ),
     showOverviewNavigatorByProject: Object.fromEntries(
       allProjects.map((project) => [
         project.id,
@@ -445,6 +452,7 @@ export interface BuildShareableLabPackArgs {
   stageLabels?: WorkbenchStageLabel[];
   groupBoxes?: WorkbenchGroupBox[];
   guideRails?: WorkbenchGuideRail[];
+  showFurniture?: boolean;
   showOverviewNavigator?: boolean;
   showGrid?: boolean;
   snapToGrid?: boolean;
@@ -477,6 +485,7 @@ export function buildShareableLabPack({
   stageLabels = [],
   groupBoxes = [],
   guideRails = [],
+  showFurniture = true,
   showOverviewNavigator = false,
   showGrid = false,
   snapToGrid = false,
@@ -509,6 +518,7 @@ export function buildShareableLabPack({
         stageLabels: cloneStageLabels(stageLabels),
         groupBoxes: cloneGroupBoxes(groupBoxes),
         guideRails: cloneGuideRails(guideRails),
+        showFurniture,
         showOverviewNavigator,
         showGrid,
         snapToGrid,
@@ -643,6 +653,7 @@ export function prepareImportedLabPack({
         stageLabels: cloneStageLabels(pack.workspace.ui.stageLabels ?? []),
         groupBoxes: cloneGroupBoxes(pack.workspace.ui.groupBoxes ?? []),
         guideRails: cloneGuideRails(pack.workspace.ui.guideRails ?? []),
+        showFurniture: pack.workspace.ui.showFurniture ?? true,
         showOverviewNavigator:
           pack.workspace.ui.showOverviewNavigator ?? isLargeWorkspace(pack.workspace.project),
         showGrid: pack.workspace.ui.showGrid ?? false,
