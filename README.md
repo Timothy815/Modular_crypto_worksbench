@@ -98,6 +98,11 @@ The next bounded architectural follow-on now drafted as:
 - a bounded foundation contract for resolving scalar-vs-sequence ambiguity in repeated-key, chunking, and stream-aligned workflows
 - keeps later sequence features grounded in explicit port and signal semantics instead of hidden execution behavior
 
+The next bounded bit/hex follow-on after that is now drafted as:
+- `BIT-AND-HEX-SEQUENCE-BRIDGES-V1.md`
+- a bounded source-and-bridge slice for explicit whole bit sequences and hex-authored bit sequences
+- keeps hex as an authoring format over `bits` rather than adding a third engine signal domain
+
 The previous dense-workspace crossing follow-on is now already shipped as:
 - `WIRE-CROSSING-DISCIPLINE-V1.md`
 - a bounded readability pass focused on stronger visual hierarchy at wire intersections
