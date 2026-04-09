@@ -1097,6 +1097,9 @@ Recent temporal-transparency follow-on now shipped:
 - formalizes and generalizes live-state visibility for bounded stateful modules
 - keeps the work read-only and defers iterator-internal state to a later slice
 
+Next bounded alignment/helper candidate now drafted:
+- `EXPLICIT-REPETITION-AND-BROADCAST-V1.md`
+
 ### Claude
 
 Safe to begin:
