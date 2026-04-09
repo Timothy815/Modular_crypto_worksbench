@@ -634,6 +634,94 @@ const ROTOR_REVERSE_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const SYMBOL_SEQUENCE_INPUT_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'SymbolSequenceInput',
+  name: 'Symbol Sequence Input Micro Demo',
+  summary: 'Minimal visible whole-sequence source: one ordered symbol buffer is emitted as a single sequence signal.',
+  pipeline: 'SymbolSequenceInput -> TextOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'sequence', defId: 'SymbolSequenceInput', params: { value: 'KEY' } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        sequence: { x: 184, y: 176 },
+        out: { x: 476, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const REPEAT_SYMBOL_TO_LENGTH_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'RepeatSymbolToLength',
+  name: 'Repeat Symbol To Length Micro Demo',
+  summary: 'Minimal visible repeated-key pattern: one whole symbol sequence is repeated until it reaches the target length.',
+  pipeline: 'SymbolSequenceInput -> RepeatSymbolToLength -> TextOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'repeat', defId: 'RepeatSymbolToLength', params: { targetLength: 10 } },
+        { id: 'sequence', defId: 'SymbolSequenceInput', params: { value: 'KEY' } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'repeat', port: 'in' } },
+        { from: { moduleId: 'repeat', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        repeat: { x: 436, y: 176 },
+        sequence: { x: 96, y: 176 },
+        out: { x: 736, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const SYMBOL_SEQUENCE_TO_TICKED_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'SymbolSequenceToTicked',
+  name: 'Symbol Sequence To Ticked Micro Demo',
+  summary: 'Minimal visible bridge: a whole symbol sequence is read one symbol per tick, then wraps back to the start.',
+  pipeline: 'SymbolSequenceInput -> SymbolSequenceToTicked + Clock -> TextOutput',
+  defaultTickedMode: true,
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'bridge', defId: 'SymbolSequenceToTicked', params: { index: 0, wrap: true } },
+        { id: 'sequence', defId: 'SymbolSequenceInput', params: { value: 'KEY' } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 6 } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'bridge', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'bridge', port: 'clock' } },
+        { from: { moduleId: 'bridge', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        bridge: { x: 444, y: 176 },
+        sequence: { x: 72, y: 84 },
+        clock: { x: 72, y: 268 },
+        out: { x: 760, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   MUX_MICRO_DEMO,
   DEMUX_MICRO_DEMO,
@@ -653,6 +741,9 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   MULTI_ROUTER_MICRO_DEMO,
   ROTOR_MICRO_DEMO,
   ROTOR_REVERSE_MICRO_DEMO,
+  SYMBOL_SEQUENCE_INPUT_MICRO_DEMO,
+  REPEAT_SYMBOL_TO_LENGTH_MICRO_DEMO,
+  SYMBOL_SEQUENCE_TO_TICKED_MICRO_DEMO,
 ];
 
 const PRIMITIVE_MICRO_DEMO_BY_DEF_ID = Object.fromEntries(

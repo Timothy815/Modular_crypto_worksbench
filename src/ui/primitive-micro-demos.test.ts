@@ -23,6 +23,9 @@ describe('primitive micro demos', () => {
       'MultiRouter',
       'Rotor',
       'RotorReverse',
+      'SymbolSequenceInput',
+      'RepeatSymbolToLength',
+      'SymbolSequenceToTicked',
     ]);
   });
 
@@ -39,6 +42,13 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('MultiRouter')?.name).toBe('Multi Router Micro Demo');
     expect(getPrimitiveMicroDemo('Rotor')?.name).toBe('Rotor Micro Demo');
     expect(getPrimitiveMicroDemo('RotorReverse')?.name).toBe('Rotor Reverse Micro Demo');
+    expect(getPrimitiveMicroDemo('SymbolSequenceInput')?.name).toBe('Symbol Sequence Input Micro Demo');
+    expect(getPrimitiveMicroDemo('RepeatSymbolToLength')?.name).toBe(
+      'Repeat Symbol To Length Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('SymbolSequenceToTicked')?.name).toBe(
+      'Symbol Sequence To Ticked Micro Demo',
+    );
     expect(getPrimitiveMicroDemo('XOR')).toBeNull();
   });
 
@@ -53,11 +63,22 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('Counter')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('LFSR')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('MultiRouter')?.defaultTickedMode).toBe(true);
+    expect(getPrimitiveMicroDemo('SymbolSequenceToTicked')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('BitSplit')?.defaultTickedMode).toBeUndefined();
     expect(getPrimitiveMicroDemo('BitPad')?.defaultTickedMode).toBeUndefined();
     expect(getPrimitiveMicroDemo('BitJoin')?.defaultTickedMode).toBeUndefined();
     expect(getPrimitiveMicroDemo('Rotor')?.defaultTickedMode).toBeUndefined();
     expect(getPrimitiveMicroDemo('RotorReverse')?.defaultTickedMode).toBeUndefined();
+  });
+
+  it('keeps the sequence bridge example honest about whole-sequence input and ticked output', () => {
+    const bridge = getPrimitiveMicroDemo('SymbolSequenceToTicked');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'SymbolSequenceToTicked',
+      'SymbolSequenceInput',
+      'Clock',
+      'TextOutput',
+    ]);
   });
 
   it('keeps the rotor reverse example structurally honest', () => {
