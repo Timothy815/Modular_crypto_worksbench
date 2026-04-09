@@ -4277,7 +4277,7 @@ body.canvas-resizing {
   position: absolute;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   font-family: var(--mono);
   font-size: 0.66rem;
   letter-spacing: 0.08em;
@@ -4405,6 +4405,7 @@ body.canvas-resizing {
   background: var(--ink);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.88);
   transition: box-shadow 120ms ease;
+  position: relative;
 }
 
 .graph-port-anchor-in .graph-port-dot {
@@ -4415,6 +4416,42 @@ body.canvas-resizing {
 
 .graph-port-anchor-out .graph-port-dot {
   background: color-mix(in srgb, var(--accent) 76%, var(--ink));
+}
+
+.graph-port-dot::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  inset: 50% auto auto 50%;
+  width: 8px;
+  height: 2px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  background: color-mix(in srgb, var(--line) 76%, white);
+}
+
+.graph-port-anchor-left .graph-port-dot::after {
+  inset: 50% auto auto 100%;
+  transform: translate(0, -50%);
+}
+
+.graph-port-anchor-right .graph-port-dot::after {
+  inset: 50% 100% auto auto;
+  transform: translate(0, -50%);
+}
+
+.graph-port-anchor-top .graph-port-dot::after {
+  inset: 100% auto auto 50%;
+  width: 2px;
+  height: 8px;
+  transform: translate(-50%, 0);
+}
+
+.graph-port-anchor-bottom .graph-port-dot::after {
+  inset: auto auto 100% 50%;
+  width: 2px;
+  height: 8px;
+  transform: translate(-50%, 0);
 }
 
 .graph-port-dot:hover {
