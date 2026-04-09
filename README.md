@@ -83,6 +83,11 @@ The next bounded repeated-authoring candidate after that is now drafted as:
 - a bounded selection-scoped helper slice for obvious repeated connection work
 - keeps the work explicit and deterministic rather than drifting into hidden macro inference
 
+The next bounded temporal-transparency candidate after that is now drafted as:
+- `STATEFUL-MODULE-LIVE-STATE-V1.md`
+- a bounded live-state visibility slice for rotors, counters, iterators, and other tick-driven modules
+- keeps the work read-only and truthful while making state evolution more visible than configuration alone
+
 The previous dense-workspace crossing follow-on is now already shipped as:
 - `WIRE-CROSSING-DISCIPLINE-V1.md`
 - a bounded readability pass focused on stronger visual hierarchy at wire intersections

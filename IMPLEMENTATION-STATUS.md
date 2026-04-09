@@ -1091,6 +1091,7 @@ Next bounded workspace/product candidates now drafted:
 - `ADAPTIVE-NODE-CARD-SIZING-V1.md`
 - `WORKSPACE-FURNITURE-VISIBILITY-V1.md`
 - `STRUCTURAL-AUTOWIRE-MACROS-V1.md`
+- `STATEFUL-MODULE-LIVE-STATE-V1.md`
 
 ### Claude
 
