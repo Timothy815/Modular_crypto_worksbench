@@ -44,6 +44,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when a graph should begin with a manually chosen symbol like A, M, or Z.',
     searchTerms: ['text', 'input', 'letter', 'symbol', 'message'],
   },
+  SymbolSequenceInput: {
+    sectionId: 'inputs-outputs',
+    sortOrder: 15,
+    purpose: 'Emits a whole symbol sequence as one ordered value.',
+    detail: 'Use this when a graph should begin with an explicit whole message or key sequence such as KEY or HELLO instead of a one-symbol-at-a-time tick source.',
+    searchTerms: ['symbol sequence', 'text sequence', 'message sequence', 'key sequence', 'whole message'],
+  },
   KeyInput: {
     sectionId: 'inputs-outputs',
     sortOrder: 20,
@@ -330,6 +337,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Repeats a visible symbol sequence until it reaches an explicit output length.',
     detail: 'Use this for Vigenere-style repeated keys and other classical cycling behaviors when the graph should show repetition explicitly instead of manually unrolling the key.',
     searchTerms: ['repeat symbol', 'repeat key', 'vigenere', 'cycle key', 'repeat to length', 'symbol', 'message'],
+  },
+  SymbolSequenceToTicked: {
+    sectionId: 'bridges',
+    sortOrder: 35,
+    purpose: 'Reads one symbol at a time from a whole sequence across ticks.',
+    detail: 'Use this to bridge an explicit whole symbol sequence back into one-symbol-per-tick workflows such as repeated-key classical ciphers.',
+    searchTerms: ['sequence to ticked', 'symbol stream', 'read sequence', 'tick adapter', 'vigenere key stream'],
   },
   BitShifter: {
     sectionId: 'word-diffusion',

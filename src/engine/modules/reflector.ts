@@ -83,8 +83,8 @@ export function pairReflectorLetters(wiring: string[], left: string, right: stri
 export const Reflector: ModuleDef = {
   id: 'Reflector',
   name: 'Reflector',
-  inputs: [{ name: 'in', type: 'symbol' }],
-  outputs: [{ name: 'out', type: 'symbol' }],
+  inputs: [{ name: 'in', type: 'symbol', kind: 'scalar' }],
+  outputs: [{ name: 'out', type: 'symbol', kind: 'scalar' }],
   paramSchema: {
     wiring: {
       key: 'wiring',

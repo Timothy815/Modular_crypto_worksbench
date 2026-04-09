@@ -1,5 +1,6 @@
 import type { ModuleRegistry } from '../types';
 import { TextInput } from './text-input';
+import { SymbolSequenceInput } from './symbol-sequence-input';
 import { KeyInput } from './key-input';
 import { BitSource } from './bit-source';
 import { AsciiSource } from './ascii-source';
@@ -52,6 +53,7 @@ import { Permutation } from './permutation';
 import { SymbolPermutation } from './symbol-permutation';
 import { SymbolWindow } from './symbol-window';
 import { RepeatSymbolToLength } from './repeat-symbol-to-length';
+import { SymbolSequenceToTicked } from './symbol-sequence-to-ticked';
 import { BitShifter } from './bit-shifter';
 import { ByteRotate } from './byte-rotate';
 import { ByteSwap } from './byte-swap';
@@ -68,6 +70,7 @@ import { Clock } from './clock';
 
 export {
   TextInput,
+  SymbolSequenceInput,
   KeyInput,
   BitSource,
   AsciiSource,
@@ -118,6 +121,7 @@ export {
   SymbolPermutation,
   SymbolWindow,
   RepeatSymbolToLength,
+  SymbolSequenceToTicked,
   BitShifter,
   ByteRotate,
   ByteSwap,
@@ -135,6 +139,7 @@ export {
 
 export const V1_REGISTRY: ModuleRegistry = {
   [TextInput.id]: TextInput,
+  [SymbolSequenceInput.id]: SymbolSequenceInput,
   [KeyInput.id]: KeyInput,
   [BitSource.id]: BitSource,
   [AsciiSource.id]: AsciiSource,
@@ -185,6 +190,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [SymbolPermutation.id]: SymbolPermutation,
   [SymbolWindow.id]: SymbolWindow,
   [RepeatSymbolToLength.id]: RepeatSymbolToLength,
+  [SymbolSequenceToTicked.id]: SymbolSequenceToTicked,
   [BitShifter.id]: BitShifter,
   [ByteRotate.id]: ByteRotate,
   [ByteSwap.id]: ByteSwap,

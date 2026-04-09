@@ -33,8 +33,8 @@ export function validateSymbolWindowParam(key: string, value: unknown): string |
 export const SymbolWindow: ModuleDef = {
   id: 'SymbolWindow',
   name: 'Symbol Window',
-  inputs: [{ name: 'in', type: 'symbol' }],
-  outputs: [{ name: 'out', type: 'symbol' }],
+  inputs: [{ name: 'in', type: 'symbol', kind: 'sequence' }],
+  outputs: [{ name: 'out', type: 'symbol', kind: 'sequence' }],
   paramSchema: {
     start: {
       key: 'start',

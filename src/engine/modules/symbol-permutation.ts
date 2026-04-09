@@ -31,8 +31,8 @@ export function validateSymbolPermutationOrderParam(value: unknown): string | nu
 export const SymbolPermutation: ModuleDef = {
   id: 'SymbolPermutation',
   name: 'Symbol Permutation',
-  inputs: [{ name: 'in', type: 'symbol' }],
-  outputs: [{ name: 'out', type: 'symbol' }],
+  inputs: [{ name: 'in', type: 'symbol', kind: 'sequence' }],
+  outputs: [{ name: 'out', type: 'symbol', kind: 'sequence' }],
   paramSchema: {
     order: {
       key: 'order',

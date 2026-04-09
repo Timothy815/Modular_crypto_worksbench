@@ -1,6 +1,7 @@
 import type { CompositeDef, IteratorDef } from './composites';
 
 export type SignalType = 'symbol' | 'bits';
+export type PortKind = 'scalar' | 'sequence';
 
 export interface SymbolSignal {
   type: 'symbol';
@@ -17,6 +18,7 @@ export type Signal = SymbolSignal | BitsSignal;
 export interface PortDef {
   name: string;
   type: SignalType;
+  kind?: PortKind;
 }
 
 export type ParamKind =
@@ -127,6 +129,7 @@ export interface ValidationIssue {
     | 'invalid-wiring'
     | 'duplicate-input-connection'
     | 'signal-type-mismatch'
+    | 'signal-kind-mismatch'
     | 'signal-width-mismatch'
     | 'cycle-detected'
     | 'invalid-composite-binding'

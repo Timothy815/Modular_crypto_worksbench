@@ -38,9 +38,12 @@ import { Plugboard } from './modules/plugboard';
 import { Reflector } from './modules/reflector';
 import { Rotor } from './modules/rotor';
 import { RotorReverse } from './modules/rotor-reverse';
+import { RepeatSymbolToLength } from './modules/repeat-symbol-to-length';
 import { Salt } from './modules/salt';
 import { SBox } from './modules/s-box';
 import { SymbolPermutation } from './modules/symbol-permutation';
+import { SymbolSequenceInput } from './modules/symbol-sequence-input';
+import { SymbolSequenceToTicked } from './modules/symbol-sequence-to-ticked';
 import { SymbolWindow } from './modules/symbol-window';
 import { SubMod } from './modules/sub-mod';
 import { TextInput } from './modules/text-input';
@@ -53,7 +56,7 @@ const registry: ModuleRegistry = {
     id: 'Source',
     name: 'Source',
     inputs: [],
-    outputs: [{ name: 'out', type: 'symbol' }],
+    outputs: [{ name: 'out', type: 'symbol', kind: 'scalar' }],
     paramSchema: {},
     evaluate: () => ({ out: { type: 'symbol', value: 'A' } }),
   },
@@ -113,9 +116,12 @@ const registry: ModuleRegistry = {
   [PolluxFractionation.id]: PolluxFractionation,
   [PolluxInverse.id]: PolluxInverse,
   [SymbolPermutation.id]: SymbolPermutation,
+  [SymbolSequenceInput.id]: SymbolSequenceInput,
+  [SymbolSequenceToTicked.id]: SymbolSequenceToTicked,
   [SymbolWindow.id]: SymbolWindow,
   [Rotor.id]: Rotor,
   [RotorReverse.id]: RotorReverse,
+  [RepeatSymbolToLength.id]: RepeatSymbolToLength,
   [Plugboard.id]: Plugboard,
   [Reflector.id]: Reflector,
   [SBox.id]: SBox,
@@ -1108,5 +1114,22 @@ describe('validateProject', () => {
         (issue) => issue.code === 'invalid-bypass' && issue.moduleId === 'xor',
       ),
     ).toBe(true);
+  });
+
+  it('reports mismatched signal kinds for sequence-sensitive symbol paths', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text', defId: 'Source', params: {} },
+        { id: 'repeat', defId: 'RepeatSymbolToLength', params: { targetLength: 8 } },
+      ],
+      connections: [
+        { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'repeat', port: 'in' } },
+      ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'signal-kind-mismatch')).toBe(true);
   });
 });

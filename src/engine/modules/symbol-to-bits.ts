@@ -5,7 +5,7 @@ const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 export const SymbolToBits: ModuleDef = {
   id: 'SymbolToBits',
   name: 'Symbol → Bits',
-  inputs: [{ name: 'in', type: 'symbol' }],
+  inputs: [{ name: 'in', type: 'symbol', kind: 'scalar' }],
   outputs: [{ name: 'out', type: 'bits' }],
   paramSchema: {},
   evaluate: (inputs) => {

@@ -39,8 +39,8 @@ function repeatSymbols(symbols: string[], targetLength: number): string[] {
 export const RepeatSymbolToLength: ModuleDef = {
   id: 'RepeatSymbolToLength',
   name: 'Repeat Symbol To Length',
-  inputs: [{ name: 'in', type: 'symbol' }],
-  outputs: [{ name: 'out', type: 'symbol' }],
+  inputs: [{ name: 'in', type: 'symbol', kind: 'sequence' }],
+  outputs: [{ name: 'out', type: 'symbol', kind: 'sequence' }],
   paramSchema: {
     targetLength: {
       key: 'targetLength',

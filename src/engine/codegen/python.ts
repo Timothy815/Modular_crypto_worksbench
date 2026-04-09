@@ -88,9 +88,11 @@ const SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS = new Set([
   'LFSR',
   'Rotor',
   'RotorReverse',
+  'SymbolSequenceToTicked',
 ]);
 const SUPPORTED_STATEFUL_PYTHON_EXPORT_COMPANION_DEF_IDS = new Set([
   'TextInput',
+  'SymbolSequenceInput',
   'BitSource',
   'BaudotSource',
   'BitOutput',
@@ -99,6 +101,7 @@ const SUPPORTED_STATEFUL_PYTHON_EXPORT_COMPANION_DEF_IDS = new Set([
   'HexOutput',
   'BitsToHex',
   'KeyInput',
+  'RepeatSymbolToLength',
   'Equals',
   'AtLeast',
   'GreaterThan',
@@ -125,6 +128,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'ROTOR_SIZE',
   'text_input',
   'text_input_tick',
+  'symbol_sequence_input',
   'key_input',
   'ascii_source',
   'baudot_source',
@@ -143,6 +147,9 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'symbol_permutation',
   'symbol_window',
   'repeat_symbol_to_length',
+  'symbol_sequence_to_ticked_init',
+  'symbol_sequence_to_ticked_eval',
+  'symbol_sequence_to_ticked_advance',
   'xor_bits',
   'and_bits',
   'or_bits',
@@ -261,6 +268,10 @@ def text_input(value):
 def text_input_tick(value, tick):
     text = str(value)
     return {"out": text[tick] if tick < len(text) else ""}
+
+
+def symbol_sequence_input(value):
+    return {"out": str(value)}
 
 
 def key_input(value):
@@ -1136,6 +1147,32 @@ def counter_advance(state):
     state["value"] = (state["value"] + state["step"]) % modulus
 
 
+def symbol_sequence_to_ticked_init(index, wrap):
+    index = int(index)
+    if index < 0:
+        raise ValueError('SymbolSequenceToTicked requires "index" to be a non-negative integer')
+    return {
+        "index": index,
+        "wrap": bool(wrap),
+    }
+
+
+def symbol_sequence_to_ticked_eval(sequence, state):
+    text = str(sequence)
+    if len(text) == 0:
+        return {"out": ""}
+    index = int(state["index"])
+    if state["wrap"]:
+        index = index % len(text)
+    if index < 0 or index >= len(text):
+        return {"out": ""}
+    return {"out": text[index]}
+
+
+def symbol_sequence_to_ticked_advance(state):
+    state["index"] = int(state["index"]) + 1
+
+
 def _parse_lfsr_taps(taps_value):
     if not isinstance(taps_value, str):
         raise ValueError("LFSR taps must be a comma-separated index list")
@@ -1814,6 +1851,8 @@ function buildModuleExpression(
   switch (def.id) {
     case 'TextInput':
       return `text_input(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
+    case 'SymbolSequenceInput':
+      return `symbol_sequence_input(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
     case 'KeyInput':
       return `key_input(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
     case 'AsciiSource':
@@ -2777,6 +2816,11 @@ function buildCompositeHelperDefinitions(
           buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
           `    state[${JSON.stringify(variableName)}] = rotor_init(${expressionContext.getParamExpression(moduleInstance, def, 'wiring')}, ${expressionContext.getParamExpression(moduleInstance, def, 'position')}, ${expressionContext.getParamExpression(moduleInstance, def, 'ringOffset')}, ${expressionContext.getParamExpression(moduleInstance, def, 'notches')})`,
         );
+      } else if (def.id === 'SymbolSequenceToTicked') {
+        initLines.push(
+          buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+          `    state[${JSON.stringify(variableName)}] = symbol_sequence_to_ticked_init(${expressionContext.getParamExpression(moduleInstance, def, 'index')}, ${expressionContext.getParamExpression(moduleInstance, def, 'wrap')})`,
+        );
       }
     }
 
@@ -2900,6 +2944,14 @@ function buildCompositeHelperDefinitions(
         continue;
       }
 
+      if (def.id === 'SymbolSequenceToTicked') {
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        tickLines.push(
+          `    ${variableName} = symbol_sequence_to_ticked_eval(${expressionContext.getInputExpression(moduleId, 'in')}, state[${JSON.stringify(variableName)}])`,
+        );
+        continue;
+      }
+
       if (def.id === 'Reflector') {
         tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
         tickLines.push(
@@ -2948,7 +3000,7 @@ function buildCompositeHelperDefinitions(
 
     for (const moduleInstance of internalProject.modules) {
       const def = registry[moduleInstance.defId];
-      if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor')) {
+      if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor' && def.id !== 'SymbolSequenceToTicked')) {
         continue;
       }
 
@@ -2985,7 +3037,7 @@ function buildCompositeHelperDefinitions(
       tickLines.push(
         buildGeneratedModuleComment(moduleInstance, def, '    ', 'Advance'),
         `    if ${stepFlagName}:`,
-        `        ${def.id === 'Counter' ? 'counter_advance' : def.id === 'LFSR' ? 'lfsr_advance' : 'rotor_advance'}(state[${JSON.stringify(variableName)}])`,
+        `        ${def.id === 'Counter' ? 'counter_advance' : def.id === 'LFSR' ? 'lfsr_advance' : def.id === 'Rotor' ? 'rotor_advance' : 'symbol_sequence_to_ticked_advance'}(state[${JSON.stringify(variableName)}])`,
       );
     }
 
@@ -4045,6 +4097,18 @@ function generateStatefulPythonExport(
       );
       continue;
     }
+
+    if (def.id === 'SymbolSequenceToTicked') {
+      const variableName = variablesByModuleId.get(moduleInstance.id);
+      if (!variableName) {
+        throw new Error(`Python export could not resolve a variable for "${moduleInstance.id}".`);
+      }
+      bodyLines.push(
+        buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+        `    ${variableName}_state = symbol_sequence_to_ticked_init(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'index'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'wrap'))})`,
+      );
+      continue;
+    }
   }
 
   bodyLines.push('', '    for tick in range(tick_count):');
@@ -4214,6 +4278,14 @@ function generateStatefulPythonExport(
       continue;
     }
 
+    if (def.id === 'SymbolSequenceToTicked') {
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
+      bodyLines.push(
+        `        ${variableName} = symbol_sequence_to_ticked_eval(${expressionContext.getInputExpression(moduleId, 'in')}, ${variableName}_state)`,
+      );
+      continue;
+    }
+
     bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
     bodyLines.push(
       `        ${variableName} = ${buildModuleExpression(moduleInstance, def, expressionContext)}`,
@@ -4222,7 +4294,7 @@ function generateStatefulPythonExport(
 
   for (const moduleInstance of project.modules) {
     const def = registry[moduleInstance.defId];
-    if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor')) {
+    if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor' && def.id !== 'SymbolSequenceToTicked')) {
       continue;
     }
 
@@ -4251,7 +4323,7 @@ function generateStatefulPythonExport(
 
   for (const moduleInstance of project.modules) {
     const def = registry[moduleInstance.defId];
-    if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor')) {
+    if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor' && def.id !== 'SymbolSequenceToTicked')) {
       continue;
     }
 
@@ -4264,7 +4336,7 @@ function generateStatefulPythonExport(
     bodyLines.push(
       buildGeneratedModuleComment(moduleInstance, def, '        ', 'Advance'),
       `        if ${stepFlagName}:`,
-      `            ${def.id === 'Counter' ? 'counter_advance' : def.id === 'LFSR' ? 'lfsr_advance' : 'rotor_advance'}(${variableName}_state)`,
+      `            ${def.id === 'Counter' ? 'counter_advance' : def.id === 'LFSR' ? 'lfsr_advance' : def.id === 'Rotor' ? 'rotor_advance' : 'symbol_sequence_to_ticked_advance'}(${variableName}_state)`,
     );
   }
 

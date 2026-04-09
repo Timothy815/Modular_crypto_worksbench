@@ -4,7 +4,7 @@ export const KeyInput: ModuleDef = {
   id: 'KeyInput',
   name: 'Key Input',
   inputs: [],
-  outputs: [{ name: 'out', type: 'symbol' }],
+  outputs: [{ name: 'out', type: 'symbol', kind: 'scalar' }],
   paramSchema: {
     value: {
       key: 'value',

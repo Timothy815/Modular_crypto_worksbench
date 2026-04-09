@@ -102,8 +102,8 @@ export function unpairPlugboardLetter(wiring: string[], letter: string): string[
 export const Plugboard: ModuleDef = {
   id: 'Plugboard',
   name: 'Plugboard',
-  inputs: [{ name: 'in', type: 'symbol' }],
-  outputs: [{ name: 'out', type: 'symbol' }],
+  inputs: [{ name: 'in', type: 'symbol', kind: 'scalar' }],
+  outputs: [{ name: 'out', type: 'symbol', kind: 'scalar' }],
   paramSchema: {
     wiring: {
       key: 'wiring',

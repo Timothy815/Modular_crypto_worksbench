@@ -66,6 +66,8 @@ import { Permutation } from './permutation';
 import { SymbolPermutation } from './symbol-permutation';
 import { SymbolWindow } from './symbol-window';
 import { RepeatSymbolToLength } from './repeat-symbol-to-length';
+import { SymbolSequenceInput } from './symbol-sequence-input';
+import { SymbolSequenceToTicked } from './symbol-sequence-to-ticked';
 import { BitShifter } from './bit-shifter';
 import { ByteRotate } from './byte-rotate';
 import { ByteSwap } from './byte-swap';
@@ -239,6 +241,37 @@ describe('RepeatSymbolToLength', () => {
         { targetLength: 5 },
       ),
     ).toThrow(/empty symbol sequence/i);
+  });
+});
+
+describe('Symbol sequence foundation', () => {
+  it('emits a whole symbol sequence explicitly', () => {
+    const result = SymbolSequenceInput.evaluate({}, { value: 'KEY' });
+    expect(result.out).toEqual({ type: 'symbol', value: 'KEY' });
+  });
+
+  it('reads one symbol per tick from a repeated sequence', () => {
+    const repeated = RepeatSymbolToLength.evaluate(
+      { in: { type: 'symbol', value: 'KEY' } },
+      { targetLength: 10 },
+    );
+
+    const tick0 = SymbolSequenceToTicked.evaluate(
+      { in: repeated.out, clock: { type: 'bits', value: [1] } },
+      { index: 0, wrap: true },
+    );
+    const tick1 = SymbolSequenceToTicked.evaluate(
+      { in: repeated.out, clock: { type: 'bits', value: [1] } },
+      { index: 1, wrap: true },
+    );
+    const tick2 = SymbolSequenceToTicked.evaluate(
+      { in: repeated.out, clock: { type: 'bits', value: [1] } },
+      { index: 2, wrap: true },
+    );
+
+    expect(tick0.out).toEqual({ type: 'symbol', value: 'K' });
+    expect(tick1.out).toEqual({ type: 'symbol', value: 'E' });
+    expect(tick2.out).toEqual({ type: 'symbol', value: 'Y' });
   });
 });
 

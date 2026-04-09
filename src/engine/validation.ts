@@ -993,6 +993,17 @@ export function validateProject(project: Project, registry: ModuleRegistry): Val
       continue;
     }
 
+    const sourceKind = sourcePort.kind ?? null;
+    const targetKind = targetPort.kind ?? null;
+    if (sourceKind && targetKind && sourceKind !== targetKind) {
+      issues.push({
+        code: 'signal-kind-mismatch',
+        message: `Signal kind mismatch from "${connection.from.moduleId}.${connection.from.port}" (${sourceKind}) to "${connection.to.moduleId}.${connection.to.port}" (${targetKind}).`,
+        connection,
+      });
+      continue;
+    }
+
     if (!(connection.to.port === CLOCK_PORT && !isCompositeDefinition(targetDef) && !isIteratorDefinition(targetDef) && isStatefulModule(targetDef))) {
       adjacency.get(connection.from.moduleId)?.push(connection.to.moduleId);
       indegree.set(
@@ -1227,6 +1238,15 @@ export function validateIteratorDef(
         code: 'signal-type-mismatch',
         message: `Iterator "${iterator.id}" requires a round definition whose input and output types match.`,
       });
+    } else if (
+      (roundDef.inputs[0]?.kind ?? null) &&
+      (roundDef.outputs[0]?.kind ?? null) &&
+      roundDef.inputs[0]?.kind !== roundDef.outputs[0]?.kind
+    ) {
+      issues.push({
+        code: 'signal-kind-mismatch',
+        message: `Iterator "${iterator.id}" requires a round definition whose input and output kinds match.`,
+      });
     } else if (hasKeyBus && roundDef.inputs[1]?.type !== 'bits') {
       issues.push({
         code: 'signal-type-mismatch',
@@ -1239,11 +1259,25 @@ export function validateIteratorDef(
       (hasKeyBus && iterator.inputs[1]?.name !== 'key') ||
       iterator.outputs[0]?.name !== 'out' ||
       iterator.inputs[0]?.type !== roundDef.inputs[0]?.type ||
+      ((iterator.inputs[0]?.kind ?? null) &&
+        (roundDef.inputs[0]?.kind ?? null) &&
+        iterator.inputs[0]?.kind !== roundDef.inputs[0]?.kind) ||
       (hasKeyBus && iterator.inputs[1]?.type !== 'bits') ||
-      iterator.outputs[0]?.type !== roundDef.outputs[0]?.type
+      iterator.outputs[0]?.type !== roundDef.outputs[0]?.type ||
+      ((iterator.outputs[0]?.kind ?? null) &&
+        (roundDef.outputs[0]?.kind ?? null) &&
+        iterator.outputs[0]?.kind !== roundDef.outputs[0]?.kind)
     ) {
       issues.push({
-        code: 'signal-type-mismatch',
+        code:
+          ((iterator.inputs[0]?.kind ?? null) &&
+            (roundDef.inputs[0]?.kind ?? null) &&
+            iterator.inputs[0]?.kind !== roundDef.inputs[0]?.kind) ||
+          ((iterator.outputs[0]?.kind ?? null) &&
+            (roundDef.outputs[0]?.kind ?? null) &&
+            iterator.outputs[0]?.kind !== roundDef.outputs[0]?.kind)
+            ? 'signal-kind-mismatch'
+            : 'signal-type-mismatch',
         message: `Iterator "${iterator.id}" must expose one input and one output matching its round definition.`,
       });
     }
@@ -1345,6 +1379,16 @@ function validateCompositeBindings(
       issues.push({
         code: 'signal-type-mismatch',
         message: `Composite "${composite.id}" has mismatched types between external port "${binding.externalPort}" and internal port "${binding.internalModuleId}.${binding.internalPort}".`,
+        moduleId: binding.internalModuleId,
+      });
+    }
+
+    const internalKind = internalPort.kind ?? null;
+    const externalKind = externalPort.kind ?? null;
+    if (internalKind && externalKind && internalKind !== externalKind) {
+      issues.push({
+        code: 'signal-kind-mismatch',
+        message: `Composite "${composite.id}" has mismatched kinds between external port "${binding.externalPort}" (${externalKind}) and internal port "${binding.internalModuleId}.${binding.internalPort}" (${internalKind}).`,
         moduleId: binding.internalModuleId,
       });
     }

@@ -93,6 +93,11 @@ The next bounded mismatch-alignment candidate after that is now shipped as:
 - a bounded explicit helper-module slice for repeated keys, repeated-byte XOR, and similar short-source / long-target cases
 - keeps mismatch policy visible in the graph and avoids hidden coercion inside existing modules
 
+The next bounded architectural follow-on now drafted as:
+- `STRUCTURED-SEQUENCE-SIGNAL-MODEL-V1.md`
+- a bounded foundation contract for resolving scalar-vs-sequence ambiguity in repeated-key, chunking, and stream-aligned workflows
+- keeps later sequence features grounded in explicit port and signal semantics instead of hidden execution behavior
+
 The previous dense-workspace crossing follow-on is now already shipped as:
 - `WIRE-CROSSING-DISCIPLINE-V1.md`
 - a bounded readability pass focused on stronger visual hierarchy at wire intersections

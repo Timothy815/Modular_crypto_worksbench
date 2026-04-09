@@ -1106,6 +1106,10 @@ Recent temporal-transparency follow-on now shipped:
 Recent bounded alignment/helper slice now shipped:
 - `EXPLICIT-REPETITION-AND-BROADCAST-V1.md`
 
+Next bounded architectural follow-on now drafted:
+- `STRUCTURED-SEQUENCE-SIGNAL-MODEL-V1.md`
+- defines the signal/port-model boundary needed before later sequence, chunking, and stream-processing work
+
 ### Claude
 
 Safe to begin:

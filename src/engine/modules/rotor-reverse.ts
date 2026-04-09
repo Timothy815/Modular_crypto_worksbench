@@ -5,11 +5,11 @@ export const RotorReverse: StatefulModuleDef = {
   id: 'RotorReverse',
   name: 'Rotor Reverse',
   inputs: [
-    { name: 'in', type: 'symbol' },
+    { name: 'in', type: 'symbol', kind: 'scalar' },
     { name: 'clock', type: 'bits' },
   ],
   outputs: [
-    { name: 'out', type: 'symbol' },
+    { name: 'out', type: 'symbol', kind: 'scalar' },
     { name: 'turnover', type: 'bits' },
   ],
   liveStateDisplay: {

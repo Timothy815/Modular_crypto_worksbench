@@ -6,7 +6,7 @@ export const BitsToSymbol: ModuleDef = {
   id: 'BitsToSymbol',
   name: 'Bits → Symbol',
   inputs: [{ name: 'in', type: 'bits' }],
-  outputs: [{ name: 'out', type: 'symbol' }],
+  outputs: [{ name: 'out', type: 'symbol', kind: 'scalar' }],
   paramSchema: {},
   evaluate: (inputs) => {
     const signal = inputs.in;
