@@ -1091,7 +1091,11 @@ Next bounded workspace/product candidates now drafted:
 - `ADAPTIVE-NODE-CARD-SIZING-V1.md`
 - `WORKSPACE-FURNITURE-VISIBILITY-V1.md`
 - `STRUCTURAL-AUTOWIRE-MACROS-V1.md`
+
+Recent temporal-transparency follow-on now shipped:
 - `STATEFUL-MODULE-LIVE-STATE-V1.md`
+- formalizes and generalizes live-state visibility for bounded stateful modules
+- keeps the work read-only and defers iterator-internal state to a later slice
 
 ### Claude
 

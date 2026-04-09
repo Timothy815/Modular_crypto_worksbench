@@ -22,6 +22,7 @@ import {
   inferLearningStage,
 } from '../learning-sequence';
 import { getModuleCategory } from '../module-categories';
+import { buildLiveStateSummary } from '../live-state-display';
 import {
   getModulesInSelectionBox,
   normalizeSelectionBoxRect,
@@ -772,13 +773,6 @@ export function WorkbenchPanel({
         : null,
     [selectedStageLabelId, stageLabels],
   );
-  useEffect(() => {
-    if (!furnitureVisible) {
-      setSelectedGuideRailId(null);
-      setSelectedGroupBoxId(null);
-      setSelectedStageLabelId(null);
-    }
-  }, [furnitureVisible]);
   const [canvasHeightResizeState, setCanvasHeightResizeState] = useState<{
     originY: number;
     originHeight: number;
@@ -3505,11 +3499,21 @@ export function WorkbenchPanel({
                   {isTickedMode && tickedParamsByModule?.[moduleInstance.id] && tickCount > 0 ? (() => {
                     const tickParams = tickedParamsByModule[moduleInstance.id]?.[currentTick];
                     if (!tickParams) return null;
-                    const positionValue = tickParams.position;
-                    if (positionValue !== undefined) {
+                    const liveStateSummary = buildLiveStateSummary(
+                      def,
+                      moduleInstance,
+                      tickParams,
+                      currentTick > 0 ? tickedParamsByModule[moduleInstance.id]?.[currentTick - 1] : undefined,
+                    );
+                    if (liveStateSummary) {
                       return (
-                        <span className="graph-node-tick-state" title={`position = ${positionValue}`}>
-                          pos {String(positionValue)}
+                        <span
+                          className={`graph-node-tick-state${
+                            liveStateSummary.advancedSinceLastTick ? ' graph-node-tick-state-advanced' : ''
+                          }`}
+                          title={liveStateSummary.title}
+                        >
+                          {liveStateSummary.label} {liveStateSummary.displayText}
                         </span>
                       );
                     }

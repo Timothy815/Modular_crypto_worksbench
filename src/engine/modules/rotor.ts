@@ -196,6 +196,11 @@ export const Rotor: StatefulModuleDef = {
     { name: 'out', type: 'symbol' },
     { name: 'turnover', type: 'bits' },
   ],
+  liveStateDisplay: {
+    key: 'position',
+    label: 'pos',
+    format: 'rotor-position',
+  },
   paramSchema: {
     wiring: {
       key: 'wiring',

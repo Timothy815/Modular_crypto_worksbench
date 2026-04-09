@@ -52,6 +52,10 @@ export const Counter: StatefulModuleDef = {
   name: 'Counter',
   inputs: [{ name: 'clock', type: 'bits' }],
   outputs: [{ name: 'out', type: 'bits' }],
+  liveStateDisplay: {
+    key: 'value',
+    label: 'count',
+  },
   paramSchema: {
     width: {
       key: 'width',

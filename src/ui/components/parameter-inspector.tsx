@@ -22,6 +22,7 @@ import type {
 import { BitsEditor } from './editors/bits-editor';
 import { WiringEditor } from './editors/wiring-editor';
 import { formatParamValue, formatSignal, parseParamValue } from '../formatters';
+import { buildLiveStateSummary } from '../live-state-display';
 import {
   getSinkRepresentationOptions,
   type SinkRepresentation,
@@ -970,6 +971,29 @@ export function ParameterInspector({
       [key]: !current[key],
     }));
   };
+  const liveStateSummary = useMemo(() => {
+    if (
+      !moduleDef ||
+      !moduleInstance ||
+      !isTickedMode ||
+      tickCount <= 0 ||
+      !tickedParamsByModule?.[moduleInstance.id]
+    ) {
+      return null;
+    }
+
+    const tickParams = tickedParamsByModule[moduleInstance.id]?.[currentTick];
+    if (!tickParams) {
+      return null;
+    }
+
+    return buildLiveStateSummary(
+      moduleDef,
+      moduleInstance,
+      tickParams,
+      currentTick > 0 ? tickedParamsByModule[moduleInstance.id]?.[currentTick - 1] : undefined,
+    );
+  }, [currentTick, isTickedMode, moduleDef, moduleInstance, tickCount, tickedParamsByModule]);
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
@@ -2608,6 +2632,14 @@ export function ParameterInspector({
                   : ''}
               </p>
             ) : null
+          ) : null}
+          {liveStateSummary ? (
+            <div className="inspector-live-state-summary" title={liveStateSummary.title}>
+              <span className="meta-label">Live State</span>
+              <code className="inspector-live-state-value">
+                {liveStateSummary.label} {liveStateSummary.displayText}
+              </code>
+            </div>
           ) : null}
           {isReadOnlyMode ? (
             <div className="param-field selected-module-rename-field">

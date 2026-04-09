@@ -52,6 +52,11 @@ export const LFSR: StatefulModuleDef = {
     { name: 'clock', type: 'bits' },
   ],
   outputs: [{ name: 'out', type: 'bits' }],
+  liveStateDisplay: {
+    key: 'seed',
+    label: 'reg',
+    format: 'bits',
+  },
   paramSchema: {
     seed: {
       key: 'seed',

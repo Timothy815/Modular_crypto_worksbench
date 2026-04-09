@@ -61,6 +61,11 @@ export interface ModuleDef {
 }
 
 export interface StatefulModuleDef extends ModuleDef {
+  liveStateDisplay?: {
+    key: string;
+    label: string;
+    format?: 'default' | 'bits' | 'rotor-position';
+  };
   advance: (params: ModuleParams, tick: number) => ModuleParams;
 }
 

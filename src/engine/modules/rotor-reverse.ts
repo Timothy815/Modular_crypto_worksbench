@@ -12,6 +12,11 @@ export const RotorReverse: StatefulModuleDef = {
     { name: 'out', type: 'symbol' },
     { name: 'turnover', type: 'bits' },
   ],
+  liveStateDisplay: {
+    key: 'position',
+    label: 'pos',
+    format: 'rotor-position',
+  },
   paramSchema: {
     linkedRotorId: {
       key: 'linkedRotorId',

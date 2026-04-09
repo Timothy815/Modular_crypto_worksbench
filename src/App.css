@@ -4883,6 +4883,21 @@ body.canvas-resizing {
   color: var(--role-composite-ink);
 }
 
+.inspector-live-state-summary {
+  display: grid;
+  gap: 4px;
+  margin: -4px 0 12px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-panel) 82%, white);
+}
+
+.inspector-live-state-value {
+  font-size: 0.82rem;
+  color: var(--accent);
+}
+
 .param-list {
   display: grid;
   gap: 12px;
@@ -6352,6 +6367,10 @@ body.canvas-resizing {
   color: var(--accent);
   opacity: 0.85;
   margin-top: 4px;
+}
+
+.graph-node-tick-state-advanced {
+  color: color-mix(in srgb, var(--accent) 92%, var(--ink));
 }
 
 .graph-node-history {
