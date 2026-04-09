@@ -28,6 +28,15 @@ But the product still hides too much temporal truth:
 
 This weakens MCW's glass-box promise in the temporal dimension.
 
+## What Already Exists
+
+MCW already partially surfaces temporal state in two incomplete ways:
+- workspace cards already show rotor position in ticked mode through a hard-coded path
+- the inspector can expose tick-param detail in a generic list
+
+This contract does **not** start from zero.
+It formalizes and generalizes that partial behavior so stateful live-state visibility stops depending on one-off module-specific checks.
+
 ## Product Goal
 
 For stateful modules, the user should be able to answer:
@@ -54,9 +63,11 @@ This contract is limited to visible state readouts for modules that already main
 Good V1 targets include:
 - rotors
 - counters
-- iterators
 - LFSR / PRNG-style stepping modules
-- similar tick-driven state holders already present in MCW
+- similar tick-driven state holders whose current live state already appears in top-level tick params
+
+Iterator state is explicitly deferred from V1.
+Iterator internal stepping state is nested and is not currently exposed in the same top-level tick-param path as the simpler state holders above.
 
 This slice may include:
 - compact current-state readouts on the workspace card
@@ -75,6 +86,52 @@ This slice may include:
 8. V1 should read from existing execution/tick state where possible rather than requiring new engine behavior.
 9. The live-state treatment must remain compact enough not to overwhelm the node card.
 10. Non-stateful modules must not be burdened with fake or empty live-state chrome.
+11. V1 must not add more ad hoc per-module-id card rendering checks for live state.
+12. V1 must define a single mechanism for identifying which top-level tick param is the live-state field to display.
+
+## Live-State Key Mechanism
+
+V1 should identify displayable live state through an explicit declaration rather than by hard-coded module-id checks.
+
+The preferred shape is:
+- a bounded module-definition-level declaration such as `liveStateDisplayKey`
+- or an equivalent centralized mapping with the same product effect
+
+The important contract rule is:
+- the UI must know which top-level tick param represents current live state
+- without guessing from all params
+- and without piling up scattered module-id-specific rendering logic
+
+V1 should only target modules whose current live state is already represented as a top-level tick param.
+
+## Start / Now Visual Language
+
+V1 must distinguish:
+- configured start state
+- current live state
+
+The bounded visual rule for V1 should be:
+- start state comes from the configured module params
+- live state comes from the current tick's declared live-state key
+- if start and live state are the same, the UI may show only one value
+- if they differ, the UI should show a compact before/after readout such as `A -> D` or `0 -> 3`
+
+This can appear:
+- on the workspace card
+- in the inspector
+- or in both
+
+But the distinction itself must be consistent.
+
+## Advancement Cue
+
+If the product shows an "advanced last tick" style cue, it must be computed honestly.
+
+The bounded V1 rule is:
+- if `currentTick === 0`, no advancement cue is shown
+- otherwise, a module is considered to have advanced only if the current live-state value differs from the prior tick's live-state value
+
+If this cue cannot be derived honestly for a module in V1, the cue should be omitted rather than guessed.
 
 ## Product Shape
 
@@ -86,14 +143,14 @@ Good bounded V1 examples:
 - Counter:
   - configured start value
   - current value
-- Iterator:
-  - current index
-  - current emitted item, if appropriate
 
 The exact presentation may vary by module type, but the product shape must stay:
 - compact
 - truthful
 - visibly distinct from configuration
+
+Iterator live state is a follow-on.
+It should be handled in a later contract once iterator-internal stepping state is surfaced through a bounded execution/result path.
 
 ## Explicit Non-Goals
 
@@ -104,6 +161,7 @@ Do not include:
 - a separate timeline panel
 - hidden derived state that is not already represented by execution/tick state
 - a requirement that every module render extra card chrome
+- iterator-internal sub-state plumbing in V1
 
 ## Success Criteria
 
