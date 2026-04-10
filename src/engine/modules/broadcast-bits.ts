@@ -21,8 +21,8 @@ export function validateBroadcastBitsParam(fieldKey: string, value: unknown): st
 export const BroadcastBits: ModuleDef = {
   id: 'BroadcastBits',
   name: 'Broadcast Bits',
-  inputs: [{ name: 'in', type: 'bits' }],
-  outputs: [{ name: 'out', type: 'bits' }],
+  inputs: [{ name: 'in', type: 'bits', kind: 'scalar' }],
+  outputs: [{ name: 'out', type: 'bits', kind: 'sequence' }],
   paramSchema: {
     copies: {
       key: 'copies',

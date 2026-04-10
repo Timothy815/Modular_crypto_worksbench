@@ -18,10 +18,12 @@ import { validateProject } from '../validation';
 const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'TextInput',
   'KeyInput',
+  'BitSequenceInput',
   'AsciiSource',
   'BaudotSource',
   'BitSource',
   'HexSource',
+  'HexSequenceInput',
   'IV',
   'Nonce',
   'Salt',
@@ -80,6 +82,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'Reflector',
   'RotorReverse',
   'Plugboard',
+  'BitsSequenceToTicked',
 ]);
 
 const SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS = new Set([
@@ -93,7 +96,9 @@ const SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS = new Set([
 const SUPPORTED_STATEFUL_PYTHON_EXPORT_COMPANION_DEF_IDS = new Set([
   'TextInput',
   'SymbolSequenceInput',
+  'BitSequenceInput',
   'BitSource',
+  'HexSequenceInput',
   'BaudotSource',
   'BitOutput',
   'Output',
@@ -102,6 +107,7 @@ const SUPPORTED_STATEFUL_PYTHON_EXPORT_COMPANION_DEF_IDS = new Set([
   'BitsToHex',
   'KeyInput',
   'RepeatSymbolToLength',
+  'RepeatBitsToLength',
   'Equals',
   'AtLeast',
   'GreaterThan',
@@ -129,6 +135,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'text_input',
   'text_input_tick',
   'symbol_sequence_input',
+  'bit_sequence_input',
   'key_input',
   'ascii_source',
   'baudot_source',
@@ -136,6 +143,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'bit_source',
   'bit_source_tick',
   'hex_source',
+  'hex_sequence_input',
   'protocol_material_source',
   'symbol_to_bits',
   'bits_to_symbol',
@@ -150,6 +158,9 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'symbol_sequence_to_ticked_init',
   'symbol_sequence_to_ticked_eval',
   'symbol_sequence_to_ticked_advance',
+  'bits_sequence_to_ticked_init',
+  'bits_sequence_to_ticked_eval',
+  'bits_sequence_to_ticked_advance',
   'xor_bits',
   'and_bits',
   'or_bits',
@@ -274,6 +285,10 @@ def symbol_sequence_input(value):
     return {"out": str(value)}
 
 
+def bit_sequence_input(stream):
+    return {"out": _expect_bits(stream, "BitSequenceInput")}
+
+
 def key_input(value):
     return {"out": str(value)}
 
@@ -369,6 +384,10 @@ def hex_source(value):
         for shift in (3, 2, 1, 0):
             bits.append((nibble >> shift) & 1)
     return {"out": bits}
+
+
+def hex_sequence_input(value):
+    return hex_source(value)
 
 
 def protocol_material_source(value, width, module_name):
@@ -1173,6 +1192,63 @@ def symbol_sequence_to_ticked_advance(state):
     state["index"] = int(state["index"]) + 1
 
 
+def _normalize_remainder_mode(value):
+    if value not in ("pad", "truncate", "error"):
+        raise ValueError('BitsSequenceToTicked requires "remainderMode" to be pad, truncate, or error')
+    return value
+
+
+def bits_sequence_to_ticked_init(index, word_width, wrap, remainder_mode):
+    index = int(index)
+    if index < 0:
+        raise ValueError('BitsSequenceToTicked requires "index" to be a non-negative integer')
+    return {
+        "index": index,
+        "word_width": _require_positive_int(word_width, "wordWidth", "BitsSequenceToTicked"),
+        "wrap": bool(wrap),
+        "remainder_mode": _normalize_remainder_mode(remainder_mode),
+    }
+
+
+def _build_bits_sequence_words(bits, word_width, remainder_mode):
+    if len(bits) == 0:
+        return []
+    words = []
+    full_word_count = len(bits) // word_width
+    for index in range(full_word_count):
+        start = index * word_width
+        words.append(bits[start:start + word_width])
+    remainder = len(bits) % word_width
+    if remainder == 0:
+        return words
+    tail = bits[len(bits) - remainder:]
+    if remainder_mode == "truncate":
+        return words
+    if remainder_mode == "pad":
+        words.append(tail + [0] * (word_width - remainder))
+        return words
+    raise ValueError(
+        f"BitsSequenceToTicked cannot emit {len(bits)} bits as {word_width}-bit words without an explicit remainder policy"
+    )
+
+
+def bits_sequence_to_ticked_eval(sequence, state):
+    bits = _expect_bits(sequence, "BitsSequenceToTicked")
+    words = _build_bits_sequence_words(bits, state["word_width"], state["remainder_mode"])
+    if len(words) == 0:
+        return {"out": []}
+    index = int(state["index"])
+    if state["wrap"]:
+        index = index % len(words)
+    if index < 0 or index >= len(words):
+        return {"out": []}
+    return {"out": list(words[index])}
+
+
+def bits_sequence_to_ticked_advance(state):
+    state["index"] = int(state["index"]) + 1
+
+
 def _parse_lfsr_taps(taps_value):
     if not isinstance(taps_value, str):
         raise ValueError("LFSR taps must be a comma-separated index list")
@@ -1853,6 +1929,8 @@ function buildModuleExpression(
       return `text_input(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
     case 'SymbolSequenceInput':
       return `symbol_sequence_input(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
+    case 'BitSequenceInput':
+      return `bit_sequence_input(${expressionContext.getParamExpression(moduleInstance, def, 'stream')})`;
     case 'KeyInput':
       return `key_input(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
     case 'AsciiSource':
@@ -1863,6 +1941,8 @@ function buildModuleExpression(
       return `bit_source(${expressionContext.getParamExpression(moduleInstance, def, 'stream')})`;
     case 'HexSource':
       return `hex_source(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
+    case 'HexSequenceInput':
+      return `hex_sequence_input(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
     case 'IV':
       return `protocol_material_source(${expressionContext.getParamExpression(moduleInstance, def, 'value')}, ${expressionContext.getParamExpression(moduleInstance, def, 'width')}, "IV")`;
     case 'Nonce':
@@ -2821,6 +2901,11 @@ function buildCompositeHelperDefinitions(
           buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
           `    state[${JSON.stringify(variableName)}] = symbol_sequence_to_ticked_init(${expressionContext.getParamExpression(moduleInstance, def, 'index')}, ${expressionContext.getParamExpression(moduleInstance, def, 'wrap')})`,
         );
+      } else if (def.id === 'BitsSequenceToTicked') {
+        initLines.push(
+          buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+          `    state[${JSON.stringify(variableName)}] = bits_sequence_to_ticked_init(${expressionContext.getParamExpression(moduleInstance, def, 'index')}, ${expressionContext.getParamExpression(moduleInstance, def, 'wordWidth')}, ${expressionContext.getParamExpression(moduleInstance, def, 'wrap')}, ${expressionContext.getParamExpression(moduleInstance, def, 'remainderMode')})`,
+        );
       }
     }
 
@@ -2952,6 +3037,14 @@ function buildCompositeHelperDefinitions(
         continue;
       }
 
+      if (def.id === 'BitsSequenceToTicked') {
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        tickLines.push(
+          `    ${variableName} = bits_sequence_to_ticked_eval(${expressionContext.getInputExpression(moduleId, 'in')}, state[${JSON.stringify(variableName)}])`,
+        );
+        continue;
+      }
+
       if (def.id === 'Reflector') {
         tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
         tickLines.push(
@@ -3000,7 +3093,7 @@ function buildCompositeHelperDefinitions(
 
     for (const moduleInstance of internalProject.modules) {
       const def = registry[moduleInstance.defId];
-      if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor' && def.id !== 'SymbolSequenceToTicked')) {
+      if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor' && def.id !== 'SymbolSequenceToTicked' && def.id !== 'BitsSequenceToTicked')) {
         continue;
       }
 
@@ -4109,6 +4202,18 @@ function generateStatefulPythonExport(
       );
       continue;
     }
+
+    if (def.id === 'BitsSequenceToTicked') {
+      const variableName = variablesByModuleId.get(moduleInstance.id);
+      if (!variableName) {
+        throw new Error(`Python export could not resolve a variable for "${moduleInstance.id}".`);
+      }
+      bodyLines.push(
+        buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+        `    ${variableName}_state = bits_sequence_to_ticked_init(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'index'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'wordWidth'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'wrap'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'remainderMode'))})`,
+      );
+      continue;
+    }
   }
 
   bodyLines.push('', '    for tick in range(tick_count):');
@@ -4286,6 +4391,14 @@ function generateStatefulPythonExport(
       continue;
     }
 
+    if (def.id === 'BitsSequenceToTicked') {
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
+      bodyLines.push(
+        `        ${variableName} = bits_sequence_to_ticked_eval(${expressionContext.getInputExpression(moduleId, 'in')}, ${variableName}_state)`,
+      );
+      continue;
+    }
+
     bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
     bodyLines.push(
       `        ${variableName} = ${buildModuleExpression(moduleInstance, def, expressionContext)}`,
@@ -4294,7 +4407,7 @@ function generateStatefulPythonExport(
 
   for (const moduleInstance of project.modules) {
     const def = registry[moduleInstance.defId];
-    if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor' && def.id !== 'SymbolSequenceToTicked')) {
+    if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor' && def.id !== 'SymbolSequenceToTicked' && def.id !== 'BitsSequenceToTicked')) {
       continue;
     }
 
@@ -4323,7 +4436,7 @@ function generateStatefulPythonExport(
 
   for (const moduleInstance of project.modules) {
     const def = registry[moduleInstance.defId];
-    if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor' && def.id !== 'SymbolSequenceToTicked')) {
+    if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor' && def.id !== 'SymbolSequenceToTicked' && def.id !== 'BitsSequenceToTicked')) {
       continue;
     }
 
@@ -4336,7 +4449,7 @@ function generateStatefulPythonExport(
     bodyLines.push(
       buildGeneratedModuleComment(moduleInstance, def, '        ', 'Advance'),
       `        if ${stepFlagName}:`,
-      `            ${def.id === 'Counter' ? 'counter_advance' : def.id === 'LFSR' ? 'lfsr_advance' : def.id === 'Rotor' ? 'rotor_advance' : 'symbol_sequence_to_ticked_advance'}(${variableName}_state)`,
+      `            ${def.id === 'Counter' ? 'counter_advance' : def.id === 'LFSR' ? 'lfsr_advance' : def.id === 'Rotor' ? 'rotor_advance' : def.id === 'BitsSequenceToTicked' ? 'bits_sequence_to_ticked_advance' : 'symbol_sequence_to_ticked_advance'}(${variableName}_state)`,
     );
   }
 

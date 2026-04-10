@@ -722,6 +722,98 @@ const SYMBOL_SEQUENCE_TO_TICKED_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const BIT_SEQUENCE_INPUT_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'BitSequenceInput',
+  name: 'Bit Sequence Input Micro Demo',
+  summary: 'Minimal visible whole-sequence source: one ordered bit buffer is emitted as a single sequence signal.',
+  pipeline: 'BitSequenceInput -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'sequence', defId: 'BitSequenceInput', params: { stream: [1, 0, 1, 1, 0, 0, 1, 1] } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        sequence: { x: 184, y: 176 },
+        out: { x: 476, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const HEX_SEQUENCE_INPUT_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'HexSequenceInput',
+  name: 'Hex Sequence Input Micro Demo',
+  summary: 'Minimal visible whole-sequence source: one hex-authored buffer is emitted as a single bit sequence.',
+  pipeline: 'HexSequenceInput -> BitsToHex -> HexOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'sequence', defId: 'HexSequenceInput', params: { value: 'A3F9' } },
+        { id: 'to-hex', defId: 'BitsToHex', params: {} },
+        { id: 'out', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'to-hex', port: 'in' } },
+        { from: { moduleId: 'to-hex', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        sequence: { x: 120, y: 176 },
+        'to-hex': { x: 420, y: 176 },
+        out: { x: 700, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const BITS_SEQUENCE_TO_TICKED_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'BitsSequenceToTicked',
+  name: 'Bits Sequence To Ticked Micro Demo',
+  summary: 'Minimal visible bridge: a whole bit sequence is read as one fixed-width word per tick, then wraps back to the start.',
+  pipeline: 'BitSequenceInput -> BitsSequenceToTicked + Clock -> BitOutput',
+  defaultTickedMode: true,
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        {
+          id: 'bridge',
+          defId: 'BitsSequenceToTicked',
+          params: { index: 0, wordWidth: 4, wrap: true, remainderMode: 'error' },
+        },
+        { id: 'sequence', defId: 'BitSequenceInput', params: { stream: [1, 0, 1, 1, 0, 0, 1, 1] } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 6 } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'bridge', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'bridge', port: 'clock' } },
+        { from: { moduleId: 'bridge', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        bridge: { x: 444, y: 176 },
+        sequence: { x: 72, y: 84 },
+        clock: { x: 72, y: 268 },
+        out: { x: 760, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   MUX_MICRO_DEMO,
   DEMUX_MICRO_DEMO,
@@ -744,6 +836,9 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   SYMBOL_SEQUENCE_INPUT_MICRO_DEMO,
   REPEAT_SYMBOL_TO_LENGTH_MICRO_DEMO,
   SYMBOL_SEQUENCE_TO_TICKED_MICRO_DEMO,
+  BIT_SEQUENCE_INPUT_MICRO_DEMO,
+  HEX_SEQUENCE_INPUT_MICRO_DEMO,
+  BITS_SEQUENCE_TO_TICKED_MICRO_DEMO,
 ];
 
 const PRIMITIVE_MICRO_DEMO_BY_DEF_ID = Object.fromEntries(

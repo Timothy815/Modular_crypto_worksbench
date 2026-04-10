@@ -26,6 +26,9 @@ describe('primitive micro demos', () => {
       'SymbolSequenceInput',
       'RepeatSymbolToLength',
       'SymbolSequenceToTicked',
+      'BitSequenceInput',
+      'HexSequenceInput',
+      'BitsSequenceToTicked',
     ]);
   });
 
@@ -49,6 +52,11 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('SymbolSequenceToTicked')?.name).toBe(
       'Symbol Sequence To Ticked Micro Demo',
     );
+    expect(getPrimitiveMicroDemo('BitSequenceInput')?.name).toBe('Bit Sequence Input Micro Demo');
+    expect(getPrimitiveMicroDemo('HexSequenceInput')?.name).toBe('Hex Sequence Input Micro Demo');
+    expect(getPrimitiveMicroDemo('BitsSequenceToTicked')?.name).toBe(
+      'Bits Sequence To Ticked Micro Demo',
+    );
     expect(getPrimitiveMicroDemo('XOR')).toBeNull();
   });
 
@@ -64,6 +72,7 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('LFSR')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('MultiRouter')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('SymbolSequenceToTicked')?.defaultTickedMode).toBe(true);
+    expect(getPrimitiveMicroDemo('BitsSequenceToTicked')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('BitSplit')?.defaultTickedMode).toBeUndefined();
     expect(getPrimitiveMicroDemo('BitPad')?.defaultTickedMode).toBeUndefined();
     expect(getPrimitiveMicroDemo('BitJoin')?.defaultTickedMode).toBeUndefined();
@@ -78,6 +87,16 @@ describe('primitive micro demos', () => {
       'SymbolSequenceInput',
       'Clock',
       'TextOutput',
+    ]);
+  });
+
+  it('keeps the bit sequence bridge example honest about whole-sequence input and ticked output', () => {
+    const bridge = getPrimitiveMicroDemo('BitsSequenceToTicked');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'BitsSequenceToTicked',
+      'BitSequenceInput',
+      'Clock',
+      'BitOutput',
     ]);
   });
 

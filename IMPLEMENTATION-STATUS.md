@@ -198,7 +198,7 @@ The next bounded discovery candidate is now:
 - a search-first primitive-discovery pass inside the existing palette surface
 - intended to reduce scroll-heavy lookup without widening into a global command palette
 
-The next bounded bit/hex sequence follow-on after the structured-sequence foundation is now:
+The next bounded bit/hex sequence follow-on after the structured-sequence foundation is now shipped as:
 - `BIT-AND-HEX-SEQUENCE-BRIDGES-V1.md`
 - a bounded source-and-bridge slice for explicit whole bit sequences and hex-authored bit sequences
 - keeps hex as an authoring format over `bits` and avoids introducing a hidden third signal domain

@@ -2,7 +2,7 @@
 
 Last updated: April 9, 2026
 
-Status: Drafted for review before implementation
+Status: Implemented on `main`
 
 ## Purpose
 
@@ -80,25 +80,27 @@ Where:
 1. `BitSequenceInput` must emit a `bits` signal with `kind: 'sequence'`.
 2. `HexSequenceInput` must emit a `bits` signal with `kind: 'sequence'`.
 3. `HexSequenceInput` must parse hex text deterministically into the bit sequence it emits.
-4. `BitsSequenceToTicked` must consume a `bits` signal with `kind: 'sequence'` and emit a `bits` signal with `kind: 'scalar'`.
-5. `BitsSequenceToTicked` must require an explicit fixed word width for each emitted tick item.
-6. `BitsSequenceToTicked` must preserve ordering.
-7. `BitsSequenceToTicked` must define explicit edge behavior for trailing incomplete words:
+4. `HexSequenceInput` must use the same sanitization and hex-to-bits logic as `HexSource`.
+5. `BitsSequenceToTicked` must consume a `bits` signal with `kind: 'sequence'` and emit a `bits` signal with `kind: 'scalar'`.
+6. `BitsSequenceToTicked` must require an explicit fixed word width for each emitted tick item.
+7. `BitsSequenceToTicked` must preserve ordering.
+8. `BitsSequenceToTicked` must define explicit edge behavior for trailing incomplete words:
    - pad
    - truncate
    - error
-8. Existing scalar bit primitives must remain scalar-only by default.
-9. No existing scalar primitive may silently map across a bit sequence as part of this slice.
-10. Validation must reject scalar/sequence kind mismatches when kinds are explicit.
-11. Validation must reject impossible fixed-width sequence slicing configurations.
-12. Hex in this slice is an input format, not an engine-level runtime signal type.
+9. `BitsSequenceToTicked` must default to `error` for remainder handling.
+10. Existing scalar bit primitives must remain scalar-only by default.
+11. No existing scalar primitive may silently map across a bit sequence as part of this slice.
+12. Validation must reject scalar/sequence kind mismatches when kinds are explicit.
+13. Validation must reject impossible fixed-width sequence slicing configurations.
+14. Hex in this slice is an input format, not an engine-level runtime signal type.
 
 ## Important Clarification
 
 This slice must answer one ambiguity explicitly:
 
 For the `bits` domain, a scalar bit value is one calculation word.
-A bit sequence is an ordered list of calculation words or an ordered buffer that is later segmented into words by an explicit bridge.
+A bit sequence in V1 is represented as one flat `number[]` buffer that is later segmented into words only by an explicit bridge such as `BitsSequenceToTicked`.
 
 V1 should avoid fuzzy “sometimes this array is one word, sometimes it is many words” behavior.
 
@@ -114,6 +116,7 @@ Safe V1 defaults:
 - `BitsSequenceToTicked`
   - param: `wordWidth`
   - param: `wrap`
+  - `wrap` means the emitted word stream cycles when the workspace runs for more ticks than there are available words
   - param: `remainderMode` = `pad | truncate | error`
 
 This keeps the slice focused on:

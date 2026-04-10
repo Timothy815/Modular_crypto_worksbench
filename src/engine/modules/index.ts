@@ -3,9 +3,11 @@ import { TextInput } from './text-input';
 import { SymbolSequenceInput } from './symbol-sequence-input';
 import { KeyInput } from './key-input';
 import { BitSource } from './bit-source';
+import { BitSequenceInput } from './bit-sequence-input';
 import { AsciiSource } from './ascii-source';
 import { BaudotSource } from './baudot-source';
 import { HexSource } from './hex-source';
+import { HexSequenceInput } from './hex-sequence-input';
 import { IV } from './iv';
 import { Nonce } from './nonce';
 import { SymbolToBits } from './symbol-to-bits';
@@ -54,6 +56,7 @@ import { SymbolPermutation } from './symbol-permutation';
 import { SymbolWindow } from './symbol-window';
 import { RepeatSymbolToLength } from './repeat-symbol-to-length';
 import { SymbolSequenceToTicked } from './symbol-sequence-to-ticked';
+import { BitsSequenceToTicked } from './bits-sequence-to-ticked';
 import { BitShifter } from './bit-shifter';
 import { ByteRotate } from './byte-rotate';
 import { ByteSwap } from './byte-swap';
@@ -73,9 +76,11 @@ export {
   SymbolSequenceInput,
   KeyInput,
   BitSource,
+  BitSequenceInput,
   AsciiSource,
   BaudotSource,
   HexSource,
+  HexSequenceInput,
   IV,
   Nonce,
   SymbolToBits,
@@ -122,6 +127,7 @@ export {
   SymbolWindow,
   RepeatSymbolToLength,
   SymbolSequenceToTicked,
+  BitsSequenceToTicked,
   BitShifter,
   ByteRotate,
   ByteSwap,
@@ -142,9 +148,11 @@ export const V1_REGISTRY: ModuleRegistry = {
   [SymbolSequenceInput.id]: SymbolSequenceInput,
   [KeyInput.id]: KeyInput,
   [BitSource.id]: BitSource,
+  [BitSequenceInput.id]: BitSequenceInput,
   [AsciiSource.id]: AsciiSource,
   [BaudotSource.id]: BaudotSource,
   [HexSource.id]: HexSource,
+  [HexSequenceInput.id]: HexSequenceInput,
   [IV.id]: IV,
   [Nonce.id]: Nonce,
   [SymbolToBits.id]: SymbolToBits,
@@ -191,6 +199,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [SymbolWindow.id]: SymbolWindow,
   [RepeatSymbolToLength.id]: RepeatSymbolToLength,
   [SymbolSequenceToTicked.id]: SymbolSequenceToTicked,
+  [BitsSequenceToTicked.id]: BitsSequenceToTicked,
   [BitShifter.id]: BitShifter,
   [ByteRotate.id]: ByteRotate,
   [ByteSwap.id]: ByteSwap,

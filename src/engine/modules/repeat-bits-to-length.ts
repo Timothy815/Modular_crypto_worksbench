@@ -29,8 +29,8 @@ function repeatBits(bits: number[], targetLength: number): number[] {
 export const RepeatBitsToLength: ModuleDef = {
   id: 'RepeatBitsToLength',
   name: 'Repeat Bits To Length',
-  inputs: [{ name: 'in', type: 'bits' }],
-  outputs: [{ name: 'out', type: 'bits' }],
+  inputs: [{ name: 'in', type: 'bits', kind: 'sequence' }],
+  outputs: [{ name: 'out', type: 'bits', kind: 'sequence' }],
   paramSchema: {
     targetLength: {
       key: 'targetLength',

@@ -8,6 +8,7 @@ import { BaudotSource } from './modules/baudot-source';
 import { BitPad } from './modules/bit-pad';
 import { BitUnpad } from './modules/bit-unpad';
 import { BitSource } from './modules/bit-source';
+import { BitSequenceInput } from './modules/bit-sequence-input';
 import { BitSplit } from './modules/bit-split';
 import { BitWindow } from './modules/bit-window';
 import { ByteRotate } from './modules/byte-rotate';
@@ -18,6 +19,7 @@ import { Demux } from './modules/demux';
 import { Equals } from './modules/equals';
 import { Gate } from './modules/gate';
 import { HexSource } from './modules/hex-source';
+import { HexSequenceInput } from './modules/hex-sequence-input';
 import { IV } from './modules/iv';
 import { Majority } from './modules/majority';
 import { ModExp } from './modules/mod-exp';
@@ -44,6 +46,7 @@ import { SBox } from './modules/s-box';
 import { SymbolPermutation } from './modules/symbol-permutation';
 import { SymbolSequenceInput } from './modules/symbol-sequence-input';
 import { SymbolSequenceToTicked } from './modules/symbol-sequence-to-ticked';
+import { BitsSequenceToTicked } from './modules/bits-sequence-to-ticked';
 import { SymbolWindow } from './modules/symbol-window';
 import { SubMod } from './modules/sub-mod';
 import { TextInput } from './modules/text-input';
@@ -89,9 +92,11 @@ const registry: ModuleRegistry = {
     evaluate: (inputs) => ({ out: inputs.in }),
   },
   [BitSource.id]: BitSource,
+  [BitSequenceInput.id]: BitSequenceInput,
   [AsciiSource.id]: AsciiSource,
   [BaudotSource.id]: BaudotSource,
   [HexSource.id]: HexSource,
+  [HexSequenceInput.id]: HexSequenceInput,
   [IV.id]: IV,
   [Majority.id]: Majority,
   [Mux.id]: Mux,
@@ -118,6 +123,7 @@ const registry: ModuleRegistry = {
   [SymbolPermutation.id]: SymbolPermutation,
   [SymbolSequenceInput.id]: SymbolSequenceInput,
   [SymbolSequenceToTicked.id]: SymbolSequenceToTicked,
+  [BitsSequenceToTicked.id]: BitsSequenceToTicked,
   [SymbolWindow.id]: SymbolWindow,
   [Rotor.id]: Rotor,
   [RotorReverse.id]: RotorReverse,
@@ -1128,6 +1134,42 @@ describe('validateProject', () => {
     };
 
     const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'signal-kind-mismatch')).toBe(true);
+  });
+
+  it('reports mismatched signal kinds for sequence-sensitive bit paths', () => {
+    const project: Project = {
+      modules: [
+        { id: 'bit-source', defId: 'Source', params: {} },
+        {
+          id: 'bit-bridge',
+          defId: 'BitsSequenceToTicked',
+          params: { index: 0, wordWidth: 4, wrap: true, remainderMode: 'error' },
+        },
+      ],
+      connections: [
+        {
+          from: { moduleId: 'bit-source', port: 'out' },
+          to: { moduleId: 'bit-bridge', port: 'in' },
+        },
+      ],
+    };
+
+    const bitRegistry: ModuleRegistry = {
+      ...registry,
+      Source: {
+        id: 'Source',
+        name: 'Source',
+        inputs: [],
+        outputs: [{ name: 'out', type: 'bits', kind: 'scalar' }],
+        paramSchema: {},
+        evaluate: () => ({ out: { type: 'bits', value: [1, 0, 1, 0] } }),
+      },
+    };
+
+    const result = validateProject(project, bitRegistry);
 
     expect(result.ok).toBe(false);
     expect(result.issues.some((issue) => issue.code === 'signal-kind-mismatch')).toBe(true);

@@ -35,6 +35,7 @@ import { validateBitUnpadParam } from './modules/bit-unpad';
 import { validateBitWindowParam } from './modules/bit-window';
 import { validateByteRotateParam } from './modules/byte-rotate';
 import { validateBroadcastBitsParam } from './modules/broadcast-bits';
+import { validateBitsSequenceToTickedParam } from './modules/bits-sequence-to-ticked';
 import { parsePolluxAlphabet, validatePolluxFractionationParam } from './modules/pollux-fractionation';
 import { validateRepeatBitsToLengthParam } from './modules/repeat-bits-to-length';
 import { validateRepeatSymbolToLengthParam } from './modules/repeat-symbol-to-length';
@@ -240,6 +241,10 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'BroadcastBits') {
     return validateBroadcastBitsParam(field.key, value);
+  }
+
+  if (def.id === 'BitsSequenceToTicked') {
+    return validateBitsSequenceToTickedParam(field.key, value);
   }
 
   if (def.id === 'ByteRotate') {

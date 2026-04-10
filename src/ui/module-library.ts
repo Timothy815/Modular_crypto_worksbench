@@ -65,6 +65,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this as a simple round key or fixed mask when experimenting in the bit domain. Raw bit text like 01000001 01000010 is accepted directly, without forcing manual byte separators.',
     searchTerms: ['bit', 'source', 'key', 'stream', 'bits'],
   },
+  BitSequenceInput: {
+    sectionId: 'inputs-outputs',
+    sortOrder: 35,
+    purpose: 'Emits a whole bit sequence as one ordered buffer.',
+    detail: 'Use this when a graph should begin with an explicit whole bit buffer instead of a one-bit-per-tick source.',
+    searchTerms: ['bit sequence', 'whole bits', 'bit buffer', 'sequence source', 'key bits'],
+  },
   AsciiSource: {
     sectionId: 'inputs-outputs',
     sortOrder: 40,
@@ -85,6 +92,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Emits a hexadecimal value directly into the bit domain.',
     detail: 'Use this for byte-oriented labs when you want to paste hex test vectors instead of typing raw bits.',
     searchTerms: ['hex', 'source', 'byte', 'vector', 'bits', 'input'],
+  },
+  HexSequenceInput: {
+    sectionId: 'inputs-outputs',
+    sortOrder: 65,
+    purpose: 'Emits a whole hex-authored bit sequence as one ordered buffer.',
+    detail: 'Use this when a graph should begin with an explicit whole hex buffer rather than a tick-sliced hex source.',
+    searchTerms: ['hex sequence', 'whole hex', 'hex buffer', 'sequence source', 'byte sequence'],
   },
   IV: {
     sectionId: 'protocol-context',
@@ -344,6 +358,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Reads one symbol at a time from a whole sequence across ticks.',
     detail: 'Use this to bridge an explicit whole symbol sequence back into one-symbol-per-tick workflows such as repeated-key classical ciphers.',
     searchTerms: ['sequence to ticked', 'symbol stream', 'read sequence', 'tick adapter', 'vigenere key stream'],
+  },
+  BitsSequenceToTicked: {
+    sectionId: 'bridges',
+    sortOrder: 40,
+    purpose: 'Reads one fixed-width bit word at a time from a whole bit sequence across ticks.',
+    detail: 'Use this to bridge an explicit whole bit or hex-authored sequence into one-word-per-tick workflows such as repeated-byte XOR or block stepping.',
+    searchTerms: ['bits sequence to ticked', 'bit stream bridge', 'word per tick', 'hex sequence bridge', 'sequence to ticked'],
   },
   BitShifter: {
     sectionId: 'word-diffusion',

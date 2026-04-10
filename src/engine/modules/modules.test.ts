@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { TextInput } from './text-input';
 import { KeyInput } from './key-input';
 import { BitSource } from './bit-source';
+import { BitSequenceInput } from './bit-sequence-input';
 import { AsciiSource } from './ascii-source';
 import { BaudotSource } from './baudot-source';
 import { HexSource } from './hex-source';
+import { HexSequenceInput } from './hex-sequence-input';
 import { IV } from './iv';
 import { Nonce } from './nonce';
 import { Salt } from './salt';
@@ -68,6 +70,7 @@ import { SymbolWindow } from './symbol-window';
 import { RepeatSymbolToLength } from './repeat-symbol-to-length';
 import { SymbolSequenceInput } from './symbol-sequence-input';
 import { SymbolSequenceToTicked } from './symbol-sequence-to-ticked';
+import { BitsSequenceToTicked } from './bits-sequence-to-ticked';
 import { BitShifter } from './bit-shifter';
 import { ByteRotate } from './byte-rotate';
 import { ByteSwap } from './byte-swap';
@@ -291,6 +294,53 @@ describe('RepeatBitsToLength', () => {
         { targetLength: 8 },
       ),
     ).toThrow(/empty bit sequence/i);
+  });
+});
+
+describe('Bit and hex sequence foundation', () => {
+  it('emits a whole bit sequence explicitly', () => {
+    const result = BitSequenceInput.evaluate({}, { stream: [1, 0, 1, 1, 0, 0, 1, 1] });
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1, 1, 0, 0, 1, 1] });
+  });
+
+  it('emits a whole hex-authored bit sequence using the shared hex parser', () => {
+    const result = HexSequenceInput.evaluate({}, { value: ' a3 f9 ' });
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1],
+    });
+  });
+
+  it('reads one fixed-width bit word per tick from a whole bit sequence', () => {
+    const result0 = BitsSequenceToTicked.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 1, 0, 0, 1, 1] }, clock: { type: 'bits', value: [1] } },
+      { index: 0, wordWidth: 4, wrap: true, remainderMode: 'error' },
+    );
+    const result1 = BitsSequenceToTicked.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 1, 0, 0, 1, 1] }, clock: { type: 'bits', value: [1] } },
+      { index: 1, wordWidth: 4, wrap: true, remainderMode: 'error' },
+    );
+
+    expect(result0.out).toEqual({ type: 'bits', value: [1, 0, 1, 1] });
+    expect(result1.out).toEqual({ type: 'bits', value: [0, 0, 1, 1] });
+  });
+
+  it('defaults to error on incomplete trailing words', () => {
+    expect(() =>
+      BitsSequenceToTicked.evaluate(
+        { in: { type: 'bits', value: [1, 0, 1, 1, 0, 0, 1, 1, 1, 0] }, clock: { type: 'bits', value: [1] } },
+        { index: 0, wordWidth: 4, wrap: true, remainderMode: 'error' },
+      ),
+    ).toThrow(/cannot emit 10 bits as 4-bit words/i);
+  });
+
+  it('pads trailing words when remainder mode is pad', () => {
+    const result = BitsSequenceToTicked.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 0, 1, 1] }, clock: { type: 'bits', value: [1] } },
+      { index: 1, wordWidth: 4, wrap: true, remainderMode: 'pad' },
+    );
+
+    expect(result.out).toEqual({ type: 'bits', value: [1, 1, 0, 0] });
   });
 });
 

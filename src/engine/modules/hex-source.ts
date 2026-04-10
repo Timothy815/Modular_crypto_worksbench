@@ -17,7 +17,7 @@ export function validateHexSourceValue(value: unknown): string | null {
   return null;
 }
 
-function sanitizeHex(value: unknown): string {
+export function sanitizeHex(value: unknown): string {
   const validationMessage = validateHexSourceValue(value);
   if (validationMessage) {
     throw new Error(validationMessage);
@@ -28,7 +28,7 @@ function sanitizeHex(value: unknown): string {
     : '';
 }
 
-function hexToBits(value: string): number[] {
+export function hexToBits(value: string): number[] {
   return value.split('').flatMap((digit) => {
     const nibble = Number.parseInt(digit, 16);
     return [3, 2, 1, 0].map((shift) => (nibble >> shift) & 1);
