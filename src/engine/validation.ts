@@ -18,6 +18,7 @@ import {
   type IteratorDef,
 } from './composites';
 import { validateAsciiSourceValue } from './modules/ascii-source';
+import { validateAsciiSequenceToTickedParam } from './modules/ascii-sequence-to-ticked';
 import { validateBaudotSourceValue } from './modules/baudot-source';
 import { validateHexSourceValue } from './modules/hex-source';
 import { validatePermutationOrderParam } from './modules/permutation';
@@ -193,6 +194,14 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'AsciiSource' && field.key === 'value') {
     return validateAsciiSourceValue(value);
+  }
+
+  if (def.id === 'AsciiSequenceInput' && field.key === 'value') {
+    return validateAsciiSourceValue(value);
+  }
+
+  if (def.id === 'AsciiSequenceToTicked') {
+    return validateAsciiSequenceToTickedParam(field.key, value);
   }
 
   if (def.id === 'BaudotSource' && field.key === 'value') {

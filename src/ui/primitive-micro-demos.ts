@@ -660,6 +660,32 @@ const SYMBOL_SEQUENCE_INPUT_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const ASCII_SEQUENCE_INPUT_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'AsciiSequenceInput',
+  name: 'ASCII Sequence Input Micro Demo',
+  summary: 'Minimal visible whole-sequence source: one ordered ASCII buffer is emitted as a single sequence signal.',
+  pipeline: 'AsciiSequenceInput -> TextOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'sequence', defId: 'AsciiSequenceInput', params: { value: 'HELLO' } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        sequence: { x: 184, y: 176 },
+        out: { x: 476, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const REPEAT_SYMBOL_TO_LENGTH_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'RepeatSymbolToLength',
   name: 'Repeat Symbol To Length Micro Demo',
@@ -701,6 +727,39 @@ const SYMBOL_SEQUENCE_TO_TICKED_MICRO_DEMO: PrimitiveMicroDemo = {
       modules: [
         { id: 'bridge', defId: 'SymbolSequenceToTicked', params: { index: 0, wrap: true } },
         { id: 'sequence', defId: 'SymbolSequenceInput', params: { value: 'KEY' } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 6 } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'bridge', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'bridge', port: 'clock' } },
+        { from: { moduleId: 'bridge', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        bridge: { x: 444, y: 176 },
+        sequence: { x: 72, y: 84 },
+        clock: { x: 72, y: 268 },
+        out: { x: 760, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const ASCII_SEQUENCE_TO_TICKED_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'AsciiSequenceToTicked',
+  name: 'ASCII Sequence To Ticked Micro Demo',
+  summary: 'Minimal visible bridge: a whole ASCII sequence is read one character per tick, then wraps back to the start.',
+  pipeline: 'AsciiSequenceInput -> AsciiSequenceToTicked + Clock -> TextOutput',
+  defaultTickedMode: true,
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'bridge', defId: 'AsciiSequenceToTicked', params: { index: 0, wrap: true } },
+        { id: 'sequence', defId: 'AsciiSequenceInput', params: { value: 'KEY' } },
         { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 6 } },
         { id: 'out', defId: 'TextOutput', params: {} },
       ],
@@ -834,8 +893,10 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   ROTOR_MICRO_DEMO,
   ROTOR_REVERSE_MICRO_DEMO,
   SYMBOL_SEQUENCE_INPUT_MICRO_DEMO,
+  ASCII_SEQUENCE_INPUT_MICRO_DEMO,
   REPEAT_SYMBOL_TO_LENGTH_MICRO_DEMO,
   SYMBOL_SEQUENCE_TO_TICKED_MICRO_DEMO,
+  ASCII_SEQUENCE_TO_TICKED_MICRO_DEMO,
   BIT_SEQUENCE_INPUT_MICRO_DEMO,
   HEX_SEQUENCE_INPUT_MICRO_DEMO,
   BITS_SEQUENCE_TO_TICKED_MICRO_DEMO,

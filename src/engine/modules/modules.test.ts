@@ -4,6 +4,8 @@ import { KeyInput } from './key-input';
 import { BitSource } from './bit-source';
 import { BitSequenceInput } from './bit-sequence-input';
 import { AsciiSource } from './ascii-source';
+import { AsciiSequenceInput } from './ascii-sequence-input';
+import { AsciiSequenceToTicked } from './ascii-sequence-to-ticked';
 import { BaudotSource } from './baudot-source';
 import { HexSource } from './hex-source';
 import { HexSequenceInput } from './hex-sequence-input';
@@ -269,6 +271,32 @@ describe('Symbol sequence foundation', () => {
     );
     const tick2 = SymbolSequenceToTicked.evaluate(
       { in: repeated.out, clock: { type: 'bits', value: [1] } },
+      { index: 2, wrap: true },
+    );
+
+    expect(tick0.out).toEqual({ type: 'symbol', value: 'K' });
+    expect(tick1.out).toEqual({ type: 'symbol', value: 'E' });
+    expect(tick2.out).toEqual({ type: 'symbol', value: 'Y' });
+  });
+});
+
+describe('ASCII sequence foundation', () => {
+  it('emits a whole ASCII sequence explicitly', () => {
+    const result = AsciiSequenceInput.evaluate({}, { value: 'KEY' });
+    expect(result.out).toEqual({ type: 'symbol', value: 'KEY' });
+  });
+
+  it('reads one ASCII character per tick from a whole sequence', () => {
+    const tick0 = AsciiSequenceToTicked.evaluate(
+      { in: { type: 'symbol', value: 'KEY' }, clock: { type: 'bits', value: [1] } },
+      { index: 0, wrap: true },
+    );
+    const tick1 = AsciiSequenceToTicked.evaluate(
+      { in: { type: 'symbol', value: 'KEY' }, clock: { type: 'bits', value: [1] } },
+      { index: 1, wrap: true },
+    );
+    const tick2 = AsciiSequenceToTicked.evaluate(
+      { in: { type: 'symbol', value: 'KEY' }, clock: { type: 'bits', value: [1] } },
       { index: 2, wrap: true },
     );
 

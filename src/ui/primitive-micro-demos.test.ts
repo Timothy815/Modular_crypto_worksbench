@@ -24,8 +24,10 @@ describe('primitive micro demos', () => {
       'Rotor',
       'RotorReverse',
       'SymbolSequenceInput',
+      'AsciiSequenceInput',
       'RepeatSymbolToLength',
       'SymbolSequenceToTicked',
+      'AsciiSequenceToTicked',
       'BitSequenceInput',
       'HexSequenceInput',
       'BitsSequenceToTicked',
@@ -46,11 +48,15 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('Rotor')?.name).toBe('Rotor Micro Demo');
     expect(getPrimitiveMicroDemo('RotorReverse')?.name).toBe('Rotor Reverse Micro Demo');
     expect(getPrimitiveMicroDemo('SymbolSequenceInput')?.name).toBe('Symbol Sequence Input Micro Demo');
+    expect(getPrimitiveMicroDemo('AsciiSequenceInput')?.name).toBe('ASCII Sequence Input Micro Demo');
     expect(getPrimitiveMicroDemo('RepeatSymbolToLength')?.name).toBe(
       'Repeat Symbol To Length Micro Demo',
     );
     expect(getPrimitiveMicroDemo('SymbolSequenceToTicked')?.name).toBe(
       'Symbol Sequence To Ticked Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('AsciiSequenceToTicked')?.name).toBe(
+      'ASCII Sequence To Ticked Micro Demo',
     );
     expect(getPrimitiveMicroDemo('BitSequenceInput')?.name).toBe('Bit Sequence Input Micro Demo');
     expect(getPrimitiveMicroDemo('HexSequenceInput')?.name).toBe('Hex Sequence Input Micro Demo');
@@ -72,6 +78,7 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('LFSR')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('MultiRouter')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('SymbolSequenceToTicked')?.defaultTickedMode).toBe(true);
+    expect(getPrimitiveMicroDemo('AsciiSequenceToTicked')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('BitsSequenceToTicked')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('BitSplit')?.defaultTickedMode).toBeUndefined();
     expect(getPrimitiveMicroDemo('BitPad')?.defaultTickedMode).toBeUndefined();
@@ -85,6 +92,16 @@ describe('primitive micro demos', () => {
     expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
       'SymbolSequenceToTicked',
       'SymbolSequenceInput',
+      'Clock',
+      'TextOutput',
+    ]);
+  });
+
+  it('keeps the ASCII sequence bridge example honest about whole-sequence input and ticked output', () => {
+    const bridge = getPrimitiveMicroDemo('AsciiSequenceToTicked');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'AsciiSequenceToTicked',
+      'AsciiSequenceInput',
       'Clock',
       'TextOutput',
     ]);

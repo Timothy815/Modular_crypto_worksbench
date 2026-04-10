@@ -79,6 +79,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when a modern byte-oriented machine should begin from readable ASCII text instead of manually entered bits.',
     searchTerms: ['ascii', 'source', 'text', 'byte', 'input', 'bits'],
   },
+  AsciiSequenceInput: {
+    sectionId: 'inputs-outputs',
+    sortOrder: 45,
+    purpose: 'Emits a whole ASCII text sequence as one ordered value.',
+    detail: 'Use this when a graph should begin with an explicit whole ASCII message or key before any repetition or ticked bridging.',
+    searchTerms: ['ascii sequence', 'whole ascii', 'ascii text', 'message sequence', 'key sequence'],
+  },
   BaudotSource: {
     sectionId: 'inputs-outputs',
     sortOrder: 50,
@@ -358,6 +365,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Reads one symbol at a time from a whole sequence across ticks.',
     detail: 'Use this to bridge an explicit whole symbol sequence back into one-symbol-per-tick workflows such as repeated-key classical ciphers.',
     searchTerms: ['sequence to ticked', 'symbol stream', 'read sequence', 'tick adapter', 'vigenere key stream'],
+  },
+  AsciiSequenceToTicked: {
+    sectionId: 'bridges',
+    sortOrder: 37,
+    purpose: 'Reads one ASCII character at a time from a whole sequence across ticks.',
+    detail: 'Use this to bridge an explicit whole ASCII message or key back into one-character-per-tick workflows.',
+    searchTerms: ['ascii sequence to ticked', 'ascii stream', 'character per tick', 'tick adapter', 'ascii key stream'],
   },
   BitsSequenceToTicked: {
     sectionId: 'bridges',
