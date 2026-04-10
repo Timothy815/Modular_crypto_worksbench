@@ -1251,7 +1251,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `STRUCTURED-SEQUENCE-SIGNAL-MODEL-V1.md` | Shipped first sequence-foundation slice for explicit scalar vs sequence port kinds and honest whole-sequence bridge paths |
 | `BIT-AND-HEX-SEQUENCE-BRIDGES-V1.md` | Shipped explicit bit/hex sequence inputs and bit-sequence-to-ticked follow-on on top of the sequence foundation |
 | `TICKED-TO-SEQUENCE-COLLECTORS-V1.md` | Shipped bounded reverse-bridge slice for collecting per-tick scalar output back into whole visible sequences |
-| `SEQUENCE-CHUNK-AND-JOIN-PRIMITIVES-V1.md` | Narrowed to a bit-first segmentation/reassembly slice built on explicit tick bridges; first demo path added to start implementation honestly |
+| `SEQUENCE-CHUNK-AND-JOIN-PRIMITIVES-V1.md` | Shipped bounded bit-first segmentation/reassembly slice via `BitsSequenceToTicked`, `TickedBitsToSequence`, the `Bit Sequence Segment And Rejoin` demo, and the `Visible Word Segmentation` tutorial |
 | `EXPLICIT-MISMATCH-POLICIES-V1.md` | Shipped bounded mismatch-policy slice for explicit truncate/pad-style repair beyond repetition and broadcast |
 | `REPRESENTATION-TO-OPERATIONAL-BRIDGES-V1.md` | Shipped bounded scalar/ticked bridge-completeness slice for making ASCII and Hex fully usable in operational bit-domain pipelines |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |

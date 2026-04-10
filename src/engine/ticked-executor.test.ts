@@ -13,6 +13,9 @@ import { Rotor } from './modules/rotor';
 import { RotorReverse } from './modules/rotor-reverse';
 import { TextInput } from './modules/text-input';
 import { BitSource } from './modules/bit-source';
+import { BitSequenceInput } from './modules/bit-sequence-input';
+import { BitsSequenceToTicked } from './modules/bits-sequence-to-ticked';
+import { NOT } from './modules/not';
 import { Reflector } from './modules/reflector';
 import { Clock } from './modules/clock';
 import { Output } from './modules/output';
@@ -150,6 +153,9 @@ describe('executeTickedProject', () => {
     RotorReverse,
     TextInput,
     BitSource,
+    BitSequenceInput,
+    BitsSequenceToTicked,
+    NOT,
     TickedSymbolsToSequence,
     TickedBitsToSequence,
     Reflector,
@@ -273,6 +279,39 @@ describe('executeTickedProject', () => {
       { collected: [1], count: 1 },
       { collected: [1, 0], count: 2 },
     ]);
+  });
+
+  it('segments fixed-width words across ticks, processes them, and reassembles them in order', () => {
+    const project: Project = {
+      modules: [
+        { id: 'sequence', defId: 'BitSequenceInput', params: { stream: [1, 0, 1, 1, 0, 0, 1, 1] } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 2 } },
+        {
+          id: 'segment',
+          defId: 'BitsSequenceToTicked',
+          params: { index: 0, wordWidth: 4, wrap: false, remainderMode: 'error' },
+        },
+        { id: 'invert', defId: 'NOT', params: {} },
+        { id: 'collector', defId: 'TickedBitsToSequence', params: { collected: [], count: 0 } },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'segment', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'segment', port: 'clock' } },
+        { from: { moduleId: 'segment', port: 'out' }, to: { moduleId: 'invert', port: 'in' } },
+        { from: { moduleId: 'invert', port: 'out' }, to: { moduleId: 'collector', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'collector', port: 'clock' } },
+      ],
+    };
+
+    const result = executeTickedProject(project, registry, 2);
+
+    expect(result.ticks[0].outputsByModuleId.segment.out).toEqual({ type: 'bits', value: [1, 0, 1, 1] });
+    expect(result.ticks[1].outputsByModuleId.segment.out).toEqual({ type: 'bits', value: [0, 0, 1, 1] });
+    expect(result.ticks[0].outputsByModuleId.collector.out).toEqual({ type: 'bits', value: [0, 1, 0, 0] });
+    expect(result.ticks[1].outputsByModuleId.collector.out).toEqual({
+      type: 'bits',
+      value: [0, 1, 0, 0, 1, 1, 0, 0],
+    });
   });
 
   it('does not advance stateless modules', () => {
