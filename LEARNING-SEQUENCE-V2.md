@@ -2,7 +2,7 @@
 
 Last updated: March 26, 2026
 
-Status: Implemented on local `main` after the completed `MCW-V2-SANITY-AUDIT.md`.
+Status: Shipped on `main` after the completed `MCW-V2-SANITY-AUDIT.md`.
 
 ## Purpose
 

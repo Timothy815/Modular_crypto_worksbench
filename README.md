@@ -93,7 +93,7 @@ The next bounded mismatch-alignment candidate after that is now shipped as:
 - a bounded explicit helper-module slice for repeated keys, repeated-byte XOR, and similar short-source / long-target cases
 - keeps mismatch policy visible in the graph and avoids hidden coercion inside existing modules
 
-The next bounded architectural follow-on now drafted as:
+The next bounded architectural follow-on is now shipped as:
 - `STRUCTURED-SEQUENCE-SIGNAL-MODEL-V1.md`
 - a bounded foundation contract for resolving scalar-vs-sequence ambiguity in repeated-key, chunking, and stream-aligned workflows
 - keeps later sequence features grounded in explicit port and signal semantics instead of hidden execution behavior
@@ -102,6 +102,12 @@ The next bounded bit/hex follow-on after that is now shipped as:
 - `BIT-AND-HEX-SEQUENCE-BRIDGES-V1.md`
 - a bounded source-and-bridge slice for explicit whole bit sequences and hex-authored bit sequences
 - keeps hex as an authoring format over `bits` rather than adding a third engine signal domain
+
+The next bounded reverse-bridge and mismatch-repair follow-ons after that are now also shipped as:
+- `TICKED-TO-SEQUENCE-COLLECTORS-V1.md`
+- a bounded reverse-bridge slice for collecting per-tick scalar output back into whole visible sequences
+- `EXPLICIT-MISMATCH-POLICIES-V1.md`
+- a bounded visible repair-policy slice for explicit truncate/pad handling beyond repetition and broadcast
 
 The previous dense-workspace crossing follow-on is now already shipped as:
 - `WIRE-CROSSING-DISCIPLINE-V1.md`

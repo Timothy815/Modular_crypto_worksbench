@@ -1111,9 +1111,15 @@ Recent temporal-transparency follow-on now shipped:
 Recent bounded alignment/helper slice now shipped:
 - `EXPLICIT-REPETITION-AND-BROADCAST-V1.md`
 
-Next bounded architectural follow-on now drafted:
+Recent bounded architectural follow-on now shipped:
 - `STRUCTURED-SEQUENCE-SIGNAL-MODEL-V1.md`
 - defines the signal/port-model boundary needed before later sequence, chunking, and stream-processing work
+
+Recent bounded reverse-bridge and mismatch-repair follow-ons now shipped:
+- `TICKED-TO-SEQUENCE-COLLECTORS-V1.md`
+- collects per-tick scalar output back into whole visible sequences
+- `EXPLICIT-MISMATCH-POLICIES-V1.md`
+- adds explicit truncate/pad-style mismatch repair beyond repetition and broadcast
 
 ### Claude
 
@@ -1237,7 +1243,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `PROTOCOL-HANDSHAKES-V1.md` | Framed for `v1.44.0` as the bounded systems-level follow-on for visible handshake / transcript composition |
 | `MCW-V2-SANITY-PASS.md` | Proposed post-`v1.44.0` as the next product-level cohesion pass after the completed systems-composition checkpoint |
 | `MCW-V2-SANITY-AUDIT.md` | Completed audit deliverable: the product still holds, but the late library/pathfinding model now needs one bounded follow-on |
-| `LEARNING-SEQUENCE-V2.md` | Implemented on local `main` as the bounded late-stage pathfinding and library-reorganization follow-on after the sanity audit |
+| `LEARNING-SEQUENCE-V2.md` | Shipped on `main` as the bounded late-stage pathfinding and library-reorganization follow-on after the sanity audit |
 | `STRUCTURED-SEQUENCE-SIGNAL-MODEL-V1.md` | Shipped first sequence-foundation slice for explicit scalar vs sequence port kinds and honest whole-sequence bridge paths |
 | `BIT-AND-HEX-SEQUENCE-BRIDGES-V1.md` | Shipped explicit bit/hex sequence inputs and bit-sequence-to-ticked follow-on on top of the sequence foundation |
 | `TICKED-TO-SEQUENCE-COLLECTORS-V1.md` | Shipped bounded reverse-bridge slice for collecting per-tick scalar output back into whole visible sequences |
