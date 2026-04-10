@@ -24,6 +24,44 @@ export interface DemoProject extends LearningSequenceMeta {
 
 export const demoProjects: DemoProject[] = [
   {
+    id: 'bit-sequence-segment-and-rejoin',
+    name: 'Bit Sequence Segment And Rejoin',
+    group: 'Sequences & Streams',
+    summary: 'A whole bit buffer is segmented into fixed-width words across ticks, transformed one word at a time, then collected back into one visible sequence.',
+    pipeline: 'BitSequenceInput -> BitsSequenceToTicked + Clock -> NOT -> TickedBitsToSequence -> BitOutput',
+    defaultTickedMode: true,
+    project: {
+      modules: [
+        { id: 'sequence', defId: 'BitSequenceInput', params: { stream: [1, 0, 1, 1, 0, 0, 1, 1] } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 3 } },
+        {
+          id: 'segment',
+          defId: 'BitsSequenceToTicked',
+          params: { index: 0, wordWidth: 4, wrap: false, remainderMode: 'error' },
+        },
+        { id: 'invert', defId: 'NOT', params: {} },
+        { id: 'collect', defId: 'TickedBitsToSequence', params: { collected: [], count: 0 } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'segment', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'segment', port: 'clock' } },
+        { from: { moduleId: 'segment', port: 'out' }, to: { moduleId: 'invert', port: 'in' } },
+        { from: { moduleId: 'invert', port: 'out' }, to: { moduleId: 'collect', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'collect', port: 'clock' } },
+        { from: { moduleId: 'collect', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    layout: {
+      sequence: { x: 64, y: 88 },
+      clock: { x: 64, y: 256 },
+      segment: { x: 356, y: 88 },
+      invert: { x: 612, y: 88 },
+      collect: { x: 872, y: 88 },
+      out: { x: 1140, y: 88 },
+    },
+  },
+  {
     id: 'toy-rsa',
     name: 'Toy RSA',
     group: 'Number Theory',

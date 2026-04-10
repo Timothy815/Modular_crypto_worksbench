@@ -962,7 +962,7 @@ Implemented and shipped:
 - `STRUCTURED-SEQUENCE-SIGNAL-MODEL-V1.md`: shipped first bounded sequence-foundation slice for explicit scalar vs sequence port kinds and honest whole-sequence bridge paths
 - `BIT-AND-HEX-SEQUENCE-BRIDGES-V1.md`: shipped explicit bit/hex sequence inputs and bit-sequence-to-ticked bridge follow-on
 - `TICKED-TO-SEQUENCE-COLLECTORS-V1.md`: shipped reverse-bridge slice for collecting per-tick scalar output back into whole visible sequences
-- `SEQUENCE-CHUNK-AND-JOIN-PRIMITIVES-V1.md`: drafted explicit grouping contract for chunking and rejoining sequence data without hidden block semantics
+- `SEQUENCE-CHUNK-AND-JOIN-PRIMITIVES-V1.md`: narrowed to a bit-first segmentation/reassembly slice built on explicit tick bridges instead of fake nested chunk containers
 - `EXPLICIT-MISMATCH-POLICIES-V1.md`: shipped follow-on policy family for explicit truncate/pad-style mismatch repair beyond repetition and broadcast
 - `ADVANCED-ROTOR-REALISM-V1.md`: shipped first bounded rotor-realism slice for ring setting, turnover, and double-step behavior
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
