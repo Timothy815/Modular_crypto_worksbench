@@ -31,6 +31,10 @@ describe('primitive micro demos', () => {
       'AsciiSequenceToTicked',
       'AsciiCharToBits',
       'AsciiSequenceToBits',
+      'BitsToAscii',
+      'BitsToHex',
+      'AsciiToHex',
+      'HexToAscii',
       'TickedSymbolsToSequence',
       'TickedBitsToSequence',
       'BitSequenceInput',
@@ -76,6 +80,18 @@ describe('primitive micro demos', () => {
     );
     expect(getPrimitiveMicroDemo('AsciiSequenceToBits')?.name).toBe(
       'ASCII Sequence To Bits Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('BitsToAscii')?.name).toBe(
+      'Bits To ASCII Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('BitsToHex')?.name).toBe(
+      'Bits To Hex Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('AsciiToHex')?.name).toBe(
+      'ASCII To Hex Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('HexToAscii')?.name).toBe(
+      'Hex To ASCII Micro Demo',
     );
     expect(getPrimitiveMicroDemo('TickedSymbolsToSequence')?.name).toBe(
       'Ticked Symbols To Sequence Micro Demo',
@@ -173,6 +189,42 @@ describe('primitive micro demos', () => {
       'AsciiSequenceToBits',
       'AsciiSequenceInput',
       'BitOutput',
+    ]);
+  });
+
+  it('keeps the bits-to-ASCII whole-buffer bridge honest about direct decode to text', () => {
+    const bridge = getPrimitiveMicroDemo('BitsToAscii');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'BitsToAscii',
+      'BitSequenceInput',
+      'TextOutput',
+    ]);
+  });
+
+  it('keeps the bits-to-hex whole-buffer bridge honest about direct encode to hex', () => {
+    const bridge = getPrimitiveMicroDemo('BitsToHex');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'BitsToHex',
+      'BitSequenceInput',
+      'HexOutput',
+    ]);
+  });
+
+  it('keeps the ASCII-to-hex whole-buffer bridge honest about direct sequence encoding', () => {
+    const bridge = getPrimitiveMicroDemo('AsciiToHex');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'AsciiToHex',
+      'AsciiSequenceInput',
+      'HexOutput',
+    ]);
+  });
+
+  it('keeps the hex-to-ASCII whole-buffer bridge honest about direct sequence decoding', () => {
+    const bridge = getPrimitiveMicroDemo('HexToAscii');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'HexToAscii',
+      'SymbolSequenceInput',
+      'TextOutput',
     ]);
   });
 

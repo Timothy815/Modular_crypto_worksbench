@@ -875,6 +875,122 @@ const ASCII_SEQUENCE_TO_BITS_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const BITS_TO_ASCII_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'BitsToAscii',
+  name: 'Bits To ASCII Micro Demo',
+  summary: 'Minimal visible whole-buffer bridge: one bit buffer is decoded directly into readable ASCII text.',
+  pipeline: 'BitSequenceInput -> BitsToAscii -> TextOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'bridge', defId: 'BitsToAscii', params: {} },
+        { id: 'sequence', defId: 'BitSequenceInput', params: { stream: [0, 1, 0, 0, 0, 0, 0, 1] } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'bridge', port: 'in' } },
+        { from: { moduleId: 'bridge', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        bridge: { x: 420, y: 176 },
+        sequence: { x: 120, y: 176 },
+        out: { x: 720, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const BITS_TO_HEX_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'BitsToHex',
+  name: 'Bits To Hex Micro Demo',
+  summary: 'Minimal visible whole-buffer bridge: one bit buffer is encoded directly into uppercase hexadecimal text.',
+  pipeline: 'BitSequenceInput -> BitsToHex -> HexOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'bridge', defId: 'BitsToHex', params: {} },
+        { id: 'sequence', defId: 'BitSequenceInput', params: { stream: [1, 0, 1, 0, 0, 0, 1, 1] } },
+        { id: 'out', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'bridge', port: 'in' } },
+        { from: { moduleId: 'bridge', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        bridge: { x: 420, y: 176 },
+        sequence: { x: 120, y: 176 },
+        out: { x: 720, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const ASCII_TO_HEX_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'AsciiToHex',
+  name: 'ASCII To Hex Micro Demo',
+  summary: 'Minimal visible whole-buffer bridge: one ASCII sequence is encoded directly into uppercase hexadecimal byte text.',
+  pipeline: 'AsciiSequenceInput -> AsciiToHex -> HexOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'bridge', defId: 'AsciiToHex', params: {} },
+        { id: 'sequence', defId: 'AsciiSequenceInput', params: { value: 'AB' } },
+        { id: 'out', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'bridge', port: 'in' } },
+        { from: { moduleId: 'bridge', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        bridge: { x: 420, y: 176 },
+        sequence: { x: 120, y: 176 },
+        out: { x: 720, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const HEX_TO_ASCII_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'HexToAscii',
+  name: 'Hex To ASCII Micro Demo',
+  summary: 'Minimal visible whole-buffer bridge: one hex-authored text sequence is decoded directly into readable ASCII.',
+  pipeline: 'SymbolSequenceInput -> HexToAscii -> TextOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'bridge', defId: 'HexToAscii', params: {} },
+        { id: 'sequence', defId: 'SymbolSequenceInput', params: { value: '4142' } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'bridge', port: 'in' } },
+        { from: { moduleId: 'bridge', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        bridge: { x: 420, y: 176 },
+        sequence: { x: 120, y: 176 },
+        out: { x: 720, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const TICKED_SYMBOLS_TO_SEQUENCE_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'TickedSymbolsToSequence',
   name: 'Ticked Symbols To Sequence Micro Demo',
@@ -1241,6 +1357,10 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   ASCII_SEQUENCE_TO_TICKED_MICRO_DEMO,
   ASCII_CHAR_TO_BITS_MICRO_DEMO,
   ASCII_SEQUENCE_TO_BITS_MICRO_DEMO,
+  BITS_TO_ASCII_MICRO_DEMO,
+  BITS_TO_HEX_MICRO_DEMO,
+  ASCII_TO_HEX_MICRO_DEMO,
+  HEX_TO_ASCII_MICRO_DEMO,
   TICKED_SYMBOLS_TO_SEQUENCE_MICRO_DEMO,
   TICKED_BITS_TO_SEQUENCE_MICRO_DEMO,
   BIT_SEQUENCE_INPUT_MICRO_DEMO,
