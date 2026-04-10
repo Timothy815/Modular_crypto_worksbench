@@ -21,16 +21,19 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'AsciiSequenceInput',
   'BitSequenceInput',
   'AsciiSource',
+  'AsciiCharToBits',
   'BaudotSource',
   'BitSource',
   'HexSource',
   'HexSequenceInput',
+  'HexDigitToBits',
   'IV',
   'Nonce',
   'Salt',
   'Output',
   'TextOutput',
   'BitsToAscii',
+  'BitsToAsciiChar',
   'BitsToBaudot',
   'BitOutput',
   'HexOutput',
@@ -45,6 +48,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'PolluxControlledFractionation',
   'PolluxInverse',
   'BitsToHex',
+  'BitsToHexDigit',
   'HexToAscii',
   'AsciiToHex',
   'XOR',
@@ -145,6 +149,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'text_input',
   'text_input_tick',
   'ascii_sequence_input',
+  'ascii_char_to_bits',
   'symbol_sequence_input',
   'bit_sequence_input',
   'key_input',
@@ -159,8 +164,11 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'symbol_to_bits',
   'bits_to_symbol',
   'bits_to_ascii',
+  'bits_to_ascii_char',
   'bits_to_baudot',
   'bits_to_hex',
+  'bits_to_hex_digit',
+  'hex_digit_to_bits',
   'hex_to_ascii',
   'ascii_to_hex',
   'symbol_permutation',
@@ -599,6 +607,26 @@ def bits_to_ascii(signal):
     return {"out": "".join(chars)}
 
 
+def ascii_char_to_bits(signal):
+    symbol = _expect_symbol(signal, "AsciiCharToBits")
+    if len(symbol) != 1:
+        raise ValueError("AsciiCharToBits expects exactly one ASCII character")
+    value = ord(symbol)
+    if value > 0x7F:
+        raise ValueError("AsciiCharToBits accepts only 7-bit ASCII characters")
+    return {"out": [(value >> shift) & 1 for shift in range(7, -1, -1)]}
+
+
+def bits_to_ascii_char(signal):
+    bits = _expect_bits(signal, "BitsToAsciiChar")
+    if len(bits) != 8:
+        raise ValueError("BitsToAsciiChar expects exactly 8 bits; use padding or truncation helpers first")
+    value = _bits_to_unsigned_number(bits)
+    if value > 0x7F:
+        raise ValueError("BitsToAsciiChar can only decode 7-bit ASCII byte values (0-127)")
+    return {"out": chr(value)}
+
+
 def bits_to_baudot(signal):
     bits = _expect_bits(signal, "BitsToBaudot")
     if len(bits) % 5 != 0:
@@ -655,6 +683,24 @@ def bits_to_hex(signal):
     for index in range(0, len(bits), 4):
         digits.append(format(_bits_to_unsigned_number(bits[index:index + 4]), "X"))
     return {"out": "".join(digits)}
+
+
+def hex_digit_to_bits(signal):
+    symbol = _expect_symbol(signal, "HexDigitToBits")
+    if len(symbol) != 1:
+        raise ValueError("HexDigitToBits expects exactly one hex digit")
+    digit = symbol.upper()
+    if digit not in "0123456789ABCDEF":
+        raise ValueError("HexDigitToBits accepts only hexadecimal characters 0-9 and A-F")
+    value = int(digit, 16)
+    return {"out": [(value >> shift) & 1 for shift in range(3, -1, -1)]}
+
+
+def bits_to_hex_digit(signal):
+    bits = _expect_bits(signal, "BitsToHexDigit")
+    if len(bits) != 4:
+        raise ValueError("BitsToHexDigit expects exactly 4 bits")
+    return {"out": format(_bits_to_unsigned_number(bits), "X")}
 
 
 def hex_to_ascii(signal):
@@ -2096,6 +2142,8 @@ function buildModuleExpression(
       return `text_input(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
     case 'AsciiSequenceInput':
       return `ascii_sequence_input(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
+    case 'AsciiCharToBits':
+      return `ascii_char_to_bits(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'SymbolSequenceInput':
       return `symbol_sequence_input(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
     case 'BitSequenceInput':
@@ -2142,10 +2190,16 @@ function buildModuleExpression(
       return `pollux_inverse(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'zeroAlphabet')}, ${expressionContext.getParamExpression(moduleInstance, def, 'oneAlphabet')})`;
     case 'BitsToAscii':
       return `bits_to_ascii(${expressionContext.getInputExpression(moduleId, 'in')})`;
+    case 'BitsToAsciiChar':
+      return `bits_to_ascii_char(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'BitsToBaudot':
       return `bits_to_baudot(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'BitsToHex':
       return `bits_to_hex(${expressionContext.getInputExpression(moduleId, 'in')})`;
+    case 'BitsToHexDigit':
+      return `bits_to_hex_digit(${expressionContext.getInputExpression(moduleId, 'in')})`;
+    case 'HexDigitToBits':
+      return `hex_digit_to_bits(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'HexToAscii':
       return `hex_to_ascii(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'AsciiToHex':

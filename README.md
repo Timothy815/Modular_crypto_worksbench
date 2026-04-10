@@ -109,6 +109,11 @@ The next bounded reverse-bridge and mismatch-repair follow-ons after that are no
 - `EXPLICIT-MISMATCH-POLICIES-V1.md`
 - a bounded visible repair-policy slice for explicit truncate/pad handling beyond repetition and broadcast
 
+The next bounded bridge-completeness candidate after that is now shipped as:
+- `REPRESENTATION-TO-OPERATIONAL-BRIDGES-V1.md`
+- a bounded bridge-family slice for making ASCII and Hex fully usable in real cryptographic pipelines through explicit scalar/ticked bridges into `bits`
+- keeps MCW multi-domain while eliminating representation dead ends
+
 The previous dense-workspace crossing follow-on is now already shipped as:
 - `WIRE-CROSSING-DISCIPLINE-V1.md`
 - a bounded readability pass focused on stronger visual hierarchy at wire intersections
@@ -970,6 +975,7 @@ Implemented and shipped:
 - `TICKED-TO-SEQUENCE-COLLECTORS-V1.md`: shipped reverse-bridge slice for collecting per-tick scalar output back into whole visible sequences
 - `SEQUENCE-CHUNK-AND-JOIN-PRIMITIVES-V1.md`: narrowed to a bit-first segmentation/reassembly slice built on explicit tick bridges instead of fake nested chunk containers
 - `EXPLICIT-MISMATCH-POLICIES-V1.md`: shipped follow-on policy family for explicit truncate/pad-style mismatch repair beyond repetition and broadcast
+- `REPRESENTATION-TO-OPERATIONAL-BRIDGES-V1.md`: shipped bounded scalar/ticked bridge-completeness slice so ASCII and Hex can enter and leave real bit-domain computation without dead ends
 - `ADVANCED-ROTOR-REALISM-V1.md`: shipped first bounded rotor-realism slice for ring setting, turnover, and double-step behavior
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views

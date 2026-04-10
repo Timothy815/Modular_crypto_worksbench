@@ -1121,6 +1121,10 @@ Recent bounded reverse-bridge and mismatch-repair follow-ons now shipped:
 - `EXPLICIT-MISMATCH-POLICIES-V1.md`
 - adds explicit truncate/pad-style mismatch repair beyond repetition and broadcast
 
+Recent bounded representation-bridge completeness candidate now shipped:
+- `REPRESENTATION-TO-OPERATIONAL-BRIDGES-V1.md`
+- defines the missing explicit ASCII/Hex scalar bridge path into operational bit-domain computation and back
+
 ### Claude
 
 Safe to begin:
@@ -1249,6 +1253,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `TICKED-TO-SEQUENCE-COLLECTORS-V1.md` | Shipped bounded reverse-bridge slice for collecting per-tick scalar output back into whole visible sequences |
 | `SEQUENCE-CHUNK-AND-JOIN-PRIMITIVES-V1.md` | Narrowed to a bit-first segmentation/reassembly slice built on explicit tick bridges; first demo path added to start implementation honestly |
 | `EXPLICIT-MISMATCH-POLICIES-V1.md` | Shipped bounded mismatch-policy slice for explicit truncate/pad-style repair beyond repetition and broadcast |
+| `REPRESENTATION-TO-OPERATIONAL-BRIDGES-V1.md` | Shipped bounded scalar/ticked bridge-completeness slice for making ASCII and Hex fully usable in operational bit-domain pipelines |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
 | `BRIDGE-ERGONOMICS-V1.md` | Shipped in `v1.31.0` — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |

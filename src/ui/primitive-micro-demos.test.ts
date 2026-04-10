@@ -29,13 +29,17 @@ describe('primitive micro demos', () => {
       'TruncateSymbolSequence',
       'SymbolSequenceToTicked',
       'AsciiSequenceToTicked',
+      'AsciiCharToBits',
       'TickedSymbolsToSequence',
       'TickedBitsToSequence',
       'BitSequenceInput',
       'TruncateBitsSequence',
       'PadBitsSequence',
       'HexSequenceInput',
+      'HexDigitToBits',
       'BitsSequenceToTicked',
+      'BitsToAsciiChar',
+      'BitsToHexDigit',
     ]);
   });
 
@@ -66,6 +70,9 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('AsciiSequenceToTicked')?.name).toBe(
       'ASCII Sequence To Ticked Micro Demo',
     );
+    expect(getPrimitiveMicroDemo('AsciiCharToBits')?.name).toBe(
+      'ASCII Char To Bits Micro Demo',
+    );
     expect(getPrimitiveMicroDemo('TickedSymbolsToSequence')?.name).toBe(
       'Ticked Symbols To Sequence Micro Demo',
     );
@@ -80,8 +87,15 @@ describe('primitive micro demos', () => {
       'Pad Bits Sequence Micro Demo',
     );
     expect(getPrimitiveMicroDemo('HexSequenceInput')?.name).toBe('Hex Sequence Input Micro Demo');
+    expect(getPrimitiveMicroDemo('HexDigitToBits')?.name).toBe('Hex Digit To Bits Micro Demo');
     expect(getPrimitiveMicroDemo('BitsSequenceToTicked')?.name).toBe(
       'Bits Sequence To Ticked Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('BitsToAsciiChar')?.name).toBe(
+      'Bits To ASCII Char Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('BitsToHexDigit')?.name).toBe(
+      'Bits To Hex Digit Micro Demo',
     );
     expect(getPrimitiveMicroDemo('XOR')).toBeNull();
   });
@@ -138,6 +152,17 @@ describe('primitive micro demos', () => {
     ]);
   });
 
+  it('keeps the ASCII char bridge example honest about ticked character to bit-word conversion', () => {
+    const bridge = getPrimitiveMicroDemo('AsciiCharToBits');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'AsciiCharToBits',
+      'AsciiSequenceToTicked',
+      'AsciiSequenceInput',
+      'Clock',
+      'BitOutput',
+    ]);
+  });
+
   it('keeps the symbol collector example honest about ticked input and collected output', () => {
     const bridge = getPrimitiveMicroDemo('TickedSymbolsToSequence');
     expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
@@ -165,6 +190,41 @@ describe('primitive micro demos', () => {
       'BitSequenceInput',
       'Clock',
       'BitOutput',
+    ]);
+  });
+
+  it('keeps the hex digit bridge example honest about scalar hex-to-bits conversion', () => {
+    const bridge = getPrimitiveMicroDemo('HexDigitToBits');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'HexDigitToBits',
+      'TextInput',
+      'BitOutput',
+    ]);
+  });
+
+  it('keeps the bits-to-ASCII-char example honest about ticked byte decoding and collection', () => {
+    const bridge = getPrimitiveMicroDemo('BitsToAsciiChar');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'BitsToAsciiChar',
+      'TickedSymbolsToSequence',
+      'BitsSequenceToTicked',
+      'BitSequenceInput',
+      'Clock',
+      'TextOutput',
+    ]);
+  });
+
+  it('keeps the bits-to-hex-digit example honest about the main hex sequence path', () => {
+    const bridge = getPrimitiveMicroDemo('BitsToHexDigit');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'BitsToHexDigit',
+      'TickedSymbolsToSequence',
+      'XOR',
+      'BitSource',
+      'BitsSequenceToTicked',
+      'HexSequenceInput',
+      'Clock',
+      'TextOutput',
     ]);
   });
 

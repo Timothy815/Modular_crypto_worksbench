@@ -7,19 +7,23 @@ import { BitSequenceInput } from './bit-sequence-input';
 import { AsciiSource } from './ascii-source';
 import { AsciiSequenceInput } from './ascii-sequence-input';
 import { AsciiSequenceToTicked } from './ascii-sequence-to-ticked';
+import { AsciiCharToBits } from './ascii-char-to-bits';
 import { TickedSymbolsToSequence } from './ticked-symbols-to-sequence';
 import { TickedBitsToSequence } from './ticked-bits-to-sequence';
 import { BaudotSource } from './baudot-source';
 import { HexSource } from './hex-source';
 import { HexSequenceInput } from './hex-sequence-input';
+import { HexDigitToBits } from './hex-digit-to-bits';
 import { IV } from './iv';
 import { Nonce } from './nonce';
 import { SymbolToBits } from './symbol-to-bits';
 import { Salt } from './salt';
 import { BitsToAscii } from './bits-to-ascii';
+import { BitsToAsciiChar } from './bits-to-ascii-char';
 import { BitsToBaudot } from './bits-to-baudot';
 import { BitsToSymbol } from './bits-to-symbol';
 import { BitsToHex } from './bits-to-hex';
+import { BitsToHexDigit } from './bits-to-hex-digit';
 import {
   PolluxControlledFractionation,
   PolluxFractionation,
@@ -87,19 +91,23 @@ export {
   AsciiSource,
   AsciiSequenceInput,
   AsciiSequenceToTicked,
+  AsciiCharToBits,
   TickedSymbolsToSequence,
   TickedBitsToSequence,
   BaudotSource,
   HexSource,
   HexSequenceInput,
+  HexDigitToBits,
   IV,
   Nonce,
   SymbolToBits,
   Salt,
   BitsToAscii,
+  BitsToAsciiChar,
   BitsToBaudot,
   BitsToSymbol,
   BitsToHex,
+  BitsToHexDigit,
   PolluxFractionation,
   PolluxControlledFractionation,
   PolluxInverse,
@@ -166,19 +174,23 @@ export const V1_REGISTRY: ModuleRegistry = {
   [AsciiSource.id]: AsciiSource,
   [AsciiSequenceInput.id]: AsciiSequenceInput,
   [AsciiSequenceToTicked.id]: AsciiSequenceToTicked,
+  [AsciiCharToBits.id]: AsciiCharToBits,
   [TickedSymbolsToSequence.id]: TickedSymbolsToSequence,
   [TickedBitsToSequence.id]: TickedBitsToSequence,
   [BaudotSource.id]: BaudotSource,
   [HexSource.id]: HexSource,
   [HexSequenceInput.id]: HexSequenceInput,
+  [HexDigitToBits.id]: HexDigitToBits,
   [IV.id]: IV,
   [Nonce.id]: Nonce,
   [SymbolToBits.id]: SymbolToBits,
   [Salt.id]: Salt,
   [BitsToAscii.id]: BitsToAscii,
+  [BitsToAsciiChar.id]: BitsToAsciiChar,
   [BitsToBaudot.id]: BitsToBaudot,
   [BitsToSymbol.id]: BitsToSymbol,
   [BitsToHex.id]: BitsToHex,
+  [BitsToHexDigit.id]: BitsToHexDigit,
   [PolluxFractionation.id]: PolluxFractionation,
   [PolluxControlledFractionation.id]: PolluxControlledFractionation,
   [PolluxInverse.id]: PolluxInverse,

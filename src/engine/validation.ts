@@ -387,6 +387,9 @@ function inferStaticBitWidth(
       width = typeof value === 'string' ? value.replace(/\s+/g, '').length * 4 : null;
       break;
     }
+    case 'HexDigitToBits':
+      width = 4;
+      break;
     case 'IV':
     case 'Nonce':
     case 'Salt': {
@@ -402,6 +405,9 @@ function inferStaticBitWidth(
       width = typeof value === 'string' ? value.length * 8 : null;
       break;
     }
+    case 'AsciiCharToBits':
+      width = 8;
+      break;
     case 'BaudotSource': {
       const value = instance.params.value;
       width = typeof value === 'string' ? value.length * 5 : null;

@@ -6,19 +6,23 @@ import { BitSequenceInput } from './bit-sequence-input';
 import { AsciiSource } from './ascii-source';
 import { AsciiSequenceInput } from './ascii-sequence-input';
 import { AsciiSequenceToTicked } from './ascii-sequence-to-ticked';
+import { AsciiCharToBits } from './ascii-char-to-bits';
 import { TickedSymbolsToSequence } from './ticked-symbols-to-sequence';
 import { TickedBitsToSequence } from './ticked-bits-to-sequence';
 import { BaudotSource } from './baudot-source';
 import { HexSource } from './hex-source';
 import { HexSequenceInput } from './hex-sequence-input';
+import { HexDigitToBits } from './hex-digit-to-bits';
 import { IV } from './iv';
 import { Nonce } from './nonce';
 import { Salt } from './salt';
 import { SymbolToBits } from './symbol-to-bits';
 import { BitsToAscii } from './bits-to-ascii';
+import { BitsToAsciiChar } from './bits-to-ascii-char';
 import { BitsToBaudot } from './bits-to-baudot';
 import { BitsToSymbol } from './bits-to-symbol';
 import { BitsToHex } from './bits-to-hex';
+import { BitsToHexDigit } from './bits-to-hex-digit';
 import {
   decodePolluxFractionation,
   encodePolluxControlledFractionation,
@@ -169,6 +173,61 @@ describe('HexSource', () => {
     const sliced = HexSource.tickSlice({ value: 'A3F0' }, 1);
     const result = HexSource.evaluate({}, sliced);
     expect(result.out).toEqual({ type: 'bits', value: [1, 1, 1, 1, 0, 0, 0, 0] });
+  });
+});
+
+describe('AsciiCharToBits', () => {
+  it('encodes one ASCII character into one 8-bit word', () => {
+    const result = AsciiCharToBits.evaluate({ in: { type: 'symbol', value: 'A' } }, {});
+    expect(result.out).toEqual({ type: 'bits', value: [0, 1, 0, 0, 0, 0, 0, 1] });
+  });
+
+  it('throws on multi-character input', () => {
+    expect(() => AsciiCharToBits.evaluate({ in: { type: 'symbol', value: 'AB' } }, {})).toThrow(
+      /exactly one ASCII character/i,
+    );
+  });
+});
+
+describe('BitsToAsciiChar', () => {
+  it('decodes one 8-bit word into one ASCII character', () => {
+    const result = BitsToAsciiChar.evaluate(
+      { in: { type: 'bits', value: [0, 1, 0, 0, 0, 0, 0, 1] } },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'A' });
+  });
+
+  it('throws on non-byte widths', () => {
+    expect(() => BitsToAsciiChar.evaluate({ in: { type: 'bits', value: [1, 0, 1] } }, {})).toThrow(
+      /exactly 8 bits/i,
+    );
+  });
+});
+
+describe('HexDigitToBits', () => {
+  it('encodes one hex digit into one nibble', () => {
+    const result = HexDigitToBits.evaluate({ in: { type: 'symbol', value: 'a' } }, {});
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1, 0] });
+  });
+
+  it('throws on invalid hex input', () => {
+    expect(() => HexDigitToBits.evaluate({ in: { type: 'symbol', value: 'G' } }, {})).toThrow(
+      /hexadecimal characters/i,
+    );
+  });
+});
+
+describe('BitsToHexDigit', () => {
+  it('decodes one nibble into one uppercase hex digit', () => {
+    const result = BitsToHexDigit.evaluate({ in: { type: 'bits', value: [1, 0, 1, 0] } }, {});
+    expect(result.out).toEqual({ type: 'symbol', value: 'A' });
+  });
+
+  it('throws on non-nibble widths', () => {
+    expect(() => BitsToHexDigit.evaluate({ in: { type: 'bits', value: [1, 0, 1] } }, {})).toThrow(
+      /exactly 4 bits/i,
+    );
   });
 });
 

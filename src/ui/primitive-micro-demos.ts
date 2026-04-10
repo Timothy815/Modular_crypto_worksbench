@@ -810,6 +810,42 @@ const ASCII_SEQUENCE_TO_TICKED_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const ASCII_CHAR_TO_BITS_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'AsciiCharToBits',
+  name: 'ASCII Char To Bits Micro Demo',
+  summary: 'Minimal visible bridge: one ticked ASCII character becomes one 8-bit word for bit-domain processing.',
+  pipeline: 'AsciiSequenceInput -> AsciiSequenceToTicked + Clock -> AsciiCharToBits -> BitOutput',
+  defaultTickedMode: true,
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'bridge', defId: 'AsciiCharToBits', params: {} },
+        { id: 'tick', defId: 'AsciiSequenceToTicked', params: { index: 0, wrap: true } },
+        { id: 'sequence', defId: 'AsciiSequenceInput', params: { value: 'KEY' } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 4 } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'tick', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'tick', port: 'clock' } },
+        { from: { moduleId: 'tick', port: 'out' }, to: { moduleId: 'bridge', port: 'in' } },
+        { from: { moduleId: 'bridge', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        bridge: { x: 640, y: 176 },
+        tick: { x: 408, y: 176 },
+        sequence: { x: 72, y: 84 },
+        clock: { x: 72, y: 268 },
+        out: { x: 900, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const TICKED_SYMBOLS_TO_SEQUENCE_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'TickedSymbolsToSequence',
   name: 'Ticked Symbols To Sequence Micro Demo',
@@ -989,6 +1025,35 @@ const HEX_SEQUENCE_INPUT_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const HEX_DIGIT_TO_BITS_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'HexDigitToBits',
+  name: 'Hex Digit To Bits Micro Demo',
+  summary: 'Minimal visible bridge: one authored hex digit becomes one 4-bit word for bit-domain processing.',
+  pipeline: 'TextInput -> HexDigitToBits -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'bridge', defId: 'HexDigitToBits', params: {} },
+        { id: 'text', defId: 'TextInput', params: { value: 'A' } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'bridge', port: 'in' } },
+        { from: { moduleId: 'bridge', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        bridge: { x: 420, y: 176 },
+        text: { x: 120, y: 176 },
+        out: { x: 700, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const BITS_SEQUENCE_TO_TICKED_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'BitsSequenceToTicked',
   name: 'Bits Sequence To Ticked Micro Demo',
@@ -1026,6 +1091,100 @@ const BITS_SEQUENCE_TO_TICKED_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const BITS_TO_ASCII_CHAR_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'BitsToAsciiChar',
+  name: 'Bits To ASCII Char Micro Demo',
+  summary: 'Minimal visible bridge: one 8-bit word becomes one collected ASCII character.',
+  pipeline: 'BitSequenceInput -> BitsSequenceToTicked + Clock -> BitsToAsciiChar -> TickedSymbolsToSequence -> TextOutput',
+  defaultTickedMode: true,
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'bridge', defId: 'BitsToAsciiChar', params: {} },
+        { id: 'collector', defId: 'TickedSymbolsToSequence', params: { collected: '', count: 0 } },
+        {
+          id: 'tick',
+          defId: 'BitsSequenceToTicked',
+          params: { index: 0, wordWidth: 8, wrap: true, remainderMode: 'error' },
+        },
+        { id: 'sequence', defId: 'BitSequenceInput', params: { stream: [0, 1, 0, 0, 0, 0, 0, 1] } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 3 } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'tick', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'tick', port: 'clock' } },
+        { from: { moduleId: 'tick', port: 'out' }, to: { moduleId: 'bridge', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'collector', port: 'clock' } },
+        { from: { moduleId: 'bridge', port: 'out' }, to: { moduleId: 'collector', port: 'in' } },
+        { from: { moduleId: 'collector', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        bridge: { x: 652, y: 132 },
+        collector: { x: 652, y: 252 },
+        tick: { x: 420, y: 176 },
+        sequence: { x: 72, y: 84 },
+        clock: { x: 72, y: 268 },
+        out: { x: 920, y: 252 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const BITS_TO_HEX_DIGIT_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'BitsToHexDigit',
+  name: 'Bits To Hex Digit Micro Demo',
+  summary: 'Minimal visible bridge: one ticked nibble-scale bit word becomes one collected hex digit after a real bit-domain transform.',
+  pipeline: 'HexSequenceInput -> BitsSequenceToTicked + Clock -> XOR -> BitsToHexDigit -> TickedSymbolsToSequence -> TextOutput',
+  defaultTickedMode: true,
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'bridge', defId: 'BitsToHexDigit', params: {} },
+        { id: 'collector', defId: 'TickedSymbolsToSequence', params: { collected: '', count: 0 } },
+        { id: 'xor', defId: 'XOR', params: {} },
+        { id: 'mask', defId: 'BitSource', params: { stream: [0, 0, 0, 1] } },
+        {
+          id: 'tick',
+          defId: 'BitsSequenceToTicked',
+          params: { index: 0, wordWidth: 4, wrap: true, remainderMode: 'error' },
+        },
+        { id: 'sequence', defId: 'HexSequenceInput', params: { value: 'A3' } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 4 } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'tick', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'tick', port: 'clock' } },
+        { from: { moduleId: 'tick', port: 'out' }, to: { moduleId: 'xor', port: 'a' } },
+        { from: { moduleId: 'mask', port: 'out' }, to: { moduleId: 'xor', port: 'b' } },
+        { from: { moduleId: 'xor', port: 'out' }, to: { moduleId: 'bridge', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'collector', port: 'clock' } },
+        { from: { moduleId: 'bridge', port: 'out' }, to: { moduleId: 'collector', port: 'in' } },
+        { from: { moduleId: 'collector', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        bridge: { x: 860, y: 132 },
+        collector: { x: 860, y: 252 },
+        xor: { x: 636, y: 176 },
+        mask: { x: 420, y: 268 },
+        tick: { x: 420, y: 84 },
+        sequence: { x: 72, y: 84 },
+        clock: { x: 72, y: 268 },
+        out: { x: 1110, y: 252 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   MUX_MICRO_DEMO,
   DEMUX_MICRO_DEMO,
@@ -1051,13 +1210,17 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   TRUNCATE_SYMBOL_SEQUENCE_MICRO_DEMO,
   SYMBOL_SEQUENCE_TO_TICKED_MICRO_DEMO,
   ASCII_SEQUENCE_TO_TICKED_MICRO_DEMO,
+  ASCII_CHAR_TO_BITS_MICRO_DEMO,
   TICKED_SYMBOLS_TO_SEQUENCE_MICRO_DEMO,
   TICKED_BITS_TO_SEQUENCE_MICRO_DEMO,
   BIT_SEQUENCE_INPUT_MICRO_DEMO,
   TRUNCATE_BITS_SEQUENCE_MICRO_DEMO,
   PAD_BITS_SEQUENCE_MICRO_DEMO,
   HEX_SEQUENCE_INPUT_MICRO_DEMO,
+  HEX_DIGIT_TO_BITS_MICRO_DEMO,
   BITS_SEQUENCE_TO_TICKED_MICRO_DEMO,
+  BITS_TO_ASCII_CHAR_MICRO_DEMO,
+  BITS_TO_HEX_DIGIT_MICRO_DEMO,
 ];
 
 const PRIMITIVE_MICRO_DEMO_BY_DEF_ID = Object.fromEntries(

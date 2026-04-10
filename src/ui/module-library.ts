@@ -86,6 +86,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when a graph should begin with an explicit whole ASCII message or key before any repetition or ticked bridging.',
     searchTerms: ['ascii sequence', 'whole ascii', 'ascii text', 'message sequence', 'key sequence'],
   },
+  AsciiCharToBits: {
+    sectionId: 'bridges',
+    sortOrder: 15,
+    purpose: 'Converts one 7-bit ASCII character into one 8-bit calculation word.',
+    detail: 'Use this when a ticked ASCII character should enter the bit domain honestly for XOR, S-boxes, permutations, or other bit-domain work.',
+    searchTerms: ['bridge', 'ascii', 'char', 'bits', 'byte', 'tick', 'xor'],
+  },
   BaudotSource: {
     sectionId: 'inputs-outputs',
     sortOrder: 50,
@@ -106,6 +113,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Emits a whole hex-authored bit sequence as one ordered buffer.',
     detail: 'Use this when a graph should begin with an explicit whole hex buffer rather than a tick-sliced hex source.',
     searchTerms: ['hex sequence', 'whole hex', 'hex buffer', 'sequence source', 'byte sequence'],
+  },
+  HexDigitToBits: {
+    sectionId: 'bridges',
+    sortOrder: 27,
+    purpose: 'Converts one hexadecimal digit into one 4-bit calculation word.',
+    detail: 'Use this when one scalar hex digit should enter the bit domain honestly instead of relying on a whole-sequence hex path.',
+    searchTerms: ['bridge', 'hex', 'digit', 'bits', 'nibble', 'tick', 'xor'],
   },
   IV: {
     sectionId: 'protocol-context',
@@ -513,6 +527,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this to return a byte-domain machine back to readable ASCII when the byte values stay within 7-bit ASCII range.',
     searchTerms: ['bridge', 'ascii', 'decode', 'bits', 'byte', 'text'],
   },
+  BitsToAsciiChar: {
+    sectionId: 'bridges',
+    sortOrder: 25,
+    purpose: 'Converts one 8-bit calculation word into one ASCII character.',
+    detail: 'Use this when a ticked byte-scale result should become one collected ASCII character without decoding a whole string at once.',
+    searchTerms: ['bridge', 'bits', 'ascii', 'char', 'decode', 'tick', 'byte'],
+  },
   BitsToBaudot: {
     sectionId: 'bridges',
     sortOrder: 30,
@@ -554,6 +575,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Converts a bit signal into hexadecimal text.',
     detail: 'Use this when a bit-domain machine should end as hex so students can compare byte-oriented results directly.',
     searchTerms: ['bridge', 'hex', 'encode', 'bits', 'byte', 'output'],
+  },
+  BitsToHexDigit: {
+    sectionId: 'bridges',
+    sortOrder: 55,
+    purpose: 'Converts one 4-bit calculation word into one uppercase hex digit.',
+    detail: 'Use this when a ticked nibble-scale result should become one collected hex digit instead of a whole hex string at once.',
+    searchTerms: ['bridge', 'bits', 'hex', 'digit', 'nibble', 'encode', 'tick'],
   },
   HexToAscii: {
     sectionId: 'bridges',
