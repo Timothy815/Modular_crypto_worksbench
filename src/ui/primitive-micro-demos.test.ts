@@ -26,11 +26,14 @@ describe('primitive micro demos', () => {
       'SymbolSequenceInput',
       'AsciiSequenceInput',
       'RepeatSymbolToLength',
+      'TruncateSymbolSequence',
       'SymbolSequenceToTicked',
       'AsciiSequenceToTicked',
       'TickedSymbolsToSequence',
       'TickedBitsToSequence',
       'BitSequenceInput',
+      'TruncateBitsSequence',
+      'PadBitsSequence',
       'HexSequenceInput',
       'BitsSequenceToTicked',
     ]);
@@ -54,6 +57,9 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('RepeatSymbolToLength')?.name).toBe(
       'Repeat Symbol To Length Micro Demo',
     );
+    expect(getPrimitiveMicroDemo('TruncateSymbolSequence')?.name).toBe(
+      'Truncate Symbol Sequence Micro Demo',
+    );
     expect(getPrimitiveMicroDemo('SymbolSequenceToTicked')?.name).toBe(
       'Symbol Sequence To Ticked Micro Demo',
     );
@@ -67,6 +73,12 @@ describe('primitive micro demos', () => {
       'Ticked Bits To Sequence Micro Demo',
     );
     expect(getPrimitiveMicroDemo('BitSequenceInput')?.name).toBe('Bit Sequence Input Micro Demo');
+    expect(getPrimitiveMicroDemo('TruncateBitsSequence')?.name).toBe(
+      'Truncate Bits Sequence Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('PadBitsSequence')?.name).toBe(
+      'Pad Bits Sequence Micro Demo',
+    );
     expect(getPrimitiveMicroDemo('HexSequenceInput')?.name).toBe('Hex Sequence Input Micro Demo');
     expect(getPrimitiveMicroDemo('BitsSequenceToTicked')?.name).toBe(
       'Bits Sequence To Ticked Micro Demo',
@@ -107,6 +119,15 @@ describe('primitive micro demos', () => {
     ]);
   });
 
+  it('keeps the symbol truncate example honest about explicit mismatch repair', () => {
+    const bridge = getPrimitiveMicroDemo('TruncateSymbolSequence');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'TruncateSymbolSequence',
+      'SymbolSequenceInput',
+      'TextOutput',
+    ]);
+  });
+
   it('keeps the ASCII sequence bridge example honest about whole-sequence input and ticked output', () => {
     const bridge = getPrimitiveMicroDemo('AsciiSequenceToTicked');
     expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
@@ -143,6 +164,24 @@ describe('primitive micro demos', () => {
       'BitsSequenceToTicked',
       'BitSequenceInput',
       'Clock',
+      'BitOutput',
+    ]);
+  });
+
+  it('keeps the bit truncate example honest about explicit mismatch repair', () => {
+    const bridge = getPrimitiveMicroDemo('TruncateBitsSequence');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'TruncateBitsSequence',
+      'BitSequenceInput',
+      'BitOutput',
+    ]);
+  });
+
+  it('keeps the bit pad example honest about explicit mismatch repair', () => {
+    const bridge = getPrimitiveMicroDemo('PadBitsSequence');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'PadBitsSequence',
+      'BitSequenceInput',
       'BitOutput',
     ]);
   });

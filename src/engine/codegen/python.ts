@@ -38,6 +38,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'SymbolPermutation',
   'SymbolWindow',
   'RepeatSymbolToLength',
+  'TruncateSymbolSequence',
   'SymbolToBits',
   'BitsToSymbol',
   'PolluxFractionation',
@@ -75,6 +76,8 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'BitWindow',
   'RepeatBitsToLength',
   'BroadcastBits',
+  'TruncateBitsSequence',
+  'PadBitsSequence',
   'BitShifter',
   'Clock',
   'Counter',
@@ -163,6 +166,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'symbol_permutation',
   'symbol_window',
   'repeat_symbol_to_length',
+  'truncate_symbol_sequence',
   'ascii_sequence_to_ticked_init',
   'ascii_sequence_to_ticked_eval',
   'ascii_sequence_to_ticked_advance',
@@ -207,6 +211,8 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'bit_window',
   'repeat_bits_to_length',
   'broadcast_bits',
+  'truncate_bits_sequence',
+  'pad_bits_sequence',
   'bit_shifter_bits',
   'clock_tick',
   'counter_init',
@@ -733,6 +739,21 @@ def repeat_symbol_to_length(signal, target_length):
     return {"out": "".join(characters[index % len(characters)] for index in range(target_length))}
 
 
+def truncate_symbol_sequence(signal, target_length, side):
+    symbol = str(signal)
+    characters = list(symbol)
+    target_length = int(target_length)
+    if target_length < 0:
+        raise ValueError("TruncateSymbolSequence requires a non-negative target length.")
+    if side not in ("left", "right"):
+        raise ValueError("TruncateSymbolSequence side must be left or right.")
+    if len(characters) <= target_length:
+        return {"out": symbol}
+    if side == "left":
+        return {"out": "".join(characters[:target_length])}
+    return {"out": "".join(characters[len(characters) - target_length:])}
+
+
 def xor_bits(a, b):
     left = _expect_bits(a, "XOR")
     right = _expect_bits(b, "XOR")
@@ -1073,6 +1094,38 @@ def broadcast_bits(signal, copies):
     if len(bits) == 0:
         raise ValueError("BroadcastBits cannot broadcast an empty bit pattern")
     return {"out": bits * copies}
+
+
+def truncate_bits_sequence(signal, target_length, side):
+    bits = _expect_bits(signal, "TruncateBitsSequence")
+    target_length = int(target_length)
+    if target_length < 0:
+        raise ValueError("TruncateBitsSequence requires a non-negative target length.")
+    if side not in ("left", "right"):
+        raise ValueError("TruncateBitsSequence side must be left or right.")
+    if len(bits) <= target_length:
+        return {"out": bits[:]}
+    if side == "left":
+        return {"out": bits[:target_length]}
+    return {"out": bits[len(bits) - target_length:]}
+
+
+def pad_bits_sequence(signal, target_length, side, pad_bit):
+    bits = _expect_bits(signal, "PadBitsSequence")
+    target_length = int(target_length)
+    if target_length < 0:
+        raise ValueError("PadBitsSequence requires a non-negative target length.")
+    if side not in ("left", "right"):
+        raise ValueError("PadBitsSequence side must be left or right.")
+    if str(pad_bit) not in ("0", "1"):
+        raise ValueError("PadBitsSequence padBit must be 0 or 1.")
+    if len(bits) >= target_length:
+        return {"out": bits[:]}
+    fill = 1 if str(pad_bit) == "1" else 0
+    padding = [fill for _ in range(target_length - len(bits))]
+    if side == "left":
+        return {"out": padding + bits}
+    return {"out": bits + padding}
 
 
 def bit_shift(signal, amount, mode):
@@ -2073,6 +2126,8 @@ function buildModuleExpression(
       return `symbol_window(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'start')}, ${expressionContext.getParamExpression(moduleInstance, def, 'width')})`;
     case 'RepeatSymbolToLength':
       return `repeat_symbol_to_length(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetLength')})`;
+    case 'TruncateSymbolSequence':
+      return `truncate_symbol_sequence(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetLength')}, ${expressionContext.getParamExpression(moduleInstance, def, 'side')})`;
     case 'Reflector':
       return `{"out": reflector_traverse(${expressionContext.getInputExpression(moduleId, 'in')}, _parse_reflector_wiring(${expressionContext.getParamExpression(moduleInstance, def, 'wiring')}))}`;
     case 'Plugboard':
@@ -2153,6 +2208,10 @@ function buildModuleExpression(
       return `repeat_bits_to_length(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetLength')})`;
     case 'BroadcastBits':
       return `broadcast_bits(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'copies')})`;
+    case 'TruncateBitsSequence':
+      return `truncate_bits_sequence(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetLength')}, ${expressionContext.getParamExpression(moduleInstance, def, 'side')})`;
+    case 'PadBitsSequence':
+      return `pad_bits_sequence(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetLength')}, ${expressionContext.getParamExpression(moduleInstance, def, 'side')}, ${expressionContext.getParamExpression(moduleInstance, def, 'padBit')})`;
     case 'BitShifter':
       return `bit_shift(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'amount')}, ${expressionContext.getParamExpression(moduleInstance, def, 'mode')})`;
     default:

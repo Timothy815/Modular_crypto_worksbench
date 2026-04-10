@@ -72,6 +72,7 @@ import { Permutation } from './permutation';
 import { SymbolPermutation } from './symbol-permutation';
 import { SymbolWindow } from './symbol-window';
 import { RepeatSymbolToLength } from './repeat-symbol-to-length';
+import { TruncateSymbolSequence } from './truncate-symbol-sequence';
 import { SymbolSequenceInput } from './symbol-sequence-input';
 import { SymbolSequenceToTicked } from './symbol-sequence-to-ticked';
 import { BitsSequenceToTicked } from './bits-sequence-to-ticked';
@@ -85,6 +86,8 @@ import { BitUnpad } from './bit-unpad';
 import { BitWindow } from './bit-window';
 import { RepeatBitsToLength } from './repeat-bits-to-length';
 import { BroadcastBits } from './broadcast-bits';
+import { TruncateBitsSequence } from './truncate-bits-sequence';
+import { PadBitsSequence } from './pad-bits-sequence';
 import { GreaterThan } from './greater-than';
 import { ModExp } from './mod-exp';
 import { ModInverse } from './mod-inverse';
@@ -251,6 +254,24 @@ describe('RepeatSymbolToLength', () => {
   });
 });
 
+describe('TruncateSymbolSequence', () => {
+  it('keeps the left side of a symbol sequence by default', () => {
+    const result = TruncateSymbolSequence.evaluate(
+      { in: { type: 'symbol', value: 'HELLOWORLD' } },
+      { targetLength: 5, side: 'left' },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'HELLO' });
+  });
+
+  it('can preserve the right side of a symbol sequence', () => {
+    const result = TruncateSymbolSequence.evaluate(
+      { in: { type: 'symbol', value: 'HELLOWORLD' } },
+      { targetLength: 5, side: 'right' },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'WORLD' });
+  });
+});
+
 describe('Symbol sequence foundation', () => {
   it('emits a whole symbol sequence explicitly', () => {
     const result = SymbolSequenceInput.evaluate({}, { value: 'KEY' });
@@ -373,6 +394,42 @@ describe('RepeatBitsToLength', () => {
         { targetLength: 8 },
       ),
     ).toThrow(/empty bit sequence/i);
+  });
+});
+
+describe('TruncateBitsSequence', () => {
+  it('keeps the left side of a bit sequence by default', () => {
+    const result = TruncateBitsSequence.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 1, 0, 0] } },
+      { targetLength: 4, side: 'left' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1, 1] });
+  });
+
+  it('can preserve the right side of a bit sequence', () => {
+    const result = TruncateBitsSequence.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 1, 0, 0] } },
+      { targetLength: 4, side: 'right' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 1, 0, 0] });
+  });
+});
+
+describe('PadBitsSequence', () => {
+  it('pads a bit sequence on the right by default', () => {
+    const result = PadBitsSequence.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 1] } },
+      { targetLength: 8, side: 'right', padBit: '0' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1, 1, 0, 0, 0, 0] });
+  });
+
+  it('pads a bit sequence on the left with explicit ones', () => {
+    const result = PadBitsSequence.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 1] } },
+      { targetLength: 8, side: 'left', padBit: '1' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 1, 1, 1, 1, 0, 1, 1] });
   });
 });
 

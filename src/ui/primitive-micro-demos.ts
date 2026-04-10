@@ -715,6 +715,35 @@ const REPEAT_SYMBOL_TO_LENGTH_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const TRUNCATE_SYMBOL_SEQUENCE_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'TruncateSymbolSequence',
+  name: 'Truncate Symbol Sequence Micro Demo',
+  summary: 'Minimal visible mismatch policy: keep only the leftmost symbols from one explicit sequence.',
+  pipeline: 'SymbolSequenceInput -> TruncateSymbolSequence -> TextOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'truncate', defId: 'TruncateSymbolSequence', params: { targetLength: 5, side: 'left' } },
+        { id: 'sequence', defId: 'SymbolSequenceInput', params: { value: 'HELLOWORLD' } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'truncate', port: 'in' } },
+        { from: { moduleId: 'truncate', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        truncate: { x: 436, y: 176 },
+        sequence: { x: 72, y: 176 },
+        out: { x: 760, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const SYMBOL_SEQUENCE_TO_TICKED_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'SymbolSequenceToTicked',
   name: 'Symbol Sequence To Ticked Micro Demo',
@@ -847,6 +876,64 @@ const TICKED_BITS_TO_SEQUENCE_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const TRUNCATE_BITS_SEQUENCE_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'TruncateBitsSequence',
+  name: 'Truncate Bits Sequence Micro Demo',
+  summary: 'Minimal visible mismatch policy: keep only the leftmost bits from one explicit bit sequence.',
+  pipeline: 'BitSequenceInput -> TruncateBitsSequence -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'truncate', defId: 'TruncateBitsSequence', params: { targetLength: 6, side: 'left' } },
+        { id: 'sequence', defId: 'BitSequenceInput', params: { stream: [1, 0, 1, 1, 0, 0, 1, 1] } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'truncate', port: 'in' } },
+        { from: { moduleId: 'truncate', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        truncate: { x: 436, y: 176 },
+        sequence: { x: 72, y: 176 },
+        out: { x: 760, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const PAD_BITS_SEQUENCE_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'PadBitsSequence',
+  name: 'Pad Bits Sequence Micro Demo',
+  summary: 'Minimal visible mismatch policy: extend one explicit bit sequence with chosen left or right padding bits.',
+  pipeline: 'BitSequenceInput -> PadBitsSequence -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'pad', defId: 'PadBitsSequence', params: { targetLength: 8, side: 'left', padBit: '0' } },
+        { id: 'sequence', defId: 'BitSequenceInput', params: { stream: [1, 0, 1, 1] } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'pad', port: 'in' } },
+        { from: { moduleId: 'pad', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        pad: { x: 436, y: 176 },
+        sequence: { x: 72, y: 176 },
+        out: { x: 760, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const BIT_SEQUENCE_INPUT_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'BitSequenceInput',
   name: 'Bit Sequence Input Micro Demo',
@@ -961,11 +1048,14 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   SYMBOL_SEQUENCE_INPUT_MICRO_DEMO,
   ASCII_SEQUENCE_INPUT_MICRO_DEMO,
   REPEAT_SYMBOL_TO_LENGTH_MICRO_DEMO,
+  TRUNCATE_SYMBOL_SEQUENCE_MICRO_DEMO,
   SYMBOL_SEQUENCE_TO_TICKED_MICRO_DEMO,
   ASCII_SEQUENCE_TO_TICKED_MICRO_DEMO,
   TICKED_SYMBOLS_TO_SEQUENCE_MICRO_DEMO,
   TICKED_BITS_TO_SEQUENCE_MICRO_DEMO,
   BIT_SEQUENCE_INPUT_MICRO_DEMO,
+  TRUNCATE_BITS_SEQUENCE_MICRO_DEMO,
+  PAD_BITS_SEQUENCE_MICRO_DEMO,
   HEX_SEQUENCE_INPUT_MICRO_DEMO,
   BITS_SEQUENCE_TO_TICKED_MICRO_DEMO,
 ];

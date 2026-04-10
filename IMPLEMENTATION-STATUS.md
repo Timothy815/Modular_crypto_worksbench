@@ -1242,7 +1242,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `BIT-AND-HEX-SEQUENCE-BRIDGES-V1.md` | Shipped explicit bit/hex sequence inputs and bit-sequence-to-ticked follow-on on top of the sequence foundation |
 | `TICKED-TO-SEQUENCE-COLLECTORS-V1.md` | Shipped bounded reverse-bridge slice for collecting per-tick scalar output back into whole visible sequences |
 | `SEQUENCE-CHUNK-AND-JOIN-PRIMITIVES-V1.md` | Drafted bounded explicit grouping contract for chunking and rejoining sequence data without hidden block semantics |
-| `EXPLICIT-MISMATCH-POLICIES-V1.md` | Drafted bounded mismatch-policy follow-on for explicit truncate/pad-style repair beyond repetition and broadcast |
+| `EXPLICIT-MISMATCH-POLICIES-V1.md` | Shipped bounded mismatch-policy slice for explicit truncate/pad-style repair beyond repetition and broadcast |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
 | `BRIDGE-ERGONOMICS-V1.md` | Shipped in `v1.31.0` — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |

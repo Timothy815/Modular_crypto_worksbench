@@ -45,6 +45,7 @@ import { Reflector } from './modules/reflector';
 import { Rotor } from './modules/rotor';
 import { RotorReverse } from './modules/rotor-reverse';
 import { RepeatSymbolToLength } from './modules/repeat-symbol-to-length';
+import { TruncateSymbolSequence } from './modules/truncate-symbol-sequence';
 import { Salt } from './modules/salt';
 import { SBox } from './modules/s-box';
 import { SymbolPermutation } from './modules/symbol-permutation';
@@ -54,6 +55,8 @@ import { BitsSequenceToTicked } from './modules/bits-sequence-to-ticked';
 import { SymbolWindow } from './modules/symbol-window';
 import { SubMod } from './modules/sub-mod';
 import { TextInput } from './modules/text-input';
+import { TruncateBitsSequence } from './modules/truncate-bits-sequence';
+import { PadBitsSequence } from './modules/pad-bits-sequence';
 import { XOR } from './modules/xor';
 import type { ModuleRegistry, Project } from './types';
 import { validateProject } from './validation';
@@ -136,6 +139,7 @@ const registry: ModuleRegistry = {
   [Rotor.id]: Rotor,
   [RotorReverse.id]: RotorReverse,
   [RepeatSymbolToLength.id]: RepeatSymbolToLength,
+  [TruncateSymbolSequence.id]: TruncateSymbolSequence,
   [Plugboard.id]: Plugboard,
   [Reflector.id]: Reflector,
   [SBox.id]: SBox,
@@ -145,6 +149,8 @@ const registry: ModuleRegistry = {
   [ByteSwap.id]: ByteSwap,
   [BitPad.id]: BitPad,
   [BitUnpad.id]: BitUnpad,
+  [TruncateBitsSequence.id]: TruncateBitsSequence,
+  [PadBitsSequence.id]: PadBitsSequence,
   [GreaterThan.id]: GreaterThan,
   [Demux.id]: Demux,
   [TextInput.id]: TextInput,
@@ -1181,5 +1187,41 @@ describe('validateProject', () => {
 
     expect(result.ok).toBe(false);
     expect(result.issues.some((issue) => issue.code === 'signal-kind-mismatch')).toBe(true);
+  });
+
+  it('rejects TruncateSymbolSequence targetLength that is negative', () => {
+    const project: Project = {
+      modules: [{ id: 'truncate', defId: 'TruncateSymbolSequence', params: { targetLength: -1, side: 'left' } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'invalid-param-type' && issue.moduleId === 'truncate')).toBe(true);
+  });
+
+  it('rejects TruncateBitsSequence side outside the bounded choices', () => {
+    const project: Project = {
+      modules: [{ id: 'truncate', defId: 'TruncateBitsSequence', params: { targetLength: 4, side: 'middle' } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'invalid-param-option' && issue.moduleId === 'truncate')).toBe(true);
+  });
+
+  it('rejects PadBitsSequence padBit outside the bounded choices', () => {
+    const project: Project = {
+      modules: [{ id: 'pad', defId: 'PadBitsSequence', params: { targetLength: 8, side: 'left', padBit: '2' } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'invalid-param-option' && issue.moduleId === 'pad')).toBe(true);
   });
 });

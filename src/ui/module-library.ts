@@ -359,6 +359,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this for Vigenere-style repeated keys and other classical cycling behaviors when the graph should show repetition explicitly instead of manually unrolling the key.',
     searchTerms: ['repeat symbol', 'repeat key', 'vigenere', 'cycle key', 'repeat to length', 'symbol', 'message'],
   },
+  TruncateSymbolSequence: {
+    sectionId: 'symbol-domain',
+    sortOrder: 60,
+    purpose: 'Truncates a visible symbol sequence to an explicit output length.',
+    detail: 'Use this when a message or key should visibly keep only the leftmost or rightmost symbols instead of relying on hidden mismatch handling.',
+    searchTerms: ['truncate symbol', 'trim message', 'cut sequence', 'truncate key', 'symbol sequence'],
+  },
   SymbolSequenceToTicked: {
     sectionId: 'bridges',
     sortOrder: 35,
@@ -463,6 +470,20 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Repeats an entire bit pattern by an explicit copy count.',
     detail: 'Use this when one visible byte or word should be broadcast across multiple repeated lanes, such as repeated-byte XOR experiments.',
     searchTerms: ['broadcast bits', 'repeat byte', 'repeat word', 'copies', 'byte xor', 'bits', 'framing'],
+  },
+  TruncateBitsSequence: {
+    sectionId: 'framing-routing',
+    sortOrder: 60,
+    purpose: 'Truncates a visible bit sequence to an explicit output length.',
+    detail: 'Use this when a bit or hex-authored sequence should visibly keep only the leftmost or rightmost bits before the next stage.',
+    searchTerms: ['truncate bits', 'trim bits', 'cut bit sequence', 'truncate hex buffer'],
+  },
+  PadBitsSequence: {
+    sectionId: 'framing-routing',
+    sortOrder: 65,
+    purpose: 'Pads a visible bit sequence to an explicit output length with a chosen bit value.',
+    detail: 'Use this when a bit sequence should visibly grow to a required length with explicit left/right padding instead of hidden coercion.',
+    searchTerms: ['pad bits sequence', 'sequence padding', 'left pad bits', 'right pad bits', 'pad buffer'],
   },
   SBox: {
     sectionId: 'word-diffusion',

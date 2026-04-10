@@ -59,6 +59,7 @@ import { Permutation } from './permutation';
 import { SymbolPermutation } from './symbol-permutation';
 import { SymbolWindow } from './symbol-window';
 import { RepeatSymbolToLength } from './repeat-symbol-to-length';
+import { TruncateSymbolSequence } from './truncate-symbol-sequence';
 import { SymbolSequenceToTicked } from './symbol-sequence-to-ticked';
 import { BitsSequenceToTicked } from './bits-sequence-to-ticked';
 import { BitShifter } from './bit-shifter';
@@ -71,6 +72,8 @@ import { BitUnpad } from './bit-unpad';
 import { BitWindow } from './bit-window';
 import { RepeatBitsToLength } from './repeat-bits-to-length';
 import { BroadcastBits } from './broadcast-bits';
+import { TruncateBitsSequence } from './truncate-bits-sequence';
+import { PadBitsSequence } from './pad-bits-sequence';
 import { LFSR } from './lfsr';
 import { SBox } from './s-box';
 import { Clock } from './clock';
@@ -134,6 +137,7 @@ export {
   SymbolPermutation,
   SymbolWindow,
   RepeatSymbolToLength,
+  TruncateSymbolSequence,
   SymbolSequenceToTicked,
   BitsSequenceToTicked,
   BitShifter,
@@ -146,6 +150,8 @@ export {
   BitWindow,
   RepeatBitsToLength,
   BroadcastBits,
+  TruncateBitsSequence,
+  PadBitsSequence,
   LFSR,
   SBox,
   Clock,
@@ -210,6 +216,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [SymbolPermutation.id]: SymbolPermutation,
   [SymbolWindow.id]: SymbolWindow,
   [RepeatSymbolToLength.id]: RepeatSymbolToLength,
+  [TruncateSymbolSequence.id]: TruncateSymbolSequence,
   [SymbolSequenceToTicked.id]: SymbolSequenceToTicked,
   [BitsSequenceToTicked.id]: BitsSequenceToTicked,
   [BitShifter.id]: BitShifter,
@@ -222,6 +229,8 @@ export const V1_REGISTRY: ModuleRegistry = {
   [BitWindow.id]: BitWindow,
   [RepeatBitsToLength.id]: RepeatBitsToLength,
   [BroadcastBits.id]: BroadcastBits,
+  [TruncateBitsSequence.id]: TruncateBitsSequence,
+  [PadBitsSequence.id]: PadBitsSequence,
   [LFSR.id]: LFSR,
   [SBox.id]: SBox,
   [Clock.id]: Clock,
