@@ -1238,6 +1238,11 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `MCW-V2-SANITY-PASS.md` | Proposed post-`v1.44.0` as the next product-level cohesion pass after the completed systems-composition checkpoint |
 | `MCW-V2-SANITY-AUDIT.md` | Completed audit deliverable: the product still holds, but the late library/pathfinding model now needs one bounded follow-on |
 | `LEARNING-SEQUENCE-V2.md` | Implemented on local `main` as the bounded late-stage pathfinding and library-reorganization follow-on after the sanity audit |
+| `STRUCTURED-SEQUENCE-SIGNAL-MODEL-V1.md` | Shipped first sequence-foundation slice for explicit scalar vs sequence port kinds and honest whole-sequence bridge paths |
+| `BIT-AND-HEX-SEQUENCE-BRIDGES-V1.md` | Shipped explicit bit/hex sequence inputs and bit-sequence-to-ticked follow-on on top of the sequence foundation |
+| `TICKED-TO-SEQUENCE-COLLECTORS-V1.md` | Drafted bounded reverse-bridge contract for collecting per-tick scalar output back into whole visible sequences |
+| `SEQUENCE-CHUNK-AND-JOIN-PRIMITIVES-V1.md` | Drafted bounded explicit grouping contract for chunking and rejoining sequence data without hidden block semantics |
+| `EXPLICIT-MISMATCH-POLICIES-V1.md` | Drafted bounded mismatch-policy follow-on for explicit truncate/pad-style repair beyond repetition and broadcast |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
 | `BRIDGE-ERGONOMICS-V1.md` | Shipped in `v1.31.0` — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |

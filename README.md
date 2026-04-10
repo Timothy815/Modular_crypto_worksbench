@@ -959,6 +959,11 @@ Implemented and shipped:
 - `BYPASS-V1.md`: shipped bounded usability slice for visible instance-level bypass on eligible one-in/one-out modules
 - `INVERSE-PERMUTATION-AUTHORING-V1.md`: shipped bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors
 - `BRIDGE-ERGONOMICS-V1.md`: shipped bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior
+- `STRUCTURED-SEQUENCE-SIGNAL-MODEL-V1.md`: shipped first bounded sequence-foundation slice for explicit scalar vs sequence port kinds and honest whole-sequence bridge paths
+- `BIT-AND-HEX-SEQUENCE-BRIDGES-V1.md`: shipped explicit bit/hex sequence inputs and bit-sequence-to-ticked bridge follow-on
+- `TICKED-TO-SEQUENCE-COLLECTORS-V1.md`: drafted reverse-bridge contract for collecting per-tick scalar output back into whole visible sequences
+- `SEQUENCE-CHUNK-AND-JOIN-PRIMITIVES-V1.md`: drafted explicit grouping contract for chunking and rejoining sequence data without hidden block semantics
+- `EXPLICIT-MISMATCH-POLICIES-V1.md`: drafted follow-on policy family for explicit truncate/pad-style mismatch repair beyond repetition and broadcast
 - `ADVANCED-ROTOR-REALISM-V1.md`: shipped first bounded rotor-realism slice for ring setting, turnover, and double-step behavior
 - `PARAM-FORWARDING-V1.md`: active direction for explicit exposed-internal controls on reusable architectures
 - `TRANSFORMATION-VISUALIZATION-V1.md`: shipped first milestone for primitive-level transformation legibility and drill-down views
