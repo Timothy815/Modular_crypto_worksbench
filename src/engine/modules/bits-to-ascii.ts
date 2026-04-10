@@ -16,8 +16,8 @@ function bitsToChar(bits: number[]): string {
 export const BitsToAscii: ModuleDef = {
   id: 'BitsToAscii',
   name: 'Bits → ASCII',
-  inputs: [{ name: 'in', type: 'bits' }],
-  outputs: [{ name: 'out', type: 'symbol' }],
+  inputs: [{ name: 'in', type: 'bits', kind: 'sequence' }],
+  outputs: [{ name: 'out', type: 'symbol', kind: 'sequence' }],
   paramSchema: {},
   evaluate: (inputs) => {
     const signal = inputs.in;

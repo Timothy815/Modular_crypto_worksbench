@@ -6,6 +6,7 @@ import { BitSource } from './bit-source';
 import { BitSequenceInput } from './bit-sequence-input';
 import { AsciiSource } from './ascii-source';
 import { AsciiSequenceInput } from './ascii-sequence-input';
+import { AsciiSequenceToBits } from './ascii-sequence-to-bits';
 import { AsciiSequenceToTicked } from './ascii-sequence-to-ticked';
 import { AsciiCharToBits } from './ascii-char-to-bits';
 import { TickedSymbolsToSequence } from './ticked-symbols-to-sequence';
@@ -90,6 +91,7 @@ export {
   BitSequenceInput,
   AsciiSource,
   AsciiSequenceInput,
+  AsciiSequenceToBits,
   AsciiSequenceToTicked,
   AsciiCharToBits,
   TickedSymbolsToSequence,
@@ -173,6 +175,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [BitSequenceInput.id]: BitSequenceInput,
   [AsciiSource.id]: AsciiSource,
   [AsciiSequenceInput.id]: AsciiSequenceInput,
+  [AsciiSequenceToBits.id]: AsciiSequenceToBits,
   [AsciiSequenceToTicked.id]: AsciiSequenceToTicked,
   [AsciiCharToBits.id]: AsciiCharToBits,
   [TickedSymbolsToSequence.id]: TickedSymbolsToSequence,

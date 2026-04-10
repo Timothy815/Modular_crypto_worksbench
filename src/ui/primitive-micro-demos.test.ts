@@ -30,6 +30,7 @@ describe('primitive micro demos', () => {
       'SymbolSequenceToTicked',
       'AsciiSequenceToTicked',
       'AsciiCharToBits',
+      'AsciiSequenceToBits',
       'TickedSymbolsToSequence',
       'TickedBitsToSequence',
       'BitSequenceInput',
@@ -72,6 +73,9 @@ describe('primitive micro demos', () => {
     );
     expect(getPrimitiveMicroDemo('AsciiCharToBits')?.name).toBe(
       'ASCII Char To Bits Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('AsciiSequenceToBits')?.name).toBe(
+      'ASCII Sequence To Bits Micro Demo',
     );
     expect(getPrimitiveMicroDemo('TickedSymbolsToSequence')?.name).toBe(
       'Ticked Symbols To Sequence Micro Demo',
@@ -159,6 +163,15 @@ describe('primitive micro demos', () => {
       'AsciiSequenceToTicked',
       'AsciiSequenceInput',
       'Clock',
+      'BitOutput',
+    ]);
+  });
+
+  it('keeps the ASCII whole-sequence bridge honest about direct sequence-to-buffer conversion', () => {
+    const bridge = getPrimitiveMicroDemo('AsciiSequenceToBits');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'AsciiSequenceToBits',
+      'AsciiSequenceInput',
       'BitOutput',
     ]);
   });

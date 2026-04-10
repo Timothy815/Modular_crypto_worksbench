@@ -50,6 +50,7 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   BitUnpad: 'operator',
   BitWindow: 'operator',
   SBox: 'operator',
+  AsciiSequenceToBits: 'bridge',
   AsciiCharToBits: 'bridge',
   SymbolToBits: 'bridge',
   BitsToAscii: 'bridge',

@@ -3,8 +3,8 @@ import type { ModuleDef } from '../types';
 export const AsciiToHex: ModuleDef = {
   id: 'AsciiToHex',
   name: 'ASCII → Hex',
-  inputs: [{ name: 'in', type: 'symbol' }],
-  outputs: [{ name: 'out', type: 'symbol' }],
+  inputs: [{ name: 'in', type: 'symbol', kind: 'sequence' }],
+  outputs: [{ name: 'out', type: 'symbol', kind: 'sequence' }],
   paramSchema: {},
   evaluate: (inputs) => {
     const signal = inputs.in;

@@ -5,6 +5,7 @@ import { BitSource } from './bit-source';
 import { BitSequenceInput } from './bit-sequence-input';
 import { AsciiSource } from './ascii-source';
 import { AsciiSequenceInput } from './ascii-sequence-input';
+import { AsciiSequenceToBits } from './ascii-sequence-to-bits';
 import { AsciiSequenceToTicked } from './ascii-sequence-to-ticked';
 import { AsciiCharToBits } from './ascii-char-to-bits';
 import { TickedSymbolsToSequence } from './ticked-symbols-to-sequence';
@@ -366,6 +367,24 @@ describe('ASCII sequence foundation', () => {
   it('emits a whole ASCII sequence explicitly', () => {
     const result = AsciiSequenceInput.evaluate({}, { value: 'KEY' });
     expect(result.out).toEqual({ type: 'symbol', value: 'KEY' });
+  });
+
+  it('encodes a whole ASCII sequence directly into one bit buffer', () => {
+    const result = AsciiSequenceToBits.evaluate(
+      { in: { type: 'symbol', value: 'AB' } },
+      {},
+    );
+
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0],
+    });
+  });
+
+  it('rejects non-ASCII characters in a whole ASCII sequence bridge', () => {
+    expect(() => AsciiSequenceToBits.evaluate({ in: { type: 'symbol', value: 'A\x80' } }, {})).toThrow(
+      'AsciiSequenceToBits accepts only 7-bit ASCII characters',
+    );
   });
 
   it('reads one ASCII character per tick from a whole sequence', () => {

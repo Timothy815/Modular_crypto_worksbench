@@ -1,6 +1,6 @@
 import type { ModuleDef } from '../types';
 
-function normalizeAsciiChar(value: string): string {
+export function normalizeAsciiChar(value: string): string {
   if (value.length !== 1) {
     throw new Error('AsciiCharToBits expects exactly one ASCII character');
   }
@@ -12,7 +12,7 @@ function normalizeAsciiChar(value: string): string {
   return value;
 }
 
-function charToBits(char: string): number[] {
+export function charToBits(char: string): number[] {
   const code = char.charCodeAt(0);
   return [7, 6, 5, 4, 3, 2, 1, 0].map((shift) => (code >> shift) & 1);
 }

@@ -19,6 +19,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'TextInput',
   'KeyInput',
   'AsciiSequenceInput',
+  'AsciiSequenceToBits',
   'BitSequenceInput',
   'AsciiSource',
   'AsciiCharToBits',
@@ -109,6 +110,7 @@ const SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS = new Set([
 const SUPPORTED_STATEFUL_PYTHON_EXPORT_COMPANION_DEF_IDS = new Set([
   'TextInput',
   'AsciiSequenceInput',
+  'AsciiSequenceToBits',
   'SymbolSequenceInput',
   'BitSequenceInput',
   'BitSource',
@@ -149,6 +151,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'text_input',
   'text_input_tick',
   'ascii_sequence_input',
+  'ascii_sequence_to_bits',
   'ascii_char_to_bits',
   'symbol_sequence_input',
   'bit_sequence_input',
@@ -605,6 +608,17 @@ def bits_to_ascii(signal):
             raise ValueError("BitsToAscii can only decode 7-bit ASCII byte values (0-127)")
         chars.append(chr(value))
     return {"out": "".join(chars)}
+
+
+def ascii_sequence_to_bits(signal):
+    symbol = _expect_symbol(signal, "AsciiSequenceToBits")
+    bits = []
+    for char in symbol:
+        value = ord(char)
+        if value > 0x7F:
+            raise ValueError("AsciiSequenceToBits accepts only 7-bit ASCII characters")
+        bits.extend((value >> shift) & 1 for shift in range(7, -1, -1))
+    return {"out": bits}
 
 
 def ascii_char_to_bits(signal):
@@ -2142,6 +2156,8 @@ function buildModuleExpression(
       return `text_input(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
     case 'AsciiSequenceInput':
       return `ascii_sequence_input(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
+    case 'AsciiSequenceToBits':
+      return `ascii_sequence_to_bits(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'AsciiCharToBits':
       return `ascii_char_to_bits(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'SymbolSequenceInput':

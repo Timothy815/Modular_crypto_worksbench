@@ -29,8 +29,8 @@ function hexByteToChar(byte: string): string {
 export const HexToAscii: ModuleDef = {
   id: 'HexToAscii',
   name: 'Hex → ASCII',
-  inputs: [{ name: 'in', type: 'symbol' }],
-  outputs: [{ name: 'out', type: 'symbol' }],
+  inputs: [{ name: 'in', type: 'symbol', kind: 'sequence' }],
+  outputs: [{ name: 'out', type: 'symbol', kind: 'sequence' }],
   paramSchema: {},
   evaluate: (inputs) => {
     const signal = inputs.in;

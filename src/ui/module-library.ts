@@ -520,6 +520,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when a symbolic pipeline needs to cross into bit-based transforms.',
     searchTerms: ['bridge', 'convert', 'encode', 'symbol', 'bits'],
   },
+  AsciiSequenceToBits: {
+    sectionId: 'bridges',
+    sortOrder: 15,
+    purpose: 'Converts a whole ASCII sequence directly into one bit buffer.',
+    detail: 'Use this when readable ASCII should enter a bit-domain machine without first stepping one character at a time through ticked execution.',
+    searchTerms: ['bridge', 'ascii', 'sequence', 'bits', 'encode', 'buffer', 'byte'],
+  },
   BitsToAscii: {
     sectionId: 'bridges',
     sortOrder: 20,

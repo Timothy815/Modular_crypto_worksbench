@@ -846,6 +846,35 @@ const ASCII_CHAR_TO_BITS_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const ASCII_SEQUENCE_TO_BITS_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'AsciiSequenceToBits',
+  name: 'ASCII Sequence To Bits Micro Demo',
+  summary: 'Minimal visible whole-sequence bridge: one ASCII buffer becomes one bit buffer without forcing a ticked path.',
+  pipeline: 'AsciiSequenceInput -> AsciiSequenceToBits -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'bridge', defId: 'AsciiSequenceToBits', params: {} },
+        { id: 'sequence', defId: 'AsciiSequenceInput', params: { value: 'KEY' } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'bridge', port: 'in' } },
+        { from: { moduleId: 'bridge', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        bridge: { x: 420, y: 176 },
+        sequence: { x: 120, y: 176 },
+        out: { x: 720, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const TICKED_SYMBOLS_TO_SEQUENCE_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'TickedSymbolsToSequence',
   name: 'Ticked Symbols To Sequence Micro Demo',
@@ -1211,6 +1240,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   SYMBOL_SEQUENCE_TO_TICKED_MICRO_DEMO,
   ASCII_SEQUENCE_TO_TICKED_MICRO_DEMO,
   ASCII_CHAR_TO_BITS_MICRO_DEMO,
+  ASCII_SEQUENCE_TO_BITS_MICRO_DEMO,
   TICKED_SYMBOLS_TO_SEQUENCE_MICRO_DEMO,
   TICKED_BITS_TO_SEQUENCE_MICRO_DEMO,
   BIT_SEQUENCE_INPUT_MICRO_DEMO,
