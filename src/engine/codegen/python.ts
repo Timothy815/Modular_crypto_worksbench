@@ -27,6 +27,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'BitSource',
   'HexSource',
   'HexSequenceInput',
+  'HexSequenceToBits',
   'HexDigitToBits',
   'IV',
   'Nonce',
@@ -163,6 +164,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'bit_source_tick',
   'hex_source',
   'hex_sequence_input',
+  'hex_sequence_to_bits',
   'protocol_material_source',
   'symbol_to_bits',
   'bits_to_symbol',
@@ -697,6 +699,18 @@ def bits_to_hex(signal):
     for index in range(0, len(bits), 4):
         digits.append(format(_bits_to_unsigned_number(bits[index:index + 4]), "X"))
     return {"out": "".join(digits)}
+
+
+def hex_sequence_to_bits(signal):
+    symbol = _expect_symbol(signal, "HexSequenceToBits")
+    value = str(symbol).strip().replace(" ", "").upper()
+    if any(char not in "0123456789ABCDEF" for char in value):
+        raise ValueError("HexSource accepts only hexadecimal characters 0-9 and A-F")
+    bits = []
+    for digit in value:
+        nibble = int(digit, 16)
+        bits.extend((nibble >> shift) & 1 for shift in range(3, -1, -1))
+    return {"out": bits}
 
 
 def hex_digit_to_bits(signal):
@@ -2176,6 +2190,8 @@ function buildModuleExpression(
       return `hex_source(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
     case 'HexSequenceInput':
       return `hex_sequence_input(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
+    case 'HexSequenceToBits':
+      return `hex_sequence_to_bits(${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'IV':
       return `protocol_material_source(${expressionContext.getParamExpression(moduleInstance, def, 'value')}, ${expressionContext.getParamExpression(moduleInstance, def, 'width')}, "IV")`;
     case 'Nonce':

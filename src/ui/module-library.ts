@@ -121,6 +121,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when one scalar hex digit should enter the bit domain honestly instead of relying on a whole-sequence hex path.',
     searchTerms: ['bridge', 'hex', 'digit', 'bits', 'nibble', 'tick', 'xor'],
   },
+  HexSequenceToBits: {
+    sectionId: 'bridges',
+    sortOrder: 28,
+    purpose: 'Converts a whole hex text sequence directly into one bit buffer.',
+    detail: 'Use this when hex text already exists inside the graph and should enter the bit domain without pretending it must be re-authored as a source.',
+    searchTerms: ['bridge', 'hex sequence', 'hex text', 'bits', 'buffer', 'nibbles', 'encode'],
+  },
   IV: {
     sectionId: 'protocol-context',
     sortOrder: 10,

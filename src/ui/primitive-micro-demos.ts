@@ -1049,6 +1049,35 @@ const HEX_TO_ASCII_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const HEX_SEQUENCE_TO_BITS_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'HexSequenceToBits',
+  name: 'Hex Sequence To Bits Micro Demo',
+  summary: 'Minimal visible whole-buffer bridge: one in-graph hex text sequence becomes one bit buffer without re-entering through a source.',
+  pipeline: 'SymbolSequenceInput -> HexSequenceToBits -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'bridge', defId: 'HexSequenceToBits', params: {} },
+        { id: 'sequence', defId: 'SymbolSequenceInput', params: { value: 'A3F9' } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'sequence', port: 'out' }, to: { moduleId: 'bridge', port: 'in' } },
+        { from: { moduleId: 'bridge', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        bridge: { x: 420, y: 176 },
+        sequence: { x: 120, y: 176 },
+        out: { x: 720, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const TICKED_SYMBOLS_TO_SEQUENCE_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'TickedSymbolsToSequence',
   name: 'Ticked Symbols To Sequence Micro Demo',
@@ -1421,6 +1450,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   SYMBOL_TO_BITS_MICRO_DEMO,
   BITS_TO_SYMBOL_MICRO_DEMO,
   HEX_TO_ASCII_MICRO_DEMO,
+  HEX_SEQUENCE_TO_BITS_MICRO_DEMO,
   TICKED_SYMBOLS_TO_SEQUENCE_MICRO_DEMO,
   TICKED_BITS_TO_SEQUENCE_MICRO_DEMO,
   BIT_SEQUENCE_INPUT_MICRO_DEMO,

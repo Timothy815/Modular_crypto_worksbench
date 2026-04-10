@@ -14,6 +14,7 @@ import { TickedBitsToSequence } from './ticked-bits-to-sequence';
 import { BaudotSource } from './baudot-source';
 import { HexSource } from './hex-source';
 import { HexSequenceInput } from './hex-sequence-input';
+import { HexSequenceToBits } from './hex-sequence-to-bits';
 import { HexDigitToBits } from './hex-digit-to-bits';
 import { IV } from './iv';
 import { Nonce } from './nonce';
@@ -99,6 +100,7 @@ export {
   BaudotSource,
   HexSource,
   HexSequenceInput,
+  HexSequenceToBits,
   HexDigitToBits,
   IV,
   Nonce,
@@ -183,6 +185,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [BaudotSource.id]: BaudotSource,
   [HexSource.id]: HexSource,
   [HexSequenceInput.id]: HexSequenceInput,
+  [HexSequenceToBits.id]: HexSequenceToBits,
   [HexDigitToBits.id]: HexDigitToBits,
   [IV.id]: IV,
   [Nonce.id]: Nonce,

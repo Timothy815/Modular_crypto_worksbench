@@ -13,6 +13,7 @@ import { TickedBitsToSequence } from './ticked-bits-to-sequence';
 import { BaudotSource } from './baudot-source';
 import { HexSource } from './hex-source';
 import { HexSequenceInput } from './hex-sequence-input';
+import { HexSequenceToBits } from './hex-sequence-to-bits';
 import { HexDigitToBits } from './hex-digit-to-bits';
 import { IV } from './iv';
 import { Nonce } from './nonce';
@@ -519,6 +520,14 @@ describe('Bit and hex sequence foundation', () => {
 
   it('emits a whole hex-authored bit sequence using the shared hex parser', () => {
     const result = HexSequenceInput.evaluate({}, { value: ' a3 f9 ' });
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1],
+    });
+  });
+
+  it('converts a whole in-graph hex sequence back into bits', () => {
+    const result = HexSequenceToBits.evaluate({ in: { type: 'symbol', value: ' a3 f9 ' } }, {});
     expect(result.out).toEqual({
       type: 'bits',
       value: [1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1],

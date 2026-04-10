@@ -37,6 +37,7 @@ describe('primitive micro demos', () => {
       'SymbolToBits',
       'BitsToSymbol',
       'HexToAscii',
+      'HexSequenceToBits',
       'TickedSymbolsToSequence',
       'TickedBitsToSequence',
       'BitSequenceInput',
@@ -100,6 +101,9 @@ describe('primitive micro demos', () => {
     );
     expect(getPrimitiveMicroDemo('HexToAscii')?.name).toBe(
       'Hex To ASCII Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('HexSequenceToBits')?.name).toBe(
+      'Hex Sequence To Bits Micro Demo',
     );
     expect(getPrimitiveMicroDemo('TickedSymbolsToSequence')?.name).toBe(
       'Ticked Symbols To Sequence Micro Demo',
@@ -251,6 +255,15 @@ describe('primitive micro demos', () => {
       'HexToAscii',
       'SymbolSequenceInput',
       'TextOutput',
+    ]);
+  });
+
+  it('keeps the hex-sequence-to-bits whole-buffer bridge honest about direct sequence-to-buffer conversion', () => {
+    const bridge = getPrimitiveMicroDemo('HexSequenceToBits');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'HexSequenceToBits',
+      'SymbolSequenceInput',
+      'BitOutput',
     ]);
   });
 
