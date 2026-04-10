@@ -2896,35 +2896,37 @@ export function WorkbenchPanel({
       ) : null}
       {pendingConnection ? (
         <p className="connection-status">
-          {pendingConnection.excludedConnectionIndex !== null ? 'Rewiring' : 'Wiring from'}{' '}
-          <strong>{pendingConnection.fromModuleId}.{pendingConnection.fromPort}</strong>.
-          {pendingTargetSummary ? (
-            <>
-              {' '}
-              <span className="connection-status-chip connection-status-chip-valid">
-                {pendingTargetSummary.validCount} valid
-              </span>
-              <span className="connection-status-chip connection-status-chip-replace">
-                {pendingTargetSummary.replaceCount} replace
-              </span>
-              {' '}
-              {pendingTargetSummary.hoveredTargetKey && pendingTargetSummary.hoveredTargetState ? (
-                <span className="connection-status-detail">
-                  Target{' '}
-                  <strong>{pendingTargetSummary.hoveredTargetKey.replace(':', '.')}</strong>{' '}
-                  {pendingTargetSummary.hoveredTargetState.valid
-                    ? pendingTargetSummary.hoveredTargetState.mode === 'replace'
-                      ? 'will replace the existing input connection.'
-                      : 'is ready to connect.'
-                    : pendingTargetSummary.hoveredTargetState.reason ?? 'is blocked.'}
+          <span className="connection-status-summary">
+            <span className="connection-status-source">
+              {pendingConnection.excludedConnectionIndex !== null ? 'Rewiring' : 'Wiring from'}{' '}
+              <strong>{pendingConnection.fromModuleId}.{pendingConnection.fromPort}</strong>.
+            </span>
+            {pendingTargetSummary ? (
+              <span className="connection-status-chips">
+                <span className="connection-status-chip connection-status-chip-valid">
+                  {pendingTargetSummary.validCount} valid
                 </span>
-              ) : (
-                <span className="connection-status-detail">
-                  Valid inputs glow teal. Replacement targets glow gold. Blocked targets glow red.
+                <span className="connection-status-chip connection-status-chip-replace">
+                  {pendingTargetSummary.replaceCount} replace
                 </span>
-              )}
-            </>
-          ) : null}
+              </span>
+            ) : null}
+          </span>
+          <span className="connection-status-detail">
+            {pendingTargetSummary?.hoveredTargetKey && pendingTargetSummary.hoveredTargetState ? (
+              <>
+                Target{' '}
+                <strong>{pendingTargetSummary.hoveredTargetKey.replace(':', '.')}</strong>{' '}
+                {pendingTargetSummary.hoveredTargetState.valid
+                  ? pendingTargetSummary.hoveredTargetState.mode === 'replace'
+                    ? 'will replace the existing input connection.'
+                    : 'is ready to connect.'
+                  : pendingTargetSummary.hoveredTargetState.reason ?? 'is blocked.'}
+              </>
+            ) : (
+              <>Valid inputs glow teal. Replacement targets glow gold. Blocked targets glow red.</>
+            )}
+          </span>
         </p>
       ) : connectionFeedback ? (
         <p className="connection-status connection-status-warning">{connectionFeedback}</p>
