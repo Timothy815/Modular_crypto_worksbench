@@ -40,6 +40,7 @@ export interface ParamFieldDef {
   kind: ParamKind;
   defaultValue: unknown;
   required?: boolean;
+  hidden?: boolean;
   options?: ParamOption[];
   description?: string;
 }
@@ -63,12 +64,13 @@ export interface ModuleDef {
 }
 
 export interface StatefulModuleDef extends ModuleDef {
+  usesClockAsInput?: boolean;
   liveStateDisplay?: {
     key: string;
     label: string;
     format?: 'default' | 'bits' | 'rotor-position';
   };
-  advance: (params: ModuleParams, tick: number) => ModuleParams;
+  advance: (params: ModuleParams, tick: number, inputs?: ModuleInputs) => ModuleParams;
 }
 
 export interface TickSliceableModuleDef extends ModuleDef {
@@ -80,6 +82,10 @@ export type ModuleDefinition = ModuleDef | CompositeDef | IteratorDef;
 
 export function isStatefulModule(def: ModuleDefinition): def is StatefulModuleDef {
   return 'advance' in def && typeof (def as StatefulModuleDef).advance === 'function';
+}
+
+export function usesClockAsInput(def: ModuleDefinition): boolean {
+  return isStatefulModule(def) && Boolean(def.usesClockAsInput);
 }
 
 export function isTickSliceable(def: ModuleDefinition): def is TickSliceableModuleDef {

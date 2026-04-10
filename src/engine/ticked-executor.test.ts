@@ -16,6 +16,8 @@ import { BitSource } from './modules/bit-source';
 import { Reflector } from './modules/reflector';
 import { Clock } from './modules/clock';
 import { Output } from './modules/output';
+import { TickedSymbolsToSequence } from './modules/ticked-symbols-to-sequence';
+import { TickedBitsToSequence } from './modules/ticked-bits-to-sequence';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
@@ -147,6 +149,9 @@ describe('executeTickedProject', () => {
     Rotor,
     RotorReverse,
     TextInput,
+    BitSource,
+    TickedSymbolsToSequence,
+    TickedBitsToSequence,
     Reflector,
     Clock,
   };
@@ -217,6 +222,56 @@ describe('executeTickedProject', () => {
       { offset: 0 },
       { offset: 1 },
       { offset: 2 },
+    ]);
+  });
+
+  it('collects scalar text output into a visible symbol sequence', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text', defId: 'TextInput', params: { value: 'KEY' } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 3 } },
+        { id: 'collector', defId: 'TickedSymbolsToSequence', params: { collected: '', count: 0 } },
+      ],
+      connections: [
+        { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'collector', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'collector', port: 'clock' } },
+      ],
+    };
+
+    const result = executeTickedProject(project, registry, 3);
+
+    expect(result.ticks[0].outputsByModuleId.collector.out).toEqual({ type: 'symbol', value: 'K' });
+    expect(result.ticks[1].outputsByModuleId.collector.out).toEqual({ type: 'symbol', value: 'KE' });
+    expect(result.ticks[2].outputsByModuleId.collector.out).toEqual({ type: 'symbol', value: 'KEY' });
+    expect(result.paramsByModuleByTick.collector).toEqual([
+      { collected: '', count: 0 },
+      { collected: 'K', count: 1 },
+      { collected: 'KE', count: 2 },
+    ]);
+  });
+
+  it('collects scalar bit words into a visible bit sequence', () => {
+    const project: Project = {
+      modules: [
+        { id: 'bits', defId: 'BitSource', params: { stream: [1, 0, 1] } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 3 } },
+        { id: 'collector', defId: 'TickedBitsToSequence', params: { collected: [], count: 0 } },
+      ],
+      connections: [
+        { from: { moduleId: 'bits', port: 'out' }, to: { moduleId: 'collector', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'collector', port: 'clock' } },
+      ],
+    };
+
+    const result = executeTickedProject(project, registry, 3);
+
+    expect(result.ticks[0].outputsByModuleId.collector.out).toEqual({ type: 'bits', value: [1] });
+    expect(result.ticks[1].outputsByModuleId.collector.out).toEqual({ type: 'bits', value: [1, 0] });
+    expect(result.ticks[2].outputsByModuleId.collector.out).toEqual({ type: 'bits', value: [1, 0, 1] });
+    expect(result.paramsByModuleByTick.collector).toEqual([
+      { collected: [], count: 0 },
+      { collected: [1], count: 1 },
+      { collected: [1, 0], count: 2 },
     ]);
   });
 

@@ -28,6 +28,8 @@ describe('primitive micro demos', () => {
       'RepeatSymbolToLength',
       'SymbolSequenceToTicked',
       'AsciiSequenceToTicked',
+      'TickedSymbolsToSequence',
+      'TickedBitsToSequence',
       'BitSequenceInput',
       'HexSequenceInput',
       'BitsSequenceToTicked',
@@ -58,6 +60,12 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('AsciiSequenceToTicked')?.name).toBe(
       'ASCII Sequence To Ticked Micro Demo',
     );
+    expect(getPrimitiveMicroDemo('TickedSymbolsToSequence')?.name).toBe(
+      'Ticked Symbols To Sequence Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('TickedBitsToSequence')?.name).toBe(
+      'Ticked Bits To Sequence Micro Demo',
+    );
     expect(getPrimitiveMicroDemo('BitSequenceInput')?.name).toBe('Bit Sequence Input Micro Demo');
     expect(getPrimitiveMicroDemo('HexSequenceInput')?.name).toBe('Hex Sequence Input Micro Demo');
     expect(getPrimitiveMicroDemo('BitsSequenceToTicked')?.name).toBe(
@@ -79,6 +87,8 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('MultiRouter')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('SymbolSequenceToTicked')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('AsciiSequenceToTicked')?.defaultTickedMode).toBe(true);
+    expect(getPrimitiveMicroDemo('TickedSymbolsToSequence')?.defaultTickedMode).toBe(true);
+    expect(getPrimitiveMicroDemo('TickedBitsToSequence')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('BitsSequenceToTicked')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('BitSplit')?.defaultTickedMode).toBeUndefined();
     expect(getPrimitiveMicroDemo('BitPad')?.defaultTickedMode).toBeUndefined();
@@ -104,6 +114,26 @@ describe('primitive micro demos', () => {
       'AsciiSequenceInput',
       'Clock',
       'TextOutput',
+    ]);
+  });
+
+  it('keeps the symbol collector example honest about ticked input and collected output', () => {
+    const bridge = getPrimitiveMicroDemo('TickedSymbolsToSequence');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'TickedSymbolsToSequence',
+      'TextInput',
+      'Clock',
+      'TextOutput',
+    ]);
+  });
+
+  it('keeps the bit collector example honest about ticked input and collected output', () => {
+    const bridge = getPrimitiveMicroDemo('TickedBitsToSequence');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'TickedBitsToSequence',
+      'BitSource',
+      'Clock',
+      'BitOutput',
     ]);
   });
 

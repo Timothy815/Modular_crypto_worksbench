@@ -12,7 +12,7 @@ import type {
   ModuleRegistry,
   Project,
 } from '../types';
-import { isStatefulModule, isTickSliceable } from '../types';
+import { isStatefulModule, isTickSliceable, usesClockAsInput } from '../types';
 import { validateProject } from '../validation';
 
 const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
@@ -83,6 +83,8 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'Reflector',
   'RotorReverse',
   'Plugboard',
+  'TickedSymbolsToSequence',
+  'TickedBitsToSequence',
   'BitsSequenceToTicked',
 ]);
 
@@ -92,6 +94,8 @@ const SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS = new Set([
   'LFSR',
   'Rotor',
   'RotorReverse',
+  'TickedSymbolsToSequence',
+  'TickedBitsToSequence',
   'AsciiSequenceToTicked',
   'SymbolSequenceToTicked',
 ]);
@@ -162,9 +166,15 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'ascii_sequence_to_ticked_init',
   'ascii_sequence_to_ticked_eval',
   'ascii_sequence_to_ticked_advance',
+  'ticked_symbols_to_sequence_init',
+  'ticked_symbols_to_sequence_eval',
+  'ticked_symbols_to_sequence_advance',
   'symbol_sequence_to_ticked_init',
   'symbol_sequence_to_ticked_eval',
   'symbol_sequence_to_ticked_advance',
+  'ticked_bits_to_sequence_init',
+  'ticked_bits_to_sequence_eval',
+  'ticked_bits_to_sequence_advance',
   'bits_sequence_to_ticked_init',
   'bits_sequence_to_ticked_eval',
   'bits_sequence_to_ticked_advance',
@@ -1210,6 +1220,33 @@ def ascii_sequence_to_ticked_advance(state):
     state["index"] = int(state["index"]) + 1
 
 
+def ticked_symbols_to_sequence_init(collected, count):
+    text = str(collected)
+    count = int(count)
+    if count < 0:
+        raise ValueError('TickedSymbolsToSequence requires "count" to be a non-negative integer')
+    return {
+        "collected": text,
+        "count": count,
+    }
+
+
+def ticked_symbols_to_sequence_eval(symbol, clock, state):
+    text = str(symbol)
+    should_collect = clock is None or _is_active_control_pulse(_expect_bits(clock, "TickedSymbolsToSequence"))
+    if should_collect and len(text) > 0:
+        return {"out": state["collected"] + text}
+    return {"out": state["collected"]}
+
+
+def ticked_symbols_to_sequence_advance(symbol, clock, state):
+    text = str(symbol)
+    should_collect = clock is None or _is_active_control_pulse(_expect_bits(clock, "TickedSymbolsToSequence"))
+    if should_collect and len(text) > 0:
+        state["collected"] = state["collected"] + text
+        state["count"] = int(state["count"]) + len(text)
+
+
 def symbol_sequence_to_ticked_init(index, wrap):
     index = int(index)
     if index < 0:
@@ -1234,6 +1271,33 @@ def symbol_sequence_to_ticked_eval(sequence, state):
 
 def symbol_sequence_to_ticked_advance(state):
     state["index"] = int(state["index"]) + 1
+
+
+def ticked_bits_to_sequence_init(collected, count):
+    bits = _expect_bits(collected, "TickedBitsToSequence")
+    count = int(count)
+    if count < 0:
+        raise ValueError('TickedBitsToSequence requires "count" to be a non-negative integer')
+    return {
+        "collected": bits[:],
+        "count": count,
+    }
+
+
+def ticked_bits_to_sequence_eval(word, clock, state):
+    bits = _expect_bits(word, "TickedBitsToSequence")
+    should_collect = clock is None or _is_active_control_pulse(_expect_bits(clock, "TickedBitsToSequence"))
+    if should_collect and len(bits) > 0:
+        return {"out": state["collected"] + bits}
+    return {"out": state["collected"][:]}
+
+
+def ticked_bits_to_sequence_advance(word, clock, state):
+    bits = _expect_bits(word, "TickedBitsToSequence")
+    should_collect = clock is None or _is_active_control_pulse(_expect_bits(clock, "TickedBitsToSequence"))
+    if should_collect and len(bits) > 0:
+        state["collected"] = state["collected"] + bits
+        state["count"] = int(state["count"]) + len(bits)
 
 
 def _normalize_remainder_mode(value):
@@ -1810,7 +1874,12 @@ function buildTopologicalOrder(project: Project, registry: ModuleRegistry): stri
   for (const connection of project.connections) {
     const targetInstance = project.modules.find((moduleInstance) => moduleInstance.id === connection.to.moduleId);
     const targetDef = targetInstance ? registry[targetInstance.defId] : null;
-    if (connection.to.port === 'clock' && targetDef && isStatefulModule(targetDef)) {
+    if (
+      connection.to.port === 'clock' &&
+      targetDef &&
+      isStatefulModule(targetDef) &&
+      !usesClockAsInput(targetDef)
+    ) {
       continue;
     }
     adjacency.get(connection.from.moduleId)?.push(connection.to.moduleId);
@@ -2943,6 +3012,16 @@ function buildCompositeHelperDefinitions(
           buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
           `    state[${JSON.stringify(variableName)}] = rotor_init(${expressionContext.getParamExpression(moduleInstance, def, 'wiring')}, ${expressionContext.getParamExpression(moduleInstance, def, 'position')}, ${expressionContext.getParamExpression(moduleInstance, def, 'ringOffset')}, ${expressionContext.getParamExpression(moduleInstance, def, 'notches')})`,
         );
+      } else if (def.id === 'TickedSymbolsToSequence') {
+        initLines.push(
+          buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+          `    state[${JSON.stringify(variableName)}] = ticked_symbols_to_sequence_init(${expressionContext.getParamExpression(moduleInstance, def, 'collected')}, ${expressionContext.getParamExpression(moduleInstance, def, 'count')})`,
+        );
+      } else if (def.id === 'TickedBitsToSequence') {
+        initLines.push(
+          buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+          `    state[${JSON.stringify(variableName)}] = ticked_bits_to_sequence_init(${expressionContext.getParamExpression(moduleInstance, def, 'collected')}, ${expressionContext.getParamExpression(moduleInstance, def, 'count')})`,
+        );
       } else if (def.id === 'AsciiSequenceToTicked') {
         initLines.push(
           buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
@@ -3081,6 +3160,22 @@ function buildCompositeHelperDefinitions(
         continue;
       }
 
+      if (def.id === 'TickedSymbolsToSequence') {
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        tickLines.push(
+          `    ${variableName} = ticked_symbols_to_sequence_eval(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'clock')}, state[${JSON.stringify(variableName)}])`,
+        );
+        continue;
+      }
+
+      if (def.id === 'TickedBitsToSequence') {
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        tickLines.push(
+          `    ${variableName} = ticked_bits_to_sequence_eval(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'clock')}, state[${JSON.stringify(variableName)}])`,
+        );
+        continue;
+      }
+
       if (def.id === 'AsciiSequenceToTicked') {
         tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
         tickLines.push(
@@ -3153,7 +3248,7 @@ function buildCompositeHelperDefinitions(
 
     for (const moduleInstance of internalProject.modules) {
       const def = registry[moduleInstance.defId];
-      if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor' && def.id !== 'AsciiSequenceToTicked' && def.id !== 'SymbolSequenceToTicked' && def.id !== 'BitsSequenceToTicked')) {
+      if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor' && def.id !== 'TickedSymbolsToSequence' && def.id !== 'TickedBitsToSequence' && def.id !== 'AsciiSequenceToTicked' && def.id !== 'SymbolSequenceToTicked' && def.id !== 'BitsSequenceToTicked')) {
         continue;
       }
 
@@ -3177,7 +3272,7 @@ function buildCompositeHelperDefinitions(
 
     for (const moduleInstance of internalProject.modules) {
       const def = registry[moduleInstance.defId];
-      if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor' && def.id !== 'AsciiSequenceToTicked' && def.id !== 'SymbolSequenceToTicked' && def.id !== 'BitsSequenceToTicked')) {
+      if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor' && def.id !== 'TickedSymbolsToSequence' && def.id !== 'TickedBitsToSequence' && def.id !== 'AsciiSequenceToTicked' && def.id !== 'SymbolSequenceToTicked' && def.id !== 'BitsSequenceToTicked')) {
         continue;
       }
 
@@ -3187,10 +3282,26 @@ function buildCompositeHelperDefinitions(
       }
 
       const stepFlagName = `step_${variableName}`;
+      const advanceCall =
+        def.id === 'Counter'
+          ? `counter_advance(state[${JSON.stringify(variableName)}])`
+          : def.id === 'LFSR'
+            ? `lfsr_advance(state[${JSON.stringify(variableName)}])`
+            : def.id === 'Rotor'
+              ? `rotor_advance(state[${JSON.stringify(variableName)}])`
+              : def.id === 'TickedSymbolsToSequence'
+                ? `ticked_symbols_to_sequence_advance(${expressionContext.getInputExpression(moduleInstance.id, 'in')}, ${expressionContext.getInputExpression(moduleInstance.id, 'clock')}, state[${JSON.stringify(variableName)}])`
+                : def.id === 'TickedBitsToSequence'
+                  ? `ticked_bits_to_sequence_advance(${expressionContext.getInputExpression(moduleInstance.id, 'in')}, ${expressionContext.getInputExpression(moduleInstance.id, 'clock')}, state[${JSON.stringify(variableName)}])`
+                  : def.id === 'AsciiSequenceToTicked'
+                    ? `ascii_sequence_to_ticked_advance(state[${JSON.stringify(variableName)}])`
+                    : def.id === 'BitsSequenceToTicked'
+                      ? `bits_sequence_to_ticked_advance(state[${JSON.stringify(variableName)}])`
+                      : `symbol_sequence_to_ticked_advance(state[${JSON.stringify(variableName)}])`;
       tickLines.push(
         buildGeneratedModuleComment(moduleInstance, def, '    ', 'Advance'),
         `    if ${stepFlagName}:`,
-        `        ${def.id === 'Counter' ? 'counter_advance' : def.id === 'LFSR' ? 'lfsr_advance' : def.id === 'Rotor' ? 'rotor_advance' : def.id === 'AsciiSequenceToTicked' ? 'ascii_sequence_to_ticked_advance' : def.id === 'BitsSequenceToTicked' ? 'bits_sequence_to_ticked_advance' : 'symbol_sequence_to_ticked_advance'}(state[${JSON.stringify(variableName)}])`,
+        `        ${advanceCall}`,
       );
     }
 
@@ -4251,6 +4362,30 @@ function generateStatefulPythonExport(
       continue;
     }
 
+    if (def.id === 'TickedSymbolsToSequence') {
+      const variableName = variablesByModuleId.get(moduleInstance.id);
+      if (!variableName) {
+        throw new Error(`Python export could not resolve a variable for "${moduleInstance.id}".`);
+      }
+      bodyLines.push(
+        buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+        `    ${variableName}_state = ticked_symbols_to_sequence_init(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'collected'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'count'))})`,
+      );
+      continue;
+    }
+
+    if (def.id === 'TickedBitsToSequence') {
+      const variableName = variablesByModuleId.get(moduleInstance.id);
+      if (!variableName) {
+        throw new Error(`Python export could not resolve a variable for "${moduleInstance.id}".`);
+      }
+      bodyLines.push(
+        buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+        `    ${variableName}_state = ticked_bits_to_sequence_init(${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'collected'))}, ${toPythonLiteral(getResolvedParamValue(moduleInstance, def, 'count'))})`,
+      );
+      continue;
+    }
+
     if (def.id === 'AsciiSequenceToTicked') {
       const variableName = variablesByModuleId.get(moduleInstance.id);
       if (!variableName) {
@@ -4455,6 +4590,22 @@ function generateStatefulPythonExport(
       continue;
     }
 
+    if (def.id === 'TickedSymbolsToSequence') {
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
+      bodyLines.push(
+        `        ${variableName} = ticked_symbols_to_sequence_eval(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'clock')}, ${variableName}_state)`,
+      );
+      continue;
+    }
+
+    if (def.id === 'TickedBitsToSequence') {
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
+      bodyLines.push(
+        `        ${variableName} = ticked_bits_to_sequence_eval(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'clock')}, ${variableName}_state)`,
+      );
+      continue;
+    }
+
     if (def.id === 'AsciiSequenceToTicked') {
       bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
       bodyLines.push(
@@ -4487,7 +4638,7 @@ function generateStatefulPythonExport(
 
   for (const moduleInstance of project.modules) {
     const def = registry[moduleInstance.defId];
-    if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor' && def.id !== 'AsciiSequenceToTicked' && def.id !== 'SymbolSequenceToTicked' && def.id !== 'BitsSequenceToTicked')) {
+    if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor' && def.id !== 'TickedSymbolsToSequence' && def.id !== 'TickedBitsToSequence' && def.id !== 'AsciiSequenceToTicked' && def.id !== 'SymbolSequenceToTicked' && def.id !== 'BitsSequenceToTicked')) {
       continue;
     }
 
@@ -4516,7 +4667,7 @@ function generateStatefulPythonExport(
 
   for (const moduleInstance of project.modules) {
     const def = registry[moduleInstance.defId];
-    if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor' && def.id !== 'AsciiSequenceToTicked' && def.id !== 'SymbolSequenceToTicked' && def.id !== 'BitsSequenceToTicked')) {
+    if (!def || (def.id !== 'Counter' && def.id !== 'LFSR' && def.id !== 'Rotor' && def.id !== 'TickedSymbolsToSequence' && def.id !== 'TickedBitsToSequence' && def.id !== 'AsciiSequenceToTicked' && def.id !== 'SymbolSequenceToTicked' && def.id !== 'BitsSequenceToTicked')) {
       continue;
     }
 
@@ -4526,10 +4677,26 @@ function generateStatefulPythonExport(
     }
 
     const stepFlagName = `step_${variableName}`;
+    const advanceCall =
+      def.id === 'Counter'
+        ? `counter_advance(${variableName}_state)`
+        : def.id === 'LFSR'
+          ? `lfsr_advance(${variableName}_state)`
+          : def.id === 'Rotor'
+            ? `rotor_advance(${variableName}_state)`
+            : def.id === 'TickedSymbolsToSequence'
+              ? `ticked_symbols_to_sequence_advance(${expressionContext.getInputExpression(moduleInstance.id, 'in')}, ${expressionContext.getInputExpression(moduleInstance.id, 'clock')}, ${variableName}_state)`
+              : def.id === 'TickedBitsToSequence'
+                ? `ticked_bits_to_sequence_advance(${expressionContext.getInputExpression(moduleInstance.id, 'in')}, ${expressionContext.getInputExpression(moduleInstance.id, 'clock')}, ${variableName}_state)`
+                : def.id === 'AsciiSequenceToTicked'
+                  ? `ascii_sequence_to_ticked_advance(${variableName}_state)`
+                  : def.id === 'BitsSequenceToTicked'
+                    ? `bits_sequence_to_ticked_advance(${variableName}_state)`
+                    : `symbol_sequence_to_ticked_advance(${variableName}_state)`;
     bodyLines.push(
       buildGeneratedModuleComment(moduleInstance, def, '        ', 'Advance'),
       `        if ${stepFlagName}:`,
-      `            ${def.id === 'Counter' ? 'counter_advance' : def.id === 'LFSR' ? 'lfsr_advance' : def.id === 'Rotor' ? 'rotor_advance' : def.id === 'AsciiSequenceToTicked' ? 'ascii_sequence_to_ticked_advance' : def.id === 'BitsSequenceToTicked' ? 'bits_sequence_to_ticked_advance' : 'symbol_sequence_to_ticked_advance'}(${variableName}_state)`,
+      `            ${advanceCall}`,
     );
   }
 

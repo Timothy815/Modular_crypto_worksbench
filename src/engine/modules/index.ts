@@ -7,6 +7,8 @@ import { BitSequenceInput } from './bit-sequence-input';
 import { AsciiSource } from './ascii-source';
 import { AsciiSequenceInput } from './ascii-sequence-input';
 import { AsciiSequenceToTicked } from './ascii-sequence-to-ticked';
+import { TickedSymbolsToSequence } from './ticked-symbols-to-sequence';
+import { TickedBitsToSequence } from './ticked-bits-to-sequence';
 import { BaudotSource } from './baudot-source';
 import { HexSource } from './hex-source';
 import { HexSequenceInput } from './hex-sequence-input';
@@ -82,6 +84,8 @@ export {
   AsciiSource,
   AsciiSequenceInput,
   AsciiSequenceToTicked,
+  TickedSymbolsToSequence,
+  TickedBitsToSequence,
   BaudotSource,
   HexSource,
   HexSequenceInput,
@@ -156,6 +160,8 @@ export const V1_REGISTRY: ModuleRegistry = {
   [AsciiSource.id]: AsciiSource,
   [AsciiSequenceInput.id]: AsciiSequenceInput,
   [AsciiSequenceToTicked.id]: AsciiSequenceToTicked,
+  [TickedSymbolsToSequence.id]: TickedSymbolsToSequence,
+  [TickedBitsToSequence.id]: TickedBitsToSequence,
   [BaudotSource.id]: BaudotSource,
   [HexSource.id]: HexSource,
   [HexSequenceInput.id]: HexSequenceInput,

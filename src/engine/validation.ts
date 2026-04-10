@@ -19,6 +19,8 @@ import {
 } from './composites';
 import { validateAsciiSourceValue } from './modules/ascii-source';
 import { validateAsciiSequenceToTickedParam } from './modules/ascii-sequence-to-ticked';
+import { validateTickedBitsToSequenceParam } from './modules/ticked-bits-to-sequence';
+import { validateTickedSymbolsToSequenceParam } from './modules/ticked-symbols-to-sequence';
 import { validateBaudotSourceValue } from './modules/baudot-source';
 import { validateHexSourceValue } from './modules/hex-source';
 import { validatePermutationOrderParam } from './modules/permutation';
@@ -202,6 +204,14 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'AsciiSequenceToTicked') {
     return validateAsciiSequenceToTickedParam(field.key, value);
+  }
+
+  if (def.id === 'TickedSymbolsToSequence') {
+    return validateTickedSymbolsToSequenceParam(field.key, value);
+  }
+
+  if (def.id === 'TickedBitsToSequence') {
+    return validateTickedBitsToSequenceParam(field.key, value);
   }
 
   if (def.id === 'BaudotSource' && field.key === 'value') {

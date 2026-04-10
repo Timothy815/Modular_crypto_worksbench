@@ -781,6 +781,72 @@ const ASCII_SEQUENCE_TO_TICKED_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const TICKED_SYMBOLS_TO_SEQUENCE_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'TickedSymbolsToSequence',
+  name: 'Ticked Symbols To Sequence Micro Demo',
+  summary: 'Minimal visible collector: one symbol per tick is accumulated back into a whole visible sequence.',
+  pipeline: 'TextInput + Clock -> TickedSymbolsToSequence -> TextOutput',
+  defaultTickedMode: true,
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'collector', defId: 'TickedSymbolsToSequence', params: { collected: '', count: 0 } },
+        { id: 'text', defId: 'TextInput', params: { value: 'KEY' } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 4 } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'collector', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'collector', port: 'clock' } },
+        { from: { moduleId: 'collector', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        collector: { x: 444, y: 176 },
+        text: { x: 72, y: 84 },
+        clock: { x: 72, y: 268 },
+        out: { x: 760, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const TICKED_BITS_TO_SEQUENCE_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'TickedBitsToSequence',
+  name: 'Ticked Bits To Sequence Micro Demo',
+  summary: 'Minimal visible collector: one bit word per tick is accumulated back into a whole visible bit sequence.',
+  pipeline: 'BitSource + Clock -> TickedBitsToSequence -> BitOutput',
+  defaultTickedMode: true,
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'collector', defId: 'TickedBitsToSequence', params: { collected: [], count: 0 } },
+        { id: 'bits', defId: 'BitSource', params: { stream: [1, 0, 1, 1] } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 5 } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'bits', port: 'out' }, to: { moduleId: 'collector', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'collector', port: 'clock' } },
+        { from: { moduleId: 'collector', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        collector: { x: 444, y: 176 },
+        bits: { x: 72, y: 84 },
+        clock: { x: 72, y: 268 },
+        out: { x: 760, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const BIT_SEQUENCE_INPUT_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'BitSequenceInput',
   name: 'Bit Sequence Input Micro Demo',
@@ -897,6 +963,8 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   REPEAT_SYMBOL_TO_LENGTH_MICRO_DEMO,
   SYMBOL_SEQUENCE_TO_TICKED_MICRO_DEMO,
   ASCII_SEQUENCE_TO_TICKED_MICRO_DEMO,
+  TICKED_SYMBOLS_TO_SEQUENCE_MICRO_DEMO,
+  TICKED_BITS_TO_SEQUENCE_MICRO_DEMO,
   BIT_SEQUENCE_INPUT_MICRO_DEMO,
   HEX_SEQUENCE_INPUT_MICRO_DEMO,
   BITS_SEQUENCE_TO_TICKED_MICRO_DEMO,

@@ -1240,7 +1240,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `LEARNING-SEQUENCE-V2.md` | Implemented on local `main` as the bounded late-stage pathfinding and library-reorganization follow-on after the sanity audit |
 | `STRUCTURED-SEQUENCE-SIGNAL-MODEL-V1.md` | Shipped first sequence-foundation slice for explicit scalar vs sequence port kinds and honest whole-sequence bridge paths |
 | `BIT-AND-HEX-SEQUENCE-BRIDGES-V1.md` | Shipped explicit bit/hex sequence inputs and bit-sequence-to-ticked follow-on on top of the sequence foundation |
-| `TICKED-TO-SEQUENCE-COLLECTORS-V1.md` | Drafted bounded reverse-bridge contract for collecting per-tick scalar output back into whole visible sequences |
+| `TICKED-TO-SEQUENCE-COLLECTORS-V1.md` | Shipped bounded reverse-bridge slice for collecting per-tick scalar output back into whole visible sequences |
 | `SEQUENCE-CHUNK-AND-JOIN-PRIMITIVES-V1.md` | Drafted bounded explicit grouping contract for chunking and rejoining sequence data without hidden block semantics |
 | `EXPLICIT-MISMATCH-POLICIES-V1.md` | Drafted bounded mismatch-policy follow-on for explicit truncate/pad-style repair beyond repetition and broadcast |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |

@@ -2678,7 +2678,7 @@ export function ParameterInspector({
             </div>
           )}
           <div className="selected-module-actions">
-            {!isReadOnlyMode && Object.values(moduleDef.paramSchema).length > 0 ? (
+            {!isReadOnlyMode && Object.values(moduleDef.paramSchema).some((field) => !field.hidden) ? (
               <InspectorIconButton
                 icon="copy"
                 label="Copy Params"
@@ -2867,10 +2867,10 @@ export function ParameterInspector({
           ) : null}
 
           <div className="param-list">
-            {Object.values(moduleDef.paramSchema).length === 0 ? (
+            {Object.values(moduleDef.paramSchema).filter((field) => !field.hidden).length === 0 ? (
               <p className="empty-state">This module has no configurable parameters.</p>
             ) : (
-              Object.values(moduleDef.paramSchema).map((field) => {
+              Object.values(moduleDef.paramSchema).filter((field) => !field.hidden).map((field) => {
                 const isReadOnlyLinkedRotorField =
                   moduleDef.id === 'RotorReverse' &&
                   Boolean(linkedRotorSourceInstance) &&

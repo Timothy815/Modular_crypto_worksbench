@@ -6,6 +6,8 @@ import { BitSequenceInput } from './bit-sequence-input';
 import { AsciiSource } from './ascii-source';
 import { AsciiSequenceInput } from './ascii-sequence-input';
 import { AsciiSequenceToTicked } from './ascii-sequence-to-ticked';
+import { TickedSymbolsToSequence } from './ticked-symbols-to-sequence';
+import { TickedBitsToSequence } from './ticked-bits-to-sequence';
 import { BaudotSource } from './baudot-source';
 import { HexSource } from './hex-source';
 import { HexSequenceInput } from './hex-sequence-input';
@@ -303,6 +305,55 @@ describe('ASCII sequence foundation', () => {
     expect(tick0.out).toEqual({ type: 'symbol', value: 'K' });
     expect(tick1.out).toEqual({ type: 'symbol', value: 'E' });
     expect(tick2.out).toEqual({ type: 'symbol', value: 'Y' });
+  });
+});
+
+describe('Ticked-to-sequence collectors', () => {
+  it('collects scalar symbols into one visible sequence', () => {
+    const result = TickedSymbolsToSequence.evaluate(
+      { in: { type: 'symbol', value: 'Y' }, clock: { type: 'bits', value: [1] } },
+      { collected: 'KE', count: 2 },
+    );
+
+    expect(result.out).toEqual({ type: 'symbol', value: 'KEY' });
+  });
+
+  it('advances the symbol collector only on active clock pulses', () => {
+    const held = TickedSymbolsToSequence.advance(
+      { collected: 'KE', count: 2 },
+      0,
+      { in: { type: 'symbol', value: 'Y' }, clock: { type: 'bits', value: [0] } },
+    );
+    const advanced = TickedSymbolsToSequence.advance(
+      { collected: 'KE', count: 2 },
+      0,
+      { in: { type: 'symbol', value: 'Y' }, clock: { type: 'bits', value: [1] } },
+    );
+
+    expect(held).toEqual({ collected: 'KE', count: 2 });
+    expect(advanced).toEqual({ collected: 'KEY', count: 3 });
+  });
+
+  it('collects scalar bit words into one visible bit sequence', () => {
+    const result = TickedBitsToSequence.evaluate(
+      { in: { type: 'bits', value: [1, 0, 1, 1] }, clock: { type: 'bits', value: [1] } },
+      { collected: [0, 0, 1, 1], count: 4 },
+    );
+
+    expect(result.out).toEqual({ type: 'bits', value: [0, 0, 1, 1, 1, 0, 1, 1] });
+  });
+
+  it('advances the bit collector by appending the current scalar word', () => {
+    const advanced = TickedBitsToSequence.advance(
+      { collected: [0, 0, 1, 1], count: 4 },
+      0,
+      { in: { type: 'bits', value: [1, 0, 1, 1] }, clock: { type: 'bits', value: [1] } },
+    );
+
+    expect(advanced).toEqual({
+      collected: [0, 0, 1, 1, 1, 0, 1, 1],
+      count: 8,
+    });
   });
 });
 

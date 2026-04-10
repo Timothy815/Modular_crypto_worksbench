@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { AsciiSource } from './modules/ascii-source';
 import { AsciiSequenceInput } from './modules/ascii-sequence-input';
 import { AsciiSequenceToTicked } from './modules/ascii-sequence-to-ticked';
+import { TickedBitsToSequence } from './modules/ticked-bits-to-sequence';
+import { TickedSymbolsToSequence } from './modules/ticked-symbols-to-sequence';
 import { AddMod } from './modules/add-mod';
 import { AND } from './modules/and';
 import { AtLeast } from './modules/at-least';
@@ -98,6 +100,8 @@ const registry: ModuleRegistry = {
   [AsciiSource.id]: AsciiSource,
   [AsciiSequenceInput.id]: AsciiSequenceInput,
   [AsciiSequenceToTicked.id]: AsciiSequenceToTicked,
+  [TickedSymbolsToSequence.id]: TickedSymbolsToSequence,
+  [TickedBitsToSequence.id]: TickedBitsToSequence,
   [BaudotSource.id]: BaudotSource,
   [HexSource.id]: HexSource,
   [HexSequenceInput.id]: HexSequenceInput,

@@ -10,6 +10,7 @@ import {
   type TickedExecutionResult,
   isStatefulModule,
   isTickSliceable,
+  usesClockAsInput,
 } from './types';
 import { validateProject } from './validation';
 import {
@@ -92,7 +93,12 @@ function buildTopologicalOrder(project: Project, registry: ModuleRegistry): stri
   for (const connection of project.connections) {
     const targetInstance = project.modules.find((moduleInstance) => moduleInstance.id === connection.to.moduleId);
     const targetDef = targetInstance ? registry[targetInstance.defId] : null;
-    if (connection.to.port === CLOCK_PORT && targetDef && isStatefulModule(targetDef)) {
+    if (
+      connection.to.port === CLOCK_PORT &&
+      targetDef &&
+      isStatefulModule(targetDef) &&
+      !usesClockAsInput(targetDef)
+    ) {
       continue;
     }
 
@@ -150,7 +156,12 @@ function collectInputs(
 
     const targetInstance = project.modules.find((moduleInstance) => moduleInstance.id === connection.to.moduleId);
     const targetDef = targetInstance ? registry[targetInstance.defId] : null;
-    if (connection.to.port === CLOCK_PORT && targetDef && isStatefulModule(targetDef)) {
+    if (
+      connection.to.port === CLOCK_PORT &&
+      targetDef &&
+      isStatefulModule(targetDef) &&
+      !usesClockAsInput(targetDef)
+    ) {
       continue;
     }
 
@@ -576,6 +587,7 @@ function executeTickedGraph(
 ): ExecutionResult {
   const order = buildTopologicalOrder(project, registry);
   const outputsByModuleId: Record<string, ModuleOutputs> = {};
+  const inputsByModuleId: Record<string, ModuleInputs> = {};
   const trace: ExecutionTraceEntry[] = [];
   const analysisTrace: ExecutionTraceEntry[] = [];
   const instancesById = new Map(
@@ -598,6 +610,7 @@ function executeTickedGraph(
     }
 
     const inputs = collectInputs(moduleId, project, registry, outputsByModuleId, inputOverrides);
+    inputsByModuleId[moduleId] = inputs;
     const currentParams = runtimeState.paramsByModuleId[moduleId] ?? {};
     const effectiveParams = resolveLinkedRotorParams(
       def,
@@ -664,6 +677,7 @@ function executeTickedGraph(
         runtimeState.paramsByModuleId[moduleInstance.id] = def.advance(
           runtimeState.paramsByModuleId[moduleInstance.id],
           tick,
+          inputsByModuleId[moduleInstance.id],
         );
       }
     }

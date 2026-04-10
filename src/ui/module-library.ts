@@ -380,6 +380,20 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this to bridge an explicit whole bit or hex-authored sequence into one-word-per-tick workflows such as repeated-byte XOR or block stepping.',
     searchTerms: ['bits sequence to ticked', 'bit stream bridge', 'word per tick', 'hex sequence bridge', 'sequence to ticked'],
   },
+  TickedSymbolsToSequence: {
+    sectionId: 'bridges',
+    sortOrder: 45,
+    purpose: 'Collects one scalar symbol per tick back into a whole visible symbol sequence.',
+    detail: 'Use this to re-materialize a ticked symbol stream as one ordered sequence for downstream sequence-aware modules and comparisons.',
+    searchTerms: ['ticked symbols to sequence', 'collect symbols', 'record stream', 'sequence collector', 'symbol collector'],
+  },
+  TickedBitsToSequence: {
+    sectionId: 'bridges',
+    sortOrder: 50,
+    purpose: 'Collects one scalar bit word per tick back into a whole visible bit sequence.',
+    detail: 'Use this to re-materialize a ticked bit stream or word stream as one ordered bit sequence.',
+    searchTerms: ['ticked bits to sequence', 'collect bits', 'record bit stream', 'sequence collector', 'bit collector'],
+  },
   BitShifter: {
     sectionId: 'word-diffusion',
     sortOrder: 20,
