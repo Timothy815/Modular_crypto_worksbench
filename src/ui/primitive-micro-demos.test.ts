@@ -34,6 +34,8 @@ describe('primitive micro demos', () => {
       'BitsToAscii',
       'BitsToHex',
       'AsciiToHex',
+      'SymbolToBits',
+      'BitsToSymbol',
       'HexToAscii',
       'TickedSymbolsToSequence',
       'TickedBitsToSequence',
@@ -89,6 +91,12 @@ describe('primitive micro demos', () => {
     );
     expect(getPrimitiveMicroDemo('AsciiToHex')?.name).toBe(
       'ASCII To Hex Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('SymbolToBits')?.name).toBe(
+      'Symbol To Bits Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('BitsToSymbol')?.name).toBe(
+      'Bits To Symbol Micro Demo',
     );
     expect(getPrimitiveMicroDemo('HexToAscii')?.name).toBe(
       'Hex To ASCII Micro Demo',
@@ -216,6 +224,24 @@ describe('primitive micro demos', () => {
       'AsciiToHex',
       'AsciiSequenceInput',
       'HexOutput',
+    ]);
+  });
+
+  it('keeps the symbol-to-bits scalar bridge honest about direct alphabet encoding', () => {
+    const bridge = getPrimitiveMicroDemo('SymbolToBits');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'SymbolToBits',
+      'TextInput',
+      'BitOutput',
+    ]);
+  });
+
+  it('keeps the bits-to-symbol scalar bridge honest about direct alphabet decoding', () => {
+    const bridge = getPrimitiveMicroDemo('BitsToSymbol');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'BitsToSymbol',
+      'BitSource',
+      'TextOutput',
     ]);
   });
 

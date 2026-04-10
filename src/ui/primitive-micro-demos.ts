@@ -962,6 +962,64 @@ const ASCII_TO_HEX_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const SYMBOL_TO_BITS_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'SymbolToBits',
+  name: 'Symbol To Bits Micro Demo',
+  summary: 'Minimal visible scalar bridge: one letter symbol becomes one 5-bit word using the built-in alphabet mapping.',
+  pipeline: 'TextInput -> SymbolToBits -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'bridge', defId: 'SymbolToBits', params: {} },
+        { id: 'text', defId: 'TextInput', params: { value: 'K' } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'bridge', port: 'in' } },
+        { from: { moduleId: 'bridge', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        bridge: { x: 420, y: 176 },
+        text: { x: 120, y: 176 },
+        out: { x: 720, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const BITS_TO_SYMBOL_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'BitsToSymbol',
+  name: 'Bits To Symbol Micro Demo',
+  summary: 'Minimal visible scalar bridge: one 5-bit word becomes one letter symbol using the built-in alphabet mapping.',
+  pipeline: 'BitSource -> BitsToSymbol -> TextOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'bridge', defId: 'BitsToSymbol', params: {} },
+        { id: 'bits', defId: 'BitSource', params: { stream: [0, 1, 0, 1, 0] } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'bits', port: 'out' }, to: { moduleId: 'bridge', port: 'in' } },
+        { from: { moduleId: 'bridge', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        bridge: { x: 420, y: 176 },
+        bits: { x: 120, y: 176 },
+        out: { x: 720, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const HEX_TO_ASCII_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'HexToAscii',
   name: 'Hex To ASCII Micro Demo',
@@ -1360,6 +1418,8 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   BITS_TO_ASCII_MICRO_DEMO,
   BITS_TO_HEX_MICRO_DEMO,
   ASCII_TO_HEX_MICRO_DEMO,
+  SYMBOL_TO_BITS_MICRO_DEMO,
+  BITS_TO_SYMBOL_MICRO_DEMO,
   HEX_TO_ASCII_MICRO_DEMO,
   TICKED_SYMBOLS_TO_SEQUENCE_MICRO_DEMO,
   TICKED_BITS_TO_SEQUENCE_MICRO_DEMO,
