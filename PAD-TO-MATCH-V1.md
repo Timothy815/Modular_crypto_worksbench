@@ -2,7 +2,7 @@
 
 Last updated: April 10, 2026
 
-Status: Draft
+Status: Shipped on `main`.
 
 ## Purpose
 

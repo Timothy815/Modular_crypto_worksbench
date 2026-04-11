@@ -511,6 +511,17 @@ Current `main` now also includes the first reducer-maintenance slice:
 - extracted pure workspace history/versioning helpers into `src/ui/workspace-state-support.ts`
 - reduced inline snapshot/versioning responsibility inside `src/ui/store.ts`
 
+The following contracts were confirmed shipped on `main` during an April 2026 documentation audit (code existed but status lines had not been updated):
+- `AUTHORING-FEEDBACK-FAST-PASS-V1.md` — wire domain coloring, port compatibility highlight during drag, inline module rename via double-click
+- `CANVAS-QUICK-ADD-V1.md` — double-click empty canvas to search and place a module at that position
+- `WORKSPACE-COMPARISON-ERGONOMICS-V1.md` — compare current workspace to a saved version with added/unchanged visual overlays
+- `MATCH-LENGTH-MISMATCH-HELPERS-V1.md` — family contract for pad/repeat/truncate-to-match helpers
+- `PAD-TO-MATCH-V1.md` — pad bits/symbols to match a reference signal's length
+- `REPEAT-TO-MATCH-V1.md` — repeat bits/symbols to match a reference signal's length
+- `TRUNCATE-TO-MATCH-V1.md` — truncate bits/symbols to match a reference signal's length
+- `PIPELINE-AUTHORING-WAYFINDING-V1.md` — typicalPath wayfinding language on module families in the inspector and palette
+- `STRUCTURAL-AUTOWIRE-MACROS-V1.md` — auto-wire selected clusters by matching ports, left-to-right, or top-to-bottom
+
 The next recommended builder-power follow-on is now shipped:
 - `CLUSTER-BOUNDARY-PORT-AUTHORING-V1.md`
 - explicit include/exclude control over inferred composite boundary ports during capture
