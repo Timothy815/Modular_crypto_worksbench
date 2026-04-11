@@ -67,6 +67,7 @@ import { SymbolWindow } from './symbol-window';
 import { RepeatSymbolToLength } from './repeat-symbol-to-length';
 import { RepeatSymbolToMatch } from './repeat-symbol-to-match';
 import { TruncateSymbolSequence } from './truncate-symbol-sequence';
+import { TruncateSymbolToMatch } from './truncate-symbol-to-match';
 import { SymbolSequenceToTicked } from './symbol-sequence-to-ticked';
 import { BitsSequenceToTicked } from './bits-sequence-to-ticked';
 import { BitShifter } from './bit-shifter';
@@ -81,6 +82,7 @@ import { RepeatBitsToLength } from './repeat-bits-to-length';
 import { RepeatBitsToMatch } from './repeat-bits-to-match';
 import { BroadcastBits } from './broadcast-bits';
 import { TruncateBitsSequence } from './truncate-bits-sequence';
+import { TruncateBitsToMatch } from './truncate-bits-to-match';
 import { PadBitsSequence } from './pad-bits-sequence';
 import { LFSR } from './lfsr';
 import { SBox } from './s-box';
@@ -153,6 +155,7 @@ export {
   RepeatSymbolToLength,
   RepeatSymbolToMatch,
   TruncateSymbolSequence,
+  TruncateSymbolToMatch,
   SymbolSequenceToTicked,
   BitsSequenceToTicked,
   BitShifter,
@@ -167,6 +170,7 @@ export {
   RepeatBitsToMatch,
   BroadcastBits,
   TruncateBitsSequence,
+  TruncateBitsToMatch,
   PadBitsSequence,
   LFSR,
   SBox,
@@ -240,6 +244,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [RepeatSymbolToLength.id]: RepeatSymbolToLength,
   [RepeatSymbolToMatch.id]: RepeatSymbolToMatch,
   [TruncateSymbolSequence.id]: TruncateSymbolSequence,
+  [TruncateSymbolToMatch.id]: TruncateSymbolToMatch,
   [SymbolSequenceToTicked.id]: SymbolSequenceToTicked,
   [BitsSequenceToTicked.id]: BitsSequenceToTicked,
   [BitShifter.id]: BitShifter,
@@ -254,6 +259,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [RepeatBitsToMatch.id]: RepeatBitsToMatch,
   [BroadcastBits.id]: BroadcastBits,
   [TruncateBitsSequence.id]: TruncateBitsSequence,
+  [TruncateBitsToMatch.id]: TruncateBitsToMatch,
   [PadBitsSequence.id]: PadBitsSequence,
   [LFSR.id]: LFSR,
   [SBox.id]: SBox,

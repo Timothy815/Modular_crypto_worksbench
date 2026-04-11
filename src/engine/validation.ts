@@ -44,7 +44,9 @@ import { parsePolluxAlphabet, validatePolluxFractionationParam } from './modules
 import { validateRepeatBitsToLengthParam } from './modules/repeat-bits-to-length';
 import { validateRepeatSymbolToLengthParam } from './modules/repeat-symbol-to-length';
 import { validateTruncateBitsSequenceParam } from './modules/truncate-bits-sequence';
+import { validateTruncateBitsToMatchParam } from './modules/truncate-bits-to-match';
 import { validateTruncateSymbolSequenceParam } from './modules/truncate-symbol-sequence';
+import { validateTruncateSymbolToMatchParam } from './modules/truncate-symbol-to-match';
 import { isBypassEligibleDefinition } from './bypass';
 import {
   validateProtocolMaterialParam,
@@ -265,12 +267,20 @@ function getModuleSpecificParamMessage(
     return validateTruncateSymbolSequenceParam(field.key, value);
   }
 
+  if (def.id === 'TruncateSymbolToMatch') {
+    return validateTruncateSymbolToMatchParam(field.key, value);
+  }
+
   if (def.id === 'BroadcastBits') {
     return validateBroadcastBitsParam(field.key, value);
   }
 
   if (def.id === 'TruncateBitsSequence') {
     return validateTruncateBitsSequenceParam(field.key, value);
+  }
+
+  if (def.id === 'TruncateBitsToMatch') {
+    return validateTruncateBitsToMatchParam(field.key, value);
   }
 
   if (def.id === 'PadBitsSequence') {

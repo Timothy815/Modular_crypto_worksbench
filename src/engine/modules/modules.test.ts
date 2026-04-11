@@ -80,6 +80,7 @@ import { SymbolWindow } from './symbol-window';
 import { RepeatSymbolToLength } from './repeat-symbol-to-length';
 import { RepeatSymbolToMatch } from './repeat-symbol-to-match';
 import { TruncateSymbolSequence } from './truncate-symbol-sequence';
+import { TruncateSymbolToMatch } from './truncate-symbol-to-match';
 import { SymbolSequenceInput } from './symbol-sequence-input';
 import { SymbolSequenceToTicked } from './symbol-sequence-to-ticked';
 import { BitsSequenceToTicked } from './bits-sequence-to-ticked';
@@ -95,6 +96,7 @@ import { RepeatBitsToLength } from './repeat-bits-to-length';
 import { RepeatBitsToMatch } from './repeat-bits-to-match';
 import { BroadcastBits } from './broadcast-bits';
 import { TruncateBitsSequence } from './truncate-bits-sequence';
+import { TruncateBitsToMatch } from './truncate-bits-to-match';
 import { PadBitsSequence } from './pad-bits-sequence';
 import { GreaterThan } from './greater-than';
 import { ModExp } from './mod-exp';
@@ -371,6 +373,41 @@ describe('TruncateSymbolSequence', () => {
   });
 });
 
+describe('TruncateSymbolToMatch', () => {
+  it('keeps the left side when the input is longer than the reference', () => {
+    const result = TruncateSymbolToMatch.evaluate(
+      {
+        in: { type: 'symbol', value: 'HELLOWORLD' },
+        reference: { type: 'symbol', value: 'KEY' },
+      },
+      { side: 'left' },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'HEL' });
+  });
+
+  it('keeps the right side when requested', () => {
+    const result = TruncateSymbolToMatch.evaluate(
+      {
+        in: { type: 'symbol', value: 'HELLOWORLD' },
+        reference: { type: 'symbol', value: 'KEY' },
+      },
+      { side: 'right' },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'RLD' });
+  });
+
+  it('keeps the input unchanged when it is already shorter than the reference', () => {
+    const result = TruncateSymbolToMatch.evaluate(
+      {
+        in: { type: 'symbol', value: 'KEY' },
+        reference: { type: 'symbol', value: 'HELLOWORLD' },
+      },
+      { side: 'left' },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'KEY' });
+  });
+});
+
 describe('Symbol sequence foundation', () => {
   it('emits a whole symbol sequence explicitly', () => {
     const result = SymbolSequenceInput.evaluate({}, { value: 'KEY' });
@@ -565,6 +602,41 @@ describe('TruncateBitsSequence', () => {
       { targetLength: 4, side: 'right' },
     );
     expect(result.out).toEqual({ type: 'bits', value: [1, 1, 0, 0] });
+  });
+});
+
+describe('TruncateBitsToMatch', () => {
+  it('keeps the left side when the input is longer than the reference', () => {
+    const result = TruncateBitsToMatch.evaluate(
+      {
+        in: { type: 'bits', value: [1, 0, 1, 1, 0, 0, 1, 1] },
+        reference: { type: 'bits', value: [0, 0, 0, 0] },
+      },
+      { side: 'left' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1, 1] });
+  });
+
+  it('keeps the right side when requested', () => {
+    const result = TruncateBitsToMatch.evaluate(
+      {
+        in: { type: 'bits', value: [1, 0, 1, 1, 0, 0, 1, 1] },
+        reference: { type: 'bits', value: [0, 0, 0, 0] },
+      },
+      { side: 'right' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [0, 0, 1, 1] });
+  });
+
+  it('keeps the input unchanged when it is already shorter than the reference', () => {
+    const result = TruncateBitsToMatch.evaluate(
+      {
+        in: { type: 'bits', value: [1, 0, 1] },
+        reference: { type: 'bits', value: [0, 0, 0, 0, 0, 0] },
+      },
+      { side: 'left' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1] });
   });
 });
 

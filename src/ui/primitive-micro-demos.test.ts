@@ -28,6 +28,7 @@ describe('primitive micro demos', () => {
       'RepeatSymbolToLength',
       'RepeatSymbolToMatch',
       'TruncateSymbolSequence',
+      'TruncateSymbolToMatch',
       'SymbolSequenceToTicked',
       'AsciiSequenceToTicked',
       'AsciiCharToBits',
@@ -44,6 +45,7 @@ describe('primitive micro demos', () => {
       'BitSequenceInput',
       'RepeatBitsToMatch',
       'TruncateBitsSequence',
+      'TruncateBitsToMatch',
       'PadBitsSequence',
       'HexSequenceInput',
       'HexDigitToBits',
@@ -76,6 +78,9 @@ describe('primitive micro demos', () => {
     );
     expect(getPrimitiveMicroDemo('TruncateSymbolSequence')?.name).toBe(
       'Truncate Symbol Sequence Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('TruncateSymbolToMatch')?.name).toBe(
+      'Truncate Symbol To Match Micro Demo',
     );
     expect(getPrimitiveMicroDemo('SymbolSequenceToTicked')?.name).toBe(
       'Symbol Sequence To Ticked Micro Demo',
@@ -120,6 +125,9 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('RepeatBitsToMatch')?.name).toBe('Repeat Bits To Match Micro Demo');
     expect(getPrimitiveMicroDemo('TruncateBitsSequence')?.name).toBe(
       'Truncate Bits Sequence Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('TruncateBitsToMatch')?.name).toBe(
+      'Truncate Bits To Match Micro Demo',
     );
     expect(getPrimitiveMicroDemo('PadBitsSequence')?.name).toBe(
       'Pad Bits Sequence Micro Demo',
@@ -184,6 +192,16 @@ describe('primitive micro demos', () => {
     const bridge = getPrimitiveMicroDemo('RepeatSymbolToMatch');
     expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
       'RepeatSymbolToMatch',
+      'SymbolSequenceInput',
+      'SymbolSequenceInput',
+      'TextOutput',
+    ]);
+  });
+
+  it('keeps the symbol truncate-to-match example honest about visible reference-driven truncation', () => {
+    const bridge = getPrimitiveMicroDemo('TruncateSymbolToMatch');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'TruncateSymbolToMatch',
       'SymbolSequenceInput',
       'SymbolSequenceInput',
       'TextOutput',
@@ -361,6 +379,16 @@ describe('primitive micro demos', () => {
     const bridge = getPrimitiveMicroDemo('RepeatBitsToMatch');
     expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
       'RepeatBitsToMatch',
+      'BitSequenceInput',
+      'BitSequenceInput',
+      'BitOutput',
+    ]);
+  });
+
+  it('keeps the bit truncate-to-match example honest about visible reference-driven truncation', () => {
+    const bridge = getPrimitiveMicroDemo('TruncateBitsToMatch');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'TruncateBitsToMatch',
       'BitSequenceInput',
       'BitSequenceInput',
       'BitOutput',

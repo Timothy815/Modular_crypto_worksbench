@@ -47,6 +47,7 @@ import { RotorReverse } from './modules/rotor-reverse';
 import { RepeatSymbolToLength } from './modules/repeat-symbol-to-length';
 import { RepeatSymbolToMatch } from './modules/repeat-symbol-to-match';
 import { TruncateSymbolSequence } from './modules/truncate-symbol-sequence';
+import { TruncateSymbolToMatch } from './modules/truncate-symbol-to-match';
 import { Salt } from './modules/salt';
 import { SBox } from './modules/s-box';
 import { SymbolPermutation } from './modules/symbol-permutation';
@@ -58,6 +59,7 @@ import { SymbolWindow } from './modules/symbol-window';
 import { SubMod } from './modules/sub-mod';
 import { TextInput } from './modules/text-input';
 import { TruncateBitsSequence } from './modules/truncate-bits-sequence';
+import { TruncateBitsToMatch } from './modules/truncate-bits-to-match';
 import { PadBitsSequence } from './modules/pad-bits-sequence';
 import { XOR } from './modules/xor';
 import type { ModuleRegistry, Project } from './types';
@@ -143,6 +145,7 @@ const registry: ModuleRegistry = {
   [RepeatSymbolToLength.id]: RepeatSymbolToLength,
   [RepeatSymbolToMatch.id]: RepeatSymbolToMatch,
   [TruncateSymbolSequence.id]: TruncateSymbolSequence,
+  [TruncateSymbolToMatch.id]: TruncateSymbolToMatch,
   [Plugboard.id]: Plugboard,
   [Reflector.id]: Reflector,
   [SBox.id]: SBox,
@@ -153,6 +156,7 @@ const registry: ModuleRegistry = {
   [BitPad.id]: BitPad,
   [BitUnpad.id]: BitUnpad,
   [TruncateBitsSequence.id]: TruncateBitsSequence,
+  [TruncateBitsToMatch.id]: TruncateBitsToMatch,
   [PadBitsSequence.id]: PadBitsSequence,
   [GreaterThan.id]: GreaterThan,
   [Demux.id]: Demux,
@@ -1234,6 +1238,37 @@ describe('validateProject', () => {
 
     expect(result.ok).toBe(false);
     expect(result.issues.some((issue) => issue.code === 'invalid-param-option' && issue.moduleId === 'truncate')).toBe(true);
+  });
+
+  it('rejects TruncateSymbolToMatch side outside the bounded choices', () => {
+    const project: Project = {
+      modules: [{ id: 'truncate', defId: 'TruncateSymbolToMatch', params: { side: 'middle' } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'invalid-param-option' && issue.moduleId === 'truncate')).toBe(true);
+  });
+
+  it('reports mismatched signal kinds on truncate-to-match reference inputs', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text', defId: 'Source', params: {} },
+        { id: 'message', defId: 'SymbolSequenceInput', params: { value: 'HELLO' } },
+        { id: 'truncate', defId: 'TruncateSymbolToMatch', params: { side: 'left' } },
+      ],
+      connections: [
+        { from: { moduleId: 'message', port: 'out' }, to: { moduleId: 'truncate', port: 'in' } },
+        { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'truncate', port: 'reference' } },
+      ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'signal-kind-mismatch')).toBe(true);
   });
 
   it('rejects PadBitsSequence padBit outside the bounded choices', () => {

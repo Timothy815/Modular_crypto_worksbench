@@ -394,6 +394,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when a message or key should visibly keep only the leftmost or rightmost symbols instead of relying on hidden mismatch handling.',
     searchTerms: ['truncate symbol', 'trim message', 'cut sequence', 'truncate key', 'symbol sequence'],
   },
+  TruncateSymbolToMatch: {
+    sectionId: 'symbol-domain',
+    sortOrder: 62,
+    purpose: 'Truncates a visible symbol sequence so it does not exceed a visible reference length.',
+    detail: 'Use this when another explicit symbol sequence should cap the output length without hiding which side is preserved. If the input is already shorter, the output stays unchanged.',
+    searchTerms: ['truncate symbol to match', 'truncate to reference', 'cap message', 'reference length', 'symbol sequence'],
+  },
   SymbolSequenceToTicked: {
     sectionId: 'bridges',
     sortOrder: 35,
@@ -512,6 +519,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Truncates a visible bit sequence to an explicit output length.',
     detail: 'Use this when a bit or hex-authored sequence should visibly keep only the leftmost or rightmost bits before the next stage.',
     searchTerms: ['truncate bits', 'trim bits', 'cut bit sequence', 'truncate hex buffer'],
+  },
+  TruncateBitsToMatch: {
+    sectionId: 'framing-routing',
+    sortOrder: 62,
+    purpose: 'Truncates a visible bit sequence so it does not exceed a visible reference width.',
+    detail: 'Use this when another explicit bit buffer should cap the output width without hidden clipping. Length is measured in bits, and shorter inputs stay unchanged.',
+    searchTerms: ['truncate bits to match', 'truncate to reference', 'cap buffer', 'reference width', 'bits'],
   },
   PadBitsSequence: {
     sectionId: 'framing-routing',

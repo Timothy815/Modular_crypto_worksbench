@@ -776,6 +776,38 @@ const TRUNCATE_SYMBOL_SEQUENCE_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const TRUNCATE_SYMBOL_TO_MATCH_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'TruncateSymbolToMatch',
+  name: 'Truncate Symbol To Match Micro Demo',
+  summary: 'Visible truncation ergonomics: one symbol sequence is clipped only when it exceeds a visible reference length.',
+  pipeline: 'SymbolSequenceInput(message) + SymbolSequenceInput(reference) -> TruncateSymbolToMatch -> TextOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'truncate', defId: 'TruncateSymbolToMatch', params: { side: 'left' } },
+        { id: 'message', defId: 'SymbolSequenceInput', params: { value: 'HELLOWORLD' } },
+        { id: 'reference', defId: 'SymbolSequenceInput', params: { value: 'KEY' } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'message', port: 'out' }, to: { moduleId: 'truncate', port: 'in' } },
+        { from: { moduleId: 'reference', port: 'out' }, to: { moduleId: 'truncate', port: 'reference' } },
+        { from: { moduleId: 'truncate', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        truncate: { x: 432, y: 176 },
+        message: { x: 72, y: 120 },
+        reference: { x: 72, y: 260 },
+        out: { x: 764, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const SYMBOL_SEQUENCE_TO_TICKED_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'SymbolSequenceToTicked',
   name: 'Symbol Sequence To Ticked Micro Demo',
@@ -1205,6 +1237,38 @@ const TRUNCATE_BITS_SEQUENCE_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const TRUNCATE_BITS_TO_MATCH_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'TruncateBitsToMatch',
+  name: 'Truncate Bits To Match Micro Demo',
+  summary: 'Visible truncation ergonomics: one bit buffer is clipped only when it exceeds a visible reference width.',
+  pipeline: 'BitSequenceInput(buffer) + BitSequenceInput(reference) -> TruncateBitsToMatch -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'truncate', defId: 'TruncateBitsToMatch', params: { side: 'right' } },
+        { id: 'buffer', defId: 'BitSequenceInput', params: { stream: [1, 0, 1, 1, 0, 0, 1, 1] } },
+        { id: 'reference', defId: 'BitSequenceInput', params: { stream: [0, 0, 0, 0] } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'buffer', port: 'out' }, to: { moduleId: 'truncate', port: 'in' } },
+        { from: { moduleId: 'reference', port: 'out' }, to: { moduleId: 'truncate', port: 'reference' } },
+        { from: { moduleId: 'truncate', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        truncate: { x: 436, y: 176 },
+        buffer: { x: 72, y: 120 },
+        reference: { x: 72, y: 260 },
+        out: { x: 756, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const PAD_BITS_SEQUENCE_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'PadBitsSequence',
   name: 'Pad Bits Sequence Micro Demo',
@@ -1505,6 +1569,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   REPEAT_SYMBOL_TO_LENGTH_MICRO_DEMO,
   REPEAT_SYMBOL_TO_MATCH_MICRO_DEMO,
   TRUNCATE_SYMBOL_SEQUENCE_MICRO_DEMO,
+  TRUNCATE_SYMBOL_TO_MATCH_MICRO_DEMO,
   SYMBOL_SEQUENCE_TO_TICKED_MICRO_DEMO,
   ASCII_SEQUENCE_TO_TICKED_MICRO_DEMO,
   ASCII_CHAR_TO_BITS_MICRO_DEMO,
@@ -1521,6 +1586,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   BIT_SEQUENCE_INPUT_MICRO_DEMO,
   REPEAT_BITS_TO_MATCH_MICRO_DEMO,
   TRUNCATE_BITS_SEQUENCE_MICRO_DEMO,
+  TRUNCATE_BITS_TO_MATCH_MICRO_DEMO,
   PAD_BITS_SEQUENCE_MICRO_DEMO,
   HEX_SEQUENCE_INPUT_MICRO_DEMO,
   HEX_DIGIT_TO_BITS_MICRO_DEMO,

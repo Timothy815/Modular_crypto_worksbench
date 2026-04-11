@@ -44,6 +44,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'SymbolWindow',
   'RepeatSymbolToLength',
   'TruncateSymbolSequence',
+  'TruncateSymbolToMatch',
   'SymbolToBits',
   'BitsToSymbol',
   'PolluxFractionation',
@@ -85,6 +86,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'RepeatBitsToMatch',
   'BroadcastBits',
   'TruncateBitsSequence',
+  'TruncateBitsToMatch',
   'PadBitsSequence',
   'BitShifter',
   'Clock',
@@ -182,6 +184,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'symbol_window',
   'repeat_symbol_to_length',
   'repeat_symbol_to_match',
+  'truncate_symbol_to_match',
   'truncate_symbol_sequence',
   'ascii_sequence_to_ticked_init',
   'ascii_sequence_to_ticked_eval',
@@ -228,6 +231,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'repeat_bits_to_length',
   'repeat_bits_to_match',
   'broadcast_bits',
+  'truncate_bits_to_match',
   'truncate_bits_sequence',
   'pad_bits_sequence',
   'bit_shifter_bits',
@@ -829,6 +833,20 @@ def repeat_symbol_to_match(signal, reference):
     return {"out": "".join(characters[index % len(characters)] for index in range(target_length))}
 
 
+def truncate_symbol_to_match(signal, reference, side):
+    symbol = str(signal)
+    characters = list(symbol)
+    reference_symbol = str(reference)
+    target_length = len(list(reference_symbol))
+    if side not in ("left", "right"):
+        raise ValueError("TruncateSymbolToMatch side must be left or right.")
+    if len(characters) <= target_length:
+        return {"out": symbol}
+    if side == "left":
+        return {"out": "".join(characters[:target_length])}
+    return {"out": "".join(characters[-target_length:])}
+
+
 def truncate_symbol_sequence(signal, target_length, side):
     symbol = str(signal)
     characters = list(symbol)
@@ -1185,6 +1203,19 @@ def repeat_bits_to_match(signal, reference):
     if len(bits) == 0:
         raise ValueError("RepeatBitsToMatch requires a non-empty input sequence to repeat")
     return {"out": [bits[index % len(bits)] for index in range(target_length)]}
+
+
+def truncate_bits_to_match(signal, reference, side):
+    bits = _expect_bits(signal, "TruncateBitsToMatch")
+    reference_bits = _expect_bits(reference, "TruncateBitsToMatch")
+    target_length = len(reference_bits)
+    if side not in ("left", "right"):
+        raise ValueError("TruncateBitsToMatch side must be left or right.")
+    if len(bits) <= target_length:
+        return {"out": bits.copy()}
+    if side == "left":
+        return {"out": bits[:target_length]}
+    return {"out": bits[-target_length:]}
 
 
 def broadcast_bits(signal, copies):
@@ -2235,6 +2266,8 @@ function buildModuleExpression(
       return `repeat_symbol_to_length(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetLength')})`;
     case 'RepeatSymbolToMatch':
       return `repeat_symbol_to_match(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'reference')})`;
+    case 'TruncateSymbolToMatch':
+      return `truncate_symbol_to_match(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'reference')}, ${expressionContext.getParamExpression(moduleInstance, def, 'side')})`;
     case 'TruncateSymbolSequence':
       return `truncate_symbol_sequence(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetLength')}, ${expressionContext.getParamExpression(moduleInstance, def, 'side')})`;
     case 'Reflector':
@@ -2325,6 +2358,8 @@ function buildModuleExpression(
       return `repeat_bits_to_match(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'reference')})`;
     case 'BroadcastBits':
       return `broadcast_bits(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'copies')})`;
+    case 'TruncateBitsToMatch':
+      return `truncate_bits_to_match(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'reference')}, ${expressionContext.getParamExpression(moduleInstance, def, 'side')})`;
     case 'TruncateBitsSequence':
       return `truncate_bits_sequence(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetLength')}, ${expressionContext.getParamExpression(moduleInstance, def, 'side')})`;
     case 'PadBitsSequence':
