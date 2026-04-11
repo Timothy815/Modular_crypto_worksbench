@@ -1,6 +1,6 @@
 # NODE-ROTATION-WIRE-LEGIBILITY-V1
 
-Status: Proposed
+Status: Shipped on `main`.
 Owner: Codex
 Last updated: April 3, 2026
 
