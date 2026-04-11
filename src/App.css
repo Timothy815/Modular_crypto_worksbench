@@ -5218,6 +5218,17 @@ body.canvas-resizing {
   font-family: var(--mono);
 }
 
+.param-input-number:not(:focus) {
+  cursor: ew-resize;
+}
+
+.param-input-scrubbing {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-strong)) !important;
+  outline: 1.5px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  outline-offset: -1px;
+  user-select: none;
+}
+
 .readonly-param-value {
   min-height: 2.75rem;
   padding: 10px 12px;

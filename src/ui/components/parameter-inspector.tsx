@@ -821,6 +821,43 @@ function InspectorSection({
   );
 }
 
+function ScrubNumberInput({
+  renderedValue,
+  onRawChange,
+}: {
+  renderedValue: string;
+  onRawChange: (raw: string) => void;
+}) {
+  const scrubRef = useRef<{ startX: number; startValue: number } | null>(null);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+
+  return (
+    <input
+      type="number"
+      className={isScrubbing ? 'param-input-number param-input-scrubbing' : 'param-input-number'}
+      value={renderedValue}
+      onChange={(e) => onRawChange(e.target.value)}
+      onPointerDown={(e) => {
+        if (e.button !== 0) return;
+        if (document.activeElement === e.currentTarget) return;
+        e.preventDefault();
+        const startValue = parseFloat(renderedValue);
+        e.currentTarget.setPointerCapture(e.pointerId);
+        scrubRef.current = { startX: e.clientX, startValue: isNaN(startValue) ? 0 : startValue };
+        setIsScrubbing(true);
+      }}
+      onPointerMove={(e) => {
+        if (!scrubRef.current) return;
+        const dx = e.clientX - scrubRef.current.startX;
+        const steps = Math.round(dx / 4);
+        onRawChange(String(scrubRef.current.startValue + steps));
+      }}
+      onPointerUp={() => { scrubRef.current = null; setIsScrubbing(false); }}
+      onPointerCancel={() => { scrubRef.current = null; setIsScrubbing(false); }}
+    />
+  );
+}
+
 export function ParameterInspector({
   execution,
   registry,
@@ -4643,18 +4680,31 @@ export function ParameterInspector({
                         Baseline: {formatParamValue(baselineValue, field)}
                       </span>
                     ) : null}
-                    <input
-                      type={field.kind === 'number' ? 'number' : 'text'}
-                      value={renderedValue}
-                      onChange={(event) => {
-                        const rawValue = event.target.value;
-                        onParamDraftChange(moduleInstance.id, field.key, rawValue);
-                        const parsed = parseParamValue(rawValue, field);
-                        if (parsed.ok) {
-                          onParamChange(moduleInstance.id, field.key, parsed.value);
-                        }
-                      }}
-                    />
+                    {field.kind === 'number' ? (
+                      <ScrubNumberInput
+                        renderedValue={renderedValue}
+                        onRawChange={(rawValue) => {
+                          onParamDraftChange(moduleInstance.id, field.key, rawValue);
+                          const parsed = parseParamValue(rawValue, field);
+                          if (parsed.ok) {
+                            onParamChange(moduleInstance.id, field.key, parsed.value);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={renderedValue}
+                        onChange={(event) => {
+                          const rawValue = event.target.value;
+                          onParamDraftChange(moduleInstance.id, field.key, rawValue);
+                          const parsed = parseParamValue(rawValue, field);
+                          if (parsed.ok) {
+                            onParamChange(moduleInstance.id, field.key, parsed.value);
+                          }
+                        }}
+                      />
+                    )}
                     {isHexSourceValueField ? (
                       <div className="param-stepper-row">
                         <button
