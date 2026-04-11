@@ -95,6 +95,11 @@ const WorkbenchProjectContext = lazy(() =>
     default: module.WorkbenchProjectContext,
   })),
 );
+const CanvasQuickAdd = lazy(() =>
+  import('./canvas-quick-add').then((module) => ({
+    default: module.CanvasQuickAdd,
+  })),
+);
 
 const NODE_WIDTH = CANVAS_NODE_WIDTH;
 const NODE_HEIGHT = CANVAS_NODE_HEIGHT;
@@ -516,6 +521,8 @@ interface WorkbenchPanelProps {
   onSetWireColorMode: (mode: WorkbenchWireColorMode) => void;
   onSetTutorialStep?: (stepIndex: number) => void;
   onSetTutorialNotesVisible?: (visible: boolean) => void;
+  onRenameModuleInstance: (moduleId: string, nextModuleId: string) => void;
+  onAddModule: (moduleDef: ModuleDefinition, position: { x: number; y: number }) => void;
   projects: DemoProject[];
 }
 
@@ -643,6 +650,8 @@ export function WorkbenchPanel({
   onSetWireColorMode,
   onSetTutorialStep,
   onSetTutorialNotesVisible,
+  onRenameModuleInstance,
+  onAddModule,
   projects,
 }: WorkbenchPanelProps) {
   const canvasSurfaceRef = useRef<HTMLDivElement | null>(null);
@@ -704,6 +713,8 @@ export function WorkbenchPanel({
     initialPosition: number;
     currentPosition: number;
   } | null>(null);
+  const [inlineRename, setInlineRename] = useState<{ moduleId: string; value: string } | null>(null);
+  const [quickAdd, setQuickAdd] = useState<{ canvasX: number; canvasY: number; clientX: number; clientY: number } | null>(null);
   const [pendingConnection, setPendingConnection] =
     useState<PendingConnection | null>(null);
   const [connectionFeedback, setConnectionFeedback] = useState<string | null>(null);
@@ -3055,6 +3066,7 @@ export function WorkbenchPanel({
             } as CSSProperties
           }
           onMouseDown={(event) => {
+            if (quickAdd) { setQuickAdd(null); }
             if (isCompositeEditor || pendingConnection || event.target !== event.currentTarget) {
               return;
             }
@@ -3076,6 +3088,13 @@ export function WorkbenchPanel({
               currentY: pointer.y,
               additive: event.shiftKey || event.metaKey || event.ctrlKey,
             });
+          }}
+          onDoubleClick={(event) => {
+            if (isCompositeEditor || event.target !== event.currentTarget) return;
+            const pointer = getCanvasPointerFromClient(event.clientX, event.clientY);
+            if (!pointer) return;
+            setSelectionBox(null);
+            setQuickAdd({ canvasX: pointer.x, canvasY: pointer.y, clientX: event.clientX, clientY: event.clientY });
           }}
         >
           {showFurniture && guideRails.map((guideRail) => {
@@ -3466,7 +3485,26 @@ export function WorkbenchPanel({
                       </span>
                     </div>
                   ) : null}
-                  <strong className="graph-node-title">{moduleInstance.id}</strong>
+                  {inlineRename?.moduleId === moduleInstance.id ? (
+                    <input
+                      className="graph-node-title-input"
+                      autoFocus
+                      value={inlineRename.value}
+                      onChange={(e) => setInlineRename({ moduleId: moduleInstance.id, value: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') { onRenameModuleInstance(moduleInstance.id, inlineRename.value); setInlineRename(null); }
+                        else if (e.key === 'Escape') setInlineRename(null);
+                      }}
+                      onBlur={() => { onRenameModuleInstance(moduleInstance.id, inlineRename?.value ?? moduleInstance.id); setInlineRename(null); }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <strong
+                      className="graph-node-title"
+                      onDoubleClick={isObservationMode ? undefined : (e) => { e.stopPropagation(); setInlineRename({ moduleId: moduleInstance.id, value: moduleInstance.id }); }}
+                    >{moduleInstance.id}</strong>
+                  )}
                   {moduleInstance.id === tutorialStep?.focusModuleId ? (
                     <span className="graph-node-tutorial-badge">Tutorial</span>
                   ) : null}
@@ -4103,6 +4141,20 @@ export function WorkbenchPanel({
           <strong>{validationIssues.length > 0 ? `${validationIssues.length} issues` : 'clean'}</strong>
         </div>
       </div>
+
+      {quickAdd ? (
+        <Suspense>
+          <CanvasQuickAdd
+            clientX={quickAdd.clientX}
+            clientY={quickAdd.clientY}
+            canvasX={quickAdd.canvasX}
+            canvasY={quickAdd.canvasY}
+            registry={registry}
+            onAdd={onAddModule}
+            onDismiss={() => setQuickAdd(null)}
+          />
+        </Suspense>
+      ) : null}
     </section>
   );
 }

@@ -4048,6 +4048,22 @@ body.canvas-resizing {
   text-wrap: pretty;
 }
 
+.graph-node-title-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0 3px;
+  background: var(--field-bg);
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  color: var(--ink-strong);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.26;
+  outline: none;
+  box-sizing: border-box;
+}
+
 .graph-node-meta-row {
   display: block;
   margin-bottom: 5px;
@@ -7001,4 +7017,68 @@ body.canvas-resizing {
 .randomness-repeat-grid {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   margin-top: 12px;
+}
+
+/* Canvas quick-add overlay */
+.canvas-quick-add {
+  position: fixed;
+  z-index: 1200;
+  width: 240px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
+  padding: 5px;
+  transform: translateY(-50%);
+}
+
+.canvas-quick-add-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 8px;
+  background: var(--field-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--ink);
+  font-size: 13px;
+  outline: none;
+}
+
+.canvas-quick-add-input:focus {
+  border-color: var(--accent);
+}
+
+.canvas-quick-add-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.canvas-quick-add-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.canvas-quick-add-item:hover {
+  background: var(--hover-bg);
+}
+
+.canvas-quick-add-name {
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.canvas-quick-add-id {
+  font-size: 11px;
+  color: var(--ink-secondary);
+  font-family: monospace;
+  flex-shrink: 0;
 }

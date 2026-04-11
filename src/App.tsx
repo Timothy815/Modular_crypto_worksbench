@@ -3097,6 +3097,16 @@ function MainApp() {
                 visible,
               })
             }
+            onRenameModuleInstance={(moduleId, nextModuleId) =>
+              isCompositeDrilldownActive
+                ? undefined
+                : dispatch({ type: 'renameModuleInstance', projectId: activeProjectDefinition.id, moduleId, nextModuleId })
+            }
+            onAddModule={(moduleDef, position) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({ type: 'addModule', projectId: activeProjectDefinition.id, moduleDef, position })
+            }
             projects={state.compositeEditor || isCompositeDrilldownActive ? [activeProjectDefinition] : availableProjects}
             isCompositeEditor={Boolean(state.compositeEditor)}
           />

@@ -255,7 +255,7 @@ export type UiAction =
     }
   | { type: 'removeGroupBox'; projectId: string; groupBoxId: string }
   | { type: 'setOverviewNavigatorVisible'; projectId: string; visible: boolean }
-  | { type: 'addModule'; projectId: string; moduleDef: ModuleDefinition }
+  | { type: 'addModule'; projectId: string; moduleDef: ModuleDefinition; position?: { x: number; y: number } }
   | {
       type: 'renameModuleInstance';
       projectId: string;
@@ -2813,7 +2813,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         },
       ];
 
-      const { x: newX, y: newY } = findNextModulePlacement(
+      const { x: newX, y: newY } = action.position ?? findNextModulePlacement(
         currentLayout,
         state.guideRailsByProject[action.projectId] ?? [],
         state.stageLabelsByProject[action.projectId] ?? [],
