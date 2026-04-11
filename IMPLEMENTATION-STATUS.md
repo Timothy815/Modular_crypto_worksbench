@@ -1303,7 +1303,8 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `REQUIRE-LENGTH-MATCH-WORKFLOW-POLISH-V1.md` | Shipped bounded strict-mismatch workflow polish via directional require-helper messages, Python parity, and paired strict-vs-repair primitive micro demos |
 | `PIPELINE-AUTHORING-WAYFINDING-V1.md` | Shipped bounded pipeline-language follow-on via optional `typicalPath` on role summaries, surfaced in inspector and palette help cards for bridges, mismatch helpers, collectors, and require helpers |
 | `REFERENCE-LENGTH-ERGONOMICS-V2.md` | Closed — Success Shape 1: remaining friction was graph-reading friction, not dataflow friction; native fanout plus stage group boxes already solve shared-reference layout; no anchor primitive added |
-| `INSPECTOR-STRUCTURED-EDITOR-EXTRACTION-V1.md` | Ready next bounded maintenance slice: extract the structured primitive editor family out of `parameter-inspector.tsx` without changing inspector behavior |
+| `INSPECTOR-STRUCTURED-EDITOR-EXTRACTION-V1.md` | Shipped on `main` — extracted the structured primitive editor family out of `parameter-inspector.tsx` without changing inspector behavior |
+| `INSPECTOR-ANALYSIS-AND-OUTPUT-EXTRACTION-V1.md` | Shipped on `main` — extracted output-summary, analyze-tab, and compare-tab rendering out of `parameter-inspector.tsx` into dedicated inspector components without changing behavior |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
 | `BRIDGE-ERGONOMICS-V1.md` | Shipped in `v1.31.0` — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |
