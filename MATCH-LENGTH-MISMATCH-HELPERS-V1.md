@@ -86,12 +86,13 @@ But the family naming and semantics should be locked before the line expands.
    - `in`
    - `reference`
 4. `reference` determines target length only.
-5. Output length must exactly equal `reference.length`, unless the helper is an explicit strict/error variant.
-6. Ordering must always be preserved.
-7. Existing operator modules must not silently adopt these policies.
-8. Validation must reject scalar/sequence mismatches and domain mismatches.
-9. Helpers must remain pure, deterministic, and exportable.
-10. Inspector language should be consistent across the family.
+5. For truncate-to-match helpers, output length equals `min(in.length, reference.length)`.
+6. For repeat-to-match and pad-to-match helpers, output length must exactly equal `reference.length`, unless the helper is an explicit strict/error variant.
+7. Ordering must always be preserved.
+8. Existing operator modules must not silently adopt these policies.
+9. Validation must reject scalar/sequence mismatches and domain mismatches.
+10. Helpers must remain pure, deterministic, and exportable.
+11. Inspector language should be consistent across the family.
 
 ## Policy Semantics
 
@@ -107,6 +108,7 @@ But the family naming and semantics should be locked before the line expands.
 - define preserved side explicitly:
   - left
   - right
+- output length equals `min(in.length, reference.length)`
 - if `in.length < reference.length`, output is the unchanged input (identity behavior)
 - output length equals reference length only when truncation is actually needed
 - users who need strict enforcement that lengths already match should use a later explicit strict/error helper such as `RequireSymbolLengthMatch` or `RequireBitsLengthMatch`

@@ -58,6 +58,11 @@ This is the product boundary:
 - acceptable: `TruncateBitsToMatch(side=left, reference=block)`
 - unacceptable: `XOR` or `Permutation` silently clipping the longer input
 
+Important semantic note:
+- this helper does not guarantee equality with the reference in all cases
+- it guarantees that output length will not exceed reference length
+- when the input is already shorter than the reference, the output remains unchanged
+
 ## V1 Product Shape
 
 Bounded first-implementation modules:
@@ -85,14 +90,15 @@ Interpretation:
 1. Truncation must remain graph-visible.
 2. Output ordering must be preserved.
 3. The preserved side must remain explicit through the `side` param.
-4. If `in.length > reference.length`, output length must exactly equal reference length.
-5. If `in.length === reference.length`, output must equal `in`.
-6. If `in.length < reference.length`, output must equal `in` unchanged.
-7. Empty reference must yield empty output.
-8. `reference` must be a sequence input, not a scalar tick item.
-9. `reference` must share the same signal domain as `in`; cross-domain length derivation is out of scope for V1.
-10. Existing operator modules such as `XOR`, `AND`, `OR`, `AddMod`, `Permutation`, and `SBox` must not silently adopt this behavior.
-11. V1 must be pure, deterministic, and Python-exportable.
+4. Output length equals `min(in.length, reference.length)`.
+5. If `in.length > reference.length`, output length must exactly equal reference length.
+6. If `in.length === reference.length`, output must equal `in`.
+7. If `in.length < reference.length`, output must equal `in` unchanged.
+8. Empty reference must yield empty output regardless of `side`.
+9. `reference` must be a sequence input, not a scalar tick item.
+10. `reference` must share the same signal domain as `in`; cross-domain length derivation is out of scope for V1.
+11. Existing operator modules such as `XOR`, `AND`, `OR`, `AddMod`, `Permutation`, and `SBox` must not silently adopt this behavior.
+12. V1 must be pure, deterministic, and Python-exportable.
 
 ## Domain Rules
 
@@ -120,6 +126,7 @@ Examples:
 - `reference`: `bits`, `kind: 'sequence'`
 - `out`: `bits`, `kind: 'sequence'`
 - `side`: `left | right`
+- length is measured in bits, not word groups
 
 Examples:
 - input: `[1,0,1,1,0,0,1,1]`
@@ -161,6 +168,7 @@ Recommended inspector language:
 Recommended preview behavior:
 - show the resulting truncated output when both inputs are available
 - make it obvious that the reference is contributing length only
+- when `in.length < reference.length`, display a notice that no truncation was applied and the output equals the input, not the reference length
 - describe resolved length in domain-native units:
   - character count for symbol sequences
   - bit count for bit sequences
@@ -191,7 +199,7 @@ It should feel like the reference-driven truncation companion to:
 
 - `SymbolSequenceInput(message) -> TruncateSymbolToMatch(reference=key, side=left) -> TextOutput`
 - `BitSequenceInput(buffer) -> TruncateBitsToMatch(reference=block, side=right) -> BitOutput`
-- `AsciiSequenceInput(message) -> TruncateSymbolToMatch(reference=key, side=left) -> AsciiSequenceToTicked -> AsciiCharToBits`
+- `BitSequenceInput(longBuffer) -> TruncateBitsToMatch(reference=block, side=left) -> BitsSequenceToTicked(wordWidth=8) -> XOR(b=blockWord)`
 
 ## Explicit Non-Goals
 
