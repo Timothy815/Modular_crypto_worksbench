@@ -22,7 +22,7 @@ MCW now has two mismatch-helper styles:
   - `TruncateSymbolSequence`
   - `TruncateBitsSequence`
   - `PadBitsSequence`
-- upcoming reference-driven helpers
+- shipped reference-driven helpers
   - `RepeatSymbolToMatch`
   - `RepeatBitsToMatch`
 

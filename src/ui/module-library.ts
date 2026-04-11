@@ -496,7 +496,7 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     sectionId: 'framing-routing',
     sortOrder: 57,
     purpose: 'Repeats a visible bit pattern until it matches a visible reference buffer width.',
-    detail: 'Use this for repeated-key XOR or repeated masks when another explicit bit buffer should define the output width without hidden operator behavior.',
+    detail: 'Use this for repeated-key XOR or repeated masks when another explicit bit buffer should define the output width without hidden operator behavior. Length is measured in bits, not word groups.',
     searchTerms: ['repeat bits to match', 'mask repeat', 'reference width', 'repeated key xor', 'bits', 'framing'],
   },
   BroadcastBits: {
