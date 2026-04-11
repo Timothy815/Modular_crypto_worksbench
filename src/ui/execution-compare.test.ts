@@ -2,8 +2,28 @@ import { describe, expect, it } from 'vitest';
 
 import { executeProject } from '../engine/executor';
 import { V1_REGISTRY } from '../engine/modules';
-import type { Project } from '../engine/types';
-import { compareExecutionResults, findFirstTraceDivergence } from './execution-compare';
+import type { ExecutionResult, Project, TickedExecutionResult } from '../engine/types';
+import { collectTickedOutput, compareExecutionResults, findFirstTraceDivergence } from './execution-compare';
+
+function createTick(
+  signalValue: string,
+  defId = 'HexOutput',
+  moduleId = 'out',
+): ExecutionResult {
+  return {
+    order: [moduleId],
+    outputsByModuleId: {},
+    analysisTrace: [],
+    trace: [
+      {
+        moduleId,
+        defId,
+        inputs: { in: { type: 'symbol', value: signalValue } },
+        outputs: {},
+      },
+    ],
+  };
+}
 
 describe('execution comparison helpers', () => {
   const baseProject: Project = {
@@ -90,5 +110,34 @@ describe('execution comparison helpers', () => {
     });
     expect(divergence?.baseline?.moduleId).toBe('key');
     expect(divergence?.variant?.moduleId).toBe('encode');
+  });
+
+  it('collects only the per-tick delta when a sink value is already cumulative', () => {
+    const result: TickedExecutionResult = {
+      ticks: [
+        createTick('0A'),
+        createTick('0A11'),
+        createTick('0A110D'),
+        createTick('0A110D0A'),
+        createTick('0A110D0A06'),
+        createTick('0A110D0A0612'),
+      ],
+      paramsByModuleByTick: {},
+    };
+
+    expect(collectTickedOutput(result)).toBe('0A110D0A0612');
+  });
+
+  it('keeps concatenating full sink values when the sink is genuinely per-tick', () => {
+    const result: TickedExecutionResult = {
+      ticks: [
+        createTick('K', 'Output'),
+        createTick('E', 'Output'),
+        createTick('Y', 'Output'),
+      ],
+      paramsByModuleByTick: {},
+    };
+
+    expect(collectTickedOutput(result)).toBe('KEY');
   });
 });

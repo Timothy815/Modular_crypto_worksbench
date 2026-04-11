@@ -88,18 +88,38 @@ export function collectTickedOutput(
   result: TickedExecutionResult,
   targetSinkModuleId?: string,
 ): string {
-  return result.ticks
-    .map((tick) => {
-      const outputModule = getOutputTraceEntry(tick, targetSinkModuleId);
-      const signal = outputModule?.outputs.out ?? outputModule?.inputs.in ?? null;
+  let transcript = '';
+  let previousTickValue = '';
 
-      if (!signal) {
-        return '';
-      }
+  for (const tick of result.ticks) {
+    const outputModule = getOutputTraceEntry(tick, targetSinkModuleId);
+    const signal = outputModule?.outputs.out ?? outputModule?.inputs.in ?? null;
+    const currentTickValue =
+      signal == null
+        ? ''
+        : signal.type === 'symbol'
+          ? signal.value
+          : signal.value.join('');
 
-      return signal.type === 'symbol' ? signal.value : signal.value.join('');
-    })
-    .join('');
+    if (currentTickValue.length === 0) {
+      previousTickValue = currentTickValue;
+      continue;
+    }
+
+    if (
+      previousTickValue.length > 0 &&
+      currentTickValue.length >= previousTickValue.length &&
+      currentTickValue.startsWith(previousTickValue)
+    ) {
+      transcript += currentTickValue.slice(previousTickValue.length);
+    } else {
+      transcript += currentTickValue;
+    }
+
+    previousTickValue = currentTickValue;
+  }
+
+  return transcript;
 }
 
 export function findFirstTickedDivergence(

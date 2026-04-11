@@ -3,7 +3,7 @@ import { isOutputSinkDefId } from '../engine/output-sinks';
 import { isStatefulModule, type ModuleRegistry, type Project, type ValidationIssue } from '../engine/types';
 import { validateProject } from '../engine/validation';
 import type { ExecutionComparison, TraceDivergence } from './execution-compare';
-import { compareExecutionResults, findFirstAnalysisTraceDivergence } from './execution-compare';
+import { collectTickedOutput, compareExecutionResults, findFirstAnalysisTraceDivergence } from './execution-compare';
 import type { ExecutionResult, ExecutionTraceEntry } from '../engine/types';
 import type { LearningSequenceMeta } from './learning-sequence';
 import type { WorkbenchPosition } from './workbench-document';
@@ -226,26 +226,6 @@ function compareTickedChallengeResults(
     outputsMatch: baselineOutput === variantOutput,
     firstDivergence,
   };
-}
-
-function collectTickedOutput(result: ReturnType<typeof executeTickedProject>): string {
-  return result.ticks
-    .map((tick) => {
-      const outputModule = tick.trace.find(
-        (entry) => isOutputSinkDefId(entry.defId),
-      );
-      const signal =
-        outputModule?.outputs.out ??
-        outputModule?.inputs.in ??
-        null;
-
-      if (!signal) {
-        return '';
-      }
-
-      return signal.type === 'symbol' ? signal.value : signal.value.join('');
-    })
-    .join('');
 }
 
 function hasExplicitTimeBehavior(project: Project, registry: ModuleRegistry): boolean {

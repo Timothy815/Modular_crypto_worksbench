@@ -4,7 +4,6 @@ import './App.css';
 import { isCompositeDefinition, type CompositeLibraryEntry } from './engine/composites';
 import { V1_REGISTRY } from './engine/modules';
 import type { ExecutionResult, ExecutionTraceEntry, TickedExecutionResult } from './engine/types';
-import { isOutputSinkDefId } from './engine/output-sinks';
 import { validateCompositeDef, validateProject } from './engine/validation';
 import {
   createCompositeFromSelection,
@@ -23,7 +22,7 @@ import {
 import { LazyPanelFallback } from './ui/components/lazy-panel-fallback';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
 import { demoProjects, getDefaultDemoProject, runDemoProject } from './ui/demo-projects';
-import { compareExecutionResults } from './ui/execution-compare';
+import { collectTickedOutput, compareExecutionResults } from './ui/execution-compare';
 import { createInstructorPilotUrl } from './ui/instructor-pilot-url';
 import { createUserManualUrl } from './ui/manual-url';
 import {
@@ -476,23 +475,7 @@ function MainApp() {
       )
     : null;
   const collectedOutput = tickedExecution
-    ? tickedExecution.ticks
-        .map((tick) => {
-          const outputModule = primaryOutputModuleId
-            ? activeProjectState.modules.find((m) => m.id === primaryOutputModuleId) ?? null
-            : activeProjectState.modules.find((m) => isOutputSinkDefId(m.defId)) ?? null;
-          if (!outputModule) return '';
-          const outputTraceEntry = tick.trace.find(
-            (entry) => entry.moduleId === outputModule.id,
-          );
-          const signal =
-            tick.outputsByModuleId[outputModule.id]?.out ??
-            outputTraceEntry?.inputs.in ??
-            null;
-          if (!signal) return '';
-          return signal.type === 'symbol' ? signal.value : signal.value.join('');
-        })
-        .join('')
+    ? collectTickedOutput(tickedExecution, primaryOutputModuleId ?? undefined)
     : null;
 
   const activeCompositeDrilldownInstance =
