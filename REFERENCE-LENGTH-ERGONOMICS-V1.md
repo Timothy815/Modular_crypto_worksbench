@@ -2,13 +2,17 @@
 
 Last updated: April 11, 2026
 
-Status: Draft
+Status: Superseded by `REFERENCE-LENGTH-ERGONOMICS-V2`
 
 ## Purpose
 
 Define the next bounded ergonomics slice for **explicit reference-driven length bookkeeping**.
 
 This contract is about making sequence normalization and alignment easier to author without hiding the chosen policy.
+
+Current note:
+- this V1 framing is retained for history
+- active decision work should use `REFERENCE-LENGTH-ERGONOMICS-V2`
 
 It does not replace the existing mismatch-helper family.
 It builds on top of it.
