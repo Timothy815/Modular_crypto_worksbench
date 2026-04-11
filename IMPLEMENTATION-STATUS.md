@@ -1259,6 +1259,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `TRUNCATE-TO-MATCH-V1.md` | Shipped bounded truncation follow-on via `TruncateSymbolToMatch`, `TruncateBitsToMatch`, Python export support, and focused primitive micro demos |
 | `PAD-TO-MATCH-V1.md` | Shipped bounded padding follow-on via `PadSymbolToMatch`, `PadBitsToMatch`, Python export support, and focused primitive micro demos |
 | `REQUIRE-LENGTH-MATCH-V1.md` | Shipped bounded strict-companion slice via `RequireSymbolLengthMatch`, `RequireBitsLengthMatch`, Python export parity, and focused primitive micro demos so sequence alignment can fail fast visibly instead of relying on downstream width errors |
+| `PIPELINE-MICRO-DEMOS-V1.md` | Draft bounded end-to-end composition-demo slice for sequence, bridge, and mismatch workflows so users can see honest working pipelines rather than only isolated primitive behavior |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
 | `BRIDGE-ERGONOMICS-V1.md` | Shipped in `v1.31.0` — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |
