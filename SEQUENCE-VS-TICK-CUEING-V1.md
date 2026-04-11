@@ -15,6 +15,10 @@ explicit at the exact surfaces where users currently get confused.
 This slice is not about changing engine behavior.
 It is about making the existing sequence model legible in the inspector, tick bar, and node-level runtime presentation.
 
+Implementation note:
+- this contract should be implemented together with `PIPELINE-ROLE-LANGUAGE-V1`, not as a separate standalone pass
+- the cue grammar here should become the temporal-shape subsection of that broader role-language pass
+
 ## Product Problem
 
 MCW now has the right architecture:
@@ -163,6 +167,11 @@ Do not invent multiple competing phrases for the same concept.
 - the UI must not imply that a collector output is a fresh scalar on each tick
 - use words such as `collected so far` or `running collected output`
 
+6. **Visual budget is strict**
+- node-card cueing should be limited to modules where temporal shape changes or accumulation semantics are easy to misread
+- in practice that means bridges and collectors first
+- ordinary operators such as `XOR` should not gain permanent temporal-shape badges in V1
+
 ## Recommended V1 Cue Grammar
 
 The preferred short-form language is:
@@ -182,6 +191,7 @@ The preferred short-form language is:
   - `4-bit word per tick`
 
 This wording is intentionally plain.
+It should share one visual slot with the role-language chip rather than creating a second competing always-on label line.
 
 ## Recommended Inspector Behavior
 
@@ -219,6 +229,7 @@ Good bounded examples:
 Bad examples:
 - full sentence labels on every card
 - permanent duplicate type explanations on all modules
+- separate independent role chips and temporal-shape chips stacked on the same node surface
 
 ## Expected File Scope
 

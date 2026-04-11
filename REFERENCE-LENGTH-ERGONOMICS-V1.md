@@ -73,14 +73,17 @@ This slice extends:
 
 This is an ergonomics layer around those slices, not an alternative to them.
 
+Current scheduling note:
+- this slice is explicitly deferred until after `PIPELINE-MICRO-DEMOS-V2` ships and the merged role/cueing pass lands
+- its necessity should be re-validated against real workflow feedback rather than assumed up front
+
 ## Include
 
 V1 should include bounded helpers that make **reference-driven normalization** easier to author while keeping policy visible.
 
 The strongest bounded candidates are:
-1. a paired normalization helper shape for “normalize this input to that visible reference with one explicit policy”
-2. a visible length-derivation helper if needed for workflows where the same reference drives multiple branches
-3. inspector guidance that makes reused reference-derived normalization obvious
+1. a visible length-derivation helper if needed for workflows where the same reference drives multiple branches
+2. inspector guidance that makes reused reference-derived normalization obvious
 
 The exact implementation may be one helper or a very small family, but it must stay bounded.
 
@@ -108,29 +111,9 @@ The wrong kind of ergonomics is:
 
 ## Recommended V1 Product Shape
 
-The recommended bounded V1 is:
+The only acceptable bounded V1 direction is an explicit length-derivation helper plus the existing policy helpers.
 
-### Option A: explicit paired normalization helpers
-
-Candidates:
-- `NormalizeSymbolToMatch`
-- `NormalizeBitsToMatch`
-
-Required params:
-- `policy`
-  - `repeat`
-  - `truncate-left`
-  - `truncate-right`
-  - `pad-left`
-  - `pad-right`
-  - `require`
-- explicit pad value where relevant
-
-Important constraint:
-- if this option is chosen, the helper name and inspector wording must still make the policy explicit at runtime
-- the graph must not read like “magic matching”
-
-### Option B: explicit length-derivation helper plus existing policy helpers
+### Explicit length-derivation helper plus existing policy helpers
 
 Candidates:
 - `SymbolSequenceLengthRef`
@@ -143,15 +126,8 @@ Purpose:
 Important constraint:
 - the policy still lives in `Repeat*ToMatch`, `Truncate*ToMatch`, `Pad*ToMatch`, or `Require*LengthMatch`
 - this helper contributes length visibility only
-
-### Preferred V1 direction
-
-Prefer **Option B** first unless a review shows that the additional helper does not actually remove meaningful graph friction.
-
-Reason:
-- it preserves the current policy grammar
-- it lowers bookkeeping without collapsing multiple policies into one module
-- it is more aligned with MCW’s explicitness model
+- MCW already supports output fanout, so this helper must justify itself as a named reference anchor or organizational pass-through, not as a workaround for missing connection fanout
+- this helper must remain a pass-through / named-anchor shape, not a new hidden length-signal type in disguise
 
 ## Core Rules
 
@@ -161,6 +137,7 @@ Reason:
 
 2. **Reference contribution must remain visible**
 - if a helper derives or reuses reference length, the user must be able to see which sequence is providing it
+- a helper in this family must not introduce a new phantom length signal type
 
 3. **Normalization order must stay readable**
 - if a workflow requires truncate-then-pad, that sequence of decisions should still be legible
@@ -201,6 +178,7 @@ This slice is successful when:
 - the graph remains explicit about which policy is being applied
 - users can still point to the module that made the mismatch decision
 - MCW feels more ergonomic without feeling more magical
+- and the value is strong enough to justify a new helper beyond ordinary fanout and composition
 
 ## Explicitly Avoid Next
 

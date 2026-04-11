@@ -18,6 +18,10 @@ The goal is for users to recognize at a glance whether a module is acting as:
 
 This contract is about language and lightweight presentation, not engine behavior.
 
+Implementation note:
+- this contract is the implementation vehicle for the merged role/cueing pass
+- `SEQUENCE-VS-TICK-CUEING-V1` should be treated as the temporal-shape subsection of this work, not as a separate standalone implementation
+
 ## Product Problem
 
 MCW now has the right building blocks, but they still read too much like a flat set of primitives.
@@ -100,6 +104,8 @@ Examples:
 
 1. **One visible primary role per module surface**
 - a module may have nuanced behavior, but the UI should choose one primary role label where the label is shown
+- when a module plausibly fits more than one role, the earliest-stage / input-most role wins
+- example: `HexSource` reads as a `Source`, not as a `Bridge`, because the user encounters it first as a graph entry point
 
 2. **Role labels must help workflow reading**
 - the label is there to answer “what part does this play in the machine?”
@@ -112,6 +118,10 @@ Examples:
 4. **Mismatch helpers stay explicit**
 - repeat / truncate / pad / require helpers should be visibly read as one family of workflow tools
 - their policy stays in the detail copy and module name
+- the detail copy should distinguish repair helpers from strict assertion helpers
+- recommended sub-role wording:
+  - `Mismatch Helper: repair`
+  - `Mismatch Helper: require`
 
 5. **Collectors must read differently from bridges**
 - this is a high-value distinction
@@ -130,6 +140,7 @@ Examples:
 
 The current section structure remains.
 This is a role overlay, not a replacement.
+Temporal-shape wording such as `whole -> one per tick` or `one per tick -> whole` should occupy the same role-label system, not appear as a second independent taxonomy.
 
 ### 2. Inspector
 
@@ -165,6 +176,8 @@ Good examples:
   - `one per tick -> whole sequence`
 - `Role: Mismatch Helper`
   - `repeat to visible reference length`
+- `Role: Mismatch Helper`
+  - `require exact visible reference length`
 - `Role: Operator`
   - `bitwise XOR over equal-width words`
 

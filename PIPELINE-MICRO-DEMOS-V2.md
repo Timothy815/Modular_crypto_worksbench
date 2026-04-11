@@ -50,6 +50,7 @@ That means:
 - prioritize authoring patterns over theoretical completeness
 - stay end-to-end, compact, and editable
 - make encryption/decryption symmetry visible where the workflow naturally has it
+- keep paired paths visually separated in the seeded layout so forward and reverse halves read clearly
 
 ## Relationship To Existing Work
 
@@ -129,6 +130,7 @@ Do not include in V2:
 - one screen at normal zoom on a typical laptop
 - avoid branching into full protocol architectures
 - prefer one transformation family per demo
+- if a workflow includes both encrypt and decrypt halves, the seeded layout should keep those halves visually separated
 
 ## Recommended New Demo Shapes
 
@@ -140,7 +142,8 @@ Recommended shape:
 - `XOR -> TickedBitsToSequence -> BitsToHex -> HexOutput(cipher)`
 - and a paired reverse path
 - `HexSequenceInput(cipher) -> BitsSequenceToTicked(wordWidth=8) -> XOR(a)`
-- `AsciiSequenceInput(key) -> RepeatSymbolToMatch(reference=plain or cipher-byte-count companion path) -> AsciiSequenceToTicked -> AsciiCharToBits -> XOR(b)`
+- `AsciiSequenceInput(plain-length-reference) -> visible length-only reference role`
+- `AsciiSequenceInput(key) -> RepeatSymbolToMatch(reference=plain-length-reference) -> AsciiSequenceToTicked -> AsciiCharToBits -> XOR(b)`
 - `XOR -> TickedBitsToSequence -> BitsToAscii -> TextOutput(recovered)`
 
 Purpose:
@@ -148,7 +151,9 @@ Purpose:
 - proves that ASCII authoring, bit-domain XOR, hex-visible ciphertext, and ASCII recovery all compose honestly
 
 Implementation note:
-- the reverse path should remain bounded and readable; if reference alignment for the decrypt half requires a visible helper bridge or byte-count companion, that dependency should remain explicit
+- V2 explicitly chooses the visible known-length reference path for the decrypt half
+- do not hide decrypt-side alignment behind a byte-count derivation companion in this slice
+- the reference-only input should be visually marked as contributing length rather than recovered data
 
 ### 2. ASCII strict-match XOR encrypt/decrypt
 
@@ -174,7 +179,7 @@ Purpose:
 ### 4. Hex-authored normalize-then-XOR workflow
 
 Recommended shape:
-- `HexSequenceInput(buffer) -> HexSequenceToBits -> TruncateBitsToMatch or PadBitsToMatch (reference=block)`
+- `HexSequenceInput(buffer) -> HexSequenceToBits -> TruncateBitsToMatch(reference=block, side=...) -> PadBitsToMatch(reference=block, side=..., padBit=...)`
 - `reference block path -> HexSequenceToBits`
 - both into `BitsSequenceToTicked(wordWidth=8)` branches
 - then `XOR -> TickedBitsToSequence -> BitsToHex -> HexOutput`
@@ -182,6 +187,7 @@ Recommended shape:
 Purpose:
 - proves that block-width normalization remains visible even when the authoring layer is hex
 - helps users see the difference between representation width and operational width
+- proves the composed normalize path explicitly instead of implying “pick whichever helper applies”
 
 ## UI Surface Guidance
 
