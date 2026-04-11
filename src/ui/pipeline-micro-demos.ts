@@ -13,7 +13,7 @@ const ASCII_REPEATED_KEY_XOR_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
   id: 'ascii-repeated-key-xor',
   name: 'ASCII Repeated-Key XOR',
   summary:
-    'Uses a repeat mismatch helper to align the ASCII key to the message, two character-per-tick bridges into the bit domain, XOR, and a collector to gather the encrypted result as visible hex.',
+    'Repeat mismatch helper aligns the ASCII key; two character-per-tick bridges enter the bit domain, XOR, and a collector produce the encrypted hex result.',
   pipeline:
     'AsciiSequenceInput(message) + AsciiSequenceInput(key) -> RepeatSymbolToMatch -> AsciiSequenceToTicked -> AsciiCharToBits -> XOR -> TickedBitsToSequence -> BitsToHex -> HexOutput',
   defaultTickedMode: true,
@@ -75,7 +75,7 @@ const STRICT_MATCH_BEFORE_XOR_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
   id: 'strict-match-before-xor',
   name: 'Strict Match Before XOR',
   summary:
-    'Strict mismatch helper asserts the key already matches the message length before either path bridges into bits. Stops loudly if lengths differ.',
+    'Strict mismatch helper asserts the key length matches the message before bridging into bits. Stops loudly if lengths differ.',
   pipeline:
     'AsciiSequenceInput(message) -> RequireSymbolLengthMatch(reference=key) -> AsciiSequenceToTicked -> AsciiCharToBits -> XOR <- AsciiSequenceInput(key) -> AsciiSequenceToTicked -> AsciiCharToBits -> TickedBitsToSequence -> BitsToHex -> HexOutput',
   defaultTickedMode: true,
@@ -137,7 +137,7 @@ const TRUNCATE_TO_BLOCK_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
   id: 'truncate-to-block',
   name: 'Truncate To Block',
   summary:
-    'Truncate mismatch helper clips an overlong bit buffer to a reference block, then both paths bridge into the word domain for XOR.',
+    'Truncate mismatch helper clips an overlong buffer to the reference block, then both paths bridge into bits for XOR.',
   pipeline:
     'BitSequenceInput(longBuffer) + BitSequenceInput(block) -> TruncateBitsToMatch -> BitsSequenceToTicked(wordWidth=4) -> XOR -> TickedBitsToSequence -> BitsToHex -> HexOutput',
   defaultTickedMode: true,
@@ -201,7 +201,7 @@ const PAD_TO_BLOCK_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
   id: 'pad-to-block',
   name: 'Pad To Block',
   summary:
-    'Pad mismatch helper extends a short bit buffer to a reference block width, then both paths bridge into the word domain for XOR.',
+    'Pad mismatch helper extends a short buffer to the reference block width, then both paths bridge into bits for XOR.',
   pipeline:
     'BitSequenceInput(shortBuffer) + BitSequenceInput(block) -> PadBitsToMatch -> BitsSequenceToTicked(wordWidth=4) -> XOR -> TickedBitsToSequence -> BitsToHex -> HexOutput',
   defaultTickedMode: true,
@@ -307,7 +307,7 @@ const ASCII_REPEATED_KEY_XOR_ENCRYPT_DECRYPT_PIPELINE_MICRO_DEMO: PipelineMicroD
   id: 'ascii-repeated-key-xor-encrypt-decrypt',
   name: 'ASCII Repeated-Key XOR Encrypt/Decrypt',
   summary:
-    'Paired encrypt/decrypt: top branch uses a repeat mismatch helper, two character-per-tick bridges, XOR, and a collector to produce hex ciphertext. Bottom branch bridges hex input, XORs with the same key bits, and collects the recovered ASCII.',
+    'Paired encrypt/decrypt: top branch uses a repeat mismatch helper, two bridges, XOR, and a collector to produce hex ciphertext. Bottom branch bridges hex, XORs with the same key, and collects the recovered ASCII.',
   pipeline:
     'AsciiSequenceInput(plain) + AsciiSequenceInput(key) -> RepeatSymbolToMatch(reference=plain) -> AsciiSequenceToTicked -> AsciiCharToBits -> XOR -> TickedBitsToSequence -> BitsToHex -> HexOutput, plus HexSequenceInput(cipher) -> BitsSequenceToTicked(wordWidth=8) -> XOR -> TickedBitsToSequence -> BitsToAscii -> TextOutput',
   defaultTickedMode: true,
@@ -393,7 +393,7 @@ const ASCII_STRICT_MATCH_XOR_ENCRYPT_DECRYPT_PIPELINE_MICRO_DEMO: PipelineMicroD
   id: 'ascii-strict-match-xor-encrypt-decrypt',
   name: 'ASCII Strict-Match XOR Encrypt/Decrypt',
   summary:
-    'Paired encrypt/decrypt using a strict mismatch helper before the first bridge. Stops loudly if key and message lengths differ. The bottom branch decrypts using the same key bridge structure.',
+    'Paired encrypt/decrypt with a strict mismatch helper before bridging. Stops loudly if key and message lengths differ. Bottom branch decrypts with the same key bridge structure.',
   pipeline:
     'AsciiSequenceInput(message) + AsciiSequenceInput(key) -> RequireSymbolLengthMatch -> AsciiSequenceToTicked -> AsciiCharToBits -> XOR -> TickedBitsToSequence -> BitsToHex -> HexOutput, plus HexSequenceInput(cipher) -> BitsSequenceToTicked(wordWidth=8) -> XOR -> TickedBitsToSequence -> BitsToAscii -> TextOutput',
   defaultTickedMode: true,
@@ -479,7 +479,7 @@ const HEX_BLOCK_XOR_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
   id: 'hex-block-xor',
   name: 'Hex Block XOR',
   summary:
-    'Two hex sources bridge into the word domain one byte at a time, XOR, and a collector produces visible hex. No mismatch helper needed — both blocks are already the same width.',
+    'Two hex sources bridge into bits one byte at a time, XOR, and a collector produces visible hex. No mismatch helper needed — both blocks are the same width.',
   pipeline:
     'HexSequenceInput(leftBlock) + HexSequenceInput(rightBlock) -> BitsSequenceToTicked(wordWidth=8) -> XOR -> TickedBitsToSequence -> BitsToHex -> HexOutput',
   defaultTickedMode: true,
@@ -539,7 +539,7 @@ const HEX_NORMALIZE_THEN_XOR_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
   id: 'hex-normalize-then-xor',
   name: 'Hex Normalize Then XOR',
   summary:
-    'Two chained mismatch helpers — truncate then pad — align the buffer to the reference block. Both paths then bridge into the word domain for XOR. Shows the composed normalization pattern.',
+    'Two chained mismatch helpers — truncate then pad — align the buffer to the reference block. Both paths bridge into bits for XOR. Shows the composed normalization pattern.',
   pipeline:
     'HexSequenceInput(buffer) -> TruncateBitsToMatch -> PadBitsToMatch -> BitsSequenceToTicked(wordWidth=8) -> XOR <- HexSequenceInput(block) -> TickedBitsToSequence -> BitsToHex -> HexOutput',
   defaultTickedMode: true,
@@ -599,6 +599,17 @@ const HEX_NORMALIZE_THEN_XOR_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
         out: { x: 1920, y: 148 },
       },
       annotations: [],
+      groupBoxes: [
+        {
+          id: 'normalize-group',
+          x: 20,
+          y: 20,
+          width: 820,
+          height: 360,
+          title: 'Normalize to block width',
+          variant: 'stage',
+        },
+      ],
     },
   },
 };

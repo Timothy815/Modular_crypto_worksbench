@@ -2,7 +2,32 @@
 
 Last updated: April 11, 2026
 
-Status: Draft
+Status: Closed — Success Shape 1
+
+## Decision
+
+The remaining friction is graph-reading friction, not dataflow friction.
+
+MCW already supports native output fanout. A single reference source can drive
+multiple mismatch helpers without a new primitive. The tools to communicate
+shared-reference intent — stage group boxes, role labels, and wayfinding copy —
+are already shipped.
+
+A pass-through anchor helper was evaluated and rejected because:
+- it does not reduce wire count
+- it competes with the already-shipped stage-group-box tool for the same job
+- it would feel like plumbing trivia rather than a reusable teaching pattern
+- the only scenario where it beats grouping (reference far from dependents with
+  crossing wires) is a layout problem already addressed by wire routing tools
+
+Resolved action: the `hex-normalize-then-xor` pipeline micro demo was updated
+with a stage group box labeled "Normalize buffer to block width" wrapping the
+buffer source, reference block, truncate helper, and pad helper. This demonstrates
+the grouping solution concretely.
+
+No new primitive will be added from this contract.
+
+---
 
 ## Purpose
 
