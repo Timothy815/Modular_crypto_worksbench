@@ -3,16 +3,21 @@ import { describe, expect, it } from 'vitest';
 import { deriveTickCount, executeProject, executeTickedProject } from '../engine/executor';
 import { V1_REGISTRY } from '../engine/modules';
 import { validateProject } from '../engine/validation';
+import { collectTickedOutput } from './execution-compare';
 import { getPipelineMicroDemo, PIPELINE_MICRO_DEMOS } from './pipeline-micro-demos';
 
 describe('pipeline micro demos', () => {
-  it('is bounded to the locked V1 end-to-end sequence and mismatch workflows', () => {
+  it('is bounded to the shipped V1 set plus the locked V2 end-to-end sequence workflows', () => {
     expect(PIPELINE_MICRO_DEMOS.map((entry) => entry.id)).toEqual([
       'ascii-repeated-key-xor',
       'strict-match-before-xor',
       'truncate-to-block',
       'pad-to-block',
       'representation-round-trip',
+      'ascii-repeated-key-xor-encrypt-decrypt',
+      'ascii-strict-match-xor-encrypt-decrypt',
+      'hex-block-xor',
+      'hex-normalize-then-xor',
     ]);
   });
 
@@ -22,14 +27,30 @@ describe('pipeline micro demos', () => {
     expect(getPipelineMicroDemo('truncate-to-block')?.name).toBe('Truncate To Block');
     expect(getPipelineMicroDemo('pad-to-block')?.name).toBe('Pad To Block');
     expect(getPipelineMicroDemo('representation-round-trip')?.name).toBe('Representation Round Trip');
+    expect(getPipelineMicroDemo('ascii-repeated-key-xor-encrypt-decrypt')?.name).toBe(
+      'ASCII Repeated-Key XOR Encrypt/Decrypt',
+    );
+    expect(getPipelineMicroDemo('ascii-strict-match-xor-encrypt-decrypt')?.name).toBe(
+      'ASCII Strict-Match XOR Encrypt/Decrypt',
+    );
+    expect(getPipelineMicroDemo('hex-block-xor')?.name).toBe('Hex Block XOR');
+    expect(getPipelineMicroDemo('hex-normalize-then-xor')?.name).toBe('Hex Normalize Then XOR');
     expect(getPipelineMicroDemo('missing')).toBeNull();
   });
 
-  it('defaults the ticked composition workflows to ticked mode and leaves the round-trip unticked', () => {
+  it('defaults every composition workflow to ticked mode and leaves the round-trip unticked', () => {
     expect(getPipelineMicroDemo('ascii-repeated-key-xor')?.defaultTickedMode).toBe(true);
     expect(getPipelineMicroDemo('strict-match-before-xor')?.defaultTickedMode).toBe(true);
     expect(getPipelineMicroDemo('truncate-to-block')?.defaultTickedMode).toBe(true);
     expect(getPipelineMicroDemo('pad-to-block')?.defaultTickedMode).toBe(true);
+    expect(getPipelineMicroDemo('ascii-repeated-key-xor-encrypt-decrypt')?.defaultTickedMode).toBe(
+      true,
+    );
+    expect(getPipelineMicroDemo('ascii-strict-match-xor-encrypt-decrypt')?.defaultTickedMode).toBe(
+      true,
+    );
+    expect(getPipelineMicroDemo('hex-block-xor')?.defaultTickedMode).toBe(true);
+    expect(getPipelineMicroDemo('hex-normalize-then-xor')?.defaultTickedMode).toBe(true);
     expect(getPipelineMicroDemo('representation-round-trip')?.defaultTickedMode).toBeUndefined();
   });
 
@@ -90,6 +111,64 @@ describe('pipeline micro demos', () => {
     ]);
   });
 
+  it('keeps the repeated-key encrypt/decrypt demo honest about paired visible branches', () => {
+    const demo = getPipelineMicroDemo('ascii-repeated-key-xor-encrypt-decrypt');
+    expect(demo?.document.project.modules.map((module) => module.defId)).toEqual([
+      'AsciiSequenceInput',
+      'AsciiSequenceInput',
+      'RepeatSymbolToMatch',
+      'AsciiSequenceToTicked',
+      'AsciiSequenceToTicked',
+      'AsciiCharToBits',
+      'AsciiCharToBits',
+      'XOR',
+      'TickedBitsToSequence',
+      'BitsToHex',
+      'HexOutput',
+      'HexSequenceInput',
+      'BitsSequenceToTicked',
+      'XOR',
+      'TickedBitsToSequence',
+      'BitsToAscii',
+      'TextOutput',
+      'Clock',
+    ]);
+  });
+
+  it('keeps the strict encrypt/decrypt demo honest about require-based key scheduling', () => {
+    const demo = getPipelineMicroDemo('ascii-strict-match-xor-encrypt-decrypt');
+    expect(demo?.document.project.modules.map((module) => module.defId)).toContain(
+      'RequireSymbolLengthMatch',
+    );
+    expect(demo?.document.project.modules.map((module) => module.defId)).not.toContain(
+      'RepeatSymbolToMatch',
+    );
+  });
+
+  it('keeps the hex block and normalize demos honest about byte-stepped hex workflows', () => {
+    const hexBlock = getPipelineMicroDemo('hex-block-xor');
+    const normalize = getPipelineMicroDemo('hex-normalize-then-xor');
+
+    expect(hexBlock?.document.project.modules.map((module) => module.defId)).toEqual([
+      'HexSequenceInput',
+      'HexSequenceInput',
+      'BitsSequenceToTicked',
+      'BitsSequenceToTicked',
+      'XOR',
+      'TickedBitsToSequence',
+      'BitsToHex',
+      'HexOutput',
+      'Clock',
+    ]);
+
+    expect(normalize?.document.project.modules.map((module) => module.defId)).toContain(
+      'TruncateBitsToMatch',
+    );
+    expect(normalize?.document.project.modules.map((module) => module.defId)).toContain(
+      'PadBitsToMatch',
+    );
+  });
+
   it('keeps every seeded workspace statically valid', () => {
     for (const demo of PIPELINE_MICRO_DEMOS) {
       const validation = validateProject(demo.document.project, V1_REGISTRY);
@@ -109,5 +188,23 @@ describe('pipeline micro demos', () => {
         expect(() => executeProject(demo.document.project, V1_REGISTRY)).not.toThrow();
       }
     }
+  });
+
+  it('encrypts and decrypts correctly in the repeated-key ASCII pair demo', () => {
+    const demo = getPipelineMicroDemo('ascii-repeated-key-xor-encrypt-decrypt');
+    const tickCount = deriveTickCount(demo!.document.project, V1_REGISTRY);
+    const result = executeTickedProject(demo!.document.project, V1_REGISTRY, tickCount ?? 0);
+
+    expect(collectTickedOutput(result, 'cipher-out')).toBe('0A110D0A0612');
+    expect(collectTickedOutput(result, 'recover-out')).toBe('ATTACK');
+  });
+
+  it('encrypts and decrypts correctly in the strict-match ASCII pair demo', () => {
+    const demo = getPipelineMicroDemo('ascii-strict-match-xor-encrypt-decrypt');
+    const tickCount = deriveTickCount(demo!.document.project, V1_REGISTRY);
+    const result = executeTickedProject(demo!.document.project, V1_REGISTRY, tickCount ?? 0);
+
+    expect(collectTickedOutput(result, 'cipher-out')).toBe('031019080911');
+    expect(collectTickedOutput(result, 'recover-out')).toBe('SECRET');
   });
 });

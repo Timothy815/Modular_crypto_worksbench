@@ -119,6 +119,11 @@ The next bounded composition-teaching follow-on after that is now shipped as:
 - a bounded Quick Start pipeline-demo slice for honest end-to-end sequence, bridge, and mismatch workflows
 - complements primitive-local `Try Demo` examples without adding a second full tutorial system
 
+The next bounded pipeline expansion after that is now also shipped as:
+- `PIPELINE-MICRO-DEMOS-V2.md`
+- a bounded Quick Start follow-on adding paired ASCII encrypt/decrypt workflows plus hex block and normalize-then-XOR workflows
+- keeps the most common sequence pipelines visible, compact, and editable without turning Quick Start into a second tutorial library
+
 The previous dense-workspace crossing follow-on is now already shipped as:
 - `WIRE-CROSSING-DISCIPLINE-V1.md`
 - a bounded readability pass focused on stronger visual hierarchy at wire intersections
