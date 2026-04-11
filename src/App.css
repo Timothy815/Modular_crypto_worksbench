@@ -3500,6 +3500,19 @@ body.canvas-resizing {
   stroke: color-mix(in srgb, var(--connection-stroke) 76%, white);
 }
 
+.connection-group-idle .connection-visible-path {
+  opacity: 0.28;
+  filter: none;
+}
+
+.connection-group-live.connection-group-wire-mode-domain.connection-group-domain-bits .connection-visible-path {
+  filter: drop-shadow(0 0 4px color-mix(in srgb, #0f74d1 32%, transparent));
+}
+
+.connection-group-live.connection-group-wire-mode-domain.connection-group-domain-symbol .connection-visible-path {
+  filter: drop-shadow(0 0 4px color-mix(in srgb, #c46a12 28%, transparent));
+}
+
 .connection-group-dimmed .connection-visible-path {
   stroke-width: 1.9;
   opacity: 0.11;

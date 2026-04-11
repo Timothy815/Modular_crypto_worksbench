@@ -193,6 +193,13 @@ The next workspace-chrome simplification follow-on after that is now shipped as:
 - a bounded trim pass for duplicated high-frequency menu entries
 - keeps menus focused on lower-frequency structure, version, and import/export actions
 
+The second Experiential North Star Live Readability slice is now also shipped:
+- `LIVE-WIRE-EMPHASIS-V1.md`
+- connection-group-live class (slight domain-glow boost) when source output exists in execution
+- connection-group-idle class (opacity 0.28, no filter) when execution present but source has no output
+- emphasized / trace / dimmed / selected remain authoritative by CSS order
+- no new props, no store changes
+
 The first Experiential North Star Live Readability slice is now shipped:
 - `LIVE-SIGNAL-CHIPS-V1.md`
 - compact output-port value chips rendered on the canvas after every successful execution

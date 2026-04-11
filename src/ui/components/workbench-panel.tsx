@@ -2415,6 +2415,8 @@ export function WorkbenchPanel({
           layer === 'base' && legibilityState.emphasized ? 'connection-group-emphasized' : '',
           layer === 'base' && legibilityState.traceEmphasized ? 'connection-group-trace' : '',
           layer === 'base' && legibilityState.dimmed ? 'connection-group-dimmed' : '',
+          layer === 'base' && execution !== null && execution.outputsByModuleId[connection.from.moduleId]?.[connection.from.port] != null ? 'connection-group-live' : '',
+          layer === 'base' && execution !== null && execution.outputsByModuleId[connection.from.moduleId]?.[connection.from.port] == null ? 'connection-group-idle' : '',
           workspaceComparison
             ? workspaceComparison.currentConnectionStatusByKey[getConnectionComparisonKey(connection)] === 'added'
               ? 'connection-group-compare-added'
