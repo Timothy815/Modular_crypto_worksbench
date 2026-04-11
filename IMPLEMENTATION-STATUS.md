@@ -1257,6 +1257,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `MATCH-LENGTH-MISMATCH-HELPERS-V1.md` | Family framing lock adopted for coherent reference-driven mismatch helpers such as repeat/truncate/pad-to-match without hidden operator behavior |
 | `REPEAT-TO-MATCH-V1.md` | Shipped bounded ergonomic mismatch-repair slice via `RepeatSymbolToMatch`, `RepeatBitsToMatch`, Python export support, and focused primitive micro demos |
 | `TRUNCATE-TO-MATCH-V1.md` | Shipped bounded truncation follow-on via `TruncateSymbolToMatch`, `TruncateBitsToMatch`, Python export support, and focused primitive micro demos |
+| `PAD-TO-MATCH-V1.md` | Draft bounded follow-on for reference-driven padding via `PadSymbolToMatch` and `PadBitsToMatch` |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
 | `BRIDGE-ERGONOMICS-V1.md` | Shipped in `v1.31.0` — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |

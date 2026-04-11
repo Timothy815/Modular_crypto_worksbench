@@ -122,7 +122,9 @@ But the family naming and semantics should be locked before the line expands.
 - define pad value explicitly:
   - symbol
   - bit
-- output length equals reference length
+- output length equals `max(in.length, reference.length)`
+- padding is applied only when `in.length < reference.length`
+- if `in.length >= reference.length`, output is unchanged
 - `PadSymbolToMatch` should use an explicit single-character string param for the pad character, with default value of space (` `)
 
 ## UX Guidance
