@@ -10,86 +10,84 @@ Define a short experiential north star for MCW so future product slices can be e
 
 This is not an implementation contract.
 This is not a roadmap replacement.
-It is a future-direction note that should help guide prioritization across many bounded slices.
+It is a lens that should sharpen prioritization across many bounded slices.
 
 ## Core Statement
 
-MCW should increasingly feel like directly shaping a live cryptographic machine.
+MCW should increasingly feel like working on a live cryptographic machine, not assembling a static diagram.
 
 The goal is not hidden automation.
 The goal is not relaxed rigor.
 The goal is not to make the graph less explicit.
 
 The goal is to make explicit systems feel:
-- immediate
-- legible
-- responsive
-- playable
+- immediate — edits connect visibly to machine behavior
+- legible — structure reads at a glance without decoding
+- responsive — the machine feels alive while you are building it
 
 within MCW's stricter cryptographic and educational constraints.
 
-## Audulus Comparison, Properly Framed
+## The Audulus 4 Standard
 
-MCW should not try to become Audulus for cryptography in a superficial sense.
+The quality to aim for is not Audulus's feature set. It is the feeling Audulus creates:
 
-The right comparison is experiential, not literal:
+> When you patch a cable or turn a knob in Audulus, you feel the machine respond. You are not filling out a configuration form. You are shaping something that is already running.
 
-> Within cryptography's stricter teaching, typing, and explicit-conversion constraints, MCW should move toward the same experiential standard that Audulus reaches in modular signal design: the user should feel like they are handling a living machine, not merely assembling a diagram.
+MCW cannot and should not copy Audulus literally — cryptography requires typed domains, explicit conversions, and glass-box honesty that modular audio does not. But within those constraints, the same experiential standard applies:
+
+**The user should feel like they are handling a working machine, not authoring a specification.**
+
+The gap between those two feelings is the space this note is trying to close.
 
 ## What This Means In Practice
 
-Future slices should increasingly favor work that makes the machine feel more direct to shape:
-- wiring should feel intentional rather than bureaucratic
-- state should be easier to read while the machine is running
-- pipeline structure should be easier to recognize while staying explicit
-- graph edits should feel closely connected to visible machine behavior
-- repeated bookkeeping should be reduced only when that reduction preserves graph honesty
+Future slices should increasingly favor work that closes that gap:
+
+- **Wiring feels like routing a signal**, not drawing a logical arrow.
+  MCW-specific target: direct rewiring, clear port feedback, wire type visible at a glance.
+
+- **State is readable while the machine is running.**
+  MCW-specific target: signal values visible without opening Analyze; active paths distinguishable from idle ones.
+
+- **Structure reads without interpretation.**
+  MCW-specific target: pipeline shape recognizable from layout and role labels alone, not from reading every module name.
+
+- **Parameter edits connect directly to visible output.**
+  MCW-specific target: changing a key value or width produces an immediately visible effect in the running graph, not just in the inspector.
+
+- **Bookkeeping is reduced, not hidden.**
+  MCW-specific target: ergonomic improvements that cut repeated ceremony while keeping every policy decision visible in the graph.
 
 ## What This Does Not Mean
 
 This note does **not** justify:
 - hidden coercions
-- automatic graph repair behind the scenes
+- automatic graph repair
 - silent type adaptation
 - invisible mismatch handling
-- generic “smart” behavior that obscures the machine
+- "smart" behavior that obscures the machine
 
-MCW's distinct strength remains its glass-box honesty.
-The experiential goal is to make that honesty feel alive, not to dilute it.
+MCW's glass-box honesty is the thing worth keeping. The experiential goal is to make that honesty feel alive, not to trade it away for surface smoothness.
 
 ## Priority Lens
 
 When choosing among future bounded slices, prefer work that improves one or more of these:
 
-1. **Live Readability**
-- Can the user tell what the machine is doing right now?
+1. **Live Readability** — Can the user tell what the machine is doing right now, without entering Analyze?
 
-2. **Authoring Fluency**
-- Does building or rewiring the graph feel direct and confident?
+2. **Authoring Fluency** — Does building or rewiring the graph feel direct and confident, not ceremonial?
 
-3. **Pipeline Legibility**
-- Can the user recognize the structure of the system without excessive interpretation?
+3. **Pipeline Legibility** — Can the user recognize the structure of the system at a glance?
 
-4. **Mechanism Feel**
-- Does interacting with the graph feel like shaping a real working mechanism rather than filling out a formal diagram?
+4. **Mechanism Feel** — Does interacting with the graph feel like shaping a working machine, or like editing a document?
 
-5. **Honest Ergonomics**
-- Does the slice reduce friction without hiding the policy or the data transformation?
-
-## Relationship To Current Work
-
-This note reinforces the value of slices such as:
-- pipeline wayfinding
-- live-state readability
-- strict-but-clear mismatch workflow polish
-- wiring confidence and fluency
-- bounded ergonomics around explicit sequence handling
-
-It should not override the current bounded-slice workflow.
-It should sharpen it.
+5. **Honest Ergonomics** — Does the slice reduce friction without hiding the policy or the data flow?
 
 ## Success Condition
 
-This note is doing its job if future decisions can increasingly be justified in both of these ways:
-- “this makes MCW more explicit and correct”
-- “this makes MCW feel more like directly shaping a live machine”
+This note is doing its job if future decisions can be justified in both of these ways at once:
+- "this makes MCW more explicit and correct"
+- "this makes MCW feel more like directly shaping a live machine"
+
+A slice that satisfies only the first is necessary but not sufficient.
+A slice that satisfies only the second is not acceptable.

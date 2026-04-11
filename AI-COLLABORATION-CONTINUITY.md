@@ -1,6 +1,6 @@
 # AI Collaboration Continuity
 
-Last updated: March 27, 2026
+Last updated: April 11, 2026
 
 ## Purpose
 
@@ -140,9 +140,21 @@ If the repository state is intact, the operating model should also be treated as
 When resuming work, treat these files as the minimum continuity set:
 - `AI-COLLABORATION-CONTINUITY.md`
 - `IMPLEMENTATION-STATUS.md`
+- `EXPERIENTIAL-NORTH-STAR-V1.md`
 - the currently active contract file
 
 If there is any mismatch between tone, workflow, or responsibility assumptions, this file governs the collaboration model.
+
+## Product Framing
+
+Beyond the operating model, all agents should hold one shared product framing:
+
+MCW should feel like working on a live cryptographic machine, not assembling a static diagram.
+
+This is not a request for hidden automation or relaxed rigor. It is a quality bar: explicit systems should feel immediate, legible, and responsive. The Audulus 4 standard — where the machine feels alive while you shape it — is the experiential target, within MCW's stricter teaching and typing constraints.
+
+All proposed slices should be evaluated against this framing alongside correctness and capability.
+Read `EXPERIENTIAL-NORTH-STAR-V1.md` for the full statement and priority lens.
 
 ## Current Expectation
 
