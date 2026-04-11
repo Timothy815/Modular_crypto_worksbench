@@ -193,6 +193,14 @@ The next workspace-chrome simplification follow-on after that is now shipped as:
 - a bounded trim pass for duplicated high-frequency menu entries
 - keeps menus focused on lower-frequency structure, version, and import/export actions
 
+The first Experiential North Star Live Readability slice is now shipped:
+- `LIVE-SIGNAL-CHIPS-V1.md`
+- compact output-port value chips rendered on the canvas after every successful execution
+- bits chips in blue-accent tint, symbol chips in orange-accent tint — matching wire domain colors
+- truncated to 8 bits / 10 symbol chars with hover showing full value
+- pointer-events none, does not interfere with wire creation
+- session-local Chips toggle button in graph-meta strip when execution is available
+
 The bounded discovery slice is now shipped:
 - `SEARCH-FIRST-PALETTE-V1.md`
 - a search-first primitive-discovery pass inside the existing palette surface

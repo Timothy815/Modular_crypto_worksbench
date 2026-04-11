@@ -4557,6 +4557,35 @@ body.canvas-resizing {
   white-space: nowrap;
 }
 
+.graph-port-signal-chip {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.88;
+  max-width: 7ch;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.graph-port-signal-chip-bits {
+  background: color-mix(in srgb, #0f74d1 14%, var(--surface-soft));
+  color: color-mix(in srgb, #0f74d1 90%, var(--ink));
+  border: 1px solid color-mix(in srgb, #0f74d1 28%, var(--line));
+}
+
+.graph-port-signal-chip-symbol {
+  background: color-mix(in srgb, #c46a12 12%, var(--surface-soft));
+  color: color-mix(in srgb, #c46a12 88%, var(--ink));
+  border: 1px solid color-mix(in srgb, #c46a12 26%, var(--line));
+}
+
 .graph-port-anchor-top,
 .graph-port-anchor-bottom {
   gap: 8px;
@@ -4607,9 +4636,38 @@ body.canvas-resizing {
 }
 
 .graph-meta {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
+}
+
+.graph-meta > div {
+  flex: 1 1 0;
+  min-width: 80px;
+}
+
+.graph-meta-chip-toggle {
+  align-self: center;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-button);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+  white-space: nowrap;
+}
+
+.graph-meta-chip-toggle:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--surface-button) 82%, var(--accent) 18%);
+}
+
+.graph-meta-chip-toggle-off {
+  color: var(--muted);
 }
 
 .graph-meta > div,

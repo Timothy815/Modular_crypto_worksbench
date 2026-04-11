@@ -23,6 +23,7 @@ import {
 } from '../learning-sequence';
 import { getModuleCategory } from '../module-categories';
 import { buildLiveStateSummary } from '../live-state-display';
+import { formatSignalChip } from '../signal-chip-format';
 import {
   getModulesInSelectionBox,
   normalizeSelectionBoxRect,
@@ -715,6 +716,7 @@ export function WorkbenchPanel({
   } | null>(null);
   const [inlineRename, setInlineRename] = useState<{ moduleId: string; value: string } | null>(null);
   const [quickAdd, setQuickAdd] = useState<{ canvasX: number; canvasY: number; clientX: number; clientY: number } | null>(null);
+  const [showSignalChips, setShowSignalChips] = useState(true);
   const [pendingConnection, setPendingConnection] =
     useState<PendingConnection | null>(null);
   const [connectionFeedback, setConnectionFeedback] = useState<string | null>(null);
@@ -3770,6 +3772,18 @@ export function WorkbenchPanel({
                           );
                         }}
                       >
+                        {showSignalChips && execution ? (() => {
+                          const sig = execution.outputsByModuleId[moduleInstance.id]?.[port.name];
+                          if (!sig) return null;
+                          return (
+                            <span
+                              className={`graph-port-signal-chip graph-port-signal-chip-${sig.type}`}
+                              title={sig.type === 'bits' ? `[${sig.value.join(',')}]` : sig.value}
+                            >
+                              {formatSignalChip(sig)}
+                            </span>
+                          );
+                        })() : null}
                         <span className="graph-port-direction">OUT</span>
                         <span className="graph-port-dot" />
                         {renderCompositePortHint({
@@ -4140,6 +4154,16 @@ export function WorkbenchPanel({
           <span className="meta-label">Validation</span>
           <strong>{validationIssues.length > 0 ? `${validationIssues.length} issues` : 'clean'}</strong>
         </div>
+        {execution && !isCompositeEditor ? (
+          <button
+            type="button"
+            className={`graph-meta-chip-toggle${showSignalChips ? '' : ' graph-meta-chip-toggle-off'}`}
+            title={showSignalChips ? 'Hide signal chips' : 'Show signal chips'}
+            onClick={() => setShowSignalChips((v) => !v)}
+          >
+            {showSignalChips ? 'Chips \u25cf' : 'Chips \u25cb'}
+          </button>
+        ) : null}
       </div>
 
       {quickAdd ? (
