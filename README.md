@@ -124,6 +124,11 @@ The next bounded pipeline expansion after that is now also shipped as:
 - a bounded Quick Start follow-on adding paired ASCII encrypt/decrypt workflows plus hex block and normalize-then-XOR workflows
 - keeps the most common sequence pipelines visible, compact, and editable without turning Quick Start into a second tutorial library
 
+The next bounded pipeline-legibility follow-on after that is now also shipped as:
+- `PIPELINE-ROLE-LANGUAGE-V1.md`
+- a bounded shared role/cueing pass for making sources, bridges, mismatch helpers, collectors, sinks, and ordinary operators read more clearly in the palette and inspector
+- absorbs the temporal-shape wording from `SEQUENCE-VS-TICK-CUEING-V1.md` without adding a second always-on badge system
+
 The previous dense-workspace crossing follow-on is now already shipped as:
 - `WIRE-CROSSING-DISCIPLINE-V1.md`
 - a bounded readability pass focused on stronger visual hierarchy at wire intersections

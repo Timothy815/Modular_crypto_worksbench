@@ -3,6 +3,10 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboa
 import type { ModuleRegistry } from '../../engine/types';
 import { getModuleCategory } from '../module-categories';
 import {
+  getModuleRole,
+  getModuleRoleDetail,
+} from '../module-role-language';
+import {
   type ModuleLibraryDomainTab,
   getModuleDetail,
   getModuleLibrarySectionId,
@@ -82,6 +86,8 @@ function getPaletteSearchCandidates(definition: ModuleRegistry[string]) {
     name: definition.name,
     purpose: getModulePurpose(definition),
     detail: getModuleDetail(definition),
+    role: getModuleRole(definition),
+    roleDetail: getModuleRoleDetail(definition),
     section: getModuleLibrarySectionId(definition).replace(/-/g, ' '),
   };
 }
@@ -92,11 +98,13 @@ function getPaletteSearchRank(definition: ModuleRegistry[string], query: string)
     return 0;
   }
 
-  const { id, name, purpose, detail, section } = getPaletteSearchCandidates(definition);
+  const { id, name, purpose, detail, role, roleDetail, section } = getPaletteSearchCandidates(definition);
   const normalizedId = id.toLowerCase();
   const normalizedName = name.toLowerCase();
   const normalizedPurpose = purpose.toLowerCase();
   const normalizedDetail = detail.toLowerCase();
+  const normalizedRole = role.toLowerCase();
+  const normalizedRoleDetail = roleDetail.toLowerCase();
   const normalizedSection = section.toLowerCase();
 
   if (normalizedId === normalized || normalizedName === normalized) {
@@ -117,6 +125,10 @@ function getPaletteSearchRank(definition: ModuleRegistry[string], query: string)
 
   if (normalizedPurpose.includes(normalized)) {
     return 200;
+  }
+
+  if (normalizedRole.includes(normalized) || normalizedRoleDetail.includes(normalized)) {
+    return 150;
   }
 
   if (normalizedDetail.includes(normalized) || matchesModuleSearch(definition, normalized)) {
@@ -557,6 +569,10 @@ function ModuleLibraryCard({
         <div className="primitive-meta">
           <strong className="primitive-title">{def.name}</strong>
           <p className="primitive-def-id">{def.id}</p>
+          <div className="primitive-role-line">
+            <span className="content-status-chip">Role: {getModuleRole(def)}</span>
+            <span className="primitive-role-detail">{getModuleRoleDetail(def)}</span>
+          </div>
           <p className="primitive-purpose">{getModulePurpose(def)}</p>
           {isReusable ? (
             <span className={isComposite ? 'module-kind-badge' : 'module-kind-badge module-kind-badge-iterator'}>
@@ -661,6 +677,9 @@ function ModuleLibraryCard({
       </div>
       {viewMode === 'expanded' && showHelp ? (
         <div className="primitive-help-card">
+          <p className="primitive-help-role">
+            <span className="meta-label">Role</span> <strong>{getModuleRole(def)}</strong> {'\u00b7'} {getModuleRoleDetail(def)}
+          </p>
           <span className="meta-label">What It Does</span>
           <p>{getModuleDetail(def)}</p>
           {primitiveMicroDemo ? (

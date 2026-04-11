@@ -50,6 +50,7 @@ import {
   getPortSideForModulePort,
 } from '../node-orientation';
 import { getOrderedPorts } from '../port-ordering';
+import { getModuleRole, getModuleRoleDetail } from '../module-role-language';
 import type {
   VerificationCase,
   VerificationCaseResult,
@@ -1567,7 +1568,7 @@ export function ParameterInspector({
           </p>
         ) : null}
         {!isOutputSummaryCollapsed && showCollectedOutput && hasCollectedOutput && outputSummaries.length <= 1 ? (
-          <p className="trace-summary-subtitle">Collected: <strong>{collectedOutput}</strong></p>
+          <p className="trace-summary-subtitle">Collected so far: <strong>{collectedOutput}</strong></p>
         ) : null}
         {outputSummaries.length > 1 && !isOutputSummaryCollapsed ? (
           <div className="inspector-output-switcher">
@@ -2621,6 +2622,10 @@ export function ParameterInspector({
           <span className="meta-label">Module</span>
           <strong className="selected-module-name">{moduleInstance.id}</strong>
           <p className="selected-module-type">{moduleDef.id}</p>
+          <div className="inspector-module-role-summary">
+            <span className="content-status-chip">Role: {getModuleRole(moduleDef)}</span>
+            <p className="comparison-copy">{getModuleRoleDetail(moduleDef)}</p>
+          </div>
           {'kind' in moduleDef ? (
             moduleDef.kind === 'composite' ? (
               <p className="selected-module-kind">Composite definition</p>

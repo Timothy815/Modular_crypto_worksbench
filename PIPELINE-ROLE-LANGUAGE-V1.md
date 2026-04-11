@@ -2,7 +2,7 @@
 
 Last updated: April 11, 2026
 
-Status: Draft
+Status: Shipped
 
 ## Purpose
 
@@ -40,10 +40,10 @@ The missing piece is a small, explicit pipeline-role language that users can lea
 
 ## Why Now
 
-This should come after:
+This shipped after:
 - pipeline micro demo expansion
-- sequence-vs-tick cueing
-- reference-length ergonomics planning
+- the decision to merge sequence-vs-tick cueing into one shared role-language pass
+- reference-length ergonomics deferral
 
 because those slices define the workflows and ambiguity that this language needs to clarify.
 
@@ -197,6 +197,14 @@ Likely files in scope:
 - `IMPLEMENTATION-STATUS.md`
 
 This slice should stay UI-local.
+
+## Implementation Notes
+
+Shipped V1 behavior:
+- adds shared role/detail language through a bounded UI-local helper
+- surfaces `Role: ...` plus one short workflow detail line in the primitive palette and inspector
+- updates cumulative ticked-output wording from a bare `Collected` label to clearer running-output language
+- keeps node-card role badges out of V1 to preserve canvas calm
 
 ## Success Criteria
 

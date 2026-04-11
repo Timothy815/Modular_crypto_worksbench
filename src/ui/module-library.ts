@@ -1,5 +1,11 @@
 import { isCompositeDefinition, isIteratorDefinition } from '../engine/composites';
 import type { ModuleDefinition } from '../engine/types';
+export type { ModuleRoleSummary, ModuleWorkflowRole } from './module-role-language';
+export {
+  getModuleRole,
+  getModuleRoleDetail,
+  getModuleRoleSummary,
+} from './module-role-language';
 
 export type ModuleLibrarySectionId =
   | 'inputs-outputs'
@@ -668,6 +674,7 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     searchTerms: ['bridge', 'ascii', 'hex', 'encode', 'bytes', 'text'],
   },
 };
+
 
 export const MODULE_LIBRARY_SECTIONS: ModuleLibrarySection[] = [
   {

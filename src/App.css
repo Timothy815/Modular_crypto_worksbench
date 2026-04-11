@@ -1118,6 +1118,19 @@ body.dock-resizing {
   color: var(--muted);
 }
 
+.primitive-role-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.primitive-role-detail {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
 .primitive-help-card {
   margin-top: 12px;
   padding: 12px 14px;
@@ -1130,12 +1143,17 @@ body.dock-resizing {
   margin: 8px 0 0;
 }
 
+.primitive-help-role {
+  margin-top: 0;
+}
+
 .primitive-help-ports {
   font-size: 0.84rem;
   color: var(--muted);
 }
 
 .palette-panel-compact .primitive-purpose,
+.palette-panel-compact .primitive-role-detail,
 .palette-panel-compact .primitive-section-copy {
   display: none;
 }
@@ -4936,6 +4954,16 @@ body.canvas-resizing {
   margin-bottom: 14px;
   font-family: var(--mono);
   font-size: 0.88rem;
+}
+
+.inspector-module-role-summary {
+  display: grid;
+  gap: 4px;
+  margin: -4px 0 12px;
+}
+
+.inspector-module-role-summary .comparison-copy {
+  margin: 0;
 }
 
 .selected-module-kind {

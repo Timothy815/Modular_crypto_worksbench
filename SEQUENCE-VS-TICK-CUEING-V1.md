@@ -2,7 +2,7 @@
 
 Last updated: April 11, 2026
 
-Status: Draft
+Status: Shipped via `PIPELINE-ROLE-LANGUAGE-V1`
 
 ## Purpose
 
@@ -18,6 +18,11 @@ It is about making the existing sequence model legible in the inspector, tick ba
 Implementation note:
 - this contract should be implemented together with `PIPELINE-ROLE-LANGUAGE-V1`, not as a separate standalone pass
 - the cue grammar here should become the temporal-shape subsection of that broader role-language pass
+
+Implementation result:
+- the merged pass shipped the shared cue grammar into palette and inspector role language
+- cumulative tick summaries now use explicit running/collected wording
+- permanent node-card temporal badges remained deferred to preserve visual budget
 
 ## Product Problem
 

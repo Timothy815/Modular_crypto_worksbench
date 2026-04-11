@@ -4,6 +4,8 @@ import { V1_REGISTRY } from '../engine/modules';
 import {
   MODULE_LIBRARY_SECTIONS,
   getModuleLibrarySectionId,
+  getModuleRoleDetail,
+  getModuleRoleSummary,
   getModuleLibrarySortOrder,
   matchesModuleDomainTab,
   matchesModuleSearch,
@@ -65,5 +67,40 @@ describe('module library palette coherence', () => {
     expect(matchesModuleSearch(V1_REGISTRY.SBox, 'diffusion')).toBe(true);
     expect(matchesModuleSearch(V1_REGISTRY.BitSplit, 'framing')).toBe(true);
     expect(matchesModuleSearch(V1_REGISTRY.BitSplit, 'feistel')).toBe(true);
+  });
+
+  it('assigns stable workflow roles to pipeline-critical modules', () => {
+    expect(getModuleRoleSummary(V1_REGISTRY.HexSource)).toEqual({
+      role: 'Source',
+      detail: 'graph entry point',
+    });
+    expect(getModuleRoleSummary(V1_REGISTRY.AsciiSequenceToTicked)).toEqual({
+      role: 'Bridge',
+      detail: 'whole sequence -> one per tick',
+    });
+    expect(getModuleRoleSummary(V1_REGISTRY.TickedBitsToSequence)).toEqual({
+      role: 'Collector',
+      detail: 'one per tick -> whole sequence',
+    });
+    expect(getModuleRoleSummary(V1_REGISTRY.RepeatBitsToMatch)).toEqual({
+      role: 'Mismatch Helper',
+      detail: 'repair visible reference length mismatch',
+    });
+    expect(getModuleRoleSummary(V1_REGISTRY.RequireBitsLengthMatch)).toEqual({
+      role: 'Mismatch Helper',
+      detail: 'require exact visible reference length',
+    });
+    expect(getModuleRoleSummary(V1_REGISTRY.BitOutput)).toEqual({
+      role: 'Sink',
+      detail: 'final endpoint for the visible result',
+    });
+  });
+
+  it('keeps ordinary transformation stages labeled as operators', () => {
+    expect(getModuleRoleSummary(V1_REGISTRY.XOR)).toEqual({
+      role: 'Operator',
+      detail: 'visible transformation stage',
+    });
+    expect(getModuleRoleDetail(V1_REGISTRY.BitsSequenceToTicked)).toBe('whole sequence -> fixed-width word per tick');
   });
 });

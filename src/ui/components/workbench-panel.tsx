@@ -2888,8 +2888,8 @@ export function WorkbenchPanel({
           ) : (
             <>
               Selected modules: <strong>{selectedModuleIds.length}</strong>. Use
-              <strong> Shift-click</strong>, <strong> Cmd/Ctrl-click</strong>, or drag on empty canvas
-              to build a composite selection, then drag any selected module to move the group.
+              <strong> Shift-click</strong>, <strong> Cmd/Ctrl-click</strong>, or drag empty canvas
+              to grow the selection, then drag to move the group.
             </>
           )}
         </p>
@@ -2919,12 +2919,12 @@ export function WorkbenchPanel({
                 <strong>{pendingTargetSummary.hoveredTargetKey.replace(':', '.')}</strong>{' '}
                 {pendingTargetSummary.hoveredTargetState.valid
                   ? pendingTargetSummary.hoveredTargetState.mode === 'replace'
-                    ? 'will replace the existing input connection.'
+                    ? 'will replace the current input.'
                     : 'is ready to connect.'
                   : pendingTargetSummary.hoveredTargetState.reason ?? 'is blocked.'}
               </>
             ) : (
-              <>Valid inputs glow teal. Replacement targets glow gold. Blocked targets glow red.</>
+              <>Valid targets glow teal. Replace targets glow gold. Blocked targets glow red.</>
             )}
           </span>
         </p>
@@ -3014,13 +3014,13 @@ export function WorkbenchPanel({
               </label>
               {collectedOutput !== null ? (
                 <span className="tick-bar-collected">
-                  <span className="meta-label">Collected</span> <strong>{collectedOutput}</strong>
+                  <span className="meta-label">Running output</span> <strong>{collectedOutput}</strong>
                 </span>
               ) : null}
             </>
           ) : isTickedMode ? (
             <span className="tick-bar-label tick-bar-label-muted">
-              No tick-sliceable sources in graph
+              No tickable sources in graph
             </span>
           ) : null}
         </div>
@@ -3975,7 +3975,7 @@ export function WorkbenchPanel({
               type="button"
               className="dock-collapse-button"
               onClick={() => onSetOverviewNavigatorVisible(false)}
-              aria-label="Hide overview navigator"
+              aria-label="Hide navigator"
             >
               −
             </button>
@@ -4060,8 +4060,8 @@ export function WorkbenchPanel({
       <button
         type="button"
         className="canvas-height-resize-handle"
-        aria-label="Resize workbench height"
-        title="Drag to resize workbench height"
+        aria-label="Resize canvas"
+        title="Drag to resize canvas"
         onPointerDown={(event) => {
           event.preventDefault();
           setCanvasHeightResizeState({
