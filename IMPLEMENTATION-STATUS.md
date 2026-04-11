@@ -1263,6 +1263,9 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `PIPELINE-MICRO-DEMOS-V2.md` | Shipped bounded pipeline-demo expansion via paired ASCII encrypt/decrypt workflows plus hex block and normalize-then-XOR workflows, keeping the most common sequence pipelines visible and editable in Quick Start |
 | `PIPELINE-ROLE-LANGUAGE-V1.md` | Shipped bounded shared role/cueing pass via palette and inspector role summaries for sources, bridges, mismatch helpers, collectors, sinks, and ordinary operators |
 | `SEQUENCE-VS-TICK-CUEING-V1.md` | Shipped via the merged role-language pass, clarifying whole-sequence vs per-tick vs collected-output wording without adding a second badge system |
+| `REQUIRE-LENGTH-MATCH-WORKFLOW-POLISH-V1.md` | Shipped bounded strict-mismatch workflow polish via directional require-helper messages, Python parity, and paired strict-vs-repair primitive micro demos |
+| `PIPELINE-AUTHORING-WAYFINDING-V1.md` | Open bounded pipeline-language follow-on for one-line typical-path guidance that builds on shipped role/cueing summaries without adding automation |
+| `REFERENCE-LENGTH-ERGONOMICS-V2.md` | Open decision contract for whether shared reference fanout needs any helper beyond stronger demos, grouping, and wording |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
 | `BRIDGE-ERGONOMICS-V1.md` | Shipped in `v1.31.0` — bounded bridge/usability follow-on for easier raw-bit entry and clearer byte-oriented bridge behavior |

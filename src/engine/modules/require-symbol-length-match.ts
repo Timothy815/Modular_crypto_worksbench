@@ -1,4 +1,5 @@
 import type { ModuleDef } from '../types';
+import { formatRequireLengthMatchMessage } from './require-length-match-message';
 
 function countSymbols(symbol: string): number {
   return Array.from(symbol).length;
@@ -9,9 +10,7 @@ function requireSymbolLengthMatch(symbol: string, reference: string): string {
   const referenceLength = countSymbols(reference);
 
   if (inputLength !== referenceLength) {
-    throw new Error(
-      `RequireSymbolLengthMatch length mismatch: input has ${inputLength} characters but reference has ${referenceLength}`,
-    );
+    throw new Error(formatRequireLengthMatchMessage('RequireSymbolLengthMatch', inputLength, referenceLength, 'char'));
   }
 
   return symbol;

@@ -1,11 +1,10 @@
 import type { ModuleDef } from '../types';
 import { expectBitsSignal } from './bit-word';
+import { formatRequireLengthMatchMessage } from './require-length-match-message';
 
 function requireBitsLengthMatch(bits: number[], reference: number[]): number[] {
   if (bits.length !== reference.length) {
-    throw new Error(
-      `RequireBitsLengthMatch length mismatch: input has ${bits.length} bits but reference has ${reference.length}`,
-    );
+    throw new Error(formatRequireLengthMatchMessage('RequireBitsLengthMatch', bits.length, reference.length, 'bit'));
   }
 
   return [...bits];

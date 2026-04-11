@@ -165,7 +165,7 @@ function App() {
   const userManualConfig = getUserManualConfig();
   if (userManualConfig) {
     return (
-      <Suspense fallback={<LazyPanelFallback label="Manual" title="Preparing user manual…" />}>
+      <Suspense fallback={<LazyPanelFallback label="Manual" title="Manual…" />}>
         <ManualWindow initialTheme={userManualConfig.theme} />
       </Suspense>
     );
@@ -174,7 +174,7 @@ function App() {
   const instructorPilotConfig = getInstructorPilotConfig();
   if (instructorPilotConfig) {
     return (
-      <Suspense fallback={<LazyPanelFallback label="Pilot" title="Preparing instructor pilot pack…" />}>
+      <Suspense fallback={<LazyPanelFallback label="Pilot" title="Pilot…" />}>
         <InstructorPilotWindow initialTheme={instructorPilotConfig.theme} />
       </Suspense>
     );
@@ -183,7 +183,7 @@ function App() {
   const detachedPanelConfig = getDetachedPanelConfig();
   if (detachedPanelConfig) {
     return (
-      <Suspense fallback={<LazyPanelFallback label="Window" title="Preparing detached panel…" />}>
+      <Suspense fallback={<LazyPanelFallback label="Window" title="Panel…" />}>
         <DetachedPanelWindow
           channelName={DETACHED_PANEL_CHANNEL_NAME}
           hostId={detachedPanelConfig.hostId}
@@ -518,7 +518,7 @@ function MainApp() {
     : [];
   const compositeDrilldownExecutionError =
     isCompositeDrilldownActive && !compositeDrilldownContext?.execution
-      ? 'Instance trace is unavailable until the parent workspace runs successfully.'
+      ? 'Instance trace is unavailable until the parent workspace runs.'
       : null;
   const compositeDrilldownSteppedModuleId =
     compositeDrilldown &&
@@ -641,7 +641,7 @@ function MainApp() {
       baselineExecutionError = error instanceof Error ? error.message : 'Baseline execution failed.';
     }
   } else if (comparisonBaseline && baselineValidation && !baselineValidation.ok) {
-    baselineExecutionError = 'Baseline is no longer valid against the current registry.';
+    baselineExecutionError = 'Baseline no longer matches this registry.';
   }
   const executionComparison =
     baselineExecution && execution
@@ -959,7 +959,7 @@ function MainApp() {
       const rawValue = await file.text();
       const pack = parseShareableLabPack(rawValue);
       if (!pack) {
-        setImportError('The selected file is not a valid MCW shareable lab pack.');
+        setImportError('Selected file is not a valid MCW pack.');
         return;
       }
 
@@ -1096,7 +1096,7 @@ function MainApp() {
     (rawValue: string) => {
       const challengeDocument = parseGuidedChallengeDocument(rawValue);
       if (!challengeDocument) {
-        setImportError('The selected file is not a valid MCW guided challenge document.');
+        setImportError('Selected file is not a valid MCW challenge file.');
         return;
       }
 
@@ -1477,7 +1477,7 @@ function MainApp() {
       type: 'createBlankWorkspace',
       workspaceId,
       name,
-      summary: 'A blank personal workspace for building from scratch.',
+      summary: 'A blank workspace for building from scratch.',
       pipeline: 'Blank canvas',
     });
   }
@@ -1544,7 +1544,7 @@ function MainApp() {
   const handleOpenPrimitiveMicroDemo = useCallback(
     (defId: string) => {
       if (state.compositeEditor) {
-        window.alert('Primitive micro demos are unavailable while editing a reusable composite.');
+        window.alert('Primitive demos unavailable in composite mode.');
         return;
       }
 
@@ -1587,7 +1587,7 @@ function MainApp() {
   const handleOpenPipelineMicroDemo = useCallback(
     (pipelineId: string) => {
       if (state.compositeEditor) {
-        window.alert('Pipeline micro demos are unavailable while editing a reusable composite.');
+        window.alert('Pipeline demos unavailable in composite mode.');
         return;
       }
 
@@ -1633,7 +1633,7 @@ function MainApp() {
     }
 
     if (effectiveSelectedModuleIds.length === 0) {
-      window.alert('Select one or more modules before duplicating.');
+      window.alert('Select modules before duplicating.');
       return;
     }
 
@@ -2014,7 +2014,7 @@ function MainApp() {
           dispatch({
             type: 'setCompositeEditorSaveError',
             message:
-              'This module is bound to an exposed composite port. Boundary editing will come in a later slice.',
+              'This module is bound to a composite port. Boundary editing comes later.',
           });
           return;
         }
@@ -2406,9 +2406,9 @@ function MainApp() {
             }
             summary={
               state.compositeEditor && activeCompositeEntry
-                ? 'Editing the internal graph of a reusable composite. Boundary ports stay fixed in this first editing slice.'
+                ? 'Editing a reusable composite. Boundary ports stay fixed.'
                 : isCompositeDrilldownActive
-                  ? 'Read-only drill-down into one placed composite instance. Inspect signals, trace, and forwarded parameters without mutating the shared definition.'
+                  ? 'Read-only drill-down into one composite instance. Inspect signals, trace, and forwarded params without changing the shared module.'
                   : undefined
             }
             pipelineLabel={
@@ -3028,7 +3028,7 @@ function MainApp() {
                 return;
               }
 
-              setImportError('The selected file is not a valid MCW workbench or composite library document.');
+        setImportError('Selected file is not a valid MCW workbench or library file.');
             }}
             onImportLabPack={isCompositeDrilldownActive ? async () => undefined : handleImportShareableLabPack}
             onTidyLayout={() =>
@@ -3534,7 +3534,7 @@ function MainApp() {
                     ? dispatch({
                         type: 'setCompositeEditorSaveError',
                         message:
-                          'This module is bound to an exposed composite port. Boundary editing will come in a later slice.',
+                          'This module is bound to a composite port. Boundary editing comes later.',
                       })
                     : dispatch({
                         type: 'removeModule',
@@ -3825,24 +3825,22 @@ function MainApp() {
             onClick={(event) => event.stopPropagation()}
           >
             <p className="panel-label">Composite Authoring</p>
-            <h2>Create Reusable Composite</h2>
+            <h2>Create Composite</h2>
             <p className="dialog-copy">
-              Capture the current selection as a reusable composite module. The
-              selection stays in the workbench; this first version just adds the
-              new composite to the library.
+              Capture the selection as a reusable composite. The selection stays
+              in the workbench; this version only adds it to the library.
             </p>
 
             <p className="dialog-selection-summary">
-              Selected modules: <strong>{effectiveSelectedModuleIds.length}</strong>
+              Selected: <strong>{effectiveSelectedModuleIds.length}</strong>
             </p>
             <div className="dialog-composite-preview">
-              <span className="meta-label">Captured Structure</span>
+              <span className="meta-label">Structure</span>
               <p className="dialog-composite-preview-copy">
                 {compositeSelectionPreview.moduleCount} module
                 {compositeSelectionPreview.moduleCount === 1 ? '' : 's'} and{' '}
                 {compositeSelectionPreview.internalConnectionCount} internal connection
-                {compositeSelectionPreview.internalConnectionCount === 1 ? '' : 's'} will be
-                captured.
+                {compositeSelectionPreview.internalConnectionCount === 1 ? '' : 's'} captured.
               </p>
               {compositeSelectionPreview.error ? (
                 <p className="field-error">{compositeSelectionPreview.error}</p>
@@ -3851,7 +3849,7 @@ function MainApp() {
                 <div className="port-group">
                   <span className="meta-label">Inputs</span>
                   {compositeSelectionPreview.inputCandidates.length === 0 ? (
-                    <p className="empty-state">No input boundary ports</p>
+                    <p className="empty-state">No input ports</p>
                   ) : (
                     <ul className="port-list">
                       {compositeSelectionPreview.inputCandidates.map((port) => (
@@ -3895,7 +3893,7 @@ function MainApp() {
                 <div className="port-group">
                   <span className="meta-label">Outputs</span>
                   {compositeSelectionPreview.outputCandidates.length === 0 ? (
-                    <p className="empty-state">No output boundary ports</p>
+                    <p className="empty-state">No output ports</p>
                   ) : (
                     <ul className="port-list">
                       {compositeSelectionPreview.outputCandidates.map((port) => (
@@ -4003,7 +4001,7 @@ function MainApp() {
                 className="composite-purpose-textarea"
                 value={compositePurpose}
                 onChange={(event) => setCompositePurpose(event.target.value)}
-                placeholder="Describe what this composite does, what it's for, and how to use it. This appears in the ? info panel on the palette card."
+                placeholder="Describe this composite and how to use it. Shows in the ? info panel."
                 rows={3}
               />
             </label>
@@ -4297,7 +4295,7 @@ function MainApp() {
                 value={challengeCapturePrompt}
                 onChange={(event) => setChallengeCapturePrompt(event.target.value)}
                 rows={4}
-                placeholder="Describe what students should repair or discover."
+                placeholder="Describe what students should repair or find."
               />
             </label>
 
@@ -4323,7 +4321,7 @@ function MainApp() {
                 value={challengeCaptureHints}
                 onChange={(event) => setChallengeCaptureHints(event.target.value)}
                 rows={4}
-                placeholder="The clock period matters.\nInspect the LFSR seed after each pulse."
+                placeholder="Clock period matters.\nInspect the LFSR seed after each pulse."
               />
             </label>
 

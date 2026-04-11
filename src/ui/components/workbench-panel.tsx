@@ -2833,7 +2833,7 @@ export function WorkbenchPanel({
 
       {tutorialStep ? (
         <div className="tutorial-step-banner">
-          <span className="meta-label">Tutorial Step</span>
+          <span className="meta-label">Step</span>
           <strong>
             {tutorialTitle ? `${tutorialTitle} — ` : ''}
             {tutorialStep.title}
@@ -2882,14 +2882,14 @@ export function WorkbenchPanel({
         <p className="selection-status">
           {isObservationMode ? (
             <>
-              Selected modules: <strong>{selectedModuleIds.length}</strong>. Use
-              <strong> Shift-click</strong> or <strong> Cmd/Ctrl-click</strong> to compare internal modules inside this instance view.
+              <strong>{selectedModuleIds.length}</strong> selected. Use
+              <strong> Shift-click</strong> or <strong> Cmd/Ctrl-click</strong> to compare.
             </>
           ) : (
             <>
-              Selected modules: <strong>{selectedModuleIds.length}</strong>. Use
-              <strong> Shift-click</strong>, <strong> Cmd/Ctrl-click</strong>, or drag empty canvas
-              to grow the selection, then drag to move the group.
+              <strong>{selectedModuleIds.length}</strong> selected. Use
+              <strong> Shift-click</strong>, <strong> Cmd/Ctrl-click</strong>, or drag canvas to add;
+              drag to move.
             </>
           )}
         </p>
@@ -2919,12 +2919,12 @@ export function WorkbenchPanel({
                 <strong>{pendingTargetSummary.hoveredTargetKey.replace(':', '.')}</strong>{' '}
                 {pendingTargetSummary.hoveredTargetState.valid
                   ? pendingTargetSummary.hoveredTargetState.mode === 'replace'
-                    ? 'will replace the current input.'
-                    : 'is ready to connect.'
+                    ? 'replaces the current input.'
+                    : 'is ready.'
                   : pendingTargetSummary.hoveredTargetState.reason ?? 'is blocked.'}
               </>
             ) : (
-              <>Valid targets glow teal. Replace targets glow gold. Blocked targets glow red.</>
+              <>Teal ok. Gold replace. Red blocked.</>
             )}
           </span>
         </p>
@@ -2933,7 +2933,7 @@ export function WorkbenchPanel({
       ) : effectiveSelectedConnectionIndex !== null &&
         activeProjectState.connections[effectiveSelectedConnectionIndex] ? (
         <p className="selection-status">
-          Selected wire:{' '}
+          Wire:{' '}
           <strong>
             {activeProjectState.connections[effectiveSelectedConnectionIndex].from.moduleId}.
             {activeProjectState.connections[effectiveSelectedConnectionIndex].from.port}
@@ -2943,7 +2943,7 @@ export function WorkbenchPanel({
             {activeProjectState.connections[effectiveSelectedConnectionIndex].to.moduleId}.
             {activeProjectState.connections[effectiveSelectedConnectionIndex].to.port}
           </strong>
-          . Use <strong>Delete Wire</strong> to remove it.
+          . <strong>Delete Wire</strong> removes it.
         </p>
       ) : null}
 
@@ -3014,13 +3014,13 @@ export function WorkbenchPanel({
               </label>
               {collectedOutput !== null ? (
                 <span className="tick-bar-collected">
-                  <span className="meta-label">Running output</span> <strong>{collectedOutput}</strong>
+                  <span className="meta-label">Output</span> <strong>{collectedOutput}</strong>
                 </span>
               ) : null}
             </>
           ) : isTickedMode ? (
             <span className="tick-bar-label tick-bar-label-muted">
-              No tickable sources in graph
+              No sources
             </span>
           ) : null}
         </div>
@@ -3785,7 +3785,7 @@ export function WorkbenchPanel({
                     : `${canvasHeight - focusPos.y - 6}px`,
                 }}
               >
-                <span className="meta-label">Tutorial Focus</span>
+                <span className="meta-label">Focus</span>
                 <strong>{tutorialStep.title}</strong>
                 <p>{tutorialStep.body}</p>
               </div>
@@ -4083,7 +4083,7 @@ export function WorkbenchPanel({
           </strong>
           {validationIssues.length > 1 ? (
             <p className="execution-error-detail">
-              {validationIssues.length - 1} more issue{validationIssues.length === 2 ? '' : 's'} listed in the inspector.
+              {validationIssues.length - 1} more issue{validationIssues.length === 2 ? '' : 's'} in the inspector.
             </p>
           ) : null}
         </div>

@@ -851,8 +851,11 @@ def require_symbol_length_match(signal, reference):
     input_length = len(list(symbol))
     reference_length = len(list(reference_symbol))
     if input_length != reference_length:
+        difference = input_length - reference_length
+        direction = "shorter" if difference < 0 else "longer"
+        unit = "char" if abs(difference) == 1 else "chars"
         raise ValueError(
-            f"RequireSymbolLengthMatch length mismatch: input has {input_length} characters but reference has {reference_length}"
+            f"RequireSymbolLengthMatch mismatch: input {input_length} chars; reference {reference_length} chars — input is {abs(difference)} {unit} {direction}"
         )
     return {"out": symbol}
 
@@ -1250,8 +1253,11 @@ def require_bits_length_match(signal, reference):
     bits = _expect_bits(signal, "RequireBitsLengthMatch")
     reference_bits = _expect_bits(reference, "RequireBitsLengthMatch")
     if len(bits) != len(reference_bits):
+        difference = len(bits) - len(reference_bits)
+        direction = "shorter" if difference < 0 else "longer"
+        unit = "bit" if abs(difference) == 1 else "bits"
         raise ValueError(
-            f"RequireBitsLengthMatch length mismatch: input has {len(bits)} bits but reference has {len(reference_bits)}"
+            f"RequireBitsLengthMatch mismatch: input {len(bits)} bits; reference {len(reference_bits)} bits — input is {abs(difference)} {unit} {direction}"
         )
     return {"out": bits.copy()}
 

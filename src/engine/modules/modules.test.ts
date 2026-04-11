@@ -468,7 +468,9 @@ describe('RequireSymbolLengthMatch', () => {
         },
         {},
       ),
-    ).toThrow(/length mismatch/i);
+    ).toThrow(
+      'RequireSymbolLengthMatch mismatch: input 9 chars; reference 3 chars — input is 6 chars longer',
+    );
   });
 });
 
@@ -760,7 +762,9 @@ describe('RequireBitsLengthMatch', () => {
         },
         {},
       ),
-    ).toThrow(/length mismatch/i);
+    ).toThrow(
+      'RequireBitsLengthMatch mismatch: input 3 bits; reference 4 bits — input is 1 bit shorter',
+    );
   });
 });
 

@@ -2,7 +2,7 @@
 
 Last updated: April 11, 2026
 
-Status: Draft
+Status: Shipped
 
 ## Purpose
 
@@ -58,9 +58,22 @@ This slice builds on:
 
 This is the workflow-polish follow-on after the strict helpers already exist and have micro demos.
 
+## Relationship To `PIPELINE-ROLE-LANGUAGE-V1`
+
+`PIPELINE-ROLE-LANGUAGE-V1` already gives this module family the primary role label:
+- `Role: Mismatch Helper`
+
+This shipped slice extends that language with strict-helper-specific wording such as:
+- `require exact visible reference length`
+- `Strict length check`
+- local failure-state explanation
+
+Do not replace the existing role label.
+Extend it.
+
 ## Include
 
-V1 should include bounded improvements in:
+V1 includes bounded improvements in:
 
 1. **Inspector clarity**
 - make the selected strict helper clearly read as:
@@ -69,18 +82,22 @@ V1 should include bounded improvements in:
 - make mismatch outcomes concrete in local wording
 
 2. **Validation/runtime message quality**
-- length mismatch messages should be plain and domain-native
+- length mismatch messages should be plain, domain-native, and directional
 - examples:
-  - `input has 6 characters; reference has 8`
-  - `input has 24 bits; reference has 32`
+  - `input has 6 characters; reference has 8 characters — input is 2 characters shorter`
+  - `input has 24 bits; reference has 32 bits — input is 8 bits shorter`
 
 3. **Failure-local workflow hints**
 - small bounded hints such as:
-  - `Use a repair helper upstream if you want to align lengths visibly`
-- this must remain descriptive, not automatic
+  - `If you want visible normalization instead, a repair helper upstream can align lengths before this point`
+- this must remain descriptive, not automatic, and must not imply that the strict helper is misplaced
 
-4. **Focused micro demo and/or Quick Start wording if needed**
-- one clean example where strict mismatch is the point of the lesson
+4. **Focused primitive micro demos**
+- extend one symbol-domain strict-helper micro demo and one bit-domain strict-helper micro demo so the failure is the point of the lesson
+- each demo should show:
+  - one strict branch that blocks on mismatch
+  - one visible repair-helper alternative branch beside it
+  - local sink endpoints that make the contrast legible
 
 ## Exclude
 
@@ -110,12 +127,17 @@ Do not include in V1:
 - hints may name likely upstream helpers
 - hints may not rewrite the graph or collapse the choice
 
+5. **Hints must describe alternatives as design choices, not corrections**
+- good: `If you want visible normalization instead, a repair helper upstream can align lengths before this point.`
+- bad: `Try a repair helper instead.`
+- the require helper stopping the graph is correct behavior; hint language must not undermine that
+
 ## Recommended UI Language
 
 Good examples:
 - `Strict length check`
 - `Execution stopped here because lengths do not match`
-- `Use a repair helper upstream if you want visible normalization instead`
+- `If you want visible normalization instead, a repair helper upstream can align lengths before this point`
 - `This helper does not repeat, pad, or truncate`
 
 Bad examples:
@@ -129,7 +151,7 @@ Likely files/surfaces in scope:
 - strict-helper inspector summaries
 - local validation issue copy
 - runtime/trace issue presentation
-- focused demo/help copy if needed
+- focused strict-helper primitive micro demo copy
 
 This should stay UI-local unless a tiny message-formatting helper is justified.
 

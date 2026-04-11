@@ -226,8 +226,10 @@ describe('primitive micro demos', () => {
     const bridge = getPrimitiveMicroDemo('RequireSymbolLengthMatch');
     expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
       'RequireSymbolLengthMatch',
+      'RepeatSymbolToMatch',
       'SymbolSequenceInput',
       'SymbolSequenceInput',
+      'TextOutput',
       'TextOutput',
     ]);
   });
@@ -452,8 +454,10 @@ describe('primitive micro demos', () => {
     const bridge = getPrimitiveMicroDemo('RequireBitsLengthMatch');
     expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
       'RequireBitsLengthMatch',
+      'PadBitsToMatch',
       'BitSequenceInput',
       'BitSequenceInput',
+      'BitOutput',
       'BitOutput',
     ]);
   });
