@@ -66,6 +66,7 @@ import { SymbolPermutation } from './symbol-permutation';
 import { SymbolWindow } from './symbol-window';
 import { RepeatSymbolToLength } from './repeat-symbol-to-length';
 import { RepeatSymbolToMatch } from './repeat-symbol-to-match';
+import { PadSymbolToMatch } from './pad-symbol-to-match';
 import { TruncateSymbolSequence } from './truncate-symbol-sequence';
 import { TruncateSymbolToMatch } from './truncate-symbol-to-match';
 import { SymbolSequenceToTicked } from './symbol-sequence-to-ticked';
@@ -80,6 +81,7 @@ import { BitUnpad } from './bit-unpad';
 import { BitWindow } from './bit-window';
 import { RepeatBitsToLength } from './repeat-bits-to-length';
 import { RepeatBitsToMatch } from './repeat-bits-to-match';
+import { PadBitsToMatch } from './pad-bits-to-match';
 import { BroadcastBits } from './broadcast-bits';
 import { TruncateBitsSequence } from './truncate-bits-sequence';
 import { TruncateBitsToMatch } from './truncate-bits-to-match';
@@ -154,6 +156,7 @@ export {
   SymbolWindow,
   RepeatSymbolToLength,
   RepeatSymbolToMatch,
+  PadSymbolToMatch,
   TruncateSymbolSequence,
   TruncateSymbolToMatch,
   SymbolSequenceToTicked,
@@ -168,6 +171,7 @@ export {
   BitWindow,
   RepeatBitsToLength,
   RepeatBitsToMatch,
+  PadBitsToMatch,
   BroadcastBits,
   TruncateBitsSequence,
   TruncateBitsToMatch,
@@ -243,6 +247,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [SymbolWindow.id]: SymbolWindow,
   [RepeatSymbolToLength.id]: RepeatSymbolToLength,
   [RepeatSymbolToMatch.id]: RepeatSymbolToMatch,
+  [PadSymbolToMatch.id]: PadSymbolToMatch,
   [TruncateSymbolSequence.id]: TruncateSymbolSequence,
   [TruncateSymbolToMatch.id]: TruncateSymbolToMatch,
   [SymbolSequenceToTicked.id]: SymbolSequenceToTicked,
@@ -257,6 +262,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [BitWindow.id]: BitWindow,
   [RepeatBitsToLength.id]: RepeatBitsToLength,
   [RepeatBitsToMatch.id]: RepeatBitsToMatch,
+  [PadBitsToMatch.id]: PadBitsToMatch,
   [BroadcastBits.id]: BroadcastBits,
   [TruncateBitsSequence.id]: TruncateBitsSequence,
   [TruncateBitsToMatch.id]: TruncateBitsToMatch,

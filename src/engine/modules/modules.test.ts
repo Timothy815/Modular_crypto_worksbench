@@ -77,6 +77,7 @@ import {
 import { Permutation } from './permutation';
 import { SymbolPermutation } from './symbol-permutation';
 import { SymbolWindow } from './symbol-window';
+import { PadSymbolToMatch } from './pad-symbol-to-match';
 import { RepeatSymbolToLength } from './repeat-symbol-to-length';
 import { RepeatSymbolToMatch } from './repeat-symbol-to-match';
 import { TruncateSymbolSequence } from './truncate-symbol-sequence';
@@ -92,6 +93,7 @@ import { BitSplit } from './bit-split';
 import { BitPad } from './bit-pad';
 import { BitUnpad } from './bit-unpad';
 import { BitWindow } from './bit-window';
+import { PadBitsToMatch } from './pad-bits-to-match';
 import { RepeatBitsToLength } from './repeat-bits-to-length';
 import { RepeatBitsToMatch } from './repeat-bits-to-match';
 import { BroadcastBits } from './broadcast-bits';
@@ -408,6 +410,41 @@ describe('TruncateSymbolToMatch', () => {
   });
 });
 
+describe('PadSymbolToMatch', () => {
+  it('pads on the left to match the reference length', () => {
+    const result = PadSymbolToMatch.evaluate(
+      {
+        in: { type: 'symbol', value: 'KEY' },
+        reference: { type: 'symbol', value: 'HELLOWORLD' },
+      },
+      { side: 'left', padChar: '_' },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: '_______KEY' });
+  });
+
+  it('pads on the right to match the reference length', () => {
+    const result = PadSymbolToMatch.evaluate(
+      {
+        in: { type: 'symbol', value: 'KEY' },
+        reference: { type: 'symbol', value: 'HELLOWORLD' },
+      },
+      { side: 'right', padChar: 'X' },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'KEYXXXXXXX' });
+  });
+
+  it('keeps the input unchanged when it is already longer than the reference', () => {
+    const result = PadSymbolToMatch.evaluate(
+      {
+        in: { type: 'symbol', value: 'HELLOWORLD' },
+        reference: { type: 'symbol', value: 'KEY' },
+      },
+      { side: 'right', padChar: ' ' },
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'HELLOWORLD' });
+  });
+});
+
 describe('Symbol sequence foundation', () => {
   it('emits a whole symbol sequence explicitly', () => {
     const result = SymbolSequenceInput.evaluate({}, { value: 'KEY' });
@@ -637,6 +674,41 @@ describe('TruncateBitsToMatch', () => {
       { side: 'left' },
     );
     expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1] });
+  });
+});
+
+describe('PadBitsToMatch', () => {
+  it('pads on the left to match the reference width', () => {
+    const result = PadBitsToMatch.evaluate(
+      {
+        in: { type: 'bits', value: [1, 0, 1] },
+        reference: { type: 'bits', value: [0, 0, 0, 0, 0, 0, 0, 0] },
+      },
+      { side: 'left', padBit: '0' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [0, 0, 0, 0, 0, 1, 0, 1] });
+  });
+
+  it('pads on the right to match the reference width', () => {
+    const result = PadBitsToMatch.evaluate(
+      {
+        in: { type: 'bits', value: [1, 0, 1] },
+        reference: { type: 'bits', value: [0, 0, 0, 0, 0, 0, 0, 0] },
+      },
+      { side: 'right', padBit: '1' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1, 1, 1, 1, 1, 1] });
+  });
+
+  it('keeps the input unchanged when it is already longer than the reference', () => {
+    const result = PadBitsToMatch.evaluate(
+      {
+        in: { type: 'bits', value: [1, 0, 1, 1, 0, 0, 1, 1] },
+        reference: { type: 'bits', value: [0, 0, 0, 0] },
+      },
+      { side: 'right', padBit: '0' },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1, 1, 0, 0, 1, 1] });
   });
 });
 

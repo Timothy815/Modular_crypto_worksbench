@@ -34,6 +34,8 @@ import { Mux } from './modules/mux';
 import { Nonce } from './modules/nonce';
 import { NOT } from './modules/not';
 import { OR } from './modules/or';
+import { PadBitsToMatch } from './modules/pad-bits-to-match';
+import { PadSymbolToMatch } from './modules/pad-symbol-to-match';
 import { Permutation } from './modules/permutation';
 import {
   PolluxControlledFractionation,
@@ -158,6 +160,8 @@ const registry: ModuleRegistry = {
   [TruncateBitsSequence.id]: TruncateBitsSequence,
   [TruncateBitsToMatch.id]: TruncateBitsToMatch,
   [PadBitsSequence.id]: PadBitsSequence,
+  [PadBitsToMatch.id]: PadBitsToMatch,
+  [PadSymbolToMatch.id]: PadSymbolToMatch,
   [GreaterThan.id]: GreaterThan,
   [Demux.id]: Demux,
   [TextInput.id]: TextInput,
@@ -1274,6 +1278,30 @@ describe('validateProject', () => {
   it('rejects PadBitsSequence padBit outside the bounded choices', () => {
     const project: Project = {
       modules: [{ id: 'pad', defId: 'PadBitsSequence', params: { targetLength: 8, side: 'left', padBit: '2' } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'invalid-param-option' && issue.moduleId === 'pad')).toBe(true);
+  });
+
+  it('rejects PadSymbolToMatch padChar values longer than one character', () => {
+    const project: Project = {
+      modules: [{ id: 'pad', defId: 'PadSymbolToMatch', params: { side: 'right', padChar: 'AB' } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'invalid-param-type' && issue.moduleId === 'pad')).toBe(true);
+  });
+
+  it('rejects PadBitsToMatch padBit outside the bounded choices', () => {
+    const project: Project = {
+      modules: [{ id: 'pad', defId: 'PadBitsToMatch', params: { side: 'left', padBit: '2' } }],
       connections: [],
     };
 

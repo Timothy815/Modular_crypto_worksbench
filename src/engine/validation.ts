@@ -39,7 +39,9 @@ import { validateBitWindowParam } from './modules/bit-window';
 import { validateByteRotateParam } from './modules/byte-rotate';
 import { validateBroadcastBitsParam } from './modules/broadcast-bits';
 import { validateBitsSequenceToTickedParam } from './modules/bits-sequence-to-ticked';
+import { validatePadBitsToMatchParam } from './modules/pad-bits-to-match';
 import { validatePadBitsSequenceParam } from './modules/pad-bits-sequence';
+import { validatePadSymbolToMatchParam } from './modules/pad-symbol-to-match';
 import { parsePolluxAlphabet, validatePolluxFractionationParam } from './modules/pollux-fractionation';
 import { validateRepeatBitsToLengthParam } from './modules/repeat-bits-to-length';
 import { validateRepeatSymbolToLengthParam } from './modules/repeat-symbol-to-length';
@@ -275,6 +277,10 @@ function getModuleSpecificParamMessage(
     return validateBroadcastBitsParam(field.key, value);
   }
 
+  if (def.id === 'PadSymbolToMatch') {
+    return validatePadSymbolToMatchParam(field.key, value);
+  }
+
   if (def.id === 'TruncateBitsSequence') {
     return validateTruncateBitsSequenceParam(field.key, value);
   }
@@ -285,6 +291,10 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'PadBitsSequence') {
     return validatePadBitsSequenceParam(field.key, value);
+  }
+
+  if (def.id === 'PadBitsToMatch') {
+    return validatePadBitsToMatchParam(field.key, value);
   }
 
   if (def.id === 'BitsSequenceToTicked') {

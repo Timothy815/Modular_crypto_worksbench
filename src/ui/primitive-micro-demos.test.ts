@@ -27,6 +27,7 @@ describe('primitive micro demos', () => {
       'AsciiSequenceInput',
       'RepeatSymbolToLength',
       'RepeatSymbolToMatch',
+      'PadSymbolToMatch',
       'TruncateSymbolSequence',
       'TruncateSymbolToMatch',
       'SymbolSequenceToTicked',
@@ -44,6 +45,7 @@ describe('primitive micro demos', () => {
       'TickedBitsToSequence',
       'BitSequenceInput',
       'RepeatBitsToMatch',
+      'PadBitsToMatch',
       'TruncateBitsSequence',
       'TruncateBitsToMatch',
       'PadBitsSequence',
@@ -75,6 +77,9 @@ describe('primitive micro demos', () => {
     );
     expect(getPrimitiveMicroDemo('RepeatSymbolToMatch')?.name).toBe(
       'Repeat Symbol To Match Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('PadSymbolToMatch')?.name).toBe(
+      'Pad Symbol To Match Micro Demo',
     );
     expect(getPrimitiveMicroDemo('TruncateSymbolSequence')?.name).toBe(
       'Truncate Symbol Sequence Micro Demo',
@@ -123,6 +128,7 @@ describe('primitive micro demos', () => {
     );
     expect(getPrimitiveMicroDemo('BitSequenceInput')?.name).toBe('Bit Sequence Input Micro Demo');
     expect(getPrimitiveMicroDemo('RepeatBitsToMatch')?.name).toBe('Repeat Bits To Match Micro Demo');
+    expect(getPrimitiveMicroDemo('PadBitsToMatch')?.name).toBe('Pad Bits To Match Micro Demo');
     expect(getPrimitiveMicroDemo('TruncateBitsSequence')?.name).toBe(
       'Truncate Bits Sequence Micro Demo',
     );
@@ -192,6 +198,16 @@ describe('primitive micro demos', () => {
     const bridge = getPrimitiveMicroDemo('RepeatSymbolToMatch');
     expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
       'RepeatSymbolToMatch',
+      'SymbolSequenceInput',
+      'SymbolSequenceInput',
+      'TextOutput',
+    ]);
+  });
+
+  it('keeps the symbol pad-to-match example honest about visible reference-driven padding', () => {
+    const bridge = getPrimitiveMicroDemo('PadSymbolToMatch');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'PadSymbolToMatch',
       'SymbolSequenceInput',
       'SymbolSequenceInput',
       'TextOutput',
@@ -379,6 +395,16 @@ describe('primitive micro demos', () => {
     const bridge = getPrimitiveMicroDemo('RepeatBitsToMatch');
     expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
       'RepeatBitsToMatch',
+      'BitSequenceInput',
+      'BitSequenceInput',
+      'BitOutput',
+    ]);
+  });
+
+  it('keeps the bit pad-to-match example honest about visible reference-driven padding', () => {
+    const bridge = getPrimitiveMicroDemo('PadBitsToMatch');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'PadBitsToMatch',
       'BitSequenceInput',
       'BitSequenceInput',
       'BitOutput',

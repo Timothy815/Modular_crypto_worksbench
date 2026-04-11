@@ -43,6 +43,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'SymbolPermutation',
   'SymbolWindow',
   'RepeatSymbolToLength',
+  'PadSymbolToMatch',
   'TruncateSymbolSequence',
   'TruncateSymbolToMatch',
   'SymbolToBits',
@@ -84,6 +85,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'BitWindow',
   'RepeatBitsToLength',
   'RepeatBitsToMatch',
+  'PadBitsToMatch',
   'BroadcastBits',
   'TruncateBitsSequence',
   'TruncateBitsToMatch',
@@ -183,6 +185,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'symbol_permutation',
   'symbol_window',
   'repeat_symbol_to_length',
+  'pad_symbol_to_match',
   'repeat_symbol_to_match',
   'truncate_symbol_to_match',
   'truncate_symbol_sequence',
@@ -230,6 +233,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'bit_window',
   'repeat_bits_to_length',
   'repeat_bits_to_match',
+  'pad_bits_to_match',
   'broadcast_bits',
   'truncate_bits_to_match',
   'truncate_bits_sequence',
@@ -821,6 +825,24 @@ def repeat_symbol_to_length(signal, target_length):
     return {"out": "".join(characters[index % len(characters)] for index in range(target_length))}
 
 
+def pad_symbol_to_match(signal, reference, side, pad_char):
+    symbol = str(signal)
+    reference_symbol = str(reference)
+    target_length = len(list(reference_symbol))
+    if side not in ("left", "right"):
+        raise ValueError("PadSymbolToMatch side must be left or right.")
+    if not isinstance(pad_char, str) or len(pad_char) != 1:
+        raise ValueError('PadSymbolToMatch requires "padChar" to be exactly one character')
+    code_point = ord(pad_char)
+    if code_point < 0x20 or code_point > 0x7E:
+        raise ValueError('PadSymbolToMatch requires "padChar" to be one printable non-control ASCII character')
+    if len(symbol) >= target_length:
+        return {"out": symbol}
+    pad_count = target_length - len(symbol)
+    padding = pad_char * pad_count
+    return {"out": padding + symbol if side == "left" else symbol + padding}
+
+
 def repeat_symbol_to_match(signal, reference):
     symbol = str(signal)
     characters = list(symbol)
@@ -1192,6 +1214,22 @@ def repeat_bits_to_length(signal, target_length):
     if len(bits) == 0:
         raise ValueError("RepeatBitsToLength cannot repeat an empty bit sequence")
     return {"out": [bits[index % len(bits)] for index in range(target_length)]}
+
+
+def pad_bits_to_match(signal, reference, side, pad_bit):
+    bits = _expect_bits(signal, "PadBitsToMatch")
+    reference_bits = _expect_bits(reference, "PadBitsToMatch")
+    target_length = len(reference_bits)
+    if side not in ("left", "right"):
+        raise ValueError("PadBitsToMatch side must be left or right.")
+    if str(pad_bit) not in ("0", "1"):
+        raise ValueError('PadBitsToMatch requires "padBit" to be 0 or 1')
+    if len(bits) >= target_length:
+        return {"out": bits.copy()}
+    pad_count = target_length - len(bits)
+    pad_value = 1 if str(pad_bit) == "1" else 0
+    padding = [pad_value for _ in range(pad_count)]
+    return {"out": padding + bits if side == "left" else bits + padding}
 
 
 def repeat_bits_to_match(signal, reference):
@@ -2264,6 +2302,8 @@ function buildModuleExpression(
       return `symbol_window(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'start')}, ${expressionContext.getParamExpression(moduleInstance, def, 'width')})`;
     case 'RepeatSymbolToLength':
       return `repeat_symbol_to_length(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetLength')})`;
+    case 'PadSymbolToMatch':
+      return `pad_symbol_to_match(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'reference')}, ${expressionContext.getParamExpression(moduleInstance, def, 'side')}, ${expressionContext.getParamExpression(moduleInstance, def, 'padChar')})`;
     case 'RepeatSymbolToMatch':
       return `repeat_symbol_to_match(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'reference')})`;
     case 'TruncateSymbolToMatch':
@@ -2354,6 +2394,8 @@ function buildModuleExpression(
       return `bit_window(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'start')}, ${expressionContext.getParamExpression(moduleInstance, def, 'width')})`;
     case 'RepeatBitsToLength':
       return `repeat_bits_to_length(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetLength')})`;
+    case 'PadBitsToMatch':
+      return `pad_bits_to_match(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'reference')}, ${expressionContext.getParamExpression(moduleInstance, def, 'side')}, ${expressionContext.getParamExpression(moduleInstance, def, 'padBit')})`;
     case 'RepeatBitsToMatch':
       return `repeat_bits_to_match(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'reference')})`;
     case 'BroadcastBits':

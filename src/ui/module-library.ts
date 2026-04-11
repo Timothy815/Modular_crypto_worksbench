@@ -387,6 +387,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this for repeated-key authoring when the message already exists in the graph and you want the repeat policy to stay explicit without manually counting characters.',
     searchTerms: ['repeat symbol to match', 'repeat key', 'vigenere', 'reference length', 'match message', 'symbol'],
   },
+  PadSymbolToMatch: {
+    sectionId: 'symbol-domain',
+    sortOrder: 58,
+    purpose: 'Pads a visible symbol sequence until it reaches a visible reference length.',
+    detail: 'Use this when another explicit symbol sequence should define the target length and the pad side and pad character should stay visible on the graph. Longer inputs stay unchanged.',
+    searchTerms: ['pad symbol to match', 'pad to reference', 'pad character', 'reference length', 'symbol sequence'],
+  },
   TruncateSymbolSequence: {
     sectionId: 'symbol-domain',
     sortOrder: 60,
@@ -505,6 +512,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Repeats a visible bit pattern until it matches a visible reference buffer width.',
     detail: 'Use this for repeated-key XOR or repeated masks when another explicit bit buffer should define the output width without hidden operator behavior. Length is measured in bits, not word groups.',
     searchTerms: ['repeat bits to match', 'mask repeat', 'reference width', 'repeated key xor', 'bits', 'framing'],
+  },
+  PadBitsToMatch: {
+    sectionId: 'framing-routing',
+    sortOrder: 58,
+    purpose: 'Pads a visible bit sequence until it reaches a visible reference width.',
+    detail: 'Use this when another explicit bit buffer should define the target width and the pad side and pad bit should stay explicit. Length is measured in bits, and longer inputs stay unchanged.',
+    searchTerms: ['pad bits to match', 'pad to reference', 'pad bit', 'reference width', 'bits', 'framing'],
   },
   BroadcastBits: {
     sectionId: 'framing-routing',

@@ -747,6 +747,38 @@ const REPEAT_SYMBOL_TO_MATCH_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const PAD_SYMBOL_TO_MATCH_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'PadSymbolToMatch',
+  name: 'Pad Symbol To Match Micro Demo',
+  summary: 'Visible padding ergonomics: one symbol sequence grows to a visible reference length with an explicit pad character.',
+  pipeline: 'SymbolSequenceInput(shortCode) + SymbolSequenceInput(reference) -> PadSymbolToMatch -> TextOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'pad', defId: 'PadSymbolToMatch', params: { side: 'left', padChar: ' ' } },
+        { id: 'short-code', defId: 'SymbolSequenceInput', params: { value: 'KEY' } },
+        { id: 'reference', defId: 'SymbolSequenceInput', params: { value: 'HELLOWORLD' } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'short-code', port: 'out' }, to: { moduleId: 'pad', port: 'in' } },
+        { from: { moduleId: 'reference', port: 'out' }, to: { moduleId: 'pad', port: 'reference' } },
+        { from: { moduleId: 'pad', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        pad: { x: 432, y: 176 },
+        'short-code': { x: 72, y: 120 },
+        reference: { x: 72, y: 260 },
+        out: { x: 764, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const TRUNCATE_SYMBOL_SEQUENCE_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'TruncateSymbolSequence',
   name: 'Truncate Symbol Sequence Micro Demo',
@@ -1356,6 +1388,38 @@ const REPEAT_BITS_TO_MATCH_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const PAD_BITS_TO_MATCH_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'PadBitsToMatch',
+  name: 'Pad Bits To Match Micro Demo',
+  summary: 'Visible padding ergonomics: one bit sequence grows to a visible reference width with an explicit pad bit.',
+  pipeline: 'BitSequenceInput(shortBlock) + BitSequenceInput(reference) -> PadBitsToMatch -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'pad', defId: 'PadBitsToMatch', params: { side: 'right', padBit: '0' } },
+        { id: 'short-block', defId: 'BitSequenceInput', params: { stream: [1, 0, 1] } },
+        { id: 'reference', defId: 'BitSequenceInput', params: { stream: [0, 0, 0, 0, 0, 0, 0, 0] } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'short-block', port: 'out' }, to: { moduleId: 'pad', port: 'in' } },
+        { from: { moduleId: 'reference', port: 'out' }, to: { moduleId: 'pad', port: 'reference' } },
+        { from: { moduleId: 'pad', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        pad: { x: 436, y: 176 },
+        'short-block': { x: 72, y: 120 },
+        reference: { x: 72, y: 260 },
+        out: { x: 756, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const HEX_SEQUENCE_INPUT_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'HexSequenceInput',
   name: 'Hex Sequence Input Micro Demo',
@@ -1568,6 +1632,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   ASCII_SEQUENCE_INPUT_MICRO_DEMO,
   REPEAT_SYMBOL_TO_LENGTH_MICRO_DEMO,
   REPEAT_SYMBOL_TO_MATCH_MICRO_DEMO,
+  PAD_SYMBOL_TO_MATCH_MICRO_DEMO,
   TRUNCATE_SYMBOL_SEQUENCE_MICRO_DEMO,
   TRUNCATE_SYMBOL_TO_MATCH_MICRO_DEMO,
   SYMBOL_SEQUENCE_TO_TICKED_MICRO_DEMO,
@@ -1585,6 +1650,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   TICKED_BITS_TO_SEQUENCE_MICRO_DEMO,
   BIT_SEQUENCE_INPUT_MICRO_DEMO,
   REPEAT_BITS_TO_MATCH_MICRO_DEMO,
+  PAD_BITS_TO_MATCH_MICRO_DEMO,
   TRUNCATE_BITS_SEQUENCE_MICRO_DEMO,
   TRUNCATE_BITS_TO_MATCH_MICRO_DEMO,
   PAD_BITS_SEQUENCE_MICRO_DEMO,
