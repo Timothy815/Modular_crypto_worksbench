@@ -141,6 +141,7 @@ export type DetachedPanelCommand =
   | { type: 'openComposite'; defId: string }
   | { type: 'duplicateReusable'; defId: string }
   | { type: 'openPrimitiveMicroDemo'; defId: string }
+  | { type: 'openPipelineMicroDemo'; pipelineId: string }
   | { type: 'exportCompositeLibrary' }
   | { type: 'removeComposite'; defId: string }
   | { type: 'copyParams'; moduleId: string }

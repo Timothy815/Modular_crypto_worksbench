@@ -87,6 +87,7 @@ import {
   loadInitialVerificationCasesByProject,
 } from './ui/workspace-artifacts';
 import { getPrimitiveMicroDemo } from './ui/primitive-micro-demos';
+import { getPipelineMicroDemo } from './ui/pipeline-micro-demos';
 import { buildCompositeInstanceDrilldownContext } from './ui/composite-instance-drilldown';
 import { computeAutoWireConnections, type AutoWireMode } from './ui/autowire-selection';
 
@@ -1600,6 +1601,49 @@ function MainApp() {
     [availableProjects, state.compositeEditor, state.userWorkspaceLibrary],
   );
 
+  const handleOpenPipelineMicroDemo = useCallback(
+    (pipelineId: string) => {
+      if (state.compositeEditor) {
+        window.alert('Pipeline micro demos are unavailable while editing a reusable composite.');
+        return;
+      }
+
+      const pipelineMicroDemo = getPipelineMicroDemo(pipelineId);
+      if (!pipelineMicroDemo) {
+        return;
+      }
+
+      const existingWorkspaceNames = new Set(
+        state.userWorkspaceLibrary.map((workspace) => workspace.name),
+      );
+      const workspaceName = createWorkspaceNameFromBase(pipelineMicroDemo.name, existingWorkspaceNames);
+      const workspaceId = createUniqueWorkspaceId(
+        workspaceName,
+        new Set(availableProjects.map((project) => project.id)),
+      );
+
+      dispatch({
+        type: 'createBlankWorkspace',
+        workspaceId,
+        name: workspaceName,
+        summary: pipelineMicroDemo.summary,
+        pipeline: pipelineMicroDemo.pipeline,
+      });
+      dispatch({
+        type: 'loadDocument',
+        projectId: workspaceId,
+        document: pipelineMicroDemo.document,
+      });
+      dispatch({
+        type: 'setTickedMode',
+        projectId: workspaceId,
+        enabled: pipelineMicroDemo.defaultTickedMode ?? false,
+      });
+      setImportError(null);
+    },
+    [availableProjects, state.compositeEditor, state.userWorkspaceLibrary],
+  );
+
   function handleDuplicateSelectedCluster() {
     if (state.compositeEditor) {
       return;
@@ -1935,6 +1979,7 @@ function MainApp() {
         }
       },
       openPrimitiveMicroDemo: handleOpenPrimitiveMicroDemo,
+      openPipelineMicroDemo: handleOpenPipelineMicroDemo,
       exportCompositeLibrary: () =>
         downloadCompositeLibraryDocument({
           version: 1,
@@ -2106,6 +2151,7 @@ function MainApp() {
       handleImportChallengeRaw,
       handleImportVerificationCases,
       handleLoadChallengeStart,
+      handleOpenPipelineMicroDemo,
       handleOpenPrimitiveMicroDemo,
       handleRemoveVerificationCase,
       handleSelectChallenge,
@@ -3744,6 +3790,7 @@ function MainApp() {
                 }
                 onSelectTutorial={(tutorialId) => handleSelectTutorial(tutorialId)}
                 onOpenTutorialPath={handleOpenTutorialPath}
+                onOpenPipelineMicroDemo={handleOpenPipelineMicroDemo}
                 onSetTutorialStep={(stepValue) => {
                   setStepIndex(selectedTutorial?.steps[stepValue]?.targetStepIndex ?? null);
                   dispatch({

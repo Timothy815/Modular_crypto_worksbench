@@ -78,6 +78,7 @@ interface LearningDockProps {
   onModernFlipBitChange: (value: number) => void;
   onSelectTutorial: (tutorialId: string) => void;
   onOpenTutorialPath: (projectId: string, tutorialId: string) => void;
+  onOpenPipelineMicroDemo: (pipelineId: string) => void;
   onSetTutorialStep: (stepIndex: number) => void;
   onSwitchProject: (projectId: string) => void;
   onFocusStepModule: (moduleId: string) => void;
@@ -127,6 +128,7 @@ export function LearningDock({
   onModernFlipBitChange,
   onSelectTutorial,
   onOpenTutorialPath,
+  onOpenPipelineMicroDemo,
   onSetTutorialStep,
   onSwitchProject,
   onFocusStepModule,
@@ -209,6 +211,7 @@ export function LearningDock({
             starterChallengeSolved={selectedChallenge?.id === 'repair-bridge-key' && challengeEvaluation?.status === 'success'}
             onOpenProject={onSwitchProject}
             onOpenTutorialPath={onOpenTutorialPath}
+            onOpenPipelineMicroDemo={onOpenPipelineMicroDemo}
             onOpenChallenge={onSelectChallenge}
             onOpenManual={onOpenManual}
             onOpenCryptanalysis={() => {

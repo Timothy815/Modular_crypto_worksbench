@@ -1,4 +1,5 @@
 import { FIRST_SESSION_QUICK_START, QUICK_START_SURFACES } from '../quick-start';
+import { PIPELINE_MICRO_DEMOS } from '../pipeline-micro-demos';
 
 interface QuickStartPanelProps {
   currentProjectId: string;
@@ -7,6 +8,7 @@ interface QuickStartPanelProps {
   starterChallengeSolved: boolean;
   onOpenProject: (projectId: string) => void;
   onOpenTutorialPath: (projectId: string, tutorialId: string) => void;
+  onOpenPipelineMicroDemo: (pipelineId: string) => void;
   onOpenChallenge: (challengeId: string) => void;
   onOpenManual: () => void;
   onOpenCryptanalysis: () => void;
@@ -19,6 +21,7 @@ export function QuickStartPanel({
   starterChallengeSolved,
   onOpenProject,
   onOpenTutorialPath,
+  onOpenPipelineMicroDemo,
   onOpenChallenge,
   onOpenManual,
   onOpenCryptanalysis,
@@ -117,6 +120,31 @@ export function QuickStartPanel({
               <div key={surface.id} className="quick-start-surface-row">
                 <strong>{surface.title}</strong>
                 <p className="comparison-copy">{surface.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="comparison-card comparison-card-wide">
+          <span className="meta-label">Pipeline Micro Demos</span>
+          <p className="comparison-copy">
+            These compact end-to-end examples show how bridges, mismatch helpers, collectors, and
+            operational transforms fit together in one honest working path.
+          </p>
+          <div className="quick-start-surface-list">
+            {PIPELINE_MICRO_DEMOS.map((demo) => (
+              <div key={demo.id} className="quick-start-surface-row">
+                <strong>{demo.name}</strong>
+                <p className="comparison-copy">{demo.summary}</p>
+                <div className="comparison-actions">
+                  <button
+                    type="button"
+                    className="mini-action-button"
+                    onClick={() => onOpenPipelineMicroDemo(demo.id)}
+                  >
+                    Open Pipeline Demo
+                  </button>
+                </div>
               </div>
             ))}
           </div>

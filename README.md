@@ -114,6 +114,11 @@ The next bounded bridge-completeness candidate after that is now shipped as:
 - a bounded bridge-family slice for making ASCII and Hex fully usable in real cryptographic pipelines through explicit scalar/ticked bridges into `bits`
 - keeps MCW multi-domain while eliminating representation dead ends
 
+The next bounded composition-teaching follow-on after that is now shipped as:
+- `PIPELINE-MICRO-DEMOS-V1.md`
+- a bounded Quick Start pipeline-demo slice for honest end-to-end sequence, bridge, and mismatch workflows
+- complements primitive-local `Try Demo` examples without adding a second full tutorial system
+
 The previous dense-workspace crossing follow-on is now already shipped as:
 - `WIRE-CROSSING-DISCIPLINE-V1.md`
 - a bounded readability pass focused on stronger visual hierarchy at wire intersections

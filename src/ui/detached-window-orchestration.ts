@@ -140,6 +140,7 @@ export interface DetachedPanelCommandHandlers {
   openComposite: (defId: string) => void;
   duplicateReusable: (defId: string) => void;
   openPrimitiveMicroDemo: (defId: string) => void;
+  openPipelineMicroDemo: (pipelineId: string) => void;
   exportCompositeLibrary: () => void;
   removeComposite: (defId: string) => void;
   copyParams: (moduleId: string) => void;
@@ -262,6 +263,9 @@ export function connectDetachedPanelChannel(args: DetachedPanelChannelBridgeArgs
         return;
       case 'openPrimitiveMicroDemo':
         args.commandHandlers.openPrimitiveMicroDemo(command.defId);
+        return;
+      case 'openPipelineMicroDemo':
+        args.commandHandlers.openPipelineMicroDemo(command.pipelineId);
         return;
       case 'exportCompositeLibrary':
         args.commandHandlers.exportCompositeLibrary();

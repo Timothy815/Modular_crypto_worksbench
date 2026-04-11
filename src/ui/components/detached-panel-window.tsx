@@ -940,6 +940,9 @@ function DetachedLearningView({
           onOpenTutorialPath={(projectId, tutorialId) =>
             onSendCommand({ type: 'selectTutorial', tutorialId, projectId })
           }
+          onOpenPipelineMicroDemo={(pipelineId) =>
+            onSendCommand({ type: 'openPipelineMicroDemo', pipelineId })
+          }
           onOpenChallenge={(challengeId) => onSendCommand({ type: 'selectChallenge', challengeId })}
           onOpenManual={() => {
             window.open(
