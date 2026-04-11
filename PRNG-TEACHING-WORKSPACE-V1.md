@@ -1,6 +1,6 @@
 # PRNG-TEACHING-WORKSPACE-V1
 
-Status: Implemented
+Status: Shipped on `main`.
 
 Owner: Codex
 Scope: Sequential / Historical Bridges / Cryptanalysis Teaching

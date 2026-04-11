@@ -1,6 +1,6 @@
 # GUIDE-STAGE-SNAP-EXPANSION-V1
 
-Status: Implemented locally, pending push
+Status: Shipped on `main`.
 Date: 2026-04-04
 
 ## Intent

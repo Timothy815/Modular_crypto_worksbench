@@ -1,6 +1,6 @@
 # FLAGSHIP-LAB-MODERN-V1
 
-Status: Implemented
+Status: Shipped on `main`.
 
 Owner: Codex
 Scope: Modern Flagship Sequence / Tutorials / Challenges / Cryptanalysis / Verification / Manual

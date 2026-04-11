@@ -1,6 +1,6 @@
 # POLLUX-INVERSE-V1
 
-Status: Implemented
+Status: Shipped on `main`.
 
 Owner: Codex
 Scope: Classical Cryptanalysis / Historical Bridges / Pollux Round-Trip

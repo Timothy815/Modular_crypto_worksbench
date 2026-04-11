@@ -2,7 +2,7 @@
 
 Last updated: March 24, 2026
 
-Status: Ready to frame/tag as the `v1.7.0` Hashing V1 milestone.
+Status: Shipped on `main`.
 
 ## Purpose
 

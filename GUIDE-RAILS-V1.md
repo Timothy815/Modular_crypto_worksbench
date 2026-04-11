@@ -1,6 +1,6 @@
 # GUIDE-RAILS-V1
 
-Status: Implemented locally
+Status: Shipped on `main`.
 
 ## Goal
 

@@ -2,7 +2,7 @@
 
 Last updated: March 25, 2026
 
-Status: First milestone shipped in `v1.28.0`.
+Status: Shipped on `main`.
 
 ## Purpose
 

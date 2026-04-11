@@ -1,6 +1,6 @@
 # WORKSPACE-POLISH-V2
 
-Status: Implemented locally
+Status: Shipped on `main`.
 
 ## Intent
 

@@ -1,6 +1,6 @@
 # SOFT-GRID-SNAP-V1
 
-Status: Implemented locally, pending push
+Status: Shipped on `main`.
 
 Owner: Codex
 Scope: Workbench UI metadata and placement ergonomics only

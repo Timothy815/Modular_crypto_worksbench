@@ -1,6 +1,6 @@
 # USER-MANUAL-V1
 
-Status: Implemented
+Status: Shipped on `main`.
 
 Owner: Codex
 Scope: UI / Product Surface / Documentation

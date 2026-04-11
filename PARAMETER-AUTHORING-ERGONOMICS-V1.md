@@ -2,7 +2,7 @@
 
 Last updated: March 27, 2026
 
-Status: Implemented on `main` after `CONNECTION-AUTHORING-ERGONOMICS-V1`.
+Status: Shipped on `main`.
 
 ## Purpose
 

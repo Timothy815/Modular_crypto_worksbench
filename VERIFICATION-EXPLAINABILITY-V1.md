@@ -1,6 +1,6 @@
 # VERIFICATION-EXPLAINABILITY-V1
 
-Status: Implemented
+Status: Shipped on `main`.
 
 Owner: Codex
 Scope: Compare Surface / Verification Station / Failure Interpretation / User Guidance

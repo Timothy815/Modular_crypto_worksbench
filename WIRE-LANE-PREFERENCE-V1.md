@@ -1,6 +1,6 @@
 # WIRE-LANE-PREFERENCE-V1
 
-Status: Implemented locally, pending push
+Status: Shipped on `main`.
 Date: 2026-04-03
 
 ## Intent

@@ -2,7 +2,7 @@
 
 Last updated: March 27, 2026
 
-Status: Implemented on `feature/workspace-landmarks`; validated with `LARGE-WORKSPACE-UX-AUDIT.md` and carried forward as one bounded orientation fix.
+Status: Shipped on `main`.
 
 ## Purpose
 

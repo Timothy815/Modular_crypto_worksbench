@@ -1,6 +1,6 @@
 # POLLUX-FRACTIONATION-V1
 
-Status: Implemented
+Status: Shipped on `main`.
 
 Owner: Codex
 Scope: Classical Cryptanalysis / Historical Bridges / Encoding Experimentation

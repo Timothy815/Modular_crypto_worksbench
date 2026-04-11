@@ -1,6 +1,6 @@
 # WORKBENCH-MENU-CLEANUP-V1
 
-Status: Implemented
+Status: Shipped on `main`.
 
 Owner: Codex
 Scope: UI / Workbench Shell

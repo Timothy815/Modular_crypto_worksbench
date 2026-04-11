@@ -2,7 +2,7 @@
 
 Last updated: April 8, 2026
 
-Status: Implemented on `main`
+Status: Shipped on `main`.
 
 ## Purpose
 

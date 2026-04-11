@@ -1,6 +1,6 @@
 # INSTRUCTOR-PILOT-PACK-V1
 
-Status: Implemented
+Status: Shipped on `main`.
 
 Owner: Codex
 Scope: Instructor Resources / Pilot Guidance / Adoption Support

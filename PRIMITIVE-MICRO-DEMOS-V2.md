@@ -2,7 +2,7 @@
 
 Last updated: March 27, 2026
 
-Status: Implemented on `feature/primitive-micro-demos-v2` as the bounded follow-on after `PRIMITIVE-MICRO-DEMOS-V1`.
+Status: Shipped on `main`.
 
 ## Purpose
 

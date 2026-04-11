@@ -1,6 +1,6 @@
 # DRAG-ALIGNMENT-GUIDES-V1
 
-Status: Implemented locally
+Status: Shipped on `main`.
 
 ## Intent
 

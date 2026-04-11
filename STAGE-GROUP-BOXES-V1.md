@@ -2,7 +2,7 @@
 
 Last updated: April 3, 2026
 
-Status: Implemented locally, pending push
+Status: Shipped on `main`.
 
 Owner: Codex
 Scope: Workbench Readability / Teaching Layout / UI Metadata Only

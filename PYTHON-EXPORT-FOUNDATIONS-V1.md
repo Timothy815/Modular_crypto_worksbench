@@ -2,7 +2,7 @@
 
 Last updated: March 27, 2026
 
-Status: Implemented on `main`
+Status: Shipped on `main`.
 
 ---
 

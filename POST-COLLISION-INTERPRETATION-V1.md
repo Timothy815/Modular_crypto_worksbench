@@ -2,7 +2,7 @@
 
 Last updated: March 24, 2026
 
-Status: First milestone shipped in `v1.11.0` — post-success nudges, side-by-side message comparison, and first internal-divergence helper delivered.
+Status: Shipped on `main`.
 
 ## Purpose
 

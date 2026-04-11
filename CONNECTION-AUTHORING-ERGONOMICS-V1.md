@@ -2,7 +2,7 @@
 
 Last updated: March 27, 2026
 
-Status: Implemented on `main` after `WORKSPACE-VISIBILITY-NAVIGATION-V1`.
+Status: Shipped on `main`.
 
 ## Purpose
 

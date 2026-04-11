@@ -1,6 +1,6 @@
 # FIRST-SESSION-ONBOARDING-V1
 
-Status: Implemented
+Status: Shipped on `main`.
 
 Owner: Codex
 Scope: Onboarding / Guide / Manual / Learning Flow

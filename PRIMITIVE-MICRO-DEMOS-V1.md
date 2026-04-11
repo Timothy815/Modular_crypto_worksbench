@@ -2,7 +2,7 @@
 
 Last updated: March 27, 2026
 
-Status: Implemented on `feature/primitive-micro-demos` as the next bounded primitive-legibility ergonomics follow-on.
+Status: Shipped on `main`.
 
 ## Purpose
 

@@ -1,6 +1,6 @@
 # SBOX-TABLE-TRANSFORMS-V1
 
-Status: Implemented
+Status: Shipped on `main`.
 
 Owner: Codex
 Scope: Primitive Authoring / Teaching / Modern-Crypto Experimentation
