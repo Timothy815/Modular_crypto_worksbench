@@ -4571,6 +4571,7 @@ body.canvas-resizing {
 }
 
 .graph-port-signal-chip {
+  position: relative;
   font-family: var(--mono);
   font-size: 0.64rem;
   font-weight: 700;
@@ -4579,12 +4580,71 @@ body.canvas-resizing {
   padding: 2px 5px;
   border-radius: 4px;
   white-space: nowrap;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: default;
   user-select: none;
   opacity: 0.88;
   max-width: 7ch;
   overflow: hidden;
   text-overflow: clip;
+}
+
+.graph-port-signal-chip:hover {
+  opacity: 1;
+  overflow: visible;
+  z-index: 300;
+}
+
+.graph-port-signal-chip-detail {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 120px;
+  max-width: 260px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface-panel);
+  box-shadow: 0 4px 16px color-mix(in srgb, black 18%, transparent);
+  z-index: 300;
+  white-space: pre;
+  overflow: visible;
+  text-overflow: unset;
+  max-width: unset;
+}
+
+.graph-port-signal-chip:hover .graph-port-signal-chip-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.graph-port-signal-chip-detail-primary {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink);
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.graph-port-signal-chip-detail-row {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.graph-port-signal-chip-detail-meta {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--muted) 70%, transparent);
+  border-top: 1px solid var(--line);
+  padding-top: 4px;
+  margin-top: 2px;
 }
 
 .graph-port-signal-chip-bits {

@@ -23,7 +23,7 @@ import {
 } from '../learning-sequence';
 import { getModuleCategory } from '../module-categories';
 import { buildLiveStateSummary } from '../live-state-display';
-import { formatSignalChip } from '../signal-chip-format';
+import { buildSignalChipDetail, formatSignalChip } from '../signal-chip-format';
 import {
   getModulesInSelectionBox,
   normalizeSelectionBoxRect,
@@ -3778,13 +3778,19 @@ export function WorkbenchPanel({
                           const sig = execution.outputsByModuleId[moduleInstance.id]?.[port.name];
                           if (!sig) return null;
                           const chipText = formatSignalChip(sig);
+                          const chipDetail = buildSignalChipDetail(sig);
                           return (
                             <span
                               key={chipText}
                               className={`graph-port-signal-chip graph-port-signal-chip-${sig.type}`}
-                              title={sig.type === 'bits' ? `[${sig.value.join(',')}]` : sig.value}
                             >
                               {chipText}
+                              <span className="graph-port-signal-chip-detail" aria-hidden="true">
+                                <span className="graph-port-signal-chip-detail-primary">{chipDetail.primary}</span>
+                                {chipDetail.hex ? <span className="graph-port-signal-chip-detail-row">{chipDetail.hex}</span> : null}
+                                {chipDetail.decimal ? <span className="graph-port-signal-chip-detail-row">{chipDetail.decimal}</span> : null}
+                                <span className="graph-port-signal-chip-detail-meta">{chipDetail.meta}</span>
+                              </span>
                             </span>
                           );
                         })() : null}
