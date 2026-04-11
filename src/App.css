@@ -3577,6 +3577,49 @@ body.canvas-resizing {
   letter-spacing: 0;
 }
 
+.connection-wire-value-chip-bits {
+  fill: color-mix(in srgb, #0f74d1 16%, var(--surface-soft));
+  stroke: color-mix(in srgb, #0f74d1 30%, var(--line));
+  stroke-width: 1;
+}
+
+.connection-wire-value-chip-symbol {
+  fill: color-mix(in srgb, #c46a12 14%, var(--surface-soft));
+  stroke: color-mix(in srgb, #c46a12 28%, var(--line));
+  stroke-width: 1;
+}
+
+.connection-wire-value-chip-value {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.connection-wire-value-chip-text-bits .connection-wire-value-chip-value {
+  fill: color-mix(in srgb, #0f74d1 90%, var(--ink));
+}
+
+.connection-wire-value-chip-text-symbol .connection-wire-value-chip-value {
+  fill: color-mix(in srgb, #c46a12 90%, var(--ink));
+}
+
+.connection-wire-value-chip-detail {
+  font-size: 9.5px;
+  font-weight: 600;
+  fill: var(--muted);
+}
+
+.connection-wire-value-chip-meta {
+  font-size: 9px;
+  font-weight: 500;
+  fill: color-mix(in srgb, var(--muted) 70%, transparent);
+}
+
+.connection-wire-value-separator {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
 .connection-direction-cues {
   fill: color-mix(in srgb, var(--ink) 88%, transparent);
   font-family: var(--mono);

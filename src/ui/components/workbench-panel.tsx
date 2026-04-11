@@ -2650,8 +2650,19 @@ export function WorkbenchPanel({
     const midpointY = (sourceAnchor.y + targetAnchor.y) / 2;
     const sourceLabel = `${connection.from.moduleId}.${connection.from.port}`;
     const targetLabel = `${connection.to.moduleId}.${connection.to.port}`;
-    const labelWidth = Math.max(sourceLabel.length, targetLabel.length) * 7 + 20;
-    const labelHeight = 40;
+
+    const wireSig = showSignalChips && execution
+      ? (execution.outputsByModuleId[connection.from.moduleId]?.[connection.from.port] ?? null)
+      : null;
+    const wireChipText = wireSig ? formatSignalChip(wireSig) : null;
+    const wireChipDetail = wireSig ? buildSignalChipDetail(wireSig) : null;
+
+    const portLabelWidth = Math.max(sourceLabel.length, targetLabel.length) * 7 + 20;
+    const labelWidth = wireChipText ? Math.max(portLabelWidth, 150) : portLabelWidth;
+
+    // Signal area: 8px top pad + 14px value + 12px hex + 12px meta + 8px bottom pad = 54px
+    const chipAreaHeight = wireChipText ? 54 : 0;
+    const labelHeight = chipAreaHeight + (wireChipText ? 2 : 0) + 40;
 
     return (
       <g
@@ -2660,14 +2671,43 @@ export function WorkbenchPanel({
         transform={`translate(${midpointX - labelWidth / 2} ${midpointY - labelHeight - 24})`}
       >
         <rect width={labelWidth} height={labelHeight} rx="10" ry="10" />
-        <text x={10} y={15}>
-          <tspan x={10} dy="0">
-            {sourceLabel}
-          </tspan>
-          <tspan x={10} dy="14">
-            {targetLabel}
-          </tspan>
-        </text>
+        {wireChipText && wireChipDetail && wireSig ? (
+          <>
+            <rect
+              x={8} y={8}
+              width={labelWidth - 16} height={chipAreaHeight - 16}
+              rx="6" ry="6"
+              className={`connection-wire-value-chip connection-wire-value-chip-${wireSig.type}`}
+            />
+            <text className={`connection-wire-value-chip-text connection-wire-value-chip-text-${wireSig.type}`}>
+              <tspan x={labelWidth / 2} y={22} textAnchor="middle" className="connection-wire-value-chip-value">
+                {wireChipText}
+              </tspan>
+              {wireChipDetail.hex ? (
+                <tspan x={labelWidth / 2} dy="13" textAnchor="middle" className="connection-wire-value-chip-detail">
+                  {wireChipDetail.hex}
+                </tspan>
+              ) : null}
+              <tspan x={labelWidth / 2} dy="13" textAnchor="middle" className="connection-wire-value-chip-meta">
+                {wireChipDetail.meta}
+              </tspan>
+            </text>
+            <line
+              x1={8} y1={chipAreaHeight + 2}
+              x2={labelWidth - 8} y2={chipAreaHeight + 2}
+              className="connection-wire-value-separator"
+            />
+            <text x={10} y={chipAreaHeight + 18}>
+              <tspan x={10} dy="0">{sourceLabel}</tspan>
+              <tspan x={10} dy="14">{targetLabel}</tspan>
+            </text>
+          </>
+        ) : (
+          <text x={10} y={15}>
+            <tspan x={10} dy="0">{sourceLabel}</tspan>
+            <tspan x={10} dy="14">{targetLabel}</tspan>
+          </text>
+        )}
       </g>
     );
   }
