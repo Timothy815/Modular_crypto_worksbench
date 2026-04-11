@@ -2,7 +2,7 @@
 
 Last updated: April 11, 2026
 
-Status: Shipped
+Status: Shipped on `main`.
 
 ## Purpose
 
