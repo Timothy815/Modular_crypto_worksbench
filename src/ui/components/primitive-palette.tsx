@@ -5,6 +5,7 @@ import { getModuleCategory } from '../module-categories';
 import {
   getModuleRole,
   getModuleRoleDetail,
+  getModuleTypicalPath,
 } from '../module-role-language';
 import {
   type ModuleLibraryDomainTab,
@@ -682,6 +683,12 @@ function ModuleLibraryCard({
           </p>
           <span className="meta-label">What It Does</span>
           <p>{getModuleDetail(def)}</p>
+          {getModuleTypicalPath(def) ? (
+            <p>
+              <span className="meta-label">Typical path</span>{' '}
+              {getModuleTypicalPath(def)}
+            </p>
+          ) : null}
           {primitiveMicroDemo ? (
             <p className="comparison-copy">
               <strong>Try Demo:</strong> Loads a tiny editable example focused on this primitive.

@@ -77,18 +77,23 @@ describe('module library palette coherence', () => {
     expect(getModuleRoleSummary(V1_REGISTRY.AsciiSequenceToTicked)).toEqual({
       role: 'Bridge',
       detail: 'whole sequence -> one per tick',
+      typicalPath: 'Typical path: whole ASCII source → this bridge → AsciiCharToBits → operator → collector',
     });
     expect(getModuleRoleSummary(V1_REGISTRY.TickedBitsToSequence)).toEqual({
       role: 'Collector',
       detail: 'one per tick -> whole sequence',
+      typicalPath: 'Typical path: ticked operator output → this collector → representation bridge or sink',
     });
     expect(getModuleRoleSummary(V1_REGISTRY.RepeatBitsToMatch)).toEqual({
       role: 'Mismatch Helper',
       detail: 'repair visible reference length mismatch',
+      typicalPath: 'Typical path: short bit key → this mismatch helper → BitsSequenceToTicked → operator',
     });
     expect(getModuleRoleSummary(V1_REGISTRY.RequireBitsLengthMatch)).toEqual({
       role: 'Mismatch Helper',
       detail: 'require exact visible reference length',
+      typicalPath:
+        'Stops the graph loudly if bit widths differ. Use when a mismatch must never proceed silently — place a repair mismatch helper upstream if normalization is the intent instead.',
     });
     expect(getModuleRoleSummary(V1_REGISTRY.BitOutput)).toEqual({
       role: 'Sink',

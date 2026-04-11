@@ -12,6 +12,7 @@ export type ModuleWorkflowRole =
 export interface ModuleRoleSummary {
   role: ModuleWorkflowRole;
   detail: string;
+  typicalPath?: string;
 }
 
 const SOURCE_MODULE_IDS = new Set([
@@ -79,6 +80,39 @@ const BRIDGE_MODULE_IDS = new Set([
   'BitsToHex',
 ]);
 
+const TYPICAL_PATH: Record<string, string> = {
+  AsciiSequenceToTicked:
+    'Typical path: whole ASCII source → this bridge → AsciiCharToBits → operator → collector',
+  BitsSequenceToTicked:
+    'Typical path: whole bit or hex source → this bridge → operator → collector',
+  TickedBitsToSequence:
+    'Typical path: ticked operator output → this collector → representation bridge or sink',
+  TickedSymbolsToSequence:
+    'Typical path: ticked symbol operator → this collector → sink',
+  AsciiCharToBits:
+    'Typical path: after AsciiSequenceToTicked, before a bitwise operator like XOR',
+  BitsToAsciiChar:
+    'Typical path: after a ticked bit operator, before TickedSymbolsToSequence',
+  BitsToHexDigit:
+    'Typical path: after a ticked bit operator to display each output word as a hex digit',
+  RepeatSymbolToMatch:
+    'Typical path: key source → this mismatch helper → AsciiSequenceToTicked → AsciiCharToBits → operator',
+  RepeatBitsToMatch:
+    'Typical path: short bit key → this mismatch helper → BitsSequenceToTicked → operator',
+  TruncateSymbolToMatch:
+    'Typical path: overlong symbol input → this mismatch helper → bridge → operator',
+  TruncateBitsToMatch:
+    'Typical path: overlong bit buffer → this mismatch helper → bridge → operator',
+  PadSymbolToMatch:
+    'Typical path: short symbol input → this mismatch helper → bridge → operator',
+  PadBitsToMatch:
+    'Typical path: short bit buffer → this mismatch helper → bridge → operator',
+  RequireSymbolLengthMatch:
+    'Stops the graph loudly if symbol lengths differ. Use when a mismatch must never proceed silently — place a repair mismatch helper upstream if normalization is the intent instead.',
+  RequireBitsLengthMatch:
+    'Stops the graph loudly if bit widths differ. Use when a mismatch must never proceed silently — place a repair mismatch helper upstream if normalization is the intent instead.',
+};
+
 function getBridgeDetail(definition: ModuleDefinition): string {
   switch (definition.id) {
     case 'SymbolSequenceToTicked':
@@ -101,6 +135,11 @@ function getBridgeDetail(definition: ModuleDefinition): string {
     default:
       return 'visible domain or shape bridge';
   }
+}
+
+function withTypicalPath(summary: Omit<ModuleRoleSummary, 'typicalPath'>, id: string): ModuleRoleSummary {
+  const typicalPath = TYPICAL_PATH[id];
+  return typicalPath ? { ...summary, typicalPath } : summary;
 }
 
 export function getModuleRoleSummary(definition: ModuleDefinition): ModuleRoleSummary {
@@ -126,24 +165,21 @@ export function getModuleRoleSummary(definition: ModuleDefinition): ModuleRoleSu
   }
 
   if (COLLECTOR_MODULE_IDS.has(definition.id)) {
-    return {
-      role: 'Collector',
-      detail: 'one per tick -> whole sequence',
-    };
+    return withTypicalPath({ role: 'Collector', detail: 'one per tick -> whole sequence' }, definition.id);
   }
 
   if (MISMATCH_REQUIRE_MODULE_IDS.has(definition.id)) {
-    return {
-      role: 'Mismatch Helper',
-      detail: 'require exact visible reference length',
-    };
+    return withTypicalPath(
+      { role: 'Mismatch Helper', detail: 'require exact visible reference length' },
+      definition.id,
+    );
   }
 
   if (MISMATCH_REPAIR_MODULE_IDS.has(definition.id)) {
-    return {
-      role: 'Mismatch Helper',
-      detail: 'repair visible reference length mismatch',
-    };
+    return withTypicalPath(
+      { role: 'Mismatch Helper', detail: 'repair visible reference length mismatch' },
+      definition.id,
+    );
   }
 
   if (SOURCE_MODULE_IDS.has(definition.id)) {
@@ -154,10 +190,7 @@ export function getModuleRoleSummary(definition: ModuleDefinition): ModuleRoleSu
   }
 
   if (BRIDGE_MODULE_IDS.has(definition.id)) {
-    return {
-      role: 'Bridge',
-      detail: getBridgeDetail(definition),
-    };
+    return withTypicalPath({ role: 'Bridge', detail: getBridgeDetail(definition) }, definition.id);
   }
 
   return {
@@ -172,4 +205,8 @@ export function getModuleRole(definition: ModuleDefinition): ModuleWorkflowRole 
 
 export function getModuleRoleDetail(definition: ModuleDefinition): string {
   return getModuleRoleSummary(definition).detail;
+}
+
+export function getModuleTypicalPath(definition: ModuleDefinition): string | undefined {
+  return getModuleRoleSummary(definition).typicalPath;
 }

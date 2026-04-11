@@ -50,7 +50,7 @@ import {
   getPortSideForModulePort,
 } from '../node-orientation';
 import { getOrderedPorts } from '../port-ordering';
-import { getModuleRole, getModuleRoleDetail } from '../module-role-language';
+import { getModuleRole, getModuleRoleDetail, getModuleTypicalPath } from '../module-role-language';
 import type {
   VerificationCase,
   VerificationCaseResult,
@@ -2625,6 +2625,12 @@ export function ParameterInspector({
           <div className="inspector-module-role-summary">
             <span className="content-status-chip">Role: {getModuleRole(moduleDef)}</span>
             <p className="comparison-copy">{getModuleRoleDetail(moduleDef)}</p>
+            {getModuleTypicalPath(moduleDef) ? (
+              <p className="comparison-copy inspector-typical-path">
+                <span className="meta-label">Typical path</span>{' '}
+                {getModuleTypicalPath(moduleDef)}
+              </p>
+            ) : null}
           </div>
           {'kind' in moduleDef ? (
             moduleDef.kind === 'composite' ? (
