@@ -3777,12 +3777,14 @@ export function WorkbenchPanel({
                         {showSignalChips && execution ? (() => {
                           const sig = execution.outputsByModuleId[moduleInstance.id]?.[port.name];
                           if (!sig) return null;
+                          const chipText = formatSignalChip(sig);
                           return (
                             <span
+                              key={chipText}
                               className={`graph-port-signal-chip graph-port-signal-chip-${sig.type}`}
                               title={sig.type === 'bits' ? `[${sig.value.join(',')}]` : sig.value}
                             >
-                              {formatSignalChip(sig)}
+                              {chipText}
                             </span>
                           );
                         })() : null}

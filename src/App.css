@@ -4599,6 +4599,16 @@ body.canvas-resizing {
   border: 1px solid color-mix(in srgb, #c46a12 26%, var(--line));
 }
 
+@keyframes chip-update {
+  0%   { opacity: 0.3; transform: scale(1.18); }
+  60%  { opacity: 1;   transform: scale(1.04); }
+  100% { opacity: 0.88; transform: scale(1); }
+}
+
+.graph-port-signal-chip {
+  animation: chip-update 220ms ease-out;
+}
+
 .graph-port-anchor-top,
 .graph-port-anchor-bottom {
   gap: 8px;
