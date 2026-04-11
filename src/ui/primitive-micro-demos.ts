@@ -779,6 +779,38 @@ const PAD_SYMBOL_TO_MATCH_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const REQUIRE_SYMBOL_LENGTH_MATCH_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'RequireSymbolLengthMatch',
+  name: 'Require Symbol Length Match Micro Demo',
+  summary: 'Visible strict mismatch policy: one symbol sequence passes only when it already matches the length of a visible reference sequence.',
+  pipeline: 'SymbolSequenceInput(message) + SymbolSequenceInput(key) -> RequireSymbolLengthMatch -> TextOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'require', defId: 'RequireSymbolLengthMatch', params: {} },
+        { id: 'message', defId: 'SymbolSequenceInput', params: { value: 'ATTACK' } },
+        { id: 'key', defId: 'SymbolSequenceInput', params: { value: 'SECRET' } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'message', port: 'out' }, to: { moduleId: 'require', port: 'in' } },
+        { from: { moduleId: 'key', port: 'out' }, to: { moduleId: 'require', port: 'reference' } },
+        { from: { moduleId: 'require', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        require: { x: 432, y: 176 },
+        message: { x: 72, y: 120 },
+        key: { x: 72, y: 260 },
+        out: { x: 764, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const TRUNCATE_SYMBOL_SEQUENCE_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'TruncateSymbolSequence',
   name: 'Truncate Symbol Sequence Micro Demo',
@@ -1420,6 +1452,38 @@ const PAD_BITS_TO_MATCH_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const REQUIRE_BITS_LENGTH_MATCH_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'RequireBitsLengthMatch',
+  name: 'Require Bits Length Match Micro Demo',
+  summary: 'Visible strict mismatch policy: one bit buffer passes only when it already matches a visible reference width.',
+  pipeline: 'BitSequenceInput(buffer) + BitSequenceInput(reference) -> RequireBitsLengthMatch -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'require', defId: 'RequireBitsLengthMatch', params: {} },
+        { id: 'buffer', defId: 'BitSequenceInput', params: { stream: [1, 0, 1, 1, 0, 0, 1, 1] } },
+        { id: 'reference', defId: 'BitSequenceInput', params: { stream: [0, 0, 0, 0, 0, 0, 0, 0] } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'buffer', port: 'out' }, to: { moduleId: 'require', port: 'in' } },
+        { from: { moduleId: 'reference', port: 'out' }, to: { moduleId: 'require', port: 'reference' } },
+        { from: { moduleId: 'require', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        require: { x: 436, y: 176 },
+        buffer: { x: 72, y: 120 },
+        reference: { x: 72, y: 260 },
+        out: { x: 756, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const HEX_SEQUENCE_INPUT_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'HexSequenceInput',
   name: 'Hex Sequence Input Micro Demo',
@@ -1633,6 +1697,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   REPEAT_SYMBOL_TO_LENGTH_MICRO_DEMO,
   REPEAT_SYMBOL_TO_MATCH_MICRO_DEMO,
   PAD_SYMBOL_TO_MATCH_MICRO_DEMO,
+  REQUIRE_SYMBOL_LENGTH_MATCH_MICRO_DEMO,
   TRUNCATE_SYMBOL_SEQUENCE_MICRO_DEMO,
   TRUNCATE_SYMBOL_TO_MATCH_MICRO_DEMO,
   SYMBOL_SEQUENCE_TO_TICKED_MICRO_DEMO,
@@ -1651,6 +1716,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   BIT_SEQUENCE_INPUT_MICRO_DEMO,
   REPEAT_BITS_TO_MATCH_MICRO_DEMO,
   PAD_BITS_TO_MATCH_MICRO_DEMO,
+  REQUIRE_BITS_LENGTH_MATCH_MICRO_DEMO,
   TRUNCATE_BITS_SEQUENCE_MICRO_DEMO,
   TRUNCATE_BITS_TO_MATCH_MICRO_DEMO,
   PAD_BITS_SEQUENCE_MICRO_DEMO,

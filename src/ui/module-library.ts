@@ -394,6 +394,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when another explicit symbol sequence should define the target length and the pad side and pad character should stay visible on the graph. Longer inputs stay unchanged.',
     searchTerms: ['pad symbol to match', 'pad to reference', 'pad character', 'reference length', 'symbol sequence'],
   },
+  RequireSymbolLengthMatch: {
+    sectionId: 'symbol-domain',
+    sortOrder: 59,
+    purpose: 'Requires one visible symbol sequence to already match a visible reference length.',
+    detail: 'Use this when the graph should fail fast on symbol-length mismatch instead of repairing it with repeat, truncate, or pad behavior.',
+    searchTerms: ['require symbol length match', 'assert symbol length', 'fail on mismatch', 'reference length', 'symbol sequence'],
+  },
   TruncateSymbolSequence: {
     sectionId: 'symbol-domain',
     sortOrder: 60,
@@ -519,6 +526,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Pads a visible bit sequence until it reaches a visible reference width.',
     detail: 'Use this when another explicit bit buffer should define the target width and the pad side and pad bit should stay explicit. Length is measured in bits, and longer inputs stay unchanged.',
     searchTerms: ['pad bits to match', 'pad to reference', 'pad bit', 'reference width', 'bits', 'framing'],
+  },
+  RequireBitsLengthMatch: {
+    sectionId: 'framing-routing',
+    sortOrder: 59,
+    purpose: 'Requires one visible bit sequence to already match a visible reference width.',
+    detail: 'Use this when the graph should fail fast on bit-length mismatch instead of repairing it with repeat, truncate, or pad behavior. Length is measured in bits.',
+    searchTerms: ['require bits length match', 'assert bit width', 'fail on mismatch', 'reference width', 'bits', 'framing'],
   },
   BroadcastBits: {
     sectionId: 'framing-routing',

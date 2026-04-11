@@ -44,6 +44,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'SymbolWindow',
   'RepeatSymbolToLength',
   'PadSymbolToMatch',
+  'RequireSymbolLengthMatch',
   'TruncateSymbolSequence',
   'TruncateSymbolToMatch',
   'SymbolToBits',
@@ -86,6 +87,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'RepeatBitsToLength',
   'RepeatBitsToMatch',
   'PadBitsToMatch',
+  'RequireBitsLengthMatch',
   'BroadcastBits',
   'TruncateBitsSequence',
   'TruncateBitsToMatch',
@@ -843,6 +845,18 @@ def pad_symbol_to_match(signal, reference, side, pad_char):
     return {"out": padding + symbol if side == "left" else symbol + padding}
 
 
+def require_symbol_length_match(signal, reference):
+    symbol = str(signal)
+    reference_symbol = str(reference)
+    input_length = len(list(symbol))
+    reference_length = len(list(reference_symbol))
+    if input_length != reference_length:
+        raise ValueError(
+            f"RequireSymbolLengthMatch length mismatch: input has {input_length} characters but reference has {reference_length}"
+        )
+    return {"out": symbol}
+
+
 def repeat_symbol_to_match(signal, reference):
     symbol = str(signal)
     characters = list(symbol)
@@ -1230,6 +1244,16 @@ def pad_bits_to_match(signal, reference, side, pad_bit):
     pad_value = 1 if str(pad_bit) == "1" else 0
     padding = [pad_value for _ in range(pad_count)]
     return {"out": padding + bits if side == "left" else bits + padding}
+
+
+def require_bits_length_match(signal, reference):
+    bits = _expect_bits(signal, "RequireBitsLengthMatch")
+    reference_bits = _expect_bits(reference, "RequireBitsLengthMatch")
+    if len(bits) != len(reference_bits):
+        raise ValueError(
+            f"RequireBitsLengthMatch length mismatch: input has {len(bits)} bits but reference has {len(reference_bits)}"
+        )
+    return {"out": bits.copy()}
 
 
 def repeat_bits_to_match(signal, reference):
@@ -2304,6 +2328,8 @@ function buildModuleExpression(
       return `repeat_symbol_to_length(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetLength')})`;
     case 'PadSymbolToMatch':
       return `pad_symbol_to_match(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'reference')}, ${expressionContext.getParamExpression(moduleInstance, def, 'side')}, ${expressionContext.getParamExpression(moduleInstance, def, 'padChar')})`;
+    case 'RequireSymbolLengthMatch':
+      return `require_symbol_length_match(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'reference')})`;
     case 'RepeatSymbolToMatch':
       return `repeat_symbol_to_match(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'reference')})`;
     case 'TruncateSymbolToMatch':
@@ -2396,6 +2422,8 @@ function buildModuleExpression(
       return `repeat_bits_to_length(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetLength')})`;
     case 'PadBitsToMatch':
       return `pad_bits_to_match(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'reference')}, ${expressionContext.getParamExpression(moduleInstance, def, 'side')}, ${expressionContext.getParamExpression(moduleInstance, def, 'padBit')})`;
+    case 'RequireBitsLengthMatch':
+      return `require_bits_length_match(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'reference')})`;
     case 'RepeatBitsToMatch':
       return `repeat_bits_to_match(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'reference')})`;
     case 'BroadcastBits':

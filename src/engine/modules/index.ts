@@ -67,6 +67,7 @@ import { SymbolWindow } from './symbol-window';
 import { RepeatSymbolToLength } from './repeat-symbol-to-length';
 import { RepeatSymbolToMatch } from './repeat-symbol-to-match';
 import { PadSymbolToMatch } from './pad-symbol-to-match';
+import { RequireSymbolLengthMatch } from './require-symbol-length-match';
 import { TruncateSymbolSequence } from './truncate-symbol-sequence';
 import { TruncateSymbolToMatch } from './truncate-symbol-to-match';
 import { SymbolSequenceToTicked } from './symbol-sequence-to-ticked';
@@ -82,6 +83,7 @@ import { BitWindow } from './bit-window';
 import { RepeatBitsToLength } from './repeat-bits-to-length';
 import { RepeatBitsToMatch } from './repeat-bits-to-match';
 import { PadBitsToMatch } from './pad-bits-to-match';
+import { RequireBitsLengthMatch } from './require-bits-length-match';
 import { BroadcastBits } from './broadcast-bits';
 import { TruncateBitsSequence } from './truncate-bits-sequence';
 import { TruncateBitsToMatch } from './truncate-bits-to-match';
@@ -157,6 +159,7 @@ export {
   RepeatSymbolToLength,
   RepeatSymbolToMatch,
   PadSymbolToMatch,
+  RequireSymbolLengthMatch,
   TruncateSymbolSequence,
   TruncateSymbolToMatch,
   SymbolSequenceToTicked,
@@ -172,6 +175,7 @@ export {
   RepeatBitsToLength,
   RepeatBitsToMatch,
   PadBitsToMatch,
+  RequireBitsLengthMatch,
   BroadcastBits,
   TruncateBitsSequence,
   TruncateBitsToMatch,
@@ -248,6 +252,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [RepeatSymbolToLength.id]: RepeatSymbolToLength,
   [RepeatSymbolToMatch.id]: RepeatSymbolToMatch,
   [PadSymbolToMatch.id]: PadSymbolToMatch,
+  [RequireSymbolLengthMatch.id]: RequireSymbolLengthMatch,
   [TruncateSymbolSequence.id]: TruncateSymbolSequence,
   [TruncateSymbolToMatch.id]: TruncateSymbolToMatch,
   [SymbolSequenceToTicked.id]: SymbolSequenceToTicked,
@@ -263,6 +268,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [RepeatBitsToLength.id]: RepeatBitsToLength,
   [RepeatBitsToMatch.id]: RepeatBitsToMatch,
   [PadBitsToMatch.id]: PadBitsToMatch,
+  [RequireBitsLengthMatch.id]: RequireBitsLengthMatch,
   [BroadcastBits.id]: BroadcastBits,
   [TruncateBitsSequence.id]: TruncateBitsSequence,
   [TruncateBitsToMatch.id]: TruncateBitsToMatch,

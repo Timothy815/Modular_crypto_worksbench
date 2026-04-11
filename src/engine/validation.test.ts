@@ -36,6 +36,8 @@ import { NOT } from './modules/not';
 import { OR } from './modules/or';
 import { PadBitsToMatch } from './modules/pad-bits-to-match';
 import { PadSymbolToMatch } from './modules/pad-symbol-to-match';
+import { RequireBitsLengthMatch } from './modules/require-bits-length-match';
+import { RequireSymbolLengthMatch } from './modules/require-symbol-length-match';
 import { Permutation } from './modules/permutation';
 import {
   PolluxControlledFractionation,
@@ -146,6 +148,7 @@ const registry: ModuleRegistry = {
   [RotorReverse.id]: RotorReverse,
   [RepeatSymbolToLength.id]: RepeatSymbolToLength,
   [RepeatSymbolToMatch.id]: RepeatSymbolToMatch,
+  [RequireSymbolLengthMatch.id]: RequireSymbolLengthMatch,
   [TruncateSymbolSequence.id]: TruncateSymbolSequence,
   [TruncateSymbolToMatch.id]: TruncateSymbolToMatch,
   [Plugboard.id]: Plugboard,
@@ -159,6 +162,7 @@ const registry: ModuleRegistry = {
   [BitUnpad.id]: BitUnpad,
   [TruncateBitsSequence.id]: TruncateBitsSequence,
   [TruncateBitsToMatch.id]: TruncateBitsToMatch,
+  [RequireBitsLengthMatch.id]: RequireBitsLengthMatch,
   [PadBitsSequence.id]: PadBitsSequence,
   [PadBitsToMatch.id]: PadBitsToMatch,
   [PadSymbolToMatch.id]: PadSymbolToMatch,
@@ -1175,6 +1179,25 @@ describe('validateProject', () => {
       connections: [
         { from: { moduleId: 'message', port: 'out' }, to: { moduleId: 'repeat', port: 'in' } },
         { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'repeat', port: 'reference' } },
+      ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'signal-kind-mismatch')).toBe(true);
+  });
+
+  it('reports mismatched signal kinds on require-length-match reference inputs', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text', defId: 'Source', params: {} },
+        { id: 'message', defId: 'SymbolSequenceInput', params: { value: 'HELLO' } },
+        { id: 'require', defId: 'RequireSymbolLengthMatch', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'message', port: 'out' }, to: { moduleId: 'require', port: 'in' } },
+        { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'require', port: 'reference' } },
       ],
     };
 

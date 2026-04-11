@@ -1686,6 +1686,50 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
   });
 
+  it('matches executeProject for a strict symbol length-match workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'message', defId: 'AsciiSequenceInput', params: { value: 'ATTACK' } },
+        { id: 'key', defId: 'AsciiSequenceInput', params: { value: 'SECRET' } },
+        { id: 'require-1', defId: 'RequireSymbolLengthMatch', params: {} },
+        { id: 'text-out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'message', port: 'out' }, to: { moduleId: 'require-1', port: 'in' } },
+        { from: { moduleId: 'key', port: 'out' }, to: { moduleId: 'require-1', port: 'reference' } },
+        { from: { moduleId: 'require-1', port: 'out' }, to: { moduleId: 'text-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeProject for a strict bits length-match workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'buffer', defId: 'BitSequenceInput', params: { stream: [1, 0, 1, 1, 0, 0, 1, 1] } },
+        { id: 'reference', defId: 'BitSequenceInput', params: { stream: [0, 0, 0, 0, 1, 1, 1, 1] } },
+        { id: 'require-1', defId: 'RequireBitsLengthMatch', params: {} },
+        { id: 'bits-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'buffer', port: 'out' }, to: { moduleId: 'require-1', port: 'in' } },
+        { from: { moduleId: 'reference', port: 'out' }, to: { moduleId: 'require-1', port: 'reference' } },
+        { from: { moduleId: 'require-1', port: 'out' }, to: { moduleId: 'bits-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
   it('matches executeProject for a Pollux fractionation workspace', () => {
     const project: Project = {
       modules: [

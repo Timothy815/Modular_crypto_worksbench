@@ -78,6 +78,7 @@ import { Permutation } from './permutation';
 import { SymbolPermutation } from './symbol-permutation';
 import { SymbolWindow } from './symbol-window';
 import { PadSymbolToMatch } from './pad-symbol-to-match';
+import { RequireSymbolLengthMatch } from './require-symbol-length-match';
 import { RepeatSymbolToLength } from './repeat-symbol-to-length';
 import { RepeatSymbolToMatch } from './repeat-symbol-to-match';
 import { TruncateSymbolSequence } from './truncate-symbol-sequence';
@@ -94,6 +95,7 @@ import { BitPad } from './bit-pad';
 import { BitUnpad } from './bit-unpad';
 import { BitWindow } from './bit-window';
 import { PadBitsToMatch } from './pad-bits-to-match';
+import { RequireBitsLengthMatch } from './require-bits-length-match';
 import { RepeatBitsToLength } from './repeat-bits-to-length';
 import { RepeatBitsToMatch } from './repeat-bits-to-match';
 import { BroadcastBits } from './broadcast-bits';
@@ -445,6 +447,31 @@ describe('PadSymbolToMatch', () => {
   });
 });
 
+describe('RequireSymbolLengthMatch', () => {
+  it('passes the input through unchanged when the reference length matches', () => {
+    const result = RequireSymbolLengthMatch.evaluate(
+      {
+        in: { type: 'symbol', value: 'ATTACK' },
+        reference: { type: 'symbol', value: 'SECRET' },
+      },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'ATTACK' });
+  });
+
+  it('throws when the input and reference lengths differ', () => {
+    expect(() =>
+      RequireSymbolLengthMatch.evaluate(
+        {
+          in: { type: 'symbol', value: 'ATTACKNOW' },
+          reference: { type: 'symbol', value: 'KEY' },
+        },
+        {},
+      ),
+    ).toThrow(/length mismatch/i);
+  });
+});
+
 describe('Symbol sequence foundation', () => {
   it('emits a whole symbol sequence explicitly', () => {
     const result = SymbolSequenceInput.evaluate({}, { value: 'KEY' });
@@ -709,6 +736,31 @@ describe('PadBitsToMatch', () => {
       { side: 'right', padBit: '0' },
     );
     expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1, 1, 0, 0, 1, 1] });
+  });
+});
+
+describe('RequireBitsLengthMatch', () => {
+  it('passes the input through unchanged when the reference width matches', () => {
+    const result = RequireBitsLengthMatch.evaluate(
+      {
+        in: { type: 'bits', value: [1, 0, 1, 1, 0, 0, 1, 1] },
+        reference: { type: 'bits', value: [0, 0, 0, 0, 1, 1, 1, 1] },
+      },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1, 1, 0, 0, 1, 1] });
+  });
+
+  it('throws when the input and reference widths differ', () => {
+    expect(() =>
+      RequireBitsLengthMatch.evaluate(
+        {
+          in: { type: 'bits', value: [1, 0, 1] },
+          reference: { type: 'bits', value: [0, 0, 0, 0] },
+        },
+        {},
+      ),
+    ).toThrow(/length mismatch/i);
   });
 });
 

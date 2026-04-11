@@ -51,6 +51,7 @@ The family should make it obvious that:
 - the policy is explicit
 - the reference contributes length, not transformed data
 - the choice of policy remains on-canvas
+- the user can choose either visible repair or visible fail-fast assertion
 
 ## Core Decision
 
@@ -70,8 +71,6 @@ The intended family grammar is:
 - `TruncateBitsToMatch`
 - `PadSymbolToMatch`
 - `PadBitsToMatch`
-
-Possible later strict companions:
 - `RequireSymbolLengthMatch`
 - `RequireBitsLengthMatch`
 
@@ -173,10 +172,12 @@ It should preserve the same product values:
    - `RepeatBitsToMatch`
 2. `TRUNCATE-TO-MATCH-V1`
 3. `PAD-TO-MATCH-V1`
+4. `REQUIRE-LENGTH-MATCH-V1`
 
 That order is recommended because:
 - repeat-to-match solves the most common key/message ergonomics problem first
 - truncate/pad-to-match are lower-frequency but should follow the same family model
+- require-length-match should land after the repair helpers so the family has an explicit strict companion instead of only downstream failure
 
 ## Explicit Non-Goals
 

@@ -28,6 +28,7 @@ describe('primitive micro demos', () => {
       'RepeatSymbolToLength',
       'RepeatSymbolToMatch',
       'PadSymbolToMatch',
+      'RequireSymbolLengthMatch',
       'TruncateSymbolSequence',
       'TruncateSymbolToMatch',
       'SymbolSequenceToTicked',
@@ -46,6 +47,7 @@ describe('primitive micro demos', () => {
       'BitSequenceInput',
       'RepeatBitsToMatch',
       'PadBitsToMatch',
+      'RequireBitsLengthMatch',
       'TruncateBitsSequence',
       'TruncateBitsToMatch',
       'PadBitsSequence',
@@ -80,6 +82,9 @@ describe('primitive micro demos', () => {
     );
     expect(getPrimitiveMicroDemo('PadSymbolToMatch')?.name).toBe(
       'Pad Symbol To Match Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('RequireSymbolLengthMatch')?.name).toBe(
+      'Require Symbol Length Match Micro Demo',
     );
     expect(getPrimitiveMicroDemo('TruncateSymbolSequence')?.name).toBe(
       'Truncate Symbol Sequence Micro Demo',
@@ -129,6 +134,9 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('BitSequenceInput')?.name).toBe('Bit Sequence Input Micro Demo');
     expect(getPrimitiveMicroDemo('RepeatBitsToMatch')?.name).toBe('Repeat Bits To Match Micro Demo');
     expect(getPrimitiveMicroDemo('PadBitsToMatch')?.name).toBe('Pad Bits To Match Micro Demo');
+    expect(getPrimitiveMicroDemo('RequireBitsLengthMatch')?.name).toBe(
+      'Require Bits Length Match Micro Demo',
+    );
     expect(getPrimitiveMicroDemo('TruncateBitsSequence')?.name).toBe(
       'Truncate Bits Sequence Micro Demo',
     );
@@ -208,6 +216,16 @@ describe('primitive micro demos', () => {
     const bridge = getPrimitiveMicroDemo('PadSymbolToMatch');
     expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
       'PadSymbolToMatch',
+      'SymbolSequenceInput',
+      'SymbolSequenceInput',
+      'TextOutput',
+    ]);
+  });
+
+  it('keeps the symbol require-length-match example honest about visible strict matching', () => {
+    const bridge = getPrimitiveMicroDemo('RequireSymbolLengthMatch');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'RequireSymbolLengthMatch',
       'SymbolSequenceInput',
       'SymbolSequenceInput',
       'TextOutput',
@@ -425,6 +443,16 @@ describe('primitive micro demos', () => {
     const bridge = getPrimitiveMicroDemo('PadBitsSequence');
     expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
       'PadBitsSequence',
+      'BitSequenceInput',
+      'BitOutput',
+    ]);
+  });
+
+  it('keeps the bit require-length-match example honest about visible strict matching', () => {
+    const bridge = getPrimitiveMicroDemo('RequireBitsLengthMatch');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'RequireBitsLengthMatch',
+      'BitSequenceInput',
       'BitSequenceInput',
       'BitOutput',
     ]);
