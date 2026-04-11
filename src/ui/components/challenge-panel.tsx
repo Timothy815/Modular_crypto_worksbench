@@ -180,7 +180,6 @@ export function ChallengePanel({
                 </span>
               ) : null}
             </div>
-            <p className="comparison-copy">Reset returns to the seeded starting machine.</p>
             {recommendedNext ? (
               <div className="comparison-copy project-recommended-next">
                 <span>Recommended next:</span>

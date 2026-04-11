@@ -115,7 +115,7 @@ export function TutorialPanel({
         <p className="tutorial-progress-summary">
           {completedCount} of {tutorials.length} completed
           {workspaceMode === 'build' ? (
-            <span className="workspace-mode-hint"> — overlays off</span>
+            <span className="workspace-mode-hint"> — guide overlays hidden</span>
           ) : null}
         </p>
       </div>
@@ -214,11 +214,8 @@ export function TutorialPanel({
 
       {isCompleted ? (
         <div className="tutorial-completed-banner">
-          <strong>Tutorial complete</strong>
-          <p>
-            You have walked through all {totalSteps} steps.
-            Try another tutorial, or revisit any step using the navigator below.
-          </p>
+          <strong>All {totalSteps} steps complete.</strong>
+          {' '}Pick the next tutorial from the selector above, or step back through any step below.
         </div>
       ) : null}
 

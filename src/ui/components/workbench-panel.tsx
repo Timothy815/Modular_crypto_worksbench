@@ -2974,12 +2974,12 @@ export function WorkbenchPanel({
                 <strong>{pendingTargetSummary.hoveredTargetKey.replace(':', '.')}</strong>{' '}
                 {pendingTargetSummary.hoveredTargetState.valid
                   ? pendingTargetSummary.hoveredTargetState.mode === 'replace'
-                    ? 'replaces the current input.'
-                    : 'is ready.'
-                  : pendingTargetSummary.hoveredTargetState.reason ?? 'is blocked.'}
+                    ? 'will replace the existing connection.'
+                    : 'ready to connect.'
+                  : pendingTargetSummary.hoveredTargetState.reason ?? 'blocked.'}
               </>
             ) : (
-              <>Teal ok. Gold replace. Red blocked.</>
+              <>Teal = connect &bull; Gold = replace &bull; Red = blocked</>
             )}
           </span>
         </p>

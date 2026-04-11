@@ -36,9 +36,7 @@ export function QuickStartPanel({
         <p className="panel-label">Quick Start</p>
         <h2>Start Here</h2>
         <p className="comparison-copy">
-          MCW is a systems IDE for building visible cryptographic machines. Your first loop should be:
-          open the starter demo, follow the matching tutorial, repair the matching challenge, then
-          confirm the machine behaves correctly.
+          Build visible cryptographic machines. Complete the starter loop: open the demo, step through the tutorial, repair the challenge.
         </p>
       </div>
 
@@ -109,7 +107,7 @@ export function QuickStartPanel({
               Use the Inspector <strong>Compare</strong> tab or the challenge success banner to confirm the
               machine now matches expected behavior.
             </li>
-            <li>Use the manual if a term is unfamiliar, then move to Byte Round as the next recommended tutorial.</li>
+            <li>Use the manual if a term is unfamiliar. The next recommended step is below.</li>
           </ol>
         </div>
 
@@ -153,9 +151,7 @@ export function QuickStartPanel({
         <div className="comparison-card comparison-card-wide">
           <span className="meta-label">What To Do Next</span>
           <p className="comparison-copy">
-            After the starter loop passes, the next clean move is <strong>Byte Round</strong>. It keeps
-            the graph small but introduces modern substitution and permutation without jumping all the
-            way into multi-round systems.
+            After the starter loop: <strong>Byte Round</strong> — small graph, modern substitution and permutation.
           </p>
           <div className="comparison-actions">
             <button

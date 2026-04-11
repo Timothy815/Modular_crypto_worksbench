@@ -707,6 +707,15 @@ The current final comparison-oriented ergonomics slice after that is:
 - structural comparison only: modules and connections
 - added / removed / unchanged structure surfaced in the live workspace and summary card
 
+The pilot-readiness polish pass is now shipped as:
+- `PILOT-POLISH-V1.md`
+- seven friction-reduction fixes across Quick Start, Tutorial, Challenge, and workbench wire-connection surfaces
+- Quick Start intro tightened; "What To Do Next" copy shortened; step-5 forward reference removed
+- Tutorial completed banner condensed; Build mode hint changed from "overlays off" to "guide overlays hidden"
+- Challenge card: removed "Reset returns to the seeded starting machine" noise copy
+- Wire-drag status: "is ready." → "ready to connect."; "Teal ok. Gold replace. Red blocked." → "Teal = connect • Gold = replace • Red = blocked"
+- CSS: panel-head margin-bottom 18px → 14px; content-selector-card gap 10px → 8px, padding 14px → 12px
+
 The current shipped primitive-expansion follow-on after that is:
 - `MultiRouter` as a bounded `1 -> N` indexed routing primitive
 - fixed visible outputs `out0` through `out7` with bounded `routeCount` (`2`, `4`, or `8`)

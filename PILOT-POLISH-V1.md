@@ -2,7 +2,7 @@
 
 Last updated: April 3, 2026
 
-Status: Proposed
+Status: Shipped on `main`.
 
 Owner: Codex
 Scope: Product Polish / Pilot Readiness / Friction Reduction
