@@ -193,10 +193,10 @@ The next workspace-chrome simplification follow-on after that is now shipped as:
 - a bounded trim pass for duplicated high-frequency menu entries
 - keeps menus focused on lower-frequency structure, version, and import/export actions
 
-The next bounded discovery candidate is now:
+The bounded discovery slice is now shipped:
 - `SEARCH-FIRST-PALETTE-V1.md`
 - a search-first primitive-discovery pass inside the existing palette surface
-- intended to reduce scroll-heavy lookup without widening into a global command palette
+- accent focus ring, `/` keyboard shortcut hint, secondary-control dimming when active, no new persistence
 
 The next bounded bit/hex sequence follow-on after the structured-sequence foundation is now shipped as:
 - `BIT-AND-HEX-SEQUENCE-BRIDGES-V1.md`

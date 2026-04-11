@@ -2764,14 +2764,49 @@ body.dock-resizing {
   margin: 16px 0 0;
 }
 
+.palette-search-label-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.palette-search-shortcut {
+  margin-left: auto;
+  font: 700 0.72rem / 1 var(--font-mono, monospace);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 5px;
+  background: var(--surface-button);
+  user-select: none;
+  pointer-events: none;
+}
+
 .palette-search input {
   width: 100%;
-  border: 1px solid var(--line);
+  border: 1.5px solid var(--line);
   border-radius: 14px;
   background: var(--surface-button);
-  padding: 10px 12px;
+  padding: 11px 14px;
   font: inherit;
+  font-size: 0.94rem;
   color: var(--ink);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.palette-search input:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.palette-secondary-controls {
+  transition: opacity 180ms ease;
+}
+
+.palette-panel[data-search-active] .palette-secondary-controls {
+  opacity: 0.45;
+  pointer-events: none;
 }
 
 .primitive-sections {

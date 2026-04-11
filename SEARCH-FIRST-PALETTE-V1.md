@@ -2,7 +2,7 @@
 
 Last updated: April 4, 2026
 
-Status: Drafted for review before implementation
+Status: Shipped on `main`.
 
 ## Purpose
 

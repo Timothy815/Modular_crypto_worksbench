@@ -250,12 +250,18 @@ export function PrimitivePalette({
   };
 
   return (
-    <aside className={viewMode === 'compact' ? 'panel palette-panel palette-panel-compact' : 'panel palette-panel'}>
+    <aside
+      className={viewMode === 'compact' ? 'panel palette-panel palette-panel-compact' : 'panel palette-panel'}
+      data-search-active={searchActive || undefined}
+    >
       <div className="panel-head">
         <p className="panel-label">Palette</p>
         <h2>Module Library</h2>
         <label className="palette-search">
-          <span className="meta-label">Search Library</span>
+          <div className="palette-search-label-row">
+            <span className="meta-label">Search</span>
+            <kbd className="palette-search-shortcut" title="Press / to focus search">/</kbd>
+          </div>
           <input
             ref={searchInputRef}
             type="search"
@@ -264,55 +270,57 @@ export function PrimitivePalette({
             onKeyDown={handleSearchKeyDown}
             placeholder={
               activeTab === 'composites'
-                ? 'Search composites and iterators by name or id'
-                : 'Search by name, id, purpose, or keyword'
+                ? 'Name or id…'
+                : 'Name, id, or keyword…'
             }
           />
         </label>
-        <label className="palette-filter">
-          <span className="meta-label">Filter</span>
-          <select value={activeTab} onChange={(event) => setActiveTab(event.target.value as ModuleLibraryDomainTab)}>
-            <option value="all">All Primitives</option>
-            <option value="inputs">Inputs</option>
-            <option value="outputs">Outputs</option>
-            <option value="symbol">Symbol</option>
-            <option value="bit">Bit</option>
-            <option value="bridge">Bridges</option>
-            <option value="composites">Composites</option>
-          </select>
-        </label>
-        {activeTab === 'composites' ? (
-          <div className="palette-toolbar">
-            <button
-              type="button"
-              className="palette-view-toggle-button"
-              title={viewMode === 'compact' ? 'Expanded View' : 'Compact View'}
-              aria-label={viewMode === 'compact' ? 'Switch to expanded palette view' : 'Switch to compact palette view'}
-              onClick={onToggleViewMode}
-            >
-              <PaletteViewModeIcon viewMode={viewMode} />
-            </button>
-            <button
-              type="button"
-              className="mini-action-button"
-              onClick={onExportCompositeLibrary}
-            >
-              Export Library
-            </button>
-          </div>
-        ) : (
-          <div className="palette-toolbar">
-            <button
-              type="button"
-              className="palette-view-toggle-button"
-              title={viewMode === 'compact' ? 'Expanded View' : 'Compact View'}
-              aria-label={viewMode === 'compact' ? 'Switch to expanded palette view' : 'Switch to compact palette view'}
-              onClick={onToggleViewMode}
-            >
-              <PaletteViewModeIcon viewMode={viewMode} />
-            </button>
-          </div>
-        )}
+        <div className="palette-secondary-controls">
+          <label className="palette-filter">
+            <span className="meta-label">Filter</span>
+            <select value={activeTab} onChange={(event) => setActiveTab(event.target.value as ModuleLibraryDomainTab)}>
+              <option value="all">All Primitives</option>
+              <option value="inputs">Inputs</option>
+              <option value="outputs">Outputs</option>
+              <option value="symbol">Symbol</option>
+              <option value="bit">Bit</option>
+              <option value="bridge">Bridges</option>
+              <option value="composites">Composites</option>
+            </select>
+          </label>
+          {activeTab === 'composites' ? (
+            <div className="palette-toolbar">
+              <button
+                type="button"
+                className="palette-view-toggle-button"
+                title={viewMode === 'compact' ? 'Expanded View' : 'Compact View'}
+                aria-label={viewMode === 'compact' ? 'Switch to expanded palette view' : 'Switch to compact palette view'}
+                onClick={onToggleViewMode}
+              >
+                <PaletteViewModeIcon viewMode={viewMode} />
+              </button>
+              <button
+                type="button"
+                className="mini-action-button"
+                onClick={onExportCompositeLibrary}
+              >
+                Export Library
+              </button>
+            </div>
+          ) : (
+            <div className="palette-toolbar">
+              <button
+                type="button"
+                className="palette-view-toggle-button"
+                title={viewMode === 'compact' ? 'Expanded View' : 'Compact View'}
+                aria-label={viewMode === 'compact' ? 'Switch to expanded palette view' : 'Switch to compact palette view'}
+                onClick={onToggleViewMode}
+              >
+                <PaletteViewModeIcon viewMode={viewMode} />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
       {searchActive ? (
         <div className="primitive-sections primitive-search-results" role="list" aria-label="Palette search results">
