@@ -65,6 +65,7 @@ import { Permutation } from './permutation';
 import { SymbolPermutation } from './symbol-permutation';
 import { SymbolWindow } from './symbol-window';
 import { RepeatSymbolToLength } from './repeat-symbol-to-length';
+import { RepeatSymbolToMatch } from './repeat-symbol-to-match';
 import { TruncateSymbolSequence } from './truncate-symbol-sequence';
 import { SymbolSequenceToTicked } from './symbol-sequence-to-ticked';
 import { BitsSequenceToTicked } from './bits-sequence-to-ticked';
@@ -77,6 +78,7 @@ import { BitPad } from './bit-pad';
 import { BitUnpad } from './bit-unpad';
 import { BitWindow } from './bit-window';
 import { RepeatBitsToLength } from './repeat-bits-to-length';
+import { RepeatBitsToMatch } from './repeat-bits-to-match';
 import { BroadcastBits } from './broadcast-bits';
 import { TruncateBitsSequence } from './truncate-bits-sequence';
 import { PadBitsSequence } from './pad-bits-sequence';
@@ -149,6 +151,7 @@ export {
   SymbolPermutation,
   SymbolWindow,
   RepeatSymbolToLength,
+  RepeatSymbolToMatch,
   TruncateSymbolSequence,
   SymbolSequenceToTicked,
   BitsSequenceToTicked,
@@ -161,6 +164,7 @@ export {
   BitUnpad,
   BitWindow,
   RepeatBitsToLength,
+  RepeatBitsToMatch,
   BroadcastBits,
   TruncateBitsSequence,
   PadBitsSequence,
@@ -234,6 +238,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [SymbolPermutation.id]: SymbolPermutation,
   [SymbolWindow.id]: SymbolWindow,
   [RepeatSymbolToLength.id]: RepeatSymbolToLength,
+  [RepeatSymbolToMatch.id]: RepeatSymbolToMatch,
   [TruncateSymbolSequence.id]: TruncateSymbolSequence,
   [SymbolSequenceToTicked.id]: SymbolSequenceToTicked,
   [BitsSequenceToTicked.id]: BitsSequenceToTicked,
@@ -246,6 +251,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [BitUnpad.id]: BitUnpad,
   [BitWindow.id]: BitWindow,
   [RepeatBitsToLength.id]: RepeatBitsToLength,
+  [RepeatBitsToMatch.id]: RepeatBitsToMatch,
   [BroadcastBits.id]: BroadcastBits,
   [TruncateBitsSequence.id]: TruncateBitsSequence,
   [PadBitsSequence.id]: PadBitsSequence,

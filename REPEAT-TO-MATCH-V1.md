@@ -84,6 +84,8 @@ This contract is intentionally narrower than a full mismatch-helper family.
 8. The helpers must operate only on already-explicit sequence signals.
 9. V1 must be pure, deterministic, and Python-exportable.
 10. The helpers must not infer policy from downstream modules.
+11. `reference` must be a sequence input, not a scalar tick item.
+12. `reference` must share the same signal domain as `in`; cross-domain length derivation is out of scope for V1.
 
 ## Domain Rules
 
@@ -116,6 +118,8 @@ Validation must reject:
 - missing `reference` connection
 - scalar/sequence mismatches
 - symbol/bits domain mismatches
+- scalar kind on the `reference` input port
+- `reference` domain not matching `in`
 
 Runtime must reject:
 - empty `in` sequence when `reference` is non-empty
@@ -136,6 +140,9 @@ Recommended inspector language:
 Recommended preview behavior:
 - show the repeated result when both inputs are available
 - make it obvious that the reference is providing length, not data content
+- describe resolved length in domain-native units:
+  - character count for symbol sequences
+  - bit count for bit sequences
 
 ## Product Boundary
 
@@ -161,8 +168,12 @@ It should feel like the ergonomic companion to:
 
 ## Likely Demo Paths
 
-- `AsciiSequenceInput(message) + AsciiSequenceInput(key) -> RepeatSymbolToMatch -> AsciiSequenceToTicked -> AsciiCharToBits -> XOR`
-- `BitSequenceInput(data) + BitSequenceInput(mask) -> RepeatBitsToMatch -> XOR`
+- `AsciiSequenceInput(message) -> AsciiSequenceToTicked -> AsciiCharToBits -> XOR (input a)`
+- `AsciiSequenceInput(key) -> RepeatSymbolToMatch(reference=message) -> AsciiSequenceToTicked -> AsciiCharToBits -> XOR (input b)`
+- `XOR -> TickedBitsToSequence`
+- `BitSequenceInput(data) -> BitsSequenceToTicked(wordWidth=8) -> XOR (input a)`
+- `BitSequenceInput(mask) -> RepeatBitsToMatch(reference=data) -> BitsSequenceToTicked(wordWidth=8) -> XOR (input b)`
+- `XOR -> TickedBitsToSequence`
 
 ## Explicit Non-Goals
 

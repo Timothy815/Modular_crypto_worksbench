@@ -715,6 +715,38 @@ const REPEAT_SYMBOL_TO_LENGTH_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const REPEAT_SYMBOL_TO_MATCH_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'RepeatSymbolToMatch',
+  name: 'Repeat Symbol To Match Micro Demo',
+  summary: 'Visible repeated-key ergonomics: one symbol sequence repeats until it matches the length of a second explicit symbol sequence.',
+  pipeline: 'SymbolSequenceInput(key) + SymbolSequenceInput(message) -> RepeatSymbolToMatch -> TextOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'repeat', defId: 'RepeatSymbolToMatch', params: {} },
+        { id: 'key', defId: 'SymbolSequenceInput', params: { value: 'KEY' } },
+        { id: 'message', defId: 'SymbolSequenceInput', params: { value: 'HELLOWORLD' } },
+        { id: 'out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'key', port: 'out' }, to: { moduleId: 'repeat', port: 'in' } },
+        { from: { moduleId: 'message', port: 'out' }, to: { moduleId: 'repeat', port: 'reference' } },
+        { from: { moduleId: 'repeat', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        repeat: { x: 432, y: 176 },
+        key: { x: 80, y: 120 },
+        message: { x: 80, y: 260 },
+        out: { x: 764, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const TRUNCATE_SYMBOL_SEQUENCE_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'TruncateSymbolSequence',
   name: 'Truncate Symbol Sequence Micro Demo',
@@ -1228,6 +1260,38 @@ const BIT_SEQUENCE_INPUT_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const REPEAT_BITS_TO_MATCH_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'RepeatBitsToMatch',
+  name: 'Repeat Bits To Match Micro Demo',
+  summary: 'Visible repeated-mask ergonomics: one bit sequence repeats until it matches the width of a second explicit bit buffer.',
+  pipeline: 'BitSequenceInput(mask) + BitSequenceInput(data) -> RepeatBitsToMatch -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'repeat', defId: 'RepeatBitsToMatch', params: {} },
+        { id: 'mask', defId: 'BitSequenceInput', params: { stream: [1, 0, 1] } },
+        { id: 'data', defId: 'BitSequenceInput', params: { stream: [1, 1, 0, 0, 1, 0, 1, 1] } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'mask', port: 'out' }, to: { moduleId: 'repeat', port: 'in' } },
+        { from: { moduleId: 'data', port: 'out' }, to: { moduleId: 'repeat', port: 'reference' } },
+        { from: { moduleId: 'repeat', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        repeat: { x: 436, y: 176 },
+        mask: { x: 72, y: 120 },
+        data: { x: 72, y: 260 },
+        out: { x: 756, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const HEX_SEQUENCE_INPUT_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'HexSequenceInput',
   name: 'Hex Sequence Input Micro Demo',
@@ -1439,6 +1503,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   SYMBOL_SEQUENCE_INPUT_MICRO_DEMO,
   ASCII_SEQUENCE_INPUT_MICRO_DEMO,
   REPEAT_SYMBOL_TO_LENGTH_MICRO_DEMO,
+  REPEAT_SYMBOL_TO_MATCH_MICRO_DEMO,
   TRUNCATE_SYMBOL_SEQUENCE_MICRO_DEMO,
   SYMBOL_SEQUENCE_TO_TICKED_MICRO_DEMO,
   ASCII_SEQUENCE_TO_TICKED_MICRO_DEMO,
@@ -1454,6 +1519,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   TICKED_SYMBOLS_TO_SEQUENCE_MICRO_DEMO,
   TICKED_BITS_TO_SEQUENCE_MICRO_DEMO,
   BIT_SEQUENCE_INPUT_MICRO_DEMO,
+  REPEAT_BITS_TO_MATCH_MICRO_DEMO,
   TRUNCATE_BITS_SEQUENCE_MICRO_DEMO,
   PAD_BITS_SEQUENCE_MICRO_DEMO,
   HEX_SEQUENCE_INPUT_MICRO_DEMO,

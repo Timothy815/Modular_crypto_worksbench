@@ -78,6 +78,7 @@ import { Permutation } from './permutation';
 import { SymbolPermutation } from './symbol-permutation';
 import { SymbolWindow } from './symbol-window';
 import { RepeatSymbolToLength } from './repeat-symbol-to-length';
+import { RepeatSymbolToMatch } from './repeat-symbol-to-match';
 import { TruncateSymbolSequence } from './truncate-symbol-sequence';
 import { SymbolSequenceInput } from './symbol-sequence-input';
 import { SymbolSequenceToTicked } from './symbol-sequence-to-ticked';
@@ -91,6 +92,7 @@ import { BitPad } from './bit-pad';
 import { BitUnpad } from './bit-unpad';
 import { BitWindow } from './bit-window';
 import { RepeatBitsToLength } from './repeat-bits-to-length';
+import { RepeatBitsToMatch } from './repeat-bits-to-match';
 import { BroadcastBits } from './broadcast-bits';
 import { TruncateBitsSequence } from './truncate-bits-sequence';
 import { PadBitsSequence } from './pad-bits-sequence';
@@ -315,6 +317,42 @@ describe('RepeatSymbolToLength', () => {
   });
 });
 
+describe('RepeatSymbolToMatch', () => {
+  it('repeats a short symbol key until it matches the reference length', () => {
+    const result = RepeatSymbolToMatch.evaluate(
+      {
+        in: { type: 'symbol', value: 'KEY' },
+        reference: { type: 'symbol', value: 'HELLOWORLD' },
+      },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: 'KEYKEYKEYK' });
+  });
+
+  it('returns an empty sequence when the reference is empty', () => {
+    const result = RepeatSymbolToMatch.evaluate(
+      {
+        in: { type: 'symbol', value: 'KEY' },
+        reference: { type: 'symbol', value: '' },
+      },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'symbol', value: '' });
+  });
+
+  it('throws on an empty symbol sequence when the reference is non-empty', () => {
+    expect(() =>
+      RepeatSymbolToMatch.evaluate(
+        {
+          in: { type: 'symbol', value: '' },
+          reference: { type: 'symbol', value: 'HELLO' },
+        },
+        {},
+      ),
+    ).toThrow(/non-empty input sequence/i);
+  });
+});
+
 describe('TruncateSymbolSequence', () => {
   it('keeps the left side of a symbol sequence by default', () => {
     const result = TruncateSymbolSequence.evaluate(
@@ -473,6 +511,42 @@ describe('RepeatBitsToLength', () => {
         { targetLength: 8 },
       ),
     ).toThrow(/empty bit sequence/i);
+  });
+});
+
+describe('RepeatBitsToMatch', () => {
+  it('repeats a bit mask until it matches the reference width', () => {
+    const result = RepeatBitsToMatch.evaluate(
+      {
+        in: { type: 'bits', value: [1, 0, 1] },
+        reference: { type: 'bits', value: [0, 0, 0, 0, 0, 0, 0, 0] },
+      },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1, 1, 0, 1, 1, 0] });
+  });
+
+  it('returns an empty sequence when the reference is empty', () => {
+    const result = RepeatBitsToMatch.evaluate(
+      {
+        in: { type: 'bits', value: [1, 0, 1] },
+        reference: { type: 'bits', value: [] },
+      },
+      {},
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [] });
+  });
+
+  it('throws on an empty bit sequence when the reference is non-empty', () => {
+    expect(() =>
+      RepeatBitsToMatch.evaluate(
+        {
+          in: { type: 'bits', value: [] },
+          reference: { type: 'bits', value: [0, 1, 0, 1] },
+        },
+        {},
+      ),
+    ).toThrow(/non-empty input sequence/i);
   });
 });
 

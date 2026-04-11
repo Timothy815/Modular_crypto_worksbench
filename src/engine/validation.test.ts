@@ -45,6 +45,7 @@ import { Reflector } from './modules/reflector';
 import { Rotor } from './modules/rotor';
 import { RotorReverse } from './modules/rotor-reverse';
 import { RepeatSymbolToLength } from './modules/repeat-symbol-to-length';
+import { RepeatSymbolToMatch } from './modules/repeat-symbol-to-match';
 import { TruncateSymbolSequence } from './modules/truncate-symbol-sequence';
 import { Salt } from './modules/salt';
 import { SBox } from './modules/s-box';
@@ -52,6 +53,7 @@ import { SymbolPermutation } from './modules/symbol-permutation';
 import { SymbolSequenceInput } from './modules/symbol-sequence-input';
 import { SymbolSequenceToTicked } from './modules/symbol-sequence-to-ticked';
 import { BitsSequenceToTicked } from './modules/bits-sequence-to-ticked';
+import { RepeatBitsToMatch } from './modules/repeat-bits-to-match';
 import { SymbolWindow } from './modules/symbol-window';
 import { SubMod } from './modules/sub-mod';
 import { TextInput } from './modules/text-input';
@@ -139,6 +141,7 @@ const registry: ModuleRegistry = {
   [Rotor.id]: Rotor,
   [RotorReverse.id]: RotorReverse,
   [RepeatSymbolToLength.id]: RepeatSymbolToLength,
+  [RepeatSymbolToMatch.id]: RepeatSymbolToMatch,
   [TruncateSymbolSequence.id]: TruncateSymbolSequence,
   [Plugboard.id]: Plugboard,
   [Reflector.id]: Reflector,
@@ -154,6 +157,7 @@ const registry: ModuleRegistry = {
   [GreaterThan.id]: GreaterThan,
   [Demux.id]: Demux,
   [TextInput.id]: TextInput,
+  [RepeatBitsToMatch.id]: RepeatBitsToMatch,
 };
 
 describe('validateProject', () => {
@@ -1144,6 +1148,25 @@ describe('validateProject', () => {
       ],
       connections: [
         { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'repeat', port: 'in' } },
+      ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'signal-kind-mismatch')).toBe(true);
+  });
+
+  it('reports mismatched signal kinds on repeat-to-match reference inputs', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text', defId: 'Source', params: {} },
+        { id: 'message', defId: 'SymbolSequenceInput', params: { value: 'HELLO' } },
+        { id: 'repeat', defId: 'RepeatSymbolToMatch', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'message', port: 'out' }, to: { moduleId: 'repeat', port: 'in' } },
+        { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'repeat', port: 'reference' } },
       ],
     };
 

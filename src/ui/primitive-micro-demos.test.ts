@@ -26,6 +26,7 @@ describe('primitive micro demos', () => {
       'SymbolSequenceInput',
       'AsciiSequenceInput',
       'RepeatSymbolToLength',
+      'RepeatSymbolToMatch',
       'TruncateSymbolSequence',
       'SymbolSequenceToTicked',
       'AsciiSequenceToTicked',
@@ -41,6 +42,7 @@ describe('primitive micro demos', () => {
       'TickedSymbolsToSequence',
       'TickedBitsToSequence',
       'BitSequenceInput',
+      'RepeatBitsToMatch',
       'TruncateBitsSequence',
       'PadBitsSequence',
       'HexSequenceInput',
@@ -68,6 +70,9 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('AsciiSequenceInput')?.name).toBe('ASCII Sequence Input Micro Demo');
     expect(getPrimitiveMicroDemo('RepeatSymbolToLength')?.name).toBe(
       'Repeat Symbol To Length Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('RepeatSymbolToMatch')?.name).toBe(
+      'Repeat Symbol To Match Micro Demo',
     );
     expect(getPrimitiveMicroDemo('TruncateSymbolSequence')?.name).toBe(
       'Truncate Symbol Sequence Micro Demo',
@@ -112,6 +117,7 @@ describe('primitive micro demos', () => {
       'Ticked Bits To Sequence Micro Demo',
     );
     expect(getPrimitiveMicroDemo('BitSequenceInput')?.name).toBe('Bit Sequence Input Micro Demo');
+    expect(getPrimitiveMicroDemo('RepeatBitsToMatch')?.name).toBe('Repeat Bits To Match Micro Demo');
     expect(getPrimitiveMicroDemo('TruncateBitsSequence')?.name).toBe(
       'Truncate Bits Sequence Micro Demo',
     );
@@ -169,6 +175,16 @@ describe('primitive micro demos', () => {
     const bridge = getPrimitiveMicroDemo('TruncateSymbolSequence');
     expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
       'TruncateSymbolSequence',
+      'SymbolSequenceInput',
+      'TextOutput',
+    ]);
+  });
+
+  it('keeps the symbol repeat-to-match example honest about visible reference-driven repetition', () => {
+    const bridge = getPrimitiveMicroDemo('RepeatSymbolToMatch');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'RepeatSymbolToMatch',
+      'SymbolSequenceInput',
       'SymbolSequenceInput',
       'TextOutput',
     ]);
@@ -336,6 +352,16 @@ describe('primitive micro demos', () => {
     const bridge = getPrimitiveMicroDemo('TruncateBitsSequence');
     expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
       'TruncateBitsSequence',
+      'BitSequenceInput',
+      'BitOutput',
+    ]);
+  });
+
+  it('keeps the bit repeat-to-match example honest about visible reference-driven repetition', () => {
+    const bridge = getPrimitiveMicroDemo('RepeatBitsToMatch');
+    expect(bridge?.document.project.modules.map((module) => module.defId)).toEqual([
+      'RepeatBitsToMatch',
+      'BitSequenceInput',
       'BitSequenceInput',
       'BitOutput',
     ]);

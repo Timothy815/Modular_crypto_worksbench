@@ -380,6 +380,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this for Vigenere-style repeated keys and other classical cycling behaviors when the graph should show repetition explicitly instead of manually unrolling the key.',
     searchTerms: ['repeat symbol', 'repeat key', 'vigenere', 'cycle key', 'repeat to length', 'symbol', 'message'],
   },
+  RepeatSymbolToMatch: {
+    sectionId: 'symbol-domain',
+    sortOrder: 57,
+    purpose: 'Repeats a visible symbol sequence until it matches a visible reference sequence length.',
+    detail: 'Use this for repeated-key authoring when the message already exists in the graph and you want the repeat policy to stay explicit without manually counting characters.',
+    searchTerms: ['repeat symbol to match', 'repeat key', 'vigenere', 'reference length', 'match message', 'symbol'],
+  },
   TruncateSymbolSequence: {
     sectionId: 'symbol-domain',
     sortOrder: 60,
@@ -484,6 +491,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Repeats a visible bit pattern until it reaches an explicit output width.',
     detail: 'Use this when a short mask, pad, or key word should repeat visibly across a longer bitstring instead of forcing manual duplication.',
     searchTerms: ['repeat bits', 'repeat to length', 'cycle bits', 'mask repeat', 'pad repeat', 'bits', 'framing'],
+  },
+  RepeatBitsToMatch: {
+    sectionId: 'framing-routing',
+    sortOrder: 57,
+    purpose: 'Repeats a visible bit pattern until it matches a visible reference buffer width.',
+    detail: 'Use this for repeated-key XOR or repeated masks when another explicit bit buffer should define the output width without hidden operator behavior.',
+    searchTerms: ['repeat bits to match', 'mask repeat', 'reference width', 'repeated key xor', 'bits', 'framing'],
   },
   BroadcastBits: {
     sectionId: 'framing-routing',

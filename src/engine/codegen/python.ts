@@ -53,6 +53,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'BitsToHexDigit',
   'HexToAscii',
   'AsciiToHex',
+  'RepeatSymbolToMatch',
   'XOR',
   'AND',
   'OR',
@@ -81,6 +82,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'BitUnpad',
   'BitWindow',
   'RepeatBitsToLength',
+  'RepeatBitsToMatch',
   'BroadcastBits',
   'TruncateBitsSequence',
   'PadBitsSequence',
@@ -179,6 +181,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'symbol_permutation',
   'symbol_window',
   'repeat_symbol_to_length',
+  'repeat_symbol_to_match',
   'truncate_symbol_sequence',
   'ascii_sequence_to_ticked_init',
   'ascii_sequence_to_ticked_eval',
@@ -223,6 +226,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'bit_unpad',
   'bit_window',
   'repeat_bits_to_length',
+  'repeat_bits_to_match',
   'broadcast_bits',
   'truncate_bits_sequence',
   'pad_bits_sequence',
@@ -813,6 +817,18 @@ def repeat_symbol_to_length(signal, target_length):
     return {"out": "".join(characters[index % len(characters)] for index in range(target_length))}
 
 
+def repeat_symbol_to_match(signal, reference):
+    symbol = str(signal)
+    characters = list(symbol)
+    reference_symbol = str(reference)
+    target_length = len(list(reference_symbol))
+    if target_length == 0:
+        return {"out": ""}
+    if len(characters) == 0:
+        raise ValueError("RepeatSymbolToMatch requires a non-empty input sequence to repeat")
+    return {"out": "".join(characters[index % len(characters)] for index in range(target_length))}
+
+
 def truncate_symbol_sequence(signal, target_length, side):
     symbol = str(signal)
     characters = list(symbol)
@@ -1157,6 +1173,17 @@ def repeat_bits_to_length(signal, target_length):
         raise ValueError("RepeatBitsToLength target length must be a positive integer.")
     if len(bits) == 0:
         raise ValueError("RepeatBitsToLength cannot repeat an empty bit sequence")
+    return {"out": [bits[index % len(bits)] for index in range(target_length)]}
+
+
+def repeat_bits_to_match(signal, reference):
+    bits = _expect_bits(signal, "RepeatBitsToMatch")
+    reference_bits = _expect_bits(reference, "RepeatBitsToMatch")
+    target_length = len(reference_bits)
+    if target_length == 0:
+        return {"out": []}
+    if len(bits) == 0:
+        raise ValueError("RepeatBitsToMatch requires a non-empty input sequence to repeat")
     return {"out": [bits[index % len(bits)] for index in range(target_length)]}
 
 
@@ -2206,6 +2233,8 @@ function buildModuleExpression(
       return `symbol_window(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'start')}, ${expressionContext.getParamExpression(moduleInstance, def, 'width')})`;
     case 'RepeatSymbolToLength':
       return `repeat_symbol_to_length(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetLength')})`;
+    case 'RepeatSymbolToMatch':
+      return `repeat_symbol_to_match(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'reference')})`;
     case 'TruncateSymbolSequence':
       return `truncate_symbol_sequence(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetLength')}, ${expressionContext.getParamExpression(moduleInstance, def, 'side')})`;
     case 'Reflector':
@@ -2292,6 +2321,8 @@ function buildModuleExpression(
       return `bit_window(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'start')}, ${expressionContext.getParamExpression(moduleInstance, def, 'width')})`;
     case 'RepeatBitsToLength':
       return `repeat_bits_to_length(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetLength')})`;
+    case 'RepeatBitsToMatch':
+      return `repeat_bits_to_match(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getInputExpression(moduleId, 'reference')})`;
     case 'BroadcastBits':
       return `broadcast_bits(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'copies')})`;
     case 'TruncateBitsSequence':

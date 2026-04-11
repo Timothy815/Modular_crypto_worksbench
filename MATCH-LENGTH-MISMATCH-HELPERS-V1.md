@@ -107,7 +107,9 @@ But the family naming and semantics should be locked before the line expands.
 - define preserved side explicitly:
   - left
   - right
-- output length equals reference length or shorter only when input is already shorter and the helper contract says “error” instead of auto-pad
+- if `in.length < reference.length`, output is the unchanged input (identity behavior)
+- output length equals reference length only when truncation is actually needed
+- users who need strict enforcement that lengths already match should use a later explicit strict/error helper such as `RequireSymbolLengthMatch` or `RequireBitsLengthMatch`
 
 ### Pad-to-match
 
@@ -119,6 +121,7 @@ But the family naming and semantics should be locked before the line expands.
   - symbol
   - bit
 - output length equals reference length
+- `PadSymbolToMatch` should use an explicit single-character string param for the pad character, with default value of space (` `)
 
 ## UX Guidance
 
