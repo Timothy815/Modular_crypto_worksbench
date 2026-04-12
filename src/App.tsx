@@ -159,6 +159,7 @@ interface CompositeDrilldownState {
   stepIndex: number | null;
   activeAnalysisTraceEntry: ExecutionTraceEntry | null;
   requestedFocusModuleId: string | null;
+  conditionalBranch?: 'then' | 'else';
 }
 
 function App() {
@@ -494,10 +495,16 @@ function MainApp() {
     compositeDrilldown?.parentProjectId === activeProjectDefinition.id
       ? baseProjectState.modules.find((moduleInstance) => moduleInstance.id === compositeDrilldown.instanceId) ?? null
       : null;
-  const activeCompositeDrilldownDefinition =
+  const activeCompositeDrilldownBaseDefinition =
     activeCompositeDrilldownInstance
       ? effectiveRegistry[activeCompositeDrilldownInstance.defId]
       : null;
+  const activeCompositeDrilldownDefinition =
+    activeCompositeDrilldownBaseDefinition && isConditionalDefinition(activeCompositeDrilldownBaseDefinition)
+      ? compositeDrilldown?.conditionalBranch === 'else'
+        ? (effectiveRegistry[activeCompositeDrilldownBaseDefinition.elseDefId] ?? null)
+        : (effectiveRegistry[activeCompositeDrilldownBaseDefinition.thenDefId] ?? null)
+      : activeCompositeDrilldownBaseDefinition;
   const compositeDrilldownContext =
     compositeDrilldown &&
     activeCompositeDrilldownInstance &&
@@ -821,7 +828,7 @@ function MainApp() {
       }
 
       const definition = effectiveRegistry[moduleInstance.defId];
-      if (!definition || !isCompositeDefinition(definition)) {
+      if (!definition || (!isCompositeDefinition(definition) && !isConditionalDefinition(definition))) {
         return;
       }
 
@@ -834,6 +841,7 @@ function MainApp() {
         stepIndex: null,
         activeAnalysisTraceEntry: null,
         requestedFocusModuleId: null,
+        conditionalBranch: isConditionalDefinition(definition) ? 'then' : undefined,
       });
     },
     [
@@ -3144,9 +3152,34 @@ function MainApp() {
               <div>
                 <span className="meta-label">Instance Drill-down</span>
                 <strong>
-                  {activeProjectDefinition.name} &gt; {activeCompositeDrilldownInstance.id} ({activeCompositeDrilldownDefinition.name})
+                  {activeProjectDefinition.name} &gt; {activeCompositeDrilldownInstance.id}
+                  {compositeDrilldown?.conditionalBranch
+                    ? ` — ${compositeDrilldown.conditionalBranch === 'then' ? 'Then' : 'Else'} Branch (${activeCompositeDrilldownDefinition.name})`
+                    : ` (${activeCompositeDrilldownDefinition.name})`}
                 </strong>
-                <p className="composite-editor-subtitle">Read-only view of one placed composite instance</p>
+                <p className="composite-editor-subtitle">
+                  {compositeDrilldown?.conditionalBranch
+                    ? 'Read-only view of the selected branch composite'
+                    : 'Read-only view of one placed composite instance'}
+                </p>
+                {compositeDrilldown?.conditionalBranch && activeCompositeDrilldownBaseDefinition && isConditionalDefinition(activeCompositeDrilldownBaseDefinition) ? (
+                  <div className="composite-editor-actions" style={{ marginTop: 4 }}>
+                    <button
+                      type="button"
+                      className={compositeDrilldown.conditionalBranch === 'then' ? 'primary-dialog-button' : 'secondary-dialog-button'}
+                      onClick={() => setCompositeDrilldown((current) => current ? { ...current, conditionalBranch: 'then', selectedModuleId: null, selectedModuleIds: [] } : null)}
+                    >
+                      Then Branch
+                    </button>
+                    <button
+                      type="button"
+                      className={compositeDrilldown.conditionalBranch === 'else' ? 'primary-dialog-button' : 'secondary-dialog-button'}
+                      onClick={() => setCompositeDrilldown((current) => current ? { ...current, conditionalBranch: 'else', selectedModuleId: null, selectedModuleIds: [] } : null)}
+                    >
+                      Else Branch
+                    </button>
+                  </div>
+                ) : null}
                 {compositeDrilldownContext?.forwardedParamValues.length ? (
                   <p className="comparison-copy">
                     Forwarded params:{' '}
