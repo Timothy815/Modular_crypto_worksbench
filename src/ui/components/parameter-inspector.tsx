@@ -733,7 +733,13 @@ function ScrubNumberInput({
   renderedValue: string;
   onRawChange: (raw: string) => void;
 }) {
-  const scrubRef = useRef<{ startX: number; startValue: number } | null>(null);
+  const scrubRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startValue: number;
+    input: HTMLInputElement;
+    active: boolean;
+  } | null>(null);
   const [isScrubbing, setIsScrubbing] = useState(false);
 
   return (
@@ -744,21 +750,47 @@ function ScrubNumberInput({
       onChange={(e) => onRawChange(e.target.value)}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
+        if (e.pointerType !== 'mouse') return;
         if (document.activeElement === e.currentTarget) return;
-        e.preventDefault();
         const startValue = parseFloat(renderedValue);
-        e.currentTarget.setPointerCapture(e.pointerId);
-        scrubRef.current = { startX: e.clientX, startValue: isNaN(startValue) ? 0 : startValue };
-        setIsScrubbing(true);
+        scrubRef.current = {
+          pointerId: e.pointerId,
+          startX: e.clientX,
+          startValue: isNaN(startValue) ? 0 : startValue,
+          input: e.currentTarget,
+          active: false,
+        };
       }}
       onPointerMove={(e) => {
         if (!scrubRef.current) return;
+        if (scrubRef.current.pointerId !== e.pointerId) return;
         const dx = e.clientX - scrubRef.current.startX;
+        if (!scrubRef.current.active) {
+          if (Math.abs(dx) < 6) {
+            return;
+          }
+          e.preventDefault();
+          scrubRef.current.input.setPointerCapture(e.pointerId);
+          scrubRef.current.active = true;
+          setIsScrubbing(true);
+        }
         const steps = Math.round(dx / 4);
         onRawChange(String(scrubRef.current.startValue + steps));
       }}
-      onPointerUp={() => { scrubRef.current = null; setIsScrubbing(false); }}
-      onPointerCancel={() => { scrubRef.current = null; setIsScrubbing(false); }}
+      onPointerUp={(e) => {
+        if (scrubRef.current?.active && scrubRef.current.input.hasPointerCapture(e.pointerId)) {
+          scrubRef.current.input.releasePointerCapture(e.pointerId);
+        }
+        scrubRef.current = null;
+        setIsScrubbing(false);
+      }}
+      onPointerCancel={(e) => {
+        if (scrubRef.current?.active && scrubRef.current.input.hasPointerCapture(e.pointerId)) {
+          scrubRef.current.input.releasePointerCapture(e.pointerId);
+        }
+        scrubRef.current = null;
+        setIsScrubbing(false);
+      }}
     />
   );
 }
