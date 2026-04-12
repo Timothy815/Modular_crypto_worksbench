@@ -204,6 +204,7 @@ The following ceremony-reduction and legibility slices are now shipped on `main`
 - Hover-to-sever wire button — hovering any wire shows a `✕ Sever` button at the midpoint; no menu navigation needed to delete a connection
 - Pipeline starters (Quick Start strip) — four one-click pre-wired chains in the palette: Symbol Cipher Input, Symbol Key Input, Bit Stream Input, Symbol Output Chain; eliminates the bridge-placement ceremony for the most common pipelines
 - Insert bridge on type mismatch — when a drag-drop fails due to symbol↔bits mismatch, an inline popup offers one-click bridge insertion at the wire midpoint; bridge is placed and both ends wired automatically
+- Mid-drag palette drop — while dragging a wire, compatible palette modules highlight in blue with a port-name hint chip; releasing the mouse over one auto-places the module adjacent to the source and wires it in a single gesture; incompatible modules dim; no separate place-then-connect steps required
 
 The second Experiential North Star Live Readability slice is now also shipped:
 - `LIVE-WIRE-EMPHASIS-V1.md`
