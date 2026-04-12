@@ -801,10 +801,21 @@ export function matchesModuleSearch(definition: ModuleDefinition, query: string)
   return candidates.some((candidate) => candidate.toLowerCase().includes(normalized));
 }
 
+// Internal helper composites that back built-in conditional defs — not meant
+// for direct palette placement by the user.
+const INTERNAL_COMPOSITE_IDS = new Set([
+  'ConditionalRotateBranch',
+  'ConditionalInvertBranch',
+]);
+
 export function matchesModuleDomainTab(
   definition: ModuleDefinition,
   tab: ModuleLibraryDomainTab,
 ): boolean {
+  if (INTERNAL_COMPOSITE_IDS.has(definition.id)) {
+    return false;
+  }
+
   if (tab === 'all') {
     return !isCompositeDefinition(definition) && !isIteratorDefinition(definition) && !isConditionalDefinition(definition);
   }

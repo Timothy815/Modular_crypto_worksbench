@@ -400,6 +400,14 @@ export function PrimitivePalette({
               ),
             },
             {
+              id: 'built-in-conditionals',
+              title: 'Built-In Conditionals',
+              description: 'Shipped conditional branching modules — one control bit selects which branch definition runs.',
+              defs: visibleDefs.filter(
+                (def) => builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'conditional',
+              ),
+            },
+            {
               id: 'user-composites',
               title: 'My Composites',
               description: 'Editable composite modules you created yourself.',
