@@ -11,10 +11,12 @@ import {
   isStatefulModule,
 } from './types';
 import {
+  isConditionalDefinition,
   isCompositeDefinition,
   isIteratorDefinition,
   type CompositeDef,
   type CompositePortBinding,
+  type ConditionalDef,
   type IteratorDef,
 } from './composites';
 import { validateAsciiSourceValue } from './modules/ascii-source';
@@ -72,6 +74,7 @@ const SINGLE_BIT_TERNARY_MODULE_IDS = new Set(['Majority']);
 const SINGLE_BIT_SELECTOR_MODULE_IDS = new Set(['Mux']);
 const SINGLE_BIT_ROUTER_MODULE_IDS = new Set(['Demux']);
 const CLOCK_PORT = 'clock';
+const CONDITIONAL_SELECT_PORT = 'select';
 
 function findPort(def: ModuleDefinition, portName: string, direction: 'input' | 'output') {
   const ports = direction === 'input' ? def.inputs : def.outputs;
@@ -159,6 +162,10 @@ function getModuleSpecificParamMessage(
         : 'Iteration count must be a positive integer';
     }
 
+    return null;
+  }
+
+  if (isConditionalDefinition(def)) {
     return null;
   }
 
@@ -344,7 +351,7 @@ function inferStaticBitWidth(
 
   const def = defsByInstanceId.get(moduleId);
   const instance = instancesById.get(moduleId);
-  if (!def || !instance || isCompositeDefinition(def) || isIteratorDefinition(def)) {
+  if (!def || !instance || isCompositeDefinition(def) || isIteratorDefinition(def) || isConditionalDefinition(def)) {
     memo.set(moduleId, null);
     return null;
   }
@@ -561,6 +568,21 @@ function validateBitWidthConstraints(
       continue;
     }
 
+    if (isConditionalDefinition(def)) {
+      const select = incomingConnections.get(`${moduleInstance.id}:${CONDITIONAL_SELECT_PORT}`);
+      if (select) {
+        const selectWidth = getControlWidth(select);
+        if (selectWidth !== null && selectWidth !== 1) {
+          issues.push({
+            code: 'signal-width-mismatch',
+            message: `Module "${moduleInstance.id}" requires a 1-bit conditional select input.`,
+            moduleId: moduleInstance.id,
+          });
+        }
+      }
+      continue;
+    }
+
     if (EQUAL_WIDTH_BINARY_MODULE_IDS.has(def.id)) {
       const left = incomingConnections.get(`${moduleInstance.id}:a`);
       const right = incomingConnections.get(`${moduleInstance.id}:b`);
@@ -737,7 +759,7 @@ function validateBitWidthConstraints(
 
       const instance = instancesById.get(upstream.moduleId);
       const upstreamDef = defsByInstanceId.get(upstream.moduleId);
-      if (!instance || !upstreamDef || isCompositeDefinition(upstreamDef) || isIteratorDefinition(upstreamDef)) {
+      if (!instance || !upstreamDef || isCompositeDefinition(upstreamDef) || isIteratorDefinition(upstreamDef) || isConditionalDefinition(upstreamDef)) {
         continue;
       }
 
@@ -777,7 +799,7 @@ function validateBitWidthConstraints(
 
       const instance = instancesById.get(upstream.moduleId);
       const upstreamDef = defsByInstanceId.get(upstream.moduleId);
-      if (!instance || !upstreamDef || isCompositeDefinition(upstreamDef) || isIteratorDefinition(upstreamDef)) {
+      if (!instance || !upstreamDef || isCompositeDefinition(upstreamDef) || isIteratorDefinition(upstreamDef) || isConditionalDefinition(upstreamDef)) {
         continue;
       }
 
@@ -877,7 +899,7 @@ function validateParams(
     }
   }
 
-  if (!isCompositeDefinition(def) && !isIteratorDefinition(def)) {
+  if (!isCompositeDefinition(def) && !isIteratorDefinition(def) && !isConditionalDefinition(def)) {
     if (
       def.id === 'PolluxFractionation' ||
       def.id === 'PolluxControlledFractionation' ||
@@ -932,7 +954,7 @@ function validateLinkedRotorPairings(
 ) {
   for (const moduleInstance of project.modules) {
     const def = defsByInstanceId.get(moduleInstance.id);
-    if (!def || isCompositeDefinition(def) || isIteratorDefinition(def) || def.id !== 'RotorReverse') {
+    if (!def || isCompositeDefinition(def) || isIteratorDefinition(def) || isConditionalDefinition(def) || def.id !== 'RotorReverse') {
       continue;
     }
 
@@ -962,7 +984,7 @@ function validateLinkedRotorPairings(
     }
 
     const linkedDef = defsByInstanceId.get(trimmedLinkedRotorId);
-    if (!linkedDef || isCompositeDefinition(linkedDef) || isIteratorDefinition(linkedDef) || linkedDef.id !== 'Rotor') {
+    if (!linkedDef || isCompositeDefinition(linkedDef) || isIteratorDefinition(linkedDef) || isConditionalDefinition(linkedDef) || linkedDef.id !== 'Rotor') {
       issues.push({
         code: 'invalid-param-type',
         message: `Module "${moduleInstance.id}" parameter "linkedRotorId" must reference a forward Rotor, not "${linkedInstance.defId}".`,
@@ -974,6 +996,7 @@ function validateLinkedRotorPairings(
 
 export function validateProject(project: Project, registry: ModuleRegistry): ValidationResult {
   const { defsByInstanceId, instancesById, issues } = buildModuleMaps(project, registry);
+  const validatedDefinitionIds = new Set<string>();
   const inboundEdgeKeys = new Set<string>();
   const adjacency = new Map<string, string[]>();
   const indegree = new Map<string, number>();
@@ -984,6 +1007,12 @@ export function validateProject(project: Project, registry: ModuleRegistry): Val
 
     const def = defsByInstanceId.get(moduleInstance.id);
     if (def) {
+      if (!validatedDefinitionIds.has(def.id)) {
+        if (isConditionalDefinition(def)) {
+          issues.push(...validateConditionalDef(def, registry).issues);
+        }
+        validatedDefinitionIds.add(def.id);
+      }
       validateParams(moduleInstance, def, registry, issues);
     }
   }
@@ -1069,7 +1098,7 @@ export function validateProject(project: Project, registry: ModuleRegistry): Val
       continue;
     }
 
-    if (!(connection.to.port === CLOCK_PORT && !isCompositeDefinition(targetDef) && !isIteratorDefinition(targetDef) && isStatefulModule(targetDef))) {
+    if (!(connection.to.port === CLOCK_PORT && !isCompositeDefinition(targetDef) && !isIteratorDefinition(targetDef) && !isConditionalDefinition(targetDef) && isStatefulModule(targetDef))) {
       adjacency.get(connection.from.moduleId)?.push(connection.to.moduleId);
       indegree.set(
         connection.to.moduleId,
@@ -1140,6 +1169,129 @@ export function validateCompositeDef(
     issues,
   );
   validateForwardedParams(composite, registry, issues);
+
+  return {
+    ok: issues.length === 0,
+    issues,
+  };
+}
+
+function portSignature(port: { name: string; type: string; kind?: string | undefined }) {
+  return `${port.name}:${port.type}:${port.kind ?? ''}`;
+}
+
+function paramFieldSignature(field: ParamFieldDef | undefined) {
+  if (!field) {
+    return null;
+  }
+
+  const options = field.options?.map((option) => `${option.label}:${option.value}`).join('|') ?? '';
+  return `${field.key}:${field.kind}:${field.required ? 'required' : 'optional'}:${options}`;
+}
+
+function paramSchemasMatch(
+  leftSchema: Record<string, ParamFieldDef>,
+  rightSchema: Record<string, ParamFieldDef>,
+): boolean {
+  const leftKeys = Object.keys(leftSchema).sort();
+  const rightKeys = Object.keys(rightSchema).sort();
+  if (leftKeys.length !== rightKeys.length) {
+    return false;
+  }
+
+  return leftKeys.every(
+    (key, index) =>
+      key === rightKeys[index] &&
+      paramFieldSignature(leftSchema[key]) === paramFieldSignature(rightSchema[key]),
+  );
+}
+
+function conditionalForwardedInputs(def: ConditionalDef) {
+  return def.inputs.filter((port) => port.name !== CONDITIONAL_SELECT_PORT);
+}
+
+export function validateConditionalDef(
+  conditional: ConditionalDef,
+  registry: ModuleRegistry,
+): ValidationResult {
+  const issues: ValidationIssue[] = [];
+  const selectPort = conditional.inputs.find((port) => port.name === CONDITIONAL_SELECT_PORT);
+  if (!selectPort) {
+    issues.push({
+      code: 'invalid-composite-binding',
+      message: `Conditional "${conditional.id}" must expose a reserved "${CONDITIONAL_SELECT_PORT}" input.`,
+    });
+  } else if (selectPort.type !== 'bits' || (selectPort.kind ?? 'scalar') !== 'scalar') {
+    issues.push({
+      code: 'signal-type-mismatch',
+      message: `Conditional "${conditional.id}" must expose "${CONDITIONAL_SELECT_PORT}" as a scalar bits input.`,
+    });
+  }
+
+  if (conditional.thenDefId === conditional.id || conditional.elseDefId === conditional.id) {
+    issues.push({
+      code: 'invalid-composite-binding',
+      message: `Conditional "${conditional.id}" cannot reference itself directly as a branch definition.`,
+    });
+  }
+
+  const thenDef = registry[conditional.thenDefId];
+  const elseDef = registry[conditional.elseDefId];
+  if (!thenDef) {
+    issues.push({
+      code: 'unknown-module-def',
+      message: `Conditional "${conditional.id}" references unknown then definition "${conditional.thenDefId}".`,
+    });
+  }
+
+  if (!elseDef) {
+    issues.push({
+      code: 'unknown-module-def',
+      message: `Conditional "${conditional.id}" references unknown else definition "${conditional.elseDefId}".`,
+    });
+  }
+
+  if (!thenDef || !elseDef) {
+    return { ok: issues.length === 0, issues };
+  }
+
+  const expectedInputs = conditionalForwardedInputs(conditional).map(portSignature);
+  const thenInputs = thenDef.inputs.map(portSignature);
+  const elseInputs = elseDef.inputs.map(portSignature);
+  if (
+    expectedInputs.length !== thenInputs.length ||
+    expectedInputs.length !== elseInputs.length ||
+    expectedInputs.some((signature, index) => signature !== thenInputs[index] || signature !== elseInputs[index])
+  ) {
+    issues.push({
+      code: 'invalid-composite-binding',
+      message: `Conditional "${conditional.id}" requires both branches to expose the same forwarded input ports as the conditional definition.`,
+    });
+  }
+
+  const expectedOutputs = conditional.outputs.map(portSignature);
+  const thenOutputs = thenDef.outputs.map(portSignature);
+  const elseOutputs = elseDef.outputs.map(portSignature);
+  if (
+    expectedOutputs.length !== thenOutputs.length ||
+    expectedOutputs.length !== elseOutputs.length ||
+    expectedOutputs.some((signature, index) => signature !== thenOutputs[index] || signature !== elseOutputs[index])
+  ) {
+    issues.push({
+      code: 'invalid-composite-binding',
+      message: `Conditional "${conditional.id}" requires both branches to expose the same output ports as the conditional definition.`,
+    });
+  }
+
+  if (
+    !paramSchemasMatch(conditional.paramSchema, thenDef.paramSchema) ||
+    !paramSchemasMatch(conditional.paramSchema, elseDef.paramSchema)
+  ) {
+    issues.push({
+      code: 'invalid-composite-binding',
+      message: `Conditional "${conditional.id}" requires branch param schemas to match the conditional param schema exactly.`,
+    });
+  }
 
   return {
     ok: issues.length === 0,

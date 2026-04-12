@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CompositeDef, IteratorDef } from './composites';
+import type { CompositeDef, ConditionalDef, IteratorDef } from './composites';
 import type { ModuleRegistry } from './types';
-import { validateCompositeDef, validateIteratorDef, validateProject } from './validation';
+import { validateCompositeDef, validateConditionalDef, validateIteratorDef, validateProject } from './validation';
 
 const registry: ModuleRegistry = {
   Source: {
@@ -480,6 +480,83 @@ describe('validateCompositeDef', () => {
 
     expect(projectResult.ok).toBe(false);
     expect(projectResult.issues.some((issue) => issue.moduleId === 'forwarded')).toBe(true);
+  });
+});
+
+describe('validateConditionalDef', () => {
+  it('accepts a structurally valid conditional definition', () => {
+    const conditional: ConditionalDef = {
+      id: 'SymbolConditional',
+      name: 'Symbol Conditional',
+      kind: 'conditional',
+      version: 1,
+      inputs: [
+        { name: 'select', type: 'bits', kind: 'scalar' },
+        { name: 'in', type: 'symbol' },
+      ],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {},
+      thenDefId: 'Loop',
+      elseDefId: 'SinkPassthrough',
+    };
+
+    const result = validateConditionalDef(conditional, {
+      ...registry,
+      SinkPassthrough: {
+        id: 'SinkPassthrough',
+        name: 'Sink Passthrough',
+        inputs: [{ name: 'in', type: 'symbol' }],
+        outputs: [{ name: 'out', type: 'symbol' }],
+        paramSchema: {},
+        evaluate: (inputs) => ({ out: inputs.in }),
+      },
+    });
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('rejects a conditional with a non-bits select port', () => {
+    const conditional: ConditionalDef = {
+      id: 'BrokenConditional',
+      name: 'Broken Conditional',
+      kind: 'conditional',
+      version: 1,
+      inputs: [
+        { name: 'select', type: 'symbol', kind: 'scalar' },
+        { name: 'in', type: 'symbol' },
+      ],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {},
+      thenDefId: 'Loop',
+      elseDefId: 'Loop',
+    };
+
+    const result = validateConditionalDef(conditional, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'signal-type-mismatch')).toBe(true);
+  });
+
+  it('rejects branch interface mismatches', () => {
+    const conditional: ConditionalDef = {
+      id: 'MismatchedConditional',
+      name: 'Mismatched Conditional',
+      kind: 'conditional',
+      version: 1,
+      inputs: [
+        { name: 'select', type: 'bits', kind: 'scalar' },
+        { name: 'in', type: 'symbol' },
+      ],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {},
+      thenDefId: 'Loop',
+      elseDefId: 'Source',
+    };
+
+    const result = validateConditionalDef(conditional, registry);
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.code === 'invalid-composite-binding')).toBe(true);
   });
 });
 

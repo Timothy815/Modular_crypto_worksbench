@@ -14,9 +14,11 @@ import {
 } from './types';
 import { validateProject } from './validation';
 import {
+  isConditionalDefinition,
   isCompositeDefinition,
   isIteratorDefinition,
   type CompositeDef,
+  type ConditionalDef,
   type IteratorDef,
 } from './composites';
 import { evaluateBypass, isBypassEligibleDefinition } from './bypass';
@@ -34,7 +36,15 @@ interface TickedRuntimeState {
   paramsByModuleId: Record<string, ModuleParams>;
   compositeStateByModuleId: Record<string, TickedRuntimeState | undefined>;
   iteratorStateByModuleId: Record<string, TickedRuntimeState | undefined>;
+  conditionalStateByModuleId: Record<
+    string,
+    { thenState: TickedRuntimeState; elseState: TickedRuntimeState } | undefined
+  >;
 }
+
+const CONDITIONAL_SELECT_PORT = 'select';
+const CONDITIONAL_THEN_BRANCH = 'then';
+const CONDITIONAL_ELSE_BRANCH = 'else';
 
 function getLinkedRotorId(params: ModuleParams): string | null {
   const linkedRotorId = params[ROTOR_LINK_PARAM];
@@ -269,6 +279,9 @@ function evaluateDefinition(
   if (isIteratorDefinition(def)) {
     return evaluateIterator(moduleId, def, inputs, params, registry);
   }
+  if (isConditionalDefinition(def)) {
+    return evaluateConditional(moduleId, def, inputs, params, registry);
+  }
 
   return {
     outputs: def.evaluate(inputs, params),
@@ -485,6 +498,76 @@ function evaluateIterator(
   };
 }
 
+function getConditionalBranchLabelAndDefId(
+  def: ConditionalDef,
+  inputs: ModuleInputs,
+): { branchLabel: 'then' | 'else'; selectedDefId: string } {
+  const select = inputs[CONDITIONAL_SELECT_PORT];
+  if (!select || select.type !== 'bits' || select.value.length !== 1) {
+    throw new ProjectValidationError('Conditional select must be exactly one bit.');
+  }
+
+  if (select.value[0] === 1) {
+    return { branchLabel: CONDITIONAL_THEN_BRANCH, selectedDefId: def.thenDefId };
+  }
+
+  if (select.value[0] === 0) {
+    return { branchLabel: CONDITIONAL_ELSE_BRANCH, selectedDefId: def.elseDefId };
+  }
+
+  throw new ProjectValidationError('Conditional select must be exactly one bit.');
+}
+
+function buildConditionalBranchProject(
+  branchLabel: 'then' | 'else',
+  defId: string,
+  params: ModuleParams,
+): Project {
+  return {
+    modules: [{ id: branchLabel, defId, params }],
+    connections: [],
+  };
+}
+
+function stripConditionalSelectInput(inputs: ModuleInputs): ModuleInputs {
+  const forwardedInputs: ModuleInputs = {};
+  for (const [portName, signal] of Object.entries(inputs)) {
+    if (portName === CONDITIONAL_SELECT_PORT) {
+      continue;
+    }
+
+    forwardedInputs[portName] = signal;
+  }
+
+  return forwardedInputs;
+}
+
+function evaluateConditional(
+  moduleId: string,
+  def: ConditionalDef,
+  inputs: ModuleInputs,
+  params: ModuleParams,
+  registry: ModuleRegistry,
+): EvaluatedDefinitionResult {
+  const { branchLabel, selectedDefId } = getConditionalBranchLabelAndDefId(def, inputs);
+  const internalResult = executeProject(
+    buildConditionalBranchProject(branchLabel, selectedDefId, params),
+    registry,
+    { [branchLabel]: stripConditionalSelectInput(inputs) },
+  );
+  const outputs = internalResult.outputsByModuleId[branchLabel];
+  if (!outputs) {
+    throw new ProjectValidationError(
+      `Conditional "${def.id}" could not resolve ${branchLabel} branch outputs.`,
+    );
+  }
+
+  return {
+    outputs,
+    hoistedTrace: hoistTraceEntries(internalResult.analysisTrace, moduleId),
+  };
+}
+
 function createTickedRuntimeState(
   project: Project,
   registry: ModuleRegistry,
@@ -492,6 +575,10 @@ function createTickedRuntimeState(
   const paramsByModuleId: Record<string, ModuleParams> = {};
   const compositeStateByModuleId: Record<string, TickedRuntimeState | undefined> = {};
   const iteratorStateByModuleId: Record<string, TickedRuntimeState | undefined> = {};
+  const conditionalStateByModuleId: Record<
+    string,
+    { thenState: TickedRuntimeState; elseState: TickedRuntimeState } | undefined
+  > = {};
 
   for (const moduleInstance of project.modules) {
     paramsByModuleId[moduleInstance.id] = { ...moduleInstance.params };
@@ -507,12 +594,34 @@ function createTickedRuntimeState(
       def && isIteratorDefinition(def)
         ? createTickedRuntimeState(buildIteratorProject(def, moduleInstance.params), registry)
         : undefined;
+    conditionalStateByModuleId[moduleInstance.id] =
+      def && isConditionalDefinition(def)
+        ? {
+            thenState: createTickedRuntimeState(
+              buildConditionalBranchProject(
+                CONDITIONAL_THEN_BRANCH,
+                def.thenDefId,
+                moduleInstance.params,
+              ),
+              registry,
+            ),
+            elseState: createTickedRuntimeState(
+              buildConditionalBranchProject(
+                CONDITIONAL_ELSE_BRANCH,
+                def.elseDefId,
+                moduleInstance.params,
+              ),
+              registry,
+            ),
+          }
+        : undefined;
   }
 
   return {
     paramsByModuleId,
     compositeStateByModuleId,
     iteratorStateByModuleId,
+    conditionalStateByModuleId,
   };
 }
 
@@ -645,6 +754,16 @@ function executeTickedGraph(
             tick,
             runtimeState.iteratorStateByModuleId[moduleId],
         )
+      : isConditionalDefinition(def)
+        ? executeTickedConditional(
+            moduleId,
+            def,
+            inputs,
+            currentParams,
+            registry,
+            tick,
+            runtimeState.conditionalStateByModuleId[moduleId],
+          )
       : {
           outputs:
             moduleInstance.bypass && isBypassEligibleDefinition(def)
@@ -743,6 +862,40 @@ function executeTickedComposite(
     }
 
     outputs[binding.externalPort] = signal;
+  }
+
+  return {
+    outputs,
+    hoistedTrace: hoistTraceEntries(internalResult.analysisTrace, moduleId),
+  };
+}
+
+function executeTickedConditional(
+  moduleId: string,
+  def: ConditionalDef,
+  inputs: ModuleInputs,
+  params: ModuleParams,
+  registry: ModuleRegistry,
+  tick: number,
+  runtimeState?: { thenState: TickedRuntimeState; elseState: TickedRuntimeState },
+): EvaluatedDefinitionResult {
+  if (!runtimeState) {
+    throw new ProjectValidationError(`Conditional "${def.id}" is missing ticked runtime state.`);
+  }
+
+  const { branchLabel, selectedDefId } = getConditionalBranchLabelAndDefId(def, inputs);
+  const internalResult = executeTickedGraph(
+    buildConditionalBranchProject(branchLabel, selectedDefId, params),
+    registry,
+    tick,
+    branchLabel === CONDITIONAL_THEN_BRANCH ? runtimeState.thenState : runtimeState.elseState,
+    { [branchLabel]: stripConditionalSelectInput(inputs) },
+  );
+  const outputs = internalResult.outputsByModuleId[branchLabel];
+  if (!outputs) {
+    throw new ProjectValidationError(
+      `Conditional "${def.id}" could not resolve ${branchLabel} branch outputs.`,
+    );
   }
 
   return {

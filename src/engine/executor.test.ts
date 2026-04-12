@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CompositeDef, IteratorDef } from './composites';
+import type { CompositeDef, ConditionalDef, IteratorDef } from './composites';
 import { executeProject } from './executor';
 import type { ModuleRegistry, Project } from './types';
 import { BitShifter } from './modules/bit-shifter';
@@ -238,8 +238,78 @@ const permutationComposite: CompositeDef = {
   outputBindings: [{ externalPort: 'out', internalModuleId: 'permute-1', internalPort: 'out' }],
 };
 
+const conditionalThenComposite: CompositeDef = {
+  id: 'ConditionalThenComposite',
+  name: 'Conditional Then Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [{ name: 'in', type: 'symbol' }],
+  outputs: [{ name: 'out', type: 'symbol' }],
+  paramSchema: {},
+  project: {
+    modules: [{ id: 'echo-1', defId: 'SymbolEcho', params: {} }],
+    connections: [],
+  },
+  inputBindings: [{ externalPort: 'in', internalModuleId: 'echo-1', internalPort: 'in' }],
+  outputBindings: [{ externalPort: 'out', internalModuleId: 'echo-1', internalPort: 'out' }],
+};
+
+const conditionalElseComposite: CompositeDef = {
+  id: 'ConditionalElseComposite',
+  name: 'Conditional Else Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [{ name: 'in', type: 'symbol' }],
+  outputs: [{ name: 'out', type: 'symbol' }],
+  paramSchema: {},
+  project: {
+    modules: [{ id: 'echo-1', defId: 'ElseEcho', params: {} }],
+    connections: [],
+  },
+  inputBindings: [{ externalPort: 'in', internalModuleId: 'echo-1', internalPort: 'in' }],
+  outputBindings: [{ externalPort: 'out', internalModuleId: 'echo-1', internalPort: 'out' }],
+};
+
+const symbolConditionalDef: ConditionalDef = {
+  id: 'SymbolConditional',
+  name: 'Symbol Conditional',
+  kind: 'conditional',
+  version: 1,
+  inputs: [
+    { name: 'select', type: 'bits', kind: 'scalar' },
+    { name: 'in', type: 'symbol' },
+  ],
+  outputs: [{ name: 'out', type: 'symbol' }],
+  paramSchema: {},
+  thenDefId: 'ConditionalThenComposite',
+  elseDefId: 'ConditionalElseComposite',
+};
+
 const registryWithComposite: ModuleRegistry = {
   ...registry,
+  ElseEcho: {
+    id: 'ElseEcho',
+    name: 'Else Echo',
+    inputs: [{ name: 'in', type: 'symbol' }],
+    outputs: [{ name: 'out', type: 'symbol' }],
+    paramSchema: {},
+    evaluate: (inputs) => ({ out: { type: 'symbol', value: `${inputs.in.value}!` } }),
+  },
+  BitSelect: {
+    id: 'BitSelect',
+    name: 'Bit Select',
+    inputs: [],
+    outputs: [{ name: 'out', type: 'bits', kind: 'scalar' }],
+    paramSchema: {
+      value: {
+        key: 'value',
+        label: 'Value',
+        kind: 'bits',
+        defaultValue: [1],
+      },
+    },
+    evaluate: (_inputs, params) => ({ out: { type: 'bits', value: params.value as number[] } }),
+  },
   XorBits: {
     id: 'XorBits',
     name: 'Xor Bits',
@@ -312,6 +382,9 @@ const registryWithComposite: ModuleRegistry = {
     },
   },
   [permutationComposite.id]: permutationComposite,
+  [conditionalThenComposite.id]: conditionalThenComposite,
+  [conditionalElseComposite.id]: conditionalElseComposite,
+  [symbolConditionalDef.id]: symbolConditionalDef,
 };
 
 describe('executeProject', () => {
@@ -478,6 +551,26 @@ describe('executeProject', () => {
       'composite/echo-1',
       'sink',
     ]);
+  });
+
+  it('executes only the selected conditional branch', () => {
+    const project: Project = {
+      modules: [
+        { id: 'source', defId: 'TextSource', params: { value: 'Q' } },
+        { id: 'select', defId: 'BitSelect', params: { value: [1] } },
+        { id: 'conditional', defId: 'SymbolConditional', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'conditional', port: 'in' } },
+        { from: { moduleId: 'select', port: 'out' }, to: { moduleId: 'conditional', port: 'select' } },
+      ],
+    };
+
+    const result = executeProject(project, registryWithComposite);
+
+    expect(result.outputsByModuleId.conditional.out).toEqual({ type: 'symbol', value: 'Q' });
+    expect(result.analysisTrace.some((entry) => entry.moduleId === 'conditional/then')).toBe(true);
+    expect(result.analysisTrace.some((entry) => entry.moduleId === 'conditional/else')).toBe(false);
   });
 
   it('executes an iterator module instance like a bounded repeated chain', () => {

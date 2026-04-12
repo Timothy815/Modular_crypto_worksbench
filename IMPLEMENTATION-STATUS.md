@@ -729,6 +729,15 @@ The current near-future control-structure items after that are:
 - stronger iterator control as a later bounded repetition/control line
 - both explicitly kept separate from general programming-language drift
 
+The current shipped bounded conditional-composition slice for that line is:
+- `CONDITIONAL-IF-ELSE-DEFINITION-V1.md`
+- one binary explicit `if / else` definition kind
+- reserved `select` input of one-bit scalar bits
+- two explicit child definitions with identical external interfaces and matching param schemas
+- only the selected branch executes; inactive branches do not evaluate
+- ticked execution preserves per-branch runtime state without advancing the inactive branch
+- intentionally framed as an engine-level definition kind rather than a wrapper around existing routing primitives
+
 The current shipped advanced-rotor follow-on after that is:
 - explicit reverse traversal through rotor wiring via `RotorReverse`
 - historically faithful visible `Rotor -> Reflector -> RotorReverse` signal paths

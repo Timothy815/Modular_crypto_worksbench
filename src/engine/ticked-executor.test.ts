@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { deriveTickCount, executeTickedProject } from './executor';
-import type { CompositeDef, IteratorDef } from './composites';
+import type { CompositeDef, ConditionalDef, IteratorDef } from './composites';
 import type {
   ModuleInputs,
   ModuleRegistry,
@@ -128,6 +128,102 @@ const ForwardedRotorComposite: CompositeDef = {
   ],
 };
 
+const StatefulSuffix: StatefulModuleDef = {
+  id: 'StatefulSuffix',
+  name: 'Stateful Suffix',
+  inputs: [{ name: 'in', type: 'symbol', kind: 'scalar' }],
+  outputs: [{ name: 'out', type: 'symbol', kind: 'scalar' }],
+  paramSchema: {
+    suffix: {
+      key: 'suffix',
+      label: 'Suffix',
+      kind: 'string',
+      defaultValue: 'A',
+    },
+  },
+  evaluate: (inputs, params) => ({
+    out: { type: 'symbol', value: `${inputs.in.value}${params.suffix as string}` },
+  }),
+  advance: (params) => ({
+    ...params,
+    suffix: String.fromCharCode(String(params.suffix ?? 'A').charCodeAt(0) + 1),
+  }),
+};
+
+const StatefulThenComposite: CompositeDef = {
+  id: 'StatefulThenComposite',
+  name: 'Stateful Then Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [{ name: 'in', type: 'symbol', kind: 'scalar' }],
+  outputs: [{ name: 'out', type: 'symbol', kind: 'scalar' }],
+  paramSchema: {
+    suffix: {
+      key: 'suffix',
+      label: 'Suffix',
+      kind: 'string',
+      defaultValue: 'A',
+    },
+  },
+  project: {
+    modules: [{ id: 'suffix', defId: 'StatefulSuffix', params: { suffix: 'A' } }],
+    connections: [],
+  },
+  inputBindings: [{ externalPort: 'in', internalModuleId: 'suffix', internalPort: 'in' }],
+  outputBindings: [{ externalPort: 'out', internalModuleId: 'suffix', internalPort: 'out' }],
+  forwardedParams: [
+    { externalParam: 'suffix', internalModuleId: 'suffix', internalParamKey: 'suffix' },
+  ],
+};
+
+const StatefulElseComposite: CompositeDef = {
+  id: 'StatefulElseComposite',
+  name: 'Stateful Else Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [{ name: 'in', type: 'symbol', kind: 'scalar' }],
+  outputs: [{ name: 'out', type: 'symbol', kind: 'scalar' }],
+  paramSchema: {
+    suffix: {
+      key: 'suffix',
+      label: 'Suffix',
+      kind: 'string',
+      defaultValue: 'a',
+    },
+  },
+  project: {
+    modules: [{ id: 'suffix', defId: 'StatefulSuffix', params: { suffix: 'a' } }],
+    connections: [],
+  },
+  inputBindings: [{ externalPort: 'in', internalModuleId: 'suffix', internalPort: 'in' }],
+  outputBindings: [{ externalPort: 'out', internalModuleId: 'suffix', internalPort: 'out' }],
+  forwardedParams: [
+    { externalParam: 'suffix', internalModuleId: 'suffix', internalParamKey: 'suffix' },
+  ],
+};
+
+const StatefulConditional: ConditionalDef = {
+  id: 'StatefulConditional',
+  name: 'Stateful Conditional',
+  kind: 'conditional',
+  version: 1,
+  inputs: [
+    { name: 'select', type: 'bits', kind: 'scalar' },
+    { name: 'in', type: 'symbol', kind: 'scalar' },
+  ],
+  outputs: [{ name: 'out', type: 'symbol', kind: 'scalar' }],
+  paramSchema: {
+    suffix: {
+      key: 'suffix',
+      label: 'Suffix',
+      kind: 'string',
+      defaultValue: 'A',
+    },
+  },
+  thenDefId: 'StatefulThenComposite',
+  elseDefId: 'StatefulElseComposite',
+};
+
 describe('isStatefulModule', () => {
   it('returns true for modules with an advance function', () => {
     expect(isStatefulModule(ShiftModule)).toBe(true);
@@ -148,6 +244,10 @@ describe('executeTickedProject', () => {
     PassThrough,
     PassThroughComposite,
     PassThroughIterator,
+    StatefulSuffix,
+    StatefulThenComposite,
+    StatefulElseComposite,
+    StatefulConditional,
     ForwardedRotorComposite,
     Rotor,
     RotorReverse,
@@ -176,6 +276,60 @@ describe('executeTickedProject', () => {
 
     const result = executeTickedProject(project, registry, 3, overrides);
     expect(result.ticks).toHaveLength(3);
+  });
+
+  it('preserves inactive conditional branch state across ticks', () => {
+    const tickToggleSource = {
+      id: 'TickToggleSource',
+      name: 'Tick Toggle Source',
+      inputs: [],
+      outputs: [{ name: 'out', type: 'bits' as const, kind: 'scalar' as const }],
+      paramSchema: {},
+      tickSlice: (_params: Record<string, unknown>, tick: number) => ({ value: [tick % 2] }),
+      tickLength: () => 3,
+      evaluate: (_inputs: ModuleInputs, params: Record<string, unknown>) => ({
+        out: { type: 'bits' as const, value: params.value as number[] },
+      }),
+    };
+
+    const tickTextSource = {
+      id: 'TickTextSource',
+      name: 'Tick Text Source',
+      inputs: [],
+      outputs: [{ name: 'out', type: 'symbol' as const, kind: 'scalar' as const }],
+      paramSchema: {},
+      tickSlice: (_params: Record<string, unknown>, tick: number) => ({ value: `T${tick}` }),
+      tickLength: () => 3,
+      evaluate: (_inputs: ModuleInputs, params: Record<string, unknown>) => ({
+        out: { type: 'symbol' as const, value: params.value as string },
+      }),
+    };
+
+    const project: Project = {
+      modules: [
+        { id: 'input', defId: 'TickTextSource', params: {} },
+        { id: 'select', defId: 'TickToggleSource', params: {} },
+        { id: 'conditional', defId: 'StatefulConditional', params: { suffix: 'A' } },
+      ],
+      connections: [
+        { from: { moduleId: 'input', port: 'out' }, to: { moduleId: 'conditional', port: 'in' } },
+        { from: { moduleId: 'select', port: 'out' }, to: { moduleId: 'conditional', port: 'select' } },
+      ],
+    };
+
+    const result = executeTickedProject(
+      project,
+      {
+        ...registry,
+        TickToggleSource: tickToggleSource,
+        TickTextSource: tickTextSource,
+      },
+      3,
+    );
+
+    expect(result.ticks[0]?.outputsByModuleId.conditional.out).toEqual({ type: 'symbol', value: 'T0A' });
+    expect(result.ticks[1]?.outputsByModuleId.conditional.out).toEqual({ type: 'symbol', value: 'T1A' });
+    expect(result.ticks[2]?.outputsByModuleId.conditional.out).toEqual({ type: 'symbol', value: 'T2B' });
   });
 
   it('advances stateful module params between ticks', () => {
