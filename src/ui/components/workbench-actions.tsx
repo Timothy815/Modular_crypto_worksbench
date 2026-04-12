@@ -89,6 +89,7 @@ interface WorkbenchActionsProps {
   onRequestImport: () => void;
   onRequestImportLabPack: () => void;
   onRequestCreateComposite: () => void;
+  onRequestCreateConditional: () => void;
   onToggleFurnitureVisible: (visible: boolean) => void;
   onToggleTutorialNotes?: (visible: boolean) => void;
 }
@@ -658,6 +659,7 @@ export function WorkbenchActions({
   onRequestImport,
   onRequestImportLabPack,
   onRequestCreateComposite,
+  onRequestCreateConditional,
   onToggleFurnitureVisible,
   onToggleTutorialNotes,
 }: WorkbenchActionsProps) {
@@ -1042,6 +1044,10 @@ export function WorkbenchActions({
               onSelect={onRequestCreateComposite}
               disabled={!hasSelection}
             />
+            <WorkbenchMenuActionButton
+              label="New Conditional"
+              onSelect={onRequestCreateConditional}
+            />
             <WorkbenchMenuActionButton label="Add Group Box" onSelect={onRequestAddGroupBox} />
             <WorkbenchMenuActionButton
               label="Add Vertical Rail"
@@ -1086,6 +1092,10 @@ export function WorkbenchActions({
             label="Create Composite"
             onSelect={onRequestCreateComposite}
             disabled={!hasSelection}
+          />
+          <WorkbenchMenuActionButton
+            label="New Conditional"
+            onSelect={onRequestCreateConditional}
           />
         </WorkbenchActionMenu>
       )}

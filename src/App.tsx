@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react';
 
 import './App.css';
-import { isCompositeDefinition, type CompositeLibraryEntry } from './engine/composites';
+import { isCompositeDefinition, isConditionalDefinition, isIteratorDefinition, type CompositeLibraryEntry, type ConditionalDef } from './engine/composites';
 import { V1_REGISTRY } from './engine/modules';
 import type { ExecutionResult, ExecutionTraceEntry, TickedExecutionResult } from './engine/types';
 import { validateCompositeDef, validateProject } from './engine/validation';
@@ -276,6 +276,12 @@ function MainApp() {
   const [excludedCompositeBoundaryPortKeys, setExcludedCompositeBoundaryPortKeys] = useState<string[]>([]);
   const [compositePortNameOverrides, setCompositePortNameOverrides] = useState<Record<string, string>>({});
   const [compositePurpose, setCompositePurpose] = useState('');
+  const [isConditionalDialogOpen, setIsConditionalDialogOpen] = useState(false);
+  const [conditionalName, setConditionalName] = useState('');
+  const [conditionalId, setConditionalId] = useState('');
+  const [conditionalThenDefId, setConditionalThenDefId] = useState('');
+  const [conditionalElseDefId, setConditionalElseDefId] = useState('');
+  const [conditionalDialogError, setConditionalDialogError] = useState<string | null>(null);
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
   const [isChallengeResetConfirmOpen, setIsChallengeResetConfirmOpen] = useState(false);
   const [isChallengeCaptureOpen, setIsChallengeCaptureOpen] = useState(false);
@@ -2805,6 +2811,14 @@ function MainApp() {
               setReplaceSelectionAfterCreate(!state.compositeEditor);
               setIsCompositeDialogOpen(true);
             }}
+            onRequestCreateConditional={() => {
+              setConditionalName('');
+              setConditionalId('');
+              setConditionalThenDefId('');
+              setConditionalElseDefId('');
+              setConditionalDialogError(null);
+              setIsConditionalDialogOpen(true);
+            }}
             onRequestAutoWire={handleAutoWireSelection}
             onRequestDuplicateSelection={isCompositeDrilldownActive ? () => undefined : handleDuplicateSelectedCluster}
             onRequestDeleteSelection={isCompositeDrilldownActive ? () => undefined : handleDeleteSelectedCluster}
@@ -4133,6 +4147,131 @@ function MainApp() {
           </div>
         </div>
       ) : null}
+
+      {isConditionalDialogOpen ? (() => {
+        const branchCandidates = Object.values(effectiveRegistry).filter(
+          (def) => (isCompositeDefinition(def) || isIteratorDefinition(def)) && !isConditionalDefinition(def),
+        );
+        const closeConditionalDialog = () => {
+          setIsConditionalDialogOpen(false);
+          setConditionalDialogError(null);
+        };
+        return (
+          <div className="dialog-backdrop" onClick={closeConditionalDialog}>
+            <div className="dialog-panel" onClick={(e) => e.stopPropagation()}>
+              <h2 className="dialog-title">New Conditional</h2>
+              <p className="dialog-description">
+                Author a conditional module that routes its input through one of two branch definitions
+                based on a single 1-bit select input. Both branches must share the same port shape.
+              </p>
+
+              <label className="param-field">
+                <span>Display Name</span>
+                <input
+                  type="text"
+                  value={conditionalName}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setConditionalName(next);
+                    if (!conditionalId) setConditionalId(createCompositeIdCandidate(next));
+                  }}
+                  placeholder="My Branch Switch"
+                />
+              </label>
+
+              <label className="param-field">
+                <span>Stable Id</span>
+                <input
+                  type="text"
+                  value={conditionalId}
+                  onChange={(e) => setConditionalId(e.target.value)}
+                  placeholder="MyBranchSwitch"
+                />
+              </label>
+
+              <label className="param-field">
+                <span>Then branch (select = 1)</span>
+                <select
+                  value={conditionalThenDefId}
+                  onChange={(e) => setConditionalThenDefId(e.target.value)}
+                >
+                  <option value="">— choose a composite —</option>
+                  {branchCandidates.map((def) => (
+                    <option key={def.id} value={def.id}>{def.name}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="param-field">
+                <span>Else branch (select = 0)</span>
+                <select
+                  value={conditionalElseDefId}
+                  onChange={(e) => setConditionalElseDefId(e.target.value)}
+                >
+                  <option value="">— choose a composite —</option>
+                  {branchCandidates.map((def) => (
+                    <option key={def.id} value={def.id}>{def.name}</option>
+                  ))}
+                </select>
+              </label>
+
+              {conditionalDialogError ? (
+                <p className="field-error">{conditionalDialogError}</p>
+              ) : null}
+
+              <div className="dialog-actions">
+                <button type="button" className="secondary-dialog-button" onClick={closeConditionalDialog}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="primary-dialog-button"
+                  onClick={() => {
+                    const name = conditionalName.trim();
+                    const id = conditionalId.trim();
+                    if (!name) { setConditionalDialogError('Display name is required.'); return; }
+                    if (!id) { setConditionalDialogError('Stable ID is required.'); return; }
+                    if (!conditionalThenDefId) { setConditionalDialogError('Choose a then-branch definition.'); return; }
+                    if (!conditionalElseDefId) { setConditionalDialogError('Choose an else-branch definition.'); return; }
+                    if (state.compositeLibrary.some((entry) => entry.id === id)) {
+                      setConditionalDialogError(`A reusable with id "${id}" already exists.`);
+                      return;
+                    }
+                    const thenDef = effectiveRegistry[conditionalThenDefId];
+                    const elseDef = effectiveRegistry[conditionalElseDefId];
+                    if (!thenDef || !elseDef) { setConditionalDialogError('Selected branch definitions not found.'); return; }
+                    const portMismatch =
+                      thenDef.inputs.length !== elseDef.inputs.length ||
+                      thenDef.outputs.length !== elseDef.outputs.length ||
+                      thenDef.inputs.some((p, i) => p.name !== elseDef.inputs[i]?.name || p.type !== elseDef.inputs[i]?.type) ||
+                      thenDef.outputs.some((p, i) => p.name !== elseDef.outputs[i]?.name || p.type !== elseDef.outputs[i]?.type);
+                    if (portMismatch) {
+                      setConditionalDialogError('Both branches must have the same input and output port names and types.');
+                      return;
+                    }
+                    const conditionalDef: ConditionalDef = {
+                      id,
+                      name,
+                      kind: 'conditional',
+                      version: 1,
+                      inputs: [{ name: 'select', type: 'bits', kind: 'scalar' }, ...thenDef.inputs],
+                      outputs: thenDef.outputs,
+                      paramSchema: {},
+                      thenDefId: conditionalThenDefId,
+                      elseDefId: conditionalElseDefId,
+                    };
+                    const entry: CompositeLibraryEntry = { id, name, version: 1, source: 'user', definition: conditionalDef };
+                    dispatch({ type: 'addCompositeToLibrary', entry });
+                    closeConditionalDialog();
+                  }}
+                >
+                  Create Conditional
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })() : null}
 
       {isCloseConfirmOpen ? (
         <div

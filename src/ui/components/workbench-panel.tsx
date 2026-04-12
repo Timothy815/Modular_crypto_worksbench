@@ -447,6 +447,7 @@ interface WorkbenchPanelProps {
   onSelectModule: (moduleId: string, additive?: boolean) => void;
   onSelectModules: (moduleIds: string[], additive?: boolean) => void;
   onRequestCreateComposite: () => void;
+  onRequestCreateConditional: () => void;
   onRequestAutoWire: (mode: AutoWireMode) => void;
   onRequestDuplicateSelection: () => void;
   onRequestDeleteSelection: () => void;
@@ -612,6 +613,7 @@ export function WorkbenchPanel({
   onSelectModule,
   onSelectModules,
   onRequestCreateComposite,
+  onRequestCreateConditional,
   onRequestAutoWire,
   onRequestDuplicateSelection,
   onRequestDeleteSelection,
@@ -2854,6 +2856,7 @@ export function WorkbenchPanel({
           onRequestImport={() => importInputRef.current?.click()}
           onRequestImportLabPack={() => importLabPackInputRef.current?.click()}
           onRequestCreateComposite={onRequestCreateComposite}
+          onRequestCreateConditional={onRequestCreateConditional}
           onRequestAutoWire={onRequestAutoWire}
           onToggleFurnitureVisible={onSetFurnitureVisible}
           onToggleTutorialNotes={onSetTutorialNotesVisible}
