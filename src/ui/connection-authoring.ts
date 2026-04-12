@@ -71,9 +71,10 @@ export function getTargetPortState(
   }
 
   if (sourcePortDef.type !== targetPortDef.type) {
+    const suggestion = getBridgeSuggestion(sourcePortDef.type, targetPortDef.type);
     return {
       valid: false,
-      reason: `Expected ${targetPortDef.type} input, but source provides ${sourcePortDef.type}.`,
+      reason: `Expected ${targetPortDef.type} input, but source provides ${sourcePortDef.type}.${suggestion}`,
       mode: 'blocked',
       replaceConnectionIndex: null,
     };
@@ -138,4 +139,14 @@ export function getTargetPortState(
     mode: replaceConnectionIndex >= 0 ? 'replace' : 'new',
     replaceConnectionIndex: replaceConnectionIndex >= 0 ? replaceConnectionIndex : null,
   };
+}
+
+function getBridgeSuggestion(sourceType: string, targetType: string): string {
+  if (sourceType === 'symbol' && targetType === 'bits') {
+    return ' Try inserting AsciiCharToBits (one character → 8-bit byte), SymbolToBits (lookup table), or HexDigitToBits (one hex char → 4 bits).';
+  }
+  if (sourceType === 'bits' && targetType === 'symbol') {
+    return ' Try inserting BitsToAsciiChar (8-bit byte → character), BitsToHex (bits → hex string), or BitsToSymbol (lookup table).';
+  }
+  return '';
 }

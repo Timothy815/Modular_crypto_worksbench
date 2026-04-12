@@ -8,6 +8,7 @@ import type {
   Project,
   ValidationIssue,
 } from '../../engine/types';
+import { isTickSliceable } from '../../engine/types';
 import { isOutputSinkDefId } from '../../engine/output-sinks';
 import type { AutoWireMode } from '../autowire-selection';
 import {
@@ -3535,6 +3536,16 @@ export function WorkbenchPanel({
                       </span>
                     </div>
                   ) : null}
+                  {isTickedMode && def && isTickSliceable(def) ? (() => {
+                    const len = def.tickLength(moduleInstance.params);
+                    return (
+                      <div className="graph-node-role-row">
+                        <span className="graph-node-stream-badge">
+                          {`Stream · ${len} tick${len === 1 ? '' : 's'}`}
+                        </span>
+                      </div>
+                    );
+                  })() : null}
                   {inlineRename?.moduleId === moduleInstance.id ? (
                     <input
                       className="graph-node-title-input"

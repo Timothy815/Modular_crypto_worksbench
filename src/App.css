@@ -4196,6 +4196,20 @@ body.canvas-resizing {
   color: var(--role-sink-strong);
 }
 
+.graph-node-stream-badge {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--role-bridge-strong) 40%, transparent);
+  background: color-mix(in srgb, var(--role-bridge-bg) 70%, var(--surface-soft));
+  color: var(--role-bridge-strong);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
 .graph-node-ports {
   display: flex;
   justify-content: space-between;
