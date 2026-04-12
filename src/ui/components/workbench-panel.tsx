@@ -2689,8 +2689,9 @@ export function WorkbenchPanel({
             <g
               key={defId}
               className="bridge-popup-option"
-              onClick={(event) => {
+              onMouseDown={(event) => {
                 event.stopPropagation();
+                event.preventDefault();
                 const sourcePos = effectiveLayout[fromModuleId] ?? { x: 0, y: 0 };
                 const targetPos = effectiveLayout[toModuleId] ?? { x: 0, y: 0 };
                 onInsertBridgeConnection(defId, fromModuleId, fromPort, toModuleId, toPort, {
@@ -2708,8 +2709,9 @@ export function WorkbenchPanel({
         <line x1={8} y1={headerHeight + 4 + options.length * rowHeight + 2} x2={popupWidth - 8} y2={headerHeight + 4 + options.length * rowHeight + 2} className="bridge-popup-sep" />
         <g
           className="bridge-popup-cancel"
-          onClick={(event) => {
+          onMouseDown={(event) => {
             event.stopPropagation();
+            event.preventDefault();
             setPendingBridgeInsertion(null);
           }}
         >
