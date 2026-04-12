@@ -3,6 +3,9 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboa
 import type { ModuleRegistry } from '../../engine/types';
 import { getModuleCategory } from '../module-categories';
 import {
+  getModuleChainsBefore,
+  getModuleChainsAfter,
+  getModuleDomainSignature,
   getModuleRole,
   getModuleRoleDetail,
   getModuleTypicalPath,
@@ -609,6 +612,9 @@ function ModuleLibraryCard({
             <span className="primitive-role-detail">{getModuleRoleDetail(def)}</span>
           </div>
           <p className="primitive-purpose">{getModulePurpose(def)}</p>
+          {viewMode === 'expanded' ? (
+            <span className="primitive-domain-sig">{getModuleDomainSignature(def)}</span>
+          ) : null}
           {isReusable ? (
             <span className={isComposite ? 'module-kind-badge' : 'module-kind-badge module-kind-badge-iterator'}>
               {isBuiltInReusable ? 'Architecture' : isComposite ? 'Composite' : 'Iterator'}
@@ -734,6 +740,26 @@ function ModuleLibraryCard({
           <p className="primitive-help-ports">
             Outputs: <strong>{def.outputs.map((port) => `${port.name}:${port.type}`).join(', ') || 'none'}</strong>
           </p>
+          {getModuleChainsBefore(def).length > 0 ? (
+            <div className="primitive-chains-row">
+              <span className="meta-label">Comes after</span>
+              <span className="primitive-chains-chips">
+                {getModuleChainsBefore(def).map((id) => (
+                  <span key={id} className="primitive-chain-chip">{id}</span>
+                ))}
+              </span>
+            </div>
+          ) : null}
+          {getModuleChainsAfter(def).length > 0 ? (
+            <div className="primitive-chains-row">
+              <span className="meta-label">Chains into</span>
+              <span className="primitive-chains-chips">
+                {getModuleChainsAfter(def).map((id) => (
+                  <span key={id} className="primitive-chain-chip">{id}</span>
+                ))}
+              </span>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </li>

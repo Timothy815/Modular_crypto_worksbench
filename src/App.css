@@ -1152,6 +1152,45 @@ body.dock-resizing {
   color: var(--muted);
 }
 
+/* Domain signature chip — always visible in expanded card */
+.primitive-domain-sig {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-family: var(--font-mono, monospace);
+  background: color-mix(in srgb, var(--surface-soft) 80%, var(--line));
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+/* Chains-with rows in help card */
+.primitive-chains-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 8px;
+}
+.primitive-chains-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.primitive-chain-chip {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-soft));
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
 .palette-panel-compact .primitive-purpose,
 .palette-panel-compact .primitive-role-detail,
 .palette-panel-compact .primitive-section-copy {
@@ -4581,6 +4620,26 @@ body.canvas-resizing {
 
 .graph-port-anchor-out .graph-port-dot {
   background: color-mix(in srgb, var(--accent) 76%, var(--ink));
+}
+
+/* Port domain colouring — bits = blue, symbol = amber */
+.graph-port-domain-bits .graph-port-dot {
+  border-color: #2a7dd4;
+  background: #2a7dd4;
+  box-shadow: 0 0 0 2px rgba(42, 125, 212, 0.28);
+}
+.graph-port-anchor-in.graph-port-domain-bits .graph-port-dot {
+  background: transparent;
+  border-color: #2a7dd4;
+}
+.graph-port-domain-symbol .graph-port-dot {
+  border-color: #c46a12;
+  background: #c46a12;
+  box-shadow: 0 0 0 2px rgba(196, 106, 18, 0.28);
+}
+.graph-port-anchor-in.graph-port-domain-symbol .graph-port-dot {
+  background: transparent;
+  border-color: #c46a12;
 }
 
 .graph-port-dot::after {

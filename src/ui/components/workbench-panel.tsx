@@ -3725,7 +3725,7 @@ export function WorkbenchPanel({
                             pendingConnection,
                             targetPortStates[inputKey],
                             hasIncomingConnection,
-                          )} graph-port-anchor-${side}${
+                          )} graph-port-anchor-${side} graph-port-domain-${port.type}${
                             emphasizedConnectionPortKeys.has(`in:${moduleInstance.id}:${port.name}`)
                               ? ' graph-port-anchor-emphasized'
                               : ''
@@ -3800,7 +3800,7 @@ export function WorkbenchPanel({
                           pendingConnection.fromPort === port.name
                             ? 'graph-port-anchor graph-port-anchor-out graph-port-anchor-active'
                             : 'graph-port-anchor graph-port-anchor-out'
-                        } graph-port-anchor-${side}${
+                        } graph-port-anchor-${side} graph-port-domain-${port.type}${
                           emphasizedConnectionPortKeys.has(`out:${moduleInstance.id}:${port.name}`)
                             ? ' graph-port-anchor-emphasized'
                             : ''

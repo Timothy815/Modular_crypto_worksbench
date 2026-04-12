@@ -210,3 +210,81 @@ export function getModuleRoleDetail(definition: ModuleDefinition): string {
 export function getModuleTypicalPath(definition: ModuleDefinition): string | undefined {
   return getModuleRoleSummary(definition).typicalPath;
 }
+
+export function getModuleDomainSignature(definition: ModuleDefinition): string {
+  const inputTypes = [...new Set(definition.inputs.map((p) => p.type))];
+  const outputTypes = [...new Set(definition.outputs.map((p) => p.type))];
+  const inStr = inputTypes.length === 0 ? '·' : inputTypes.join('+');
+  const outStr = outputTypes.length === 0 ? '·' : outputTypes.join('+');
+  return `${inStr} → ${outStr}`;
+}
+
+const CHAINS_WITH: Record<string, { before?: string[]; after?: string[] }> = {
+  TextInput: { after: ['AsciiSequenceToTicked', 'RepeatSymbolToMatch'] },
+  AsciiSource: { after: ['AsciiSequenceToTicked', 'RepeatSymbolToMatch'] },
+  KeyInput: { after: ['AsciiSequenceToTicked', 'RepeatSymbolToMatch', 'SymbolToBits'] },
+  BitSource: { after: ['BitsSequenceToTicked', 'XOR', 'ConstantBit'] },
+  HexSource: { after: ['BitsSequenceToTicked', 'XOR'] },
+  ConstantBit: { after: ['Conditional', 'Gate', 'Mux', 'Demux'] },
+  Clock: { after: ['Rotor', 'Counter', 'LFSR', 'Gate'] },
+  AsciiSequenceToTicked: {
+    before: ['TextInput', 'AsciiSource', 'KeyInput'],
+    after: ['AsciiCharToBits', 'SymbolPermutation', 'SymbolToBits'],
+  },
+  BitsSequenceToTicked: {
+    before: ['BitSource', 'HexSource'],
+    after: ['XOR', 'SBox', 'Permutation'],
+  },
+  AsciiCharToBits: {
+    before: ['AsciiSequenceToTicked'],
+    after: ['XOR', 'Permutation', 'SBox'],
+  },
+  BitsToAsciiChar: {
+    before: ['XOR', 'SBox', 'Permutation'],
+    after: ['TickedSymbolsToSequence'],
+  },
+  BitsToHex: {
+    before: ['TickedBitsToSequence'],
+    after: ['Output', 'TextOutput'],
+  },
+  TickedBitsToSequence: {
+    before: ['XOR', 'SBox', 'Permutation', 'BitShifter'],
+    after: ['BitsToHex', 'BitsToAscii', 'BitOutput', 'HexOutput'],
+  },
+  TickedSymbolsToSequence: {
+    before: ['BitsToAsciiChar'],
+    after: ['Output', 'TextOutput'],
+  },
+  XOR: {
+    before: ['AsciiCharToBits', 'BitsSequenceToTicked', 'BitSource'],
+    after: ['BitsToAsciiChar', 'TickedBitsToSequence', 'BitOutput'],
+  },
+  SBox: {
+    before: ['AsciiCharToBits', 'BitsSequenceToTicked'],
+    after: ['Permutation', 'BitsToAsciiChar', 'XOR'],
+  },
+  Permutation: {
+    before: ['AsciiCharToBits', 'BitsSequenceToTicked', 'SBox'],
+    after: ['XOR', 'BitsToAsciiChar', 'TickedBitsToSequence'],
+  },
+  RepeatSymbolToMatch: {
+    before: ['KeyInput', 'TextInput'],
+    after: ['AsciiSequenceToTicked'],
+  },
+  RepeatBitsToMatch: {
+    before: ['BitSource'],
+    after: ['BitsSequenceToTicked'],
+  },
+  Conditional: {
+    before: ['ConstantBit'],
+    after: ['Output', 'TextOutput', 'BitOutput'],
+  },
+};
+
+export function getModuleChainsBefore(definition: ModuleDefinition): string[] {
+  return CHAINS_WITH[definition.id]?.before ?? [];
+}
+
+export function getModuleChainsAfter(definition: ModuleDefinition): string[] {
+  return CHAINS_WITH[definition.id]?.after ?? [];
+}
