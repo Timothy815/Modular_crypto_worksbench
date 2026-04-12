@@ -3979,7 +3979,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       };
     case 'openCompositeEditor': {
       const entry = state.compositeLibrary.find((candidate) => candidate.id === action.entryId);
-      if (!entry || !isCompositeDefinition(entry.definition) || isBuiltInCompositeLibraryEntry(entry)) {
+      if (!entry || !isCompositeDefinition(entry.definition)) {
         return state;
       }
 

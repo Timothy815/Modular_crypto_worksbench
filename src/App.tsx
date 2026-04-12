@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react';
 
 import './App.css';
-import { isCompositeDefinition, isConditionalDefinition, isIteratorDefinition, isMultiConditionalDefinition, type CompositeLibraryEntry, type ConditionalDef, type MultiConditionalDef } from './engine/composites';
+import { isBuiltInCompositeLibraryEntry, isCompositeDefinition, isConditionalDefinition, isIteratorDefinition, isMultiConditionalDefinition, type CompositeLibraryEntry, type ConditionalDef, type MultiConditionalDef } from './engine/composites';
 import { V1_REGISTRY } from './engine/modules';
 import type { ExecutionResult, ExecutionTraceEntry, TickedExecutionResult } from './engine/types';
 import { validateCompositeDef, validateProject } from './engine/validation';
@@ -3220,7 +3220,10 @@ function MainApp() {
               <div>
                 <span className="meta-label">Editing Composite</span>
                 <strong>{activeCompositeEntry.name}</strong>
-                <p className="composite-editor-subtitle">{activeCompositeEntry.id}</p>
+                <p className="composite-editor-subtitle">
+                  {activeCompositeEntry.id}
+                  {isBuiltInCompositeLibraryEntry(activeCompositeEntry) ? ' · Built-in — edits apply this session only and reset on reload.' : ''}
+                </p>
                 {state.compositeEditor.saveError ? (
                   <p className="field-error">{state.compositeEditor.saveError}</p>
                 ) : null}

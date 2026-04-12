@@ -1360,7 +1360,7 @@ describe('uiReducer', () => {
     expect(nextState.compositeLibrary.some((entry) => entry.id === builtInEntry.id)).toBe(true);
   });
 
-  it('does not open the editor for built-in architecture entries', () => {
+  it('opens the editor for built-in composite entries so users can experiment with their internals', () => {
     const initialState = createInitialUiState(demoProjects);
     const builtInComposite = initialState.compositeLibrary.find(
       (entry) => entry.source === 'built-in' && entry.definition.kind === 'composite',
@@ -1375,7 +1375,8 @@ describe('uiReducer', () => {
       entryId: builtInComposite.id,
     });
 
-    expect(nextState.compositeEditor).toBeNull();
+    expect(nextState.compositeEditor).not.toBeNull();
+    expect(nextState.compositeEditor?.entryId).toBe(builtInComposite.id);
   });
 
   it('defaults each project to a matching starter challenge when one exists', () => {
