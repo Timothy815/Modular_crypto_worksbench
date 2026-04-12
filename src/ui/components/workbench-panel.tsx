@@ -535,6 +535,7 @@ interface WorkbenchPanelProps {
   onSetTutorialNotesVisible?: (visible: boolean) => void;
   onRenameModuleInstance: (moduleId: string, nextModuleId: string) => void;
   onAddModule: (moduleDef: ModuleDefinition, position: { x: number; y: number }) => void;
+  onPendingConnectionChange?: (info: { fromModuleId: string; fromPort: string; sourceType: string } | null) => void;
   projects: DemoProject[];
 }
 
@@ -667,6 +668,7 @@ export function WorkbenchPanel({
   onSetTutorialNotesVisible,
   onRenameModuleInstance,
   onAddModule,
+  onPendingConnectionChange,
   projects,
 }: WorkbenchPanelProps) {
   const canvasSurfaceRef = useRef<HTMLDivElement | null>(null);
@@ -1949,6 +1951,25 @@ export function WorkbenchPanel({
       window.removeEventListener('mouseup', handleConnectionUp);
     };
   }, [pendingConnection, pendingTargetAnchors, workspaceZoom]);
+
+  const pendingFromModuleId = pendingConnection?.fromModuleId ?? null;
+  const pendingFromPort = pendingConnection?.fromPort ?? null;
+  useEffect(() => {
+    if (!onPendingConnectionChange) return;
+    if (!pendingFromModuleId || !pendingFromPort) {
+      onPendingConnectionChange(null);
+      return;
+    }
+    const sourceInstance = activeProjectState.modules.find((m) => m.id === pendingFromModuleId);
+    const sourceDef = sourceInstance ? registry[sourceInstance.defId] : null;
+    const sourcePort = sourceDef?.outputs.find((p) => p.name === pendingFromPort);
+    onPendingConnectionChange(
+      sourcePort
+        ? { fromModuleId: pendingFromModuleId, fromPort: pendingFromPort, sourceType: sourcePort.type }
+        : null,
+    );
+  }, [onPendingConnectionChange, pendingFromModuleId, pendingFromPort, activeProjectState, registry]);
+
   const pendingTargetSummary = useMemo(() => {
     if (!pendingConnection) {
       return null;

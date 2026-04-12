@@ -36,6 +36,8 @@ interface PrimitivePaletteProps {
   onRemoveComposite: (defId: string) => void;
   compositeUsageCountById: Record<string, number>;
   builtInReusableIds: string[];
+  pendingConnectionSourceType?: string | null;
+  onDropForPendingConnection?: (defId: string, toPort: string) => void;
 }
 
 function PaletteViewModeIcon({ viewMode }: { viewMode: 'compact' | 'expanded' }) {
@@ -157,6 +159,8 @@ export function PrimitivePalette({
   onRemoveComposite,
   compositeUsageCountById,
   builtInReusableIds,
+  pendingConnectionSourceType,
+  onDropForPendingConnection,
 }: PrimitivePaletteProps) {
   const [activeTab, setActiveTab] = useState<ModuleLibraryDomainTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -367,6 +371,8 @@ export function PrimitivePalette({
                 onDuplicateReusable={onDuplicateReusable}
                 onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                 onRemoveComposite={onRemoveComposite}
+                pendingConnectionSourceType={pendingConnectionSourceType}
+                onDropForPendingConnection={onDropForPendingConnection}
               />
             ))}
           </ul>
@@ -398,6 +404,8 @@ export function PrimitivePalette({
                     onDuplicateReusable={onDuplicateReusable}
                     onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                     onRemoveComposite={onRemoveComposite}
+                    pendingConnectionSourceType={pendingConnectionSourceType}
+                    onDropForPendingConnection={onDropForPendingConnection}
                   />
                 ))}
               </ul>
@@ -486,6 +494,8 @@ export function PrimitivePalette({
                       onDuplicateReusable={onDuplicateReusable}
                       onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                       onRemoveComposite={onRemoveComposite}
+                      pendingConnectionSourceType={pendingConnectionSourceType}
+                      onDropForPendingConnection={onDropForPendingConnection}
                     />
                   ))}
                 </ul>
@@ -518,6 +528,8 @@ interface ModuleLibraryCardProps {
   onDuplicateReusable: (defId: string) => void;
   onOpenPrimitiveMicroDemo: (defId: string) => void;
   onRemoveComposite: (defId: string) => void;
+  pendingConnectionSourceType?: string | null;
+  onDropForPendingConnection?: (defId: string, toPort: string) => void;
 }
 
 function ModuleLibraryCard({
@@ -530,6 +542,8 @@ function ModuleLibraryCard({
   onDuplicateReusable,
   onOpenPrimitiveMicroDemo,
   onRemoveComposite,
+  pendingConnectionSourceType,
+  onDropForPendingConnection,
 }: ModuleLibraryCardProps) {
   const isComposite = 'kind' in def && def.kind === 'composite';
   const isIterator = 'kind' in def && def.kind === 'iterator';
@@ -539,12 +553,29 @@ function ModuleLibraryCard({
   const [showHelp, setShowHelp] = useState(false);
   const primitiveMicroDemo = getPrimitiveMicroDemo(def.id);
 
+  const compatibleDropPort = pendingConnectionSourceType
+    ? def.inputs.find((p) => p.type === pendingConnectionSourceType) ?? null
+    : null;
+  const isDropTarget = compatibleDropPort !== null;
+
+  function handleDropMouseUp(event: React.MouseEvent) {
+    if (!compatibleDropPort || !onDropForPendingConnection) return;
+    event.stopPropagation();
+    onDropForPendingConnection(def.id, compatibleDropPort.name);
+  }
+
   if (viewMode === 'compact') {
     return (
-      <li className={`primitive-card primitive-compact-row primitive-card-${getModuleCategory(def)}`}>
+      <li
+        className={`primitive-card primitive-compact-row primitive-card-${getModuleCategory(def)}${isDropTarget ? ' primitive-card-droppable' : pendingConnectionSourceType ? ' primitive-card-incompat' : ''}`}
+        onMouseUp={isDropTarget ? handleDropMouseUp : undefined}
+      >
         <div className="primitive-compact-main">
           <div className="primitive-compact-meta">
             <strong className="primitive-title">{def.name}</strong>
+            {isDropTarget ? (
+              <span className="primitive-drop-hint">→ {compatibleDropPort?.name}</span>
+            ) : null}
             {isReusable ? (
               <span className={isComposite ? 'module-kind-badge' : 'module-kind-badge module-kind-badge-iterator'}>
                 {isBuiltInReusable ? 'Architecture' : isComposite ? 'Composite' : 'Iterator'}
@@ -623,7 +654,11 @@ function ModuleLibraryCard({
   }
 
   return (
-    <li key={def.id} className={`primitive-card primitive-card-${getModuleCategory(def)}`}>
+    <li
+      key={def.id}
+      className={`primitive-card primitive-card-${getModuleCategory(def)}${isDropTarget ? ' primitive-card-droppable' : pendingConnectionSourceType ? ' primitive-card-incompat' : ''}`}
+      onMouseUp={isDropTarget ? handleDropMouseUp : undefined}
+    >
       <div className="primitive-main">
         <div className="primitive-meta">
           <strong className="primitive-title">{def.name}</strong>
@@ -633,7 +668,9 @@ function ModuleLibraryCard({
             <span className="primitive-role-detail">{getModuleRoleDetail(def)}</span>
           </div>
           <p className="primitive-purpose">{getModulePurpose(def)}</p>
-          {viewMode === 'expanded' ? (
+          {isDropTarget ? (
+            <span className="primitive-drop-hint">Release to connect → {compatibleDropPort?.name}</span>
+          ) : viewMode === 'expanded' ? (
             <span className="primitive-domain-sig">{getModuleDomainSignature(def)}</span>
           ) : null}
           {isReusable ? (

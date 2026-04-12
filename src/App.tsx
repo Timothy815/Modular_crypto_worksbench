@@ -23,6 +23,7 @@ import { LazyPanelFallback } from './ui/components/lazy-panel-fallback';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
 import { demoProjects, getDefaultDemoProject, runDemoProject } from './ui/demo-projects';
 import { collectTickedOutput, compareExecutionResults } from './ui/execution-compare';
+import { CANVAS_NODE_WIDTH } from './ui/canvas-selection';
 import { getStarterById } from './ui/pipeline-starters';
 import { createInstructorPilotUrl } from './ui/instructor-pilot-url';
 import { createUserManualUrl } from './ui/manual-url';
@@ -309,6 +310,11 @@ function MainApp() {
   const [activeAnalysisTraceEntry, setActiveAnalysisTraceEntry] =
     useState<ExecutionTraceEntry | null>(null);
   const [paletteViewMode, setPaletteViewMode] = useState<'compact' | 'expanded'>('expanded');
+  const [activePendingConnection, setActivePendingConnection] = useState<{
+    fromModuleId: string;
+    fromPort: string;
+    sourceType: string;
+  } | null>(null);
   const [requestedWorkspaceFocusModuleId, setRequestedWorkspaceFocusModuleId] =
     useState<string | null>(null);
   const [compositeDrilldown, setCompositeDrilldown] = useState<CompositeDrilldownState | null>(null);
@@ -2946,6 +2952,7 @@ function MainApp() {
                 position,
               });
             }}
+            onPendingConnectionChange={setActivePendingConnection}
             onSetConnectionOrthogonalBend={(connectionKey, axis, value) =>
               dispatch({
                 type: 'setConnectionOrthogonalBend',
@@ -3438,6 +3445,21 @@ function MainApp() {
                     compositeId: defId,
                   })
                 }
+                pendingConnectionSourceType={activePendingConnection?.sourceType ?? null}
+                onDropForPendingConnection={(defId, toPort) => {
+                  const moduleDef = effectiveRegistry[defId];
+                  if (!moduleDef || !activePendingConnection) return;
+                  const sourcePos = baseLayout[activePendingConnection.fromModuleId] ?? { x: 200, y: 200 };
+                  dispatch({
+                    type: 'insertModuleAndConnect',
+                    projectId: activeProjectDefinition.id,
+                    moduleDef,
+                    position: { x: sourcePos.x + CANVAS_NODE_WIDTH + 80, y: sourcePos.y },
+                    fromModuleId: activePendingConnection.fromModuleId,
+                    fromPort: activePendingConnection.fromPort,
+                    toPort,
+                  });
+                }}
               />
             </Suspense>
             <button

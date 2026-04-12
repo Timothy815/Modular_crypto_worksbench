@@ -275,6 +275,15 @@ export type UiAction =
       toPort: string;
       position: { x: number; y: number };
     }
+  | {
+      type: 'insertModuleAndConnect';
+      projectId: string;
+      moduleDef: ModuleDefinition;
+      position: { x: number; y: number };
+      fromModuleId: string;
+      fromPort: string;
+      toPort: string;
+    }
   | { type: 'removeModule'; projectId: string; moduleId: string }
   | {
       type: 'addConnection';
@@ -616,6 +625,7 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'deleteSelectedCluster',
   'insertStarterChain',
   'insertBridgeConnection',
+  'insertModuleAndConnect',
   'removeModule',
   'addConnection',
   'autoWireSelection',
@@ -3080,6 +3090,61 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         selectedModuleIdsByProject: {
           ...state.selectedModuleIdsByProject,
           [action.projectId]: [bridgeId],
+        },
+        currentTickByProject: {
+          ...state.currentTickByProject,
+          [action.projectId]: 0,
+        },
+        isTickPlaybackActiveByProject: {
+          ...state.isTickPlaybackActiveByProject,
+          [action.projectId]: false,
+        },
+      };
+    }
+    case 'insertModuleAndConnect': {
+      if (state.compositeEditor) {
+        return state;
+      }
+      const currentProject = state.projectStates[action.projectId];
+      const currentLayout = state.layoutByProject[action.projectId];
+      const currentLayoutDirection = state.layoutDirectionByProject[action.projectId] ?? 'horizontal';
+      if (!currentProject || !currentLayout) {
+        return state;
+      }
+      const newModuleId = createModuleId(currentProject, action.moduleDef.id);
+      const nextProject = cloneProject(currentProject);
+      nextProject.modules = [
+        ...nextProject.modules,
+        { id: newModuleId, defId: action.moduleDef.id, params: buildDefaultParams(action.moduleDef) },
+      ];
+      nextProject.connections = [
+        ...nextProject.connections,
+        { from: { moduleId: action.fromModuleId, port: action.fromPort }, to: { moduleId: newModuleId, port: action.toPort } },
+      ];
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: nextProject,
+        },
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: {
+            ...currentLayout,
+            [newModuleId]: {
+              x: action.position.x,
+              y: action.position.y,
+              orientation: getDefaultNodeOrientation(currentLayoutDirection),
+            },
+          },
+        },
+        selectedModuleIdByProject: {
+          ...state.selectedModuleIdByProject,
+          [action.projectId]: newModuleId,
+        },
+        selectedModuleIdsByProject: {
+          ...state.selectedModuleIdsByProject,
+          [action.projectId]: [newModuleId],
         },
         currentTickByProject: {
           ...state.currentTickByProject,

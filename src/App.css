@@ -2832,6 +2832,34 @@ body.dock-resizing {
   border-color: color-mix(in srgb, var(--accent) 60%, var(--line));
 }
 
+/* ── Mid-drag palette drop targets ────────────────────────────────────── */
+.primitive-card-droppable {
+  outline: 2px solid #2a7dd4;
+  outline-offset: -2px;
+  background: color-mix(in srgb, #2a7dd4 10%, var(--surface-soft)) !important;
+  cursor: crosshair;
+  transition: background 80ms ease, outline-color 80ms ease;
+}
+.primitive-card-droppable:hover {
+  background: color-mix(in srgb, #2a7dd4 20%, var(--surface-soft)) !important;
+  outline-color: #1a6ec4;
+}
+.primitive-card-incompat {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.primitive-drop-hint {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-family: var(--mono-font, monospace);
+  color: #2a7dd4;
+  background: color-mix(in srgb, #2a7dd4 12%, transparent);
+  border: 1px solid color-mix(in srgb, #2a7dd4 30%, transparent);
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-top: 2px;
+}
+
 .palette-search {
   display: grid;
   gap: 6px;
