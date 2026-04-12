@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react';
 
 import './App.css';
-import { isCompositeDefinition, isConditionalDefinition, isIteratorDefinition, type CompositeLibraryEntry, type ConditionalDef } from './engine/composites';
+import { isCompositeDefinition, isConditionalDefinition, isIteratorDefinition, isMultiConditionalDefinition, type CompositeLibraryEntry, type ConditionalDef, type MultiConditionalDef } from './engine/composites';
 import { V1_REGISTRY } from './engine/modules';
 import type { ExecutionResult, ExecutionTraceEntry, TickedExecutionResult } from './engine/types';
 import { validateCompositeDef, validateProject } from './engine/validation';
@@ -282,6 +282,12 @@ function MainApp() {
   const [conditionalThenDefId, setConditionalThenDefId] = useState('');
   const [conditionalElseDefId, setConditionalElseDefId] = useState('');
   const [conditionalDialogError, setConditionalDialogError] = useState<string | null>(null);
+  const [isMultiConditionalDialogOpen, setIsMultiConditionalDialogOpen] = useState(false);
+  const [multiConditionalName, setMultiConditionalName] = useState('');
+  const [multiConditionalId, setMultiConditionalId] = useState('');
+  const [multiConditionalBranchCount, setMultiConditionalBranchCount] = useState<2 | 4 | 8>(2);
+  const [multiConditionalBranchDefIds, setMultiConditionalBranchDefIds] = useState<string[]>(['', '']);
+  const [multiConditionalDialogError, setMultiConditionalDialogError] = useState<string | null>(null);
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
   const [isChallengeResetConfirmOpen, setIsChallengeResetConfirmOpen] = useState(false);
   const [isChallengeCaptureOpen, setIsChallengeCaptureOpen] = useState(false);
@@ -2819,6 +2825,14 @@ function MainApp() {
               setConditionalDialogError(null);
               setIsConditionalDialogOpen(true);
             }}
+            onRequestCreateMultiConditional={() => {
+              setMultiConditionalName('');
+              setMultiConditionalId('');
+              setMultiConditionalBranchCount(2);
+              setMultiConditionalBranchDefIds(['', '']);
+              setMultiConditionalDialogError(null);
+              setIsMultiConditionalDialogOpen(true);
+            }}
             onRequestAutoWire={handleAutoWireSelection}
             onRequestDuplicateSelection={isCompositeDrilldownActive ? () => undefined : handleDuplicateSelectedCluster}
             onRequestDeleteSelection={isCompositeDrilldownActive ? () => undefined : handleDeleteSelectedCluster}
@@ -4266,6 +4280,147 @@ function MainApp() {
                   }}
                 >
                   Create Conditional
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })() : null}
+
+      {isMultiConditionalDialogOpen ? (() => {
+        const branchCandidates = Object.values(effectiveRegistry).filter(
+          (def) => (isCompositeDefinition(def) || isIteratorDefinition(def)) && !isMultiConditionalDefinition(def),
+        );
+        const closeDialog = () => {
+          setIsMultiConditionalDialogOpen(false);
+          setMultiConditionalDialogError(null);
+        };
+        const selectWidth = multiConditionalBranchCount <= 2 ? 1 : multiConditionalBranchCount <= 4 ? 2 : 3;
+        return (
+          <div className="dialog-backdrop" onClick={closeDialog}>
+            <div className="dialog-panel" onClick={(e) => e.stopPropagation()}>
+              <h2 className="dialog-title">New Multi-Conditional</h2>
+              <p className="dialog-description">
+                Author a multi-branch module where a {selectWidth}-bit control word selects which branch
+                definition runs. All branches must share the same port shape.
+              </p>
+
+              <label className="param-field">
+                <span>Display Name</span>
+                <input
+                  type="text"
+                  value={multiConditionalName}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setMultiConditionalName(next);
+                    if (!multiConditionalId) setMultiConditionalId(createCompositeIdCandidate(next));
+                  }}
+                  placeholder="My Switch"
+                />
+              </label>
+
+              <label className="param-field">
+                <span>Stable Id</span>
+                <input
+                  type="text"
+                  value={multiConditionalId}
+                  onChange={(e) => setMultiConditionalId(e.target.value)}
+                  placeholder="MySwitch"
+                />
+              </label>
+
+              <label className="param-field">
+                <span>Branch count</span>
+                <select
+                  value={multiConditionalBranchCount}
+                  onChange={(e) => {
+                    const next = Number(e.target.value) as 2 | 4 | 8;
+                    setMultiConditionalBranchCount(next);
+                    setMultiConditionalBranchDefIds(Array.from({ length: next }, (_, i) => multiConditionalBranchDefIds[i] ?? ''));
+                  }}
+                >
+                  <option value={2}>2 branches (1-bit select)</option>
+                  <option value={4}>4 branches (2-bit select)</option>
+                  <option value={8}>8 branches (3-bit select)</option>
+                </select>
+              </label>
+
+              {Array.from({ length: multiConditionalBranchCount }, (_, i) => (
+                <label key={i} className="param-field">
+                  <span>Branch {i} (select = {i.toString(2).padStart(selectWidth, '0')})</span>
+                  <select
+                    value={multiConditionalBranchDefIds[i] ?? ''}
+                    onChange={(e) => {
+                      const next = [...multiConditionalBranchDefIds];
+                      next[i] = e.target.value;
+                      setMultiConditionalBranchDefIds(next);
+                    }}
+                  >
+                    <option value="">— choose a composite —</option>
+                    {branchCandidates.map((def) => (
+                      <option key={def.id} value={def.id}>{def.name}</option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+
+              {multiConditionalDialogError ? (
+                <p className="field-error">{multiConditionalDialogError}</p>
+              ) : null}
+
+              <div className="dialog-actions">
+                <button type="button" className="secondary-dialog-button" onClick={closeDialog}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="primary-dialog-button"
+                  onClick={() => {
+                    const name = multiConditionalName.trim();
+                    const id = multiConditionalId.trim();
+                    if (!name) { setMultiConditionalDialogError('Display name is required.'); return; }
+                    if (!id) { setMultiConditionalDialogError('Stable ID is required.'); return; }
+                    if (multiConditionalBranchDefIds.slice(0, multiConditionalBranchCount).some((defId) => !defId)) {
+                      setMultiConditionalDialogError('All branch definitions must be chosen.');
+                      return;
+                    }
+                    if (state.compositeLibrary.some((entry) => entry.id === id)) {
+                      setMultiConditionalDialogError(`A reusable with id "${id}" already exists.`);
+                      return;
+                    }
+                    const activeBranchDefIds = multiConditionalBranchDefIds.slice(0, multiConditionalBranchCount);
+                    const branchDefs = activeBranchDefIds.map((defId) => effectiveRegistry[defId]);
+                    if (branchDefs.some((def) => !def)) {
+                      setMultiConditionalDialogError('One or more selected branch definitions were not found.');
+                      return;
+                    }
+                    const referenceDef = branchDefs[0]!;
+                    const portMismatch = branchDefs.slice(1).some((def) =>
+                      def!.inputs.length !== referenceDef.inputs.length ||
+                      def!.outputs.length !== referenceDef.outputs.length ||
+                      def!.inputs.some((p, i) => p.name !== referenceDef.inputs[i]?.name || p.type !== referenceDef.inputs[i]?.type) ||
+                      def!.outputs.some((p, i) => p.name !== referenceDef.outputs[i]?.name || p.type !== referenceDef.outputs[i]?.type),
+                    );
+                    if (portMismatch) {
+                      setMultiConditionalDialogError('All branches must have the same input and output port names and types.');
+                      return;
+                    }
+                    const multiConditionalDef: MultiConditionalDef = {
+                      id,
+                      name,
+                      kind: 'multi-conditional',
+                      version: 1,
+                      inputs: [{ name: 'select', type: 'bits' }, ...referenceDef.inputs],
+                      outputs: referenceDef.outputs,
+                      paramSchema: {},
+                      branchDefIds: activeBranchDefIds,
+                    };
+                    const entry: CompositeLibraryEntry = { id, name, version: 1, source: 'user', definition: multiConditionalDef };
+                    dispatch({ type: 'addCompositeToLibrary', entry });
+                    closeDialog();
+                  }}
+                >
+                  Create Multi-Conditional
                 </button>
               </div>
             </div>

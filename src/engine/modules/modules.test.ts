@@ -47,6 +47,7 @@ import { Majority } from './majority';
 import { Mux } from './mux';
 import { Modulo } from './modulo';
 import { MultiRouter } from './multi-router';
+import { MultiSelector } from './multi-selector';
 import { NOT } from './not';
 import { OR } from './or';
 import { SubMod } from './sub-mod';
@@ -975,6 +976,65 @@ describe('MultiRouter', () => {
           in: { type: 'bits', value: [1, 0, 1, 1] },
         },
         { routeCount: '4' },
+      ),
+    ).toThrow(/2-bit word/i);
+  });
+});
+
+describe('MultiSelector', () => {
+  it('selects the input word at the indexed position for four inputs', () => {
+    const result = MultiSelector.evaluate(
+      {
+        select: { type: 'bits', value: [1, 0] },
+        in0: { type: 'bits', value: [1, 1, 1, 1] },
+        in1: { type: 'bits', value: [0, 0, 0, 0] },
+        in2: { type: 'bits', value: [1, 0, 1, 0] },
+        in3: { type: 'bits', value: [0, 1, 0, 1] },
+        in4: { type: 'bits', value: [0, 0, 0, 0] },
+        in5: { type: 'bits', value: [0, 0, 0, 0] },
+        in6: { type: 'bits', value: [0, 0, 0, 0] },
+        in7: { type: 'bits', value: [0, 0, 0, 0] },
+      },
+      { selectCount: '4' },
+    );
+
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 1, 0] });
+  });
+
+  it('selects in0 for select value zero', () => {
+    const result = MultiSelector.evaluate(
+      {
+        select: { type: 'bits', value: [0] },
+        in0: { type: 'bits', value: [1, 1] },
+        in1: { type: 'bits', value: [0, 0] },
+        in2: { type: 'bits', value: [0, 0] },
+        in3: { type: 'bits', value: [0, 0] },
+        in4: { type: 'bits', value: [0, 0] },
+        in5: { type: 'bits', value: [0, 0] },
+        in6: { type: 'bits', value: [0, 0] },
+        in7: { type: 'bits', value: [0, 0] },
+      },
+      { selectCount: '2' },
+    );
+
+    expect(result.out).toEqual({ type: 'bits', value: [1, 1] });
+  });
+
+  it('throws when the select width does not match select count', () => {
+    expect(() =>
+      MultiSelector.evaluate(
+        {
+          select: { type: 'bits', value: [1] },
+          in0: { type: 'bits', value: [1] },
+          in1: { type: 'bits', value: [0] },
+          in2: { type: 'bits', value: [0] },
+          in3: { type: 'bits', value: [0] },
+          in4: { type: 'bits', value: [0] },
+          in5: { type: 'bits', value: [0] },
+          in6: { type: 'bits', value: [0] },
+          in7: { type: 'bits', value: [0] },
+        },
+        { selectCount: '4' },
       ),
     ).toThrow(/2-bit word/i);
   });

@@ -58,12 +58,23 @@ export interface ConditionalDef {
   version: number;
 }
 
+export interface MultiConditionalDef {
+  id: string;
+  name: string;
+  kind: 'multi-conditional';
+  inputs: PortDef[];
+  outputs: PortDef[];
+  paramSchema: ParamSchema;
+  branchDefIds: string[]; // index 0 = select value 0, index 1 = select value 1, etc.
+  version: number;
+}
+
 export interface CompositeLibraryEntry {
   id: string;
   name: string;
   version: number;
   source?: 'built-in' | 'user';
-  definition: CompositeDef | IteratorDef | ConditionalDef;
+  definition: CompositeDef | IteratorDef | ConditionalDef | MultiConditionalDef;
 }
 
 export function isBuiltInCompositeLibraryEntry(entry: CompositeLibraryEntry) {
@@ -80,4 +91,8 @@ export function isIteratorDefinition(definition: ModuleDefinition): definition i
 
 export function isConditionalDefinition(definition: ModuleDefinition): definition is ConditionalDef {
   return 'kind' in definition && definition.kind === 'conditional';
+}
+
+export function isMultiConditionalDefinition(definition: ModuleDefinition): definition is MultiConditionalDef {
+  return 'kind' in definition && definition.kind === 'multi-conditional';
 }

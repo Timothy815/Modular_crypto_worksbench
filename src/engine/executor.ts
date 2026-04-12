@@ -17,9 +17,11 @@ import {
   isConditionalDefinition,
   isCompositeDefinition,
   isIteratorDefinition,
+  isMultiConditionalDefinition,
   type CompositeDef,
   type ConditionalDef,
   type IteratorDef,
+  type MultiConditionalDef,
 } from './composites';
 import { evaluateBypass, isBypassEligibleDefinition } from './bypass';
 
@@ -40,6 +42,7 @@ interface TickedRuntimeState {
     string,
     { thenState: TickedRuntimeState; elseState: TickedRuntimeState } | undefined
   >;
+  multiConditionalStateByModuleId: Record<string, TickedRuntimeState[] | undefined>;
 }
 
 const CONDITIONAL_SELECT_PORT = 'select';
@@ -282,6 +285,9 @@ function evaluateDefinition(
   if (isConditionalDefinition(def)) {
     return evaluateConditional(moduleId, def, inputs, params, registry);
   }
+  if (isMultiConditionalDefinition(def)) {
+    return evaluateMultiConditional(moduleId, def, inputs, params, registry);
+  }
 
   return {
     outputs: def.evaluate(inputs, params),
@@ -519,7 +525,7 @@ function getConditionalBranchLabelAndDefId(
 }
 
 function buildConditionalBranchProject(
-  branchLabel: 'then' | 'else',
+  branchLabel: string,
   defId: string,
   params: ModuleParams,
 ): Project {
@@ -568,6 +574,55 @@ function evaluateConditional(
   };
 }
 
+function getMultiConditionalBranchIndex(
+  def: MultiConditionalDef,
+  inputs: ModuleInputs,
+): number {
+  const select = inputs[CONDITIONAL_SELECT_PORT];
+  if (!select || select.type !== 'bits') {
+    throw new ProjectValidationError('MultiConditional select must be a bits signal.');
+  }
+  const branchCount = def.branchDefIds.length;
+  const requiredWidth = branchCount <= 2 ? 1 : branchCount <= 4 ? 2 : 3;
+  if (select.value.length !== requiredWidth) {
+    throw new ProjectValidationError(
+      `MultiConditional select must be ${requiredWidth} bit(s) for ${branchCount} branches.`,
+    );
+  }
+  const index = select.value.reduce((acc, bit, i) => acc + (bit << (select.value.length - 1 - i)), 0);
+  return Math.min(index, branchCount - 1);
+}
+
+function evaluateMultiConditional(
+  moduleId: string,
+  def: MultiConditionalDef,
+  inputs: ModuleInputs,
+  params: ModuleParams,
+  registry: ModuleRegistry,
+): EvaluatedDefinitionResult {
+  const branchIndex = getMultiConditionalBranchIndex(def, inputs);
+  const selectedDefId = def.branchDefIds[branchIndex];
+  if (!selectedDefId) {
+    throw new ProjectValidationError(`MultiConditional "${def.id}" has no branch at index ${branchIndex}.`);
+  }
+  const branchLabel = `branch${branchIndex}`;
+  const internalResult = executeProject(
+    buildConditionalBranchProject(branchLabel, selectedDefId, params),
+    registry,
+    { [branchLabel]: stripConditionalSelectInput(inputs) },
+  );
+  const outputs = internalResult.outputsByModuleId[branchLabel];
+  if (!outputs) {
+    throw new ProjectValidationError(
+      `MultiConditional "${def.id}" could not resolve branch ${branchIndex} outputs.`,
+    );
+  }
+  return {
+    outputs,
+    hoistedTrace: hoistTraceEntries(internalResult.analysisTrace, moduleId),
+  };
+}
+
 function createTickedRuntimeState(
   project: Project,
   registry: ModuleRegistry,
@@ -579,6 +634,7 @@ function createTickedRuntimeState(
     string,
     { thenState: TickedRuntimeState; elseState: TickedRuntimeState } | undefined
   > = {};
+  const multiConditionalStateByModuleId: Record<string, TickedRuntimeState[] | undefined> = {};
 
   for (const moduleInstance of project.modules) {
     paramsByModuleId[moduleInstance.id] = { ...moduleInstance.params };
@@ -615,6 +671,15 @@ function createTickedRuntimeState(
             ),
           }
         : undefined;
+    multiConditionalStateByModuleId[moduleInstance.id] =
+      def && isMultiConditionalDefinition(def)
+        ? def.branchDefIds.map((branchDefId, i) =>
+            createTickedRuntimeState(
+              buildConditionalBranchProject(`branch${i}`, branchDefId, moduleInstance.params),
+              registry,
+            ),
+          )
+        : undefined;
   }
 
   return {
@@ -622,6 +687,7 @@ function createTickedRuntimeState(
     compositeStateByModuleId,
     iteratorStateByModuleId,
     conditionalStateByModuleId,
+    multiConditionalStateByModuleId,
   };
 }
 
@@ -764,6 +830,16 @@ function executeTickedGraph(
             tick,
             runtimeState.conditionalStateByModuleId[moduleId],
           )
+      : isMultiConditionalDefinition(def)
+        ? executeTickedMultiConditional(
+            moduleId,
+            def,
+            inputs,
+            currentParams,
+            registry,
+            tick,
+            runtimeState.multiConditionalStateByModuleId[moduleId],
+          )
       : {
           outputs:
             moduleInstance.bypass && isBypassEligibleDefinition(def)
@@ -898,6 +974,43 @@ function executeTickedConditional(
     );
   }
 
+  return {
+    outputs,
+    hoistedTrace: hoistTraceEntries(internalResult.analysisTrace, moduleId),
+  };
+}
+
+function executeTickedMultiConditional(
+  moduleId: string,
+  def: MultiConditionalDef,
+  inputs: ModuleInputs,
+  params: ModuleParams,
+  registry: ModuleRegistry,
+  tick: number,
+  branchStates?: TickedRuntimeState[],
+): EvaluatedDefinitionResult {
+  if (!branchStates || branchStates.length !== def.branchDefIds.length) {
+    throw new ProjectValidationError(`MultiConditional "${def.id}" is missing ticked runtime state.`);
+  }
+  const branchIndex = getMultiConditionalBranchIndex(def, inputs);
+  const selectedDefId = def.branchDefIds[branchIndex];
+  if (!selectedDefId) {
+    throw new ProjectValidationError(`MultiConditional "${def.id}" has no branch at index ${branchIndex}.`);
+  }
+  const branchLabel = `branch${branchIndex}`;
+  const internalResult = executeTickedGraph(
+    buildConditionalBranchProject(branchLabel, selectedDefId, params),
+    registry,
+    tick,
+    branchStates[branchIndex],
+    { [branchLabel]: stripConditionalSelectInput(inputs) },
+  );
+  const outputs = internalResult.outputsByModuleId[branchLabel];
+  if (!outputs) {
+    throw new ProjectValidationError(
+      `MultiConditional "${def.id}" could not resolve branch ${branchIndex} outputs.`,
+    );
+  }
   return {
     outputs,
     hoistedTrace: hoistTraceEntries(internalResult.analysisTrace, moduleId),

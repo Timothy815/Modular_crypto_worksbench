@@ -4,9 +4,9 @@ import { join } from 'node:path';
 const distAssetsDir = join(process.cwd(), 'dist', 'assets');
 
 const thresholds = {
-  index: 272 * 1024,
+  index: 276 * 1024,
   react: 210 * 1024,
-  maxChunk: 272 * 1024,
+  maxChunk: 276 * 1024,
 };
 
 function formatKiB(bytes) {

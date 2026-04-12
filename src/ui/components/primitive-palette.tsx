@@ -408,6 +408,22 @@ export function PrimitivePalette({
               ),
             },
             {
+              id: 'user-conditionals',
+              title: 'My Conditionals',
+              description: 'Conditional modules you authored — one control bit selects which branch runs.',
+              defs: visibleDefs.filter(
+                (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'conditional',
+              ),
+            },
+            {
+              id: 'user-multi-conditionals',
+              title: 'My Multi-Conditionals',
+              description: 'Multi-branch modules you authored — a multi-bit control word selects which branch runs.',
+              defs: visibleDefs.filter(
+                (def) => 'kind' in def && def.kind === 'multi-conditional',
+              ),
+            },
+            {
               id: 'user-composites',
               title: 'My Composites',
               description: 'Editable composite modules you created yourself.',
@@ -494,7 +510,8 @@ function ModuleLibraryCard({
   const isComposite = 'kind' in def && def.kind === 'composite';
   const isIterator = 'kind' in def && def.kind === 'iterator';
   const isConditional = 'kind' in def && def.kind === 'conditional';
-  const isReusable = isComposite || isIterator || isConditional;
+  const isMultiConditional = 'kind' in def && def.kind === 'multi-conditional';
+  const isReusable = isComposite || isIterator || isConditional || isMultiConditional;
   const [showHelp, setShowHelp] = useState(false);
   const primitiveMicroDemo = getPrimitiveMicroDemo(def.id);
 

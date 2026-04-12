@@ -4,6 +4,7 @@ import {
   type CompositeLibraryEntry,
   type ConditionalDef,
   type IteratorDef,
+  type MultiConditionalDef,
 } from '../engine/composites';
 import type { Project } from '../engine/types';
 import type { DemoProject } from './demo-projects';
@@ -1211,7 +1212,26 @@ function isCompositeLibraryEntry(value: unknown): value is CompositeLibraryEntry
     (candidate.source === undefined ||
       candidate.source === 'built-in' ||
       candidate.source === 'user') &&
-    (isCompositeDef(candidate.definition) || isIteratorDef(candidate.definition) || isConditionalDef(candidate.definition))
+    (isCompositeDef(candidate.definition) || isIteratorDef(candidate.definition) || isConditionalDef(candidate.definition) || isMultiConditionalDef(candidate.definition))
+  );
+}
+
+function isMultiConditionalDef(value: unknown): value is MultiConditionalDef {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const candidate = value as MultiConditionalDef;
+  return (
+    candidate.kind === 'multi-conditional' &&
+    typeof candidate.id === 'string' &&
+    typeof candidate.name === 'string' &&
+    typeof candidate.version === 'number' &&
+    Array.isArray(candidate.inputs) &&
+    Array.isArray(candidate.outputs) &&
+    typeof candidate.paramSchema === 'object' &&
+    candidate.paramSchema !== null &&
+    Array.isArray(candidate.branchDefIds) &&
+    candidate.branchDefIds.every((id: unknown) => typeof id === 'string')
   );
 }
 

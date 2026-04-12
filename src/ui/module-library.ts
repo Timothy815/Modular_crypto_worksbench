@@ -1,4 +1,4 @@
-import { isCompositeDefinition, isConditionalDefinition, isIteratorDefinition } from '../engine/composites';
+import { isCompositeDefinition, isConditionalDefinition, isIteratorDefinition, isMultiConditionalDefinition } from '../engine/composites';
 import type { ModuleDefinition } from '../engine/types';
 export type { ModuleRoleSummary, ModuleWorkflowRole } from './module-role-language';
 export {
@@ -329,6 +329,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Routes one bit word into one of several visible outputs using an indexed control word.',
     detail: 'Use this when a graph should show an explicit finite switch/case style route decision instead of composing multiple binary routing layers by hand.',
     searchTerms: ['multi router', 'router', 'switch', 'case', 'routing', 'scheduler', 'counter', 'demux', 'bits', 'routing'],
+  },
+  MultiSelector: {
+    sectionId: 'framing-routing',
+    sortOrder: 65,
+    purpose: 'Selects one of several bit-word inputs and forwards it to a single output using an indexed control word.',
+    detail: 'Use this as the rejoining half of a switch/case graph: MultiRouter fans out, MultiSelector rejoins the active lane back into a single path.',
+    searchTerms: ['multi selector', 'selector', 'switch', 'case', 'routing', 'mux', 'counter', 'bits', 'routing'],
   },
   GreaterThan: {
     sectionId: 'bit-logic',
@@ -730,7 +737,7 @@ export const MODULE_LIBRARY_SECTIONS: ModuleLibrarySection[] = [
 ];
 
 export function getModuleLibrarySectionId(definition: ModuleDefinition): ModuleLibrarySectionId {
-  if (isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition)) {
+  if (isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition) || isMultiConditionalDefinition(definition)) {
     return 'composites';
   }
 
@@ -738,7 +745,7 @@ export function getModuleLibrarySectionId(definition: ModuleDefinition): ModuleL
 }
 
 export function getModuleLibrarySortOrder(definition: ModuleDefinition): number {
-  if (isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition)) {
+  if (isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition) || isMultiConditionalDefinition(definition)) {
     return Number.MAX_SAFE_INTEGER;
   }
 
@@ -755,6 +762,9 @@ export function getModulePurpose(definition: ModuleDefinition): string {
   }
   if (isConditionalDefinition(definition)) {
     return `Conditional module: runs "${definition.thenDefId}" when select is 1, "${definition.elseDefId}" when select is 0.`;
+  }
+  if (isMultiConditionalDefinition(definition)) {
+    return `Multi-conditional module: ${definition.branchDefIds.length} branches selected by a ${definition.branchDefIds.length <= 2 ? '1' : definition.branchDefIds.length <= 4 ? '2' : '3'}-bit control word.`;
   }
 
   return (
@@ -776,6 +786,9 @@ export function getModuleDetail(definition: ModuleDefinition): string {
   if (isConditionalDefinition(definition)) {
     return 'Conditional module that executes one of two branch definitions based on a one-bit select input.';
   }
+  if (isMultiConditionalDefinition(definition)) {
+    return 'Multi-conditional module that executes one of several branch definitions based on a multi-bit select word. Pairs with MultiRouter/MultiSelector for visible switch/case graph structures.';
+  }
 
   return (
     PRIMITIVE_LIBRARY_META[definition.id]?.detail ??
@@ -793,8 +806,8 @@ export function matchesModuleSearch(definition: ModuleDefinition, query: string)
     definition.id,
     definition.name,
     getModulePurpose(definition),
-    ...((isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition))
-      ? ['composite', 'iterator', 'conditional', 'round chain', 'architecture', 'branch']
+    ...((isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition) || isMultiConditionalDefinition(definition))
+      ? ['composite', 'iterator', 'conditional', 'multi-conditional', 'round chain', 'architecture', 'branch', 'switch', 'case']
       : PRIMITIVE_LIBRARY_META[definition.id]?.searchTerms ?? []),
   ];
 
@@ -817,14 +830,14 @@ export function matchesModuleDomainTab(
   }
 
   if (tab === 'all') {
-    return !isCompositeDefinition(definition) && !isIteratorDefinition(definition) && !isConditionalDefinition(definition);
+    return !isCompositeDefinition(definition) && !isIteratorDefinition(definition) && !isConditionalDefinition(definition) && !isMultiConditionalDefinition(definition);
   }
 
   if (tab === 'composites') {
-    return isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition);
+    return isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition) || isMultiConditionalDefinition(definition);
   }
 
-  if (isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition)) {
+  if (isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition) || isMultiConditionalDefinition(definition)) {
     return false;
   }
 

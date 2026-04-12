@@ -47,6 +47,7 @@ import { Majority } from './majority';
 import { Mux } from './mux';
 import { Demux } from './demux';
 import { MultiRouter } from './multi-router';
+import { MultiSelector } from './multi-selector';
 import { GreaterThan } from './greater-than';
 import { Counter } from './counter';
 import { Equals } from './equals';
@@ -139,6 +140,7 @@ export {
   Mux,
   Demux,
   MultiRouter,
+  MultiSelector,
   GreaterThan,
   Counter,
   Equals,
@@ -232,6 +234,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [Mux.id]: Mux,
   [Demux.id]: Demux,
   [MultiRouter.id]: MultiRouter,
+  [MultiSelector.id]: MultiSelector,
   [GreaterThan.id]: GreaterThan,
   [Counter.id]: Counter,
   [Equals.id]: Equals,
