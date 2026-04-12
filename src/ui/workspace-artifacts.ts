@@ -13,6 +13,7 @@ import {
   parseCompositeLibraryDocument,
   parseWorkbenchDocument,
 } from './persistence';
+import { isBuiltInCompositeLibraryEntry } from '../engine/composites';
 import type {
   ComparisonBaselineDocument,
   CompositeLibraryDocument,
@@ -184,10 +185,14 @@ export function hydrateInitialUiState(projects: DemoProject[]): UiState {
       persistedWorkspace.tutorialLibrary.length > 0
         ? persistedWorkspace.tutorialLibrary
         : initialState.tutorialLibrary,
-    compositeLibrary:
-      persistedWorkspace.compositeLibrary.entries.length > 0
-        ? persistedWorkspace.compositeLibrary.entries
-        : initialState.compositeLibrary,
+    compositeLibrary: [
+      // Always use fresh built-in composites so new additions are never missing
+      ...initialState.compositeLibrary,
+      // Preserve user-authored composites from persisted state
+      ...persistedWorkspace.compositeLibrary.entries.filter(
+        (entry) => !isBuiltInCompositeLibraryEntry(entry),
+      ),
+    ],
     userWorkspaceLibrary: persistedWorkspace.userWorkspaceLibrary ?? [],
     showPalette: persistedWorkspace.showPalette,
     showInspector: persistedWorkspace.showInspector,
