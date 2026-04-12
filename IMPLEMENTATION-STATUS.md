@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: April 11, 2026
+Last updated: April 12, 2026
 
 ---
 
@@ -192,6 +192,18 @@ The next workspace-chrome simplification follow-on after that is now shipped as:
 - `WORKBENCH-CONTROL-SIMPLIFICATION-V1.md`
 - a bounded trim pass for duplicated high-frequency menu entries
 - keeps menus focused on lower-frequency structure, version, and import/export actions
+
+The following ceremony-reduction and legibility slices are now shipped on `main` (April 2026):
+- `ConstantBit` module — fixed 1-bit constant source that does not tick-slice the graph; fills the gap between `BitSource` and the `Conditional` select port
+- `collectTickedOutput` prefix-dedup fix — repeated consecutive scalar tick values (e.g. `7B 7B`) were being collapsed; fixed comparison from `>=` to `>`
+- Bridge suggestions on type-mismatch rejection — connection-drop failures now include named bridge module suggestions inline
+- Stream badge on tick-sliceable nodes — `Stream · N ticks` pill shown in ticked mode so tick length is visible without entering Analyze
+- Domain signature chip in palette — every expanded card shows `symbol → bits` / `bits → bits` etc. at a glance
+- Port dot domain coloring — input/output anchor dots are now blue for `bits` and amber for `symbol` directly on the canvas
+- "Chains well with" in palette help card — curated `Comes after` / `Chains into` chip rows behind the `?` button for ~20 key modules
+- Hover-to-sever wire button — hovering any wire shows a `✕ Sever` button at the midpoint; no menu navigation needed to delete a connection
+- Pipeline starters (Quick Start strip) — four one-click pre-wired chains in the palette: Symbol Cipher Input, Symbol Key Input, Bit Stream Input, Symbol Output Chain; eliminates the bridge-placement ceremony for the most common pipelines
+- Insert bridge on type mismatch — when a drag-drop fails due to symbol↔bits mismatch, an inline popup offers one-click bridge insertion at the wire midpoint; bridge is placed and both ends wired automatically
 
 The second Experiential North Star Live Readability slice is now also shipped:
 - `LIVE-WIRE-EMPHASIS-V1.md`
