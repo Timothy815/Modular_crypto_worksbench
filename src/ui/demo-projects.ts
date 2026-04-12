@@ -2523,6 +2523,45 @@ export const demoProjects: DemoProject[] = [
       output: { x: 1240, y: 232 },
     },
   },
+  {
+    id: 'one-machine-two-directions',
+    name: 'One Machine Two Directions',
+    group: 'Conditional Clocking',
+    stage: 'streams-and-scheduling',
+    order: 175,
+    summary:
+      'Two instances of the same conditional cipher show how a single mode bit selects the forward path or the inverse path — encryption and decryption from one definition.',
+    pipeline:
+      'BitSource -> CipherDirectionSwitch(select=0) -> BitOutput | CipherDirectionSwitch(select=0).out -> CipherDirectionSwitch(select=1) -> BitOutput',
+    project: {
+      modules: [
+        { id: 'plaintext', defId: 'BitSource', params: { stream: [1, 0, 1, 1, 0, 0, 1, 0] } },
+        { id: 'mode-enc', defId: 'BitSource', params: { stream: [0] } },
+        { id: 'cipher-enc', defId: 'CipherDirectionSwitch', params: {} },
+        { id: 'encrypted-out', defId: 'BitOutput', params: {} },
+        { id: 'mode-dec', defId: 'BitSource', params: { stream: [1] } },
+        { id: 'cipher-dec', defId: 'CipherDirectionSwitch', params: {} },
+        { id: 'recovered-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'plaintext', port: 'out' }, to: { moduleId: 'cipher-enc', port: 'in' } },
+        { from: { moduleId: 'mode-enc', port: 'out' }, to: { moduleId: 'cipher-enc', port: 'select' } },
+        { from: { moduleId: 'cipher-enc', port: 'out' }, to: { moduleId: 'encrypted-out', port: 'in' } },
+        { from: { moduleId: 'cipher-enc', port: 'out' }, to: { moduleId: 'cipher-dec', port: 'in' } },
+        { from: { moduleId: 'mode-dec', port: 'out' }, to: { moduleId: 'cipher-dec', port: 'select' } },
+        { from: { moduleId: 'cipher-dec', port: 'out' }, to: { moduleId: 'recovered-out', port: 'in' } },
+      ],
+    },
+    layout: {
+      plaintext: { x: 40, y: 200 },
+      'mode-enc': { x: 40, y: 80 },
+      'cipher-enc': { x: 280, y: 140 },
+      'encrypted-out': { x: 520, y: 60 },
+      'mode-dec': { x: 520, y: 280 },
+      'cipher-dec': { x: 760, y: 140 },
+      'recovered-out': { x: 1000, y: 140 },
+    },
+  },
 ];
 
 export function getDefaultDemoProject(projects: DemoProject[]): DemoProject | null {

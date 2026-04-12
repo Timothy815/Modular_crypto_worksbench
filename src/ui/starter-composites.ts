@@ -982,4 +982,89 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
       elseDefId: 'ConditionalInvertBranch',
     },
   },
+  // --- One Machine Two Directions cipher branches ---
+  {
+    id: 'CipherForwardBranch',
+    name: 'Cipher Forward Branch',
+    version: 1,
+    source: 'built-in',
+    definition: {
+      id: 'CipherForwardBranch',
+      name: 'Cipher Forward Branch',
+      kind: 'composite',
+      version: 1,
+      inputs: [{ name: 'in', type: 'bits' }],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {},
+      project: {
+        modules: [
+          {
+            id: 'sbox',
+            defId: 'SBox',
+            params: { table: Array.from({ length: 256 }, (_, i) => 255 - i).join(',') },
+          },
+          { id: 'shift', defId: 'BitShifter', params: { amount: 2, mode: 'rotate-left' } },
+        ],
+        connections: [
+          { from: { moduleId: 'sbox', port: 'out' }, to: { moduleId: 'shift', port: 'in' } },
+        ],
+      },
+      inputBindings: [{ externalPort: 'in', internalModuleId: 'sbox', internalPort: 'in' }],
+      outputBindings: [{ externalPort: 'out', internalModuleId: 'shift', internalPort: 'out' }],
+      purpose:
+        'Then-branch (select=0) for CipherDirectionSwitch: substitutes all bits with their complements, then rotates two positions left.',
+    },
+  },
+  {
+    id: 'CipherInverseBranch',
+    name: 'Cipher Inverse Branch',
+    version: 1,
+    source: 'built-in',
+    definition: {
+      id: 'CipherInverseBranch',
+      name: 'Cipher Inverse Branch',
+      kind: 'composite',
+      version: 1,
+      inputs: [{ name: 'in', type: 'bits' }],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {},
+      project: {
+        modules: [
+          { id: 'shift', defId: 'BitShifter', params: { amount: 2, mode: 'rotate-right' } },
+          {
+            id: 'sbox',
+            defId: 'SBox',
+            params: { table: Array.from({ length: 256 }, (_, i) => 255 - i).join(',') },
+          },
+        ],
+        connections: [
+          { from: { moduleId: 'shift', port: 'out' }, to: { moduleId: 'sbox', port: 'in' } },
+        ],
+      },
+      inputBindings: [{ externalPort: 'in', internalModuleId: 'shift', internalPort: 'in' }],
+      outputBindings: [{ externalPort: 'out', internalModuleId: 'sbox', internalPort: 'out' }],
+      purpose:
+        'Else-branch (select=1) for CipherDirectionSwitch: rotates two positions right first, then substitutes all bits with their complements. Exactly undoes CipherForwardBranch.',
+    },
+  },
+  {
+    id: 'CipherDirectionSwitch',
+    name: 'Cipher Direction Switch',
+    version: 1,
+    source: 'built-in',
+    definition: {
+      id: 'CipherDirectionSwitch',
+      name: 'Cipher Direction Switch',
+      kind: 'conditional',
+      version: 1,
+      inputs: [
+        { name: 'select', type: 'bits', kind: 'scalar' },
+        { name: 'in', type: 'bits' },
+      ],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {},
+      thenDefId: 'CipherForwardBranch',
+      elseDefId: 'CipherInverseBranch',
+    },
+  },
 ];

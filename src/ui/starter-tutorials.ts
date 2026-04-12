@@ -2682,4 +2682,53 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       },
     ],
   },
+  {
+    version: 1,
+    id: 'one-machine-two-directions',
+    title: 'One Machine, Two Directions',
+    group: 'Conditional Clocking',
+    stage: 'streams-and-scheduling',
+    order: 175,
+    recommendedAfter: ['routed-clock-keystream'],
+    summary:
+      'See how a single 1-bit mode control selects the forward cipher path or its exact inverse — encryption and decryption from one shared definition.',
+    projectId: 'one-machine-two-directions',
+    steps: [
+      {
+        id: 'omtd-definition',
+        title: 'One Definition, Two Instances',
+        body: 'Both cipher-enc and cipher-dec are instances of the same CipherDirectionSwitch composite. The canvas wiring is identical between them — the only thing that changes is the bit connected to each select port.',
+        focusModuleId: 'cipher-enc',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'omtd-mode-enc',
+        title: 'Select Zero Runs The Forward Path',
+        body: 'The left mode source emits [0]. When select is 0, CipherDirectionSwitch runs its forward branch: every byte is substituted with its bitwise complement, then the result is rotated two positions left.',
+        focusModuleId: 'mode-enc',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'omtd-encrypted',
+        title: 'Inspect The Encrypted Output',
+        body: 'The first BitOutput shows the encrypted value. Every bit pattern has been rearranged — the forward path has visibly changed the word. This is the encrypted form of the original plaintext.',
+        focusModuleId: 'encrypted-out',
+        targetStepIndex: 4,
+      },
+      {
+        id: 'omtd-mode-dec',
+        title: 'Select One Runs The Inverse Path',
+        body: 'The right mode source emits [1]. When select is 1, CipherDirectionSwitch runs its inverse branch: rotate right two positions first, then substitute again. Reversing the order of two self-inverse operations produces the exact inverse of the forward path.',
+        focusModuleId: 'mode-dec',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'omtd-recovered',
+        title: 'The Round-Trip Restores The Original',
+        body: 'The second BitOutput shows the recovered plaintext. It matches the original input exactly. You have just encrypted and decrypted using the same machine definition, directed only by a 1-bit control. This is how hardware cipher implementations work: one circuit, one mode bit, two behaviors.',
+        focusModuleId: 'recovered-out',
+        targetStepIndex: 6,
+      },
+    ],
+  },
 ];

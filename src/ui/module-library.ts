@@ -823,6 +823,8 @@ const INTERNAL_COMPOSITE_IDS = new Set([
   'MultiCondBranchInvert',
   'MultiCondBranchRotL2',
   'MultiCondBranchRotR1',
+  'CipherForwardBranch',
+  'CipherInverseBranch',
 ]);
 
 export function matchesModuleDomainTab(
