@@ -1687,6 +1687,38 @@ const BITS_TO_HEX_DIGIT_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const CONDITIONAL_BRANCH_DEMO_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'ConditionalBranchDemo',
+  name: 'Conditional Branch Demo Micro Demo',
+  summary: 'Minimal visible conditional: one control bit selects which branch definition runs — rotate-left on 1, invert on 0.',
+  pipeline: 'BitSource(select) + BitSource(in) -> ConditionalBranchDemo -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'cond', defId: 'ConditionalBranchDemo', params: {} },
+        { id: 'select', defId: 'BitSource', params: { stream: [1] } },
+        { id: 'input', defId: 'BitSource', params: { stream: [1, 0, 1, 1, 0, 0, 1, 0] } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'select', port: 'out' }, to: { moduleId: 'cond', port: 'select' } },
+        { from: { moduleId: 'input', port: 'out' }, to: { moduleId: 'cond', port: 'in' } },
+        { from: { moduleId: 'cond', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        cond: { x: 360, y: 130 },
+        select: { x: 76, y: 52 },
+        input: { x: 76, y: 208 },
+        out: { x: 620, y: 130 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   MUX_MICRO_DEMO,
   DEMUX_MICRO_DEMO,
@@ -1739,6 +1771,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   BITS_SEQUENCE_TO_TICKED_MICRO_DEMO,
   BITS_TO_ASCII_CHAR_MICRO_DEMO,
   BITS_TO_HEX_DIGIT_MICRO_DEMO,
+  CONDITIONAL_BRANCH_DEMO_MICRO_DEMO,
 ];
 
 const PRIMITIVE_MICRO_DEMO_BY_DEF_ID = Object.fromEntries(

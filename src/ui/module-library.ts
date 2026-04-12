@@ -1,4 +1,4 @@
-import { isCompositeDefinition, isIteratorDefinition } from '../engine/composites';
+import { isCompositeDefinition, isConditionalDefinition, isIteratorDefinition } from '../engine/composites';
 import type { ModuleDefinition } from '../engine/types';
 export type { ModuleRoleSummary, ModuleWorkflowRole } from './module-role-language';
 export {
@@ -730,7 +730,7 @@ export const MODULE_LIBRARY_SECTIONS: ModuleLibrarySection[] = [
 ];
 
 export function getModuleLibrarySectionId(definition: ModuleDefinition): ModuleLibrarySectionId {
-  if (isCompositeDefinition(definition) || isIteratorDefinition(definition)) {
+  if (isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition)) {
     return 'composites';
   }
 
@@ -738,7 +738,7 @@ export function getModuleLibrarySectionId(definition: ModuleDefinition): ModuleL
 }
 
 export function getModuleLibrarySortOrder(definition: ModuleDefinition): number {
-  if (isCompositeDefinition(definition) || isIteratorDefinition(definition)) {
+  if (isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition)) {
     return Number.MAX_SAFE_INTEGER;
   }
 
@@ -752,6 +752,9 @@ export function getModulePurpose(definition: ModuleDefinition): string {
   }
   if (isIteratorDefinition(definition)) {
     return `Bounded iterator repeating "${definition.roundDefId}" for ${definition.iterationCount} round${definition.iterationCount === 1 ? '' : 's'}${definition.roundKeyWidth ? ` with a ${definition.roundKeyWidth}-bit key per round` : ''}.`;
+  }
+  if (isConditionalDefinition(definition)) {
+    return `Conditional module: runs "${definition.thenDefId}" when select is 1, "${definition.elseDefId}" when select is 0.`;
   }
 
   return (
@@ -770,6 +773,9 @@ export function getModuleDetail(definition: ModuleDefinition): string {
       ? 'Bounded iterator that auto-unrolls one round definition a fixed number of times and splits a visible key bus into one sub-key per round.'
       : 'Bounded iterator that auto-unrolls one round definition a fixed number of times.';
   }
+  if (isConditionalDefinition(definition)) {
+    return 'Conditional module that executes one of two branch definitions based on a one-bit select input.';
+  }
 
   return (
     PRIMITIVE_LIBRARY_META[definition.id]?.detail ??
@@ -787,8 +793,8 @@ export function matchesModuleSearch(definition: ModuleDefinition, query: string)
     definition.id,
     definition.name,
     getModulePurpose(definition),
-    ...((isCompositeDefinition(definition) || isIteratorDefinition(definition))
-      ? ['composite', 'iterator', 'round chain', 'architecture']
+    ...((isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition))
+      ? ['composite', 'iterator', 'conditional', 'round chain', 'architecture', 'branch']
       : PRIMITIVE_LIBRARY_META[definition.id]?.searchTerms ?? []),
   ];
 
@@ -800,14 +806,14 @@ export function matchesModuleDomainTab(
   tab: ModuleLibraryDomainTab,
 ): boolean {
   if (tab === 'all') {
-    return !isCompositeDefinition(definition) && !isIteratorDefinition(definition);
+    return !isCompositeDefinition(definition) && !isIteratorDefinition(definition) && !isConditionalDefinition(definition);
   }
 
   if (tab === 'composites') {
-    return isCompositeDefinition(definition) || isIteratorDefinition(definition);
+    return isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition);
   }
 
-  if (isCompositeDefinition(definition) || isIteratorDefinition(definition)) {
+  if (isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition)) {
     return false;
   }
 

@@ -485,7 +485,8 @@ function ModuleLibraryCard({
 }: ModuleLibraryCardProps) {
   const isComposite = 'kind' in def && def.kind === 'composite';
   const isIterator = 'kind' in def && def.kind === 'iterator';
-  const isReusable = isComposite || isIterator;
+  const isConditional = 'kind' in def && def.kind === 'conditional';
+  const isReusable = isComposite || isIterator || isConditional;
   const [showHelp, setShowHelp] = useState(false);
   const primitiveMicroDemo = getPrimitiveMicroDemo(def.id);
 

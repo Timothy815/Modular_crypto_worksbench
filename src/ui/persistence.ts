@@ -2,6 +2,7 @@ import {
   isCompositeDefinition,
   type CompositeDef,
   type CompositeLibraryEntry,
+  type ConditionalDef,
   type IteratorDef,
 } from '../engine/composites';
 import type { Project } from '../engine/types';
@@ -1210,7 +1211,27 @@ function isCompositeLibraryEntry(value: unknown): value is CompositeLibraryEntry
     (candidate.source === undefined ||
       candidate.source === 'built-in' ||
       candidate.source === 'user') &&
-    (isCompositeDef(candidate.definition) || isIteratorDef(candidate.definition))
+    (isCompositeDef(candidate.definition) || isIteratorDef(candidate.definition) || isConditionalDef(candidate.definition))
+  );
+}
+
+function isConditionalDef(value: unknown): value is ConditionalDef {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as ConditionalDef;
+  return (
+    candidate.kind === 'conditional' &&
+    typeof candidate.id === 'string' &&
+    typeof candidate.name === 'string' &&
+    typeof candidate.version === 'number' &&
+    Array.isArray(candidate.inputs) &&
+    Array.isArray(candidate.outputs) &&
+    typeof candidate.paramSchema === 'object' &&
+    candidate.paramSchema !== null &&
+    typeof candidate.thenDefId === 'string' &&
+    typeof candidate.elseDefId === 'string'
   );
 }
 

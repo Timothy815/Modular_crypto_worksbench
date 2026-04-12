@@ -56,6 +56,7 @@ describe('primitive micro demos', () => {
       'BitsSequenceToTicked',
       'BitsToAsciiChar',
       'BitsToHexDigit',
+      'ConditionalBranchDemo',
     ]);
   });
 
@@ -156,6 +157,9 @@ describe('primitive micro demos', () => {
     );
     expect(getPrimitiveMicroDemo('BitsToHexDigit')?.name).toBe(
       'Bits To Hex Digit Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('ConditionalBranchDemo')?.name).toBe(
+      'Conditional Branch Demo Micro Demo',
     );
     expect(getPrimitiveMicroDemo('XOR')).toBeNull();
   });
@@ -460,6 +464,22 @@ describe('primitive micro demos', () => {
       'BitOutput',
       'BitOutput',
     ]);
+  });
+
+  it('keeps the conditional branch demo honest: focal conditional first, one select bit, one data input, one output', () => {
+    const demo = getPrimitiveMicroDemo('ConditionalBranchDemo');
+    expect(demo?.document.project.modules.map((module) => module.defId)).toEqual([
+      'ConditionalBranchDemo',
+      'BitSource',
+      'BitSource',
+      'BitOutput',
+    ]);
+    // select is a 1-bit scalar control
+    const selectModule = demo?.document.project.modules.find((m) => m.id === 'select');
+    expect(selectModule?.params?.stream).toEqual([1]);
+    // input is an 8-bit value
+    const inputModule = demo?.document.project.modules.find((m) => m.id === 'input');
+    expect(inputModule?.params?.stream).toHaveLength(8);
   });
 
   it('keeps the rotor reverse example structurally honest', () => {
