@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { isCompositeDefinition } from '../../engine/composites';
+import { isCompositeDefinition, isConditionalDefinition } from '../../engine/composites';
 import { getBypassIneligibilityReason, isBypassEligibleDefinition } from '../../engine/bypass';
 import { isOutputSinkDefId } from '../../engine/output-sinks';
 import type {
@@ -1545,7 +1545,7 @@ export function ParameterInspector({
                 onClick={() => onDuplicateModule(moduleInstance.id)}
               />
             ) : null}
-            {!isReadOnlyMode && isCompositeDefinition(moduleDef) && onOpenCompositeInstanceDrilldown ? (
+            {!isReadOnlyMode && (isCompositeDefinition(moduleDef) || isConditionalDefinition(moduleDef)) && onOpenCompositeInstanceDrilldown ? (
               <button
                 type="button"
                 className="mini-action-button"
