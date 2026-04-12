@@ -138,6 +138,7 @@ export interface DetachedPanelWindowGroup {
 export type DetachedPanelCommand =
   | { type: 'togglePaletteViewMode' }
   | { type: 'addModule'; defId: string }
+  | { type: 'insertStarterChain'; starterId: string }
   | { type: 'openComposite'; defId: string }
   | { type: 'duplicateReusable'; defId: string }
   | { type: 'openPrimitiveMicroDemo'; defId: string }

@@ -637,6 +637,7 @@ function renderDetachedPane(
         compositeUsageCountById={(payload as DetachedPaletteSnapshot).compositeUsageCountById}
         builtInReusableIds={(payload as DetachedPaletteSnapshot).builtInReusableIds}
         onAddModule={(defId) => sendCommand('palette', { type: 'addModule', defId })}
+        onInsertStarterChain={(starterId) => sendCommand('palette', { type: 'insertStarterChain', starterId })}
         onExportCompositeLibrary={() => sendCommand('palette', { type: 'exportCompositeLibrary' })}
         onOpenComposite={(defId) =>
           postAction({

@@ -491,6 +491,14 @@ interface WorkbenchPanelProps {
     toPort: string,
   ) => void;
   onRemoveConnection: (connectionIndex: number) => void;
+  onInsertBridgeConnection: (
+    bridgeDefId: string,
+    fromModuleId: string,
+    fromPort: string,
+    toModuleId: string,
+    toPort: string,
+    position: { x: number; y: number },
+  ) => void;
   onSetConnectionOrthogonalBend: (
     connectionKey: string,
     axis: 'x' | 'y',
@@ -635,6 +643,7 @@ export function WorkbenchPanel({
   onAddConnection,
   onReplaceConnection,
   onRemoveConnection,
+  onInsertBridgeConnection,
   onSetConnectionOrthogonalBend,
   onSetConnectionOrthogonalAnchors,
   onRemoveConnectionOrthogonalAnchor,
@@ -724,6 +733,16 @@ export function WorkbenchPanel({
   const [showSignalChips, setShowSignalChips] = useState(true);
   const [pendingConnection, setPendingConnection] =
     useState<PendingConnection | null>(null);
+  const [pendingBridgeInsertion, setPendingBridgeInsertion] = useState<{
+    fromModuleId: string;
+    fromPort: string;
+    toModuleId: string;
+    toPort: string;
+    sourceType: string;
+    targetType: string;
+    x: number;
+    y: number;
+  } | null>(null);
   const [connectionFeedback, setConnectionFeedback] = useState<string | null>(null);
   const [selectedConnectionIndex, setSelectedConnectionIndex] = useState<number | null>(null);
   const [hoveredConnectionIndex, setHoveredConnectionIndex] = useState<number | null>(null);
@@ -2170,6 +2189,30 @@ export function WorkbenchPanel({
     if (!pendingConnection) return;
     const targetState = targetPortStates[`${moduleId}:${portName}`];
     if (!targetState?.valid) {
+      // Check if this is a type mismatch we can offer a bridge for
+      const sourceInstance = activeProjectState.modules.find((m) => m.id === pendingConnection.fromModuleId);
+      const targetInstance = activeProjectState.modules.find((m) => m.id === moduleId);
+      const sourceDef = sourceInstance ? registry[sourceInstance.defId] : null;
+      const targetDef = targetInstance ? registry[targetInstance.defId] : null;
+      const sourcePort = sourceDef?.outputs.find((p) => p.name === pendingConnection.fromPort);
+      const targetPort = targetDef?.inputs.find((p) => p.name === portName);
+      if (sourcePort && targetPort && sourcePort.type !== targetPort.type) {
+        const sourcePos = effectiveLayout[pendingConnection.fromModuleId] ?? { x: 0, y: 0 };
+        const targetPos = effectiveLayout[moduleId] ?? { x: 0, y: 0 };
+        setPendingBridgeInsertion({
+          fromModuleId: pendingConnection.fromModuleId,
+          fromPort: pendingConnection.fromPort,
+          toModuleId: moduleId,
+          toPort: portName,
+          sourceType: sourcePort.type,
+          targetType: targetPort.type,
+          x: Math.round((sourcePos.x + targetPos.x) / 2),
+          y: Math.round((sourcePos.y + targetPos.y) / 2),
+        });
+        setPendingConnection(null);
+        setConnectionFeedback(null);
+        return;
+      }
       setConnectionFeedback(targetState?.reason ?? 'Connection blocked.');
       return;
     }
@@ -2581,6 +2624,77 @@ export function WorkbenchPanel({
               />
             ))
           : null}
+      </g>
+    );
+  }
+
+  const BRIDGE_OPTIONS: Record<string, Array<{ defId: string; label: string }>> = {
+    'symbol→bits': [
+      { defId: 'AsciiCharToBits', label: 'AsciiCharToBits — char → 8 bits' },
+      { defId: 'HexDigitToBits', label: 'HexDigitToBits — hex char → 4 bits' },
+    ],
+    'bits→symbol': [
+      { defId: 'BitsToAsciiChar', label: 'BitsToAsciiChar — 8 bits → char' },
+      { defId: 'BitsToHex', label: 'BitsToHex — bits → hex string' },
+    ],
+  };
+
+  function renderBridgeInsertionPopup() {
+    if (!pendingBridgeInsertion) return null;
+    const { fromModuleId, fromPort, toModuleId, toPort, sourceType, targetType, x, y } = pendingBridgeInsertion;
+    const key = `${sourceType}→${targetType}`;
+    const options = BRIDGE_OPTIONS[key] ?? [];
+    const popupWidth = 260;
+    const rowHeight = 28;
+    const headerHeight = 32;
+    const cancelHeight = 28;
+    const popupHeight = headerHeight + options.length * rowHeight + 6 + cancelHeight + 8;
+
+    return (
+      <g
+        className="bridge-insertion-popup"
+        transform={`translate(${x - popupWidth / 2} ${y - popupHeight - 16})`}
+      >
+        <rect width={popupWidth} height={popupHeight} rx={10} ry={10} className="bridge-popup-bg" />
+        <text x={popupWidth / 2} y={20} textAnchor="middle" className="bridge-popup-title">
+          {`Insert bridge  ${sourceType} → ${targetType}`}
+        </text>
+        <line x1={8} y1={headerHeight} x2={popupWidth - 8} y2={headerHeight} className="bridge-popup-sep" />
+        {options.map(({ defId, label }, i) => {
+          const optionDef = registry[defId];
+          if (!optionDef) return null;
+          const rowY = headerHeight + 4 + i * rowHeight;
+          return (
+            <g
+              key={defId}
+              className="bridge-popup-option"
+              onClick={(event) => {
+                event.stopPropagation();
+                const sourcePos = effectiveLayout[fromModuleId] ?? { x: 0, y: 0 };
+                const targetPos = effectiveLayout[toModuleId] ?? { x: 0, y: 0 };
+                onInsertBridgeConnection(defId, fromModuleId, fromPort, toModuleId, toPort, {
+                  x: Math.round((sourcePos.x + targetPos.x) / 2),
+                  y: Math.round((sourcePos.y + targetPos.y) / 2),
+                });
+                setPendingBridgeInsertion(null);
+              }}
+            >
+              <rect x={8} y={rowY} width={popupWidth - 16} height={rowHeight - 4} rx={5} />
+              <text x={16} y={rowY + rowHeight - 11} className="bridge-popup-option-text">{label}</text>
+            </g>
+          );
+        })}
+        <line x1={8} y1={headerHeight + 4 + options.length * rowHeight + 2} x2={popupWidth - 8} y2={headerHeight + 4 + options.length * rowHeight + 2} className="bridge-popup-sep" />
+        <g
+          className="bridge-popup-cancel"
+          onClick={(event) => {
+            event.stopPropagation();
+            setPendingBridgeInsertion(null);
+          }}
+        >
+          <rect x={8} y={headerHeight + 4 + options.length * rowHeight + 6} width={popupWidth - 16} height={cancelHeight - 4} rx={5} />
+          <text x={popupWidth / 2} y={headerHeight + 4 + options.length * rowHeight + 6 + cancelHeight - 11} textAnchor="middle" className="bridge-popup-cancel-text">Cancel</text>
+        </g>
       </g>
     );
   }
@@ -3140,6 +3254,7 @@ export function WorkbenchPanel({
           }
           onMouseDown={(event) => {
             if (quickAdd) { setQuickAdd(null); }
+            if (pendingBridgeInsertion) { setPendingBridgeInsertion(null); return; }
             if (isCompositeEditor || pendingConnection || event.target !== event.currentTarget) {
               return;
             }
@@ -3434,6 +3549,7 @@ export function WorkbenchPanel({
             {activeProjectState.connections.map((connection, connectionIndex) =>
               renderConnectionHoverLabel(connection, connectionIndex),
             )}
+            {renderBridgeInsertionPopup()}
           </svg>
 
           {activeProjectState.modules.map((moduleInstance) => {

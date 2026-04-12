@@ -51,7 +51,7 @@ import {
   recordWorkspaceHistoryTransition,
   type WorkspaceHistoryState,
 } from './workspace-state-support';
-import { duplicateWorkspaceSelection } from './workspace-clipboard';
+import { duplicateWorkspaceSelection, pasteWorkspaceClipboardSnapshot, type WorkspaceClipboardSnapshot } from './workspace-clipboard';
 import {
   getDefaultNodeOrientation,
   getNextNodeOrientationClockwise,
@@ -264,6 +264,17 @@ export type UiAction =
     }
   | { type: 'duplicateSelectedCluster'; projectId: string }
   | { type: 'deleteSelectedCluster'; projectId: string }
+  | { type: 'insertStarterChain'; projectId: string; snapshot: WorkspaceClipboardSnapshot }
+  | {
+      type: 'insertBridgeConnection';
+      projectId: string;
+      bridgeDef: ModuleDefinition;
+      fromModuleId: string;
+      fromPort: string;
+      toModuleId: string;
+      toPort: string;
+      position: { x: number; y: number };
+    }
   | { type: 'removeModule'; projectId: string; moduleId: string }
   | {
       type: 'addConnection';
@@ -603,6 +614,8 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'renameModuleInstance',
   'duplicateSelectedCluster',
   'deleteSelectedCluster',
+  'insertStarterChain',
+  'insertBridgeConnection',
   'removeModule',
   'addConnection',
   'autoWireSelection',
@@ -2969,6 +2982,104 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         selectedModuleIdsByProject: {
           ...state.selectedModuleIdsByProject,
           [action.projectId]: duplicated.pastedModuleIds,
+        },
+        currentTickByProject: {
+          ...state.currentTickByProject,
+          [action.projectId]: 0,
+        },
+        isTickPlaybackActiveByProject: {
+          ...state.isTickPlaybackActiveByProject,
+          [action.projectId]: false,
+        },
+      };
+    }
+    case 'insertStarterChain': {
+      if (state.compositeEditor) {
+        return state;
+      }
+      const currentProject = state.projectStates[action.projectId];
+      const currentLayout = state.layoutByProject[action.projectId];
+      if (!currentProject || !currentLayout) {
+        return state;
+      }
+      const pasted = pasteWorkspaceClipboardSnapshot({
+        targetProject: currentProject,
+        targetLayout: currentLayout,
+        snapshot: action.snapshot,
+      });
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: pasted.project,
+        },
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: pasted.layout,
+        },
+        selectedModuleIdsByProject: {
+          ...state.selectedModuleIdsByProject,
+          [action.projectId]: pasted.pastedModuleIds,
+        },
+        selectedModuleIdByProject: {
+          ...state.selectedModuleIdByProject,
+          [action.projectId]: pasted.pastedModuleIds[0] ?? null,
+        },
+        currentTickByProject: {
+          ...state.currentTickByProject,
+          [action.projectId]: 0,
+        },
+        isTickPlaybackActiveByProject: {
+          ...state.isTickPlaybackActiveByProject,
+          [action.projectId]: false,
+        },
+      };
+    }
+    case 'insertBridgeConnection': {
+      if (state.compositeEditor) {
+        return state;
+      }
+      const currentProject = state.projectStates[action.projectId];
+      const currentLayout = state.layoutByProject[action.projectId];
+      const currentLayoutDirection = state.layoutDirectionByProject[action.projectId] ?? 'horizontal';
+      if (!currentProject || !currentLayout) {
+        return state;
+      }
+      const bridgeId = createModuleId(currentProject, action.bridgeDef.id);
+      const nextProject = cloneProject(currentProject);
+      nextProject.modules = [
+        ...nextProject.modules,
+        { id: bridgeId, defId: action.bridgeDef.id, params: buildDefaultParams(action.bridgeDef) },
+      ];
+      nextProject.connections = [
+        ...nextProject.connections,
+        { from: { moduleId: action.fromModuleId, port: action.fromPort }, to: { moduleId: bridgeId, port: 'in' } },
+        { from: { moduleId: bridgeId, port: 'out' }, to: { moduleId: action.toModuleId, port: action.toPort } },
+      ];
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: nextProject,
+        },
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: {
+            ...currentLayout,
+            [bridgeId]: {
+              x: action.position.x,
+              y: action.position.y,
+              orientation: getDefaultNodeOrientation(currentLayoutDirection),
+            },
+          },
+        },
+        selectedModuleIdByProject: {
+          ...state.selectedModuleIdByProject,
+          [action.projectId]: bridgeId,
+        },
+        selectedModuleIdsByProject: {
+          ...state.selectedModuleIdsByProject,
+          [action.projectId]: [bridgeId],
         },
         currentTickByProject: {
           ...state.currentTickByProject,

@@ -2797,6 +2797,41 @@ body.dock-resizing {
   vector-effect: non-scaling-stroke;
 }
 
+/* ── Pipeline starters strip ──────────────────────────────────────────── */
+.palette-starters {
+  padding: 10px 16px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.palette-starters-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 6px;
+}
+.palette-starters-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.palette-starter-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--line));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-soft));
+  color: var(--accent);
+  transition: background 120ms ease, border-color 120ms ease;
+  white-space: nowrap;
+}
+.palette-starter-chip:hover {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-soft));
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--line));
+}
+
 .palette-search {
   display: grid;
   gap: 6px;
@@ -3613,6 +3648,69 @@ body.canvas-resizing {
   font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+/* ── Bridge insertion popup ───────────────────────────────────────────── */
+.bridge-insertion-popup {
+  pointer-events: none;
+}
+.bridge-popup-bg {
+  fill: color-mix(in srgb, var(--surface-panel) 96%, white);
+  stroke: color-mix(in srgb, var(--accent) 40%, var(--line));
+  stroke-width: 1;
+  filter: drop-shadow(0 10px 22px color-mix(in srgb, var(--accent) 14%, transparent));
+}
+.bridge-popup-title {
+  fill: var(--muted);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
+.bridge-popup-sep {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.bridge-popup-option {
+  pointer-events: all;
+  cursor: pointer;
+}
+.bridge-popup-option rect {
+  fill: color-mix(in srgb, var(--accent) 10%, var(--surface-soft));
+  stroke: color-mix(in srgb, var(--accent) 28%, transparent);
+  stroke-width: 1;
+  transition: fill 100ms ease;
+}
+.bridge-popup-option:hover rect {
+  fill: color-mix(in srgb, var(--accent) 22%, var(--surface-soft));
+}
+.bridge-popup-option-text {
+  fill: var(--accent);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  pointer-events: none;
+}
+.bridge-popup-cancel {
+  pointer-events: all;
+  cursor: pointer;
+}
+.bridge-popup-cancel rect {
+  fill: color-mix(in srgb, var(--ink) 6%, var(--surface-soft));
+  stroke: var(--line);
+  stroke-width: 1;
+  transition: fill 100ms ease;
+}
+.bridge-popup-cancel:hover rect {
+  fill: color-mix(in srgb, var(--ink) 12%, var(--surface-soft));
+}
+.bridge-popup-cancel-text {
+  fill: var(--muted);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
   pointer-events: none;
 }
 

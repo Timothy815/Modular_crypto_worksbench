@@ -21,12 +21,14 @@ import {
   MODULE_LIBRARY_SECTIONS,
 } from '../module-library';
 import { getPrimitiveMicroDemo } from '../primitive-micro-demos';
+import { PIPELINE_STARTERS } from '../pipeline-starters';
 
 interface PrimitivePaletteProps {
   registry: ModuleRegistry;
   viewMode: 'compact' | 'expanded';
   onToggleViewMode: () => void;
   onAddModule: (defId: string) => void;
+  onInsertStarterChain: (starterId: string) => void;
   onOpenComposite: (defId: string) => void;
   onDuplicateReusable: (defId: string) => void;
   onOpenPrimitiveMicroDemo: (defId: string) => void;
@@ -147,6 +149,7 @@ export function PrimitivePalette({
   viewMode,
   onToggleViewMode,
   onAddModule,
+  onInsertStarterChain,
   onOpenComposite,
   onDuplicateReusable,
   onOpenPrimitiveMicroDemo,
@@ -325,6 +328,24 @@ export function PrimitivePalette({
           )}
         </div>
       </div>
+      {viewMode !== 'compact' ? (
+        <div className="palette-starters">
+          <p className="palette-starters-label">Quick Start</p>
+          <div className="palette-starters-chips">
+            {PIPELINE_STARTERS.map((starter) => (
+              <button
+                key={starter.id}
+                type="button"
+                className="palette-starter-chip"
+                title={starter.description}
+                onClick={() => onInsertStarterChain(starter.id)}
+              >
+                {starter.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       {searchActive ? (
         <div className="primitive-sections primitive-search-results" role="list" aria-label="Palette search results">
           <div className="primitive-search-summary">

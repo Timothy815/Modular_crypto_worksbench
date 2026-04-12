@@ -23,6 +23,7 @@ import { LazyPanelFallback } from './ui/components/lazy-panel-fallback';
 import { WorkbenchPanel } from './ui/components/workbench-panel';
 import { demoProjects, getDefaultDemoProject, runDemoProject } from './ui/demo-projects';
 import { collectTickedOutput, compareExecutionResults } from './ui/execution-compare';
+import { getStarterById } from './ui/pipeline-starters';
 import { createInstructorPilotUrl } from './ui/instructor-pilot-url';
 import { createUserManualUrl } from './ui/manual-url';
 import {
@@ -1981,6 +1982,23 @@ function MainApp() {
           dispatch({ type: 'openCompositeEditor', entryId: nextEntry.id });
         }
       },
+      insertStarterChain: (starterId: string) => {
+        const starter = getStarterById(starterId);
+        if (!starter) return;
+        const resolvedModules = starter.snapshot.modules.map((m) => {
+          const def = effectiveRegistry[m.defId];
+          if (!def) return m;
+          const defaultParams = Object.fromEntries(
+            Object.values(def.paramSchema).map((f) => [f.key, f.defaultValue]),
+          );
+          return { ...m, params: { ...defaultParams, ...m.params } };
+        });
+        dispatch({
+          type: 'insertStarterChain',
+          projectId: activeProjectDefinition.id,
+          snapshot: { ...starter.snapshot, modules: resolvedModules },
+        });
+      },
       openPrimitiveMicroDemo: handleOpenPrimitiveMicroDemo,
       openPipelineMicroDemo: handleOpenPipelineMicroDemo,
       exportCompositeLibrary: () =>
@@ -2914,6 +2932,20 @@ function MainApp() {
                 connectionIndex,
               })
             }
+            onInsertBridgeConnection={(bridgeDefId, fromModuleId, fromPort, toModuleId, toPort, position) => {
+              const bridgeDef = effectiveRegistry[bridgeDefId];
+              if (!bridgeDef) return;
+              dispatch({
+                type: 'insertBridgeConnection',
+                projectId: activeProjectDefinition.id,
+                bridgeDef,
+                fromModuleId,
+                fromPort,
+                toModuleId,
+                toPort,
+                position,
+              });
+            }}
             onSetConnectionOrthogonalBend={(connectionKey, axis, value) =>
               dispatch({
                 type: 'setConnectionOrthogonalBend',
@@ -3344,6 +3376,24 @@ function MainApp() {
                     type: 'addModule',
                     projectId: activeProjectDefinition.id,
                     moduleDef,
+                  });
+                }}
+                onInsertStarterChain={(starterId) => {
+                  const starter = getStarterById(starterId);
+                  if (!starter) return;
+                  // Resolve default params for any module whose params are empty
+                  const resolvedModules = starter.snapshot.modules.map((m) => {
+                    const def = effectiveRegistry[m.defId];
+                    if (!def) return m;
+                    const defaultParams = Object.fromEntries(
+                      Object.values(def.paramSchema).map((f) => [f.key, f.defaultValue]),
+                    );
+                    return { ...m, params: { ...defaultParams, ...m.params } };
+                  });
+                  dispatch({
+                    type: 'insertStarterChain',
+                    projectId: activeProjectDefinition.id,
+                    snapshot: { ...starter.snapshot, modules: resolvedModules },
                   });
                 }}
                 onExportCompositeLibrary={() =>

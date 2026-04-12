@@ -137,6 +137,7 @@ export interface DetachedPanelCommandHandlers {
   dispatch: (action: UiAction) => void;
   togglePaletteViewMode: () => void;
   addModuleByDefId: (defId: string) => ModuleDefinition | null;
+  insertStarterChain: (starterId: string) => void;
   openComposite: (defId: string) => void;
   duplicateReusable: (defId: string) => void;
   openPrimitiveMicroDemo: (defId: string) => void;
@@ -254,6 +255,9 @@ export function connectDetachedPanelChannel(args: DetachedPanelChannelBridgeArgs
         return;
       case 'addModule':
         args.commandHandlers.addModuleByDefId(command.defId);
+        return;
+      case 'insertStarterChain':
+        args.commandHandlers.insertStarterChain(command.starterId);
         return;
       case 'openComposite':
         args.commandHandlers.openComposite(command.defId);
