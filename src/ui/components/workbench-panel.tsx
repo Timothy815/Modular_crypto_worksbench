@@ -2667,7 +2667,8 @@ export function WorkbenchPanel({
 
     // Signal area: 8px top pad + 14px value + 12px hex + 12px meta + 8px bottom pad = 54px
     const chipAreaHeight = wireChipText ? 54 : 0;
-    const labelHeight = chipAreaHeight + (wireChipText ? 2 : 0) + 40;
+    const severRowHeight = isObservationMode ? 0 : 28;
+    const labelHeight = chipAreaHeight + (wireChipText ? 2 : 0) + 40 + severRowHeight;
 
     return (
       <g
@@ -2713,6 +2714,27 @@ export function WorkbenchPanel({
             <tspan x={10} dy="14">{targetLabel}</tspan>
           </text>
         )}
+        {!isObservationMode ? (
+          <>
+            <line
+              x1={8} y1={labelHeight - severRowHeight}
+              x2={labelWidth - 8} y2={labelHeight - severRowHeight}
+              className="connection-wire-value-separator"
+            />
+            <g
+              className="connection-sever-btn"
+              onClick={(event) => {
+                event.stopPropagation();
+                onRemoveConnection(connectionIndex);
+              }}
+            >
+              <rect x={8} y={labelHeight - severRowHeight + 4} width={labelWidth - 16} height={20} rx={4} />
+              <text x={labelWidth / 2} y={labelHeight - severRowHeight + 18} textAnchor="middle">
+                ✕ Sever
+              </text>
+            </g>
+          </>
+        ) : null}
       </g>
     );
   }
