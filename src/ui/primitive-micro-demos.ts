@@ -1719,6 +1719,93 @@ const CONDITIONAL_BRANCH_DEMO_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const MULTI_SELECTOR_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'MultiSelector',
+  name: 'Multi Selector Micro Demo',
+  summary: 'Minimal visible case rejoining: a counter cycles through four distinct inputs so one is forwarded to the output at a time.',
+  pipeline: 'Clock -> Counter -> MultiSelector(in0..in3) -> BitOutput',
+  defaultTickedMode: true,
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'sel', defId: 'MultiSelector', params: { selectCount: '4' } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 8 } },
+        { id: 'counter', defId: 'Counter', params: { width: 2, value: 0, step: 1 } },
+        { id: 'in0', defId: 'BitSource', params: { stream: [1, 0, 1, 0, 1, 0, 1, 0] } },
+        { id: 'in1', defId: 'BitSource', params: { stream: [1, 1, 0, 0, 1, 1, 0, 0] } },
+        { id: 'in2', defId: 'BitSource', params: { stream: [1, 1, 1, 1, 0, 0, 0, 0] } },
+        { id: 'in3', defId: 'BitSource', params: { stream: [0, 0, 0, 0, 1, 1, 1, 1] } },
+        { id: 'zero', defId: 'BitSource', params: { stream: [0, 0, 0, 0, 0, 0, 0, 0] } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'counter', port: 'clock' } },
+        { from: { moduleId: 'counter', port: 'out' }, to: { moduleId: 'sel', port: 'select' } },
+        { from: { moduleId: 'in0', port: 'out' }, to: { moduleId: 'sel', port: 'in0' } },
+        { from: { moduleId: 'in1', port: 'out' }, to: { moduleId: 'sel', port: 'in1' } },
+        { from: { moduleId: 'in2', port: 'out' }, to: { moduleId: 'sel', port: 'in2' } },
+        { from: { moduleId: 'in3', port: 'out' }, to: { moduleId: 'sel', port: 'in3' } },
+        { from: { moduleId: 'zero', port: 'out' }, to: { moduleId: 'sel', port: 'in4' } },
+        { from: { moduleId: 'zero', port: 'out' }, to: { moduleId: 'sel', port: 'in5' } },
+        { from: { moduleId: 'zero', port: 'out' }, to: { moduleId: 'sel', port: 'in6' } },
+        { from: { moduleId: 'zero', port: 'out' }, to: { moduleId: 'sel', port: 'in7' } },
+        { from: { moduleId: 'sel', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        clock: { x: 40, y: 48 },
+        counter: { x: 240, y: 48 },
+        sel: { x: 560, y: 200 },
+        in0: { x: 340, y: 80 },
+        in1: { x: 340, y: 180 },
+        in2: { x: 340, y: 280 },
+        in3: { x: 340, y: 380 },
+        zero: { x: 340, y: 480 },
+        out: { x: 800, y: 200 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const MULTI_COND_SWITCH_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'MultiCondSwitch4',
+  name: 'Multi-Cond Switch 4 Micro Demo',
+  summary: 'Minimal visible N-branch conditional: a counter cycles through four branch definitions — rotate-left-1, invert, rotate-left-2, rotate-right-1 — applied to the same 8-bit input.',
+  pipeline: 'Clock -> Counter(2-bit) -> MultiCondSwitch4.select + BitSource -> out',
+  defaultTickedMode: true,
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'sw', defId: 'MultiCondSwitch4', params: {} },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 8 } },
+        { id: 'counter', defId: 'Counter', params: { width: 2, value: 0, step: 1 } },
+        { id: 'input', defId: 'BitSource', params: { stream: [1, 0, 1, 1, 0, 0, 1, 0] } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'counter', port: 'clock' } },
+        { from: { moduleId: 'counter', port: 'out' }, to: { moduleId: 'sw', port: 'select' } },
+        { from: { moduleId: 'input', port: 'out' }, to: { moduleId: 'sw', port: 'in' } },
+        { from: { moduleId: 'sw', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        clock: { x: 40, y: 48 },
+        counter: { x: 240, y: 48 },
+        input: { x: 240, y: 200 },
+        sw: { x: 500, y: 130 },
+        out: { x: 760, y: 130 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   MUX_MICRO_DEMO,
   DEMUX_MICRO_DEMO,
@@ -1736,6 +1823,8 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   POLLUX_CONTROLLED_FRACTIONATION_MICRO_DEMO,
   LFSR_MICRO_DEMO,
   MULTI_ROUTER_MICRO_DEMO,
+  MULTI_SELECTOR_MICRO_DEMO,
+  MULTI_COND_SWITCH_MICRO_DEMO,
   ROTOR_MICRO_DEMO,
   ROTOR_REVERSE_MICRO_DEMO,
   SYMBOL_SEQUENCE_INPUT_MICRO_DEMO,

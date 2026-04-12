@@ -21,6 +21,8 @@ describe('primitive micro demos', () => {
       'PolluxControlledFractionation',
       'LFSR',
       'MultiRouter',
+      'MultiSelector',
+      'MultiCondSwitch4',
       'Rotor',
       'RotorReverse',
       'SymbolSequenceInput',
@@ -71,6 +73,8 @@ describe('primitive micro demos', () => {
     );
     expect(getPrimitiveMicroDemo('LFSR')?.name).toBe('LFSR Micro Demo');
     expect(getPrimitiveMicroDemo('MultiRouter')?.name).toBe('Multi Router Micro Demo');
+    expect(getPrimitiveMicroDemo('MultiSelector')?.name).toBe('Multi Selector Micro Demo');
+    expect(getPrimitiveMicroDemo('MultiCondSwitch4')?.name).toBe('Multi-Cond Switch 4 Micro Demo');
     expect(getPrimitiveMicroDemo('Rotor')?.name).toBe('Rotor Micro Demo');
     expect(getPrimitiveMicroDemo('RotorReverse')?.name).toBe('Rotor Reverse Micro Demo');
     expect(getPrimitiveMicroDemo('SymbolSequenceInput')?.name).toBe('Symbol Sequence Input Micro Demo');

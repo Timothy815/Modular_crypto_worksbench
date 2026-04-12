@@ -819,6 +819,10 @@ export function matchesModuleSearch(definition: ModuleDefinition, query: string)
 const INTERNAL_COMPOSITE_IDS = new Set([
   'ConditionalRotateBranch',
   'ConditionalInvertBranch',
+  'MultiCondBranchRotL1',
+  'MultiCondBranchInvert',
+  'MultiCondBranchRotL2',
+  'MultiCondBranchRotR1',
 ]);
 
 export function matchesModuleDomainTab(
