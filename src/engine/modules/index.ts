@@ -3,6 +3,7 @@ import { TextInput } from './text-input';
 import { SymbolSequenceInput } from './symbol-sequence-input';
 import { KeyInput } from './key-input';
 import { BitSource } from './bit-source';
+import { ConstantBit } from './constant-bit';
 import { BitSequenceInput } from './bit-sequence-input';
 import { AsciiSource } from './ascii-source';
 import { AsciiSequenceInput } from './ascii-sequence-input';
@@ -98,6 +99,7 @@ export {
   SymbolSequenceInput,
   KeyInput,
   BitSource,
+  ConstantBit,
   BitSequenceInput,
   AsciiSource,
   AsciiSequenceInput,
@@ -192,6 +194,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [SymbolSequenceInput.id]: SymbolSequenceInput,
   [KeyInput.id]: KeyInput,
   [BitSource.id]: BitSource,
+  [ConstantBit.id]: ConstantBit,
   [BitSequenceInput.id]: BitSequenceInput,
   [AsciiSource.id]: AsciiSource,
   [AsciiSequenceInput.id]: AsciiSequenceInput,

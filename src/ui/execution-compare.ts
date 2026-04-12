@@ -108,7 +108,7 @@ export function collectTickedOutput(
 
     if (
       previousTickValue.length > 0 &&
-      currentTickValue.length >= previousTickValue.length &&
+      currentTickValue.length > previousTickValue.length &&
       currentTickValue.startsWith(previousTickValue)
     ) {
       transcript += currentTickValue.slice(previousTickValue.length);

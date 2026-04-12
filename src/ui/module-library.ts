@@ -71,6 +71,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this as a simple round key or fixed mask when experimenting in the bit domain. Raw bit text like 01000001 01000010 is accepted directly, without forcing manual byte separators.',
     searchTerms: ['bit', 'source', 'key', 'stream', 'bits'],
   },
+  ConstantBit: {
+    sectionId: 'inputs-outputs',
+    sortOrder: 32,
+    purpose: 'Emits a single fixed bit (0 or 1) on every tick without being consumed.',
+    detail: 'Use this as a mode-select or control signal in ticked machines. Unlike BitSource it is not tick-sliceable, so it never runs out and never limits the tick count of the session.',
+    searchTerms: ['constant', 'bit', 'select', 'mode', 'control', 'fixed', 'static'],
+  },
   BitSequenceInput: {
     sectionId: 'inputs-outputs',
     sortOrder: 35,
@@ -855,6 +862,7 @@ export function matchesModuleDomainTab(
         'TextInput',
         'KeyInput',
         'BitSource',
+        'ConstantBit',
         'AsciiSource',
         'BaudotSource',
         'HexSource',

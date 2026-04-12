@@ -140,4 +140,21 @@ describe('execution comparison helpers', () => {
 
     expect(collectTickedOutput(result)).toBe('KEY');
   });
+
+  it('preserves repeated consecutive scalar tick values', () => {
+    // Regression: 785A7B7BFB was being collapsed to 785A7BFB because the
+    // prefix-dedup logic treated tick4=7B as having no new content vs tick3=7B.
+    const result: TickedExecutionResult = {
+      ticks: [
+        createTick('78'),
+        createTick('5A'),
+        createTick('7B'),
+        createTick('7B'),
+        createTick('FB'),
+      ],
+      paramsByModuleByTick: {},
+    };
+
+    expect(collectTickedOutput(result)).toBe('785A7B7BFB');
+  });
 });
