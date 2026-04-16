@@ -3182,6 +3182,19 @@ function MainApp() {
                 ? undefined
                 : dispatch({ type: 'addModule', projectId: activeProjectDefinition.id, moduleDef, position })
             }
+            onInsertModuleAndConnect={(moduleDef, position, fromModuleId, fromPort, toPort) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'insertModuleAndConnect',
+                    projectId: activeProjectDefinition.id,
+                    moduleDef,
+                    position,
+                    fromModuleId,
+                    fromPort,
+                    toPort,
+                  })
+            }
             projects={state.compositeEditor || isCompositeDrilldownActive ? [activeProjectDefinition] : availableProjects}
             isCompositeEditor={Boolean(state.compositeEditor)}
           />

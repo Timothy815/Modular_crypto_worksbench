@@ -179,6 +179,19 @@ interface PendingConnection {
   excludedConnectionIndex: number | null;
 }
 
+interface QuickAddState {
+  canvasX: number;
+  canvasY: number;
+  clientX: number;
+  clientY: number;
+  mode: 'plain' | 'connect';
+  pendingConnection?: {
+    fromModuleId: string;
+    fromPort: string;
+    sourceType: string;
+  };
+}
+
 function getPortAnchorStyle(
   side: PortSide,
   portIndex: number,
@@ -535,6 +548,13 @@ interface WorkbenchPanelProps {
   onSetTutorialNotesVisible?: (visible: boolean) => void;
   onRenameModuleInstance: (moduleId: string, nextModuleId: string) => void;
   onAddModule: (moduleDef: ModuleDefinition, position: { x: number; y: number }) => void;
+  onInsertModuleAndConnect: (
+    moduleDef: ModuleDefinition,
+    position: { x: number; y: number },
+    fromModuleId: string,
+    fromPort: string,
+    toPort: string,
+  ) => void;
   onPendingConnectionChange?: (info: { fromModuleId: string; fromPort: string; sourceType: string } | null) => void;
   projects: DemoProject[];
 }
@@ -668,6 +688,7 @@ export function WorkbenchPanel({
   onSetTutorialNotesVisible,
   onRenameModuleInstance,
   onAddModule,
+  onInsertModuleAndConnect,
   onPendingConnectionChange,
   projects,
 }: WorkbenchPanelProps) {
@@ -731,7 +752,7 @@ export function WorkbenchPanel({
     currentPosition: number;
   } | null>(null);
   const [inlineRename, setInlineRename] = useState<{ moduleId: string; value: string } | null>(null);
-  const [quickAdd, setQuickAdd] = useState<{ canvasX: number; canvasY: number; clientX: number; clientY: number } | null>(null);
+  const [quickAdd, setQuickAdd] = useState<QuickAddState | null>(null);
   const [showSignalChips, setShowSignalChips] = useState(true);
   const [pendingConnection, setPendingConnection] =
     useState<PendingConnection | null>(null);
@@ -1999,6 +2020,35 @@ export function WorkbenchPanel({
       hoveredTargetState,
     };
   }, [hoveredPendingTargetKey, pendingConnection, targetPortStates]);
+  const compatibleQuickAddOptions = useMemo(() => {
+    if (quickAdd?.mode !== 'connect' || !quickAdd.pendingConnection) {
+      return [];
+    }
+
+    return Object.values(registry)
+      .map((definition) => {
+        const compatiblePort =
+          definition.inputs.find((port) => port.type === quickAdd.pendingConnection?.sourceType) ?? null;
+        if (!compatiblePort) {
+          return null;
+        }
+
+        return {
+          def: definition,
+          subtitle: `Connect → ${compatiblePort.name}`,
+          onSelect: (selectedDef: ModuleDefinition) => {
+            onInsertModuleAndConnect(
+              selectedDef,
+              { x: quickAdd.canvasX, y: quickAdd.canvasY },
+              quickAdd.pendingConnection!.fromModuleId,
+              quickAdd.pendingConnection!.fromPort,
+              compatiblePort.name,
+            );
+          },
+        };
+      })
+      .filter((option): option is { def: ModuleDefinition; subtitle: string; onSelect: (def: ModuleDefinition) => void } => option !== null);
+  }, [onInsertModuleAndConnect, quickAdd, registry]);
 
   useEffect(() => {
     if (
@@ -3305,7 +3355,53 @@ export function WorkbenchPanel({
             const pointer = getCanvasPointerFromClient(event.clientX, event.clientY);
             if (!pointer) return;
             setSelectionBox(null);
-            setQuickAdd({ canvasX: pointer.x, canvasY: pointer.y, clientX: event.clientX, clientY: event.clientY });
+            setQuickAdd({
+              canvasX: pointer.x,
+              canvasY: pointer.y,
+              clientX: event.clientX,
+              clientY: event.clientY,
+              mode: 'plain',
+            });
+          }}
+          onMouseUp={(event) => {
+            if (!pendingConnection || event.target !== event.currentTarget) {
+              return;
+            }
+
+            const pointer = getCanvasPointerFromClient(event.clientX, event.clientY);
+            if (!pointer) {
+              return;
+            }
+
+            const sourceInstance = activeProjectState.modules.find(
+              (moduleInstance) => moduleInstance.id === pendingConnection.fromModuleId,
+            );
+            const sourceDef = sourceInstance ? registry[sourceInstance.defId] : null;
+            const sourcePort = sourceDef?.outputs.find((port) => port.name === pendingConnection.fromPort);
+            if (!sourcePort) {
+              setPendingConnection(null);
+              setHoveredPendingTargetKey(null);
+              return;
+            }
+
+            event.stopPropagation();
+            setQuickAdd({
+              canvasX: pointer.x,
+              canvasY: pointer.y,
+              clientX: event.clientX,
+              clientY: event.clientY,
+              mode: 'connect',
+              pendingConnection: {
+                fromModuleId: pendingConnection.fromModuleId,
+                fromPort: pendingConnection.fromPort,
+                sourceType: sourcePort.type,
+              },
+            });
+            setPendingConnection(null);
+            setHoveredCompositeHintModuleId(null);
+            setHoveredPortHintKey(null);
+            setHoveredPendingTargetKey(null);
+            setConnectionFeedback(null);
           }}
         >
           {showFurniture && guideRails.map((guideRail) => {
@@ -4402,7 +4498,18 @@ export function WorkbenchPanel({
             canvasX={quickAdd.canvasX}
             canvasY={quickAdd.canvasY}
             registry={registry}
-            onAdd={onAddModule}
+            onAdd={quickAdd.mode === 'plain' ? onAddModule : undefined}
+            options={quickAdd.mode === 'connect' ? compatibleQuickAddOptions : undefined}
+            placeholder={
+              quickAdd.mode === 'connect'
+                ? 'Add compatible module…'
+                : 'Add module…'
+            }
+            emptyMessage={
+              quickAdd.mode === 'connect'
+                ? 'No modules accept this signal type.'
+                : 'No matching modules.'
+            }
             onDismiss={() => setQuickAdd(null)}
           />
         </Suspense>

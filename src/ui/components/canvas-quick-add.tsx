@@ -1,6 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ModuleDefinition } from '../../engine/types';
 import type { ModuleRegistry } from '../../engine/types';
+
+interface CanvasQuickAddOption {
+  def: ModuleDefinition;
+  subtitle?: string;
+  onSelect: (def: ModuleDefinition) => void;
+}
 
 interface CanvasQuickAddProps {
   clientX: number;
@@ -8,22 +14,52 @@ interface CanvasQuickAddProps {
   canvasX: number;
   canvasY: number;
   registry: ModuleRegistry;
-  onAdd: (def: ModuleDefinition, position: { x: number; y: number }) => void;
+  onAdd?: (def: ModuleDefinition, position: { x: number; y: number }) => void;
+  options?: CanvasQuickAddOption[];
+  placeholder?: string;
+  emptyMessage?: string;
   onDismiss: () => void;
 }
 
-export function CanvasQuickAdd({ clientX, clientY, canvasX, canvasY, registry, onAdd, onDismiss }: CanvasQuickAddProps) {
+export function CanvasQuickAdd({
+  clientX,
+  clientY,
+  canvasX,
+  canvasY,
+  registry,
+  onAdd,
+  options,
+  placeholder = 'Add module…',
+  emptyMessage = 'No matching modules.',
+  onDismiss,
+}: CanvasQuickAddProps) {
   const [query, setQuery] = useState('');
 
   const q = query.trim().toLowerCase();
-  const results = q
-    ? Object.values(registry)
-        .filter((d) => d.id.toLowerCase().includes(q) || d.name.toLowerCase().includes(q))
-        .slice(0, 6)
-    : [];
+  const results = useMemo(() => {
+    const optionList: CanvasQuickAddOption[] =
+      options ??
+      Object.values(registry).map((def) => ({
+        def,
+        onSelect: (selectedDef: ModuleDefinition) => {
+          onAdd?.(selectedDef, { x: canvasX, y: canvasY });
+        },
+      }));
 
-  function place(def: ModuleDefinition) {
-    onAdd(def, { x: canvasX, y: canvasY });
+    const filtered = q
+      ? optionList.filter(
+          ({ def, subtitle }) =>
+            def.id.toLowerCase().includes(q) ||
+            def.name.toLowerCase().includes(q) ||
+            subtitle?.toLowerCase().includes(q),
+        )
+      : optionList;
+
+    return filtered.slice(0, 8);
+  }, [canvasX, canvasY, onAdd, options, q, registry]);
+
+  function place(option: CanvasQuickAddOption) {
+    option.onSelect(option.def);
     onDismiss();
   }
 
@@ -36,7 +72,7 @@ export function CanvasQuickAdd({ clientX, clientY, canvasX, canvasY, registry, o
       <input
         className="canvas-quick-add-input"
         autoFocus
-        placeholder="Add module…"
+        placeholder={placeholder}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onBlur={() => setTimeout(onDismiss, 150)}
@@ -47,17 +83,24 @@ export function CanvasQuickAdd({ clientX, clientY, canvasX, canvasY, registry, o
       />
       {results.length > 0 ? (
         <ul className="canvas-quick-add-list">
-          {results.map((def) => (
+          {results.map((option) => (
             <li
-              key={def.id}
+              key={`${option.def.id}:${option.subtitle ?? ''}`}
               className="canvas-quick-add-item"
-              onMouseDown={() => place(def)}
+              onMouseDown={() => place(option)}
             >
-              <span className="canvas-quick-add-name">{def.name}</span>
-              <span className="canvas-quick-add-id">{def.id}</span>
+              <span>
+                <span className="canvas-quick-add-name">{option.def.name}</span>
+                {option.subtitle ? (
+                  <span className="canvas-quick-add-subtitle">{option.subtitle}</span>
+                ) : null}
+              </span>
+              <span className="canvas-quick-add-id">{option.def.id}</span>
             </li>
           ))}
         </ul>
+      ) : q || options ? (
+        <p className="canvas-quick-add-empty">{emptyMessage}</p>
       ) : null}
     </div>
   );

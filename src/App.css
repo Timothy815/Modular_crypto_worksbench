@@ -7509,9 +7509,9 @@ body.canvas-resizing {
 }
 
 .canvas-quick-add-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: 8px;
   padding: 4px 6px;
   border-radius: 4px;
@@ -7527,9 +7527,22 @@ body.canvas-resizing {
   color: var(--ink);
 }
 
+.canvas-quick-add-subtitle {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--ink-secondary);
+}
+
 .canvas-quick-add-id {
   font-size: 11px;
   color: var(--ink-secondary);
   font-family: monospace;
   flex-shrink: 0;
+}
+
+.canvas-quick-add-empty {
+  margin: 8px 4px 4px;
+  font-size: 12px;
+  color: var(--ink-secondary);
 }
