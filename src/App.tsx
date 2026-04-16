@@ -3177,6 +3177,17 @@ function MainApp() {
                 ? undefined
                 : dispatch({ type: 'renameModuleInstance', projectId: activeProjectDefinition.id, moduleId, nextModuleId })
             }
+            onUpdateModuleParam={(moduleId, key, value) =>
+              isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'updateParam',
+                    projectId: activeProjectDefinition.id,
+                    moduleId,
+                    key,
+                    value,
+                  })
+            }
             onAddModule={(moduleDef, position) =>
               state.compositeEditor || isCompositeDrilldownActive
                 ? undefined

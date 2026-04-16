@@ -4342,6 +4342,70 @@ body.canvas-resizing {
   box-sizing: border-box;
 }
 
+.graph-node-inline-param-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  width: 100%;
+  margin: 6px 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  text-align: left;
+  cursor: text;
+}
+
+.graph-node-inline-param-label {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.graph-node-inline-param-value {
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: 0.84rem;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.graph-node-inline-param-editor {
+  display: grid;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.graph-node-inline-param-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 4px 6px;
+  background: var(--field-bg);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  color: var(--ink-strong);
+  font: inherit;
+  font-family: var(--mono);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.graph-node-inline-param-input-error {
+  border-color: var(--danger-text);
+}
+
+.graph-node-inline-param-error {
+  font-size: 0.74rem;
+  color: var(--danger-text);
+}
+
 .graph-node-meta-row {
   display: block;
   margin-bottom: 5px;

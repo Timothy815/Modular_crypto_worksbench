@@ -86,6 +86,7 @@ import {
   snapModulePositionToGuideRails,
   shouldClearOrthogonalBendOverride,
 } from '../workbench-support';
+import { formatParamValue, parseParamValue } from '../formatters';
 import { WORKBENCH_GRID_SIZE } from '../store';
 const WorkbenchActions = lazy(() =>
   import('./workbench-actions').then((module) => ({
@@ -548,6 +549,7 @@ interface WorkbenchPanelProps {
   onSetTutorialStep?: (stepIndex: number) => void;
   onSetTutorialNotesVisible?: (visible: boolean) => void;
   onRenameModuleInstance: (moduleId: string, nextModuleId: string) => void;
+  onUpdateModuleParam: (moduleId: string, key: string, value: unknown) => void;
   onAddModule: (moduleDef: ModuleDefinition, position: { x: number; y: number }) => void;
   onInsertModuleAndConnect: (
     moduleDef: ModuleDefinition,
@@ -558,6 +560,31 @@ interface WorkbenchPanelProps {
   ) => void;
   onPendingConnectionChange?: (info: { fromModuleId: string; fromPort: string; sourceType: string } | null) => void;
   projects: DemoProject[];
+}
+
+interface InlineEditableParamSpec {
+  paramKey: string;
+  label: string;
+}
+
+const INLINE_EDITABLE_PARAM_SPECS: Record<string, InlineEditableParamSpec> = {
+  BitSource: { paramKey: 'stream', label: 'Bits' },
+  KeyInput: { paramKey: 'value', label: 'Key' },
+  IV: { paramKey: 'value', label: 'IV' },
+  Nonce: { paramKey: 'value', label: 'Nonce' },
+  Salt: { paramKey: 'value', label: 'Salt' },
+  BitShifter: { paramKey: 'amount', label: 'Shift' },
+  Counter: { paramKey: 'value', label: 'Count' },
+};
+
+function formatInlineEditableValue(value: unknown, fieldKind: string) {
+  if (fieldKind === 'bits' && Array.isArray(value)) {
+    const compact = value.join('');
+    return compact.length > 20 ? `${compact.slice(0, 20)}…` : compact;
+  }
+
+  const text = String(value ?? '');
+  return text.length > 24 ? `${text.slice(0, 24)}…` : text;
 }
 
 export function WorkbenchPanel({
@@ -688,6 +715,7 @@ export function WorkbenchPanel({
   onSetTutorialStep,
   onSetTutorialNotesVisible,
   onRenameModuleInstance,
+  onUpdateModuleParam,
   onAddModule,
   onInsertModuleAndConnect,
   onPendingConnectionChange,
@@ -753,6 +781,12 @@ export function WorkbenchPanel({
     currentPosition: number;
   } | null>(null);
   const [inlineRename, setInlineRename] = useState<{ moduleId: string; value: string } | null>(null);
+  const [inlineParamEdit, setInlineParamEdit] = useState<{
+    moduleId: string;
+    paramKey: string;
+    value: string;
+    error: string | null;
+  } | null>(null);
   const [quickAdd, setQuickAdd] = useState<QuickAddState | null>(null);
   const [showSignalChips, setShowSignalChips] = useState(true);
   const [pendingConnection, setPendingConnection] =
@@ -2348,6 +2382,38 @@ export function WorkbenchPanel({
     setSelectedConnectionIndex(null);
   }
 
+  function commitInlineParamEdit(
+    moduleId: string,
+    definition: ModuleDefinition | null,
+    currentParams: Record<string, unknown>,
+  ) {
+    if (!inlineParamEdit || inlineParamEdit.moduleId !== moduleId || !definition) {
+      return;
+    }
+
+    const field = definition.paramSchema[inlineParamEdit.paramKey];
+    if (!field) {
+      setInlineParamEdit(null);
+      return;
+    }
+
+    const parsed = parseParamValue(inlineParamEdit.value, field);
+    if (!parsed.ok) {
+      setInlineParamEdit((current) =>
+        current && current.moduleId === moduleId
+          ? { ...current, error: parsed.error ?? 'Invalid value.' }
+          : current,
+      );
+      return;
+    }
+
+    const currentValue = currentParams[inlineParamEdit.paramKey] ?? field.defaultValue;
+    if (parsed.value !== currentValue) {
+      onUpdateModuleParam(moduleId, inlineParamEdit.paramKey, parsed.value);
+    }
+    setInlineParamEdit(null);
+  }
+
   function jumpToModule(moduleId: string) {
     const position = effectiveLayout[moduleId];
     const canvasSurface = canvasSurfaceRef.current;
@@ -3859,6 +3925,86 @@ export function WorkbenchPanel({
                       onDoubleClick={isObservationMode ? undefined : (e) => { e.stopPropagation(); setInlineRename({ moduleId: moduleInstance.id, value: moduleInstance.id }); }}
                     >{moduleInstance.id}</strong>
                   )}
+                  {(() => {
+                    const inlineParamSpec = INLINE_EDITABLE_PARAM_SPECS[moduleInstance.defId];
+                    const inlineParamField = inlineParamSpec
+                      ? def?.paramSchema[inlineParamSpec.paramKey] ?? null
+                      : null;
+                    const inlineParamValue = inlineParamField
+                      ? moduleInstance.params[inlineParamSpec!.paramKey] ?? inlineParamField.defaultValue
+                      : null;
+                    const isInlineEditingParam =
+                      inlineParamEdit?.moduleId === moduleInstance.id &&
+                      inlineParamEdit.paramKey === inlineParamSpec?.paramKey;
+
+                    if (!inlineParamSpec || !inlineParamField || inlineParamValue === null) {
+                      return null;
+                    }
+
+                    return isInlineEditingParam ? (
+                      <div className="graph-node-inline-param-editor">
+                        <input
+                          className={`graph-node-inline-param-input${
+                            inlineParamEdit?.error ? ' graph-node-inline-param-input-error' : ''
+                          }`}
+                          autoFocus
+                          value={inlineParamEdit.value}
+                          onChange={(event) =>
+                            setInlineParamEdit({
+                              moduleId: moduleInstance.id,
+                              paramKey: inlineParamSpec.paramKey,
+                              value: event.target.value,
+                              error: null,
+                            })
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === 'Tab') {
+                              event.preventDefault();
+                              commitInlineParamEdit(moduleInstance.id, def ?? null, moduleInstance.params);
+                            } else if (event.key === 'Escape') {
+                              event.preventDefault();
+                              setInlineParamEdit(null);
+                            }
+                          }}
+                          onBlur={() => {
+                            commitInlineParamEdit(moduleInstance.id, def ?? null, moduleInstance.params);
+                            setInlineParamEdit((current) =>
+                              current?.moduleId === moduleInstance.id ? null : current,
+                            );
+                          }}
+                          onMouseDown={(event) => event.stopPropagation()}
+                          onClick={(event) => event.stopPropagation()}
+                        />
+                        {inlineParamEdit?.error ? (
+                          <span className="graph-node-inline-param-error">{inlineParamEdit.error}</span>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="graph-node-inline-param-chip"
+                        title={`Edit ${inlineParamField.label}`}
+                        onMouseDown={(event) => event.stopPropagation()}
+                        onClick={(event) => {
+                          if (isObservationMode) {
+                            return;
+                          }
+                          event.stopPropagation();
+                          setInlineParamEdit({
+                            moduleId: moduleInstance.id,
+                            paramKey: inlineParamSpec.paramKey,
+                            value: formatParamValue(inlineParamValue, inlineParamField),
+                            error: null,
+                          });
+                        }}
+                      >
+                        <span className="graph-node-inline-param-label">{inlineParamSpec.label}</span>
+                        <span className="graph-node-inline-param-value">
+                          {formatInlineEditableValue(inlineParamValue, inlineParamField.kind)}
+                        </span>
+                      </button>
+                    );
+                  })()}
                   {moduleInstance.id === tutorialStep?.focusModuleId ? (
                     <span className="graph-node-tutorial-badge">Tutorial</span>
                   ) : null}
