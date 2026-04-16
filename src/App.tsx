@@ -3676,6 +3676,17 @@ function MainApp() {
                     ? undefined
                     : handleDuplicateSingleModule
                 }
+                onReplaceModule={
+                  isCompositeDrilldownActive || state.compositeEditor
+                    ? undefined
+                    : (moduleId, nextDefId) =>
+                        dispatch({
+                          type: 'replaceModule',
+                          projectId: activeProjectDefinition.id,
+                          moduleId,
+                          nextDefId,
+                        })
+                }
                 onRenameModuleInstance={(moduleId, nextModuleId) =>
                   isCompositeDrilldownActive
                     ? undefined

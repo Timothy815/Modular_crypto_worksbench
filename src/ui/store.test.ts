@@ -4,6 +4,7 @@ import { V1_REGISTRY } from '../engine/modules';
 import { CANVAS_NODE_HEIGHT, CANVAS_NODE_WIDTH } from './canvas-selection';
 import { demoProjects } from './demo-projects';
 import { createInitialUiState, uiReducer } from './store';
+import { getConnectionComparisonKey } from './workspace-comparison';
 
 describe('uiReducer', () => {
   it('renames a module instance and updates workspace-local references atomically', () => {
@@ -70,6 +71,129 @@ describe('uiReducer', () => {
     expect(nextState.probedModuleIdsByProject[projectId]).toContain('round_1-source');
     expect(nextState.paramDrafts[`${projectId}:round_1-source:seed`]).toBe('1010101');
     expect(nextState.paramDrafts[`${projectId}:${moduleId}:seed`]).toBeUndefined();
+  });
+
+  it('replaces a module in place and preserves compatible connections, layout, and selection state', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const moduleId = 'lfsr';
+    const currentProject = initialState.projectStates[projectId];
+    const currentLayout = initialState.layoutByProject[projectId]?.[moduleId];
+    const touchingConnections = currentProject.connections.filter(
+      (connection) => connection.from.moduleId === moduleId || connection.to.moduleId === moduleId,
+    );
+    const incomingConnection = touchingConnections.find((connection) => connection.to.moduleId === moduleId);
+
+    if (!currentLayout || !incomingConnection) {
+      throw new Error('Expected the sequential demo to contain the LFSR with an incoming clock.');
+    }
+
+    const preparedState = uiReducer(
+      uiReducer(
+        uiReducer(initialState, {
+          type: 'toggleProbe',
+          projectId,
+          moduleId,
+        }),
+        {
+          type: 'setParamDraft',
+          projectId,
+          moduleId,
+          key: 'seed',
+          rawValue: '10101010',
+        },
+      ),
+      {
+        type: 'setConnectionLanePreference',
+        projectId,
+        connectionKey: getConnectionComparisonKey(incomingConnection),
+        preference: 'positive',
+      },
+    );
+
+    const nextState = uiReducer(preparedState, {
+      type: 'replaceModule',
+      projectId,
+      moduleId,
+      nextDefId: 'Counter',
+    });
+
+    const replacedModule = nextState.projectStates[projectId]?.modules.find(
+      (moduleInstance) => moduleInstance.id === moduleId,
+    );
+    expect(replacedModule?.defId).toBe('Counter');
+    expect(replacedModule?.params).toEqual({
+      width: V1_REGISTRY.Counter.paramSchema.width.defaultValue,
+      value: V1_REGISTRY.Counter.paramSchema.value.defaultValue,
+      step: V1_REGISTRY.Counter.paramSchema.step.defaultValue,
+    });
+    expect(
+      nextState.projectStates[projectId]?.connections.filter(
+        (connection) => connection.from.moduleId === moduleId || connection.to.moduleId === moduleId,
+      ),
+    ).toEqual(touchingConnections);
+    expect(nextState.layoutByProject[projectId]?.[moduleId]).toEqual(currentLayout);
+    expect(nextState.probedModuleIdsByProject[projectId]).toContain(moduleId);
+    expect(nextState.paramDrafts[`${projectId}:${moduleId}:seed`]).toBeUndefined();
+    expect(
+      nextState.connectionLayoutByProject[projectId]?.[
+        getConnectionComparisonKey(incomingConnection)
+      ]?.orthogonalLanePreference,
+    ).toBe('positive');
+  });
+
+  it('drops only incompatible connections and stale wire layout metadata when replacing a module', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const moduleId = 'lfsr';
+    const currentProject = initialState.projectStates[projectId];
+    const incomingConnection = currentProject.connections.find(
+      (connection) => connection.to.moduleId === moduleId,
+    );
+    const outgoingConnection = currentProject.connections.find(
+      (connection) => connection.from.moduleId === moduleId,
+    );
+
+    if (!incomingConnection || !outgoingConnection) {
+      throw new Error('Expected the sequential demo to contain both incoming and outgoing LFSR wiring.');
+    }
+
+    const preparedState = uiReducer(
+      uiReducer(initialState, {
+        type: 'setConnectionLanePreference',
+        projectId,
+        connectionKey: getConnectionComparisonKey(incomingConnection),
+        preference: 'positive',
+      }),
+      {
+        type: 'setConnectionLanePreference',
+        projectId,
+        connectionKey: getConnectionComparisonKey(outgoingConnection),
+        preference: 'negative',
+      },
+    );
+
+    const nextState = uiReducer(preparedState, {
+      type: 'replaceModule',
+      projectId,
+      moduleId,
+      nextDefId: 'BitPad',
+    });
+
+    const touchingConnections = nextState.projectStates[projectId]?.connections.filter(
+      (connection) => connection.from.moduleId === moduleId || connection.to.moduleId === moduleId,
+    );
+    expect(touchingConnections).toEqual([outgoingConnection]);
+    expect(
+      nextState.connectionLayoutByProject[projectId]?.[
+        getConnectionComparisonKey(incomingConnection)
+      ],
+    ).toBeUndefined();
+    expect(
+      nextState.connectionLayoutByProject[projectId]?.[
+        getConnectionComparisonKey(outgoingConnection)
+      ]?.orthogonalLanePreference,
+    ).toBe('negative');
   });
 
   it('rotates a module clockwise without changing engine state', () => {

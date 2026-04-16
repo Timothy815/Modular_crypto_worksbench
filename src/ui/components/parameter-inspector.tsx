@@ -21,6 +21,12 @@ import {
   type SinkRepresentation,
 } from '../sink-representations';
 import {
+  getModuleDetail,
+  getModulePurpose,
+  matchesModuleDomainTab,
+  matchesModuleSearch,
+} from '../module-library';
+import {
   getModuleInstanceIdValidationError,
   normalizeModuleInstanceIdCandidate,
 } from '../module-instance-id';
@@ -128,6 +134,7 @@ interface ParameterInspectorProps {
     side: WorkbenchPortSide | null,
   ) => void;
   onDuplicateModule?: (moduleId: string) => void;
+  onReplaceModule?: (moduleId: string, nextDefId: string) => void;
   onRenameModuleInstance?: (moduleId: string, nextModuleId: string) => void;
   onDeleteModule: (moduleId: string) => void;
   canRenameModuleIds?: boolean;
@@ -830,6 +837,7 @@ export function ParameterInspector({
   onMoveModulePortOrder,
   onSetModulePortSide,
   onDuplicateModule,
+  onReplaceModule,
   onRenameModuleInstance,
   onDeleteModule,
   canRenameModuleIds = true,
@@ -886,6 +894,8 @@ export function ParameterInspector({
     draft: '',
     error: null,
   });
+  const [replaceSearchQuery, setReplaceSearchQuery] = useState('');
+  const [selectedReplacementDefId, setSelectedReplacementDefId] = useState<string>('');
   const [collapsedAnalyzeSections, setCollapsedAnalyzeSections] = useState({
     tick: false,
     selectedIssues: false,
@@ -925,6 +935,81 @@ export function ParameterInspector({
       currentTick > 0 ? tickedParamsByModule[moduleInstance.id]?.[currentTick - 1] : undefined,
     );
   }, [currentTick, isTickedMode, moduleDef, moduleInstance, tickCount, tickedParamsByModule]);
+  const replacementCandidates = useMemo(() => {
+    if (!moduleDef) {
+      return [];
+    }
+
+    return Object.values(registry)
+      .filter(
+        (definition) =>
+          definition.id !== moduleDef.id &&
+          (matchesModuleDomainTab(definition, 'all') || matchesModuleDomainTab(definition, 'composites')),
+      )
+      .filter((definition) => matchesModuleSearch(definition, replaceSearchQuery))
+      .sort((left, right) => left.name.localeCompare(right.name));
+  }, [moduleDef, registry, replaceSearchQuery]);
+  const selectedReplacementDef =
+    selectedReplacementDefId && replacementCandidates.some((candidate) => candidate.id === selectedReplacementDefId)
+      ? registry[selectedReplacementDefId]
+      : replacementCandidates[0] ?? null;
+  const replacementConnectionSummary = useMemo(() => {
+    if (!moduleDef || !moduleInstance || !selectedReplacementDef) {
+      return null;
+    }
+
+    const currentInputPorts = new Map(
+      moduleDef.inputs.map((port) => [port.name, `${port.type}:${port.kind ?? 'scalar'}`]),
+    );
+    const currentOutputPorts = new Map(
+      moduleDef.outputs.map((port) => [port.name, `${port.type}:${port.kind ?? 'scalar'}`]),
+    );
+    const nextInputPorts = new Set(
+      selectedReplacementDef.inputs.map((port) => `${port.name}:${port.type}:${port.kind ?? 'scalar'}`),
+    );
+    const nextOutputPorts = new Set(
+      selectedReplacementDef.outputs.map((port) => `${port.name}:${port.type}:${port.kind ?? 'scalar'}`),
+    );
+
+    let retained = 0;
+    let dropped = 0;
+    for (const connection of project.connections) {
+      if (connection.from.moduleId === moduleInstance.id) {
+        const currentSignature = currentOutputPorts.get(connection.from.port);
+        if (currentSignature && nextOutputPorts.has(`${connection.from.port}:${currentSignature}`)) {
+          retained += 1;
+        } else {
+          dropped += 1;
+        }
+      } else if (connection.to.moduleId === moduleInstance.id) {
+        const currentSignature = currentInputPorts.get(connection.to.port);
+        if (currentSignature && nextInputPorts.has(`${connection.to.port}:${currentSignature}`)) {
+          retained += 1;
+        } else {
+          dropped += 1;
+        }
+      }
+    }
+
+    return { retained, dropped };
+  }, [moduleDef, moduleInstance, project.connections, selectedReplacementDef]);
+  useEffect(() => {
+    setReplaceSearchQuery('');
+    setSelectedReplacementDefId('');
+  }, [moduleDef?.id, moduleInstance?.id]);
+  useEffect(() => {
+    if (!selectedReplacementDefId && replacementCandidates[0]) {
+      setSelectedReplacementDefId(replacementCandidates[0].id);
+      return;
+    }
+
+    if (
+      selectedReplacementDefId &&
+      !replacementCandidates.some((candidate) => candidate.id === selectedReplacementDefId)
+    ) {
+      setSelectedReplacementDefId(replacementCandidates[0]?.id ?? '');
+    }
+  }, [replacementCandidates, selectedReplacementDefId]);
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
@@ -1577,6 +1662,20 @@ export function ParameterInspector({
                 onClick={() => onDuplicateModule(moduleInstance.id)}
               />
             ) : null}
+            {!isReadOnlyMode && onReplaceModule ? (
+              <button
+                type="button"
+                className="mini-action-button"
+                onClick={() => {
+                  if (selectedReplacementDef) {
+                    onReplaceModule(moduleInstance.id, selectedReplacementDef.id);
+                  }
+                }}
+                disabled={!selectedReplacementDef}
+              >
+                Replace with…
+              </button>
+            ) : null}
             {!isReadOnlyMode && (isCompositeDefinition(moduleDef) || isConditionalDefinition(moduleDef)) && onOpenCompositeInstanceDrilldown ? (
               <button
                 type="button"
@@ -1613,6 +1712,68 @@ export function ParameterInspector({
               </button>
             ) : null}
           </div>
+          {!isReadOnlyMode && onReplaceModule ? (
+            <div className="content-selector-card">
+              <div className="param-field">
+                <label className="param-field-label" htmlFor="replace-module-search">
+                  <span className="param-field-label-text">Replace With</span>
+                </label>
+                <input
+                  id="replace-module-search"
+                  type="search"
+                  value={replaceSearchQuery}
+                  onChange={(event) => setReplaceSearchQuery(event.target.value)}
+                  placeholder="Search modules by name, role, or purpose"
+                />
+              </div>
+              <div className="param-field">
+                <label className="param-field-label" htmlFor="replace-module-select">
+                  <span className="param-field-label-text">Candidate</span>
+                </label>
+                <select
+                  id="replace-module-select"
+                  value={selectedReplacementDef?.id ?? ''}
+                  onChange={(event) => setSelectedReplacementDefId(event.target.value)}
+                >
+                  {replacementCandidates.length > 0 ? (
+                    replacementCandidates.map((definition) => (
+                      <option key={definition.id} value={definition.id}>
+                        {definition.name} ({definition.id})
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">No matching modules</option>
+                  )}
+                </select>
+              </div>
+              {selectedReplacementDef ? (
+                <>
+                  <div className="content-selector-meta">
+                    <span className="content-status-chip">
+                      Role: {getModuleRole(selectedReplacementDef)}
+                    </span>
+                    <span className="content-status-chip">
+                      {selectedReplacementDef.inputs.length} in · {selectedReplacementDef.outputs.length} out
+                    </span>
+                  </div>
+                  <p className="comparison-copy">{getModulePurpose(selectedReplacementDef)}</p>
+                  <p className="comparison-copy">{getModuleDetail(selectedReplacementDef)}</p>
+                </>
+              ) : (
+                <p className="comparison-copy">
+                  No replacement candidates match the current search.
+                </p>
+              )}
+              {replacementConnectionSummary ? (
+                <p className="comparison-copy">
+                  Replacement keeps <strong>{replacementConnectionSummary.retained}</strong> connection
+                  {replacementConnectionSummary.retained === 1 ? '' : 's'} and removes{' '}
+                  <strong>{replacementConnectionSummary.dropped}</strong> incompatible connection
+                  {replacementConnectionSummary.dropped === 1 ? '' : 's'}.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           {!isReadOnlyMode && parameterClipboard &&
           parameterClipboard.sourceModuleId === moduleInstance.id &&
           parameterClipboard.sourceDefId === moduleDef.id ? (

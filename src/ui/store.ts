@@ -56,6 +56,7 @@ import {
   getDefaultNodeOrientation,
   getNextNodeOrientationClockwise,
 } from './node-orientation';
+import { isBypassEligibleDefinition } from '../engine/bypass';
 import { CANVAS_NODE_HEIGHT, CANVAS_NODE_WIDTH } from './canvas-selection';
 import { isLargeWorkspace } from './workspace-landmarks';
 import { clonePortOrder, movePortInOrder, type OrderedPortDirection } from './port-ordering';
@@ -262,6 +263,12 @@ export type UiAction =
       moduleId: string;
       nextModuleId: string;
     }
+  | {
+      type: 'replaceModule';
+      projectId: string;
+      moduleId: string;
+      nextDefId: string;
+    }
   | { type: 'duplicateSelectedCluster'; projectId: string }
   | { type: 'deleteSelectedCluster'; projectId: string }
   | { type: 'insertStarterChain'; projectId: string; snapshot: WorkspaceClipboardSnapshot }
@@ -417,6 +424,48 @@ function createModuleId(project: Project, defId: string) {
   }
 
   return candidate;
+}
+
+function getPortKindSignature(kind: 'scalar' | 'sequence' | undefined) {
+  return kind ?? 'scalar';
+}
+
+function getPortCompatibilityKey(port: {
+  name: string;
+  type: string;
+  kind?: 'scalar' | 'sequence';
+}) {
+  return `${port.name}:${port.type}:${getPortKindSignature(port.kind)}`;
+}
+
+function buildPortCompatibilitySet(
+  ports: Array<{ name: string; type: string; kind?: 'scalar' | 'sequence' }>,
+) {
+  return new Set(ports.map((port) => getPortCompatibilityKey(port)));
+}
+
+function getRetainedConnectionsForReplacement(
+  project: Project,
+  moduleId: string,
+  currentDef: ModuleDefinition,
+  nextDef: ModuleDefinition,
+) {
+  const nextInputPorts = buildPortCompatibilitySet(nextDef.inputs);
+  const nextOutputPorts = buildPortCompatibilitySet(nextDef.outputs);
+
+  return project.connections.filter((connection) => {
+    if (connection.from.moduleId === moduleId) {
+      const outputPort = currentDef.outputs.find((port) => port.name === connection.from.port);
+      return outputPort ? nextOutputPorts.has(getPortCompatibilityKey(outputPort)) : false;
+    }
+
+    if (connection.to.moduleId === moduleId) {
+      const inputPort = currentDef.inputs.find((port) => port.name === connection.to.port);
+      return inputPort ? nextInputPorts.has(getPortCompatibilityKey(inputPort)) : false;
+    }
+
+    return true;
+  });
 }
 
 function createAnnotationId(annotations: WorkbenchAnnotation[]) {
@@ -621,6 +670,7 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'removeGroupBox',
   'addModule',
   'renameModuleInstance',
+  'replaceModule',
   'duplicateSelectedCluster',
   'deleteSelectedCluster',
   'insertStarterChain',
@@ -2950,6 +3000,87 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           action.moduleId,
           nextModuleId,
         ),
+      };
+    }
+    case 'replaceModule': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentProject = state.projectStates[action.projectId];
+      const currentLayout = state.layoutByProject[action.projectId];
+      if (!currentProject || !currentLayout) {
+        return state;
+      }
+
+      const currentModule = currentProject.modules.find(
+        (moduleInstance) => moduleInstance.id === action.moduleId,
+      );
+      if (!currentModule || currentModule.defId === action.nextDefId) {
+        return state;
+      }
+
+      const effectiveRegistry = getEffectiveRegistry(V1_REGISTRY, state.compositeLibrary);
+      const currentDef = effectiveRegistry[currentModule.defId];
+      const nextDef = effectiveRegistry[action.nextDefId];
+      if (!currentDef || !nextDef) {
+        return state;
+      }
+
+      const nextProject = cloneProject(currentProject);
+      nextProject.modules = nextProject.modules.map((moduleInstance) => {
+        if (moduleInstance.id !== action.moduleId) {
+          return moduleInstance;
+        }
+
+        return {
+          ...moduleInstance,
+          defId: nextDef.id,
+          params: buildDefaultParams(nextDef),
+          bypass: moduleInstance.bypass && isBypassEligibleDefinition(nextDef) ? true : undefined,
+        };
+      });
+
+      nextProject.connections = getRetainedConnectionsForReplacement(
+        currentProject,
+        action.moduleId,
+        currentDef,
+        nextDef,
+      );
+
+      const retainedConnectionKeys = new Set(
+        nextProject.connections.map((connection) => getConnectionComparisonKey(connection)),
+      );
+      const nextConnectionLayout = Object.fromEntries(
+        Object.entries(state.connectionLayoutByProject[action.projectId] ?? {}).filter(
+          ([connectionKey]) => retainedConnectionKeys.has(connectionKey),
+        ),
+      );
+      const nextDrafts = Object.fromEntries(
+        Object.entries(state.paramDrafts).filter(
+          ([key]) => !key.startsWith(`${action.projectId}:${action.moduleId}:`),
+        ),
+      );
+
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: nextProject,
+        },
+        connectionLayoutByProject: {
+          ...state.connectionLayoutByProject,
+          [action.projectId]: nextConnectionLayout,
+        },
+        currentTickByProject: {
+          ...state.currentTickByProject,
+          [action.projectId]: 0,
+        },
+        isTickPlaybackActiveByProject: {
+          ...state.isTickPlaybackActiveByProject,
+          [action.projectId]: false,
+        },
+        paramDrafts: nextDrafts,
       };
     }
     case 'duplicateSelectedCluster': {
