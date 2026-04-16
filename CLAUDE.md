@@ -72,6 +72,7 @@ Read PARAMETER-COMPARISON-ERGONOMICS-V1.md before changing selected-sibling para
 Read PRIMITIVE-MICRO-DEMOS-V1.md before changing primitive-local `Try Demo` actions, micro-demo registry behavior, or palette-local seeded examples.
 Read PRIMITIVE-MICRO-DEMOS-V2.md before extending primitive-local micro demos into timing, state, or framing examples.
 Read PRIMITIVE-MICRO-DEMOS-V3.md before extending primitive-local micro demos into rotor traversal or reverse-path examples.
+Read WIRING-CEREMONY-REDUCTION-V1.md before implementing drag-from-port quick-add, replace-module-in-place, inline parameter editing, click-to-connect, or drag-from-palette placement.
 Read WIRE-LEGIBILITY-ERGONOMICS-V1.md before changing wire selection, one-hop connection emphasis, or workspace-level path legibility behavior.
 Read TRACE-WORKSPACE-BRIDGING-V1.md before changing active trace emphasis in the workspace, one-hop step-context highlighting, or trace/workspace visual bridging behavior.
 Read COMPOSITE-REUSE-ERGONOMICS-V1.md before changing composite promotion clarity, composite boundary workflow, or composite-reuse ergonomics.
