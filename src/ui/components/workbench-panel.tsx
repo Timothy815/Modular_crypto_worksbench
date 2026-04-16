@@ -177,6 +177,7 @@ interface PendingConnection {
   mouseX: number;
   mouseY: number;
   excludedConnectionIndex: number | null;
+  isDragging: boolean;
 }
 
 interface QuickAddState {
@@ -1908,7 +1909,7 @@ export function WorkbenchPanel({
     return anchors;
   }, [activeProjectState.modules, effectiveLayout, layoutDirection, nodeSizeByModuleId, pendingConnection, registry]);
   useEffect(() => {
-    if (!pendingConnection) {
+    if (!pendingConnection || !pendingConnection.isDragging) {
       return undefined;
     }
 
@@ -1958,10 +1959,7 @@ export function WorkbenchPanel({
     }
 
     function handleConnectionUp() {
-      setPendingConnection(null);
-      setHoveredCompositeHintModuleId(null);
-      setHoveredPortHintKey(null);
-      setHoveredPendingTargetKey(null);
+      clearPendingConnectionUi();
     }
 
     window.addEventListener('mousemove', handleConnectionMove);
@@ -1990,6 +1988,13 @@ export function WorkbenchPanel({
         : null,
     );
   }, [onPendingConnectionChange, pendingFromModuleId, pendingFromPort, activeProjectState, registry]);
+
+  function clearPendingConnectionUi(clearConnection = true) {
+    if (clearConnection) {
+      setPendingConnection(null);
+    }
+    setConnectionFeedback(null);
+  }
 
   const pendingTargetSummary = useMemo(() => {
     if (!pendingConnection) {
@@ -2062,10 +2067,6 @@ export function WorkbenchPanel({
     const activeAnchorIndex = effectiveSelectedConnectionAnchorIndex;
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Backspace' && event.key !== 'Delete') {
-        return;
-      }
-
       const target = event.target;
       if (
         target instanceof HTMLElement &&
@@ -2076,9 +2077,11 @@ export function WorkbenchPanel({
         return;
       }
 
-      event.preventDefault();
-      onRemoveConnectionOrthogonalAnchor(activeConnectionKey, activeAnchorIndex);
-      setSelectedConnectionAnchorIndex(null);
+      if (event.key === 'Backspace' || event.key === 'Delete') {
+        event.preventDefault();
+        onRemoveConnectionOrthogonalAnchor(activeConnectionKey, activeAnchorIndex);
+        setSelectedConnectionAnchorIndex(null);
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown);
@@ -2152,10 +2155,10 @@ export function WorkbenchPanel({
   function startConnectionFromOutput(
     moduleId: string,
     portName: string,
+    clientX: number,
+    clientY: number,
   ) {
     setSelectedConnectionIndex(null);
-    setSelectedGuideRailId(null);
-    setSelectedStageLabelId(null);
     const pos = layout[moduleId];
     if (!pos) return;
     const orientation = getNodeOrientation(pos.orientation, layoutDirection);
@@ -2183,23 +2186,52 @@ export function WorkbenchPanel({
       sourceSizeConfig.portGap,
     );
     setConnectionFeedback(null);
-    setHoveredPortHintKey(null);
-    setHoveredPendingTargetKey(null);
-    setPendingConnection({
-      fromModuleId: moduleId,
-      fromPort: portName,
-      fromAnchor: anchor,
-      fromSide: sourceSide,
-      mouseX: anchor.x,
-      mouseY: anchor.y,
-      excludedConnectionIndex: null,
-    });
+    setPendingConnection(null);
+
+    const handleInitialPointerMove = (event: MouseEvent) => {
+      const deltaX = event.clientX - clientX;
+      const deltaY = event.clientY - clientY;
+      if (deltaX * deltaX + deltaY * deltaY < 36) {
+        return;
+      }
+
+      const pointer = getCanvasPointerFromClient(event.clientX, event.clientY);
+      const targetPoint = pointer ?? anchor;
+      setPendingConnection({
+        fromModuleId: moduleId,
+        fromPort: portName,
+        fromAnchor: anchor,
+        fromSide: sourceSide,
+        mouseX: targetPoint.x,
+        mouseY: targetPoint.y,
+        excludedConnectionIndex: null,
+        isDragging: true,
+      });
+      window.removeEventListener('mousemove', handleInitialPointerMove);
+      window.removeEventListener('mouseup', handleInitialPointerUp);
+    };
+
+    const handleInitialPointerUp = () => {
+      setPendingConnection({
+        fromModuleId: moduleId,
+        fromPort: portName,
+        fromAnchor: anchor,
+        fromSide: sourceSide,
+        mouseX: anchor.x,
+        mouseY: anchor.y,
+        excludedConnectionIndex: null,
+        isDragging: false,
+      });
+      window.removeEventListener('mousemove', handleInitialPointerMove);
+      window.removeEventListener('mouseup', handleInitialPointerUp);
+    };
+
+    window.addEventListener('mousemove', handleInitialPointerMove);
+    window.addEventListener('mouseup', handleInitialPointerUp);
   }
 
   function startConnectionRewireFromInput(moduleId: string, portName: string) {
     setSelectedConnectionIndex(null);
-    setSelectedGuideRailId(null);
-    setSelectedStageLabelId(null);
     const connectionIndex = findIncomingConnectionIndex(activeProjectState, moduleId, portName);
     if (connectionIndex < 0) {
       return;
@@ -2253,6 +2285,7 @@ export function WorkbenchPanel({
       mouseX: sourceAnchor.x,
       mouseY: sourceAnchor.y,
       excludedConnectionIndex: connectionIndex,
+      isDragging: true,
     });
   }
 
@@ -3328,6 +3361,10 @@ export function WorkbenchPanel({
           onMouseDown={(event) => {
             if (quickAdd) { setQuickAdd(null); }
             if (pendingBridgeInsertion) { setPendingBridgeInsertion(null); return; }
+            if (pendingConnection && !pendingConnection.isDragging && event.target === event.currentTarget) {
+              setPendingConnection(null);
+              return;
+            }
             if (isCompositeEditor || pendingConnection || event.target !== event.currentTarget) {
               return;
             }
@@ -3364,7 +3401,11 @@ export function WorkbenchPanel({
             });
           }}
           onMouseUp={(event) => {
-            if (!pendingConnection || event.target !== event.currentTarget) {
+            if (
+              !pendingConnection ||
+              !pendingConnection.isDragging ||
+              event.target !== event.currentTarget
+            ) {
               return;
             }
 
@@ -3379,8 +3420,7 @@ export function WorkbenchPanel({
             const sourceDef = sourceInstance ? registry[sourceInstance.defId] : null;
             const sourcePort = sourceDef?.outputs.find((port) => port.name === pendingConnection.fromPort);
             if (!sourcePort) {
-              setPendingConnection(null);
-              setHoveredPendingTargetKey(null);
+              clearPendingConnectionUi();
               return;
             }
 
@@ -3397,11 +3437,7 @@ export function WorkbenchPanel({
                 sourceType: sourcePort.type,
               },
             });
-            setPendingConnection(null);
-            setHoveredCompositeHintModuleId(null);
-            setHoveredPortHintKey(null);
-            setHoveredPendingTargetKey(null);
-            setConnectionFeedback(null);
+            clearPendingConnectionUi();
           }}
         >
           {showFurniture && guideRails.map((guideRail) => {
@@ -3639,7 +3675,7 @@ export function WorkbenchPanel({
               renderConnection(connection, connectionIndex, 'base'),
             )}
 
-            {pendingConnection ? (() => {
+            {pendingConnection && pendingConnection.isDragging ? (() => {
               const { fromAnchor, fromSide, mouseX, mouseY } = pendingConnection;
               return (
                 <path
@@ -4085,6 +4121,8 @@ export function WorkbenchPanel({
                           startConnectionFromOutput(
                             moduleInstance.id,
                             port.name,
+                            event.clientX,
+                            event.clientY,
                           );
                         }}
                       >
