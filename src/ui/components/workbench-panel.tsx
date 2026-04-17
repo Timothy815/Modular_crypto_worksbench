@@ -464,6 +464,7 @@ interface WorkbenchPanelProps {
   onSelectModules: (moduleIds: string[], additive?: boolean) => void;
   onRequestCreateComposite: () => void;
   onRequestCreateIterator: () => void;
+  onRequestCreateClockedIterator: () => void;
   onRequestCreateConditional: () => void;
   onRequestCreateMultiConditional: () => void;
   onRequestAutoWire: (mode: AutoWireMode) => void;
@@ -688,6 +689,7 @@ export function WorkbenchPanel({
   onSelectModules,
   onRequestCreateComposite,
   onRequestCreateIterator,
+  onRequestCreateClockedIterator,
   onRequestCreateConditional,
   onRequestCreateMultiConditional,
   onRequestAutoWire,
@@ -3304,6 +3306,7 @@ export function WorkbenchPanel({
           onRequestImportLabPack={() => importLabPackInputRef.current?.click()}
           onRequestCreateComposite={onRequestCreateComposite}
           onRequestCreateIterator={onRequestCreateIterator}
+          onRequestCreateClockedIterator={onRequestCreateClockedIterator}
           onRequestCreateConditional={onRequestCreateConditional}
           onRequestCreateMultiConditional={onRequestCreateMultiConditional}
           onRequestAutoWire={onRequestAutoWire}

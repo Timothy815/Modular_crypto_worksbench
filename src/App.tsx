@@ -53,6 +53,10 @@ import {
 import { cloneProject } from './ui/project-clone';
 import { createIteratorDefinition, isEligibleIteratorBodyDefinition } from './ui/iterator-authoring';
 import {
+  createClockedIteratorDefinition,
+  isEligibleClockedIteratorBodyDefinition,
+} from './ui/clocked-iterator-authoring';
+import {
   broadcastDetachedSnapshots,
   connectDetachedPanelChannel,
   createWindowSessionId,
@@ -377,6 +381,13 @@ function MainApp() {
   const [iteratorRoundDefId, setIteratorRoundDefId] = useState('');
   const [iteratorIterationCount, setIteratorIterationCount] = useState('2');
   const [iteratorDialogError, setIteratorDialogError] = useState<string | null>(null);
+  const [isClockedIteratorDialogOpen, setIsClockedIteratorDialogOpen] = useState(false);
+  const [clockedIteratorName, setClockedIteratorName] = useState('');
+  const [clockedIteratorId, setClockedIteratorId] = useState('');
+  const [clockedIteratorRoundDefId, setClockedIteratorRoundDefId] = useState('');
+  const [clockedIteratorRoundCount, setClockedIteratorRoundCount] = useState('4');
+  const [clockedIteratorEndPolicy, setClockedIteratorEndPolicy] = useState<'halt' | 'wrap'>('halt');
+  const [clockedIteratorDialogError, setClockedIteratorDialogError] = useState<string | null>(null);
   const [isMultiConditionalDialogOpen, setIsMultiConditionalDialogOpen] = useState(false);
   const [multiConditionalName, setMultiConditionalName] = useState('');
   const [multiConditionalId, setMultiConditionalId] = useState('');
@@ -3025,6 +3036,15 @@ function MainApp() {
               setIteratorDialogError(null);
               setIsIteratorDialogOpen(true);
             }}
+            onRequestCreateClockedIterator={() => {
+              setClockedIteratorName('');
+              setClockedIteratorId('');
+              setClockedIteratorRoundDefId('');
+              setClockedIteratorRoundCount('4');
+              setClockedIteratorEndPolicy('halt');
+              setClockedIteratorDialogError(null);
+              setIsClockedIteratorDialogOpen(true);
+            }}
             onRequestCreateConditional={() => {
               setConditionalName('');
               setConditionalId('');
@@ -4614,6 +4634,132 @@ function MainApp() {
                   }}
                 >
                   Create Iterator
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })() : null}
+
+      {isClockedIteratorDialogOpen ? (() => {
+        const clockedBodyCandidates = Object.values(effectiveRegistry).filter((def) =>
+          isEligibleClockedIteratorBodyDefinition(def),
+        );
+        const closeClockedIteratorDialog = () => {
+          setIsClockedIteratorDialogOpen(false);
+          setClockedIteratorDialogError(null);
+        };
+        return (
+          <div className="dialog-backdrop" onClick={closeClockedIteratorDialog}>
+            <div className="dialog-panel" onClick={(e) => e.stopPropagation()}>
+              <h2 className="dialog-title">New Clocked Iterator</h2>
+              <p className="dialog-description">
+                Author a pulse-driven bounded traversal machine. One clock pulse advances the
+                iterator by exactly one round. The output accumulates across pulses until the round
+                bank is exhausted.
+              </p>
+
+              <label className="param-field">
+                <span>Display Name</span>
+                <input
+                  type="text"
+                  value={clockedIteratorName}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setClockedIteratorName(next);
+                    if (!clockedIteratorId) setClockedIteratorId(createCompositeIdCandidate(next));
+                  }}
+                  placeholder="My Clocked Iterator"
+                />
+              </label>
+
+              <label className="param-field">
+                <span>Stable Id</span>
+                <input
+                  type="text"
+                  value={clockedIteratorId}
+                  onChange={(e) => setClockedIteratorId(e.target.value)}
+                  placeholder="MyClockedIterator"
+                />
+              </label>
+
+              <label className="param-field">
+                <span>Round body</span>
+                <select
+                  value={clockedIteratorRoundDefId}
+                  onChange={(e) => setClockedIteratorRoundDefId(e.target.value)}
+                >
+                  <option value="">— choose an eligible body —</option>
+                  {clockedBodyCandidates.map((def) => (
+                    <option key={def.id} value={def.id}>
+                      {def.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="param-field">
+                <span>Round Count</span>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={clockedIteratorRoundCount}
+                  onChange={(e) => setClockedIteratorRoundCount(e.target.value)}
+                />
+              </label>
+
+              <label className="param-field">
+                <span>End Policy</span>
+                <select
+                  value={clockedIteratorEndPolicy}
+                  onChange={(e) =>
+                    setClockedIteratorEndPolicy(e.target.value as 'halt' | 'wrap')
+                  }
+                >
+                  <option value="halt">Halt — stop at the last round</option>
+                  <option value="wrap">Wrap — return to round 1 after the last</option>
+                </select>
+              </label>
+
+              {clockedIteratorRoundDefId ? (
+                <p className="comparison-copy">
+                  Body must expose exactly one input named <strong>in</strong> and one output named
+                  <strong> out</strong>. Nested iterator bodies are not eligible.
+                </p>
+              ) : null}
+
+              {clockedIteratorDialogError ? (
+                <p className="field-error">{clockedIteratorDialogError}</p>
+              ) : null}
+
+              <div className="dialog-actions">
+                <button type="button" className="secondary-dialog-button" onClick={closeClockedIteratorDialog}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="primary-dialog-button"
+                  onClick={() => {
+                    const parsedRoundCount = Number(clockedIteratorRoundCount);
+                    const result = createClockedIteratorDefinition({
+                      registry: effectiveRegistry,
+                      name: clockedIteratorName,
+                      id: clockedIteratorId,
+                      roundDefId: clockedIteratorRoundDefId,
+                      roundCount: parsedRoundCount,
+                      endPolicy: clockedIteratorEndPolicy,
+                    });
+                    if (!result.ok || !result.entry) {
+                      setClockedIteratorDialogError(result.error ?? 'Clocked iterator definition is invalid.');
+                      return;
+                    }
+
+                    dispatch({ type: 'addCompositeToLibrary', entry: result.entry });
+                    closeClockedIteratorDialog();
+                  }}
+                >
+                  Create Clocked Iterator
                 </button>
               </div>
             </div>

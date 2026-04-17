@@ -90,6 +90,7 @@ interface WorkbenchActionsProps {
   onRequestImportLabPack: () => void;
   onRequestCreateComposite: () => void;
   onRequestCreateIterator: () => void;
+  onRequestCreateClockedIterator: () => void;
   onRequestCreateConditional: () => void;
   onRequestCreateMultiConditional: () => void;
   onToggleFurnitureVisible: (visible: boolean) => void;
@@ -662,6 +663,7 @@ export function WorkbenchActions({
   onRequestImportLabPack,
   onRequestCreateComposite,
   onRequestCreateIterator,
+  onRequestCreateClockedIterator,
   onRequestCreateConditional,
   onRequestCreateMultiConditional,
   onToggleFurnitureVisible,
@@ -1053,6 +1055,10 @@ export function WorkbenchActions({
               onSelect={onRequestCreateIterator}
             />
             <WorkbenchMenuActionButton
+              label="Create Clocked Iterator"
+              onSelect={onRequestCreateClockedIterator}
+            />
+            <WorkbenchMenuActionButton
               label="New Conditional"
               onSelect={onRequestCreateConditional}
             />
@@ -1108,6 +1114,10 @@ export function WorkbenchActions({
           <WorkbenchMenuActionButton
             label="Create Iterator"
             onSelect={onRequestCreateIterator}
+          />
+          <WorkbenchMenuActionButton
+            label="Create Clocked Iterator"
+            onSelect={onRequestCreateClockedIterator}
           />
           <WorkbenchMenuActionButton
             label="New Conditional"
