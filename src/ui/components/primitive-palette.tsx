@@ -436,6 +436,14 @@ export function PrimitivePalette({
               ),
             },
             {
+              id: 'built-in-clocked-iterators',
+              title: 'Built-In Clocked Iterators',
+              description: 'Shipped pulse-driven bounded iterator architectures provided by the product.',
+              defs: visibleDefs.filter(
+                (def) => builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'clocked-iterator',
+              ),
+            },
+            {
               id: 'built-in-conditionals',
               title: 'Built-In Conditionals',
               description: 'Shipped conditional branching modules — one control bit selects which branch definition runs.',
@@ -473,6 +481,14 @@ export function PrimitivePalette({
               description: 'Editable bounded iterator modules you created yourself.',
               defs: visibleDefs.filter(
                 (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'iterator',
+              ),
+            },
+            {
+              id: 'user-clocked-iterators',
+              title: 'My Clocked Iterators',
+              description: 'Pulse-driven bounded iterator modules you created yourself.',
+              defs: visibleDefs.filter(
+                (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'clocked-iterator',
               ),
             },
           ]
