@@ -85,6 +85,7 @@ export function DetachedPanelWindow({
   kind,
 }: DetachedPanelWindowProps) {
   const [snapshot, setSnapshot] = useState<DetachedPanelStateSnapshot | null>(null);
+  const [hasActivePaletteCanvasDrag, setHasActivePaletteCanvasDrag] = useState(false);
   const splitContainerRef = useRef<HTMLDivElement | null>(null);
   const splitRatioFrameRef = useRef<number | null>(null);
   const queuedSplitRatioRef = useRef<number | null>(null);
@@ -229,6 +230,29 @@ export function DetachedPanelWindow({
   const postAction = (action: UiAction) => {
     postDetachedAction(channelName, hostId, panelWindowId, action);
   };
+  const startPaletteCanvasDrag = (defId: string) => {
+    setHasActivePaletteCanvasDrag(true);
+    sendCommand('palette', {
+      type: 'startPaletteCanvasDrag',
+      defId,
+    });
+  };
+
+  useEffect(() => {
+    if (!hasActivePaletteCanvasDrag) {
+      return undefined;
+    }
+
+    const cancelDetachedPaletteDrag = () => {
+      setHasActivePaletteCanvasDrag(false);
+      sendCommand('palette', { type: 'cancelPaletteCanvasDrag' });
+    };
+
+    window.addEventListener('mouseup', cancelDetachedPaletteDrag);
+    return () => {
+      window.removeEventListener('mouseup', cancelDetachedPaletteDrag);
+    };
+  }, [hasActivePaletteCanvasDrag]);
 
   const startSplitResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
     const container = splitContainerRef.current;
@@ -437,6 +461,7 @@ export function DetachedPanelWindow({
                       registry,
                       postAction,
                       sendCommand,
+                      startPaletteCanvasDrag,
                     )}
                   </section>
                 );
@@ -559,6 +584,7 @@ export function DetachedPanelWindow({
                     registry,
                     postAction,
                     sendCommand,
+                    startPaletteCanvasDrag,
                   )}
                 </section>
                 <button
@@ -596,12 +622,20 @@ export function DetachedPanelWindow({
                     registry,
                     postAction,
                     sendCommand,
+                    startPaletteCanvasDrag,
                   )}
                 </section>
               </div>
             </section>
           ) : (
-            renderDetachedPane(activeKind, activePayload, registry, postAction, sendCommand)
+            renderDetachedPane(
+              activeKind,
+              activePayload,
+              registry,
+              postAction,
+              sendCommand,
+              startPaletteCanvasDrag,
+            )
           )}
         </>
       )}
@@ -623,6 +657,7 @@ function renderDetachedPane(
   registry: ReturnType<typeof getEffectiveRegistry>,
   postAction: (action: UiAction) => void,
   sendCommand: (targetKind: DetachedPanelKind, command: DetachedPanelCommand) => void,
+  onStartPaletteCanvasDrag: (defId: string) => void,
 ) {
   if (!payload) {
     return null;
@@ -637,6 +672,7 @@ function renderDetachedPane(
         compositeUsageCountById={(payload as DetachedPaletteSnapshot).compositeUsageCountById}
         builtInReusableIds={(payload as DetachedPaletteSnapshot).builtInReusableIds}
         onAddModule={(defId) => sendCommand('palette', { type: 'addModule', defId })}
+        onStartCanvasDrag={(defId) => onStartPaletteCanvasDrag(defId)}
         onInsertStarterChain={(starterId) => sendCommand('palette', { type: 'insertStarterChain', starterId })}
         onExportCompositeLibrary={() => sendCommand('palette', { type: 'exportCompositeLibrary' })}
         onOpenComposite={(defId) =>

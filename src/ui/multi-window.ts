@@ -138,6 +138,8 @@ export interface DetachedPanelWindowGroup {
 export type DetachedPanelCommand =
   | { type: 'togglePaletteViewMode' }
   | { type: 'addModule'; defId: string }
+  | { type: 'startPaletteCanvasDrag'; defId: string }
+  | { type: 'cancelPaletteCanvasDrag' }
   | { type: 'insertStarterChain'; starterId: string }
   | { type: 'openComposite'; defId: string }
   | { type: 'duplicateReusable'; defId: string }

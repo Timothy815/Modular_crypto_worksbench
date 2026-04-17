@@ -165,6 +165,7 @@ interface CompositeDrilldownState {
 }
 
 interface PaletteCanvasDragState {
+  panelWindowId: string | null;
   defId: string;
   startClientX: number;
   startClientY: number;
@@ -284,9 +285,6 @@ function MainApp() {
           return current;
         }
 
-        const deltaX = event.clientX - current.startClientX;
-        const deltaY = event.clientY - current.startClientY;
-        const isActive = current.isActive || deltaX * deltaX + deltaY * deltaY >= 36;
         const canvasSurface = document.querySelector('.canvas-surface');
         const canvasRect =
           canvasSurface instanceof HTMLElement ? canvasSurface.getBoundingClientRect() : null;
@@ -297,6 +295,12 @@ function MainApp() {
             event.clientY >= canvasRect.top &&
             event.clientY <= canvasRect.bottom,
         );
+        const deltaX = event.clientX - current.startClientX;
+        const deltaY = event.clientY - current.startClientY;
+        const isActive =
+          current.panelWindowId !== null
+            ? true
+            : current.isActive || deltaX * deltaX + deltaY * deltaY >= 36;
 
         return {
           ...current,
@@ -2014,14 +2018,38 @@ function MainApp() {
       addModuleByDefId: (defId: string) => {
         const moduleDef = effectiveRegistry[defId] ?? null;
         if (!moduleDef) {
-          return null;
+          return;
         }
         dispatch({
           type: 'addModule',
           projectId: activeProjectDefinition.id,
           moduleDef,
         });
-        return moduleDef;
+      },
+      startPaletteCanvasDrag: (defId: string, panelWindowId: string) => {
+        if (!effectiveRegistry[defId]) {
+          return;
+        }
+
+        setPaletteCanvasDrag({
+          panelWindowId,
+          defId,
+          startClientX: 0,
+          startClientY: 0,
+          clientX: 0,
+          clientY: 0,
+          isActive: false,
+          isOverCanvas: false,
+        });
+      },
+      cancelPaletteCanvasDrag: (panelWindowId: string) => {
+        setPaletteCanvasDrag((current) => {
+          if (!current || current.panelWindowId !== panelWindowId) {
+            return current;
+          }
+
+          return null;
+        });
       },
       openComposite: (defId: string) =>
         dispatch({
@@ -3460,6 +3488,7 @@ function MainApp() {
                 }
                 onStartCanvasDrag={(defId, clientX, clientY) =>
                   setPaletteCanvasDrag({
+                    panelWindowId: null,
                     defId,
                     startClientX: clientX,
                     startClientY: clientY,

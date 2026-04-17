@@ -1,6 +1,6 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 
-import type { ExecutionTraceEntry, ModuleDefinition } from '../engine/types';
+import type { ExecutionTraceEntry } from '../engine/types';
 import type { UiAction } from './store';
 import type { WorkspaceMode } from './workspace-mode';
 import {
@@ -136,7 +136,9 @@ export function returnDetachedPanelToMain(args: {
 export interface DetachedPanelCommandHandlers {
   dispatch: (action: UiAction) => void;
   togglePaletteViewMode: () => void;
-  addModuleByDefId: (defId: string) => ModuleDefinition | null;
+  addModuleByDefId: (defId: string) => void;
+  startPaletteCanvasDrag: (defId: string, panelWindowId: string) => void;
+  cancelPaletteCanvasDrag: (panelWindowId: string) => void;
   insertStarterChain: (starterId: string) => void;
   openComposite: (defId: string) => void;
   duplicateReusable: (defId: string) => void;
@@ -237,6 +239,7 @@ export function connectDetachedPanelChannel(args: DetachedPanelChannelBridgeArgs
     }
 
     if (message.type === 'panelClosed') {
+      args.commandHandlers.cancelPaletteCanvasDrag(message.panelWindowId);
       delete args.commandHandlers.detachedWindowsRef.current[message.panelWindowId];
       args.commandHandlers.setGroups((current) =>
         removeDetachedPanelGroup(current, message.panelWindowId),
@@ -255,6 +258,12 @@ export function connectDetachedPanelChannel(args: DetachedPanelChannelBridgeArgs
         return;
       case 'addModule':
         args.commandHandlers.addModuleByDefId(command.defId);
+        return;
+      case 'startPaletteCanvasDrag':
+        args.commandHandlers.startPaletteCanvasDrag(command.defId, message.panelWindowId);
+        return;
+      case 'cancelPaletteCanvasDrag':
+        args.commandHandlers.cancelPaletteCanvasDrag(message.panelWindowId);
         return;
       case 'insertStarterChain':
         args.commandHandlers.insertStarterChain(command.starterId);

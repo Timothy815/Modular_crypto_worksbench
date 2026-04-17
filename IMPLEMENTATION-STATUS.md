@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: April 12, 2026
+Last updated: April 16, 2026
 
 ---
 
@@ -218,6 +218,12 @@ The first Experiential North Star Live Readability slice is now shipped:
 - compact output-port value chips rendered on the canvas after every successful execution
 - bits chips in blue-accent tint, symbol chips in orange-accent tint — matching wire domain colors
 - truncated to 8 bits / 10 symbol chars with hover showing full value
+
+The detached authoring parity follow-on is now also shipped:
+- `DETACHED-PALETTE-DRAG-TO-CANVAS-V1.md`
+- detached palette windows can now start a host-owned drag session into the main workbench canvas
+- placement, snapping, drop resolution, and cancellation remain owned by the main workbench
+- detached-window close now cancels any matching transient drag session instead of leaving a stale ghost
 - pointer-events none, does not interfere with wire creation
 - session-local Chips toggle button in graph-meta strip when execution is available
 
