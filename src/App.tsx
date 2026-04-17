@@ -382,6 +382,7 @@ function MainApp() {
   const [iteratorIterationCount, setIteratorIterationCount] = useState('2');
   const [iteratorDialogError, setIteratorDialogError] = useState<string | null>(null);
   const [isClockedIteratorDialogOpen, setIsClockedIteratorDialogOpen] = useState(false);
+  const [clockedIteratorEditingId, setClockedIteratorEditingId] = useState<string | null>(null);
   const [clockedIteratorName, setClockedIteratorName] = useState('');
   const [clockedIteratorId, setClockedIteratorId] = useState('');
   const [clockedIteratorRoundDefId, setClockedIteratorRoundDefId] = useState('');
@@ -2154,6 +2155,19 @@ function MainApp() {
           type: 'openCompositeEditor',
           entryId: defId,
         }),
+      editClockedIterator: (defId: string) => {
+        const entry = state.compositeLibrary.find((e) => e.id === defId);
+        if (!entry || !('kind' in entry.definition) || entry.definition.kind !== 'clocked-iterator') return;
+        const def = entry.definition;
+        setClockedIteratorEditingId(defId);
+        setClockedIteratorName(def.name);
+        setClockedIteratorId(def.id);
+        setClockedIteratorRoundDefId(def.roundDefId);
+        setClockedIteratorRoundCount(String(def.roundCount));
+        setClockedIteratorEndPolicy(def.endPolicy);
+        setClockedIteratorDialogError(null);
+        setIsClockedIteratorDialogOpen(true);
+      },
       duplicateReusable: (defId: string) => {
         const entry = state.compositeLibrary.find((candidate) => candidate.id === defId);
         if (!entry) {
@@ -3037,6 +3051,7 @@ function MainApp() {
               setIsIteratorDialogOpen(true);
             }}
             onRequestCreateClockedIterator={() => {
+              setClockedIteratorEditingId(null);
               setClockedIteratorName('');
               setClockedIteratorId('');
               setClockedIteratorRoundDefId('');
@@ -3663,6 +3678,19 @@ function MainApp() {
                     type: 'openCompositeEditor',
                     entryId: defId,
                   });
+                }}
+                onEditClockedIterator={(defId) => {
+                  const entry = state.compositeLibrary.find((e) => e.id === defId);
+                  if (!entry || !('kind' in entry.definition) || entry.definition.kind !== 'clocked-iterator') return;
+                  const def = entry.definition;
+                  setClockedIteratorEditingId(defId);
+                  setClockedIteratorName(def.name);
+                  setClockedIteratorId(def.id);
+                  setClockedIteratorRoundDefId(def.roundDefId);
+                  setClockedIteratorRoundCount(String(def.roundCount));
+                  setClockedIteratorEndPolicy(def.endPolicy);
+                  setClockedIteratorDialogError(null);
+                  setIsClockedIteratorDialogOpen(true);
                 }}
                 onDuplicateReusable={(defId) => {
                   const entry = state.compositeLibrary.find((candidate) => candidate.id === defId);
@@ -4647,12 +4675,13 @@ function MainApp() {
         );
         const closeClockedIteratorDialog = () => {
           setIsClockedIteratorDialogOpen(false);
+          setClockedIteratorEditingId(null);
           setClockedIteratorDialogError(null);
         };
         return (
           <div className="dialog-backdrop" onClick={closeClockedIteratorDialog}>
             <div className="dialog-panel" onClick={(e) => e.stopPropagation()}>
-              <h2 className="dialog-title">New Clocked Iterator</h2>
+              <h2 className="dialog-title">{clockedIteratorEditingId ? 'Edit Clocked Iterator' : 'New Clocked Iterator'}</h2>
               <p className="dialog-description">
                 Author a pulse-driven bounded traversal machine. One clock pulse advances the
                 iterator by exactly one round. The output accumulates across pulses until the round
@@ -4667,7 +4696,7 @@ function MainApp() {
                   onChange={(e) => {
                     const next = e.target.value;
                     setClockedIteratorName(next);
-                    if (!clockedIteratorId) setClockedIteratorId(createCompositeIdCandidate(next));
+                    if (!clockedIteratorEditingId && !clockedIteratorId) setClockedIteratorId(createCompositeIdCandidate(next));
                   }}
                   placeholder="My Clocked Iterator"
                 />
@@ -4678,8 +4707,9 @@ function MainApp() {
                 <input
                   type="text"
                   value={clockedIteratorId}
-                  onChange={(e) => setClockedIteratorId(e.target.value)}
+                  onChange={(e) => { if (!clockedIteratorEditingId) setClockedIteratorId(e.target.value); }}
                   placeholder="MyClockedIterator"
+                  readOnly={!!clockedIteratorEditingId}
                 />
               </label>
 
@@ -4742,8 +4772,13 @@ function MainApp() {
                   className="primary-dialog-button"
                   onClick={() => {
                     const parsedRoundCount = Number(clockedIteratorRoundCount);
+                    const registryForValidation = clockedIteratorEditingId
+                      ? Object.fromEntries(
+                          Object.entries(effectiveRegistry).filter(([k]) => k !== clockedIteratorEditingId),
+                        )
+                      : effectiveRegistry;
                     const result = createClockedIteratorDefinition({
-                      registry: effectiveRegistry,
+                      registry: registryForValidation,
                       name: clockedIteratorName,
                       id: clockedIteratorId,
                       roundDefId: clockedIteratorRoundDefId,
@@ -4755,11 +4790,15 @@ function MainApp() {
                       return;
                     }
 
-                    dispatch({ type: 'addCompositeToLibrary', entry: result.entry });
+                    if (clockedIteratorEditingId) {
+                      dispatch({ type: 'updateCompositeInLibrary', entry: result.entry });
+                    } else {
+                      dispatch({ type: 'addCompositeToLibrary', entry: result.entry });
+                    }
                     closeClockedIteratorDialog();
                   }}
                 >
-                  Create Clocked Iterator
+                  {clockedIteratorEditingId ? 'Update Clocked Iterator' : 'Create Clocked Iterator'}
                 </button>
               </div>
             </div>

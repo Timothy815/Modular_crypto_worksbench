@@ -148,6 +148,7 @@ export interface DetachedPanelCommandHandlers {
   cancelPaletteCanvasDrag: (panelWindowId: string) => void;
   insertStarterChain: (starterId: string) => void;
   openComposite: (defId: string) => void;
+  editClockedIterator: (defId: string) => void;
   duplicateReusable: (defId: string) => void;
   openPrimitiveMicroDemo: (defId: string) => void;
   openPipelineMicroDemo: (pipelineId: string) => void;
@@ -296,6 +297,9 @@ export function connectDetachedPanelChannel(args: DetachedPanelChannelBridgeArgs
         return;
       case 'openComposite':
         args.commandHandlers.openComposite(command.defId);
+        return;
+      case 'editClockedIterator':
+        args.commandHandlers.editClockedIterator(command.defId);
         return;
       case 'duplicateReusable':
         args.commandHandlers.duplicateReusable(command.defId);

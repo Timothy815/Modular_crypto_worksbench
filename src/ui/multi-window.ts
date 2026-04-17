@@ -144,6 +144,7 @@ export type DetachedPanelCommand =
   | { type: 'cancelPaletteCanvasDrag' }
   | { type: 'insertStarterChain'; starterId: string }
   | { type: 'openComposite'; defId: string }
+  | { type: 'editClockedIterator'; defId: string }
   | { type: 'duplicateReusable'; defId: string }
   | { type: 'openPrimitiveMicroDemo'; defId: string }
   | { type: 'openPipelineMicroDemo'; pipelineId: string }

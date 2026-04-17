@@ -31,6 +31,7 @@ interface PrimitivePaletteProps {
   onStartCanvasDrag?: (defId: string, clientX: number, clientY: number) => void;
   onInsertStarterChain: (starterId: string) => void;
   onOpenComposite: (defId: string) => void;
+  onEditClockedIterator: (defId: string) => void;
   onDuplicateReusable: (defId: string) => void;
   onOpenPrimitiveMicroDemo: (defId: string) => void;
   onExportCompositeLibrary: () => void;
@@ -155,6 +156,7 @@ export function PrimitivePalette({
   onStartCanvasDrag,
   onInsertStarterChain,
   onOpenComposite,
+  onEditClockedIterator,
   onDuplicateReusable,
   onOpenPrimitiveMicroDemo,
   onExportCompositeLibrary,
@@ -371,6 +373,7 @@ export function PrimitivePalette({
                   onAddModule={onAddModule}
                   onStartCanvasDrag={onStartCanvasDrag}
                   onOpenComposite={onOpenComposite}
+                  onEditClockedIterator={onEditClockedIterator}
                 onDuplicateReusable={onDuplicateReusable}
                 onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                 onRemoveComposite={onRemoveComposite}
@@ -405,6 +408,7 @@ export function PrimitivePalette({
                 onAddModule={onAddModule}
                 onStartCanvasDrag={onStartCanvasDrag}
                 onOpenComposite={onOpenComposite}
+                    onEditClockedIterator={onEditClockedIterator}
                     onDuplicateReusable={onDuplicateReusable}
                     onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                     onRemoveComposite={onRemoveComposite}
@@ -512,6 +516,7 @@ export function PrimitivePalette({
                       onAddModule={onAddModule}
                       onStartCanvasDrag={onStartCanvasDrag}
                       onOpenComposite={onOpenComposite}
+                      onEditClockedIterator={onEditClockedIterator}
                       onDuplicateReusable={onDuplicateReusable}
                       onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                       onRemoveComposite={onRemoveComposite}
@@ -547,6 +552,7 @@ interface ModuleLibraryCardProps {
   onAddModule: (defId: string) => void;
   onStartCanvasDrag?: (defId: string, clientX: number, clientY: number) => void;
   onOpenComposite: (defId: string) => void;
+  onEditClockedIterator: (defId: string) => void;
   onDuplicateReusable: (defId: string) => void;
   onOpenPrimitiveMicroDemo: (defId: string) => void;
   onRemoveComposite: (defId: string) => void;
@@ -562,6 +568,7 @@ function ModuleLibraryCard({
   onAddModule,
   onStartCanvasDrag,
   onOpenComposite,
+  onEditClockedIterator,
   onDuplicateReusable,
   onOpenPrimitiveMicroDemo,
   onRemoveComposite,
@@ -570,9 +577,10 @@ function ModuleLibraryCard({
 }: ModuleLibraryCardProps) {
   const isComposite = 'kind' in def && def.kind === 'composite';
   const isIterator = 'kind' in def && def.kind === 'iterator';
+  const isClockedIterator = 'kind' in def && def.kind === 'clocked-iterator';
   const isConditional = 'kind' in def && def.kind === 'conditional';
   const isMultiConditional = 'kind' in def && def.kind === 'multi-conditional';
-  const isReusable = isComposite || isIterator || isConditional || isMultiConditional;
+  const isReusable = isComposite || isIterator || isClockedIterator || isConditional || isMultiConditional;
   const [showHelp, setShowHelp] = useState(false);
   const primitiveMicroDemo = getPrimitiveMicroDemo(def.id);
 
@@ -618,7 +626,7 @@ function ModuleLibraryCard({
             ) : null}
             {isReusable ? (
               <span className={isComposite ? 'module-kind-badge' : 'module-kind-badge module-kind-badge-iterator'}>
-                {isBuiltInReusable ? 'Architecture' : isComposite ? 'Composite' : 'Iterator'}
+                {isBuiltInReusable ? 'Architecture' : isComposite ? 'Composite' : isClockedIterator ? 'Clocked Iterator' : 'Iterator'}
               </span>
             ) : null}
             {isReusable ? (
@@ -665,6 +673,17 @@ function ModuleLibraryCard({
                 type="button"
                 className="primitive-action-button"
                 onClick={() => onOpenComposite(def.id)}
+                title={`Edit ${def.name}`}
+                aria-label={`Edit ${def.name}`}
+              >
+                ✎
+              </button>
+            ) : null}
+            {isClockedIterator && !isBuiltInReusable ? (
+              <button
+                type="button"
+                className="primitive-action-button"
+                onClick={() => onEditClockedIterator(def.id)}
                 title={`Edit ${def.name}`}
                 aria-label={`Edit ${def.name}`}
               >
@@ -760,6 +779,17 @@ function ModuleLibraryCard({
                 type="button"
                 className="primitive-action-button"
                 onClick={() => onOpenComposite(def.id)}
+                title={`Edit ${def.name}`}
+                aria-label={`Edit ${def.name}`}
+              >
+                ✎
+              </button>
+            ) : null}
+            {isClockedIterator && !isBuiltInReusable ? (
+              <button
+                type="button"
+                className="primitive-action-button"
+                onClick={() => onEditClockedIterator(def.id)}
                 title={`Edit ${def.name}`}
                 aria-label={`Edit ${def.name}`}
               >
