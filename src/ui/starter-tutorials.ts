@@ -2193,6 +2193,48 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
   },
   {
     version: 1,
+    id: 'clocked-round-traversal',
+    title: 'One Pulse, One Round',
+    group: 'Conditional Clocking',
+    stage: 'streams-and-scheduling',
+    order: 165,
+    recommendedAfter: ['filtered-keystream'],
+    summary:
+      'Learn how a clocked iterator separates the traversal machine from the structure machine: each pulse advances one round, the output accumulates, and the bank halts explicitly.',
+    projectId: 'clocked-round-traversal',
+    steps: [
+      {
+        id: 'ci-input',
+        title: 'The Input Seeds The First State',
+        body: 'IV provides the constant 8-bit seed value. Before any pulse arrives, the clocked iterator outputs this seed unchanged. Nothing has been transformed yet — the machine is waiting for the first clock signal.',
+        focusModuleId: 'input',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'ci-clock',
+        title: 'Each Pulse Advances Exactly One Round',
+        body: 'Clock fires a 1-bit pulse on every tick. Each pulse tells the iterator to apply the next round of the body to the current accumulated state. No pulse means no advancement — the output holds steady.',
+        focusModuleId: 'clock',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'ci-iterator',
+        title: 'The Iterator Holds The Current Position',
+        body: 'Select the iterator and watch the inspector as you step through. It shows the current step, the total round count, and whether the machine has halted. After 3 pulses the step reaches 3/3 and the machine halts — no further pulses can advance it.',
+        focusModuleId: 'iterator',
+        targetStepIndex: 3,
+      },
+      {
+        id: 'ci-output',
+        title: 'The Output Is The Accumulated Result',
+        body: 'Each round applies the body transform to the previous output. By tick 4 the iterator has halted and the output shows the result of applying all three rounds in sequence. This is cumulative traversal state: not the current round in isolation, but the progressively transformed result.',
+        focusModuleId: 'output',
+        targetStepIndex: 4,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'filtered-keystream',
     title: 'The Filtered Keystream',
     group: 'Conditional Clocking',

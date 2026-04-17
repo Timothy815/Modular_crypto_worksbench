@@ -137,6 +137,8 @@ const ITEM_ORDER_HINTS: Record<string, number> = {
   'repair-the-majority-vote': 150,
   'filtered-keystream': 160,
   'repair-the-filter-selector': 160,
+  'clocked-round-traversal': 165,
+  'repair-the-clock-pulse': 165,
   'routed-clock-keystream': 170,
   'repair-the-routed-clock': 170,
   'one-machine-two-directions': 175,

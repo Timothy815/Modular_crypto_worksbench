@@ -35,6 +35,7 @@ const lfsrPredictabilityProject = demoProjects.find((project) => project.id === 
 const gatedKeystreamProject = demoProjects.find((project) => project.id === 'gated-keystream');
 const majorityKeystreamProject = demoProjects.find((project) => project.id === 'majority-keystream');
 const filteredKeystreamProject = demoProjects.find((project) => project.id === 'filtered-keystream');
+const clockedRoundTraversalProject = demoProjects.find((project) => project.id === 'clocked-round-traversal');
 const routedClockKeystreamProject = demoProjects.find((project) => project.id === 'routed-clock-keystream');
 const advancedRotorSteppingProject = demoProjects.find((project) => project.id === 'advanced-rotor-stepping');
 const visibleSymbolScrambleProject = demoProjects.find((project) => project.id === 'visible-symbol-scramble');
@@ -145,6 +146,9 @@ if (!majorityKeystreamProject) {
 if (!filteredKeystreamProject) {
   throw new Error('Expected filtered-keystream demo project to seed starter challenges.');
 }
+if (!clockedRoundTraversalProject) {
+  throw new Error('Expected clocked-round-traversal demo project to seed starter challenges.');
+}
 if (!routedClockKeystreamProject) {
   throw new Error('Expected routed-clock-keystream demo project to seed starter challenges.');
 }
@@ -254,6 +258,11 @@ const majorityKeystreamTarget = cloneProject(majorityKeystreamProject.project);
 const brokenMajorityKeystreamStart = cloneProject(majorityKeystreamProject.project);
 const filteredKeystreamTarget = cloneProject(filteredKeystreamProject.project);
 const brokenFilteredKeystreamStart = cloneProject(filteredKeystreamProject.project);
+const clockedRoundTraversalTarget = cloneProject(clockedRoundTraversalProject.project);
+const brokenClockedRoundTraversalStart = cloneProject(clockedRoundTraversalProject.project);
+brokenClockedRoundTraversalStart.connections = brokenClockedRoundTraversalStart.connections.filter(
+  (c) => !(c.from.moduleId === 'clock' && c.to.moduleId === 'iterator'),
+);
 const routedClockKeystreamTarget = cloneProject(routedClockKeystreamProject.project);
 const brokenRoutedClockKeystreamStart = cloneProject(routedClockKeystreamProject.project);
 const advancedRotorSteppingTarget = cloneProject(advancedRotorSteppingProject.project);
@@ -1484,6 +1493,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'Both candidate data registers are already correct; the problem is in the select line.',
       'Mux does not vote and it does not gate time. It simply chooses input a or input b.',
       'If the selector bit flips, the machine keeps the same rhythm but chooses the wrong keystream source.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-clock-pulse',
+    title: 'Repair the Clock Pulse',
+    projectId: 'clocked-round-traversal',
+    group: 'Conditional Clocking',
+    stage: 'streams-and-scheduling',
+    order: 165,
+    recommendedAfter: ['clocked-round-traversal'],
+    difficulty: 'beginner',
+    prompt:
+      'The clocked iterator is placed and wired to its input, but it never advances past the seed. Identify what is missing and restore the connection that drives the iterator forward.',
+    startingProject: brokenClockedRoundTraversalStart,
+    startingLayout: cloneProject(clockedRoundTraversalProject.layout),
+    targetProject: clockedRoundTraversalTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The iterator has two inputs: one for the data and one for the clock signal.',
+      'Without a clock connection the iterator stays frozen at step 0 on every tick.',
+      'The Clock module is already in the workspace — connect its pulse output to the iterator clock input.',
     ],
   },
   {

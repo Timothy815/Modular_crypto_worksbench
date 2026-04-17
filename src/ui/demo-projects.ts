@@ -2554,6 +2554,37 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'clocked-round-traversal',
+    name: 'Clocked Round Traversal',
+    group: 'Conditional Clocking',
+    stage: 'streams-and-scheduling',
+    order: 165,
+    recommendedAfter: ['filtered-keystream'],
+    summary:
+      'A bounded round body advances one step per clock pulse. Watch the accumulated output change with each tick, then halt when the round bank is exhausted.',
+    pipeline: 'Clock + BitSource -> ClockedByteRoundIterator(3 rounds, halt) -> BitOutput',
+    defaultTickedMode: true,
+    project: {
+      modules: [
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 8 } },
+        { id: 'input', defId: 'IV', params: { width: 8, value: 'a6' } },
+        { id: 'iterator', defId: 'ClockedByteRoundIterator', params: {} },
+        { id: 'output', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'iterator', port: 'clock' } },
+        { from: { moduleId: 'input', port: 'out' }, to: { moduleId: 'iterator', port: 'in' } },
+        { from: { moduleId: 'iterator', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      clock: { x: 40, y: 56 },
+      input: { x: 40, y: 248 },
+      iterator: { x: 320, y: 152 },
+      output: { x: 600, y: 152 },
+    },
+  },
+  {
     id: 'one-machine-two-directions',
     name: 'One Machine Two Directions',
     group: 'Conditional Clocking',
