@@ -164,6 +164,16 @@ interface CompositeDrilldownState {
   conditionalBranch?: 'then' | 'else';
 }
 
+interface PaletteCanvasDragState {
+  defId: string;
+  startClientX: number;
+  startClientY: number;
+  clientX: number;
+  clientY: number;
+  isActive: boolean;
+  isOverCanvas: boolean;
+}
+
 function App() {
   const userManualConfig = getUserManualConfig();
   if (userManualConfig) {
@@ -247,6 +257,7 @@ function MainApp() {
     originX: number;
     originWidth: number;
   } | null>(null);
+  const [paletteCanvasDrag, setPaletteCanvasDrag] = useState<PaletteCanvasDragState | null>(null);
   const [challengeCaptureShouldExport, setChallengeCaptureShouldExport] = useState<boolean>(() => {
     if (typeof window === 'undefined') {
       return true;
@@ -262,6 +273,46 @@ function MainApp() {
     const savedTheme = window.localStorage.getItem('mcw:theme');
     return savedTheme === 'dark' ? 'dark' : 'light';
   });
+  useEffect(() => {
+    if (!paletteCanvasDrag) {
+      return undefined;
+    }
+
+    const handlePointerMove = (event: MouseEvent) => {
+      setPaletteCanvasDrag((current) => {
+        if (!current) {
+          return current;
+        }
+
+        const deltaX = event.clientX - current.startClientX;
+        const deltaY = event.clientY - current.startClientY;
+        const isActive = current.isActive || deltaX * deltaX + deltaY * deltaY >= 36;
+        const canvasSurface = document.querySelector('.canvas-surface');
+        const canvasRect =
+          canvasSurface instanceof HTMLElement ? canvasSurface.getBoundingClientRect() : null;
+        const isOverCanvas = Boolean(
+          canvasRect &&
+            event.clientX >= canvasRect.left &&
+            event.clientX <= canvasRect.right &&
+            event.clientY >= canvasRect.top &&
+            event.clientY <= canvasRect.bottom,
+        );
+
+        return {
+          ...current,
+          clientX: event.clientX,
+          clientY: event.clientY,
+          isActive,
+          isOverCanvas,
+        };
+      });
+    };
+
+    window.addEventListener('mousemove', handlePointerMove);
+    return () => {
+      window.removeEventListener('mousemove', handlePointerMove);
+    };
+  }, [paletteCanvasDrag]);
   const [parameterClipboard, setParameterClipboard] = useState<ParameterClipboardState | null>(null);
   const hostWindowIdRef = useRef(createWindowSessionId());
   const detachedPanelWindowsRef = useRef<Record<string, Window | null>>({});
@@ -3193,6 +3244,18 @@ function MainApp() {
                 ? undefined
                 : dispatch({ type: 'addModule', projectId: activeProjectDefinition.id, moduleDef, position })
             }
+            activePaletteModuleDrag={
+              paletteCanvasDrag
+                ? {
+                    moduleDef: effectiveRegistry[paletteCanvasDrag.defId] ?? null,
+                    clientX: paletteCanvasDrag.clientX,
+                    clientY: paletteCanvasDrag.clientY,
+                    isActive: paletteCanvasDrag.isActive,
+                    isOverCanvas: paletteCanvasDrag.isOverCanvas,
+                  }
+                : null
+            }
+            onClearPaletteModuleDrag={() => setPaletteCanvasDrag(null)}
             onInsertModuleAndConnect={(moduleDef, position, fromModuleId, fromPort, toPort) =>
               state.compositeEditor || isCompositeDrilldownActive
                 ? undefined
@@ -3394,6 +3457,17 @@ function MainApp() {
                   setPaletteViewMode((currentMode) =>
                     currentMode === 'expanded' ? 'compact' : 'expanded',
                   )
+                }
+                onStartCanvasDrag={(defId, clientX, clientY) =>
+                  setPaletteCanvasDrag({
+                    defId,
+                    startClientX: clientX,
+                    startClientY: clientY,
+                    clientX,
+                    clientY,
+                    isActive: false,
+                    isOverCanvas: false,
+                  })
                 }
                 compositeUsageCountById={compositeUsageCountById}
                 builtInReusableIds={builtInReusableIds}
@@ -4849,6 +4923,20 @@ function MainApp() {
               </button>
             </div>
           </div>
+        </div>
+      ) : null}
+      {paletteCanvasDrag?.isActive && !paletteCanvasDrag.isOverCanvas ? (
+        <div
+          className="palette-canvas-drag-ghost"
+          style={{
+            left: `${paletteCanvasDrag.clientX + 14}px`,
+            top: `${paletteCanvasDrag.clientY + 14}px`,
+          }}
+        >
+          <div className="palette-canvas-drag-ghost-id">{paletteCanvasDrag.defId}</div>
+          <strong className="palette-canvas-drag-ghost-name">
+            {effectiveRegistry[paletteCanvasDrag.defId]?.name ?? paletteCanvasDrag.defId}
+          </strong>
         </div>
       ) : null}
     </main>

@@ -28,6 +28,7 @@ interface PrimitivePaletteProps {
   viewMode: 'compact' | 'expanded';
   onToggleViewMode: () => void;
   onAddModule: (defId: string) => void;
+  onStartCanvasDrag?: (defId: string, clientX: number, clientY: number) => void;
   onInsertStarterChain: (starterId: string) => void;
   onOpenComposite: (defId: string) => void;
   onDuplicateReusable: (defId: string) => void;
@@ -151,6 +152,7 @@ export function PrimitivePalette({
   viewMode,
   onToggleViewMode,
   onAddModule,
+  onStartCanvasDrag,
   onInsertStarterChain,
   onOpenComposite,
   onDuplicateReusable,
@@ -366,8 +368,9 @@ export function PrimitivePalette({
                 viewMode={viewMode}
                 usageCount={compositeUsageCountById[def.id] ?? 0}
                 isBuiltInReusable={builtInReusableIds.includes(def.id)}
-                onAddModule={onAddModule}
-                onOpenComposite={onOpenComposite}
+                  onAddModule={onAddModule}
+                  onStartCanvasDrag={onStartCanvasDrag}
+                  onOpenComposite={onOpenComposite}
                 onDuplicateReusable={onDuplicateReusable}
                 onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                 onRemoveComposite={onRemoveComposite}
@@ -399,8 +402,9 @@ export function PrimitivePalette({
                     viewMode={viewMode}
                     usageCount={compositeUsageCountById[def.id] ?? 0}
                     isBuiltInReusable={false}
-                    onAddModule={onAddModule}
-                    onOpenComposite={onOpenComposite}
+                onAddModule={onAddModule}
+                onStartCanvasDrag={onStartCanvasDrag}
+                onOpenComposite={onOpenComposite}
                     onDuplicateReusable={onDuplicateReusable}
                     onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                     onRemoveComposite={onRemoveComposite}
@@ -490,6 +494,7 @@ export function PrimitivePalette({
                       usageCount={compositeUsageCountById[def.id] ?? 0}
                       isBuiltInReusable={builtInReusableIds.includes(def.id)}
                       onAddModule={onAddModule}
+                      onStartCanvasDrag={onStartCanvasDrag}
                       onOpenComposite={onOpenComposite}
                       onDuplicateReusable={onDuplicateReusable}
                       onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
@@ -524,6 +529,7 @@ interface ModuleLibraryCardProps {
   usageCount: number;
   isBuiltInReusable: boolean;
   onAddModule: (defId: string) => void;
+  onStartCanvasDrag?: (defId: string, clientX: number, clientY: number) => void;
   onOpenComposite: (defId: string) => void;
   onDuplicateReusable: (defId: string) => void;
   onOpenPrimitiveMicroDemo: (defId: string) => void;
@@ -538,6 +544,7 @@ function ModuleLibraryCard({
   usageCount,
   isBuiltInReusable,
   onAddModule,
+  onStartCanvasDrag,
   onOpenComposite,
   onDuplicateReusable,
   onOpenPrimitiveMicroDemo,
@@ -562,6 +569,22 @@ function ModuleLibraryCard({
     if (!compatibleDropPort || !onDropForPendingConnection) return;
     event.stopPropagation();
     onDropForPendingConnection(def.id, compatibleDropPort.name);
+  }
+
+  function handleCardMouseDown(event: React.MouseEvent) {
+    if (!onStartCanvasDrag || pendingConnectionSourceType || event.button !== 0) {
+      return;
+    }
+
+    const target = event.target;
+    if (
+      target instanceof HTMLElement &&
+      target.closest('button, input, textarea, select, a, [data-no-palette-drag="true"]')
+    ) {
+      return;
+    }
+
+    onStartCanvasDrag(def.id, event.clientX, event.clientY);
   }
 
   if (viewMode === 'compact') {
@@ -659,7 +682,7 @@ function ModuleLibraryCard({
       className={`primitive-card primitive-card-${getModuleCategory(def)}${isDropTarget ? ' primitive-card-droppable' : pendingConnectionSourceType ? ' primitive-card-incompat' : ''}`}
       onMouseUp={isDropTarget ? handleDropMouseUp : undefined}
     >
-      <div className="primitive-main">
+      <div className="primitive-main" onMouseDown={handleCardMouseDown}>
         <div className="primitive-meta">
           <strong className="primitive-title">{def.name}</strong>
           <p className="primitive-def-id">{def.id}</p>

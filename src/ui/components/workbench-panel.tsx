@@ -551,6 +551,14 @@ interface WorkbenchPanelProps {
   onRenameModuleInstance: (moduleId: string, nextModuleId: string) => void;
   onUpdateModuleParam: (moduleId: string, key: string, value: unknown) => void;
   onAddModule: (moduleDef: ModuleDefinition, position: { x: number; y: number }) => void;
+  activePaletteModuleDrag?: {
+    moduleDef: ModuleDefinition | null;
+    clientX: number;
+    clientY: number;
+    isActive: boolean;
+    isOverCanvas: boolean;
+  } | null;
+  onClearPaletteModuleDrag?: () => void;
   onInsertModuleAndConnect: (
     moduleDef: ModuleDefinition,
     position: { x: number; y: number },
@@ -717,6 +725,8 @@ export function WorkbenchPanel({
   onRenameModuleInstance,
   onUpdateModuleParam,
   onAddModule,
+  activePaletteModuleDrag = null,
+  onClearPaletteModuleDrag,
   onInsertModuleAndConnect,
   onPendingConnectionChange,
   projects,
@@ -1262,6 +1272,53 @@ export function WorkbenchPanel({
       scrollTop: canvasSurface.scrollTop,
       zoom: workspaceZoom,
     });
+  }
+
+  function getPaletteModulePlacement(
+    moduleDef: ModuleDefinition,
+    clientX: number,
+    clientY: number,
+  ) {
+    const canvasRect = canvasSurfaceRef.current?.getBoundingClientRect();
+    if (
+      !canvasRect ||
+      clientX < canvasRect.left ||
+      clientX > canvasRect.right ||
+      clientY < canvasRect.top ||
+      clientY > canvasRect.bottom
+    ) {
+      return null;
+    }
+
+    const pointer = getCanvasPointerFromClient(clientX, clientY);
+    if (!pointer) {
+      return null;
+    }
+
+    const nodeSizeClass = getNodeSizeClass(moduleDef.inputs.length + moduleDef.outputs.length);
+    const nodeSizeConfig = NODE_SIZE_CONFIGS[nodeSizeClass];
+    const rawPosition = {
+      x: Math.max(16, pointer.x),
+      y: Math.max(16, pointer.y),
+    };
+    const snappedPosition = snapToGuides
+      ? snapModulePositionToGuideRails(
+          snapToGrid ? snapPointToGrid(rawPosition) : rawPosition,
+          guideRails,
+          stageLabels,
+          groupBoxes,
+          nodeSizeConfig.width,
+          nodeSizeConfig.height,
+        )
+      : snapToGrid
+        ? snapPointToGrid(rawPosition)
+        : rawPosition;
+
+    return {
+      nodeSizeClass,
+      nodeSizeConfig,
+      position: snappedPosition,
+    };
   }
 
   function fitWorkspaceView() {
@@ -2471,6 +2528,48 @@ export function WorkbenchPanel({
     onSelectModule(requestedFocusModuleId, false);
     onWorkspaceFocusHandled?.();
   }, [effectiveLayout, onSelectModule, onWorkspaceFocusHandled, requestedFocusModuleId, workspaceZoom]);
+
+  const paletteModuleGhost = useMemo(() => {
+    if (!activePaletteModuleDrag?.isActive || !activePaletteModuleDrag.moduleDef) {
+      return null;
+    }
+
+    return getPaletteModulePlacement(
+      activePaletteModuleDrag.moduleDef,
+      activePaletteModuleDrag.clientX,
+      activePaletteModuleDrag.clientY,
+    );
+  }, [activePaletteModuleDrag, getPaletteModulePlacement]);
+
+  useEffect(() => {
+    if (!activePaletteModuleDrag || !onClearPaletteModuleDrag) {
+      return undefined;
+    }
+
+    const handlePointerUp = (event: MouseEvent) => {
+      if (activePaletteModuleDrag.isActive && activePaletteModuleDrag.moduleDef) {
+        const dropTarget = getPaletteModulePlacement(
+          activePaletteModuleDrag.moduleDef,
+          event.clientX,
+          event.clientY,
+        );
+        if (dropTarget && !isCompositeEditor) {
+          onAddModule(activePaletteModuleDrag.moduleDef, dropTarget.position);
+        }
+      }
+
+      onClearPaletteModuleDrag();
+    };
+
+    window.addEventListener('mouseup', handlePointerUp, true);
+    return () => window.removeEventListener('mouseup', handlePointerUp, true);
+  }, [
+    activePaletteModuleDrag,
+    getPaletteModulePlacement,
+    isCompositeEditor,
+    onAddModule,
+    onClearPaletteModuleDrag,
+  ]);
 
   function renderConnection(
     connection: Project['connections'][number],
@@ -3772,6 +3871,49 @@ export function WorkbenchPanel({
             )}
             {renderBridgeInsertionPopup()}
           </svg>
+
+          {activePaletteModuleDrag?.isActive &&
+          activePaletteModuleDrag.moduleDef &&
+          paletteModuleGhost ? (() => {
+            const moduleDef = activePaletteModuleDrag.moduleDef;
+            const category = getModuleCategory(moduleDef);
+            const sequentialRole = isTickedMode
+              ? getSequentialRole(moduleDef.id, moduleDef)
+              : null;
+
+            return (
+              <div
+                className={
+                  `graph-node graph-node-${category} graph-node-palette-ghost` +
+                  (paletteModuleGhost.nodeSizeClass !== 'standard'
+                    ? ` graph-node--${paletteModuleGhost.nodeSizeClass}`
+                    : '')
+                }
+                style={{
+                  left: `${paletteModuleGhost.position.x}px`,
+                  top: `${paletteModuleGhost.position.y}px`,
+                }}
+              >
+                <div className="graph-node-body">
+                  <div className="graph-node-meta-row">
+                    <span className="graph-node-type">{moduleDef.id}</span>
+                  </div>
+                  {sequentialRole ? (
+                    <div className="graph-node-role-row">
+                      <span className={`graph-node-role-badge graph-node-role-badge-${sequentialRole}`}>
+                        {getSequentialRoleLabel(sequentialRole)}
+                      </span>
+                    </div>
+                  ) : null}
+                  <strong className="graph-node-title">{moduleDef.name}</strong>
+                  <div className="graph-node-ports">
+                    <span>{moduleDef.inputs.length} in</span>
+                    <span>{moduleDef.outputs.length} out</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })() : null}
 
           {activeProjectState.modules.map((moduleInstance) => {
             const position = effectiveLayout[moduleInstance.id] ?? { x: 24, y: 24 };

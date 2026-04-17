@@ -1099,6 +1099,14 @@ body.dock-resizing {
   gap: 12px;
 }
 
+.primitive-main {
+  cursor: grab;
+}
+
+.primitive-main:active {
+  cursor: grabbing;
+}
+
 .primitive-meta {
   min-width: 0;
 }
@@ -3883,6 +3891,16 @@ body.canvas-resizing {
   -webkit-backdrop-filter: blur(3px);
 }
 
+.graph-node-palette-ghost {
+  z-index: 6;
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.graph-node-palette-ghost .graph-node-body {
+  cursor: grabbing;
+}
+
 .graph-node--compact {
   width: 120px;
 }
@@ -4503,6 +4521,39 @@ body.canvas-resizing {
       color-mix(in srgb, white 10%, transparent) 0%,
       transparent 36%
     );
+}
+
+.palette-canvas-drag-ghost {
+  position: fixed;
+  z-index: 70;
+  min-width: 144px;
+  max-width: 220px;
+  padding: 10px 12px 11px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--line) 84%, white);
+  background: color-mix(in srgb, var(--surface-strong) 96%, white);
+  box-shadow:
+    0 12px 28px rgba(18, 23, 38, 0.16),
+    inset 0 1px 0 color-mix(in srgb, white 45%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: none;
+  transform: translate3d(0, 0, 0);
+}
+
+.palette-canvas-drag-ghost-id {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.palette-canvas-drag-ghost-name {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink-strong);
+  overflow-wrap: anywhere;
 }
 
 .graph-node-issue-badge {
