@@ -1,4 +1,4 @@
-import { isCompositeDefinition, isIteratorDefinition } from './composites';
+import { isClockedIteratorDefinition, isCompositeDefinition, isIteratorDefinition } from './composites';
 import {
   type ModuleDefinition,
   type ModuleInputs,
@@ -20,7 +20,7 @@ const BYPASSABLE_MODULE_IDS = new Set([
 ]);
 
 export function isBypassEligibleDefinition(def: ModuleDefinition): boolean {
-  if (isCompositeDefinition(def) || isIteratorDefinition(def)) {
+  if (isCompositeDefinition(def) || isIteratorDefinition(def) || isClockedIteratorDefinition(def)) {
     return false;
   }
 
@@ -36,8 +36,8 @@ export function isBypassEligibleDefinition(def: ModuleDefinition): boolean {
 }
 
 export function getBypassIneligibilityReason(def: ModuleDefinition): string {
-  if (isCompositeDefinition(def) || isIteratorDefinition(def)) {
-    return 'Bypass V1 does not apply to composite or iterator definitions.';
+  if (isCompositeDefinition(def) || isIteratorDefinition(def) || isClockedIteratorDefinition(def)) {
+    return 'Bypass V1 does not apply to composite, iterator, or clocked iterator definitions.';
   }
 
   if (def.inputs.length !== 1 || def.outputs.length !== 1) {

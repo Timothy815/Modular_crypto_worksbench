@@ -59,6 +59,7 @@ describe('primitive micro demos', () => {
       'BitsToAsciiChar',
       'BitsToHexDigit',
       'ByteRoundIterator',
+      'ClockedByteRoundIterator',
       'ConditionalBranchDemo',
     ]);
   });
@@ -166,6 +167,9 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('ByteRoundIterator')?.name).toBe(
       'Byte Round Iterator Micro Demo',
     );
+    expect(getPrimitiveMicroDemo('ClockedByteRoundIterator')?.name).toBe(
+      'Clocked Byte Round Iterator Micro Demo',
+    );
     expect(getPrimitiveMicroDemo('ConditionalBranchDemo')?.name).toBe(
       'Conditional Branch Demo Micro Demo',
     );
@@ -188,6 +192,7 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('TickedSymbolsToSequence')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('TickedBitsToSequence')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('BitsSequenceToTicked')?.defaultTickedMode).toBe(true);
+    expect(getPrimitiveMicroDemo('ClockedByteRoundIterator')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('BitSplit')?.defaultTickedMode).toBeUndefined();
     expect(getPrimitiveMicroDemo('BitPad')?.defaultTickedMode).toBeUndefined();
     expect(getPrimitiveMicroDemo('BitJoin')?.defaultTickedMode).toBeUndefined();
@@ -508,6 +513,16 @@ describe('primitive micro demos', () => {
       'ByteRoundComposite',
       'BitSource',
       'BitOutput',
+      'BitOutput',
+    ]);
+  });
+
+  it('keeps the clocked iterator demo honest about visible pulse-driven traversal', () => {
+    const demo = getPrimitiveMicroDemo('ClockedByteRoundIterator');
+    expect(demo?.document.project.modules.map((module) => module.defId)).toEqual([
+      'ClockedByteRoundIterator',
+      'BitSequenceInput',
+      'Clock',
       'BitOutput',
     ]);
   });

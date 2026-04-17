@@ -345,6 +345,27 @@ export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
     },
   },
   {
+    id: 'ClockedByteRoundIterator',
+    name: 'Clocked Byte Round Iterator',
+    version: 1,
+    source: 'built-in',
+    definition: {
+      id: 'ClockedByteRoundIterator',
+      name: 'Clocked Byte Round Iterator',
+      kind: 'clocked-iterator',
+      version: 1,
+      inputs: [
+        { name: 'in', type: 'bits' },
+        { name: 'clock', type: 'bits', kind: 'scalar' },
+      ],
+      outputs: [{ name: 'out', type: 'bits' }],
+      paramSchema: {},
+      roundDefId: 'ByteRoundComposite',
+      roundCount: 3,
+      endPolicy: 'halt',
+    },
+  },
+  {
     id: 'HashDigestRoundComposite',
     name: 'Hash Digest Round',
     version: 1,

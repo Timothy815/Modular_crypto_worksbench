@@ -46,6 +46,19 @@ export interface IteratorDef {
   version: number;
 }
 
+export interface ClockedIteratorDef {
+  id: string;
+  name: string;
+  kind: 'clocked-iterator';
+  inputs: PortDef[];
+  outputs: PortDef[];
+  paramSchema: ParamSchema;
+  roundDefId: string;
+  roundCount: number;
+  endPolicy: 'halt' | 'wrap';
+  version: number;
+}
+
 export interface ConditionalDef {
   id: string;
   name: string;
@@ -74,7 +87,7 @@ export interface CompositeLibraryEntry {
   name: string;
   version: number;
   source?: 'built-in' | 'user';
-  definition: CompositeDef | IteratorDef | ConditionalDef | MultiConditionalDef;
+  definition: CompositeDef | IteratorDef | ClockedIteratorDef | ConditionalDef | MultiConditionalDef;
 }
 
 export function isBuiltInCompositeLibraryEntry(entry: CompositeLibraryEntry) {
@@ -87,6 +100,10 @@ export function isCompositeDefinition(definition: ModuleDefinition): definition 
 
 export function isIteratorDefinition(definition: ModuleDefinition): definition is IteratorDef {
   return 'kind' in definition && definition.kind === 'iterator';
+}
+
+export function isClockedIteratorDefinition(definition: ModuleDefinition): definition is ClockedIteratorDef {
+  return 'kind' in definition && definition.kind === 'clocked-iterator';
 }
 
 export function isConditionalDefinition(definition: ModuleDefinition): definition is ConditionalDef {

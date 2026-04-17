@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: April 16, 2026
+Last updated: April 17, 2026
 
 ---
 
@@ -30,6 +30,7 @@ Current `main` now also includes later post-`v2.1.0` follow-ons:
 - `UI-ARCHITECTURE-STABILIZATION-V1.md`
 - `ITERATOR-DEFINITION-AUTHORING-V1.md`
 - `ITERATOR-WORKFLOW-POLISH-V1.md`
+- `CLOCKED-ITERATOR-V1.md`
 
 Iterator definition authoring is now shipped on `main`:
 - a bounded `Create Iterator` flow is available from the workbench structure actions
@@ -43,6 +44,12 @@ Iterator workflow polish is now also shipped on `main`:
 - the inspector explicitly distinguishes inherited iterator count from instance override state
 - a bounded `ByteRoundIterator` micro demo now compares a single round body against its iterator wrapper
 - this slice stays within the existing bounded iterator execution model and does not add signal-driven stop semantics
+
+Clocked iterator traversal is now also shipped on `main`:
+- a separate `clocked-iterator` reusable-definition kind now exists alongside the structural iterator family
+- ticked execution treats it as a pulse-driven bounded traversal machine with explicit `clock`, `roundCount`, and `endPolicy`
+- V1 uses cumulative state, visible `step 0` seed behavior, and bounded `halt` / `wrap` traversal semantics
+- a built-in `ClockedByteRoundIterator` and matching micro demo now expose the slice without adding iterator authoring drift or reset semantics
 
 The older `v2.1` builder-power / maintainability queue is now largely already present on `main`:
 - `REPEATED-STRUCTURE-AUTHORING-V1.md`

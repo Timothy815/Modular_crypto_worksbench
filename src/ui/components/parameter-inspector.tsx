@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { isCompositeDefinition, isConditionalDefinition } from '../../engine/composites';
+import { isClockedIteratorDefinition, isCompositeDefinition, isConditionalDefinition } from '../../engine/composites';
 import { getBypassIneligibilityReason, isBypassEligibleDefinition } from '../../engine/bypass';
 import { isOutputSinkDefId } from '../../engine/output-sinks';
 import type {
@@ -936,6 +936,48 @@ export function ParameterInspector({
       currentTick > 0 ? tickedParamsByModule[moduleInstance.id]?.[currentTick - 1] : undefined,
     );
   }, [currentTick, isTickedMode, moduleDef, moduleInstance, tickCount, tickedParamsByModule]);
+  const clockedIteratorLiveState = useMemo(() => {
+    if (
+      !moduleDef ||
+      !isClockedIteratorDefinition(moduleDef) ||
+      !moduleInstance ||
+      !isTickedMode ||
+      !tickedParamsByModule?.[moduleInstance.id]
+    ) {
+      return null;
+    }
+
+    const tickParams = tickedParamsByModule[moduleInstance.id]?.[currentTick];
+    if (!tickParams) {
+      return null;
+    }
+
+    const currentStep = typeof tickParams.__clockedIteratorCurrentStep === 'number'
+      ? tickParams.__clockedIteratorCurrentStep
+      : 0;
+    const halted = tickParams.__clockedIteratorHalted === true;
+    const accumulated = tickParams.__clockedIteratorAccumulated as
+      | { type: 'bits'; value: number[] }
+      | { type: 'symbol'; value: string }
+      | undefined;
+    const fallbackOutput = execution?.outputsByModuleId?.[moduleInstance.id]?.out as
+      | { type: 'bits'; value: number[] }
+      | { type: 'symbol'; value: string }
+      | undefined;
+    const visibleAccumulated = accumulated ?? fallbackOutput;
+
+    const accumulatedText = !visibleAccumulated
+      ? '—'
+      : visibleAccumulated.type === 'bits'
+        ? visibleAccumulated.value.join('')
+        : visibleAccumulated.value;
+
+    return {
+      currentStep,
+      halted,
+      accumulatedText,
+    };
+  }, [currentTick, execution, isTickedMode, moduleDef, moduleInstance, tickedParamsByModule]);
   const replacementCandidates = useMemo(() => {
     if (!moduleDef) {
       return [];
@@ -1576,6 +1618,36 @@ export function ParameterInspector({
                           <strong>({iteratorRoundSummary.defaultRounds})</strong>
                         </>
                       )}
+                    </p>
+                  </>
+                ) : null}
+              </>
+            ) : moduleDef.kind === 'clocked-iterator' ? (
+              <>
+                <p className="selected-module-kind">Clocked iterator definition</p>
+                <p className="comparison-copy">
+                  Body:{' '}
+                  <strong>
+                    {registry[moduleDef.roundDefId]?.name ?? moduleDef.roundDefId}
+                  </strong>{' '}
+                  <span className="meta-label">({moduleDef.roundDefId})</span>
+                </p>
+                <p className="comparison-copy">
+                  Round bank: <strong>{moduleDef.roundCount}</strong> • End policy:{' '}
+                  <strong>{moduleDef.endPolicy}</strong>
+                </p>
+                {clockedIteratorLiveState ? (
+                  <>
+                    <p className="comparison-copy">
+                      Current step:{' '}
+                      <strong>
+                        {clockedIteratorLiveState.currentStep} / {moduleDef.roundCount}
+                      </strong>
+                      {clockedIteratorLiveState.halted ? ' • halted' : ''}
+                    </p>
+                    <p className="comparison-copy">
+                      Accumulated output:{' '}
+                      <strong>{clockedIteratorLiveState.accumulatedText}</strong>
                     </p>
                   </>
                 ) : null}

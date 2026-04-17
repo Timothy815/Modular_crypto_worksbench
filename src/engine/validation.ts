@@ -11,9 +11,12 @@ import {
   isStatefulModule,
 } from './types';
 import {
+  isClockedIteratorDefinition,
   isConditionalDefinition,
   isCompositeDefinition,
   isIteratorDefinition,
+  isMultiConditionalDefinition,
+  type ClockedIteratorDef,
   type CompositeDef,
   type CompositePortBinding,
   type ConditionalDef,
@@ -162,6 +165,10 @@ function getModuleSpecificParamMessage(
         : 'Iteration count must be a positive integer';
     }
 
+    return null;
+  }
+
+  if (isClockedIteratorDefinition(def)) {
     return null;
   }
 
@@ -351,7 +358,7 @@ function inferStaticBitWidth(
 
   const def = defsByInstanceId.get(moduleId);
   const instance = instancesById.get(moduleId);
-  if (!def || !instance || isCompositeDefinition(def) || isIteratorDefinition(def) || isConditionalDefinition(def)) {
+  if (!def || !instance || isCompositeDefinition(def) || isIteratorDefinition(def) || isClockedIteratorDefinition(def) || isConditionalDefinition(def) || isMultiConditionalDefinition(def)) {
     memo.set(moduleId, null);
     return null;
   }
@@ -564,7 +571,7 @@ function validateBitWidthConstraints(
 
   for (const moduleInstance of project.modules) {
     const def = defsByInstanceId.get(moduleInstance.id);
-    if (!def || isCompositeDefinition(def) || isIteratorDefinition(def)) {
+    if (!def || isCompositeDefinition(def) || isIteratorDefinition(def) || isClockedIteratorDefinition(def) || isMultiConditionalDefinition(def)) {
       continue;
     }
 
@@ -759,7 +766,7 @@ function validateBitWidthConstraints(
 
       const instance = instancesById.get(upstream.moduleId);
       const upstreamDef = defsByInstanceId.get(upstream.moduleId);
-      if (!instance || !upstreamDef || isCompositeDefinition(upstreamDef) || isIteratorDefinition(upstreamDef) || isConditionalDefinition(upstreamDef)) {
+      if (!instance || !upstreamDef || isCompositeDefinition(upstreamDef) || isIteratorDefinition(upstreamDef) || isClockedIteratorDefinition(upstreamDef) || isConditionalDefinition(upstreamDef) || isMultiConditionalDefinition(upstreamDef)) {
         continue;
       }
 
@@ -799,7 +806,7 @@ function validateBitWidthConstraints(
 
       const instance = instancesById.get(upstream.moduleId);
       const upstreamDef = defsByInstanceId.get(upstream.moduleId);
-      if (!instance || !upstreamDef || isCompositeDefinition(upstreamDef) || isIteratorDefinition(upstreamDef) || isConditionalDefinition(upstreamDef)) {
+      if (!instance || !upstreamDef || isCompositeDefinition(upstreamDef) || isIteratorDefinition(upstreamDef) || isClockedIteratorDefinition(upstreamDef) || isConditionalDefinition(upstreamDef) || isMultiConditionalDefinition(upstreamDef)) {
         continue;
       }
 
@@ -899,7 +906,7 @@ function validateParams(
     }
   }
 
-  if (!isCompositeDefinition(def) && !isIteratorDefinition(def) && !isConditionalDefinition(def)) {
+  if (!isCompositeDefinition(def) && !isIteratorDefinition(def) && !isClockedIteratorDefinition(def) && !isConditionalDefinition(def) && !isMultiConditionalDefinition(def)) {
     if (
       def.id === 'PolluxFractionation' ||
       def.id === 'PolluxControlledFractionation' ||
@@ -954,7 +961,7 @@ function validateLinkedRotorPairings(
 ) {
   for (const moduleInstance of project.modules) {
     const def = defsByInstanceId.get(moduleInstance.id);
-    if (!def || isCompositeDefinition(def) || isIteratorDefinition(def) || isConditionalDefinition(def) || def.id !== 'RotorReverse') {
+    if (!def || isCompositeDefinition(def) || isIteratorDefinition(def) || isClockedIteratorDefinition(def) || isConditionalDefinition(def) || isMultiConditionalDefinition(def) || def.id !== 'RotorReverse') {
       continue;
     }
 
@@ -984,7 +991,7 @@ function validateLinkedRotorPairings(
     }
 
     const linkedDef = defsByInstanceId.get(trimmedLinkedRotorId);
-    if (!linkedDef || isCompositeDefinition(linkedDef) || isIteratorDefinition(linkedDef) || isConditionalDefinition(linkedDef) || linkedDef.id !== 'Rotor') {
+    if (!linkedDef || isCompositeDefinition(linkedDef) || isIteratorDefinition(linkedDef) || isClockedIteratorDefinition(linkedDef) || isConditionalDefinition(linkedDef) || isMultiConditionalDefinition(linkedDef) || linkedDef.id !== 'Rotor') {
       issues.push({
         code: 'invalid-param-type',
         message: `Module "${moduleInstance.id}" parameter "linkedRotorId" must reference a forward Rotor, not "${linkedInstance.defId}".`,
@@ -1010,6 +1017,10 @@ export function validateProject(project: Project, registry: ModuleRegistry): Val
       if (!validatedDefinitionIds.has(def.id)) {
         if (isConditionalDefinition(def)) {
           issues.push(...validateConditionalDef(def, registry).issues);
+        } else if (isIteratorDefinition(def)) {
+          issues.push(...validateIteratorDef(def, registry).issues);
+        } else if (isClockedIteratorDefinition(def)) {
+          issues.push(...validateClockedIteratorDef(def, registry).issues);
         }
         validatedDefinitionIds.add(def.id);
       }
@@ -1514,6 +1525,97 @@ export function validateIteratorDef(
     issues.push({
       code: 'invalid-param-type',
       message: `Iterator "${iterator.id}" must declare a positive integer round key width when key distribution is enabled.`,
+    });
+  }
+
+  return {
+    ok: issues.length === 0,
+    issues,
+  };
+}
+
+export function validateClockedIteratorDef(
+  iterator: ClockedIteratorDef,
+  registry: ModuleRegistry,
+): ValidationResult {
+  const issues: ValidationIssue[] = [];
+  const roundDef = registry[iterator.roundDefId];
+
+  if (!roundDef) {
+    issues.push({
+      code: 'unknown-module-def',
+      message: `Clocked iterator "${iterator.id}" references unknown round definition "${iterator.roundDefId}".`,
+    });
+    return { ok: false, issues };
+  }
+
+  if (isIteratorDefinition(roundDef) || isClockedIteratorDefinition(roundDef)) {
+    issues.push({
+      code: 'invalid-composite-binding',
+      message: `Clocked iterator "${iterator.id}" cannot currently use iterator bodies in V1.`,
+    });
+  }
+
+  if (roundDef.inputs.length !== 1 || roundDef.outputs.length !== 1) {
+    issues.push({
+      code: 'invalid-composite-binding',
+      message: `Clocked iterator "${iterator.id}" requires a body with exactly one input and one output.`,
+    });
+  } else if (roundDef.inputs[0]?.name !== 'in' || roundDef.outputs[0]?.name !== 'out') {
+    issues.push({
+      code: 'invalid-composite-binding',
+      message: `Clocked iterator "${iterator.id}" currently requires body ports named "in" and "out".`,
+    });
+  } else if (roundDef.inputs[0]?.type !== roundDef.outputs[0]?.type) {
+    issues.push({
+      code: 'signal-type-mismatch',
+      message: `Clocked iterator "${iterator.id}" requires a body whose input and output types match.`,
+    });
+  } else if (
+    (roundDef.inputs[0]?.kind ?? null) &&
+    (roundDef.outputs[0]?.kind ?? null) &&
+    roundDef.inputs[0]?.kind !== roundDef.outputs[0]?.kind
+  ) {
+    issues.push({
+      code: 'signal-kind-mismatch',
+      message: `Clocked iterator "${iterator.id}" requires a body whose input and output kinds match.`,
+    });
+  }
+
+  if (
+    iterator.inputs.length !== 2 ||
+    iterator.outputs.length !== 1 ||
+    iterator.inputs[0]?.name !== 'in' ||
+    iterator.inputs[1]?.name !== CLOCK_PORT ||
+    iterator.inputs[1]?.type !== 'bits' ||
+    (iterator.inputs[1]?.kind ?? 'scalar') !== 'scalar' ||
+    iterator.outputs[0]?.name !== 'out' ||
+    iterator.inputs[0]?.type !== roundDef.inputs[0]?.type ||
+    ((iterator.inputs[0]?.kind ?? null) &&
+      (roundDef.inputs[0]?.kind ?? null) &&
+      iterator.inputs[0]?.kind !== roundDef.inputs[0]?.kind) ||
+    iterator.outputs[0]?.type !== roundDef.outputs[0]?.type ||
+    ((iterator.outputs[0]?.kind ?? null) &&
+      (roundDef.outputs[0]?.kind ?? null) &&
+      iterator.outputs[0]?.kind !== roundDef.outputs[0]?.kind)
+  ) {
+    issues.push({
+      code: 'signal-type-mismatch',
+      message: `Clocked iterator "${iterator.id}" must expose "in", scalar bits "clock", and "out" matching its body definition.`,
+    });
+  }
+
+  if (!Number.isInteger(iterator.roundCount) || iterator.roundCount < 1) {
+    issues.push({
+      code: 'invalid-param-type',
+      message: `Clocked iterator "${iterator.id}" must declare a positive integer round count.`,
+    });
+  }
+
+  if (iterator.endPolicy !== 'halt' && iterator.endPolicy !== 'wrap') {
+    issues.push({
+      code: 'invalid-param-option',
+      message: `Clocked iterator "${iterator.id}" must declare endPolicy as "halt" or "wrap".`,
     });
   }
 

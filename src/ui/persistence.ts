@@ -1,5 +1,6 @@
 import {
   isCompositeDefinition,
+  type ClockedIteratorDef,
   type CompositeDef,
   type CompositeLibraryEntry,
   type ConditionalDef,
@@ -1212,7 +1213,7 @@ function isCompositeLibraryEntry(value: unknown): value is CompositeLibraryEntry
     (candidate.source === undefined ||
       candidate.source === 'built-in' ||
       candidate.source === 'user') &&
-    (isCompositeDef(candidate.definition) || isIteratorDef(candidate.definition) || isConditionalDef(candidate.definition) || isMultiConditionalDef(candidate.definition))
+    (isCompositeDef(candidate.definition) || isIteratorDef(candidate.definition) || isClockedIteratorDef(candidate.definition) || isConditionalDef(candidate.definition) || isMultiConditionalDef(candidate.definition))
   );
 }
 
@@ -1306,5 +1307,26 @@ function isIteratorDef(value: unknown): value is IteratorDef {
     candidate.paramSchema !== null &&
     typeof candidate.roundDefId === 'string' &&
     typeof candidate.iterationCount === 'number'
+  );
+}
+
+function isClockedIteratorDef(value: unknown): value is ClockedIteratorDef {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as ClockedIteratorDef;
+  return (
+    candidate.kind === 'clocked-iterator' &&
+    typeof candidate.id === 'string' &&
+    typeof candidate.name === 'string' &&
+    typeof candidate.version === 'number' &&
+    Array.isArray(candidate.inputs) &&
+    Array.isArray(candidate.outputs) &&
+    typeof candidate.paramSchema === 'object' &&
+    candidate.paramSchema !== null &&
+    typeof candidate.roundDefId === 'string' &&
+    typeof candidate.roundCount === 'number' &&
+    (candidate.endPolicy === 'halt' || candidate.endPolicy === 'wrap')
   );
 }

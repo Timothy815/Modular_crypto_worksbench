@@ -1,4 +1,4 @@
-import { isCompositeDefinition, isIteratorDefinition } from '../engine/composites';
+import { isClockedIteratorDefinition, isCompositeDefinition, isIteratorDefinition } from '../engine/composites';
 import type { ModuleDefinition } from '../engine/types';
 
 export type ModuleWorkflowRole =
@@ -154,6 +154,13 @@ export function getModuleRoleSummary(definition: ModuleDefinition): ModuleRoleSu
     return {
       role: 'Operator',
       detail: 'bounded round architecture stage',
+    };
+  }
+
+  if (isClockedIteratorDefinition(definition)) {
+    return {
+      role: 'Operator',
+      detail: 'pulse-driven bounded round machine',
     };
   }
 

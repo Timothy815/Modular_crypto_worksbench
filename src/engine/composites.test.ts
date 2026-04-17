@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CompositeDef, ConditionalDef, IteratorDef } from './composites';
+import type { ClockedIteratorDef, CompositeDef, ConditionalDef, IteratorDef } from './composites';
 import type { ModuleRegistry } from './types';
-import { validateCompositeDef, validateConditionalDef, validateIteratorDef, validateProject } from './validation';
+import { validateClockedIteratorDef, validateCompositeDef, validateConditionalDef, validateIteratorDef, validateProject } from './validation';
 
 const registry: ModuleRegistry = {
   Source: {
@@ -702,5 +702,70 @@ describe('validateIteratorDef', () => {
 
     expect(result.ok).toBe(false);
     expect(result.issues.some((issue) => issue.code === 'invalid-composite-binding')).toBe(true);
+  });
+});
+
+describe('validateClockedIteratorDef', () => {
+  it('accepts a structurally valid clocked iterator definition', () => {
+    const iterator: ClockedIteratorDef = {
+      id: 'ClockedRoundIterator',
+      name: 'Clocked Round Iterator',
+      kind: 'clocked-iterator',
+      version: 1,
+      inputs: [
+        { name: 'in', type: 'symbol' },
+        { name: 'clock', type: 'bits', kind: 'scalar' },
+      ],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {},
+      roundDefId: 'Loop',
+      roundCount: 3,
+      endPolicy: 'halt',
+    };
+
+    const result = validateClockedIteratorDef(iterator, registry);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('rejects bodies without reserved in/out ports', () => {
+    const renamedRound: CompositeDef = {
+      id: 'RenamedRound',
+      name: 'Renamed Round',
+      kind: 'composite',
+      version: 1,
+      inputs: [{ name: 'data', type: 'symbol' }],
+      outputs: [{ name: 'result', type: 'symbol' }],
+      paramSchema: {},
+      project: {
+        modules: [{ id: 'loop-1', defId: 'Loop', params: {} }],
+        connections: [],
+      },
+      inputBindings: [{ externalPort: 'data', internalModuleId: 'loop-1', internalPort: 'in' }],
+      outputBindings: [{ externalPort: 'result', internalModuleId: 'loop-1', internalPort: 'out' }],
+    };
+    const iterator: ClockedIteratorDef = {
+      id: 'ClockedRoundIterator',
+      name: 'Clocked Round Iterator',
+      kind: 'clocked-iterator',
+      version: 1,
+      inputs: [
+        { name: 'in', type: 'symbol' },
+        { name: 'clock', type: 'bits', kind: 'scalar' },
+      ],
+      outputs: [{ name: 'out', type: 'symbol' }],
+      paramSchema: {},
+      roundDefId: 'RenamedRound',
+      roundCount: 3,
+      endPolicy: 'halt',
+    };
+
+    const result = validateClockedIteratorDef(iterator, {
+      ...registry,
+      RenamedRound: renamedRound,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((issue) => issue.message.includes('named "in" and "out"'))).toBe(true);
   });
 });

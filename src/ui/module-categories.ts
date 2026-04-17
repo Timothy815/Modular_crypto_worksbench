@@ -1,4 +1,4 @@
-import { isCompositeDefinition, isIteratorDefinition } from '../engine/composites';
+import { isClockedIteratorDefinition, isCompositeDefinition, isIteratorDefinition } from '../engine/composites';
 import type { ModuleDefinition } from '../engine/types';
 
 export type ModuleCategory = 'source' | 'operator' | 'bridge' | 'sink' | 'composite';
@@ -84,7 +84,9 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
 export function getModuleCategory(definitionOrDefId: ModuleDefinition | string): ModuleCategory {
   if (
     typeof definitionOrDefId !== 'string' &&
-    (isCompositeDefinition(definitionOrDefId) || isIteratorDefinition(definitionOrDefId))
+    (isCompositeDefinition(definitionOrDefId) ||
+      isIteratorDefinition(definitionOrDefId) ||
+      isClockedIteratorDefinition(definitionOrDefId))
   ) {
     return 'composite';
   }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { deriveTickCount, executeTickedProject } from './executor';
-import type { CompositeDef, ConditionalDef, IteratorDef } from './composites';
+import type { ClockedIteratorDef, CompositeDef, ConditionalDef, IteratorDef } from './composites';
 import type {
   ModuleInputs,
   ModuleRegistry,
@@ -87,6 +87,46 @@ const PassThroughIterator: IteratorDef = {
   paramSchema: {},
   roundDefId: 'PassThroughComposite',
   iterationCount: 2,
+};
+
+const RotateLeftWord = {
+  id: 'RotateLeftWord',
+  name: 'Rotate Left Word',
+  inputs: [{ name: 'in', type: 'bits' as const }],
+  outputs: [{ name: 'out', type: 'bits' as const }],
+  paramSchema: {},
+  evaluate: (inputs: ModuleInputs) => {
+    const bits = inputs.in.value as number[];
+    return {
+      out: {
+        type: 'bits' as const,
+        value: bits.length === 0 ? [] : [...bits.slice(1), bits[0]],
+      },
+    };
+  },
+};
+
+const ClockedRotateIteratorHalt: ClockedIteratorDef = {
+  id: 'ClockedRotateIteratorHalt',
+  name: 'Clocked Rotate Iterator Halt',
+  kind: 'clocked-iterator',
+  version: 1,
+  inputs: [
+    { name: 'in', type: 'bits' },
+    { name: 'clock', type: 'bits', kind: 'scalar' },
+  ],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {},
+  roundDefId: 'RotateLeftWord',
+  roundCount: 3,
+  endPolicy: 'halt',
+};
+
+const ClockedRotateIteratorWrap: ClockedIteratorDef = {
+  ...ClockedRotateIteratorHalt,
+  id: 'ClockedRotateIteratorWrap',
+  name: 'Clocked Rotate Iterator Wrap',
+  endPolicy: 'wrap',
 };
 
 const ForwardedRotorComposite: CompositeDef = {
@@ -244,6 +284,9 @@ describe('executeTickedProject', () => {
     PassThrough,
     PassThroughComposite,
     PassThroughIterator,
+    RotateLeftWord,
+    ClockedRotateIteratorHalt,
+    ClockedRotateIteratorWrap,
     StatefulSuffix,
     StatefulThenComposite,
     StatefulElseComposite,
@@ -533,6 +576,58 @@ describe('executeTickedProject', () => {
       'iter1/round-2',
       'iter1/round-2/pass-1',
     ]);
+  });
+
+  it('holds seed output at step 0 and advances clocked iterators one round per pulse', () => {
+    const project: Project = {
+      modules: [
+        { id: 'iter', defId: 'ClockedRotateIteratorHalt', params: {} },
+        { id: 'source', defId: 'BitSequenceInput', params: { stream: [1, 0, 0, 0] } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 5 } },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'iter', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'iter', port: 'clock' } },
+      ],
+    };
+
+    const result = executeTickedProject(project, registry, 5);
+
+    expect(result.ticks.map((tick) => tick.outputsByModuleId.iter.out)).toEqual([
+      { type: 'bits', value: [1, 0, 0, 0] },
+      { type: 'bits', value: [0, 0, 0, 1] },
+      { type: 'bits', value: [0, 0, 1, 0] },
+      { type: 'bits', value: [0, 1, 0, 0] },
+      { type: 'bits', value: [0, 1, 0, 0] },
+    ]);
+    expect(result.paramsByModuleByTick.iter.map((params) => params.__clockedIteratorCurrentStep)).toEqual([undefined, 1, 2, 3, 3]);
+    expect(result.paramsByModuleByTick.iter.map((params) => params.__clockedIteratorHalted)).toEqual([undefined, false, false, true, true]);
+  });
+
+  it('wraps clocked iterators back to the seed state on the next pulse after the last round', () => {
+    const project: Project = {
+      modules: [
+        { id: 'iter', defId: 'ClockedRotateIteratorWrap', params: {} },
+        { id: 'source', defId: 'BitSequenceInput', params: { stream: [1, 0, 0, 0] } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 6 } },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'iter', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'iter', port: 'clock' } },
+      ],
+    };
+
+    const result = executeTickedProject(project, registry, 6);
+
+    expect(result.ticks.map((tick) => tick.outputsByModuleId.iter.out)).toEqual([
+      { type: 'bits', value: [1, 0, 0, 0] },
+      { type: 'bits', value: [0, 0, 0, 1] },
+      { type: 'bits', value: [0, 0, 1, 0] },
+      { type: 'bits', value: [0, 1, 0, 0] },
+      { type: 'bits', value: [1, 0, 0, 0] },
+      { type: 'bits', value: [0, 0, 0, 1] },
+    ]);
+    expect(result.paramsByModuleByTick.iter.map((params) => params.__clockedIteratorCurrentStep)).toEqual([undefined, 1, 2, 3, 0, 1]);
   });
 
   it('handles zero ticks gracefully', () => {

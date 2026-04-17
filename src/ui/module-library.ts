@@ -1,4 +1,10 @@
-import { isCompositeDefinition, isConditionalDefinition, isIteratorDefinition, isMultiConditionalDefinition } from '../engine/composites';
+import {
+  isClockedIteratorDefinition,
+  isCompositeDefinition,
+  isConditionalDefinition,
+  isIteratorDefinition,
+  isMultiConditionalDefinition,
+} from '../engine/composites';
 import type { ModuleDefinition } from '../engine/types';
 export type { ModuleRoleSummary, ModuleWorkflowRole } from './module-role-language';
 export {
@@ -744,7 +750,7 @@ export const MODULE_LIBRARY_SECTIONS: ModuleLibrarySection[] = [
 ];
 
 export function getModuleLibrarySectionId(definition: ModuleDefinition): ModuleLibrarySectionId {
-  if (isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition) || isMultiConditionalDefinition(definition)) {
+  if (isCompositeDefinition(definition) || isIteratorDefinition(definition) || isClockedIteratorDefinition(definition) || isConditionalDefinition(definition) || isMultiConditionalDefinition(definition)) {
     return 'composites';
   }
 
@@ -752,7 +758,7 @@ export function getModuleLibrarySectionId(definition: ModuleDefinition): ModuleL
 }
 
 export function getModuleLibrarySortOrder(definition: ModuleDefinition): number {
-  if (isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition) || isMultiConditionalDefinition(definition)) {
+  if (isCompositeDefinition(definition) || isIteratorDefinition(definition) || isClockedIteratorDefinition(definition) || isConditionalDefinition(definition) || isMultiConditionalDefinition(definition)) {
     return Number.MAX_SAFE_INTEGER;
   }
 
@@ -766,6 +772,9 @@ export function getModulePurpose(definition: ModuleDefinition): string {
   }
   if (isIteratorDefinition(definition)) {
     return `Bounded iterator repeating "${definition.roundDefId}" for ${definition.iterationCount} round${definition.iterationCount === 1 ? '' : 's'}${definition.roundKeyWidth ? ` with a ${definition.roundKeyWidth}-bit key per round` : ''}.`;
+  }
+  if (isClockedIteratorDefinition(definition)) {
+    return `Clocked iterator stepping "${definition.roundDefId}" across ${definition.roundCount} round${definition.roundCount === 1 ? '' : 's'} with ${definition.endPolicy} at the end of the bank.`;
   }
   if (isConditionalDefinition(definition)) {
     return `Conditional module: runs "${definition.thenDefId}" when select is 1, "${definition.elseDefId}" when select is 0.`;
@@ -790,6 +799,9 @@ export function getModuleDetail(definition: ModuleDefinition): string {
       ? 'Bounded iterator that auto-unrolls one round definition a fixed number of times and splits a visible key bus into one sub-key per round.'
       : 'Bounded iterator that auto-unrolls one round definition a fixed number of times.';
   }
+  if (isClockedIteratorDefinition(definition)) {
+    return 'Pulse-driven bounded iterator that advances one visible round per clock pulse and keeps its accumulated state on-canvas in ticked execution.';
+  }
   if (isConditionalDefinition(definition)) {
     return 'Conditional module that executes one of two branch definitions based on a one-bit select input.';
   }
@@ -813,8 +825,8 @@ export function matchesModuleSearch(definition: ModuleDefinition, query: string)
     definition.id,
     definition.name,
     getModulePurpose(definition),
-    ...((isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition) || isMultiConditionalDefinition(definition))
-      ? ['composite', 'iterator', 'conditional', 'multi-conditional', 'round chain', 'architecture', 'branch', 'switch', 'case']
+    ...((isCompositeDefinition(definition) || isIteratorDefinition(definition) || isClockedIteratorDefinition(definition) || isConditionalDefinition(definition) || isMultiConditionalDefinition(definition))
+      ? ['composite', 'iterator', 'clocked iterator', 'stepped iterator', 'conditional', 'multi-conditional', 'round chain', 'architecture', 'branch', 'switch', 'case', 'clocked', 'pulse']
       : PRIMITIVE_LIBRARY_META[definition.id]?.searchTerms ?? []),
   ];
 
@@ -843,14 +855,14 @@ export function matchesModuleDomainTab(
   }
 
   if (tab === 'all') {
-    return !isCompositeDefinition(definition) && !isIteratorDefinition(definition) && !isConditionalDefinition(definition) && !isMultiConditionalDefinition(definition);
+    return !isCompositeDefinition(definition) && !isIteratorDefinition(definition) && !isClockedIteratorDefinition(definition) && !isConditionalDefinition(definition) && !isMultiConditionalDefinition(definition);
   }
 
   if (tab === 'composites') {
-    return isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition) || isMultiConditionalDefinition(definition);
+    return isCompositeDefinition(definition) || isIteratorDefinition(definition) || isClockedIteratorDefinition(definition) || isConditionalDefinition(definition) || isMultiConditionalDefinition(definition);
   }
 
-  if (isCompositeDefinition(definition) || isIteratorDefinition(definition) || isConditionalDefinition(definition) || isMultiConditionalDefinition(definition)) {
+  if (isCompositeDefinition(definition) || isIteratorDefinition(definition) || isClockedIteratorDefinition(definition) || isConditionalDefinition(definition) || isMultiConditionalDefinition(definition)) {
     return false;
   }
 

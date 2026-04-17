@@ -1731,6 +1731,42 @@ const BYTE_ROUND_ITERATOR_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const CLOCKED_BYTE_ROUND_ITERATOR_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'ClockedByteRoundIterator',
+  name: 'Clocked Byte Round Iterator Micro Demo',
+  summary:
+    'Shows a bounded round bank that advances one visible byte round per pulse while holding its accumulated state between ticks.',
+  pipeline: 'BitSequenceInput + Clock -> ClockedByteRoundIterator -> BitOutput',
+  defaultTickedMode: true,
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'clocked', defId: 'ClockedByteRoundIterator', params: {} },
+        { id: 'source', defId: 'BitSequenceInput', params: { stream: [1, 0, 1, 1, 0, 0, 1, 0] } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 6 } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'clocked', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'clocked', port: 'clock' } },
+        { from: { moduleId: 'clocked', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        source: { x: 64, y: 176 },
+        clock: { x: 64, y: 56 },
+        clocked: { x: 372, y: 176 },
+        out: { x: 676, y: 176 },
+      },
+      annotations: [
+        { id: 'clocked-note', x: 372, y: 96, text: 'Select to watch step 0 -> 3 and halt' },
+      ],
+    },
+  },
+};
+
 const CONDITIONAL_BRANCH_DEMO_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'ConditionalBranchDemo',
   name: 'Conditional Branch Demo Micro Demo',
@@ -1905,6 +1941,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   BITS_TO_ASCII_CHAR_MICRO_DEMO,
   BITS_TO_HEX_DIGIT_MICRO_DEMO,
   BYTE_ROUND_ITERATOR_MICRO_DEMO,
+  CLOCKED_BYTE_ROUND_ITERATOR_MICRO_DEMO,
   CONDITIONAL_BRANCH_DEMO_MICRO_DEMO,
 ];
 

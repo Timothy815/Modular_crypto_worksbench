@@ -14,10 +14,12 @@ import {
 } from './types';
 import { validateProject } from './validation';
 import {
+  isClockedIteratorDefinition,
   isConditionalDefinition,
   isCompositeDefinition,
   isIteratorDefinition,
   isMultiConditionalDefinition,
+  type ClockedIteratorDef,
   type CompositeDef,
   type ConditionalDef,
   type IteratorDef,
@@ -26,6 +28,9 @@ import {
 import { evaluateBypass, isBypassEligibleDefinition } from './bypass';
 
 const CLOCK_PORT = 'clock';
+const CLOCKED_ITERATOR_STEP_KEY = '__clockedIteratorCurrentStep';
+const CLOCKED_ITERATOR_HALTED_KEY = '__clockedIteratorHalted';
+const CLOCKED_ITERATOR_ACCUMULATED_KEY = '__clockedIteratorAccumulated';
 const ROTOR_LINK_PARAM = 'linkedRotorId';
 const ROTOR_SHARED_PARAM_KEYS = ['wiring', 'position', 'ringOffset', 'notches'] as const;
 
@@ -34,10 +39,17 @@ interface EvaluatedDefinitionResult {
   hoistedTrace: ExecutionTraceEntry[];
 }
 
+interface ClockedIteratorRuntimeSnapshot {
+  currentStep: number;
+  halted: boolean;
+  accumulated: ModuleInputs['in'];
+}
+
 interface TickedRuntimeState {
   paramsByModuleId: Record<string, ModuleParams>;
   compositeStateByModuleId: Record<string, TickedRuntimeState | undefined>;
   iteratorStateByModuleId: Record<string, TickedRuntimeState | undefined>;
+  clockedIteratorStateByModuleId: Record<string, ModuleParams | undefined>;
   conditionalStateByModuleId: Record<
     string,
     { thenState: TickedRuntimeState; elseState: TickedRuntimeState } | undefined
@@ -282,6 +294,9 @@ function evaluateDefinition(
   if (isIteratorDefinition(def)) {
     return evaluateIterator(moduleId, def, inputs, params, registry);
   }
+  if (isClockedIteratorDefinition(def)) {
+    return evaluateClockedIterator(moduleId, def, inputs, params, registry);
+  }
   if (isConditionalDefinition(def)) {
     return evaluateConditional(moduleId, def, inputs, params, registry);
   }
@@ -509,6 +524,81 @@ function evaluateIterator(
   };
 }
 
+function cloneSignal(signal: ModuleInputs['in']): ModuleInputs['in'] {
+  return signal.type === 'bits'
+    ? { type: 'bits', value: [...signal.value] }
+    : { type: 'symbol', value: signal.value };
+}
+
+function createClockedIteratorRuntimeParams(seed: ModuleInputs['in']): ModuleParams {
+  return {
+    [CLOCKED_ITERATOR_STEP_KEY]: 0,
+    [CLOCKED_ITERATOR_HALTED_KEY]: false,
+    [CLOCKED_ITERATOR_ACCUMULATED_KEY]: cloneSignal(seed),
+  };
+}
+
+function readClockedIteratorRuntimeParams(
+  params: ModuleParams | undefined,
+  seed: ModuleInputs['in'],
+): ClockedIteratorRuntimeSnapshot {
+  const currentStep = typeof params?.[CLOCKED_ITERATOR_STEP_KEY] === 'number'
+    ? Math.max(0, Math.trunc(params[CLOCKED_ITERATOR_STEP_KEY] as number))
+    : 0;
+  const halted = params?.[CLOCKED_ITERATOR_HALTED_KEY] === true;
+  const accumulatedParam = params?.[CLOCKED_ITERATOR_ACCUMULATED_KEY];
+  const accumulated =
+    accumulatedParam &&
+    typeof accumulatedParam === 'object' &&
+    'type' in accumulatedParam &&
+    'value' in accumulatedParam
+      ? cloneSignal(accumulatedParam as ModuleInputs['in'])
+      : cloneSignal(seed);
+
+  return { currentStep, halted, accumulated };
+}
+
+function evaluateClockedIteratorRound(
+  _moduleId: string,
+  def: ClockedIteratorDef,
+  input: ModuleInputs['in'],
+  registry: ModuleRegistry,
+): EvaluatedDefinitionResult {
+  const roundDef = registry[def.roundDefId];
+  if (!roundDef) {
+    throw new ProjectValidationError(
+      `Clocked iterator "${def.id}" references unknown round definition "${def.roundDefId}".`,
+    );
+  }
+
+  return evaluateDefinition(
+    'round',
+    roundDef,
+    { in: input },
+    {},
+    registry,
+    false,
+  );
+}
+
+function evaluateClockedIterator(
+  _moduleId: string,
+  def: ClockedIteratorDef,
+  inputs: ModuleInputs,
+  _params: ModuleParams,
+  _registry: ModuleRegistry,
+): EvaluatedDefinitionResult {
+  const seed = inputs.in;
+  if (!seed) {
+    throw new ProjectValidationError(`Clocked iterator "${def.id}" is missing input "in".`);
+  }
+
+  return {
+    outputs: { out: cloneSignal(seed) },
+    hoistedTrace: [],
+  };
+}
+
 function getConditionalBranchLabelAndDefId(
   def: ConditionalDef,
   inputs: ModuleInputs,
@@ -635,6 +725,7 @@ function createTickedRuntimeState(
   const paramsByModuleId: Record<string, ModuleParams> = {};
   const compositeStateByModuleId: Record<string, TickedRuntimeState | undefined> = {};
   const iteratorStateByModuleId: Record<string, TickedRuntimeState | undefined> = {};
+  const clockedIteratorStateByModuleId: Record<string, ModuleParams | undefined> = {};
   const conditionalStateByModuleId: Record<
     string,
     { thenState: TickedRuntimeState; elseState: TickedRuntimeState } | undefined
@@ -655,6 +746,7 @@ function createTickedRuntimeState(
       def && isIteratorDefinition(def)
         ? createTickedRuntimeState(buildIteratorProject(def, moduleInstance.params), registry)
         : undefined;
+    clockedIteratorStateByModuleId[moduleInstance.id] = undefined;
     conditionalStateByModuleId[moduleInstance.id] =
       def && isConditionalDefinition(def)
         ? {
@@ -691,6 +783,7 @@ function createTickedRuntimeState(
     paramsByModuleId,
     compositeStateByModuleId,
     iteratorStateByModuleId,
+    clockedIteratorStateByModuleId,
     conditionalStateByModuleId,
     multiConditionalStateByModuleId,
   };
@@ -825,6 +918,14 @@ function executeTickedGraph(
             tick,
             runtimeState.iteratorStateByModuleId[moduleId],
         )
+      : isClockedIteratorDefinition(def)
+        ? executeTickedClockedIterator(
+            moduleId,
+            def,
+            inputs,
+            registry,
+            runtimeState.clockedIteratorStateByModuleId,
+          )
       : isConditionalDefinition(def)
         ? executeTickedConditional(
             moduleId,
@@ -1060,6 +1161,61 @@ function executeTickedIterator(
   };
 }
 
+function executeTickedClockedIterator(
+  moduleId: string,
+  def: ClockedIteratorDef,
+  inputs: ModuleInputs,
+  registry: ModuleRegistry,
+  runtimeParamsByModuleId: Record<string, ModuleParams | undefined>,
+): EvaluatedDefinitionResult {
+  const seed = inputs.in;
+  if (!seed) {
+    throw new ProjectValidationError(`Clocked iterator "${def.id}" is missing input "in".`);
+  }
+
+  const runtimeParams = readClockedIteratorRuntimeParams(runtimeParamsByModuleId[moduleId], seed);
+  const outputs: ModuleOutputs = {
+    out: cloneSignal(runtimeParams.accumulated),
+  };
+
+  const clockSignal = inputs.clock;
+  const activePulse = Boolean(clockSignal && isActivePulse(clockSignal));
+
+  if (!activePulse) {
+    runtimeParamsByModuleId[moduleId] = {
+      [CLOCKED_ITERATOR_STEP_KEY]: runtimeParams.currentStep,
+      [CLOCKED_ITERATOR_HALTED_KEY]: runtimeParams.halted,
+      [CLOCKED_ITERATOR_ACCUMULATED_KEY]: cloneSignal(runtimeParams.accumulated),
+    };
+    return { outputs, hoistedTrace: [] };
+  }
+
+  if (runtimeParams.currentStep >= def.roundCount) {
+    runtimeParamsByModuleId[moduleId] =
+      def.endPolicy === 'wrap'
+        ? createClockedIteratorRuntimeParams(seed)
+        : {
+            [CLOCKED_ITERATOR_STEP_KEY]: runtimeParams.currentStep,
+            [CLOCKED_ITERATOR_HALTED_KEY]: true,
+            [CLOCKED_ITERATOR_ACCUMULATED_KEY]: cloneSignal(runtimeParams.accumulated),
+          };
+    return { outputs, hoistedTrace: [] };
+  }
+
+  const roundResult = evaluateClockedIteratorRound(moduleId, def, runtimeParams.accumulated, registry);
+  const nextStep = runtimeParams.currentStep + 1;
+  runtimeParamsByModuleId[moduleId] = {
+    [CLOCKED_ITERATOR_STEP_KEY]: nextStep,
+    [CLOCKED_ITERATOR_HALTED_KEY]: def.endPolicy === 'halt' && nextStep >= def.roundCount,
+    [CLOCKED_ITERATOR_ACCUMULATED_KEY]: cloneSignal(roundResult.outputs.out),
+  };
+
+  return {
+    outputs,
+    hoistedTrace: [],
+  };
+}
+
 export function executeTickedProject(
   project: Project,
   registry: ModuleRegistry,
@@ -1085,12 +1241,14 @@ export function executeTickedProject(
     for (const moduleInstance of project.modules) {
       const def = registry[moduleInstance.defId];
       const currentParams = runtimeState.paramsByModuleId[moduleInstance.id];
+      const clockedIteratorParams = runtimeState.clockedIteratorStateByModuleId[moduleInstance.id];
       paramsByModuleByTick[moduleInstance.id].push({
         ...resolveLinkedRotorParams(
           def,
           currentParams,
           (linkedModuleId) => runtimeState.paramsByModuleId[linkedModuleId],
         ),
+        ...(def && isClockedIteratorDefinition(def) ? { ...clockedIteratorParams } : {}),
       });
     }
 
