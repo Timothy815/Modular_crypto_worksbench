@@ -563,6 +563,7 @@ function evaluateClockedIteratorRound(
   def: ClockedIteratorDef,
   input: ModuleInputs['in'],
   registry: ModuleRegistry,
+  roundParams: ModuleParams,
 ): EvaluatedDefinitionResult {
   const roundDef = registry[def.roundDefId];
   if (!roundDef) {
@@ -575,7 +576,7 @@ function evaluateClockedIteratorRound(
     'round',
     roundDef,
     { in: input },
-    {},
+    roundParams,
     registry,
     false,
   );
@@ -923,6 +924,7 @@ function executeTickedGraph(
             moduleId,
             def,
             inputs,
+            currentParams,
             registry,
             runtimeState.clockedIteratorStateByModuleId,
           )
@@ -1165,6 +1167,7 @@ function executeTickedClockedIterator(
   moduleId: string,
   def: ClockedIteratorDef,
   inputs: ModuleInputs,
+  params: ModuleParams,
   registry: ModuleRegistry,
   runtimeParamsByModuleId: Record<string, ModuleParams | undefined>,
 ): EvaluatedDefinitionResult {
@@ -1202,7 +1205,10 @@ function executeTickedClockedIterator(
     return { outputs, hoistedTrace: [] };
   }
 
-  const roundResult = evaluateClockedIteratorRound(moduleId, def, runtimeParams.accumulated, registry);
+  const roundParams = Object.fromEntries(
+    Object.entries(def.paramSchema).map(([key, field]) => [key, params[key] ?? field.defaultValue]),
+  );
+  const roundResult = evaluateClockedIteratorRound(moduleId, def, runtimeParams.accumulated, registry, roundParams);
   const nextStep = runtimeParams.currentStep + 1;
   runtimeParamsByModuleId[moduleId] = {
     [CLOCKED_ITERATOR_STEP_KEY]: nextStep,

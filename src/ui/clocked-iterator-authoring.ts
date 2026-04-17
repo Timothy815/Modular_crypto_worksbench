@@ -115,7 +115,7 @@ export function createClockedIteratorDefinition({
       { name: 'clock', type: 'bits', kind: 'scalar' },
     ],
     outputs: [roundDefinition.outputs[0]!],
-    paramSchema: {},
+    paramSchema: { ...roundDefinition.paramSchema },
     roundDefId,
     roundCount,
     endPolicy,
