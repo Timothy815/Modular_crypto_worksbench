@@ -584,6 +584,7 @@ function ModuleLibraryCard({
       return;
     }
 
+    event.preventDefault();
     onStartCanvasDrag(def.id, event.clientX, event.clientY);
   }
 
