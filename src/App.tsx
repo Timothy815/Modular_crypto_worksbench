@@ -175,6 +175,12 @@ interface PaletteCanvasDragState {
   isOverCanvas: boolean;
 }
 
+interface PaletteCanvasDropRequest {
+  requestId: number;
+  clientX: number;
+  clientY: number;
+}
+
 function App() {
   const userManualConfig = getUserManualConfig();
   if (userManualConfig) {
@@ -259,6 +265,8 @@ function MainApp() {
     originWidth: number;
   } | null>(null);
   const [paletteCanvasDrag, setPaletteCanvasDrag] = useState<PaletteCanvasDragState | null>(null);
+  const [paletteCanvasDropRequest, setPaletteCanvasDropRequest] =
+    useState<PaletteCanvasDropRequest | null>(null);
   const [challengeCaptureShouldExport, setChallengeCaptureShouldExport] = useState<boolean>(() => {
     if (typeof window === 'undefined') {
       return true;
@@ -317,6 +325,28 @@ function MainApp() {
       window.removeEventListener('mousemove', handlePointerMove);
     };
   }, [paletteCanvasDrag]);
+  const resolvePaletteDragViewport = useCallback((clientX: number, clientY: number) => {
+    const canvasSurface = document.querySelector('.canvas-surface');
+    const canvasRect =
+      canvasSurface instanceof HTMLElement ? canvasSurface.getBoundingClientRect() : null;
+    const isOverCanvas = Boolean(
+      canvasRect &&
+        clientX >= canvasRect.left &&
+        clientX <= canvasRect.right &&
+        clientY >= canvasRect.top &&
+        clientY <= canvasRect.bottom,
+    );
+    return { clientX, clientY, isOverCanvas };
+  }, []);
+
+  const mapDetachedScreenPointToClient = useCallback((screenX: number, screenY: number) => {
+    const horizontalChrome = Math.max(0, Math.round((window.outerWidth - window.innerWidth) / 2));
+    const verticalChrome = Math.max(0, window.outerHeight - window.innerHeight);
+    return {
+      clientX: screenX - window.screenX - horizontalChrome,
+      clientY: screenY - window.screenY - verticalChrome,
+    };
+  }, []);
   const [parameterClipboard, setParameterClipboard] = useState<ParameterClipboardState | null>(null);
   const hostWindowIdRef = useRef(createWindowSessionId());
   const detachedPanelWindowsRef = useRef<Record<string, Window | null>>({});
@@ -2026,20 +2056,70 @@ function MainApp() {
           moduleDef,
         });
       },
-      startPaletteCanvasDrag: (defId: string, panelWindowId: string) => {
+      startPaletteCanvasDrag: (
+        defId: string,
+        panelWindowId: string,
+        screenX: number,
+        screenY: number,
+      ) => {
         if (!effectiveRegistry[defId]) {
           return;
         }
 
+        const pointer = mapDetachedScreenPointToClient(screenX, screenY);
+        const viewport = resolvePaletteDragViewport(pointer.clientX, pointer.clientY);
+
         setPaletteCanvasDrag({
           panelWindowId,
           defId,
-          startClientX: 0,
-          startClientY: 0,
-          clientX: 0,
-          clientY: 0,
-          isActive: false,
-          isOverCanvas: false,
+          startClientX: viewport.clientX,
+          startClientY: viewport.clientY,
+          clientX: viewport.clientX,
+          clientY: viewport.clientY,
+          isActive: true,
+          isOverCanvas: viewport.isOverCanvas,
+        });
+      },
+      updatePaletteCanvasDrag: (panelWindowId: string, screenX: number, screenY: number) => {
+        const pointer = mapDetachedScreenPointToClient(screenX, screenY);
+        const viewport = resolvePaletteDragViewport(pointer.clientX, pointer.clientY);
+        setPaletteCanvasDrag((current) => {
+          if (!current || current.panelWindowId !== panelWindowId) {
+            return current;
+          }
+
+          return {
+            ...current,
+            clientX: viewport.clientX,
+            clientY: viewport.clientY,
+            isActive: true,
+            isOverCanvas: viewport.isOverCanvas,
+          };
+        });
+      },
+      endPaletteCanvasDrag: (panelWindowId: string, screenX: number, screenY: number) => {
+        const pointer = mapDetachedScreenPointToClient(screenX, screenY);
+        const viewport = resolvePaletteDragViewport(pointer.clientX, pointer.clientY);
+        setPaletteCanvasDrag((current) => {
+          if (!current || current.panelWindowId !== panelWindowId) {
+            return current;
+          }
+
+          if (viewport.isOverCanvas) {
+            setPaletteCanvasDropRequest({
+              requestId: Date.now(),
+              clientX: viewport.clientX,
+              clientY: viewport.clientY,
+            });
+          }
+
+          return {
+            ...current,
+            clientX: viewport.clientX,
+            clientY: viewport.clientY,
+            isActive: true,
+            isOverCanvas: viewport.isOverCanvas,
+          };
         });
       },
       cancelPaletteCanvasDrag: (panelWindowId: string) => {
@@ -2263,6 +2343,8 @@ function MainApp() {
       handleSelectChallenge,
       handleSelectTutorial,
       handleUnzipComposite,
+      mapDetachedScreenPointToClient,
+      resolvePaletteDragViewport,
       returnDetachedPanelToMain,
       selectedChallenge,
       selectedModule,
@@ -3284,6 +3366,11 @@ function MainApp() {
                 : null
             }
             onClearPaletteModuleDrag={() => setPaletteCanvasDrag(null)}
+            paletteModuleDropRequest={paletteCanvasDropRequest}
+            onPaletteModuleDropRequestHandled={() => {
+              setPaletteCanvasDropRequest(null);
+              setPaletteCanvasDrag(null);
+            }}
             onInsertModuleAndConnect={(moduleDef, position, fromModuleId, fromPort, toPort) =>
               state.compositeEditor || isCompositeDrilldownActive
                 ? undefined

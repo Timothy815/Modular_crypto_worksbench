@@ -85,7 +85,9 @@ export function DetachedPanelWindow({
   kind,
 }: DetachedPanelWindowProps) {
   const [snapshot, setSnapshot] = useState<DetachedPanelStateSnapshot | null>(null);
-  const [hasActivePaletteCanvasDrag, setHasActivePaletteCanvasDrag] = useState(false);
+  const [activePaletteCanvasDrag, setActivePaletteCanvasDrag] = useState<{
+    defId: string;
+  } | null>(null);
   const splitContainerRef = useRef<HTMLDivElement | null>(null);
   const splitRatioFrameRef = useRef<number | null>(null);
   const queuedSplitRatioRef = useRef<number | null>(null);
@@ -230,29 +232,47 @@ export function DetachedPanelWindow({
   const postAction = (action: UiAction) => {
     postDetachedAction(channelName, hostId, panelWindowId, action);
   };
-  const startPaletteCanvasDrag = (defId: string) => {
-    setHasActivePaletteCanvasDrag(true);
+  const startPaletteCanvasDrag = (defId: string, clientX: number, clientY: number) => {
+    const horizontalChrome = Math.max(0, Math.round((window.outerWidth - window.innerWidth) / 2));
+    const verticalChrome = Math.max(0, window.outerHeight - window.innerHeight);
+    setActivePaletteCanvasDrag({ defId });
     sendCommand('palette', {
       type: 'startPaletteCanvasDrag',
       defId,
+      screenX: window.screenX + horizontalChrome + clientX,
+      screenY: window.screenY + verticalChrome + clientY,
     });
   };
 
   useEffect(() => {
-    if (!hasActivePaletteCanvasDrag) {
+    if (!activePaletteCanvasDrag) {
       return undefined;
     }
 
-    const cancelDetachedPaletteDrag = () => {
-      setHasActivePaletteCanvasDrag(false);
-      sendCommand('palette', { type: 'cancelPaletteCanvasDrag' });
+    const handlePointerMove = (event: MouseEvent) => {
+      sendCommand('palette', {
+        type: 'updatePaletteCanvasDrag',
+        screenX: event.screenX,
+        screenY: event.screenY,
+      });
     };
 
-    window.addEventListener('mouseup', cancelDetachedPaletteDrag);
-    return () => {
-      window.removeEventListener('mouseup', cancelDetachedPaletteDrag);
+    const finishDetachedPaletteDrag = (event: MouseEvent) => {
+      setActivePaletteCanvasDrag(null);
+      sendCommand('palette', {
+        type: 'endPaletteCanvasDrag',
+        screenX: event.screenX,
+        screenY: event.screenY,
+      });
     };
-  }, [hasActivePaletteCanvasDrag]);
+
+    window.addEventListener('mousemove', handlePointerMove);
+    window.addEventListener('mouseup', finishDetachedPaletteDrag);
+    return () => {
+      window.removeEventListener('mousemove', handlePointerMove);
+      window.removeEventListener('mouseup', finishDetachedPaletteDrag);
+    };
+  }, [activePaletteCanvasDrag]);
 
   const startSplitResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
     const container = splitContainerRef.current;
@@ -657,7 +677,7 @@ function renderDetachedPane(
   registry: ReturnType<typeof getEffectiveRegistry>,
   postAction: (action: UiAction) => void,
   sendCommand: (targetKind: DetachedPanelKind, command: DetachedPanelCommand) => void,
-  onStartPaletteCanvasDrag: (defId: string) => void,
+  onStartPaletteCanvasDrag: (defId: string, clientX: number, clientY: number) => void,
 ) {
   if (!payload) {
     return null;
@@ -672,7 +692,9 @@ function renderDetachedPane(
         compositeUsageCountById={(payload as DetachedPaletteSnapshot).compositeUsageCountById}
         builtInReusableIds={(payload as DetachedPaletteSnapshot).builtInReusableIds}
         onAddModule={(defId) => sendCommand('palette', { type: 'addModule', defId })}
-        onStartCanvasDrag={(defId) => onStartPaletteCanvasDrag(defId)}
+        onStartCanvasDrag={(defId, clientX, clientY) =>
+          onStartPaletteCanvasDrag(defId, clientX, clientY)
+        }
         onInsertStarterChain={(starterId) => sendCommand('palette', { type: 'insertStarterChain', starterId })}
         onExportCompositeLibrary={() => sendCommand('palette', { type: 'exportCompositeLibrary' })}
         onOpenComposite={(defId) =>

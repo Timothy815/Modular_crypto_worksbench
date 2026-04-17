@@ -559,6 +559,12 @@ interface WorkbenchPanelProps {
     isOverCanvas: boolean;
   } | null;
   onClearPaletteModuleDrag?: () => void;
+  paletteModuleDropRequest?: {
+    requestId: number;
+    clientX: number;
+    clientY: number;
+  } | null;
+  onPaletteModuleDropRequestHandled?: () => void;
   onInsertModuleAndConnect: (
     moduleDef: ModuleDefinition,
     position: { x: number; y: number },
@@ -727,6 +733,8 @@ export function WorkbenchPanel({
   onAddModule,
   activePaletteModuleDrag = null,
   onClearPaletteModuleDrag,
+  paletteModuleDropRequest = null,
+  onPaletteModuleDropRequestHandled,
   onInsertModuleAndConnect,
   onPendingConnectionChange,
   projects,
@@ -2569,6 +2577,33 @@ export function WorkbenchPanel({
     isCompositeEditor,
     onAddModule,
     onClearPaletteModuleDrag,
+  ]);
+
+  useEffect(() => {
+    if (
+      !paletteModuleDropRequest ||
+      !activePaletteModuleDrag?.moduleDef ||
+      !onPaletteModuleDropRequestHandled
+    ) {
+      return;
+    }
+
+    const dropTarget = getPaletteModulePlacement(
+      activePaletteModuleDrag.moduleDef,
+      paletteModuleDropRequest.clientX,
+      paletteModuleDropRequest.clientY,
+    );
+    if (dropTarget && !isCompositeEditor) {
+      onAddModule(activePaletteModuleDrag.moduleDef, dropTarget.position);
+    }
+    onPaletteModuleDropRequestHandled();
+  }, [
+    activePaletteModuleDrag,
+    getPaletteModulePlacement,
+    isCompositeEditor,
+    onAddModule,
+    onPaletteModuleDropRequestHandled,
+    paletteModuleDropRequest,
   ]);
 
   function renderConnection(

@@ -137,7 +137,14 @@ export interface DetachedPanelCommandHandlers {
   dispatch: (action: UiAction) => void;
   togglePaletteViewMode: () => void;
   addModuleByDefId: (defId: string) => void;
-  startPaletteCanvasDrag: (defId: string, panelWindowId: string) => void;
+  startPaletteCanvasDrag: (
+    defId: string,
+    panelWindowId: string,
+    screenX: number,
+    screenY: number,
+  ) => void;
+  updatePaletteCanvasDrag: (panelWindowId: string, screenX: number, screenY: number) => void;
+  endPaletteCanvasDrag: (panelWindowId: string, screenX: number, screenY: number) => void;
   cancelPaletteCanvasDrag: (panelWindowId: string) => void;
   insertStarterChain: (starterId: string) => void;
   openComposite: (defId: string) => void;
@@ -260,7 +267,26 @@ export function connectDetachedPanelChannel(args: DetachedPanelChannelBridgeArgs
         args.commandHandlers.addModuleByDefId(command.defId);
         return;
       case 'startPaletteCanvasDrag':
-        args.commandHandlers.startPaletteCanvasDrag(command.defId, message.panelWindowId);
+        args.commandHandlers.startPaletteCanvasDrag(
+          command.defId,
+          message.panelWindowId,
+          command.screenX,
+          command.screenY,
+        );
+        return;
+      case 'updatePaletteCanvasDrag':
+        args.commandHandlers.updatePaletteCanvasDrag(
+          message.panelWindowId,
+          command.screenX,
+          command.screenY,
+        );
+        return;
+      case 'endPaletteCanvasDrag':
+        args.commandHandlers.endPaletteCanvasDrag(
+          message.panelWindowId,
+          command.screenX,
+          command.screenY,
+        );
         return;
       case 'cancelPaletteCanvasDrag':
         args.commandHandlers.cancelPaletteCanvasDrag(message.panelWindowId);
