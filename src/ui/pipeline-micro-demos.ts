@@ -614,6 +614,95 @@ const HEX_NORMALIZE_THEN_XOR_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
   },
 };
 
+const CANVAS_AUTHORING_XOR_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
+  id: 'canvas-authoring-xor',
+  name: 'Canvas Authoring XOR Builder',
+  summary:
+    'A small repeated-key XOR machine with visible prompts for drag-to-place, quick-add, click-to-connect, replace in place, and inline canvas edits.',
+  pipeline:
+    'AsciiSequenceInput(message) + AsciiSequenceInput(key) -> RepeatSymbolToMatch -> AsciiSequenceToTicked -> AsciiCharToBits -> XOR -> TickedBitsToSequence -> BitsToHex -> HexOutput, plus one unconnected preview sink for click-to-connect practice',
+  defaultTickedMode: true,
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'message', defId: 'AsciiSequenceInput', params: { value: 'ATTACK' } },
+        { id: 'key', defId: 'AsciiSequenceInput', params: { value: 'KEY' } },
+        { id: 'repeat', defId: 'RepeatSymbolToMatch', params: {} },
+        { id: 'message-tick', defId: 'AsciiSequenceToTicked', params: { index: 0, wrap: false } },
+        { id: 'key-tick', defId: 'AsciiSequenceToTicked', params: { index: 0, wrap: false } },
+        { id: 'message-bits', defId: 'AsciiCharToBits', params: {} },
+        { id: 'key-bits', defId: 'AsciiCharToBits', params: {} },
+        { id: 'xor', defId: 'XOR', params: {} },
+        { id: 'collect', defId: 'TickedBitsToSequence', params: { collected: [], count: 0 } },
+        { id: 'hex', defId: 'BitsToHex', params: {} },
+        { id: 'out', defId: 'HexOutput', params: {} },
+        { id: 'preview', defId: 'TextOutput', params: {} },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 6 } },
+      ],
+      connections: [
+        { from: { moduleId: 'message', port: 'out' }, to: { moduleId: 'repeat', port: 'reference' } },
+        { from: { moduleId: 'message', port: 'out' }, to: { moduleId: 'message-tick', port: 'in' } },
+        { from: { moduleId: 'key', port: 'out' }, to: { moduleId: 'repeat', port: 'in' } },
+        { from: { moduleId: 'repeat', port: 'out' }, to: { moduleId: 'key-tick', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'message-tick', port: 'clock' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'key-tick', port: 'clock' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'collect', port: 'clock' } },
+        { from: { moduleId: 'message-tick', port: 'out' }, to: { moduleId: 'message-bits', port: 'in' } },
+        { from: { moduleId: 'key-tick', port: 'out' }, to: { moduleId: 'key-bits', port: 'in' } },
+        { from: { moduleId: 'message-bits', port: 'out' }, to: { moduleId: 'xor', port: 'a' } },
+        { from: { moduleId: 'key-bits', port: 'out' }, to: { moduleId: 'xor', port: 'b' } },
+        { from: { moduleId: 'xor', port: 'out' }, to: { moduleId: 'collect', port: 'in' } },
+        { from: { moduleId: 'collect', port: 'out' }, to: { moduleId: 'hex', port: 'in' } },
+        { from: { moduleId: 'hex', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        message: { x: 56, y: 64 },
+        key: { x: 56, y: 232 },
+        repeat: { x: 308, y: 232 },
+        'message-tick': { x: 308, y: 64 },
+        'key-tick': { x: 568, y: 232 },
+        clock: { x: 308, y: 368 },
+        'message-bits': { x: 568, y: 64 },
+        'key-bits': { x: 828, y: 232 },
+        xor: { x: 1084, y: 148 },
+        collect: { x: 1336, y: 148 },
+        hex: { x: 1588, y: 148 },
+        out: { x: 1812, y: 148 },
+        preview: { x: 1812, y: 420 },
+      },
+      annotations: [
+        {
+          id: 'authoring-note-inline',
+          x: 44,
+          y: 398,
+          text: 'Inline edit: click the ATTACK or KEY values directly on the cards to change them without leaving the canvas.',
+        },
+        {
+          id: 'authoring-note-palette',
+          x: 952,
+          y: 20,
+          text: 'Direct placement: drag a module from the expanded palette into the open space above this path.',
+        },
+        {
+          id: 'authoring-note-quick-add',
+          x: 1488,
+          y: 312,
+          text: 'Quick Add: drag from hex.out into empty canvas to add another symbol sink or bridge.',
+        },
+        {
+          id: 'authoring-note-click-replace',
+          x: 1768,
+          y: 556,
+          text: 'Click-to-connect: arm hex.out, then click preview.in. After it is wired, try Replace with in the inspector to swap the sink in place.',
+        },
+      ],
+    },
+  },
+};
+
 export const PIPELINE_MICRO_DEMOS: PipelineMicroDemo[] = [
   ASCII_REPEATED_KEY_XOR_PIPELINE_MICRO_DEMO,
   STRICT_MATCH_BEFORE_XOR_PIPELINE_MICRO_DEMO,
@@ -624,6 +713,7 @@ export const PIPELINE_MICRO_DEMOS: PipelineMicroDemo[] = [
   ASCII_STRICT_MATCH_XOR_ENCRYPT_DECRYPT_PIPELINE_MICRO_DEMO,
   HEX_BLOCK_XOR_PIPELINE_MICRO_DEMO,
   HEX_NORMALIZE_THEN_XOR_PIPELINE_MICRO_DEMO,
+  CANVAS_AUTHORING_XOR_PIPELINE_MICRO_DEMO,
 ];
 
 const PIPELINE_MICRO_DEMO_BY_ID = Object.fromEntries(

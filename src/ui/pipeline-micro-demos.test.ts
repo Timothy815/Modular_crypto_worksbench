@@ -18,6 +18,7 @@ describe('pipeline micro demos', () => {
       'ascii-strict-match-xor-encrypt-decrypt',
       'hex-block-xor',
       'hex-normalize-then-xor',
+      'canvas-authoring-xor',
     ]);
   });
 
@@ -35,6 +36,7 @@ describe('pipeline micro demos', () => {
     );
     expect(getPipelineMicroDemo('hex-block-xor')?.name).toBe('Hex Block XOR');
     expect(getPipelineMicroDemo('hex-normalize-then-xor')?.name).toBe('Hex Normalize Then XOR');
+    expect(getPipelineMicroDemo('canvas-authoring-xor')?.name).toBe('Canvas Authoring XOR Builder');
     expect(getPipelineMicroDemo('missing')).toBeNull();
   });
 
@@ -51,6 +53,7 @@ describe('pipeline micro demos', () => {
     );
     expect(getPipelineMicroDemo('hex-block-xor')?.defaultTickedMode).toBe(true);
     expect(getPipelineMicroDemo('hex-normalize-then-xor')?.defaultTickedMode).toBe(true);
+    expect(getPipelineMicroDemo('canvas-authoring-xor')?.defaultTickedMode).toBe(true);
     expect(getPipelineMicroDemo('representation-round-trip')?.defaultTickedMode).toBeUndefined();
   });
 
@@ -169,6 +172,26 @@ describe('pipeline micro demos', () => {
     );
   });
 
+  it('seeds the canvas authoring demo with a working XOR path plus visible gesture prompts', () => {
+    const demo = getPipelineMicroDemo('canvas-authoring-xor');
+    expect(demo?.document.project.modules.map((module) => module.defId)).toEqual([
+      'AsciiSequenceInput',
+      'AsciiSequenceInput',
+      'RepeatSymbolToMatch',
+      'AsciiSequenceToTicked',
+      'AsciiSequenceToTicked',
+      'AsciiCharToBits',
+      'AsciiCharToBits',
+      'XOR',
+      'TickedBitsToSequence',
+      'BitsToHex',
+      'HexOutput',
+      'TextOutput',
+      'Clock',
+    ]);
+    expect(demo?.document.ui.annotations).toHaveLength(4);
+  });
+
   it('keeps every seeded workspace statically valid', () => {
     for (const demo of PIPELINE_MICRO_DEMOS) {
       const validation = validateProject(demo.document.project, V1_REGISTRY);
@@ -206,5 +229,13 @@ describe('pipeline micro demos', () => {
 
     expect(collectTickedOutput(result, 'cipher-out')).toBe('031019080911');
     expect(collectTickedOutput(result, 'recover-out')).toBe('SECRET');
+  });
+
+  it('keeps the canvas authoring demo executable while producing the same cipher as the base repeated-key XOR flow', () => {
+    const demo = getPipelineMicroDemo('canvas-authoring-xor');
+    const tickCount = deriveTickCount(demo!.document.project, V1_REGISTRY);
+    const result = executeTickedProject(demo!.document.project, V1_REGISTRY, tickCount ?? 0);
+
+    expect(collectTickedOutput(result, 'out')).toBe('0A110D0A0612');
   });
 });

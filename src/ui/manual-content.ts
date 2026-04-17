@@ -53,6 +53,13 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'Use the grouped workbench menus for common actions. View contains zoom and navigation actions. Edit contains authoring operations such as notes, composite creation, layout cleanup, and selection actions. Project contains recovery actions such as undo, redo, and save version. Import/Export contains JSON and Python export. MCW also supports workspace-local undo and redo, named saved versions, and restore workflows. If you are trying something risky, save a version first so you can return to a known checkpoint without rebuilding the graph by hand.',
         indexTerms: ['undo', 'redo', 'save version', 'restore', 'workbench menus', 'project menu'],
       },
+      {
+        id: 'wiring-and-placement',
+        title: 'Wiring And Placement',
+        body:
+          'MCW now supports several fast authoring gestures that reduce repetitive wiring ceremony without hiding structure. You can drag a module from the expanded palette directly onto the canvas to place it where you want, drag from an output port into empty canvas space to open Quick Add already scoped to that signal type, and click an output once to arm a connection before finishing it on a distant input. If you need to swap one module for another without rebuilding the surrounding graph, use Replace with in the inspector. For a few common sources and controls, the canvas card itself also supports small inline parameter edits so you do not have to bounce to the inspector for every short value change. These actions make the workbench faster, but they do not add hidden auto-logic: the resulting graph is still fully visible and still edited by explicit modules and wires.',
+        indexTerms: ['wiring', 'placement', 'quick add', 'click to connect', 'replace with', 'inline edit', 'drag from palette'],
+      },
     ],
   },
   {
@@ -64,7 +71,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         id: 'palette-and-inspector',
         title: 'Palette And Inspector',
         body:
-          'The palette is where you add modules, browse reusable structures, and launch micro demos or library exports. The inspector is where you tune parameters, inspect live trace values, compare selected modules, and work through verification cases. The fastest authoring loop in MCW is often Palette plus Inspector side by side: add a structure from the palette, then immediately inspect or tune it. If you lose track of a module, use the trace and focus tools to jump back to the relevant workspace area instead of manually panning through the full graph.',
+          'The palette is where you add modules, browse reusable structures, launch micro demos, and start authoring gestures such as direct drag-to-canvas placement from the expanded card view. The inspector is where you tune parameters, inspect live trace values, compare selected modules, work through verification cases, and use actions such as Replace with when you want to preserve position while changing the selected module. The fastest authoring loop in MCW is often Palette plus Inspector side by side: place from the palette, wire on the canvas, then immediately inspect or tune the result. If you lose track of a module, use the trace and focus tools to jump back to the relevant workspace area instead of manually panning through the full graph.',
         indexTerms: ['palette', 'inspector', 'parameters', 'micro demos', 'library'],
       },
       {
