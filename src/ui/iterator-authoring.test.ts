@@ -13,6 +13,34 @@ const PASS_BITS: ModuleDef = {
   evaluate: (inputs) => ({ out: inputs.in }),
 };
 
+const PARAMETRIZED_SHIFT_BODY: ModuleDef = {
+  id: 'ParameterizedShiftBody',
+  name: 'Parameterized Shift Body',
+  inputs: [{ name: 'in', type: 'bits' }],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {
+    amount: {
+      key: 'amount',
+      label: 'Amount',
+      kind: 'number',
+      defaultValue: 1,
+    },
+    mode: {
+      key: 'mode',
+      label: 'Mode',
+      kind: 'select',
+      defaultValue: 'rotate-left',
+      options: [
+        { label: 'Rotate Left', value: 'rotate-left' },
+        { label: 'Rotate Right', value: 'rotate-right' },
+        { label: 'Left Shift', value: 'left' },
+        { label: 'Right Shift', value: 'right' },
+      ],
+    },
+  },
+  evaluate: (inputs) => ({ out: inputs.in }),
+};
+
 const BAD_PORTS: ModuleDef = {
   id: 'BadPorts',
   name: 'Bad Ports',
@@ -86,6 +114,60 @@ describe('iterator authoring', () => {
     expect(result.entry.definition.iterationCount).toBe(3);
     expect(result.entry.definition.roundDefId).toBe('PassBits');
     expect(result.entry.definition.paramSchema.iterationCount?.defaultValue).toBe(3);
+  });
+
+  it('inherits the body param schema so authored iterators can configure repeated rounds', () => {
+    const registry: ModuleRegistry = {
+      ...V1_REGISTRY,
+      ParameterizedShiftBody: PARAMETRIZED_SHIFT_BODY,
+    };
+
+    const result = createIteratorDefinition({
+      registry,
+      name: 'Shift Iterator',
+      id: 'ShiftIterator',
+      roundDefId: 'ParameterizedShiftBody',
+      iterationCount: 2,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.entry || result.entry.definition.kind !== 'iterator') {
+      return;
+    }
+
+    expect(result.entry.definition.paramSchema.amount?.defaultValue).toBe(1);
+    expect(result.entry.definition.paramSchema.mode?.defaultValue).toBe('rotate-left');
+    expect(result.entry.definition.paramSchema.iterationCount?.defaultValue).toBe(2);
+  });
+
+  it('rejects bodies whose param schema already uses iterationCount', () => {
+    const registry: ModuleRegistry = {
+      ...V1_REGISTRY,
+      ConflictingBody: {
+        ...PASS_BITS,
+        id: 'ConflictingBody',
+        name: 'Conflicting Body',
+        paramSchema: {
+          iterationCount: {
+            key: 'iterationCount',
+            label: 'Conflicting Iteration Count',
+            kind: 'number',
+            defaultValue: 1,
+          },
+        },
+      },
+    };
+
+    const result = createIteratorDefinition({
+      registry,
+      name: 'Conflicting Iterator',
+      id: 'ConflictingIterator',
+      roundDefId: 'ConflictingBody',
+      iterationCount: 2,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('may not declare a param named "iterationCount"');
   });
 
   it('rejects nested iterator bodies', () => {

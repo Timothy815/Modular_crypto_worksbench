@@ -107,6 +107,13 @@ export function createIteratorDefinition({
     return { ok: false, error: 'Iteration count must be a positive integer.' };
   }
 
+  if ('iterationCount' in roundDefinition.paramSchema) {
+    return {
+      ok: false,
+      error: 'Iterator bodies may not declare a param named "iterationCount" in V1.',
+    };
+  }
+
   const definition: IteratorDef = {
     id: trimmedId,
     name: trimmedName,
@@ -115,6 +122,7 @@ export function createIteratorDefinition({
     inputs: [roundDefinition.inputs[0]],
     outputs: [roundDefinition.outputs[0]],
     paramSchema: {
+      ...roundDefinition.paramSchema,
       iterationCount: {
         key: 'iterationCount',
         label: 'Round Count',

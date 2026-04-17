@@ -97,6 +97,43 @@ const bitsEchoIterator: IteratorDef = {
   iterationCount: 2,
 };
 
+const shiftingIterator: IteratorDef = {
+  id: 'ShiftingIterator',
+  name: 'Shifting Iterator',
+  kind: 'iterator',
+  version: 1,
+  inputs: [{ name: 'in', type: 'bits' }],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {
+    amount: {
+      key: 'amount',
+      label: 'Amount',
+      kind: 'number',
+      defaultValue: 1,
+    },
+    mode: {
+      key: 'mode',
+      label: 'Mode',
+      kind: 'select',
+      defaultValue: 'rotate-left',
+      options: [
+        { label: 'Rotate Left', value: 'rotate-left' },
+        { label: 'Rotate Right', value: 'rotate-right' },
+        { label: 'Left Shift', value: 'left' },
+        { label: 'Right Shift', value: 'right' },
+      ],
+    },
+    iterationCount: {
+      key: 'iterationCount',
+      label: 'Round Count',
+      kind: 'number',
+      defaultValue: 2,
+    },
+  },
+  roundDefId: 'BitShifter',
+  iterationCount: 2,
+};
+
 const symbolEchoComposite: CompositeDef = {
   id: 'SymbolEchoComposite',
   name: 'Symbol Echo Composite',
@@ -339,6 +376,7 @@ const registryWithComposite: ModuleRegistry = {
   [symbolEchoIterator.id]: symbolEchoIterator,
   [bitsEchoComposite.id]: bitsEchoComposite,
   [bitsEchoIterator.id]: bitsEchoIterator,
+  [shiftingIterator.id]: shiftingIterator,
   [keyedBitsRoundComposite.id]: keyedBitsRoundComposite,
   [keyedBitsIterator.id]: keyedBitsIterator,
   [forwardedRoundsComposite.id]: forwardedRoundsComposite,
@@ -448,6 +486,30 @@ describe('executeProject', () => {
       twoRoundResult.analysisTrace.some((entry) => entry.moduleId === 'source/iterator-1/round-2'),
     ).toBe(true);
     expect(bitsEchoIterator.iterationCount).toBe(2);
+  });
+
+  it('forwards iterator body params into each repeated round', () => {
+    const project: Project = {
+      modules: [
+        {
+          id: 'iter-1',
+          defId: 'ShiftingIterator',
+          params: { amount: 1, mode: 'rotate-left', iterationCount: 2 },
+        },
+      ],
+      connections: [],
+    };
+
+    const result = executeProject(project, registryWithComposite, {
+      'iter-1': {
+        in: { type: 'bits', value: [1, 0, 0, 0] },
+      },
+    });
+
+    expect(result.outputsByModuleId['iter-1']?.out).toEqual({
+      type: 'bits',
+      value: [0, 0, 1, 0],
+    });
   });
 
   it('executes a valid graph in topological order', () => {

@@ -409,10 +409,15 @@ function getResolvedIterationCount(
 
 function buildIteratorProject(def: IteratorDef, params: ModuleParams = {}): Project {
   const iterationCount = getResolvedIterationCount(def, params);
+  const roundParams = Object.fromEntries(
+    Object.entries(def.paramSchema)
+      .filter(([key]) => key !== 'iterationCount')
+      .map(([key, field]) => [key, params[key] ?? field.defaultValue]),
+  );
   const modules = Array.from({ length: iterationCount }, (_, index) => ({
     id: `round-${index + 1}`,
     defId: def.roundDefId,
-    params: {},
+    params: roundParams,
   }));
   const connections = Array.from({ length: Math.max(0, modules.length - 1) }, (_, index) => ({
     from: { moduleId: modules[index].id, port: 'out' },
