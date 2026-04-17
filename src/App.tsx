@@ -51,6 +51,7 @@ import {
   saveWorkspaceToStorage,
 } from './ui/persistence';
 import { cloneProject } from './ui/project-clone';
+import { createIteratorDefinition, isEligibleIteratorBodyDefinition } from './ui/iterator-authoring';
 import {
   broadcastDetachedSnapshots,
   connectDetachedPanelChannel,
@@ -370,6 +371,12 @@ function MainApp() {
   const [conditionalThenDefId, setConditionalThenDefId] = useState('');
   const [conditionalElseDefId, setConditionalElseDefId] = useState('');
   const [conditionalDialogError, setConditionalDialogError] = useState<string | null>(null);
+  const [isIteratorDialogOpen, setIsIteratorDialogOpen] = useState(false);
+  const [iteratorName, setIteratorName] = useState('');
+  const [iteratorId, setIteratorId] = useState('');
+  const [iteratorRoundDefId, setIteratorRoundDefId] = useState('');
+  const [iteratorIterationCount, setIteratorIterationCount] = useState('2');
+  const [iteratorDialogError, setIteratorDialogError] = useState<string | null>(null);
   const [isMultiConditionalDialogOpen, setIsMultiConditionalDialogOpen] = useState(false);
   const [multiConditionalName, setMultiConditionalName] = useState('');
   const [multiConditionalId, setMultiConditionalId] = useState('');
@@ -3010,6 +3017,14 @@ function MainApp() {
               setReplaceSelectionAfterCreate(!state.compositeEditor);
               setIsCompositeDialogOpen(true);
             }}
+            onRequestCreateIterator={() => {
+              setIteratorName('');
+              setIteratorId('');
+              setIteratorRoundDefId('');
+              setIteratorIterationCount('2');
+              setIteratorDialogError(null);
+              setIsIteratorDialogOpen(true);
+            }}
             onRequestCreateConditional={() => {
               setConditionalName('');
               setConditionalId('');
@@ -4494,6 +4509,117 @@ function MainApp() {
           </div>
         </div>
       ) : null}
+
+      {isIteratorDialogOpen ? (() => {
+        const bodyCandidates = Object.values(effectiveRegistry).filter((def) =>
+          isEligibleIteratorBodyDefinition(def),
+        );
+        const closeIteratorDialog = () => {
+          setIsIteratorDialogOpen(false);
+          setIteratorDialogError(null);
+        };
+        return (
+          <div className="dialog-backdrop" onClick={closeIteratorDialog}>
+            <div className="dialog-panel" onClick={(e) => e.stopPropagation()}>
+              <h2 className="dialog-title">New Iterator</h2>
+              <p className="dialog-description">
+                Author a bounded repeated-round wrapper around one eligible machine body. V1 iterators
+                repeat one <code>in -&gt; out</code> body and expose a configurable round count.
+              </p>
+
+              <label className="param-field">
+                <span>Display Name</span>
+                <input
+                  type="text"
+                  value={iteratorName}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setIteratorName(next);
+                    if (!iteratorId) setIteratorId(createCompositeIdCandidate(next));
+                  }}
+                  placeholder="My Round Iterator"
+                />
+              </label>
+
+              <label className="param-field">
+                <span>Stable Id</span>
+                <input
+                  type="text"
+                  value={iteratorId}
+                  onChange={(e) => setIteratorId(e.target.value)}
+                  placeholder="MyRoundIterator"
+                />
+              </label>
+
+              <label className="param-field">
+                <span>Repeated body</span>
+                <select
+                  value={iteratorRoundDefId}
+                  onChange={(e) => setIteratorRoundDefId(e.target.value)}
+                >
+                  <option value="">— choose an eligible body —</option>
+                  {bodyCandidates.map((def) => (
+                    <option key={def.id} value={def.id}>
+                      {def.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="param-field">
+                <span>Iteration Count</span>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={iteratorIterationCount}
+                  onChange={(e) => setIteratorIterationCount(e.target.value)}
+                />
+              </label>
+
+              {iteratorRoundDefId ? (
+                <p className="comparison-copy">
+                  Body must expose exactly one input named <strong>in</strong> and one output named
+                  <strong> out</strong>. Key-bus iterators stay out of scope for V1 authoring.
+                </p>
+              ) : null}
+
+              {iteratorDialogError ? (
+                <p className="field-error">{iteratorDialogError}</p>
+              ) : null}
+
+              <div className="dialog-actions">
+                <button type="button" className="secondary-dialog-button" onClick={closeIteratorDialog}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="primary-dialog-button"
+                  onClick={() => {
+                    const parsedIterationCount = Number(iteratorIterationCount);
+                    const result = createIteratorDefinition({
+                      registry: effectiveRegistry,
+                      name: iteratorName,
+                      id: iteratorId,
+                      roundDefId: iteratorRoundDefId,
+                      iterationCount: parsedIterationCount,
+                    });
+                    if (!result.ok || !result.entry) {
+                      setIteratorDialogError(result.error ?? 'Iterator definition is invalid.');
+                      return;
+                    }
+
+                    dispatch({ type: 'addCompositeToLibrary', entry: result.entry });
+                    closeIteratorDialog();
+                  }}
+                >
+                  Create Iterator
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })() : null}
 
       {isConditionalDialogOpen ? (() => {
         const branchCandidates = Object.values(effectiveRegistry).filter(

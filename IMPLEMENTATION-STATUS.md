@@ -28,6 +28,14 @@ Current `main` now also includes later post-`v2.1.0` follow-ons:
 - `SEQUENTIAL-STATE-AUTHORING-V1.md`
 - `SBOX-GENERATION-WORKFLOW-V1.md`
 - `UI-ARCHITECTURE-STABILIZATION-V1.md`
+- `ITERATOR-DEFINITION-AUTHORING-V1.md`
+
+Iterator definition authoring is now shipped on `main`:
+- a bounded `Create Iterator` flow is available from the workbench structure actions
+- a user can wrap an eligible `in -> out` primitive or reusable body as a real `IteratorDef`
+- authored iterators are saved into the reusable library and instantiate like other structured definitions
+- the inspector now shows iterator definition metadata, repeated body identity, and default round count
+- V1 stays keyless and read-only with respect to the repeated body; nested iterator bodies remain out of scope
 
 The older `v2.1` builder-power / maintainability queue is now largely already present on `main`:
 - `REPEATED-STRUCTURE-AUTHORING-V1.md`

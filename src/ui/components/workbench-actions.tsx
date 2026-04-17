@@ -89,6 +89,7 @@ interface WorkbenchActionsProps {
   onRequestImport: () => void;
   onRequestImportLabPack: () => void;
   onRequestCreateComposite: () => void;
+  onRequestCreateIterator: () => void;
   onRequestCreateConditional: () => void;
   onRequestCreateMultiConditional: () => void;
   onToggleFurnitureVisible: (visible: boolean) => void;
@@ -660,6 +661,7 @@ export function WorkbenchActions({
   onRequestImport,
   onRequestImportLabPack,
   onRequestCreateComposite,
+  onRequestCreateIterator,
   onRequestCreateConditional,
   onRequestCreateMultiConditional,
   onToggleFurnitureVisible,
@@ -1047,6 +1049,10 @@ export function WorkbenchActions({
               disabled={!hasSelection}
             />
             <WorkbenchMenuActionButton
+              label="Create Iterator"
+              onSelect={onRequestCreateIterator}
+            />
+            <WorkbenchMenuActionButton
               label="New Conditional"
               onSelect={onRequestCreateConditional}
             />
@@ -1098,6 +1104,10 @@ export function WorkbenchActions({
             label="Create Composite"
             onSelect={onRequestCreateComposite}
             disabled={!hasSelection}
+          />
+          <WorkbenchMenuActionButton
+            label="Create Iterator"
+            onSelect={onRequestCreateIterator}
           />
           <WorkbenchMenuActionButton
             label="New Conditional"

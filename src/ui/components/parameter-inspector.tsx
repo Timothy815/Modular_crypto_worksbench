@@ -1532,12 +1532,24 @@ export function ParameterInspector({
             moduleDef.kind === 'composite' ? (
               <p className="selected-module-kind">Composite definition</p>
             ) : moduleDef.kind === 'iterator' ? (
-              <p className="selected-module-kind">
-                Iterator definition
-                {typeof moduleDef.roundKeyWidth === 'number'
-                  ? ` • ${moduleDef.roundKeyWidth}-bit round keys`
-                  : ''}
-              </p>
+              <>
+                <p className="selected-module-kind">
+                  Iterator definition
+                  {typeof moduleDef.roundKeyWidth === 'number'
+                    ? ` • ${moduleDef.roundKeyWidth}-bit round keys`
+                    : ''}
+                </p>
+                <p className="comparison-copy">
+                  Body:{' '}
+                  <strong>
+                    {registry[moduleDef.roundDefId]?.name ?? moduleDef.roundDefId}
+                  </strong>{' '}
+                  <span className="meta-label">({moduleDef.roundDefId})</span>
+                </p>
+                <p className="comparison-copy">
+                  Default rounds: <strong>{moduleDef.iterationCount}</strong>
+                </p>
+              </>
             ) : null
           ) : null}
           {liveStateSummary ? (
