@@ -594,7 +594,7 @@ function ModuleLibraryCard({
         className={`primitive-card primitive-compact-row primitive-card-${getModuleCategory(def)}${isDropTarget ? ' primitive-card-droppable' : pendingConnectionSourceType ? ' primitive-card-incompat' : ''}`}
         onMouseUp={isDropTarget ? handleDropMouseUp : undefined}
       >
-        <div className="primitive-compact-main">
+        <div className="primitive-compact-main" onMouseDown={handleCardMouseDown}>
           <div className="primitive-compact-meta">
             <strong className="primitive-title">{def.name}</strong>
             {isDropTarget ? (
