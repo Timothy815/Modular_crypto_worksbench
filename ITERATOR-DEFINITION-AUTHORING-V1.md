@@ -130,6 +130,19 @@ V1 should **not** allow:
 
 That keeps the first authoring slice bounded and avoids immediately widening into nested iterator semantics.
 
+### Current engine chaining constraint
+
+Under the current executor, iterator chaining is hardcoded through:
+- input port name `in`
+- output port name `out`
+
+The repeated body must therefore expose:
+- exactly one externally visible input port named `in`
+- exactly one externally visible output port named `out`
+
+This is not just a UI preference.
+It reflects the current engine constraint in iterator project construction and final output resolution.
+
 ## Include
 
 V1 includes:
@@ -153,15 +166,17 @@ V1 includes:
   - configured `iterationCount`
   - optional `roundKeyWidth` if present
 
-4. **Open / inspect workflow**
-- allow opening or drilling into the repeated body in a way that matches existing structured-definition workflows
-- keep the repeated body explicit and inspectable
+4. **Read-only body visibility**
+- when selected, show the repeated body definition name and id in the inspector
+- keep the repeated body explicit and inspectable as metadata
+- do **not** require opening the iterator body in the composite editor in V1
 
 5. **Bounded validation**
 - reject invalid iterator id / name authoring inputs
 - reject missing selected body
 - reject body definitions that are not allowed by V1
 - reject nested-iterator body selection in V1
+- reject body definitions whose externally visible port names are not exactly `in` and `out`
 - reject invalid `iterationCount` values
 
 6. **At least one teaching surface**
@@ -194,6 +209,9 @@ Validation and UI must enforce all of the following:
 5. `iterationCount` must be a positive integer
 6. The new iterator must inherit the repeated body’s external input/output interface directly
 7. The new iterator must not invent extra control ports in V1
+8. The body’s externally visible input port must be named exactly `in`
+9. The body’s externally visible output port must be named exactly `out`
+10. A body with any other port naming is not eligible for V1 iterator wrapping
 
 ## Why Direct Interface Inheritance Is Preferred
 
@@ -210,6 +228,8 @@ This is preferred because it:
 - preserves the existing iterator execution shape
 - makes the resulting iterator card read as “this body, repeated N times”
 
+It also keeps V1 aligned with the current executor’s assumptions instead of pretending arbitrary port remapping already exists.
+
 ## UX Expectations
 
 When the interaction is working correctly:
@@ -223,7 +243,14 @@ When the interaction is working correctly:
 The result should feel materially similar to current conditional authoring:
 - explicit structure
 - explicit wrapper
-- explicit reopenability
+- explicit reopenability of the wrapper as a reusable definition
+
+In V1, “reopenability” means:
+- the iterator definition remains visible and reusable
+- the wrapper’s metadata is inspectable
+- the repeated body is shown read-only by name/id in the inspector
+
+It does **not** mean full composite-editor body editing through the iterator surface.
 
 ## Likely UI Surfaces In Scope
 
@@ -241,6 +268,29 @@ Possible engine touch points:
 
 The engine’s underlying iterator execution model should remain unchanged in V1.
 
+## Iteration Count Decision
+
+V1 should explicitly match existing shipped iterator behavior:
+
+- the authored iterator definition sets a default `IteratorDef.iterationCount`
+- the authored iterator should also include an `iterationCount` field in `paramSchema`
+- placed instances may therefore override the count per instance, using the same resolved-count behavior already present in the executor
+
+This is preferred because it keeps authored iterators behaviorally aligned with the built-in iterator family instead of creating a weaker one-off iterator class.
+
+## roundKeyWidth Decision
+
+`roundKeyWidth` is intentionally **out of scope for iterator authoring V1**.
+
+V1 authors only keyless iterators.
+
+That means:
+- authored V1 iterators expose only `in` and `out`
+- the creation dialog does not ask for `roundKeyWidth`
+- key-bus-aware iterators remain a separate follow-on concern
+
+This is a deliberate boundary to keep the first authoring slice focused on wrapper parity rather than keyed repeated-round scheduling.
+
 ## Recommended Test Set
 
 V1 should ship with tests for:
@@ -249,9 +299,11 @@ V1 should ship with tests for:
 2. iterator creation from a composite body
 3. iterator creation from a conditional body
 4. rejection of nested iterator body selection
-5. rejection of zero / negative / non-integer `iterationCount`
-6. saved iterator reappears in reusable library and palette
-7. authored iterator instance executes identically to the same body repeated under the current iterator semantics
+5. rejection of bodies that do not expose `in` / `out`
+6. rejection of zero / negative / non-integer `iterationCount`
+7. saved iterator reappears in reusable library and palette
+8. authored iterator instances may override `iterationCount` per instance
+9. authored iterator instance executes identically to the same body repeated under the current iterator semantics
 
 ## Non-Goals
 
@@ -262,6 +314,8 @@ This slice is not trying to:
 - solve visible stop conditions
 - solve signal-driven repetition
 - collapse iterators into scripting
+- expose keyed iterator authoring through `roundKeyWidth`
+- support opening iterator bodies in the composite editor surface
 
 ## Explicit Follow-On Boundary
 
