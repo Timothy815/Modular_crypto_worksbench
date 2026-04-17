@@ -1636,6 +1636,36 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'clocked-byte-round-iterator',
+    name: 'Clocked Byte Round Iterator',
+    group: 'Modern Rounds',
+    stage: 'modern-bit-machines',
+    order: 132,
+    recommendedAfter: ['counters-conditions-pulses', 'keyed-byte-iterator'],
+    summary: 'A bounded round bank that holds one accumulated byte state and advances exactly one visible round per incoming pulse.',
+    pipeline: 'BitSequenceInput + Clock -> ClockedByteRoundIterator -> BitOutput',
+    defaultTickedMode: true,
+    project: {
+      modules: [
+        { id: 'source', defId: 'BitSequenceInput', params: { stream: [1, 0, 1, 1, 0, 0, 1, 0] } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 6 } },
+        { id: 'clocked', defId: 'ClockedByteRoundIterator', params: {} },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'clocked', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'clocked', port: 'clock' } },
+        { from: { moduleId: 'clocked', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    layout: {
+      source: { x: 64, y: 188 },
+      clock: { x: 64, y: 64 },
+      clocked: { x: 380, y: 188 },
+      out: { x: 696, y: 188 },
+    },
+  },
+  {
     id: 'feistel-network',
     name: '[LAB-2.2] Feistel Network',
     group: 'Modern Rounds',

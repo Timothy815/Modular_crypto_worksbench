@@ -50,6 +50,7 @@ Clocked iterator traversal is now also shipped on `main`:
 - ticked execution treats it as a pulse-driven bounded traversal machine with explicit `clock`, `roundCount`, and `endPolicy`
 - V1 uses cumulative state, visible `step 0` seed behavior, and bounded `halt` / `wrap` traversal semantics
 - a built-in `ClockedByteRoundIterator` and matching micro demo now expose the slice without adding iterator authoring drift or reset semantics
+- a dedicated `Clocked Byte Round Iterator` demo project and `One Pulse Per Round` tutorial now turn the runtime slice into a guided teaching surface
 
 The older `v2.1` builder-power / maintainability queue is now largely already present on `main`:
 - `REPEATED-STRUCTURE-AUTHORING-V1.md`
