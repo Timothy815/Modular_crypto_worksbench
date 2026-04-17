@@ -1687,6 +1687,50 @@ const BITS_TO_HEX_DIGIT_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const BYTE_ROUND_ITERATOR_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'ByteRoundIterator',
+  name: 'Byte Round Iterator Micro Demo',
+  summary:
+    'Compares one visible byte round body against its iterator wrapper so the repeated-body relationship and round count stay legible on canvas.',
+  pipeline: 'BitSource -> ByteRoundComposite + ByteRoundIterator -> BitOutput(body, iterator)',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'iterator', defId: 'ByteRoundIterator', params: { iterationCount: 3 } },
+        { id: 'body', defId: 'ByteRoundComposite', params: {} },
+        { id: 'source', defId: 'BitSource', params: { stream: [1, 0, 1, 1, 0, 0, 1, 0] } },
+        { id: 'body-out', defId: 'BitOutput', params: {} },
+        { id: 'iterator-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'body', port: 'in' } },
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'iterator', port: 'in' } },
+        { from: { moduleId: 'body', port: 'out' }, to: { moduleId: 'body-out', port: 'in' } },
+        { from: { moduleId: 'iterator', port: 'out' }, to: { moduleId: 'iterator-out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        source: { x: 72, y: 176 },
+        body: { x: 360, y: 84 },
+        iterator: { x: 360, y: 268 },
+        'body-out': { x: 660, y: 84 },
+        'iterator-out': { x: 660, y: 268 },
+      },
+      annotations: [
+        { id: 'body-note', x: 360, y: 32, text: 'Single round body' },
+        {
+          id: 'iterator-note',
+          x: 360,
+          y: 216,
+          text: 'Iterator wrapper • select to inspect default vs resolved rounds',
+        },
+      ],
+    },
+  },
+};
+
 const CONDITIONAL_BRANCH_DEMO_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'ConditionalBranchDemo',
   name: 'Conditional Branch Demo Micro Demo',
@@ -1860,6 +1904,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   BITS_SEQUENCE_TO_TICKED_MICRO_DEMO,
   BITS_TO_ASCII_CHAR_MICRO_DEMO,
   BITS_TO_HEX_DIGIT_MICRO_DEMO,
+  BYTE_ROUND_ITERATOR_MICRO_DEMO,
   CONDITIONAL_BRANCH_DEMO_MICRO_DEMO,
 ];
 

@@ -58,6 +58,7 @@ describe('primitive micro demos', () => {
       'BitsSequenceToTicked',
       'BitsToAsciiChar',
       'BitsToHexDigit',
+      'ByteRoundIterator',
       'ConditionalBranchDemo',
     ]);
   });
@@ -161,6 +162,9 @@ describe('primitive micro demos', () => {
     );
     expect(getPrimitiveMicroDemo('BitsToHexDigit')?.name).toBe(
       'Bits To Hex Digit Micro Demo',
+    );
+    expect(getPrimitiveMicroDemo('ByteRoundIterator')?.name).toBe(
+      'Byte Round Iterator Micro Demo',
     );
     expect(getPrimitiveMicroDemo('ConditionalBranchDemo')?.name).toBe(
       'Conditional Branch Demo Micro Demo',
@@ -494,6 +498,17 @@ describe('primitive micro demos', () => {
       'Rotor',
       'Reflector',
       'TextOutput',
+    ]);
+  });
+
+  it('keeps the iterator wrapper demo honest about body-versus-wrapper comparison', () => {
+    const demo = getPrimitiveMicroDemo('ByteRoundIterator');
+    expect(demo?.document.project.modules.map((module) => module.defId)).toEqual([
+      'ByteRoundIterator',
+      'ByteRoundComposite',
+      'BitSource',
+      'BitOutput',
+      'BitOutput',
     ]);
   });
 });

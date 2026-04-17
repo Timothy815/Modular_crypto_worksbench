@@ -59,6 +59,7 @@ import {
 } from '../node-orientation';
 import { getOrderedPorts } from '../port-ordering';
 import { getModuleRole, getModuleRoleDetail, getModuleTypicalPath } from '../module-role-language';
+import { getIteratorRoundSummary } from '../iterator-workflow';
 import type {
   VerificationCase,
   VerificationCaseResult,
@@ -1153,6 +1154,13 @@ export function ParameterInspector({
       : moduleInstance?.id ?? '';
   const effectiveRenameError =
     moduleInstance && renameState.moduleId === moduleInstance.id ? renameState.error : null;
+  const iteratorRoundSummary =
+    moduleDef &&
+    moduleInstance &&
+    'kind' in moduleDef &&
+    moduleDef.kind === 'iterator'
+      ? getIteratorRoundSummary(moduleDef, moduleInstance.params)
+      : null;
   const renameValidationError = useMemo(() => {
     if (!moduleInstance) {
       return null;
@@ -1549,6 +1557,28 @@ export function ParameterInspector({
                 <p className="comparison-copy">
                   Default rounds: <strong>{moduleDef.iterationCount}</strong>
                 </p>
+                {iteratorRoundSummary ? (
+                  <>
+                    <p className="comparison-copy">
+                      Resolved rounds: <strong>{iteratorRoundSummary.resolvedRounds}</strong>
+                    </p>
+                    <p className="comparison-copy">
+                      {iteratorRoundSummary.hasInstanceOverride ? (
+                        <>
+                          <span className="meta-label">Instance override active</span>{' '}
+                          <strong>
+                            ({iteratorRoundSummary.defaultRounds} → {iteratorRoundSummary.resolvedRounds})
+                          </strong>
+                        </>
+                      ) : (
+                        <>
+                          <span className="meta-label">Using definition default</span>{' '}
+                          <strong>({iteratorRoundSummary.defaultRounds})</strong>
+                        </>
+                      )}
+                    </p>
+                  </>
+                ) : null}
               </>
             ) : null
           ) : null}
