@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
-import type { ModuleDefinition } from '../../engine/types';
+import type { ModuleDefinition, PortKind, SignalType } from '../../engine/types';
 import type {
   ExecutionResult,
   ExecutionTraceEntry,
@@ -87,6 +87,11 @@ import {
   shouldClearOrthogonalBendOverride,
 } from '../workbench-support';
 import { formatParamValue, parseParamValue } from '../formatters';
+import {
+  buildInsertChainTemplates,
+  getMatchingCanonicalChains,
+  getPortKindSignature,
+} from '../canonical-chain-insertion';
 import { WORKBENCH_GRID_SIZE } from '../store';
 const WorkbenchActions = lazy(() =>
   import('./workbench-actions').then((module) => ({
@@ -190,7 +195,8 @@ interface QuickAddState {
   pendingConnection?: {
     fromModuleId: string;
     fromPort: string;
-    sourceType: string;
+    sourceType: SignalType;
+    sourceKind: PortKind;
   };
 }
 
@@ -573,7 +579,14 @@ interface WorkbenchPanelProps {
     fromPort: string,
     toPort: string,
   ) => void;
-  onPendingConnectionChange?: (info: { fromModuleId: string; fromPort: string; sourceType: string } | null) => void;
+  onInsertChain: (
+    modules: Array<{ defId: string; params?: Record<string, unknown>; position: { x: number; y: number } }>,
+    connections: Array<{ fromIndex: number; fromPort: string; toIndex: number; toPort: string }>,
+    attach: { fromModuleId: string; fromPort: string; toIndex: number; toPort: string },
+  ) => void;
+  onPendingConnectionChange?: (
+    info: { fromModuleId: string; fromPort: string; sourceType: SignalType; sourceKind: PortKind } | null,
+  ) => void;
   onHoveredInputPortChange?: (info: { moduleId: string; defId?: string; port: string; type: string } | null) => void;
   projects: DemoProject[];
 }
@@ -739,6 +752,7 @@ export function WorkbenchPanel({
   paletteModuleDropRequest = null,
   onPaletteModuleDropRequestHandled,
   onInsertModuleAndConnect,
+  onInsertChain,
   onPendingConnectionChange,
   onHoveredInputPortChange,
   projects,
@@ -2087,7 +2101,12 @@ export function WorkbenchPanel({
     const sourcePort = sourceDef?.outputs.find((p) => p.name === pendingFromPort);
     onPendingConnectionChange(
       sourcePort
-        ? { fromModuleId: pendingFromModuleId, fromPort: pendingFromPort, sourceType: sourcePort.type }
+        ? {
+            fromModuleId: pendingFromModuleId,
+            fromPort: pendingFromPort,
+            sourceType: sourcePort.type,
+            sourceKind: getPortKindSignature(sourcePort.kind),
+          }
         : null,
     );
   }, [onPendingConnectionChange, pendingFromModuleId, pendingFromPort, activeProjectState, registry]);
@@ -2133,20 +2152,52 @@ export function WorkbenchPanel({
       return [];
     }
 
-    return Object.values(registry)
+    const sourceType = quickAdd.pendingConnection.sourceType;
+    const sourceKind = quickAdd.pendingConnection.sourceKind;
+    const chainOptions = getMatchingCanonicalChains({
+      sourceType,
+      sourceKind,
+      registry,
+    }).map((chain) => ({
+      id: `chain:${chain.id}`,
+      label: chain.label,
+      subtitle: chain.description,
+      badge: 'Chain',
+      onSelect: () => {
+        const templates = buildInsertChainTemplates({
+          chain,
+          canvasPosition: { x: quickAdd.canvasX, y: quickAdd.canvasY },
+          layoutDirection,
+        });
+        onInsertChain(templates.modules, templates.connections, {
+          fromModuleId: quickAdd.pendingConnection!.fromModuleId,
+          fromPort: quickAdd.pendingConnection!.fromPort,
+          toIndex: 0,
+          toPort: 'in',
+        });
+      },
+    }));
+
+    const moduleOptions = Object.values(registry)
       .map((definition) => {
         const compatiblePort =
-          definition.inputs.find((port) => port.type === quickAdd.pendingConnection?.sourceType) ?? null;
+          definition.inputs.find(
+            (port) =>
+              port.type === sourceType &&
+              getPortKindSignature(port.kind) === sourceKind,
+          ) ?? null;
         if (!compatiblePort) {
           return null;
         }
 
         return {
-          def: definition,
+          id: definition.id,
+          label: definition.name,
           subtitle: `Connect → ${compatiblePort.name}`,
-          onSelect: (selectedDef: ModuleDefinition) => {
+          detailId: definition.id,
+          onSelect: () => {
             onInsertModuleAndConnect(
-              selectedDef,
+              definition,
               { x: quickAdd.canvasX, y: quickAdd.canvasY },
               quickAdd.pendingConnection!.fromModuleId,
               quickAdd.pendingConnection!.fromPort,
@@ -2155,8 +2206,16 @@ export function WorkbenchPanel({
           },
         };
       })
-      .filter((option): option is { def: ModuleDefinition; subtitle: string; onSelect: (def: ModuleDefinition) => void } => option !== null);
-  }, [onInsertModuleAndConnect, quickAdd, registry]);
+      .filter((option): option is {
+        id: string;
+        label: string;
+        subtitle: string;
+        detailId: string;
+        onSelect: () => void;
+      } => option !== null);
+
+    return [...chainOptions, ...moduleOptions];
+  }, [layoutDirection, onInsertChain, onInsertModuleAndConnect, quickAdd, registry]);
 
   useEffect(() => {
     if (
@@ -3681,12 +3740,13 @@ export function WorkbenchPanel({
               clientX: event.clientX,
               clientY: event.clientY,
               mode: 'connect',
-              pendingConnection: {
-                fromModuleId: pendingConnection.fromModuleId,
-                fromPort: pendingConnection.fromPort,
-                sourceType: sourcePort.type,
-              },
-            });
+                pendingConnection: {
+                  fromModuleId: pendingConnection.fromModuleId,
+                  fromPort: pendingConnection.fromPort,
+                  sourceType: sourcePort.type,
+                  sourceKind: getPortKindSignature(sourcePort.kind),
+                },
+              });
             clearPendingConnectionUi();
           }}
         >

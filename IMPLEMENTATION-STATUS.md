@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: April 17, 2026
+Last updated: April 18, 2026
 
 ---
 
@@ -31,6 +31,12 @@ Current `main` now also includes later post-`v2.1.0` follow-ons:
 - `ITERATOR-DEFINITION-AUTHORING-V1.md`
 - `ITERATOR-WORKFLOW-POLISH-V1.md`
 - `CLOCKED-ITERATOR-V1.md`
+- `CANONICAL-CHAIN-INSERTION-V1.md`
+
+Canonical chain insertion is now also shipped on `main`:
+- pending-connection quick add can insert bounded named bridge / collector chains in one atomic action
+- V1 stays intentionally narrow: `ASCII sequence -> bit words`, `Collect ticked bits -> hex`, and `Collect ticked bits -> ASCII`
+- inserted chains remain fully explicit on canvas as ordinary modules and wires, with no hidden coercion or free-form synthesis
 
 Palette wayfinding is now also tightened on `main`:
 - expanded palette cards now surface role chips and typical-path guidance directly on the card instead of burying workflow language behind the `?` affordance

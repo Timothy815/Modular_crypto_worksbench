@@ -1997,6 +1997,73 @@ describe('uiReducer', () => {
     expect(nextState.workspaceModeByProject['my-scratchpad']).toBe('build');
   });
 
+  it('inserts a canonical chain as one atomic workspace step', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const createdState = uiReducer(initialState, {
+      type: 'createBlankWorkspace',
+      workspaceId: 'chain-scratchpad',
+      name: 'Chain Scratchpad',
+      summary: 'A workspace for chain insertion tests.',
+      pipeline: 'Text -> chain',
+    });
+
+    const withSource = uiReducer(createdState, {
+      type: 'addModule',
+      projectId: 'chain-scratchpad',
+      moduleDef: V1_REGISTRY.TextInput,
+      position: { x: 80, y: 120 },
+    });
+
+    const insertedState = uiReducer(withSource, {
+      type: 'insertChain',
+      projectId: 'chain-scratchpad',
+      modules: [
+        { defId: 'AsciiSequenceToTicked', position: { x: 280, y: 120 } },
+        { defId: 'AsciiCharToBits', position: { x: 500, y: 120 } },
+      ],
+      connections: [
+        { fromIndex: 0, fromPort: 'out', toIndex: 1, toPort: 'in' },
+      ],
+      attach: {
+        fromModuleId: 'textinput-1',
+        fromPort: 'out',
+        toIndex: 0,
+        toPort: 'in',
+      },
+    });
+
+    expect(insertedState.projectStates['chain-scratchpad']?.modules.map((module) => module.id)).toEqual([
+      'textinput-1',
+      'asciisequencetoticked-1',
+      'asciichartobits-1',
+    ]);
+    expect(insertedState.projectStates['chain-scratchpad']?.connections).toEqual([
+      {
+        from: { moduleId: 'textinput-1', port: 'out' },
+        to: { moduleId: 'asciisequencetoticked-1', port: 'in' },
+      },
+      {
+        from: { moduleId: 'asciisequencetoticked-1', port: 'out' },
+        to: { moduleId: 'asciichartobits-1', port: 'in' },
+      },
+    ]);
+    expect(insertedState.selectedModuleIdByProject['chain-scratchpad']).toBe('asciichartobits-1');
+    expect(insertedState.selectedModuleIdsByProject['chain-scratchpad']).toEqual([
+      'asciisequencetoticked-1',
+      'asciichartobits-1',
+    ]);
+
+    const undoneState = uiReducer(insertedState, {
+      type: 'undoWorkspaceHistory',
+      projectId: 'chain-scratchpad',
+    });
+
+    expect(undoneState.projectStates['chain-scratchpad']?.modules.map((module) => module.id)).toEqual([
+      'textinput-1',
+    ]);
+    expect(undoneState.projectStates['chain-scratchpad']?.connections).toEqual([]);
+  });
+
   it('saves the current graph into a personal workspace entry', () => {
     const initialState = createInitialUiState(demoProjects);
 

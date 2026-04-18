@@ -418,6 +418,7 @@ function MainApp() {
     fromModuleId: string;
     fromPort: string;
     sourceType: string;
+    sourceKind: 'scalar' | 'sequence';
   } | null>(null);
   const [hoveredInputPortHint, setHoveredInputPortHint] = useState<{
     moduleId: string;
@@ -3443,6 +3444,17 @@ function MainApp() {
                     fromModuleId,
                     fromPort,
                     toPort,
+                  })
+            }
+            onInsertChain={(modules, connections, attach) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'insertChain',
+                    projectId: activeProjectDefinition.id,
+                    modules,
+                    connections,
+                    attach,
                   })
             }
             projects={state.compositeEditor || isCompositeDrilldownActive ? [activeProjectDefinition] : availableProjects}

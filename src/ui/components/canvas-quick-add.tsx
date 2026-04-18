@@ -2,10 +2,13 @@ import { useMemo, useState } from 'react';
 import type { ModuleDefinition } from '../../engine/types';
 import type { ModuleRegistry } from '../../engine/types';
 
-interface CanvasQuickAddOption {
-  def: ModuleDefinition;
+export interface CanvasQuickAddOption {
+  id: string;
+  label: string;
+  detailId?: string;
   subtitle?: string;
-  onSelect: (def: ModuleDefinition) => void;
+  badge?: string;
+  onSelect: () => void;
 }
 
 interface CanvasQuickAddProps {
@@ -40,18 +43,22 @@ export function CanvasQuickAdd({
     const optionList: CanvasQuickAddOption[] =
       options ??
       Object.values(registry).map((def) => ({
-        def,
-        onSelect: (selectedDef: ModuleDefinition) => {
-          onAdd?.(selectedDef, { x: canvasX, y: canvasY });
+        id: def.id,
+        label: def.name,
+        detailId: def.id,
+        onSelect: () => {
+          onAdd?.(def, { x: canvasX, y: canvasY });
         },
       }));
 
     const filtered = q
       ? optionList.filter(
-          ({ def, subtitle }) =>
-            def.id.toLowerCase().includes(q) ||
-            def.name.toLowerCase().includes(q) ||
-            subtitle?.toLowerCase().includes(q),
+          ({ id, label, detailId, subtitle, badge }) =>
+            id.toLowerCase().includes(q) ||
+            label.toLowerCase().includes(q) ||
+            detailId?.toLowerCase().includes(q) ||
+            subtitle?.toLowerCase().includes(q) ||
+            badge?.toLowerCase().includes(q),
         )
       : optionList;
 
@@ -59,7 +66,7 @@ export function CanvasQuickAdd({
   }, [canvasX, canvasY, onAdd, options, q, registry]);
 
   function place(option: CanvasQuickAddOption) {
-    option.onSelect(option.def);
+    option.onSelect();
     onDismiss();
   }
 
@@ -85,17 +92,20 @@ export function CanvasQuickAdd({
         <ul className="canvas-quick-add-list">
           {results.map((option) => (
             <li
-              key={`${option.def.id}:${option.subtitle ?? ''}`}
+              key={`${option.id}:${option.detailId ?? ''}:${option.subtitle ?? ''}`}
               className="canvas-quick-add-item"
               onMouseDown={() => place(option)}
             >
               <span>
-                <span className="canvas-quick-add-name">{option.def.name}</span>
+                <span className="canvas-quick-add-name">
+                  {option.label}
+                  {option.badge ? <span className="canvas-quick-add-badge">{option.badge}</span> : null}
+                </span>
                 {option.subtitle ? (
                   <span className="canvas-quick-add-subtitle">{option.subtitle}</span>
                 ) : null}
               </span>
-              <span className="canvas-quick-add-id">{option.def.id}</span>
+              <span className="canvas-quick-add-id">{option.detailId ?? option.id}</span>
             </li>
           ))}
         </ul>

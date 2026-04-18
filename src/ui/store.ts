@@ -62,6 +62,10 @@ import { isLargeWorkspace } from './workspace-landmarks';
 import { clonePortOrder, movePortInOrder, type OrderedPortDirection } from './port-ordering';
 import { getConnectionComparisonKey } from './workspace-comparison';
 import { snapModulePositionToGuideRails } from './workbench-support';
+import type {
+  InsertChainConnectionTemplate,
+  InsertChainModuleTemplate,
+} from './canonical-chain-insertion';
 
 export interface UiState {
   activeProjectId: string;
@@ -290,6 +294,18 @@ export type UiAction =
       fromModuleId: string;
       fromPort: string;
       toPort: string;
+    }
+  | {
+      type: 'insertChain';
+      projectId: string;
+      modules: InsertChainModuleTemplate[];
+      connections: InsertChainConnectionTemplate[];
+      attach: {
+        fromModuleId: string;
+        fromPort: string;
+        toIndex: number;
+        toPort: string;
+      };
     }
   | { type: 'removeModule'; projectId: string; moduleId: string }
   | {
@@ -676,6 +692,7 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'insertStarterChain',
   'insertBridgeConnection',
   'insertModuleAndConnect',
+  'insertChain',
   'removeModule',
   'addConnection',
   'autoWireSelection',
@@ -3360,6 +3377,108 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           [action.projectId]: false,
         },
         paramDrafts: nextDrafts,
+      };
+    }
+    case 'insertChain': {
+      if (state.compositeEditor) {
+        return state;
+      }
+      const currentProject = state.projectStates[action.projectId];
+      const currentLayout = state.layoutByProject[action.projectId];
+      const currentLayoutDirection = state.layoutDirectionByProject[action.projectId] ?? 'horizontal';
+      if (!currentProject || !currentLayout || action.modules.length === 0) {
+        return state;
+      }
+
+      const nextProject = cloneProject(currentProject);
+      const insertedModuleIds = action.modules.map((moduleTemplate) => createModuleId(nextProject, moduleTemplate.defId));
+      const nextModules = action.modules.map((moduleTemplate, index) => {
+        const definition = V1_REGISTRY[moduleTemplate.defId];
+        if (!definition) {
+          return null;
+        }
+
+        return {
+          id: insertedModuleIds[index],
+          defId: moduleTemplate.defId,
+          params: {
+            ...buildDefaultParams(definition),
+            ...(moduleTemplate.params ?? {}),
+          },
+        };
+      });
+
+      if (nextModules.some((moduleInstance) => moduleInstance === null)) {
+        return state;
+      }
+
+      nextProject.modules = [
+        ...nextProject.modules,
+        ...(nextModules.filter((moduleInstance): moduleInstance is ModuleInstance => moduleInstance !== null)),
+      ];
+
+      nextProject.connections = [
+        ...nextProject.connections,
+        {
+          from: {
+            moduleId: action.attach.fromModuleId,
+            port: action.attach.fromPort,
+          },
+          to: {
+            moduleId: insertedModuleIds[action.attach.toIndex],
+            port: action.attach.toPort,
+          },
+        },
+        ...action.connections.map((connectionTemplate) => ({
+          from: {
+            moduleId: insertedModuleIds[connectionTemplate.fromIndex],
+            port: connectionTemplate.fromPort,
+          },
+          to: {
+            moduleId: insertedModuleIds[connectionTemplate.toIndex],
+            port: connectionTemplate.toPort,
+          },
+        })),
+      ];
+
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: nextProject,
+        },
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: {
+            ...currentLayout,
+            ...Object.fromEntries(
+              action.modules.map((moduleTemplate, index) => [
+                insertedModuleIds[index],
+                {
+                  x: moduleTemplate.position.x,
+                  y: moduleTemplate.position.y,
+                  orientation: getDefaultNodeOrientation(currentLayoutDirection),
+                },
+              ]),
+            ),
+          },
+        },
+        selectedModuleIdByProject: {
+          ...state.selectedModuleIdByProject,
+          [action.projectId]: insertedModuleIds[insertedModuleIds.length - 1] ?? null,
+        },
+        selectedModuleIdsByProject: {
+          ...state.selectedModuleIdsByProject,
+          [action.projectId]: [...insertedModuleIds],
+        },
+        currentTickByProject: {
+          ...state.currentTickByProject,
+          [action.projectId]: 0,
+        },
+        isTickPlaybackActiveByProject: {
+          ...state.isTickPlaybackActiveByProject,
+          [action.projectId]: false,
+        },
       };
     }
     case 'removeModule': {

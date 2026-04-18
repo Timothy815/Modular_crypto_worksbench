@@ -1,8 +1,8 @@
 # Canonical Chain Insertion V1
 
-Last updated: April 17, 2026
+Last updated: April 18, 2026
 
-Status: Tightened draft
+Status: Shipped on `main`
 
 ---
 

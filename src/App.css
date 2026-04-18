@@ -7726,6 +7726,21 @@ body.canvas-resizing {
   color: var(--ink);
 }
 
+.canvas-quick-add-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
 .canvas-quick-add-subtitle {
   display: block;
   margin-top: 2px;
