@@ -27,6 +27,17 @@ export interface WorkspaceExecutionResolution {
   primaryOutputModuleId: string | null;
 }
 
+function hasSinkExecution(execution: ExecutionResult | null, sinkModuleId: string) {
+  if (!execution) {
+    return false;
+  }
+
+  return (
+    execution.trace.some((entry) => entry.moduleId === sinkModuleId) ||
+    execution.outputsByModuleId[sinkModuleId] !== undefined
+  );
+}
+
 function buildReverseConnections(project: Project): Map<string, Set<string>> {
   const reverse = new Map<string, Set<string>>();
 
@@ -128,10 +139,50 @@ function getSinkSignal(execution: ExecutionResult, sinkModuleId: string) {
   return execution.outputsByModuleId[sinkModuleId]?.out ?? traceEntry?.inputs.in ?? null;
 }
 
-function getPrimaryOutputModuleId(project: Project, execution: ExecutionResult | null): string | null {
+function getPreferredOutputModuleId(
+  project: Project,
+  preferredModuleIds: string[],
+  execution: ExecutionResult | null,
+) {
+  if (preferredModuleIds.length === 0) {
+    return null;
+  }
+
+  const sinkSlices = getSinkProjectSlices(project);
+  if (sinkSlices.length === 0) {
+    return null;
+  }
+
+  for (const preferredModuleId of preferredModuleIds) {
+    const directSink = sinkSlices.find((slice) => slice.sinkModuleId === preferredModuleId);
+    if (directSink && hasSinkExecution(execution, directSink.sinkModuleId)) {
+      return directSink.sinkModuleId;
+    }
+
+    const matchingSlices = sinkSlices.filter((slice) =>
+      slice.project.modules.some((module) => module.id === preferredModuleId),
+    );
+    if (matchingSlices.length === 1 && hasSinkExecution(execution, matchingSlices[0].sinkModuleId)) {
+      return matchingSlices[0].sinkModuleId;
+    }
+  }
+
+  return null;
+}
+
+function getPrimaryOutputModuleId(
+  project: Project,
+  execution: ExecutionResult | null,
+  preferredModuleIds: string[] = [],
+): string | null {
   const sinkModules = project.modules.filter((module) => isOutputSinkDefId(module.defId));
   if (sinkModules.length === 0) {
     return null;
+  }
+
+  const preferredOutputModuleId = getPreferredOutputModuleId(project, preferredModuleIds, execution);
+  if (preferredOutputModuleId) {
+    return preferredOutputModuleId;
   }
 
   if (execution) {
@@ -149,6 +200,7 @@ function resolveFullProjectExecution(
   registry: ModuleRegistry,
   isTickedMode: boolean,
   currentTick: number,
+  preferredModuleIds: string[],
 ): WorkspaceExecutionResolution {
   const validation = validateProject(project, registry);
   if (!validation.ok) {
@@ -174,6 +226,7 @@ function resolveFullProjectExecution(
           primaryOutputModuleId: getPrimaryOutputModuleId(
             project,
             tickedExecution.ticks[Math.min(currentTick, tickCount - 1)] ?? null,
+            preferredModuleIds,
           ),
         };
       }
@@ -185,7 +238,7 @@ function resolveFullProjectExecution(
       executionError: null,
       tickedExecution: null,
       tickCount: null,
-      primaryOutputModuleId: getPrimaryOutputModuleId(project, execution),
+      primaryOutputModuleId: getPrimaryOutputModuleId(project, execution, preferredModuleIds),
     };
   } catch (error) {
     return {
@@ -203,16 +256,17 @@ export function resolveWorkspaceExecution(
   registry: ModuleRegistry,
   isTickedMode: boolean,
   currentTick: number,
+  preferredModuleIds: string[] = [],
 ): WorkspaceExecutionResolution {
   const sinkSlices = getSinkProjectSlices(project);
 
   if (sinkSlices.length === 0) {
-    return resolveFullProjectExecution(project, registry, isTickedMode, currentTick);
+    return resolveFullProjectExecution(project, registry, isTickedMode, currentTick, preferredModuleIds);
   }
 
   const validSlices = sinkSlices.filter((slice) => validateProject(slice.project, registry).ok);
   if (validSlices.length === 0) {
-    return resolveFullProjectExecution(project, registry, isTickedMode, currentTick);
+    return resolveFullProjectExecution(project, registry, isTickedMode, currentTick, preferredModuleIds);
   }
 
   try {
@@ -234,7 +288,7 @@ export function resolveWorkspaceExecution(
           executionError: null,
           tickedExecution,
           tickCount,
-          primaryOutputModuleId: getPrimaryOutputModuleId(project, execution),
+          primaryOutputModuleId: getPrimaryOutputModuleId(project, execution, preferredModuleIds),
         };
       }
     }
@@ -245,11 +299,11 @@ export function resolveWorkspaceExecution(
       executionError: null,
       tickedExecution: null,
       tickCount: null,
-      primaryOutputModuleId: getPrimaryOutputModuleId(project, execution),
+      primaryOutputModuleId: getPrimaryOutputModuleId(project, execution, preferredModuleIds),
     };
   } catch (error) {
     if (error instanceof ProjectValidationError) {
-      return resolveFullProjectExecution(project, registry, isTickedMode, currentTick);
+      return resolveFullProjectExecution(project, registry, isTickedMode, currentTick, preferredModuleIds);
     }
 
     return {

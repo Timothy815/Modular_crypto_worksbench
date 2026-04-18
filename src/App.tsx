@@ -584,6 +584,9 @@ function MainApp() {
     effectiveRegistry,
     isTickedMode,
     currentTick,
+    effectiveSelectedModuleId
+      ? [effectiveSelectedModuleId, ...effectiveSelectedModuleIds.filter((moduleId) => moduleId !== effectiveSelectedModuleId)]
+      : effectiveSelectedModuleIds,
   );
   execution = workspaceExecution.execution;
   executionError = workspaceExecution.executionError;

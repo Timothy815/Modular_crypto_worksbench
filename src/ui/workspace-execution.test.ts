@@ -91,4 +91,43 @@ describe('resolveWorkspaceExecution', () => {
     expect(result.tickCount).toBeGreaterThan(0);
     expect(result.primaryOutputModuleId).toBe('output');
   });
+
+  it('prefers the selected chain sink when the selection belongs to exactly one output branch', () => {
+    const project: Project = {
+      modules: [
+        { id: 'left-source', defId: 'BitSource', params: { stream: [1, 0, 1, 0] } },
+        { id: 'left-output', defId: 'BitOutput', params: {} },
+        { id: 'right-source', defId: 'BitSource', params: { stream: [1, 1, 0, 0] } },
+        { id: 'right-output', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'left-source', port: 'out' }, to: { moduleId: 'left-output', port: 'in' } },
+        { from: { moduleId: 'right-source', port: 'out' }, to: { moduleId: 'right-output', port: 'in' } },
+      ],
+    };
+
+    const result = resolveWorkspaceExecution(project, registry, false, 0, ['right-source']);
+
+    expect(result.executionError).toBeNull();
+    expect(result.primaryOutputModuleId).toBe('right-output');
+  });
+
+  it('falls back to the normal primary-output heuristic when the selected module is shared upstream', () => {
+    const project: Project = {
+      modules: [
+        { id: 'shared-source', defId: 'BitSource', params: { stream: [1, 0, 1, 0] } },
+        { id: 'left-output', defId: 'BitOutput', params: {} },
+        { id: 'right-output', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'shared-source', port: 'out' }, to: { moduleId: 'left-output', port: 'in' } },
+        { from: { moduleId: 'shared-source', port: 'out' }, to: { moduleId: 'right-output', port: 'in' } },
+      ],
+    };
+
+    const result = resolveWorkspaceExecution(project, registry, false, 0, ['shared-source']);
+
+    expect(result.executionError).toBeNull();
+    expect(result.primaryOutputModuleId).toBe('left-output');
+  });
 });
