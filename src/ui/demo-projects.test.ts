@@ -19,4 +19,14 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('BitsSequenceToTicked');
     expect(demo?.pipeline).toContain('TickedBitsToSequence');
   });
+
+  it('includes the visible repeated-key repair demo as a ticked workflow', () => {
+    const demo = demoProjects.find((project) => project.id === 'visible-repeated-key-repair');
+
+    expect(demo?.name).toBe('Visible Repeated-Key Repair');
+    expect(demo?.defaultTickedMode).toBe(true);
+    expect(demo?.pipeline).toContain('RepeatSymbolToMatch');
+    expect(demo?.pipeline).toContain('AsciiSequenceToTicked');
+    expect(demo?.pipeline).toContain('TickedBitsToSequence');
+  });
 });
