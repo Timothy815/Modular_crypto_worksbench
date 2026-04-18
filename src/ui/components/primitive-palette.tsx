@@ -11,6 +11,10 @@ import {
   getModuleTypicalPath,
 } from '../module-role-language';
 import {
+  getPaletteContextRank,
+  type PaletteHoveredInputPortHint,
+} from '../palette-wayfinding';
+import {
   type ModuleLibraryDomainTab,
   getModuleDetail,
   getModuleLibrarySectionId,
@@ -39,7 +43,7 @@ interface PrimitivePaletteProps {
   compositeUsageCountById: Record<string, number>;
   builtInReusableIds: string[];
   pendingConnectionSourceType?: string | null;
-  hoveredInputPort?: { moduleId: string; port: string; type: string } | null;
+  hoveredInputPort?: PaletteHoveredInputPortHint | null;
   onDropForPendingConnection?: (defId: string, toPort: string) => void;
 }
 
@@ -99,6 +103,7 @@ function getPaletteSearchCandidates(definition: ModuleRegistry[string]) {
     detail: getModuleDetail(definition),
     role: getModuleRole(definition),
     roleDetail: getModuleRoleDetail(definition),
+    typicalPath: getModuleTypicalPath(definition) ?? '',
     section: getModuleLibrarySectionId(definition).replace(/-/g, ' '),
   };
 }
@@ -109,13 +114,14 @@ function getPaletteSearchRank(definition: ModuleRegistry[string], query: string)
     return 0;
   }
 
-  const { id, name, purpose, detail, role, roleDetail, section } = getPaletteSearchCandidates(definition);
+  const { id, name, purpose, detail, role, roleDetail, typicalPath, section } = getPaletteSearchCandidates(definition);
   const normalizedId = id.toLowerCase();
   const normalizedName = name.toLowerCase();
   const normalizedPurpose = purpose.toLowerCase();
   const normalizedDetail = detail.toLowerCase();
   const normalizedRole = role.toLowerCase();
   const normalizedRoleDetail = roleDetail.toLowerCase();
+  const normalizedTypicalPath = typicalPath.toLowerCase();
   const normalizedSection = section.toLowerCase();
 
   if (normalizedId === normalized || normalizedName === normalized) {
@@ -142,7 +148,11 @@ function getPaletteSearchRank(definition: ModuleRegistry[string], query: string)
     return 150;
   }
 
-  if (normalizedDetail.includes(normalized) || matchesModuleSearch(definition, normalized)) {
+  if (
+    normalizedDetail.includes(normalized) ||
+    normalizedTypicalPath.includes(normalized) ||
+    matchesModuleSearch(definition, normalized)
+  ) {
     return 100;
   }
 
@@ -206,18 +216,50 @@ export function PrimitivePalette({
     return matchesModuleDomainTab(def, activeTab) && matchesModuleSearch(def, normalizedSearchQuery);
   });
 
-  const rankedVisibleDefs = useMemo(
+  const contextRank = useMemo(
+    () =>
+      new Map(
+        visibleDefs.map((definition) => [
+          definition.id,
+          getPaletteContextRank(definition, {
+            pendingConnectionSourceType,
+            hoveredInputPort,
+          }),
+        ]),
+      ),
+    [hoveredInputPort, pendingConnectionSourceType, visibleDefs],
+  );
+
+  const orderedVisibleDefs = useMemo(
     () =>
       [...visibleDefs].sort((left, right) => {
-        const rankDifference =
-          getPaletteSearchRank(right, normalizedSearchQuery) - getPaletteSearchRank(left, normalizedSearchQuery);
+        const rankDifference = (contextRank.get(right.id) ?? 0) - (contextRank.get(left.id) ?? 0);
         if (rankDifference !== 0) {
           return rankDifference;
         }
 
         return (sortOrderIndex.get(left.id) ?? 0) - (sortOrderIndex.get(right.id) ?? 0);
       }),
-    [normalizedSearchQuery, sortOrderIndex, visibleDefs],
+    [contextRank, sortOrderIndex, visibleDefs],
+  );
+
+  const rankedVisibleDefs = useMemo(
+    () =>
+      [...visibleDefs].sort((left, right) => {
+        const searchRankDifference =
+          getPaletteSearchRank(right, normalizedSearchQuery) - getPaletteSearchRank(left, normalizedSearchQuery);
+        if (searchRankDifference !== 0) {
+          return searchRankDifference;
+        }
+
+        const contextRankDifference = (contextRank.get(right.id) ?? 0) - (contextRank.get(left.id) ?? 0);
+        if (contextRankDifference !== 0) {
+          return contextRankDifference;
+        }
+
+        return (sortOrderIndex.get(left.id) ?? 0) - (sortOrderIndex.get(right.id) ?? 0);
+      }),
+    [contextRank, normalizedSearchQuery, sortOrderIndex, visibleDefs],
   );
 
   const primitiveSections = useMemo(
@@ -225,10 +267,10 @@ export function PrimitivePalette({
       MODULE_LIBRARY_SECTIONS.filter((section) => section.id !== 'composites')
         .map((section) => ({
           ...section,
-          defs: visibleDefs.filter((def) => getModuleLibrarySectionId(def) === section.id),
+          defs: orderedVisibleDefs.filter((def) => getModuleLibrarySectionId(def) === section.id),
         }))
         .filter((section) => section.defs.length > 0),
-    [visibleDefs],
+    [orderedVisibleDefs],
   );
 
   useEffect(() => {
@@ -280,7 +322,7 @@ export function PrimitivePalette({
           </div>
           {hoveredInputPort ? (
             <div className="palette-compatibility-label">
-              Showing sources compatible with {hoveredInputPort.port} ({hoveredInputPort.type})
+              Showing likely sources for {hoveredInputPort.defId ? `${hoveredInputPort.defId}.` : ''}{hoveredInputPort.port} ({hoveredInputPort.type})
             </div>
           ) : null}
           <input
@@ -436,7 +478,7 @@ export function PrimitivePalette({
               id: 'built-in-composites',
               title: 'Built-In Composites',
               description: 'Shipped composite architecture modules provided by the product.',
-              defs: visibleDefs.filter(
+              defs: orderedVisibleDefs.filter(
                 (def) => builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'composite',
               ),
             },
@@ -444,7 +486,7 @@ export function PrimitivePalette({
               id: 'built-in-iterators',
               title: 'Built-In Iterators',
               description: 'Shipped bounded iterator architectures provided by the product.',
-              defs: visibleDefs.filter(
+              defs: orderedVisibleDefs.filter(
                 (def) => builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'iterator',
               ),
             },
@@ -452,7 +494,7 @@ export function PrimitivePalette({
               id: 'built-in-clocked-iterators',
               title: 'Built-In Clocked Iterators',
               description: 'Shipped pulse-driven bounded iterator architectures provided by the product.',
-              defs: visibleDefs.filter(
+              defs: orderedVisibleDefs.filter(
                 (def) => builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'clocked-iterator',
               ),
             },
@@ -460,7 +502,7 @@ export function PrimitivePalette({
               id: 'built-in-conditionals',
               title: 'Built-In Conditionals',
               description: 'Shipped conditional branching modules — one control bit selects which branch definition runs.',
-              defs: visibleDefs.filter(
+              defs: orderedVisibleDefs.filter(
                 (def) => builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'conditional',
               ),
             },
@@ -468,7 +510,7 @@ export function PrimitivePalette({
               id: 'user-conditionals',
               title: 'My Conditionals',
               description: 'Conditional modules you authored — one control bit selects which branch runs.',
-              defs: visibleDefs.filter(
+              defs: orderedVisibleDefs.filter(
                 (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'conditional',
               ),
             },
@@ -476,7 +518,7 @@ export function PrimitivePalette({
               id: 'user-multi-conditionals',
               title: 'My Multi-Conditionals',
               description: 'Multi-branch modules you authored — a multi-bit control word selects which branch runs.',
-              defs: visibleDefs.filter(
+              defs: orderedVisibleDefs.filter(
                 (def) => 'kind' in def && def.kind === 'multi-conditional',
               ),
             },
@@ -484,7 +526,7 @@ export function PrimitivePalette({
               id: 'user-composites',
               title: 'My Composites',
               description: 'Editable composite modules you created yourself.',
-              defs: visibleDefs.filter(
+              defs: orderedVisibleDefs.filter(
                 (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'composite',
               ),
             },
@@ -492,7 +534,7 @@ export function PrimitivePalette({
               id: 'user-iterators',
               title: 'My Iterators',
               description: 'Editable bounded iterator modules you created yourself.',
-              defs: visibleDefs.filter(
+              defs: orderedVisibleDefs.filter(
                 (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'iterator',
               ),
             },
@@ -500,7 +542,7 @@ export function PrimitivePalette({
               id: 'user-clocked-iterators',
               title: 'My Clocked Iterators',
               description: 'Pulse-driven bounded iterator modules you created yourself.',
-              defs: visibleDefs.filter(
+              defs: orderedVisibleDefs.filter(
                 (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'clocked-iterator',
               ),
             },
@@ -567,8 +609,12 @@ interface ModuleLibraryCardProps {
   onOpenPrimitiveMicroDemo: (defId: string) => void;
   onRemoveComposite: (defId: string) => void;
   pendingConnectionSourceType?: string | null;
-  hoveredInputPort?: { moduleId: string; port: string; type: string } | null;
+  hoveredInputPort?: PaletteHoveredInputPortHint | null;
   onDropForPendingConnection?: (defId: string, toPort: string) => void;
+}
+
+function getRoleClassName(def: ModuleRegistry[string]) {
+  return `primitive-role-chip-${getModuleRole(def).toLowerCase().replace(/\s+/g, '-')}`;
 }
 
 function ModuleLibraryCard({
@@ -595,6 +641,11 @@ function ModuleLibraryCard({
   const isReusable = isComposite || isIterator || isClockedIterator || isConditional || isMultiConditional;
   const [showHelp, setShowHelp] = useState(false);
   const primitiveMicroDemo = getPrimitiveMicroDemo(def.id);
+  const moduleRole = getModuleRole(def);
+  const moduleRoleDetail = getModuleRoleDetail(def);
+  const moduleTypicalPath = getModuleTypicalPath(def);
+  const chainsBefore = getModuleChainsBefore(def);
+  const chainsAfter = getModuleChainsAfter(def);
 
   const compatibleDropPort = pendingConnectionSourceType
     ? def.inputs.find((p) => p.type === pendingConnectionSourceType) ?? null
@@ -646,6 +697,7 @@ function ModuleLibraryCard({
                 {isBuiltInReusable ? 'Architecture' : isComposite ? 'Composite' : isClockedIterator ? 'Clocked Iterator' : 'Iterator'}
               </span>
             ) : null}
+            <span className={`primitive-role-chip ${getRoleClassName(def)}`}>{moduleRole}</span>
             {isReusable ? (
               <p className="primitive-reuse-summary">
                 {def.inputs.length} in / {def.outputs.length} out
@@ -740,10 +792,35 @@ function ModuleLibraryCard({
           <strong className="primitive-title">{def.name}</strong>
           <p className="primitive-def-id">{def.id}</p>
           <div className="primitive-role-line">
-            <span className="content-status-chip">Role: {getModuleRole(def)}</span>
-            <span className="primitive-role-detail">{getModuleRoleDetail(def)}</span>
+            <span className={`primitive-role-chip ${getRoleClassName(def)}`}>{moduleRole}</span>
+            <span className="primitive-role-detail">{moduleRoleDetail}</span>
           </div>
           <p className="primitive-purpose">{getModulePurpose(def)}</p>
+          {moduleTypicalPath ? <p className="primitive-typical-path">{moduleTypicalPath}</p> : null}
+          {!moduleTypicalPath && (chainsBefore.length > 0 || chainsAfter.length > 0) ? (
+            <div className="primitive-inline-chains">
+              {chainsBefore.length > 0 ? (
+                <span className="primitive-inline-chain-group">
+                  <span className="meta-label">After</span>
+                  <span className="primitive-chains-chips">
+                    {chainsBefore.slice(0, 3).map((id) => (
+                      <span key={id} className="primitive-chain-chip">{id}</span>
+                    ))}
+                  </span>
+                </span>
+              ) : null}
+              {chainsAfter.length > 0 ? (
+                <span className="primitive-inline-chain-group">
+                  <span className="meta-label">Then</span>
+                  <span className="primitive-chains-chips">
+                    {chainsAfter.slice(0, 3).map((id) => (
+                      <span key={id} className="primitive-chain-chip">{id}</span>
+                    ))}
+                  </span>
+                </span>
+              ) : null}
+            </div>
+          ) : null}
           {isDropTarget ? (
             <span className="primitive-drop-hint">Release to connect → {compatibleDropPort?.name}</span>
           ) : viewMode === 'expanded' ? (
@@ -864,14 +941,14 @@ function ModuleLibraryCard({
       {viewMode === 'expanded' && showHelp ? (
         <div className="primitive-help-card">
           <p className="primitive-help-role">
-            <span className="meta-label">Role</span> <strong>{getModuleRole(def)}</strong> {'\u00b7'} {getModuleRoleDetail(def)}
+            <span className="meta-label">Role</span> <strong>{moduleRole}</strong> {'\u00b7'} {moduleRoleDetail}
           </p>
           <span className="meta-label">What It Does</span>
           <p>{getModuleDetail(def)}</p>
-          {getModuleTypicalPath(def) ? (
+          {moduleTypicalPath ? (
             <p>
               <span className="meta-label">Typical path</span>{' '}
-              {getModuleTypicalPath(def)}
+              {moduleTypicalPath}
             </p>
           ) : null}
           {primitiveMicroDemo ? (
@@ -885,21 +962,21 @@ function ModuleLibraryCard({
           <p className="primitive-help-ports">
             Outputs: <strong>{def.outputs.map((port) => `${port.name}:${port.type}`).join(', ') || 'none'}</strong>
           </p>
-          {getModuleChainsBefore(def).length > 0 ? (
+          {chainsBefore.length > 0 ? (
             <div className="primitive-chains-row">
               <span className="meta-label">Comes after</span>
               <span className="primitive-chains-chips">
-                {getModuleChainsBefore(def).map((id) => (
+                {chainsBefore.map((id) => (
                   <span key={id} className="primitive-chain-chip">{id}</span>
                 ))}
               </span>
             </div>
           ) : null}
-          {getModuleChainsAfter(def).length > 0 ? (
+          {chainsAfter.length > 0 ? (
             <div className="primitive-chains-row">
               <span className="meta-label">Chains into</span>
               <span className="primitive-chains-chips">
-                {getModuleChainsAfter(def).map((id) => (
+                {chainsAfter.map((id) => (
                   <span key={id} className="primitive-chain-chip">{id}</span>
                 ))}
               </span>

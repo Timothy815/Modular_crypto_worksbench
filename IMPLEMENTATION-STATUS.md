@@ -32,6 +32,11 @@ Current `main` now also includes later post-`v2.1.0` follow-ons:
 - `ITERATOR-WORKFLOW-POLISH-V1.md`
 - `CLOCKED-ITERATOR-V1.md`
 
+Palette wayfinding is now also tightened on `main`:
+- expanded palette cards now surface role chips and typical-path guidance directly on the card instead of burying workflow language behind the `?` affordance
+- hovered-input palette guidance now knows the target module definition as well as the port type, so compatible sources and bridges rank ahead of generic matches
+- existing `Comes after` / `Chains into` metadata now assists default ordering and visible chain cues for modules without a dedicated typical-path line
+
 Iterator definition authoring is now shipped on `main`:
 - a bounded `Create Iterator` flow is available from the workbench structure actions
 - a user can wrap an eligible `in -> out` primitive or reusable body as a real `IteratorDef`

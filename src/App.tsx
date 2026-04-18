@@ -421,6 +421,7 @@ function MainApp() {
   } | null>(null);
   const [hoveredInputPortHint, setHoveredInputPortHint] = useState<{
     moduleId: string;
+    defId?: string;
     port: string;
     type: string;
   } | null>(null);

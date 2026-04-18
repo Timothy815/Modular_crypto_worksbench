@@ -574,7 +574,7 @@ interface WorkbenchPanelProps {
     toPort: string,
   ) => void;
   onPendingConnectionChange?: (info: { fromModuleId: string; fromPort: string; sourceType: string } | null) => void;
-  onHoveredInputPortChange?: (info: { moduleId: string; port: string; type: string } | null) => void;
+  onHoveredInputPortChange?: (info: { moduleId: string; defId?: string; port: string; type: string } | null) => void;
   projects: DemoProject[];
 }
 
@@ -4404,6 +4404,7 @@ export function WorkbenchPanel({
                               if (!hasIncomingConnection) {
                                 onHoveredInputPortChange?.({
                                   moduleId: moduleInstance.id,
+                                  defId: moduleInstance.defId,
                                   port: port.name,
                                   type: port.type,
                                 });
