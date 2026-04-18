@@ -51,7 +51,12 @@ import {
   recordWorkspaceHistoryTransition,
   type WorkspaceHistoryState,
 } from './workspace-state-support';
-import { duplicateWorkspaceSelection, pasteWorkspaceClipboardSnapshot, type WorkspaceClipboardSnapshot } from './workspace-clipboard';
+import {
+  buildWorkspaceClipboardSnapshot,
+  duplicateWorkspaceSelection,
+  pasteWorkspaceClipboardSnapshot,
+  type WorkspaceClipboardSnapshot,
+} from './workspace-clipboard';
 import {
   getDefaultNodeOrientation,
   getNextNodeOrientationClockwise,
@@ -152,6 +157,16 @@ export type UiAction =
     }
   | {
       type: 'saveWorkspaceAs';
+      sourceProjectId: string;
+      workspaceId: string;
+      name: string;
+      summary: string;
+      pipeline: string;
+      group?: string;
+      defaultTickedMode?: boolean;
+    }
+  | {
+      type: 'copySelectedClusterToWorkspace';
       sourceProjectId: string;
       workspaceId: string;
       name: string;
@@ -1461,6 +1476,187 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         selectedModuleIdsByProject: {
           ...state.selectedModuleIdsByProject,
           [action.workspaceId]: selectedModuleId ? [selectedModuleId] : [],
+        },
+        workspaceHistoryByProject: {
+          ...state.workspaceHistoryByProject,
+          [action.workspaceId]: createEmptyWorkspaceHistoryState(),
+        },
+        workspaceVersionsByProject: {
+          ...state.workspaceVersionsByProject,
+          [action.workspaceId]: [],
+        },
+      };
+    }
+    case 'copySelectedClusterToWorkspace': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const sourceProject = state.projectStates[action.sourceProjectId];
+      const sourceLayout = state.layoutByProject[action.sourceProjectId];
+      const selectedModuleIds = state.selectedModuleIdsByProject[action.sourceProjectId] ?? [];
+      if (!sourceProject || !sourceLayout || selectedModuleIds.length === 0) {
+        return state;
+      }
+
+      const snapshot = buildWorkspaceClipboardSnapshot({
+        project: sourceProject,
+        layout: sourceLayout,
+        selectedModuleIds,
+      });
+      if (!snapshot) {
+        return state;
+      }
+
+      const pastedSelection = pasteWorkspaceClipboardSnapshot({
+        targetProject: { modules: [], connections: [] },
+        targetLayout: {},
+        snapshot,
+        anchor: { x: 48, y: 48 },
+      });
+      const [selectedModuleId] = pastedSelection.pastedModuleIds;
+
+      return {
+        ...state,
+        activeProjectId: action.workspaceId,
+        userWorkspaceLibrary: [
+          ...state.userWorkspaceLibrary.filter((workspace) => workspace.id !== action.workspaceId),
+          {
+            id: action.workspaceId,
+            name: action.name,
+            group: action.group ?? 'My Workspaces',
+            summary: action.summary,
+            pipeline: action.pipeline,
+            defaultTickedMode: action.defaultTickedMode ?? false,
+          },
+        ],
+        projectStates: {
+          ...state.projectStates,
+          [action.workspaceId]: pastedSelection.project,
+        },
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.workspaceId]: pastedSelection.layout,
+        },
+        annotationsByProject: {
+          ...state.annotationsByProject,
+          [action.workspaceId]: [],
+        },
+        stageLabelsByProject: {
+          ...state.stageLabelsByProject,
+          [action.workspaceId]: [],
+        },
+        groupBoxesByProject: {
+          ...state.groupBoxesByProject,
+          [action.workspaceId]: [],
+        },
+        guideRailsByProject: {
+          ...state.guideRailsByProject,
+          [action.workspaceId]: [],
+        },
+        showFurnitureByProject: {
+          ...state.showFurnitureByProject,
+          [action.workspaceId]: true,
+        },
+        showOverviewNavigatorByProject: {
+          ...state.showOverviewNavigatorByProject,
+          [action.workspaceId]: false,
+        },
+        showGridByProject: {
+          ...state.showGridByProject,
+          [action.workspaceId]: false,
+        },
+        snapToGridByProject: {
+          ...state.snapToGridByProject,
+          [action.workspaceId]: false,
+        },
+        snapToGuidesByProject: {
+          ...state.snapToGuidesByProject,
+          [action.workspaceId]: false,
+        },
+        layoutDirectionByProject: {
+          ...state.layoutDirectionByProject,
+          [action.workspaceId]: 'horizontal',
+        },
+        routingModeByProject: {
+          ...state.routingModeByProject,
+          [action.workspaceId]: 'curved',
+        },
+        connectionLayoutByProject: {
+          ...state.connectionLayoutByProject,
+          [action.workspaceId]: {},
+        },
+        comparisonBaselinesByProject: {
+          ...state.comparisonBaselinesByProject,
+          [action.workspaceId]: null,
+        },
+        activeChallengeIdByProject: {
+          ...state.activeChallengeIdByProject,
+          [action.workspaceId]: null,
+        },
+        activeTutorialIdByProject: {
+          ...state.activeTutorialIdByProject,
+          [action.workspaceId]: null,
+        },
+        activeTutorialStepByProject: {
+          ...state.activeTutorialStepByProject,
+          [action.workspaceId]: 0,
+        },
+        completedTutorialsByProject: {
+          ...state.completedTutorialsByProject,
+          [action.workspaceId]: [],
+        },
+        tutorialNotesVisibleByProject: {
+          ...state.tutorialNotesVisibleByProject,
+          [action.workspaceId]: true,
+        },
+        probedModuleIdsByProject: {
+          ...state.probedModuleIdsByProject,
+          [action.workspaceId]: [],
+        },
+        workspaceModeByProject: {
+          ...state.workspaceModeByProject,
+          [action.workspaceId]: 'build',
+        },
+        cryptanalysisModeByProject: {
+          ...state.cryptanalysisModeByProject,
+          [action.workspaceId]: 'classical',
+        },
+        cryptanalysisInputByProject: {
+          ...state.cryptanalysisInputByProject,
+          [action.workspaceId]: '',
+        },
+        modernAnalysisBaselineByProject: {
+          ...state.modernAnalysisBaselineByProject,
+          [action.workspaceId]: '',
+        },
+        modernAnalysisFlipBitByProject: {
+          ...state.modernAnalysisFlipBitByProject,
+          [action.workspaceId]: 0,
+        },
+        tickedModeByProject: {
+          ...state.tickedModeByProject,
+          [action.workspaceId]: action.defaultTickedMode ?? false,
+        },
+        currentTickByProject: {
+          ...state.currentTickByProject,
+          [action.workspaceId]: 0,
+        },
+        isTickPlaybackActiveByProject: {
+          ...state.isTickPlaybackActiveByProject,
+          [action.workspaceId]: false,
+        },
+        tickPlaybackSpeedMsByProject: {
+          ...state.tickPlaybackSpeedMsByProject,
+          [action.workspaceId]: 500,
+        },
+        selectedModuleIdByProject: {
+          ...state.selectedModuleIdByProject,
+          [action.workspaceId]: selectedModuleId ?? null,
+        },
+        selectedModuleIdsByProject: {
+          ...state.selectedModuleIdsByProject,
+          [action.workspaceId]: pastedSelection.pastedModuleIds,
         },
         workspaceHistoryByProject: {
           ...state.workspaceHistoryByProject,

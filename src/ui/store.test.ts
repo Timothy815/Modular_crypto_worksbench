@@ -2150,6 +2150,116 @@ describe('uiReducer', () => {
     );
   });
 
+  it('copies the selected cluster into a new workspace with internal wiring preserved', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const workspaceState = uiReducer(initialState, {
+      type: 'createBlankWorkspace',
+      workspaceId: 'cluster-copy-test',
+      name: 'Cluster Copy Test',
+      summary: 'A workspace for selection copy tests.',
+      pipeline: 'Text -> bridge -> output',
+    });
+
+    const withTextInput = uiReducer(workspaceState, {
+      type: 'addModule',
+      projectId: 'cluster-copy-test',
+      moduleDef: V1_REGISTRY.TextInput,
+      position: { x: 80, y: 120 },
+    });
+    const withTickBridge = uiReducer(withTextInput, {
+      type: 'addModule',
+      projectId: 'cluster-copy-test',
+      moduleDef: V1_REGISTRY.AsciiSequenceToTicked,
+      position: { x: 320, y: 120 },
+    });
+    const withBitsBridge = uiReducer(withTickBridge, {
+      type: 'addModule',
+      projectId: 'cluster-copy-test',
+      moduleDef: V1_REGISTRY.AsciiCharToBits,
+      position: { x: 560, y: 120 },
+    });
+    const wiredState = uiReducer(
+      uiReducer(withBitsBridge, {
+        type: 'addConnection',
+        projectId: 'cluster-copy-test',
+        fromModuleId: 'textinput-1',
+        fromPort: 'out',
+        toModuleId: 'asciisequencetoticked-1',
+        toPort: 'in',
+      }),
+      {
+        type: 'addConnection',
+        projectId: 'cluster-copy-test',
+        fromModuleId: 'asciisequencetoticked-1',
+        fromPort: 'out',
+        toModuleId: 'asciichartobits-1',
+        toPort: 'in',
+      },
+    );
+    const selectedState = uiReducer(wiredState, {
+      type: 'selectModules',
+      projectId: 'cluster-copy-test',
+      moduleIds: ['asciisequencetoticked-1', 'asciichartobits-1'],
+    });
+
+    const copiedState = uiReducer(selectedState, {
+      type: 'copySelectedClusterToWorkspace',
+      sourceProjectId: 'cluster-copy-test',
+      workspaceId: 'cluster-copy-workspace',
+      name: 'Cluster Copy Workspace',
+      summary: 'Copied from a selected cluster.',
+      pipeline: 'AsciiSequenceToTicked -> AsciiCharToBits',
+      defaultTickedMode: true,
+    });
+
+    expect(copiedState.activeProjectId).toBe('cluster-copy-workspace');
+    expect(copiedState.userWorkspaceLibrary[1]).toEqual({
+      id: 'cluster-copy-workspace',
+      name: 'Cluster Copy Workspace',
+      group: 'My Workspaces',
+      summary: 'Copied from a selected cluster.',
+      pipeline: 'AsciiSequenceToTicked -> AsciiCharToBits',
+      defaultTickedMode: true,
+    });
+    expect(copiedState.projectStates['cluster-copy-workspace']).toEqual({
+      modules: [
+        {
+          id: 'asciisequencetoticked-1',
+          defId: 'AsciiSequenceToTicked',
+          params: { index: 0, wrap: true },
+        },
+        {
+          id: 'asciichartobits-1',
+          defId: 'AsciiCharToBits',
+          params: {},
+        },
+      ],
+      connections: [
+        {
+          from: { moduleId: 'asciisequencetoticked-1', port: 'out' },
+          to: { moduleId: 'asciichartobits-1', port: 'in' },
+        },
+      ],
+    });
+    expect(copiedState.layoutByProject['cluster-copy-workspace']).toEqual({
+      'asciisequencetoticked-1': { x: 48, y: 48, orientation: 'east' },
+      'asciichartobits-1': { x: 288, y: 48, orientation: 'east' },
+    });
+    expect(copiedState.selectedModuleIdByProject['cluster-copy-workspace']).toBe(
+      'asciisequencetoticked-1',
+    );
+    expect(copiedState.selectedModuleIdsByProject['cluster-copy-workspace']).toEqual([
+      'asciisequencetoticked-1',
+      'asciichartobits-1',
+    ]);
+    expect(copiedState.currentTickByProject['cluster-copy-workspace']).toBe(0);
+    expect(copiedState.isTickPlaybackActiveByProject['cluster-copy-workspace']).toBe(false);
+    expect(copiedState.workspaceModeByProject['cluster-copy-workspace']).toBe('build');
+    expect(copiedState.projectStates['cluster-copy-test']).toEqual(
+      selectedState.projectStates['cluster-copy-test'],
+    );
+  });
+
   it('deep-clones annotations when duplicating a workspace', () => {
     const initialState = createInitialUiState(demoProjects);
     const sourceProjectId = 'sequential';

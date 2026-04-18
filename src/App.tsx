@@ -20,7 +20,6 @@ import {
   getUserManualConfig,
 } from './ui/app-shell-support';
 import { LazyPanelFallback } from './ui/components/lazy-panel-fallback';
-import { WorkbenchPanel } from './ui/components/workbench-panel';
 import { demoProjects, getDefaultDemoProject, runDemoProject } from './ui/demo-projects';
 import { collectTickedOutput, compareExecutionResults } from './ui/execution-compare';
 import { CANVAS_NODE_WIDTH } from './ui/canvas-selection';
@@ -107,6 +106,11 @@ const DetachedPanelWindow = lazy(() =>
     default: module.DetachedPanelWindow,
   })),
 );
+const WorkbenchPanel = lazy(() =>
+  import('./ui/components/workbench-panel').then((module) => ({
+    default: module.WorkbenchPanel,
+  })),
+);
 const ParameterInspector = lazy(() =>
   import('./ui/components/parameter-inspector').then((module) => ({
     default: module.ParameterInspector,
@@ -132,19 +136,6 @@ const InstructorPilotWindow = lazy(() =>
     default: module.InstructorPilotWindow,
   })),
 );
-
-function createDuplicateWorkspaceName(sourceName: string, existingNames: Set<string>) {
-  const baseName = `${sourceName} Copy`;
-  let candidate = baseName;
-  let suffix = 2;
-
-  while (existingNames.has(candidate)) {
-    candidate = `${baseName} ${suffix}`;
-    suffix += 1;
-  }
-
-  return candidate;
-}
 
 function createWorkspaceVersionId(projectId: string, timestamp: string) {
   return `${projectId}-version-${timestamp.replace(/[^0-9]/g, '')}`;
@@ -1658,29 +1649,24 @@ function MainApp() {
     });
   }
 
-  function handleDuplicateCurrentWorkspace() {
-    const existingNames = new Set(
-      state.userWorkspaceLibrary.map((workspace) => workspace.name),
-    );
+  async function handleDuplicateCurrentWorkspace() {
     const sourceName =
       state.userWorkspaceLibrary.find((workspace) => workspace.id === activeProjectDefinition.id)?.name ??
       activeProjectDefinition.name;
-    const suggestedName = createDuplicateWorkspaceName(sourceName, existingNames);
-    const proposedName = window.prompt('Duplicate workspace as:', suggestedName);
-    const name = proposedName?.trim();
-    if (!name) {
+    const { promptForDuplicateWorkspace } = await import('./ui/workspace-copy-intents');
+    const nextWorkspace = promptForDuplicateWorkspace({
+      sourceName,
+      existingNames: new Set(state.userWorkspaceLibrary.map((workspace) => workspace.name)),
+      usedIds: new Set(availableProjects.map((project) => project.id)),
+    });
+    if (!nextWorkspace) {
       return;
     }
-
-    const workspaceId = createUniqueWorkspaceId(
-      name,
-      new Set(availableProjects.map((project) => project.id)),
-    );
     dispatch({
       type: 'saveWorkspaceAs',
       sourceProjectId: activeProjectDefinition.id,
-      workspaceId,
-      name,
+      workspaceId: nextWorkspace.workspaceId,
+      name: nextWorkspace.name,
       summary: `A duplicated workspace based on ${sourceName}.`,
       pipeline: describeWorkspacePipeline(activeProjectState),
       defaultTickedMode: state.tickedModeByProject[activeProjectDefinition.id] ?? false,
@@ -1786,6 +1772,40 @@ function MainApp() {
     dispatch({
       type: 'duplicateSelectedCluster',
       projectId: activeProjectDefinition.id,
+    });
+    setImportError(null);
+  }
+
+  async function handleCopySelectedClusterToWorkspace() {
+    if (state.compositeEditor) {
+      return;
+    }
+
+    if (effectiveSelectedModuleIds.length === 0) {
+      window.alert('Select modules before copying them into a new workspace.');
+      return;
+    }
+
+    const sourceName =
+      state.userWorkspaceLibrary.find((workspace) => workspace.id === activeProjectDefinition.id)?.name ??
+      activeProjectDefinition.name;
+    const { promptForCopiedClusterWorkspace } = await import('./ui/workspace-copy-intents');
+    const nextWorkspace = promptForCopiedClusterWorkspace({
+      sourceName,
+      existingNames: new Set(state.userWorkspaceLibrary.map((workspace) => workspace.name)),
+      usedIds: new Set(availableProjects.map((project) => project.id)),
+    });
+    if (!nextWorkspace) {
+      return;
+    }
+    dispatch({
+      type: 'copySelectedClusterToWorkspace',
+      sourceProjectId: activeProjectDefinition.id,
+      workspaceId: nextWorkspace.workspaceId,
+      name: nextWorkspace.name,
+      summary: `A copied cluster from ${sourceName}.`,
+      pipeline: 'Selected cluster',
+      defaultTickedMode: state.tickedModeByProject[activeProjectDefinition.id] ?? false,
     });
     setImportError(null);
   }
@@ -2644,10 +2664,11 @@ function MainApp() {
               : '')
           }
         >
-          <WorkbenchPanel
-            key={`${state.compositeEditor ? 'composite' : isCompositeDrilldownActive ? 'drilldown' : 'workspace'}:${activeProjectDefinition.id}:${compositeDrilldown?.instanceId ?? 'root'}`}
-            activeProject={activeProjectDefinition}
-            title={
+          <Suspense fallback={<LazyPanelFallback label="Workbench" title="Workbench…" />}>
+            <WorkbenchPanel
+              key={`${state.compositeEditor ? 'composite' : isCompositeDrilldownActive ? 'drilldown' : 'workspace'}:${activeProjectDefinition.id}:${compositeDrilldown?.instanceId ?? 'root'}`}
+              activeProject={activeProjectDefinition}
+              title={
               state.compositeEditor
                 ? activeCompositeEntry
                   ? `${activeCompositeEntry.name} Internals`
@@ -3092,6 +3113,9 @@ function MainApp() {
             }}
             onRequestAutoWire={handleAutoWireSelection}
             onRequestDuplicateSelection={isCompositeDrilldownActive ? () => undefined : handleDuplicateSelectedCluster}
+            onRequestCopySelectionToWorkspace={
+              isCompositeDrilldownActive ? () => undefined : handleCopySelectedClusterToWorkspace
+            }
             onRequestDeleteSelection={isCompositeDrilldownActive ? () => undefined : handleDeleteSelectedCluster}
             onRequestUndo={handleUndoWorkspaceHistory}
             onRequestRedo={handleRedoWorkspaceHistory}
@@ -3460,9 +3484,10 @@ function MainApp() {
                     attach,
                   })
             }
-            projects={state.compositeEditor || isCompositeDrilldownActive ? [activeProjectDefinition] : availableProjects}
-            isCompositeEditor={Boolean(state.compositeEditor)}
-          />
+              projects={state.compositeEditor || isCompositeDrilldownActive ? [activeProjectDefinition] : availableProjects}
+              isCompositeEditor={Boolean(state.compositeEditor)}
+            />
+          </Suspense>
           {importError ? <p className="import-error-banner">{importError}</p> : null}
           {isCompositeDrilldownActive && activeCompositeDrilldownInstance && activeCompositeDrilldownDefinition ? (
             <div className="composite-editor-toolbar">

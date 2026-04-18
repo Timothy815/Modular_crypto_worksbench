@@ -77,6 +77,7 @@ interface WorkbenchActionsProps {
   onRequestAddGuideRail: (axis: 'horizontal' | 'vertical') => void;
   onRequestAutoWire: (mode: AutoWireMode) => void;
   onRequestDuplicateSelection: () => void;
+  onRequestCopySelectionToWorkspace: () => void;
   onRequestDeleteSelection: () => void;
   onRequestDeleteWire: () => void;
   onRequestToggleWireWaypointMode: () => void;
@@ -649,6 +650,7 @@ export function WorkbenchActions({
   onRequestAddGuideRail,
   onRequestAutoWire,
   onRequestDuplicateSelection,
+  onRequestCopySelectionToWorkspace,
   onRequestDeleteSelection,
   onRequestDeleteWire,
   onRequestToggleWireWaypointMode,
@@ -1081,6 +1083,11 @@ export function WorkbenchActions({
             <WorkbenchMenuActionButton
               label="Duplicate Cluster"
               onSelect={onRequestDuplicateSelection}
+              disabled={!hasSelection}
+            />
+            <WorkbenchMenuActionButton
+              label="Copy Cluster To New Workspace"
+              onSelect={onRequestCopySelectionToWorkspace}
               disabled={!hasSelection}
             />
             <WorkbenchMenuActionButton

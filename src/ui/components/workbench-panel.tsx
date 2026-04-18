@@ -474,6 +474,7 @@ interface WorkbenchPanelProps {
   onRequestCreateMultiConditional: () => void;
   onRequestAutoWire: (mode: AutoWireMode) => void;
   onRequestDuplicateSelection: () => void;
+  onRequestCopySelectionToWorkspace: () => void;
   onRequestDeleteSelection: () => void;
   onRequestUndo: () => void;
   onRequestRedo: () => void;
@@ -706,6 +707,7 @@ export function WorkbenchPanel({
   onRequestCreateMultiConditional,
   onRequestAutoWire,
   onRequestDuplicateSelection,
+  onRequestCopySelectionToWorkspace,
   onRequestDeleteSelection,
   onRequestUndo,
   onRequestRedo,
@@ -3356,6 +3358,7 @@ export function WorkbenchPanel({
           onRequestAddGroupBoxFromSelection={onAddGroupBoxFromSelection}
           onRequestAddGuideRail={onAddGuideRail}
           onRequestDuplicateSelection={onRequestDuplicateSelection}
+          onRequestCopySelectionToWorkspace={onRequestCopySelectionToWorkspace}
           onRequestDeleteSelection={onRequestDeleteSelection}
           onRequestDeleteWire={() => {
             if (effectiveSelectedConnectionIndex !== null) {
