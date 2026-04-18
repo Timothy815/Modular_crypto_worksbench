@@ -419,9 +419,20 @@ function MainApp() {
     fromPort: string;
     sourceType: string;
   } | null>(null);
+  const [hoveredInputPortHint, setHoveredInputPortHint] = useState<{
+    moduleId: string;
+    port: string;
+    type: string;
+  } | null>(null);
   const [requestedWorkspaceFocusModuleId, setRequestedWorkspaceFocusModuleId] =
     useState<string | null>(null);
   const [compositeDrilldown, setCompositeDrilldown] = useState<CompositeDrilldownState | null>(null);
+
+  useEffect(() => {
+    if (activePendingConnection) {
+      setHoveredInputPortHint(null);
+    }
+  }, [activePendingConnection]);
 
   const availableProjects = useMemo(
     () => [
@@ -3164,6 +3175,7 @@ function MainApp() {
               });
             }}
             onPendingConnectionChange={setActivePendingConnection}
+            onHoveredInputPortChange={setHoveredInputPortHint}
             onSetConnectionOrthogonalBend={(connectionKey, axis, value) =>
               dispatch({
                 type: 'setConnectionOrthogonalBend',
@@ -3723,6 +3735,7 @@ function MainApp() {
                   })
                 }
                 pendingConnectionSourceType={activePendingConnection?.sourceType ?? null}
+                hoveredInputPort={activePendingConnection ? null : hoveredInputPortHint}
                 onDropForPendingConnection={(defId, toPort) => {
                   const moduleDef = effectiveRegistry[defId];
                   if (!moduleDef || !activePendingConnection) return;

@@ -575,6 +575,7 @@ interface WorkbenchPanelProps {
     toPort: string,
   ) => void;
   onPendingConnectionChange?: (info: { fromModuleId: string; fromPort: string; sourceType: string } | null) => void;
+  onHoveredInputPortChange?: (info: { moduleId: string; port: string; type: string } | null) => void;
   projects: DemoProject[];
 }
 
@@ -741,6 +742,7 @@ export function WorkbenchPanel({
   onPaletteModuleDropRequestHandled,
   onInsertModuleAndConnect,
   onPendingConnectionChange,
+  onHoveredInputPortChange,
   projects,
 }: WorkbenchPanelProps) {
   const canvasSurfaceRef = useRef<HTMLDivElement | null>(null);
@@ -4357,12 +4359,20 @@ export function WorkbenchPanel({
                           onMouseEnter={() => {
                             if (!pendingConnection) {
                               setHoveredPortHintKey(`${moduleInstance.id}:in:${port.name}`);
+                              if (!hasIncomingConnection) {
+                                onHoveredInputPortChange?.({
+                                  moduleId: moduleInstance.id,
+                                  port: port.name,
+                                  type: port.type,
+                                });
+                              }
                             }
                           }}
                           onMouseLeave={() => {
                             setHoveredPortHintKey((current) =>
                               current === `${moduleInstance.id}:in:${port.name}` ? null : current,
                             );
+                            onHoveredInputPortChange?.(null);
                           }}
                           onMouseDown={(event) => {
                             if (isObservationMode) {

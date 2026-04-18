@@ -2856,6 +2856,12 @@ body.dock-resizing {
   opacity: 0.4;
   pointer-events: none;
 }
+.primitive-card-suggested {
+  outline: 2px solid color-mix(in srgb, #1c9b63 72%, white);
+  outline-offset: -2px;
+  background: color-mix(in srgb, #1c9b63 8%, var(--surface-soft)) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #1c9b63 18%, transparent), 0 0 14px color-mix(in srgb, #1c9b63 14%, transparent);
+}
 .primitive-drop-hint {
   display: inline-block;
   font-size: 0.7rem;
@@ -2872,6 +2878,14 @@ body.dock-resizing {
   display: grid;
   gap: 6px;
   margin: 16px 0 0;
+}
+.palette-compatibility-label {
+  font-size: 0.76rem;
+  color: color-mix(in srgb, #1c9b63 82%, var(--text-muted));
+  background: color-mix(in srgb, #1c9b63 10%, transparent);
+  border: 1px solid color-mix(in srgb, #1c9b63 22%, transparent);
+  border-radius: 8px;
+  padding: 6px 8px;
 }
 
 .palette-search-label-row {

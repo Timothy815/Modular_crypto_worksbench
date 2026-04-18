@@ -39,6 +39,7 @@ interface PrimitivePaletteProps {
   compositeUsageCountById: Record<string, number>;
   builtInReusableIds: string[];
   pendingConnectionSourceType?: string | null;
+  hoveredInputPort?: { moduleId: string; port: string; type: string } | null;
   onDropForPendingConnection?: (defId: string, toPort: string) => void;
 }
 
@@ -164,6 +165,7 @@ export function PrimitivePalette({
   compositeUsageCountById,
   builtInReusableIds,
   pendingConnectionSourceType,
+  hoveredInputPort,
   onDropForPendingConnection,
 }: PrimitivePaletteProps) {
   const [activeTab, setActiveTab] = useState<ModuleLibraryDomainTab>('all');
@@ -276,6 +278,11 @@ export function PrimitivePalette({
             <span className="meta-label">Search</span>
             <kbd className="palette-search-shortcut" title="Press / to focus search">/</kbd>
           </div>
+          {hoveredInputPort ? (
+            <div className="palette-compatibility-label">
+              Showing sources compatible with {hoveredInputPort.port} ({hoveredInputPort.type})
+            </div>
+          ) : null}
           <input
             ref={searchInputRef}
             type="search"
@@ -378,6 +385,7 @@ export function PrimitivePalette({
                 onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                 onRemoveComposite={onRemoveComposite}
                 pendingConnectionSourceType={pendingConnectionSourceType}
+                hoveredInputPort={hoveredInputPort}
                 onDropForPendingConnection={onDropForPendingConnection}
               />
             ))}
@@ -413,6 +421,7 @@ export function PrimitivePalette({
                     onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                     onRemoveComposite={onRemoveComposite}
                     pendingConnectionSourceType={pendingConnectionSourceType}
+                    hoveredInputPort={hoveredInputPort}
                     onDropForPendingConnection={onDropForPendingConnection}
                   />
                 ))}
@@ -521,6 +530,7 @@ export function PrimitivePalette({
                       onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                       onRemoveComposite={onRemoveComposite}
                       pendingConnectionSourceType={pendingConnectionSourceType}
+                      hoveredInputPort={hoveredInputPort}
                       onDropForPendingConnection={onDropForPendingConnection}
                     />
                   ))}
@@ -557,6 +567,7 @@ interface ModuleLibraryCardProps {
   onOpenPrimitiveMicroDemo: (defId: string) => void;
   onRemoveComposite: (defId: string) => void;
   pendingConnectionSourceType?: string | null;
+  hoveredInputPort?: { moduleId: string; port: string; type: string } | null;
   onDropForPendingConnection?: (defId: string, toPort: string) => void;
 }
 
@@ -573,6 +584,7 @@ function ModuleLibraryCard({
   onOpenPrimitiveMicroDemo,
   onRemoveComposite,
   pendingConnectionSourceType,
+  hoveredInputPort,
   onDropForPendingConnection,
 }: ModuleLibraryCardProps) {
   const isComposite = 'kind' in def && def.kind === 'composite';
@@ -588,6 +600,11 @@ function ModuleLibraryCard({
     ? def.inputs.find((p) => p.type === pendingConnectionSourceType) ?? null
     : null;
   const isDropTarget = compatibleDropPort !== null;
+  const isSuggestedSource =
+    !pendingConnectionSourceType &&
+    hoveredInputPort !== null &&
+    hoveredInputPort !== undefined &&
+    def.outputs.some((port) => port.type === hoveredInputPort.type);
 
   function handleDropMouseUp(event: React.MouseEvent) {
     if (!compatibleDropPort || !onDropForPendingConnection) return;
@@ -615,7 +632,7 @@ function ModuleLibraryCard({
   if (viewMode === 'compact') {
     return (
       <li
-        className={`primitive-card primitive-compact-row primitive-card-${getModuleCategory(def)}${isDropTarget ? ' primitive-card-droppable' : pendingConnectionSourceType ? ' primitive-card-incompat' : ''}`}
+        className={`primitive-card primitive-compact-row primitive-card-${getModuleCategory(def)}${isDropTarget ? ' primitive-card-droppable' : pendingConnectionSourceType ? ' primitive-card-incompat' : ''}${isSuggestedSource ? ' primitive-card-suggested' : ''}`}
         onMouseUp={isDropTarget ? handleDropMouseUp : undefined}
       >
         <div className="primitive-compact-main" onMouseDown={handleCardMouseDown}>
@@ -715,7 +732,7 @@ function ModuleLibraryCard({
   return (
     <li
       key={def.id}
-      className={`primitive-card primitive-card-${getModuleCategory(def)}${isDropTarget ? ' primitive-card-droppable' : pendingConnectionSourceType ? ' primitive-card-incompat' : ''}`}
+      className={`primitive-card primitive-card-${getModuleCategory(def)}${isDropTarget ? ' primitive-card-droppable' : pendingConnectionSourceType ? ' primitive-card-incompat' : ''}${isSuggestedSource ? ' primitive-card-suggested' : ''}`}
       onMouseUp={isDropTarget ? handleDropMouseUp : undefined}
     >
       <div className="primitive-main" onMouseDown={handleCardMouseDown}>
