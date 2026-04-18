@@ -10,6 +10,10 @@ export function formatRequireLengthMatchMessage(
   const direction = difference < 0 ? 'shorter' : 'longer';
   const inputUnit = inputLength === 1 ? unit : `${unit}s`;
   const referenceUnit = referenceLength === 1 ? unit : `${unit}s`;
+  const repairHint =
+    unit === 'bit'
+      ? ' Use RepeatBitsToMatch, PadBitsToMatch, or TruncateBitsToMatch if the graph should repair the mismatch explicitly instead.'
+      : ' Use RepeatSymbolToMatch, PadSymbolToMatch, or TruncateSymbolToMatch if the graph should repair the mismatch explicitly instead.';
 
-  return `${moduleName} mismatch: input ${inputLength} ${inputUnit}; reference ${referenceLength} ${referenceUnit} — input is ${magnitude} ${pluralUnit} ${direction}`;
+  return `${moduleName} mismatch: input ${inputLength} ${inputUnit}; reference ${referenceLength} ${referenceUnit} — input is ${magnitude} ${pluralUnit} ${direction}.${repairHint}`;
 }

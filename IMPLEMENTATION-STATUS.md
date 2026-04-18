@@ -37,6 +37,11 @@ Palette wayfinding is now also tightened on `main`:
 - hovered-input palette guidance now knows the target module definition as well as the port type, so compatible sources and bridges rank ahead of generic matches
 - existing `Comes after` / `Chains into` metadata now assists default ordering and visible chain cues for modules without a dedicated typical-path line
 
+Connection failure language is now also tightened on `main`:
+- live wire-drop blocking now rejects explicit sequence/scalar kind mismatches during authoring instead of letting them slip through to later validation
+- both live connection feedback and full-graph validation now name the missing explicit bridge or collector on type/kind mismatch paths
+- `Require*LengthMatch` runtime failures now include the exact count difference plus the visible repair-family alternatives (`Repeat*ToMatch`, `Pad*ToMatch`, `Truncate*ToMatch`)
+
 Iterator definition authoring is now shipped on `main`:
 - a bounded `Create Iterator` flow is available from the workbench structure actions
 - a user can wrap an eligible `in -> out` primitive or reusable body as a real `IteratorDef`

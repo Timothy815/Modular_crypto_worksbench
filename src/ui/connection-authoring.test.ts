@@ -105,4 +105,21 @@ describe('connection authoring helpers', () => {
     expect(state.valid).toBe(false);
     expect(state.mode).toBe('blocked');
   });
+
+  it('blocks signal kind mismatches with an explicit bridge suggestion', () => {
+    const project: Project = {
+      modules: [
+        { id: 'message', defId: 'AsciiSequenceInput', params: { value: 'HELLO' } },
+        { id: 'bridge', defId: 'AsciiCharToBits', params: {} },
+      ],
+      connections: [],
+    };
+
+    const state = getTargetPortState(project, V1_REGISTRY, 'message', 'out', 'bridge', 'in');
+
+    expect(state.valid).toBe(false);
+    expect(state.mode).toBe('blocked');
+    expect(state.reason).toContain('Signal kind mismatch');
+    expect(state.reason).toContain('Insert SymbolSequenceToTicked or AsciiSequenceToTicked');
+  });
 });

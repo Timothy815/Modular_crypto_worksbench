@@ -470,7 +470,7 @@ describe('RequireSymbolLengthMatch', () => {
         {},
       ),
     ).toThrow(
-      'RequireSymbolLengthMatch mismatch: input 9 chars; reference 3 chars — input is 6 chars longer',
+      'RequireSymbolLengthMatch mismatch: input 9 chars; reference 3 chars — input is 6 chars longer. Use RepeatSymbolToMatch, PadSymbolToMatch, or TruncateSymbolToMatch if the graph should repair the mismatch explicitly instead.',
     );
   });
 });
@@ -764,7 +764,7 @@ describe('RequireBitsLengthMatch', () => {
         {},
       ),
     ).toThrow(
-      'RequireBitsLengthMatch mismatch: input 3 bits; reference 4 bits — input is 1 bit shorter',
+      'RequireBitsLengthMatch mismatch: input 3 bits; reference 4 bits — input is 1 bit shorter. Use RepeatBitsToMatch, PadBitsToMatch, or TruncateBitsToMatch if the graph should repair the mismatch explicitly instead.',
     );
   });
 });

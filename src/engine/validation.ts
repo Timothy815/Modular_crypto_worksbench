@@ -61,6 +61,10 @@ import {
 } from './modules/protocol-material';
 import { validateSymbolPermutationOrderParam } from './modules/symbol-permutation';
 import { validateSymbolWindowParam } from './modules/symbol-window';
+import {
+  formatSignalKindMismatchMessage,
+  formatSignalTypeMismatchMessage,
+} from './connection-mismatch-message';
 
 const EQUAL_WIDTH_BINARY_MODULE_IDS = new Set([
   'AND',
@@ -1092,7 +1096,12 @@ export function validateProject(project: Project, registry: ModuleRegistry): Val
     if (sourcePort.type !== targetPort.type) {
       issues.push({
         code: 'signal-type-mismatch',
-        message: `Signal type mismatch from "${connection.from.moduleId}.${connection.from.port}" to "${connection.to.moduleId}.${connection.to.port}".`,
+        message: formatSignalTypeMismatchMessage(
+          `${connection.from.moduleId}.${connection.from.port}`,
+          `${connection.to.moduleId}.${connection.to.port}`,
+          sourcePort.type,
+          targetPort.type,
+        ),
         connection,
       });
       continue;
@@ -1103,7 +1112,13 @@ export function validateProject(project: Project, registry: ModuleRegistry): Val
     if (sourceKind && targetKind && sourceKind !== targetKind) {
       issues.push({
         code: 'signal-kind-mismatch',
-        message: `Signal kind mismatch from "${connection.from.moduleId}.${connection.from.port}" (${sourceKind}) to "${connection.to.moduleId}.${connection.to.port}" (${targetKind}).`,
+        message: formatSignalKindMismatchMessage(
+          `${connection.from.moduleId}.${connection.from.port}`,
+          `${connection.to.moduleId}.${connection.to.port}`,
+          sourcePort.type,
+          sourceKind,
+          targetKind,
+        ),
         connection,
       });
       continue;

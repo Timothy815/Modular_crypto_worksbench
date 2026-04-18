@@ -1,3 +1,7 @@
+import {
+  formatSignalKindMismatchMessage,
+  formatSignalTypeMismatchMessage,
+} from '../engine/connection-mismatch-message';
 import { validateProject } from '../engine/validation';
 import type { ModuleRegistry, Project } from '../engine/types';
 
@@ -71,10 +75,31 @@ export function getTargetPortState(
   }
 
   if (sourcePortDef.type !== targetPortDef.type) {
-    const suggestion = getBridgeSuggestion(sourcePortDef.type, targetPortDef.type);
     return {
       valid: false,
-      reason: `Expected ${targetPortDef.type} input, but source provides ${sourcePortDef.type}.${suggestion}`,
+      reason: formatSignalTypeMismatchMessage(
+        `${fromModuleId}.${fromPort}`,
+        `${toModuleId}.${toPort}`,
+        sourcePortDef.type,
+        targetPortDef.type,
+      ),
+      mode: 'blocked',
+      replaceConnectionIndex: null,
+    };
+  }
+
+  const sourceKind = sourcePortDef.kind ?? null;
+  const targetKind = targetPortDef.kind ?? null;
+  if (sourceKind && targetKind && sourceKind !== targetKind) {
+    return {
+      valid: false,
+      reason: formatSignalKindMismatchMessage(
+        `${fromModuleId}.${fromPort}`,
+        `${toModuleId}.${toPort}`,
+        sourcePortDef.type,
+        sourceKind,
+        targetKind,
+      ),
       mode: 'blocked',
       replaceConnectionIndex: null,
     };
@@ -139,14 +164,4 @@ export function getTargetPortState(
     mode: replaceConnectionIndex >= 0 ? 'replace' : 'new',
     replaceConnectionIndex: replaceConnectionIndex >= 0 ? replaceConnectionIndex : null,
   };
-}
-
-function getBridgeSuggestion(sourceType: string, targetType: string): string {
-  if (sourceType === 'symbol' && targetType === 'bits') {
-    return ' Try inserting AsciiCharToBits (one character → 8-bit byte), SymbolToBits (lookup table), or HexDigitToBits (one hex char → 4 bits).';
-  }
-  if (sourceType === 'bits' && targetType === 'symbol') {
-    return ' Try inserting BitsToAsciiChar (8-bit byte → character), BitsToHex (bits → hex string), or BitsToSymbol (lookup table).';
-  }
-  return '';
 }

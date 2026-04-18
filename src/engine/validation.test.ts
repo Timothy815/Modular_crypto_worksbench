@@ -1205,6 +1205,13 @@ describe('validateProject', () => {
 
     expect(result.ok).toBe(false);
     expect(result.issues.some((issue) => issue.code === 'signal-kind-mismatch')).toBe(true);
+    expect(
+      result.issues.some(
+        (issue) =>
+          issue.code === 'signal-kind-mismatch' &&
+          issue.message.includes('Insert TickedSymbolsToSequence'),
+      ),
+    ).toBe(true);
   });
 
   it('reports mismatched signal kinds for sequence-sensitive bit paths', () => {
