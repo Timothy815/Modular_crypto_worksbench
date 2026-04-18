@@ -4,6 +4,7 @@ import { V1_REGISTRY } from '../engine/modules';
 import {
   buildInsertChainTemplates,
   getMatchingCanonicalChains,
+  getMatchingCanonicalRepairChains,
 } from './canonical-chain-insertion';
 
 describe('canonical chain insertion', () => {
@@ -28,6 +29,37 @@ describe('canonical chain insertion', () => {
       'Collect ticked bits -> ASCII',
       'Collect ticked bits -> hex',
     ]);
+  });
+
+  it('matches only the chain that fully solves a failed source-target pair', () => {
+    const asciiRepair = getMatchingCanonicalRepairChains({
+      sourceType: 'symbol',
+      sourceKind: 'sequence',
+      targetType: 'bits',
+      targetKind: 'scalar',
+      registry: V1_REGISTRY,
+    });
+    const collectorRepair = getMatchingCanonicalRepairChains({
+      sourceType: 'bits',
+      sourceKind: 'scalar',
+      targetType: 'symbol',
+      targetKind: 'sequence',
+      registry: V1_REGISTRY,
+    });
+    const noRepair = getMatchingCanonicalRepairChains({
+      sourceType: 'bits',
+      sourceKind: 'scalar',
+      targetType: 'bits',
+      targetKind: 'scalar',
+      registry: V1_REGISTRY,
+    });
+
+    expect(asciiRepair.map((chain) => chain.id)).toEqual(['ascii-sequence-to-bit-words']);
+    expect(collectorRepair.map((chain) => chain.label)).toEqual([
+      'Collect ticked bits -> ASCII',
+      'Collect ticked bits -> hex',
+    ]);
+    expect(noRepair).toEqual([]);
   });
 
   it('builds a forward horizontal lane for inserted modules', () => {

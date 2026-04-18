@@ -3473,7 +3473,7 @@ function MainApp() {
                     toPort,
                   })
             }
-            onInsertChain={(modules, connections, attach) =>
+            onInsertChain={(modules, connections, attach, attachTarget) =>
               state.compositeEditor || isCompositeDrilldownActive
                 ? undefined
                 : dispatch({
@@ -3482,6 +3482,7 @@ function MainApp() {
                     modules,
                     connections,
                     attach,
+                    ...(attachTarget ? { attachTarget } : {}),
                   })
             }
               projects={state.compositeEditor || isCompositeDrilldownActive ? [activeProjectDefinition] : availableProjects}

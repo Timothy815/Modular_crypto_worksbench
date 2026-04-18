@@ -3782,6 +3782,20 @@ body.canvas-resizing {
   letter-spacing: 0.05em;
   pointer-events: none;
 }
+.bridge-popup-help-text {
+  fill: var(--muted);
+  font-family: var(--mono);
+  font-size: 8px;
+  pointer-events: none;
+}
+.bridge-popup-section-label {
+  fill: var(--ink);
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
 .bridge-popup-sep {
   stroke: var(--line);
   stroke-width: 1;

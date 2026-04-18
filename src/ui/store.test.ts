@@ -2064,6 +2064,69 @@ describe('uiReducer', () => {
     expect(undoneState.projectStates['chain-scratchpad']?.connections).toEqual([]);
   });
 
+  it('can insert a canonical chain and attach its tail to a target input', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const createdState = uiReducer(initialState, {
+      type: 'createBlankWorkspace',
+      workspaceId: 'repair-chain-scratchpad',
+      name: 'Repair Chain Scratchpad',
+      summary: 'A workspace for repair chain tests.',
+      pipeline: 'Text -> bridge -> xor',
+    });
+
+    const withSource = uiReducer(createdState, {
+      type: 'addModule',
+      projectId: 'repair-chain-scratchpad',
+      moduleDef: V1_REGISTRY.TextInput,
+      position: { x: 80, y: 120 },
+    });
+    const withTarget = uiReducer(withSource, {
+      type: 'addModule',
+      projectId: 'repair-chain-scratchpad',
+      moduleDef: V1_REGISTRY.XOR,
+      position: { x: 760, y: 120 },
+    });
+
+    const insertedState = uiReducer(withTarget, {
+      type: 'insertChain',
+      projectId: 'repair-chain-scratchpad',
+      modules: [
+        { defId: 'AsciiSequenceToTicked', position: { x: 280, y: 120 } },
+        { defId: 'AsciiCharToBits', position: { x: 500, y: 120 } },
+      ],
+      connections: [
+        { fromIndex: 0, fromPort: 'out', toIndex: 1, toPort: 'in' },
+      ],
+      attach: {
+        fromModuleId: 'textinput-1',
+        fromPort: 'out',
+        toIndex: 0,
+        toPort: 'in',
+      },
+      attachTarget: {
+        fromIndex: 1,
+        fromPort: 'out',
+        toModuleId: 'xor-1',
+        toPort: 'a',
+      },
+    });
+
+    expect(insertedState.projectStates['repair-chain-scratchpad']?.connections).toEqual([
+      {
+        from: { moduleId: 'textinput-1', port: 'out' },
+        to: { moduleId: 'asciisequencetoticked-1', port: 'in' },
+      },
+      {
+        from: { moduleId: 'asciisequencetoticked-1', port: 'out' },
+        to: { moduleId: 'asciichartobits-1', port: 'in' },
+      },
+      {
+        from: { moduleId: 'asciichartobits-1', port: 'out' },
+        to: { moduleId: 'xor-1', port: 'a' },
+      },
+    ]);
+  });
+
   it('saves the current graph into a personal workspace entry', () => {
     const initialState = createInitialUiState(demoProjects);
 

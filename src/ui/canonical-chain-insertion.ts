@@ -92,6 +92,31 @@ export function getMatchingCanonicalChains({
     .sort((left, right) => left.label.localeCompare(right.label));
 }
 
+export function getMatchingCanonicalRepairChains({
+  sourceType,
+  sourceKind,
+  targetType,
+  targetKind,
+  registry,
+}: {
+  sourceType: SignalType;
+  sourceKind: PortKind;
+  targetType: SignalType;
+  targetKind: PortKind;
+  registry: ModuleRegistry;
+}) {
+  return CANONICAL_CHAIN_DEFINITIONS
+    .filter(
+      (chain) =>
+        chain.startPortShape.type === sourceType &&
+        chain.startPortShape.kind === sourceKind &&
+        chain.endPortShape.type === targetType &&
+        chain.endPortShape.kind === targetKind &&
+        chain.modules.every((moduleTemplate) => registry[moduleTemplate.defId]),
+    )
+    .sort((left, right) => left.label.localeCompare(right.label));
+}
+
 export function buildInsertChainTemplates({
   chain,
   canvasPosition,

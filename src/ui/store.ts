@@ -321,6 +321,12 @@ export type UiAction =
         toIndex: number;
         toPort: string;
       };
+      attachTarget?: {
+        fromIndex: number;
+        fromPort: string;
+        toModuleId: string;
+        toPort: string;
+      };
     }
   | { type: 'removeModule'; projectId: string; moduleId: string }
   | {
@@ -3635,6 +3641,20 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
             port: connectionTemplate.toPort,
           },
         })),
+        ...(action.attachTarget
+          ? [
+              {
+                from: {
+                  moduleId: insertedModuleIds[action.attachTarget.fromIndex],
+                  port: action.attachTarget.fromPort,
+                },
+                to: {
+                  moduleId: action.attachTarget.toModuleId,
+                  port: action.attachTarget.toPort,
+                },
+              },
+            ]
+          : []),
       ];
 
       return {
