@@ -7,6 +7,7 @@ import {
   getMatchingCanonicalChains,
   getMatchingCanonicalChainsForTarget,
   getMatchingCanonicalRepairChains,
+  getMatchingReferenceAwareRepairChains,
 } from './canonical-chain-insertion';
 
 describe('canonical chain insertion', () => {
@@ -76,6 +77,18 @@ describe('canonical chain insertion', () => {
       'Collect ticked bits -> hex',
     ]);
     expect(noRepair).toEqual([]);
+  });
+
+  it('matches only the reference-aware repair chain for the same failed pair', () => {
+    const matches = getMatchingReferenceAwareRepairChains({
+      sourceType: 'symbol',
+      sourceKind: 'sequence',
+      targetType: 'bits',
+      targetKind: 'scalar',
+      registry: V1_REGISTRY,
+    });
+
+    expect(matches.map((chain) => chain.id)).toEqual(['expand-key-to-bit-words']);
   });
 
   it('matches canonical chains that can feed a hovered target input', () => {

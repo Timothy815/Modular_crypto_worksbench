@@ -43,6 +43,9 @@ Canonical chain insertion is now also shipped on `main`:
 - Stage 3 is now also shipped: pending-connection quick add can offer `Expand key -> bit words (choose reference)` as the first reference-aware canonical chain
 - choosing that option enters an explicit follow-up state where the user must click a visible compatible symbol-sequence output as the `RepeatSymbolToMatch.reference` source
 - the final insertion still lands as one atomic action, adding the mismatch helper, the bridge chain, the source attachment, and the chosen reference attachment without hidden inference
+- Stage 3B is now also shipped: the mismatch-repair popup can offer that same reference-aware chain when the failed source/target pair already matches its head and tail
+- choosing the popup offer hands off into the same explicit reference chooser rather than guessing a visible reference branch
+- the completed repair still lands as one atomic action, now preserving the failed target attachment as well as the source and chosen reference attachments
 
 Palette wayfinding is now also tightened on `main`:
 - expanded palette cards now surface role chips and typical-path guidance directly on the card instead of burying workflow language behind the `?` affordance

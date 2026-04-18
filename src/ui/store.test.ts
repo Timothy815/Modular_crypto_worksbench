@@ -2209,6 +2209,93 @@ describe('uiReducer', () => {
     expect(undoneState.projectStates['reference-chain-scratchpad']?.connections).toEqual([]);
   });
 
+  it('can insert a reference-aware canonical repair chain with a preserved target attachment', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const createdState = uiReducer(initialState, {
+      type: 'createBlankWorkspace',
+      workspaceId: 'reference-repair-chain-scratchpad',
+      name: 'Reference Repair Chain Scratchpad',
+      summary: 'A workspace for reference-aware repair chain tests.',
+      pipeline: 'Key -> repeat -> bits -> target',
+    });
+
+    const withKey = uiReducer(createdState, {
+      type: 'addModule',
+      projectId: 'reference-repair-chain-scratchpad',
+      moduleDef: V1_REGISTRY.TextInput,
+      position: { x: 80, y: 120 },
+    });
+    const withReference = uiReducer(withKey, {
+      type: 'addModule',
+      projectId: 'reference-repair-chain-scratchpad',
+      moduleDef: V1_REGISTRY.TextInput,
+      position: { x: 80, y: 320 },
+    });
+    const withTarget = uiReducer(withReference, {
+      type: 'addModule',
+      projectId: 'reference-repair-chain-scratchpad',
+      moduleDef: V1_REGISTRY.XOR,
+      position: { x: 980, y: 120 },
+    });
+
+    const insertedState = uiReducer(withTarget, {
+      type: 'insertChain',
+      projectId: 'reference-repair-chain-scratchpad',
+      modules: [
+        { defId: 'RepeatSymbolToMatch', position: { x: 300, y: 120 } },
+        { defId: 'AsciiSequenceToTicked', position: { x: 520, y: 120 } },
+        { defId: 'AsciiCharToBits', position: { x: 740, y: 120 } },
+      ],
+      connections: [
+        { fromIndex: 0, fromPort: 'out', toIndex: 1, toPort: 'in' },
+        { fromIndex: 1, fromPort: 'out', toIndex: 2, toPort: 'in' },
+      ],
+      attach: {
+        fromModuleId: 'textinput-1',
+        fromPort: 'out',
+        toIndex: 0,
+        toPort: 'in',
+      },
+      attachTarget: {
+        fromIndex: 2,
+        fromPort: 'out',
+        toModuleId: 'xor-1',
+        toPort: 'a',
+      },
+      attachInputs: [
+        {
+          fromModuleId: 'textinput-2',
+          fromPort: 'out',
+          toIndex: 0,
+          toPort: 'reference',
+        },
+      ],
+    });
+
+    expect(insertedState.projectStates['reference-repair-chain-scratchpad']?.connections).toEqual([
+      {
+        from: { moduleId: 'textinput-1', port: 'out' },
+        to: { moduleId: 'repeatsymboltomatch-1', port: 'in' },
+      },
+      {
+        from: { moduleId: 'textinput-2', port: 'out' },
+        to: { moduleId: 'repeatsymboltomatch-1', port: 'reference' },
+      },
+      {
+        from: { moduleId: 'repeatsymboltomatch-1', port: 'out' },
+        to: { moduleId: 'asciisequencetoticked-1', port: 'in' },
+      },
+      {
+        from: { moduleId: 'asciisequencetoticked-1', port: 'out' },
+        to: { moduleId: 'asciichartobits-1', port: 'in' },
+      },
+      {
+        from: { moduleId: 'asciichartobits-1', port: 'out' },
+        to: { moduleId: 'xor-1', port: 'a' },
+      },
+    ]);
+  });
+
   it('saves the current graph into a personal workspace entry', () => {
     const initialState = createInitialUiState(demoProjects);
 

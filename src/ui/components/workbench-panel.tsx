@@ -91,6 +91,7 @@ import {
   buildInsertChainTemplates,
   getMatchingCanonicalChains,
   getMatchingCanonicalRepairChains,
+  getMatchingReferenceAwareRepairChains,
   getPortKindSignature,
   type CanonicalChainDefinition,
 } from '../canonical-chain-insertion';
@@ -209,6 +210,10 @@ interface PendingReferenceChainSelection {
   sourceAttachment: {
     fromModuleId: string;
     fromPort: string;
+  };
+  targetAttachment?: {
+    toModuleId: string;
+    toPort: string;
   };
 }
 
@@ -2163,7 +2168,8 @@ export function WorkbenchPanel({
       return;
     }
 
-    const { chain, canvasX, canvasY, sourceAttachment } = pendingReferenceChainSelection;
+    const { chain, canvasX, canvasY, sourceAttachment, targetAttachment } =
+      pendingReferenceChainSelection;
     const templates = buildInsertChainTemplates({
       chain,
       canvasPosition: { x: canvasX, y: canvasY },
@@ -2178,7 +2184,14 @@ export function WorkbenchPanel({
         toIndex: 0,
         toPort: 'in',
       },
-      undefined,
+      targetAttachment
+        ? {
+            fromIndex: templates.modules.length - 1,
+            fromPort: 'out',
+            toModuleId: targetAttachment.toModuleId,
+            toPort: targetAttachment.toPort,
+          }
+        : undefined,
       [
         {
           fromModuleId: referenceModuleId,
@@ -3195,14 +3208,28 @@ export function WorkbenchPanel({
       targetKind,
       registry,
     });
+    const referenceAwareChainOptions = getMatchingReferenceAwareRepairChains({
+      sourceType,
+      sourceKind,
+      targetType,
+      targetKind,
+      registry,
+    });
     const popupWidth = 260;
     const rowHeight = 28;
     const headerHeight = 32;
     const cancelHeight = 28;
     const bridgeSectionHeight = bridgeOptions.length > 0 ? 20 + bridgeOptions.length * rowHeight + 6 : 0;
     const chainSectionHeight = chainOptions.length > 0 ? 20 + chainOptions.length * rowHeight + 6 : 0;
+    const referenceAwareChainSectionHeight =
+      referenceAwareChainOptions.length > 0 ? 20 + referenceAwareChainOptions.length * rowHeight + 6 : 0;
     const popupHeight =
-      headerHeight + bridgeSectionHeight + chainSectionHeight + cancelHeight + 12;
+      headerHeight +
+      bridgeSectionHeight +
+      chainSectionHeight +
+      referenceAwareChainSectionHeight +
+      cancelHeight +
+      12;
 
     return (
       <g
@@ -3308,6 +3335,52 @@ export function WorkbenchPanel({
                 </g>,
               );
             });
+          }
+
+          if (referenceAwareChainOptions.length > 0) {
+            currentY += chainOptions.length > 0 ? chainOptions.length * rowHeight + 6 : 0;
+            sections.push(
+              <text key="reference-chain-label" x={12} y={currentY + 11} className="bridge-popup-section-label">
+                Reference-aware repair chains
+              </text>,
+            );
+            currentY += 16;
+            referenceAwareChainOptions.forEach((chain, index) => {
+              const rowY = currentY + 4 + index * rowHeight;
+              sections.push(
+                <g
+                  key={`reference-chain:${chain.id}`}
+                  className="bridge-popup-option"
+                  onMouseDown={(event) => {
+                    event.stopPropagation();
+                    event.preventDefault();
+                    const sourcePos = effectiveLayout[fromModuleId] ?? { x: 0, y: 0 };
+                    const targetPos = effectiveLayout[toModuleId] ?? { x: 0, y: 0 };
+                    setPendingReferenceChainSelection({
+                      chain,
+                      canvasX: Math.round((sourcePos.x + targetPos.x) / 2) - 120,
+                      canvasY: Math.round((sourcePos.y + targetPos.y) / 2),
+                      sourceAttachment: {
+                        fromModuleId,
+                        fromPort,
+                      },
+                      targetAttachment: {
+                        toModuleId,
+                        toPort,
+                      },
+                    });
+                    setPendingRepairInsertion(null);
+                  }}
+                >
+                  <rect x={8} y={rowY} width={popupWidth - 16} height={rowHeight - 4} rx={5} />
+                  <text x={16} y={rowY + rowHeight - 11} className="bridge-popup-option-text">
+                    {chain.label}
+                  </text>
+                </g>,
+              );
+            });
+          } else if (chainOptions.length > 0) {
+            currentY += chainOptions.length * rowHeight + 6;
           }
 
           return sections;
