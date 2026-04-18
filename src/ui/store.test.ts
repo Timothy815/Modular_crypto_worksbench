@@ -2127,6 +2127,88 @@ describe('uiReducer', () => {
     ]);
   });
 
+  it('can insert a reference-aware canonical chain as one atomic workspace step', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const createdState = uiReducer(initialState, {
+      type: 'createBlankWorkspace',
+      workspaceId: 'reference-chain-scratchpad',
+      name: 'Reference Chain Scratchpad',
+      summary: 'A workspace for reference-aware chain tests.',
+      pipeline: 'Key -> repeat -> bits',
+    });
+
+    const withKey = uiReducer(createdState, {
+      type: 'addModule',
+      projectId: 'reference-chain-scratchpad',
+      moduleDef: V1_REGISTRY.TextInput,
+      position: { x: 80, y: 120 },
+    });
+    const withReference = uiReducer(withKey, {
+      type: 'addModule',
+      projectId: 'reference-chain-scratchpad',
+      moduleDef: V1_REGISTRY.TextInput,
+      position: { x: 80, y: 320 },
+    });
+
+    const insertedState = uiReducer(withReference, {
+      type: 'insertChain',
+      projectId: 'reference-chain-scratchpad',
+      modules: [
+        { defId: 'RepeatSymbolToMatch', position: { x: 300, y: 120 } },
+        { defId: 'AsciiSequenceToTicked', position: { x: 520, y: 120 } },
+        { defId: 'AsciiCharToBits', position: { x: 740, y: 120 } },
+      ],
+      connections: [
+        { fromIndex: 0, fromPort: 'out', toIndex: 1, toPort: 'in' },
+        { fromIndex: 1, fromPort: 'out', toIndex: 2, toPort: 'in' },
+      ],
+      attach: {
+        fromModuleId: 'textinput-1',
+        fromPort: 'out',
+        toIndex: 0,
+        toPort: 'in',
+      },
+      attachInputs: [
+        {
+          fromModuleId: 'textinput-2',
+          fromPort: 'out',
+          toIndex: 0,
+          toPort: 'reference',
+        },
+      ],
+    });
+
+    expect(insertedState.projectStates['reference-chain-scratchpad']?.connections).toEqual([
+      {
+        from: { moduleId: 'textinput-1', port: 'out' },
+        to: { moduleId: 'repeatsymboltomatch-1', port: 'in' },
+      },
+      {
+        from: { moduleId: 'textinput-2', port: 'out' },
+        to: { moduleId: 'repeatsymboltomatch-1', port: 'reference' },
+      },
+      {
+        from: { moduleId: 'repeatsymboltomatch-1', port: 'out' },
+        to: { moduleId: 'asciisequencetoticked-1', port: 'in' },
+      },
+      {
+        from: { moduleId: 'asciisequencetoticked-1', port: 'out' },
+        to: { moduleId: 'asciichartobits-1', port: 'in' },
+      },
+    ]);
+
+    const undoneState = uiReducer(insertedState, {
+      type: 'undoWorkspaceHistory',
+      projectId: 'reference-chain-scratchpad',
+    });
+
+    expect(undoneState.projectStates['reference-chain-scratchpad']?.modules.map((module) => module.id)).toEqual([
+      'textinput-1',
+      'textinput-2',
+    ]);
+    expect(undoneState.projectStates['reference-chain-scratchpad']?.connections).toEqual([]);
+  });
+
   it('saves the current graph into a personal workspace entry', () => {
     const initialState = createInitialUiState(demoProjects);
 

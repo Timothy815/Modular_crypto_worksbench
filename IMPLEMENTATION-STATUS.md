@@ -40,6 +40,9 @@ Canonical chain insertion is now also shipped on `main`:
 - Stage 2A is now also shipped: hovering an unconnected input port can surface a bounded `Common chains` strip in the palette when a canonical chain's output shape matches that hovered target
 - clicking a hovered-input chain suggestion inserts the same explicit Stage 1 chain and attaches its tail directly to the hovered port, leaving the chain head exposed upstream for the next move
 - wire hit testing is also slightly widened so selecting and severing narrow connections requires less cursor precision
+- Stage 3 is now also shipped: pending-connection quick add can offer `Expand key -> bit words (choose reference)` as the first reference-aware canonical chain
+- choosing that option enters an explicit follow-up state where the user must click a visible compatible symbol-sequence output as the `RepeatSymbolToMatch.reference` source
+- the final insertion still lands as one atomic action, adding the mismatch helper, the bridge chain, the source attachment, and the chosen reference attachment without hidden inference
 
 Palette wayfinding is now also tightened on `main`:
 - expanded palette cards now surface role chips and typical-path guidance directly on the card instead of burying workflow language behind the `?` affordance

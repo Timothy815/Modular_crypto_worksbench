@@ -4911,6 +4911,21 @@ body.canvas-resizing {
   filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 20%, transparent));
 }
 
+.graph-port-reference-candidate {
+  color: color-mix(in srgb, var(--success-text) 86%, var(--ink));
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--success-bg) 34%, transparent));
+}
+
+.graph-port-reference-candidate .graph-port-dot {
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--success-bg) 46%, transparent),
+    0 0 0 9px color-mix(in srgb, var(--success-bg) 18%, transparent);
+}
+
+.graph-port-reference-inactive {
+  opacity: 0.38;
+}
+
 .graph-port-anchor-in .graph-port-direction {
   border-color: color-mix(in srgb, var(--success-text) 34%, var(--line));
   color: color-mix(in srgb, var(--success-text) 82%, var(--ink));
@@ -5021,6 +5036,30 @@ body.canvas-resizing {
   border-radius: 999px;
   transform: translate(-50%, -50%);
   background: color-mix(in srgb, var(--line) 76%, white);
+}
+
+.reference-chain-choice-banner {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  z-index: 14;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--success-text) 26%, var(--line));
+  background: color-mix(in srgb, var(--success-bg) 72%, var(--surface));
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.14);
+}
+
+.reference-chain-choice-banner strong {
+  font-size: 0.88rem;
+}
+
+.reference-chain-choice-banner span {
+  color: var(--muted);
+  font-size: 0.84rem;
 }
 
 .graph-port-anchor-left .graph-port-dot::after {

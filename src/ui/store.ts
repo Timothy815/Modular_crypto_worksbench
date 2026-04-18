@@ -327,6 +327,12 @@ export type UiAction =
         toModuleId: string;
         toPort: string;
       };
+      attachInputs?: Array<{
+        fromModuleId: string;
+        fromPort: string;
+        toIndex: number;
+        toPort: string;
+      }>;
     }
   | { type: 'removeModule'; projectId: string; moduleId: string }
   | {
@@ -3592,7 +3598,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         !currentProject ||
         !currentLayout ||
         action.modules.length === 0 ||
-        (!action.attach && !action.attachTarget)
+        (!action.attach && !action.attachTarget && !(action.attachInputs && action.attachInputs.length > 0))
       ) {
         return state;
       }
@@ -3640,6 +3646,16 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
               },
             ]
           : []),
+        ...(action.attachInputs ?? []).map((attachInput) => ({
+          from: {
+            moduleId: attachInput.fromModuleId,
+            port: attachInput.fromPort,
+          },
+          to: {
+            moduleId: insertedModuleIds[attachInput.toIndex],
+            port: attachInput.toPort,
+          },
+        })),
         ...action.connections.map((connectionTemplate) => ({
           from: {
             moduleId: insertedModuleIds[connectionTemplate.fromIndex],

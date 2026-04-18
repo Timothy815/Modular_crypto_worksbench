@@ -92,6 +92,7 @@ import {
   getMatchingCanonicalChains,
   getMatchingCanonicalRepairChains,
   getPortKindSignature,
+  type CanonicalChainDefinition,
 } from '../canonical-chain-insertion';
 import { WORKBENCH_GRID_SIZE } from '../store';
 const WorkbenchActions = lazy(() =>
@@ -198,6 +199,16 @@ interface QuickAddState {
     fromPort: string;
     sourceType: SignalType;
     sourceKind: PortKind;
+  };
+}
+
+interface PendingReferenceChainSelection {
+  chain: CanonicalChainDefinition;
+  canvasX: number;
+  canvasY: number;
+  sourceAttachment: {
+    fromModuleId: string;
+    fromPort: string;
   };
 }
 
@@ -586,6 +597,7 @@ interface WorkbenchPanelProps {
     connections: Array<{ fromIndex: number; fromPort: string; toIndex: number; toPort: string }>,
     attach?: { fromModuleId: string; fromPort: string; toIndex: number; toPort: string },
     attachTarget?: { fromIndex: number; fromPort: string; toModuleId: string; toPort: string },
+    attachInputs?: Array<{ fromModuleId: string; fromPort: string; toIndex: number; toPort: string }>,
   ) => void;
   onPendingConnectionChange?: (
     info: { fromModuleId: string; fromPort: string; sourceType: SignalType; sourceKind: PortKind } | null,
@@ -830,6 +842,8 @@ export function WorkbenchPanel({
     error: string | null;
   } | null>(null);
   const [quickAdd, setQuickAdd] = useState<QuickAddState | null>(null);
+  const [pendingReferenceChainSelection, setPendingReferenceChainSelection] =
+    useState<PendingReferenceChainSelection | null>(null);
   const [showSignalChips, setShowSignalChips] = useState(true);
   const [pendingConnection, setPendingConnection] =
     useState<PendingConnection | null>(null);
@@ -2126,6 +2140,57 @@ export function WorkbenchPanel({
     setConnectionFeedback(null);
   }
 
+  function clearReferenceChainSelection() {
+    setPendingReferenceChainSelection(null);
+  }
+
+  function isCompatibleReferenceOutput(port: {
+    type: SignalType;
+    kind?: PortKind;
+  }) {
+    if (!pendingReferenceChainSelection) {
+      return false;
+    }
+
+    return (
+      port.type === pendingReferenceChainSelection.chain.startPortShape.type &&
+      getPortKindSignature(port.kind) === pendingReferenceChainSelection.chain.startPortShape.kind
+    );
+  }
+
+  function commitReferenceAwareChainSelection(referenceModuleId: string, referencePort: string) {
+    if (!pendingReferenceChainSelection) {
+      return;
+    }
+
+    const { chain, canvasX, canvasY, sourceAttachment } = pendingReferenceChainSelection;
+    const templates = buildInsertChainTemplates({
+      chain,
+      canvasPosition: { x: canvasX, y: canvasY },
+      layoutDirection,
+    });
+    onInsertChain(
+      templates.modules,
+      templates.connections,
+      {
+        fromModuleId: sourceAttachment.fromModuleId,
+        fromPort: sourceAttachment.fromPort,
+        toIndex: 0,
+        toPort: 'in',
+      },
+      undefined,
+      [
+        {
+          fromModuleId: referenceModuleId,
+          fromPort: referencePort,
+          toIndex: 0,
+          toPort: chain.referencePort ?? 'reference',
+        },
+      ],
+    );
+    clearReferenceChainSelection();
+  }
+
   const pendingTargetSummary = useMemo(() => {
     if (!pendingConnection) {
       return null;
@@ -2172,6 +2237,19 @@ export function WorkbenchPanel({
       subtitle: chain.description,
       badge: 'Chain',
       onSelect: () => {
+        if (chain.requiresReferenceChoice) {
+          setPendingReferenceChainSelection({
+            chain,
+            canvasX: quickAdd.canvasX,
+            canvasY: quickAdd.canvasY,
+            sourceAttachment: {
+              fromModuleId: quickAdd.pendingConnection!.fromModuleId,
+              fromPort: quickAdd.pendingConnection!.fromPort,
+            },
+          });
+          return;
+        }
+
         const templates = buildInsertChainTemplates({
           chain,
           canvasPosition: { x: quickAdd.canvasX, y: quickAdd.canvasY },
@@ -3811,6 +3889,10 @@ export function WorkbenchPanel({
           }
           onMouseDown={(event) => {
             if (quickAdd) { setQuickAdd(null); }
+            if (pendingReferenceChainSelection) {
+              clearReferenceChainSelection();
+              return;
+            }
             if (pendingRepairInsertion) { setPendingRepairInsertion(null); return; }
             if (pendingConnection && !pendingConnection.isDragging && event.target === event.currentTarget) {
               setPendingConnection(null);
@@ -3839,6 +3921,10 @@ export function WorkbenchPanel({
             });
           }}
           onDoubleClick={(event) => {
+            if (pendingReferenceChainSelection) {
+              clearReferenceChainSelection();
+              return;
+            }
             if (isCompositeEditor || event.target !== event.currentTarget) return;
             const pointer = getCanvasPointerFromClient(event.clientX, event.clientY);
             if (!pointer) return;
@@ -4672,6 +4758,11 @@ export function WorkbenchPanel({
                         'out',
                         port.name,
                       );
+                      const isReferenceCandidate = isCompatibleReferenceOutput({
+                        type: port.type as SignalType,
+                        kind: (port as { kind?: PortKind }).kind,
+                      });
+                      const isReferenceChooserActive = pendingReferenceChainSelection !== null;
                       return (
                       <span
                         key={port.name}
@@ -4684,10 +4775,24 @@ export function WorkbenchPanel({
                           emphasizedConnectionPortKeys.has(`out:${moduleInstance.id}:${port.name}`)
                             ? ' graph-port-anchor-emphasized'
                             : ''
+                        }${
+                          isReferenceChooserActive && isReferenceCandidate
+                            ? ' graph-port-reference-candidate'
+                            : ''
+                        }${
+                          isReferenceChooserActive && !isReferenceCandidate
+                            ? ' graph-port-reference-inactive'
+                            : ''
                         }`}
                         style={getPortAnchorStyle(side, sideIndex, nodeSizeConfig)}
                         title={
-                          isCompositePortHintEligible(def) ? undefined : `${port.name}: ${port.type}`
+                          isCompositePortHintEligible(def)
+                            ? undefined
+                            : pendingReferenceChainSelection
+                              ? isReferenceCandidate
+                                ? `Choose ${moduleInstance.id}.${port.name} as reference`
+                                : `${port.name}: incompatible reference`
+                              : `${port.name}: ${port.type}`
                         }
                         onMouseEnter={() => {
                           if (!pendingConnection) {
@@ -4701,6 +4806,14 @@ export function WorkbenchPanel({
                         }
                         onMouseDown={(event) => {
                           if (isObservationMode) {
+                            return;
+                          }
+                          if (pendingReferenceChainSelection) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            if (isReferenceCandidate) {
+                              commitReferenceAwareChainSelection(moduleInstance.id, port.name);
+                            }
                             return;
                           }
                           event.preventDefault();
@@ -5138,6 +5251,19 @@ export function WorkbenchPanel({
             onDismiss={() => setQuickAdd(null)}
           />
         </Suspense>
+      ) : null}
+      {pendingReferenceChainSelection ? (
+        <div className="reference-chain-choice-banner">
+          <strong>{pendingReferenceChainSelection.chain.label}</strong>
+          <span>Choose visible reference sequence</span>
+          <button
+            type="button"
+            className="secondary-dialog-button"
+            onClick={clearReferenceChainSelection}
+          >
+            Cancel
+          </button>
+        </div>
       ) : null}
     </section>
   );

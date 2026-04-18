@@ -17,6 +17,20 @@ describe('canonical chain insertion', () => {
       registry: V1_REGISTRY,
     });
 
+    expect(matches.map((chain) => chain.id)).toEqual([
+      'ascii-sequence-to-bit-words',
+      'expand-key-to-bit-words',
+    ]);
+  });
+
+  it('can exclude reference-aware chains when only linear chains should be shown', () => {
+    const matches = getMatchingCanonicalChains({
+      sourceType: 'symbol',
+      sourceKind: 'sequence',
+      registry: V1_REGISTRY,
+      includeReferenceAware: false,
+    });
+
     expect(matches.map((chain) => chain.id)).toEqual(['ascii-sequence-to-bit-words']);
   });
 
@@ -83,6 +97,9 @@ describe('canonical chain insertion', () => {
     ]);
     expect(getCanonicalChainDefinition('ascii-sequence-to-bit-words')?.label).toBe(
       'ASCII sequence -> bit words',
+    );
+    expect(getCanonicalChainDefinition('expand-key-to-bit-words')?.requiresReferenceChoice).toBe(
+      true,
     );
   });
 

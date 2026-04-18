@@ -18,6 +18,8 @@ export interface CanonicalChainDefinition {
   startPortShape: ChainPortShape;
   endPortShape: ChainPortShape;
   modules: CanonicalChainModuleTemplate[];
+  requiresReferenceChoice?: boolean;
+  referencePort?: string;
 }
 
 export interface InsertChainModuleTemplate extends CanonicalChainModuleTemplate {
@@ -44,6 +46,21 @@ export const CANONICAL_CHAIN_DEFINITIONS: CanonicalChainDefinition[] = [
       { defId: 'AsciiSequenceToTicked' },
       { defId: 'AsciiCharToBits' },
     ],
+  },
+  {
+    id: 'expand-key-to-bit-words',
+    label: 'Expand key -> bit words (choose reference)',
+    description:
+      'Common chain · RepeatSymbolToMatch -> AsciiSequenceToTicked -> AsciiCharToBits',
+    startPortShape: { type: 'symbol', kind: 'sequence' },
+    endPortShape: { type: 'bits', kind: 'scalar' },
+    modules: [
+      { defId: 'RepeatSymbolToMatch' },
+      { defId: 'AsciiSequenceToTicked' },
+      { defId: 'AsciiCharToBits' },
+    ],
+    requiresReferenceChoice: true,
+    referencePort: 'reference',
   },
   {
     id: 'collect-ticked-bits-to-ascii',
@@ -77,16 +94,19 @@ export function getMatchingCanonicalChains({
   sourceType,
   sourceKind,
   registry,
+  includeReferenceAware = true,
 }: {
   sourceType: SignalType;
   sourceKind: PortKind;
   registry: ModuleRegistry;
+  includeReferenceAware?: boolean;
 }) {
   return CANONICAL_CHAIN_DEFINITIONS
     .filter(
       (chain) =>
         chain.startPortShape.type === sourceType &&
         chain.startPortShape.kind === sourceKind &&
+        (includeReferenceAware || !chain.requiresReferenceChoice) &&
         chain.modules.every((moduleTemplate) => registry[moduleTemplate.defId]),
     )
     .sort((left, right) => left.label.localeCompare(right.label));
@@ -112,6 +132,7 @@ export function getMatchingCanonicalRepairChains({
         chain.startPortShape.kind === sourceKind &&
         chain.endPortShape.type === targetType &&
         chain.endPortShape.kind === targetKind &&
+        !chain.requiresReferenceChoice &&
         chain.modules.every((moduleTemplate) => registry[moduleTemplate.defId]),
     )
     .sort((left, right) => left.label.localeCompare(right.label));
@@ -131,6 +152,7 @@ export function getMatchingCanonicalChainsForTarget({
       (chain) =>
         chain.endPortShape.type === targetType &&
         chain.endPortShape.kind === targetKind &&
+        !chain.requiresReferenceChoice &&
         chain.modules.every((moduleTemplate) => registry[moduleTemplate.defId]),
     )
     .sort((left, right) => left.label.localeCompare(right.label));
