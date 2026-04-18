@@ -117,6 +117,29 @@ export function getMatchingCanonicalRepairChains({
     .sort((left, right) => left.label.localeCompare(right.label));
 }
 
+export function getMatchingCanonicalChainsForTarget({
+  targetType,
+  targetKind,
+  registry,
+}: {
+  targetType: SignalType;
+  targetKind: PortKind;
+  registry: ModuleRegistry;
+}) {
+  return CANONICAL_CHAIN_DEFINITIONS
+    .filter(
+      (chain) =>
+        chain.endPortShape.type === targetType &&
+        chain.endPortShape.kind === targetKind &&
+        chain.modules.every((moduleTemplate) => registry[moduleTemplate.defId]),
+    )
+    .sort((left, right) => left.label.localeCompare(right.label));
+}
+
+export function getCanonicalChainDefinition(chainId: string) {
+  return CANONICAL_CHAIN_DEFINITIONS.find((chain) => chain.id === chainId) ?? null;
+}
+
 export function buildInsertChainTemplates({
   chain,
   canvasPosition,

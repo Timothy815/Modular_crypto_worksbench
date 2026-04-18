@@ -37,6 +37,9 @@ Canonical chain insertion is now also shipped on `main`:
 - pending-connection quick add can insert bounded named bridge / collector chains in one atomic action
 - V1 stays intentionally narrow: `ASCII sequence -> bit words`, `Collect ticked bits -> hex`, and `Collect ticked bits -> ASCII`
 - inserted chains remain fully explicit on canvas as ordinary modules and wires, with no hidden coercion or free-form synthesis
+- Stage 2A is now also shipped: hovering an unconnected input port can surface a bounded `Common chains` strip in the palette when a canonical chain's output shape matches that hovered target
+- clicking a hovered-input chain suggestion inserts the same explicit Stage 1 chain and attaches its tail directly to the hovered port, leaving the chain head exposed upstream for the next move
+- wire hit testing is also slightly widened so selecting and severing narrow connections requires less cursor precision
 
 Palette wayfinding is now also tightened on `main`:
 - expanded palette cards now surface role chips and typical-path guidance directly on the card instead of burying workflow language behind the `?` affordance

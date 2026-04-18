@@ -2,7 +2,7 @@
 
 Last updated: April 18, 2026
 
-Status: Draft
+Status: Shipped on `main`
 
 ---
 
@@ -67,9 +67,9 @@ This is not:
 
 When the user hovers an unconnected input port on the canvas, the palette may show a small `Common chains` strip above the ordinary module results.
 
-That strip shows only canonical chain options whose **start port shape** matches the hovered port’s expected upstream source shape.
+That strip shows only canonical chain options whose **end port shape** matches the hovered input port’s expected signal shape.
 
-Clicking one option inserts the same explicit chain shape used by Stage 1 and leaves the final output exposed for the next move.
+Clicking one option inserts the same explicit chain shape used by Stage 1 and attaches the chain’s tail to the hovered input, leaving the chain head exposed upstream for the next move.
 
 ---
 
@@ -115,7 +115,7 @@ The strip should appear only when the hovered input port has a clear expected si
 - `type`
 - `kind`
 
-Only chains whose `startPortShape` matches that expectation may appear.
+Only chains whose `endPortShape` matches that expectation may appear.
 
 ### Rule 2 — Suggestions remain additive
 
@@ -123,17 +123,25 @@ The palette’s ordinary hovered-port source and bridge suggestions remain visib
 
 The `Common chains` strip is an additional section, not a replacement for the ordinary results.
 
-### Rule 3 — No hidden reverse inference
+### Rule 3 — Suggestions target the hovered input only
+
+The inserted chain is chosen because its **output** can feed the hovered input directly.
+
+This slice does not attempt to infer the ideal upstream source.
+
+### Rule 4 — No hidden reverse inference
 
 The system may not inspect distant graph branches to infer a target chain.
 
 This slice is keyed only from the hovered input port’s expected upstream shape.
 
-### Rule 4 — Reuse Stage 1 insertion behavior
+### Rule 5 — Reuse Stage 1 insertion behavior
 
 Clicking a hovered-port chain suggestion must use the same `insertChain` path and deterministic placement rules already shipped in Stage 1.
 
-### Rule 5 — Keep the chain list short
+The only Stage 2A addition is that the inserted chain attaches its tail to the hovered input port while leaving its head unconnected.
+
+### Rule 6 — Keep the chain list short
 
 If no canonical chains match, the strip does not render.
 

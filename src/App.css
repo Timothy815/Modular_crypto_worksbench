@@ -2873,6 +2873,11 @@ body.dock-resizing {
   padding: 10px 16px 12px;
   border-bottom: 1px solid var(--line);
 }
+.palette-common-chains {
+  padding: 10px 16px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface-soft));
+}
 .palette-starters-label {
   font-size: 0.7rem;
   font-weight: 700;
@@ -2901,6 +2906,9 @@ body.dock-resizing {
 .palette-starter-chip:hover {
   background: color-mix(in srgb, var(--accent) 18%, var(--surface-soft));
   border-color: color-mix(in srgb, var(--accent) 60%, var(--line));
+}
+.palette-chain-chip {
+  border-color: color-mix(in srgb, var(--accent) 46%, var(--line));
 }
 
 /* ── Mid-drag palette drop targets ────────────────────────────────────── */
@@ -3505,7 +3513,7 @@ body.canvas-resizing {
 
 .connection-hit-area {
   stroke: transparent;
-  stroke-width: 16;
+  stroke-width: 22;
   fill: none;
   pointer-events: stroke;
 }

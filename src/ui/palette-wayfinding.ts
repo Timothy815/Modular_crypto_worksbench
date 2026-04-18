@@ -1,11 +1,12 @@
-import type { ModuleDefinition } from '../engine/types';
+import type { ModuleDefinition, PortKind, SignalType } from '../engine/types';
 import { getModuleChainsAfter, getModuleRole, type ModuleWorkflowRole } from './module-role-language';
 
 export interface PaletteHoveredInputPortHint {
   moduleId: string;
   defId?: string;
   port: string;
-  type: string;
+  type: SignalType;
+  kind: PortKind;
 }
 
 export interface PaletteWayfindingContext {
@@ -44,7 +45,14 @@ export function getPaletteContextRank(
     score += 800;
   }
 
-  if (context.hoveredInputPort && definition.outputs.some((port) => port.type === context.hoveredInputPort?.type)) {
+  if (
+    context.hoveredInputPort &&
+    definition.outputs.some(
+      (port) =>
+        port.type === context.hoveredInputPort!.type &&
+        (port.kind ?? 'scalar') === context.hoveredInputPort!.kind,
+    )
+  ) {
     score += 700;
     score += getRoleBias(getModuleRole(definition));
 
@@ -58,4 +66,3 @@ export function getPaletteContextRank(
 
   return score;
 }
-

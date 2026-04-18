@@ -3,7 +3,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, us
 import './App.css';
 import { isBuiltInCompositeLibraryEntry, isCompositeDefinition, isConditionalDefinition, isIteratorDefinition, isMultiConditionalDefinition, type CompositeLibraryEntry, type ConditionalDef, type MultiConditionalDef } from './engine/composites';
 import { V1_REGISTRY } from './engine/modules';
-import type { ExecutionResult, ExecutionTraceEntry, TickedExecutionResult } from './engine/types';
+import type { ExecutionResult, ExecutionTraceEntry, SignalType, TickedExecutionResult } from './engine/types';
 import { validateCompositeDef, validateProject } from './engine/validation';
 import {
   createCompositeFromSelection,
@@ -26,6 +26,11 @@ import { CANVAS_NODE_WIDTH } from './ui/canvas-selection';
 import { getStarterById } from './ui/pipeline-starters';
 import { createInstructorPilotUrl } from './ui/instructor-pilot-url';
 import { createUserManualUrl } from './ui/manual-url';
+import {
+  buildInsertChainTemplates,
+  CANONICAL_CHAIN_INSERTION_GAP,
+  getCanonicalChainDefinition,
+} from './ui/canonical-chain-insertion';
 import {
   addVerificationCasesToProject,
   applyLearningPanelTabSelection,
@@ -415,7 +420,8 @@ function MainApp() {
     moduleId: string;
     defId?: string;
     port: string;
-    type: string;
+    type: SignalType;
+    kind: 'scalar' | 'sequence';
   } | null>(null);
   const [requestedWorkspaceFocusModuleId, setRequestedWorkspaceFocusModuleId] =
     useState<string | null>(null);
@@ -3788,6 +3794,44 @@ function MainApp() {
                     fromModuleId: activePendingConnection.fromModuleId,
                     fromPort: activePendingConnection.fromPort,
                     toPort,
+                  });
+                }}
+                onInsertChainForHoveredInput={(chainId) => {
+                  const hoveredHint = activePendingConnection ? null : hoveredInputPortHint;
+                  if (!hoveredHint) {
+                    return;
+                  }
+                  const chain = getCanonicalChainDefinition(chainId);
+                  if (!chain) {
+                    return;
+                  }
+                  const targetPosition = baseLayout[hoveredHint.moduleId] ?? { x: 440, y: 220 };
+                  const chainStartPosition =
+                    activeLayoutDirection === 'vertical'
+                      ? {
+                          x: targetPosition.x,
+                          y: targetPosition.y - chain.modules.length * CANONICAL_CHAIN_INSERTION_GAP,
+                        }
+                      : {
+                          x: targetPosition.x - chain.modules.length * CANONICAL_CHAIN_INSERTION_GAP,
+                          y: targetPosition.y,
+                        };
+                  const templates = buildInsertChainTemplates({
+                    chain,
+                    canvasPosition: chainStartPosition,
+                    layoutDirection: activeLayoutDirection,
+                  });
+                  dispatch({
+                    type: 'insertChain',
+                    projectId: activeProjectDefinition.id,
+                    modules: templates.modules,
+                    connections: templates.connections,
+                    attachTarget: {
+                      fromIndex: templates.modules.length - 1,
+                      fromPort: 'out',
+                      toModuleId: hoveredHint.moduleId,
+                      toPort: hoveredHint.port,
+                    },
                   });
                 }}
               />

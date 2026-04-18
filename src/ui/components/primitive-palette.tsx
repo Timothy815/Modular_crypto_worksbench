@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 
 import type { ModuleRegistry } from '../../engine/types';
+import {
+  getMatchingCanonicalChainsForTarget,
+  type CanonicalChainDefinition,
+} from '../canonical-chain-insertion';
 import { getModuleCategory } from '../module-categories';
 import {
   getModuleChainsBefore,
@@ -45,6 +49,7 @@ interface PrimitivePaletteProps {
   pendingConnectionSourceType?: string | null;
   hoveredInputPort?: PaletteHoveredInputPortHint | null;
   onDropForPendingConnection?: (defId: string, toPort: string) => void;
+  onInsertChainForHoveredInput?: (chainId: string) => void;
 }
 
 function PaletteViewModeIcon({ viewMode }: { viewMode: 'compact' | 'expanded' }) {
@@ -177,6 +182,7 @@ export function PrimitivePalette({
   pendingConnectionSourceType,
   hoveredInputPort,
   onDropForPendingConnection,
+  onInsertChainForHoveredInput,
 }: PrimitivePaletteProps) {
   const [activeTab, setActiveTab] = useState<ModuleLibraryDomainTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -241,6 +247,18 @@ export function PrimitivePalette({
         return (sortOrderIndex.get(left.id) ?? 0) - (sortOrderIndex.get(right.id) ?? 0);
       }),
     [contextRank, sortOrderIndex, visibleDefs],
+  );
+
+  const hoveredTargetChains = useMemo<CanonicalChainDefinition[]>(
+    () =>
+      hoveredInputPort
+        ? getMatchingCanonicalChainsForTarget({
+            targetType: hoveredInputPort.type,
+            targetKind: hoveredInputPort.kind,
+            registry,
+          })
+        : [],
+    [hoveredInputPort, registry],
   );
 
   const rankedVisibleDefs = useMemo(
@@ -322,7 +340,7 @@ export function PrimitivePalette({
           </div>
           {hoveredInputPort ? (
             <div className="palette-compatibility-label">
-              Showing likely sources for {hoveredInputPort.defId ? `${hoveredInputPort.defId}.` : ''}{hoveredInputPort.port} ({hoveredInputPort.type})
+              Showing likely sources for {hoveredInputPort.defId ? `${hoveredInputPort.defId}.` : ''}{hoveredInputPort.port} ({hoveredInputPort.type}, {hoveredInputPort.kind})
             </div>
           ) : null}
           <input
@@ -398,6 +416,24 @@ export function PrimitivePalette({
                 onClick={() => onInsertStarterChain(starter.id)}
               >
                 {starter.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {hoveredInputPort && hoveredTargetChains.length > 0 && onInsertChainForHoveredInput ? (
+        <div className="palette-common-chains">
+          <p className="palette-starters-label">Common chains</p>
+          <div className="palette-starters-chips">
+            {hoveredTargetChains.map((chain) => (
+              <button
+                key={chain.id}
+                type="button"
+                className="palette-starter-chip palette-chain-chip"
+                title={chain.description}
+                onClick={() => onInsertChainForHoveredInput(chain.id)}
+              >
+                {chain.label}
               </button>
             ))}
           </div>

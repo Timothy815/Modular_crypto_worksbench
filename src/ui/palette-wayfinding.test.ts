@@ -11,8 +11,9 @@ describe('palette wayfinding context ranking', () => {
         defId: 'XOR',
         port: 'a',
         type: 'bits',
+        kind: 'scalar',
       },
-    };
+    } as const;
 
     expect(getPaletteContextRank(V1_REGISTRY.AsciiCharToBits, context)).toBeGreaterThan(
       getPaletteContextRank(V1_REGISTRY.TextInput, context),
@@ -29,8 +30,9 @@ describe('palette wayfinding context ranking', () => {
         defId: 'XOR',
         port: 'a',
         type: 'bits',
+        kind: 'scalar',
       },
-    };
+    } as const;
 
     expect(getPaletteContextRank(V1_REGISTRY.AsciiCharToBits, context)).toBeGreaterThan(
       getPaletteContextRank(V1_REGISTRY.IV, context),
@@ -46,4 +48,3 @@ describe('palette wayfinding context ranking', () => {
     expect(getPaletteContextRank(V1_REGISTRY.TextOutput, context)).toBe(0);
   });
 });
-

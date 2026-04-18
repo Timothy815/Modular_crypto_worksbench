@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { V1_REGISTRY } from '../engine/modules';
 import {
   buildInsertChainTemplates,
+  getCanonicalChainDefinition,
   getMatchingCanonicalChains,
+  getMatchingCanonicalChainsForTarget,
   getMatchingCanonicalRepairChains,
 } from './canonical-chain-insertion';
 
@@ -60,6 +62,28 @@ describe('canonical chain insertion', () => {
       'Collect ticked bits -> hex',
     ]);
     expect(noRepair).toEqual([]);
+  });
+
+  it('matches canonical chains that can feed a hovered target input', () => {
+    const bitWordTargetMatches = getMatchingCanonicalChainsForTarget({
+      targetType: 'bits',
+      targetKind: 'scalar',
+      registry: V1_REGISTRY,
+    });
+    const symbolSequenceTargetMatches = getMatchingCanonicalChainsForTarget({
+      targetType: 'symbol',
+      targetKind: 'sequence',
+      registry: V1_REGISTRY,
+    });
+
+    expect(bitWordTargetMatches.map((chain) => chain.id)).toEqual(['ascii-sequence-to-bit-words']);
+    expect(symbolSequenceTargetMatches.map((chain) => chain.label)).toEqual([
+      'Collect ticked bits -> ASCII',
+      'Collect ticked bits -> hex',
+    ]);
+    expect(getCanonicalChainDefinition('ascii-sequence-to-bit-words')?.label).toBe(
+      'ASCII sequence -> bit words',
+    );
   });
 
   it('builds a forward horizontal lane for inserted modules', () => {

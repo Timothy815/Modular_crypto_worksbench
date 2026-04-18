@@ -584,13 +584,15 @@ interface WorkbenchPanelProps {
   onInsertChain: (
     modules: Array<{ defId: string; params?: Record<string, unknown>; position: { x: number; y: number } }>,
     connections: Array<{ fromIndex: number; fromPort: string; toIndex: number; toPort: string }>,
-    attach: { fromModuleId: string; fromPort: string; toIndex: number; toPort: string },
+    attach?: { fromModuleId: string; fromPort: string; toIndex: number; toPort: string },
     attachTarget?: { fromIndex: number; fromPort: string; toModuleId: string; toPort: string },
   ) => void;
   onPendingConnectionChange?: (
     info: { fromModuleId: string; fromPort: string; sourceType: SignalType; sourceKind: PortKind } | null,
   ) => void;
-  onHoveredInputPortChange?: (info: { moduleId: string; defId?: string; port: string; type: string } | null) => void;
+  onHoveredInputPortChange?: (
+    info: { moduleId: string; defId?: string; port: string; type: SignalType; kind: PortKind } | null,
+  ) => void;
   projects: DemoProject[];
 }
 
@@ -4606,7 +4608,10 @@ export function WorkbenchPanel({
                                   moduleId: moduleInstance.id,
                                   defId: moduleInstance.defId,
                                   port: port.name,
-                                  type: port.type,
+                                  type: port.type as SignalType,
+                                  kind: getPortKindSignature(
+                                    (port as { kind?: PortKind }).kind,
+                                  ),
                                 });
                               }
                             }

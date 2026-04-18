@@ -315,7 +315,7 @@ export type UiAction =
       projectId: string;
       modules: InsertChainModuleTemplate[];
       connections: InsertChainConnectionTemplate[];
-      attach: {
+      attach?: {
         fromModuleId: string;
         fromPort: string;
         toIndex: number;
@@ -3588,7 +3588,12 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       const currentProject = state.projectStates[action.projectId];
       const currentLayout = state.layoutByProject[action.projectId];
       const currentLayoutDirection = state.layoutDirectionByProject[action.projectId] ?? 'horizontal';
-      if (!currentProject || !currentLayout || action.modules.length === 0) {
+      if (
+        !currentProject ||
+        !currentLayout ||
+        action.modules.length === 0 ||
+        (!action.attach && !action.attachTarget)
+      ) {
         return state;
       }
 
@@ -3621,16 +3626,20 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
 
       nextProject.connections = [
         ...nextProject.connections,
-        {
-          from: {
-            moduleId: action.attach.fromModuleId,
-            port: action.attach.fromPort,
-          },
-          to: {
-            moduleId: insertedModuleIds[action.attach.toIndex],
-            port: action.attach.toPort,
-          },
-        },
+        ...(action.attach
+          ? [
+              {
+                from: {
+                  moduleId: action.attach.fromModuleId,
+                  port: action.attach.fromPort,
+                },
+                to: {
+                  moduleId: insertedModuleIds[action.attach.toIndex],
+                  port: action.attach.toPort,
+                },
+              },
+            ]
+          : []),
         ...action.connections.map((connectionTemplate) => ({
           from: {
             moduleId: insertedModuleIds[connectionTemplate.fromIndex],
