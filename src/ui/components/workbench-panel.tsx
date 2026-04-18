@@ -414,7 +414,6 @@ interface WorkbenchPanelProps {
   tutorialTitle?: string | null;
   tutorialStepIndex?: number;
   tutorialStepCount?: number;
-  showTutorialToggle?: boolean;
   tutorialNotesVisible?: boolean;
   challengeSolved?: boolean;
   isCompositeEditor?: boolean;
@@ -640,7 +639,6 @@ export function WorkbenchPanel({
   tutorialTitle = null,
   tutorialStepIndex = 0,
   tutorialStepCount = 0,
-  showTutorialToggle = false,
   tutorialNotesVisible = true,
   challengeSolved = false,
   isCompositeEditor = false,
@@ -2859,6 +2857,25 @@ export function WorkbenchPanel({
           }
         />
         {shouldShowDirectionCues ? (
+          (() => {
+            const directionCueFill = isSelectedConnection
+              ? theme === 'dark'
+                ? '#ffd978'
+                : '#8a5200'
+              : !isSelectedConnection && legibilityState.traceEmphasized
+                ? theme === 'dark'
+                  ? '#b9ffbf'
+                  : '#146c2e'
+                : !isSelectedConnection && isHoveredConnection
+                  ? theme === 'dark'
+                    ? '#a9e7ff'
+                    : '#0f5ea8'
+                  : theme === 'dark'
+                    ? '#f5f7fb'
+                    : '#253247';
+            const directionCueStroke = theme === 'dark' ? 'rgba(5, 8, 14, 0.96)' : 'rgba(255, 255, 255, 0.98)';
+
+            return (
           <text
             className={[
               'connection-direction-cues',
@@ -2871,11 +2888,33 @@ export function WorkbenchPanel({
               .filter(Boolean)
               .join(' ')}
             dy="-7"
+            fill={directionCueFill}
+            stroke={directionCueStroke}
+            style={{
+              fill: directionCueFill,
+              stroke: directionCueStroke,
+              strokeWidth: 3,
+              paintOrder: 'stroke fill',
+            }}
           >
-            <textPath href={`#${directionCuePathId}`} startOffset="50%" textAnchor="middle">
-              {'➜   ➜   ➜'}
+            <textPath
+              href={`#${directionCuePathId}`}
+              startOffset="50%"
+              textAnchor="middle"
+              fill={directionCueFill}
+              stroke={directionCueStroke}
+              style={{
+                fill: directionCueFill,
+                stroke: directionCueStroke,
+                strokeWidth: 3,
+                paintOrder: 'stroke fill',
+              }}
+            >
+              {'→   →   →'}
             </textPath>
           </text>
+            );
+          })()
         ) : null}
         {routingMode === 'orthogonal' &&
         !isObservationMode &&
@@ -3227,7 +3266,6 @@ export function WorkbenchPanel({
           selectedConnectionLanePreference={selectedConnectionLanePreference}
           selectedConnectionColorOverride={selectedConnectionColorOverride}
           furnitureVisible={showFurniture}
-          showTutorialToggle={showTutorialToggle}
           tutorialNotesVisible={tutorialNotesVisible}
           onAddAnnotation={onAddAnnotation}
           onAddStageLabel={onAddStageLabel}
@@ -3351,11 +3389,15 @@ export function WorkbenchPanel({
             {tutorialStep.title}
             {tutorialStepCount > 0 ? ` (${tutorialStepIndex + 1}/${tutorialStepCount})` : ''}
           </strong>
-          <p>{tutorialStep.body}</p>
-          {tutorialStep.focusModuleId ? (
-            <p className="tutorial-step-target">
-              Focus: <strong>{tutorialStep.focusModuleId}</strong>
-            </p>
+          {tutorialNotesVisible ? (
+            <>
+              <p>{tutorialStep.body}</p>
+              {tutorialStep.focusModuleId ? (
+                <p className="tutorial-step-target">
+                  Focus: <strong>{tutorialStep.focusModuleId}</strong>
+                </p>
+              ) : null}
+            </>
           ) : null}
           <div className="tutorial-step-actions">
             {onSetTutorialStep && tutorialStepCount > 0 ? (
@@ -3378,13 +3420,13 @@ export function WorkbenchPanel({
                 </button>
               </>
             ) : null}
-            {showTutorialToggle ? (
+            {onSetTutorialNotesVisible ? (
               <button
                 type="button"
                 className="mini-action-button"
                 onClick={() => onSetTutorialNotesVisible?.(!tutorialNotesVisible)}
               >
-                Hide
+                {tutorialNotesVisible ? 'Hide Step Notes' : 'Show Step Notes'}
               </button>
             ) : null}
           </div>

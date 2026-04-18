@@ -1290,7 +1290,6 @@ function MainApp() {
   );
   const activeTutorialStep =
     workspaceMode === 'guide' &&
-    tutorialNotesVisible &&
     !state.compositeEditor &&
     selectedTutorial?.projectId === activeProjectDefinition.id
       ? selectedTutorialStep
@@ -2706,7 +2705,6 @@ function MainApp() {
             tutorialTitle={selectedTutorial?.projectId === activeProjectDefinition.id ? selectedTutorial.title : null}
             tutorialStepIndex={tutorialStepIndex}
             tutorialStepCount={selectedTutorial?.projectId === activeProjectDefinition.id ? selectedTutorial.steps.length : 0}
-            showTutorialToggle={Boolean(selectedTutorial?.projectId === activeProjectDefinition.id)}
             tutorialNotesVisible={tutorialNotesVisible}
             challengeSolved={challengeEvaluation?.status === 'success'}
             isObservationMode={isCompositeDrilldownActive}

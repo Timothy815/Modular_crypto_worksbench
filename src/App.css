@@ -841,9 +841,10 @@ body.dock-resizing {
 
 .module-kind-badge-iterator {
   border-style: solid;
-  border-color: var(--link-primary-text);
-  background: color-mix(in srgb, var(--link-primary-bg) 40%, white);
-  color: var(--link-primary-text);
+  border-color: color-mix(in srgb, var(--link-primary-bg) 68%, var(--line));
+  background: color-mix(in srgb, var(--link-primary-bg) 16%, var(--surface-panel));
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--link-primary-text) 12%, transparent);
 }
 
 .modern-bit-grid {
@@ -3829,8 +3830,8 @@ body.canvas-resizing {
   stroke-width: 1;
 }
 
-.connection-direction-cues {
-  fill: color-mix(in srgb, var(--ink) 88%, transparent);
+.graph-connections-labels .connection-direction-cues {
+  fill: color-mix(in srgb, var(--ink) 94%, white) !important;
   font-family: var(--mono);
   font-size: 18px;
   font-weight: 900;
@@ -3838,21 +3839,28 @@ body.canvas-resizing {
   pointer-events: none;
   user-select: none;
   paint-order: stroke fill;
-  stroke: color-mix(in srgb, var(--paper) 92%, transparent);
-  stroke-width: 2.5px;
+  stroke: color-mix(in srgb, var(--surface-panel) 94%, var(--paper)) !important;
+  stroke-width: 3px !important;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--surface-panel) 44%, transparent));
 }
 
-.connection-direction-cues-hovered {
-  fill: color-mix(in srgb, var(--accent) 86%, var(--ink));
+.graph-connections-labels .connection-direction-cues textPath {
+  fill: inherit !important;
+  stroke: inherit !important;
+  stroke-width: inherit !important;
 }
 
-.connection-direction-cues-selected {
-  fill: color-mix(in srgb, var(--accent) 92%, white);
-  stroke-width: 1.8px;
+.graph-connections-labels .connection-direction-cues-hovered {
+  fill: color-mix(in srgb, var(--accent) 86%, var(--ink)) !important;
 }
 
-.connection-direction-cues-trace {
-  fill: color-mix(in srgb, var(--connection-trace) 88%, var(--ink));
+.graph-connections-labels .connection-direction-cues-selected {
+  fill: color-mix(in srgb, var(--accent) 92%, white) !important;
+  stroke-width: 2.2px !important;
+}
+
+.graph-connections-labels .connection-direction-cues-trace {
+  fill: color-mix(in srgb, var(--connection-trace) 68%, white) !important;
 }
 
 .connection-bend-handle {

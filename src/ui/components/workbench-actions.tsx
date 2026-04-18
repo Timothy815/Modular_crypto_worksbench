@@ -36,7 +36,6 @@ interface WorkbenchActionsProps {
   selectedConnectionLanePreference: 'negative' | 'positive' | null;
   selectedConnectionColorOverride: WorkbenchConnectionColorOverride | null;
   furnitureVisible: boolean;
-  showTutorialToggle: boolean;
   tutorialNotesVisible: boolean;
   onAddAnnotation: () => void;
   onAddStageLabel: () => void;
@@ -621,7 +620,6 @@ export function WorkbenchActions({
   selectedConnectionLanePreference,
   selectedConnectionColorOverride,
   furnitureVisible,
-  showTutorialToggle,
   tutorialNotesVisible,
   onAddAnnotation,
   onAddStageLabel,
@@ -686,7 +684,7 @@ export function WorkbenchActions({
   const canDistributeSelection = selectedModuleIds.length >= 3;
   const showSelectionToolbar = canAlignSelection;
   const showWireToolbar = canDeleteWire;
-  const showViewMenu = showTutorialToggle;
+  const showViewMenu = Boolean(onToggleTutorialNotes);
   const currentDomainLabel =
     selectedConnectionDomainTone === 'bits'
       ? 'Domain Bits'
