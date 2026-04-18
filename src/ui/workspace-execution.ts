@@ -27,17 +27,6 @@ export interface WorkspaceExecutionResolution {
   primaryOutputModuleId: string | null;
 }
 
-function hasSinkExecution(execution: ExecutionResult | null, sinkModuleId: string) {
-  if (!execution) {
-    return false;
-  }
-
-  return (
-    execution.trace.some((entry) => entry.moduleId === sinkModuleId) ||
-    execution.outputsByModuleId[sinkModuleId] !== undefined
-  );
-}
-
 function buildReverseConnections(project: Project): Map<string, Set<string>> {
   const reverse = new Map<string, Set<string>>();
 
@@ -122,7 +111,7 @@ function mergeExecutionResults(results: ExecutionResult[]): ExecutionResult {
 }
 
 function mergeTickedExecutionResults(results: TickedExecutionResult[]): TickedExecutionResult {
-  const tickLength = results[0]?.ticks.length ?? 0;
+  const tickLength = Math.max(0, ...results.map((result) => result.ticks.length));
   const ticks = Array.from({ length: tickLength }, (_, tickIndex) =>
     mergeExecutionResults(results.map((result) => result.ticks[tickIndex]).filter(Boolean)),
   );
@@ -139,32 +128,44 @@ function getSinkSignal(execution: ExecutionResult, sinkModuleId: string) {
   return execution.outputsByModuleId[sinkModuleId]?.out ?? traceEntry?.inputs.in ?? null;
 }
 
-function getPreferredOutputModuleId(
-  project: Project,
+function getPreferredSinkModuleId(
+  sinkSlices: SinkProjectSlice[],
   preferredModuleIds: string[],
-  execution: ExecutionResult | null,
 ) {
   if (preferredModuleIds.length === 0) {
     return null;
   }
 
-  const sinkSlices = getSinkProjectSlices(project);
-  if (sinkSlices.length === 0) {
-    return null;
-  }
-
   for (const preferredModuleId of preferredModuleIds) {
     const directSink = sinkSlices.find((slice) => slice.sinkModuleId === preferredModuleId);
-    if (directSink && hasSinkExecution(execution, directSink.sinkModuleId)) {
+    if (directSink) {
       return directSink.sinkModuleId;
     }
 
     const matchingSlices = sinkSlices.filter((slice) =>
       slice.project.modules.some((module) => module.id === preferredModuleId),
     );
-    if (matchingSlices.length === 1 && hasSinkExecution(execution, matchingSlices[0].sinkModuleId)) {
+    if (matchingSlices.length === 1) {
       return matchingSlices[0].sinkModuleId;
     }
+  }
+
+  return null;
+}
+
+function getPreferredOutputModuleId(
+  preferredSinkModuleId: string | null,
+  execution: ExecutionResult | null,
+) {
+  if (
+    execution &&
+    preferredSinkModuleId &&
+    (
+      execution.outputsByModuleId[preferredSinkModuleId] !== undefined ||
+      execution.trace.some((entry) => entry.moduleId === preferredSinkModuleId)
+    )
+  ) {
+    return preferredSinkModuleId;
   }
 
   return null;
@@ -173,14 +174,14 @@ function getPreferredOutputModuleId(
 function getPrimaryOutputModuleId(
   project: Project,
   execution: ExecutionResult | null,
-  preferredModuleIds: string[] = [],
+  preferredSinkModuleId: string | null = null,
 ): string | null {
   const sinkModules = project.modules.filter((module) => isOutputSinkDefId(module.defId));
   if (sinkModules.length === 0) {
     return null;
   }
 
-  const preferredOutputModuleId = getPreferredOutputModuleId(project, preferredModuleIds, execution);
+  const preferredOutputModuleId = getPreferredOutputModuleId(preferredSinkModuleId, execution);
   if (preferredOutputModuleId) {
     return preferredOutputModuleId;
   }
@@ -203,6 +204,7 @@ function resolveFullProjectExecution(
   preferredModuleIds: string[],
 ): WorkspaceExecutionResolution {
   const validation = validateProject(project, registry);
+  const preferredSinkModuleId = getPreferredSinkModuleId(getSinkProjectSlices(project), preferredModuleIds);
   if (!validation.ok) {
     return {
       execution: null,
@@ -226,7 +228,7 @@ function resolveFullProjectExecution(
           primaryOutputModuleId: getPrimaryOutputModuleId(
             project,
             tickedExecution.ticks[Math.min(currentTick, tickCount - 1)] ?? null,
-            preferredModuleIds,
+            preferredSinkModuleId,
           ),
         };
       }
@@ -238,7 +240,7 @@ function resolveFullProjectExecution(
       executionError: null,
       tickedExecution: null,
       tickCount: null,
-      primaryOutputModuleId: getPrimaryOutputModuleId(project, execution, preferredModuleIds),
+      primaryOutputModuleId: getPrimaryOutputModuleId(project, execution, preferredSinkModuleId),
     };
   } catch (error) {
     return {
@@ -259,6 +261,7 @@ export function resolveWorkspaceExecution(
   preferredModuleIds: string[] = [],
 ): WorkspaceExecutionResolution {
   const sinkSlices = getSinkProjectSlices(project);
+  const preferredSinkModuleId = getPreferredSinkModuleId(sinkSlices, preferredModuleIds);
 
   if (sinkSlices.length === 0) {
     return resolveFullProjectExecution(project, registry, isTickedMode, currentTick, preferredModuleIds);
@@ -271,14 +274,22 @@ export function resolveWorkspaceExecution(
 
   try {
     if (isTickedMode) {
-      const tickCounts = validSlices
-        .map((slice) => deriveTickCount(slice.project, registry))
-        .filter((count): count is number => count !== null && count > 0);
+      const tickedSlices = validSlices
+        .map((slice) => ({
+          ...slice,
+          tickCount: deriveTickCount(slice.project, registry),
+        }))
+        .filter((slice): slice is SinkProjectSlice & { tickCount: number } => slice.tickCount !== null && slice.tickCount > 0);
 
-      if (tickCounts.length > 0) {
-        const tickCount = Math.min(...tickCounts);
-        const tickedResults = validSlices.map((slice) =>
-          executeTickedProject(slice.project, registry, tickCount),
+      if (tickedSlices.length > 0) {
+        const preferredTickSlice =
+          (preferredSinkModuleId
+            ? tickedSlices.find((slice) => slice.sinkModuleId === preferredSinkModuleId) ?? null
+            : null);
+        const tickCount =
+          preferredTickSlice?.tickCount ?? Math.min(...tickedSlices.map((slice) => slice.tickCount));
+        const tickedResults = tickedSlices.map((slice) =>
+          executeTickedProject(slice.project, registry, slice.tickCount),
         );
         const tickedExecution = mergeTickedExecutionResults(tickedResults);
         const execution = tickedExecution.ticks[Math.min(currentTick, tickCount - 1)] ?? null;
@@ -288,7 +299,7 @@ export function resolveWorkspaceExecution(
           executionError: null,
           tickedExecution,
           tickCount,
-          primaryOutputModuleId: getPrimaryOutputModuleId(project, execution, preferredModuleIds),
+          primaryOutputModuleId: getPrimaryOutputModuleId(project, execution, preferredSinkModuleId),
         };
       }
     }
@@ -299,7 +310,7 @@ export function resolveWorkspaceExecution(
       executionError: null,
       tickedExecution: null,
       tickCount: null,
-      primaryOutputModuleId: getPrimaryOutputModuleId(project, execution, preferredModuleIds),
+      primaryOutputModuleId: getPrimaryOutputModuleId(project, execution, preferredSinkModuleId),
     };
   } catch (error) {
     if (error instanceof ProjectValidationError) {

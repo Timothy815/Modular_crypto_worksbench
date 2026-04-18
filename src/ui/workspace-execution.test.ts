@@ -130,4 +130,33 @@ describe('resolveWorkspaceExecution', () => {
     expect(result.executionError).toBeNull();
     expect(result.primaryOutputModuleId).toBe('left-output');
   });
+
+  it('uses the selected branch tick count when output branches have different lengths', () => {
+    const project: Project = {
+      modules: [
+        { id: 'left-clock', defId: 'Clock', params: { period: 1, offset: 0, length: 2 } },
+        { id: 'left-counter', defId: 'Counter', params: { width: 3, value: 0, step: 1 } },
+        { id: 'left-output', defId: 'BitOutput', params: {} },
+        { id: 'right-clock', defId: 'Clock', params: { period: 1, offset: 0, length: 5 } },
+        { id: 'right-counter', defId: 'Counter', params: { width: 3, value: 0, step: 1 } },
+        { id: 'right-output', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'left-clock', port: 'pulse' }, to: { moduleId: 'left-counter', port: 'clock' } },
+        { from: { moduleId: 'left-counter', port: 'out' }, to: { moduleId: 'left-output', port: 'in' } },
+        { from: { moduleId: 'right-clock', port: 'pulse' }, to: { moduleId: 'right-counter', port: 'clock' } },
+        { from: { moduleId: 'right-counter', port: 'out' }, to: { moduleId: 'right-output', port: 'in' } },
+      ],
+    };
+
+    const defaultResult = resolveWorkspaceExecution(project, registry, true, 0);
+    expect(defaultResult.tickCount).toBe(2);
+
+    const selectedResult = resolveWorkspaceExecution(project, registry, true, 4, ['right-counter']);
+
+    expect(selectedResult.executionError).toBeNull();
+    expect(selectedResult.primaryOutputModuleId).toBe('right-output');
+    expect(selectedResult.tickCount).toBe(5);
+    expect(selectedResult.tickedExecution?.ticks).toHaveLength(5);
+  });
 });
