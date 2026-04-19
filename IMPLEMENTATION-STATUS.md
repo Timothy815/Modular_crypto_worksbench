@@ -43,6 +43,47 @@ Practical restart guidance:
 - before starting a contract, verify in source that it is still actually unshipped
 - every time something lands, update the contract `Status:` line and this file before ending the session
 
+### Unshipped Contracts Shortlist
+
+These are the most credible still-unshipped candidates visible from the current repo state.
+Everything else with a non-`Shipped` status is usually one of:
+- a planning note
+- an audit note
+- a superseded/closed note
+- a long-range architecture note rather than an immediate slice
+
+Current actionable shortlist:
+
+1. `WIRING-CEREMONY-REDUCTION-V1.md`
+- status: `Not yet started`
+- type: real product-facing implementation contract
+- why it matters: still the clearest remaining ceremony-reduction line around fast authoring, quick connection gestures, and lower-friction graph assembly
+
+2. `INSPECTOR-STRUCTURED-EDITOR-EXTRACTION-V1.md`
+- status: `Ready for implementation`
+- type: maintenance / architecture-protection contract
+- why it matters: reduces future drag inside one of the largest UI surfaces without changing product semantics
+
+3. `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
+- status: `Future planning note`
+- type: deferred export architecture note, not an immediate build target
+- why it matters: strategically important later, but should not be mistaken for the next bounded slice
+
+4. `CRYPTANALYSIS-WORKSPACE-V1.md`
+- status: `Active post-v1.3.0 contract`
+- type: older active product line note
+- why it matters: still a real domain line, but not currently as immediate as the bounded usability / ergonomics work unless priorities explicitly shift back toward analysis
+
+5. `EXPERIENTIAL-NORTH-STAR-V1.md`, `V2.1-AUTHORING-POWER-PLAN.md`, `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md`
+- status: active notes / roadmap notes
+- type: decision context only
+- why they matter: these should guide prioritization, not be treated as implementation targets by themselves
+
+Recommended default interpretation for a fresh agent:
+- if the goal is a concrete next slice, start by evaluating `WIRING-CEREMONY-REDUCTION-V1.md`
+- if the goal is maintenance / future speed, evaluate `INSPECTOR-STRUCTURED-EDITOR-EXTRACTION-V1.md`
+- do not treat planning notes as if they were ready-to-code feature contracts
+
 The latest shipped release checkpoint is `v2.1.0`.
 The previous major boundary was `v2.0.0`.
 
