@@ -33,11 +33,17 @@ Current `main` now also includes later post-`v2.1.0` follow-ons:
 - `CLOCKED-ITERATOR-V1.md`
 - `CANONICAL-CHAIN-INSERTION-V1.md`
 - `REFERENCE-AWARE-CHAIN-TEACHING-V1.md`
+- `STRICT-LENGTH-POLICY-TEACHING-V1.md`
 
 Reference-aware chain teaching is now also shipped on `main`:
 - a bounded `Visible Repeated-Key Repair` seeded demo now shows the full explicit repaired graph on canvas
 - a matching starter tutorial now walks through message reference, repeated key expansion, ASCII-to-bit bridging, and collected hex output
 - this slice stays intentionally compact and teaches the Stage 3 repair result directly without adding another authoring surface
+
+Strict length policy teaching is now also shipped on `main`:
+- a bounded `Visible Strict-Length Gate` seeded demo now shows a successful strict path beside an explicit repeated-key repair alternative
+- a matching starter tutorial now explains that `RequireSymbolLengthMatch` is a graph policy gate, not hidden XOR behavior
+- this slice keeps the seeded workspace executable while still making the difference between `require` and `repair` legible on canvas
 
 Canonical chain insertion is now also shipped on `main`:
 - pending-connection quick add can insert bounded named bridge / collector chains in one atomic action

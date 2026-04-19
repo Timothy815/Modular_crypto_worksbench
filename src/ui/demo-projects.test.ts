@@ -29,4 +29,14 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('AsciiSequenceToTicked');
     expect(demo?.pipeline).toContain('TickedBitsToSequence');
   });
+
+  it('includes the visible strict-length gate demo as a ticked workflow', () => {
+    const demo = demoProjects.find((project) => project.id === 'visible-strict-length-gate');
+
+    expect(demo?.name).toBe('Visible Strict-Length Gate');
+    expect(demo?.defaultTickedMode).toBe(true);
+    expect(demo?.pipeline).toContain('RequireSymbolLengthMatch');
+    expect(demo?.pipeline).toContain('RepeatSymbolToMatch');
+    expect(demo?.pipeline).toContain('TickedBitsToSequence');
+  });
 });
