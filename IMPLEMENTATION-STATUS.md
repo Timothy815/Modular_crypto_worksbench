@@ -39,6 +39,7 @@ Current `main` now also includes later post-`v2.1.0` follow-ons:
 - `BRIDGE-FAMILY-COMPARISON-TEACHING-V1.md`
 - `OPERATOR-FAMILY-COMPARISON-TEACHING-V1.md`
 - `STATEFUL-FAMILY-COMPARISON-TEACHING-V1.md`
+- `STEPPED-MECHANISM-COMPARISON-TEACHING-V1.md`
 
 Reference-aware chain teaching is now also shipped on `main`:
 - a bounded `Visible Repeated-Key Repair` seeded demo now shows the full explicit repaired graph on canvas
@@ -74,6 +75,11 @@ Stateful family comparison teaching is now also shipped on `main`:
 - a bounded `Visible Stateful Family` seeded demo now fans one shared clock into pulse emission, counting, evolving keystream state, and clocked structural traversal branches
 - a matching starter tutorial now explains the difference between a time source, a counted time word, a state register stream, and one-step-per-pulse structural traversal
 - this slice gives users a compact stateful grammar before they step into more elaborate conditional-clocking and iterator machines
+
+Stepped mechanism comparison teaching is now also shipped on `main`:
+- a bounded `Visible Stepped Mechanisms` seeded demo now places one stepped rotor branch beside one clocked iterator branch under the same shared pulse source
+- a matching starter tutorial now explains the difference between stateful substitution and one-step-per-pulse structural traversal
+- this slice turns the broader stateful-family grammar into one smaller applied machine comparison without reopening the full rotor-realism line
 
 Canonical chain insertion is now also shipped on `main`:
 - pending-connection quick add can insert bounded named bridge / collector chains in one atomic action

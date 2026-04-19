@@ -91,4 +91,15 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('LFSR');
     expect(demo?.pipeline).toContain('ClockedByteRoundIterator');
   });
+
+  it('includes the visible stepped mechanisms demo as an applied comparison workspace', () => {
+    const demo = demoProjects.find((project) => project.id === 'visible-stepped-mechanisms');
+
+    expect(demo?.name).toBe('Visible Stepped Mechanisms');
+    expect(demo?.defaultTickedMode).toBe(true);
+    expect(demo?.pipeline).toContain('Rotor');
+    expect(demo?.pipeline).toContain('ClockedByteRoundIterator');
+    expect(demo?.pipeline).toContain('TextInput');
+    expect(demo?.pipeline).toContain('IV');
+  });
 });

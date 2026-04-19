@@ -546,6 +546,60 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'visible-stepped-mechanisms',
+    name: 'Visible Stepped Mechanisms',
+    group: 'Conditional Clocking',
+    stage: 'modern-bit-machines',
+    order: 185,
+    recommendedAfter: ['visible-stateful-family'],
+    summary: 'One shared clock drives a stepped rotor branch and a clocked iterator branch so users can compare stateful substitution against pulse-driven structural traversal.',
+    pipeline:
+      'Clock + TextInput -> Rotor -> TextOutput, and Clock + IV -> ClockedByteRoundIterator -> BitOutput',
+    defaultTickedMode: true,
+    project: {
+      modules: [
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 4 } },
+
+        { id: 'text', defId: 'TextInput', params: { value: 'AAAA' } },
+        {
+          id: 'rotor',
+          defId: 'Rotor',
+          params: {
+            wiring: 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'.split(''),
+            position: 0,
+            ringOffset: 0,
+            notches: 'Q',
+          },
+        },
+        { id: 'rotor-out', defId: 'TextOutput', params: {} },
+
+        { id: 'seed', defId: 'IV', params: { width: 8, value: 'a6' } },
+        { id: 'iterator', defId: 'ClockedByteRoundIterator', params: {} },
+        { id: 'iterator-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'rotor', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'rotor', port: 'clock' } },
+        { from: { moduleId: 'rotor', port: 'out' }, to: { moduleId: 'rotor-out', port: 'in' } },
+
+        { from: { moduleId: 'seed', port: 'out' }, to: { moduleId: 'iterator', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'iterator', port: 'clock' } },
+        { from: { moduleId: 'iterator', port: 'out' }, to: { moduleId: 'iterator-out', port: 'in' } },
+      ],
+    },
+    layout: {
+      clock: { x: 56, y: 56 },
+
+      text: { x: 56, y: 204 },
+      rotor: { x: 340, y: 204 },
+      'rotor-out': { x: 624, y: 204 },
+
+      seed: { x: 936, y: 204 },
+      iterator: { x: 1220, y: 204 },
+      'iterator-out': { x: 1504, y: 204 },
+    },
+  },
+  {
     id: 'toy-rsa',
     name: 'Toy RSA',
     group: 'Number Theory',
