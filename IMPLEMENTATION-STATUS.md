@@ -35,6 +35,7 @@ Current `main` now also includes later post-`v2.1.0` follow-ons:
 - `REFERENCE-AWARE-CHAIN-TEACHING-V1.md`
 - `STRICT-LENGTH-POLICY-TEACHING-V1.md`
 - `HEX-BLOCK-PATH-TEACHING-V1.md`
+- `MISMATCH-POLICY-COMPARISON-TEACHING-V1.md`
 
 Reference-aware chain teaching is now also shipped on `main`:
 - a bounded `Visible Repeated-Key Repair` seeded demo now shows the full explicit repaired graph on canvas
@@ -50,6 +51,11 @@ Hex block path teaching is now also shipped on `main`:
 - a bounded `Visible Hex Block Paths` seeded demo now shows both the direct equal-width block XOR path and an explicit truncate-plus-pad normalization sibling
 - a matching starter tutorial now explains where hex authoring ends, where byte-word ticking begins, and why block-width policy still belongs in visible mismatch helpers
 - this slice keeps both branches executable and makes the clean-path versus normalized-path contrast readable on one canvas
+
+Mismatch policy comparison teaching is now also shipped on `main`:
+- a bounded `Visible Mismatch Policy Family` seeded demo now places `Require`, `Repeat`, `Truncate`, and `Pad` side by side against one shared reference sequence
+- a matching starter tutorial now frames the mismatch-helper family as a decision grammar: assert, cycle, clip, or fill
+- this slice stays deliberately in the symbol domain so the policy differences remain readable without bridge noise
 
 Canonical chain insertion is now also shipped on `main`:
 - pending-connection quick add can insert bounded named bridge / collector chains in one atomic action

@@ -49,4 +49,14 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('TruncateBitsToMatch');
     expect(demo?.pipeline).toContain('PadBitsToMatch');
   });
+
+  it('includes the visible mismatch policy family demo as a comparison workspace', () => {
+    const demo = demoProjects.find((project) => project.id === 'visible-mismatch-policy-family');
+
+    expect(demo?.name).toBe('Visible Mismatch Policy Family');
+    expect(demo?.pipeline).toContain('RequireSymbolLengthMatch');
+    expect(demo?.pipeline).toContain('RepeatSymbolToMatch');
+    expect(demo?.pipeline).toContain('TruncateSymbolToMatch');
+    expect(demo?.pipeline).toContain('PadSymbolToMatch');
+  });
 });
