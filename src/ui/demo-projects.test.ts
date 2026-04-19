@@ -39,4 +39,14 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('RepeatSymbolToMatch');
     expect(demo?.pipeline).toContain('TickedBitsToSequence');
   });
+
+  it('includes the visible hex block paths demo as a ticked workflow', () => {
+    const demo = demoProjects.find((project) => project.id === 'visible-hex-block-paths');
+
+    expect(demo?.name).toBe('Visible Hex Block Paths');
+    expect(demo?.defaultTickedMode).toBe(true);
+    expect(demo?.pipeline).toContain('BitsSequenceToTicked');
+    expect(demo?.pipeline).toContain('TruncateBitsToMatch');
+    expect(demo?.pipeline).toContain('PadBitsToMatch');
+  });
 });

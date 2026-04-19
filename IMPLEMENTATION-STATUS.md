@@ -34,6 +34,7 @@ Current `main` now also includes later post-`v2.1.0` follow-ons:
 - `CANONICAL-CHAIN-INSERTION-V1.md`
 - `REFERENCE-AWARE-CHAIN-TEACHING-V1.md`
 - `STRICT-LENGTH-POLICY-TEACHING-V1.md`
+- `HEX-BLOCK-PATH-TEACHING-V1.md`
 
 Reference-aware chain teaching is now also shipped on `main`:
 - a bounded `Visible Repeated-Key Repair` seeded demo now shows the full explicit repaired graph on canvas
@@ -44,6 +45,11 @@ Strict length policy teaching is now also shipped on `main`:
 - a bounded `Visible Strict-Length Gate` seeded demo now shows a successful strict path beside an explicit repeated-key repair alternative
 - a matching starter tutorial now explains that `RequireSymbolLengthMatch` is a graph policy gate, not hidden XOR behavior
 - this slice keeps the seeded workspace executable while still making the difference between `require` and `repair` legible on canvas
+
+Hex block path teaching is now also shipped on `main`:
+- a bounded `Visible Hex Block Paths` seeded demo now shows both the direct equal-width block XOR path and an explicit truncate-plus-pad normalization sibling
+- a matching starter tutorial now explains where hex authoring ends, where byte-word ticking begins, and why block-width policy still belongs in visible mismatch helpers
+- this slice keeps both branches executable and makes the clean-path versus normalized-path contrast readable on one canvas
 
 Canonical chain insertion is now also shipped on `main`:
 - pending-connection quick add can insert bounded named bridge / collector chains in one atomic action
