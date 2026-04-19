@@ -36,6 +36,7 @@ Current `main` now also includes later post-`v2.1.0` follow-ons:
 - `STRICT-LENGTH-POLICY-TEACHING-V1.md`
 - `HEX-BLOCK-PATH-TEACHING-V1.md`
 - `MISMATCH-POLICY-COMPARISON-TEACHING-V1.md`
+- `BRIDGE-FAMILY-COMPARISON-TEACHING-V1.md`
 
 Reference-aware chain teaching is now also shipped on `main`:
 - a bounded `Visible Repeated-Key Repair` seeded demo now shows the full explicit repaired graph on canvas
@@ -56,6 +57,11 @@ Mismatch policy comparison teaching is now also shipped on `main`:
 - a bounded `Visible Mismatch Policy Family` seeded demo now places `Require`, `Repeat`, `Truncate`, and `Pad` side by side against one shared reference sequence
 - a matching starter tutorial now frames the mismatch-helper family as a decision grammar: assert, cycle, clip, or fill
 - this slice stays deliberately in the symbol domain so the policy differences remain readable without bridge noise
+
+Bridge family comparison teaching is now also shipped on `main`:
+- a bounded `Visible Bridge Family` seeded demo now places whole-buffer ASCII bridging, ASCII ticked-byte bridging, and hex ticked-byte bridging on one canvas
+- a matching starter tutorial now explains where whole-sequence bridging stops, where ticking begins, and why collected return is the honest counterpart to ticked emission
+- this slice makes the common representation crossings read as one bridge grammar rather than as isolated examples
 
 Canonical chain insertion is now also shipped on `main`:
 - pending-connection quick add can insert bounded named bridge / collector chains in one atomic action

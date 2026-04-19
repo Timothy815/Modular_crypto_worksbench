@@ -59,4 +59,15 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('TruncateSymbolToMatch');
     expect(demo?.pipeline).toContain('PadSymbolToMatch');
   });
+
+  it('includes the visible bridge family demo as a comparison workspace', () => {
+    const demo = demoProjects.find((project) => project.id === 'visible-bridge-family');
+
+    expect(demo?.name).toBe('Visible Bridge Family');
+    expect(demo?.defaultTickedMode).toBe(true);
+    expect(demo?.pipeline).toContain('AsciiSequenceToBits');
+    expect(demo?.pipeline).toContain('AsciiSequenceToTicked');
+    expect(demo?.pipeline).toContain('BitsSequenceToTicked');
+    expect(demo?.pipeline).toContain('TickedBitsToSequence');
+  });
 });

@@ -338,6 +338,86 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'visible-bridge-family',
+    name: 'Visible Bridge Family',
+    group: 'Sequences & Streams',
+    stage: 'modern-bit-machines',
+    order: 170,
+    recommendedAfter: ['visible-mismatch-policy-family'],
+    summary: 'One canvas compares whole-buffer ASCII bridging, ASCII ticked-byte bridging, and hex ticked-byte bridging so the common representation crossings read as one family.',
+    pipeline:
+      'AsciiSequenceInput -> AsciiSequenceToBits -> BitsToHex -> HexOutput, plus AsciiSequenceInput -> AsciiSequenceToTicked -> AsciiCharToBits -> TickedBitsToSequence -> BitsToAscii -> TextOutput, plus HexSequenceInput -> BitsSequenceToTicked(wordWidth=8) -> TickedBitsToSequence -> BitsToAscii -> TextOutput',
+    defaultTickedMode: true,
+    project: {
+      modules: [
+        { id: 'ascii-whole', defId: 'AsciiSequenceInput', params: { value: 'OK' } },
+        { id: 'ascii-whole-bits', defId: 'AsciiSequenceToBits', params: {} },
+        { id: 'ascii-whole-hex', defId: 'BitsToHex', params: {} },
+        { id: 'ascii-whole-out', defId: 'HexOutput', params: {} },
+
+        { id: 'ascii-ticked', defId: 'AsciiSequenceInput', params: { value: 'GO' } },
+        { id: 'ascii-tick-bridge', defId: 'AsciiSequenceToTicked', params: { index: 0, wrap: false } },
+        { id: 'ascii-char-bits', defId: 'AsciiCharToBits', params: {} },
+        { id: 'ascii-collect', defId: 'TickedBitsToSequence', params: { collected: [], count: 0 } },
+        { id: 'ascii-return', defId: 'BitsToAscii', params: {} },
+        { id: 'ascii-return-out', defId: 'TextOutput', params: {} },
+
+        { id: 'hex-sequence', defId: 'HexSequenceInput', params: { value: '4849' } },
+        {
+          id: 'hex-tick-bridge',
+          defId: 'BitsSequenceToTicked',
+          params: { index: 0, wordWidth: 8, wrap: false, remainderMode: 'error' },
+        },
+        { id: 'hex-collect', defId: 'TickedBitsToSequence', params: { collected: [], count: 0 } },
+        { id: 'hex-return', defId: 'BitsToAscii', params: {} },
+        { id: 'hex-return-out', defId: 'TextOutput', params: {} },
+
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 2 } },
+      ],
+      connections: [
+        { from: { moduleId: 'ascii-whole', port: 'out' }, to: { moduleId: 'ascii-whole-bits', port: 'in' } },
+        { from: { moduleId: 'ascii-whole-bits', port: 'out' }, to: { moduleId: 'ascii-whole-hex', port: 'in' } },
+        { from: { moduleId: 'ascii-whole-hex', port: 'out' }, to: { moduleId: 'ascii-whole-out', port: 'in' } },
+
+        { from: { moduleId: 'ascii-ticked', port: 'out' }, to: { moduleId: 'ascii-tick-bridge', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'ascii-tick-bridge', port: 'clock' } },
+        { from: { moduleId: 'ascii-tick-bridge', port: 'out' }, to: { moduleId: 'ascii-char-bits', port: 'in' } },
+        { from: { moduleId: 'ascii-char-bits', port: 'out' }, to: { moduleId: 'ascii-collect', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'ascii-collect', port: 'clock' } },
+        { from: { moduleId: 'ascii-collect', port: 'out' }, to: { moduleId: 'ascii-return', port: 'in' } },
+        { from: { moduleId: 'ascii-return', port: 'out' }, to: { moduleId: 'ascii-return-out', port: 'in' } },
+
+        { from: { moduleId: 'hex-sequence', port: 'out' }, to: { moduleId: 'hex-tick-bridge', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'hex-tick-bridge', port: 'clock' } },
+        { from: { moduleId: 'hex-tick-bridge', port: 'out' }, to: { moduleId: 'hex-collect', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'hex-collect', port: 'clock' } },
+        { from: { moduleId: 'hex-collect', port: 'out' }, to: { moduleId: 'hex-return', port: 'in' } },
+        { from: { moduleId: 'hex-return', port: 'out' }, to: { moduleId: 'hex-return-out', port: 'in' } },
+      ],
+    },
+    layout: {
+      'ascii-whole': { x: 52, y: 64 },
+      'ascii-whole-bits': { x: 340, y: 64 },
+      'ascii-whole-hex': { x: 636, y: 64 },
+      'ascii-whole-out': { x: 876, y: 64 },
+
+      'ascii-ticked': { x: 52, y: 300 },
+      'ascii-tick-bridge': { x: 340, y: 300 },
+      'ascii-char-bits': { x: 636, y: 300 },
+      'ascii-collect': { x: 928, y: 300 },
+      'ascii-return': { x: 1216, y: 300 },
+      'ascii-return-out': { x: 1456, y: 300 },
+
+      'hex-sequence': { x: 52, y: 540 },
+      'hex-tick-bridge': { x: 340, y: 540 },
+      'hex-collect': { x: 636, y: 540 },
+      'hex-return': { x: 928, y: 540 },
+      'hex-return-out': { x: 1168, y: 540 },
+
+      clock: { x: 340, y: 708 },
+    },
+  },
+  {
     id: 'toy-rsa',
     name: 'Toy RSA',
     group: 'Number Theory',
