@@ -767,8 +767,16 @@ function ModuleLibraryCard({
                 type="button"
                 className="primitive-action-button"
                 onClick={() => onOpenPrimitiveMicroDemo(def.id)}
-                title={`Try ${def.name} in a minimal example`}
-                aria-label={`Try ${def.name} in a minimal example`}
+                title={
+                  primitiveMicroDemo.defaultTickedMode
+                    ? `Try ${def.name} in a minimal example (opens in ticked mode)`
+                    : `Try ${def.name} in a minimal example`
+                }
+                aria-label={
+                  primitiveMicroDemo.defaultTickedMode
+                    ? `Try ${def.name} in a minimal example that opens in ticked mode`
+                    : `Try ${def.name} in a minimal example`
+                }
               >
                 ▶
               </button>
@@ -990,6 +998,7 @@ function ModuleLibraryCard({
           {primitiveMicroDemo ? (
             <p className="comparison-copy">
               <strong>Try Demo:</strong> Loads a tiny editable example focused on this primitive.
+              {primitiveMicroDemo.defaultTickedMode ? ' Opens in ticked mode.' : ''}
             </p>
           ) : null}
           <p className="primitive-help-ports">

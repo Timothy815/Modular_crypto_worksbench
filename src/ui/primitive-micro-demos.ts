@@ -583,8 +583,9 @@ const ROTOR_MICRO_DEMO: PrimitiveMicroDemo = {
 const ROTOR_REVERSE_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'RotorReverse',
   name: 'Rotor Reverse Micro Demo',
-  summary: 'Minimal visible return path: a letter passes through a rotor, reflects, then comes back through RotorReverse.',
-  pipeline: 'TextInput -> Rotor -> Reflector -> RotorReverse -> TextOutput',
+  summary: 'Minimal visible stepped return path: a repeated letter passes through a linked forward rotor, reflects, then comes back through RotorReverse while the forward rotor position advances per tick.',
+  pipeline: 'TextInput + Clock -> Rotor -> Reflector -> RotorReverse -> TextOutput',
+  defaultTickedMode: true,
   document: {
     version: 1,
     project: {
@@ -600,7 +601,8 @@ const ROTOR_REVERSE_MICRO_DEMO: PrimitiveMicroDemo = {
             notches: '',
           },
         },
-        { id: 'text', defId: 'TextInput', params: { value: 'A' } },
+        { id: 'text', defId: 'TextInput', params: { value: 'AAAA' } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 4 } },
         {
           id: 'rotor-forward',
           defId: 'Rotor',
@@ -620,6 +622,7 @@ const ROTOR_REVERSE_MICRO_DEMO: PrimitiveMicroDemo = {
       ],
       connections: [
         { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'rotor-forward', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'rotor-forward', port: 'clock' } },
         { from: { moduleId: 'rotor-forward', port: 'out' }, to: { moduleId: 'reflector', port: 'in' } },
         { from: { moduleId: 'reflector', port: 'out' }, to: { moduleId: 'rotor-reverse', port: 'in' } },
         { from: { moduleId: 'rotor-reverse', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
@@ -627,11 +630,12 @@ const ROTOR_REVERSE_MICRO_DEMO: PrimitiveMicroDemo = {
     },
     ui: {
       layout: {
-        'rotor-reverse': { x: 812, y: 176 },
-        text: { x: 48, y: 176 },
-        'rotor-forward': { x: 300, y: 176 },
-        reflector: { x: 556, y: 176 },
-        out: { x: 1068, y: 176 },
+        clock: { x: 48, y: 64 },
+        text: { x: 48, y: 292 },
+        'rotor-forward': { x: 316, y: 176 },
+        reflector: { x: 588, y: 176 },
+        'rotor-reverse': { x: 860, y: 176 },
+        out: { x: 1132, y: 176 },
       },
       annotations: [],
     },

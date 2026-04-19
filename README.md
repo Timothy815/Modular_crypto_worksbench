@@ -378,6 +378,7 @@ The current primitive-legibility expansion after that is:
 - ticked-mode defaults only for the timing/state subset
 - the same palette-local `Try Demo` flow introduced in V1
 - the bounded rotor follow-on now also upgrades the `Rotor` micro demo into a ticked stepping example so live position matters immediately on open
+- the bounded reverse-path follow-on now also upgrades the `RotorReverse` micro demo into a ticked linked-state example and labels ticked-opening primitive demos more clearly in the palette
 
 The current workspace-legibility follow-on after that is:
 - direct single-wire selection in the workspace

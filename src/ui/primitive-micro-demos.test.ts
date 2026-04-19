@@ -188,6 +188,7 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('LFSR')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('MultiRouter')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('Rotor')?.defaultTickedMode).toBe(true);
+    expect(getPrimitiveMicroDemo('RotorReverse')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('SymbolSequenceToTicked')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('AsciiSequenceToTicked')?.defaultTickedMode).toBe(true);
     expect(getPrimitiveMicroDemo('TickedSymbolsToSequence')?.defaultTickedMode).toBe(true);
@@ -197,7 +198,6 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('BitSplit')?.defaultTickedMode).toBeUndefined();
     expect(getPrimitiveMicroDemo('BitPad')?.defaultTickedMode).toBeUndefined();
     expect(getPrimitiveMicroDemo('BitJoin')?.defaultTickedMode).toBeUndefined();
-    expect(getPrimitiveMicroDemo('RotorReverse')?.defaultTickedMode).toBeUndefined();
   });
 
   it('keeps the rotor micro demo focused on one stepped forward traversal path', () => {
@@ -206,6 +206,18 @@ describe('primitive micro demos', () => {
       'Rotor',
       'TextInput',
       'Clock',
+      'TextOutput',
+    ]);
+  });
+
+  it('keeps the rotor reverse micro demo focused on one stepped linked return path', () => {
+    const demo = getPrimitiveMicroDemo('RotorReverse');
+    expect(demo?.document.project.modules.map((module) => module.defId)).toEqual([
+      'RotorReverse',
+      'TextInput',
+      'Clock',
+      'Rotor',
+      'Reflector',
       'TextOutput',
     ]);
   });
@@ -510,6 +522,7 @@ describe('primitive micro demos', () => {
     expect(rotorReverse?.document.project.modules.map((module) => module.defId)).toEqual([
       'RotorReverse',
       'TextInput',
+      'Clock',
       'Rotor',
       'Reflector',
       'TextOutput',
