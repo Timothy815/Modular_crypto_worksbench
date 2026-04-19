@@ -808,6 +808,7 @@ The current primitive-legibility expansion after that is:
 - timing, state, and framing micro demos for `Clock`, `Counter`, `BitSplit`, `BitPad`, `BitJoin`, and `LFSR`
 - ticked-mode defaults only for the timing/state subset
 - the same palette-local `Try Demo` flow introduced in V1
+- the bounded rotor follow-on now also upgrades the `Rotor` micro demo into a ticked stepping example so live position matters immediately on open
 
 The current workspace-legibility follow-on after that is:
 - direct single-wire selection in the workspace

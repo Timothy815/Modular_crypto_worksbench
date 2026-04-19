@@ -541,8 +541,9 @@ const MULTI_ROUTER_MICRO_DEMO: PrimitiveMicroDemo = {
 const ROTOR_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'Rotor',
   name: 'Rotor Micro Demo',
-  summary: 'Minimal visible forward traversal: one letter enters a rotor and exits through its active wiring.',
-  pipeline: 'TextInput -> Rotor -> TextOutput',
+  summary: 'Minimal visible stepped traversal: the same repeated letter enters a rotor while a clock advances its position one step per tick.',
+  pipeline: 'TextInput + Clock -> Rotor -> TextOutput',
+  defaultTickedMode: true,
   document: {
     version: 1,
     project: {
@@ -557,19 +558,22 @@ const ROTOR_MICRO_DEMO: PrimitiveMicroDemo = {
             notches: '',
           },
         },
-        { id: 'text', defId: 'TextInput', params: { value: 'A' } },
+        { id: 'text', defId: 'TextInput', params: { value: 'AAAA' } },
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 4 } },
         { id: 'out', defId: 'TextOutput', params: {} },
       ],
       connections: [
         { from: { moduleId: 'text', port: 'out' }, to: { moduleId: 'rotor', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'rotor', port: 'clock' } },
         { from: { moduleId: 'rotor', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
       ],
     },
     ui: {
       layout: {
-        rotor: { x: 356, y: 176 },
-        text: { x: 76, y: 176 },
-        out: { x: 620, y: 176 },
+        rotor: { x: 380, y: 188 },
+        text: { x: 76, y: 272 },
+        clock: { x: 76, y: 84 },
+        out: { x: 680, y: 188 },
       },
       annotations: [],
     },
