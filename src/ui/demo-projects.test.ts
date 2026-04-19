@@ -102,4 +102,15 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('TextInput');
     expect(demo?.pipeline).toContain('IV');
   });
+
+  it('includes the visible control family demo as a live comparison workspace', () => {
+    const demo = demoProjects.find((project) => project.id === 'visible-control-family');
+
+    expect(demo?.name).toBe('Visible Control Family');
+    expect(demo?.defaultTickedMode).toBe(true);
+    expect(demo?.pipeline).toContain('Gate');
+    expect(demo?.pipeline).toContain('Mux');
+    expect(demo?.pipeline).toContain('MultiRouter');
+    expect(demo?.pipeline).toContain('BitsSequenceToTicked');
+  });
 });

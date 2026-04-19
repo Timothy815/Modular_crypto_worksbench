@@ -40,6 +40,7 @@ Current `main` now also includes later post-`v2.1.0` follow-ons:
 - `OPERATOR-FAMILY-COMPARISON-TEACHING-V1.md`
 - `STATEFUL-FAMILY-COMPARISON-TEACHING-V1.md`
 - `STEPPED-MECHANISM-COMPARISON-TEACHING-V1.md`
+- `CONTROL-FAMILY-COMPARISON-TEACHING-V1.md`
 
 Reference-aware chain teaching is now also shipped on `main`:
 - a bounded `Visible Repeated-Key Repair` seeded demo now shows the full explicit repaired graph on canvas
@@ -80,6 +81,11 @@ Stepped mechanism comparison teaching is now also shipped on `main`:
 - a bounded `Visible Stepped Mechanisms` seeded demo now places one stepped rotor branch beside one clocked iterator branch under the same shared pulse source
 - a matching starter tutorial now explains the difference between stateful substitution and one-step-per-pulse structural traversal
 - this slice turns the broader stateful-family grammar into one smaller applied machine comparison without reopening the full rotor-realism line
+
+Control family comparison teaching is now also shipped on `main`:
+- a bounded `Visible Control Family` seeded demo now places `Gate`, `Mux`, and `MultiRouter` side by side under one shared clocked control context
+- a matching starter tutorial now explains the difference between blocking a signal, choosing one candidate, and routing one signal into one visible lane
+- this slice gives users a compact live control grammar before they step into larger stream-cipher and conditional-clocking machines
 
 Canonical chain insertion is now also shipped on `main`:
 - pending-connection quick add can insert bounded named bridge / collector chains in one atomic action

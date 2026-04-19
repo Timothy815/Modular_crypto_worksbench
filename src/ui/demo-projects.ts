@@ -600,6 +600,90 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'visible-control-family',
+    name: 'Visible Control Family',
+    group: 'Conditional Clocking',
+    stage: 'modern-bit-machines',
+    order: 190,
+    recommendedAfter: ['visible-stepped-mechanisms'],
+    summary: 'One shared clock drives a gate branch, a mux branch, and a multi-router branch so users can compare blocking, choosing, and routing on one canvas.',
+    pipeline:
+      'Clock + BitSequenceInput -> BitsSequenceToTicked -> Gate / Mux, and Clock -> Counter -> MultiRouter',
+    defaultTickedMode: true,
+    project: {
+      modules: [
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 4 } },
+
+        { id: 'control-seq', defId: 'BitSequenceInput', params: { stream: [1, 0, 1, 1] } },
+        {
+          id: 'control-tick',
+          defId: 'BitsSequenceToTicked',
+          params: { index: 0, wordWidth: 1, wrap: false, remainderMode: 'error' },
+        },
+
+        { id: 'gate-source', defId: 'IV', params: { width: 8, value: 'a6' } },
+        { id: 'gate', defId: 'Gate', params: {} },
+        { id: 'gate-out', defId: 'BitOutput', params: {} },
+
+        { id: 'mux-a', defId: 'ConstantBit', params: { value: 0 } },
+        { id: 'mux-b', defId: 'ConstantBit', params: { value: 1 } },
+        { id: 'mux', defId: 'Mux', params: {} },
+        { id: 'mux-out', defId: 'BitOutput', params: {} },
+
+        { id: 'route-source', defId: 'IV', params: { width: 8, value: '3c' } },
+        { id: 'route-select', defId: 'Counter', params: { width: 2, value: 0, step: 1 } },
+        { id: 'router', defId: 'MultiRouter', params: { routeCount: '4' } },
+        { id: 'route-out-0', defId: 'BitOutput', params: {} },
+        { id: 'route-out-1', defId: 'BitOutput', params: {} },
+        { id: 'route-out-2', defId: 'BitOutput', params: {} },
+        { id: 'route-out-3', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'control-seq', port: 'out' }, to: { moduleId: 'control-tick', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'control-tick', port: 'clock' } },
+
+        { from: { moduleId: 'gate-source', port: 'out' }, to: { moduleId: 'gate', port: 'in' } },
+        { from: { moduleId: 'control-tick', port: 'out' }, to: { moduleId: 'gate', port: 'control' } },
+        { from: { moduleId: 'gate', port: 'out' }, to: { moduleId: 'gate-out', port: 'in' } },
+
+        { from: { moduleId: 'control-tick', port: 'out' }, to: { moduleId: 'mux', port: 'select' } },
+        { from: { moduleId: 'mux-a', port: 'out' }, to: { moduleId: 'mux', port: 'a' } },
+        { from: { moduleId: 'mux-b', port: 'out' }, to: { moduleId: 'mux', port: 'b' } },
+        { from: { moduleId: 'mux', port: 'out' }, to: { moduleId: 'mux-out', port: 'in' } },
+
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'route-select', port: 'clock' } },
+        { from: { moduleId: 'route-source', port: 'out' }, to: { moduleId: 'router', port: 'in' } },
+        { from: { moduleId: 'route-select', port: 'out' }, to: { moduleId: 'router', port: 'select' } },
+        { from: { moduleId: 'router', port: 'out0' }, to: { moduleId: 'route-out-0', port: 'in' } },
+        { from: { moduleId: 'router', port: 'out1' }, to: { moduleId: 'route-out-1', port: 'in' } },
+        { from: { moduleId: 'router', port: 'out2' }, to: { moduleId: 'route-out-2', port: 'in' } },
+        { from: { moduleId: 'router', port: 'out3' }, to: { moduleId: 'route-out-3', port: 'in' } },
+      ],
+    },
+    layout: {
+      clock: { x: 56, y: 52 },
+      'control-seq': { x: 56, y: 196 },
+      'control-tick': { x: 340, y: 196 },
+
+      'gate-source': { x: 624, y: 56 },
+      gate: { x: 900, y: 56 },
+      'gate-out': { x: 1176, y: 56 },
+
+      'mux-a': { x: 624, y: 196 },
+      'mux-b': { x: 624, y: 336 },
+      mux: { x: 900, y: 252 },
+      'mux-out': { x: 1176, y: 252 },
+
+      'route-source': { x: 1460, y: 56 },
+      'route-select': { x: 1460, y: 252 },
+      router: { x: 1740, y: 156 },
+      'route-out-0': { x: 2016, y: 24 },
+      'route-out-1': { x: 2016, y: 120 },
+      'route-out-2': { x: 2016, y: 216 },
+      'route-out-3': { x: 2016, y: 312 },
+    },
+  },
+  {
     id: 'toy-rsa',
     name: 'Toy RSA',
     group: 'Number Theory',
