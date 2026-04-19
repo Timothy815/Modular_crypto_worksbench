@@ -37,6 +37,7 @@ Current `main` now also includes later post-`v2.1.0` follow-ons:
 - `HEX-BLOCK-PATH-TEACHING-V1.md`
 - `MISMATCH-POLICY-COMPARISON-TEACHING-V1.md`
 - `BRIDGE-FAMILY-COMPARISON-TEACHING-V1.md`
+- `OPERATOR-FAMILY-COMPARISON-TEACHING-V1.md`
 
 Reference-aware chain teaching is now also shipped on `main`:
 - a bounded `Visible Repeated-Key Repair` seeded demo now shows the full explicit repaired graph on canvas
@@ -62,6 +63,11 @@ Bridge family comparison teaching is now also shipped on `main`:
 - a bounded `Visible Bridge Family` seeded demo now places whole-buffer ASCII bridging, ASCII ticked-byte bridging, and hex ticked-byte bridging on one canvas
 - a matching starter tutorial now explains where whole-sequence bridging stops, where ticking begins, and why collected return is the honest counterpart to ticked emission
 - this slice makes the common representation crossings read as one bridge grammar rather than as isolated examples
+
+Operator family comparison teaching is now also shipped on `main`:
+- a bounded `Visible Operator Family` seeded demo now fans one shared pair of words into XOR, AND, modular addition, and rotate branches
+- a matching starter tutorial now frames the operator family as distinct choices: reversible mixing, masking, word arithmetic, and structural movement
+- this slice gives users a compact operator grammar before they step into more composed round structures
 
 Canonical chain insertion is now also shipped on `main`:
 - pending-connection quick add can insert bounded named bridge / collector chains in one atomic action

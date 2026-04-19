@@ -418,6 +418,79 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'visible-operator-family',
+    name: 'Visible Operator Family',
+    group: 'Modern Rounds',
+    stage: 'modern-bit-machines',
+    order: 175,
+    recommendedAfter: ['visible-bridge-family'],
+    summary: 'One shared pair of visible input words fans out into XOR, AND, modular addition, and rotate branches so the operator family can be compared directly.',
+    pipeline:
+      'HexSource(left,right) -> XOR / AND / AddMod / BitShifter -> BitsToHex -> HexOutput',
+    project: {
+      modules: [
+        { id: 'left', defId: 'HexSource', params: { value: 'A3' } },
+        { id: 'right', defId: 'HexSource', params: { value: '5C' } },
+
+        { id: 'xor', defId: 'XOR', params: {} },
+        { id: 'xor-hex', defId: 'BitsToHex', params: {} },
+        { id: 'xor-out', defId: 'HexOutput', params: {} },
+
+        { id: 'and', defId: 'AND', params: {} },
+        { id: 'and-hex', defId: 'BitsToHex', params: {} },
+        { id: 'and-out', defId: 'HexOutput', params: {} },
+
+        { id: 'add', defId: 'AddMod', params: {} },
+        { id: 'add-hex', defId: 'BitsToHex', params: {} },
+        { id: 'add-out', defId: 'HexOutput', params: {} },
+
+        { id: 'rotate', defId: 'BitShifter', params: { amount: 2, mode: 'rotate-left' } },
+        { id: 'rotate-hex', defId: 'BitsToHex', params: {} },
+        { id: 'rotate-out', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'left', port: 'out' }, to: { moduleId: 'xor', port: 'a' } },
+        { from: { moduleId: 'right', port: 'out' }, to: { moduleId: 'xor', port: 'b' } },
+        { from: { moduleId: 'xor', port: 'out' }, to: { moduleId: 'xor-hex', port: 'in' } },
+        { from: { moduleId: 'xor-hex', port: 'out' }, to: { moduleId: 'xor-out', port: 'in' } },
+
+        { from: { moduleId: 'left', port: 'out' }, to: { moduleId: 'and', port: 'a' } },
+        { from: { moduleId: 'right', port: 'out' }, to: { moduleId: 'and', port: 'b' } },
+        { from: { moduleId: 'and', port: 'out' }, to: { moduleId: 'and-hex', port: 'in' } },
+        { from: { moduleId: 'and-hex', port: 'out' }, to: { moduleId: 'and-out', port: 'in' } },
+
+        { from: { moduleId: 'left', port: 'out' }, to: { moduleId: 'add', port: 'a' } },
+        { from: { moduleId: 'right', port: 'out' }, to: { moduleId: 'add', port: 'b' } },
+        { from: { moduleId: 'add', port: 'out' }, to: { moduleId: 'add-hex', port: 'in' } },
+        { from: { moduleId: 'add-hex', port: 'out' }, to: { moduleId: 'add-out', port: 'in' } },
+
+        { from: { moduleId: 'left', port: 'out' }, to: { moduleId: 'rotate', port: 'in' } },
+        { from: { moduleId: 'rotate', port: 'out' }, to: { moduleId: 'rotate-hex', port: 'in' } },
+        { from: { moduleId: 'rotate-hex', port: 'out' }, to: { moduleId: 'rotate-out', port: 'in' } },
+      ],
+    },
+    layout: {
+      left: { x: 52, y: 72 },
+      right: { x: 52, y: 248 },
+
+      xor: { x: 328, y: 72 },
+      'xor-hex': { x: 608, y: 72 },
+      'xor-out': { x: 844, y: 72 },
+
+      and: { x: 328, y: 248 },
+      'and-hex': { x: 608, y: 248 },
+      'and-out': { x: 844, y: 248 },
+
+      add: { x: 1104, y: 72 },
+      'add-hex': { x: 1384, y: 72 },
+      'add-out': { x: 1620, y: 72 },
+
+      rotate: { x: 1104, y: 248 },
+      'rotate-hex': { x: 1384, y: 248 },
+      'rotate-out': { x: 1620, y: 248 },
+    },
+  },
+  {
     id: 'toy-rsa',
     name: 'Toy RSA',
     group: 'Number Theory',

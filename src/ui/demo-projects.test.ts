@@ -70,4 +70,14 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('BitsSequenceToTicked');
     expect(demo?.pipeline).toContain('TickedBitsToSequence');
   });
+
+  it('includes the visible operator family demo as a comparison workspace', () => {
+    const demo = demoProjects.find((project) => project.id === 'visible-operator-family');
+
+    expect(demo?.name).toBe('Visible Operator Family');
+    expect(demo?.pipeline).toContain('XOR');
+    expect(demo?.pipeline).toContain('AND');
+    expect(demo?.pipeline).toContain('AddMod');
+    expect(demo?.pipeline).toContain('BitShifter');
+  });
 });
