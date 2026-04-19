@@ -491,6 +491,61 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'visible-stateful-family',
+    name: 'Visible Stateful Family',
+    group: 'Conditional Clocking',
+    stage: 'modern-bit-machines',
+    order: 180,
+    recommendedAfter: ['visible-operator-family'],
+    summary: 'One shared clock fans out into pulse emission, counting, evolving keystream state, and clocked structural traversal so the core stateful family can be compared directly.',
+    pipeline:
+      'Clock -> BitOutput, Clock -> Counter -> BitOutput, Clock -> LFSR -> BitOutput, and Clock + BitSequenceInput -> ClockedByteRoundIterator -> BitOutput',
+    defaultTickedMode: true,
+    project: {
+      modules: [
+        { id: 'clock', defId: 'Clock', params: { period: 1, offset: 0, length: 6 } },
+        { id: 'clock-out', defId: 'BitOutput', params: {} },
+
+        { id: 'counter', defId: 'Counter', params: { width: 5, value: 0, step: 1 } },
+        { id: 'counter-out', defId: 'BitOutput', params: {} },
+
+        { id: 'lfsr', defId: 'LFSR', params: { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 5 } },
+        { id: 'lfsr-out', defId: 'BitOutput', params: {} },
+
+        { id: 'byte-seed', defId: 'BitSequenceInput', params: { stream: [1, 0, 1, 0, 0, 1, 1, 0] } },
+        { id: 'iterator', defId: 'ClockedByteRoundIterator', params: {} },
+        { id: 'iterator-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'clock-out', port: 'in' } },
+
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'counter', port: 'clock' } },
+        { from: { moduleId: 'counter', port: 'out' }, to: { moduleId: 'counter-out', port: 'in' } },
+
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'lfsr', port: 'clock' } },
+        { from: { moduleId: 'lfsr', port: 'out' }, to: { moduleId: 'lfsr-out', port: 'in' } },
+
+        { from: { moduleId: 'byte-seed', port: 'out' }, to: { moduleId: 'iterator', port: 'in' } },
+        { from: { moduleId: 'clock', port: 'pulse' }, to: { moduleId: 'iterator', port: 'clock' } },
+        { from: { moduleId: 'iterator', port: 'out' }, to: { moduleId: 'iterator-out', port: 'in' } },
+      ],
+    },
+    layout: {
+      clock: { x: 52, y: 80 },
+      'clock-out': { x: 348, y: 80 },
+
+      counter: { x: 52, y: 260 },
+      'counter-out': { x: 348, y: 260 },
+
+      lfsr: { x: 708, y: 80 },
+      'lfsr-out': { x: 1004, y: 80 },
+
+      'byte-seed': { x: 708, y: 260 },
+      iterator: { x: 1004, y: 260 },
+      'iterator-out': { x: 1300, y: 260 },
+    },
+  },
+  {
     id: 'toy-rsa',
     name: 'Toy RSA',
     group: 'Number Theory',

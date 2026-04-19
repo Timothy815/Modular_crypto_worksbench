@@ -80,4 +80,15 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('AddMod');
     expect(demo?.pipeline).toContain('BitShifter');
   });
+
+  it('includes the visible stateful family demo as a comparison workspace', () => {
+    const demo = demoProjects.find((project) => project.id === 'visible-stateful-family');
+
+    expect(demo?.name).toBe('Visible Stateful Family');
+    expect(demo?.defaultTickedMode).toBe(true);
+    expect(demo?.pipeline).toContain('Clock');
+    expect(demo?.pipeline).toContain('Counter');
+    expect(demo?.pipeline).toContain('LFSR');
+    expect(demo?.pipeline).toContain('ClockedByteRoundIterator');
+  });
 });
