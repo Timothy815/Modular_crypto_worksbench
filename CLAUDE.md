@@ -253,11 +253,15 @@ src/utils/     — Shared helpers
 
 ## Current Resume Point
 
-- Resume from current `main` at `v2.0.0`, with the next active line being `v2.1` authoring power
-- The first bounded post-`v2.0` contract is `REPEATED-STRUCTURE-AUTHORING-V1.md`
-- The next bounded follow-on after that is `SELECTED-CLUSTER-OPERATIONS-V1.md`
-- The current active safety slice after cluster operations is `WORKSPACE-HISTORY-V1.md`
-- The current checkpointing slice after that is `WORKSPACE-VERSIONING-V1.md`
+- Resume from current `main`, not from the original `v2.0.0` / early-`v2.1` queue.
+- The first major `v2.1` builder-power line is now largely already shipped on `main`.
+- Recent work has been a bounded product-facing teaching / legibility line, including:
+  - reference-aware chain teaching
+  - strict-vs-repair policy teaching
+  - bridge / operator / stateful / control family comparison boards
+  - stepped rotor and stepped reverse-rotor primitive micro-demo follow-ons
+- Before starting any “next slice,” verify in source and in `IMPLEMENTATION-STATUS.md` that the contract is still genuinely unshipped.
+- Treat `IMPLEMENTATION-STATUS.md` as the canonical restart surface, and `V2.1-NEXT-DOCKET.md` as the broader priority note rather than a literal pending-task list.
 - The current workspace-visibility slice after that is `WORKSPACE-VISIBILITY-NAVIGATION-V1.md`
 - The current connection-authoring slice after that is `CONNECTION-AUTHORING-ERGONOMICS-V1.md`
 - The current parameter-authoring slice after that is `PARAMETER-AUTHORING-ERGONOMICS-V1.md`

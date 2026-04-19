@@ -6,6 +6,43 @@ Last updated: April 18, 2026
 
 ## Current State
 
+### State Of The Union
+
+If a new agent session starts from scratch, the shortest accurate read is:
+
+- `main` is stable, deployable, and currently ahead of the original `v2.1.0` checkpoint by a long post-release follow-on run
+- the recent product-facing work has been a bounded teaching / wayfinding line, not new engine semantics
+- the recent slices have concentrated on making MCW's existing vocabulary easier to read on canvas:
+  - reference-aware chain repair
+  - strict-vs-repair policy teaching
+  - block / bridge / operator / stateful / control family comparison boards
+  - stepped rotor and stepped reverse-rotor primitive micro demos
+- the recent engine-adjacent work that matters is already shipped:
+  - authored iterators
+  - clocked iterators
+  - canonical chain insertion
+- the project should now be treated as past the first big `v2.1` builder-power run and into bounded product-facing follow-ons, documentation hygiene, and selective next-slice choices
+
+Recent shipped commits on `main`:
+- `18a3add` — stepped rotor reverse primitive micro demo
+- `ec30b24` — stepped rotor primitive micro demo
+- `b6c64c8` — control family comparison teaching demo
+- `4d664fa` — stepped mechanism comparison teaching demo
+- `6d800b9` — stateful family comparison teaching demo
+- `0e2d34d` — operator family comparison teaching demo
+- `54adec7` — bridge family comparison teaching demo
+- `cbb9d6e` — mismatch policy comparison teaching demo
+- `2960db7` — hex block path teaching demo
+- `bf06df1` — strict length policy teaching demo
+- `0d93ae7` — reference-aware chain teaching demo
+
+Practical restart guidance:
+- read this file first
+- then read `V2.1-NEXT-DOCKET.md` for the still-open sequencing question
+- then read `CLAUDE.md` / `AGENTS.md` for standing local instructions
+- before starting a contract, verify in source that it is still actually unshipped
+- every time something lands, update the contract `Status:` line and this file before ending the session
+
 The latest shipped release checkpoint is `v2.1.0`.
 The previous major boundary was `v2.0.0`.
 
