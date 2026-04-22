@@ -629,8 +629,8 @@ export function InspectorAnalyzeDetails({
             ) : (
               <>
                 <div className="transformation-order">
-                  <span className="meta-label">Chunk Width</span>
-                  <code>{transformationView.chunkWidth} bits</code>
+                  <span className="meta-label">Chunk Shape</span>
+                  <code>{transformationView.inputWidth} → {transformationView.outputWidth} bits</code>
                 </div>
                 {transformationView.chunks.length > 1 ? (
                   <div className="sbox-chunk-selector">
@@ -652,6 +652,11 @@ export function InspectorAnalyzeDetails({
                 ) : null}
                 {activeLookupChunk ? (
                   <div className="sbox-view">
+                    {(() => {
+                      const activeDisplayIndex =
+                        transformationView.displayIndexByInputValue[activeLookupChunk.inputValue] ?? 0;
+                      return (
+                    <>
                     <div
                       className="sbox-table-wrap"
                       style={{ gridTemplateColumns: `56px repeat(${transformationView.gridColumns}, minmax(0, 1fr))` }}
@@ -661,8 +666,7 @@ export function InspectorAnalyzeDetails({
                         <span
                           key={`sbox-col-${columnIndex}`}
                           className={
-                            transformationView.usesHexGrid &&
-                            columnIndex === activeLookupChunk.inputValue % transformationView.gridColumns
+                            columnIndex === activeDisplayIndex % transformationView.gridColumns
                               ? 'sbox-table-header active'
                               : 'sbox-table-header'
                           }
@@ -670,40 +674,40 @@ export function InspectorAnalyzeDetails({
                           {formatSBoxAxisLabel(columnIndex, transformationView.gridColumns)}
                         </span>
                       ))}
-                      {transformationView.table.map((value, index) => (
-                        <Fragment key={`sbox-cell-wrap-${index}`}>
-                          {index % transformationView.gridColumns === 0 ? (
+                      {transformationView.displayOrder.map((tableIndex, displayIndex) => (
+                        <Fragment key={`sbox-cell-wrap-${tableIndex}`}>
+                          {displayIndex % transformationView.gridColumns === 0 ? (
                             <span
                               className={
-                                transformationView.usesHexGrid &&
-                                Math.floor(index / transformationView.gridColumns) ===
-                                  Math.floor(activeLookupChunk.inputValue / transformationView.gridColumns)
+                                Math.floor(displayIndex / transformationView.gridColumns) ===
+                                  Math.floor(activeDisplayIndex / transformationView.gridColumns)
                                   ? 'sbox-table-header sbox-table-row-header active'
                                   : 'sbox-table-header sbox-table-row-header'
                               }
                             >
                               {formatSBoxAxisLabel(
-                                Math.floor(index / transformationView.gridColumns),
+                                Math.floor(displayIndex / transformationView.gridColumns),
                                 transformationView.gridColumns,
                               )}
                             </span>
                           ) : null}
                           <div
-                            key={`sbox-cell-${index}`}
+                            key={`sbox-cell-${tableIndex}`}
                             className={
-                              index === activeLookupChunk.inputValue
+                              tableIndex === activeLookupChunk.inputValue
                                 ? 'sbox-table-cell active'
-                                : transformationView.usesHexGrid &&
-                                    (Math.floor(index / transformationView.gridColumns) ===
-                                      Math.floor(activeLookupChunk.inputValue / transformationView.gridColumns) ||
-                                      index % transformationView.gridColumns ===
-                                        activeLookupChunk.inputValue % transformationView.gridColumns)
+                                : Math.floor(displayIndex / transformationView.gridColumns) ===
+                                      Math.floor(activeDisplayIndex / transformationView.gridColumns) ||
+                                    displayIndex % transformationView.gridColumns ===
+                                      activeDisplayIndex % transformationView.gridColumns
                                   ? 'sbox-table-cell context'
                                   : 'sbox-table-cell'
                             }
-                            title={`table[${index}] = ${value}`}
+                            title={`table[${tableIndex}] = ${transformationView.table[tableIndex]}`}
                           >
-                            <strong className="sbox-table-value">{formatSBoxAxisLabel(value, transformationView.gridColumns)}</strong>
+                            <strong className="sbox-table-value">
+                              {formatSBoxAxisLabel(transformationView.table[tableIndex], transformationView.gridColumns)}
+                            </strong>
                           </div>
                         </Fragment>
                       ))}
@@ -712,15 +716,19 @@ export function InspectorAnalyzeDetails({
                       <span className="meta-label">Active Lookup</span>
                       <strong className="sbox-lookup-index">
                         {transformationView.usesHexGrid
-                          ? `table[0x${formatSBoxHexValue(activeLookupChunk.inputValue, transformationView.chunkWidth)}] = 0x${formatSBoxHexValue(activeLookupChunk.outputValue, transformationView.chunkWidth)}`
+                          ? `table[0x${formatSBoxHexValue(activeLookupChunk.inputValue, transformationView.inputWidth)}] = 0x${formatSBoxHexValue(activeLookupChunk.outputValue, transformationView.outputWidth)}`
                           : `table[${activeLookupChunk.inputValue}] = ${activeLookupChunk.outputValue}`}
                       </strong>
-                      {transformationView.usesHexGrid ? (
+                      {transformationView.inputWidth === 6 && transformationView.outputWidth === 4 ? (
                         <p className="comparison-copy">
-                          Hex <strong>{formatSBoxHexValue(activeLookupChunk.inputValue, transformationView.chunkWidth)}</strong> means row{' '}
-                          <strong>{formatSBoxAxisLabel(Math.floor(activeLookupChunk.inputValue / transformationView.gridColumns), transformationView.gridColumns)}</strong>{' '}
+                          DES-style layout uses the outer two bits for the row and the inner four bits for the column.
+                        </p>
+                      ) : transformationView.usesHexGrid ? (
+                        <p className="comparison-copy">
+                          Hex <strong>{formatSBoxHexValue(activeLookupChunk.inputValue, transformationView.inputWidth)}</strong> means row{' '}
+                          <strong>{formatSBoxAxisLabel(Math.floor(activeDisplayIndex / transformationView.gridColumns), transformationView.gridColumns)}</strong>{' '}
                           and column{' '}
-                          <strong>{formatSBoxAxisLabel(activeLookupChunk.inputValue % transformationView.gridColumns, transformationView.gridColumns)}</strong>.
+                          <strong>{formatSBoxAxisLabel(activeDisplayIndex % transformationView.gridColumns, transformationView.gridColumns)}</strong>.
                         </p>
                       ) : null}
                     </div>
@@ -730,7 +738,7 @@ export function InspectorAnalyzeDetails({
                         <strong className="sbox-bits">{activeLookupChunk.inputBits.join('')}</strong>
                         <span className="sbox-detail-metric">
                           {transformationView.usesHexGrid
-                            ? `hex ${formatSBoxHexValue(activeLookupChunk.inputValue, transformationView.chunkWidth)} · decimal ${activeLookupChunk.inputValue}`
+                            ? `hex ${formatSBoxHexValue(activeLookupChunk.inputValue, transformationView.inputWidth)} · decimal ${activeLookupChunk.inputValue}`
                             : `decimal ${activeLookupChunk.inputValue}`}
                         </span>
                       </div>
@@ -739,11 +747,14 @@ export function InspectorAnalyzeDetails({
                         <strong className="sbox-bits">{activeLookupChunk.outputBits.join('')}</strong>
                         <span className="sbox-detail-metric">
                           {transformationView.usesHexGrid
-                            ? `hex ${formatSBoxHexValue(activeLookupChunk.outputValue, transformationView.chunkWidth)} · decimal ${activeLookupChunk.outputValue}`
+                            ? `hex ${formatSBoxHexValue(activeLookupChunk.outputValue, transformationView.outputWidth)} · decimal ${activeLookupChunk.outputValue}`
                             : `decimal ${activeLookupChunk.outputValue}`}
                         </span>
                       </div>
                     </div>
+                    </>
+                      );
+                    })()}
                     <div className="sbox-chunk-grid">
                       {transformationView.chunks.map((chunk) => (
                         <button

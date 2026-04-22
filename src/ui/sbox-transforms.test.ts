@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildSBoxDisplayOrder,
   countSBoxFixedPoints,
   generateSBoxTable,
+  getSBoxDisplayIndexForInputValue,
   getSBoxGridColumn,
   getSBoxGridColumns,
+  getSBoxGenerationShape,
   getSBoxGridRow,
   invertSBoxTable,
   isSBoxInvolution,
@@ -18,6 +21,7 @@ describe('sbox-transforms', () => {
   it('derives the expected grid widths for teaching tables', () => {
     expect(getSBoxGridColumns(16)).toBe(4);
     expect(getSBoxGridColumns(256)).toBe(16);
+    expect(getSBoxGridColumns({ inputWidth: 6, outputWidth: 4 })).toBe(16);
   });
 
   it('derives row and column from a selected cell index', () => {
@@ -54,47 +58,63 @@ describe('sbox-transforms', () => {
 
   describe('generateSBoxTable', () => {
     it('generates a valid identity table', () => {
-      expect(generateSBoxTable(16, 'identity')).toEqual(
+      expect(generateSBoxTable(getSBoxGenerationShape(4, 4), 'identity')).toEqual(
         Array.from({ length: 16 }, (_, i) => i),
       );
-      expect(generateSBoxTable(256, 'identity')).toEqual(
+      expect(generateSBoxTable(getSBoxGenerationShape(8, 8), 'identity')).toEqual(
         Array.from({ length: 256 }, (_, i) => i),
       );
     });
 
     it('generates a valid reverse table', () => {
-      expect(generateSBoxTable(16, 'reverse')).toEqual(
+      expect(generateSBoxTable(getSBoxGenerationShape(4, 4), 'reverse')).toEqual(
         Array.from({ length: 16 }, (_, i) => 15 - i),
       );
     });
 
     it('generates a valid pair-swap table', () => {
-      const table = generateSBoxTable(16, 'pair-swap');
+      const table = generateSBoxTable(getSBoxGenerationShape(4, 4), 'pair-swap');
       expect(table).toEqual([1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14]);
       expect(new Set(table).size).toBe(16);
     });
 
     it('generates a valid random permutation for 16 entries', () => {
-      const table = generateSBoxTable(16, 'random');
+      const table = generateSBoxTable(getSBoxGenerationShape(4, 4), 'random');
       expect(table).toHaveLength(16);
       expect(new Set(table).size).toBe(16);
       expect(table.every((v) => v >= 0 && v < 16)).toBe(true);
     });
 
     it('generates a valid random permutation for 256 entries', () => {
-      const table = generateSBoxTable(256, 'random');
+      const table = generateSBoxTable(getSBoxGenerationShape(8, 8), 'random');
       expect(table).toHaveLength(256);
       expect(new Set(table).size).toBe(256);
       expect(table.every((v) => v >= 0 && v < 256)).toBe(true);
     });
 
+    it('generates bounded random values for 6->4 tables', () => {
+      const table = generateSBoxTable(getSBoxGenerationShape(6, 4), 'random');
+      expect(table).toHaveLength(64);
+      expect(table.every((v) => v >= 0 && v < 16)).toBe(true);
+    });
+
     it('generates valid permutations for the supported entry sizes', () => {
       for (const size of [16, 256]) {
-        const table = generateSBoxTable(size, 'random');
+        const table = generateSBoxTable(
+          size === 16 ? getSBoxGenerationShape(4, 4) : getSBoxGenerationShape(8, 8),
+          'random',
+        );
         expect(table).toHaveLength(size);
         expect(new Set(table).size).toBe(size);
         expect(table.every((v) => v >= 0 && v < size)).toBe(true);
       }
+    });
+
+    it('provides DES S1 as a 6->4 preset', () => {
+      const table = generateSBoxTable(getSBoxGenerationShape(6, 4), 'des-s1');
+      expect(table).toHaveLength(64);
+      expect(table[0]).toBe(14);
+      expect(table[63]).toBe(13);
     });
   });
 
@@ -113,7 +133,7 @@ describe('sbox-transforms', () => {
     });
 
     it('double-inverse returns the original table', () => {
-      const table = generateSBoxTable(16, 'random');
+      const table = generateSBoxTable(getSBoxGenerationShape(4, 4), 'random');
       expect(invertSBoxTable(invertSBoxTable(table))).toEqual(table);
     });
   });
@@ -143,6 +163,20 @@ describe('sbox-transforms', () => {
 
     it('detects non-involutions', () => {
       expect(isSBoxInvolution([1, 2, 3, 0])).toBe(false);
+    });
+  });
+
+  describe('DES-style layout helpers', () => {
+    it('maps 6-bit input values into DES display positions', () => {
+      expect(getSBoxDisplayIndexForInputValue(0b000000, { inputWidth: 6, outputWidth: 4 })).toBe(0);
+      expect(getSBoxDisplayIndexForInputValue(0b000001, { inputWidth: 6, outputWidth: 4 })).toBe(16);
+      expect(getSBoxDisplayIndexForInputValue(0b100001, { inputWidth: 6, outputWidth: 4 })).toBe(48);
+    });
+
+    it('builds display order using DES row/column semantics', () => {
+      const order = buildSBoxDisplayOrder(64, { inputWidth: 6, outputWidth: 4 });
+      expect(order.slice(0, 4)).toEqual([0, 2, 4, 6]);
+      expect(order.slice(16, 20)).toEqual([1, 3, 5, 7]);
     });
   });
 });

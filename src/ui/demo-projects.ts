@@ -1,4 +1,5 @@
 import { executeProject } from '../engine/executor';
+import { serializeSBoxTable } from '../engine/modules/s-box';
 import { V1_REGISTRY } from '../engine/modules';
 import type {
   ExecutionResult,
@@ -10,6 +11,7 @@ import {
   isCoreLearningItem,
   type LearningSequenceMeta,
 } from './learning-sequence';
+import { generateSBoxTable, getSBoxGenerationShape } from './sbox-transforms';
 
 export interface DemoProject extends LearningSequenceMeta {
   id: string;
@@ -21,6 +23,9 @@ export interface DemoProject extends LearningSequenceMeta {
   project: Project;
   layout: Record<string, { x: number; y: number }>;
 }
+
+const AES_SBOX_TABLE = serializeSBoxTable(generateSBoxTable(getSBoxGenerationShape(8, 8), 'aes'));
+const DES_S1_TABLE = serializeSBoxTable(generateSBoxTable(getSBoxGenerationShape(6, 4), 'des-s1'));
 
 export const demoProjects: DemoProject[] = [
   {
@@ -2393,6 +2398,77 @@ export const demoProjects: DemoProject[] = [
       source: { x: 48, y: 156 },
       sbox: { x: 292, y: 156 },
       permute: { x: 536, y: 156 },
+      output: { x: 780, y: 156 },
+    },
+  },
+  {
+    id: 'des-s1-lookup',
+    name: 'DES S1 Lookup',
+    group: 'Modern Rounds',
+    stage: 'modern-bit-machines',
+    order: 132,
+    recommendedAfter: ['sbox-table-transform'],
+    summary: 'A 6→4 DES-style substitution board that makes the outer-bit row and inner-bit column lookup pattern explicit.',
+    pipeline: 'BitSource(6 bits) -> SBox(6→4 DES S1) -> BitOutput',
+    project: {
+      modules: [
+        { id: 'source', defId: 'BitSource', params: { stream: [1, 0, 1, 0, 1, 1] } },
+        {
+          id: 'sbox',
+          defId: 'SBox',
+          params: {
+            inputBits: '6',
+            outputBits: '4',
+            table: DES_S1_TABLE,
+          },
+        },
+        { id: 'output', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'sbox', port: 'in' } },
+        { from: { moduleId: 'sbox', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      source: { x: 64, y: 176 },
+      sbox: { x: 356, y: 176 },
+      output: { x: 648, y: 176 },
+    },
+  },
+  {
+    id: 'aes-byte-sbox',
+    name: 'AES Byte S-Box',
+    group: 'Modern Rounds',
+    stage: 'modern-bit-machines',
+    order: 134,
+    recommendedAfter: ['byte-round'],
+    summary: 'A seeded AES 8→8 substitution board that starts from a hex byte so students can inspect the active row, column, and output directly.',
+    pipeline: 'HexSource -> SBox(AES 8→8) -> BitsToHex -> HexOutput',
+    project: {
+      modules: [
+        { id: 'source', defId: 'HexSource', params: { value: '53' } },
+        {
+          id: 'sbox',
+          defId: 'SBox',
+          params: {
+            inputBits: '8',
+            outputBits: '8',
+            table: AES_SBOX_TABLE,
+          },
+        },
+        { id: 'encode', defId: 'BitsToHex', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'sbox', port: 'in' } },
+        { from: { moduleId: 'sbox', port: 'out' }, to: { moduleId: 'encode', port: 'in' } },
+        { from: { moduleId: 'encode', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      source: { x: 48, y: 156 },
+      sbox: { x: 292, y: 156 },
+      encode: { x: 536, y: 156 },
       output: { x: 780, y: 156 },
     },
   },

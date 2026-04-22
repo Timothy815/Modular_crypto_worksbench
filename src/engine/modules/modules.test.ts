@@ -113,7 +113,9 @@ import {
   buildReverseSBoxTable,
   SBox,
   serializeSBoxTable,
+  setSBoxEntry,
   swapSBoxEntry,
+  swapSBoxEntriesByIndex,
 } from './s-box';
 import {
   buildInversePermutationOrder,
@@ -2062,6 +2064,21 @@ describe('SBox', () => {
     });
   });
 
+  it('supports explicit 6->4 substitution tables', () => {
+    const table = [
+      14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7,
+      0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8,
+      4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0,
+      15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13,
+    ].join(',');
+    const result = SBox.evaluate(
+      { in: { type: 'bits', value: [1, 0, 0, 0, 1, 1] } },
+      { inputBits: '6', outputBits: '4', table },
+    );
+
+    expect(result.out).toEqual({ type: 'bits', value: [1, 0, 0, 0] });
+  });
+
   it('throws when the table length is not a power of two', () => {
     expect(() =>
       SBox.evaluate(
@@ -2078,6 +2095,14 @@ describe('SBox', () => {
 
   it('swaps authored entries while preserving the permutation', () => {
     expect(swapSBoxEntry([0, 1, 2, 3], 1, 3)).toEqual([0, 3, 2, 1]);
+  });
+
+  it('swaps authored entries by index when duplicate outputs are allowed', () => {
+    expect(swapSBoxEntriesByIndex([0, 0, 1, 1], 1, 2)).toEqual([0, 1, 0, 1]);
+  });
+
+  it('sets authored entries directly for non-permutation tables', () => {
+    expect(setSBoxEntry([0, 1, 2, 3], 2, 1, 15)).toEqual([0, 1, 1, 3]);
   });
 
   it('serializes authored tables back into the stored param format', () => {

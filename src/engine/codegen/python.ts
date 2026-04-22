@@ -1004,41 +1004,73 @@ def multi_router(select, signal, route_count):
     return outputs
 
 
-def _parse_s_box_table(table_value):
+def _parse_s_box_dimensions(input_bits, output_bits, table_value):
+    if input_bits in (None, "") and output_bits in (None, ""):
+        parts = [part.strip() for part in str(table_value).split(",") if part.strip()]
+        if not parts:
+            raise ValueError("SBox table cannot be empty")
+        entry_count = len(parts)
+        width = 0
+        remaining = entry_count
+        while remaining > 1 and remaining % 2 == 0:
+            remaining //= 2
+            width += 1
+        if remaining != 1 or width < 1:
+            raise ValueError("SBox table length must be a power of two")
+        return width, width, entry_count, (1 << width) - 1, True
+
+    try:
+        normalized_input_bits = int(input_bits)
+        normalized_output_bits = int(output_bits)
+    except (TypeError, ValueError) as error:
+        raise ValueError("SBox inputBits and outputBits must both be set together") from error
+
+    supported_shapes = {
+        (4, 4): (16, 15, True),
+        (6, 4): (64, 15, False),
+        (8, 8): (256, 255, True),
+    }
+    shape = supported_shapes.get((normalized_input_bits, normalized_output_bits))
+    if shape is None:
+        raise ValueError("SBox only supports 4->4, 6->4, and 8->8 tables")
+
+    entry_count, max_entry, requires_permutation = shape
+    return normalized_input_bits, normalized_output_bits, entry_count, max_entry, requires_permutation
+
+
+def _parse_s_box_table(table_value, input_bits=None, output_bits=None):
     parts = [part.strip() for part in str(table_value).split(",") if part.strip()]
     if not parts:
         raise ValueError("SBox table cannot be empty")
-    entry_count = len(parts)
-    width = 0
-    remaining = entry_count
-    while remaining > 1 and remaining % 2 == 0:
-        remaining //= 2
-        width += 1
-    if remaining != 1 or width < 1:
-        raise ValueError("SBox table length must be a power of two")
-    max_entry = (1 << width) - 1
+    normalized_input_bits, normalized_output_bits, entry_count, max_entry, requires_permutation = _parse_s_box_dimensions(
+        input_bits,
+        output_bits,
+        table_value,
+    )
+    if len(parts) != entry_count:
+        raise ValueError(f"SBox table must contain exactly {entry_count} entries for {normalized_input_bits}->{normalized_output_bits}")
     entries = []
     for part in parts:
         entry = int(part)
         if entry < 0 or entry > max_entry:
             raise ValueError(f"SBox entries must be integers between 0 and {max_entry}")
         entries.append(entry)
-    if len(set(entries)) != len(entries):
+    if requires_permutation and len(set(entries)) != len(entries):
         raise ValueError("SBox table must be a permutation with no duplicates")
-    return entries, width
+    return entries, normalized_input_bits, normalized_output_bits
 
 
-def s_box(signal, table):
+def s_box(signal, table, input_bits=None, output_bits=None):
     bits = _expect_bits(signal, "SBox")
     if not bits:
         return {"out": []}
-    entries, width = _parse_s_box_table(table)
-    if len(bits) % width != 0:
-        raise ValueError(f"SBox input width must be a multiple of {width} bits")
+    entries, normalized_input_bits, normalized_output_bits = _parse_s_box_table(table, input_bits, output_bits)
+    if len(bits) % normalized_input_bits != 0:
+        raise ValueError(f"SBox input width must be a multiple of {normalized_input_bits} bits")
     output = []
-    for index in range(0, len(bits), width):
-        chunk = bits[index:index + width]
-        output.extend(_unsigned_number_to_bits(entries[_bits_to_unsigned_number(chunk)], width))
+    for index in range(0, len(bits), normalized_input_bits):
+        chunk = bits[index:index + normalized_input_bits]
+        output.extend(_unsigned_number_to_bits(entries[_bits_to_unsigned_number(chunk)], normalized_output_bits))
     return {"out": output}
 
 
@@ -2395,7 +2427,7 @@ function buildModuleExpression(
     case 'MultiRouter':
       return `multi_router(${expressionContext.getInputExpression(moduleId, 'select')}, ${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'routeCount')})`;
     case 'SBox':
-      return `s_box(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'table')})`;
+      return `s_box(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'table')}, ${moduleInstance.params.inputBits === undefined ? 'None' : expressionContext.getParamExpression(moduleInstance, def, 'inputBits')}, ${moduleInstance.params.outputBits === undefined ? 'None' : expressionContext.getParamExpression(moduleInstance, def, 'outputBits')})`;
     case 'AddMod':
       return `add_mod(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
     case 'SubMod':

@@ -2142,6 +2142,7 @@ export function ParameterInspector({
                         label={renderParamFieldLabel(field.label, field.key, isForwardedParam)}
                         field={field}
                         moduleId={moduleInstance.id}
+                        moduleParams={moduleInstance.params}
                         value={value}
                         baselineValue={baselineValue}
                         renderedValue={renderedValue}
@@ -2162,6 +2163,7 @@ export function ParameterInspector({
                         label={renderParamFieldLabel(field.label, field.key, isForwardedParam)}
                         field={field}
                         moduleId={moduleInstance.id}
+                        moduleParams={moduleInstance.params}
                         value={value}
                         baselineValue={baselineValue}
                         renderedValue={renderedValue}
@@ -2182,6 +2184,7 @@ export function ParameterInspector({
                         label={renderParamFieldLabel(field.label, field.key, isForwardedParam)}
                         field={field}
                         moduleId={moduleInstance.id}
+                        moduleParams={moduleInstance.params}
                         value={value}
                         baselineValue={baselineValue}
                         renderedValue={renderedValue}
@@ -2228,6 +2231,7 @@ export function ParameterInspector({
                       label={renderParamFieldLabel(field.label, field.key, isForwardedParam)}
                       field={field}
                       moduleId={moduleInstance.id}
+                      moduleParams={moduleInstance.params}
                       value={value}
                       baselineValue={baselineValue}
                       renderedValue={renderedValue}
@@ -2253,6 +2257,7 @@ export function ParameterInspector({
                       label={renderParamFieldLabel(field.label, field.key, isForwardedParam)}
                       field={field}
                       moduleId={moduleInstance.id}
+                      moduleParams={moduleInstance.params}
                       value={value}
                       baselineValue={baselineValue}
                       renderedValue={renderedValue}

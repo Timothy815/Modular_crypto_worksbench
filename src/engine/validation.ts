@@ -32,7 +32,7 @@ import { validatePermutationOrderParam } from './modules/permutation';
 import { validatePlugboardWiringParam } from './modules/plugboard';
 import { validateReflectorWiringParam } from './modules/reflector';
 import { validateRotorParam } from './modules/rotor';
-import { validateSBoxTableParam } from './modules/s-box';
+import { validateSBoxParams } from './modules/s-box';
 import { validateModExpParam } from './modules/mod-exp';
 import { validateModInverseParam } from './modules/mod-inverse';
 import { validateModuloParam } from './modules/modulo';
@@ -190,10 +190,6 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'SymbolWindow') {
     return validateSymbolWindowParam(field.key, value);
-  }
-
-  if (def.id === 'SBox' && field.key === 'table') {
-    return validateSBoxTableParam(value);
   }
 
   if (def.id === 'Reflector' && field.key === 'wiring') {
@@ -911,6 +907,21 @@ function validateParams(
   }
 
   if (!isCompositeDefinition(def) && !isIteratorDefinition(def) && !isClockedIteratorDefinition(def) && !isConditionalDefinition(def) && !isMultiConditionalDefinition(def)) {
+    if (def.id === 'SBox') {
+      const message = validateSBoxParams({
+        table: params.table,
+        inputBits: params.inputBits,
+        outputBits: params.outputBits,
+      });
+      if (message) {
+        issues.push({
+          code: 'invalid-param-type',
+          message: `Module "${moduleInstance.id}" parameter "table" is invalid. ${message}`,
+          moduleId: moduleInstance.id,
+        });
+      }
+    }
+
     if (
       def.id === 'PolluxFractionation' ||
       def.id === 'PolluxControlledFractionation' ||

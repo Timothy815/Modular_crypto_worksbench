@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 
 import { parsePlugboardWiring } from '../engine/modules/plugboard';
 import { parseReflectorWiring } from '../engine/modules/reflector';
-import { parseSBoxTable } from '../engine/modules/s-box';
+import { getSBoxShape, parseSBoxTable } from '../engine/modules/s-box';
 import { serializeRotorWiring } from '../engine/modules/rotor';
 import type {
   Connection,
@@ -14,6 +14,11 @@ import type {
 } from '../engine/types';
 import { resolveTraceModuleInstance } from './transformation-resolver';
 import type { ParameterComparisonFieldStatus } from './parameter-comparison';
+import {
+  buildSBoxDisplayOrder,
+  getSBoxDisplayIndexForInputValue,
+  getSBoxGridColumns,
+} from './sbox-transforms';
 
 export interface RoutingTransformationRow {
   inputIndex: number;
@@ -146,13 +151,17 @@ interface LookupTransformationView {
   kind: 'lookup';
   title: string;
   copy: string;
-  chunkWidth: number;
+  inputWidth: number;
+  outputWidth: number;
   gridColumns: number;
   table: number[];
+  displayOrder: number[];
+  displayIndexByInputValue: number[];
   usesHexGrid: boolean;
   activeRowIndex: number | null;
   activeColumnIndex: number | null;
   chunks: LookupTransformationChunk[];
+  permutation: boolean;
   summary: string;
 }
 
@@ -863,20 +872,20 @@ function getSBoxTransformation(
     return null;
   }
 
-  const table = parseSBoxTable(resolved.instance.params.table);
-  const chunkWidth = inferLookupChunkWidth(table.length);
-  if (chunkWidth < 1 || inputSignal.value.length % chunkWidth !== 0) {
+  const shape = getSBoxShape(resolved.instance.params);
+  const table = parseSBoxTable(resolved.instance.params.table, resolved.instance.params);
+  if (shape.inputWidth < 1 || inputSignal.value.length % shape.inputWidth !== 0) {
     return null;
   }
 
   const chunks: LookupTransformationChunk[] = [];
-  for (let start = 0; start < inputSignal.value.length; start += chunkWidth) {
-    const inputBits = inputSignal.value.slice(start, start + chunkWidth);
-    const outputBits = outputSignal.value.slice(start, start + chunkWidth);
+  for (let start = 0; start < inputSignal.value.length; start += shape.inputWidth) {
+    const inputBits = inputSignal.value.slice(start, start + shape.inputWidth);
+    const outputBits = outputSignal.value.slice(start, start + shape.outputWidth);
     const inputValue = bitsToNumber(inputBits);
     const outputValue = bitsToNumber(outputBits);
     chunks.push({
-      index: start / chunkWidth,
+      index: start / shape.inputWidth,
       inputBits,
       inputValue,
       outputValue,
@@ -884,7 +893,21 @@ function getSBoxTransformation(
     });
   }
 
-  const gridColumns = Math.sqrt(table.length);
+  const gridColumns = getSBoxGridColumns({
+    inputWidth: shape.inputWidth as 4 | 6 | 8,
+    outputWidth: shape.outputWidth as 4 | 8,
+  });
+  const displayOrder = buildSBoxDisplayOrder(table.length, {
+    inputWidth: shape.inputWidth as 4 | 6 | 8,
+    outputWidth: shape.outputWidth as 4 | 8,
+  });
+  const displayIndexByInputValue = Array.from({ length: table.length }, (_, inputValue) =>
+    getSBoxDisplayIndexForInputValue(inputValue, {
+      inputWidth: shape.inputWidth as 4 | 6 | 8,
+      outputWidth: shape.outputWidth as 4 | 8,
+    }),
+  );
+  const activeDisplayIndex = chunks.length > 0 ? displayIndexByInputValue[chunks[0].inputValue] : null;
 
   return {
     entry,
@@ -892,19 +915,23 @@ function getSBoxTransformation(
     title: 'Substitution Lookup',
     copy:
       'SBox groups bits into fixed-width chunks, reads each chunk as a number, and substitutes it with the table value stored at that index.',
-    chunkWidth,
-    gridColumns: Number.isInteger(gridColumns) ? gridColumns : Math.min(table.length, 16),
+    inputWidth: shape.inputWidth,
+    outputWidth: shape.outputWidth,
+    gridColumns,
     table,
-    usesHexGrid: chunkWidth >= 8 && Number.isInteger(gridColumns) && gridColumns === 16,
+    displayOrder,
+    displayIndexByInputValue,
+    usesHexGrid: shape.outputWidth >= 8 && gridColumns === 16,
     activeRowIndex:
-      chunkWidth >= 8 && Number.isInteger(gridColumns) && gridColumns === 16 && chunks.length > 0
-        ? Math.floor(chunks[0].inputValue / gridColumns)
+      activeDisplayIndex !== null
+        ? Math.floor(activeDisplayIndex / gridColumns)
         : null,
     activeColumnIndex:
-      chunkWidth >= 8 && Number.isInteger(gridColumns) && gridColumns === 16 && chunks.length > 0
-        ? chunks[0].inputValue % gridColumns
+      activeDisplayIndex !== null
+        ? activeDisplayIndex % gridColumns
         : null,
     chunks,
+    permutation: shape.requiresPermutation,
     summary:
       chunks.length === 1
         ? 'This S-Box replaces one grouped value with another by table lookup.'
@@ -1251,11 +1278,6 @@ function getBitShifterSummary(mode: string, amount: number, rows: RoutingTransfo
     : `${fillCount} output position${fillCount === 1 ? '' : 's'} are zero-filled because a plain ${formatBitShifterMode(mode).toLowerCase()} shift drops bits off one edge and opens space on the other.`;
 }
 
-function inferLookupChunkWidth(entryCount: number) {
-  const width = Math.log2(entryCount);
-  return Number.isInteger(width) && width > 0 ? width : 0;
-}
-
 function bitsToNumber(bits: number[]) {
   return bits.reduce((value, bit) => (value << 1) | bit, 0);
 }
@@ -1355,9 +1377,15 @@ export function buildPairStyles(wiring: string[], options?: { includeSelfPairs?:
   ) as Record<string, CSSProperties>;
 }
 
-export function getEditableSBoxTable(value: unknown): number[] | null {
+export function getEditableSBoxTable(
+  value: unknown,
+  options?: {
+    inputBits?: unknown;
+    outputBits?: unknown;
+  },
+): number[] | null {
   try {
-    return parseSBoxTable(value);
+    return parseSBoxTable(value, options);
   } catch {
     return null;
   }
