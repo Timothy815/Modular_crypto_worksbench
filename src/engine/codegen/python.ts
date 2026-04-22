@@ -240,6 +240,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'truncate_bits_to_match',
   'truncate_bits_sequence',
   'pad_bits_sequence',
+  'bit_shift',
   'bit_shifter_bits',
   'clock_tick',
   'counter_init',

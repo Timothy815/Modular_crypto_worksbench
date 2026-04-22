@@ -917,6 +917,35 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
   });
 
+  it('exports BitShifter helpers through the split runtime surface', () => {
+    const project: Project = {
+      modules: [
+        { id: 'hex-1', defId: 'HexSource', params: { value: '9' } },
+        { id: 'shift-1', defId: 'BitShifter', params: { amount: 1, mode: 'rotate-right' } },
+        { id: 'bits-to-hex', defId: 'BitsToHex', params: {} },
+        { id: 'hex-out', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'shift-1', port: 'in' } },
+        { from: { moduleId: 'shift-1', port: 'out' }, to: { moduleId: 'bits-to-hex', port: 'in' } },
+        { from: { moduleId: 'bits-to-hex', port: 'out' }, to: { moduleId: 'hex-out', port: 'in' } },
+      ],
+    };
+
+    const exportFiles = generatePythonExportFiles(project, V1_REGISTRY, 'BitShifter Export Demo');
+    const execution = executeGeneratedPythonFiles(
+      exportFiles.runtimeSource,
+      exportFiles.workspaceFileName,
+      exportFiles.workspaceSource,
+    );
+
+    expect(exportFiles.runtimeSource).toContain('"bit_shift"');
+    expect(exportFiles.runtimeSource).toContain('def bit_shift');
+    expect(exportFiles.workspaceSource).toContain('mcw_runtime.bit_shift');
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
   it('emits a parity script that verifies stateless export against active cases', () => {
     const project: Project = {
       modules: [
