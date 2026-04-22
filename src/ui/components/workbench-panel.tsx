@@ -50,6 +50,10 @@ import {
   getModuleFocusScrollPosition,
   getNextWorkspaceZoom,
 } from '../workspace-viewport';
+import {
+  getClampedMinimapViewportRect,
+  getElasticWorkspaceWorldBounds,
+} from '../workspace-bounds';
 import type {
   WorkbenchAnnotation,
   WorkbenchConnectionColorOverride,
@@ -1004,7 +1008,7 @@ export function WorkbenchPanel({
       ) as Record<string, WorkbenchPosition>,
     [dragState?.currentPositions, layout],
   );
-  const contentBounds = useMemo(() => {
+  const authoredBounds = useMemo(() => {
     const maxModuleX = Math.max(
       0,
       ...Object.values(effectiveLayout).map((position) => position.x + 180),
@@ -1082,8 +1086,20 @@ export function WorkbenchPanel({
     stageLabels,
     stageLabelDragState,
   ]);
-  const canvasWidth = contentBounds.width;
-  const canvasHeight = contentBounds.height;
+  const authoredCanvasWidth = authoredBounds.width;
+  const authoredCanvasHeight = authoredBounds.height;
+  const worldBounds = useMemo(
+    () =>
+      getElasticWorkspaceWorldBounds({
+        authoredWidth: authoredCanvasWidth,
+        authoredHeight: authoredCanvasHeight,
+        viewportWidth: viewportMetrics.clientWidth,
+        viewportHeight: Math.max(viewportMetrics.clientHeight, canvasViewportHeight),
+      }),
+    [authoredCanvasHeight, authoredCanvasWidth, canvasViewportHeight, viewportMetrics.clientHeight, viewportMetrics.clientWidth],
+  );
+  const canvasWidth = worldBounds.width;
+  const canvasHeight = worldBounds.height;
   const dragAlignmentGuides = useMemo(() => {
     if (!dragState) {
       return [];
@@ -1109,11 +1125,11 @@ export function WorkbenchPanel({
     const availableWidth = MINIMAP_WIDTH - MINIMAP_PADDING * 2;
     const availableHeight = MINIMAP_HEIGHT - MINIMAP_PADDING * 2;
     const scale = Math.min(
-      availableWidth / Math.max(1, canvasWidth),
-      availableHeight / Math.max(1, canvasHeight),
+      availableWidth / Math.max(1, authoredCanvasWidth),
+      availableHeight / Math.max(1, authoredCanvasHeight),
     );
-    const contentWidth = canvasWidth * scale;
-    const contentHeight = canvasHeight * scale;
+    const contentWidth = authoredCanvasWidth * scale;
+    const contentHeight = authoredCanvasHeight * scale;
     return {
       scale,
       offsetX: (MINIMAP_WIDTH - contentWidth) / 2,
@@ -1121,16 +1137,21 @@ export function WorkbenchPanel({
       contentWidth,
       contentHeight,
     };
-  }, [canvasHeight, canvasWidth]);
+  }, [authoredCanvasHeight, authoredCanvasWidth]);
   const minimapViewportRect = useMemo(() => {
-    const safeZoom = workspaceZoom > 0 ? workspaceZoom : DEFAULT_WORKSPACE_ZOOM;
-    return {
-      left: minimapMetrics.offsetX + (viewportMetrics.scrollLeft / safeZoom) * minimapMetrics.scale,
-      top: minimapMetrics.offsetY + (viewportMetrics.scrollTop / safeZoom) * minimapMetrics.scale,
-      width: (viewportMetrics.clientWidth / safeZoom) * minimapMetrics.scale,
-      height: (viewportMetrics.clientHeight / safeZoom) * minimapMetrics.scale,
-    };
-  }, [minimapMetrics, viewportMetrics, workspaceZoom]);
+    return getClampedMinimapViewportRect({
+      authoredWidth: authoredCanvasWidth,
+      authoredHeight: authoredCanvasHeight,
+      scale: minimapMetrics.scale,
+      offsetX: minimapMetrics.offsetX,
+      offsetY: minimapMetrics.offsetY,
+      scrollLeft: viewportMetrics.scrollLeft,
+      scrollTop: viewportMetrics.scrollTop,
+      clientWidth: viewportMetrics.clientWidth,
+      clientHeight: viewportMetrics.clientHeight,
+      zoom: workspaceZoom > 0 ? workspaceZoom : DEFAULT_WORKSPACE_ZOOM,
+    });
+  }, [authoredCanvasHeight, authoredCanvasWidth, minimapMetrics, viewportMetrics, workspaceZoom]);
   const workspaceLandmarks = useMemo(
     () => deriveWorkspaceLandmarks(activeProjectState, registry, effectiveLayout),
     [activeProjectState, effectiveLayout, registry],
@@ -1384,8 +1405,8 @@ export function WorkbenchPanel({
       getFitWorkspaceZoom({
         viewportWidth: canvasSurface.clientWidth,
         viewportHeight: canvasSurface.clientHeight,
-        canvasWidth,
-        canvasHeight,
+        canvasWidth: authoredCanvasWidth,
+        canvasHeight: authoredCanvasHeight,
       }),
     );
     canvasSurface.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
@@ -4955,8 +4976,8 @@ export function WorkbenchPanel({
           {!tutorialNotesVisible && tutorialStep?.focusModuleId && effectiveLayout[tutorialStep.focusModuleId] ? (() => {
             const focusPos = effectiveLayout[tutorialStep.focusModuleId];
             const CALLOUT_WIDTH = 240;
-            const placeRight = focusPos.x + NODE_WIDTH + 18 + CALLOUT_WIDTH < canvasWidth;
-            const placeBelow = focusPos.y < canvasHeight / 2;
+            const placeRight = focusPos.x + NODE_WIDTH + 18 + CALLOUT_WIDTH < authoredCanvasWidth;
+            const placeBelow = focusPos.y < authoredCanvasHeight / 2;
             return (
               <div
                 className="tutorial-canvas-callout"
@@ -4969,7 +4990,7 @@ export function WorkbenchPanel({
                     : undefined,
                   bottom: placeBelow
                     ? undefined
-                    : `${canvasHeight - focusPos.y - 6}px`,
+                    : `${authoredCanvasHeight - focusPos.y - 6}px`,
                 }}
               >
                 <span className="meta-label">Focus</span>
