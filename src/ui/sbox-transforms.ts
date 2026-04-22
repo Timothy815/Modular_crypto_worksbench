@@ -53,6 +53,18 @@ export const SBOX_GENERATION_SIZES: readonly SBoxGenerationShape[] = [
   { label: '8 → 8 bits / 256 entries', inputWidth: 8, outputWidth: 8, entryCount: 256, maxEntry: 255, permutation: true },
 ] as const;
 
+export function getDefaultSBoxPresetForShape(shape: SBoxGenerationShape): SBoxGenerationPreset {
+  if (shape.inputWidth === 4 && shape.outputWidth === 4) {
+    return 'present';
+  }
+
+  if (shape.inputWidth === 6 && shape.outputWidth === 4) {
+    return 'des-s1';
+  }
+
+  return 'aes';
+}
+
 export const SBOX_GENERATION_PRESETS: readonly {
   id: SBoxGenerationPreset;
   label: string;

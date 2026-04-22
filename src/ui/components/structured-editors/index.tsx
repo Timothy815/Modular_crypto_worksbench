@@ -1,4 +1,4 @@
-import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 
 import type { ParamFieldDef } from '../../../engine/types';
 import {
@@ -52,6 +52,7 @@ import {
   buildSBoxDisplayOrder,
   countSBoxFixedPoints,
   generateSBoxTable,
+  getDefaultSBoxPresetForShape,
   getSBoxDisplayIndexForInputValue,
   getSBoxGridColumn,
   getSBoxGridColumns,
@@ -734,7 +735,9 @@ export function SBoxEditor(props: StructuredEditorProps) {
   const supportedPresets = generationShape
     ? SBOX_GENERATION_PRESETS.filter((preset) => preset.supports(generationShape))
     : [];
-  const [generationPreset, setGenerationPreset] = useState(supportedPresets[0]?.id ?? 'random');
+  const [generationPreset, setGenerationPreset] = useState(
+    generationShape ? getDefaultSBoxPresetForShape(generationShape) : 'random',
+  );
   const displayOrder =
     shape === null
       ? []
@@ -752,6 +755,12 @@ export function SBoxEditor(props: StructuredEditorProps) {
           }),
         );
   const allowAxisTransforms = shape?.requiresPermutation ?? false;
+
+  useEffect(() => {
+    if (!supportedPresets.some((preset) => preset.id === generationPreset)) {
+      setGenerationPreset(supportedPresets[0]?.id ?? 'random');
+    }
+  }, [generationPreset, supportedPresets]);
 
   if (!editableTable || !shape || !generationShape) {
     return (
@@ -801,6 +810,36 @@ export function SBoxEditor(props: StructuredEditorProps) {
   const focusSBoxColumn = (columnIndex: number) => {
     const displayIndex = Math.min(selectedRow * gridColumns + columnIndex, currentEditableTable.length - 1);
     setRequestedSBoxEditIndex(displayOrder[displayIndex] ?? 0);
+  };
+  const applyShapeChange = (nextShapeValue: string) => {
+    const nextGenerationShape = (() => {
+      switch (nextShapeValue) {
+        case '4:4':
+          return getSBoxGenerationShape(4, 4);
+        case '6:4':
+          return getSBoxGenerationShape(6, 4);
+        case '8:8':
+          return getSBoxGenerationShape(8, 8);
+        default:
+          return generationShape;
+      }
+    })();
+
+    if (!nextGenerationShape) {
+      return;
+    }
+
+    const nextPreset = getDefaultSBoxPresetForShape(nextGenerationShape);
+    const nextTable = generateSBoxTable(nextGenerationShape, nextPreset);
+    const nextSerialized = serializeSBoxTable(nextTable);
+
+    onParamChange(moduleId, 'inputBits', String(nextGenerationShape.inputWidth));
+    onParamChange(moduleId, 'outputBits', String(nextGenerationShape.outputWidth));
+    onParamDraftChange(moduleId, field.key, nextSerialized);
+    onParamChange(moduleId, field.key, nextSerialized);
+    setGenerationPreset(nextPreset);
+    setRequestedSBoxEditIndex(0);
+    setHoveredSwapTargetIndex(null);
   };
 
   return (
@@ -1051,6 +1090,24 @@ export function SBoxEditor(props: StructuredEditorProps) {
           </div>
         </div>
         <div className="sbox-editor-utility-strip structured-editor-utility-strip">
+          <div className="sbox-editor-utility-card structured-editor-utility-card">
+            <span className="meta-label">Shape</span>
+            <div className="sbox-generate-controls">
+              <select
+                value={`${shape.inputWidth}:${shape.outputWidth}`}
+                onChange={(event) => applyShapeChange(event.target.value)}
+              >
+                <option value="4:4">4 → 4 bits</option>
+                <option value="6:4">6 → 4 bits</option>
+                <option value="8:8">8 → 8 bits</option>
+              </select>
+              <span className="content-status-chip">
+                {shape.inputWidth === 6
+                  ? 'DES-style layout keeps the 4×16 grid visible without exposing brittle intermediate shapes.'
+                  : 'Square shapes keep the familiar teaching grid and permutation tooling.'}
+              </span>
+            </div>
+          </div>
           <div className="sbox-editor-utility-card structured-editor-utility-card">
             <span className="meta-label">Generate</span>
             <div className="sbox-generate-controls">

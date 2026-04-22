@@ -224,6 +224,7 @@ export const SBox: ModuleDef = {
       label: 'Input Width',
       kind: 'select',
       defaultValue: '4',
+      hidden: true,
       options: [
         { label: '4 bits', value: '4' },
         { label: '6 bits', value: '6' },
@@ -236,6 +237,7 @@ export const SBox: ModuleDef = {
       label: 'Output Width',
       kind: 'select',
       defaultValue: '4',
+      hidden: true,
       options: [
         { label: '4 bits', value: '4' },
         { label: '8 bits', value: '8' },
