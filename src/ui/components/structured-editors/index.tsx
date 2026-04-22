@@ -709,10 +709,17 @@ export function SBoxEditor(props: StructuredEditorProps) {
     onParamDraftChange,
     onParamChange,
   } = props;
-  const shape = getSBoxShape(moduleParams);
-  const editableTable = getEditableSBoxTable(value, moduleParams);
+  let shapeError: string | null = null;
+  let shape: ReturnType<typeof getSBoxShape> | null = null;
+  try {
+    shape = getSBoxShape(moduleParams);
+  } catch (error) {
+    shapeError = error instanceof Error ? error.message : 'S-Box shape is invalid.';
+  }
+
+  const editableTable = shape ? getEditableSBoxTable(value, moduleParams) : null;
   const currentEditableTable = editableTable ?? [];
-  const baselineTable = getEditableSBoxTable(baselineValue, moduleParams);
+  const baselineTable = shape ? getEditableSBoxTable(baselineValue, moduleParams) : null;
   const [requestedSBoxEditIndex, setRequestedSBoxEditIndex] = useState(0);
   const [cellMode, setCellMode] = useState<'select' | 'swap'>('select');
   const [hoveredSwapTargetIndex, setHoveredSwapTargetIndex] = useState<number | null>(null);
@@ -723,22 +730,30 @@ export function SBoxEditor(props: StructuredEditorProps) {
     axis: 'row' | 'column';
     index: number;
   } | null>(null);
-  const generationShape = getSBoxGenerationShape(shape.inputWidth, shape.outputWidth);
-  const supportedPresets = SBOX_GENERATION_PRESETS.filter((preset) => preset.supports(generationShape));
+  const generationShape = shape ? getSBoxGenerationShape(shape.inputWidth, shape.outputWidth) : null;
+  const supportedPresets = generationShape
+    ? SBOX_GENERATION_PRESETS.filter((preset) => preset.supports(generationShape))
+    : [];
   const [generationPreset, setGenerationPreset] = useState(supportedPresets[0]?.id ?? 'random');
-  const displayOrder = buildSBoxDisplayOrder(currentEditableTable.length, {
-    inputWidth: shape.inputWidth as 4 | 6 | 8,
-    outputWidth: shape.outputWidth as 4 | 8,
-  });
-  const displayIndexByInputValue = Array.from({ length: currentEditableTable.length }, (_, inputValue) =>
-    getSBoxDisplayIndexForInputValue(inputValue, {
-      inputWidth: shape.inputWidth as 4 | 6 | 8,
-      outputWidth: shape.outputWidth as 4 | 8,
-    }),
-  );
-  const allowAxisTransforms = shape.requiresPermutation;
+  const displayOrder =
+    shape === null
+      ? []
+      : buildSBoxDisplayOrder(currentEditableTable.length, {
+          inputWidth: shape.inputWidth as 4 | 6 | 8,
+          outputWidth: shape.outputWidth as 4 | 8,
+        });
+  const displayIndexByInputValue =
+    shape === null
+      ? []
+      : Array.from({ length: currentEditableTable.length }, (_, inputValue) =>
+          getSBoxDisplayIndexForInputValue(inputValue, {
+            inputWidth: shape.inputWidth as 4 | 6 | 8,
+            outputWidth: shape.outputWidth as 4 | 8,
+          }),
+        );
+  const allowAxisTransforms = shape?.requiresPermutation ?? false;
 
-  if (!editableTable) {
+  if (!editableTable || !shape || !generationShape) {
     return (
       <label className="param-field">
         {label}
@@ -755,7 +770,7 @@ export function SBoxEditor(props: StructuredEditorProps) {
           }}
         />
         <p className="field-error">
-          {fieldError ?? 'S-Box editor is unavailable until the table parses again.'}
+          {shapeError ?? fieldError ?? 'S-Box editor is unavailable until the table parses again.'}
         </p>
       </label>
     );

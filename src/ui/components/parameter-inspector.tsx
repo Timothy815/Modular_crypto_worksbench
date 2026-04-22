@@ -682,6 +682,26 @@ function InspectorIcon({ name }: { name: InspectorIconName }) {
   }
 }
 
+function getCompatibleSBoxShape(nextInputBits: string, nextOutputBits: string) {
+  if (nextInputBits === '4') {
+    return { inputBits: '4', outputBits: '4' } as const;
+  }
+
+  if (nextInputBits === '6') {
+    return { inputBits: '6', outputBits: '4' } as const;
+  }
+
+  if (nextInputBits === '8' && nextOutputBits === '8') {
+    return { inputBits: '8', outputBits: '8' } as const;
+  }
+
+  if (nextOutputBits === '8') {
+    return { inputBits: '8', outputBits: '8' } as const;
+  }
+
+  return { inputBits: '8', outputBits: '4' } as const;
+}
+
 interface InspectorIconButtonProps {
   icon: InspectorIconName;
   label: string;
@@ -2081,6 +2101,10 @@ export function ParameterInspector({
                 }
 
                 if (field.kind === 'select') {
+                  const isSBoxWidthField =
+                    moduleDef.id === 'SBox' &&
+                    (field.key === 'inputBits' || field.key === 'outputBits');
+
                   return (
                     <label key={field.key} className="param-field">
                       {renderParamFieldLabel(field.label, field.key, isForwardedParam)}
@@ -2091,9 +2115,26 @@ export function ParameterInspector({
                       ) : null}
                       <select
                         value={String(value)}
-                        onChange={(event) =>
-                          onParamChange(moduleInstance.id, field.key, event.target.value)
-                        }
+                        onChange={(event) => {
+                          const nextValue = event.target.value;
+                          if (!isSBoxWidthField) {
+                            onParamChange(moduleInstance.id, field.key, nextValue);
+                            return;
+                          }
+
+                          const nextInputBits =
+                            field.key === 'inputBits'
+                              ? nextValue
+                              : String(moduleInstance.params.inputBits ?? '4');
+                          const nextOutputBits =
+                            field.key === 'outputBits'
+                              ? nextValue
+                              : String(moduleInstance.params.outputBits ?? '4');
+                          const compatibleShape = getCompatibleSBoxShape(nextInputBits, nextOutputBits);
+
+                          onParamChange(moduleInstance.id, 'inputBits', compatibleShape.inputBits);
+                          onParamChange(moduleInstance.id, 'outputBits', compatibleShape.outputBits);
+                        }}
                       >
                         {(field.options ?? []).map((option) => (
                           <option key={option.value} value={option.value}>
