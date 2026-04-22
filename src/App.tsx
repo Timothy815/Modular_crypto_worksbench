@@ -20,7 +20,7 @@ import {
   getUserManualConfig,
 } from './ui/app-shell-support';
 import { LazyPanelFallback } from './ui/components/lazy-panel-fallback';
-import { demoProjects, getDefaultDemoProject, runDemoProject } from './ui/demo-projects';
+import { demoProjects, getDefaultDemoProject, runDemoProject, type DemoProject } from './ui/demo-projects';
 import { collectTickedOutput, compareExecutionResults } from './ui/execution-compare';
 import { CANVAS_NODE_WIDTH } from './ui/canvas-selection';
 import { getStarterById } from './ui/pipeline-starters';
@@ -144,6 +144,27 @@ const InstructorPilotWindow = lazy(() =>
 
 function createWorkspaceVersionId(projectId: string, timestamp: string) {
   return `${projectId}-version-${timestamp.replace(/[^0-9]/g, '')}`;
+}
+
+function loadPersistedOpenWorkspaceIds(defaultProjectId: string) {
+  if (typeof window === 'undefined') {
+    return [defaultProjectId];
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem('mcw:open-workspace-tabs');
+    const parsedValue = rawValue ? JSON.parse(rawValue) : null;
+    if (Array.isArray(parsedValue)) {
+      const nextIds = parsedValue.filter((value): value is string => typeof value === 'string');
+      if (nextIds.length > 0) {
+        return nextIds;
+      }
+    }
+  } catch {
+    // Ignore malformed persisted tab state and fall back to the active project.
+  }
+
+  return [defaultProjectId];
 }
 
 interface ParameterClipboardState {
@@ -357,6 +378,9 @@ function MainApp() {
     demoProjects,
     hydrateInitialUiState,
   );
+  const [openWorkspaceIds, setOpenWorkspaceIds] = useState<string[]>(() =>
+    loadPersistedOpenWorkspaceIds(defaultDemoProject?.id ?? demoProjects[0]?.id ?? ''),
+  );
   const [importError, setImportError] = useState<string | null>(null);
   const [isCompositeDialogOpen, setIsCompositeDialogOpen] = useState(false);
   const [compositeName, setCompositeName] = useState('');
@@ -452,6 +476,12 @@ function MainApp() {
   const activeProjectDefinition =
     availableProjects.find((project) => project.id === state.activeProjectId) ??
     availableProjects[0];
+  const openWorkspaceTabs = useMemo(() => {
+    const availableById = new Map(availableProjects.map((project) => [project.id, project]));
+    return openWorkspaceIds
+      .map((projectId) => availableById.get(projectId) ?? null)
+      .filter((project): project is DemoProject => project !== null);
+  }, [availableProjects, openWorkspaceIds]);
   const effectiveRegistry = getEffectiveRegistry(V1_REGISTRY, state.compositeLibrary);
   const baseProjectState =
     state.projectStates[activeProjectDefinition.id] ?? activeProjectDefinition.project;
@@ -518,6 +548,72 @@ function MainApp() {
         ? Object.values(selectedModuleDef.paramSchema).map((field) => field.key)
         : [],
     [selectedModuleDef],
+  );
+
+  useEffect(() => {
+    const availableIds = new Set(availableProjects.map((project) => project.id));
+    setOpenWorkspaceIds((currentIds) => {
+      const filteredIds = currentIds.filter((projectId) => availableIds.has(projectId));
+      const ensuredIds =
+        activeProjectDefinition && !filteredIds.includes(activeProjectDefinition.id)
+          ? [...filteredIds, activeProjectDefinition.id]
+          : filteredIds;
+      if (ensuredIds.length === 0) {
+        return activeProjectDefinition ? [activeProjectDefinition.id] : filteredIds;
+      }
+      if (
+        ensuredIds.length === currentIds.length &&
+        ensuredIds.every((projectId, index) => projectId === currentIds[index])
+      ) {
+        return currentIds;
+      }
+      return ensuredIds;
+    });
+  }, [activeProjectDefinition, availableProjects]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.localStorage.setItem('mcw:open-workspace-tabs', JSON.stringify(openWorkspaceIds));
+  }, [openWorkspaceIds]);
+
+  const handleActivateWorkspaceTab = useCallback((projectId: string) => {
+    dispatch({
+      type: 'switchProject',
+      projectId,
+    });
+  }, []);
+
+  const handleCloseWorkspaceTab = useCallback(
+    (projectId: string) => {
+      if (openWorkspaceTabs.length <= 1) {
+        return;
+      }
+
+      const closedIndex = openWorkspaceIds.indexOf(projectId);
+      const remainingIds = openWorkspaceIds.filter((candidateId) => candidateId !== projectId);
+      setOpenWorkspaceIds(remainingIds);
+
+      if (state.activeProjectId !== projectId) {
+        return;
+      }
+
+      const fallbackProjectId =
+        remainingIds[Math.max(0, closedIndex - 1)] ??
+        remainingIds[0] ??
+        availableProjects[0]?.id;
+      if (!fallbackProjectId) {
+        return;
+      }
+
+      dispatch({
+        type: 'switchProject',
+        projectId: fallbackProjectId,
+      });
+    },
+    [availableProjects, openWorkspaceIds, openWorkspaceTabs.length, state.activeProjectId],
   );
   const compositeUsageCountById = Object.values(state.projectStates).reduce<Record<string, number>>(
     (counts, project) => {
@@ -2660,6 +2756,43 @@ function MainApp() {
           } as CSSProperties
         }
       >
+        {!state.compositeEditor && !isCompositeDrilldownActive ? (
+          <div className="workspace-tab-strip" role="tablist" aria-label="Open workspaces">
+            {openWorkspaceTabs.map((project) => {
+              const isActive = project.id === activeProjectDefinition.id;
+              const isClosable = openWorkspaceTabs.length > 1;
+              return (
+                <div
+                  key={project.id}
+                  className={`workspace-tab${isActive ? ' active' : ''}`}
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    className="workspace-tab-button"
+                    onClick={() => handleActivateWorkspaceTab(project.id)}
+                    title={project.summary}
+                  >
+                    <span className="workspace-tab-title">{project.name}</span>
+                    <span className="workspace-tab-group">{project.group ?? 'Workspace'}</span>
+                  </button>
+                  {isClosable ? (
+                    <button
+                      type="button"
+                      className="workspace-tab-close"
+                      aria-label={`Close ${project.name} tab`}
+                      title={`Close ${project.name}`}
+                      onClick={() => handleCloseWorkspaceTab(project.id)}
+                    >
+                      ×
+                    </button>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
         <div
           className={
             'workbench-stage' +

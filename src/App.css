@@ -347,14 +347,81 @@
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   margin-top: 18px;
   align-items: start;
+}
+
+.workspace-tab-strip {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 6px 2px 2px;
+  scrollbar-width: thin;
+}
+
+.workspace-tab {
+  display: inline-flex;
+  align-items: stretch;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-panel) 78%, var(--surface));
+  box-shadow: 0 8px 22px rgba(40, 28, 12, 0.05);
+}
+
+.workspace-tab.active {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--line));
+  background: color-mix(in srgb, var(--surface-panel) 64%, var(--accent) 36%);
+}
+
+.workspace-tab-button {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 10px 14px;
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.workspace-tab-title {
+  font-weight: 700;
+  color: var(--ink-strong);
+  white-space: nowrap;
+}
+
+.workspace-tab-group {
+  font-size: 0.76rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.workspace-tab-close {
+  border: 0;
+  border-left: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 1rem;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.workspace-tab-button:hover,
+.workspace-tab-close:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 .workbench-stage,
 .workbench-dock {
   grid-column: 1;
-  grid-row: 1;
+  grid-row: 2;
 }
 
 .workbench-stage {
