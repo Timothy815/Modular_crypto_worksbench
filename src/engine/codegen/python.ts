@@ -1888,6 +1888,7 @@ export interface PythonExportCompatibilityResult {
 
 interface PythonExpressionContext {
   getInputExpression: (moduleId: string, portName: string) => string;
+  hasParamOverride: (moduleId: string, key: string) => boolean;
   getParamExpression: (
     moduleInstance: ModuleInstance,
     def: ModuleDefinition,
@@ -2310,6 +2311,7 @@ function createPythonExpressionContext(
         moduleId,
         portName,
       ),
+    hasParamOverride: (moduleId, key) => paramExpressionOverrides.has(`${moduleId}:${key}`),
     getParamExpression: (moduleInstance, def, key) =>
       paramExpressionOverrides.get(`${moduleInstance.id}:${key}`)
       ?? getDefaultParamExpression(moduleInstance, def, key),
@@ -2426,8 +2428,17 @@ function buildModuleExpression(
       return `demux_bit(${expressionContext.getInputExpression(moduleId, 'select')}, ${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'MultiRouter':
       return `multi_router(${expressionContext.getInputExpression(moduleId, 'select')}, ${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'routeCount')})`;
-    case 'SBox':
-      return `s_box(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'table')}, ${moduleInstance.params.inputBits === undefined ? 'None' : expressionContext.getParamExpression(moduleInstance, def, 'inputBits')}, ${moduleInstance.params.outputBits === undefined ? 'None' : expressionContext.getParamExpression(moduleInstance, def, 'outputBits')})`;
+    case 'SBox': {
+      const inputBitsArgument =
+        moduleInstance.params.inputBits !== undefined || expressionContext.hasParamOverride(moduleId, 'inputBits')
+          ? expressionContext.getParamExpression(moduleInstance, def, 'inputBits')
+          : 'None';
+      const outputBitsArgument =
+        moduleInstance.params.outputBits !== undefined || expressionContext.hasParamOverride(moduleId, 'outputBits')
+          ? expressionContext.getParamExpression(moduleInstance, def, 'outputBits')
+          : 'None';
+      return `s_box(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'table')}, ${inputBitsArgument}, ${outputBitsArgument})`;
+    }
     case 'AddMod':
       return `add_mod(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
     case 'SubMod':

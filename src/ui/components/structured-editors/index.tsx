@@ -863,11 +863,6 @@ export function SBoxEditor(props: StructuredEditorProps) {
               ? 'Use the edge arrows on the selected row/column to rotate what you are viewing'
               : 'DES-style layout groups the outer bits into rows and the inner four bits into columns'}
           </span>
-          <span className="content-status-chip">
-            {shape.requiresPermutation
-              ? 'Permutation-only metrics such as inverse and involution stay available for equal-width tables.'
-              : 'Non-square tables are lookup-only: inverse and fixed-point language is intentionally hidden.'}
-          </span>
           <span className="content-status-chip">Cell mode: {cellMode === 'swap' ? 'Swap on click' : 'Selection only'}</span>
           <span className="content-status-chip">
             Active row {formatSBoxAxisLabel(selectedRow, gridColumns)} · column {formatSBoxAxisLabel(selectedColumn, gridColumns)}
@@ -1142,9 +1137,7 @@ export function SBoxEditor(props: StructuredEditorProps) {
                 <span className="content-status-chip">
                   {isInvolution ? 'Involution' : 'Not involution'}
                 </span>
-              ) : (
-                <span className="content-status-chip">Inverse metrics only apply to permutation tables</span>
-              )}
+              ) : null}
               {shape.requiresPermutation ? (
                 <button type="button" className="mini-action-button" onClick={() => applyNextTable(invertSBoxTable(editableTable))}>
                   Build Inverse

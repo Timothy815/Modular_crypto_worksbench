@@ -195,6 +195,55 @@ const forwardedShiftComposite: CompositeDef = {
   ],
 };
 
+const forwardedSBoxComposite: CompositeDef = {
+  id: 'ForwardedSBoxComposite',
+  name: 'Forwarded S-Box Composite',
+  kind: 'composite',
+  version: 1,
+  inputs: [{ name: 'in', type: 'bits' }],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {
+    inputBits: {
+      key: 'inputBits',
+      label: 'Input Width',
+      kind: 'select',
+      defaultValue: '4',
+      options: [
+        { label: '4 bits', value: '4' },
+        { label: '6 bits', value: '6' },
+        { label: '8 bits', value: '8' },
+      ],
+    },
+    outputBits: {
+      key: 'outputBits',
+      label: 'Output Width',
+      kind: 'select',
+      defaultValue: '4',
+      options: [
+        { label: '4 bits', value: '4' },
+        { label: '8 bits', value: '8' },
+      ],
+    },
+    table: {
+      key: 'table',
+      label: 'Substitution Table',
+      kind: 'string',
+      defaultValue: '14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7',
+    },
+  },
+  project: {
+    modules: [{ id: 'sbox-1', defId: 'SBox', params: {} }],
+    connections: [],
+  },
+  inputBindings: [{ externalPort: 'in', internalModuleId: 'sbox-1', internalPort: 'in' }],
+  outputBindings: [{ externalPort: 'out', internalModuleId: 'sbox-1', internalPort: 'out' }],
+  forwardedParams: [
+    { externalParam: 'inputBits', internalModuleId: 'sbox-1', internalParamKey: 'inputBits' },
+    { externalParam: 'outputBits', internalModuleId: 'sbox-1', internalParamKey: 'outputBits' },
+    { externalParam: 'table', internalModuleId: 'sbox-1', internalParamKey: 'table' },
+  ],
+};
+
 const clockedRotorComposite: CompositeDef = {
   id: 'ClockedRotorComposite',
   name: 'Clocked Rotor Composite',
@@ -776,6 +825,7 @@ parityDescribe('generatePythonExport', () => {
     ...starterDefinitionRegistry,
     SymbolRoundTripComposite: symbolRoundTripComposite,
     ForwardedShiftComposite: forwardedShiftComposite,
+    ForwardedSBoxComposite: forwardedSBoxComposite,
     ClockedRotorComposite: clockedRotorComposite,
     NestedComposite: nestedComposite,
     NestedForwardedComposite: nestedForwardedComposite,
@@ -1005,6 +1055,39 @@ parityDescribe('generatePythonExport', () => {
 
     expect(execution.status).toBe(0);
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('preserves forwarded 6->4 s-box dimensions during Python export', () => {
+    const project: Project = {
+      modules: [
+        { id: 'src-1', defId: 'BitSource', params: { stream: [1, 0, 0, 0, 1, 1] } },
+        {
+          id: 'box-1',
+          defId: 'ForwardedSBoxComposite',
+          params: {
+            inputBits: '6',
+            outputBits: '4',
+            table: [
+              14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7,
+              0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8,
+              4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0,
+              15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13,
+            ].join(','),
+          },
+        },
+        { id: 'out-1', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'src-1', port: 'out' }, to: { moduleId: 'box-1', port: 'in' } },
+        { from: { moduleId: 'box-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, compositeRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, compositeRegistry));
   });
 
   it('matches executeProject for a shipped composite workspace', () => {

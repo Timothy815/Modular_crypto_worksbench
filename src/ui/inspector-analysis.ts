@@ -161,7 +161,6 @@ interface LookupTransformationView {
   activeRowIndex: number | null;
   activeColumnIndex: number | null;
   chunks: LookupTransformationChunk[];
-  permutation: boolean;
   summary: string;
 }
 
@@ -931,7 +930,6 @@ function getSBoxTransformation(
         ? activeDisplayIndex % gridColumns
         : null,
     chunks,
-    permutation: shape.requiresPermutation,
     summary:
       chunks.length === 1
         ? 'This S-Box replaces one grouped value with another by table lookup.'
