@@ -1101,11 +1101,6 @@ export function SBoxEditor(props: StructuredEditorProps) {
                 <option value="6:4">6 → 4 bits</option>
                 <option value="8:8">8 → 8 bits</option>
               </select>
-              <span className="content-status-chip">
-                {shape.inputWidth === 6
-                  ? 'DES-style layout keeps the 4×16 grid visible without exposing brittle intermediate shapes.'
-                  : 'Square shapes keep the familiar teaching grid and permutation tooling.'}
-              </span>
             </div>
           </div>
           <div className="sbox-editor-utility-card structured-editor-utility-card">
@@ -1127,13 +1122,13 @@ export function SBoxEditor(props: StructuredEditorProps) {
                 Generate
               </button>
             </div>
-            <span className="content-status-chip">
-              {generationPreset === 'random'
-                ? shape.requiresPermutation
+            {generationPreset === 'random' ? (
+              <span className="content-status-chip">
+                {shape.requiresPermutation
                   ? 'Random shuffles the permutation.'
-                  : 'Random fills each 6→4 entry independently.'
-                : 'Use generation to seed a table, then refine it directly above.'}
-            </span>
+                  : 'Random fills each 6→4 entry independently.'}
+              </span>
+            ) : null}
           </div>
           <div className="sbox-editor-utility-card structured-editor-utility-card">
             <span className="meta-label">Analyze</span>
