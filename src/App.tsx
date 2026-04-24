@@ -16,6 +16,7 @@ import { createChallengeIdCandidate } from './ui/challenge-capture';
 import {
   clampDockWidth,
   getDetachedPanelConfig,
+  getDetachedWorkspaceConfig,
   getInstructorPilotConfig,
   getUserManualConfig,
 } from './ui/app-shell-support';
@@ -69,6 +70,13 @@ import {
   returnDetachedPanelToMain as returnDetachedPanelToMainHelper,
 } from './ui/detached-window-orchestration';
 import {
+  DETACHED_WORKSPACE_CHANNEL_NAME,
+  createDetachedWorkspaceUrl,
+  createDetachedWorkspaceWindowName,
+  type DetachedWorkspaceMessage,
+  type DetachedWorkspaceSnapshot,
+} from './ui/detached-workspace';
+import {
   DETACHED_PANEL_CHANNEL_NAME,
   formatDetachedPanelKindLabel,
   formatDetachedPanelWindowLabel,
@@ -110,6 +118,11 @@ const MAX_RIGHT_DOCK_WIDTH = 680;
 const DetachedPanelWindow = lazy(() =>
   import('./ui/components/detached-panel-window').then((module) => ({
     default: module.DetachedPanelWindow,
+  })),
+);
+const DetachedWorkspaceWindow = lazy(() =>
+  import('./ui/components/detached-workspace-window').then((module) => ({
+    default: module.DetachedWorkspaceWindow,
   })),
 );
 const WorkbenchPanel = lazy(() =>
@@ -232,6 +245,20 @@ function App() {
           hostId={detachedPanelConfig.hostId}
           panelWindowId={detachedPanelConfig.panelWindowId}
           kind={detachedPanelConfig.kind}
+        />
+      </Suspense>
+    );
+  }
+
+  const detachedWorkspaceConfig = getDetachedWorkspaceConfig();
+  if (detachedWorkspaceConfig) {
+    return (
+      <Suspense fallback={<LazyPanelFallback label="Window" title="Workspace…" />}>
+        <DetachedWorkspaceWindow
+          channelName={DETACHED_WORKSPACE_CHANNEL_NAME}
+          hostId={detachedWorkspaceConfig.hostId}
+          workspaceWindowId={detachedWorkspaceConfig.workspaceWindowId}
+          projectId={detachedWorkspaceConfig.projectId}
         />
       </Suspense>
     );
@@ -373,7 +400,12 @@ function MainApp() {
   const [parameterClipboard, setParameterClipboard] = useState<ParameterClipboardState | null>(null);
   const hostWindowIdRef = useRef(createWindowSessionId());
   const detachedPanelWindowsRef = useRef<Record<string, Window | null>>({});
+  const detachedWorkspaceWindowRef = useRef<Window | null>(null);
   const [detachedPanelGroups, setDetachedPanelGroups] = useState<DetachedPanelWindowGroup[]>([]);
+  const [detachedWorkspaceState, setDetachedWorkspaceState] = useState<{
+    workspaceWindowId: string;
+    projectId: string;
+  } | null>(null);
   const [state, dispatch] = useReducer(
     uiReducer,
     demoProjects,
@@ -484,6 +516,79 @@ function MainApp() {
       .filter((project): project is DemoProject => project !== null);
   }, [availableProjects, openWorkspaceIds]);
   const effectiveRegistry = getEffectiveRegistry(V1_REGISTRY, state.compositeLibrary);
+  const detachedWorkspaceSnapshot = useMemo<DetachedWorkspaceSnapshot | null>(() => {
+    if (!detachedWorkspaceState) {
+      return null;
+    }
+
+    const targetProject = availableProjects.find(
+      (project) => project.id === detachedWorkspaceState.projectId,
+    );
+    if (!targetProject) {
+      return null;
+    }
+
+    const projectState = state.projectStates[targetProject.id] ?? targetProject.project;
+    const layout = state.layoutByProject[targetProject.id] ?? targetProject.layout;
+    const validationIssues = validateProject(projectState, effectiveRegistry).issues;
+    const workspaceExecution = resolveWorkspaceExecution(
+      projectState,
+      effectiveRegistry,
+      state.tickedModeByProject[targetProject.id] ?? false,
+      state.currentTickByProject[targetProject.id] ?? 0,
+    );
+
+    return {
+      hostId: hostWindowIdRef.current,
+      workspaceWindowId: detachedWorkspaceState.workspaceWindowId,
+      projectId: targetProject.id,
+      projectName: targetProject.name,
+      projectGroup: targetProject.group,
+      summary: targetProject.summary,
+      pipeline: targetProject.pipeline,
+      theme,
+      compositeLibrary: state.compositeLibrary,
+      project: projectState,
+      layout,
+      annotations: state.annotationsByProject[targetProject.id] ?? [],
+      stageLabels: state.stageLabelsByProject[targetProject.id] ?? [],
+      groupBoxes: state.groupBoxesByProject[targetProject.id] ?? [],
+      guideRails: state.guideRailsByProject[targetProject.id] ?? [],
+      showFurniture: state.showFurnitureByProject[targetProject.id] ?? true,
+      showOverviewNavigator: state.showOverviewNavigatorByProject[targetProject.id] ?? false,
+      showGrid: state.showGridByProject[targetProject.id] ?? false,
+      snapToGrid: state.snapToGridByProject[targetProject.id] ?? false,
+      snapToGuides: state.snapToGuidesByProject[targetProject.id] ?? false,
+      layoutDirection: state.layoutDirectionByProject[targetProject.id] ?? 'horizontal',
+      routingMode: state.routingModeByProject[targetProject.id] ?? 'curved',
+      wireColorMode: state.wireColorModeByProject[targetProject.id] ?? 'domain',
+      execution: workspaceExecution.execution,
+      executionError: workspaceExecution.executionError,
+      validationIssues,
+    };
+  }, [
+    availableProjects,
+    detachedWorkspaceState,
+    effectiveRegistry,
+    state.annotationsByProject,
+    state.compositeLibrary,
+    state.currentTickByProject,
+    state.groupBoxesByProject,
+    state.guideRailsByProject,
+    state.layoutByProject,
+    state.layoutDirectionByProject,
+    state.projectStates,
+    state.routingModeByProject,
+    state.showFurnitureByProject,
+    state.showGridByProject,
+    state.showOverviewNavigatorByProject,
+    state.snapToGridByProject,
+    state.snapToGuidesByProject,
+    state.stageLabelsByProject,
+    state.tickedModeByProject,
+    state.wireColorModeByProject,
+    theme,
+  ]);
   const baseProjectState =
     state.projectStates[activeProjectDefinition.id] ?? activeProjectDefinition.project;
   const baseLayout =
@@ -2233,6 +2338,68 @@ function MainApp() {
     });
   }, [detachedPanelGroups]);
 
+  const openCurrentWorkspaceInDetachedWindow = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (
+      detachedWorkspaceWindowRef.current &&
+      !detachedWorkspaceWindowRef.current.closed &&
+      detachedWorkspaceState
+    ) {
+      detachedWorkspaceWindowRef.current.focus();
+      if (detachedWorkspaceState.projectId !== activeProjectDefinition.id) {
+        setImportError(
+          `A detached workspace window is already open for ${
+            availableProjects.find((project) => project.id === detachedWorkspaceState.projectId)?.name ??
+            detachedWorkspaceState.projectId
+          }. Close it before opening a different workspace.`,
+        );
+      }
+      return;
+    }
+
+    const workspaceWindowId = createWindowSessionId();
+    const detachedWindow = window.open(
+      createDetachedWorkspaceUrl(
+        window.location.href,
+        hostWindowIdRef.current,
+        workspaceWindowId,
+        activeProjectDefinition.id,
+      ),
+      createDetachedWorkspaceWindowName(workspaceWindowId, activeProjectDefinition.id),
+      'popup=yes,width=1480,height=960,resizable=yes,scrollbars=yes',
+    );
+
+    if (!detachedWindow) {
+      setImportError(`Unable to open the ${activeProjectDefinition.name} workspace window.`);
+      return;
+    }
+
+    detachedWorkspaceWindowRef.current = detachedWindow;
+    setDetachedWorkspaceState({
+      workspaceWindowId,
+      projectId: activeProjectDefinition.id,
+    });
+    setImportError(null);
+  }, [activeProjectDefinition.id, activeProjectDefinition.name, availableProjects, detachedWorkspaceState]);
+
+  const focusDetachedWorkspaceWindow = useCallback(() => {
+    if (detachedWorkspaceWindowRef.current && !detachedWorkspaceWindowRef.current.closed) {
+      detachedWorkspaceWindowRef.current.focus();
+      return;
+    }
+    setDetachedWorkspaceState(null);
+    detachedWorkspaceWindowRef.current = null;
+  }, []);
+
+  const closeDetachedWorkspaceWindow = useCallback(() => {
+    detachedWorkspaceWindowRef.current?.close();
+    detachedWorkspaceWindowRef.current = null;
+    setDetachedWorkspaceState(null);
+  }, []);
+
   const detachedCommandHandlers = useMemo(
     () => ({
       dispatch,
@@ -2583,6 +2750,83 @@ function MainApp() {
     });
   }, [detachedPanelGroups, detachedPayloadByKind]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof BroadcastChannel === 'undefined') {
+      return;
+    }
+
+    const channel = new BroadcastChannel(DETACHED_WORKSPACE_CHANNEL_NAME);
+
+    const postSnapshot = () => {
+      if (!detachedWorkspaceSnapshot) {
+        return;
+      }
+      const message: DetachedWorkspaceMessage = {
+        type: 'snapshot',
+        snapshot: detachedWorkspaceSnapshot,
+      };
+      channel.postMessage(message);
+    };
+
+    const handleMessage = (event: MessageEvent<DetachedWorkspaceMessage>) => {
+      const message = event.data;
+      if ('hostId' in message && message.hostId !== hostWindowIdRef.current) {
+        return;
+      }
+
+      if (message.type === 'requestSnapshot') {
+        if (
+          detachedWorkspaceSnapshot &&
+          message.workspaceWindowId === detachedWorkspaceSnapshot.workspaceWindowId &&
+          message.projectId === detachedWorkspaceSnapshot.projectId
+        ) {
+          postSnapshot();
+        }
+        return;
+      }
+
+      if (
+        message.type === 'workspaceWindowClosed' &&
+        detachedWorkspaceState &&
+        message.workspaceWindowId === detachedWorkspaceState.workspaceWindowId
+      ) {
+        detachedWorkspaceWindowRef.current = null;
+        setDetachedWorkspaceState(null);
+      }
+    };
+
+    channel.addEventListener('message', handleMessage);
+    postSnapshot();
+
+    const handleBeforeUnload = () => {
+      if (!detachedWorkspaceState) {
+        return;
+      }
+      const closedMessage: DetachedWorkspaceMessage = {
+        type: 'hostClosed',
+        hostId: hostWindowIdRef.current,
+        workspaceWindowId: detachedWorkspaceState.workspaceWindowId,
+      };
+      channel.postMessage(closedMessage);
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      channel.removeEventListener('message', handleMessage);
+      channel.close();
+    };
+  }, [detachedWorkspaceSnapshot, detachedWorkspaceState]);
+
+  useEffect(() => {
+    if (detachedWorkspaceState && !detachedWorkspaceSnapshot) {
+      detachedWorkspaceWindowRef.current?.close();
+      detachedWorkspaceWindowRef.current = null;
+      setDetachedWorkspaceState(null);
+    }
+  }, [detachedWorkspaceSnapshot, detachedWorkspaceState]);
+
   const showPaletteInMain = state.showPalette && !isDetachedPanelKindActive(detachedPanelGroups, 'palette');
   const showInspectorInMain =
     state.showInspector && !isDetachedPanelKindActive(detachedPanelGroups, 'inspector');
@@ -2736,6 +2980,21 @@ function MainApp() {
                   return;
                 }
 
+                if (value === 'new-workspace-window') {
+                  openCurrentWorkspaceInDetachedWindow();
+                  return;
+                }
+
+                if (value === 'focus-workspace-window') {
+                  focusDetachedWorkspaceWindow();
+                  return;
+                }
+
+                if (value === 'close-workspace-window') {
+                  closeDetachedWorkspaceWindow();
+                  return;
+                }
+
                 if (value.startsWith('new:')) {
                   openDetachedPanelInNewWindow(value.slice(4) as DetachedPanelKind);
                   return;
@@ -2755,6 +3014,19 @@ function MainApp() {
               }}
             >
               <option value="">Manage…</option>
+              <optgroup label="Workspace Window">
+                <option value="new-workspace-window">Open Current Workspace In New Window</option>
+                {detachedWorkspaceState ? (
+                  <option value="focus-workspace-window">
+                    Focus Detached Workspace Window
+                  </option>
+                ) : null}
+                {detachedWorkspaceState ? (
+                  <option value="close-workspace-window">
+                    Close Detached Workspace Window
+                  </option>
+                ) : null}
+              </optgroup>
               {(['palette', 'inspector', 'learning'] as DetachedPanelKind[]).map((kind) => {
                 const currentWindowId = detachedPanelWindowIdByKind[kind] ?? null;
                 const kindLabel = formatDetachedPanelKindLabel(kind);

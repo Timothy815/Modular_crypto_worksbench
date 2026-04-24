@@ -4,6 +4,12 @@ import {
   DETACHED_PANEL_WINDOW_QUERY_KEY,
   isDetachedPanelKind,
 } from './multi-window';
+import {
+  DETACHED_WORKSPACE_HOST_QUERY_KEY,
+  DETACHED_WORKSPACE_PROJECT_QUERY_KEY,
+  DETACHED_WORKSPACE_QUERY_KEY,
+  DETACHED_WORKSPACE_WINDOW_QUERY_KEY,
+} from './detached-workspace';
 
 export function clampDockWidth(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, Math.round(value)));
@@ -24,6 +30,24 @@ export function getDetachedPanelConfig() {
   }
 
   return { kind, hostId, panelWindowId };
+}
+
+export function getDetachedWorkspaceConfig() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const url = new URL(window.location.href);
+  const detachedWorkspace = url.searchParams.get(DETACHED_WORKSPACE_QUERY_KEY);
+  const hostId = url.searchParams.get(DETACHED_WORKSPACE_HOST_QUERY_KEY);
+  const workspaceWindowId = url.searchParams.get(DETACHED_WORKSPACE_WINDOW_QUERY_KEY);
+  const projectId = url.searchParams.get(DETACHED_WORKSPACE_PROJECT_QUERY_KEY);
+
+  if (detachedWorkspace !== '1' || !hostId || !workspaceWindowId || !projectId) {
+    return null;
+  }
+
+  return { hostId, workspaceWindowId, projectId };
 }
 
 function getQueryThemeParam(): 'light' | 'dark' {
