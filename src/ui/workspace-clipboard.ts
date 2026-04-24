@@ -1,4 +1,4 @@
-import type { Connection, ModuleInstance, Project } from '../engine/types';
+import type { Connection, ModuleInstance, ModuleRegistry, PortDef, Project } from '../engine/types';
 import type { WorkbenchPosition } from './workbench-document';
 import { cloneLayout } from './workspace-state-support';
 
@@ -6,6 +6,17 @@ export interface WorkspaceClipboardSnapshot {
   modules: ModuleInstance[];
   connections: Connection[];
   relativeLayout: Record<string, WorkbenchPosition>;
+}
+
+export interface WorkspaceClipboardPasteResult {
+  project: Project;
+  layout: Record<string, WorkbenchPosition>;
+  pastedModuleIds: string[];
+  sourceToPastedModuleId: Record<string, string>;
+}
+
+export interface RepeatedWorkspaceSelectionResult extends WorkspaceClipboardPasteResult {
+  repeatedConnections: Connection[];
 }
 
 const DEFAULT_PASTE_GAP_X = 180;
@@ -143,7 +154,7 @@ export function pasteWorkspaceClipboardSnapshot({
   targetLayout: Record<string, WorkbenchPosition>;
   snapshot: WorkspaceClipboardSnapshot;
   anchor?: { x: number; y: number };
-}) {
+}): WorkspaceClipboardPasteResult {
   const nextProject: Project = {
     modules: targetProject.modules.map(cloneModuleInstance),
     connections: targetProject.connections.map(cloneConnection),
@@ -196,6 +207,7 @@ export function pasteWorkspaceClipboardSnapshot({
     pastedModuleIds: snapshot.modules
       .map((moduleInstance) => idMap.get(moduleInstance.id))
       .filter((moduleId): moduleId is string => Boolean(moduleId)),
+    sourceToPastedModuleId: Object.fromEntries(idMap.entries()),
   };
 }
 
@@ -227,4 +239,211 @@ export function duplicateWorkspaceSelection({
       selectedModuleIds,
     }),
   });
+}
+
+interface BoundaryPortCandidate {
+  moduleId: string;
+  portName: string;
+  type: PortDef['type'];
+  kind: PortDef['kind'];
+  sortY: number;
+  sortX: number;
+  sortIndex: number;
+}
+
+function collectRepeatBoundaryOutputs({
+  project,
+  layout,
+  selectedModuleIds,
+  registry,
+}: {
+  project: Project;
+  layout: Record<string, WorkbenchPosition>;
+  selectedModuleIds: string[];
+  registry: ModuleRegistry;
+}): BoundaryPortCandidate[] {
+  const selectedModuleIdSet = new Set(selectedModuleIds);
+
+  return selectedModuleIds
+    .flatMap((moduleId) => {
+      const moduleInstance = project.modules.find((candidate) => candidate.id === moduleId);
+      const moduleDef = moduleInstance ? registry[moduleInstance.defId] : null;
+      if (!moduleInstance || !moduleDef) {
+        return [];
+      }
+
+      const modulePosition = layout[moduleId] ?? { x: 0, y: 0 };
+      return moduleDef.outputs.flatMap((portDef, portIndex) => {
+        const matchingConnections = project.connections.filter(
+          (connection) =>
+            connection.from.moduleId === moduleId && connection.from.port === portDef.name,
+        );
+        const hasInternalTarget = matchingConnections.some((connection) =>
+          selectedModuleIdSet.has(connection.to.moduleId),
+        );
+        const hasExternalTarget = matchingConnections.some(
+          (connection) => !selectedModuleIdSet.has(connection.to.moduleId),
+        );
+        if (!hasExternalTarget && hasInternalTarget) {
+          return [];
+        }
+        return [
+          {
+            moduleId,
+            portName: portDef.name,
+            type: portDef.type,
+            kind: portDef.kind,
+            sortY: modulePosition.y,
+            sortX: modulePosition.x,
+            sortIndex: portIndex,
+          } satisfies BoundaryPortCandidate,
+        ];
+      });
+    })
+    .sort(compareBoundaryPortCandidates);
+}
+
+function collectRepeatBoundaryInputs({
+  project,
+  layout,
+  selectedModuleIds,
+  registry,
+}: {
+  project: Project;
+  layout: Record<string, WorkbenchPosition>;
+  selectedModuleIds: string[];
+  registry: ModuleRegistry;
+}): BoundaryPortCandidate[] {
+  const selectedModuleIdSet = new Set(selectedModuleIds);
+
+  return selectedModuleIds
+    .flatMap((moduleId) => {
+      const moduleInstance = project.modules.find((candidate) => candidate.id === moduleId);
+      const moduleDef = moduleInstance ? registry[moduleInstance.defId] : null;
+      if (!moduleInstance || !moduleDef) {
+        return [];
+      }
+
+      const modulePosition = layout[moduleId] ?? { x: 0, y: 0 };
+      return moduleDef.inputs.flatMap((portDef, portIndex) => {
+        const matchingConnections = project.connections.filter(
+          (connection) => connection.to.moduleId === moduleId && connection.to.port === portDef.name,
+        );
+        const hasInternalSource = matchingConnections.some((connection) =>
+          selectedModuleIdSet.has(connection.from.moduleId),
+        );
+        const hasExternalSource = matchingConnections.some(
+          (connection) => !selectedModuleIdSet.has(connection.from.moduleId),
+        );
+        if (!hasExternalSource && hasInternalSource) {
+          return [];
+        }
+        return [
+          {
+            moduleId,
+            portName: portDef.name,
+            type: portDef.type,
+            kind: portDef.kind,
+            sortY: modulePosition.y,
+            sortX: modulePosition.x,
+            sortIndex: portIndex,
+          } satisfies BoundaryPortCandidate,
+        ];
+      });
+    })
+    .sort(compareBoundaryPortCandidates);
+}
+
+function compareBoundaryPortCandidates(
+  left: BoundaryPortCandidate,
+  right: BoundaryPortCandidate,
+): number {
+  return (
+    left.sortY - right.sortY ||
+    left.sortX - right.sortX ||
+    left.sortIndex - right.sortIndex ||
+    left.moduleId.localeCompare(right.moduleId) ||
+    left.portName.localeCompare(right.portName)
+  );
+}
+
+export function repeatWorkspaceSelectionToRight({
+  project,
+  layout,
+  selectedModuleIds,
+  registry,
+}: {
+  project: Project;
+  layout: Record<string, WorkbenchPosition>;
+  selectedModuleIds: string[];
+  registry: ModuleRegistry;
+}): RepeatedWorkspaceSelectionResult | null {
+  const duplicated = duplicateWorkspaceSelection({
+    project,
+    layout,
+    selectedModuleIds,
+  });
+  if (!duplicated) {
+    return null;
+  }
+
+  const sourceBoundaryOutputs = collectRepeatBoundaryOutputs({
+    project,
+    layout,
+    selectedModuleIds,
+    registry,
+  });
+  const duplicatedBoundaryInputs = collectRepeatBoundaryInputs({
+    project,
+    layout,
+    selectedModuleIds,
+    registry,
+  })
+    .map((candidate) => {
+      const duplicatedModuleId = duplicated.sourceToPastedModuleId[candidate.moduleId];
+      if (!duplicatedModuleId) {
+        return null;
+      }
+      return {
+        ...candidate,
+        moduleId: duplicatedModuleId,
+      } satisfies BoundaryPortCandidate;
+    })
+    .filter((candidate): candidate is BoundaryPortCandidate => candidate !== null);
+
+  const unmatchedInputs = [...duplicatedBoundaryInputs];
+  const repeatedConnections: Connection[] = [];
+
+  for (const outputCandidate of sourceBoundaryOutputs) {
+    const matchingInputIndex = unmatchedInputs.findIndex(
+      (inputCandidate) =>
+        inputCandidate.type === outputCandidate.type &&
+        (inputCandidate.kind ?? 'scalar') === (outputCandidate.kind ?? 'scalar'),
+    );
+    if (matchingInputIndex < 0) {
+      continue;
+    }
+
+    const [matchedInput] = unmatchedInputs.splice(matchingInputIndex, 1);
+    repeatedConnections.push({
+      from: { moduleId: outputCandidate.moduleId, port: outputCandidate.portName },
+      to: { moduleId: matchedInput.moduleId, port: matchedInput.portName },
+    });
+  }
+
+  if (repeatedConnections.length === 0) {
+    return {
+      ...duplicated,
+      repeatedConnections: [],
+    };
+  }
+
+  return {
+    ...duplicated,
+    project: {
+      ...duplicated.project,
+      connections: [...duplicated.project.connections, ...repeatedConnections.map(cloneConnection)],
+    },
+    repeatedConnections,
+  };
 }

@@ -100,6 +100,7 @@ import { getPrimitiveMicroDemo } from './ui/primitive-micro-demos';
 import { getPipelineMicroDemo } from './ui/pipeline-micro-demos';
 import { buildCompositeInstanceDrilldownContext } from './ui/composite-instance-drilldown';
 import { computeAutoWireConnections, type AutoWireMode } from './ui/autowire-selection';
+import { repeatWorkspaceSelectionToRight } from './ui/workspace-clipboard';
 
 const MIN_LEFT_DOCK_WIDTH = 220;
 const MAX_LEFT_DOCK_WIDTH = 520;
@@ -1878,6 +1879,42 @@ function MainApp() {
     setImportError(null);
   }
 
+  function handleRepeatSelectedClusterRight() {
+    if (state.compositeEditor) {
+      return;
+    }
+
+    if (effectiveSelectedModuleIds.length === 0) {
+      window.alert('Select modules before repeating them.');
+      return;
+    }
+
+    const currentProject = state.projectStates[activeProjectDefinition.id];
+    const currentLayout = state.layoutByProject[activeProjectDefinition.id];
+    if (!currentProject || !currentLayout) {
+      return;
+    }
+
+    const repeated = repeatWorkspaceSelectionToRight({
+      project: currentProject,
+      layout: currentLayout,
+      selectedModuleIds: effectiveSelectedModuleIds,
+      registry: effectiveRegistry,
+    });
+    if (!repeated) {
+      return;
+    }
+
+    dispatch({
+      type: 'applyRepeatedSelection',
+      projectId: activeProjectDefinition.id,
+      project: repeated.project,
+      layout: repeated.layout,
+      selectedModuleIds: repeated.pastedModuleIds,
+    });
+    setImportError(null);
+  }
+
   async function handleCopySelectedClusterToWorkspace() {
     if (state.compositeEditor) {
       return;
@@ -3257,6 +3294,9 @@ function MainApp() {
             }}
             onRequestAutoWire={handleAutoWireSelection}
             onRequestDuplicateSelection={isCompositeDrilldownActive ? () => undefined : handleDuplicateSelectedCluster}
+            onRequestRepeatSelectionRight={
+              isCompositeDrilldownActive ? () => undefined : handleRepeatSelectedClusterRight
+            }
             onRequestCopySelectionToWorkspace={
               isCompositeDrilldownActive ? () => undefined : handleCopySelectedClusterToWorkspace
             }

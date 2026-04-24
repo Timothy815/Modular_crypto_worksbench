@@ -77,6 +77,7 @@ interface WorkbenchActionsProps {
   onRequestAddGuideRail: (axis: 'horizontal' | 'vertical') => void;
   onRequestAutoWire: (mode: AutoWireMode) => void;
   onRequestDuplicateSelection: () => void;
+  onRequestRepeatSelectionRight: () => void;
   onRequestCopySelectionToWorkspace: () => void;
   onRequestDeleteSelection: () => void;
   onRequestDeleteWire: () => void;
@@ -650,6 +651,7 @@ export function WorkbenchActions({
   onRequestAddGuideRail,
   onRequestAutoWire,
   onRequestDuplicateSelection,
+  onRequestRepeatSelectionRight,
   onRequestCopySelectionToWorkspace,
   onRequestDeleteSelection,
   onRequestDeleteWire,
@@ -907,6 +909,11 @@ export function WorkbenchActions({
             <div className="workbench-inline-toolbar" aria-label="Auto-wire tools">
               <span className="meta-label">Wire</span>
               <WorkbenchInlineActionButton
+                content="Repeat"
+                title="Repeat Selection To The Right"
+                onSelect={onRequestRepeatSelectionRight}
+              />
+              <WorkbenchInlineActionButton
                 content={<WorkbenchInlineIcon name="autowire-match" />}
                 title="Connect Matching Ports (fill missing connections by exact port-name match)"
                 onSelect={() => onRequestAutoWire('matching-ports')}
@@ -1083,6 +1090,11 @@ export function WorkbenchActions({
             <WorkbenchMenuActionButton
               label="Duplicate Cluster"
               onSelect={onRequestDuplicateSelection}
+              disabled={!hasSelection}
+            />
+            <WorkbenchMenuActionButton
+              label="Repeat Right"
+              onSelect={onRequestRepeatSelectionRight}
               disabled={!hasSelection}
             />
             <WorkbenchMenuActionButton

@@ -289,6 +289,13 @@ export type UiAction =
       nextDefId: string;
     }
   | { type: 'duplicateSelectedCluster'; projectId: string }
+  | {
+      type: 'applyRepeatedSelection';
+      projectId: string;
+      project: Project;
+      layout: Record<string, WorkbenchPosition>;
+      selectedModuleIds: string[];
+    }
   | { type: 'deleteSelectedCluster'; projectId: string }
   | { type: 'insertStarterChain'; projectId: string; snapshot: WorkspaceClipboardSnapshot }
   | {
@@ -715,6 +722,7 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'renameModuleInstance',
   'replaceModule',
   'duplicateSelectedCluster',
+  'applyRepeatedSelection',
   'deleteSelectedCluster',
   'insertStarterChain',
   'insertBridgeConnection',
@@ -3369,6 +3377,36 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         selectedModuleIdsByProject: {
           ...state.selectedModuleIdsByProject,
           [action.projectId]: duplicated.pastedModuleIds,
+        },
+        currentTickByProject: {
+          ...state.currentTickByProject,
+          [action.projectId]: 0,
+        },
+        isTickPlaybackActiveByProject: {
+          ...state.isTickPlaybackActiveByProject,
+          [action.projectId]: false,
+        },
+      };
+    }
+    case 'applyRepeatedSelection': {
+      const [selectedModuleId] = action.selectedModuleIds;
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: action.project,
+        },
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: action.layout,
+        },
+        selectedModuleIdByProject: {
+          ...state.selectedModuleIdByProject,
+          [action.projectId]: selectedModuleId ?? null,
+        },
+        selectedModuleIdsByProject: {
+          ...state.selectedModuleIdsByProject,
+          [action.projectId]: action.selectedModuleIds,
         },
         currentTickByProject: {
           ...state.currentTickByProject,

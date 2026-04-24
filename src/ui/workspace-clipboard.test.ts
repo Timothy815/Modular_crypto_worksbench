@@ -1,11 +1,37 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Project } from '../engine/types';
+import type { ModuleDef, ModuleRegistry, Project } from '../engine/types';
 import {
   buildWorkspaceClipboardSnapshot,
   duplicateWorkspaceSelection,
   pasteWorkspaceClipboardSnapshot,
+  repeatWorkspaceSelectionToRight,
 } from './workspace-clipboard';
+
+const PASS_THROUGH_BITS_DEF: ModuleDef = {
+  id: 'PassBits',
+  name: 'Pass Bits',
+  inputs: [{ name: 'in', type: 'bits' }],
+  outputs: [{ name: 'out', type: 'bits' }],
+  paramSchema: {},
+  evaluate: (inputs) => ({ out: inputs.in ?? { type: 'bits', value: [] } }),
+};
+
+const TEST_REPEAT_REGISTRY: ModuleRegistry = {
+  PassBits: PASS_THROUGH_BITS_DEF,
+  Input: {
+    ...PASS_THROUGH_BITS_DEF,
+    id: 'Input',
+    name: 'Input',
+    inputs: [],
+  },
+  Output: {
+    ...PASS_THROUGH_BITS_DEF,
+    id: 'Output',
+    name: 'Output',
+    outputs: [],
+  },
+};
 
 describe('buildWorkspaceClipboardSnapshot', () => {
   it('captures only selected modules, internal connections, and relative layout', () => {
@@ -289,5 +315,71 @@ describe('duplicateWorkspaceSelection', () => {
     ]);
     expect(duplicated.layout['xor-1']).toEqual({ x: 540, y: 160 });
     expect(duplicated.layout['bitshifter-1']).toEqual({ x: 740, y: 220 });
+  });
+});
+
+describe('repeatWorkspaceSelectionToRight', () => {
+  it('duplicates a repeated lane cluster and bridges source outputs into duplicate inputs by lane order', () => {
+    const repeated = repeatWorkspaceSelectionToRight({
+      project: {
+        modules: [
+          { id: 'src-a', defId: 'Input', params: {} },
+          { id: 'lane-a-left', defId: 'PassBits', params: {} },
+          { id: 'lane-a-right', defId: 'PassBits', params: {} },
+          { id: 'dst-a', defId: 'Output', params: {} },
+          { id: 'src-b', defId: 'Input', params: {} },
+          { id: 'lane-b-left', defId: 'PassBits', params: {} },
+          { id: 'lane-b-right', defId: 'PassBits', params: {} },
+          { id: 'dst-b', defId: 'Output', params: {} },
+        ],
+        connections: [
+          { from: { moduleId: 'src-a', port: 'out' }, to: { moduleId: 'lane-a-left', port: 'in' } },
+          { from: { moduleId: 'lane-a-left', port: 'out' }, to: { moduleId: 'lane-a-right', port: 'in' } },
+          { from: { moduleId: 'lane-a-right', port: 'out' }, to: { moduleId: 'dst-a', port: 'in' } },
+          { from: { moduleId: 'src-b', port: 'out' }, to: { moduleId: 'lane-b-left', port: 'in' } },
+          { from: { moduleId: 'lane-b-left', port: 'out' }, to: { moduleId: 'lane-b-right', port: 'in' } },
+          { from: { moduleId: 'lane-b-right', port: 'out' }, to: { moduleId: 'dst-b', port: 'in' } },
+        ],
+      },
+      layout: {
+        'src-a': { x: 40, y: 120 },
+        'lane-a-left': { x: 140, y: 120 },
+        'lane-a-right': { x: 300, y: 120 },
+        'dst-a': { x: 480, y: 120 },
+        'src-b': { x: 40, y: 260 },
+        'lane-b-left': { x: 140, y: 260 },
+        'lane-b-right': { x: 300, y: 260 },
+        'dst-b': { x: 480, y: 260 },
+      },
+      selectedModuleIds: ['lane-a-left', 'lane-a-right', 'lane-b-left', 'lane-b-right'],
+      registry: TEST_REPEAT_REGISTRY,
+    });
+
+    if (!repeated) {
+      throw new Error('Expected repeated selection.');
+    }
+
+    expect(repeated.pastedModuleIds).toEqual([
+      'passbits-1',
+      'passbits-2',
+      'passbits-3',
+      'passbits-4',
+    ]);
+    expect(repeated.repeatedConnections).toEqual([
+      { from: { moduleId: 'lane-a-right', port: 'out' }, to: { moduleId: 'passbits-1', port: 'in' } },
+      { from: { moduleId: 'lane-b-right', port: 'out' }, to: { moduleId: 'passbits-3', port: 'in' } },
+    ]);
+    expect(repeated.project.connections).toEqual([
+      { from: { moduleId: 'src-a', port: 'out' }, to: { moduleId: 'lane-a-left', port: 'in' } },
+      { from: { moduleId: 'lane-a-left', port: 'out' }, to: { moduleId: 'lane-a-right', port: 'in' } },
+      { from: { moduleId: 'lane-a-right', port: 'out' }, to: { moduleId: 'dst-a', port: 'in' } },
+      { from: { moduleId: 'src-b', port: 'out' }, to: { moduleId: 'lane-b-left', port: 'in' } },
+      { from: { moduleId: 'lane-b-left', port: 'out' }, to: { moduleId: 'lane-b-right', port: 'in' } },
+      { from: { moduleId: 'lane-b-right', port: 'out' }, to: { moduleId: 'dst-b', port: 'in' } },
+      { from: { moduleId: 'passbits-1', port: 'out' }, to: { moduleId: 'passbits-2', port: 'in' } },
+      { from: { moduleId: 'passbits-3', port: 'out' }, to: { moduleId: 'passbits-4', port: 'in' } },
+      { from: { moduleId: 'lane-a-right', port: 'out' }, to: { moduleId: 'passbits-1', port: 'in' } },
+      { from: { moduleId: 'lane-b-right', port: 'out' }, to: { moduleId: 'passbits-3', port: 'in' } },
+    ]);
   });
 });
