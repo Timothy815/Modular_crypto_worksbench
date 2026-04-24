@@ -1,5 +1,6 @@
 import type { Connection, ModuleInstance, Project } from '../engine/types';
 import type { WorkbenchPosition } from './workbench-document';
+import { cloneLayout } from './workspace-state-support';
 
 export interface WorkspaceClipboardSnapshot {
   modules: ModuleInstance[];
@@ -91,11 +92,13 @@ export function buildWorkspaceClipboardSnapshot({
     return null;
   }
 
-  const selectedLayoutEntries = Object.fromEntries(
-    selectedModules.map((moduleInstance) => [
-      moduleInstance.id,
-      layout[moduleInstance.id] ?? { x: 0, y: 0 },
-    ]),
+  const selectedLayoutEntries = cloneLayout(
+    Object.fromEntries(
+      selectedModules.map((moduleInstance) => [
+        moduleInstance.id,
+        layout[moduleInstance.id] ?? { x: 0, y: 0 },
+      ]),
+    ),
   );
   const positions = Object.values(selectedLayoutEntries);
   const minX = Math.min(...positions.map((position) => position.x));
@@ -116,7 +119,14 @@ export function buildWorkspaceClipboardSnapshot({
         {
           x: position.x - minX,
           y: position.y - minY,
-          orientation: position.orientation,
+          ...(position.orientation ? { orientation: position.orientation } : {}),
+          ...(position.portLayoutPreset ? { portLayoutPreset: position.portLayoutPreset } : {}),
+          ...(position.inputOrder ? { inputOrder: [...position.inputOrder] } : {}),
+          ...(position.outputOrder ? { outputOrder: [...position.outputOrder] } : {}),
+          ...(position.inputPortSides ? { inputPortSides: { ...position.inputPortSides } } : {}),
+          ...(position.outputPortSides
+            ? { outputPortSides: { ...position.outputPortSides } }
+            : {}),
         },
       ]),
     ),
@@ -152,7 +162,18 @@ export function pasteWorkspaceClipboardSnapshot({
     nextLayout[nextModuleId] = {
       x: anchor.x + relativePosition.x,
       y: anchor.y + relativePosition.y,
-      orientation: relativePosition.orientation,
+      ...(relativePosition.orientation ? { orientation: relativePosition.orientation } : {}),
+      ...(relativePosition.portLayoutPreset
+        ? { portLayoutPreset: relativePosition.portLayoutPreset }
+        : {}),
+      ...(relativePosition.inputOrder ? { inputOrder: [...relativePosition.inputOrder] } : {}),
+      ...(relativePosition.outputOrder ? { outputOrder: [...relativePosition.outputOrder] } : {}),
+      ...(relativePosition.inputPortSides
+        ? { inputPortSides: { ...relativePosition.inputPortSides } }
+        : {}),
+      ...(relativePosition.outputPortSides
+        ? { outputPortSides: { ...relativePosition.outputPortSides } }
+        : {}),
     };
   }
 

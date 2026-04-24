@@ -58,6 +58,39 @@ describe('buildWorkspaceClipboardSnapshot', () => {
 
     expect(snapshot?.relativeLayout.left).toEqual({ x: 0, y: 0, orientation: 'south' });
   });
+
+  it('preserves custom port placement metadata in relative layout snapshots', () => {
+    const snapshot = buildWorkspaceClipboardSnapshot({
+      project: {
+        modules: [{ id: 'left', defId: 'XOR', params: {} }],
+        connections: [],
+      },
+      layout: {
+        left: {
+          x: 120,
+          y: 200,
+          orientation: 'south',
+          portLayoutPreset: 'vertical',
+          inputOrder: ['b', 'a'],
+          outputOrder: ['sum', 'carry'],
+          inputPortSides: { a: 'top', b: 'left' },
+          outputPortSides: { sum: 'right', carry: 'bottom' },
+        },
+      },
+      selectedModuleIds: ['left'],
+    });
+
+    expect(snapshot?.relativeLayout.left).toEqual({
+      x: 0,
+      y: 0,
+      orientation: 'south',
+      portLayoutPreset: 'vertical',
+      inputOrder: ['b', 'a'],
+      outputOrder: ['sum', 'carry'],
+      inputPortSides: { a: 'top', b: 'left' },
+      outputPortSides: { sum: 'right', carry: 'bottom' },
+    });
+  });
 });
 
 describe('pasteWorkspaceClipboardSnapshot', () => {
@@ -160,6 +193,50 @@ describe('pasteWorkspaceClipboardSnapshot', () => {
     });
 
     expect(pasted.layout['xor-1']).toEqual({ x: 200, y: 140, orientation: 'north' });
+  });
+
+  it('preserves custom port placement metadata on paste', () => {
+    const snapshot = buildWorkspaceClipboardSnapshot({
+      project: {
+        modules: [{ id: 'left', defId: 'XOR', params: {} }],
+        connections: [],
+      },
+      layout: {
+        left: {
+          x: 100,
+          y: 100,
+          orientation: 'north',
+          portLayoutPreset: 'vertical',
+          inputOrder: ['b', 'a'],
+          outputOrder: ['sum', 'carry'],
+          inputPortSides: { a: 'top', b: 'left' },
+          outputPortSides: { sum: 'right', carry: 'bottom' },
+        },
+      },
+      selectedModuleIds: ['left'],
+    });
+
+    if (!snapshot) {
+      throw new Error('Expected clipboard snapshot.');
+    }
+
+    const pasted = pasteWorkspaceClipboardSnapshot({
+      targetProject: { modules: [], connections: [] },
+      targetLayout: {},
+      snapshot,
+      anchor: { x: 200, y: 140 },
+    });
+
+    expect(pasted.layout['xor-1']).toEqual({
+      x: 200,
+      y: 140,
+      orientation: 'north',
+      portLayoutPreset: 'vertical',
+      inputOrder: ['b', 'a'],
+      outputOrder: ['sum', 'carry'],
+      inputPortSides: { a: 'top', b: 'left' },
+      outputPortSides: { sum: 'right', carry: 'bottom' },
+    });
   });
 });
 
