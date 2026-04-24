@@ -982,6 +982,63 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.stdout).toContain('Summary: 1 passed, 0 failed');
   });
 
+  it('derives a deterministic stateless parity case from the current workspace when none were supplied', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'HELLO' } },
+        { id: 'out-1', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const exportFiles = generatePythonExportFiles(project, V1_REGISTRY, 'Derived Parity Demo');
+    const execution = executeGeneratedPythonFiles(
+      exportFiles.runtimeSource,
+      exportFiles.workspaceFileName,
+      exportFiles.workspaceSource,
+      [{ fileName: exportFiles.parityFileName, source: exportFiles.paritySource }],
+      exportFiles.parityFileName,
+    );
+
+    expect(exportFiles.paritySource).toContain('derived-export-parity-1');
+    expect(exportFiles.paritySource).toContain('"inputValue": "HELLO"');
+    expect(execution.status).toBe(0);
+    expect(execution.stdout).toContain('PASS [stateless] text-1 (Text Input) <- HELLO');
+    expect(execution.stdout).toContain('Summary: 1 passed, 0 failed');
+  });
+
+  it('prints an explicit fallback reason when parity embedding is ambiguous', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'A' } },
+        { id: 'text-2', defId: 'TextInput', params: { value: 'B' } },
+        { id: 'out-1', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const exportFiles = generatePythonExportFiles(project, V1_REGISTRY, 'Ambiguous Parity Demo');
+    const execution = executeGeneratedPythonFiles(
+      exportFiles.runtimeSource,
+      exportFiles.workspaceFileName,
+      exportFiles.workspaceSource,
+      [{ fileName: exportFiles.parityFileName, source: exportFiles.paritySource }],
+      exportFiles.parityFileName,
+    );
+
+    expect(exportFiles.paritySource).toContain('PARITY_STATUS =');
+    expect(exportFiles.paritySource).toContain('Multiple candidate parity sources were detected.');
+    expect(execution.status).toBe(0);
+    expect(execution.stdout).toContain('No embedded parity cases were generated for this export.');
+    expect(execution.stdout).toContain('Reason: Multiple candidate parity sources were detected.');
+    expect(execution.stdout).toContain('text-1 (Text Input)');
+    expect(execution.stdout).toContain('text-2 (Text Input)');
+  });
+
   it('matches executeProject for a direct plugboard workspace', () => {
     const project: Project = {
       modules: [
@@ -2271,6 +2328,43 @@ parityDescribe('generatePythonExport', () => {
       exportFiles.parityFileName,
     );
 
+    expect(execution.status).toBe(0);
+    expect(execution.stdout).toContain('PASS [ticked] text-1 (Text Input) <- AAAA @ 4 ticks');
+    expect(execution.stdout).toContain('Summary: 1 passed, 0 failed');
+  });
+
+  it('derives a deterministic ticked parity case using the natural tick count', () => {
+    const project: Project = {
+      modules: [
+        { id: 'text-1', defId: 'TextInput', params: { value: 'AAAA' } },
+        {
+          id: 'rotor-1',
+          defId: 'Rotor',
+          params: {
+            wiring: ['E', 'K', 'M', 'F', 'L', 'G', 'D', 'Q', 'V', 'Z', 'N', 'T', 'O', 'W', 'Y', 'H', 'X', 'U', 'S', 'P', 'A', 'I', 'B', 'R', 'C', 'J'],
+            position: 0,
+            ringOffset: 0,
+            notches: 'Q',
+          },
+        },
+        { id: 'text-out', defId: 'Output', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'rotor-1', port: 'in' } },
+        { from: { moduleId: 'rotor-1', port: 'out' }, to: { moduleId: 'text-out', port: 'in' } },
+      ],
+    };
+
+    const exportFiles = generatePythonExportFiles(project, V1_REGISTRY, 'Derived Ticked Parity Demo');
+    const execution = executeGeneratedPythonFiles(
+      exportFiles.runtimeSource,
+      exportFiles.workspaceFileName,
+      exportFiles.workspaceSource,
+      [{ fileName: exportFiles.parityFileName, source: exportFiles.paritySource }],
+      exportFiles.parityFileName,
+    );
+
+    expect(exportFiles.paritySource).toContain('"tickCount": 4');
     expect(execution.status).toBe(0);
     expect(execution.stdout).toContain('PASS [ticked] text-1 (Text Input) <- AAAA @ 4 ticks');
     expect(execution.stdout).toContain('Summary: 1 passed, 0 failed');
