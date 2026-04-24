@@ -7887,11 +7887,8 @@ body.canvas-resizing {
 }
 
 .canvas-quick-add-item {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 8px;
-  padding: 4px 6px;
+  display: block;
+  padding: 6px 8px;
   border-radius: 4px;
   cursor: pointer;
 }
@@ -7900,9 +7897,23 @@ body.canvas-resizing {
   background: var(--hover-bg);
 }
 
+.canvas-quick-add-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.canvas-quick-add-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
 .canvas-quick-add-name {
   font-size: 13px;
   color: var(--ink);
+  min-width: 0;
 }
 
 .canvas-quick-add-badge {
@@ -7922,16 +7933,16 @@ body.canvas-resizing {
 
 .canvas-quick-add-subtitle {
   display: block;
-  margin-top: 2px;
   font-size: 11px;
   color: var(--ink-secondary);
 }
 
 .canvas-quick-add-id {
-  font-size: 11px;
-  color: var(--ink-secondary);
+  display: block;
+  font-size: 10px;
+  color: color-mix(in srgb, var(--ink-secondary) 86%, transparent);
   font-family: monospace;
-  flex-shrink: 0;
+  overflow-wrap: anywhere;
 }
 
 .canvas-quick-add-empty {

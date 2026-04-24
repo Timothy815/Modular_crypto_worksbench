@@ -96,16 +96,16 @@ export function CanvasQuickAdd({
               className="canvas-quick-add-item"
               onMouseDown={() => place(option)}
             >
-              <span>
-                <span className="canvas-quick-add-name">
-                  {option.label}
+              <span className="canvas-quick-add-copy">
+                <span className="canvas-quick-add-name-row">
+                  <span className="canvas-quick-add-name">{option.label}</span>
                   {option.badge ? <span className="canvas-quick-add-badge">{option.badge}</span> : null}
                 </span>
                 {option.subtitle ? (
                   <span className="canvas-quick-add-subtitle">{option.subtitle}</span>
                 ) : null}
+                <span className="canvas-quick-add-id">{option.detailId ?? option.id}</span>
               </span>
-              <span className="canvas-quick-add-id">{option.detailId ?? option.id}</span>
             </li>
           ))}
         </ul>
