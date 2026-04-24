@@ -122,6 +122,47 @@ export interface ComparisonBaselineDocument {
   capturedAt: string;
 }
 
+export interface ModernAnalysisCaseState {
+  sourceModuleId: string | null;
+  sinkModuleId: string | null;
+  baselineInput: string;
+  flipBit: number;
+}
+
+export interface RandomnessAnalysisCaseState {
+  sinkModuleId: string | null;
+}
+
+export interface ClassicalAnalysisCaseState {
+  ciphertext: string;
+  selectedPeriod: number;
+  selectedColumnIndex: number;
+  selectedShiftsByColumnKey: Record<string, number>;
+}
+
+export type SavedAnalysisCase =
+  | {
+      id: string;
+      name: string;
+      projectId: string;
+      mode: 'modern';
+      state: ModernAnalysisCaseState;
+    }
+  | {
+      id: string;
+      name: string;
+      projectId: string;
+      mode: 'randomness';
+      state: RandomnessAnalysisCaseState;
+    }
+  | {
+      id: string;
+      name: string;
+      projectId: string;
+      mode: 'classical';
+      state: ClassicalAnalysisCaseState;
+    };
+
 export interface CompositeLibraryDocument {
   version: 1;
   entries: CompositeLibraryEntry[];
@@ -154,6 +195,13 @@ export interface PersistedWorkspaceDocument {
   cryptanalysisInputByProjectId?: Record<string, string>;
   modernAnalysisBaselineByProjectId?: Record<string, string>;
   modernAnalysisFlipBitByProjectId?: Record<string, number>;
+  modernAnalysisSourceIdByProjectId?: Record<string, string | null>;
+  modernAnalysisSinkIdByProjectId?: Record<string, string | null>;
+  randomnessAnalysisSinkIdByProjectId?: Record<string, string | null>;
+  classicalSelectedPeriodByProjectId?: Record<string, number>;
+  classicalSelectedColumnIndexByProjectId?: Record<string, number>;
+  classicalSelectedShiftsByProjectId?: Record<string, Record<string, number>>;
+  savedAnalysisCasesByProjectId?: Record<string, SavedAnalysisCase[]>;
   tickedModeByProjectId?: Record<string, boolean>;
   currentTickByProjectId?: Record<string, number>;
   tickPlaybackSpeedMsByProjectId?: Record<string, number>;

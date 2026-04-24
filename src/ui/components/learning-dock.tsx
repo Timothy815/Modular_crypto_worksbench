@@ -5,6 +5,7 @@ import type { ExecutionResult, ModuleRegistry, Project, TickedExecutionResult } 
 import type { CryptanalysisMode } from '../cryptanalysis-mode';
 import type { GuidedTutorial, TutorialStep } from '../tutorials';
 import type { WorkspaceMode } from '../workspace-mode';
+import type { SavedAnalysisCase } from '../workbench-document';
 
 const ChallengePanel = lazy(() =>
   import('./challenge-panel').then((module) => ({ default: module.ChallengePanel })),
@@ -56,6 +57,13 @@ interface LearningDockProps {
   cryptanalysisMode: CryptanalysisMode;
   modernBaseline: string;
   modernFlipBit: number;
+  modernSourceId: string | null;
+  modernSinkId: string | null;
+  randomnessSinkId: string | null;
+  classicalSelectedPeriod: number;
+  classicalSelectedColumnIndex: number;
+  classicalSelectedShiftsByColumnKey: Record<string, number>;
+  savedAnalysisCases: SavedAnalysisCase[];
   onSelectChallenge: (challengeId: string) => void;
   onLoadChallengeStart: () => void;
   onExportChallenge: () => void;
@@ -76,6 +84,17 @@ interface LearningDockProps {
   onCiphertextChange: (value: string) => void;
   onModernBaselineChange: (value: string) => void;
   onModernFlipBitChange: (value: number) => void;
+  onModernSourceIdChange: (value: string | null) => void;
+  onModernSinkIdChange: (value: string | null) => void;
+  onRandomnessSinkIdChange: (value: string | null) => void;
+  onClassicalSelectedPeriodChange: (value: number) => void;
+  onClassicalSelectedColumnIndexChange: (value: number) => void;
+  onClassicalSelectedShiftChange: (key: string, value: number) => void;
+  onSaveAnalysisCase: (name: string) => void;
+  onUpdateAnalysisCase: (caseId: string) => void;
+  onRenameAnalysisCase: (caseId: string, name: string) => void;
+  onDeleteAnalysisCase: (caseId: string) => void;
+  onLoadAnalysisCase: (savedCase: SavedAnalysisCase) => void;
   onSelectTutorial: (tutorialId: string) => void;
   onOpenTutorialPath: (projectId: string, tutorialId: string) => void;
   onOpenPipelineMicroDemo: (pipelineId: string) => void;
@@ -106,6 +125,13 @@ export function LearningDock({
   cryptanalysisMode,
   modernBaseline,
   modernFlipBit,
+  modernSourceId,
+  modernSinkId,
+  randomnessSinkId,
+  classicalSelectedPeriod,
+  classicalSelectedColumnIndex,
+  classicalSelectedShiftsByColumnKey,
+  savedAnalysisCases,
   onSelectChallenge,
   onLoadChallengeStart,
   onExportChallenge,
@@ -126,6 +152,17 @@ export function LearningDock({
   onCiphertextChange,
   onModernBaselineChange,
   onModernFlipBitChange,
+  onModernSourceIdChange,
+  onModernSinkIdChange,
+  onRandomnessSinkIdChange,
+  onClassicalSelectedPeriodChange,
+  onClassicalSelectedColumnIndexChange,
+  onClassicalSelectedShiftChange,
+  onSaveAnalysisCase,
+  onUpdateAnalysisCase,
+  onRenameAnalysisCase,
+  onDeleteAnalysisCase,
+  onLoadAnalysisCase,
   onSelectTutorial,
   onOpenTutorialPath,
   onOpenPipelineMicroDemo,
@@ -277,6 +314,13 @@ export function LearningDock({
             cryptanalysisMode={cryptanalysisMode}
             modernBaseline={modernBaseline}
             modernFlipBit={modernFlipBit}
+            modernSourceId={modernSourceId}
+            modernSinkId={modernSinkId}
+            randomnessSinkId={randomnessSinkId}
+            classicalSelectedPeriod={classicalSelectedPeriod}
+            classicalSelectedColumnIndex={classicalSelectedColumnIndex}
+            classicalSelectedShiftsByColumnKey={classicalSelectedShiftsByColumnKey}
+            savedAnalysisCases={savedAnalysisCases}
             workspaceMode={workspaceMode}
             tutorial={selectedTutorial?.projectId === currentProjectId ? selectedTutorial : null}
             tutorialStep={
@@ -292,6 +336,17 @@ export function LearningDock({
             onCiphertextChange={onCiphertextChange}
             onModernBaselineChange={onModernBaselineChange}
             onModernFlipBitChange={onModernFlipBitChange}
+            onModernSourceIdChange={onModernSourceIdChange}
+            onModernSinkIdChange={onModernSinkIdChange}
+            onRandomnessSinkIdChange={onRandomnessSinkIdChange}
+            onClassicalSelectedPeriodChange={onClassicalSelectedPeriodChange}
+            onClassicalSelectedColumnIndexChange={onClassicalSelectedColumnIndexChange}
+            onClassicalSelectedShiftChange={onClassicalSelectedShiftChange}
+            onSaveAnalysisCase={onSaveAnalysisCase}
+            onUpdateAnalysisCase={onUpdateAnalysisCase}
+            onRenameAnalysisCase={onRenameAnalysisCase}
+            onDeleteAnalysisCase={onDeleteAnalysisCase}
+            onLoadAnalysisCase={onLoadAnalysisCase}
             onSetTutorialStep={onSetTutorialStep}
             onFocusTutorialModule={onFocusStepModule}
           />

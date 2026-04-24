@@ -22,6 +22,7 @@ import type {
   ComparisonBaselineDocument,
   CompositeLibraryDocument,
   PersistedWorkspaceDocument,
+  SavedAnalysisCase,
   UserWorkspaceMetadata,
   WorkbenchAnnotation,
   WorkbenchGuideRail,
@@ -121,6 +122,19 @@ function cloneTutorial(tutorial: GuidedTutorial): GuidedTutorial {
 
 function cloneVerificationCase(verificationCase: VerificationCase): VerificationCase {
   return { ...verificationCase };
+}
+
+function cloneSavedAnalysisCase(savedCase: SavedAnalysisCase): SavedAnalysisCase {
+  return {
+    ...savedCase,
+    state:
+      savedCase.mode === 'classical'
+        ? {
+            ...savedCase.state,
+            selectedShiftsByColumnKey: { ...savedCase.state.selectedShiftsByColumnKey },
+          }
+        : { ...savedCase.state },
+  } as SavedAnalysisCase;
 }
 
 function cloneReusableEntry(entry: CompositeLibraryEntry): CompositeLibraryEntry {
@@ -420,6 +434,48 @@ export function buildPersistedWorkspace(
         state.modernAnalysisFlipBitByProject[projectId] ?? 0,
       ]),
     ),
+    modernAnalysisSourceIdByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.modernAnalysisSourceIdByProject[projectId] ?? null,
+      ]),
+    ),
+    modernAnalysisSinkIdByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.modernAnalysisSinkIdByProject[projectId] ?? null,
+      ]),
+    ),
+    randomnessAnalysisSinkIdByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.randomnessAnalysisSinkIdByProject[projectId] ?? null,
+      ]),
+    ),
+    classicalSelectedPeriodByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.classicalSelectedPeriodByProject[projectId] ?? 1,
+      ]),
+    ),
+    classicalSelectedColumnIndexByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.classicalSelectedColumnIndexByProject[projectId] ?? 0,
+      ]),
+    ),
+    classicalSelectedShiftsByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        { ...(state.classicalSelectedShiftsByProject[projectId] ?? {}) },
+      ]),
+    ),
+    savedAnalysisCasesByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        (state.savedAnalysisCasesByProject[projectId] ?? []).map(cloneSavedAnalysisCase),
+      ]),
+    ),
     tickedModeByProjectId: Object.fromEntries(
       Object.keys(state.projectStates).map((projectId) => [
         projectId,
@@ -628,6 +684,62 @@ export function loadWorkspaceFromStorage(
             allowedProjectIds.has(projectId) &&
             typeof value === 'number' &&
             Number.isFinite(value),
+        ),
+      ),
+      modernAnalysisSourceIdByProjectId: Object.fromEntries(
+        Object.entries(parsed.modernAnalysisSourceIdByProjectId ?? {}).filter(
+          ([projectId, value]) =>
+            allowedProjectIds.has(projectId) &&
+            (value === null || typeof value === 'string'),
+        ),
+      ),
+      modernAnalysisSinkIdByProjectId: Object.fromEntries(
+        Object.entries(parsed.modernAnalysisSinkIdByProjectId ?? {}).filter(
+          ([projectId, value]) =>
+            allowedProjectIds.has(projectId) &&
+            (value === null || typeof value === 'string'),
+        ),
+      ),
+      randomnessAnalysisSinkIdByProjectId: Object.fromEntries(
+        Object.entries(parsed.randomnessAnalysisSinkIdByProjectId ?? {}).filter(
+          ([projectId, value]) =>
+            allowedProjectIds.has(projectId) &&
+            (value === null || typeof value === 'string'),
+        ),
+      ),
+      classicalSelectedPeriodByProjectId: Object.fromEntries(
+        Object.entries(parsed.classicalSelectedPeriodByProjectId ?? {}).filter(
+          ([projectId, value]) =>
+            allowedProjectIds.has(projectId) &&
+            typeof value === 'number' &&
+            Number.isFinite(value),
+        ),
+      ),
+      classicalSelectedColumnIndexByProjectId: Object.fromEntries(
+        Object.entries(parsed.classicalSelectedColumnIndexByProjectId ?? {}).filter(
+          ([projectId, value]) =>
+            allowedProjectIds.has(projectId) &&
+            typeof value === 'number' &&
+            Number.isFinite(value),
+        ),
+      ),
+      classicalSelectedShiftsByProjectId: Object.fromEntries(
+        Object.entries(parsed.classicalSelectedShiftsByProjectId ?? {}).filter(
+          ([projectId, value]) =>
+            allowedProjectIds.has(projectId) &&
+            value !== null &&
+            typeof value === 'object' &&
+            Object.values(value).every(
+              (shift) => typeof shift === 'number' && Number.isFinite(shift),
+            ),
+        ),
+      ),
+      savedAnalysisCasesByProjectId: Object.fromEntries(
+        Object.entries(parsed.savedAnalysisCasesByProjectId ?? {}).filter(
+          ([projectId, value]) =>
+            allowedProjectIds.has(projectId) &&
+            Array.isArray(value) &&
+            value.every(isSavedAnalysisCaseDocument),
         ),
       ),
       tickedModeByProjectId: Object.fromEntries(
@@ -1197,6 +1309,60 @@ function isVerificationCaseDocument(value: unknown): value is VerificationCase {
         Number.isInteger(candidate.tickCount) &&
         candidate.tickCount > 0))
   );
+}
+
+function isSavedAnalysisCaseDocument(value: unknown): value is SavedAnalysisCase {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const candidate = value as SavedAnalysisCase;
+  if (
+    typeof candidate.id !== 'string' ||
+    typeof candidate.name !== 'string' ||
+    typeof candidate.projectId !== 'string'
+  ) {
+    return false;
+  }
+
+  if (candidate.mode === 'modern') {
+    return (
+      candidate.state !== null &&
+      typeof candidate.state === 'object' &&
+      (candidate.state.sourceModuleId === null || typeof candidate.state.sourceModuleId === 'string') &&
+      (candidate.state.sinkModuleId === null || typeof candidate.state.sinkModuleId === 'string') &&
+      typeof candidate.state.baselineInput === 'string' &&
+      typeof candidate.state.flipBit === 'number' &&
+      Number.isFinite(candidate.state.flipBit)
+    );
+  }
+
+  if (candidate.mode === 'randomness') {
+    return (
+      candidate.state !== null &&
+      typeof candidate.state === 'object' &&
+      (candidate.state.sinkModuleId === null || typeof candidate.state.sinkModuleId === 'string')
+    );
+  }
+
+  if (candidate.mode === 'classical') {
+    return (
+      candidate.state !== null &&
+      typeof candidate.state === 'object' &&
+      typeof candidate.state.ciphertext === 'string' &&
+      typeof candidate.state.selectedPeriod === 'number' &&
+      Number.isFinite(candidate.state.selectedPeriod) &&
+      typeof candidate.state.selectedColumnIndex === 'number' &&
+      Number.isFinite(candidate.state.selectedColumnIndex) &&
+      candidate.state.selectedShiftsByColumnKey !== null &&
+      typeof candidate.state.selectedShiftsByColumnKey === 'object' &&
+      Object.values(candidate.state.selectedShiftsByColumnKey).every(
+        (shift) => typeof shift === 'number' && Number.isFinite(shift),
+      )
+    );
+  }
+
+  return false;
 }
 
 

@@ -376,6 +376,62 @@ export function hydrateInitialUiState(projects: DemoProject[]): UiState {
           0,
       ]),
     ),
+    modernAnalysisSourceIdByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.modernAnalysisSourceIdByProjectId?.[project.id] ??
+          initialState.modernAnalysisSourceIdByProject[project.id] ??
+          null,
+      ]),
+    ),
+    modernAnalysisSinkIdByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.modernAnalysisSinkIdByProjectId?.[project.id] ??
+          initialState.modernAnalysisSinkIdByProject[project.id] ??
+          null,
+      ]),
+    ),
+    randomnessAnalysisSinkIdByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.randomnessAnalysisSinkIdByProjectId?.[project.id] ??
+          initialState.randomnessAnalysisSinkIdByProject[project.id] ??
+          null,
+      ]),
+    ),
+    classicalSelectedPeriodByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.classicalSelectedPeriodByProjectId?.[project.id] ??
+          initialState.classicalSelectedPeriodByProject[project.id] ??
+          1,
+      ]),
+    ),
+    classicalSelectedColumnIndexByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.classicalSelectedColumnIndexByProjectId?.[project.id] ??
+          initialState.classicalSelectedColumnIndexByProject[project.id] ??
+          0,
+      ]),
+    ),
+    classicalSelectedShiftsByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.classicalSelectedShiftsByProjectId?.[project.id] ??
+          initialState.classicalSelectedShiftsByProject[project.id] ??
+          {},
+      ]),
+    ),
+    savedAnalysisCasesByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.savedAnalysisCasesByProjectId?.[project.id] ??
+          initialState.savedAnalysisCasesByProject[project.id] ??
+          [],
+      ]),
+    ),
     tickedModeByProject: Object.fromEntries(
       allProjects.map((project) => [
         project.id,

@@ -266,6 +266,76 @@ describe('workspace persistence', () => {
       restored?.workspaceVersionsByProjectId?.['sequential']?.[0]?.document.project,
     ).toEqual(initialState.projectStates['sequential']);
   });
+
+  it('round-trips saved analysis cases and cryptanalysis control state through storage', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const storage = new MemoryStorage();
+
+    const withMode = uiReducer(initialState, {
+      type: 'setCryptanalysisMode',
+      projectId,
+      mode: 'modern',
+    });
+    const withBaseline = uiReducer(withMode, {
+      type: 'setModernAnalysisBaseline',
+      projectId,
+      value: '10101100',
+    });
+    const withFlipBit = uiReducer(withBaseline, {
+      type: 'setModernAnalysisFlipBit',
+      projectId,
+      value: 5,
+    });
+    const withSource = uiReducer(withFlipBit, {
+      type: 'setModernAnalysisSourceId',
+      projectId,
+      value: 'input',
+    });
+    const withSink = uiReducer(withSource, {
+      type: 'setModernAnalysisSinkId',
+      projectId,
+      value: 'output',
+    });
+    const withSavedCase = uiReducer(withSink, {
+      type: 'saveAnalysisCase',
+      projectId,
+      savedCase: {
+        id: 'analysis-modern-1',
+        name: 'Saved Modern Setup',
+        projectId,
+        mode: 'modern',
+        state: {
+          sourceModuleId: 'input',
+          sinkModuleId: 'output',
+          baselineInput: '10101100',
+          flipBit: 5,
+        },
+      },
+    });
+
+    saveWorkspaceToStorage(withSavedCase, {}, storage);
+    const restored = loadWorkspaceFromStorage(demoProjects, storage);
+
+    expect(restored?.modernAnalysisBaselineByProjectId?.[projectId]).toBe('10101100');
+    expect(restored?.modernAnalysisFlipBitByProjectId?.[projectId]).toBe(5);
+    expect(restored?.modernAnalysisSourceIdByProjectId?.[projectId]).toBe('input');
+    expect(restored?.modernAnalysisSinkIdByProjectId?.[projectId]).toBe('output');
+    expect(restored?.savedAnalysisCasesByProjectId?.[projectId]).toEqual([
+      {
+        id: 'analysis-modern-1',
+        name: 'Saved Modern Setup',
+        projectId,
+        mode: 'modern',
+        state: {
+          sourceModuleId: 'input',
+          sinkModuleId: 'output',
+          baselineInput: '10101100',
+          flipBit: 5,
+        },
+      },
+    ]);
+  });
 });
 
 describe('parseShareableLabPack', () => {

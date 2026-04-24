@@ -30,6 +30,7 @@ import { cloneProject } from '../project-clone';
 import type { WorkspaceMode } from '../workspace-mode';
 import { collectTickedOutput } from '../execution-compare';
 import { isOutputSinkDefId } from '../../engine/output-sinks';
+import type { SavedAnalysisCase } from '../workbench-document';
 
 type FlippableProjectSource =
   | {
@@ -68,6 +69,13 @@ interface CryptanalysisPanelProps {
   cryptanalysisMode: CryptanalysisMode;
   modernBaseline: string;
   modernFlipBit: number;
+  modernSourceId: string | null;
+  modernSinkId: string | null;
+  randomnessSinkId: string | null;
+  classicalSelectedPeriod: number;
+  classicalSelectedColumnIndex: number;
+  classicalSelectedShiftsByColumnKey: Record<string, number>;
+  savedAnalysisCases: SavedAnalysisCase[];
   workspaceMode: WorkspaceMode;
   tutorial: GuidedTutorial | null;
   tutorialStep: TutorialStep | null;
@@ -79,6 +87,17 @@ interface CryptanalysisPanelProps {
   onCiphertextChange: (value: string) => void;
   onModernBaselineChange: (value: string) => void;
   onModernFlipBitChange: (value: number) => void;
+  onModernSourceIdChange: (value: string | null) => void;
+  onModernSinkIdChange: (value: string | null) => void;
+  onRandomnessSinkIdChange: (value: string | null) => void;
+  onClassicalSelectedPeriodChange: (value: number) => void;
+  onClassicalSelectedColumnIndexChange: (value: number) => void;
+  onClassicalSelectedShiftChange: (key: string, value: number) => void;
+  onSaveAnalysisCase: (name: string) => void;
+  onUpdateAnalysisCase: (caseId: string) => void;
+  onRenameAnalysisCase: (caseId: string, name: string) => void;
+  onDeleteAnalysisCase: (caseId: string) => void;
+  onLoadAnalysisCase: (savedCase: SavedAnalysisCase) => void;
   onSetTutorialStep: (stepIndex: number) => void;
   onFocusTutorialModule: (moduleId: string) => void;
 }
@@ -94,6 +113,13 @@ export function CryptanalysisPanel({
   cryptanalysisMode,
   modernBaseline,
   modernFlipBit,
+  modernSourceId,
+  modernSinkId,
+  randomnessSinkId,
+  classicalSelectedPeriod,
+  classicalSelectedColumnIndex,
+  classicalSelectedShiftsByColumnKey,
+  savedAnalysisCases,
   workspaceMode,
   tutorial,
   tutorialStep,
@@ -105,16 +131,22 @@ export function CryptanalysisPanel({
   onCiphertextChange,
   onModernBaselineChange,
   onModernFlipBitChange,
+  onModernSourceIdChange,
+  onModernSinkIdChange,
+  onRandomnessSinkIdChange,
+  onClassicalSelectedPeriodChange,
+  onClassicalSelectedColumnIndexChange,
+  onClassicalSelectedShiftChange,
+  onSaveAnalysisCase,
+  onUpdateAnalysisCase,
+  onRenameAnalysisCase,
+  onDeleteAnalysisCase,
+  onLoadAnalysisCase,
   onSetTutorialStep,
   onFocusTutorialModule,
 }: CryptanalysisPanelProps) {
-  const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
-  const [selectedColumnIndex, setSelectedColumnIndex] = useState<number>(0);
-  const [selectedShiftsByColumnKey, setSelectedShiftsByColumnKey] = useState<Record<string, number>>({});
-  const [selectedModernSourceId, setSelectedModernSourceId] = useState<string>('');
-  const [selectedModernSinkId, setSelectedModernSinkId] = useState<string>('');
+  const [caseDraftName, setCaseDraftName] = useState('');
   const [lastManualSweepSignature, setLastManualSweepSignature] = useState<string | null>(null);
-  const [selectedRandomnessSinkId, setSelectedRandomnessSinkId] = useState<string>('');
   const analysis = analyzeSymbolSignal(
     ciphertext.trim().length > 0 ? { type: 'symbol', value: ciphertext } : null,
   );
@@ -122,8 +154,8 @@ export function CryptanalysisPanel({
     () => analysis?.candidatePeriods.map((entry) => entry.period) ?? [],
     [analysis],
   );
-  const effectivePeriod = availablePeriods.includes(selectedPeriod)
-    ? selectedPeriod
+  const effectivePeriod = availablePeriods.includes(classicalSelectedPeriod)
+    ? classicalSelectedPeriod
     : availablePeriods[0] ?? 1;
   const columnAnalysis = useMemo(
     () =>
@@ -134,7 +166,7 @@ export function CryptanalysisPanel({
   );
   const candidateShifts = columnAnalysis.map(
     (column) =>
-      selectedShiftsByColumnKey[getColumnShiftKey(effectivePeriod, column.columnIndex)] ??
+      classicalSelectedShiftsByColumnKey[getColumnShiftKey(effectivePeriod, column.columnIndex)] ??
       column.topShiftCandidates[0]?.shift ??
       0,
   );
@@ -146,11 +178,11 @@ export function CryptanalysisPanel({
     [analysis, candidateShifts],
   );
   const effectiveColumnIndex =
-    columnAnalysis[selectedColumnIndex] ? selectedColumnIndex : 0;
+    columnAnalysis[classicalSelectedColumnIndex] ? classicalSelectedColumnIndex : 0;
   const activeColumn = columnAnalysis[effectiveColumnIndex] ?? null;
   const activeColumnShift =
     activeColumn
-      ? selectedShiftsByColumnKey[getColumnShiftKey(effectivePeriod, activeColumn.columnIndex)] ??
+      ? classicalSelectedShiftsByColumnKey[getColumnShiftKey(effectivePeriod, activeColumn.columnIndex)] ??
         activeColumn.topShiftCandidates[0]?.shift ??
         0
       : 0;
@@ -168,9 +200,9 @@ export function CryptanalysisPanel({
   const baselineBits = useMemo(() => parseBitString(modernBaseline), [modernBaseline]);
   const flippableSources = useMemo(() => findFlippableProjectSources(project), [project]);
   const effectiveModernSourceId = flippableSources.some(
-    (source) => source.moduleId === selectedModernSourceId,
+    (source) => source.moduleId === modernSourceId,
   )
-    ? selectedModernSourceId
+    ? modernSourceId
     : flippableSources[0]?.moduleId ?? '';
   const flippableSource =
     flippableSources.find((source) => source.moduleId === effectiveModernSourceId) ?? null;
@@ -245,9 +277,9 @@ export function CryptanalysisPanel({
     [project, execution],
   );
   const effectiveModernSinkId = modernSinkOptions.some(
-    (option) => option.moduleId === selectedModernSinkId,
+    (option) => option.moduleId === modernSinkId,
   )
-    ? selectedModernSinkId
+    ? (modernSinkId ?? '')
     : modernSinkOptions[0]?.moduleId ?? '';
   const baselineOutputBits = useMemo(
     () => getBitSignalForSink(execution, effectiveModernSinkId),
@@ -368,9 +400,9 @@ export function CryptanalysisPanel({
     [project, execution, tickedExecution, isTickedMode],
   );
   const effectiveRandomnessSinkId = randomnessSinkOptions.some(
-    (option) => option.moduleId === selectedRandomnessSinkId,
+    (option) => option.moduleId === randomnessSinkId,
   )
-    ? selectedRandomnessSinkId
+    ? (randomnessSinkId ?? '')
     : randomnessSinkOptions[0]?.moduleId ?? '';
   const activeRandomnessSink =
     randomnessSinkOptions.find((option) => option.moduleId === effectiveRandomnessSinkId) ?? null;
@@ -514,6 +546,23 @@ export function CryptanalysisPanel({
 
       {cryptanalysisMode === 'modern' ? (
         <div className="comparison-grid">
+          <AnalysisCaseManager
+            draftName={caseDraftName}
+            savedCases={savedAnalysisCases.filter((savedCase) => savedCase.mode === 'modern')}
+            modeLabel="Modern"
+            onDraftNameChange={setCaseDraftName}
+            onSave={() => {
+              if (caseDraftName.trim().length === 0) {
+                return;
+              }
+              onSaveAnalysisCase(caseDraftName.trim());
+              setCaseDraftName('');
+            }}
+            onLoad={onLoadAnalysisCase}
+            onUpdate={onUpdateAnalysisCase}
+            onRename={onRenameAnalysisCase}
+            onDelete={onDeleteAnalysisCase}
+          />
           {showModernCompatibilityCallout ? (
             <div className="comparison-card comparison-card-wide cryptanalysis-modern-callout">
               <span className="meta-label">Modern Analysis Compatibility</span>
@@ -619,8 +668,8 @@ export function CryptanalysisPanel({
                   <label className="param-field">
                     <span>Sweep Source</span>
                     <select
-                      value={effectiveModernSourceId}
-                      onChange={(event) => setSelectedModernSourceId(event.target.value)}
+                      value={effectiveModernSourceId ?? ''}
+                      onChange={(event) => onModernSourceIdChange(event.target.value)}
                     >
                       {flippableSources.map((source) => (
                         <option key={source.moduleId} value={source.moduleId}>
@@ -634,8 +683,8 @@ export function CryptanalysisPanel({
                   <label className="param-field">
                     <span>Analyze Sink</span>
                     <select
-                      value={effectiveModernSinkId}
-                      onChange={(event) => setSelectedModernSinkId(event.target.value)}
+                      value={effectiveModernSinkId ?? ''}
+                      onChange={(event) => onModernSinkIdChange(event.target.value)}
                     >
                       {modernSinkOptions.map((option) => (
                         <option key={option.moduleId} value={option.moduleId}>
@@ -938,6 +987,23 @@ export function CryptanalysisPanel({
         </div>
       ) : cryptanalysisMode === 'randomness' ? (
         <div className="comparison-grid">
+          <AnalysisCaseManager
+            draftName={caseDraftName}
+            savedCases={savedAnalysisCases.filter((savedCase) => savedCase.mode === 'randomness')}
+            modeLabel="Randomness"
+            onDraftNameChange={setCaseDraftName}
+            onSave={() => {
+              if (caseDraftName.trim().length === 0) {
+                return;
+              }
+              onSaveAnalysisCase(caseDraftName.trim());
+              setCaseDraftName('');
+            }}
+            onLoad={onLoadAnalysisCase}
+            onUpdate={onUpdateAnalysisCase}
+            onRename={onRenameAnalysisCase}
+            onDelete={onDeleteAnalysisCase}
+          />
           {activeRandomnessSink ? (
             <>
               <div className="comparison-card comparison-card-wide">
@@ -951,8 +1017,8 @@ export function CryptanalysisPanel({
                     <label className="param-field">
                       <span>Analyze Sink</span>
                       <select
-                        value={effectiveRandomnessSinkId}
-                        onChange={(event) => setSelectedRandomnessSinkId(event.target.value)}
+                        value={effectiveRandomnessSinkId ?? ''}
+                        onChange={(event) => onRandomnessSinkIdChange(event.target.value)}
                       >
                         {randomnessSinkOptions.map((option) => (
                           <option key={option.moduleId} value={option.moduleId}>
@@ -1155,6 +1221,23 @@ export function CryptanalysisPanel({
         </div>
       ) : (
       <div className="comparison-grid">
+        <AnalysisCaseManager
+          draftName={caseDraftName}
+          savedCases={savedAnalysisCases.filter((savedCase) => savedCase.mode === 'classical')}
+          modeLabel="Classical"
+          onDraftNameChange={setCaseDraftName}
+          onSave={() => {
+            if (caseDraftName.trim().length === 0) {
+              return;
+            }
+            onSaveAnalysisCase(caseDraftName.trim());
+            setCaseDraftName('');
+          }}
+          onLoad={onLoadAnalysisCase}
+          onUpdate={onUpdateAnalysisCase}
+          onRename={onRenameAnalysisCase}
+          onDelete={onDeleteAnalysisCase}
+        />
         <div className="comparison-card comparison-card-wide">
           <span className="meta-label">Ciphertext Input</span>
           <label className="param-field cryptanalysis-textarea-field">
@@ -1245,7 +1328,7 @@ export function CryptanalysisPanel({
                       ? 'cryptanalysis-period-row cryptanalysis-period-row-active'
                       : 'cryptanalysis-period-row'
                   }
-                  onClick={() => setSelectedPeriod(entry.period)}
+                  onClick={() => onClassicalSelectedPeriodChange(entry.period)}
                 >
                   <div className="cryptanalysis-period-copy">
                     <span className="meta-label">Period {entry.period}</span>
@@ -1298,7 +1381,7 @@ export function CryptanalysisPanel({
               <span>Inspect Period</span>
               <select
                 value={effectivePeriod}
-                onChange={(event) => setSelectedPeriod(Number(event.target.value))}
+                onChange={(event) => onClassicalSelectedPeriodChange(Number(event.target.value))}
                 disabled={availablePeriods.length === 0}
               >
                 {availablePeriods.length === 0 ? (
@@ -1324,12 +1407,12 @@ export function CryptanalysisPanel({
                       ? 'cryptanalysis-column-summary cryptanalysis-column-summary-active'
                       : 'cryptanalysis-column-summary'
                   }
-                  onClick={() => setSelectedColumnIndex(column.columnIndex)}
+                  onClick={() => onClassicalSelectedColumnIndexChange(column.columnIndex)}
                 >
                   <span className="meta-label">Column {column.columnIndex + 1}</span>
-                  <strong>{getSelectedKeyLetter(
+                    <strong>{getSelectedKeyLetter(
                     column,
-                    selectedShiftsByColumnKey[getColumnShiftKey(effectivePeriod, column.columnIndex)],
+                    classicalSelectedShiftsByColumnKey[getColumnShiftKey(effectivePeriod, column.columnIndex)],
                   )}</strong>
                   <span className="cryptanalysis-column-summary-ioc">
                     IOC {column.indexOfCoincidence !== null
@@ -1352,7 +1435,7 @@ export function CryptanalysisPanel({
             <strong>
               Column {activeColumn.columnIndex + 1} with key letter {getSelectedKeyLetter(
                 activeColumn,
-                selectedShiftsByColumnKey[getColumnShiftKey(effectivePeriod, activeColumn.columnIndex)],
+                classicalSelectedShiftsByColumnKey[getColumnShiftKey(effectivePeriod, activeColumn.columnIndex)],
               )}
             </strong>
             <p className="comparison-copy">
@@ -1363,11 +1446,14 @@ export function CryptanalysisPanel({
                 type="button"
                 className="mini-action-button"
                 onClick={() =>
-                  setSelectedShiftsByColumnKey((current) => {
-                    const key = getColumnShiftKey(effectivePeriod, activeColumn.columnIndex);
-                    const currentShift = current[key] ?? activeColumn.topShiftCandidates[0]?.shift ?? 0;
-                    return { ...current, [key]: (currentShift + 25) % 26 };
-                  })
+                  onClassicalSelectedShiftChange(
+                    getColumnShiftKey(effectivePeriod, activeColumn.columnIndex),
+                    (
+                      (classicalSelectedShiftsByColumnKey[
+                        getColumnShiftKey(effectivePeriod, activeColumn.columnIndex)
+                      ] ?? activeColumn.topShiftCandidates[0]?.shift ?? 0) + 25
+                    ) % 26,
+                  )
                 }
               >
                 Shift Left
@@ -1383,10 +1469,10 @@ export function CryptanalysisPanel({
                   step={1}
                   value={activeColumnShift}
                   onChange={(event) =>
-                    setSelectedShiftsByColumnKey((current) => ({
-                      ...current,
-                      [getColumnShiftKey(effectivePeriod, activeColumn.columnIndex)]: Number(event.target.value),
-                    }))
+                    onClassicalSelectedShiftChange(
+                      getColumnShiftKey(effectivePeriod, activeColumn.columnIndex),
+                      Number(event.target.value),
+                    )
                   }
                 />
               </label>
@@ -1394,11 +1480,14 @@ export function CryptanalysisPanel({
                 type="button"
                 className="mini-action-button"
                 onClick={() =>
-                  setSelectedShiftsByColumnKey((current) => {
-                    const key = getColumnShiftKey(effectivePeriod, activeColumn.columnIndex);
-                    const currentShift = current[key] ?? activeColumn.topShiftCandidates[0]?.shift ?? 0;
-                    return { ...current, [key]: (currentShift + 1) % 26 };
-                  })
+                  onClassicalSelectedShiftChange(
+                    getColumnShiftKey(effectivePeriod, activeColumn.columnIndex),
+                    (
+                      (classicalSelectedShiftsByColumnKey[
+                        getColumnShiftKey(effectivePeriod, activeColumn.columnIndex)
+                      ] ?? activeColumn.topShiftCandidates[0]?.shift ?? 0) + 1
+                    ) % 26,
+                  )
                 }
               >
                 Shift Right
@@ -1407,11 +1496,10 @@ export function CryptanalysisPanel({
                 type="button"
                 className="mini-action-button"
                 onClick={() =>
-                  setSelectedShiftsByColumnKey((current) => ({
-                    ...current,
-                    [getColumnShiftKey(effectivePeriod, activeColumn.columnIndex)]:
-                      activeColumn.topShiftCandidates[0]?.shift ?? 0,
-                  }))
+                  onClassicalSelectedShiftChange(
+                    getColumnShiftKey(effectivePeriod, activeColumn.columnIndex),
+                    activeColumn.topShiftCandidates[0]?.shift ?? 0,
+                  )
                 }
               >
                 Use Best Fit
@@ -1604,6 +1692,90 @@ function ModernFlipControl({
         {' '}| changed percent <strong>{(changedPercent * 100).toFixed(1)}%</strong>
       </p>
     </>
+  );
+}
+
+function AnalysisCaseManager({
+  draftName,
+  savedCases,
+  modeLabel,
+  onDraftNameChange,
+  onSave,
+  onLoad,
+  onUpdate,
+  onRename,
+  onDelete,
+}: {
+  draftName: string;
+  savedCases: SavedAnalysisCase[];
+  modeLabel: string;
+  onDraftNameChange: (value: string) => void;
+  onSave: () => void;
+  onLoad: (savedCase: SavedAnalysisCase) => void;
+  onUpdate: (caseId: string) => void;
+  onRename: (caseId: string, name: string) => void;
+  onDelete: (caseId: string) => void;
+}) {
+  return (
+    <div className="comparison-card comparison-card-wide">
+      <span className="meta-label">Saved Analysis Cases</span>
+      <strong>{modeLabel} setups for this project</strong>
+      <div className="content-filter-row">
+        <label className="param-field">
+          <span>Case Name</span>
+          <input
+            type="text"
+            value={draftName}
+            onChange={(event) => onDraftNameChange(event.target.value)}
+            placeholder={`${modeLabel} case`}
+          />
+        </label>
+        <button
+          type="button"
+          className="mini-action-button"
+          onClick={onSave}
+          disabled={draftName.trim().length === 0}
+        >
+          Save Case
+        </button>
+      </div>
+      {savedCases.length > 0 ? (
+        <div className="cryptanalysis-list">
+          {savedCases.map((savedCase) => (
+            <div key={savedCase.id} className="cryptanalysis-output-summary-row">
+              <span className="content-status-chip">
+                <strong>{savedCase.name}</strong>
+              </span>
+              <button type="button" className="mini-action-button" onClick={() => onLoad(savedCase)}>
+                Load
+              </button>
+              <button type="button" className="mini-action-button" onClick={() => onUpdate(savedCase.id)}>
+                Update
+              </button>
+              <button
+                type="button"
+                className="mini-action-button"
+                onClick={() => {
+                  const nextName = window.prompt('Rename saved analysis case', savedCase.name);
+                  if (nextName && nextName.trim().length > 0) {
+                    onRename(savedCase.id, nextName.trim());
+                  }
+                }}
+              >
+                Rename
+              </button>
+              <button type="button" className="mini-action-button" onClick={() => onDelete(savedCase.id)}>
+                Delete
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="comparison-copy">
+          Save a setup here to return to the same analysis controls later without rebuilding them by hand.
+        </p>
+      )}
+    </div>
   );
 }
 

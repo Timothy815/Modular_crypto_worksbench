@@ -1072,6 +1072,13 @@ function DetachedLearningView({
           cryptanalysisMode={snapshot.cryptanalysisMode}
           modernBaseline={snapshot.modernBaseline}
           modernFlipBit={snapshot.modernFlipBit}
+          modernSourceId={snapshot.modernSourceId}
+          modernSinkId={snapshot.modernSinkId}
+          randomnessSinkId={snapshot.randomnessSinkId}
+          classicalSelectedPeriod={snapshot.classicalSelectedPeriod}
+          classicalSelectedColumnIndex={snapshot.classicalSelectedColumnIndex}
+          classicalSelectedShiftsByColumnKey={snapshot.classicalSelectedShiftsByColumnKey}
+          savedAnalysisCases={snapshot.savedAnalysisCases}
           workspaceMode={snapshot.workspaceMode}
           tutorial={
             snapshot.tutorials.find(
@@ -1097,6 +1104,31 @@ function DetachedLearningView({
           onModernFlipBitChange={(value) =>
             onSendCommand({ type: 'setModernAnalysisFlipBit', value })
           }
+          onModernSourceIdChange={(value) =>
+            onSendCommand({ type: 'setModernAnalysisSourceId', value })
+          }
+          onModernSinkIdChange={(value) =>
+            onSendCommand({ type: 'setModernAnalysisSinkId', value })
+          }
+          onRandomnessSinkIdChange={(value) =>
+            onSendCommand({ type: 'setRandomnessAnalysisSinkId', value })
+          }
+          onClassicalSelectedPeriodChange={(value) =>
+            onSendCommand({ type: 'setClassicalSelectedPeriod', value })
+          }
+          onClassicalSelectedColumnIndexChange={(value) =>
+            onSendCommand({ type: 'setClassicalSelectedColumnIndex', value })
+          }
+          onClassicalSelectedShiftChange={(key, value) =>
+            onSendCommand({ type: 'setClassicalSelectedShift', key, value })
+          }
+          onSaveAnalysisCase={(name) => onSendCommand({ type: 'saveAnalysisCase', name })}
+          onUpdateAnalysisCase={(caseId) => onSendCommand({ type: 'updateAnalysisCase', caseId })}
+          onRenameAnalysisCase={(caseId, name) =>
+            onSendCommand({ type: 'renameAnalysisCase', caseId, name })
+          }
+          onDeleteAnalysisCase={(caseId) => onSendCommand({ type: 'deleteAnalysisCase', caseId })}
+          onLoadAnalysisCase={(savedCase) => onSendCommand({ type: 'loadAnalysisCase', savedCase })}
           onSetTutorialStep={(stepIndex) => onSendCommand({ type: 'setTutorialStep', stepIndex })}
           onFocusTutorialModule={(moduleId) => onSendCommand({ type: 'focusStepModule', moduleId })}
         />

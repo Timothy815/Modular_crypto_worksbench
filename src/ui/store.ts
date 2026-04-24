@@ -17,6 +17,7 @@ import { STARTER_TUTORIALS } from './starter-tutorials';
 import type {
   ComparisonBaselineDocument,
   CompositeLibraryDocument,
+  SavedAnalysisCase,
   UserWorkspaceMetadata,
   WorkbenchAnnotation,
   WorkbenchConnectionLayout,
@@ -107,6 +108,13 @@ export interface UiState {
   cryptanalysisInputByProject: Record<string, string>;
   modernAnalysisBaselineByProject: Record<string, string>;
   modernAnalysisFlipBitByProject: Record<string, number>;
+  modernAnalysisSourceIdByProject: Record<string, string | null>;
+  modernAnalysisSinkIdByProject: Record<string, string | null>;
+  randomnessAnalysisSinkIdByProject: Record<string, string | null>;
+  classicalSelectedPeriodByProject: Record<string, number>;
+  classicalSelectedColumnIndexByProject: Record<string, number>;
+  classicalSelectedShiftsByProject: Record<string, Record<string, number>>;
+  savedAnalysisCasesByProject: Record<string, SavedAnalysisCase[]>;
   tickedModeByProject: Record<string, boolean>;
   currentTickByProject: Record<string, number>;
   isTickPlaybackActiveByProject: Record<string, boolean>;
@@ -428,6 +436,47 @@ export type UiAction =
   | { type: 'setCryptanalysisInput'; projectId: string; value: string }
   | { type: 'setModernAnalysisBaseline'; projectId: string; value: string }
   | { type: 'setModernAnalysisFlipBit'; projectId: string; value: number }
+  | { type: 'setModernAnalysisSourceId'; projectId: string; value: string | null }
+  | { type: 'setModernAnalysisSinkId'; projectId: string; value: string | null }
+  | { type: 'setRandomnessAnalysisSinkId'; projectId: string; value: string | null }
+  | { type: 'setClassicalSelectedPeriod'; projectId: string; value: number }
+  | { type: 'setClassicalSelectedColumnIndex'; projectId: string; value: number }
+  | {
+      type: 'setClassicalSelectedShift';
+      projectId: string;
+      key: string;
+      value: number;
+    }
+  | {
+      type: 'saveAnalysisCase';
+      projectId: string;
+      savedCase: SavedAnalysisCase;
+    }
+  | {
+      type: 'updateAnalysisCase';
+      projectId: string;
+      caseId: string;
+      savedCase: SavedAnalysisCase;
+    }
+  | {
+      type: 'renameAnalysisCase';
+      projectId: string;
+      caseId: string;
+      name: string;
+    }
+  | {
+      type: 'deleteAnalysisCase';
+      projectId: string;
+      caseId: string;
+    }
+  | {
+      type: 'loadAnalysisCase';
+      projectId: string;
+      savedCase: SavedAnalysisCase;
+      nextModernSourceId: string | null;
+      nextModernSinkId: string | null;
+      nextRandomnessSinkId: string | null;
+    }
   | { type: 'setTickedMode'; projectId: string; enabled: boolean }
   | { type: 'setCurrentTick'; projectId: string; tick: number }
   | { type: 'setTickPlaybackActive'; projectId: string; active: boolean }
@@ -1092,6 +1141,27 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     modernAnalysisFlipBitByProject: Object.fromEntries(
       projects.map((project) => [project.id, 0]),
     ),
+    modernAnalysisSourceIdByProject: Object.fromEntries(
+      projects.map((project) => [project.id, null]),
+    ),
+    modernAnalysisSinkIdByProject: Object.fromEntries(
+      projects.map((project) => [project.id, null]),
+    ),
+    randomnessAnalysisSinkIdByProject: Object.fromEntries(
+      projects.map((project) => [project.id, null]),
+    ),
+    classicalSelectedPeriodByProject: Object.fromEntries(
+      projects.map((project) => [project.id, 1]),
+    ),
+    classicalSelectedColumnIndexByProject: Object.fromEntries(
+      projects.map((project) => [project.id, 0]),
+    ),
+    classicalSelectedShiftsByProject: Object.fromEntries(
+      projects.map((project) => [project.id, {}]),
+    ),
+    savedAnalysisCasesByProject: Object.fromEntries(
+      projects.map((project) => [project.id, []]),
+    ),
     tickedModeByProject: Object.fromEntries(
       projects.map((project) => [project.id, project.defaultTickedMode ?? false]),
     ),
@@ -1279,6 +1349,34 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         modernAnalysisFlipBitByProject: {
           ...state.modernAnalysisFlipBitByProject,
           [action.workspaceId]: 0,
+        },
+        modernAnalysisSourceIdByProject: {
+          ...state.modernAnalysisSourceIdByProject,
+          [action.workspaceId]: null,
+        },
+        modernAnalysisSinkIdByProject: {
+          ...state.modernAnalysisSinkIdByProject,
+          [action.workspaceId]: null,
+        },
+        randomnessAnalysisSinkIdByProject: {
+          ...state.randomnessAnalysisSinkIdByProject,
+          [action.workspaceId]: null,
+        },
+        classicalSelectedPeriodByProject: {
+          ...state.classicalSelectedPeriodByProject,
+          [action.workspaceId]: 1,
+        },
+        classicalSelectedColumnIndexByProject: {
+          ...state.classicalSelectedColumnIndexByProject,
+          [action.workspaceId]: 0,
+        },
+        classicalSelectedShiftsByProject: {
+          ...state.classicalSelectedShiftsByProject,
+          [action.workspaceId]: {},
+        },
+        savedAnalysisCasesByProject: {
+          ...state.savedAnalysisCasesByProject,
+          [action.workspaceId]: [],
         },
         tickedModeByProject: {
           ...state.tickedModeByProject,
@@ -1771,6 +1869,34 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         ),
         modernAnalysisFlipBitByProject: removeProjectEntry(
           state.modernAnalysisFlipBitByProject,
+          action.workspaceId,
+        ),
+        modernAnalysisSourceIdByProject: removeProjectEntry(
+          state.modernAnalysisSourceIdByProject,
+          action.workspaceId,
+        ),
+        modernAnalysisSinkIdByProject: removeProjectEntry(
+          state.modernAnalysisSinkIdByProject,
+          action.workspaceId,
+        ),
+        randomnessAnalysisSinkIdByProject: removeProjectEntry(
+          state.randomnessAnalysisSinkIdByProject,
+          action.workspaceId,
+        ),
+        classicalSelectedPeriodByProject: removeProjectEntry(
+          state.classicalSelectedPeriodByProject,
+          action.workspaceId,
+        ),
+        classicalSelectedColumnIndexByProject: removeProjectEntry(
+          state.classicalSelectedColumnIndexByProject,
+          action.workspaceId,
+        ),
+        classicalSelectedShiftsByProject: removeProjectEntry(
+          state.classicalSelectedShiftsByProject,
+          action.workspaceId,
+        ),
+        savedAnalysisCasesByProject: removeProjectEntry(
+          state.savedAnalysisCasesByProject,
           action.workspaceId,
         ),
         tickedModeByProject: removeProjectEntry(state.tickedModeByProject, action.workspaceId),
@@ -4629,6 +4755,163 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           [action.projectId]: Math.max(0, Math.trunc(action.value)),
         },
       };
+    case 'setModernAnalysisSourceId':
+      return {
+        ...state,
+        modernAnalysisSourceIdByProject: {
+          ...state.modernAnalysisSourceIdByProject,
+          [action.projectId]: action.value,
+        },
+      };
+    case 'setModernAnalysisSinkId':
+      return {
+        ...state,
+        modernAnalysisSinkIdByProject: {
+          ...state.modernAnalysisSinkIdByProject,
+          [action.projectId]: action.value,
+        },
+      };
+    case 'setRandomnessAnalysisSinkId':
+      return {
+        ...state,
+        randomnessAnalysisSinkIdByProject: {
+          ...state.randomnessAnalysisSinkIdByProject,
+          [action.projectId]: action.value,
+        },
+      };
+    case 'setClassicalSelectedPeriod':
+      return {
+        ...state,
+        classicalSelectedPeriodByProject: {
+          ...state.classicalSelectedPeriodByProject,
+          [action.projectId]: Math.max(1, Math.trunc(action.value)),
+        },
+      };
+    case 'setClassicalSelectedColumnIndex':
+      return {
+        ...state,
+        classicalSelectedColumnIndexByProject: {
+          ...state.classicalSelectedColumnIndexByProject,
+          [action.projectId]: Math.max(0, Math.trunc(action.value)),
+        },
+      };
+    case 'setClassicalSelectedShift':
+      return {
+        ...state,
+        classicalSelectedShiftsByProject: {
+          ...state.classicalSelectedShiftsByProject,
+          [action.projectId]: {
+            ...(state.classicalSelectedShiftsByProject[action.projectId] ?? {}),
+            [action.key]: Math.max(0, Math.trunc(action.value)),
+          },
+        },
+      };
+    case 'saveAnalysisCase':
+      return {
+        ...state,
+        savedAnalysisCasesByProject: {
+          ...state.savedAnalysisCasesByProject,
+          [action.projectId]: [
+            ...(state.savedAnalysisCasesByProject[action.projectId] ?? []),
+            action.savedCase,
+          ],
+        },
+      };
+    case 'updateAnalysisCase':
+      return {
+        ...state,
+        savedAnalysisCasesByProject: {
+          ...state.savedAnalysisCasesByProject,
+          [action.projectId]: (state.savedAnalysisCasesByProject[action.projectId] ?? []).map((savedCase) =>
+            savedCase.id === action.caseId ? action.savedCase : savedCase,
+          ),
+        },
+      };
+    case 'renameAnalysisCase':
+      return {
+        ...state,
+        savedAnalysisCasesByProject: {
+          ...state.savedAnalysisCasesByProject,
+          [action.projectId]: (state.savedAnalysisCasesByProject[action.projectId] ?? []).map((savedCase) =>
+            savedCase.id === action.caseId ? { ...savedCase, name: action.name } : savedCase,
+          ),
+        },
+      };
+    case 'deleteAnalysisCase':
+      return {
+        ...state,
+        savedAnalysisCasesByProject: {
+          ...state.savedAnalysisCasesByProject,
+          [action.projectId]: (state.savedAnalysisCasesByProject[action.projectId] ?? []).filter(
+            (savedCase) => savedCase.id !== action.caseId,
+          ),
+        },
+      };
+    case 'loadAnalysisCase': {
+      if (action.savedCase.mode === 'modern') {
+        return {
+          ...state,
+          cryptanalysisModeByProject: {
+            ...state.cryptanalysisModeByProject,
+            [action.projectId]: 'modern',
+          },
+          modernAnalysisBaselineByProject: {
+            ...state.modernAnalysisBaselineByProject,
+            [action.projectId]: action.savedCase.state.baselineInput,
+          },
+          modernAnalysisFlipBitByProject: {
+            ...state.modernAnalysisFlipBitByProject,
+            [action.projectId]: Math.max(0, Math.trunc(action.savedCase.state.flipBit)),
+          },
+          modernAnalysisSourceIdByProject: {
+            ...state.modernAnalysisSourceIdByProject,
+            [action.projectId]: action.nextModernSourceId,
+          },
+          modernAnalysisSinkIdByProject: {
+            ...state.modernAnalysisSinkIdByProject,
+            [action.projectId]: action.nextModernSinkId,
+          },
+        };
+      }
+
+      if (action.savedCase.mode === 'randomness') {
+        return {
+          ...state,
+          cryptanalysisModeByProject: {
+            ...state.cryptanalysisModeByProject,
+            [action.projectId]: 'randomness',
+          },
+          randomnessAnalysisSinkIdByProject: {
+            ...state.randomnessAnalysisSinkIdByProject,
+            [action.projectId]: action.nextRandomnessSinkId,
+          },
+        };
+      }
+
+      return {
+        ...state,
+        cryptanalysisModeByProject: {
+          ...state.cryptanalysisModeByProject,
+          [action.projectId]: 'classical',
+        },
+        cryptanalysisInputByProject: {
+          ...state.cryptanalysisInputByProject,
+          [action.projectId]: action.savedCase.state.ciphertext,
+        },
+        classicalSelectedPeriodByProject: {
+          ...state.classicalSelectedPeriodByProject,
+          [action.projectId]: Math.max(1, Math.trunc(action.savedCase.state.selectedPeriod)),
+        },
+        classicalSelectedColumnIndexByProject: {
+          ...state.classicalSelectedColumnIndexByProject,
+          [action.projectId]: Math.max(0, Math.trunc(action.savedCase.state.selectedColumnIndex)),
+        },
+        classicalSelectedShiftsByProject: {
+          ...state.classicalSelectedShiftsByProject,
+          [action.projectId]: { ...action.savedCase.state.selectedShiftsByColumnKey },
+        },
+      };
+    }
     case 'setTickedMode':
       return {
         ...state,

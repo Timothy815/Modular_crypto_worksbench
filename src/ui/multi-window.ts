@@ -10,7 +10,7 @@ import type { UiAction } from './store';
 import type { TutorialStep } from './tutorials';
 import type { GuidedTutorial } from './tutorials';
 import type { GuidedChallenge, ChallengeEvaluation } from './challenges';
-import type { ComparisonBaselineDocument } from './workbench-document';
+import type { ComparisonBaselineDocument, SavedAnalysisCase } from './workbench-document';
 import type { ExecutionComparison } from './execution-compare';
 import type {
   VerificationCase,
@@ -103,6 +103,13 @@ export interface DetachedLearningSnapshot {
   cryptanalysisMode: 'classical' | 'modern' | 'randomness';
   modernBaseline: string;
   modernFlipBit: number;
+  modernSourceId: string | null;
+  modernSinkId: string | null;
+  randomnessSinkId: string | null;
+  classicalSelectedPeriod: number;
+  classicalSelectedColumnIndex: number;
+  classicalSelectedShiftsByColumnKey: Record<string, number>;
+  savedAnalysisCases: SavedAnalysisCase[];
   isTickedMode: boolean;
   tickedExecution: TickedExecutionResult | null;
 }
@@ -189,6 +196,17 @@ export type DetachedPanelCommand =
   | { type: 'setCryptanalysisInput'; value: string }
   | { type: 'setModernAnalysisBaseline'; value: string }
   | { type: 'setModernAnalysisFlipBit'; value: number }
+  | { type: 'setModernAnalysisSourceId'; value: string | null }
+  | { type: 'setModernAnalysisSinkId'; value: string | null }
+  | { type: 'setRandomnessAnalysisSinkId'; value: string | null }
+  | { type: 'setClassicalSelectedPeriod'; value: number }
+  | { type: 'setClassicalSelectedColumnIndex'; value: number }
+  | { type: 'setClassicalSelectedShift'; key: string; value: number }
+  | { type: 'saveAnalysisCase'; name: string }
+  | { type: 'updateAnalysisCase'; caseId: string }
+  | { type: 'renameAnalysisCase'; caseId: string; name: string }
+  | { type: 'deleteAnalysisCase'; caseId: string }
+  | { type: 'loadAnalysisCase'; savedCase: SavedAnalysisCase }
   | { type: 'selectTutorial'; tutorialId: string; projectId?: string }
   | { type: 'setTutorialStep'; stepIndex: number }
   | { type: 'switchProject'; projectId: string }

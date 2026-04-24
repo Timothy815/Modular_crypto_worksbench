@@ -184,6 +184,17 @@ export interface DetachedPanelCommandHandlers {
   setCryptanalysisInput: (value: string) => void;
   setModernAnalysisBaseline: (value: string) => void;
   setModernAnalysisFlipBit: (value: number) => void;
+  setModernAnalysisSourceId: (value: string | null) => void;
+  setModernAnalysisSinkId: (value: string | null) => void;
+  setRandomnessAnalysisSinkId: (value: string | null) => void;
+  setClassicalSelectedPeriod: (value: number) => void;
+  setClassicalSelectedColumnIndex: (value: number) => void;
+  setClassicalSelectedShift: (key: string, value: number) => void;
+  saveAnalysisCase: (name: string) => void;
+  updateAnalysisCase: (caseId: string) => void;
+  renameAnalysisCase: (caseId: string, name: string) => void;
+  deleteAnalysisCase: (caseId: string) => void;
+  loadAnalysisCase: (savedCase: import('./workbench-document').SavedAnalysisCase) => void;
   selectTutorial: (tutorialId: string, projectId?: string) => void;
   setTutorialStep: (stepIndex: number) => void;
   switchProject: (projectId: string) => void;
@@ -397,6 +408,39 @@ export function connectDetachedPanelChannel(args: DetachedPanelChannelBridgeArgs
         return;
       case 'setModernAnalysisFlipBit':
         args.commandHandlers.setModernAnalysisFlipBit(command.value);
+        return;
+      case 'setModernAnalysisSourceId':
+        args.commandHandlers.setModernAnalysisSourceId(command.value);
+        return;
+      case 'setModernAnalysisSinkId':
+        args.commandHandlers.setModernAnalysisSinkId(command.value);
+        return;
+      case 'setRandomnessAnalysisSinkId':
+        args.commandHandlers.setRandomnessAnalysisSinkId(command.value);
+        return;
+      case 'setClassicalSelectedPeriod':
+        args.commandHandlers.setClassicalSelectedPeriod(command.value);
+        return;
+      case 'setClassicalSelectedColumnIndex':
+        args.commandHandlers.setClassicalSelectedColumnIndex(command.value);
+        return;
+      case 'setClassicalSelectedShift':
+        args.commandHandlers.setClassicalSelectedShift(command.key, command.value);
+        return;
+      case 'saveAnalysisCase':
+        args.commandHandlers.saveAnalysisCase(command.name);
+        return;
+      case 'updateAnalysisCase':
+        args.commandHandlers.updateAnalysisCase(command.caseId);
+        return;
+      case 'renameAnalysisCase':
+        args.commandHandlers.renameAnalysisCase(command.caseId, command.name);
+        return;
+      case 'deleteAnalysisCase':
+        args.commandHandlers.deleteAnalysisCase(command.caseId);
+        return;
+      case 'loadAnalysisCase':
+        args.commandHandlers.loadAnalysisCase(command.savedCase);
         return;
       case 'selectTutorial':
         args.commandHandlers.selectTutorial(command.tutorialId, command.projectId);

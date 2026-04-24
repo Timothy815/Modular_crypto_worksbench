@@ -3,7 +3,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, us
 import './App.css';
 import { isBuiltInCompositeLibraryEntry, isCompositeDefinition, isConditionalDefinition, isIteratorDefinition, isMultiConditionalDefinition, type CompositeLibraryEntry, type ConditionalDef, type MultiConditionalDef } from './engine/composites';
 import { V1_REGISTRY } from './engine/modules';
-import type { ExecutionResult, ExecutionTraceEntry, SignalType, TickedExecutionResult } from './engine/types';
+import type { ExecutionResult, ExecutionTraceEntry, Project, SignalType, TickedExecutionResult } from './engine/types';
 import { validateCompositeDef, validateProject } from './engine/validation';
 import {
   createCompositeFromSelection,
@@ -56,6 +56,8 @@ import {
   saveWorkspaceToStorage,
 } from './ui/persistence';
 import { cloneProject } from './ui/project-clone';
+import type { SavedAnalysisCase } from './ui/workbench-document';
+import { isOutputSinkDefId } from './engine/output-sinks';
 import { createIteratorDefinition, isEligibleIteratorBodyDefinition } from './ui/iterator-authoring';
 import {
   createClockedIteratorDefinition,
@@ -125,6 +127,61 @@ const DetachedWorkspaceWindow = lazy(() =>
     default: module.DetachedWorkspaceWindow,
   })),
 );
+
+function getCryptanalysisFlippableSourceIds(project: Project): string[] {
+  const ids: string[] = [];
+  for (const moduleInstance of project.modules) {
+    if (
+      moduleInstance.defId === 'BitSource' ||
+      moduleInstance.defId === 'HexSource' ||
+      moduleInstance.defId === 'AsciiSource'
+    ) {
+      ids.push(moduleInstance.id);
+      continue;
+    }
+
+    if (
+      moduleInstance.defId === 'TextInput' &&
+      typeof moduleInstance.params.value === 'string' &&
+      moduleInstance.params.value.length === 1
+    ) {
+      const bridgeConnection = project.connections.find(
+        (connection) =>
+          connection.from.moduleId === moduleInstance.id &&
+          connection.to.port === 'in' &&
+          project.modules.some(
+            (candidate) => candidate.id === connection.to.moduleId && candidate.defId === 'SymbolToBits',
+          ),
+      );
+      if (bridgeConnection) {
+        ids.push(moduleInstance.id);
+      }
+    }
+  }
+  return ids;
+}
+
+function getCryptanalysisSinkIds(project: Project, execution: ExecutionResult | null): string[] {
+  if (!execution) {
+    return [];
+  }
+
+  return project.modules
+    .filter((moduleInstance) => isOutputSinkDefId(moduleInstance.defId))
+    .filter((moduleInstance) => {
+      const traceEntry =
+        execution.trace.find(
+          (entry) => entry.moduleId === moduleInstance.id && isOutputSinkDefId(entry.defId),
+        ) ?? null;
+      const signal =
+        execution.outputsByModuleId[moduleInstance.id]?.out ??
+        traceEntry?.outputs.out ??
+        traceEntry?.inputs.in ??
+        null;
+      return signal?.type === 'bits';
+    })
+    .map((moduleInstance) => moduleInstance.id);
+}
 const WorkbenchPanel = lazy(() =>
   import('./ui/components/workbench-panel').then((module) => ({
     default: module.WorkbenchPanel,
@@ -1492,6 +1549,192 @@ function MainApp() {
     },
     [activeProjectDefinition.id, state.tutorialLibrary, workspaceMode],
   );
+  const handleSaveAnalysisCase = useCallback(
+    (name: string) => {
+      const trimmedName = name.trim();
+      if (trimmedName.length === 0) {
+        return;
+      }
+
+      const projectId = activeProjectDefinition.id;
+      const mode = state.cryptanalysisModeByProject[projectId] ?? 'classical';
+      const savedCase: SavedAnalysisCase =
+        mode === 'modern'
+          ? {
+              id: `analysis-case-${Math.random().toString(36).slice(2, 10)}`,
+              name: trimmedName,
+              projectId,
+              mode,
+              state: {
+                sourceModuleId: state.modernAnalysisSourceIdByProject[projectId] ?? null,
+                sinkModuleId: state.modernAnalysisSinkIdByProject[projectId] ?? null,
+                baselineInput: state.modernAnalysisBaselineByProject[projectId] ?? '',
+                flipBit: state.modernAnalysisFlipBitByProject[projectId] ?? 0,
+              },
+            }
+          : mode === 'randomness'
+            ? {
+                id: `analysis-case-${Math.random().toString(36).slice(2, 10)}`,
+                name: trimmedName,
+                projectId,
+                mode,
+                state: {
+                  sinkModuleId: state.randomnessAnalysisSinkIdByProject[projectId] ?? null,
+                },
+              }
+            : {
+                id: `analysis-case-${Math.random().toString(36).slice(2, 10)}`,
+                name: trimmedName,
+                projectId,
+                mode,
+                state: {
+                  ciphertext: state.cryptanalysisInputByProject[projectId] ?? '',
+                  selectedPeriod: state.classicalSelectedPeriodByProject[projectId] ?? 1,
+                  selectedColumnIndex: state.classicalSelectedColumnIndexByProject[projectId] ?? 0,
+                  selectedShiftsByColumnKey: {
+                    ...(state.classicalSelectedShiftsByProject[projectId] ?? {}),
+                  },
+                },
+              };
+
+      dispatch({
+        type: 'saveAnalysisCase',
+        projectId,
+        savedCase,
+      });
+    },
+    [
+      activeProjectDefinition.id,
+      state.classicalSelectedColumnIndexByProject,
+      state.classicalSelectedPeriodByProject,
+      state.classicalSelectedShiftsByProject,
+      state.cryptanalysisInputByProject,
+      state.cryptanalysisModeByProject,
+      state.modernAnalysisBaselineByProject,
+      state.modernAnalysisFlipBitByProject,
+      state.modernAnalysisSinkIdByProject,
+      state.modernAnalysisSourceIdByProject,
+      state.randomnessAnalysisSinkIdByProject,
+    ],
+  );
+  const handleUpdateAnalysisCase = useCallback(
+    (caseId: string) => {
+      const existing = (state.savedAnalysisCasesByProject[activeProjectDefinition.id] ?? []).find(
+        (savedCase) => savedCase.id === caseId,
+      );
+      if (!existing) {
+        return;
+      }
+
+      let nextCase: SavedAnalysisCase;
+      if (existing.mode === 'modern') {
+        nextCase = {
+          ...existing,
+          state: {
+            sourceModuleId: state.modernAnalysisSourceIdByProject[activeProjectDefinition.id] ?? null,
+            sinkModuleId: state.modernAnalysisSinkIdByProject[activeProjectDefinition.id] ?? null,
+            baselineInput: state.modernAnalysisBaselineByProject[activeProjectDefinition.id] ?? '',
+            flipBit: state.modernAnalysisFlipBitByProject[activeProjectDefinition.id] ?? 0,
+          },
+        };
+      } else if (existing.mode === 'randomness') {
+        nextCase = {
+          ...existing,
+          state: {
+            sinkModuleId: state.randomnessAnalysisSinkIdByProject[activeProjectDefinition.id] ?? null,
+          },
+        };
+      } else {
+        nextCase = {
+          ...existing,
+          state: {
+            ciphertext: state.cryptanalysisInputByProject[activeProjectDefinition.id] ?? '',
+            selectedPeriod: state.classicalSelectedPeriodByProject[activeProjectDefinition.id] ?? 1,
+            selectedColumnIndex: state.classicalSelectedColumnIndexByProject[activeProjectDefinition.id] ?? 0,
+            selectedShiftsByColumnKey: {
+              ...(state.classicalSelectedShiftsByProject[activeProjectDefinition.id] ?? {}),
+            },
+          },
+        };
+      }
+
+      dispatch({
+        type: 'updateAnalysisCase',
+        projectId: activeProjectDefinition.id,
+        caseId,
+        savedCase: nextCase,
+      });
+    },
+    [
+      activeProjectDefinition.id,
+      state.classicalSelectedColumnIndexByProject,
+      state.classicalSelectedPeriodByProject,
+      state.classicalSelectedShiftsByProject,
+      state.cryptanalysisInputByProject,
+      state.modernAnalysisBaselineByProject,
+      state.modernAnalysisFlipBitByProject,
+      state.modernAnalysisSinkIdByProject,
+      state.modernAnalysisSourceIdByProject,
+      state.randomnessAnalysisSinkIdByProject,
+      state.savedAnalysisCasesByProject,
+    ],
+  );
+  const handleRenameAnalysisCase = useCallback(
+    (caseId: string, name: string) => {
+      dispatch({
+        type: 'renameAnalysisCase',
+        projectId: activeProjectDefinition.id,
+        caseId,
+        name,
+      });
+    },
+    [activeProjectDefinition.id],
+  );
+  const handleDeleteAnalysisCase = useCallback(
+    (caseId: string) => {
+      dispatch({
+        type: 'deleteAnalysisCase',
+        projectId: activeProjectDefinition.id,
+        caseId,
+      });
+    },
+    [activeProjectDefinition.id],
+  );
+  const handleLoadAnalysisCase = useCallback(
+    (savedCase: SavedAnalysisCase) => {
+      const projectId = activeProjectDefinition.id;
+      const availableSourceIds = getCryptanalysisFlippableSourceIds(activeProjectState);
+      const availableSinkIds = getCryptanalysisSinkIds(activeProjectState, execution);
+      const nextModernSourceId =
+        savedCase.mode === 'modern'
+          ? availableSourceIds.includes(savedCase.state.sourceModuleId ?? '')
+            ? savedCase.state.sourceModuleId
+            : availableSourceIds[0] ?? null
+          : null;
+      const nextModernSinkId =
+        savedCase.mode === 'modern'
+          ? availableSinkIds.includes(savedCase.state.sinkModuleId ?? '')
+            ? savedCase.state.sinkModuleId
+            : availableSinkIds[0] ?? null
+          : null;
+      const nextRandomnessSinkId =
+        savedCase.mode === 'randomness'
+          ? availableSinkIds.includes(savedCase.state.sinkModuleId ?? '')
+            ? savedCase.state.sinkModuleId
+            : availableSinkIds[0] ?? null
+          : null;
+
+      dispatch({
+        type: 'loadAnalysisCase',
+        projectId,
+        savedCase,
+        nextModernSourceId,
+        nextModernSinkId,
+        nextRandomnessSinkId,
+      });
+    },
+    [activeProjectDefinition.id, activeProjectState, execution],
+  );
   const activeTutorialStep =
     workspaceMode === 'guide' &&
     !state.compositeEditor &&
@@ -1619,6 +1862,15 @@ function MainApp() {
       cryptanalysisMode: state.cryptanalysisModeByProject[activeProjectDefinition.id] ?? 'classical',
       modernBaseline: state.modernAnalysisBaselineByProject[activeProjectDefinition.id] ?? '',
       modernFlipBit: state.modernAnalysisFlipBitByProject[activeProjectDefinition.id] ?? 0,
+      modernSourceId: state.modernAnalysisSourceIdByProject[activeProjectDefinition.id] ?? null,
+      modernSinkId: state.modernAnalysisSinkIdByProject[activeProjectDefinition.id] ?? null,
+      randomnessSinkId: state.randomnessAnalysisSinkIdByProject[activeProjectDefinition.id] ?? null,
+      classicalSelectedPeriod: state.classicalSelectedPeriodByProject[activeProjectDefinition.id] ?? 1,
+      classicalSelectedColumnIndex:
+        state.classicalSelectedColumnIndexByProject[activeProjectDefinition.id] ?? 0,
+      classicalSelectedShiftsByColumnKey:
+        state.classicalSelectedShiftsByProject[activeProjectDefinition.id] ?? {},
+      savedAnalysisCases: state.savedAnalysisCasesByProject[activeProjectDefinition.id] ?? [],
       isTickedMode,
       tickedExecution,
     }),
@@ -1643,6 +1895,13 @@ function MainApp() {
       state.cryptanalysisModeByProject,
       state.modernAnalysisBaselineByProject,
       state.modernAnalysisFlipBitByProject,
+      state.modernAnalysisSinkIdByProject,
+      state.modernAnalysisSourceIdByProject,
+      state.randomnessAnalysisSinkIdByProject,
+      state.classicalSelectedPeriodByProject,
+      state.classicalSelectedColumnIndexByProject,
+      state.classicalSelectedShiftsByProject,
+      state.savedAnalysisCasesByProject,
       tickedExecution,
       state.tutorialLibrary,
       theme,
@@ -2658,6 +2917,48 @@ function MainApp() {
           projectId: activeProjectDefinition.id,
           value,
         }),
+      setModernAnalysisSourceId: (value: string | null) =>
+        dispatch({
+          type: 'setModernAnalysisSourceId',
+          projectId: activeProjectDefinition.id,
+          value,
+        }),
+      setModernAnalysisSinkId: (value: string | null) =>
+        dispatch({
+          type: 'setModernAnalysisSinkId',
+          projectId: activeProjectDefinition.id,
+          value,
+        }),
+      setRandomnessAnalysisSinkId: (value: string | null) =>
+        dispatch({
+          type: 'setRandomnessAnalysisSinkId',
+          projectId: activeProjectDefinition.id,
+          value,
+        }),
+      setClassicalSelectedPeriod: (value: number) =>
+        dispatch({
+          type: 'setClassicalSelectedPeriod',
+          projectId: activeProjectDefinition.id,
+          value,
+        }),
+      setClassicalSelectedColumnIndex: (value: number) =>
+        dispatch({
+          type: 'setClassicalSelectedColumnIndex',
+          projectId: activeProjectDefinition.id,
+          value,
+        }),
+      setClassicalSelectedShift: (key: string, value: number) =>
+        dispatch({
+          type: 'setClassicalSelectedShift',
+          projectId: activeProjectDefinition.id,
+          key,
+          value,
+        }),
+      saveAnalysisCase: handleSaveAnalysisCase,
+      updateAnalysisCase: handleUpdateAnalysisCase,
+      renameAnalysisCase: handleRenameAnalysisCase,
+      deleteAnalysisCase: handleDeleteAnalysisCase,
+      loadAnalysisCase: handleLoadAnalysisCase,
       selectTutorial: handleSelectTutorial,
       setTutorialStep: (stepIndex: number) => {
         setStepIndex(selectedTutorial?.steps[stepIndex]?.targetStepIndex ?? null);
@@ -4688,6 +4989,13 @@ function MainApp() {
                 cryptanalysisMode={state.cryptanalysisModeByProject[activeProjectDefinition.id] ?? 'classical'}
                 modernBaseline={state.modernAnalysisBaselineByProject[activeProjectDefinition.id] ?? ''}
                 modernFlipBit={state.modernAnalysisFlipBitByProject[activeProjectDefinition.id] ?? 0}
+                modernSourceId={state.modernAnalysisSourceIdByProject[activeProjectDefinition.id] ?? null}
+                modernSinkId={state.modernAnalysisSinkIdByProject[activeProjectDefinition.id] ?? null}
+                randomnessSinkId={state.randomnessAnalysisSinkIdByProject[activeProjectDefinition.id] ?? null}
+                classicalSelectedPeriod={state.classicalSelectedPeriodByProject[activeProjectDefinition.id] ?? 1}
+                classicalSelectedColumnIndex={state.classicalSelectedColumnIndexByProject[activeProjectDefinition.id] ?? 0}
+                classicalSelectedShiftsByColumnKey={state.classicalSelectedShiftsByProject[activeProjectDefinition.id] ?? {}}
+                savedAnalysisCases={state.savedAnalysisCasesByProject[activeProjectDefinition.id] ?? []}
                 onSelectChallenge={(challengeId) => {
                   handleSelectChallenge(challengeId);
                 }}
@@ -4753,6 +5061,54 @@ function MainApp() {
                     value,
                   })
                 }
+                onModernSourceIdChange={(value) =>
+                  dispatch({
+                    type: 'setModernAnalysisSourceId',
+                    projectId: activeProjectDefinition.id,
+                    value,
+                  })
+                }
+                onModernSinkIdChange={(value) =>
+                  dispatch({
+                    type: 'setModernAnalysisSinkId',
+                    projectId: activeProjectDefinition.id,
+                    value,
+                  })
+                }
+                onRandomnessSinkIdChange={(value) =>
+                  dispatch({
+                    type: 'setRandomnessAnalysisSinkId',
+                    projectId: activeProjectDefinition.id,
+                    value,
+                  })
+                }
+                onClassicalSelectedPeriodChange={(value) =>
+                  dispatch({
+                    type: 'setClassicalSelectedPeriod',
+                    projectId: activeProjectDefinition.id,
+                    value,
+                  })
+                }
+                onClassicalSelectedColumnIndexChange={(value) =>
+                  dispatch({
+                    type: 'setClassicalSelectedColumnIndex',
+                    projectId: activeProjectDefinition.id,
+                    value,
+                  })
+                }
+                onClassicalSelectedShiftChange={(key, value) =>
+                  dispatch({
+                    type: 'setClassicalSelectedShift',
+                    projectId: activeProjectDefinition.id,
+                    key,
+                    value,
+                  })
+                }
+                onSaveAnalysisCase={handleSaveAnalysisCase}
+                onUpdateAnalysisCase={handleUpdateAnalysisCase}
+                onRenameAnalysisCase={handleRenameAnalysisCase}
+                onDeleteAnalysisCase={handleDeleteAnalysisCase}
+                onLoadAnalysisCase={handleLoadAnalysisCase}
                 onSelectTutorial={(tutorialId) => handleSelectTutorial(tutorialId)}
                 onOpenTutorialPath={handleOpenTutorialPath}
                 onOpenPipelineMicroDemo={handleOpenPipelineMicroDemo}

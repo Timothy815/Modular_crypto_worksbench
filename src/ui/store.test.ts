@@ -2608,4 +2608,81 @@ describe('uiReducer', () => {
     expect(nextState.layoutByProject['my-scratchpad']).toBeUndefined();
     expect(nextState.workspaceModeByProject['my-scratchpad']).toBeUndefined();
   });
+
+  it('saves and loads modern analysis cases into reducer-backed cryptanalysis state', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+
+    const savedCase = {
+      id: 'analysis-modern-1',
+      name: 'Avalanche Baseline',
+      projectId,
+      mode: 'modern' as const,
+      state: {
+        sourceModuleId: 'input',
+        sinkModuleId: 'output',
+        baselineInput: '10101010',
+        flipBit: 3,
+      },
+    };
+
+    const savedState = uiReducer(initialState, {
+      type: 'saveAnalysisCase',
+      projectId,
+      savedCase,
+    });
+    const loadedState = uiReducer(savedState, {
+      type: 'loadAnalysisCase',
+      projectId,
+      savedCase,
+      nextModernSourceId: 'input',
+      nextModernSinkId: 'output',
+      nextRandomnessSinkId: null,
+    });
+
+    expect(savedState.savedAnalysisCasesByProject[projectId]).toContainEqual(savedCase);
+    expect(loadedState.cryptanalysisModeByProject[projectId]).toBe('modern');
+    expect(loadedState.modernAnalysisBaselineByProject[projectId]).toBe('10101010');
+    expect(loadedState.modernAnalysisFlipBitByProject[projectId]).toBe(3);
+    expect(loadedState.modernAnalysisSourceIdByProject[projectId]).toBe('input');
+    expect(loadedState.modernAnalysisSinkIdByProject[projectId]).toBe('output');
+  });
+
+  it('loads classical analysis cases and restores selected period, column, and shifts', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const projectId = 'sequential';
+    const savedCase = {
+      id: 'analysis-classical-1',
+      name: 'Vigenere Probe',
+      projectId,
+      mode: 'classical' as const,
+      state: {
+        ciphertext: 'LXFOPVEFRNHR',
+        selectedPeriod: 5,
+        selectedColumnIndex: 2,
+        selectedShiftsByColumnKey: {
+          '5:0': 11,
+          '5:2': 4,
+        },
+      },
+    };
+
+    const nextState = uiReducer(initialState, {
+      type: 'loadAnalysisCase',
+      projectId,
+      savedCase,
+      nextModernSourceId: null,
+      nextModernSinkId: null,
+      nextRandomnessSinkId: null,
+    });
+
+    expect(nextState.cryptanalysisModeByProject[projectId]).toBe('classical');
+    expect(nextState.cryptanalysisInputByProject[projectId]).toBe('LXFOPVEFRNHR');
+    expect(nextState.classicalSelectedPeriodByProject[projectId]).toBe(5);
+    expect(nextState.classicalSelectedColumnIndexByProject[projectId]).toBe(2);
+    expect(nextState.classicalSelectedShiftsByProject[projectId]).toEqual({
+      '5:0': 11,
+      '5:2': 4,
+    });
+  });
 });
