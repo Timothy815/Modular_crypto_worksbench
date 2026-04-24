@@ -460,6 +460,7 @@ interface WorkbenchPanelProps {
   onSetTickPlaybackActive?: (active: boolean) => void;
   onSetTickPlaybackSpeed?: (speedMs: number) => void;
   onToggleProbe?: (moduleId: string) => void;
+  onDuplicateModule?: (moduleId: string) => void;
   onMoveModule: (moduleId: string, x: number, y: number) => void;
   onMoveModules: (positions: Record<string, { x: number; y: number }>) => void;
   onAddAnnotation: () => void;
@@ -697,6 +698,7 @@ export function WorkbenchPanel({
   onSetTickPlaybackActive,
   onSetTickPlaybackSpeed,
   onToggleProbe,
+  onDuplicateModule,
   onMoveModule,
   onMoveModules,
   onAddAnnotation,
@@ -4630,8 +4632,8 @@ export function WorkbenchPanel({
                       type="button"
                       className={
                         probedModuleIds.includes(moduleInstance.id)
-                          ? 'graph-node-probe-button probed'
-                          : 'graph-node-probe-button'
+                          ? 'graph-node-card-action graph-node-probe-button probed'
+                          : 'graph-node-card-action graph-node-probe-button'
                       }
                       aria-label={
                         probedModuleIds.includes(moduleInstance.id)
@@ -4652,6 +4654,26 @@ export function WorkbenchPanel({
                       }}
                     >
                       {probedModuleIds.includes(moduleInstance.id) ? '\u25C9' : '\u25CB'}
+                    </button>
+                  ) : null}
+                  {onDuplicateModule ? (
+                    <button
+                      type="button"
+                      className="graph-node-card-action graph-node-duplicate-button"
+                      aria-label={`Duplicate ${moduleInstance.id}`}
+                      title="Duplicate module"
+                      onMouseDown={(event) => event.stopPropagation()}
+                      onClick={(event) => {
+                        if (isObservationMode) {
+                          return;
+                        }
+                        event.stopPropagation();
+                        setSelectedConnectionIndex(null);
+                        setSelectedStageLabelId(null);
+                        onDuplicateModule(moduleInstance.id);
+                      }}
+                    >
+                      ⧉
                     </button>
                   ) : null}
                   {isTickedMode && tickedParamsByModule?.[moduleInstance.id] && tickCount > 0 ? (() => {

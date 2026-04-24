@@ -4793,10 +4793,8 @@ body.canvas-resizing {
   box-shadow: 0 0 0 2px var(--probe-strong), 0 4px 12px var(--probe-soft);
 }
 
-.graph-node-probe-button {
+.graph-node-card-action {
   position: absolute;
-  top: 2px;
-  right: 2px;
   width: 20px;
   height: 20px;
   padding: 0;
@@ -4811,9 +4809,20 @@ body.canvas-resizing {
   transition: opacity 0.12s ease, color 0.12s ease, background 0.12s ease;
 }
 
-.graph-node:hover .graph-node-probe-button,
+.graph-node:hover .graph-node-card-action,
+.graph-node-card-action:focus-visible,
 .graph-node-probe-button.probed {
   opacity: 1;
+}
+
+.graph-node-card-action:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  outline-offset: 1px;
+}
+
+.graph-node-probe-button {
+  top: 2px;
+  right: 2px;
 }
 
 .graph-node-probe-button.probed {
@@ -4823,6 +4832,23 @@ body.canvas-resizing {
 
 .graph-node-probe-button:hover {
   background: var(--probe-soft);
+  color: var(--ink);
+}
+
+.graph-node-duplicate-button {
+  top: 50%;
+  right: -10px;
+  transform: translateY(-50%);
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line));
+  background: color-mix(in srgb, var(--surface-panel) 94%, white);
+  color: color-mix(in srgb, var(--accent) 78%, var(--ink));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 10%, transparent);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.graph-node-duplicate-button:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-panel));
   color: var(--ink);
 }
 
