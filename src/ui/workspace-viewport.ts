@@ -1,5 +1,5 @@
 export const DEFAULT_WORKSPACE_ZOOM = 1;
-export const MIN_WORKSPACE_ZOOM = 0.35;
+export const MIN_WORKSPACE_ZOOM = 0.1;
 export const MAX_WORKSPACE_ZOOM = 1.6;
 export const WORKSPACE_ZOOM_STEP = 0.2;
 
