@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   analyzeBitDifference,
   analyzeBitstreamRandomness,
+  buildAvalancheSweepSummary,
   buildCandidatePeriodChartEntries,
   buildInfluenceHeatmapColumnEntries,
   buildRoundDiffusionChartEntries,
@@ -440,5 +441,51 @@ describe('modern bit analysis helpers', () => {
         matches: [{ window: '00110101', count: 2 }],
       },
     ]);
+  });
+
+  it('builds batch avalanche sweep statistics and byte groups', () => {
+    expect(
+      buildAvalancheSweepSummary([
+        { inputIndex: 0, changedFlags: [true, false, false, false], changedCount: 1, changedPercent: 0.25 },
+        { inputIndex: 1, changedFlags: [true, true, false, false], changedCount: 2, changedPercent: 0.5 },
+        { inputIndex: 8, changedFlags: [true, true, true, false], changedCount: 3, changedPercent: 0.75 },
+        { inputIndex: 9, changedFlags: [true, true, true, true], changedCount: 4, changedPercent: 1 },
+      ], 16),
+    ).toEqual({
+      flipCount: 4,
+      minimumChangedCount: 1,
+      maximumChangedCount: 4,
+      averageChangedCount: 2.5,
+      medianChangedCount: 2.5,
+      standardDeviation: expect.closeTo(Math.sqrt(1.25), 6),
+      weakestInputs: [
+        { inputIndex: 0, changedCount: 1, changedPercent: 0.25 },
+        { inputIndex: 1, changedCount: 2, changedPercent: 0.5 },
+        { inputIndex: 8, changedCount: 3, changedPercent: 0.75 },
+        { inputIndex: 9, changedCount: 4, changedPercent: 1 },
+      ],
+      strongestInputs: [
+        { inputIndex: 9, changedCount: 4, changedPercent: 1 },
+        { inputIndex: 8, changedCount: 3, changedPercent: 0.75 },
+        { inputIndex: 1, changedCount: 2, changedPercent: 0.5 },
+        { inputIndex: 0, changedCount: 1, changedPercent: 0.25 },
+      ],
+      byteGroups: [
+        {
+          byteIndex: 0,
+          startBitIndex: 0,
+          endBitIndex: 7,
+          averageChangedCount: 1.5,
+          averageChangedPercent: 0.375,
+        },
+        {
+          byteIndex: 1,
+          startBitIndex: 8,
+          endBitIndex: 15,
+          averageChangedCount: 3.5,
+          averageChangedPercent: 0.875,
+        },
+      ],
+    });
   });
 });

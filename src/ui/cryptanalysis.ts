@@ -107,6 +107,39 @@ export interface CandidatePeriodChartEntry {
   supportBarPercent: number;
 }
 
+export interface AvalancheSweepEntry {
+  inputIndex: number;
+  changedFlags: boolean[];
+  changedCount: number;
+  changedPercent: number;
+}
+
+export interface AvalancheSweepExtremeEntry {
+  inputIndex: number;
+  changedCount: number;
+  changedPercent: number;
+}
+
+export interface AvalancheSweepByteGroupEntry {
+  byteIndex: number;
+  startBitIndex: number;
+  endBitIndex: number;
+  averageChangedCount: number;
+  averageChangedPercent: number;
+}
+
+export interface AvalancheSweepSummary {
+  flipCount: number;
+  minimumChangedCount: number;
+  maximumChangedCount: number;
+  averageChangedCount: number;
+  medianChangedCount: number;
+  standardDeviation: number;
+  weakestInputs: AvalancheSweepExtremeEntry[];
+  strongestInputs: AvalancheSweepExtremeEntry[];
+  byteGroups: AvalancheSweepByteGroupEntry[];
+}
+
 export interface BitstreamRunLengthGroup {
   lengthLabel: string;
   zeroRuns: number;
@@ -507,6 +540,103 @@ export function buildInfluenceHeatmapColumnEntries(
       intensity: inputCount > 0 ? activationCount / inputCount : 0,
     };
   });
+}
+
+export function buildAvalancheSweepSummary(
+  entries: AvalancheSweepEntry[],
+  inputBitLength: number,
+): AvalancheSweepSummary | null {
+  if (entries.length === 0) {
+    return null;
+  }
+
+  const counts = entries.map((entry) => entry.changedCount);
+  const averageChangedCount = counts.reduce((sum, value) => sum + value, 0) / counts.length;
+  const sortedCounts = [...counts].sort((left, right) => left - right);
+  const middleIndex = Math.floor(sortedCounts.length / 2);
+  const medianChangedCount =
+    sortedCounts.length % 2 === 0
+      ? (sortedCounts[middleIndex - 1] + sortedCounts[middleIndex]) / 2
+      : sortedCounts[middleIndex] ?? 0;
+  const variance =
+    counts.reduce((sum, value) => sum + ((value - averageChangedCount) ** 2), 0) / counts.length;
+
+  const weakestInputs = [...entries]
+    .sort((left, right) => {
+      if (left.changedCount !== right.changedCount) {
+        return left.changedCount - right.changedCount;
+      }
+      return left.inputIndex - right.inputIndex;
+    })
+    .slice(0, 8)
+    .map((entry) => ({
+      inputIndex: entry.inputIndex,
+      changedCount: entry.changedCount,
+      changedPercent: entry.changedPercent,
+    }));
+
+  const strongestInputs = [...entries]
+    .sort((left, right) => {
+      if (right.changedCount !== left.changedCount) {
+        return right.changedCount - left.changedCount;
+      }
+      return left.inputIndex - right.inputIndex;
+    })
+    .slice(0, 8)
+    .map((entry) => ({
+      inputIndex: entry.inputIndex,
+      changedCount: entry.changedCount,
+      changedPercent: entry.changedPercent,
+    }));
+
+  return {
+    flipCount: entries.length,
+    minimumChangedCount: sortedCounts[0] ?? 0,
+    maximumChangedCount: sortedCounts[sortedCounts.length - 1] ?? 0,
+    averageChangedCount,
+    medianChangedCount,
+    standardDeviation: Math.sqrt(variance),
+    weakestInputs,
+    strongestInputs,
+    byteGroups:
+      inputBitLength > 0 && inputBitLength % 8 === 0
+        ? buildAvalancheByteGroups(entries, inputBitLength)
+        : [],
+  };
+}
+
+function buildAvalancheByteGroups(
+  entries: AvalancheSweepEntry[],
+  inputBitLength: number,
+): AvalancheSweepByteGroupEntry[] {
+  const byteCount = Math.floor(inputBitLength / 8);
+  const groups: AvalancheSweepByteGroupEntry[] = [];
+
+  for (let byteIndex = 0; byteIndex < byteCount; byteIndex += 1) {
+    const startBitIndex = byteIndex * 8;
+    const endBitIndex = startBitIndex + 7;
+    const groupEntries = entries.filter(
+      (entry) => entry.inputIndex >= startBitIndex && entry.inputIndex <= endBitIndex,
+    );
+    if (groupEntries.length === 0) {
+      continue;
+    }
+
+    const averageChangedCount =
+      groupEntries.reduce((sum, entry) => sum + entry.changedCount, 0) / groupEntries.length;
+    const averageChangedPercent =
+      groupEntries.reduce((sum, entry) => sum + entry.changedPercent, 0) / groupEntries.length;
+
+    groups.push({
+      byteIndex,
+      startBitIndex,
+      endBitIndex,
+      averageChangedCount,
+      averageChangedPercent,
+    });
+  }
+
+  return groups;
 }
 
 export function analyzeBitstreamRandomness(bits: number[]): BitstreamRandomnessAnalysis {

@@ -5,6 +5,7 @@ import {
   analyzeBitstreamRandomness,
   analyzeRoundDiffusion,
   analyzeSymbolSignal,
+  buildAvalancheSweepSummary,
   buildInfluenceHeatmapColumnEntries,
   buildShiftConfidenceEntries,
   bitsToAlphabetSymbol,
@@ -110,6 +111,9 @@ export function CryptanalysisPanel({
   const [selectedPeriod, setSelectedPeriod] = useState<number>(1);
   const [selectedColumnIndex, setSelectedColumnIndex] = useState<number>(0);
   const [selectedShiftsByColumnKey, setSelectedShiftsByColumnKey] = useState<Record<string, number>>({});
+  const [selectedModernSourceId, setSelectedModernSourceId] = useState<string>('');
+  const [selectedModernSinkId, setSelectedModernSinkId] = useState<string>('');
+  const [lastManualSweepSignature, setLastManualSweepSignature] = useState<string | null>(null);
   const [selectedRandomnessSinkId, setSelectedRandomnessSinkId] = useState<string>('');
   const analysis = analyzeSymbolSignal(
     ciphertext.trim().length > 0 ? { type: 'symbol', value: ciphertext } : null,
@@ -162,7 +166,14 @@ export function CryptanalysisPanel({
     [activeColumn],
   );
   const baselineBits = useMemo(() => parseBitString(modernBaseline), [modernBaseline]);
-  const flippableSource = useMemo(() => findFlippableProjectSource(project), [project]);
+  const flippableSources = useMemo(() => findFlippableProjectSources(project), [project]);
+  const effectiveModernSourceId = flippableSources.some(
+    (source) => source.moduleId === selectedModernSourceId,
+  )
+    ? selectedModernSourceId
+    : flippableSources[0]?.moduleId ?? '';
+  const flippableSource =
+    flippableSources.find((source) => source.moduleId === effectiveModernSourceId) ?? null;
   const projectSourceBits = useMemo(() => {
     if (!flippableSource) {
       return [];
@@ -229,13 +240,22 @@ export function CryptanalysisPanel({
       return null;
     }
   }, [registry, variantProject]);
+  const modernSinkOptions = useMemo(
+    () => getBitstreamSinkOptions(project, execution, null, false),
+    [project, execution],
+  );
+  const effectiveModernSinkId = modernSinkOptions.some(
+    (option) => option.moduleId === selectedModernSinkId,
+  )
+    ? selectedModernSinkId
+    : modernSinkOptions[0]?.moduleId ?? '';
   const baselineOutputBits = useMemo(
-    () => (execution ? getTerminalBits(execution) : null),
-    [execution],
+    () => getBitSignalForSink(execution, effectiveModernSinkId),
+    [execution, effectiveModernSinkId],
   );
   const variantOutputBits = useMemo(
-    () => (variantExecution ? getTerminalBits(variantExecution) : null),
-    [variantExecution],
+    () => getBitSignalForSink(variantExecution, effectiveModernSinkId),
+    [variantExecution, effectiveModernSinkId],
   );
   const outputDifference = useMemo(() => {
     if (!baselineOutputBits || !variantOutputBits) {
@@ -270,55 +290,69 @@ export function CryptanalysisPanel({
     () => buildRoundDiffusionChartEntries(roundDiffusion),
     [roundDiffusion],
   );
-  const influenceRows = useMemo(() => {
-    if (!flippableSource || !baselineOutputBits || flippableSource.kind === 'text-symbol-bridge') {
+  const sweepSignature = useMemo(
+    () =>
+      JSON.stringify({
+        project,
+        sourceId: flippableSource?.moduleId ?? null,
+        sinkId: effectiveModernSinkId,
+        inputBits: effectiveInputBits,
+      }),
+    [project, flippableSource, effectiveModernSinkId, effectiveInputBits],
+  );
+  const requiresManualSweep = effectiveInputBits.length > 64;
+  const hasFreshSweep = !requiresManualSweep || lastManualSweepSignature === sweepSignature;
+  const sweepRows = useMemo(() => {
+    if (!flippableSource || !baselineOutputBits || !effectiveModernSinkId) {
       return [];
     }
 
-    const maxInputCount = Math.min(effectiveInputBits.length, 64);
-    const rows: {
-      inputIndex: number;
-      changedFlags: boolean[];
-      changedCount: number;
-      changedPercent: number;
-    }[] = [];
-
-    for (let inputIndex = 0; inputIndex < maxInputCount; inputIndex += 1) {
-      const sweepVariantBits = flipBitAtIndex(effectiveInputBits, inputIndex);
-      const sweepProject = buildVariantProject(project, flippableSource, sweepVariantBits);
-      if (!sweepProject) {
-        continue;
-      }
-
-      const validation = validateProject(sweepProject, registry);
-      if (!validation.ok) {
-        continue;
-      }
-
-      try {
-        const sweepExecution = runDemoProject(sweepProject, registry);
-        const sweepOutputBits = getTerminalBits(sweepExecution);
-        if (!sweepOutputBits) {
-          continue;
-        }
-
-        const difference = analyzeBitDifference(baselineOutputBits, sweepOutputBits);
-        rows.push({
-          inputIndex,
-          changedFlags: difference.changedFlags,
-          changedCount: difference.changedCount,
-          changedPercent: difference.changedPercent,
-        });
-      } catch {
-        continue;
-      }
+    if (requiresManualSweep && !hasFreshSweep) {
+      return [];
     }
 
-    return rows;
-  }, [baselineOutputBits, effectiveInputBits, flippableSource, project, registry]);
+    return runAvalancheSweep(project, flippableSource, registry, baselineOutputBits, effectiveModernSinkId, effectiveInputBits.length);
+  }, [
+    baselineOutputBits,
+    effectiveInputBits.length,
+    effectiveModernSinkId,
+    flippableSource,
+    hasFreshSweep,
+    project,
+    registry,
+    requiresManualSweep,
+  ]);
+  const influenceRows = useMemo(
+    () => {
+      if (!flippableSource || !baselineOutputBits || !effectiveModernSinkId) {
+        return [];
+      }
+
+      return runAvalancheSweep(
+        project,
+        flippableSource,
+        registry,
+        baselineOutputBits,
+        effectiveModernSinkId,
+        Math.min(effectiveInputBits.length, 64),
+      );
+    },
+    [
+      baselineOutputBits,
+      effectiveInputBits.length,
+      effectiveModernSinkId,
+      flippableSource,
+      project,
+      registry,
+    ],
+  );
   const influenceColumns = useMemo(
     () => buildInfluenceHeatmapColumnEntries(influenceRows.map((row) => row.changedFlags)),
     [influenceRows],
+  );
+  const sweepSummary = useMemo(
+    () => buildAvalancheSweepSummary(sweepRows, effectiveInputBits.length),
+    [sweepRows, effectiveInputBits.length],
   );
   const showInfluenceSweep =
     influenceRows.length > 0 && influenceColumns.length > 0;
@@ -348,6 +382,8 @@ export function CryptanalysisPanel({
     () => formatBitstreamSample(activeRandomnessSink?.bits ?? []),
     [activeRandomnessSink],
   );
+  const sweepNotYetRun = requiresManualSweep && lastManualSweepSignature === null;
+  const sweepStale = requiresManualSweep && lastManualSweepSignature !== null && !hasFreshSweep;
 
   return (
     <section className="panel comparison-panel cryptanalysis-panel">
@@ -577,6 +613,40 @@ export function CryptanalysisPanel({
           <div className="comparison-card comparison-card-wide">
             <span className="meta-label">Machine Output Difference</span>
             <strong>Compare real baseline vs variant outputs</strong>
+            {flippableSources.length > 1 || modernSinkOptions.length > 1 ? (
+              <div className="content-filter-row">
+                {flippableSources.length > 1 ? (
+                  <label className="param-field">
+                    <span>Sweep Source</span>
+                    <select
+                      value={effectiveModernSourceId}
+                      onChange={(event) => setSelectedModernSourceId(event.target.value)}
+                    >
+                      {flippableSources.map((source) => (
+                        <option key={source.moduleId} value={source.moduleId}>
+                          {source.moduleName} ({getFlippableSourceKindLabel(source.kind)})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+                {modernSinkOptions.length > 1 ? (
+                  <label className="param-field">
+                    <span>Analyze Sink</span>
+                    <select
+                      value={effectiveModernSinkId}
+                      onChange={(event) => setSelectedModernSinkId(event.target.value)}
+                    >
+                      {modernSinkOptions.map((option) => (
+                        <option key={option.moduleId} value={option.moduleId}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+              </div>
+            ) : null}
             {outputDifference ? (
               <>
                 <ModernFlipControl
@@ -612,6 +682,120 @@ export function CryptanalysisPanel({
                 {flippableSource?.kind === 'text-symbol-bridge' && !variantBridgeSymbol
                   ? 'This flip produced a 5-bit code outside A-Z, so there is no valid symbol variant to run through SymbolToBits.'
                   : 'This project needs a supported bit source and a bit-domain output path before the machine-aware avalanche view can render.'}
+              </p>
+            )}
+          </div>
+
+          <div className="comparison-card comparison-card-wide">
+            <span className="meta-label">Batch Avalanche Sweep</span>
+            <strong>Measure the whole input surface, not just one flip</strong>
+            <div className="cryptanalysis-output-summary-row">
+              <span className="content-status-chip">
+                Source: <strong>{flippableSource ? `${flippableSource.moduleName} (${getFlippableSourceKindLabel(flippableSource.kind)})` : 'n/a'}</strong>
+              </span>
+              <span className="content-status-chip">
+                Sink: <strong>{effectiveModernSinkId || 'n/a'}</strong>
+              </span>
+              <span className="content-status-chip">
+                Input bits: <strong>{effectiveInputBits.length}</strong>
+              </span>
+            </div>
+            {requiresManualSweep ? (
+              <div className="cryptanalysis-shift-control-row cryptanalysis-inline-flip-control">
+                <button
+                  type="button"
+                  className="mini-action-button"
+                  onClick={() => setLastManualSweepSignature(sweepSignature)}
+                  disabled={!flippableSource || !baselineOutputBits || !effectiveModernSinkId}
+                >
+                  {sweepSummary ? 'Run Sweep Again' : 'Run Sweep'}
+                </button>
+                {sweepNotYetRun ? (
+                  <span className="content-status-chip">
+                    Full sweep is manual above 64 input bits.
+                  </span>
+                ) : sweepStale ? (
+                  <span className="content-status-chip">
+                    Sweep results are stale. Re-run to refresh.
+                  </span>
+                ) : (
+                  <span className="content-status-chip">
+                    Results match the current machine state.
+                  </span>
+                )}
+              </div>
+            ) : null}
+            {sweepSummary ? (
+              <>
+                <div className="cryptanalysis-output-summary-row">
+                  <span className="content-status-chip">
+                    Flips: <strong>{sweepSummary.flipCount}</strong>
+                  </span>
+                  <span className="content-status-chip">
+                    Min: <strong>{sweepSummary.minimumChangedCount}</strong>
+                  </span>
+                  <span className="content-status-chip">
+                    Max: <strong>{sweepSummary.maximumChangedCount}</strong>
+                  </span>
+                  <span className="content-status-chip">
+                    Avg: <strong>{sweepSummary.averageChangedCount.toFixed(3)}</strong>
+                  </span>
+                  <span className="content-status-chip">
+                    Median: <strong>{sweepSummary.medianChangedCount.toFixed(3)}</strong>
+                  </span>
+                  <span className="content-status-chip">
+                    Std Dev: <strong>{sweepSummary.standardDeviation.toFixed(3)}</strong>
+                  </span>
+                </div>
+                <div className="comparison-grid">
+                  <div className="comparison-card">
+                    <span className="meta-label">Weakest Observed Inputs</span>
+                    <strong>Up to 8 lowest-response bits</strong>
+                    <div className="cryptanalysis-list">
+                      {sweepSummary.weakestInputs.map((entry) => (
+                        <p key={`weak-${entry.inputIndex}`} className="comparison-copy">
+                          Bit <strong>{entry.inputIndex + 1}</strong>
+                          {' '}| {entry.changedCount} changed bits
+                          {' '}| {(entry.changedPercent * 100).toFixed(1)}%
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="comparison-card">
+                    <span className="meta-label">Strongest Observed Inputs</span>
+                    <strong>Up to 8 highest-response bits</strong>
+                    <div className="cryptanalysis-list">
+                      {sweepSummary.strongestInputs.map((entry) => (
+                        <p key={`strong-${entry.inputIndex}`} className="comparison-copy">
+                          Bit <strong>{entry.inputIndex + 1}</strong>
+                          {' '}| {entry.changedCount} changed bits
+                          {' '}| {(entry.changedPercent * 100).toFixed(1)}%
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                {sweepSummary.byteGroups.length > 0 ? (
+                  <div className="comparison-card comparison-card-wide">
+                    <span className="meta-label">Grouped Input Summary</span>
+                    <strong>Average changed output bits by 8-bit input segment</strong>
+                    <div className="cryptanalysis-list">
+                      {sweepSummary.byteGroups.map((group) => (
+                        <p key={`byte-group-${group.byteIndex}`} className="comparison-copy">
+                          Byte {group.byteIndex + 1} (bits {group.startBitIndex + 1}-{group.endBitIndex + 1})
+                          {' '}| avg {group.averageChangedCount.toFixed(3)} changed bits
+                          {' '}| {(group.averageChangedPercent * 100).toFixed(1)}%
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <p className="comparison-copy">
+                {requiresManualSweep
+                  ? 'Run the full single-bit sweep to see whether this machine is consistently diffusive or only impressive in a few cases.'
+                  : 'This project needs a supported bit source and bit-domain sink before the full sweep can run.'}
               </p>
             )}
           </div>
@@ -683,6 +867,7 @@ export function CryptanalysisPanel({
                     <>
                       <p className="comparison-copy cryptanalysis-help-copy">
                         Rows are flipped input positions. Columns are output bits. Brighter cells mean that output bit changed for that input flip more often in this bounded sweep.
+                        {sweepRows.length > 64 ? ' The heatmap remains capped to the first 64 flips so the visual stays readable.' : ''}
                       </p>
                       <div className="modern-influence-column-summary" role="list" aria-label="Output influence totals">
                         {influenceColumns.map((column) => (
@@ -1482,23 +1667,6 @@ function getFlippableSourceKindLabel(kind: 'bit-source' | 'hex-source' | 'ascii-
   }
 }
 
-function getTerminalBits(result: ExecutionResult): number[] | null {
-  for (let index = result.trace.length - 1; index >= 0; index -= 1) {
-    const traceEntry = result.trace[index];
-    const outputSignal = Object.values(traceEntry.outputs).find((signal) => signal.type === 'bits') ?? null;
-    if (outputSignal?.type === 'bits') {
-      return outputSignal.value;
-    }
-
-    const inputSignal = Object.values(traceEntry.inputs).find((signal) => signal.type === 'bits') ?? null;
-    if (inputSignal?.type === 'bits') {
-      return inputSignal.value;
-    }
-  }
-
-  return null;
-}
-
 function getBitSignalForSink(result: ExecutionResult | null, moduleId: string): number[] | null {
   if (!result) {
     return null;
@@ -1704,29 +1872,82 @@ function buildVariantProject(
   return nextProject;
 }
 
-function findFlippableProjectSource(project: Project): FlippableProjectSource | null {
+function runAvalancheSweep(
+  project: Project,
+  flippableSource: FlippableProjectSource,
+  registry: ModuleRegistry,
+  baselineOutputBits: number[],
+  sinkModuleId: string,
+  maxInputCount: number,
+) {
+  const rows: Array<{
+    inputIndex: number;
+    changedFlags: boolean[];
+    changedCount: number;
+    changedPercent: number;
+  }> = [];
+
+  for (let inputIndex = 0; inputIndex < maxInputCount; inputIndex += 1) {
+    const sweepVariantBits = flipBitAtIndex(flippableSource.bits, inputIndex);
+    const sweepProject = buildVariantProject(project, flippableSource, sweepVariantBits);
+    if (!sweepProject) {
+      continue;
+    }
+
+    const validation = validateProject(sweepProject, registry);
+    if (!validation.ok) {
+      continue;
+    }
+
+    try {
+      const sweepExecution = runDemoProject(sweepProject, registry);
+      const sweepOutputBits = getBitSignalForSink(sweepExecution, sinkModuleId);
+      if (!sweepOutputBits) {
+        continue;
+      }
+
+      const difference = analyzeBitDifference(baselineOutputBits, sweepOutputBits);
+      rows.push({
+        inputIndex,
+        changedFlags: difference.changedFlags,
+        changedCount: difference.changedCount,
+        changedPercent: difference.changedPercent,
+      });
+    } catch {
+      continue;
+    }
+  }
+
+  return rows;
+}
+
+function findFlippableProjectSources(project: Project): FlippableProjectSource[] {
+  const sources: FlippableProjectSource[] = [];
+
   for (const moduleInstance of project.modules) {
     if (moduleInstance.defId === 'BitSource' && Array.isArray(moduleInstance.params.stream)) {
       const bits = (moduleInstance.params.stream as number[]).map((bit) => (bit ? 1 : 0));
-      return {
+      sources.push({
         moduleId: moduleInstance.id,
         moduleName: 'Bit Source',
         kind: 'bit-source' as const,
         bits,
-      };
+      });
+      continue;
     }
 
     if (moduleInstance.defId === 'HexSource' && typeof moduleInstance.params.value === 'string') {
-      return {
+      sources.push({
         moduleId: moduleInstance.id,
         moduleName: 'Hex Source',
         kind: 'hex-source' as const,
         bits: hexToBits(moduleInstance.params.value),
-      };
+      });
+      continue;
     }
 
     if (moduleInstance.defId === 'AsciiSource' && typeof moduleInstance.params.value === 'string') {
-      return {
+      sources.push({
         moduleId: moduleInstance.id,
         moduleName: 'ASCII Source',
         kind: 'ascii-source' as const,
@@ -1736,7 +1957,8 @@ function findFlippableProjectSource(project: Project): FlippableProjectSource | 
             const code = char.charCodeAt(0);
             return [7, 6, 5, 4, 3, 2, 1, 0].map((shift) => (code >> shift) & 1);
           }),
-      };
+      });
+      continue;
     }
 
     if (
@@ -1754,15 +1976,15 @@ function findFlippableProjectSource(project: Project): FlippableProjectSource | 
       );
       const symbolBits = symbolToBits(moduleInstance.params.value);
       if (bridgeConnection && symbolBits) {
-        return {
+        sources.push({
           moduleId: moduleInstance.id,
           moduleName: 'Text Input',
           kind: 'text-symbol-bridge' as const,
           bits: symbolBits,
-        };
+        });
       }
     }
   }
 
-  return null;
+  return sources;
 }
