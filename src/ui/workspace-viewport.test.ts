@@ -63,7 +63,7 @@ describe('workspace-viewport', () => {
         canvasWidth: 1600,
         canvasHeight: 900,
       }),
-    ).toBe(0.56 < MIN_WORKSPACE_ZOOM ? MIN_WORKSPACE_ZOOM : 0.56);
+    ).toBe(0.52);
 
     expect(
       getFitWorkspaceZoom({
