@@ -4498,6 +4498,37 @@ export function WorkbenchPanel({
                 >
                   <div className="graph-node-meta-row">
                     <span className="graph-node-type">{moduleInstance.defId}</span>
+                    {onToggleProbe ? (
+                      <span className="graph-node-card-actions">
+                        <button
+                          type="button"
+                          className={
+                            probedModuleIds.includes(moduleInstance.id)
+                              ? 'graph-node-card-action graph-node-probe-button probed'
+                              : 'graph-node-card-action graph-node-probe-button'
+                          }
+                          aria-label={
+                            probedModuleIds.includes(moduleInstance.id)
+                              ? `Unpin signal probe for ${moduleInstance.id}`
+                              : `Pin signal probe for ${moduleInstance.id}`
+                          }
+                          title={
+                            probedModuleIds.includes(moduleInstance.id)
+                              ? 'Unpin signal probe'
+                              : 'Pin signal probe'
+                          }
+                          onMouseDown={(event) => event.stopPropagation()}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSelectedConnectionIndex(null);
+                            setSelectedStageLabelId(null);
+                            onToggleProbe(moduleInstance.id);
+                          }}
+                        >
+                          {probedModuleIds.includes(moduleInstance.id) ? '\u25C9' : '\u25CB'}
+                        </button>
+                      </span>
+                    ) : null}
                   </div>
                   {sequentialRole ? (
                     <div className="graph-node-role-row">
@@ -4536,6 +4567,47 @@ export function WorkbenchPanel({
                       onDoubleClick={isObservationMode ? undefined : (e) => { e.stopPropagation(); setInlineRename({ moduleId: moduleInstance.id, value: moduleInstance.id }); }}
                     >{moduleInstance.id}</strong>
                   )}
+                  {onDuplicateModule ? (
+                    <button
+                      type="button"
+                      className="graph-node-duplicate-inline"
+                      aria-label={`Duplicate ${moduleInstance.id}`}
+                      title="Duplicate module"
+                      onMouseDown={(event) => event.stopPropagation()}
+                      onClick={(event) => {
+                        if (isObservationMode) {
+                          return;
+                        }
+                        event.stopPropagation();
+                        setSelectedConnectionIndex(null);
+                        setSelectedStageLabelId(null);
+                        onDuplicateModule(moduleInstance.id);
+                      }}
+                    >
+                      <svg viewBox="0 0 20 20" aria-hidden="true">
+                        <rect
+                          x="6.5"
+                          y="4.5"
+                          width="8"
+                          height="8"
+                          rx="1.6"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                        />
+                        <rect
+                          x="3.5"
+                          y="7.5"
+                          width="8"
+                          height="8"
+                          rx="1.6"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                        />
+                      </svg>
+                    </button>
+                  ) : null}
                   {(() => {
                     const inlineParamSpec = INLINE_EDITABLE_PARAM_SPECS[moduleInstance.defId];
                     const inlineParamField = inlineParamSpec
@@ -4626,55 +4698,6 @@ export function WorkbenchPanel({
                     <span className="graph-node-issue-badge">
                       {moduleIssueCountById[moduleInstance.id]}
                     </span>
-                  ) : null}
-                  {onToggleProbe ? (
-                    <button
-                      type="button"
-                      className={
-                        probedModuleIds.includes(moduleInstance.id)
-                          ? 'graph-node-card-action graph-node-probe-button probed'
-                          : 'graph-node-card-action graph-node-probe-button'
-                      }
-                      aria-label={
-                        probedModuleIds.includes(moduleInstance.id)
-                          ? `Unpin signal probe for ${moduleInstance.id}`
-                          : `Pin signal probe for ${moduleInstance.id}`
-                      }
-                      title={
-                        probedModuleIds.includes(moduleInstance.id)
-                          ? 'Unpin signal probe'
-                          : 'Pin signal probe'
-                      }
-                      onMouseDown={(event) => event.stopPropagation()}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setSelectedConnectionIndex(null);
-                        setSelectedStageLabelId(null);
-                        onToggleProbe(moduleInstance.id);
-                      }}
-                    >
-                      {probedModuleIds.includes(moduleInstance.id) ? '\u25C9' : '\u25CB'}
-                    </button>
-                  ) : null}
-                  {onDuplicateModule ? (
-                    <button
-                      type="button"
-                      className="graph-node-card-action graph-node-duplicate-button"
-                      aria-label={`Duplicate ${moduleInstance.id}`}
-                      title="Duplicate module"
-                      onMouseDown={(event) => event.stopPropagation()}
-                      onClick={(event) => {
-                        if (isObservationMode) {
-                          return;
-                        }
-                        event.stopPropagation();
-                        setSelectedConnectionIndex(null);
-                        setSelectedStageLabelId(null);
-                        onDuplicateModule(moduleInstance.id);
-                      }}
-                    >
-                      ⧉
-                    </button>
                   ) : null}
                   {isTickedMode && tickedParamsByModule?.[moduleInstance.id] && tickCount > 0 ? (() => {
                     const tickParams = tickedParamsByModule[moduleInstance.id]?.[currentTick];

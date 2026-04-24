@@ -1503,6 +1503,57 @@ describe('uiReducer', () => {
     expect(nextState.compositeEditor?.entryId).toBe(builtInComposite.id);
   });
 
+  it('duplicates the selected cluster inside the composite editor', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const builtInComposite = initialState.compositeLibrary.find(
+      (entry) => entry.source === 'built-in' && entry.definition.kind === 'composite',
+    );
+
+    if (!builtInComposite) {
+      throw new Error('Expected a built-in composite entry.');
+    }
+
+    const editorState = uiReducer(initialState, {
+      type: 'openCompositeEditor',
+      entryId: builtInComposite.id,
+    });
+
+    const compositeEditor = editorState.compositeEditor;
+    if (!compositeEditor) {
+      throw new Error('Expected an open composite editor.');
+    }
+
+    const sourceModuleId = compositeEditor.selectedModuleIds[0];
+    if (!sourceModuleId) {
+      throw new Error('Expected an initial selected module in the composite editor.');
+    }
+
+    const sourcePosition = compositeEditor.layout[sourceModuleId];
+    if (!sourcePosition) {
+      throw new Error('Expected the selected composite module to have layout.');
+    }
+
+    const duplicatedState = uiReducer(editorState, {
+      type: 'duplicateSelectedCluster',
+      projectId: 'sequential',
+    });
+
+    const duplicatedEditor = duplicatedState.compositeEditor;
+    if (!duplicatedEditor) {
+      throw new Error('Expected the composite editor to remain open.');
+    }
+
+    const duplicatedModuleIds = duplicatedEditor.selectedModuleIds;
+    expect(duplicatedModuleIds.length).toBe(1);
+    expect(duplicatedModuleIds[0]).not.toBe(sourceModuleId);
+    expect(duplicatedEditor.project.modules.length).toBe(compositeEditor.project.modules.length + 1);
+
+    const duplicatedPosition = duplicatedEditor.layout[duplicatedModuleIds[0] as string];
+    expect(duplicatedPosition?.x).toBeGreaterThan(sourcePosition.x);
+    expect(duplicatedPosition?.y).toBe(sourcePosition.y);
+    expect(duplicatedEditor.saveError).toBeNull();
+  });
+
   it('defaults each project to a matching starter challenge when one exists', () => {
     const initialState = createInitialUiState(demoProjects);
 

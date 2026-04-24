@@ -3310,7 +3310,28 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
     }
     case 'duplicateSelectedCluster': {
       if (state.compositeEditor) {
-        return state;
+        const duplicated = duplicateWorkspaceSelection({
+          project: state.compositeEditor.project,
+          layout: state.compositeEditor.layout,
+          selectedModuleIds: state.compositeEditor.selectedModuleIds,
+        });
+        if (!duplicated) {
+          return state;
+        }
+
+        const [selectedModuleId] = duplicated.pastedModuleIds;
+
+        return {
+          ...state,
+          compositeEditor: {
+            ...state.compositeEditor,
+            project: duplicated.project,
+            layout: duplicated.layout,
+            selectedModuleId: selectedModuleId ?? null,
+            selectedModuleIds: duplicated.pastedModuleIds,
+            saveError: null,
+          },
+        };
       }
 
       const currentProject = state.projectStates[action.projectId];

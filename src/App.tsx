@@ -2920,6 +2920,11 @@ function MainApp() {
                     moduleId,
                   })
             }
+            onDuplicateModule={
+              isCompositeDrilldownActive
+                ? undefined
+                : handleDuplicateSingleModule
+            }
             onMoveModule={(moduleId, x, y) =>
               isCompositeDrilldownActive
                 ? undefined
@@ -4167,7 +4172,7 @@ function MainApp() {
                         })
                 }
                 onDuplicateModule={
-                  isCompositeDrilldownActive || state.compositeEditor
+                  isCompositeDrilldownActive
                     ? undefined
                     : handleDuplicateSingleModule
                 }
