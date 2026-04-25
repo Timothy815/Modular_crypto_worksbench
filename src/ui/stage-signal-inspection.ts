@@ -23,6 +23,7 @@ export interface StageSignalDisplay {
 export interface StageSignalParent {
   moduleId: string;
   defId: string;
+  defName: string;
   port: string;
   signal: Signal | null;
   display: StageSignalDisplay | null;
@@ -32,6 +33,7 @@ export interface StageSignalParent {
 export interface StageSignalComparison {
   moduleId: string;
   defId: string;
+  defName: string;
   port: string;
   status: 'changed' | 'unchanged';
   currentDisplay: StageSignalDisplay | null;
@@ -190,8 +192,8 @@ export function buildStageSignalInspection(args: {
       roleDetail: roleDetail ?? 'Selected stage',
       traceState: executionError ? 'execution-error' : 'no-execution',
       traceMessage: executionError
-        ? 'Current execution is unavailable because validation or execution failed.'
-        : 'Run the machine to inspect current signals.',
+        ? 'This stage cannot be inspected yet because the current run failed validation or execution.'
+        : 'Run the machine to inspect the current signal at this stage.',
       parents: [],
       comparison: null,
       selectedPortName: null,
@@ -213,6 +215,7 @@ export function buildStageSignalInspection(args: {
       defId: parentDef?.id ?? parentInstance?.defId ?? 'unknown',
       port: connection.from.port,
       signal,
+      defName: parentDef?.name ?? parentInstance?.defId ?? 'Unknown Module',
       display: formatGenericSignal(signal),
       isBypassed: Boolean(parentInstance?.bypass),
     } satisfies StageSignalParent;
@@ -227,6 +230,7 @@ export function buildStageSignalInspection(args: {
       ? {
           moduleId: parents[0].moduleId,
           defId: parents[0].defId,
+          defName: parents[0].defName,
           port: parents[0].port,
           status: areSignalsEqual(current.signal, parents[0].signal) ? 'unchanged' : 'changed',
           currentDisplay: formatGenericSignal(current.signal),
@@ -241,7 +245,7 @@ export function buildStageSignalInspection(args: {
     signalLength: getSignalLength(current.signal),
     roleDetail: roleDetail ?? 'Selected stage',
     traceState: current.signal ? 'ready' : 'no-signal',
-    traceMessage: current.signal ? null : 'No current signal is available for this stage.',
+    traceMessage: current.signal ? null : 'This stage has no current signal to inspect in the active run.',
     parents,
     comparison,
     selectedPortName: current.portName,

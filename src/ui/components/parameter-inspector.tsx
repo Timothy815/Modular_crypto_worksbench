@@ -194,6 +194,31 @@ async function writeTextToClipboard(text: string) {
   document.body.removeChild(textarea);
 }
 
+function getStageSignalRepresentationLabel(representation: 'text' | 'bits' | 'bytes' | 'hex' | 'ascii') {
+  switch (representation) {
+    case 'text':
+      return 'Text';
+    case 'bits':
+      return 'Bits';
+    case 'bytes':
+      return 'Bytes';
+    case 'hex':
+      return 'Hex';
+    case 'ascii':
+      return 'ASCII';
+    default:
+      return representation;
+  }
+}
+
+function getStageSignalTypeLabel(signalType: 'symbol' | 'bits' | null, signalLength: number | null) {
+  if (!signalType) {
+    return null;
+  }
+  const base = signalType === 'bits' ? 'Bit signal' : 'Symbol signal';
+  return signalLength !== null ? `${base} • ${signalLength}` : base;
+}
+
 const PORT_SIDE_ORDER: WorkbenchPortSide[] = ['left', 'right', 'top', 'bottom'];
 
 type InspectorIconName =
@@ -1668,20 +1693,25 @@ export function ParameterInspector({
                   <code>{stageSignalInspection.display.value || '∅'}</code>
                   <div className="inspector-stage-signal-meta">
                     <span className="content-status-chip">
-                      {stageSignalInspection.display.representation.toUpperCase()}
+                      {getStageSignalRepresentationLabel(stageSignalInspection.display.representation)}
                     </span>
-                    {stageSignalInspection.signalType ? (
+                    {getStageSignalTypeLabel(
+                      stageSignalInspection.signalType,
+                      stageSignalInspection.signalLength,
+                    ) ? (
                       <span className="content-status-chip">
-                        {stageSignalInspection.signalType}
-                        {stageSignalInspection.signalLength !== null
-                          ? ` • ${stageSignalInspection.signalLength}`
-                          : ''}
+                        {getStageSignalTypeLabel(
+                          stageSignalInspection.signalType,
+                          stageSignalInspection.signalLength,
+                        )}
                       </span>
                     ) : null}
                     {stageSignalInspection.selectedPortName && stageSignalInspection.selectedPortDirection ? (
                       <span className="content-status-chip">
-                        {stageSignalInspection.selectedPortDirection === 'output' ? 'Output' : 'Input'}:{' '}
-                        {stageSignalInspection.selectedPortName}
+                        {stageSignalInspection.selectedPortDirection === 'output'
+                          ? 'Observed output'
+                          : 'Observed input'}
+                        : {stageSignalInspection.selectedPortName}
                       </span>
                     ) : null}
                   </div>
@@ -1717,14 +1747,17 @@ export function ParameterInspector({
               ) : null}
               <p className="comparison-copy">{stageSignalInspection.roleDetail}</p>
               <div className="inspector-stage-provenance">
-                <span className="meta-label">Fed By</span>
+                <span className="meta-label">Immediate Inputs</span>
                 {stageSignalInspection.parents.length > 0 ? (
                   <ul className="inspector-stage-parent-list">
                     {stageSignalInspection.parents.map((parent) => (
                       <li key={`${parent.moduleId}:${parent.port}`} className="inspector-stage-parent-item">
-                        <strong>{parent.moduleId}</strong> <span className="meta-label">{parent.defId}</span>{' '}
-                        via <code>{parent.port}</code>
-                        {parent.isBypassed ? ' • Bypassed' : ''}
+                        <strong>{parent.moduleId}</strong>{' '}
+                        <span className="meta-label">{parent.defName}</span>
+                        <span className="comparison-copy">
+                          Arrives on <code>{parent.port}</code>
+                          {parent.isBypassed ? ' • currently bypassed' : ''}
+                        </span>
                         {parent.display ? (
                           <code className="inspector-stage-parent-signal">{parent.display.value || '∅'}</code>
                         ) : null}
@@ -1732,16 +1765,21 @@ export function ParameterInspector({
                     ))}
                   </ul>
                 ) : (
-                  <p className="comparison-copy">No visible upstream stage is available.</p>
+                  <p className="comparison-copy">
+                    No immediate visible input stage is available at this authored level.
+                  </p>
                 )}
               </div>
               <div className="inspector-stage-comparison">
-                <span className="meta-label">Previous Visible Stage</span>
+                <span className="meta-label">Direct Comparison</span>
                 {stageSignalInspection.comparison ? (
                   <>
                     <p className="comparison-copy">
-                      {stageSignalInspection.comparison.status === 'changed' ? 'Changed' : 'Unchanged'} compared
-                      with <strong>{stageSignalInspection.comparison.moduleId}</strong> via{' '}
+                      {stageSignalInspection.comparison.status === 'changed'
+                        ? 'This stage changes the signal'
+                        : 'This stage leaves the signal unchanged'}{' '}
+                      compared with <strong>{stageSignalInspection.comparison.moduleId}</strong>{' '}
+                      <span className="meta-label">{stageSignalInspection.comparison.defName}</span> on{' '}
                       <code>{stageSignalInspection.comparison.port}</code>.
                     </p>
                     <div className="inspector-stage-comparison-grid">
@@ -1757,7 +1795,7 @@ export function ParameterInspector({
                   </>
                 ) : (
                   <p className="comparison-copy">
-                    No meaningful previous-stage comparison is available for this selection.
+                    No simple same-width previous-stage comparison is available for this selection.
                   </p>
                 )}
               </div>

@@ -129,7 +129,7 @@ describe('buildStageSignalInspection', () => {
       roleDetail: 'graph entry point',
     });
     expect(executionError?.traceState).toBe('execution-error');
-    expect(executionError?.traceMessage).toContain('validation or execution failed');
+    expect(executionError?.traceMessage).toContain('failed validation or execution');
   });
 });
 
