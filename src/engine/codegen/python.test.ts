@@ -1012,12 +1012,15 @@ parityDescribe('generatePythonExport', () => {
   it('prints an explicit fallback reason when parity embedding is ambiguous', () => {
     const project: Project = {
       modules: [
-        { id: 'text-1', defId: 'TextInput', params: { value: 'A' } },
-        { id: 'text-2', defId: 'TextInput', params: { value: 'B' } },
-        { id: 'out-1', defId: 'Output', params: {} },
+        { id: 'left', defId: 'HexSequenceInput', params: { value: 'AA' } },
+        { id: 'right', defId: 'HexSequenceInput', params: { value: '55' } },
+        { id: 'xor-1', defId: 'XOR', params: {} },
+        { id: 'out-1', defId: 'BitOutput', params: {} },
       ],
       connections: [
-        { from: { moduleId: 'text-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+        { from: { moduleId: 'left', port: 'out' }, to: { moduleId: 'xor-1', port: 'a' } },
+        { from: { moduleId: 'right', port: 'out' }, to: { moduleId: 'xor-1', port: 'b' } },
+        { from: { moduleId: 'xor-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
       ],
     };
 
@@ -1035,8 +1038,47 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.status).toBe(0);
     expect(execution.stdout).toContain('No embedded parity cases were generated for this export.');
     expect(execution.stdout).toContain('Reason: Multiple candidate parity sources were detected.');
-    expect(execution.stdout).toContain('text-1 (Text Input)');
-    expect(execution.stdout).toContain('text-2 (Text Input)');
+    expect(execution.stdout).toContain('left (Hex Sequence Input)');
+    expect(execution.stdout).toContain('right (Hex Sequence Input)');
+  });
+
+  it('derives parity from the terminal message path instead of auxiliary key material or intermediate sinks', () => {
+    const project: Project = {
+      modules: [
+        { id: 'plain', defId: 'AsciiSequenceInput', params: { value: 'A' } },
+        { id: 'plain-bits', defId: 'AsciiSequenceToBits', params: {} },
+        { id: 'key', defId: 'HexSequenceInput', params: { value: '0F' } },
+        { id: 'xor-1', defId: 'XOR', params: {} },
+        { id: 'cipher-bits', defId: 'BitOutput', params: {} },
+        { id: 'bits-to-ascii', defId: 'BitsToAscii', params: {} },
+        { id: 'plain-out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'plain', port: 'out' }, to: { moduleId: 'plain-bits', port: 'in' } },
+        { from: { moduleId: 'plain-bits', port: 'out' }, to: { moduleId: 'xor-1', port: 'a' } },
+        { from: { moduleId: 'key', port: 'out' }, to: { moduleId: 'xor-1', port: 'b' } },
+        { from: { moduleId: 'xor-1', port: 'out' }, to: { moduleId: 'cipher-bits', port: 'in' } },
+        { from: { moduleId: 'xor-1', port: 'out' }, to: { moduleId: 'bits-to-ascii', port: 'in' } },
+        { from: { moduleId: 'bits-to-ascii', port: 'out' }, to: { moduleId: 'plain-out', port: 'in' } },
+      ],
+    };
+
+    const exportFiles = generatePythonExportFiles(project, V1_REGISTRY, 'Primary Path Parity Demo');
+    const execution = executeGeneratedPythonFiles(
+      exportFiles.runtimeSource,
+      exportFiles.workspaceFileName,
+      exportFiles.workspaceSource,
+      [{ fileName: exportFiles.parityFileName, source: exportFiles.paritySource }],
+      exportFiles.parityFileName,
+    );
+
+    expect(exportFiles.paritySource).toContain('"sourceModuleId": "plain"');
+    expect(exportFiles.paritySource).toContain('"inputValue": "A"');
+    expect(exportFiles.paritySource).toContain('"expectedOutput": "N"');
+    expect(exportFiles.paritySource).not.toContain('Multiple candidate parity sources were detected.');
+    expect(execution.status).toBe(0);
+    expect(execution.stdout).toContain('PASS [stateless] plain (ASCII Sequence Input) <- A');
+    expect(execution.stdout).toContain('Summary: 1 passed, 0 failed');
   });
 
   it('matches executeProject for a direct plugboard workspace', () => {

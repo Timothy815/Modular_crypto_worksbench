@@ -2270,41 +2270,146 @@ function resolvePythonParitySinkCandidate(
   return candidates[0] ?? null;
 }
 
-function listPythonParitySinkCandidates(execution: ExecutionResult | null) {
+function resolvePythonParityTerminalSinkCandidate(
+  project: Project,
+  registry: ModuleRegistry,
+  execution: ExecutionResult | null,
+) {
   if (!execution) {
-    return [];
+    return null;
   }
 
-  return execution.trace
-    .filter((entry) => {
-      const outputSignal = entry.outputs.out ?? entry.inputs.in ?? null;
-      return (
-        (SYMBOL_SINK_DEF_IDS.has(entry.defId) ||
-          BIT_SINK_DEF_IDS.has(entry.defId) ||
-          HEX_SINK_DEF_IDS.has(entry.defId)) &&
-        outputSignal !== null
-      );
-    })
-    .map((entry) => `${entry.moduleId} (${entry.defId})`);
+  const traceByModuleId = new Map(execution.trace.map((entry) => [entry.moduleId, entry]));
+  const order = buildTopologicalOrder(project, registry);
+
+  for (let index = order.length - 1; index >= 0; index -= 1) {
+    const moduleId = order[index];
+    if (!moduleId) {
+      continue;
+    }
+    const entry = traceByModuleId.get(moduleId);
+    if (!entry) {
+      continue;
+    }
+    const outputSignal = entry.outputs.out ?? entry.inputs.in ?? null;
+    if (
+      (SYMBOL_SINK_DEF_IDS.has(entry.defId) ||
+        BIT_SINK_DEF_IDS.has(entry.defId) ||
+        HEX_SINK_DEF_IDS.has(entry.defId)) &&
+      outputSignal !== null
+    ) {
+      return {
+        moduleId: entry.moduleId,
+        defId: entry.defId,
+        formattedOutput: formatPythonParitySinkValue(entry.defId, outputSignal),
+      };
+    }
+  }
+
+  return null;
+}
+
+function getPythonParitySourcePriority(moduleId: string, defId: string) {
+  const normalizedId = moduleId.toLowerCase();
+  const isConfigurationLike =
+    defId === 'IV' ||
+    defId === 'Nonce' ||
+    defId === 'Salt' ||
+    normalizedId.includes('const') ||
+    normalizedId.includes('round-const') ||
+    normalizedId.includes('protocol');
+  if (isConfigurationLike) {
+    return null;
+  }
+
+  let priority = 100;
+  switch (defId) {
+    case 'TextInput':
+    case 'AsciiSequenceInput':
+    case 'AsciiSource':
+    case 'BaudotSource':
+    case 'HexSource':
+      priority = 0;
+      break;
+    case 'HexSequenceInput':
+      priority = 10;
+      break;
+    default:
+      priority = 50;
+      break;
+  }
+
+  if (normalizedId.includes('key')) {
+    priority += 20;
+  }
+  if (normalizedId.includes('iv') || normalizedId.includes('nonce') || normalizedId.includes('salt')) {
+    priority += 100;
+  }
+
+  return priority;
 }
 
 function listPythonParitySourceCandidates(
   project: Project,
   registry: ModuleRegistry,
+  terminalSinkModuleId?: string,
 ) {
-  return project.modules
+  const relevantAncestors = new Set<string>();
+  if (terminalSinkModuleId) {
+    const reverseAdjacency = new Map<string, string[]>();
+    for (const moduleInstance of project.modules) {
+      reverseAdjacency.set(moduleInstance.id, []);
+    }
+    for (const connection of project.connections) {
+      reverseAdjacency.get(connection.to.moduleId)?.push(connection.from.moduleId);
+    }
+    const pending = [terminalSinkModuleId];
+    while (pending.length > 0) {
+      const current = pending.pop();
+      if (!current) {
+        continue;
+      }
+      for (const parent of reverseAdjacency.get(current) ?? []) {
+        if (relevantAncestors.has(parent)) {
+          continue;
+        }
+        relevantAncestors.add(parent);
+        pending.push(parent);
+      }
+    }
+  }
+
+  const candidates = project.modules
     .filter((moduleInstance) => {
+      if (terminalSinkModuleId && !relevantAncestors.has(moduleInstance.id)) {
+        return false;
+      }
       const def = registry[moduleInstance.defId];
       return def ? getPythonVerificationSourceParamKey(def.id) !== null : false;
     })
     .map((moduleInstance) => {
       const def = registry[moduleInstance.defId];
+      const priority = getPythonParitySourcePriority(moduleInstance.id, moduleInstance.defId);
       return {
         moduleId: moduleInstance.id,
         defId: moduleInstance.defId,
         label: `${moduleInstance.id} (${def?.name ?? moduleInstance.defId})`,
+        priority,
       };
     });
+
+  const nonConfigurationCandidates = candidates.filter((candidate) => candidate.priority !== null);
+  if (nonConfigurationCandidates.length === 0) {
+    return [] as Array<{ moduleId: string; defId: string; label: string; priority: number | null }>;
+  }
+
+  const bestPriority = Math.min(
+    ...nonConfigurationCandidates
+      .map((candidate) => candidate.priority)
+      .filter((priority): priority is number => priority !== null),
+  );
+
+  return nonConfigurationCandidates.filter((candidate) => candidate.priority === bestPriority);
 }
 
 function deriveEmbeddedPythonParity(
@@ -2313,37 +2418,8 @@ function deriveEmbeddedPythonParity(
   parityCandidates: PythonExportParityCandidate[],
 ) {
   const hasStatefulModules = projectHasStatefulExportCandidate(project, registry);
-  const sourceCandidates = listPythonParitySourceCandidates(project, registry);
-
-  if (sourceCandidates.length === 0) {
-    return {
-      parityCases: [] as PythonExportParityCase[],
-      statusReason: 'No supported primary parity source was found.',
-      statusDetails: [] as string[],
-    };
-  }
-
-  if (sourceCandidates.length > 1) {
-    return {
-      parityCases: [] as PythonExportParityCase[],
-      statusReason: 'Multiple candidate parity sources were detected.',
-      statusDetails: sourceCandidates.map((candidate) => candidate.label),
-    };
-  }
-
-  const sourceCandidate = sourceCandidates[0];
-  if (!sourceCandidate) {
-    return {
-      parityCases: [] as PythonExportParityCase[],
-      statusReason: 'No supported primary parity source was found.',
-      statusDetails: [] as string[],
-    };
-  }
 
   const matchingExplicitCases = parityCandidates.filter((candidate) => {
-    if (candidate.sourceModuleId !== sourceCandidate.moduleId) {
-      return false;
-    }
     if (candidate.mode !== (hasStatefulModules ? 'ticked' : 'stateless')) {
       return false;
     }
@@ -2375,24 +2451,7 @@ function deriveEmbeddedPythonParity(
     };
   }
 
-  const sinkCandidateLabels = listPythonParitySinkCandidates(execution);
-  if (sinkCandidateLabels.length === 0) {
-    return {
-      parityCases: [] as PythonExportParityCase[],
-      statusReason: 'No supported parity sink was found.',
-      statusDetails: [] as string[],
-    };
-  }
-
-  if (sinkCandidateLabels.length > 1) {
-    return {
-      parityCases: [] as PythonExportParityCase[],
-      statusReason: 'Multiple candidate parity sinks were detected.',
-      statusDetails: sinkCandidateLabels,
-    };
-  }
-
-  const sinkCandidate = resolvePythonParitySinkCandidate(execution);
+  const sinkCandidate = resolvePythonParityTerminalSinkCandidate(project, registry, execution);
   if (!sinkCandidate) {
     return {
       parityCases: [] as PythonExportParityCase[],
@@ -2401,10 +2460,39 @@ function deriveEmbeddedPythonParity(
     };
   }
 
+  const sourceCandidates = listPythonParitySourceCandidates(project, registry, sinkCandidate.moduleId);
+  if (sourceCandidates.length === 0) {
+    return {
+      parityCases: [] as PythonExportParityCase[],
+      statusReason: 'No supported primary parity source was found.',
+      statusDetails: [] as string[],
+    };
+  }
+
+  if (sourceCandidates.length > 1) {
+    return {
+      parityCases: [] as PythonExportParityCase[],
+      statusReason: 'Multiple candidate parity sources were detected.',
+      statusDetails: sourceCandidates.map((candidate) => candidate.label),
+    };
+  }
+
+  const sourceCandidate = sourceCandidates[0];
+  if (!sourceCandidate) {
+    return {
+      parityCases: [] as PythonExportParityCase[],
+      statusReason: 'No supported primary parity source was found.',
+      statusDetails: [] as string[],
+    };
+  }
+
   const explicitCase = matchingExplicitCases.find(
     (candidate) =>
+      candidate.sourceModuleId === sourceCandidate.moduleId &&
+      (
       candidate.targetSinkModuleId === undefined ||
-      candidate.targetSinkModuleId === sinkCandidate.moduleId,
+      candidate.targetSinkModuleId === sinkCandidate.moduleId
+      ),
   );
   if (explicitCase) {
     return {
