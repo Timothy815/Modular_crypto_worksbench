@@ -4,6 +4,12 @@ import { parsePlugboardWiring } from '../engine/modules/plugboard';
 import { parseReflectorWiring } from '../engine/modules/reflector';
 import { getSBoxShape, parseSBoxTable } from '../engine/modules/s-box';
 import { serializeRotorWiring } from '../engine/modules/rotor';
+import { computeSBoxAnalysis } from '../engine/analysis/sbox-analysis';
+import type { SBoxAnalysis } from '../engine/analysis/sbox-analysis';
+export type { SBoxAnalysis } from '../engine/analysis/sbox-analysis';
+import { computePermutationAnalysis } from '../engine/analysis/permutation-analysis';
+import type { PermutationAnalysis } from '../engine/analysis/permutation-analysis';
+export type { PermutationAnalysis } from '../engine/analysis/permutation-analysis';
 import type {
   Connection,
   ExecutionResult,
@@ -162,6 +168,7 @@ interface LookupTransformationView {
   activeColumnIndex: number | null;
   chunks: LookupTransformationChunk[];
   summary: string;
+  sboxAnalysis: SBoxAnalysis | null;
 }
 
 interface SplitTransformationView {
@@ -855,6 +862,32 @@ function getDemuxTransformation(entry: ExecutionTraceEntry): DemuxTransformation
   };
 }
 
+export function getSBoxAnalysisFromParams(params: {
+  table?: unknown;
+  inputBits?: unknown;
+  outputBits?: unknown;
+}): SBoxAnalysis | null {
+  try {
+    const shape = getSBoxShape(params);
+    const table = parseSBoxTable(params.table, params);
+    return computeSBoxAnalysis(table, shape.inputWidth, shape.outputWidth);
+  } catch {
+    return null;
+  }
+}
+
+export function getPermutationAnalysisFromParams(
+  params: { order?: unknown },
+  blockSize?: number,
+): PermutationAnalysis | null {
+  try {
+    const order = parsePermutationOrder(params.order);
+    return computePermutationAnalysis(order, blockSize);
+  } catch {
+    return null;
+  }
+}
+
 function getSBoxTransformation(
   entry: ExecutionTraceEntry,
   project: Project,
@@ -934,6 +967,13 @@ function getSBoxTransformation(
       chunks.length === 1
         ? 'This S-Box replaces one grouped value with another by table lookup.'
         : `This S-Box processes ${chunks.length} grouped chunks independently, using the same substitution table for each chunk.`,
+    sboxAnalysis: (() => {
+      try {
+        return computeSBoxAnalysis(table, shape.inputWidth, shape.outputWidth);
+      } catch {
+        return null;
+      }
+    })(),
   };
 }
 

@@ -17,6 +17,8 @@ interface CollapsedAnalyzeSections {
   pinned: boolean;
   tutorial: boolean;
   transformation: boolean;
+  sboxProperties: boolean;
+  permutationProperties: boolean;
 }
 
 function InspectorSection({

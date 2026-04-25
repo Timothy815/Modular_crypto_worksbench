@@ -76,9 +76,12 @@ import {
   getIteratorRoundOptions,
   getTraceEntries,
   getTransformationView,
+  getSBoxAnalysisFromParams,
+  getPermutationAnalysisFromParams,
   groupIssuesByTarget,
   stepHexString,
 } from '../inspector-analysis';
+import type { SBoxAnalysis, PermutationAnalysis } from '../inspector-analysis';
 
 interface ParameterInspectorProps {
   execution: ExecutionResult | null;
@@ -975,7 +978,10 @@ export function ParameterInspector({
     pinned: false,
     tutorial: true,
     transformation: false,
+    sboxProperties: false,
+    permutationProperties: false,
   });
+  const [permutationBlockSize, setPermutationBlockSize] = useState<number | null>(null);
   const [copiedStageSignalKey, setCopiedStageSignalKey] = useState<string | null>(null);
   const copiedStageSignalTimeoutRef = useRef<number | null>(null);
 
@@ -1428,6 +1434,23 @@ export function ParameterInspector({
   const transformationView = activeTransformationEntry
     ? getTransformationView(activeTransformationEntry, project, registry)
     : null;
+  const staticSBoxAnalysis: SBoxAnalysis | null = useMemo(() => {
+    if (inspectorTab !== 'analyze' || moduleInstance?.defId !== 'SBox') {
+      return null;
+    }
+    return getSBoxAnalysisFromParams(moduleInstance.params);
+  }, [inspectorTab, moduleInstance]);
+  const isPermutationModule =
+    moduleInstance?.defId === 'Permutation' || moduleInstance?.defId === 'PermutationBits';
+  const staticPermutationAnalysis: PermutationAnalysis | null = useMemo(() => {
+    if (inspectorTab !== 'analyze' || !isPermutationModule || !moduleInstance) {
+      return null;
+    }
+    return getPermutationAnalysisFromParams(
+      moduleInstance.params,
+      permutationBlockSize ?? undefined,
+    );
+  }, [inspectorTab, isPermutationModule, moduleInstance, permutationBlockSize]);
   const canBypassSelectedModule = moduleDef ? isBypassEligibleDefinition(moduleDef) : false;
   const orderedInputPorts = useMemo(
     () =>
@@ -1648,6 +1671,10 @@ export function ParameterInspector({
       <InspectorAnalyzeDetails
         inspectorTab={inspectorTab}
         transformationView={transformationView}
+        staticSBoxAnalysis={staticSBoxAnalysis}
+        staticPermutationAnalysis={staticPermutationAnalysis}
+        permutationBlockSize={permutationBlockSize}
+        setPermutationBlockSize={setPermutationBlockSize}
         activeLookupChunk={activeLookupChunk}
         effectiveLookupChunkIndex={effectiveLookupChunkIndex}
         setRequestedLookupChunkIndex={setRequestedLookupChunkIndex}

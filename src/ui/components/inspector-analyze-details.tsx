@@ -11,7 +11,10 @@ import {
   getNestedTracePath,
   getTopLevelTraceModuleId,
   type TransformationView,
+  type SBoxAnalysis,
+  type PermutationAnalysis,
 } from '../inspector-analysis';
+import { KNOWN_SBOX_REFERENCES } from '../../engine/analysis/sbox-analysis';
 import type { TutorialStep } from '../tutorials';
 
 interface CollapsedAnalyzeSections {
@@ -22,6 +25,8 @@ interface CollapsedAnalyzeSections {
   pinned: boolean;
   tutorial: boolean;
   transformation: boolean;
+  sboxProperties: boolean;
+  permutationProperties: boolean;
 }
 
 interface GroupedIssue {
@@ -80,6 +85,10 @@ function InspectorSection({
 interface InspectorAnalyzeDetailsProps {
   inspectorTab: 'configure' | 'analyze' | 'compare';
   transformationView: TransformationView | null;
+  staticSBoxAnalysis: SBoxAnalysis | null;
+  staticPermutationAnalysis: PermutationAnalysis | null;
+  permutationBlockSize: number | null;
+  setPermutationBlockSize: (size: number | null) => void;
   activeLookupChunk: LookupChunk | null;
   effectiveLookupChunkIndex: number;
   setRequestedLookupChunkIndex: (index: number) => void;
@@ -115,6 +124,10 @@ interface InspectorAnalyzeDetailsProps {
 export function InspectorAnalyzeDetails({
   inspectorTab,
   transformationView,
+  staticSBoxAnalysis,
+  staticPermutationAnalysis,
+  permutationBlockSize,
+  setPermutationBlockSize,
   activeLookupChunk,
   effectiveLookupChunkIndex,
   setRequestedLookupChunkIndex,
@@ -783,6 +796,581 @@ export function InspectorAnalyzeDetails({
                 ? `Input chunk ${activeLookupChunk.inputBits.join('')} is index ${activeLookupChunk.inputValue}. The substitution table maps ${activeLookupChunk.inputValue} to ${activeLookupChunk.outputValue}, so the output chunk becomes ${activeLookupChunk.outputBits.join('')}.`
                 : transformationView.summary}
             </p>
+          </div>
+        </InspectorSection>
+      ) : null}
+
+      {inspectorTab === 'analyze' && staticSBoxAnalysis ? (
+        <InspectorSection
+          label="S-Box Properties"
+          collapsible
+          collapsed={collapsedAnalyzeSections.sboxProperties}
+          onToggle={() => toggleAnalyzeSection('sboxProperties')}
+        >
+          <div className="sbox-analysis-panel" style={{ borderTop: 'none', paddingTop: 0, marginTop: 0 }}>
+            <p className="sbox-analysis-disclaimer">
+              These measurements describe this S-box table in isolation. They do not account for how surrounding cipher components interact with this substitution.
+            </p>
+
+            {/* At-a-glance property strip */}
+            <div className="sbox-analysis-strip">
+              <div className="sbox-analysis-strip-cell">
+                <span className="meta-label">NL</span>
+                <strong
+                  className={
+                    staticSBoxAnalysis.lat.nonlinearity >= staticSBoxAnalysis.lat.maxTheoreticalNonlinearity * 0.75
+                      ? 'sbox-analysis-value-good'
+                      : 'sbox-analysis-value-warn'
+                  }
+                >
+                  {staticSBoxAnalysis.lat.nonlinearity}
+                </strong>
+              </div>
+              <div className="sbox-analysis-strip-cell">
+                <span className="meta-label">DDT max</span>
+                <strong
+                  className={
+                    staticSBoxAnalysis.ddt.maxUniformity <= staticSBoxAnalysis.ddt.maxIdealUniformity
+                      ? 'sbox-analysis-value-good'
+                      : 'sbox-analysis-value-warn'
+                  }
+                >
+                  {staticSBoxAnalysis.ddt.maxUniformity}
+                </strong>
+              </div>
+              <div className="sbox-analysis-strip-cell">
+                <span className="meta-label">Degree</span>
+                <strong
+                  className={
+                    staticSBoxAnalysis.algebraicDegree.degree >= staticSBoxAnalysis.algebraicDegree.maxTheoreticalDegree - 1
+                      ? 'sbox-analysis-value-good'
+                      : 'sbox-analysis-value-warn'
+                  }
+                >
+                  {staticSBoxAnalysis.algebraicDegree.degree}
+                </strong>
+              </div>
+              <div className="sbox-analysis-strip-cell">
+                <span className="meta-label">Fixed pts</span>
+                <strong
+                  className={staticSBoxAnalysis.fixedPoints === 0 ? 'sbox-analysis-value-good' : 'sbox-analysis-value-warn'}
+                >
+                  {staticSBoxAnalysis.fixedPoints}
+                </strong>
+              </div>
+            </div>
+
+            <div className="sbox-analysis-metric">
+              <div className="sbox-analysis-metric-row">
+                <span className="meta-label">Nonlinearity</span>
+                <span className="sbox-analysis-value">
+                  <strong>{staticSBoxAnalysis.lat.nonlinearity}</strong>
+                  <span className="sbox-analysis-ref">
+                    {' '}/ {staticSBoxAnalysis.lat.maxTheoreticalNonlinearity} max for {staticSBoxAnalysis.inputBits}-bit
+                  </span>
+                </span>
+              </div>
+              <p className="sbox-analysis-note">
+                Measures distance from all affine (linear) functions. Higher values indicate less linear structure.
+              </p>
+              {staticSBoxAnalysis.lat.componentNonlinearity.length > 0 ? (
+                <div className="sbox-comp-nl-row">
+                  {staticSBoxAnalysis.lat.componentNonlinearity.map((nl, j) => {
+                    const ratio = staticSBoxAnalysis.lat.maxTheoreticalNonlinearity > 0
+                      ? nl / staticSBoxAnalysis.lat.maxTheoreticalNonlinearity
+                      : 0;
+                    return (
+                      <div key={`comp-nl-${j}`} className="sbox-comp-nl-chip" title={`Output bit ${j}: NL = ${nl}`}>
+                        <span className="meta-label">b{j}</span>
+                        <strong
+                          style={{
+                            color: ratio >= 0.75
+                              ? 'var(--color-good, #38a169)'
+                              : ratio >= 0.5
+                                ? 'var(--color-warn-mild, #d97706)'
+                                : 'var(--color-warn, #c53030)',
+                          }}
+                        >
+                          {nl}
+                        </strong>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="sbox-analysis-metric">
+              <div className="sbox-analysis-metric-row">
+                <span className="meta-label">Max Differential Uniformity</span>
+                <span className="sbox-analysis-value">
+                  <strong
+                    className={
+                      staticSBoxAnalysis.ddt.maxUniformity <= staticSBoxAnalysis.ddt.maxIdealUniformity
+                        ? 'sbox-analysis-value-good'
+                        : 'sbox-analysis-value-warn'
+                    }
+                  >
+                    {staticSBoxAnalysis.ddt.maxUniformity}
+                  </strong>
+                  <span className="sbox-analysis-ref">
+                    {' '}(target ≤ {staticSBoxAnalysis.ddt.maxIdealUniformity} for this size)
+                  </span>
+                </span>
+              </div>
+              <p className="sbox-analysis-note">
+                For each nonzero input difference Δ_in, counts how many input pairs produce a given output difference Δ_out. Lower is better.
+              </p>
+            </div>
+
+            {staticSBoxAnalysis.ddt.fullMatrix ? (
+              <div className="sbox-ddt-section">
+                <span className="meta-label">Differential Distribution Table</span>
+                <p className="sbox-analysis-note">
+                  Rows: Δ_in 1–{(1 << staticSBoxAnalysis.inputBits) - 1}. Columns: Δ_out 0–{(1 << staticSBoxAnalysis.outputBits) - 1}. Outlined cells equal the maximum.
+                </p>
+                <div
+                  className="sbox-ddt-grid"
+                  style={{ gridTemplateColumns: `28px repeat(${1 << staticSBoxAnalysis.outputBits}, minmax(0, 1fr))` }}
+                >
+                  <span className="sbox-ddt-corner">Δin\Δout</span>
+                  {Array.from({ length: 1 << staticSBoxAnalysis.outputBits }, (_, col) => (
+                    <span key={`ddt-col-${col}`} className="sbox-ddt-axis">{col}</span>
+                  ))}
+                  {staticSBoxAnalysis.ddt.fullMatrix.map((row, deltaIn) => (
+                    <Fragment key={`ddt-row-${deltaIn}`}>
+                      <span className="sbox-ddt-axis sbox-ddt-row-axis">{deltaIn + 1}</span>
+                      {row.map((cell, deltaOut) => {
+                        const isMax = cell > 0 && cell === staticSBoxAnalysis.ddt.maxUniformity;
+                        const intensity = staticSBoxAnalysis.ddt.maxUniformity > 0
+                          ? cell / staticSBoxAnalysis.ddt.maxUniformity
+                          : 0;
+                        return (
+                          <div
+                            key={`ddt-cell-${deltaIn}-${deltaOut}`}
+                            className="sbox-ddt-cell"
+                            title={`Δin=${deltaIn + 1}, Δout=${deltaOut}: ${cell}`}
+                            style={{
+                              backgroundColor: cell === 0
+                                ? 'transparent'
+                                : `rgba(220, 100, 40, ${0.12 + intensity * 0.72})`,
+                              outline: isMax ? '1.5px solid rgba(200, 60, 20, 0.75)' : undefined,
+                              outlineOffset: isMax ? '-1px' : undefined,
+                              zIndex: isMax ? 1 : undefined,
+                            }}
+                          >
+                            {cell > 0 ? cell : ''}
+                          </div>
+                        );
+                      })}
+                    </Fragment>
+                  ))}
+                </div>
+              </div>
+            ) : staticSBoxAnalysis.ddt.thumbnail ? (
+              <div className="sbox-ddt-section">
+                <span className="meta-label">DDT Thumbnail (16×16 macro-blocks)</span>
+                <p className="sbox-analysis-note">
+                  Each cell shows the maximum DDT value in a 16×16 region of the full 255×256 table. Outlined cells equal the global maximum.
+                </p>
+                <div
+                  className="sbox-ddt-grid"
+                  style={{ gridTemplateColumns: `repeat(16, minmax(0, 1fr))` }}
+                >
+                  {staticSBoxAnalysis.ddt.thumbnail.map((row, ri) => (
+                    <Fragment key={`thumb-row-${ri}`}>
+                      {row.map((cell, ci) => {
+                        const isMax = cell > 0 && cell === staticSBoxAnalysis.ddt.maxUniformity;
+                        const intensity = staticSBoxAnalysis.ddt.maxUniformity > 0
+                          ? cell / staticSBoxAnalysis.ddt.maxUniformity
+                          : 0;
+                        return (
+                          <div
+                            key={`thumb-cell-${ri}-${ci}`}
+                            className="sbox-ddt-cell"
+                            title={`Region (${ri},${ci}): max = ${cell}`}
+                            style={{
+                              backgroundColor: cell === 0
+                                ? 'transparent'
+                                : `rgba(220, 100, 40, ${0.12 + intensity * 0.72})`,
+                              outline: isMax ? '1.5px solid rgba(200, 60, 20, 0.75)' : undefined,
+                              outlineOffset: isMax ? '-1px' : undefined,
+                              zIndex: isMax ? 1 : undefined,
+                            }}
+                          >
+                            {cell > 0 ? cell : ''}
+                          </div>
+                        );
+                      })}
+                    </Fragment>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="sbox-analysis-metric">
+                <div className="sbox-analysis-metric-row">
+                  <span className="meta-label">DDT Histogram</span>
+                </div>
+                <div className="sbox-ddt-histogram">
+                  {Object.entries(staticSBoxAnalysis.ddt.histogram)
+                    .sort(([a], [b]) => Number(a) - Number(b))
+                    .map(([value, count]) => (
+                      <div key={`hist-${value}`} className="sbox-ddt-hist-row">
+                        <span className="sbox-ddt-hist-value">{value}</span>
+                        <span className="sbox-ddt-hist-count">{count} cell{count !== 1 ? 's' : ''}</span>
+                      </div>
+                    ))}
+                </div>
+                <p className="sbox-analysis-note">
+                  Non-zero cell counts across the full {(1 << staticSBoxAnalysis.inputBits) - 1} × {1 << staticSBoxAnalysis.outputBits} DDT.
+                </p>
+              </div>
+            )}
+
+            <div className="sbox-analysis-metric">
+              <div className="sbox-analysis-metric-row">
+                <span className="meta-label">Algebraic Degree</span>
+                <span className="sbox-analysis-value">
+                  <strong
+                    className={
+                      staticSBoxAnalysis.algebraicDegree.degree >= staticSBoxAnalysis.algebraicDegree.maxTheoreticalDegree - 1
+                        ? 'sbox-analysis-value-good'
+                        : 'sbox-analysis-value-warn'
+                    }
+                  >
+                    {staticSBoxAnalysis.algebraicDegree.degree}
+                  </strong>
+                  <span className="sbox-analysis-ref">
+                    {' '}/ {staticSBoxAnalysis.algebraicDegree.maxTheoreticalDegree} max for {staticSBoxAnalysis.inputBits}-bit
+                  </span>
+                </span>
+              </div>
+              <p className="sbox-analysis-note">
+                Maximum degree of the Boolean coordinate functions in algebraic normal form. Higher degree resists algebraic attacks.
+              </p>
+            </div>
+
+            <div className="sbox-analysis-metric">
+              <div className="sbox-analysis-metric-row">
+                <span className="meta-label">Fixed Points</span>
+                <span className="sbox-analysis-value">
+                  <strong className={staticSBoxAnalysis.fixedPoints === 0 ? 'sbox-analysis-value-good' : 'sbox-analysis-value-warn'}>
+                    {staticSBoxAnalysis.fixedPoints}
+                  </strong>
+                  <span className="sbox-analysis-ref">
+                    {' '}(S(x) = x for {staticSBoxAnalysis.fixedPoints} input{staticSBoxAnalysis.fixedPoints !== 1 ? 's' : ''})
+                  </span>
+                </span>
+              </div>
+              <p className="sbox-analysis-note">
+                Positions where the output equals the input unchanged. A fixed point at zero can simplify certain attack models.
+              </p>
+            </div>
+
+            <div className="sbox-analysis-metric">
+              <div className="sbox-analysis-metric-row">
+                <span className="meta-label">Bit Dependency</span>
+                <span className="sbox-analysis-ref">SAC target: 0.50 per cell</span>
+              </div>
+              <p className="sbox-analysis-note">
+                Probability that flipping input bit <em>i</em> (row) changes output bit <em>j</em> (column). Green = near 0.50. Orange = deviation from target.
+              </p>
+              <div
+                className="sbox-dep-grid"
+                style={{ gridTemplateColumns: `28px repeat(${staticSBoxAnalysis.outputBits}, minmax(0, 1fr))` }}
+              >
+                <span className="sbox-ddt-corner">in\out</span>
+                {Array.from({ length: staticSBoxAnalysis.outputBits }, (_, j) => (
+                  <span key={`dep-col-${j}`} className="sbox-ddt-axis">{j}</span>
+                ))}
+                {staticSBoxAnalysis.bitDependency.matrix.map((row, i) => (
+                  <Fragment key={`dep-row-${i}`}>
+                    <span className="sbox-ddt-axis sbox-ddt-row-axis">{i}</span>
+                    {row.map((prob, j) => {
+                      const deviation = Math.abs(prob - 0.5);
+                      const alpha = deviation / 0.5;
+                      const bg = alpha < 0.05
+                        ? 'rgba(50, 160, 80, 0.28)'
+                        : `rgba(210, 95, 30, ${0.12 + alpha * 0.72})`;
+                      return (
+                        <div
+                          key={`dep-cell-${i}-${j}`}
+                          className="sbox-ddt-cell"
+                          title={`Flip input bit ${i} → output bit ${j} changes: ${(prob * 100).toFixed(1)}%`}
+                          style={{ backgroundColor: bg }}
+                        >
+                          {prob.toFixed(2)}
+                        </div>
+                      );
+                    })}
+                  </Fragment>
+                ))}
+              </div>
+              <div className="sbox-analysis-metric-row" style={{ marginTop: '6px' }}>
+                <span className="meta-label">Max SAC Deviation</span>
+                <span className="sbox-analysis-value">
+                  <strong
+                    className={
+                      staticSBoxAnalysis.bitDependency.sacDeviation < 0.125
+                        ? 'sbox-analysis-value-good'
+                        : 'sbox-analysis-value-warn'
+                    }
+                  >
+                    {staticSBoxAnalysis.bitDependency.sacDeviation.toFixed(3)}
+                  </strong>
+                  <span className="sbox-analysis-ref"> (0.000 = perfect SAC)</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Reference row */}
+            {(() => {
+              const refs = KNOWN_SBOX_REFERENCES.filter(
+                (r) => r.inputBits === staticSBoxAnalysis.inputBits && r.outputBits === staticSBoxAnalysis.outputBits,
+              );
+              if (refs.length === 0) return null;
+              return (
+                <div className="sbox-analysis-metric">
+                  <div className="sbox-analysis-metric-row">
+                    <span className="meta-label">Reference Designs</span>
+                  </div>
+                  <div className="sbox-ref-table">
+                    <div className="sbox-ref-row sbox-ref-header">
+                      <span>Name</span>
+                      <span>NL</span>
+                      <span>DDT max</span>
+                      <span>Deg</span>
+                      <span>Fixed</span>
+                    </div>
+                    {refs.map((ref) => (
+                      <div key={ref.name} className="sbox-ref-row">
+                        <span className="sbox-ref-name">{ref.name}</span>
+                        <span>{ref.nonlinearity}</span>
+                        <span>{ref.maxDifferentialUniformity}</span>
+                        <span>{ref.algebraicDegree}</span>
+                        <span>{ref.fixedPoints}</span>
+                      </div>
+                    ))}
+                    <div className="sbox-ref-row sbox-ref-yours">
+                      <span className="sbox-ref-name">Yours</span>
+                      <span
+                        className={
+                          staticSBoxAnalysis.lat.nonlinearity >= staticSBoxAnalysis.lat.maxTheoreticalNonlinearity * 0.75
+                            ? 'sbox-analysis-value-good'
+                            : 'sbox-analysis-value-warn'
+                        }
+                      >
+                        {staticSBoxAnalysis.lat.nonlinearity}
+                      </span>
+                      <span
+                        className={
+                          staticSBoxAnalysis.ddt.maxUniformity <= staticSBoxAnalysis.ddt.maxIdealUniformity
+                            ? 'sbox-analysis-value-good'
+                            : 'sbox-analysis-value-warn'
+                        }
+                      >
+                        {staticSBoxAnalysis.ddt.maxUniformity}
+                      </span>
+                      <span
+                        className={
+                          staticSBoxAnalysis.algebraicDegree.degree >= staticSBoxAnalysis.algebraicDegree.maxTheoreticalDegree - 1
+                            ? 'sbox-analysis-value-good'
+                            : 'sbox-analysis-value-warn'
+                        }
+                      >
+                        {staticSBoxAnalysis.algebraicDegree.degree}
+                      </span>
+                      <span
+                        className={staticSBoxAnalysis.fixedPoints === 0 ? 'sbox-analysis-value-good' : 'sbox-analysis-value-warn'}
+                      >
+                        {staticSBoxAnalysis.fixedPoints}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </InspectorSection>
+      ) : null}
+
+      {inspectorTab === 'analyze' && staticPermutationAnalysis ? (
+        <InspectorSection
+          label="Permutation Properties"
+          collapsible
+          collapsed={collapsedAnalyzeSections.permutationProperties}
+          onToggle={() => toggleAnalyzeSection('permutationProperties')}
+        >
+          <div className="sbox-analysis-panel" style={{ borderTop: 'none', paddingTop: 0, marginTop: 0 }}>
+            <p className="sbox-analysis-disclaimer">
+              These measurements describe the permutation routing in isolation — diffusion structure, not cryptographic security by itself.
+            </p>
+
+            {/* Cycle structure */}
+            <div className="sbox-analysis-metric">
+              <div className="sbox-analysis-metric-row">
+                <span className="meta-label">Cycle Structure</span>
+                <span className="sbox-analysis-ref">{staticPermutationAnalysis.length}-bit permutation</span>
+              </div>
+              <div className="sbox-analysis-strip">
+                <div className="sbox-analysis-strip-cell">
+                  <span className="meta-label">Cycles</span>
+                  <strong>{staticPermutationAnalysis.cycles.count}</strong>
+                </div>
+                <div className="sbox-analysis-strip-cell">
+                  <span className="meta-label">Fixed pts</span>
+                  <strong
+                    className={staticPermutationAnalysis.cycles.fixedPoints === 0 ? 'sbox-analysis-value-good' : 'sbox-analysis-value-warn'}
+                  >
+                    {staticPermutationAnalysis.cycles.fixedPoints}
+                  </strong>
+                </div>
+                <div className="sbox-analysis-strip-cell">
+                  <span className="meta-label">Min len</span>
+                  <strong>{staticPermutationAnalysis.cycles.minLength}</strong>
+                </div>
+                <div className="sbox-analysis-strip-cell">
+                  <span className="meta-label">Max len</span>
+                  <strong>{staticPermutationAnalysis.cycles.maxLength}</strong>
+                </div>
+              </div>
+              <p className="sbox-analysis-note">
+                Permutation decomposes into {staticPermutationAnalysis.cycles.count} orbit{staticPermutationAnalysis.cycles.count !== 1 ? 's' : ''} · avg length {staticPermutationAnalysis.cycles.avgLength.toFixed(2)} · {staticPermutationAnalysis.cycles.fixedPoints} fixed point{staticPermutationAnalysis.cycles.fixedPoints !== 1 ? 's' : ''} (bit goes nowhere).
+              </p>
+            </div>
+
+            {/* Displacement */}
+            <div className="sbox-analysis-metric">
+              <div className="sbox-analysis-metric-row">
+                <span className="meta-label">Displacement</span>
+                <span className="sbox-analysis-ref">how far each bit travels</span>
+              </div>
+              <div className="sbox-analysis-strip">
+                <div className="sbox-analysis-strip-cell">
+                  <span className="meta-label">Min</span>
+                  <strong
+                    className={staticPermutationAnalysis.displacement.min > 0 ? 'sbox-analysis-value-good' : 'sbox-analysis-value-warn'}
+                  >
+                    {staticPermutationAnalysis.displacement.min}
+                  </strong>
+                </div>
+                <div className="sbox-analysis-strip-cell">
+                  <span className="meta-label">Max</span>
+                  <strong>{staticPermutationAnalysis.displacement.max}</strong>
+                </div>
+                <div className="sbox-analysis-strip-cell">
+                  <span className="meta-label">Avg</span>
+                  <strong>{staticPermutationAnalysis.displacement.avg.toFixed(1)}</strong>
+                </div>
+              </div>
+              <p className="sbox-analysis-note">
+                Distance |output_position − input_position| per bit. Min &gt; 0 means no bit stays in place.
+              </p>
+            </div>
+
+            {/* Block spread configuration */}
+            <div className="sbox-analysis-metric">
+              <div className="sbox-analysis-metric-row">
+                <span className="meta-label">Inter-Block Spread</span>
+                <span className="sbox-analysis-ref">configure block size to analyse</span>
+              </div>
+              <div className="sbox-block-size-row">
+                <span className="meta-label">Block size (bits)</span>
+                <div className="sbox-block-size-chips">
+                  {[1, 2, 4, 8].filter((bs) => staticPermutationAnalysis.length % bs === 0).map((bs) => (
+                    <button
+                      key={`bs-${bs}`}
+                      type="button"
+                      className={permutationBlockSize === bs ? 'sbox-chunk-chip active' : 'sbox-chunk-chip'}
+                      onClick={() => setPermutationBlockSize(permutationBlockSize === bs ? null : bs)}
+                    >
+                      {bs}
+                    </button>
+                  ))}
+                  {staticPermutationAnalysis.length >= 16 ? [16, 32].filter((bs) => staticPermutationAnalysis.length % bs === 0).map((bs) => (
+                    <button
+                      key={`bs-${bs}`}
+                      type="button"
+                      className={permutationBlockSize === bs ? 'sbox-chunk-chip active' : 'sbox-chunk-chip'}
+                      onClick={() => setPermutationBlockSize(permutationBlockSize === bs ? null : bs)}
+                    >
+                      {bs}
+                    </button>
+                  )) : null}
+                </div>
+              </div>
+              {staticPermutationAnalysis.blockSpread ? (() => {
+                const bs = staticPermutationAnalysis.blockSpread;
+                const blockCount = bs.blockCount;
+                return (
+                  <>
+                    <div className="sbox-analysis-metric-row" style={{ marginTop: '8px' }}>
+                      <span className="meta-label">Branch Number</span>
+                      <span className="sbox-analysis-value">
+                        <strong
+                          className={bs.branchNumber >= 3 ? 'sbox-analysis-value-good' : 'sbox-analysis-value-warn'}
+                        >
+                          {bs.branchNumber}
+                        </strong>
+                        <span className="sbox-analysis-ref">
+                          {' '}{bs.branchNumberIsExact ? '(exact)' : '(lower bound)'} · {blockCount} blocks of {bs.blockSize}
+                        </span>
+                      </span>
+                    </div>
+                    <p className="sbox-analysis-note">
+                      Min over all nonempty input-block subsets A of (|A| + |activated output blocks|). Higher = better diffusion. Minimum possible = 2.
+                    </p>
+                    {blockCount <= 16 ? (
+                      <div className="sbox-ddt-section">
+                        <span className="meta-label">Spread Matrix</span>
+                        <p className="sbox-analysis-note">
+                          Cells: how many bits from input block (row) land in output block (col). Zero = no contribution.
+                        </p>
+                        <div
+                          className="sbox-ddt-grid"
+                          style={{ gridTemplateColumns: `28px repeat(${blockCount}, minmax(0, 1fr))` }}
+                        >
+                          <span className="sbox-ddt-corner">in\out</span>
+                          {Array.from({ length: blockCount }, (_, col) => (
+                            <span key={`sm-col-${col}`} className="sbox-ddt-axis">{col}</span>
+                          ))}
+                          {bs.spreadMatrix.map((row, ri) => (
+                            <Fragment key={`sm-row-${ri}`}>
+                              <span className="sbox-ddt-axis sbox-ddt-row-axis">{ri}</span>
+                              {row.map((cell, ci) => {
+                                const intensity = bs.blockSize > 0 ? cell / bs.blockSize : 0;
+                                return (
+                                  <div
+                                    key={`sm-cell-${ri}-${ci}`}
+                                    className="sbox-ddt-cell"
+                                    title={`Block ${ri} → Block ${ci}: ${cell} bit${cell !== 1 ? 's' : ''}`}
+                                    style={{
+                                      backgroundColor: cell === 0
+                                        ? 'transparent'
+                                        : `rgba(60, 130, 200, ${0.12 + intensity * 0.72})`,
+                                    }}
+                                  >
+                                    {cell > 0 ? cell : ''}
+                                  </div>
+                                );
+                              })}
+                            </Fragment>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="sbox-analysis-note">
+                        Spread matrix omitted for {blockCount} blocks — too wide to display clearly.
+                      </p>
+                    )}
+                  </>
+                );
+              })() : (
+                <p className="sbox-analysis-note" style={{ marginTop: '6px' }}>
+                  Select a block size above to see the inter-block spread matrix and branch number.
+                </p>
+              )}
+            </div>
           </div>
         </InspectorSection>
       ) : null}
