@@ -47,6 +47,7 @@ import {
 } from './ui/learning-orchestration';
 import { evaluateVerificationCases, getVerificationSourceOptions, type VerificationCase } from './ui/verification-workflow';
 import { clampTutorialStepIndex, getTutorialStep } from './ui/tutorials';
+import type { CryptanalysisMode } from './ui/cryptanalysis-mode';
 import {
   downloadDocument,
   downloadAiToolkitDocument,
@@ -1558,6 +1559,9 @@ function MainApp() {
 
       const projectId = activeProjectDefinition.id;
       const mode = state.cryptanalysisModeByProject[projectId] ?? 'classical';
+      if (mode === 'key-schedule') {
+        return;
+      }
       const savedCase: SavedAnalysisCase =
         mode === 'modern'
           ? {
@@ -2893,7 +2897,7 @@ function MainApp() {
       },
       importChallengeRaw: handleImportChallengeRaw,
       captureChallenge: handleCaptureChallenge,
-      setCryptanalysisMode: (mode: 'classical' | 'modern' | 'randomness') =>
+      setCryptanalysisMode: (mode: CryptanalysisMode) =>
         dispatch({
           type: 'setCryptanalysisMode',
           projectId: activeProjectDefinition.id,

@@ -3,9 +3,11 @@ import { describe, expect, it } from 'vitest';
 import {
   analyzeBitDifference,
   analyzeBitstreamRandomness,
+  buildKeyScheduleAdjacentDifferences,
   buildAvalancheSweepSummary,
   buildCandidatePeriodChartEntries,
   buildInfluenceHeatmapColumnEntries,
+  buildKeyScheduleSweepSummary,
   buildRoundDiffusionChartEntries,
   buildShiftConfidenceEntries,
   analyzeRoundDiffusion,
@@ -484,6 +486,114 @@ describe('modern bit analysis helpers', () => {
           endBitIndex: 15,
           averageChangedCount: 3.5,
           averageChangedPercent: 0.875,
+        },
+      ],
+    });
+  });
+
+  it('builds adjacent key-stage differences only for matching widths', () => {
+    expect(
+      buildKeyScheduleAdjacentDifferences([
+        { moduleId: 'rk1', label: 'Round Key 1', bits: [0, 0, 1, 1] },
+        { moduleId: 'rk2', label: 'Round Key 2', bits: [0, 1, 1, 1] },
+        { moduleId: 'rk3', label: 'Round Key 3', bits: [1, 0, 1] },
+      ]),
+    ).toEqual([
+      {
+        fromModuleId: 'rk1',
+        fromLabel: 'Round Key 1',
+        toModuleId: 'rk2',
+        toLabel: 'Round Key 2',
+        width: 4,
+        changedCount: 1,
+        changedPercent: 0.25,
+        widthMismatch: false,
+      },
+      {
+        fromModuleId: 'rk2',
+        fromLabel: 'Round Key 2',
+        toModuleId: 'rk3',
+        toLabel: 'Round Key 3',
+        width: null,
+        changedCount: null,
+        changedPercent: null,
+        widthMismatch: true,
+      },
+    ]);
+  });
+
+  it('summarizes per-stage key-schedule sweep results and callouts', () => {
+    const summary = buildKeyScheduleSweepSummary(
+      [
+        {
+          inputIndex: 0,
+          stageResults: [
+            { moduleId: 'rk1', changedCount: 2, changedPercent: 0.25 },
+            { moduleId: 'rk2', changedCount: 6, changedPercent: 0.75 },
+          ],
+        },
+        {
+          inputIndex: 1,
+          stageResults: [
+            { moduleId: 'rk1', changedCount: 4, changedPercent: 0.5 },
+            { moduleId: 'rk2', changedCount: 8, changedPercent: 1 },
+          ],
+        },
+      ],
+      [
+        { moduleId: 'rk1', label: 'Round Key 1', bits: [0, 0, 0, 0, 0, 0, 0, 0] },
+        { moduleId: 'rk2', label: 'Round Key 2', bits: [0, 0, 0, 0, 0, 0, 0, 0] },
+      ],
+    );
+
+    expect(summary).toEqual({
+      flipCount: 2,
+      stageEntries: [
+        {
+          moduleId: 'rk1',
+          label: 'Round Key 1',
+          width: 8,
+          minimumChangedCount: 2,
+          maximumChangedCount: 4,
+          averageChangedCount: 3,
+          averageChangedPercent: 0.375,
+        },
+        {
+          moduleId: 'rk2',
+          label: 'Round Key 2',
+          width: 8,
+          minimumChangedCount: 6,
+          maximumChangedCount: 8,
+          averageChangedCount: 7,
+          averageChangedPercent: 0.875,
+        },
+      ],
+      weakestStages: [
+        {
+          moduleId: 'rk1',
+          label: 'Round Key 1',
+          averageChangedCount: 3,
+          averageChangedPercent: 0.375,
+        },
+        {
+          moduleId: 'rk2',
+          label: 'Round Key 2',
+          averageChangedCount: 7,
+          averageChangedPercent: 0.875,
+        },
+      ],
+      strongestStages: [
+        {
+          moduleId: 'rk2',
+          label: 'Round Key 2',
+          averageChangedCount: 7,
+          averageChangedPercent: 0.875,
+        },
+        {
+          moduleId: 'rk1',
+          label: 'Round Key 1',
+          averageChangedCount: 3,
+          averageChangedPercent: 0.375,
         },
       ],
     });

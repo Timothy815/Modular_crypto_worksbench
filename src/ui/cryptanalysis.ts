@@ -140,6 +140,56 @@ export interface AvalancheSweepSummary {
   byteGroups: AvalancheSweepByteGroupEntry[];
 }
 
+export interface KeyScheduleStageSnapshot {
+  moduleId: string;
+  label: string;
+  bits: number[];
+}
+
+export interface KeyScheduleAdjacentDifferenceEntry {
+  fromModuleId: string;
+  fromLabel: string;
+  toModuleId: string;
+  toLabel: string;
+  width: number | null;
+  changedCount: number | null;
+  changedPercent: number | null;
+  widthMismatch: boolean;
+}
+
+export interface KeyScheduleSweepStageEntry {
+  moduleId: string;
+  label: string;
+  width: number;
+  minimumChangedCount: number;
+  maximumChangedCount: number;
+  averageChangedCount: number;
+  averageChangedPercent: number;
+}
+
+export interface KeyScheduleSweepCalloutEntry {
+  moduleId: string;
+  label: string;
+  averageChangedCount: number;
+  averageChangedPercent: number;
+}
+
+export interface KeyScheduleSweepRow {
+  inputIndex: number;
+  stageResults: Array<{
+    moduleId: string;
+    changedCount: number;
+    changedPercent: number;
+  }>;
+}
+
+export interface KeyScheduleSweepSummary {
+  flipCount: number;
+  stageEntries: KeyScheduleSweepStageEntry[];
+  weakestStages: KeyScheduleSweepCalloutEntry[];
+  strongestStages: KeyScheduleSweepCalloutEntry[];
+}
+
 export interface BitstreamRunLengthGroup {
   lengthLabel: string;
   zeroRuns: number;
@@ -637,6 +687,126 @@ function buildAvalancheByteGroups(
   }
 
   return groups;
+}
+
+export function buildKeyScheduleAdjacentDifferences(
+  stages: KeyScheduleStageSnapshot[],
+): KeyScheduleAdjacentDifferenceEntry[] {
+  const entries: KeyScheduleAdjacentDifferenceEntry[] = [];
+
+  for (let index = 0; index < stages.length - 1; index += 1) {
+    const current = stages[index];
+    const next = stages[index + 1];
+    if (!current || !next) {
+      continue;
+    }
+
+    if (current.bits.length !== next.bits.length) {
+      entries.push({
+        fromModuleId: current.moduleId,
+        fromLabel: current.label,
+        toModuleId: next.moduleId,
+        toLabel: next.label,
+        width: null,
+        changedCount: null,
+        changedPercent: null,
+        widthMismatch: true,
+      });
+      continue;
+    }
+
+    const difference = analyzeBitDifference(current.bits, next.bits);
+    entries.push({
+      fromModuleId: current.moduleId,
+      fromLabel: current.label,
+      toModuleId: next.moduleId,
+      toLabel: next.label,
+      width: current.bits.length,
+      changedCount: difference.changedCount,
+      changedPercent: difference.changedPercent,
+      widthMismatch: false,
+    });
+  }
+
+  return entries;
+}
+
+export function buildKeyScheduleSweepSummary(
+  rows: KeyScheduleSweepRow[],
+  stages: KeyScheduleStageSnapshot[],
+): KeyScheduleSweepSummary | null {
+  if (rows.length === 0 || stages.length === 0) {
+    return null;
+  }
+
+  const stageEntries = stages.flatMap<KeyScheduleSweepStageEntry>((stage) => {
+    const matching = rows
+      .map((row) => row.stageResults.find((entry) => entry.moduleId === stage.moduleId))
+      .filter(
+        (
+          entry,
+        ): entry is {
+          moduleId: string;
+          changedCount: number;
+          changedPercent: number;
+        } => entry !== undefined,
+      );
+
+    if (matching.length === 0) {
+      return [];
+    }
+
+    const counts = matching.map((entry) => entry.changedCount);
+    const percents = matching.map((entry) => entry.changedPercent);
+
+    return [{
+      moduleId: stage.moduleId,
+      label: stage.label,
+      width: stage.bits.length,
+      minimumChangedCount: Math.min(...counts),
+      maximumChangedCount: Math.max(...counts),
+      averageChangedCount: counts.reduce((sum, value) => sum + value, 0) / counts.length,
+      averageChangedPercent: percents.reduce((sum, value) => sum + value, 0) / percents.length,
+    }];
+  });
+
+  if (stageEntries.length === 0) {
+    return null;
+  }
+
+  const toCallout = (entry: KeyScheduleSweepStageEntry): KeyScheduleSweepCalloutEntry => ({
+    moduleId: entry.moduleId,
+    label: entry.label,
+    averageChangedCount: entry.averageChangedCount,
+    averageChangedPercent: entry.averageChangedPercent,
+  });
+
+  const weakestStages = [...stageEntries]
+    .sort((left, right) => {
+      if (left.averageChangedCount !== right.averageChangedCount) {
+        return left.averageChangedCount - right.averageChangedCount;
+      }
+      return left.label.localeCompare(right.label);
+    })
+    .slice(0, 8)
+    .map(toCallout);
+
+  const strongestStages = [...stageEntries]
+    .sort((left, right) => {
+      if (right.averageChangedCount !== left.averageChangedCount) {
+        return right.averageChangedCount - left.averageChangedCount;
+      }
+      return left.label.localeCompare(right.label);
+    })
+    .slice(0, 8)
+    .map(toCallout);
+
+  return {
+    flipCount: rows.length,
+    stageEntries,
+    weakestStages,
+    strongestStages,
+  };
 }
 
 export function analyzeBitstreamRandomness(bits: number[]): BitstreamRandomnessAnalysis {

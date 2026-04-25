@@ -3,6 +3,8 @@ import { Fragment, useMemo, useState } from 'react';
 import {
   analyzeBitDifference,
   analyzeBitstreamRandomness,
+  buildKeyScheduleAdjacentDifferences,
+  buildKeyScheduleSweepSummary,
   analyzeRoundDiffusion,
   analyzeSymbolSignal,
   buildAvalancheSweepSummary,
@@ -17,6 +19,7 @@ import {
   buildFrequencyGraphEntries,
   flipBitAtIndex,
   hexToBits,
+  type KeyScheduleStageSnapshot,
   parseBitString,
   reconstructVigenereCandidate,
   symbolToBits,
@@ -147,6 +150,9 @@ export function CryptanalysisPanel({
 }: CryptanalysisPanelProps) {
   const [caseDraftName, setCaseDraftName] = useState('');
   const [lastManualSweepSignature, setLastManualSweepSignature] = useState<string | null>(null);
+  const [selectedKeySourceId, setSelectedKeySourceId] = useState<string | null>(null);
+  const [selectedKeyStageIds, setSelectedKeyStageIds] = useState<string[]>([]);
+  const [lastKeyScheduleRunSignature, setLastKeyScheduleRunSignature] = useState<string | null>(null);
   const analysis = analyzeSymbolSignal(
     ciphertext.trim().length > 0 ? { type: 'symbol', value: ciphertext } : null,
   );
@@ -388,6 +394,77 @@ export function CryptanalysisPanel({
   );
   const showInfluenceSweep =
     influenceRows.length > 0 && influenceColumns.length > 0;
+  const keySourceOptions = useMemo(
+    () => flippableSources.filter((source) => source.kind !== 'text-symbol-bridge'),
+    [flippableSources],
+  );
+  const effectiveKeySourceId = keySourceOptions.some((source) => source.moduleId === selectedKeySourceId)
+    ? selectedKeySourceId
+    : keySourceOptions[0]?.moduleId ?? null;
+  const selectedKeySource =
+    keySourceOptions.find((source) => source.moduleId === effectiveKeySourceId) ?? null;
+  const keyStageOptions = useMemo(
+    () => getBitstreamSinkOptions(project, execution, null, false),
+    [project, execution],
+  );
+  const effectiveSelectedKeyStageIds = useMemo(
+    () =>
+      selectedKeyStageIds.filter((moduleId) =>
+        keyStageOptions.some((option) => option.moduleId === moduleId),
+      ),
+    [keyStageOptions, selectedKeyStageIds],
+  );
+  const orderedKeyStages = useMemo<KeyScheduleStageSnapshot[]>(
+    () =>
+      effectiveSelectedKeyStageIds.flatMap((moduleId) => {
+        const option = keyStageOptions.find((candidate) => candidate.moduleId === moduleId);
+        if (!option) {
+          return [];
+        }
+
+        return [{
+          moduleId: option.moduleId,
+          label: option.label,
+          bits: option.bits,
+        }];
+      }),
+    [effectiveSelectedKeyStageIds, keyStageOptions],
+  );
+  const keyScheduleAdjacentDifferences = useMemo(
+    () => buildKeyScheduleAdjacentDifferences(orderedKeyStages),
+    [orderedKeyStages],
+  );
+  const keyScheduleRunSignature = useMemo(
+    () =>
+      JSON.stringify({
+        project,
+        sourceId: effectiveKeySourceId,
+        orderedStageIds: effectiveSelectedKeyStageIds,
+      }),
+    [effectiveKeySourceId, effectiveSelectedKeyStageIds, project],
+  );
+  const keyScheduleHasFreshRun = lastKeyScheduleRunSignature === keyScheduleRunSignature;
+  const keyScheduleSweepRows = useMemo(() => {
+    if (!selectedKeySource || orderedKeyStages.length === 0 || !keyScheduleHasFreshRun) {
+      return [];
+    }
+
+    return runKeyScheduleSweep(project, selectedKeySource, registry, orderedKeyStages);
+  }, [keyScheduleHasFreshRun, orderedKeyStages, project, registry, selectedKeySource]);
+  const keyScheduleSweepSummary = useMemo(
+    () => buildKeyScheduleSweepSummary(keyScheduleSweepRows, orderedKeyStages),
+    [keyScheduleSweepRows, orderedKeyStages],
+  );
+  const keyScheduleNotYetRun = lastKeyScheduleRunSignature === null;
+  const keyScheduleStale =
+    lastKeyScheduleRunSignature !== null && !keyScheduleHasFreshRun;
+  const availableKeyStageOptions = useMemo(
+    () =>
+      keyStageOptions.filter(
+        (option) => !effectiveSelectedKeyStageIds.includes(option.moduleId),
+      ),
+    [effectiveSelectedKeyStageIds, keyStageOptions],
+  );
   const candidatePeriodChart = useMemo(
     () => (analysis ? buildCandidatePeriodChartEntries(analysis.candidatePeriods) : []),
     [analysis],
@@ -426,7 +503,9 @@ export function CryptanalysisPanel({
             ? 'Vigenere Analysis Lab'
             : cryptanalysisMode === 'modern'
               ? 'Avalanche Explorer'
-              : 'Bitstream Randomness Lab'}
+              : cryptanalysisMode === 'randomness'
+                ? 'Bitstream Randomness Lab'
+                : 'Key Schedule Analysis'}
         </h2>
         <div className="workspace-mode-switch" role="radiogroup" aria-label="Workspace mode">
           <button
@@ -490,6 +569,15 @@ export function CryptanalysisPanel({
           onClick={() => onSetCryptanalysisMode('randomness')}
         >
           Randomness
+        </button>
+        <button
+          type="button"
+          role="radio"
+          aria-checked={cryptanalysisMode === 'key-schedule'}
+          className={cryptanalysisMode === 'key-schedule' ? 'workspace-mode-chip active' : 'workspace-mode-chip'}
+          onClick={() => onSetCryptanalysisMode('key-schedule')}
+        >
+          Key Schedule
         </button>
         {tutorial ? (
           <button
@@ -981,6 +1069,254 @@ export function CryptanalysisPanel({
             ) : (
               <p className="comparison-copy">
                 Round-aware diffusion appears when the active machine exposes iterator-style internal rounds in the analysis trace.
+              </p>
+            )}
+          </div>
+        </div>
+      ) : cryptanalysisMode === 'key-schedule' ? (
+        <div className="comparison-grid">
+          <div className="comparison-card comparison-card-wide">
+            <span className="meta-label">Key Schedule Surface</span>
+            <strong>Analyze how the master key evolves into explicit round-key outputs</strong>
+            <p className="comparison-copy">
+              This surface is separate from plaintext avalanche. It only studies the selected master-key source and the ordered round-key outputs you expose explicitly at the machine boundary.
+            </p>
+            {keySourceOptions.length > 0 ? (
+              <label className="param-field">
+                <span>Master-Key Source</span>
+                <select
+                  value={effectiveKeySourceId ?? ''}
+                  onChange={(event) => setSelectedKeySourceId(event.target.value || null)}
+                >
+                  {keySourceOptions.map((source) => (
+                    <option key={source.moduleId} value={source.moduleId}>
+                      {source.moduleName} ({getFlippableSourceKindLabel(source.kind)}) — {source.moduleId}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <p className="comparison-copy">
+                No analyzable key source is available yet. Expose a supported bit-domain source such as a BitSource, HexSource, or AsciiSource.
+              </p>
+            )}
+          </div>
+
+          <div className="comparison-card comparison-card-wide">
+            <span className="meta-label">Round-Key Stage Picker</span>
+            <strong>Choose explicit terminal outputs and order them manually</strong>
+            {keyStageOptions.length > 0 ? (
+              <>
+                <div className="cryptanalysis-output-summary-row">
+                  <span className="content-status-chip">
+                    Available outputs: <strong>{keyStageOptions.length}</strong>
+                  </span>
+                  <span className="content-status-chip">
+                    Selected stages: <strong>{orderedKeyStages.length}</strong>
+                  </span>
+                </div>
+                {availableKeyStageOptions.length > 0 ? (
+                  <div className="cryptanalysis-list">
+                    {availableKeyStageOptions.map((option) => (
+                      <p key={`available-stage-${option.moduleId}`} className="comparison-copy">
+                        <strong>{option.label}</strong>
+                        {' '}| {option.bits.length} bits
+                        {' '}| {formatKeyStageValue(option.bits)}
+                        <button
+                          type="button"
+                          className="mini-action-button"
+                          onClick={() =>
+                            setSelectedKeyStageIds((current) => [...current, option.moduleId])
+                          }
+                        >
+                          Add
+                        </button>
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="comparison-copy">
+                    All observable bit outputs are already in the ordered sequence below.
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="comparison-copy">
+                No analyzable round-key outputs are available yet. Expose explicit terminal bit-domain outputs to analyze this schedule.
+              </p>
+            )}
+          </div>
+
+          <div className="comparison-card comparison-card-wide">
+            <span className="meta-label">Ordered Round-Key Sequence</span>
+            <strong>User-defined order, no topology guesses</strong>
+            {orderedKeyStages.length > 0 ? (
+              <div className="cryptanalysis-list">
+                {orderedKeyStages.map((stage, index) => (
+                  <p key={`selected-stage-${stage.moduleId}`} className="comparison-copy">
+                    <strong>{index + 1}. {stage.label}</strong>
+                    {' '}| {stage.bits.length} bits
+                    {' '}| {formatKeyStageValue(stage.bits)}
+                    <button
+                      type="button"
+                      className="mini-action-button"
+                      onClick={() =>
+                        setSelectedKeyStageIds((current) => moveStageId(current, stage.moduleId, -1))
+                      }
+                      disabled={index === 0}
+                    >
+                      Up
+                    </button>
+                    <button
+                      type="button"
+                      className="mini-action-button"
+                      onClick={() =>
+                        setSelectedKeyStageIds((current) => moveStageId(current, stage.moduleId, 1))
+                      }
+                      disabled={index >= orderedKeyStages.length - 1}
+                    >
+                      Down
+                    </button>
+                    <button
+                      type="button"
+                      className="mini-action-button"
+                      onClick={() =>
+                        setSelectedKeyStageIds((current) =>
+                          current.filter((moduleId) => moduleId !== stage.moduleId),
+                        )
+                      }
+                    >
+                      Remove
+                    </button>
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <p className="comparison-copy">
+                Add explicit terminal outputs to define the round-key sequence you want to analyze.
+              </p>
+            )}
+          </div>
+
+          <div className="comparison-card comparison-card-wide">
+            <span className="meta-label">Adjacent Round Difference</span>
+            <strong>Check whether neighboring round keys are genuinely evolving</strong>
+            {keyScheduleAdjacentDifferences.length > 0 ? (
+              <div className="cryptanalysis-list">
+                {keyScheduleAdjacentDifferences.map((entry) => (
+                  <p
+                    key={`adjacent-${entry.fromModuleId}-${entry.toModuleId}`}
+                    className="comparison-copy"
+                  >
+                    <strong>{entry.fromLabel}</strong> → <strong>{entry.toLabel}</strong>
+                    {entry.widthMismatch ? (
+                      <> | width mismatch</>
+                    ) : (
+                      <>
+                        {' '}| {entry.changedCount} changed bits
+                        {' '}| {(100 * (entry.changedPercent ?? 0)).toFixed(1)}%
+                      </>
+                    )}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <p className="comparison-copy">
+                Select at least two ordered round-key outputs to compare adjacent evolution.
+              </p>
+            )}
+          </div>
+
+          <div className="comparison-card comparison-card-wide">
+            <span className="meta-label">Key-Bit Flip Sweep</span>
+            <strong>Flip one master-key bit at a time and watch each stage respond</strong>
+            <div className="cryptanalysis-shift-control-row cryptanalysis-inline-flip-control">
+              <button
+                type="button"
+                className="mini-action-button"
+                onClick={() => setLastKeyScheduleRunSignature(keyScheduleRunSignature)}
+                disabled={!selectedKeySource || orderedKeyStages.length === 0}
+              >
+                {keyScheduleSweepSummary ? 'Run Analysis Again' : 'Run Analysis'}
+              </button>
+              {keyScheduleNotYetRun ? (
+                <span className="content-status-chip">
+                  Configure a source and ordered stages, then run analysis.
+                </span>
+              ) : keyScheduleStale ? (
+                <span className="content-status-chip">
+                  Results are stale. Re-run after source, stage, order, or machine changes.
+                </span>
+              ) : (
+                <span className="content-status-chip">
+                  Results match the current key-schedule configuration.
+                </span>
+              )}
+            </div>
+            {keyScheduleSweepSummary ? (
+              <>
+                <div className="cryptanalysis-output-summary-row">
+                  <span className="content-status-chip">
+                    Key bits flipped: <strong>{keyScheduleSweepSummary.flipCount}</strong>
+                  </span>
+                  <span className="content-status-chip">
+                    Stages analyzed: <strong>{keyScheduleSweepSummary.stageEntries.length}</strong>
+                  </span>
+                </div>
+                <div className="cryptanalysis-list">
+                  {keyScheduleSweepSummary.stageEntries.map((entry) => (
+                    <p key={`stage-summary-${entry.moduleId}`} className="comparison-copy">
+                      <strong>{entry.label}</strong>
+                      {' '}| min {entry.minimumChangedCount}
+                      {' '}| max {entry.maximumChangedCount}
+                      {' '}| avg {entry.averageChangedCount.toFixed(3)} changed bits
+                      {' '}| {(entry.averageChangedPercent * 100).toFixed(1)}%
+                    </p>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="comparison-copy">
+                This view stays manual in V1 so large key schedules do not execute on every configuration change.
+              </p>
+            )}
+          </div>
+
+          <div className="comparison-card comparison-card-wide">
+            <span className="meta-label">Weak / Strong Stage Callouts</span>
+            <strong>See where key-bit spread remains weak or becomes broad</strong>
+            {keyScheduleSweepSummary ? (
+              <div className="comparison-grid">
+                <div className="comparison-card">
+                  <span className="meta-label">Weakest Stages</span>
+                  <strong>Lowest average response to key-bit flips</strong>
+                  <div className="cryptanalysis-list">
+                    {keyScheduleSweepSummary.weakestStages.map((entry) => (
+                      <p key={`weak-stage-${entry.moduleId}`} className="comparison-copy">
+                        <strong>{entry.label}</strong>
+                        {' '}| avg {entry.averageChangedCount.toFixed(3)} bits
+                        {' '}| {(entry.averageChangedPercent * 100).toFixed(1)}%
+                      </p>
+                    ))}
+                  </div>
+                </div>
+                <div className="comparison-card">
+                  <span className="meta-label">Strongest Stages</span>
+                  <strong>Highest average response to key-bit flips</strong>
+                  <div className="cryptanalysis-list">
+                    {keyScheduleSweepSummary.strongestStages.map((entry) => (
+                      <p key={`strong-stage-${entry.moduleId}`} className="comparison-copy">
+                        <strong>{entry.label}</strong>
+                        {' '}| avg {entry.averageChangedCount.toFixed(3)} bits
+                        {' '}| {(entry.averageChangedPercent * 100).toFixed(1)}%
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="comparison-copy">
+                Run the sweep to identify where the key schedule spreads master-key changes weakly or strongly.
               </p>
             )}
           </div>
@@ -1905,6 +2241,34 @@ function formatBitstreamSample(bits: number[]): string {
     ?.join(' ') ?? bits.join('');
 }
 
+function formatKeyStageValue(bits: number[]): string {
+  if (bits.length === 0) {
+    return 'empty';
+  }
+
+  if (bits.length % 4 === 0) {
+    return `0x${bitsToHex(bits)}`;
+  }
+
+  return formatBitstreamSample(bits);
+}
+
+function moveStageId(stageIds: string[], moduleId: string, direction: -1 | 1): string[] {
+  const currentIndex = stageIds.indexOf(moduleId);
+  if (currentIndex === -1) {
+    return stageIds;
+  }
+
+  const nextIndex = currentIndex + direction;
+  if (nextIndex < 0 || nextIndex >= stageIds.length) {
+    return stageIds;
+  }
+
+  const next = [...stageIds];
+  [next[currentIndex], next[nextIndex]] = [next[nextIndex] ?? moduleId, next[currentIndex] ?? moduleId];
+  return next;
+}
+
 function formatPercent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
@@ -2042,6 +2406,65 @@ function buildVariantProject(
 
   targetModule.params.value = bitsToHex(variantBits);
   return nextProject;
+}
+
+function runKeyScheduleSweep(
+  project: Project,
+  keySource: FlippableProjectSource,
+  registry: ModuleRegistry,
+  stages: KeyScheduleStageSnapshot[],
+) {
+  const rows: Array<{
+    inputIndex: number;
+    stageResults: Array<{
+      moduleId: string;
+      changedCount: number;
+      changedPercent: number;
+    }>;
+  }> = [];
+
+  for (let inputIndex = 0; inputIndex < keySource.bits.length; inputIndex += 1) {
+    const variantBits = flipBitAtIndex(keySource.bits, inputIndex);
+    const variantProject = buildVariantProject(project, keySource, variantBits);
+    if (!variantProject) {
+      continue;
+    }
+
+    const validation = validateProject(variantProject, registry);
+    if (!validation.ok) {
+      continue;
+    }
+
+    try {
+      const variantExecution = runDemoProject(variantProject, registry);
+      const stageResults = stages.flatMap((stage) => {
+        const variantStageBits = getBitSignalForSink(variantExecution, stage.moduleId);
+        if (!variantStageBits) {
+          return [];
+        }
+
+        const difference = analyzeBitDifference(stage.bits, variantStageBits);
+        return [{
+          moduleId: stage.moduleId,
+          changedCount: difference.changedCount,
+          changedPercent: difference.changedPercent,
+        }];
+      });
+
+      if (stageResults.length === 0) {
+        continue;
+      }
+
+      rows.push({
+        inputIndex,
+        stageResults,
+      });
+    } catch {
+      continue;
+    }
+  }
+
+  return rows;
 }
 
 function runAvalancheSweep(

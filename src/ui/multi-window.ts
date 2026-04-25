@@ -11,6 +11,7 @@ import type { TutorialStep } from './tutorials';
 import type { GuidedTutorial } from './tutorials';
 import type { GuidedChallenge, ChallengeEvaluation } from './challenges';
 import type { ComparisonBaselineDocument, SavedAnalysisCase } from './workbench-document';
+import type { CryptanalysisMode } from './cryptanalysis-mode';
 import type { ExecutionComparison } from './execution-compare';
 import type {
   VerificationCase,
@@ -100,7 +101,7 @@ export interface DetachedLearningSnapshot {
   challengeEvaluation: ChallengeEvaluation | null;
   canCaptureChallenge: boolean;
   ciphertext: string;
-  cryptanalysisMode: 'classical' | 'modern' | 'randomness';
+  cryptanalysisMode: CryptanalysisMode;
   modernBaseline: string;
   modernFlipBit: number;
   modernSourceId: string | null;
@@ -192,7 +193,7 @@ export type DetachedPanelCommand =
   | { type: 'exportChallenge' }
   | { type: 'importChallengeRaw'; rawValue: string }
   | { type: 'captureChallenge' }
-  | { type: 'setCryptanalysisMode'; mode: 'classical' | 'modern' | 'randomness' }
+  | { type: 'setCryptanalysisMode'; mode: CryptanalysisMode }
   | { type: 'setCryptanalysisInput'; value: string }
   | { type: 'setModernAnalysisBaseline'; value: string }
   | { type: 'setModernAnalysisFlipBit'; value: number }

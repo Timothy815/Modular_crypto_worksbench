@@ -2,6 +2,7 @@ import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 
 import type { ExecutionTraceEntry } from '../engine/types';
 import type { UiAction } from './store';
+import type { CryptanalysisMode } from './cryptanalysis-mode';
 import type { WorkspaceMode } from './workspace-mode';
 import {
   createDetachedPanelGroup,
@@ -180,7 +181,7 @@ export interface DetachedPanelCommandHandlers {
   exportChallenge: () => void;
   importChallengeRaw: (rawValue: string) => void;
   captureChallenge: () => void;
-  setCryptanalysisMode: (mode: 'classical' | 'modern' | 'randomness') => void;
+  setCryptanalysisMode: (mode: CryptanalysisMode) => void;
   setCryptanalysisInput: (value: string) => void;
   setModernAnalysisBaseline: (value: string) => void;
   setModernAnalysisFlipBit: (value: number) => void;
