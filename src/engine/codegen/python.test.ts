@@ -1899,6 +1899,25 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
   });
 
+  it('emits source overrides for HexSequenceInput modules in generated workspace code', () => {
+    const project: Project = {
+      modules: [
+        { id: 'key', defId: 'HexSequenceInput', params: { value: 'A3F9' } },
+        { id: 'bits-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'key', port: 'out' }, to: { moduleId: 'bits-out', port: 'in' } },
+      ],
+    };
+
+    const exportFiles = generatePythonExportFiles(project, V1_REGISTRY, 'Hex Override Demo');
+
+    expect(exportFiles.workspaceSource).toContain(
+      'm_key = mcw_runtime.hex_sequence_input(_mcw_source_override(source_overrides, "key", "A3F9"))',
+    );
+    expect(exportFiles.workspaceSource).toContain('def _mcw_verification_output(source_overrides=None):');
+  });
+
   it('matches executeProject for a Pollux fractionation workspace', () => {
     const project: Project = {
       modules: [

@@ -2034,6 +2034,7 @@ function getPythonVerificationSourceParamKey(defId: string) {
     case 'AsciiSource':
     case 'BaudotSource':
     case 'HexSource':
+    case 'HexSequenceInput':
       return 'value';
     default:
       return null;
