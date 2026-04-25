@@ -6,7 +6,10 @@ import { XOR } from '../engine/modules/xor';
 import { V1_REGISTRY } from '../engine/modules';
 import { executeProject } from '../engine/executor';
 import type { ModuleRegistry, Project } from '../engine/types';
-import { buildStageSignalInspection } from './stage-signal-inspection';
+import {
+  buildStageSignalInspection,
+  serializeStageSignalForClipboard,
+} from './stage-signal-inspection';
 
 describe('buildStageSignalInspection', () => {
   it('builds a bounded comparison for a linear single-input chain', () => {
@@ -127,5 +130,21 @@ describe('buildStageSignalInspection', () => {
     });
     expect(executionError?.traceState).toBe('execution-error');
     expect(executionError?.traceMessage).toContain('validation or execution failed');
+  });
+});
+
+describe('serializeStageSignalForClipboard', () => {
+  it('returns display text by default for bit signals and raw bits when requested', () => {
+    expect(
+      serializeStageSignalForClipboard({ type: 'bits', value: [1, 0, 1, 0, 1, 0, 1, 0] }),
+    ).toBe('AA');
+    expect(
+      serializeStageSignalForClipboard({ type: 'bits', value: [1, 0, 1, 0, 1, 0, 1, 0] }, 'bits'),
+    ).toBe('10101010');
+  });
+
+  it('returns symbol values directly and null for absent signals', () => {
+    expect(serializeStageSignalForClipboard({ type: 'symbol', value: 'HELLO' })).toBe('HELLO');
+    expect(serializeStageSignalForClipboard(null)).toBeNull();
   });
 });

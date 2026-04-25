@@ -52,6 +52,25 @@ export interface StageSignalInspection {
   selectedPortDirection: 'input' | 'output' | null;
 }
 
+export function serializeStageSignalForClipboard(
+  signal: Signal | null,
+  preference: 'display' | 'bits' = 'display',
+) {
+  if (!signal) {
+    return null;
+  }
+
+  if (signal.type === 'symbol') {
+    return signal.value;
+  }
+
+  if (preference === 'bits') {
+    return signal.value.join('');
+  }
+
+  return formatGenericSignal(signal)?.value ?? signal.value.join('');
+}
+
 function getSignalLength(signal: Signal | null) {
   if (!signal) {
     return null;

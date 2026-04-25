@@ -5969,6 +5969,12 @@ body.canvas-resizing {
   gap: 8px;
 }
 
+.inspector-stage-signal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .inspector-stage-provenance,
 .inspector-stage-comparison {
   display: grid;

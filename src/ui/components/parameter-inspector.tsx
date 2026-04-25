@@ -20,7 +20,10 @@ import {
   getSinkRepresentationOptions,
   type SinkRepresentation,
 } from '../sink-representations';
-import { buildStageSignalInspection } from '../stage-signal-inspection';
+import {
+  buildStageSignalInspection,
+  serializeStageSignalForClipboard,
+} from '../stage-signal-inspection';
 import {
   getModuleDetail,
   getModulePurpose,
@@ -168,6 +171,27 @@ interface ParameterInspectorProps {
   collectedOutput?: string | null;
   onToggleProbe: (moduleId: string) => void;
   onClearProbes: () => void;
+}
+
+async function writeTextToClipboard(text: string) {
+  if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  if (typeof document === 'undefined') {
+    throw new Error('Clipboard is unavailable.');
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', 'true');
+  textarea.style.position = 'absolute';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
 }
 
 const PORT_SIDE_ORDER: WorkbenchPortSide[] = ['left', 'right', 'top', 'bottom'];
@@ -927,6 +951,40 @@ export function ParameterInspector({
     tutorial: true,
     transformation: false,
   });
+  const [copiedStageSignalKey, setCopiedStageSignalKey] = useState<string | null>(null);
+  const copiedStageSignalTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copiedStageSignalTimeoutRef.current !== null && typeof window !== 'undefined') {
+        window.clearTimeout(copiedStageSignalTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const markStageSignalCopied = (copyKey: string) => {
+    setCopiedStageSignalKey(copyKey);
+    if (copiedStageSignalTimeoutRef.current !== null && typeof window !== 'undefined') {
+      window.clearTimeout(copiedStageSignalTimeoutRef.current);
+    }
+    if (typeof window !== 'undefined') {
+      copiedStageSignalTimeoutRef.current = window.setTimeout(() => {
+        setCopiedStageSignalKey((current) => (current === copyKey ? null : current));
+      }, 1600);
+    }
+  };
+
+  const handleCopyStageSignal = async (copyKey: string, text: string | null) => {
+    if (!text) {
+      return;
+    }
+    try {
+      await writeTextToClipboard(text);
+      markStageSignalCopied(copyKey);
+    } catch {
+      setCopiedStageSignalKey(null);
+    }
+  };
 
   const toggleAnalyzeSection = (key: keyof typeof collapsedAnalyzeSections) => {
     setCollapsedAnalyzeSections((current) => ({
@@ -1625,6 +1683,34 @@ export function ParameterInspector({
                         {stageSignalInspection.selectedPortDirection === 'output' ? 'Output' : 'Input'}:{' '}
                         {stageSignalInspection.selectedPortName}
                       </span>
+                    ) : null}
+                  </div>
+                  <div className="inspector-stage-signal-actions">
+                    <button
+                      type="button"
+                      className="mini-action-button"
+                      onClick={() =>
+                        void handleCopyStageSignal(
+                          'display',
+                          serializeStageSignalForClipboard(stageSignalInspection.signal, 'display'),
+                        )
+                      }
+                    >
+                      {copiedStageSignalKey === 'display' ? 'Copied' : 'Copy Value'}
+                    </button>
+                    {stageSignalInspection.signal?.type === 'bits' ? (
+                      <button
+                        type="button"
+                        className="mini-action-button"
+                        onClick={() =>
+                          void handleCopyStageSignal(
+                            'bits',
+                            serializeStageSignalForClipboard(stageSignalInspection.signal, 'bits'),
+                          )
+                        }
+                      >
+                        {copiedStageSignalKey === 'bits' ? 'Copied' : 'Copy Bits'}
+                      </button>
                     ) : null}
                   </div>
                 </div>
