@@ -8,6 +8,7 @@ import {
   buildCandidatePeriodChartEntries,
   buildInfluenceHeatmapColumnEntries,
   buildKeyScheduleSweepSummary,
+  buildRoundContributionSummary,
   buildRoundDiffusionChartEntries,
   buildShiftConfidenceEntries,
   analyzeRoundDiffusion,
@@ -231,6 +232,73 @@ describe('modern bit analysis helpers', () => {
         barPercent: 25,
       },
     ]);
+  });
+
+  it('builds round contribution summaries from cumulative diffusion entries', () => {
+    const summary = buildRoundContributionSummary([
+      {
+        round: 1,
+        moduleId: 'round-1',
+        label: 'Round 1',
+        baselineBits: [0, 0, 0, 0],
+        variantBits: [1, 0, 0, 0],
+        changedFlags: [true, false, false, false],
+        changedCount: 1,
+        changedPercent: 0.25,
+      },
+      {
+        round: 2,
+        moduleId: 'round-2',
+        label: 'Round 2',
+        baselineBits: [0, 0, 0, 0],
+        variantBits: [1, 1, 0, 0],
+        changedFlags: [true, true, false, false],
+        changedCount: 2,
+        changedPercent: 0.5,
+      },
+      {
+        round: 3,
+        moduleId: 'round-3',
+        label: 'Round 3',
+        baselineBits: [0, 0, 0, 0],
+        variantBits: [1, 1, 0, 0],
+        changedFlags: [true, true, false, false],
+        changedCount: 2,
+        changedPercent: 0.5,
+      },
+    ]);
+
+    expect(summary.entries).toEqual([
+      {
+        round: 1,
+        moduleId: 'round-1',
+        label: 'Round 1',
+        changedCount: 1,
+        changedPercent: 0.25,
+        deltaChangedCount: 1,
+        deltaChangedPercent: 0.25,
+      },
+      {
+        round: 2,
+        moduleId: 'round-2',
+        label: 'Round 2',
+        changedCount: 2,
+        changedPercent: 0.5,
+        deltaChangedCount: 1,
+        deltaChangedPercent: 0.25,
+      },
+      {
+        round: 3,
+        moduleId: 'round-3',
+        label: 'Round 3',
+        changedCount: 2,
+        changedPercent: 0.5,
+        deltaChangedCount: 0,
+        deltaChangedPercent: 0,
+      },
+    ]);
+    expect(summary.biggestGain?.moduleId).toBe('round-2');
+    expect(summary.plateauOrRegressionRounds.map((entry) => entry.moduleId)).toEqual(['round-3']);
   });
 
   it('summarizes output-bit influence across a bounded input sweep', () => {

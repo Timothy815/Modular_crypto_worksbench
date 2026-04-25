@@ -6,6 +6,7 @@ import {
   buildKeyScheduleAdjacentDifferences,
   buildKeyScheduleSweepSummary,
   analyzeRoundDiffusion,
+  buildRoundContributionSummary,
   analyzeSymbolSignal,
   buildAvalancheSweepSummary,
   buildInfluenceHeatmapColumnEntries,
@@ -335,6 +336,10 @@ export function CryptanalysisPanel({
   );
   const roundDiffusionChart = useMemo(
     () => buildRoundDiffusionChartEntries(roundDiffusion),
+    [roundDiffusion],
+  );
+  const roundContributionSummary = useMemo(
+    () => buildRoundContributionSummary(roundDiffusion),
     [roundDiffusion],
   );
   const sweepSignature = useMemo(
@@ -1012,6 +1017,58 @@ export function CryptanalysisPanel({
                       </div>
                     </div>
                   ))}
+                </div>
+                <div className="comparison-card comparison-card-wide">
+                  <span className="meta-label">Round Contribution</span>
+                  <strong>See which rounds actually added new spread</strong>
+                  <div className="cryptanalysis-output-summary-row">
+                    <span className="content-status-chip">
+                      Biggest gain:{' '}
+                      <strong>
+                        {roundContributionSummary.biggestGain
+                          ? `Round ${roundContributionSummary.biggestGain.round}`
+                          : 'n/a'}
+                      </strong>
+                    </span>
+                    <span className="content-status-chip">
+                      Delta:{' '}
+                      <strong>
+                        {roundContributionSummary.biggestGain
+                          ? `${roundContributionSummary.biggestGain.deltaChangedCount >= 0 ? '+' : ''}${roundContributionSummary.biggestGain.deltaChangedCount} bits`
+                          : 'n/a'}
+                      </strong>
+                    </span>
+                    <span className="content-status-chip">
+                      Plateau / regression rounds:{' '}
+                      <strong>{roundContributionSummary.plateauOrRegressionRounds.length}</strong>
+                    </span>
+                  </div>
+                  <div className="cryptanalysis-list">
+                    {roundContributionSummary.entries.map((entry) => (
+                      <p key={`round-contribution-${entry.moduleId}`} className="comparison-copy">
+                        Round <strong>{entry.round}</strong> ({entry.label})
+                        {' '}| cumulative <strong>{entry.changedCount}</strong> changed bits
+                        {' '}({(entry.changedPercent * 100).toFixed(1)}%)
+                        {' '}| delta <strong>{entry.deltaChangedCount >= 0 ? '+' : ''}{entry.deltaChangedCount}</strong>
+                        {' '}bits ({entry.deltaChangedPercent >= 0 ? '+' : ''}{(entry.deltaChangedPercent * 100).toFixed(1)}%)
+                      </p>
+                    ))}
+                  </div>
+                  {roundContributionSummary.plateauOrRegressionRounds.length > 0 ? (
+                    <p className="comparison-copy cryptanalysis-help-copy">
+                      Diffusion plateaued or regressed at{' '}
+                      <strong>
+                        {roundContributionSummary.plateauOrRegressionRounds
+                          .map((entry) => `Round ${entry.round}`)
+                          .join(', ')}
+                      </strong>.
+                      {' '}That does not prove the machine is weak, but it does tell you these observed rounds added little new spread in this path.
+                    </p>
+                  ) : (
+                    <p className="comparison-copy cryptanalysis-help-copy">
+                      Every visible round added at least some new spread in this observed path. The question is now how much each round contributed, not just where the final total landed.
+                    </p>
+                  )}
                 </div>
                 <div className="modern-influence-heatmap-shell">
                   <span className="meta-label">Input-to-Output Influence</span>

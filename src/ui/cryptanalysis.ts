@@ -92,6 +92,22 @@ export interface RoundDiffusionChartEntry {
   barPercent: number;
 }
 
+export interface RoundContributionEntry {
+  round: number;
+  moduleId: string;
+  label: string;
+  changedCount: number;
+  changedPercent: number;
+  deltaChangedCount: number;
+  deltaChangedPercent: number;
+}
+
+export interface RoundContributionSummary {
+  entries: RoundContributionEntry[];
+  biggestGain: RoundContributionEntry | null;
+  plateauOrRegressionRounds: RoundContributionEntry[];
+}
+
 export interface InfluenceHeatmapColumnEntry {
   outputIndex: number;
   activationCount: number;
@@ -541,6 +557,48 @@ export function buildRoundDiffusionChartEntries(
     changedPercent: entry.changedPercent,
     barPercent: Math.max(entry.changedPercent * 100, 2),
   }));
+}
+
+export function buildRoundContributionSummary(
+  entries: RoundDiffusionEntry[],
+): RoundContributionSummary {
+  const orderedEntries = [...entries].sort((left, right) => left.round - right.round);
+  const contributionEntries = orderedEntries.map((entry, index) => {
+    const previousEntry = orderedEntries[index - 1] ?? null;
+    const deltaChangedCount = previousEntry
+      ? entry.changedCount - previousEntry.changedCount
+      : entry.changedCount;
+    const deltaChangedPercent = previousEntry
+      ? entry.changedPercent - previousEntry.changedPercent
+      : entry.changedPercent;
+
+    return {
+      round: entry.round,
+      moduleId: entry.moduleId,
+      label: entry.label,
+      changedCount: entry.changedCount,
+      changedPercent: entry.changedPercent,
+      deltaChangedCount,
+      deltaChangedPercent,
+    } satisfies RoundContributionEntry;
+  });
+
+  const biggestGainCandidates =
+    contributionEntries.length > 1 ? contributionEntries.slice(1) : contributionEntries;
+  const biggestGain = biggestGainCandidates.reduce<RoundContributionEntry | null>((best, entry) => {
+    if (!best || entry.deltaChangedCount > best.deltaChangedCount) {
+      return entry;
+    }
+    return best;
+  }, null);
+
+  return {
+    entries: contributionEntries,
+    biggestGain,
+    plateauOrRegressionRounds: contributionEntries.filter(
+      (entry, index) => index > 0 && entry.deltaChangedCount <= 0,
+    ),
+  };
 }
 
 export function buildCandidatePeriodChartEntries(
