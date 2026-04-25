@@ -5936,6 +5936,69 @@ body.canvas-resizing {
   color: var(--accent);
 }
 
+.inspector-stage-signal-card {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 16%, var(--line));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-panel) 84%, white);
+}
+
+.inspector-stage-signal-value {
+  display: grid;
+  gap: 8px;
+}
+
+.inspector-stage-signal-value code,
+.inspector-stage-parent-signal,
+.inspector-stage-comparison-grid code {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-soft) 82%, white);
+  color: var(--ink);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.inspector-stage-signal-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.inspector-stage-provenance,
+.inspector-stage-comparison {
+  display: grid;
+  gap: 8px;
+}
+
+.inspector-stage-parent-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.inspector-stage-parent-item {
+  display: grid;
+  gap: 4px;
+}
+
+.inspector-stage-parent-item .meta-label {
+  display: inline;
+  margin: 0 0 0 4px;
+  font-size: 0.68rem;
+}
+
+.inspector-stage-comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .param-list {
   display: grid;
   gap: 12px;

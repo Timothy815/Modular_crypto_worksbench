@@ -20,6 +20,7 @@ import {
   getSinkRepresentationOptions,
   type SinkRepresentation,
 } from '../sink-representations';
+import { buildStageSignalInspection } from '../stage-signal-inspection';
 import {
   getModuleDetail,
   getModulePurpose,
@@ -1185,6 +1186,19 @@ export function ParameterInspector({
   const hasCollectedOutput = isTickedMode && collectedOutput !== null;
   const selectedTrace =
     execution?.trace.find((entry) => entry.moduleId === moduleInstance?.id) ?? null;
+  const stageSignalInspection = useMemo(
+    () =>
+      buildStageSignalInspection({
+        execution,
+        executionError,
+        project,
+        registry,
+        moduleInstance,
+        moduleDef,
+        roleDetail: moduleDef ? getModuleRoleDetail(moduleDef) : null,
+      }),
+    [execution, executionError, moduleDef, moduleInstance, project, registry],
+  );
   const linkedRotorSourceInstance = useMemo(() => {
     if (moduleDef?.id !== 'RotorReverse' || !moduleInstance) {
       return null;
@@ -1585,6 +1599,84 @@ export function ParameterInspector({
 
       {moduleDef && moduleInstance && inspectorTab === 'configure' ? (
         <section className="inspector-section">
+          {stageSignalInspection ? (
+            <div className="inspector-stage-signal-card">
+              <span className="meta-label">Stage Inspection</span>
+              {stageSignalInspection.traceMessage ? (
+                <p className="comparison-copy">{stageSignalInspection.traceMessage}</p>
+              ) : null}
+              {stageSignalInspection.display ? (
+                <div className="inspector-stage-signal-value">
+                  <code>{stageSignalInspection.display.value || '∅'}</code>
+                  <div className="inspector-stage-signal-meta">
+                    <span className="content-status-chip">
+                      {stageSignalInspection.display.representation.toUpperCase()}
+                    </span>
+                    {stageSignalInspection.signalType ? (
+                      <span className="content-status-chip">
+                        {stageSignalInspection.signalType}
+                        {stageSignalInspection.signalLength !== null
+                          ? ` • ${stageSignalInspection.signalLength}`
+                          : ''}
+                      </span>
+                    ) : null}
+                    {stageSignalInspection.selectedPortName && stageSignalInspection.selectedPortDirection ? (
+                      <span className="content-status-chip">
+                        {stageSignalInspection.selectedPortDirection === 'output' ? 'Output' : 'Input'}:{' '}
+                        {stageSignalInspection.selectedPortName}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+              <p className="comparison-copy">{stageSignalInspection.roleDetail}</p>
+              <div className="inspector-stage-provenance">
+                <span className="meta-label">Fed By</span>
+                {stageSignalInspection.parents.length > 0 ? (
+                  <ul className="inspector-stage-parent-list">
+                    {stageSignalInspection.parents.map((parent) => (
+                      <li key={`${parent.moduleId}:${parent.port}`} className="inspector-stage-parent-item">
+                        <strong>{parent.moduleId}</strong> <span className="meta-label">{parent.defId}</span>{' '}
+                        via <code>{parent.port}</code>
+                        {parent.isBypassed ? ' • Bypassed' : ''}
+                        {parent.display ? (
+                          <code className="inspector-stage-parent-signal">{parent.display.value || '∅'}</code>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="comparison-copy">No visible upstream stage is available.</p>
+                )}
+              </div>
+              <div className="inspector-stage-comparison">
+                <span className="meta-label">Previous Visible Stage</span>
+                {stageSignalInspection.comparison ? (
+                  <>
+                    <p className="comparison-copy">
+                      {stageSignalInspection.comparison.status === 'changed' ? 'Changed' : 'Unchanged'} compared
+                      with <strong>{stageSignalInspection.comparison.moduleId}</strong> via{' '}
+                      <code>{stageSignalInspection.comparison.port}</code>.
+                    </p>
+                    <div className="inspector-stage-comparison-grid">
+                      <div>
+                        <span className="meta-label">Current</span>
+                        <code>{stageSignalInspection.comparison.currentDisplay?.value || '∅'}</code>
+                      </div>
+                      <div>
+                        <span className="meta-label">Previous</span>
+                        <code>{stageSignalInspection.comparison.previousDisplay?.value || '∅'}</code>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <p className="comparison-copy">
+                    No meaningful previous-stage comparison is available for this selection.
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : null}
           <span className="meta-label">Module</span>
           <strong className="selected-module-name">{moduleInstance.id}</strong>
           <p className="selected-module-type">{moduleDef.id}</p>
