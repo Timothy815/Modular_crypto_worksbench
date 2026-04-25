@@ -1277,6 +1277,15 @@ function isGuidedTutorialDocument(value: unknown): value is GuidedTutorial {
     (candidate.group === undefined || typeof candidate.group === 'string') &&
     typeof candidate.summary === 'string' &&
     typeof candidate.projectId === 'string' &&
+    (candidate.preferredWorkspaceMode === undefined ||
+      candidate.preferredWorkspaceMode === 'build' ||
+      candidate.preferredWorkspaceMode === 'guide' ||
+      candidate.preferredWorkspaceMode === 'cryptanalysis') &&
+    (candidate.preferredCryptanalysisMode === undefined ||
+      candidate.preferredCryptanalysisMode === 'classical' ||
+      candidate.preferredCryptanalysisMode === 'modern' ||
+      candidate.preferredCryptanalysisMode === 'randomness' ||
+      candidate.preferredCryptanalysisMode === 'key-schedule') &&
     Array.isArray(candidate.steps) &&
     candidate.steps.every(
       (step) =>

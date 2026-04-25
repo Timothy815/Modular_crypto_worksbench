@@ -35,6 +35,13 @@ import { collectTickedOutput } from '../execution-compare';
 import { isOutputSinkDefId } from '../../engine/output-sinks';
 import type { SavedAnalysisCase } from '../workbench-document';
 
+const AVALANCHE_LAB_PROJECT_ID = 'avalanche-lab';
+const AVALANCHE_LAB_TUTORIAL_ID = 'cryptanalysis-avalanche-lab';
+const KEY_SCHEDULE_LAB_PROJECT_ID = 'key-schedule-lab';
+const KEY_SCHEDULE_LAB_TUTORIAL_ID = 'cryptanalysis-key-schedule-lab';
+const RANDOMNESS_LAB_PROJECT_ID = 'randomness-lab';
+const RANDOMNESS_LAB_TUTORIAL_ID = 'cryptanalysis-randomness-lab';
+
 type FlippableProjectSource =
   | {
       moduleId: string;
@@ -103,6 +110,7 @@ interface CryptanalysisPanelProps {
   onLoadAnalysisCase: (savedCase: SavedAnalysisCase) => void;
   onSetTutorialStep: (stepIndex: number) => void;
   onFocusTutorialModule: (moduleId: string) => void;
+  onOpenTutorialPath: (projectId: string, tutorialId: string) => void;
 }
 
 export function CryptanalysisPanel({
@@ -147,6 +155,7 @@ export function CryptanalysisPanel({
   onLoadAnalysisCase,
   onSetTutorialStep,
   onFocusTutorialModule,
+  onOpenTutorialPath,
 }: CryptanalysisPanelProps) {
   const [caseDraftName, setCaseDraftName] = useState('');
   const [lastManualSweepSignature, setLastManualSweepSignature] = useState<string | null>(null);
@@ -826,6 +835,17 @@ export function CryptanalysisPanel({
           <div className="comparison-card comparison-card-wide">
             <span className="meta-label">Batch Avalanche Sweep</span>
             <strong>Measure the whole input surface, not just one flip</strong>
+            <div className="comparison-actions">
+              <button
+                type="button"
+                className="mini-action-button"
+                onClick={() =>
+                  onOpenTutorialPath(AVALANCHE_LAB_PROJECT_ID, AVALANCHE_LAB_TUTORIAL_ID)
+                }
+              >
+                Open Avalanche Lab
+              </button>
+            </div>
             <div className="cryptanalysis-output-summary-row">
               <span className="content-status-chip">
                 Source: <strong>{flippableSource ? `${flippableSource.moduleName} (${getFlippableSourceKindLabel(flippableSource.kind)})` : 'n/a'}</strong>
@@ -1078,6 +1098,17 @@ export function CryptanalysisPanel({
           <div className="comparison-card comparison-card-wide">
             <span className="meta-label">Key Schedule Surface</span>
             <strong>Analyze how the master key evolves into explicit round-key outputs</strong>
+            <div className="comparison-actions">
+              <button
+                type="button"
+                className="mini-action-button"
+                onClick={() =>
+                  onOpenTutorialPath(KEY_SCHEDULE_LAB_PROJECT_ID, KEY_SCHEDULE_LAB_TUTORIAL_ID)
+                }
+              >
+                Open Key Schedule Lab
+              </button>
+            </div>
             <p className="comparison-copy">
               This surface is separate from plaintext avalanche. It only studies the selected master-key source and the ordered round-key outputs you expose explicitly at the machine boundary.
             </p>
@@ -1348,6 +1379,17 @@ export function CryptanalysisPanel({
                   {activeRandomnessSink.label}
                   {' '}| {activeRandomnessSink.sourceLabel}
                 </strong>
+                <div className="comparison-actions">
+                  <button
+                    type="button"
+                    className="mini-action-button"
+                    onClick={() =>
+                      onOpenTutorialPath(RANDOMNESS_LAB_PROJECT_ID, RANDOMNESS_LAB_TUTORIAL_ID)
+                    }
+                  >
+                    Open Randomness Lab
+                  </button>
+                </div>
                 {randomnessSinkOptions.length > 1 ? (
                   <div className="content-filter-row">
                     <label className="param-field">

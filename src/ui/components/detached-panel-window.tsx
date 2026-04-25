@@ -1131,6 +1131,9 @@ function DetachedLearningView({
           onLoadAnalysisCase={(savedCase) => onSendCommand({ type: 'loadAnalysisCase', savedCase })}
           onSetTutorialStep={(stepIndex) => onSendCommand({ type: 'setTutorialStep', stepIndex })}
           onFocusTutorialModule={(moduleId) => onSendCommand({ type: 'focusStepModule', moduleId })}
+          onOpenTutorialPath={(projectId, tutorialId) =>
+            onSendCommand({ type: 'selectTutorial', tutorialId, projectId })
+          }
         />
       ) : null}
     </section>

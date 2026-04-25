@@ -1,4 +1,6 @@
 import type { LearningSequenceMeta } from './learning-sequence';
+import type { CryptanalysisMode } from './cryptanalysis-mode';
+import type { WorkspaceMode } from './workspace-mode';
 
 export interface TutorialStep {
   id: string;
@@ -15,6 +17,8 @@ export interface GuidedTutorial extends LearningSequenceMeta {
   group?: string;
   summary: string;
   projectId: string;
+  preferredWorkspaceMode?: WorkspaceMode;
+  preferredCryptanalysisMode?: CryptanalysisMode;
   steps: TutorialStep[];
 }
 

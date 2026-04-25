@@ -349,6 +349,7 @@ export function LearningDock({
             onLoadAnalysisCase={onLoadAnalysisCase}
             onSetTutorialStep={onSetTutorialStep}
             onFocusTutorialModule={onFocusStepModule}
+            onOpenTutorialPath={onOpenTutorialPath}
           />
         </Suspense>
       ) : null}

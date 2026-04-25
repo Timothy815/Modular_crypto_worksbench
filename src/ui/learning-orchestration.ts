@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from 'react';
 
 import type { ModuleRegistry } from '../engine/types';
 import type { GuidedChallenge } from './challenges';
+import type { CryptanalysisMode } from './cryptanalysis-mode';
 import { createChallengeCaptureDraft } from './challenge-capture';
 import type { GuidedTutorial } from './tutorials';
 import type { UiAction } from './store';
@@ -17,12 +18,13 @@ import type { ComparisonBaselineDocument } from './workbench-document';
 export type LearningPanelTab = 'quickstart' | 'tutorial' | 'challenge' | 'cryptanalysis';
 
 export interface TutorialSelectionPlan {
-  panelTab: 'tutorial';
+  panelTab: LearningPanelTab;
   projectId: string;
   tutorialId: string;
   targetStepIndex: number | null;
-  needsGuideMode: boolean;
   shouldSwitchProject: boolean;
+  workspaceMode: WorkspaceMode | null;
+  cryptanalysisMode: CryptanalysisMode | null;
 }
 
 export interface ChallengeSelectionPlan {
@@ -84,14 +86,18 @@ export function buildTutorialSelectionPlan(args: {
   tutorials: GuidedTutorial[];
 }): TutorialSelectionPlan {
   const nextTutorial = args.tutorials.find((tutorial) => tutorial.id === args.tutorialId) ?? null;
+  const preferredWorkspaceMode = nextTutorial?.preferredWorkspaceMode ?? 'guide';
+  const shouldUseCryptanalysis = preferredWorkspaceMode === 'cryptanalysis';
   return {
-    panelTab: 'tutorial',
+    panelTab: shouldUseCryptanalysis ? 'cryptanalysis' : 'tutorial',
     projectId: args.projectId,
     tutorialId: args.tutorialId,
     targetStepIndex: nextTutorial?.steps[0]?.targetStepIndex ?? null,
-    needsGuideMode:
-      args.workspaceMode === 'cryptanalysis' && args.projectId === args.activeProjectId,
     shouldSwitchProject: args.projectId !== args.activeProjectId,
+    workspaceMode: shouldUseCryptanalysis ? 'cryptanalysis' : 'guide',
+    cryptanalysisMode: shouldUseCryptanalysis
+      ? nextTutorial?.preferredCryptanalysisMode ?? 'modern'
+      : null,
   };
 }
 
@@ -122,17 +128,31 @@ export function applyTutorialSelectionPlan(args: {
 }) {
   const { plan, activeProjectId, dispatch, setLearningPanelTab, setStepIndex } = args;
   setLearningPanelTab(plan.panelTab);
-  if (plan.needsGuideMode) {
+  if (plan.workspaceMode && (!plan.shouldSwitchProject || plan.projectId === activeProjectId)) {
     dispatch({
       type: 'setWorkspaceMode',
-      projectId: activeProjectId,
-      mode: 'guide',
+      projectId: plan.projectId,
+      mode: plan.workspaceMode,
     });
   }
   if (plan.shouldSwitchProject) {
     dispatch({
       type: 'switchProject',
       projectId: plan.projectId,
+    });
+  }
+  if (plan.workspaceMode && plan.shouldSwitchProject) {
+    dispatch({
+      type: 'setWorkspaceMode',
+      projectId: plan.projectId,
+      mode: plan.workspaceMode,
+    });
+  }
+  if (plan.cryptanalysisMode) {
+    dispatch({
+      type: 'setCryptanalysisMode',
+      projectId: plan.projectId,
+      mode: plan.cryptanalysisMode,
     });
   }
   setStepIndex(plan.targetStepIndex);

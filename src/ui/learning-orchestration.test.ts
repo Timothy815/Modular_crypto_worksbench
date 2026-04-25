@@ -8,7 +8,7 @@ import {
 } from './learning-orchestration';
 
 describe('learning-orchestration', () => {
-  it('builds tutorial and challenge selection plans that preserve guide-mode intent', () => {
+  it('builds tutorial and challenge selection plans that preserve workspace intent', () => {
     const tutorialPlan = buildTutorialSelectionPlan({
       activeProjectId: 'project-a',
       workspaceMode: 'cryptanalysis',
@@ -47,8 +47,36 @@ describe('learning-orchestration', () => {
 
     expect(tutorialPlan.shouldSwitchProject).toBe(true);
     expect(tutorialPlan.targetStepIndex).toBe(4);
+    expect(tutorialPlan.panelTab).toBe('tutorial');
+    expect(tutorialPlan.workspaceMode).toBe('guide');
     expect(challengePlan.needsGuideMode).toBe(true);
     expect(challengePlan.projectId).toBe('project-a');
+  });
+
+  it('routes cryptanalysis labs into the cryptanalysis workspace and mode', () => {
+    const tutorialPlan = buildTutorialSelectionPlan({
+      activeProjectId: 'project-a',
+      workspaceMode: 'guide',
+      projectId: 'project-b',
+      tutorialId: 'lab-1',
+      tutorials: [
+        {
+          version: 1,
+          id: 'lab-1',
+          title: 'Avalanche Lab',
+          group: 'Cryptanalysis Labs',
+          summary: 'Summary',
+          projectId: 'project-b',
+          preferredWorkspaceMode: 'cryptanalysis',
+          preferredCryptanalysisMode: 'modern',
+          steps: [{ id: 'step-1', title: 'Step', body: 'Body' }],
+        },
+      ],
+    });
+
+    expect(tutorialPlan.panelTab).toBe('cryptanalysis');
+    expect(tutorialPlan.workspaceMode).toBe('cryptanalysis');
+    expect(tutorialPlan.cryptanalysisMode).toBe('modern');
   });
 
   it('adds a verification case when the captured baseline can run it', () => {
