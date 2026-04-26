@@ -19,6 +19,10 @@ interface CollapsedAnalyzeSections {
   transformation: boolean;
   sboxProperties: boolean;
   permutationProperties: boolean;
+  lfsrProperties: boolean;
+  plugboardProperties: boolean;
+  reflectorProperties: boolean;
+  modulusProperties: boolean;
 }
 
 function InspectorSection({

@@ -47,6 +47,15 @@ export const BitSelect: ModuleDef = {
       description:
         'Comma-separated list of input bit indices to select, in output order. Each index may appear at most once. Output width equals the number of listed indices.',
     },
+    inputWidth: {
+      key: 'inputWidth',
+      label: 'Input Width Hint',
+      kind: 'number',
+      defaultValue: null,
+      required: false,
+      description:
+        'Optional: declare the expected input width so the wire editor can render before a live connection arrives. Not used during evaluation.',
+    },
   },
   evaluate: (inputs, params) => {
     const bits = expectBitsSignal(inputs.in, 'BitSelect');
