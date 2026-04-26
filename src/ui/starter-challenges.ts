@@ -42,6 +42,7 @@ const visibleSymbolScrambleProject = demoProjects.find((project) => project.id =
 const visibleSubkeyBusProject = demoProjects.find((project) => project.id === 'visible-subkey-bus');
 const visibleKeySelectionProject = demoProjects.find((project) => project.id === 'visible-key-selection');
 const visibleKeyExpansionProject = demoProjects.find((project) => project.id === 'visible-key-expansion');
+const enigmaMachineProject = demoProjects.find((project) => project.id === 'enigma-machine');
 const multiplyCompareUnpadProject = demoProjects.find((project) => project.id === 'multiply-compare-unpad');
 const visibleMessageWindowProject = demoProjects.find((project) => project.id === 'visible-message-window');
 const toyRsaProject = demoProjects.find((project) => project.id === 'toy-rsa');
@@ -169,6 +170,9 @@ if (!visibleKeySelectionProject) {
 if (!visibleKeyExpansionProject) {
   throw new Error('Expected visible-key-expansion demo project to seed starter challenges.');
 }
+if (!enigmaMachineProject) {
+  throw new Error('Expected enigma-machine demo project to seed starter challenges.');
+}
 if (!multiplyCompareUnpadProject) {
   throw new Error('Expected multiply-compare-unpad demo project to seed starter challenges.');
 }
@@ -284,6 +288,8 @@ const visibleKeySelectionTarget = cloneProject(visibleKeySelectionProject.projec
 const brokenVisibleKeySelectionStart = cloneProject(visibleKeySelectionProject.project);
 const visibleKeyExpansionTarget = cloneProject(visibleKeyExpansionProject.project);
 const brokenVisibleKeyExpansionStart = cloneProject(visibleKeyExpansionProject.project);
+const enigmaMachineTarget = cloneProject(enigmaMachineProject.project);
+const brokenEnigmaMachineStart = cloneProject(enigmaMachineProject.project);
 const multiplyCompareUnpadTarget = cloneProject(multiplyCompareUnpadProject.project);
 const brokenMultiplyCompareUnpadStart = cloneProject(multiplyCompareUnpadProject.project);
 const visibleMessageWindowTarget = cloneProject(visibleMessageWindowProject.project);
@@ -425,6 +431,25 @@ if (!brokenBitExpand) {
 // Break it by removing the second duplicate — order '3,0,1,2,3,0' becomes '3,0,1,2,1,0'
 // The repeated boundary bit (index 3) is replaced with a non-boundary bit (index 1)
 brokenBitExpand.params.order = '3,0,1,2,1,0';
+
+const brokenEnigmaRightRotor = brokenEnigmaMachineStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'right',
+);
+if (!brokenEnigmaRightRotor) {
+  throw new Error('Expected enigma-machine demo project to contain a right rotor.');
+}
+const brokenEnigmaRightRev = brokenEnigmaMachineStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'right-rev',
+);
+if (!brokenEnigmaRightRev) {
+  throw new Error('Expected enigma-machine demo project to contain a right-rev rotor.');
+}
+// Break it: swap the first two entries in Rotor III wiring (B,D → D,B)
+// This corrupts position 0 mapping and breaks self-reciprocal property
+const brokenWiring = ['D','B','F','H','J','L','C','P','R','T','X','V','Z','N','Y','E','I','W','G','A','K','M','U','S','Q','O'];
+brokenEnigmaRightRotor.params.wiring = brokenWiring;
+// right-rev must also be corrupted the same way (it mirrors the forward rotor)
+brokenEnigmaRightRev.params.wiring = brokenWiring;
 
 const brokenSymbolWindowTwo = brokenVisibleMessageWindowStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'window-2',
@@ -1914,6 +1939,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'Only the BitSelect module needs changing.',
       'The original drops position 7 and keeps positions 0-6 and 8-14.',
       'The order param is a comma-separated list — count the entries and find the one that should be 6 not 7.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-enigma-rotor',
+    title: 'Repair the Enigma Rotor',
+    projectId: 'enigma-machine',
+    group: 'Classical Machines',
+    stage: 'rotor-realism-and-mechanized-systems',
+    order: 186,
+    recommendedAfter: ['enigma-machine'],
+    difficulty: 'intermediate',
+    prompt:
+      'The right rotor wiring in this Enigma has been corrupted — two letters in Rotor III were swapped. As a result the machine is no longer self-reciprocal: encrypting a letter and then encrypting the result no longer gives back the original. Find the swap and restore the historical Rotor III wiring so the output matches the reference.',
+    startingProject: brokenEnigmaMachineStart,
+    startingLayout: cloneProject(enigmaMachineProject.layout),
+    targetProject: enigmaMachineTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Only the right rotor (id: right) and its reverse (right-rev) need changing — both must carry the same wiring.',
+      'Historical Rotor III maps A→B, B→D, C→F. In the broken version positions 0 and 1 were swapped.',
+      'The Rotor wire editor shows which output letter each input position reaches — find the two that are out of place.',
     ],
   },
   {

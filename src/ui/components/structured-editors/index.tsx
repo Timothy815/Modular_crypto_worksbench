@@ -1541,11 +1541,13 @@ export function BitRemapEditor(props: BitRemapEditorProps) {
   const order = parseBitRemapOrderSafe(value, allowRepeats) ?? [];
   const effectiveInputWidth = liveInputWidth ?? inputWidthHint ?? 8;
   const [armedIndex, setArmedIndex] = useState<number | null>(null);
+  const [ghostPos, setGhostPos] = useState<{ svgX: number; svgY: number } | null>(null);
 
   const inputLaneRef = useRef<HTMLDivElement | null>(null);
   const outputLaneRef = useRef<HTMLDivElement | null>(null);
   const inputRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const outputDivRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const [wireLayout, setWireLayout] = useState<{ height: number; inputYs: number[]; outputYs: number[] } | null>(null);
   const orderKey = order.join(',');
 
@@ -1585,9 +1587,18 @@ export function BitRemapEditor(props: BitRemapEditorProps) {
   const handleInputClick = (inputIndex: number) => {
     if (isReadOnlyMode) return;
     if (armedIndex === null) { setArmedIndex(inputIndex); return; }
-    if (!allowRepeats && order.includes(inputIndex)) { setArmedIndex(null); return; }
+    if (!allowRepeats && order.includes(inputIndex)) { setArmedIndex(null); setGhostPos(null); return; }
     commit([...order, inputIndex]);
     setArmedIndex(null);
+    setGhostPos(null);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (armedIndex === null || !svgRef.current) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    const svgX = ((e.clientX - rect.left) / rect.width) * 220;
+    const svgY = ((e.clientY - rect.top) / rect.height) * svgHeight;
+    setGhostPos({ svgX, svgY });
   };
 
   const useCounts = new Map<number, number>();
@@ -1616,7 +1627,11 @@ export function BitRemapEditor(props: BitRemapEditorProps) {
           ) : null}
         </div>
 
-        <div className="remap-editor">
+        <div
+          className="remap-editor"
+          onMouseMove={handleMouseMove}
+          onMouseLeave={() => setGhostPos(null)}
+        >
           <div className="permutation-wire-lane remap-input-lane" ref={inputLaneRef}>
             <span className="meta-label permutation-wire-lane-label">Input</span>
             {Array.from({ length: effectiveInputWidth }, (_, inputIndex) => {
@@ -1648,7 +1663,7 @@ export function BitRemapEditor(props: BitRemapEditorProps) {
           </div>
 
           <div className="permutation-wire-canvas" aria-hidden="true" style={{ height: `${svgHeight}px` }}>
-            <svg viewBox={`0 0 220 ${svgHeight}`} preserveAspectRatio="none">
+            <svg ref={svgRef} viewBox={`0 0 220 ${svgHeight}`} preserveAspectRatio="none">
               {order.map((inputIndex, outputIndex) => {
                 const y1 = wireLayout?.inputYs[inputIndex] ??
                   (PERMUTATION_EDITOR_HEADER_OFFSET + PERMUTATION_EDITOR_PORT_HEIGHT / 2 +
@@ -1665,6 +1680,25 @@ export function BitRemapEditor(props: BitRemapEditorProps) {
                   </g>
                 );
               })}
+              {armedIndex !== null && ghostPos && wireLayout ? (() => {
+                const y1 = wireLayout.inputYs[armedIndex] ??
+                  (PERMUTATION_EDITOR_HEADER_OFFSET + PERMUTATION_EDITOR_PORT_HEIGHT / 2 +
+                    armedIndex * (PERMUTATION_EDITOR_PORT_HEIGHT + PERMUTATION_EDITOR_PORT_GAP));
+                const color = getPermutationWireColor(armedIndex);
+                return (
+                  <line
+                    x1="18"
+                    y1={y1}
+                    x2={ghostPos.svgX}
+                    y2={ghostPos.svgY}
+                    stroke={color}
+                    strokeWidth="2"
+                    strokeDasharray="7 5"
+                    strokeLinecap="round"
+                    opacity="0.65"
+                  />
+                );
+              })() : null}
             </svg>
           </div>
 
