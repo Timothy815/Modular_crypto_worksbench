@@ -15,6 +15,7 @@ import {
   type PermutationAnalysis,
 } from '../inspector-analysis';
 import { KNOWN_SBOX_REFERENCES } from '../../engine/analysis/sbox-analysis';
+import type { LFSRAnalysis, PlugboardAnalysis, ReflectorAnalysis, ModulusAnalysis } from '../inspector-analysis';
 import type { TutorialStep } from '../tutorials';
 
 function getNLConsequence(nl: number, maxNL: number): string {
@@ -64,6 +65,37 @@ function getFixedPointConsequence(fixedPoints: number): string {
   return `${fixedPoints} inputs map to themselves (S(x) = x). Multiple fixed points increase the probability that a real message block passes through unchanged, creating exploitable patterns in certain cipher modes.`;
 }
 
+function getLFSRPrimitivityConsequence(isPrimitive: boolean | null, period: number | null, maxPeriod: number, degree: number): string {
+  if (isPrimitive === null || period === null) return '';
+  if (isPrimitive) {
+    return `Maximum-length LFSR. Period ${period} = 2^${degree} − 1. Every non-zero state is visited exactly once before the sequence repeats. An attacker who observes ${2 * degree} consecutive output bits can recover the full internal state and predict all future output using the Berlekamp-Massey algorithm.`;
+  }
+  const fraction = maxPeriod > 0 ? `${period} / ${maxPeriod}` : String(period);
+  return `Non-maximum period: ${fraction}. The sequence repeats after only ${period} bits. If the period is short enough to observe in full, the attacker sees the entire keystream repeat — destroying secrecy. Even without observing the full period, Berlekamp-Massey recovers the state from ${2 * degree} bits regardless.`;
+}
+
+function getPlugboardConsequence(fixedPoints: number, pairCount: number): string {
+  if (fixedPoints === 0) {
+    return `All ${pairCount * 2} letters wired in ${pairCount} pairs. No fixed points — no letter encrypts to itself. In the Bombe attack, Turing used this property as a hard constraint: if any crib position implied a letter mapped to itself, that wheel setting was immediately eliminated.`;
+  }
+  return `${fixedPoints} unpaired letter${fixedPoints !== 1 ? 's' : ''} (fixed points). A fixed-point letter passes through the plugboard unchanged, leaving its full substitution to the rotor stack and reflector alone. In Bombe analysis, fixed points reduce the number of constraints available for menu construction — a weaker plugboard makes crib attacks easier.`;
+}
+
+function getReflectorConsequence(isValidInvolution: boolean, pairCount: number): string {
+  if (!isValidInvolution) {
+    return 'This wiring is not a valid involution. A reflector must pair every letter with exactly one other letter, with no letter mapping to itself. An invalid reflector will cause encryption to be non-self-reciprocal, breaking decryption.';
+  }
+  return `${pairCount} reciprocal pairs. A valid involution: encrypt and decrypt are the same operation. This self-reciprocal property was Enigma's key mechanical feature — and its key weakness. It made every letter pair bidirectional and made crib attacks possible because no letter could ever encrypt to itself.`;
+}
+
+function getModulusConsequence(isPrime: boolean, modulus: number, groupOrder: number): string {
+  if (!isPrime) {
+    const phi = groupOrder > 0 ? `φ(${modulus}) = ${groupOrder}` : `φ(${modulus})`;
+    return `Modulus ${modulus} is not prime. ${phi}. Not every non-zero input has a modular inverse — inputs sharing a factor with ${modulus} will cause ModInverse to fail. For RSA, the modulus is the product of two primes (n = p·q), so this is expected — but the exponent must be coprime to φ(n) = (p−1)(q−1).`;
+  }
+  return `Modulus ${modulus} is prime. Every non-zero element 1 through ${modulus - 1} has a multiplicative inverse mod ${modulus}. The multiplicative group has order φ(${modulus}) = ${groupOrder}. For Diffie-Hellman, a prime modulus guarantees the full group structure needed for discrete-log hardness.`;
+}
+
 function getBranchNumberConsequence(branchNumber: number, blockCount: number): string {
   if (branchNumber <= 2) {
     return 'Minimum branch number. A single active difference in one input block stays isolated in one output block after this permutation. Full avalanche requires many rounds — this P-layer is not doing useful diffusion work.';
@@ -85,6 +117,10 @@ interface CollapsedAnalyzeSections {
   transformation: boolean;
   sboxProperties: boolean;
   permutationProperties: boolean;
+  lfsrProperties: boolean;
+  plugboardProperties: boolean;
+  reflectorProperties: boolean;
+  modulusProperties: boolean;
 }
 
 interface GroupedIssue {
@@ -147,6 +183,10 @@ interface InspectorAnalyzeDetailsProps {
   staticPermutationAnalysis: PermutationAnalysis | null;
   permutationBlockSize: number | null;
   setPermutationBlockSize: (size: number | null) => void;
+  staticLFSRAnalysis: LFSRAnalysis | null;
+  staticPlugboardAnalysis: PlugboardAnalysis | null;
+  staticReflectorAnalysis: ReflectorAnalysis | null;
+  staticModulusAnalysis: ModulusAnalysis | null;
   activeLookupChunk: LookupChunk | null;
   effectiveLookupChunkIndex: number;
   setRequestedLookupChunkIndex: (index: number) => void;
@@ -186,6 +226,10 @@ export function InspectorAnalyzeDetails({
   staticPermutationAnalysis,
   permutationBlockSize,
   setPermutationBlockSize,
+  staticLFSRAnalysis,
+  staticPlugboardAnalysis,
+  staticReflectorAnalysis,
+  staticModulusAnalysis,
   activeLookupChunk,
   effectiveLookupChunkIndex,
   setRequestedLookupChunkIndex,
@@ -1444,6 +1488,267 @@ export function InspectorAnalyzeDetails({
                 </p>
               )}
             </div>
+          </div>
+        </InspectorSection>
+      ) : null}
+
+      {inspectorTab === 'analyze' && staticLFSRAnalysis ? (
+        <InspectorSection
+          label="LFSR Properties"
+          collapsible
+          collapsed={collapsedAnalyzeSections.lfsrProperties}
+          onToggle={() => toggleAnalyzeSection('lfsrProperties')}
+        >
+          <div className="sbox-analysis-panel" style={{ borderTop: 'none', paddingTop: 0, marginTop: 0 }}>
+            <p className="sbox-analysis-disclaimer">
+              These measurements describe the feedback polynomial's period structure — how long the keystream runs before repeating.
+            </p>
+
+            {staticLFSRAnalysis.allZerosSeed ? (
+              <p className="sbox-analysis-consequence" style={{ marginTop: '8px' }}>
+                All-zero seed: the LFSR is locked at zero and will never advance. Every XOR-feedback register produces 0 forever from this state. Set at least one seed bit to 1 before using this in a cipher.
+              </p>
+            ) : (
+              <>
+                <div className="sbox-analysis-metric">
+                  <div className="sbox-analysis-metric-row">
+                    <span className="meta-label">Degree / Period</span>
+                    <span className="sbox-analysis-ref">{staticLFSRAnalysis.degree}-stage register</span>
+                  </div>
+                  <div className="sbox-analysis-strip">
+                    <div className="sbox-analysis-strip-cell">
+                      <span className="meta-label">Degree</span>
+                      <strong>{staticLFSRAnalysis.degree}</strong>
+                    </div>
+                    <div className="sbox-analysis-strip-cell">
+                      <span className="meta-label">Max period</span>
+                      <strong>{staticLFSRAnalysis.maxPeriod}</strong>
+                    </div>
+                    <div className="sbox-analysis-strip-cell">
+                      <span className="meta-label">Actual period</span>
+                      <strong
+                        className={
+                          staticLFSRAnalysis.period === staticLFSRAnalysis.maxPeriod
+                            ? 'sbox-analysis-value-good'
+                            : 'sbox-analysis-value-warn'
+                        }
+                      >
+                        {staticLFSRAnalysis.period !== null
+                          ? (staticLFSRAnalysis.isExact ? String(staticLFSRAnalysis.period) : `≤ ${staticLFSRAnalysis.period}`)
+                          : '—'}
+                      </strong>
+                    </div>
+                    <div className="sbox-analysis-strip-cell">
+                      <span className="meta-label">Primitive</span>
+                      <strong
+                        className={
+                          staticLFSRAnalysis.isPrimitive === true
+                            ? 'sbox-analysis-value-good'
+                            : staticLFSRAnalysis.isPrimitive === false
+                              ? 'sbox-analysis-value-warn'
+                              : undefined
+                        }
+                      >
+                        {staticLFSRAnalysis.isPrimitive === true
+                          ? 'Yes'
+                          : staticLFSRAnalysis.isPrimitive === false
+                            ? 'No'
+                            : '—'}
+                      </strong>
+                    </div>
+                  </div>
+                  <p className="sbox-analysis-note">
+                    Taps: [{staticLFSRAnalysis.taps.join(', ')}] · {staticLFSRAnalysis.tapCount} feedback connections
+                    {staticLFSRAnalysis.period !== null && staticLFSRAnalysis.period < staticLFSRAnalysis.maxPeriod
+                      ? ` · period ${staticLFSRAnalysis.period} of ${staticLFSRAnalysis.maxPeriod} possible`
+                      : ''}
+                  </p>
+                </div>
+
+                {getLFSRPrimitivityConsequence(
+                  staticLFSRAnalysis.isPrimitive,
+                  staticLFSRAnalysis.period,
+                  staticLFSRAnalysis.maxPeriod,
+                  staticLFSRAnalysis.degree,
+                ) ? (
+                  <p className="sbox-analysis-consequence">
+                    {getLFSRPrimitivityConsequence(
+                      staticLFSRAnalysis.isPrimitive,
+                      staticLFSRAnalysis.period,
+                      staticLFSRAnalysis.maxPeriod,
+                      staticLFSRAnalysis.degree,
+                    )}
+                  </p>
+                ) : null}
+              </>
+            )}
+          </div>
+        </InspectorSection>
+      ) : null}
+
+      {inspectorTab === 'analyze' && staticPlugboardAnalysis ? (
+        <InspectorSection
+          label="Plugboard Properties"
+          collapsible
+          collapsed={collapsedAnalyzeSections.plugboardProperties}
+          onToggle={() => toggleAnalyzeSection('plugboardProperties')}
+        >
+          <div className="sbox-analysis-panel" style={{ borderTop: 'none', paddingTop: 0, marginTop: 0 }}>
+            <p className="sbox-analysis-disclaimer">
+              A plugboard is a reciprocal permutation — every swapped pair is its own inverse. Fixed points (unwired letters) pass through unchanged.
+            </p>
+
+            <div className="sbox-analysis-metric">
+              <div className="sbox-analysis-metric-row">
+                <span className="meta-label">Wiring Structure</span>
+                <span className="sbox-analysis-ref">{staticPlugboardAnalysis.alphabetSize}-letter alphabet</span>
+              </div>
+              <div className="sbox-analysis-strip">
+                <div className="sbox-analysis-strip-cell">
+                  <span className="meta-label">Pairs</span>
+                  <strong
+                    className={staticPlugboardAnalysis.pairCount > 0 ? 'sbox-analysis-value-good' : 'sbox-analysis-value-warn'}
+                  >
+                    {staticPlugboardAnalysis.pairCount}
+                  </strong>
+                </div>
+                <div className="sbox-analysis-strip-cell">
+                  <span className="meta-label">Fixed pts</span>
+                  <strong
+                    className={staticPlugboardAnalysis.fixedPoints === 0 ? 'sbox-analysis-value-good' : 'sbox-analysis-value-warn'}
+                  >
+                    {staticPlugboardAnalysis.fixedPoints}
+                  </strong>
+                </div>
+                <div className="sbox-analysis-strip-cell">
+                  <span className="meta-label">Wired</span>
+                  <strong>{staticPlugboardAnalysis.pairCount * 2}</strong>
+                </div>
+              </div>
+              {staticPlugboardAnalysis.pairs.length > 0 ? (
+                <p className="sbox-analysis-note">
+                  Active pairs: {staticPlugboardAnalysis.pairs.map(([a, b]) => `${a}↔${b}`).join(', ')}
+                </p>
+              ) : (
+                <p className="sbox-analysis-note">No pairs wired — all letters pass through unchanged.</p>
+              )}
+            </div>
+
+            <p className="sbox-analysis-consequence">
+              {getPlugboardConsequence(staticPlugboardAnalysis.fixedPoints, staticPlugboardAnalysis.pairCount)}
+            </p>
+          </div>
+        </InspectorSection>
+      ) : null}
+
+      {inspectorTab === 'analyze' && staticReflectorAnalysis ? (
+        <InspectorSection
+          label="Reflector Properties"
+          collapsible
+          collapsed={collapsedAnalyzeSections.reflectorProperties}
+          onToggle={() => toggleAnalyzeSection('reflectorProperties')}
+        >
+          <div className="sbox-analysis-panel" style={{ borderTop: 'none', paddingTop: 0, marginTop: 0 }}>
+            <p className="sbox-analysis-disclaimer">
+              A reflector must be a fixed-point-free involution — every letter maps to a different letter, and every mapping is its own inverse.
+            </p>
+
+            <div className="sbox-analysis-metric">
+              <div className="sbox-analysis-metric-row">
+                <span className="meta-label">Involution Structure</span>
+                <span className="sbox-analysis-ref">{staticReflectorAnalysis.alphabetSize}-letter alphabet</span>
+              </div>
+              <div className="sbox-analysis-strip">
+                <div className="sbox-analysis-strip-cell">
+                  <span className="meta-label">Pairs</span>
+                  <strong
+                    className={
+                      staticReflectorAnalysis.isValidInvolution ? 'sbox-analysis-value-good' : 'sbox-analysis-value-warn'
+                    }
+                  >
+                    {staticReflectorAnalysis.pairCount}
+                  </strong>
+                </div>
+                <div className="sbox-analysis-strip-cell">
+                  <span className="meta-label">Valid</span>
+                  <strong
+                    className={
+                      staticReflectorAnalysis.isValidInvolution ? 'sbox-analysis-value-good' : 'sbox-analysis-value-warn'
+                    }
+                  >
+                    {staticReflectorAnalysis.isValidInvolution ? 'Yes' : 'No'}
+                  </strong>
+                </div>
+              </div>
+              {staticReflectorAnalysis.pairs.length > 0 ? (
+                <p className="sbox-analysis-note">
+                  Pairs: {staticReflectorAnalysis.pairs.map(([a, b]) => `${a}↔${b}`).join(', ')}
+                </p>
+              ) : null}
+            </div>
+
+            <p className="sbox-analysis-consequence">
+              {getReflectorConsequence(staticReflectorAnalysis.isValidInvolution, staticReflectorAnalysis.pairCount)}
+            </p>
+          </div>
+        </InspectorSection>
+      ) : null}
+
+      {inspectorTab === 'analyze' && staticModulusAnalysis ? (
+        <InspectorSection
+          label="Modulus Properties"
+          collapsible
+          collapsed={collapsedAnalyzeSections.modulusProperties}
+          onToggle={() => toggleAnalyzeSection('modulusProperties')}
+        >
+          <div className="sbox-analysis-panel" style={{ borderTop: 'none', paddingTop: 0, marginTop: 0 }}>
+            <p className="sbox-analysis-disclaimer">
+              These measurements describe the group structure under this modulus — how many invertible elements exist and whether prime guarantees apply.
+            </p>
+
+            <div className="sbox-analysis-metric">
+              <div className="sbox-analysis-metric-row">
+                <span className="meta-label">Modulus Structure</span>
+                <span className="sbox-analysis-ref">
+                  mod {staticModulusAnalysis.modulus}
+                  {!staticModulusAnalysis.isAnalysisExact ? ' (estimated)' : ''}
+                </span>
+              </div>
+              <div className="sbox-analysis-strip">
+                <div className="sbox-analysis-strip-cell">
+                  <span className="meta-label">Modulus</span>
+                  <strong>{staticModulusAnalysis.modulus}</strong>
+                </div>
+                <div className="sbox-analysis-strip-cell">
+                  <span className="meta-label">Prime</span>
+                  <strong
+                    className={
+                      staticModulusAnalysis.isPrime ? 'sbox-analysis-value-good' : 'sbox-analysis-value-warn'
+                    }
+                  >
+                    {staticModulusAnalysis.isPrime ? 'Yes' : 'No'}
+                  </strong>
+                </div>
+                <div className="sbox-analysis-strip-cell">
+                  <span className="meta-label">φ(n)</span>
+                  <strong>{staticModulusAnalysis.groupOrder > 0 ? staticModulusAnalysis.groupOrder : '—'}</strong>
+                </div>
+              </div>
+              {!staticModulusAnalysis.isPrime && staticModulusAnalysis.smallFactors.length > 0 ? (
+                <p className="sbox-analysis-note">
+                  Small factors: {staticModulusAnalysis.smallFactors.join(' · ')}
+                  {staticModulusAnalysis.isAnalysisExact ? '' : ' (partial factorization)'}
+                </p>
+              ) : null}
+            </div>
+
+            <p className="sbox-analysis-consequence">
+              {getModulusConsequence(
+                staticModulusAnalysis.isPrime,
+                staticModulusAnalysis.modulus,
+                staticModulusAnalysis.groupOrder,
+              )}
+            </p>
           </div>
         </InspectorSection>
       ) : null}
