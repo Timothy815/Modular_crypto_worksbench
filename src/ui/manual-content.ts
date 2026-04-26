@@ -32,6 +32,13 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'New users should usually start in the earliest learning demos rather than the advanced arithmetic or protocol stages. Begin with the foundation workspaces, read the pipeline summary at the top of the workbench, and inspect how modules are connected before editing anything. If you want guided help, switch to Guide mode and use the tutorial and challenge surfaces. If you want freeform exploration, stay in Build mode and use the palette plus inspector together. The workbench is designed so you can move between guided learning and direct authoring without leaving the same project surface.',
         indexTerms: ['start', 'begin', 'first project', 'guide mode', 'build mode'],
       },
+      {
+        id: 'workspace-modes',
+        title: 'Workspace Modes',
+        body:
+          'MCW supports three distinct interaction modes: Build, Guide, and Challenge. Build mode is for freeform construction and experimentation. Guide mode attaches a tutorial sequence to a project, walking you through a dissection or construction path. Challenge mode presents a \"broken\" machine that you must repair to match a specific target output. You can switch between these modes at any time to move from guided instruction back to active authoring.',
+        indexTerms: ['build mode', 'guide mode', 'challenge mode', 'tutorials', 'challenges', 'learning'],
+      },
     ],
   },
   {
@@ -59,6 +66,851 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         body:
           'MCW now supports several fast authoring gestures that reduce repetitive wiring ceremony without hiding structure. You can drag a module from the expanded palette directly onto the canvas to place it where you want, drag from an output port into empty canvas space to open Quick Add already scoped to that signal type, and click an output once to arm a connection before finishing it on a distant input. If you need to swap one module for another without rebuilding the surrounding graph, use Replace with in the inspector. For a few common sources and controls, the canvas card itself also supports small inline parameter edits so you do not have to bounce to the inspector for every short value change. These actions make the workbench faster, but they do not add hidden auto-logic: the resulting graph is still fully visible and still edited by explicit modules and wires.',
         indexTerms: ['wiring', 'placement', 'quick add', 'click to connect', 'replace with', 'inline edit', 'drag from palette'],
+      },
+    ],
+  },
+  {
+    id: 'primitive-reference',
+    title: 'Module Reference: Primitives',
+    summary: 'A definitive guide to every primitive transformation in the MCW registry.',
+    entries: [
+      // --- SOURCES ---
+      {
+        id: 'TextInput',
+        title: 'TextInput',
+        body: 'A fundamental source module for entering arbitrary text. It emits a symbol signal containing the string typed into its configuration. Useful for providing plain-text messages or custom alphabets to downstream modules.',
+        indexTerms: ['text', 'input', 'source', 'symbol'],
+      },
+      {
+        id: 'SymbolSequenceInput',
+        title: 'SymbolSequenceInput',
+        body: 'Allows for the entry of a sequence of distinct symbols. Unlike TextInput, which treats the input as a single string, SymbolSequenceInput is optimized for cases where each character is a discrete token in a larger cryptographic process.',
+        indexTerms: ['symbol', 'sequence', 'input'],
+      },
+      {
+        id: 'KeyInput',
+        title: 'KeyInput',
+        body: 'A specialized source for cryptographic keys. It supports various formats and is designed to feed key material into modules like XOR, SBox, or modular arithmetic operators. It often right-pads shorter hex values to match the required key width.',
+        indexTerms: ['key', 'input', 'material'],
+      },
+      {
+        id: 'BitSource',
+        title: 'BitSource',
+        body: 'A manual entry module for bit streams. Users can input 0s and 1s directly to create custom bit patterns for testing or low-level cryptographic constructions.',
+        indexTerms: ['bits', 'source', 'manual bits'],
+      },
+      {
+        id: 'ConstantBit',
+        title: 'ConstantBit',
+        body: 'Emits a single, fixed bit (0 or 1) as a continuous signal. Frequently used as a static control signal or a constant input for logic gates.',
+        indexTerms: ['constant', 'bit', 'static'],
+      },
+      {
+        id: 'BitSequenceInput',
+        title: 'BitSequenceInput',
+        body: 'Enables the entry of a fixed sequence of bits. Useful for defining short, static bit-level constants like padding patterns or small lookup table fragments.',
+        indexTerms: ['bits', 'sequence', 'input'],
+      },
+      {
+        id: 'AsciiSource',
+        title: 'AsciiSource',
+        body: 'A text-based source that explicitly focuses on ASCII-compatible characters. It provides a bridge between human-readable text and the numeric ASCII domain.',
+        indexTerms: ['ascii', 'source', 'text'],
+      },
+      {
+        id: 'AsciiSequenceInput',
+        title: 'AsciiSequenceInput',
+        body: 'Inputs a sequence of ASCII characters, allowing for precise control over the character stream. Useful for testing machines that operate on character-by-character ASCII logic.',
+        indexTerms: ['ascii', 'sequence', 'input'],
+      },
+      {
+        id: 'BaudotSource',
+        title: 'BaudotSource',
+        body: 'A historical source module for the 5-bit Baudot code. It converts text characters into their corresponding 5-bit patterns used in early teleprinter communications.',
+        indexTerms: ['baudot', 'source', 'historical', '5-bit'],
+      },
+      {
+        id: 'HexSource',
+        title: 'HexSource',
+        body: 'Allows entry of hexadecimal values. It validates the input as hex and emits the corresponding numeric or bit-level representation depending on how it is wired.',
+        indexTerms: ['hex', 'source', 'hexadecimal'],
+      },
+      {
+        id: 'HexSequenceInput',
+        title: 'HexSequenceInput',
+        body: 'Input for a sequence of hexadecimal digits. This is the preferred way to enter raw binary data expressed in a compact hex format.',
+        indexTerms: ['hex', 'sequence', 'input'],
+      },
+      {
+        id: 'IV',
+        title: 'IV (Initialization Vector)',
+        body: 'A source module for Initialization Vectors. In MCW, it is a specialized hex source that often includes padding logic to ensure the IV matches the expected block or state size.',
+        indexTerms: ['iv', 'initialization vector', 'padding'],
+      },
+      {
+        id: 'Nonce',
+        title: 'Nonce',
+        body: 'A source for \"Numbers used once.\" Like the IV module, it provides a hex-based entry field for transient values that should ideally change for every execution or tick.',
+        indexTerms: ['nonce', 'source', 'transient'],
+      },
+      {
+        id: 'Salt',
+        title: 'Salt',
+        body: 'A source for cryptographic salt. Used to add entropy or uniqueness to inputs, particularly in hashing or key derivation micro-demos.',
+        indexTerms: ['salt', 'source', 'entropy'],
+      },
+      {
+        id: 'Clock',
+        title: 'Clock',
+        body: 'The heartbeat of stateful execution. It emits periodic pulses that trigger \"tick\" events in downstream modules like LFSRs or Counters, allowing for time-domain simulation.',
+        indexTerms: ['clock', 'tick', 'trigger', 'pulse', 'timing'],
+      },
+
+      // --- SINKS ---
+      {
+        id: 'Output',
+        title: 'Output',
+        body: 'The most basic visualization module. It displays the current value of any signal it is connected to, regardless of type (bits or symbol).',
+        indexTerms: ['output', 'sink', 'display'],
+      },
+      {
+        id: 'TextOutput',
+        title: 'TextOutput',
+        body: 'A sink specifically for symbol signals. It renders the incoming symbols as a continuous string of text, making it ideal for reading decrypted messages.',
+        indexTerms: ['text', 'output', 'sink'],
+      },
+      {
+        id: 'HexOutput',
+        title: 'HexOutput',
+        body: 'Displays incoming signals as hexadecimal strings. Useful for inspecting the raw numeric content of bitstreams or character codes.',
+        indexTerms: ['hex', 'output', 'sink'],
+      },
+      {
+        id: 'BaudotOutput',
+        title: 'BaudotOutput',
+        body: 'A historical sink that interprets 5-bit patterns as Baudot characters. It reverses the encoding of a BaudotSource to display human-readable historical text.',
+        indexTerms: ['baudot', 'output', 'sink', 'historical'],
+      },
+      {
+        id: 'BitOutput',
+        title: 'BitOutput',
+        body: 'A sink for bit signals. It displays the stream of 0s and 1s, often used as the target for randomness analysis or bit-level inspection.',
+        indexTerms: ['bits', 'output', 'sink'],
+      },
+
+      // --- BRIDGES (Domain Conversion) ---
+      {
+        id: 'AsciiSequenceToBits',
+        title: 'AsciiSequenceToBits',
+        body: 'Converts a sequence of ASCII characters into a continuous bit stream. Each character is expanded into its 8-bit representation.',
+        indexTerms: ['ascii', 'bits', 'bridge', 'conversion'],
+      },
+      {
+        id: 'AsciiSequenceToTicked',
+        title: 'AsciiSequenceToTicked',
+        body: 'A time-domain bridge. It takes an ASCII sequence and emits one character at a time on each clock tick, allowing for sequential processing of text.',
+        indexTerms: ['ascii', 'ticked', 'sequential', 'time-domain'],
+      },
+      {
+        id: 'AsciiCharToBits',
+        title: 'AsciiCharToBits',
+        body: 'Converts a single ASCII character (symbol) into its corresponding 8-bit representation. Useful for character-level bit manipulation.',
+        indexTerms: ['ascii', 'bits', 'character'],
+      },
+      {
+        id: 'TickedSymbolsToSequence',
+        title: 'TickedSymbolsToSequence',
+        body: 'Collects individual symbol signals emitted over multiple clock ticks and reassembles them into a single symbol sequence.',
+        indexTerms: ['ticked', 'symbols', 'sequence', 'reassembly'],
+      },
+      {
+        id: 'TickedBitsToSequence',
+        title: 'TickedBitsToSequence',
+        body: 'Collects individual bit signals emitted over multiple clock ticks and reassembles them into a single bit sequence or word.',
+        indexTerms: ['ticked', 'bits', 'sequence', 'reassembly'],
+      },
+      {
+        id: 'HexSequenceToBits',
+        title: 'HexSequenceToBits',
+        body: 'Converts hexadecimal sequences into their underlying bit representations. Each hex digit becomes 4 bits.',
+        indexTerms: ['hex', 'bits', 'conversion'],
+      },
+      {
+        id: 'HexDigitToBits',
+        title: 'HexDigitToBits',
+        body: 'Converts a single hex digit into its 4-bit representation.',
+        indexTerms: ['hex', 'bits', 'digit'],
+      },
+      {
+        id: 'SymbolToBits',
+        title: 'SymbolToBits',
+        body: 'A generic conversion module that maps symbols (like letters) to bit patterns. The mapping is often defined by an alphabet or an explicit code table.',
+        indexTerms: ['symbol', 'bits', 'conversion'],
+      },
+      {
+        id: 'BitsToAscii',
+        title: 'BitsToAscii',
+        body: 'Converts a bit stream back into ASCII text. It groups bits into sets of 8 and interprets them as character codes.',
+        indexTerms: ['bits', 'ascii', 'conversion'],
+      },
+      {
+        id: 'BitsToAsciiChar',
+        title: 'BitsToAsciiChar',
+        body: 'Interprets a single block of bits (usually 8) as a single ASCII character.',
+        indexTerms: ['bits', 'ascii', 'character'],
+      },
+      {
+        id: 'BitsToBaudot',
+        title: 'BitsToBaudot',
+        body: 'Converts 5-bit sequences back into the Baudot symbol set. Part of the historical teleprinter toolset.',
+        indexTerms: ['bits', 'baudot', 'historical'],
+      },
+      {
+        id: 'BitsToSymbol',
+        title: 'BitsToSymbol',
+        body: 'A generic module for mapping bit patterns back to symbols in a given alphabet.',
+        indexTerms: ['bits', 'symbol', 'conversion'],
+      },
+      {
+        id: 'BitsToHex',
+        title: 'BitsToHex',
+        body: 'Converts bit sequences into their hexadecimal string representation.',
+        indexTerms: ['bits', 'hex', 'conversion'],
+      },
+      {
+        id: 'BitsToHexDigit',
+        title: 'BitsToHexDigit',
+        body: 'Converts a 4-bit signal into its corresponding single hex digit.',
+        indexTerms: ['bits', 'hex', 'digit'],
+      },
+      {
+        id: 'HexToAscii',
+        title: 'HexToAscii',
+        body: 'Interprets hexadecimal numeric values as ASCII character codes, bridging the hex and text domains.',
+        indexTerms: ['hex', 'ascii', 'conversion'],
+      },
+      {
+        id: 'AsciiToHex',
+        title: 'AsciiToHex',
+        body: 'Converts ASCII characters into their hexadecimal numeric representations.',
+        indexTerms: ['ascii', 'hex', 'conversion'],
+      },
+
+      // --- LOGIC & ARITHMETIC ---
+      {
+        id: 'XOR',
+        title: 'XOR',
+        body: 'The most essential operation in cryptography. It performs an Exclusive OR on two bit signals of equal length. If inputs differ in length, it operates on the overlapping portion.',
+        indexTerms: ['xor', 'bits', 'logic', 'exclusive or'],
+      },
+      {
+        id: 'AND',
+        title: 'AND',
+        body: 'Performs a logical AND on two bit signals. The result bit is 1 only if both input bits are 1.',
+        indexTerms: ['and', 'bits', 'logic'],
+      },
+      {
+        id: 'OR',
+        title: 'OR',
+        body: 'Performs a logical OR on two bit signals. The result bit is 1 if at least one input bit is 1.',
+        indexTerms: ['or', 'bits', 'logic'],
+      },
+      {
+        id: 'NOT',
+        title: 'NOT',
+        body: 'Inverts a bit signal. 0s become 1s and 1s become 0s.',
+        indexTerms: ['not', 'bits', 'logic', 'inversion'],
+      },
+      {
+        id: 'AddMod',
+        title: 'AddMod',
+        body: 'Performs modular addition: (a + b) mod 2^n, where n is the bit width of the inputs. A building block for many symmetric and asymmetric algorithms.',
+        indexTerms: ['addition', 'modulo', 'arithmetic'],
+      },
+      {
+        id: 'SubMod',
+        title: 'SubMod',
+        body: 'Performs modular subtraction: (a - b) mod 2^n. The inverse of AddMod.',
+        indexTerms: ['subtraction', 'modulo', 'arithmetic'],
+      },
+      {
+        id: 'ModExp',
+        title: 'ModExp',
+        body: 'Performs modular exponentiation: (base ^ exp) mod n. Essential for public-key algorithms like RSA and Diffie-Hellman.',
+        indexTerms: ['exponentiation', 'modulo', 'public-key', 'rsa'],
+      },
+      {
+        id: 'ModInverse',
+        title: 'ModInverse',
+        body: 'Calculates the modular multiplicative inverse: x such that (a * x) ≡ 1 (mod n). Critical for RSA and other asymmetric primitives.',
+        indexTerms: ['inverse', 'modulo', 'arithmetic'],
+      },
+      {
+        id: 'Modulo',
+        title: 'Modulo',
+        body: 'Returns the remainder of division: a mod n.',
+        indexTerms: ['modulo', 'remainder', 'arithmetic'],
+      },
+      {
+        id: 'MulMod',
+        title: 'MulMod',
+        body: 'Performs modular multiplication: (a * b) mod n.',
+        indexTerms: ['multiplication', 'modulo', 'arithmetic'],
+      },
+      {
+        id: 'Majority',
+        title: 'Majority',
+        body: 'Evaluates the majority bit from its inputs. If more inputs are 1 than 0, it emits 1; otherwise 0. Used in specific stream ciphers like A5/1 for irregular clocking logic.',
+        indexTerms: ['majority', 'voting', 'logic', 'a5/1'],
+      },
+      {
+        id: 'GreaterThan',
+        title: 'GreaterThan',
+        body: 'Compares two signals and emits a true (1) signal if the first is numerically greater than the second.',
+        indexTerms: ['comparison', 'logic'],
+      },
+      {
+        id: 'Equals',
+        title: 'Equals',
+        body: 'Compares two signals for exact equality. Emits 1 if they match, 0 otherwise.',
+        indexTerms: ['equality', 'comparison'],
+      },
+      {
+        id: 'AtLeast',
+        title: 'AtLeast',
+        body: 'Compares two signals and emits 1 if the first is numerically greater than or equal to the second.',
+        indexTerms: ['comparison', 'logic'],
+      },
+
+      // --- FLOW CONTROL ---
+      {
+        id: 'Mux',
+        title: 'Mux',
+        body: 'A multiplexer that selects one of its data inputs based on a control signal. It acts as a switch, allowing one signal path to be chosen from several.',
+        indexTerms: ['mux', 'multiplexer', 'routing', 'switch'],
+      },
+      {
+        id: 'Demux',
+        title: 'Demux',
+        body: 'A demultiplexer that routes its single data input to one of several outputs based on a control signal.',
+        indexTerms: ['demux', 'demultiplexer', 'routing'],
+      },
+      {
+        id: 'MultiRouter',
+        title: 'MultiRouter',
+        body: 'A complex routing module that handles multiple input and output paths, often used in large composite machines.',
+        indexTerms: ['router', 'routing', 'signal flow'],
+      },
+      {
+        id: 'MultiSelector',
+        title: 'MultiSelector',
+        body: 'Allows for the selection of multiple discrete signal paths from a set of available inputs.',
+        indexTerms: ['selector', 'routing'],
+      },
+      {
+        id: 'Gate',
+        title: 'Gate',
+        body: 'Acts as a conditional barrier. The data signal only passes through to the output if the control signal is \"active\" (usually a 1 bit).',
+        indexTerms: ['gate', 'control', 'conditional'],
+      },
+      {
+        id: 'Counter',
+        title: 'Counter',
+        body: 'A stateful module that increments its internal value on every tick or trigger pulse. Used for indices, nonces, or loop tracking.',
+        indexTerms: ['counter', 'state', 'increment'],
+      },
+      {
+        id: 'BroadcastBits',
+        title: 'BroadcastBits',
+        body: 'Takes a single bit signal and duplicates it across multiple output ports, allowing one signal to drive many downstream components.',
+        indexTerms: ['broadcast', 'fan-out', 'bits'],
+      },
+
+      // --- CLASSICAL ---
+      {
+        id: 'Rotor',
+        title: 'Rotor',
+        body: 'Simulates a historical cipher rotor (like Enigma). It performs a substitution on symbols that changes as the rotor advances (rotates) during execution.',
+        indexTerms: ['rotor', 'enigma', 'historical', 'substitution'],
+      },
+      {
+        id: 'RotorReverse',
+        title: 'RotorReverse',
+        body: 'The inverse transformation of a Rotor. Used for the return signal path in Enigma-style machines to decrypt or complete the circuit.',
+        indexTerms: ['rotor', 'inverse', 'historical'],
+      },
+      {
+        id: 'Reflector',
+        title: 'Reflector',
+        body: 'A fixed permutation that maps symbols in pairs. In historical machines, it \"reflects\" the signal back through the rotors, ensuring the cipher is reciprocal.',
+        indexTerms: ['reflector', 'enigma', 'historical'],
+      },
+      {
+        id: 'Plugboard',
+        title: 'Plugboard',
+        body: 'Performs a fixed or configurable swap of symbol pairs before or after the main encryption process. Adds significant complexity to classical designs.',
+        indexTerms: ['plugboard', 'steckerbrett', 'historical'],
+      },
+      {
+        id: 'SymbolPermutation',
+        title: 'SymbolPermutation',
+        body: 'A general-purpose module for transposing symbols within an alphabet. Unlike a Rotor, its mapping does not automatically change over time.',
+        indexTerms: ['permutation', 'symbols', 'substitution'],
+      },
+      {
+        id: 'PolluxFractionation',
+        title: 'PolluxFractionation',
+        body: 'A homophonic substitution bridge. It maps bits to symbols using two disjoint sets (one for 0s, one for 1s). It makes bit-level data look like a random symbol stream.',
+        indexTerms: ['pollux', 'fractionation', 'homophonic'],
+      },
+      {
+        id: 'PolluxControlledFractionation',
+        title: 'PolluxControlledFractionation',
+        body: 'An advanced Pollux bridge that uses an additional selector input to choose which specific symbol from the valid set is used for a given bit.',
+        indexTerms: ['pollux', 'controlled', 'selector'],
+      },
+      {
+        id: 'PolluxInverse',
+        title: 'PolluxInverse',
+        body: 'Reverses Pollux fractionation by checking symbol set membership and recovering the original bit stream from ciphertext symbols.',
+        indexTerms: ['pollux', 'inverse', 'decryption'],
+      },
+
+      // --- MODERN ---
+      {
+        id: 'SBox',
+        title: 'SBox',
+        body: 'The non-linear component of modern block ciphers. It maps a bit-level input to a bit-level output according to a substitution table, providing confusion.',
+        indexTerms: ['sbox', 'substitution box', 'confusion', 'block cipher'],
+      },
+      {
+        id: 'Permutation',
+        title: 'Permutation',
+        body: 'A bit-level transposition module. It rearranges the bits of its input according to a fixed or configurable pattern, providing diffusion.',
+        indexTerms: ['permutation', 'diffusion', 'bits', 'p-box'],
+      },
+      {
+        id: 'LFSR',
+        title: 'LFSR',
+        body: 'Linear Feedback Shift Register. A stateful module that generates a pseudo-random bit stream based on a linear recurrence. Fundamental to stream ciphers.',
+        indexTerms: ['lfsr', 'prng', 'stream cipher', 'feedback'],
+      },
+      {
+        id: 'BitShifter',
+        title: 'BitShifter',
+        body: 'Shifts or rotates bits within a signal. Includes logical, arithmetic, and circular shift options for bit-level manipulation.',
+        indexTerms: ['shift', 'rotate', 'bits'],
+      },
+      {
+        id: 'ByteRotate',
+        title: 'ByteRotate',
+        body: 'Performs bit-level rotation within 8-bit boundaries. Often used in block cipher round functions like those found in AES.',
+        indexTerms: ['rotate', 'byte', 'bits'],
+      },
+      {
+        id: 'ByteSwap',
+        title: 'ByteSwap',
+        body: 'Swaps the order of bytes within a signal. Useful for adjusting data formats (endianness) between different protocol layers.',
+        indexTerms: ['swap', 'bytes', 'endianness'],
+      },
+
+      // --- SEQUENCE MANIPULATION ---
+      {
+        id: 'SymbolWindow',
+        title: 'SymbolWindow',
+        body: 'Extracts a specific slice or \"window\" from a symbol sequence. Useful for isolating parts of a message for analysis or sub-processing.',
+        indexTerms: ['window', 'slice', 'symbols'],
+      },
+      {
+        id: 'RepeatSymbolToLength',
+        title: 'RepeatSymbolToLength',
+        body: 'Repeats a symbol sequence until it reaches a specified total length. Ideal for creating periodic keys or padding structures.',
+        indexTerms: ['repeat', 'symbols', 'padding'],
+      },
+      {
+        id: 'RepeatSymbolToMatch',
+        title: 'RepeatSymbolToMatch',
+        body: 'Repeats a symbol sequence until its length matches that of a second \"match\" signal. Commonly used to align key streams with messages.',
+        indexTerms: ['repeat', 'match', 'symbols'],
+      },
+      {
+        id: 'PadSymbolToMatch',
+        title: 'PadSymbolToMatch',
+        body: 'Adds a padding symbol to the end of a sequence until its length matches a reference signal.',
+        indexTerms: ['padding', 'match', 'symbols'],
+      },
+      {
+        id: 'RequireSymbolLengthMatch',
+        title: 'RequireSymbolLengthMatch',
+        body: 'A validation module that throws an error if two symbol sequences do not have the same length, ensuring alignment in the pipeline.',
+        indexTerms: ['validation', 'match', 'symbols'],
+      },
+      {
+        id: 'TruncateSymbolSequence',
+        title: 'TruncateSymbolSequence',
+        body: 'Cuts a symbol sequence to a fixed length, discarding any symbols beyond the specified limit.',
+        indexTerms: ['truncate', 'symbols'],
+      },
+      {
+        id: 'TruncateSymbolToMatch',
+        title: 'TruncateSymbolToMatch',
+        body: 'Truncates a symbol sequence so that its length exactly matches a reference signal.',
+        indexTerms: ['truncate', 'match', 'symbols'],
+      },
+      {
+        id: 'SymbolSequenceToTicked',
+        title: 'SymbolSequenceToTicked',
+        body: 'Converts a symbol sequence into a stream of individual symbols, emitted one per clock tick for sequential machines.',
+        indexTerms: ['sequential', 'ticked', 'symbols'],
+      },
+      {
+        id: 'BitsSequenceToTicked',
+        title: 'BitsSequenceToTicked',
+        body: 'Converts a bit sequence into a stream of individual bits, emitted one per clock tick for time-domain simulation.',
+        indexTerms: ['sequential', 'ticked', 'bits'],
+      },
+      {
+        id: 'BitJoin',
+        title: 'BitJoin',
+        body: 'Concatenates multiple bit signals into a single, longer bit sequence. Used to assemble words or blocks from smaller fragments.',
+        indexTerms: ['join', 'concatenate', 'bits'],
+      },
+      {
+        id: 'BitSplit',
+        title: 'BitSplit',
+        body: 'Divides a bit signal into several shorter signals of specified widths. Essential for dissecting blocks or registers.',
+        indexTerms: ['split', 'divide', 'bits'],
+      },
+      {
+        id: 'BitPad',
+        title: 'BitPad',
+        body: 'Applies standard or custom bit-level padding (e.g., adding a 1 followed by 0s) to bring a signal to a required block size for encryption.',
+        indexTerms: ['padding', 'bits', 'block size'],
+      },
+      {
+        id: 'BitUnpad',
+        title: 'BitUnpad',
+        body: 'Removes bit-level padding from a signal, recovering the original unpadded message length after decryption.',
+        indexTerms: ['unpad', 'bits'],
+      },
+      {
+        id: 'BitWindow',
+        title: 'BitWindow',
+        body: 'Extracts a sub-sequence of bits from a larger bit stream based on a start index and length.',
+        indexTerms: ['window', 'slice', 'bits'],
+      },
+      {
+        id: 'BitSelect',
+        title: 'BitSelect',
+        body: 'Allows for the selection of specific individual bits from a sequence using an explicit list of bit indices.',
+        indexTerms: ['select', 'bits', 'index'],
+      },
+      {
+        id: 'BitExpand',
+        title: 'BitExpand',
+        body: 'Expands a bit signal by duplicating or reordering bits according to an expansion pattern (e.g., the E-box used in DES).',
+        indexTerms: ['expand', 'bits', 'des'],
+      },
+      {
+        id: 'RepeatBitsToLength',
+        title: 'RepeatBitsToLength',
+        body: 'Repeats a bit pattern until it reaches a desired total length in bits.',
+        indexTerms: ['repeat', 'bits', 'length'],
+      },
+      {
+        id: 'RepeatBitsToMatch',
+        title: 'RepeatBitsToMatch',
+        body: 'Repeats a bit pattern until its length matches the width of a reference bit signal.',
+        indexTerms: ['repeat', 'match', 'bits'],
+      },
+      {
+        id: 'PadBitsToMatch',
+        title: 'PadBitsToMatch',
+        body: 'Adds padding bits (0 or 1) to a signal until it matches the exact length of another reference bit signal.',
+        indexTerms: ['padding', 'match', 'bits'],
+      },
+      {
+        id: 'RequireBitsLengthMatch',
+        title: 'RequireBitsLengthMatch',
+        body: 'Validation module that ensures two bit signals have identical widths, raising an error on mismatch.',
+        indexTerms: ['validation', 'match', 'bits'],
+      },
+      {
+        id: 'TruncateBitsSequence',
+        title: 'TruncateBitsSequence',
+        body: 'Reduces a bit sequence to a fixed maximum length, keeping only the leading bits.',
+        indexTerms: ['truncate', 'bits'],
+      },
+      {
+        id: 'TruncateBitsToMatch',
+        title: 'TruncateBitsToMatch',
+        body: 'Truncates a bit signal so that its width matches that of a reference signal.',
+        indexTerms: ['truncate', 'match', 'bits'],
+      },
+      {
+        id: 'PadBitsSequence',
+        title: 'PadBitsSequence',
+        body: 'Pads a bit signal to a specific total length or alignment (e.g., ensuring it is a multiple of 8 bits).',
+        indexTerms: ['padding', 'alignment', 'bits'],
+      },
+    ],
+  },
+  {
+    id: 'composite-reference',
+    title: 'Module Reference: Composites & Iterators',
+    summary: 'Built-in reusable structures and higher-order execution modules.',
+    entries: [
+      // --- Round Functions ---
+      {
+        id: 'FeistelRoundComposite',
+        title: 'Feistel Round',
+        body: 'FeistelRoundComposite: Implements a classic Feistel network round function using Permutation, BitShifter, XOR, and BitJoin. It demonstrates the split-and-mix structure central to many symmetric ciphers.',
+        indexTerms: ['feistel', 'round function', 'symmetric cipher', 'split-and-mix', 'diffusion'],
+      },
+      {
+        id: 'KeyedByteRoundComposite',
+        title: 'Keyed Byte Round',
+        body: 'KeyedByteRoundComposite: A substitution-permutation round that incorporates an external key via XOR mixing. It represents a single stage of a modern block cipher where data is transformed by both an S-Box and a round key.',
+        indexTerms: ['keyed round', 'sbox', 'permutation', 'xor mixing', 'block cipher'],
+      },
+      {
+        id: 'ByteRoundComposite',
+        title: 'Byte Round',
+        body: 'ByteRoundComposite: A standard substitution-permutation (SP) round consisting of an S-Box substitution followed by a bit-level permutation. This is the fundamental building block for SP-network ciphers.',
+        indexTerms: ['byte round', 'sp-network', 'sbox', 'permutation', 'diffusion'],
+      },
+      {
+        id: 'HashDigestRoundComposite',
+        title: 'Hash Digest Round',
+        body: 'HashDigestRoundComposite: A specialized round for digest generation, combining substitution, rotation, and mixing with a fixed constant to ensure diffusion.',
+        indexTerms: ['hash round', 'digest', 'constant mixing', 'bit rotation', 'substitution'],
+      },
+      {
+        id: 'SpongeMixRoundComposite',
+        title: 'Sponge Mix Round',
+        body: 'SpongeMixRoundComposite: A 16-bit wide state transformation used in sponge constructions, featuring substitution, large-scale permutation, and constant mixing.',
+        indexTerms: ['sponge construction', 'state mixing', 'permutation', 'keccak-style', 'diffusion'],
+      },
+
+      // --- Iterators & State ---
+      {
+        id: 'IteratedByteRoundsComposite',
+        title: 'Iterated Byte Rounds',
+        body: 'IteratedByteRoundsComposite: A hard-coded sequence of two Byte Round modules, demonstrating manual round unrolling before moving to automated iterators.',
+        indexTerms: ['manual unroll', 'round chain', 'byte round', 'composition', 'cipher strength'],
+      },
+      {
+        id: 'ByteRoundIterator',
+        title: 'Byte Round Iterator',
+        body: 'ByteRoundIterator: A higher-order module that dynamically unrolls a specified number of Byte Round instances in a chain for easy experimentation.',
+        indexTerms: ['iterator', 'dynamic unrolling', 'byte round', 'round count', 'higher-order'],
+      },
+      {
+        id: 'ClockedByteRoundIterator',
+        title: 'Clocked Byte Round Iterator',
+        body: 'ClockedByteRoundIterator: A stateful iterator that executes one Byte Round per clock pulse, allowing for step-by-step observation of round transformations.',
+        indexTerms: ['clocked iterator', 'stateful execution', 'ticked workspace', 'step-by-step', 'round-by-round'],
+      },
+      {
+        id: 'HashDigestRoundIterator',
+        title: 'Hash Digest Iterator',
+        body: 'HashDigestRoundIterator: Automates the repeated application of the Hash Digest Round to ensure thorough diffusion and confusion in hash outputs.',
+        indexTerms: ['hash iterator', 'digest iteration', 'diffusion', 'confusion', 'hash finalization'],
+      },
+      {
+        id: 'SpongeMixRoundIterator',
+        title: 'Sponge Mix Iterator',
+        body: 'SpongeMixRoundIterator: Executes multiple Sponge Mix Rounds to provide the necessary permutation strength between absorb and squeeze phases.',
+        indexTerms: ['sponge iterator', 'state permutation', 'absorb phase', 'squeeze phase', 'capacity'],
+      },
+      {
+        id: 'KeyedByteRoundIterator',
+        title: 'Keyed Byte Round Iterator',
+        body: 'KeyedByteRoundIterator: Sequentially applies keyed rounds while automatically partitioning the input key bus into individual round keys.',
+        indexTerms: ['keyed iterator', 'round keys', 'key schedule', 'block cipher', 'bus partitioning'],
+      },
+      {
+        id: 'FeistelRoundIterator',
+        title: 'Feistel Round Iterator',
+        body: 'FeistelRoundIterator: A specialized iterator for Feistel structures that handles round key distribution across multiple Feistel Round instances.',
+        indexTerms: ['feistel iterator', 'round keys', 'feistel network', 'symmetric cipher', 'key distribution'],
+      },
+
+      // --- Routing & Control ---
+      {
+        id: 'RotorDoubleStepControl',
+        title: 'Rotor Double-Step Control',
+        body: 'RotorDoubleStepControl: Implements the mechanical stepping logic of classic rotor machines, including the double-step turnover carry-over.',
+        indexTerms: ['rotor control', 'double-step', 'enigma', 'mechanical logic', 'stepping'],
+      },
+      {
+        id: 'RotorControlBankRouter',
+        title: 'Rotor Control Bank Router',
+        body: 'RotorControlBankRouter: Uses gates and demultiplexers to route control pulses between different rotor stages based on enable signals.',
+        indexTerms: ['control routing', 'pulse distribution', 'gate', 'demux', 'rotor bank'],
+      },
+      {
+        id: 'ConditionalBranchDemo',
+        title: 'Conditional Branch Demo',
+        body: 'ConditionalBranchDemo: A basic control-flow module that selects between two different internal transformations based on a scalar control bit.',
+        indexTerms: ['conditional', 'branching', 'control flow', 'if-then-else', 'multiplexer'],
+      },
+      {
+        id: 'MultiCondSwitch4',
+        title: 'Multi-Cond Switch 4',
+        body: 'MultiCondSwitch4: An 8-bit select-driven switch that routes data through one of four specialized transformation branches.',
+        indexTerms: ['multi-conditional', 'switch', 'case statement', 'routing', 'branching'],
+      },
+      {
+        id: 'CipherDirectionSwitch',
+        title: 'Cipher Direction Switch',
+        body: 'CipherDirectionSwitch: A reversible control structure that selects between a forward transformation and its exact inverse.',
+        indexTerms: ['cipher direction', 'reversibility', 'inverse', 'encryption', 'decryption'],
+      },
+      {
+        id: 'ConditionalRotateBranch',
+        title: 'Conditional Rotate Branch',
+        body: 'ConditionalRotateBranch: A helper branch for conditional demos that performs a 1-bit left rotation on the input signal.',
+        indexTerms: ['rotate branch', 'conditional helper', 'bit rotation', 'branching', 'logic'],
+      },
+      {
+        id: 'ConditionalInvertBranch',
+        title: 'Conditional Invert Branch',
+        body: 'ConditionalInvertBranch: A helper branch for conditional demos that inverts all bits by XORing them with a constant mask.',
+        indexTerms: ['invert branch', 'conditional helper', 'xor inversion', 'bit masking', 'logic'],
+      },
+      {
+        id: 'MultiCondBranchRotL1',
+        title: 'Multi-Cond Rotate Left 1',
+        body: 'MultiCondBranchRotL1: Branch 0 for the multi-conditional demo: rotates bits left by one position.',
+        indexTerms: ['rotate left', 'multi-cond helper', 'branch 0', 'logic', 'bit shift'],
+      },
+      {
+        id: 'MultiCondBranchInvert',
+        title: 'Multi-Cond Invert',
+        body: 'MultiCondBranchInvert: Branch 1 for the multi-conditional demo: inverts all 8 bits using a constant mask.',
+        indexTerms: ['invert', 'multi-cond helper', 'branch 1', 'logic', 'bit mask'],
+      },
+      {
+        id: 'MultiCondBranchRotL2',
+        title: 'Multi-Cond Rotate Left 2',
+        body: 'MultiCondBranchRotL2: Branch 2 for the multi-conditional demo: rotates bits left by two positions.',
+        indexTerms: ['rotate left 2', 'multi-cond helper', 'branch 2', 'logic', 'bit shift'],
+      },
+      {
+        id: 'MultiCondBranchRotR1',
+        title: 'Multi-Cond Rotate Right 1',
+        body: 'MultiCondBranchRotR1: Branch 3 for the multi-conditional demo: rotates bits right by one position.',
+        indexTerms: ['rotate right', 'multi-cond helper', 'branch 3', 'logic', 'bit shift'],
+      },
+      {
+        id: 'CipherForwardBranch',
+        title: 'Cipher Forward Branch',
+        body: 'CipherForwardBranch: The forward path for the direction switch demo: substitutes bits with complements then rotates left.',
+        indexTerms: ['forward branch', 'encryption path', 'substitution', 'rotation', 'cipher'],
+      },
+      {
+        id: 'CipherInverseBranch',
+        title: 'Cipher Inverse Branch',
+        body: 'CipherInverseBranch: The inverse path for the direction switch demo: rotates right then substitutes bits with complements.',
+        indexTerms: ['inverse branch', 'decryption path', 'reversibility', 'undo', 'cipher'],
+      },
+
+      // --- Architecture Demos ---
+      {
+        id: 'SymbolRoundTripComposite',
+        title: 'Symbol Round Trip',
+        body: 'SymbolRoundTripComposite: Demonstrates the conversion between abstract symbols and bit-level representations, ensuring data integrity.',
+        indexTerms: ['round trip', 'symbol-to-bits', 'bits-to-symbol', 'data integrity', 'domain conversion'],
+      },
+      {
+        id: 'ToyCompressionHashComposite',
+        title: 'Toy Compression Hash',
+        body: 'ToyCompressionHashComposite: A full hash construction demonstrating a Merkle-Damgård style compression function and finalization digest.',
+        indexTerms: ['hash construction', 'compression function', 'merkle-damgård', 'digest', 'architecture'],
+      },
+      {
+        id: 'ToySpongeHashComposite',
+        title: 'Toy Sponge Hash',
+        body: 'ToySpongeHashComposite: A complete implementation of a sponge-based hash function, showing the interaction between rate and capacity.',
+        indexTerms: ['sponge hash', 'absorb', 'squeeze', 'rate-capacity', 'modern hash'],
+      },
+    ],
+  },
+  {
+    id: 'analysis-reference',
+    title: 'Cryptanalysis & Properties',
+    summary: 'A reference for the analytical tools and property panels in the Analyze tab.',
+    entries: [
+      {
+        id: 'sbox-properties',
+        title: 'S-Box Properties',
+        body:
+          'The S-Box analysis panel measures the cryptographic strength of a substitution table in isolation. Nonlinearity (NL) measures the distance from all affine functions; high NL resists Matsui’s linear cryptanalysis. Differential Uniformity (DDT max) counts the most likely input-to-output difference propagation; lower uniformity resists Biham-Shamir differential cryptanalysis. Algebraic Degree measures the complexity of the Boolean coordinate functions; high degree resists algebraic attacks using Gröbner bases or XL algorithms. The panel also tracks Fixed Points (where S(x) = x) and the Strict Avalanche Criterion (SAC), which measures the 50% probability that flipping an input bit changes a given output bit.',
+        indexTerms: ['nonlinearity', 'ddt', 'differential uniformity', 'algebraic degree', 'fixed points', 'sac', 'matsui', 'biham-shamir', 's-box analysis'],
+      },
+      {
+        id: 'permutation-properties',
+        title: 'Permutation Properties',
+        body:
+          'The Permutation analysis panel describes the diffusion structure of a bit-routing layer. It decomposes the mapping into a Cycle Structure, showing the number and length of orbits. Displacement measures how far each bit travels from its input position to its output position. Inter-Block Spread calculates the Branch Number—the minimum number of active input and output blocks in a nonempty transition. A high branch number indicates strong diffusion, where a single change spreads rapidly across the state; this is the structural goal of the AES ShiftRows and MixColumns combination.',
+        indexTerms: ['cycle structure', 'displacement', 'branch number', 'diffusion', 'avalanche', 'permutation analysis', 'block spread'],
+      },
+      {
+        id: 'lfsr-properties',
+        title: 'LFSR Properties',
+        body:
+          'Linear Feedback Shift Register (LFSR) analysis focuses on the period and primitivity of the feedback polynomial. A Primitive polynomial produces a maximum-length sequence of period 2^n − 1, where every non-zero state is visited once. If an LFSR is non-primitive, the keystream repeats prematurely, destroying secrecy. Regardless of period, any LFSR is structurally vulnerable: an attacker who observes 2n consecutive output bits can use the Berlekamp-Massey algorithm to recover the full internal state and predict all future bits.',
+        indexTerms: ['lfsr', 'period', 'primitivity', 'maximum length', 'berlekamp-massey', 'feedback taps'],
+      },
+      {
+        id: 'plugboard-properties',
+        title: 'Plugboard Properties',
+        body:
+          'The Plugboard panel analyzes reciprocal substitutions (swapped pairs). It counts the number of wired pairs and identifies Fixed Points (unpaired letters). In classical cryptanalysis, such as Turing’s Bombe attack on Enigma, the absence of fixed points was a critical constraint: if a letter could not encrypt to itself, many potential wheel settings could be eliminated immediately. A weaker plugboard with many fixed points reduces the number of constraints available for crib attacks.',
+        indexTerms: ['plugboard', 'reciprocal', 'pairs', 'fixed points', 'turing', 'bombe', 'enigma'],
+      },
+      {
+        id: 'reflector-properties',
+        title: 'Reflector Properties',
+        body:
+          'A Reflector is a special case of a fixed-point-free involution. The analysis verifies that every letter is paired with exactly one other letter and that no letter maps to itself. This self-reciprocal property was the heart of the Enigma machine, allowing the same device settings to both encrypt and decrypt. However, this symmetry was also its greatest weakness: it guaranteed that no letter could ever encrypt to itself, providing the \"hard negative\" constraint that made crib-based attacks possible.',
+        indexTerms: ['reflector', 'involution', 'self-reciprocal', 'enigma weakness', 'classical analysis'],
+      },
+      {
+        id: 'modulus-properties',
+        title: 'Modulus Properties',
+        body:
+          'The Modulus panel describes the structure of the multiplicative group for modular arithmetic. It checks for Primality and calculates the Group Order (Euler’s totient function, φ(n)). A prime modulus guarantees that every non-zero element has a modular inverse, a requirement for Diffie-Hellman and other discrete-log constructions. For RSA-style modules, the panel identifies small factors; the modulus must be the product of two primes, and the exponent must be coprime to φ(n) for the inverse operation to exist.',
+        indexTerms: ['modulus', 'primality', 'phi', 'totient', 'group order', 'modular inverse', 'rsa', 'diffie-hellman'],
+      },
+      {
+        id: 'transformation-lookup',
+        title: 'Substitution Lookup (S-Box) View',
+        body:
+          'The Substitution View visualizes how the S-Box module processes data. It groups the incoming bit stream into fixed-width chunks (e.g., 4, 6, or 8 bits), treats each chunk as a numerical index, and performs a table lookup to produce the output chunk. The view includes a grid representation of the substitution table, highlighting the active lookup cell and its context within the row and column. For DES-style S-Boxes, it supports the specialized outer-bits/inner-bits row-column mapping.',
+        indexTerms: ['sbox view', 'lookup table', 'chunking', 'substitution grid', 'des layout'],
+      },
+      {
+        id: 'transformation-routing',
+        title: 'Routing & Permutation Views',
+        body:
+          'Routing transformations reorder or select signals without changing their underlying values. The Bit Remap (Permutation) view shows explicit wiring between input and output positions. Bit Select extracts specific indices while dropping others (like DES PC-1/PC-2), and Bit Expand copies indices to increase width (like DES E-expansion). The Bit Shifter view animates logical shifts and rotations, highlighting where bits wrap around or where zero-filling occurs. Symbol-domain versions provide the same orbit-preserving reordering for visible character strings.',
+        indexTerms: ['permutation view', 'bit remap', 'bit select', 'bit expand', 'bit shifter', 'rotation', 'symbol permutation'],
+      },
+      {
+        id: 'transformation-logic',
+        title: 'Bitwise Logic & Gate Views',
+        body:
+          'Logic views visualize bit-by-bit control and comparison. The XOR view highlights bit disagreements, where the output is 1 only if the inputs differ. The Pulse Gate view shows a signal passing through or being blocked by a one-bit control pulse. Majority Vote displays three-way voting logic, and the Mux/Demux views show active routing where a select line chooses which path a signal follows. These views make control-flow and conditional logic in a cipher explicit and visible.',
+        indexTerms: ['xor view', 'gate view', 'majority vote', 'mux', 'demux', 'logic gates', 'control flow'],
+      },
+      {
+        id: 'transformation-structural',
+        title: 'Structural & Arithmetic Views',
+        body:
+          'Structural transforms manage block boundaries and numerical values. BitSplit shows a single bus dividing into left and right sub-blocks (common in Feistel networks), while BitPad and BitUnpad show the addition or removal of padding bits to meet target widths. Word operations like MulMod, ModExp, and ModInverse visualize modular arithmetic, treating bit vectors as unsigned integers and showing the mathematical result alongside the bit-level transformation.',
+        indexTerms: ['bitsplit', 'bitpad', 'bitunpad', 'modular multiplication', 'modular exponentiation', 'modular inverse', 'word operations'],
       },
     ],
   },
