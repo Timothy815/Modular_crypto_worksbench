@@ -7161,6 +7161,17 @@ body.canvas-resizing {
   line-height: 1.5;
 }
 
+.sbox-analysis-consequence {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--ink);
+  line-height: 1.6;
+  padding: 6px 10px;
+  border-left: 2px solid var(--accent, #5a7fc7);
+  background: rgba(90, 127, 199, 0.06);
+  border-radius: 0 4px 4px 0;
+}
+
 .sbox-ddt-section {
   display: grid;
   gap: 6px;

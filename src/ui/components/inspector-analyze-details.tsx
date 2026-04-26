@@ -17,6 +17,64 @@ import {
 import { KNOWN_SBOX_REFERENCES } from '../../engine/analysis/sbox-analysis';
 import type { TutorialStep } from '../tutorials';
 
+function getNLConsequence(nl: number, maxNL: number): string {
+  if (nl === 0) {
+    return 'Every output bit is a linear function of the inputs. An attacker can recover the S-box mapping with a handful of known pairs — no brute force needed. In a cipher, linear S-boxes make the whole construction solvable with linear algebra.';
+  }
+  if (nl < maxNL * 0.5) {
+    return 'Strong linear approximations exist. Matsui\'s linear cryptanalysis can exploit these to recover key bits with far fewer plaintexts than brute force — the weaker the nonlinearity, the fewer pairs needed.';
+  }
+  if (nl < maxNL * 0.75) {
+    return 'Moderate nonlinearity. Linear approximations have reduced but usable bias. Linear cryptanalysis is harder but not closed off — a determined attacker with enough data can still find key information.';
+  }
+  return 'High nonlinearity. Linear approximations are weak. Matsui\'s linear cryptanalysis needs an impractical number of known plaintexts — this S-box actively resists the most common attack on block ciphers.';
+}
+
+function getDDTConsequence(maxUniformity: number, maxIdeal: number, inputBits: number): string {
+  const n = 1 << inputBits;
+  if (maxUniformity === n) {
+    return `Every input difference produces a completely predictable output difference. Differential cryptanalysis (Biham-Shamir) succeeds with a single chosen plaintext pair. This S-box provides zero differential resistance.`;
+  }
+  if (maxUniformity > maxIdeal * 2) {
+    return `High differential uniformity means certain input differences propagate to output differences with high probability. A differential characteristic through this S-box is easy to build and exploit across rounds.`;
+  }
+  if (maxUniformity <= maxIdeal) {
+    return `Optimal for this size. Every nonzero input difference spreads to output differences as evenly as possible. Differential characteristics through this S-box have the lowest achievable probability — Biham-Shamir differential cryptanalysis is maximally expensive.`;
+  }
+  return `Above the ideal threshold. Some differential characteristics propagate with higher than necessary probability, giving an attacker more leverage than an optimal design would allow.`;
+}
+
+function getDegreeConsequence(degree: number, maxDegree: number): string {
+  if (degree <= 1) {
+    return 'Degree 1 means every output bit is an affine (linear) function of the inputs. The cipher reduces entirely to a system of linear equations — solvable in milliseconds by any computer, regardless of key length.';
+  }
+  if (degree < maxDegree - 1) {
+    return `Low algebraic degree. Algebraic attacks using Gröbner bases or XL algorithms become tractable — the polynomial system describing this S-box has less complexity than an ${maxDegree}-degree system. Key recovery may be feasible without exhaustive search.`;
+  }
+  return `High algebraic degree. The polynomial system describing this S-box is maximally complex. Algebraic attacks face exponentially hard equations — this is what makes modern ciphers resistant to algebraic cryptanalysis.`;
+}
+
+function getFixedPointConsequence(fixedPoints: number): string {
+  if (fixedPoints === 0) {
+    return 'No input maps to itself — good. In certain cipher modes, fixed points create inputs where a block encrypts to itself, which can simplify attacker models or reveal information about the key.';
+  }
+  if (fixedPoints === 1) {
+    return '1 input maps to itself (S(x) = x). In ECB mode this creates a block that encrypts to itself unchanged. In differential analysis, this means one trivial "characteristic" always holds.';
+  }
+  return `${fixedPoints} inputs map to themselves (S(x) = x). Multiple fixed points increase the probability that a real message block passes through unchanged, creating exploitable patterns in certain cipher modes.`;
+}
+
+function getBranchNumberConsequence(branchNumber: number, blockCount: number): string {
+  if (branchNumber <= 2) {
+    return 'Minimum branch number. A single active difference in one input block stays isolated in one output block after this permutation. Full avalanche requires many rounds — this P-layer is not doing useful diffusion work.';
+  }
+  const roundsEstimate = Math.ceil(Math.log(blockCount) / Math.log(branchNumber - 1));
+  if (branchNumber >= blockCount) {
+    return `Maximum branch number for this block structure. Any single active difference reaches every output block in one pass — one round through this permutation achieves complete diffusion. This is what AES\'s ShiftRows+MixColumns combination targets.`;
+  }
+  return `Each active difference activates at least ${branchNumber - 1} output blocks. Roughly ${roundsEstimate} rounds needed to fully diffuse a single-block difference across all ${blockCount} blocks. Higher branch numbers reduce the number of rounds needed for security.`;
+}
+
 interface CollapsedAnalyzeSections {
   tick: boolean;
   selectedIssues: boolean;
@@ -873,6 +931,9 @@ export function InspectorAnalyzeDetails({
               <p className="sbox-analysis-note">
                 Measures distance from all affine (linear) functions. Higher values indicate less linear structure.
               </p>
+              <p className="sbox-analysis-consequence">
+                {getNLConsequence(staticSBoxAnalysis.lat.nonlinearity, staticSBoxAnalysis.lat.maxTheoreticalNonlinearity)}
+              </p>
               {staticSBoxAnalysis.lat.componentNonlinearity.length > 0 ? (
                 <div className="sbox-comp-nl-row">
                   {staticSBoxAnalysis.lat.componentNonlinearity.map((nl, j) => {
@@ -920,6 +981,9 @@ export function InspectorAnalyzeDetails({
               </div>
               <p className="sbox-analysis-note">
                 For each nonzero input difference Δ_in, counts how many input pairs produce a given output difference Δ_out. Lower is better.
+              </p>
+              <p className="sbox-analysis-consequence">
+                {getDDTConsequence(staticSBoxAnalysis.ddt.maxUniformity, staticSBoxAnalysis.ddt.maxIdealUniformity, staticSBoxAnalysis.inputBits)}
               </p>
             </div>
 
@@ -1048,6 +1112,9 @@ export function InspectorAnalyzeDetails({
               <p className="sbox-analysis-note">
                 Maximum degree of the Boolean coordinate functions in algebraic normal form. Higher degree resists algebraic attacks.
               </p>
+              <p className="sbox-analysis-consequence">
+                {getDegreeConsequence(staticSBoxAnalysis.algebraicDegree.degree, staticSBoxAnalysis.algebraicDegree.maxTheoreticalDegree)}
+              </p>
             </div>
 
             <div className="sbox-analysis-metric">
@@ -1064,6 +1131,9 @@ export function InspectorAnalyzeDetails({
               </div>
               <p className="sbox-analysis-note">
                 Positions where the output equals the input unchanged. A fixed point at zero can simplify certain attack models.
+              </p>
+              <p className="sbox-analysis-consequence">
+                {getFixedPointConsequence(staticSBoxAnalysis.fixedPoints)}
               </p>
             </div>
 
@@ -1319,6 +1389,9 @@ export function InspectorAnalyzeDetails({
                     </div>
                     <p className="sbox-analysis-note">
                       Min over all nonempty input-block subsets A of (|A| + |activated output blocks|). Higher = better diffusion. Minimum possible = 2.
+                    </p>
+                    <p className="sbox-analysis-consequence">
+                      {getBranchNumberConsequence(bs.branchNumber, blockCount)}
                     </p>
                     {blockCount <= 16 ? (
                       <div className="sbox-ddt-section">
