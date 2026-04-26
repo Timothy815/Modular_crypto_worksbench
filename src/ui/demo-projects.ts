@@ -3534,6 +3534,35 @@ export const demoProjects: DemoProject[] = [
       'strong-out': { x: 880, y: 820 },
     },
   },
+  {
+    id: 'visible-key-selection',
+    name: 'Visible Key Selection',
+    group: 'Key Routing',
+    summary: 'One 16-bit key bus feeds two explicit selection steps: a contiguous BitWindow slice and a non-contiguous BitSelect parity-drop, so the difference is visible on the canvas.',
+    pipeline: 'HexSource -> BitWindow / BitSelect -> BitOutput comparison',
+    project: {
+      modules: [
+        { id: 'keybus', defId: 'HexSource', params: { value: 'A5C3' } },
+        { id: 'window', defId: 'BitWindow', params: { start: 0, width: 8 } },
+        { id: 'select', defId: 'BitSelect', params: { order: '0,1,2,3,4,5,6,8,9,10,11,12,13,14' } },
+        { id: 'out-window', defId: 'BitOutput', params: {} },
+        { id: 'out-select', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'keybus', port: 'out' }, to: { moduleId: 'window', port: 'in' } },
+        { from: { moduleId: 'keybus', port: 'out' }, to: { moduleId: 'select', port: 'in' } },
+        { from: { moduleId: 'window', port: 'out' }, to: { moduleId: 'out-window', port: 'in' } },
+        { from: { moduleId: 'select', port: 'out' }, to: { moduleId: 'out-select', port: 'in' } },
+      ],
+    },
+    layout: {
+      keybus: { x: 80, y: 200 },
+      window: { x: 380, y: 100 },
+      select: { x: 380, y: 300 },
+      'out-window': { x: 700, y: 100 },
+      'out-select': { x: 700, y: 300 },
+    },
+  },
 ];
 
 export function getDefaultDemoProject(projects: DemoProject[]): DemoProject | null {

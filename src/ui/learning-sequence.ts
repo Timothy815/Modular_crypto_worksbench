@@ -130,6 +130,8 @@ const ITEM_ORDER_HINTS: Record<string, number> = {
   'repair-the-iv': 100,
   'visible-subkey-bus': 110,
   'repair-the-key-window': 110,
+  'visible-key-selection': 112,
+  'repair-the-key-selection': 112,
   'key-schedule-workshop': 120,
   keystream: 130,
   'gated-keystream': 140,

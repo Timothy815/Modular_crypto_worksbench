@@ -82,6 +82,7 @@ import { BitSplit } from './bit-split';
 import { BitPad } from './bit-pad';
 import { BitUnpad } from './bit-unpad';
 import { BitWindow } from './bit-window';
+import { BitSelect } from './bit-select';
 import { RepeatBitsToLength } from './repeat-bits-to-length';
 import { RepeatBitsToMatch } from './repeat-bits-to-match';
 import { PadBitsToMatch } from './pad-bits-to-match';
@@ -176,6 +177,7 @@ export {
   BitPad,
   BitUnpad,
   BitWindow,
+  BitSelect,
   RepeatBitsToLength,
   RepeatBitsToMatch,
   PadBitsToMatch,
@@ -271,6 +273,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [BitPad.id]: BitPad,
   [BitUnpad.id]: BitUnpad,
   [BitWindow.id]: BitWindow,
+  [BitSelect.id]: BitSelect,
   [RepeatBitsToLength.id]: RepeatBitsToLength,
   [RepeatBitsToMatch.id]: RepeatBitsToMatch,
   [PadBitsToMatch.id]: PadBitsToMatch,

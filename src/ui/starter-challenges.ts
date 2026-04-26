@@ -40,6 +40,7 @@ const routedClockKeystreamProject = demoProjects.find((project) => project.id ==
 const advancedRotorSteppingProject = demoProjects.find((project) => project.id === 'advanced-rotor-stepping');
 const visibleSymbolScrambleProject = demoProjects.find((project) => project.id === 'visible-symbol-scramble');
 const visibleSubkeyBusProject = demoProjects.find((project) => project.id === 'visible-subkey-bus');
+const visibleKeySelectionProject = demoProjects.find((project) => project.id === 'visible-key-selection');
 const multiplyCompareUnpadProject = demoProjects.find((project) => project.id === 'multiply-compare-unpad');
 const visibleMessageWindowProject = demoProjects.find((project) => project.id === 'visible-message-window');
 const toyRsaProject = demoProjects.find((project) => project.id === 'toy-rsa');
@@ -161,6 +162,9 @@ if (!visibleSymbolScrambleProject) {
 if (!visibleSubkeyBusProject) {
   throw new Error('Expected visible-subkey-bus demo project to seed starter challenges.');
 }
+if (!visibleKeySelectionProject) {
+  throw new Error('Expected visible-key-selection demo project to seed starter challenges.');
+}
 if (!multiplyCompareUnpadProject) {
   throw new Error('Expected multiply-compare-unpad demo project to seed starter challenges.');
 }
@@ -272,6 +276,8 @@ const visibleSymbolScrambleTarget = cloneProject(visibleSymbolScrambleProject.pr
 const brokenVisibleSymbolScrambleStart = cloneProject(visibleSymbolScrambleProject.project);
 const visibleSubkeyBusTarget = cloneProject(visibleSubkeyBusProject.project);
 const brokenVisibleSubkeyBusStart = cloneProject(visibleSubkeyBusProject.project);
+const visibleKeySelectionTarget = cloneProject(visibleKeySelectionProject.project);
+const brokenVisibleKeySelectionStart = cloneProject(visibleKeySelectionProject.project);
 const multiplyCompareUnpadTarget = cloneProject(multiplyCompareUnpadProject.project);
 const brokenMultiplyCompareUnpadStart = cloneProject(multiplyCompareUnpadProject.project);
 const visibleMessageWindowTarget = cloneProject(visibleMessageWindowProject.project);
@@ -394,6 +400,15 @@ if (!brokenWindowTwo) {
   throw new Error('Expected visible-subkey-bus demo project to contain window-2.');
 }
 brokenWindowTwo.params.start = 4;
+
+const brokenBitSelect = brokenVisibleKeySelectionStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'select',
+);
+if (!brokenBitSelect) {
+  throw new Error('Expected visible-key-selection demo project to contain a select module.');
+}
+// Break it by swapping indices 6 and 7 — position 7 was the dropped parity bit, now included
+brokenBitSelect.params.order = '0,1,2,3,4,5,7,8,9,10,11,12,13,14';
 
 const brokenSymbolWindowTwo = brokenVisibleMessageWindowStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'window-2',
@@ -1859,6 +1874,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The encryption and decryption branches are already correct.',
       'Encrypt-then-MAC means the receiver should recompute the tag from ciphertext, not from recovered plaintext.',
       'Follow the input into the receiver-side XOR that feeds the verification hash and reconnect it to the protected message branch.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-key-selection',
+    title: 'Repair the Key Selection',
+    projectId: 'visible-key-selection',
+    group: 'Key Routing',
+    stage: 'streams-and-scheduling',
+    order: 115,
+    recommendedAfter: ['visible-subkey-bus'],
+    difficulty: 'intermediate',
+    prompt:
+      'The BitSelect module in this workspace is selecting the wrong bit from position 6 onward. It is currently including position 7 instead of skipping it — but position 7 is the parity bit that should be dropped. Restore the selection order so only positions 0-6 and 8-14 are kept and the output matches the reference.',
+    startingProject: brokenVisibleKeySelectionStart,
+    startingLayout: cloneProject(visibleKeySelectionProject.layout),
+    targetProject: visibleKeySelectionTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Only the BitSelect module needs changing.',
+      'The original drops position 7 and keeps positions 0-6 and 8-14.',
+      'The order param is a comma-separated list — count the entries and find the one that should be 6 not 7.',
     ],
   },
 ];

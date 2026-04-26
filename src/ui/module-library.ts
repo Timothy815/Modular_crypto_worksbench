@@ -532,6 +532,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when one visible key bus should feed different sub-keys into different rounds without hiding the routing in iterator magic.',
     searchTerms: ['window', 'slice', 'sub-key', 'key bus', 'extract', 'bits', 'schedule', 'framing', 'routing'],
   },
+  BitSelect: {
+    sectionId: 'framing-routing',
+    sortOrder: 52,
+    purpose: 'Selects arbitrary non-contiguous bits from an input and emits them in a specified order.',
+    detail: 'Use this when you need to drop specific positions (like DES parity bits) or pick a non-contiguous subset in a custom order. BitWindow is a simpler choice for contiguous slices.',
+    searchTerms: ['select', 'compression permutation', 'permutation choice', 'PC-1', 'PC-2', 'DES', 'drop bits', 'non-contiguous', 'framing', 'routing', 'key schedule'],
+  },
   RepeatBitsToLength: {
     sectionId: 'framing-routing',
     sortOrder: 55,

@@ -10,6 +10,12 @@ export type { SBoxAnalysis } from '../engine/analysis/sbox-analysis';
 import { computePermutationAnalysis } from '../engine/analysis/permutation-analysis';
 import type { PermutationAnalysis } from '../engine/analysis/permutation-analysis';
 export type { PermutationAnalysis } from '../engine/analysis/permutation-analysis';
+import { getLFSRAnalysisFromParams } from '../engine/analysis/lfsr-analysis';
+export type { LFSRAnalysis } from '../engine/analysis/lfsr-analysis';
+import { getPlugboardAnalysisFromParams, getReflectorAnalysisFromParams } from '../engine/analysis/plugboard-analysis';
+export type { PlugboardAnalysis, ReflectorAnalysis } from '../engine/analysis/plugboard-analysis';
+import { getModulusAnalysisFromParams } from '../engine/analysis/modexp-analysis';
+export type { ModulusAnalysis } from '../engine/analysis/modexp-analysis';
 import type {
   Connection,
   ExecutionResult,
@@ -325,6 +331,9 @@ export function getTransformationView(
   }
   if (entry.defId === 'BitWindow') {
     return getBitWindowTransformation(entry, project, registry);
+  }
+  if (entry.defId === 'BitSelect') {
+    return getBitSelectTransformation(entry, project, registry);
   }
   if (entry.defId === 'MulMod') {
     return getMulModTransformation(entry);
@@ -1256,6 +1265,78 @@ function getBitWindowTransformation(
   };
 }
 
+function getBitSelectTransformation(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): RoutingTransformationView | null {
+  const resolved = resolveTraceModuleInstance(entry.moduleId, project, registry);
+  if (!resolved) {
+    return null;
+  }
+
+  const input = entry.inputs.in;
+  const output = entry.outputs.out;
+  if (input?.type !== 'bits' || output?.type !== 'bits') {
+    return null;
+  }
+
+  const orderParam = resolved.instance.params.order;
+  const order: number[] =
+    typeof orderParam === 'string'
+      ? orderParam
+          .split(',')
+          .map((p) => Number(p.trim()))
+          .filter((n) => Number.isInteger(n) && n >= 0)
+      : [];
+
+  if (order.length === 0) {
+    return null;
+  }
+
+  const rows = order.map((inputIndex, outputIndex) => ({
+    inputIndex,
+    inputValue: input.value[inputIndex] ?? 0,
+    outputIndex,
+    outputValue: output.value[outputIndex] ?? 0,
+    kind: 'line' as const,
+  }));
+
+  const laneHeight = 32;
+  const laneGap = 6;
+  const laneStep = laneHeight + laneGap;
+  const laneOffset = laneHeight / 2;
+  const svgHeight = Math.max(laneHeight, rows.length * laneHeight + Math.max(0, rows.length - 1) * laneGap);
+  const rowsWithPositions = rows.map((row, laneIndex) => ({
+    ...row,
+    inputY: laneOffset + laneIndex * laneStep,
+    outputY: laneOffset + laneIndex * laneStep,
+    color: getPermutationWireColor(row.inputIndex),
+  }));
+
+  const droppedCount = input.value.length - order.length;
+  const selectedPositions = order.join(', ');
+
+  return {
+    entry,
+    kind: 'routing',
+    title: 'Bit Select Mapping',
+    copy:
+      'BitSelect picks arbitrary non-contiguous positions from the input and emits them in the specified order. Positions not listed are permanently dropped — this is how DES PC-1 strips parity bits and PC-2 extracts each round subkey.',
+    configLabel: 'Selected positions',
+    configValue: selectedPositions,
+    middleLabel: 'Selection',
+    rows: rowsWithPositions,
+    inputLane: rowsWithPositions,
+    outputLane: rowsWithPositions,
+    svgHeight,
+    summary:
+      droppedCount > 0
+        ? `Selects ${order.length} of ${input.value.length} input bits. ${droppedCount} bit${droppedCount !== 1 ? 's' : ''} dropped permanently.`
+        : `Selects all ${order.length} bits — output order differs from input order.`,
+  };
+}
+
 function parsePermutationOrder(value: unknown): number[] {
   if (typeof value !== 'string') {
     return [];
@@ -1632,4 +1713,20 @@ export function formatLinkedRotorFieldValue(fieldKey: string, value: unknown) {
   }
 
   return String(value ?? '');
+}
+
+export function getLFSRAnalysis(params: Record<string, unknown>) {
+  return getLFSRAnalysisFromParams(params);
+}
+
+export function getPlugboardAnalysis(params: Record<string, unknown>) {
+  return getPlugboardAnalysisFromParams(params);
+}
+
+export function getReflectorAnalysis(params: Record<string, unknown>) {
+  return getReflectorAnalysisFromParams(params);
+}
+
+export function getModulusAnalysis(params: Record<string, unknown>) {
+  return getModulusAnalysisFromParams(params);
 }

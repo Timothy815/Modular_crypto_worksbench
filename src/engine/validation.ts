@@ -41,6 +41,7 @@ import { validateBitSplitParam } from './modules/bit-split';
 import { validateBitPadParam } from './modules/bit-pad';
 import { validateBitUnpadParam } from './modules/bit-unpad';
 import { validateBitWindowParam } from './modules/bit-window';
+import { validateBitSelectOrderParam, parseBitSelectOrder } from './modules/bit-select';
 import { validateByteRotateParam } from './modules/byte-rotate';
 import { validateBroadcastBitsParam } from './modules/broadcast-bits';
 import { validateBitsSequenceToTickedParam } from './modules/bits-sequence-to-ticked';
@@ -269,6 +270,13 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'BitWindow') {
     return validateBitWindowParam(field.key, value);
+  }
+
+  if (def.id === 'BitSelect') {
+    if (field.key === 'order') {
+      return validateBitSelectOrderParam(value);
+    }
+    return null;
   }
 
   if (def.id === 'RepeatBitsToLength') {
@@ -540,6 +548,15 @@ function inferStaticBitWidth(
           : null;
       break;
     }
+    case 'BitSelect': {
+      try {
+        const order = parseBitSelectOrder(instance.params.order);
+        width = order.length;
+      } catch {
+        width = null;
+      }
+      break;
+    }
     default:
       width = null;
   }
@@ -687,6 +704,45 @@ function validateBitWidthConstraints(
           message: `Module "${moduleInstance.id}" parameters "start" and "width" are invalid. BitWindow range must fit within the input width (${inputWidth}).`,
           moduleId: moduleInstance.id,
         });
+      }
+    }
+
+    if (def.id === 'BitSelect') {
+      const upstream = incomingConnections.get(`${moduleInstance.id}:in`);
+      if (!upstream) {
+        continue;
+      }
+
+      let order: number[];
+      try {
+        order = parseBitSelectOrder(moduleInstance.params.order);
+      } catch {
+        continue;
+      }
+
+      const inputWidth = getWidth(upstream.moduleId);
+      if (inputWidth !== null) {
+        const maxIndex = Math.max(...order);
+        if (maxIndex >= inputWidth) {
+          issues.push({
+            code: 'invalid-param-type',
+            message: `Module "${moduleInstance.id}" BitSelect index ${maxIndex} is out of range for input width ${inputWidth}.`,
+            moduleId: moduleInstance.id,
+          });
+        }
+      }
+
+      const seen = new Set<number>();
+      for (const index of order) {
+        if (seen.has(index)) {
+          issues.push({
+            code: 'invalid-param-type',
+            message: `Module "${moduleInstance.id}" BitSelect index ${index} appears more than once in the selection order.`,
+            moduleId: moduleInstance.id,
+          });
+          break;
+        }
+        seen.add(index);
       }
     }
 
