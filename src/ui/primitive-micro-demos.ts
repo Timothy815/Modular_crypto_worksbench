@@ -1894,6 +1894,64 @@ const MULTI_COND_SWITCH_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const BIT_SELECT_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'BitSelect',
+  name: 'BitSelect Micro Demo',
+  summary: 'Minimal compression permutation: an 8-bit source passes through BitSelect which drops 2 bits and reorders the rest, producing a 6-bit output.',
+  pipeline: 'BitSource(8) -> BitSelect(order:0,1,2,4,5,7) -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'select', defId: 'BitSelect', params: { order: '0,1,2,4,5,7', inputWidth: 8 } },
+        { id: 'source', defId: 'BitSource', params: { stream: [1, 0, 1, 1, 0, 1, 0, 1] } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'select', port: 'in' } },
+        { from: { moduleId: 'select', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        source: { x: 76, y: 176 },
+        select: { x: 360, y: 176 },
+        out: { x: 640, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const BIT_EXPAND_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'BitExpand',
+  name: 'BitExpand Micro Demo',
+  summary: 'Minimal expansion permutation: a 4-bit source passes through BitExpand which repeats two boundary bits, producing a 6-bit output.',
+  pipeline: 'BitSource(4) -> BitExpand(order:3,0,1,2,3,0) -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'expand', defId: 'BitExpand', params: { order: '3,0,1,2,3,0', inputWidth: 4 } },
+        { id: 'source', defId: 'BitSource', params: { stream: [1, 0, 1, 1] } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'expand', port: 'in' } },
+        { from: { moduleId: 'expand', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        source: { x: 76, y: 176 },
+        expand: { x: 360, y: 176 },
+        out: { x: 640, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   MUX_MICRO_DEMO,
   DEMUX_MICRO_DEMO,
@@ -1951,6 +2009,8 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   BYTE_ROUND_ITERATOR_MICRO_DEMO,
   CLOCKED_BYTE_ROUND_ITERATOR_MICRO_DEMO,
   CONDITIONAL_BRANCH_DEMO_MICRO_DEMO,
+  BIT_SELECT_MICRO_DEMO,
+  BIT_EXPAND_MICRO_DEMO,
 ];
 
 const PRIMITIVE_MICRO_DEMO_BY_DEF_ID = Object.fromEntries(

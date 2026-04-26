@@ -42,6 +42,7 @@ import { validateBitPadParam } from './modules/bit-pad';
 import { validateBitUnpadParam } from './modules/bit-unpad';
 import { validateBitWindowParam } from './modules/bit-window';
 import { validateBitSelectOrderParam, parseBitSelectOrder } from './modules/bit-select';
+import { validateBitExpandOrderParam, parseBitExpandOrder } from './modules/bit-expand';
 import { validateByteRotateParam } from './modules/byte-rotate';
 import { validateBroadcastBitsParam } from './modules/broadcast-bits';
 import { validateBitsSequenceToTickedParam } from './modules/bits-sequence-to-ticked';
@@ -275,6 +276,13 @@ function getModuleSpecificParamMessage(
   if (def.id === 'BitSelect') {
     if (field.key === 'order') {
       return validateBitSelectOrderParam(value);
+    }
+    return null;
+  }
+
+  if (def.id === 'BitExpand') {
+    if (field.key === 'order') {
+      return validateBitExpandOrderParam(value);
     }
     return null;
   }
@@ -557,6 +565,15 @@ function inferStaticBitWidth(
       }
       break;
     }
+    case 'BitExpand': {
+      try {
+        const order = parseBitExpandOrder(instance.params.order);
+        width = order.length;
+      } catch {
+        width = null;
+      }
+      break;
+    }
     default:
       width = null;
   }
@@ -743,6 +760,32 @@ function validateBitWidthConstraints(
           break;
         }
         seen.add(index);
+      }
+    }
+
+    if (def.id === 'BitExpand') {
+      const upstream = incomingConnections.get(`${moduleInstance.id}:in`);
+      if (!upstream) {
+        continue;
+      }
+
+      let order: number[];
+      try {
+        order = parseBitExpandOrder(moduleInstance.params.order);
+      } catch {
+        continue;
+      }
+
+      const inputWidth = getWidth(upstream.moduleId);
+      if (inputWidth !== null) {
+        const maxIndex = Math.max(...order);
+        if (maxIndex >= inputWidth) {
+          issues.push({
+            code: 'invalid-param-type',
+            message: `Module "${moduleInstance.id}" BitExpand index ${maxIndex} is out of range for input width ${inputWidth}.`,
+            moduleId: moduleInstance.id,
+          });
+        }
       }
     }
 

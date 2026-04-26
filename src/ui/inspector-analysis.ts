@@ -335,6 +335,9 @@ export function getTransformationView(
   if (entry.defId === 'BitSelect') {
     return getBitSelectTransformation(entry, project, registry);
   }
+  if (entry.defId === 'BitExpand') {
+    return getBitExpandTransformation(entry, project, registry);
+  }
   if (entry.defId === 'MulMod') {
     return getMulModTransformation(entry);
   }
@@ -1334,6 +1337,84 @@ function getBitSelectTransformation(
       droppedCount > 0
         ? `Selects ${order.length} of ${input.value.length} input bits. ${droppedCount} bit${droppedCount !== 1 ? 's' : ''} dropped permanently.`
         : `Selects all ${order.length} bits — output order differs from input order.`,
+  };
+}
+
+function getBitExpandTransformation(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): RoutingTransformationView | null {
+  const resolved = resolveTraceModuleInstance(entry.moduleId, project, registry);
+  if (!resolved) {
+    return null;
+  }
+
+  const input = entry.inputs.in;
+  const output = entry.outputs.out;
+  if (input?.type !== 'bits' || output?.type !== 'bits') {
+    return null;
+  }
+
+  const orderParam = resolved.instance.params.order;
+  const order: number[] =
+    typeof orderParam === 'string'
+      ? orderParam
+          .split(',')
+          .map((p) => Number(p.trim()))
+          .filter((n) => Number.isInteger(n) && n >= 0)
+      : [];
+
+  if (order.length === 0) {
+    return null;
+  }
+
+  // Count how many times each input index is used
+  const useCounts = new Map<number, number>();
+  for (const idx of order) {
+    useCounts.set(idx, (useCounts.get(idx) ?? 0) + 1);
+  }
+
+  const rows = order.map((inputIndex, outputIndex) => ({
+    inputIndex,
+    inputValue: input.value[inputIndex] ?? 0,
+    outputIndex,
+    outputValue: output.value[outputIndex] ?? 0,
+    kind: 'line' as const,
+  }));
+
+  const laneHeight = 32;
+  const laneGap = 6;
+  const laneStep = laneHeight + laneGap;
+  const laneOffset = laneHeight / 2;
+  const svgHeight = Math.max(laneHeight, rows.length * laneHeight + Math.max(0, rows.length - 1) * laneGap);
+  const rowsWithPositions = rows.map((row, laneIndex) => ({
+    ...row,
+    inputY: laneOffset + laneIndex * laneStep,
+    outputY: laneOffset + laneIndex * laneStep,
+    color: getPermutationWireColor(row.inputIndex),
+  }));
+
+  const repeatedCount = [...useCounts.values()].filter((c) => c > 1).length;
+  const addedBits = output.value.length - input.value.length;
+
+  return {
+    entry,
+    kind: 'routing',
+    title: 'Bit Expand Mapping',
+    copy:
+      'BitExpand copies input bits to an expanded output, allowing duplicate indices. Repeated positions let one input bit feed multiple downstream slots — this is how DES E-expansion gives boundary bits dual participation in adjacent 6-bit subkey groups.',
+    configLabel: 'Expanded positions',
+    configValue: order.join(', '),
+    middleLabel: 'Expansion',
+    rows: rowsWithPositions,
+    inputLane: rowsWithPositions,
+    outputLane: rowsWithPositions,
+    svgHeight,
+    summary:
+      repeatedCount > 0
+        ? `Expands ${input.value.length} → ${output.value.length} bits (+${addedBits}). ${repeatedCount} input position${repeatedCount !== 1 ? 's' : ''} used more than once.`
+        : `Maps ${input.value.length} → ${output.value.length} bits. No repeated positions.`,
   };
 }
 

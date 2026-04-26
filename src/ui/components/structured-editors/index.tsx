@@ -9,6 +9,8 @@ import {
   swapPermutationOrderPositions,
   buildInversePermutationOrder,
 } from '../../../engine/modules/permutation';
+import { parseBitSelectOrder } from '../../../engine/modules/bit-select';
+import { parseBitExpandOrder } from '../../../engine/modules/bit-expand';
 import {
   buildIdentityPlugboardWiring,
   normalizePlugboardReciprocalWiring,
@@ -1486,6 +1488,239 @@ export function PermutationOrderEditor(props: PermutationOrderEditorProps) {
                   if (parsed.ok) {
                     onParamChange(moduleId, field.key, parsed.value);
                   }
+                }}
+              />
+              {fieldError ? <p className="field-error">{fieldError}</p> : null}
+            </label>
+          ) : fieldError ? (
+            <p className="field-error">{fieldError}</p>
+          ) : null}
+        </div>
+      </div>
+    </label>
+  );
+}
+
+// ─── BitRemapEditor ────────────────────────────────────────────────────────────
+// Shared pick-list wire editor for BitSelect (allowRepeats=false) and
+// BitExpand (allowRepeats=true).
+
+interface BitRemapEditorProps {
+  allowRepeats: boolean;
+  moduleId: string;
+  field: ParamFieldDef;
+  label: ReactNode;
+  value: unknown;
+  renderedValue: string;
+  fieldError: string | null;
+  inputWidthHint: number | null;
+  liveInputWidth: number | null;
+  isReadOnlyMode: boolean;
+  rawExpanded: boolean;
+  onToggleRawEditor: () => void;
+  onParamDraftChange: (moduleId: string, key: string, value: string) => void;
+  onParamChange: (moduleId: string, key: string, value: unknown) => void;
+}
+
+function parseBitRemapOrderSafe(value: unknown, allowRepeats: boolean): number[] | null {
+  if (typeof value !== 'string' || value.trim() === '') return null;
+  try {
+    return allowRepeats ? parseBitExpandOrder(value) : parseBitSelectOrder(value);
+  } catch {
+    return null;
+  }
+}
+
+export function BitRemapEditor(props: BitRemapEditorProps) {
+  const {
+    allowRepeats, moduleId, field, label, value, renderedValue, fieldError,
+    inputWidthHint, liveInputWidth, isReadOnlyMode, rawExpanded,
+    onToggleRawEditor, onParamDraftChange, onParamChange,
+  } = props;
+
+  const order = parseBitRemapOrderSafe(value, allowRepeats) ?? [];
+  const effectiveInputWidth = liveInputWidth ?? inputWidthHint ?? 8;
+  const [armedIndex, setArmedIndex] = useState<number | null>(null);
+
+  const inputLaneRef = useRef<HTMLDivElement | null>(null);
+  const outputLaneRef = useRef<HTMLDivElement | null>(null);
+  const inputRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const outputDivRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [wireLayout, setWireLayout] = useState<{ height: number; inputYs: number[]; outputYs: number[] } | null>(null);
+  const orderKey = order.join(',');
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      setWireLayout(
+        measureWireLayout(
+          inputLaneRef.current,
+          outputLaneRef.current,
+          inputRefs.current,
+          outputDivRefs.current as (HTMLButtonElement | null)[],
+        ),
+      );
+    };
+    const frameId = window.requestAnimationFrame(measure);
+    const observer =
+      typeof ResizeObserver !== 'undefined' && inputLaneRef.current && outputLaneRef.current
+        ? new ResizeObserver(() => measure()) : null;
+    if (observer && inputLaneRef.current && outputLaneRef.current) {
+      observer.observe(inputLaneRef.current);
+      observer.observe(outputLaneRef.current);
+    }
+    window.addEventListener('resize', measure);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      observer?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [effectiveInputWidth, orderKey]);
+
+  const commit = (nextOrder: number[]) => {
+    const serialized = nextOrder.join(',');
+    onParamDraftChange(moduleId, field.key, serialized);
+    onParamChange(moduleId, field.key, serialized);
+  };
+
+  const handleInputClick = (inputIndex: number) => {
+    if (isReadOnlyMode) return;
+    if (armedIndex === null) { setArmedIndex(inputIndex); return; }
+    if (!allowRepeats && order.includes(inputIndex)) { setArmedIndex(null); return; }
+    commit([...order, inputIndex]);
+    setArmedIndex(null);
+  };
+
+  const useCounts = new Map<number, number>();
+  for (const idx of order) useCounts.set(idx, (useCounts.get(idx) ?? 0) + 1);
+
+  const svgHeight = wireLayout?.height ?? Math.max(
+    PERMUTATION_EDITOR_PORT_HEIGHT,
+    order.length * PERMUTATION_EDITOR_PORT_HEIGHT + Math.max(0, order.length - 1) * PERMUTATION_EDITOR_PORT_GAP,
+  );
+
+  return (
+    <label className="param-field">
+      {label}
+      <div className="permutation-editor">
+        <div className="permutation-editor-meta structured-editor-meta">
+          <span className="content-status-chip">
+            {effectiveInputWidth} input{effectiveInputWidth !== 1 ? 's' : ''} · {order.length} output slot{order.length !== 1 ? 's' : ''}
+          </span>
+          <span className="content-status-chip">
+            {allowRepeats
+              ? 'Click a dot to arm it, then click any dot to append (repeats allowed)'
+              : 'Click a dot to arm it, then click any unselected dot to append'}
+          </span>
+          {armedIndex !== null ? (
+            <span className="content-status-chip">Armed input {armedIndex} — click any input dot to append</span>
+          ) : null}
+        </div>
+
+        <div className="remap-editor">
+          <div className="permutation-wire-lane remap-input-lane" ref={inputLaneRef}>
+            <span className="meta-label permutation-wire-lane-label">Input</span>
+            {Array.from({ length: effectiveInputWidth }, (_, inputIndex) => {
+              const count = useCounts.get(inputIndex) ?? 0;
+              const isSelected = count > 0;
+              const isArmed = armedIndex === inputIndex;
+              const isDisabled = !allowRepeats && isSelected && armedIndex !== null && !isArmed;
+              return (
+                <button
+                  key={`remap-input-${inputIndex}`}
+                  type="button"
+                  ref={(node) => { inputRefs.current[inputIndex] = node; }}
+                  className={[
+                    'permutation-port permutation-port-input',
+                    isArmed ? ' active' : '',
+                    isDisabled ? ' remap-port-disabled' : '',
+                    isSelected && !isArmed ? ' remap-port-selected' : '',
+                  ].join('')}
+                  onClick={() => handleInputClick(inputIndex)}
+                  style={{ color: isSelected ? getPermutationWireColor(inputIndex) : undefined }}
+                >
+                  <strong className="permutation-slot-value">{inputIndex}</strong>
+                  {allowRepeats && count > 1 ? (
+                    <span className="remap-input-dot-count">×{count}</span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="permutation-wire-canvas" aria-hidden="true" style={{ height: `${svgHeight}px` }}>
+            <svg viewBox={`0 0 220 ${svgHeight}`} preserveAspectRatio="none">
+              {order.map((inputIndex, outputIndex) => {
+                const y1 = wireLayout?.inputYs[inputIndex] ??
+                  (PERMUTATION_EDITOR_HEADER_OFFSET + PERMUTATION_EDITOR_PORT_HEIGHT / 2 +
+                    inputIndex * (PERMUTATION_EDITOR_PORT_HEIGHT + PERMUTATION_EDITOR_PORT_GAP));
+                const y2 = wireLayout?.outputYs[outputIndex] ??
+                  (PERMUTATION_EDITOR_HEADER_OFFSET + PERMUTATION_EDITOR_PORT_HEIGHT / 2 +
+                    outputIndex * (PERMUTATION_EDITOR_PORT_HEIGHT + PERMUTATION_EDITOR_PORT_GAP));
+                const color = getPermutationWireColor(inputIndex);
+                return (
+                  <g key={`remap-wire-${outputIndex}`}>
+                    <line x1="18" y1={y1} x2="202" y2={y2} stroke={color} strokeWidth="3" strokeLinecap="round" opacity="0.92" />
+                    <circle cx="18" cy={y1} r="4" fill={color} opacity="0.98" />
+                    <circle cx="202" cy={y2} r="4" fill={color} opacity="0.98" />
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+
+          <div className="permutation-wire-lane remap-output-lane" ref={outputLaneRef}>
+            <span className="meta-label permutation-wire-lane-label">Output</span>
+            {order.map((inputIndex, outputIndex) => (
+              <div
+                key={`remap-output-${outputIndex}`}
+                ref={(node) => { outputDivRefs.current[outputIndex] = node; }}
+                className="remap-output-chip"
+                style={{ borderLeftColor: getPermutationWireColor(inputIndex) }}
+              >
+                <span className="meta-label">Slot {outputIndex}</span>
+                <strong className="permutation-slot-value" style={{ color: getPermutationWireColor(inputIndex) }}>
+                  ← {inputIndex}
+                </strong>
+                {!isReadOnlyMode ? (
+                  <button
+                    type="button"
+                    className="remap-output-chip-remove"
+                    aria-label={`Remove output slot ${outputIndex}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      commit(order.filter((_, i) => i !== outputIndex));
+                    }}
+                  >
+                    ×
+                  </button>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {!isReadOnlyMode && order.length > 0 ? (
+          <div className="permutation-inline-tools" role="group" aria-label="Remap tools">
+            <button type="button" className="mini-action-button" onClick={() => { commit([]); setArmedIndex(null); }}>
+              Clear All
+            </button>
+          </div>
+        ) : null}
+
+        <div className="inspector-raw-editor">
+          <button type="button" className="mini-action-button inspector-raw-toggle" onClick={onToggleRawEditor}>
+            {rawExpanded ? 'Hide Raw CSV Order' : 'Show Raw CSV Order'}
+          </button>
+          {rawExpanded ? (
+            <label className="param-field permutation-editor-raw">
+              <span>Raw CSV Order</span>
+              <textarea
+                value={renderedValue}
+                onChange={(event) => {
+                  const rawValue = event.target.value;
+                  onParamDraftChange(moduleId, field.key, rawValue);
+                  const parsed = parseParamValue(rawValue, field);
+                  if (parsed.ok) onParamChange(moduleId, field.key, parsed.value);
                 }}
               />
               {fieldError ? <p className="field-error">{fieldError}</p> : null}

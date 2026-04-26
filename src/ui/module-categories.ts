@@ -54,6 +54,7 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   BitUnpad: 'operator',
   BitWindow: 'operator',
   BitSelect: 'operator',
+  BitExpand: 'operator',
   RepeatBitsToMatch: 'bridge',
   PadBitsToMatch: 'bridge',
   RequireBitsLengthMatch: 'bridge',

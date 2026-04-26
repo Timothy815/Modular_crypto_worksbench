@@ -532,6 +532,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when one visible key bus should feed different sub-keys into different rounds without hiding the routing in iterator magic.',
     searchTerms: ['window', 'slice', 'sub-key', 'key bus', 'extract', 'bits', 'schedule', 'framing', 'routing'],
   },
+  BitExpand: {
+    sectionId: 'framing-routing',
+    sortOrder: 53,
+    purpose: 'Maps input bits to a larger output by allowing repeated indices — expansion permutation.',
+    detail: 'Use this when a cipher step needs to widen a word by copying boundary or key bits to multiple positions. The canonical example is DES E-expansion: 32 bits → 48 bits by repeating 16 boundary bits.',
+    searchTerms: ['expand', 'expansion permutation', 'E-expansion', 'DES', 'repeat bits', 'widen', 'copy bits', 'framing', 'routing', 'key schedule'],
+  },
   BitSelect: {
     sectionId: 'framing-routing',
     sortOrder: 52,

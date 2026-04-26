@@ -3683,4 +3683,48 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       },
     ],
   },
+  {
+    id: 'visible-key-expansion',
+    title: 'Repeating Bits on Purpose',
+    group: 'Key Routing',
+    summary: 'Learn why expansion permutations exist and how BitExpand makes deliberate bit duplication explicit and visible.',
+    projectId: 'visible-key-expansion',
+    steps: [
+      {
+        id: 'expand-source',
+        title: 'A 4-Bit Input, A 6-Bit Output',
+        body: 'BitSource provides 4 bits. BitExpand will produce 6 bits from that — not by inventing new information, but by copying two of the existing bits into additional positions. The output is wider than the input.',
+        focusModuleId: 'source',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'expand-main',
+        title: 'The Order List Allows Duplicates',
+        body: 'BitExpand uses the same comma-separated index list as BitSelect, but here the same index can appear more than once. The order "3,0,1,2,3,0" picks bit 3 first, then bits 0–2, then repeats bit 3 and bit 0. Those repeated positions each produce a full output slot.',
+        focusModuleId: 'expand',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'expand-output',
+        title: 'Output Width Equals List Length',
+        body: 'Just like BitSelect, BitExpand derives its output width from the number of entries in the list. Here the list has 6 entries, so the output is 6 bits — even though the input was only 4. The extra bits are copies of existing positions, not zeros or padding.',
+        focusModuleId: 'out',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'expand-des-context',
+        title: 'Why DES Does This',
+        body: 'The DES E-expansion applies this same idea: it takes a 32-bit half-block and produces 48 bits by repeating the four boundary bits. This lets a 48-bit key mix into every bit of the expansion output — even the bits that came from adjacent positions. The expansion creates overlap that the key schedule depends on.',
+        focusModuleId: 'expand',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'expand-analyze',
+        title: 'Open Analyze To See The Duplication',
+        body: 'Select the BitExpand module and open the Analyze tab. The transformation view shows wires from each output slot back to its source input position. Positions that appear more than once have multiple wires leaving the same input dot — the duplication is explicit in the routing diagram.',
+        focusModuleId: 'expand',
+        targetStepIndex: 1,
+      },
+    ],
+  },
 ];

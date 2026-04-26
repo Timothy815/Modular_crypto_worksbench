@@ -43,6 +43,7 @@ import { InspectorAnalyzeView } from './inspector-analyze-view';
 import { InspectorAnalyzeDetails } from './inspector-analyze-details';
 import { InspectorCompareView, InspectorOutputSummary } from './inspector-analysis-output';
 import {
+  BitRemapEditor,
   PermutationOrderEditor,
   PlugboardEditor,
   ReflectorEditor,
@@ -78,10 +79,14 @@ import {
   getTransformationView,
   getSBoxAnalysisFromParams,
   getPermutationAnalysisFromParams,
+  getLFSRAnalysis,
+  getPlugboardAnalysis,
+  getReflectorAnalysis,
+  getModulusAnalysis,
   groupIssuesByTarget,
   stepHexString,
 } from '../inspector-analysis';
-import type { SBoxAnalysis, PermutationAnalysis } from '../inspector-analysis';
+import type { SBoxAnalysis, PermutationAnalysis, LFSRAnalysis, PlugboardAnalysis, ReflectorAnalysis, ModulusAnalysis } from '../inspector-analysis';
 
 interface ParameterInspectorProps {
   execution: ExecutionResult | null;
@@ -980,6 +985,10 @@ export function ParameterInspector({
     transformation: false,
     sboxProperties: false,
     permutationProperties: false,
+    lfsrProperties: false,
+    plugboardProperties: false,
+    reflectorProperties: false,
+    modulusProperties: false,
   });
   const [permutationBlockSize, setPermutationBlockSize] = useState<number | null>(null);
   const [copiedStageSignalKey, setCopiedStageSignalKey] = useState<string | null>(null);
@@ -1451,6 +1460,23 @@ export function ParameterInspector({
       permutationBlockSize ?? undefined,
     );
   }, [inspectorTab, isPermutationModule, moduleInstance, permutationBlockSize]);
+  const staticLFSRAnalysis: LFSRAnalysis | null = useMemo(() => {
+    if (inspectorTab !== 'analyze' || moduleInstance?.defId !== 'LFSR' || !moduleInstance) return null;
+    return getLFSRAnalysis(moduleInstance.params as Record<string, unknown>);
+  }, [inspectorTab, moduleInstance]);
+  const staticPlugboardAnalysis: PlugboardAnalysis | null = useMemo(() => {
+    if (inspectorTab !== 'analyze' || moduleInstance?.defId !== 'Plugboard' || !moduleInstance) return null;
+    return getPlugboardAnalysis(moduleInstance.params as Record<string, unknown>);
+  }, [inspectorTab, moduleInstance]);
+  const staticReflectorAnalysis: ReflectorAnalysis | null = useMemo(() => {
+    if (inspectorTab !== 'analyze' || moduleInstance?.defId !== 'Reflector' || !moduleInstance) return null;
+    return getReflectorAnalysis(moduleInstance.params as Record<string, unknown>);
+  }, [inspectorTab, moduleInstance]);
+  const staticModulusAnalysis: ModulusAnalysis | null = useMemo(() => {
+    if (inspectorTab !== 'analyze' || !moduleInstance) return null;
+    if (moduleInstance.defId !== 'ModExp' && moduleInstance.defId !== 'ModInverse') return null;
+    return getModulusAnalysis(moduleInstance.params as Record<string, unknown>);
+  }, [inspectorTab, moduleInstance]);
   const canBypassSelectedModule = moduleDef ? isBypassEligibleDefinition(moduleDef) : false;
   const orderedInputPorts = useMemo(
     () =>
@@ -1675,6 +1701,10 @@ export function ParameterInspector({
         staticPermutationAnalysis={staticPermutationAnalysis}
         permutationBlockSize={permutationBlockSize}
         setPermutationBlockSize={setPermutationBlockSize}
+        staticLFSRAnalysis={staticLFSRAnalysis}
+        staticPlugboardAnalysis={staticPlugboardAnalysis}
+        staticReflectorAnalysis={staticReflectorAnalysis}
+        staticModulusAnalysis={staticModulusAnalysis}
         activeLookupChunk={activeLookupChunk}
         effectiveLookupChunkIndex={effectiveLookupChunkIndex}
         setRequestedLookupChunkIndex={setRequestedLookupChunkIndex}
@@ -2558,6 +2588,41 @@ export function ParameterInspector({
                           onClick={onClick}
                         />
                       )}
+                    />
+                  );
+                }
+
+                const isBitRemapOrderField =
+                  (moduleDef.id === 'BitSelect' || moduleDef.id === 'BitExpand') &&
+                  field.key === 'order' &&
+                  field.kind === 'string';
+
+                if (isBitRemapOrderField) {
+                  const bitRemapInputWidthHint =
+                    typeof moduleInstance.params.inputWidth === 'number'
+                      ? moduleInstance.params.inputWidth
+                      : null;
+                  const bitRemapLiveInputWidth =
+                    selectedTrace?.inputs?.in?.type === 'bits'
+                      ? (selectedTrace.inputs.in.value as number[]).length
+                      : null;
+                  return (
+                    <BitRemapEditor
+                      key={field.key}
+                      label={renderParamFieldLabel(field.label, field.key, isForwardedParam)}
+                      field={field}
+                      moduleId={moduleInstance.id}
+                      value={value}
+                      renderedValue={renderedValue}
+                      fieldError={fieldError ?? null}
+                      isReadOnlyMode={isReadOnlyMode}
+                      rawExpanded={isRawEditorExpanded(moduleInstance.id, field.key)}
+                      onToggleRawEditor={() => toggleRawEditor(moduleInstance.id, field.key)}
+                      onParamDraftChange={onParamDraftChange}
+                      onParamChange={onParamChange}
+                      allowRepeats={moduleDef.id === 'BitExpand'}
+                      inputWidthHint={bitRemapInputWidthHint}
+                      liveInputWidth={bitRemapLiveInputWidth}
                     />
                   );
                 }

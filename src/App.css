@@ -2801,6 +2801,60 @@ body.dock-resizing {
   font-size: 0.88rem;
 }
 
+/* ─── BitRemapEditor ──────────────────────────────────────────────────────── */
+.remap-editor {
+  display: grid;
+  grid-template-columns: max-content 220px max-content;
+  gap: 12px;
+  align-items: start;
+  justify-content: center;
+}
+
+.remap-output-chip {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 6px;
+  height: 52px;
+  padding: 8px 9px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-panel);
+  font: inherit;
+}
+
+.remap-output-chip-remove {
+  appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--ink-muted);
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.remap-output-chip-remove:hover {
+  color: var(--ink);
+}
+
+.remap-input-dot-count {
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+}
+
+.remap-port-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.remap-port-selected {
+  border-color: color-mix(in srgb, var(--analysis-accent) 56%, var(--line));
+}
+
 .reflector-editor {
   display: grid;
   gap: 12px;

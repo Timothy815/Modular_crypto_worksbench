@@ -41,6 +41,7 @@ const advancedRotorSteppingProject = demoProjects.find((project) => project.id =
 const visibleSymbolScrambleProject = demoProjects.find((project) => project.id === 'visible-symbol-scramble');
 const visibleSubkeyBusProject = demoProjects.find((project) => project.id === 'visible-subkey-bus');
 const visibleKeySelectionProject = demoProjects.find((project) => project.id === 'visible-key-selection');
+const visibleKeyExpansionProject = demoProjects.find((project) => project.id === 'visible-key-expansion');
 const multiplyCompareUnpadProject = demoProjects.find((project) => project.id === 'multiply-compare-unpad');
 const visibleMessageWindowProject = demoProjects.find((project) => project.id === 'visible-message-window');
 const toyRsaProject = demoProjects.find((project) => project.id === 'toy-rsa');
@@ -165,6 +166,9 @@ if (!visibleSubkeyBusProject) {
 if (!visibleKeySelectionProject) {
   throw new Error('Expected visible-key-selection demo project to seed starter challenges.');
 }
+if (!visibleKeyExpansionProject) {
+  throw new Error('Expected visible-key-expansion demo project to seed starter challenges.');
+}
 if (!multiplyCompareUnpadProject) {
   throw new Error('Expected multiply-compare-unpad demo project to seed starter challenges.');
 }
@@ -278,6 +282,8 @@ const visibleSubkeyBusTarget = cloneProject(visibleSubkeyBusProject.project);
 const brokenVisibleSubkeyBusStart = cloneProject(visibleSubkeyBusProject.project);
 const visibleKeySelectionTarget = cloneProject(visibleKeySelectionProject.project);
 const brokenVisibleKeySelectionStart = cloneProject(visibleKeySelectionProject.project);
+const visibleKeyExpansionTarget = cloneProject(visibleKeyExpansionProject.project);
+const brokenVisibleKeyExpansionStart = cloneProject(visibleKeyExpansionProject.project);
 const multiplyCompareUnpadTarget = cloneProject(multiplyCompareUnpadProject.project);
 const brokenMultiplyCompareUnpadStart = cloneProject(multiplyCompareUnpadProject.project);
 const visibleMessageWindowTarget = cloneProject(visibleMessageWindowProject.project);
@@ -409,6 +415,16 @@ if (!brokenBitSelect) {
 }
 // Break it by swapping indices 6 and 7 — position 7 was the dropped parity bit, now included
 brokenBitSelect.params.order = '0,1,2,3,4,5,7,8,9,10,11,12,13,14';
+
+const brokenBitExpand = brokenVisibleKeyExpansionStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'expand',
+);
+if (!brokenBitExpand) {
+  throw new Error('Expected visible-key-expansion demo project to contain an expand module.');
+}
+// Break it by removing the second duplicate — order '3,0,1,2,3,0' becomes '3,0,1,2,1,0'
+// The repeated boundary bit (index 3) is replaced with a non-boundary bit (index 1)
+brokenBitExpand.params.order = '3,0,1,2,1,0';
 
 const brokenSymbolWindowTwo = brokenVisibleMessageWindowStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'window-2',
@@ -1898,6 +1914,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'Only the BitSelect module needs changing.',
       'The original drops position 7 and keeps positions 0-6 and 8-14.',
       'The order param is a comma-separated list — count the entries and find the one that should be 6 not 7.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-e-expansion',
+    title: 'Repair the E-Expansion',
+    projectId: 'visible-key-expansion',
+    group: 'Key Routing',
+    stage: 'streams-and-scheduling',
+    order: 114,
+    recommendedAfter: ['visible-key-selection'],
+    difficulty: 'intermediate',
+    prompt:
+      'The BitExpand module in this workspace should repeat two boundary bits — positions 3 and 0 — so the output slots are 3,0,1,2,3,0. It currently has one of those duplicates replaced by a non-boundary bit. Restore the expansion order so the correct boundary bits are repeated and the output matches the reference.',
+    startingProject: brokenVisibleKeyExpansionStart,
+    startingLayout: cloneProject(visibleKeyExpansionProject.layout),
+    targetProject: visibleKeyExpansionTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Only the BitExpand module needs changing.',
+      'The correct order is 3,0,1,2,3,0 — bit 3 appears at slot 0 and slot 4, bit 0 appears at slot 1 and slot 5.',
+      'The expansion order is a comma-separated list — find the slot that should be 3 and restore it.',
     ],
   },
 ];

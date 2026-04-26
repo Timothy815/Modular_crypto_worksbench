@@ -61,6 +61,8 @@ describe('primitive micro demos', () => {
       'ByteRoundIterator',
       'ClockedByteRoundIterator',
       'ConditionalBranchDemo',
+      'BitSelect',
+      'BitExpand',
     ]);
   });
 

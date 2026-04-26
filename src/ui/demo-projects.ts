@@ -3563,6 +3563,29 @@ export const demoProjects: DemoProject[] = [
       'out-select': { x: 700, y: 300 },
     },
   },
+  {
+    id: 'visible-key-expansion',
+    name: 'Visible Key Expansion',
+    group: 'Key Routing',
+    summary: 'A 4-bit source feeds a BitExpand module that copies two boundary bits, producing a 6-bit output — so the duplication is visible on the canvas. Contrast with BitSelect which only drops bits.',
+    pipeline: 'BitSource -> BitExpand(order:3,0,1,2,3,0) -> BitOutput',
+    project: {
+      modules: [
+        { id: 'source', defId: 'BitSource', params: { stream: [1, 0, 1, 1] } },
+        { id: 'expand', defId: 'BitExpand', params: { order: '3,0,1,2,3,0', inputWidth: 4 } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source', port: 'out' }, to: { moduleId: 'expand', port: 'in' } },
+        { from: { moduleId: 'expand', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    layout: {
+      source: { x: 80, y: 200 },
+      expand: { x: 380, y: 200 },
+      out: { x: 680, y: 200 },
+    },
+  },
 ];
 
 export function getDefaultDemoProject(projects: DemoProject[]): DemoProject | null {
