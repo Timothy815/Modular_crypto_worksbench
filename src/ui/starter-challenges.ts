@@ -43,6 +43,7 @@ const visibleSubkeyBusProject = demoProjects.find((project) => project.id === 'v
 const visibleKeySelectionProject = demoProjects.find((project) => project.id === 'visible-key-selection');
 const visibleKeyExpansionProject = demoProjects.find((project) => project.id === 'visible-key-expansion');
 const enigmaMachineProject = demoProjects.find((project) => project.id === 'enigma-machine');
+const visibleFeistelRoundProject = demoProjects.find((project) => project.id === 'visible-feistel-round');
 const multiplyCompareUnpadProject = demoProjects.find((project) => project.id === 'multiply-compare-unpad');
 const visibleMessageWindowProject = demoProjects.find((project) => project.id === 'visible-message-window');
 const toyRsaProject = demoProjects.find((project) => project.id === 'toy-rsa');
@@ -173,6 +174,9 @@ if (!visibleKeyExpansionProject) {
 if (!enigmaMachineProject) {
   throw new Error('Expected enigma-machine demo project to seed starter challenges.');
 }
+if (!visibleFeistelRoundProject) {
+  throw new Error('Expected visible-feistel-round demo project to seed starter challenges.');
+}
 if (!multiplyCompareUnpadProject) {
   throw new Error('Expected multiply-compare-unpad demo project to seed starter challenges.');
 }
@@ -290,6 +294,8 @@ const visibleKeyExpansionTarget = cloneProject(visibleKeyExpansionProject.projec
 const brokenVisibleKeyExpansionStart = cloneProject(visibleKeyExpansionProject.project);
 const enigmaMachineTarget = cloneProject(enigmaMachineProject.project);
 const brokenEnigmaMachineStart = cloneProject(enigmaMachineProject.project);
+const visibleFeistelRoundTarget = cloneProject(visibleFeistelRoundProject.project);
+const brokenVisibleFeistelRoundStart = cloneProject(visibleFeistelRoundProject.project);
 const multiplyCompareUnpadTarget = cloneProject(multiplyCompareUnpadProject.project);
 const brokenMultiplyCompareUnpadStart = cloneProject(multiplyCompareUnpadProject.project);
 const visibleMessageWindowTarget = cloneProject(visibleMessageWindowProject.project);
@@ -450,6 +456,15 @@ const brokenWiring = ['D','B','F','H','J','L','C','P','R','T','X','V','Z','N','Y
 brokenEnigmaRightRotor.params.wiring = brokenWiring;
 // right-rev must also be corrupted the same way (it mirrors the forward rotor)
 brokenEnigmaRightRev.params.wiring = brokenWiring;
+
+const brokenFeistelKey2 = brokenVisibleFeistelRoundStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'key2',
+);
+if (!brokenFeistelKey2) {
+  throw new Error('Expected visible-feistel-round demo project to contain key2.');
+}
+// Break it: zero out round 2 key — F(R1, 0) leaks structure because XOR with 0 is identity
+brokenFeistelKey2.params.stream = [0, 0, 0, 0];
 
 const brokenSymbolWindowTwo = brokenVisibleMessageWindowStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'window-2',
@@ -1987,6 +2002,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'Only the BitExpand module needs changing.',
       'The correct order is 3,0,1,2,3,0 — bit 3 appears at slot 0 and slot 4, bit 0 appears at slot 1 and slot 5.',
       'The expansion order is a comma-separated list — find the slot that should be 3 and restore it.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-feistel-round',
+    title: 'Repair the Feistel Round',
+    projectId: 'visible-feistel-round',
+    group: 'Modern Rounds',
+    stage: 'modern-bit-machines',
+    order: 135,
+    recommendedAfter: ['visible-feistel-round'],
+    difficulty: 'intermediate',
+    prompt:
+      'The round 2 key in this Feistel workspace was reset to all zeros. When the key is all zeros, XOR with it is the identity — the S-box input leaks the unmodified right half, and the round provides no real mixing. Restore the correct 4-bit key2 so the final output matches the reference.',
+    startingProject: brokenVisibleFeistelRoundStart,
+    startingLayout: cloneProject(visibleFeistelRoundProject.layout),
+    targetProject: visibleFeistelRoundTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Only key2 (BitSource id "key2") needs changing.',
+      'The correct key is [1,1,0,0] — four bits, not all zeros.',
+      'Find key2 in the inspector, edit the stream field, and re-run to compare against the reference output.',
     ],
   },
 ];

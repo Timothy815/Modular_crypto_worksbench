@@ -26,6 +26,8 @@ export interface DemoProject extends LearningSequenceMeta {
 
 const AES_SBOX_TABLE = serializeSBoxTable(generateSBoxTable(getSBoxGenerationShape(8, 8), 'aes'));
 const DES_S1_TABLE = serializeSBoxTable(generateSBoxTable(getSBoxGenerationShape(6, 4), 'des-s1'));
+// PRESENT cipher 4→4 S-box: bijective, high nonlinearity, used in Feistel round demos
+const PRESENT_SBOX_TABLE = '12,5,6,11,9,0,10,13,3,14,15,8,4,7,1,2';
 
 export const demoProjects: DemoProject[] = [
   {
@@ -3660,6 +3662,121 @@ export const demoProjects: DemoProject[] = [
       source: { x: 80, y: 200 },
       expand: { x: 380, y: 200 },
       out: { x: 680, y: 200 },
+    },
+  },
+  {
+    id: 'visible-des-f-function',
+    name: 'Visible DES F-Function',
+    group: 'Modern Rounds',
+    stage: 'modern-bit-machines',
+    order: 133,
+    recommendedAfter: ['des-s1-lookup'],
+    summary: 'The DES F-function in miniature: a 4-bit right half expands via DES-style E-expansion, mixes with a round key through XOR, passes through the DES S1 S-box, then diffuses through a P-permutation — every step is an explicit visible module.',
+    pipeline: 'BitSource(4) -> BitExpand(E-expansion 4→6) -> XOR(round key) -> SBox(6→4 DES S1) -> Permutation(P) -> BitOutput',
+    project: {
+      modules: [
+        { id: 'right-half', defId: 'BitSource', params: { stream: [1, 0, 1, 0] } },
+        { id: 'round-key', defId: 'BitSource', params: { stream: [0, 1, 1, 0, 1, 0] } },
+        { id: 'e-expand', defId: 'BitExpand', params: { order: '3,0,1,2,3,0', inputWidth: 4 } },
+        { id: 'f-xor', defId: 'XOR', params: {} },
+        { id: 's1', defId: 'SBox', params: { inputBits: '6', outputBits: '4', table: DES_S1_TABLE } },
+        { id: 'p-perm', defId: 'Permutation', params: { order: '2,0,3,1' } },
+        { id: 'output', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'right-half', port: 'out' }, to: { moduleId: 'e-expand', port: 'in' } },
+        { from: { moduleId: 'e-expand', port: 'out' }, to: { moduleId: 'f-xor', port: 'a' } },
+        { from: { moduleId: 'round-key', port: 'out' }, to: { moduleId: 'f-xor', port: 'b' } },
+        { from: { moduleId: 'f-xor', port: 'out' }, to: { moduleId: 's1', port: 'in' } },
+        { from: { moduleId: 's1', port: 'out' }, to: { moduleId: 'p-perm', port: 'in' } },
+        { from: { moduleId: 'p-perm', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      'right-half': { x: 48, y: 320 },
+      'round-key': { x: 48, y: 100 },
+      'e-expand': { x: 280, y: 320 },
+      'f-xor': { x: 520, y: 210 },
+      's1': { x: 760, y: 210 },
+      'p-perm': { x: 1000, y: 210 },
+      output: { x: 1240, y: 210 },
+    },
+  },
+  {
+    id: 'visible-feistel-round',
+    name: 'Visible Feistel Round',
+    group: 'Modern Rounds',
+    stage: 'modern-bit-machines',
+    order: 134,
+    recommendedAfter: ['visible-des-f-function'],
+    summary: 'Two explicit unrolled Feistel rounds on an 8-bit block. Each round is a separate cluster of visible modules — split, F-function, XOR, swap — so the Feistel structure is directly inspectable before the iterator abstraction is introduced.',
+    pipeline: 'HexSource -> BitSplit -> [R XOR key -> SBox -> XOR L] -> BitJoin -> BitSplit -> [R XOR key -> SBox -> XOR L] -> BitJoin -> BitOutput',
+    project: {
+      modules: [
+        // inputs
+        { id: 'block', defId: 'HexSource', params: { value: 'A3' } },
+        { id: 'key1', defId: 'BitSource', params: { stream: [0, 1, 0, 1] } },
+        { id: 'key2', defId: 'BitSource', params: { stream: [1, 1, 0, 0] } },
+        // round 1
+        { id: 'split1', defId: 'BitSplit', params: { leftWidth: 4 } },
+        { id: 'f1-xor', defId: 'XOR', params: {} },
+        { id: 'f1-sbox', defId: 'SBox', params: { table: PRESENT_SBOX_TABLE } },
+        { id: 'r1-xor', defId: 'XOR', params: {} },
+        { id: 'join1', defId: 'BitJoin', params: {} },
+        // round 2
+        { id: 'split2', defId: 'BitSplit', params: { leftWidth: 4 } },
+        { id: 'f2-xor', defId: 'XOR', params: {} },
+        { id: 'f2-sbox', defId: 'SBox', params: { table: PRESENT_SBOX_TABLE } },
+        { id: 'r2-xor', defId: 'XOR', params: {} },
+        { id: 'join2', defId: 'BitJoin', params: {} },
+        { id: 'output', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        // feed round 1
+        { from: { moduleId: 'block', port: 'out' }, to: { moduleId: 'split1', port: 'in' } },
+        // F-function round 1: F(R0, K1) = SBox(R0 XOR K1)
+        { from: { moduleId: 'split1', port: 'right' }, to: { moduleId: 'f1-xor', port: 'a' } },
+        { from: { moduleId: 'key1', port: 'out' }, to: { moduleId: 'f1-xor', port: 'b' } },
+        { from: { moduleId: 'f1-xor', port: 'out' }, to: { moduleId: 'f1-sbox', port: 'in' } },
+        // new right = L0 XOR F1
+        { from: { moduleId: 'f1-sbox', port: 'out' }, to: { moduleId: 'r1-xor', port: 'a' } },
+        { from: { moduleId: 'split1', port: 'left' }, to: { moduleId: 'r1-xor', port: 'b' } },
+        // Feistel swap: new left = R0, new right = L0 XOR F1
+        { from: { moduleId: 'split1', port: 'right' }, to: { moduleId: 'join1', port: 'a' } },
+        { from: { moduleId: 'r1-xor', port: 'out' }, to: { moduleId: 'join1', port: 'b' } },
+        // feed round 2
+        { from: { moduleId: 'join1', port: 'out' }, to: { moduleId: 'split2', port: 'in' } },
+        // F-function round 2: F(R1, K2) = SBox(R1 XOR K2)
+        { from: { moduleId: 'split2', port: 'right' }, to: { moduleId: 'f2-xor', port: 'a' } },
+        { from: { moduleId: 'key2', port: 'out' }, to: { moduleId: 'f2-xor', port: 'b' } },
+        { from: { moduleId: 'f2-xor', port: 'out' }, to: { moduleId: 'f2-sbox', port: 'in' } },
+        // new right = L1 XOR F2
+        { from: { moduleId: 'f2-sbox', port: 'out' }, to: { moduleId: 'r2-xor', port: 'a' } },
+        { from: { moduleId: 'split2', port: 'left' }, to: { moduleId: 'r2-xor', port: 'b' } },
+        // Feistel swap: new left = R1, new right = L1 XOR F2
+        { from: { moduleId: 'split2', port: 'right' }, to: { moduleId: 'join2', port: 'a' } },
+        { from: { moduleId: 'r2-xor', port: 'out' }, to: { moduleId: 'join2', port: 'b' } },
+        { from: { moduleId: 'join2', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      // inputs
+      block:   { x: 48,   y: 240 },
+      key1:    { x: 48,   y: 48  },
+      key2:    { x: 1100, y: 48  },
+      // round 1
+      split1:  { x: 280,  y: 240 },
+      'f1-xor':  { x: 500,  y: 100 },
+      'f1-sbox': { x: 720,  y: 100 },
+      'r1-xor':  { x: 720,  y: 380 },
+      join1:   { x: 940,  y: 240 },
+      // round 2
+      split2:  { x: 1160, y: 240 },
+      'f2-xor':  { x: 1380, y: 100 },
+      'f2-sbox': { x: 1600, y: 100 },
+      'r2-xor':  { x: 1600, y: 380 },
+      join2:   { x: 1820, y: 240 },
+      output:  { x: 2060, y: 240 },
     },
   },
 ];

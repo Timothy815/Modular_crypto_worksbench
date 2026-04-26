@@ -136,6 +136,9 @@ const ITEM_ORDER_HINTS: Record<string, number> = {
   'repair-the-key-selection': 112,
   'visible-key-expansion': 113,
   'repair-the-e-expansion': 113,
+  'visible-des-f-function': 133,
+  'visible-feistel-round': 134,
+  'repair-the-feistel-round': 135,
   'enigma-machine': 185,
   'repair-the-enigma-rotor': 186,
   'key-schedule-workshop': 120,
@@ -187,6 +190,9 @@ const RECOMMENDED_AFTER_HINTS: Record<string, string[]> = {
   'toy-rsa': ['multiply-compare-unpad'],
   'breaking-the-unbreakable': ['bridge'],
   'avalanche-effect': ['feistel-network'],
+  'visible-des-f-function': ['des-s1-lookup'],
+  'visible-feistel-round': ['visible-des-f-function'],
+  'repair-the-feistel-round': ['visible-feistel-round'],
 };
 
 function normalizeHintKey(item: SequencedLearningItem): string {
