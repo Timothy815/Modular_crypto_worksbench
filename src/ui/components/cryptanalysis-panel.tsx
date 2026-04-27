@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useMemo, useRef, useState } from 'react';
 
 import {
   analyzeBitDifference,
@@ -35,6 +35,11 @@ import type { WorkspaceMode } from '../workspace-mode';
 import { collectTickedOutput } from '../execution-compare';
 import { isOutputSinkDefId } from '../../engine/output-sinks';
 import type { SavedAnalysisCase } from '../workbench-document';
+import {
+  computeOutputStatistics,
+  generateNarrativeSummary,
+  type OutputStatistics,
+} from '../../engine/analysis/output-statistics';
 
 const AVALANCHE_LAB_PROJECT_ID = 'avalanche-lab';
 const AVALANCHE_LAB_TUTORIAL_ID = 'cryptanalysis-avalanche-lab';
@@ -163,6 +168,17 @@ export function CryptanalysisPanel({
   const [selectedKeySourceId, setSelectedKeySourceId] = useState<string | null>(null);
   const [selectedKeyStageIds, setSelectedKeyStageIds] = useState<string[]>([]);
   const [lastKeyScheduleRunSignature, setLastKeyScheduleRunSignature] = useState<string | null>(null);
+  const [outputStatsSinkId, setOutputStatsSinkId] = useState<string | null>(null);
+  const [outputStatsSourceId, setOutputStatsSourceId] = useState<string | null>(null);
+  const [outputStatsResult, setOutputStatsResult] = useState<OutputStatistics | null>(null);
+  const [outputStatsRunning, setOutputStatsRunning] = useState(false);
+  const [outputStatsError, setOutputStatsError] = useState<string | null>(null);
+  const [outputStatsKeyDep, setOutputStatsKeyDep] = useState<{
+    confirmed: boolean | null;
+    keyModuleFound: boolean;
+    bitsChanged: number;
+  } | null>(null);
+  const outputStatsAbortRef = useRef(false);
   const analysis = analyzeSymbolSignal(
     ciphertext.trim().length > 0 ? { type: 'symbol', value: ciphertext } : null,
   );
@@ -519,7 +535,9 @@ export function CryptanalysisPanel({
               ? 'Avalanche Explorer'
               : cryptanalysisMode === 'randomness'
                 ? 'Bitstream Randomness Lab'
-                : 'Key Schedule Analysis'}
+                : cryptanalysisMode === 'output-stats'
+                  ? 'Output Statistics'
+                  : 'Key Schedule Analysis'}
         </h2>
         <div className="workspace-mode-switch" role="radiogroup" aria-label="Workspace mode">
           <button
@@ -592,6 +610,15 @@ export function CryptanalysisPanel({
           onClick={() => onSetCryptanalysisMode('key-schedule')}
         >
           Key Schedule
+        </button>
+        <button
+          type="button"
+          role="radio"
+          aria-checked={cryptanalysisMode === 'output-stats'}
+          className={cryptanalysisMode === 'output-stats' ? 'workspace-mode-chip active' : 'workspace-mode-chip'}
+          onClick={() => onSetCryptanalysisMode('output-stats')}
+        >
+          Output Stats
         </button>
         {tutorial ? (
           <button
@@ -1654,6 +1681,400 @@ export function CryptanalysisPanel({
             </div>
           )}
         </div>
+      ) : cryptanalysisMode === 'output-stats' ? (
+        <div className="comparison-grid">
+          {/* Permanent disclaimer */}
+          <div className="comparison-card comparison-card-wide">
+            <span className="meta-label">Before You Read These Results</span>
+            <strong>Statistics measure the look of randomness, not the strength of a secret.</strong>
+            <p className="comparison-copy cryptanalysis-help-copy">
+              A Caesar cipher and ChaCha20 can both produce a flat frequency distribution at this sample size.
+              Use these charts to understand what each test reveals — and what it misses.
+            </p>
+          </div>
+
+          {/* Configuration + Run button */}
+          <div className="comparison-card comparison-card-wide">
+            <span className="meta-label">Configuration</span>
+            <strong>Output sweep</strong>
+            {flippableSources.length > 0 ? (
+              <div className="content-filter-row">
+                <label className="param-field">
+                  <span>Sweep source</span>
+                  <select
+                    value={outputStatsSourceId ?? flippableSources[0]?.moduleId ?? ''}
+                    onChange={(event) => setOutputStatsSourceId(event.target.value)}
+                  >
+                    {flippableSources
+                      .filter((s) => s.kind !== 'text-symbol-bridge')
+                      .map((source) => (
+                        <option key={source.moduleId} value={source.moduleId}>
+                          {source.moduleName} ({source.bits.length} bits)
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              </div>
+            ) : null}
+            {modernSinkOptions.length > 0 ? (
+              <div className="content-filter-row">
+                <label className="param-field">
+                  <span>Observe output</span>
+                  <select
+                    value={outputStatsSinkId ?? modernSinkOptions[0]?.moduleId ?? ''}
+                    onChange={(event) => setOutputStatsSinkId(event.target.value)}
+                  >
+                    {modernSinkOptions.map((option) => (
+                      <option key={option.moduleId} value={option.moduleId}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            ) : null}
+            {flippableSources.length === 0 || modernSinkOptions.length === 0 ? (
+              <p className="comparison-copy">
+                This workspace needs at least one bit-domain source and one bit-domain output sink.
+              </p>
+            ) : (
+              <div className="comparison-actions">
+                <button
+                  type="button"
+                  className="mini-action-button"
+                  disabled={outputStatsRunning}
+                  onClick={() => {
+                    const effectiveSourceId =
+                      outputStatsSourceId ?? flippableSources.find((s) => s.kind !== 'text-symbol-bridge')?.moduleId ?? null;
+                    const effectiveSinkId =
+                      outputStatsSinkId ?? modernSinkOptions[0]?.moduleId ?? null;
+                    const sweepSource =
+                      flippableSources.find((s) => s.moduleId === effectiveSourceId) ?? null;
+
+                    if (!sweepSource || !effectiveSinkId) {
+                      setOutputStatsError('Select a source and sink to run analysis.');
+                      return;
+                    }
+
+                    if (sweepSource.kind === 'text-symbol-bridge') {
+                      setOutputStatsError('Text-bridge sources cannot be swept numerically. Use a BitSource or HexSource.');
+                      return;
+                    }
+
+                    setOutputStatsRunning(true);
+                    setOutputStatsError(null);
+                    outputStatsAbortRef.current = false;
+
+                    // Run synchronously on next tick to allow UI to update
+                    setTimeout(() => {
+                      if (outputStatsAbortRef.current) return;
+                      const inputWidth = sweepSource.bits.length;
+                      const sweepCount = Math.min(256, Math.pow(2, inputWidth));
+                      const sampleKind: 'exhaustive' | 'sampled' =
+                        sweepCount === Math.pow(2, inputWidth) ? 'exhaustive' : 'sampled';
+
+                      const { observations, outputWidth, errors } = runOutputStatsSweep(
+                        project,
+                        sweepSource,
+                        registry,
+                        effectiveSinkId,
+                        sweepCount,
+                      );
+
+                      if (observations.length < 16) {
+                        setOutputStatsError(
+                          `Too few successful observations (${observations.length}/${Math.floor(sweepCount)} — ${errors} errors). Check that the project runs without errors.`,
+                        );
+                        setOutputStatsRunning(false);
+                        return;
+                      }
+
+                      // Key dependency check
+                      const keyDep = runKeyDependencyCheck(
+                        project,
+                        sweepSource,
+                        registry,
+                        effectiveSinkId,
+                        execution,
+                      );
+                      setOutputStatsKeyDep(keyDep);
+
+                      const stats = computeOutputStatistics(
+                        observations,
+                        outputWidth,
+                        sampleKind,
+                        keyDep.keyModuleFound ? keyDep.confirmed : null,
+                      );
+                      setOutputStatsResult(stats);
+                      setOutputStatsRunning(false);
+                    }, 0);
+                  }}
+                >
+                  {outputStatsRunning ? 'Running…' : outputStatsResult ? 'Re-run Analysis' : 'Run Analysis'}
+                </button>
+              </div>
+            )}
+            {outputStatsError ? (
+              <p className="comparison-copy" style={{ color: 'var(--signal-warn)' }}>
+                {outputStatsError}
+              </p>
+            ) : null}
+            {outputStatsResult ? (
+              <div className="cryptanalysis-output-summary-row">
+                <span className="content-status-chip">
+                  {outputStatsResult.observationCount} observations
+                </span>
+                <span className="content-status-chip">
+                  {outputStatsResult.sampleKind === 'exhaustive' ? 'exhaustive sweep' : 'sampled sweep'}
+                </span>
+                <span className={`content-status-chip ${
+                  outputStatsResult.profileLabel === 'uniform distribution' ? '' :
+                  outputStatsResult.profileLabel === 'near-uniform' ? 'status-chip-warning' :
+                  'status-chip-error'
+                }`}>
+                  {outputStatsResult.profileLabel}
+                </span>
+              </div>
+            ) : null}
+          </div>
+
+          {/* Key dependency check */}
+          {outputStatsKeyDep ? (
+            <div className={`comparison-card comparison-card-wide ${
+              outputStatsKeyDep.confirmed === false ? 'cryptanalysis-modern-callout' : ''
+            }`}>
+              <span className="meta-label">Key Dependency</span>
+              {outputStatsKeyDep.confirmed === false ? (
+                <>
+                  <strong>The output does not change when the key changes.</strong>
+                  <p className="comparison-copy">
+                    Flipping the first bit of the detected key module produced identical output.
+                    This workspace behaves like a scrambler, not a cipher — the statistics below
+                    describe the output distribution, but without key dependency, any uniformity is
+                    meaningless from a security standpoint.
+                  </p>
+                  <p className="comparison-copy cryptanalysis-help-copy">
+                    Check that the key source module is connected to the cipher path.
+                  </p>
+                </>
+              ) : outputStatsKeyDep.confirmed === true ? (
+                <>
+                  <strong>Confirmed — output changes with the key.</strong>
+                  <p className="comparison-copy">
+                    Flipping the first bit of the detected key module changed{' '}
+                    <strong>{outputStatsKeyDep.bitsChanged}</strong> output bits.
+                  </p>
+                </>
+              ) : !outputStatsKeyDep.keyModuleFound ? (
+                <>
+                  <strong>No key source detected.</strong>
+                  <p className="comparison-copy">
+                    No source module was found separate from the sweep source. A cipher requires
+                    a key — without one, any statistical uniformity reflects the function's structure,
+                    not a secret.
+                  </p>
+                </>
+              ) : (
+                <p className="comparison-copy">Key dependency check could not complete.</p>
+              )}
+            </div>
+          ) : null}
+
+          {outputStatsResult ? (
+            <>
+              {/* Section 1: Byte Frequency */}
+              <div className="comparison-card comparison-card-wide">
+                <span className="meta-label">
+                  Byte Frequency
+                  {!outputStatsResult.byteFrequency.sampleValid ? (
+                    <span className="cryptanalysis-validity-badge"> · low sample</span>
+                  ) : null}
+                </span>
+                <strong>
+                  {outputStatsResult.byteFrequency.bucketCount === outputStatsResult.byteFrequency.counts.length
+                    ? `${outputStatsResult.byteFrequency.bucketCount}-bucket distribution`
+                    : 'Coarse distribution (sample too small for full histogram)'}
+                </strong>
+                <p className="comparison-copy cryptanalysis-help-copy">
+                  A bijective cipher swept across all its inputs always produces a flat distribution.
+                  This test detects frequency imbalance but cannot distinguish a Caesar cipher from a strong cipher at small sample sizes.
+                </p>
+                <div className="output-stats-freq-chart" role="img" aria-label="Byte frequency histogram">
+                  {renderFrequencyBars(
+                    outputStatsResult.byteFrequency.counts,
+                    outputStatsResult.byteFrequency.expectedCount,
+                  )}
+                </div>
+                {outputStatsResult.byteFrequency.sampleValid ? (
+                  <p className="comparison-copy">
+                    χ² = <strong>{outputStatsResult.byteFrequency.chiSquared.toFixed(1)}</strong>
+                    {' '}| p = <strong>{outputStatsResult.byteFrequency.chiSquaredPValue.toFixed(3)}</strong>
+                    {' '}| max deviation bucket {outputStatsResult.byteFrequency.maxDeviationBucket}
+                    {' '}({(outputStatsResult.byteFrequency.maxDeviationFraction * 100).toFixed(0)}% from expected)
+                  </p>
+                ) : (
+                  <p className="comparison-copy cryptanalysis-help-copy">
+                    Insufficient sample for a valid chi-squared test.
+                    Increase sweep count or reduce output width.
+                  </p>
+                )}
+              </div>
+
+              {/* Section 2: Bit Balance */}
+              <div className="comparison-card comparison-card-wide">
+                <span className="meta-label">
+                  Bit Balance
+                  {!outputStatsResult.bitBalance.sampleValid ? (
+                    <span className="cryptanalysis-validity-badge"> · low sample</span>
+                  ) : null}
+                </span>
+                <strong>
+                  {(outputStatsResult.bitBalance.onesFraction * 100).toFixed(1)}% ones across all output bits
+                </strong>
+                <p className="comparison-copy cryptanalysis-help-copy">
+                  A stuck bit position — one that is almost always 0 or always 1 — carries almost no information.
+                </p>
+                <div className="output-stats-balance-chart" role="img" aria-label="Per-bit-position balance">
+                  {renderBalanceBars(outputStatsResult.bitBalance.perPositionFractions)}
+                </div>
+                <p className="comparison-copy">
+                  Monobit p-value: <strong>
+                    {outputStatsResult.bitBalance.sampleValid
+                      ? outputStatsResult.bitBalance.monobitPValue.toFixed(4)
+                      : 'n/a (insufficient sample)'}
+                  </strong>
+                </p>
+              </div>
+
+              {/* Section 3: Shannon Entropy */}
+              <div className="comparison-card">
+                <span className="meta-label">Shannon Entropy</span>
+                <strong>
+                  {outputStatsResult.byteEntropy.shannonEntropy.toFixed(3)} bits
+                  {' '}/ {outputStatsResult.outputWidth} bit max
+                </strong>
+                <p className="comparison-copy">
+                  {(outputStatsResult.byteEntropy.entropyFraction * 100).toFixed(1)}% of maximum entropy
+                  {' '}| {outputStatsResult.byteEntropy.uniqueValueCount} of{' '}
+                  {Math.min(Math.pow(2, outputStatsResult.outputWidth), 65536).toFixed(0)} distinct output values seen
+                </p>
+                <div className="output-stats-entropy-gauge">
+                  <div
+                    className="output-stats-entropy-fill"
+                    style={{
+                      width: `${(outputStatsResult.byteEntropy.entropyFraction * 100).toFixed(1)}%`,
+                      backgroundColor: outputStatsResult.byteEntropy.entropyFraction > 0.9
+                        ? 'var(--analysis-accent)'
+                        : outputStatsResult.byteEntropy.entropyFraction > 0.7
+                          ? 'var(--signal-warn)'
+                          : 'var(--signal-error)',
+                    }}
+                  />
+                </div>
+                <p className="comparison-copy cryptanalysis-help-copy">
+                  High entropy is required for a good cipher but not sufficient.
+                  A Caesar cipher swept across all inputs also scores near-maximum entropy.
+                </p>
+              </div>
+
+              {/* Section 4: Sequential Correlation */}
+              <div className="comparison-card">
+                <span className="meta-label">
+                  Sequential Correlation
+                  {!outputStatsResult.correlation.sampleValid ? (
+                    <span className="cryptanalysis-validity-badge"> · low sample</span>
+                  ) : null}
+                </span>
+                <strong>
+                  Adjacent-value linear correlation r = {outputStatsResult.correlation.serialCorrelationCoefficient.toFixed(3)}
+                </strong>
+                <p className="comparison-copy cryptanalysis-help-copy">
+                  This is the test the other sections miss. A Caesar cipher scores perfectly
+                  on frequency, balance, and entropy — but its scatter plot shows a diagonal because
+                  output[i+1] = output[i] + 1. A cloud means consecutive outputs are not linearly related.
+                </p>
+                <div
+                  className="output-stats-scatter-grid"
+                  style={{ gridTemplateColumns: `repeat(${outputStatsResult.correlation.gridSize}, 1fr)` }}
+                  role="img"
+                  aria-label="Sequential correlation scatter"
+                  title={`${outputStatsResult.correlation.valuePairs} consecutive pairs plotted`}
+                >
+                  {renderScatterGrid(outputStatsResult.correlation.scatterGrid)}
+                </div>
+                <p className="comparison-copy" style={{ fontSize: '0.7rem', color: 'var(--label-muted)' }}>
+                  Each cell = (output[i], output[i+1]) pair count.
+                  {outputStatsResult.correlation.bucketDivisor > 1
+                    ? ` Values bucketed into ${outputStatsResult.correlation.gridSize}×${outputStatsResult.correlation.gridSize} grid.`
+                    : ''}
+                </p>
+              </div>
+
+              {/* Section 5: Runs Uniformity */}
+              <div className="comparison-card comparison-card-wide">
+                <span className="meta-label">
+                  Runs Uniformity
+                  {!outputStatsResult.runs.sampleValid ? (
+                    <span className="cryptanalysis-validity-badge">
+                      {' '}· {outputStatsResult.runs.prerequisitePasses ? 'low sample' : 'prerequisite failed'}
+                    </span>
+                  ) : null}
+                </span>
+                <strong>
+                  {outputStatsResult.runs.totalRuns} runs
+                  {' '}(expected ~{outputStatsResult.runs.expectedRuns.toFixed(0)})
+                </strong>
+                <p className="comparison-copy cryptanalysis-help-copy">
+                  In a random bit stream, half of all runs have length 1, a quarter have length 2, and so on.
+                  Bars show observed (solid) vs expected geometric distribution (reference).
+                </p>
+                <div className="output-stats-runs-chart" role="img" aria-label="Run length distribution">
+                  {renderRunsChart(
+                    outputStatsResult.runs.runLengthCounts,
+                    outputStatsResult.runs.expectedRunLengthCounts,
+                  )}
+                </div>
+                <p className="comparison-copy">
+                  Runs test p-value: <strong>
+                    {outputStatsResult.runs.sampleValid
+                      ? outputStatsResult.runs.runsTestPValue.toFixed(4)
+                      : outputStatsResult.runs.prerequisitePasses
+                        ? 'n/a (insufficient sample)'
+                        : 'n/a (monobit prerequisite failed)'}
+                  </strong>
+                </p>
+              </div>
+
+              {/* Narrative summary */}
+              <div className="comparison-card comparison-card-wide">
+                <span className="meta-label">Summary</span>
+                <strong>What this output looks like</strong>
+                <p className="comparison-copy">
+                  {generateNarrativeSummary(outputStatsResult)}
+                </p>
+              </div>
+            </>
+          ) : !outputStatsRunning ? (
+            <div className="comparison-card comparison-card-wide">
+              <span className="meta-label">Ready</span>
+              <strong>Click Run Analysis to sweep the workspace.</strong>
+              <p className="comparison-copy">
+                The engine will run your workspace across{' '}
+                <strong>
+                  {(() => {
+                    const src = flippableSources.find(
+                      (s) => s.moduleId === (outputStatsSourceId ?? flippableSources.find((x) => x.kind !== 'text-symbol-bridge')?.moduleId),
+                    );
+                    if (!src) return 'N';
+                    return Math.min(256, Math.pow(2, src.bits.length)).toFixed(0);
+                  })()}
+                </strong>{' '}
+                distinct inputs, then compute bit balance, entropy, byte frequency, sequential
+                correlation, and runs uniformity.
+              </p>
+            </div>
+          ) : null}
+        </div>
       ) : (
       <div className="comparison-grid">
         <AnalysisCaseManager
@@ -2681,4 +3102,219 @@ function findFlippableProjectSources(project: Project): FlippableProjectSource[]
   }
 
   return sources;
+}
+
+// ── Output stats helpers ──────────────────────────────────────────────────────
+
+function intToBits(value: number, width: number): number[] {
+  return Array.from({ length: width }, (_, i) => (value >> (width - 1 - i)) & 1);
+}
+
+function runOutputStatsSweep(
+  project: Project,
+  sweepSource: FlippableProjectSource,
+  registry: ModuleRegistry,
+  sinkModuleId: string,
+  sweepCount: number,
+): { observations: number[][]; outputWidth: number; errors: number } {
+  const observations: number[][] = [];
+  let outputWidth = 0;
+  let errors = 0;
+
+  for (let i = 0; i < sweepCount; i += 1) {
+    const inputBits = intToBits(i, sweepSource.bits.length);
+    const variantProject = buildVariantProject(project, sweepSource, inputBits);
+    if (!variantProject) {
+      errors += 1;
+      continue;
+    }
+
+    const validation = validateProject(variantProject, registry);
+    if (!validation.ok) {
+      errors += 1;
+      continue;
+    }
+
+    try {
+      const result = runDemoProject(variantProject, registry);
+      const outputBits = getBitSignalForSink(result, sinkModuleId);
+      if (!outputBits || outputBits.length === 0) {
+        errors += 1;
+        continue;
+      }
+      outputWidth = outputBits.length;
+      observations.push(outputBits);
+    } catch {
+      errors += 1;
+    }
+  }
+
+  return { observations, outputWidth, errors };
+}
+
+function runKeyDependencyCheck(
+  project: Project,
+  sweepSource: FlippableProjectSource | null,
+  registry: ModuleRegistry,
+  sinkModuleId: string,
+  execution: ExecutionResult | null,
+): { confirmed: boolean | null; keyModuleFound: boolean; bitsChanged: number } {
+  const allSources = findFlippableProjectSources(project);
+  const keyCandidate =
+    allSources.find(
+      (s) => s.moduleId !== sweepSource?.moduleId && s.kind !== 'text-symbol-bridge',
+    ) ?? null;
+
+  if (!keyCandidate) {
+    return { confirmed: null, keyModuleFound: false, bitsChanged: 0 };
+  }
+
+  const baselineOutput = getBitSignalForSink(execution, sinkModuleId);
+  if (!baselineOutput) {
+    return { confirmed: null, keyModuleFound: true, bitsChanged: 0 };
+  }
+
+  const variantKeyBits = flipBitAtIndex(keyCandidate.bits, 0);
+  const variantProject = buildVariantProject(project, keyCandidate, variantKeyBits);
+  if (!variantProject) {
+    return { confirmed: null, keyModuleFound: true, bitsChanged: 0 };
+  }
+
+  const validation = validateProject(variantProject, registry);
+  if (!validation.ok) {
+    return { confirmed: null, keyModuleFound: true, bitsChanged: 0 };
+  }
+
+  try {
+    const variantExecution = runDemoProject(variantProject, registry);
+    const variantOutput = getBitSignalForSink(variantExecution, sinkModuleId);
+    if (!variantOutput) {
+      return { confirmed: null, keyModuleFound: true, bitsChanged: 0 };
+    }
+    const diff = analyzeBitDifference(baselineOutput, variantOutput);
+    return { confirmed: diff.changedCount > 0, keyModuleFound: true, bitsChanged: diff.changedCount };
+  } catch {
+    return { confirmed: null, keyModuleFound: true, bitsChanged: 0 };
+  }
+}
+
+// ── Output stats rendering helpers ────────────────────────────────────────────
+
+function renderFrequencyBars(counts: number[], expectedCount: number): React.ReactNode {
+  const maxCount = Math.max(...counts, expectedCount * 1.5, 1);
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 1, height: 60 }}>
+      {counts.map((count, i) => {
+        const height = (count / maxCount) * 58;
+        const deviation = expectedCount > 0 ? Math.abs(count - expectedCount) / expectedCount : 0;
+        const color =
+          deviation > 0.5
+            ? 'var(--signal-error)'
+            : deviation > 0.2
+              ? 'var(--signal-warn)'
+              : 'var(--analysis-accent)';
+        return (
+          <div
+            key={i}
+            title={`Bucket ${i}: ${count} (expected ${expectedCount.toFixed(1)})`}
+            style={{
+              flex: 1,
+              height: Math.max(height, count > 0 ? 1 : 0),
+              backgroundColor: color,
+              borderRadius: '1px 1px 0 0',
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function renderBalanceBars(perPositionFractions: number[]): React.ReactNode {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 48 }}>
+      {perPositionFractions.map((frac, i) => {
+        const deviation = Math.abs(frac - 0.5);
+        const color =
+          deviation > 0.4
+            ? 'var(--signal-error)'
+            : deviation > 0.2
+              ? 'var(--signal-warn)'
+              : 'var(--analysis-accent)';
+        return (
+          <div
+            key={i}
+            title={`Bit position ${i}: ${(frac * 100).toFixed(1)}% ones`}
+            style={{
+              flex: 1,
+              height: Math.max(frac * 44, 2),
+              backgroundColor: color,
+              borderRadius: '1px 1px 0 0',
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function renderScatterGrid(scatterGrid: number[][]): React.ReactNode {
+  const gridSize = scatterGrid.length;
+  const maxHit = Math.max(1, ...scatterGrid.flatMap((row) => row));
+  return scatterGrid.flatMap((row, rowIdx) =>
+    row.map((count, colIdx) => {
+      const intensity = count > 0 ? Math.min(1, Math.log1p(count) / Math.log1p(maxHit)) : 0;
+      return (
+        <div
+          key={`${rowIdx}-${colIdx}`}
+          title={`(${colIdx}, ${rowIdx}): ${count} pairs`}
+          style={{
+            height: `${Math.floor(100 / gridSize)}px`,
+            backgroundColor:
+              count > 0
+                ? `rgba(var(--analysis-accent-rgb, 100, 210, 255), ${intensity.toFixed(2)})`
+                : 'var(--bg-raised)',
+            border: '1px solid var(--border-subtle)',
+          }}
+        />
+      );
+    }),
+  );
+}
+
+function renderRunsChart(
+  runLengthCounts: number[],
+  expectedRunLengthCounts: number[],
+): React.ReactNode {
+  const labels = ['1', '2', '3', '4', '5', '6', '7', '8+'];
+  const maxCount = Math.max(
+    1,
+    ...runLengthCounts,
+    ...expectedRunLengthCounts.map((v) => Math.ceil(v)),
+  );
+  return (
+    <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 64 }}>
+      {labels.map((label, i) => {
+        const observed = runLengthCounts[i] ?? 0;
+        const expected = expectedRunLengthCounts[i] ?? 0;
+        const obsH = (observed / maxCount) * 56;
+        const expH = (expected / maxCount) * 56;
+        return (
+          <div key={label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <div style={{ position: 'relative', width: '100%', height: 56, display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+              <div
+                title={`Length ${label}: ${observed} observed`}
+                style={{ flex: 1, height: Math.max(obsH, observed > 0 ? 2 : 0), backgroundColor: 'var(--analysis-accent)', borderRadius: '1px 1px 0 0' }}
+              />
+              <div
+                title={`Length ${label}: ${expected.toFixed(1)} expected`}
+                style={{ flex: 1, height: Math.max(expH, 1), backgroundColor: 'var(--border-subtle)', borderRadius: '1px 1px 0 0', border: '1px dashed var(--label-muted)' }}
+              />
+            </div>
+            <span style={{ fontSize: '0.6rem', color: 'var(--label-muted)' }}>{label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
 }

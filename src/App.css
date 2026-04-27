@@ -8400,3 +8400,186 @@ body.canvas-resizing {
   font-size: 12px;
   color: var(--ink-secondary);
 }
+
+/* ── Output Statistics panel ─────────────────────────────────────── */
+
+.output-stats-freq-chart,
+.output-stats-balance-chart,
+.output-stats-runs-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.output-stats-freq-chart > div,
+.output-stats-balance-chart > div,
+.output-stats-runs-chart > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 20px;
+}
+
+.output-stats-freq-chart > div span:first-child,
+.output-stats-balance-chart > div span:first-child,
+.output-stats-runs-chart > div span:first-child {
+  flex: 0 0 52px;
+  font-size: 11px;
+  color: var(--ink-secondary);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.output-stats-bar-track {
+  flex: 1 1 auto;
+  height: 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-soft) 88%, var(--surface-1));
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  overflow: hidden;
+  position: relative;
+}
+
+.output-stats-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 82%, transparent);
+  transition: width 0.3s ease;
+}
+
+.output-stats-bar-fill.expected-line {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  background: color-mix(in srgb, var(--ink-secondary) 58%, transparent);
+  border-radius: 0;
+}
+
+.output-stats-bar-value {
+  flex: 0 0 42px;
+  font-size: 11px;
+  color: var(--ink-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Entropy gauge */
+.output-stats-entropy-gauge {
+  position: relative;
+  height: 18px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-soft) 88%, var(--surface-1));
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.output-stats-entropy-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.35s ease;
+}
+
+/* Scatter grid */
+.output-stats-scatter-grid {
+  display: grid;
+  gap: 3px;
+  margin-top: 10px;
+}
+
+.output-stats-scatter-cell {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent) var(--cell-heat, 0%), var(--surface-1));
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Validity badge (low-sample warning suffix) */
+.cryptanalysis-validity-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
+.cryptanalysis-validity-badge.low-sample {
+  background: color-mix(in srgb, #d97706 14%, var(--surface-1));
+  color: color-mix(in srgb, #92400e 86%, var(--text));
+  border: 1px solid color-mix(in srgb, #d97706 32%, var(--border));
+}
+
+.cryptanalysis-validity-badge.valid {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-1));
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+
+/* Key dependency result cards */
+.output-stats-key-dep-critical {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, #dc2626 38%, var(--border));
+  background: color-mix(in srgb, #dc2626 10%, var(--surface-1));
+  color: color-mix(in srgb, #7f1d1d 88%, var(--text));
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.output-stats-key-dep-confirmed {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, #16a34a 28%, var(--border));
+  background: color-mix(in srgb, #16a34a 8%, var(--surface-1));
+  color: color-mix(in srgb, #14532d 88%, var(--text));
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+/* Profile label chip */
+.output-stats-profile-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: capitalize;
+}
+
+.output-stats-profile-chip.uniform {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-1));
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+}
+
+.output-stats-profile-chip.near-uniform {
+  background: color-mix(in srgb, #16a34a 10%, var(--surface-1));
+  color: color-mix(in srgb, #14532d 88%, var(--text));
+  border: 1px solid color-mix(in srgb, #16a34a 28%, var(--border));
+}
+
+.output-stats-profile-chip.structured {
+  background: color-mix(in srgb, #d97706 12%, var(--surface-1));
+  color: color-mix(in srgb, #92400e 88%, var(--text));
+  border: 1px solid color-mix(in srgb, #d97706 30%, var(--border));
+}
+
+.output-stats-profile-chip.highly-structured {
+  background: color-mix(in srgb, #dc2626 10%, var(--surface-1));
+  color: color-mix(in srgb, #7f1d1d 88%, var(--text));
+  border: 1px solid color-mix(in srgb, #dc2626 28%, var(--border));
+}

@@ -1559,7 +1559,7 @@ function MainApp() {
 
       const projectId = activeProjectDefinition.id;
       const mode = state.cryptanalysisModeByProject[projectId] ?? 'classical';
-      if (mode === 'key-schedule') {
+      if (mode === 'key-schedule' || mode === 'output-stats') {
         return;
       }
       const savedCase: SavedAnalysisCase =

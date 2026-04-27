@@ -1,1 +1,1 @@
-export type CryptanalysisMode = 'classical' | 'modern' | 'randomness' | 'key-schedule';
+export type CryptanalysisMode = 'classical' | 'modern' | 'randomness' | 'key-schedule' | 'output-stats';

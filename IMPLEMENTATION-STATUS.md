@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: April 18, 2026
+Last updated: April 21, 2026
 
 ---
 
@@ -38,6 +38,7 @@ Recent shipped commits on `main`:
 
 Practical restart guidance:
 - read this file first
+- then read `ACTIVE-DOCS.md` for the current live-doc surface and archive policy
 - then read `V2.1-NEXT-DOCKET.md` for the still-open sequencing question
 - then read `CLAUDE.md` / `AGENTS.md` for standing local instructions
 - before starting a contract, verify in source that it is still actually unshipped
@@ -54,34 +55,37 @@ Everything else with a non-`Shipped` status is usually one of:
 
 Current actionable shortlist:
 
-1. `WIRING-CEREMONY-REDUCTION-V1.md`
-- status: `Not yet started`
-- type: real product-facing implementation contract
-- why it matters: still the clearest remaining ceremony-reduction line around fast authoring, quick connection gestures, and lower-friction graph assembly
+1. `WORD-LEVEL-OPERATIONS-V1.md`
+- status: `Open` — written 2026-04-26
+- type: new engine primitives (`WordSplit`, `WordJoin`) + demo + tutorial
+- why it matters: unlocks ChaCha20, SHA-256, and AES expression on canvas; fills the gap between flat bit arrays and word-granularity modern cipher construction
 
-2. `INSPECTOR-STRUCTURED-EDITOR-EXTRACTION-V1.md`
-- status: `Ready for implementation`
-- type: maintenance / architecture-protection contract
-- why it matters: reduces future drag inside one of the largest UI surfaces without changing product semantics
+2. `AVALANCHE-INFLUENCE-ENGINE-V1.md`
+- status: `Open` — written 2026-04-27
+- type: redesign of cryptanalysis panel's Modern Analysis mode
+- why it matters: replaces the current disconnected single-flip view and illegible heatmap with a first-class `InfluenceMatrix` artifact, quality score, and plain-language callouts
 
-3. `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
+3. `OUTPUT-STATISTICS-V1.md`
+- status: `Open` — written 2026-04-27
+- type: new "Output Statistics" tab in the Cryptanalysis workspace
+- why it matters: aggregates output across N swept inputs into Shannon entropy, byte frequency, bit balance, sequential correlation, and runs test — the visual narrative arc from "is this output biased?" through "does it look random?"
+
+4. `docs/live/contracts/2026-04/PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
 - status: `Future planning note`
-- type: deferred export architecture note, not an immediate build target
-- why it matters: strategically important later, but should not be mistaken for the next bounded slice
+- type: strategic export-architecture note, not an immediate build target
+- why it matters: still useful context if Python export productization is revisited, but it should not be mistaken for a currently open bounded slice because the first runtime-library productization follow-ons are already shipped
 
-4. `CRYPTANALYSIS-WORKSPACE-V1.md`
-- status: `Active post-v1.3.0 contract`
-- type: older active product line note
-- why it matters: still a real domain line, but not currently as immediate as the bounded usability / ergonomics work unless priorities explicitly shift back toward analysis
-
-5. `EXPERIENTIAL-NORTH-STAR-V1.md`, `V2.1-AUTHORING-POWER-PLAN.md`, `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md`
+2. `EXPERIENTIAL-NORTH-STAR-V1.md`, `V2.1-AUTHORING-POWER-PLAN.md`, `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md`
 - status: active notes / roadmap notes
 - type: decision context only
 - why they matter: these should guide prioritization, not be treated as implementation targets by themselves
 
 Recommended default interpretation for a fresh agent:
-- if the goal is a concrete next slice, start by evaluating `WIRING-CEREMONY-REDUCTION-V1.md`
-- if the goal is maintenance / future speed, evaluate `INSPECTOR-STRUCTURED-EDITOR-EXTRACTION-V1.md`
+- wiring-ceremony reduction is already shipped in source and should not be treated as the next open feature
+- inspector structured-editor extraction is already shipped in source and should not be treated as the next maintenance slice
+- cryptanalysis workspace is already shipped in source and should not be treated as an open first-pass workspace contract
+- there is currently no trustworthy pre-existing “next implementation contract” in this old shortlist
+- if the goal is concrete new feature work, first choose or write a fresh bounded contract against current source rather than relying on older stale “next” labels
 - do not treat planning notes as if they were ready-to-code feature contracts
 
 The latest shipped release checkpoint is `v2.1.0`.
@@ -109,6 +113,7 @@ Current `main` now also includes later post-`v2.1.0` follow-ons:
 - `ITERATOR-DEFINITION-AUTHORING-V1.md`
 - `ITERATOR-WORKFLOW-POLISH-V1.md`
 - `CLOCKED-ITERATOR-V1.md`
+- `docs/archive/contracts/2026-04/WIRING-CEREMONY-REDUCTION-V1.md`
 - `CANONICAL-CHAIN-INSERTION-V1.md`
 - `REFERENCE-AWARE-CHAIN-TEACHING-V1.md`
 - `STRICT-LENGTH-POLICY-TEACHING-V1.md`
@@ -223,6 +228,13 @@ The older `v2.1` builder-power / maintainability queue is now largely already pr
 - `STORE-REFACTOR-V1.md`
 - `APP-SHELL-REFACTOR-V1.md`
 - `UI-ARCHITECTURE-STABILIZATION-V1.md`
+
+Wiring ceremony reduction is now also shipped on `main`:
+- drag from an output port into empty canvas opens a compatible quick-add popup and inserts and wires the chosen module at the drop point
+- selected modules can now be swapped in place through `Replace with…`, preserving same-name same-type connections where possible
+- a bounded allow-list of dominant scalar params is editable directly on canvas nodes
+- clicking an output port can arm a pending connection and complete it later on a compatible input
+- expanded palette cards can be dragged directly onto the canvas for explicit positioned placement
 
 Current active sequencing should now be read as:
 - choose the next product-facing slice from the remaining unshipped contracts
@@ -562,7 +574,7 @@ Current `main` now also includes:
   - parity-tested for newly unlocked mixed recursive stateless and temporal workspaces
   - completes common authored machine coverage without introducing a hidden interpreter
 - future Python export architecture note:
-  - `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
+  - `docs/live/contracts/2026-04/PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
   - now represents the next Python export frontier as a productization step rather than a coverage blocker
   - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file
   - keeps the current self-contained one-file export as the correct bounded foundations architecture for now
@@ -1443,7 +1455,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `ADVANCED-FOUNDRY-CLOCK-V1.md` | Locked, shipped (engine + UI slices) |
 | `ITERATIVE-ROUNDS-AND-KEYSCHEDULES-V1.md` | Active, implemented as bounded iterator groundwork |
 | `KEY-SCHEDULE-GROUNDWORK-V1.md` | Active, implemented as explicit key-bus groundwork |
-| `CRYPTANALYSIS-WORKSPACE-V1.md` | Locked, implemented as the `v1.4.0` workspace boundary |
+| `docs/archive/contracts/2026-04/CRYPTANALYSIS-WORKSPACE-V1.md` | Locked, implemented as the `v1.4.0` workspace boundary |
 | `MODERN-ANALYSIS-V1.md` | Active, implemented as the `v1.5.0` modern-analysis line |
 | `HASHING-V1.md` | Shipped as the `v1.7.0` first hashing milestone contract |
 | `HASH-COLLISION-CHALLENGE-V1.md` | Shipped as the `v1.8.0` first bounded hash weakness challenge |
@@ -1513,7 +1525,7 @@ TextInput -> Rotor -> Reflector -> Rotor -> SymbolToBits -> XOR -> BitsToSymbol 
 | `REQUIRE-LENGTH-MATCH-WORKFLOW-POLISH-V1.md` | Shipped bounded strict-mismatch workflow polish via directional require-helper messages, Python parity, and paired strict-vs-repair primitive micro demos |
 | `PIPELINE-AUTHORING-WAYFINDING-V1.md` | Shipped bounded pipeline-language follow-on via optional `typicalPath` on role summaries, surfaced in inspector and palette help cards for bridges, mismatch helpers, collectors, and require helpers |
 | `REFERENCE-LENGTH-ERGONOMICS-V2.md` | Closed — Success Shape 1: remaining friction was graph-reading friction, not dataflow friction; native fanout plus stage group boxes already solve shared-reference layout; no anchor primitive added |
-| `INSPECTOR-STRUCTURED-EDITOR-EXTRACTION-V1.md` | Shipped on `main` — extracted the structured primitive editor family out of `parameter-inspector.tsx` without changing inspector behavior |
+| `docs/archive/contracts/2026-04/INSPECTOR-STRUCTURED-EDITOR-EXTRACTION-V1.md` | Shipped on `main` — extracted the structured primitive editor family out of `parameter-inspector.tsx` without changing inspector behavior |
 | `INSPECTOR-ANALYSIS-AND-OUTPUT-EXTRACTION-V1.md` | Shipped on `main` — extracted output-summary, analyze-tab, and compare-tab rendering out of `parameter-inspector.tsx` into dedicated inspector components without changing behavior |
 | `BYPASS-V1.md` | Shipped in `v1.29.0` — bounded instance-level bypass for eligible one-in/one-out same-domain modules |
 | `INVERSE-PERMUTATION-AUTHORING-V1.md` | Shipped in `v1.30.0` — bounded authoring follow-on for deriving inverse mappings in bit and symbol permutation editors |
