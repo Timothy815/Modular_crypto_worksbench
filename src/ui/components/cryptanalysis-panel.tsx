@@ -72,6 +72,13 @@ type FlippableProjectSource =
       moduleName: string;
       kind: 'text-symbol-bridge';
       bits: number[];
+    }
+  | {
+      moduleId: string;
+      moduleName: string;
+      /** Bare TextInput (no SymbolToBits bridge) — swept A–Z */
+      kind: 'symbol-source';
+      bits: number[];
     };
 
 interface CryptanalysisPanelProps {
@@ -1697,19 +1704,21 @@ export function CryptanalysisPanel({
           <div className="comparison-card comparison-card-wide">
             <span className="meta-label">Configuration</span>
             <strong>Output sweep</strong>
-            {flippableSources.length > 0 ? (
+            {flippableSources.filter((s) => s.kind !== 'text-symbol-bridge').length > 0 ? (
               <div className="content-filter-row">
                 <label className="param-field">
                   <span>Sweep source</span>
                   <select
-                    value={outputStatsSourceId ?? flippableSources[0]?.moduleId ?? ''}
+                    value={outputStatsSourceId ?? flippableSources.find((s) => s.kind !== 'text-symbol-bridge')?.moduleId ?? ''}
                     onChange={(event) => setOutputStatsSourceId(event.target.value)}
                   >
                     {flippableSources
                       .filter((s) => s.kind !== 'text-symbol-bridge')
                       .map((source) => (
                         <option key={source.moduleId} value={source.moduleId}>
-                          {source.moduleName} ({source.bits.length} bits)
+                          {source.kind === 'symbol-source'
+                            ? `${source.moduleName} (A\u2013Z)`
+                            : `${source.moduleName} (${source.bits.length} bits)`}
                         </option>
                       ))}
                   </select>
@@ -1733,9 +1742,9 @@ export function CryptanalysisPanel({
                 </label>
               </div>
             ) : null}
-            {flippableSources.length === 0 || modernSinkOptions.length === 0 ? (
+            {flippableSources.filter((s) => s.kind !== 'text-symbol-bridge').length === 0 || modernSinkOptions.length === 0 ? (
               <p className="comparison-copy">
-                This workspace needs at least one bit-domain source and one bit-domain output sink.
+                This workspace needs at least one sweepable source (BitSource, HexSource, AsciiSource, or TextInput) and one bit-domain output sink.
               </p>
             ) : (
               <div className="comparison-actions">
@@ -1768,10 +1777,14 @@ export function CryptanalysisPanel({
                     // Run synchronously on next tick to allow UI to update
                     setTimeout(() => {
                       if (outputStatsAbortRef.current) return;
-                      const inputWidth = sweepSource.bits.length;
-                      const sweepCount = Math.min(256, Math.pow(2, inputWidth));
+                      const sweepCount =
+                        sweepSource.kind === 'symbol-source'
+                          ? SYMBOL_SWEEP_ALPHABET.length
+                          : Math.min(256, Math.pow(2, sweepSource.bits.length));
                       const sampleKind: 'exhaustive' | 'sampled' =
-                        sweepCount === Math.pow(2, inputWidth) ? 'exhaustive' : 'sampled';
+                        sweepSource.kind === 'symbol-source'
+                          ? 'exhaustive'
+                          : sweepCount === Math.pow(2, sweepSource.bits.length) ? 'exhaustive' : 'sampled';
 
                       const { observations, outputWidth, errors } = runOutputStatsSweep(
                         project,
@@ -2066,6 +2079,7 @@ export function CryptanalysisPanel({
                       (s) => s.moduleId === (outputStatsSourceId ?? flippableSources.find((x) => x.kind !== 'text-symbol-bridge')?.moduleId),
                     );
                     if (!src) return 'N';
+                    if (src.kind === 'symbol-source') return SYMBOL_SWEEP_ALPHABET.length.toFixed(0);
                     return Math.min(256, Math.pow(2, src.bits.length)).toFixed(0);
                   })()}
                 </strong>{' '}
@@ -2682,7 +2696,7 @@ function getSelectedKeyLetter(
   );
 }
 
-function getFlippableSourceKindLabel(kind: 'bit-source' | 'hex-source' | 'ascii-source' | 'text-symbol-bridge') {
+function getFlippableSourceKindLabel(kind: 'bit-source' | 'hex-source' | 'ascii-source' | 'text-symbol-bridge' | 'symbol-source') {
   switch (kind) {
     case 'bit-source':
       return 'BitSource';
@@ -2692,6 +2706,8 @@ function getFlippableSourceKindLabel(kind: 'bit-source' | 'hex-source' | 'ascii-
       return 'AsciiSource';
     case 'text-symbol-bridge':
       return 'TextInput → SymbolToBits';
+    case 'symbol-source':
+      return 'TextInput (A–Z)';
   }
 }
 
@@ -2924,6 +2940,14 @@ function buildVariantProject(
     return nextProject;
   }
 
+  if (flippableSource.kind === 'symbol-source') {
+    if (!variantBridgeSymbol) {
+      return null;
+    }
+    targetModule.params.value = variantBridgeSymbol;
+    return nextProject;
+  }
+
   targetModule.params.value = bitsToHex(variantBits);
   return nextProject;
 }
@@ -3097,6 +3121,14 @@ function findFlippableProjectSources(project: Project): FlippableProjectSource[]
           kind: 'text-symbol-bridge' as const,
           bits: symbolBits,
         });
+      } else {
+        // Bare symbol source — no SymbolToBits bridge; sweep A–Z
+        sources.push({
+          moduleId: moduleInstance.id,
+          moduleName: typeof moduleInstance.params.name === 'string' ? moduleInstance.params.name : 'Text Input',
+          kind: 'symbol-source' as const,
+          bits: symbolBits ?? new Array(5).fill(0),
+        });
       }
     }
   }
@@ -3110,6 +3142,8 @@ function intToBits(value: number, width: number): number[] {
   return Array.from({ length: width }, (_, i) => (value >> (width - 1 - i)) & 1);
 }
 
+const SYMBOL_SWEEP_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
 function runOutputStatsSweep(
   project: Project,
   sweepSource: FlippableProjectSource,
@@ -3122,8 +3156,15 @@ function runOutputStatsSweep(
   let errors = 0;
 
   for (let i = 0; i < sweepCount; i += 1) {
-    const inputBits = intToBits(i, sweepSource.bits.length);
-    const variantProject = buildVariantProject(project, sweepSource, inputBits);
+    let variantProject: Project | null;
+    if (sweepSource.kind === 'symbol-source') {
+      const char = SYMBOL_SWEEP_ALPHABET[i] ?? null;
+      if (!char) { errors += 1; continue; }
+      variantProject = buildVariantProject(project, sweepSource, [], char);
+    } else {
+      const inputBits = intToBits(i, sweepSource.bits.length);
+      variantProject = buildVariantProject(project, sweepSource, inputBits);
+    }
     if (!variantProject) {
       errors += 1;
       continue;
