@@ -22,6 +22,7 @@ interface WorkbenchActionsProps {
   canUndo: boolean;
   canRedo: boolean;
   selectedModuleIds: string[];
+  canPasteSelection?: boolean;
   selectedFurnitureKind: 'stage-label' | 'group-box' | 'guide-rail' | null;
   selectedFurnitureTitle: string | null;
   selectedFurnitureDetailPrimary: string | null;
@@ -76,6 +77,8 @@ interface WorkbenchActionsProps {
   onRequestAddGroupBoxFromSelection: () => void;
   onRequestAddGuideRail: (axis: 'horizontal' | 'vertical') => void;
   onRequestAutoWire: (mode: AutoWireMode) => void;
+  onRequestCopySelection: () => void;
+  onRequestPasteSelection: () => void;
   onRequestDuplicateSelection: () => void;
   onRequestRepeatSelectionRight: () => void;
   onRequestCopySelectionToWorkspace: () => void;
@@ -608,6 +611,7 @@ export function WorkbenchActions({
   canUndo,
   canRedo,
   selectedModuleIds,
+  canPasteSelection = false,
   selectedFurnitureKind,
   selectedFurnitureTitle,
   selectedFurnitureDetailPrimary,
@@ -650,6 +654,8 @@ export function WorkbenchActions({
   onRequestAddGroupBoxFromSelection,
   onRequestAddGuideRail,
   onRequestAutoWire,
+  onRequestCopySelection,
+  onRequestPasteSelection,
   onRequestDuplicateSelection,
   onRequestRepeatSelectionRight,
   onRequestCopySelectionToWorkspace,
@@ -1086,6 +1092,18 @@ export function WorkbenchActions({
               label="Group Selection"
               onSelect={onRequestAddGroupBoxFromSelection}
               disabled={selectedModuleIds.length < 1}
+            />
+            <WorkbenchMenuActionButton
+              label="Copy Cluster"
+              onSelect={onRequestCopySelection}
+              disabled={!hasSelection}
+              title="Copy selected modules (Cmd/Ctrl+C)"
+            />
+            <WorkbenchMenuActionButton
+              label="Paste Cluster"
+              onSelect={onRequestPasteSelection}
+              disabled={!canPasteSelection}
+              title="Paste copied modules (Cmd/Ctrl+V)"
             />
             <WorkbenchMenuActionButton
               label="Duplicate Cluster"

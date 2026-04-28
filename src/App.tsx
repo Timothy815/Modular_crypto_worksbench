@@ -113,7 +113,11 @@ import { getPrimitiveMicroDemo } from './ui/primitive-micro-demos';
 import { getPipelineMicroDemo } from './ui/pipeline-micro-demos';
 import { buildCompositeInstanceDrilldownContext } from './ui/composite-instance-drilldown';
 import { computeAutoWireConnections, type AutoWireMode } from './ui/autowire-selection';
-import { repeatWorkspaceSelectionToRight } from './ui/workspace-clipboard';
+import {
+  buildWorkspaceClipboardSnapshot,
+  repeatWorkspaceSelectionToRight,
+  type WorkspaceClipboardSnapshot,
+} from './ui/workspace-clipboard';
 
 const MIN_LEFT_DOCK_WIDTH = 220;
 const MAX_LEFT_DOCK_WIDTH = 520;
@@ -458,6 +462,7 @@ function MainApp() {
     };
   }, []);
   const [parameterClipboard, setParameterClipboard] = useState<ParameterClipboardState | null>(null);
+  const [workspaceClipboard, setWorkspaceClipboard] = useState<WorkspaceClipboardSnapshot | null>(null);
   const hostWindowIdRef = useRef(createWindowSessionId());
   const detachedPanelWindowsRef = useRef<Record<string, Window | null>>({});
   const detachedWorkspaceWindowRef = useRef<Window | null>(null);
@@ -2249,6 +2254,40 @@ function MainApp() {
     setImportError(null);
   }
 
+  function handleCopySelectedCluster() {
+    if (state.compositeEditor) {
+      return;
+    }
+
+    if (effectiveSelectedModuleIds.length === 0) {
+      return;
+    }
+
+    const snapshot = buildWorkspaceClipboardSnapshot({
+      project: activeProjectState,
+      layout: activeLayout,
+      selectedModuleIds: effectiveSelectedModuleIds,
+    });
+    if (!snapshot) {
+      return;
+    }
+    setWorkspaceClipboard(snapshot);
+    setImportError(null);
+  }
+
+  function handlePasteWorkspaceClipboard() {
+    if (state.compositeEditor || !workspaceClipboard) {
+      return;
+    }
+
+    dispatch({
+      type: 'pasteWorkspaceClipboard',
+      projectId: activeProjectDefinition.id,
+      snapshot: workspaceClipboard,
+    });
+    setImportError(null);
+  }
+
   function handleRepeatSelectedClusterRight() {
     if (state.compositeEditor) {
       return;
@@ -2473,6 +2512,24 @@ function MainApp() {
         return;
       }
 
+      if (matchesShortcutCombo(event, { key: 'c', metaOrCtrl: true })) {
+        if (!hasSelection) {
+          return;
+        }
+        event.preventDefault();
+        handleCopySelectedCluster();
+        return;
+      }
+
+      if (matchesShortcutCombo(event, { key: 'v', metaOrCtrl: true })) {
+        if (!workspaceClipboard) {
+          return;
+        }
+        event.preventDefault();
+        handlePasteWorkspaceClipboard();
+        return;
+      }
+
       if ((event.key === 'Backspace' || event.key === 'Delete') && hasSelection) {
         event.preventDefault();
         handleDeleteSelectedCluster();
@@ -2610,7 +2667,9 @@ function MainApp() {
     effectiveTickCount,
     execution,
     handleDeleteSelectedCluster,
+    handleCopySelectedCluster,
     handleDuplicateSelectedCluster,
+    handlePasteWorkspaceClipboard,
     handleRedoWorkspaceHistory,
     handleUndoWorkspaceHistory,
     isCompositeDrilldownActive,
@@ -2620,6 +2679,7 @@ function MainApp() {
     state.showInspector,
     stepIndex,
     syncTutorialStepFromTrace,
+    workspaceClipboard,
   ]);
 
   function handleSaveWorkspaceVersion() {
@@ -4068,6 +4128,8 @@ function MainApp() {
               setIsMultiConditionalDialogOpen(true);
             }}
             onRequestAutoWire={handleAutoWireSelection}
+            onRequestCopySelection={isCompositeDrilldownActive ? () => undefined : handleCopySelectedCluster}
+            onRequestPasteSelection={isCompositeDrilldownActive ? () => undefined : handlePasteWorkspaceClipboard}
             onRequestDuplicateSelection={isCompositeDrilldownActive ? () => undefined : handleDuplicateSelectedCluster}
             onRequestRepeatSelectionRight={
               isCompositeDrilldownActive ? () => undefined : handleRepeatSelectedClusterRight
@@ -4083,6 +4145,7 @@ function MainApp() {
             }
             canUndo={isCompositeDrilldownActive ? false : canUndoWorkspaceHistory}
             canRedo={isCompositeDrilldownActive ? false : canRedoWorkspaceHistory}
+            canPasteSelection={!isCompositeDrilldownActive && workspaceClipboard !== null}
             workspaceVersions={isCompositeDrilldownActive ? [] : activeWorkspaceVersions}
             onRequestSaveVersion={handleSaveWorkspaceVersion}
             onRequestArrangeSelection={(mode) =>

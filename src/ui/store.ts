@@ -297,6 +297,7 @@ export type UiAction =
       nextDefId: string;
     }
   | { type: 'duplicateSelectedCluster'; projectId: string }
+  | { type: 'pasteWorkspaceClipboard'; projectId: string; snapshot: WorkspaceClipboardSnapshot }
   | {
       type: 'applyRepeatedSelection';
       projectId: string;
@@ -3545,6 +3546,48 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       };
     }
     case 'insertStarterChain': {
+      if (state.compositeEditor) {
+        return state;
+      }
+      const currentProject = state.projectStates[action.projectId];
+      const currentLayout = state.layoutByProject[action.projectId];
+      if (!currentProject || !currentLayout) {
+        return state;
+      }
+      const pasted = pasteWorkspaceClipboardSnapshot({
+        targetProject: currentProject,
+        targetLayout: currentLayout,
+        snapshot: action.snapshot,
+      });
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: pasted.project,
+        },
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: pasted.layout,
+        },
+        selectedModuleIdsByProject: {
+          ...state.selectedModuleIdsByProject,
+          [action.projectId]: pasted.pastedModuleIds,
+        },
+        selectedModuleIdByProject: {
+          ...state.selectedModuleIdByProject,
+          [action.projectId]: pasted.pastedModuleIds[0] ?? null,
+        },
+        currentTickByProject: {
+          ...state.currentTickByProject,
+          [action.projectId]: 0,
+        },
+        isTickPlaybackActiveByProject: {
+          ...state.isTickPlaybackActiveByProject,
+          [action.projectId]: false,
+        },
+      };
+    }
+    case 'pasteWorkspaceClipboard': {
       if (state.compositeEditor) {
         return state;
       }

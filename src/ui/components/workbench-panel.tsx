@@ -495,6 +495,8 @@ interface WorkbenchPanelProps {
   onRequestCreateConditional: () => void;
   onRequestCreateMultiConditional: () => void;
   onRequestAutoWire: (mode: AutoWireMode) => void;
+  onRequestCopySelection: () => void;
+  onRequestPasteSelection: () => void;
   onRequestDuplicateSelection: () => void;
   onRequestRepeatSelectionRight: () => void;
   onRequestCopySelectionToWorkspace: () => void;
@@ -504,6 +506,7 @@ interface WorkbenchPanelProps {
   onToggleTheme: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  canPasteSelection?: boolean;
   workspaceVersions: WorkspaceVersionDocument[];
   onRequestSaveVersion: () => void;
   onRequestArrangeSelection: (
@@ -734,6 +737,8 @@ export function WorkbenchPanel({
   onRequestCreateConditional,
   onRequestCreateMultiConditional,
   onRequestAutoWire,
+  onRequestCopySelection,
+  onRequestPasteSelection,
   onRequestDuplicateSelection,
   onRequestRepeatSelectionRight,
   onRequestCopySelectionToWorkspace,
@@ -743,6 +748,7 @@ export function WorkbenchPanel({
   onToggleTheme,
   canUndo,
   canRedo,
+  canPasteSelection = false,
   workspaceVersions,
   onRequestSaveVersion,
   onRequestArrangeSelection,
@@ -3627,6 +3633,7 @@ export function WorkbenchPanel({
           snapToGuides={snapToGuides}
           canUndo={canUndo}
           canRedo={canRedo}
+          canPasteSelection={canPasteSelection}
           selectedModuleIds={selectedModuleIds}
           selectedFurnitureKind={selectedFurnitureKind}
           selectedFurnitureTitle={selectedFurnitureTitle}
@@ -3672,6 +3679,8 @@ export function WorkbenchPanel({
           onRequestAddGroupBox={onAddGroupBox}
           onRequestAddGroupBoxFromSelection={onAddGroupBoxFromSelection}
           onRequestAddGuideRail={onAddGuideRail}
+          onRequestCopySelection={onRequestCopySelection}
+          onRequestPasteSelection={onRequestPasteSelection}
           onRequestDuplicateSelection={onRequestDuplicateSelection}
           onRequestRepeatSelectionRight={onRequestRepeatSelectionRight}
           onRequestCopySelectionToWorkspace={onRequestCopySelectionToWorkspace}

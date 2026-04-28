@@ -252,6 +252,8 @@ export function DetachedWorkspaceWindow({
             onRequestCreateConditional={() => undefined}
             onRequestCreateMultiConditional={() => undefined}
             onRequestAutoWire={() => undefined}
+            onRequestCopySelection={() => undefined}
+            onRequestPasteSelection={() => undefined}
             onRequestDuplicateSelection={() => undefined}
             onRequestRepeatSelectionRight={() => undefined}
             onRequestCopySelectionToWorkspace={() => undefined}
@@ -261,6 +263,7 @@ export function DetachedWorkspaceWindow({
             onToggleTheme={() => undefined}
             canUndo={false}
             canRedo={false}
+            canPasteSelection={false}
             workspaceVersions={[]}
             onRequestSaveVersion={() => undefined}
             onRequestArrangeSelection={() => undefined}

@@ -61,6 +61,13 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         indexTerms: ['undo', 'redo', 'save version', 'restore', 'workbench menus', 'project menu'],
       },
       {
+        id: 'keyboard-shortcuts',
+        title: 'Keyboard Shortcuts',
+        body:
+          'MCW supports a small set of workbench shortcuts for repeated actions. These are accelerators for visible controls, not hidden commands. Current V1 shortcuts: Cmd/Ctrl+Z for Undo, Cmd/Ctrl+Shift+Z for Redo, Cmd/Ctrl+C for Copy Cluster, Cmd/Ctrl+V for Paste Cluster, Cmd/Ctrl+D for Duplicate Cluster, Delete or Backspace for Delete Cluster, arrow keys to nudge the current selection by one workbench grid step, Space to play or pause tick playback when tick controls are active, and [ / ] to move backward or forward through tick or trace stepping contexts that are already visible. Shortcuts do not fire while you are typing in parameter editors, rename fields, CSV boxes, or other text inputs. Look for shortcut hints on the matching buttons and controls.',
+        indexTerms: ['keyboard shortcuts', 'hotkeys', 'quick keys', 'copy shortcut', 'paste shortcut', 'undo shortcut', 'redo shortcut', 'duplicate shortcut', 'delete shortcut', 'playback shortcut', 'step shortcut'],
+      },
+      {
         id: 'wiring-and-placement',
         title: 'Wiring And Placement',
         body:
