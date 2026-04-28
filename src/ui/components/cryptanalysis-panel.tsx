@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   analyzeBitDifference,
@@ -2074,15 +2074,14 @@ export function CryptanalysisPanel({
                 <p className="comparison-copy cryptanalysis-help-copy">
                   A stuck bit position — one that is almost always 0 or always 1 — carries almost no information.
                 </p>
-                <div className="output-stats-balance-chart" role="img" aria-label="Per-bit-position balance">
-                  {renderBalanceBars(outputStatsResult.bitBalance.perPositionFractions)}
-                </div>
-                <p className="comparison-copy">
+                <BitBalanceHeatmap fractions={outputStatsResult.bitBalance.perPositionFractions} />
+                <p className="comparison-copy" style={{ marginTop: 10 }}>
                   Monobit p-value: <strong>
                     {outputStatsResult.bitBalance.sampleValid
                       ? outputStatsResult.bitBalance.monobitPValue.toFixed(4)
                       : 'n/a (insufficient sample)'}
                   </strong>
+                  {' '}| ones fraction: <strong>{(outputStatsResult.bitBalance.onesFraction * 100).toFixed(1)}%</strong>
                 </p>
               </div>
 
@@ -2090,30 +2089,56 @@ export function CryptanalysisPanel({
               <div className="comparison-card">
                 <span className="meta-label">Shannon Entropy</span>
                 <strong>
-                  {outputStatsResult.byteEntropy.shannonEntropy.toFixed(3)} bits
-                  {' '}/ {outputStatsResult.outputWidth} bit max
+                  {outputStatsResult.byteEntropy.shannonEntropy.toFixed(3)} bits / {outputStatsResult.outputWidth}-bit max
                 </strong>
-                <p className="comparison-copy">
-                  {(outputStatsResult.byteEntropy.entropyFraction * 100).toFixed(1)}% of maximum entropy
-                  {' '}| {outputStatsResult.byteEntropy.uniqueValueCount} of{' '}
-                  {Math.min(Math.pow(2, outputStatsResult.outputWidth), 65536).toFixed(0)} distinct output values seen
+                {/* Gauge with reference markers */}
+                {(() => {
+                  const maxH = outputStatsResult.outputWidth;
+                  const H = outputStatsResult.byteEntropy.shannonEntropy;
+                  const pct = (H / maxH) * 100;
+                  const fillColor =
+                    H / maxH > 0.92 ? 'rgba(64,168,255,0.85)' :
+                    H / maxH > 0.70 ? 'rgba(200,140,40,0.85)' :
+                                      'rgba(210,50,40,0.85)';
+                  // Reference markers as fractions of maxH
+                  const markers: Array<{ val: number; label: string }> = maxH >= 7
+                    ? [{ val: 0, label: '0' }, { val: 3.5 / maxH, label: '3.5\nEng' }, { val: 6.5 / maxH, label: '6.5' }, { val: 7.9 / maxH, label: '7.9\nAES' }, { val: 1, label: maxH.toFixed(0) }]
+                    : [{ val: 0, label: '0' }, { val: 0.5, label: (maxH / 2).toFixed(0) }, { val: 1, label: maxH.toFixed(0) }];
+                  return (
+                    <div style={{ marginTop: 10 }}>
+                      <div style={{ position: 'relative', height: 20, borderRadius: 999, background: 'color-mix(in srgb, var(--surface-soft) 88%, var(--surface-1))', border: '1px solid var(--border)', overflow: 'visible' }}>
+                        <div style={{ height: '100%', borderRadius: 999, width: `${pct.toFixed(1)}%`, background: fillColor, transition: 'width 0.4s ease' }} />
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', mixBlendMode: 'overlay' }}>
+                            {H.toFixed(3)} bits
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ position: 'relative', height: 20, marginTop: 2 }}>
+                        {markers.map(({ val, label }) => (
+                          <span key={val} style={{
+                            position: 'absolute',
+                            left: `${(val * 100).toFixed(1)}%`,
+                            transform: 'translateX(-50%)',
+                            fontSize: 9,
+                            color: 'var(--ink-secondary)',
+                            fontFamily: 'monospace',
+                            whiteSpace: 'pre',
+                            textAlign: 'center',
+                            lineHeight: 1.2,
+                          }}>{label}</span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+                <p className="comparison-copy" style={{ marginTop: 6 }}>
+                  {(outputStatsResult.byteEntropy.entropyFraction * 100).toFixed(1)}% of max
+                  {' '}· {outputStatsResult.byteEntropy.uniqueValueCount} of{' '}
+                  {Math.min(Math.pow(2, outputStatsResult.outputWidth), 65536).toFixed(0)} distinct values seen
                 </p>
-                <div className="output-stats-entropy-gauge">
-                  <div
-                    className="output-stats-entropy-fill"
-                    style={{
-                      width: `${(outputStatsResult.byteEntropy.entropyFraction * 100).toFixed(1)}%`,
-                      backgroundColor: outputStatsResult.byteEntropy.entropyFraction > 0.9
-                        ? 'var(--analysis-accent)'
-                        : outputStatsResult.byteEntropy.entropyFraction > 0.7
-                          ? 'var(--signal-warn)'
-                          : 'var(--signal-error)',
-                    }}
-                  />
-                </div>
                 <p className="comparison-copy cryptanalysis-help-copy">
-                  High entropy is required for a good cipher but not sufficient.
-                  A Caesar cipher swept across all inputs also scores near-maximum entropy.
+                  High entropy is required but not sufficient — a Caesar cipher swept across all inputs scores near-maximum entropy too.
                 </p>
               </div>
 
@@ -2126,28 +2151,22 @@ export function CryptanalysisPanel({
                   ) : null}
                 </span>
                 <strong>
-                  Adjacent-value linear correlation r = {outputStatsResult.correlation.serialCorrelationCoefficient.toFixed(3)}
+                  r = {outputStatsResult.correlation.serialCorrelationCoefficient.toFixed(3)}
+                  {Math.abs(outputStatsResult.correlation.serialCorrelationCoefficient) > 0.3 ? ' — linear structure detected' : ' — no obvious linear structure'}
                 </strong>
                 <p className="comparison-copy cryptanalysis-help-copy">
-                  This is the test the other sections miss. A Caesar cipher scores perfectly
-                  on frequency, balance, and entropy — but its scatter plot shows a diagonal because
-                  output[i+1] = output[i] + 1. A cloud means consecutive outputs are not linearly related.
+                  Each dot = (output[i], output[i+1]). A cipher with structure shows diagonals or clusters.
+                  A cloud means consecutive outputs are not linearly related.
                 </p>
-                <div
-                  className="output-stats-scatter-grid"
-                  style={{ gridTemplateColumns: `repeat(${outputStatsResult.correlation.gridSize}, 1fr)` }}
-                  role="img"
-                  aria-label="Sequential correlation scatter"
-                  title={`${outputStatsResult.correlation.valuePairs} consecutive pairs plotted`}
-                >
-                  {renderScatterGrid(outputStatsResult.correlation.scatterGrid)}
-                </div>
-                <p className="comparison-copy" style={{ fontSize: '0.7rem', color: 'var(--label-muted)' }}>
-                  Each cell = (output[i], output[i+1]) pair count.
-                  {outputStatsResult.correlation.bucketDivisor > 1
-                    ? ` Values bucketed into ${outputStatsResult.correlation.gridSize}×${outputStatsResult.correlation.gridSize} grid.`
-                    : ''}
-                </p>
+                <ScatterCanvas
+                  grid={outputStatsResult.correlation.scatterGrid}
+                  gridSize={outputStatsResult.correlation.gridSize}
+                />
+                {outputStatsResult.correlation.bucketDivisor > 1 && (
+                  <p className="comparison-copy" style={{ fontSize: '0.7rem', color: 'var(--ink-secondary)', marginTop: 4 }}>
+                    Values bucketed into {outputStatsResult.correlation.gridSize}×{outputStatsResult.correlation.gridSize} grid ({outputStatsResult.correlation.valuePairs} pairs).
+                  </p>
+                )}
               </div>
 
               {/* Section 5: Runs Uniformity */}
@@ -3365,87 +3384,175 @@ function runKeyDependencyCheck(
   }
 }
 
-// ── Output stats rendering helpers ────────────────────────────────────────────
+// ── Output stats visual components ───────────────────────────────────────────
+
+/** Canvas-based sequential-correlation heatmap (log1p heat accumulation). */
+function ScatterCanvas({ grid, gridSize }: { grid: number[][]; gridSize: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const SIZE = 240;
+    canvas.width = SIZE;
+    canvas.height = SIZE;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const cell = SIZE / Math.max(gridSize, 1);
+    const maxVal = Math.max(1, ...grid.flatMap((r) => r));
+    const img = ctx.createImageData(SIZE, SIZE);
+    for (let row = 0; row < gridSize; row++) {
+      for (let col = 0; col < gridSize; col++) {
+        const count = grid[row]?.[col] ?? 0;
+        const t = count > 0 ? Math.min(1, Math.log1p(count) / Math.log1p(maxVal)) : 0;
+        const x0 = Math.floor(col * cell), y0 = Math.floor(row * cell);
+        const x1 = Math.floor((col + 1) * cell), y1 = Math.floor((row + 1) * cell);
+        for (let py = y0; py < y1; py++) {
+          for (let px = x0; px < x1; px++) {
+            const idx = (py * SIZE + px) * 4;
+            if (count === 0) {
+              img.data[idx] = 18; img.data[idx + 1] = 20; img.data[idx + 2] = 28; img.data[idx + 3] = 255;
+            } else {
+              // Warm amber-to-white ramp: low=deep amber, high=bright white
+              img.data[idx]     = Math.round(50  + 205 * t);
+              img.data[idx + 1] = Math.round(20  + 180 * t);
+              img.data[idx + 2] = Math.round(0   + 120 * t);
+              img.data[idx + 3] = 255;
+            }
+          }
+        }
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    // Grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 0.5;
+    for (let i = 1; i < gridSize; i++) {
+      const pos = i * cell;
+      ctx.beginPath(); ctx.moveTo(pos, 0); ctx.lineTo(pos, SIZE); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, pos); ctx.lineTo(SIZE, pos); ctx.stroke();
+    }
+  }, [grid, gridSize]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ position: 'relative', display: 'inline-block' }}>
+        <canvas
+          ref={canvasRef}
+          style={{ display: 'block', width: '100%', maxWidth: 240, imageRendering: 'pixelated', borderRadius: 6, border: '1px solid var(--border)' }}
+          title="Sequential correlation heatmap — each cell = (output[i], output[i+1]) pair count"
+        />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--ink-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+        <span>x[i] → 0</span><span>x[i+1] (y-axis) →</span><span>max</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: 'var(--ink-secondary)' }}>
+        <div style={{ width: 48, height: 8, borderRadius: 999, background: 'linear-gradient(90deg, #1a1420 0%, #c86400 50%, #ffffff 100%)', border: '1px solid var(--border)' }} />
+        <span>dark = no pairs · bright = many pairs</span>
+      </div>
+    </div>
+  );
+}
+
+/** Per-bit-position balance heatmap. Color encodes % of 1s: balanced=green, biased=red. */
+function BitBalanceHeatmap({ fractions }: { fractions: number[] }) {
+  const n = fractions.length;
+  const cols = Math.min(n, 32);
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 2, marginTop: 8 }}>
+        {fractions.map((frac, i) => {
+          const dev = Math.abs(frac - 0.5);
+          // green=balanced, amber=moderate, red=biased
+          const [r, g, b] =
+            dev < 0.08  ? [40, 180, 100]  :
+            dev < 0.2   ? [200, 160, 40]  :
+                          [210, 50,  40];
+          const alpha = 0.25 + dev * 1.4;
+          return (
+            <div
+              key={i}
+              title={`Bit ${i}: ${(frac * 100).toFixed(1)}% ones`}
+              style={{
+                height: 18,
+                borderRadius: 3,
+                backgroundColor: `rgba(${r},${g},${b},${Math.min(1, alpha).toFixed(2)})`,
+                border: `1px solid rgba(${r},${g},${b},0.35)`,
+              }}
+            />
+          );
+        })}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3, fontSize: 10, color: 'var(--ink-secondary)' }}>
+        <span>bit 0</span>
+        {n > 1 && <span>bit {n - 1}</span>}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, fontSize: 10, color: 'var(--ink-secondary)' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: 3, backgroundColor: 'rgba(40,180,100,0.65)' }} />
+          balanced (≈50%)
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: 3, backgroundColor: 'rgba(210,50,40,0.80)' }} />
+          biased
+        </span>
+      </div>
+    </div>
+  );
+}
 
 function renderFrequencyBars(counts: number[], expectedCount: number): React.ReactNode {
   const maxCount = Math.max(...counts, expectedCount * 1.5, 1);
+  const expectedH = (expectedCount / maxCount) * 100;
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 1, height: 60 }}>
-      {counts.map((count, i) => {
-        const height = (count / maxCount) * 58;
-        const deviation = expectedCount > 0 ? Math.abs(count - expectedCount) / expectedCount : 0;
-        const color =
-          deviation > 0.5
-            ? 'var(--signal-error)'
-            : deviation > 0.2
-              ? 'var(--signal-warn)'
-              : 'var(--analysis-accent)';
-        return (
-          <div
-            key={i}
-            title={`Bucket ${i}: ${count} (expected ${expectedCount.toFixed(1)})`}
-            style={{
-              flex: 1,
-              height: Math.max(height, count > 0 ? 1 : 0),
-              backgroundColor: color,
-              borderRadius: '1px 1px 0 0',
-            }}
-          />
-        );
-      })}
+    <div>
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', gap: 1, height: 100, marginTop: 8 }}>
+        {/* Expected line */}
+        <div style={{
+          position: 'absolute', left: 0, right: 0,
+          bottom: `${expectedH}%`,
+          borderTop: '1px dashed rgba(180,180,180,0.35)',
+          pointerEvents: 'none',
+          zIndex: 1,
+        }} />
+        {counts.map((count, i) => {
+          const height = (count / maxCount) * 100;
+          const deviation = expectedCount > 0 ? Math.abs(count - expectedCount) / expectedCount : 0;
+          const [r, g, b] =
+            deviation > 0.5 ? [210, 50, 40] :
+            deviation > 0.2 ? [200, 140, 40] :
+                              [40, 180, 120];
+          return (
+            <div
+              key={i}
+              title={`Bucket ${i}: ${count} (expected ${expectedCount.toFixed(1)})`}
+              style={{
+                flex: 1,
+                height: `${Math.max(height, count > 0 ? 1 : 0)}%`,
+                backgroundColor: `rgba(${r},${g},${b},0.75)`,
+                borderRadius: '1px 1px 0 0',
+              }}
+            />
+          );
+        })}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2, fontSize: 10, color: 'var(--ink-secondary)', fontFamily: 'monospace' }}>
+        <span>0x00</span><span>0x40</span><span>0x80</span><span>0xC0</span><span>0xFF</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, fontSize: 10, color: 'var(--ink-secondary)' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ display: 'inline-block', width: 24, height: 1, borderTop: '1px dashed rgba(180,180,180,0.55)' }} />
+          expected
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ display: 'inline-block', width: 12, height: 10, borderRadius: 2, backgroundColor: 'rgba(40,180,120,0.75)' }} />
+          flat
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ display: 'inline-block', width: 12, height: 10, borderRadius: 2, backgroundColor: 'rgba(210,50,40,0.75)' }} />
+          spike
+        </span>
+      </div>
     </div>
-  );
-}
-
-function renderBalanceBars(perPositionFractions: number[]): React.ReactNode {
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 48 }}>
-      {perPositionFractions.map((frac, i) => {
-        const deviation = Math.abs(frac - 0.5);
-        const color =
-          deviation > 0.4
-            ? 'var(--signal-error)'
-            : deviation > 0.2
-              ? 'var(--signal-warn)'
-              : 'var(--analysis-accent)';
-        return (
-          <div
-            key={i}
-            title={`Bit position ${i}: ${(frac * 100).toFixed(1)}% ones`}
-            style={{
-              flex: 1,
-              height: Math.max(frac * 44, 2),
-              backgroundColor: color,
-              borderRadius: '1px 1px 0 0',
-            }}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-function renderScatterGrid(scatterGrid: number[][]): React.ReactNode {
-  const gridSize = scatterGrid.length;
-  const maxHit = Math.max(1, ...scatterGrid.flatMap((row) => row));
-  return scatterGrid.flatMap((row, rowIdx) =>
-    row.map((count, colIdx) => {
-      const intensity = count > 0 ? Math.min(1, Math.log1p(count) / Math.log1p(maxHit)) : 0;
-      return (
-        <div
-          key={`${rowIdx}-${colIdx}`}
-          title={`(${colIdx}, ${rowIdx}): ${count} pairs`}
-          style={{
-            height: `${Math.floor(100 / gridSize)}px`,
-            backgroundColor:
-              count > 0
-                ? `rgba(var(--analysis-accent-rgb, 100, 210, 255), ${intensity.toFixed(2)})`
-                : 'var(--bg-raised)',
-            border: '1px solid var(--border-subtle)',
-          }}
-        />
-      );
-    }),
   );
 }
 
@@ -3454,34 +3561,42 @@ function renderRunsChart(
   expectedRunLengthCounts: number[],
 ): React.ReactNode {
   const labels = ['1', '2', '3', '4', '5', '6', '7', '8+'];
-  const maxCount = Math.max(
-    1,
-    ...runLengthCounts,
-    ...expectedRunLengthCounts.map((v) => Math.ceil(v)),
-  );
+  const maxCount = Math.max(1, ...runLengthCounts, ...expectedRunLengthCounts.map((v) => Math.ceil(v)));
   return (
-    <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 64 }}>
-      {labels.map((label, i) => {
-        const observed = runLengthCounts[i] ?? 0;
-        const expected = expectedRunLengthCounts[i] ?? 0;
-        const obsH = (observed / maxCount) * 56;
-        const expH = (expected / maxCount) * 56;
-        return (
-          <div key={label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-            <div style={{ position: 'relative', width: '100%', height: 56, display: 'flex', alignItems: 'flex-end', gap: 1 }}>
-              <div
-                title={`Length ${label}: ${observed} observed`}
-                style={{ flex: 1, height: Math.max(obsH, observed > 0 ? 2 : 0), backgroundColor: 'var(--analysis-accent)', borderRadius: '1px 1px 0 0' }}
-              />
-              <div
-                title={`Length ${label}: ${expected.toFixed(1)} expected`}
-                style={{ flex: 1, height: Math.max(expH, 1), backgroundColor: 'var(--border-subtle)', borderRadius: '1px 1px 0 0', border: '1px dashed var(--label-muted)' }}
-              />
+    <div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', height: 96, marginTop: 8 }}>
+        {labels.map((label, i) => {
+          const observed = runLengthCounts[i] ?? 0;
+          const expected = expectedRunLengthCounts[i] ?? 0;
+          const obsH = (observed / maxCount) * 88;
+          const expH = (expected / maxCount) * 88;
+          return (
+            <div key={label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
+              <div style={{ position: 'relative', width: '100%', height: 88, display: 'flex', alignItems: 'flex-end', gap: 2 }}>
+                <div
+                  title={`Length ${label}: ${observed} observed`}
+                  style={{ flex: 1, height: Math.max(obsH, observed > 0 ? 2 : 0), backgroundColor: 'rgba(64,168,255,0.80)', borderRadius: '2px 2px 0 0' }}
+                />
+                <div
+                  title={`Length ${label}: ${expected.toFixed(1)} expected`}
+                  style={{ flex: 1, height: Math.max(expH, 1), backgroundColor: 'rgba(180,180,180,0.30)', borderRadius: '2px 2px 0 0', border: '1px dashed rgba(180,180,180,0.45)' }}
+                />
+              </div>
+              <span style={{ fontSize: 10, color: 'var(--ink-secondary)', marginTop: 3 }}>{label}</span>
             </div>
-            <span style={{ fontSize: '0.6rem', color: 'var(--label-muted)' }}>{label}</span>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, fontSize: 10, color: 'var(--ink-secondary)' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ display: 'inline-block', width: 12, height: 10, borderRadius: 2, backgroundColor: 'rgba(64,168,255,0.80)' }} />
+          observed
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ display: 'inline-block', width: 12, height: 10, borderRadius: 2, backgroundColor: 'rgba(180,180,180,0.30)', border: '1px dashed rgba(180,180,180,0.45)' }} />
+          expected (random)
+        </span>
+      </div>
     </div>
   );
 }
