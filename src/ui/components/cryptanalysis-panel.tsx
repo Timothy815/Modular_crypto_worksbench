@@ -3195,7 +3195,7 @@ function findFlippableProjectSources(project: Project): FlippableProjectSource[]
       const bits = (moduleInstance.params.stream as number[]).map((bit) => (bit ? 1 : 0));
       sources.push({
         moduleId: moduleInstance.id,
-        moduleName: 'Bit Source',
+        moduleName: moduleInstance.id,
         kind: 'bit-source' as const,
         bits,
       });
@@ -3205,7 +3205,7 @@ function findFlippableProjectSources(project: Project): FlippableProjectSource[]
     if ((moduleInstance.defId === 'HexSource' || moduleInstance.defId === 'HexSequenceInput') && typeof moduleInstance.params.value === 'string') {
       sources.push({
         moduleId: moduleInstance.id,
-        moduleName: moduleInstance.defId === 'HexSequenceInput' ? 'Hex Sequence Input' : 'Hex Source',
+        moduleName: moduleInstance.id,
         kind: 'hex-source' as const,
         bits: hexToBits(moduleInstance.params.value),
       });
@@ -3215,7 +3215,7 @@ function findFlippableProjectSources(project: Project): FlippableProjectSource[]
     if (moduleInstance.defId === 'AsciiSource' && typeof moduleInstance.params.value === 'string') {
       sources.push({
         moduleId: moduleInstance.id,
-        moduleName: 'ASCII Source',
+        moduleName: moduleInstance.id,
         kind: 'ascii-source' as const,
         bits: moduleInstance.params.value
           .split('')
@@ -3244,15 +3244,14 @@ function findFlippableProjectSources(project: Project): FlippableProjectSource[]
       if (bridgeConnection && symbolBits) {
         sources.push({
           moduleId: moduleInstance.id,
-          moduleName: 'Text Input',
+          moduleName: moduleInstance.id,
           kind: 'text-symbol-bridge' as const,
           bits: symbolBits,
         });
       } else {
-        // Bare symbol source — no SymbolToBits bridge; sweep A–Z
         sources.push({
           moduleId: moduleInstance.id,
-          moduleName: typeof moduleInstance.params.name === 'string' ? moduleInstance.params.name : 'Text Input',
+          moduleName: moduleInstance.id,
           kind: 'symbol-source' as const,
           bits: symbolBits ?? new Array(5).fill(0),
         });
