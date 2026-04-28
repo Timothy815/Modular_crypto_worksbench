@@ -193,6 +193,8 @@ export function CryptanalysisPanel({
     bitsChanged: number;
   } | null>(null);
   const outputStatsAbortRef = useRef(false);
+  const variantExecTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [variantExecution, setVariantExecution] = useState<ExecutionResult | null>(null);
   const analysis = analyzeSymbolSignal(
     ciphertext.trim().length > 0 ? { type: 'symbol', value: ciphertext } : null,
   );
@@ -302,22 +304,23 @@ export function CryptanalysisPanel({
 
     return buildVariantProject(project, flippableSource, variantInputBits, variantBridgeSymbol);
   }, [flippableSource, project, variantBridgeSymbol, variantInputBits]);
-  const variantExecution = useMemo(() => {
+  useEffect(() => {
+    if (variantExecTimeoutRef.current) clearTimeout(variantExecTimeoutRef.current);
     if (!variantProject) {
-      return null;
+      setVariantExecution(null);
+      return;
     }
-
-    const validation = validateProject(variantProject, registry);
-    if (!validation.ok) {
-      return null;
-    }
-
-    try {
-      return runDemoProject(variantProject, registry);
-    } catch {
-      return null;
-    }
-  }, [registry, variantProject]);
+    variantExecTimeoutRef.current = setTimeout(() => {
+      const validation = validateProject(variantProject, registry);
+      if (!validation.ok) { setVariantExecution(null); return; }
+      try {
+        setVariantExecution(runDemoProject(variantProject, registry));
+      } catch {
+        setVariantExecution(null);
+      }
+    }, 50);
+    return () => { if (variantExecTimeoutRef.current) clearTimeout(variantExecTimeoutRef.current); };
+  }, [variantProject, registry]);
   const modernSinkOptions = useMemo(
     () => getBitstreamSinkOptions(project, execution, null, false),
     [project, execution],
@@ -851,35 +854,80 @@ export function CryptanalysisPanel({
                 ) : null}
               </div>
             ) : null}
-            {outputDifference ? (
+            {flippableSource && baselineOutputBits ? (
               <>
                 <ModernFlipControl
                   bitLength={effectiveInputBits.length}
                   flipBit={effectiveModernFlipBit}
-                  changedCount={outputDifference.changedCount}
-                  changedPercent={outputDifference.changedPercent}
+                  changedCount={outputDifference?.changedCount ?? 0}
+                  changedPercent={outputDifference?.changedPercent ?? 0}
                   metricLabel="changed output bits"
                   onChange={onModernFlipBitChange}
                 />
-                {outputHexSummary ? (
-                  <div className="cryptanalysis-output-summary-row">
-                    <span className="content-status-chip">
-                      Baseline Hex: <strong>{outputHexSummary.baseline}</strong>
-                    </span>
-                    <span className="content-status-chip">
-                      Variant Hex: <strong>{outputHexSummary.variant}</strong>
-                    </span>
-                  </div>
-                ) : null}
-                <div className="modern-bit-grid">
-                  <BitStripRow label="Baseline Out" bits={outputDifference.baselineBits} />
-                  <BitStripRow label="Variant Out" bits={outputDifference.variantBits} changedFlags={outputDifference.changedFlags} />
-                  <BitStripRow label="Changed Out" bits={outputDifference.changedFlags.map((changed) => (changed ? 1 : 0))} changedFlags={outputDifference.changedFlags} emphasis="changed" />
+                <div className="comparison-actions">
+                  <button
+                    type="button"
+                    className="mini-action-button"
+                    title="Sweep every bit-flip variant, concatenate all outputs, and send to Classical Analysis"
+                    onClick={() => {
+                      const parts: string[] = [];
+                      for (let i = 0; i < flippableSource.bits.length; i++) {
+                        const vBits = flipBitAtIndex(flippableSource.bits, i);
+                        const vProject = buildVariantProject(project, flippableSource, vBits);
+                        if (!vProject) continue;
+                        const validation = validateProject(vProject, registry);
+                        if (!validation.ok) continue;
+                        try {
+                          const vExec = runDemoProject(vProject, registry);
+                          const sym = getSymbolSignalForSink(vExec, effectiveModernSinkId);
+                          if (sym) { parts.push(sym); continue; }
+                          const bits = getBitSignalForSink(vExec, effectiveModernSinkId);
+                          if (bits && bits.length >= 8) {
+                            for (let j = 0; j + 7 < bits.length; j += 8) {
+                              const byte = bits.slice(j, j + 8).reduce((acc, b, k) => acc | (b << (7 - k)), 0);
+                              parts.push(String.fromCharCode(65 + (byte % 26)));
+                            }
+                          }
+                        } catch { continue; }
+                      }
+                      if (parts.length > 0) {
+                        onCiphertextChange(parts.join('').toUpperCase());
+                        onSetCryptanalysisMode('classical');
+                      }
+                    }}
+                  >
+                    Sweep to Classical
+                  </button>
                 </div>
-                <p className="comparison-copy">
-                  Changed output bits <strong>{outputDifference.changedCount}</strong>
-                  {' '}| changed percent <strong>{(outputDifference.changedPercent * 100).toFixed(1)}%</strong>
-                </p>
+                {outputDifference ? (
+                  <>
+                    {outputHexSummary ? (
+                      <div className="cryptanalysis-output-summary-row">
+                        <span className="content-status-chip">
+                          Baseline Hex: <strong>{outputHexSummary.baseline}</strong>
+                        </span>
+                        <span className="content-status-chip">
+                          Variant Hex: <strong>{outputHexSummary.variant}</strong>
+                        </span>
+                      </div>
+                    ) : null}
+                    <div className="modern-bit-grid">
+                      <BitStripRow label="Baseline Out" bits={outputDifference.baselineBits} />
+                      <BitStripRow label="Variant Out" bits={outputDifference.variantBits} changedFlags={outputDifference.changedFlags} />
+                      <BitStripRow label="Changed Out" bits={outputDifference.changedFlags.map((changed) => (changed ? 1 : 0))} changedFlags={outputDifference.changedFlags} emphasis="changed" />
+                    </div>
+                    <p className="comparison-copy">
+                      Changed output bits <strong>{outputDifference.changedCount}</strong>
+                      {' '}| changed percent <strong>{(outputDifference.changedPercent * 100).toFixed(1)}%</strong>
+                    </p>
+                  </>
+                ) : (
+                  <p className="comparison-copy">
+                    {flippableSource.kind === 'text-symbol-bridge' && !variantBridgeSymbol
+                      ? 'This flip produced a 5-bit code outside A–Z, so there is no valid symbol variant to run.'
+                      : 'Variant output unavailable for this bit position — execution could not complete.'}
+                  </p>
+                )}
               </>
             ) : (
               <p className="comparison-copy">
