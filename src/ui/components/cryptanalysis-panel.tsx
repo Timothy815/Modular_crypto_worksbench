@@ -3202,10 +3202,10 @@ function findFlippableProjectSources(project: Project): FlippableProjectSource[]
       continue;
     }
 
-    if (moduleInstance.defId === 'HexSource' && typeof moduleInstance.params.value === 'string') {
+    if ((moduleInstance.defId === 'HexSource' || moduleInstance.defId === 'HexSequenceInput') && typeof moduleInstance.params.value === 'string') {
       sources.push({
         moduleId: moduleInstance.id,
-        moduleName: 'Hex Source',
+        moduleName: moduleInstance.defId === 'HexSequenceInput' ? 'Hex Sequence Input' : 'Hex Source',
         kind: 'hex-source' as const,
         bits: hexToBits(moduleInstance.params.value),
       });
