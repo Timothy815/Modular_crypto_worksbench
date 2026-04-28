@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, useDeferredValue } from 'react';
 
 import {
   analyzeBitDifference,
@@ -195,6 +195,10 @@ export function CryptanalysisPanel({
   const outputStatsAbortRef = useRef(false);
   const variantExecTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [variantExecution, setVariantExecution] = useState<ExecutionResult | null>(null);
+  // Cache the last valid output diff so strips never vanish when a single flip position
+  // transiently fails validation (e.g. edge values in a Mark-II SPN).
+  const lastValidOutputDiffRef = useRef<ReturnType<typeof analyzeBitDifference> | null>(null);
+  const lastValidOutputHexRef = useRef<{ baseline: string; variant: string } | null>(null);
   const analysis = analyzeSymbolSignal(
     ciphertext.trim().length > 0 ? { type: 'symbol', value: ciphertext } : null,
   );
@@ -268,9 +272,12 @@ export function CryptanalysisPanel({
   const effectiveInputBits = flippableSource ? projectSourceBits : baselineBits;
   const effectiveModernFlipBit =
     effectiveInputBits.length > 0 ? Math.min(Math.max(0, modernFlipBit), effectiveInputBits.length - 1) : 0;
+  // Defer the variant computation so slider/button clicks feel instant even when the render
+  // tree is large. The slider thumb moves on the frame of the click; output updates follow.
+  const deferredFlipBit = useDeferredValue(effectiveModernFlipBit);
   const variantInputBits = useMemo(
-    () => flipBitAtIndex(effectiveInputBits, effectiveModernFlipBit),
-    [effectiveInputBits, effectiveModernFlipBit],
+    () => flipBitAtIndex(effectiveInputBits, deferredFlipBit),
+    [effectiveInputBits, deferredFlipBit],
   );
   const variantBridgeSymbol = useMemo(() => {
     if (flippableSource?.kind !== 'text-symbol-bridge') {
@@ -304,6 +311,15 @@ export function CryptanalysisPanel({
 
     return buildVariantProject(project, flippableSource, variantInputBits, variantBridgeSymbol);
   }, [flippableSource, project, variantBridgeSymbol, variantInputBits]);
+  // Clear cached diffs when the source module changes so stale data from a different source
+  // never shows under a newly selected source.
+  const prevSourceIdRef = useRef<string | null>(null);
+  if (flippableSource?.moduleId !== prevSourceIdRef.current) {
+    prevSourceIdRef.current = flippableSource?.moduleId ?? null;
+    lastValidOutputDiffRef.current = null;
+    lastValidOutputHexRef.current = null;
+  }
+
   useEffect(() => {
     if (variantExecTimeoutRef.current) clearTimeout(variantExecTimeoutRef.current);
     if (!variantProject) {
@@ -367,6 +383,11 @@ export function CryptanalysisPanel({
       variant: bitsToHex(variantOutputBits),
     };
   }, [baselineOutputBits, variantOutputBits]);
+  // Keep last-valid values so the output strips never blank out on a transient failed position
+  if (outputDifference !== null) lastValidOutputDiffRef.current = outputDifference;
+  if (outputHexSummary !== null) lastValidOutputHexRef.current = outputHexSummary;
+  const stableOutputDiff = outputDifference ?? lastValidOutputDiffRef.current;
+  const stableOutputHex = outputHexSummary ?? lastValidOutputHexRef.current;
   const roundDiffusion = useMemo(
     () => analyzeRoundDiffusion(execution, variantExecution),
     [execution, variantExecution],
@@ -416,6 +437,11 @@ export function CryptanalysisPanel({
       if (!flippableSource || !baselineOutputBits || !effectiveModernSinkId) {
         return [];
       }
+      // For large sources (same threshold as sweepRows) gate behind the manual sweep button
+      // so we don't auto-run 64 project executions on every project/source change.
+      if (requiresManualSweep && !hasFreshSweep) {
+        return [];
+      }
 
       return runAvalancheSweep(
         project,
@@ -431,8 +457,10 @@ export function CryptanalysisPanel({
       effectiveInputBits.length,
       effectiveModernSinkId,
       flippableSource,
+      hasFreshSweep,
       project,
       registry,
+      requiresManualSweep,
     ],
   );
   const influenceColumns = useMemo(
@@ -859,8 +887,8 @@ export function CryptanalysisPanel({
                 <ModernFlipControl
                   bitLength={effectiveInputBits.length}
                   flipBit={effectiveModernFlipBit}
-                  changedCount={outputDifference?.changedCount ?? 0}
-                  changedPercent={outputDifference?.changedPercent ?? 0}
+                  changedCount={stableOutputDiff?.changedCount ?? 0}
+                  changedPercent={stableOutputDiff?.changedPercent ?? 0}
                   metricLabel="changed output bits"
                   onChange={onModernFlipBitChange}
                 />
@@ -899,26 +927,26 @@ export function CryptanalysisPanel({
                     Sweep to Classical
                   </button>
                 </div>
-                {outputDifference ? (
+                {stableOutputDiff ? (
                   <>
-                    {outputHexSummary ? (
+                    {stableOutputHex ? (
                       <div className="cryptanalysis-output-summary-row">
                         <span className="content-status-chip">
-                          Baseline Hex: <strong>{outputHexSummary.baseline}</strong>
+                          Baseline Hex: <strong>{stableOutputHex.baseline}</strong>
                         </span>
                         <span className="content-status-chip">
-                          Variant Hex: <strong>{outputHexSummary.variant}</strong>
+                          Variant Hex: <strong>{stableOutputHex.variant}</strong>
                         </span>
                       </div>
                     ) : null}
                     <div className="modern-bit-grid">
-                      <BitStripRow label="Baseline Out" bits={outputDifference.baselineBits} />
-                      <BitStripRow label="Variant Out" bits={outputDifference.variantBits} changedFlags={outputDifference.changedFlags} />
-                      <BitStripRow label="Changed Out" bits={outputDifference.changedFlags.map((changed) => (changed ? 1 : 0))} changedFlags={outputDifference.changedFlags} emphasis="changed" />
+                      <BitStripRow label="Baseline Out" bits={stableOutputDiff.baselineBits} />
+                      <BitStripRow label="Variant Out" bits={stableOutputDiff.variantBits} changedFlags={stableOutputDiff.changedFlags} />
+                      <BitStripRow label="Changed Out" bits={stableOutputDiff.changedFlags.map((changed) => (changed ? 1 : 0))} changedFlags={stableOutputDiff.changedFlags} emphasis="changed" />
                     </div>
                     <p className="comparison-copy">
-                      Changed output bits <strong>{outputDifference.changedCount}</strong>
-                      {' '}| changed percent <strong>{(outputDifference.changedPercent * 100).toFixed(1)}%</strong>
+                      Changed output bits <strong>{stableOutputDiff.changedCount}</strong>
+                      {' '}| changed percent <strong>{(stableOutputDiff.changedPercent * 100).toFixed(1)}%</strong>
                     </p>
                   </>
                 ) : (
