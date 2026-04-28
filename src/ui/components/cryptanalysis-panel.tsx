@@ -178,6 +178,13 @@ export function CryptanalysisPanel({
   const [outputStatsSinkId, setOutputStatsSinkId] = useState<string | null>(null);
   const [outputStatsSourceId, setOutputStatsSourceId] = useState<string | null>(null);
   const [outputStatsResult, setOutputStatsResult] = useState<OutputStatistics | null>(null);
+  const [outputStatsSymbolResult, setOutputStatsSymbolResult] = useState<{
+    inputChars: string[];
+    outputChars: (string | null)[];
+    charFreq: Record<string, number>;
+    isPermutation: boolean;
+    selfMappings: string[];
+  } | null>(null);
   const [outputStatsRunning, setOutputStatsRunning] = useState(false);
   const [outputStatsError, setOutputStatsError] = useState<string | null>(null);
   const [outputStatsKeyDep, setOutputStatsKeyDep] = useState<{
@@ -315,6 +322,10 @@ export function CryptanalysisPanel({
     () => getBitstreamSinkOptions(project, execution, null, false),
     [project, execution],
   );
+  const outputStatsSymbolSinkOptions = useMemo(
+    () => getSymbolSinkOptions(project, execution),
+    [project, execution],
+  );
   const effectiveModernSinkId = modernSinkOptions.some(
     (option) => option.moduleId === modernSinkId,
   )
@@ -435,6 +446,14 @@ export function CryptanalysisPanel({
     () => flippableSources.filter((source) => source.kind !== 'text-symbol-bridge'),
     [flippableSources],
   );
+  // Determine whether the currently-selected output-stats source is symbol-domain
+  const effectiveOutputStatsSourceId =
+    outputStatsSourceId ?? flippableSources.find((s) => s.kind !== 'text-symbol-bridge')?.moduleId ?? null;
+  const effectiveOutputStatsSweepSource =
+    flippableSources.find((s) => s.moduleId === effectiveOutputStatsSourceId) ?? null;
+  const outputStatsIsSymbolMode = effectiveOutputStatsSweepSource?.kind === 'symbol-source';
+  const outputStatsActiveSinkOptions = outputStatsIsSymbolMode ? outputStatsSymbolSinkOptions : modernSinkOptions;
+
   const effectiveKeySourceId = keySourceOptions.some((source) => source.moduleId === selectedKeySourceId)
     ? selectedKeySourceId
     : keySourceOptions[0]?.moduleId ?? null;
@@ -1725,15 +1744,15 @@ export function CryptanalysisPanel({
                 </label>
               </div>
             ) : null}
-            {modernSinkOptions.length > 0 ? (
+            {outputStatsActiveSinkOptions.length > 0 ? (
               <div className="content-filter-row">
                 <label className="param-field">
                   <span>Observe output</span>
                   <select
-                    value={outputStatsSinkId ?? modernSinkOptions[0]?.moduleId ?? ''}
+                    value={outputStatsSinkId ?? outputStatsActiveSinkOptions[0]?.moduleId ?? ''}
                     onChange={(event) => setOutputStatsSinkId(event.target.value)}
                   >
-                    {modernSinkOptions.map((option) => (
+                    {outputStatsActiveSinkOptions.map((option) => (
                       <option key={option.moduleId} value={option.moduleId}>
                         {option.label}
                       </option>
@@ -1742,9 +1761,9 @@ export function CryptanalysisPanel({
                 </label>
               </div>
             ) : null}
-            {flippableSources.filter((s) => s.kind !== 'text-symbol-bridge').length === 0 || modernSinkOptions.length === 0 ? (
+            {flippableSources.filter((s) => s.kind !== 'text-symbol-bridge').length === 0 || outputStatsActiveSinkOptions.length === 0 ? (
               <p className="comparison-copy">
-                This workspace needs at least one sweepable source (BitSource, HexSource, AsciiSource, or TextInput) and one bit-domain output sink.
+                This workspace needs at least one sweepable source (BitSource, HexSource, AsciiSource, or TextInput) and at least one output sink.
               </p>
             ) : (
               <div className="comparison-actions">
@@ -1753,12 +1772,9 @@ export function CryptanalysisPanel({
                   className="mini-action-button"
                   disabled={outputStatsRunning}
                   onClick={() => {
-                    const effectiveSourceId =
-                      outputStatsSourceId ?? flippableSources.find((s) => s.kind !== 'text-symbol-bridge')?.moduleId ?? null;
                     const effectiveSinkId =
-                      outputStatsSinkId ?? modernSinkOptions[0]?.moduleId ?? null;
-                    const sweepSource =
-                      flippableSources.find((s) => s.moduleId === effectiveSourceId) ?? null;
+                      outputStatsSinkId ?? outputStatsActiveSinkOptions[0]?.moduleId ?? null;
+                    const sweepSource = effectiveOutputStatsSweepSource;
 
                     if (!sweepSource || !effectiveSinkId) {
                       setOutputStatsError('Select a source and sink to run analysis.');
@@ -1774,17 +1790,28 @@ export function CryptanalysisPanel({
                     setOutputStatsError(null);
                     outputStatsAbortRef.current = false;
 
-                    // Run synchronously on next tick to allow UI to update
                     setTimeout(() => {
                       if (outputStatsAbortRef.current) return;
-                      const sweepCount =
-                        sweepSource.kind === 'symbol-source'
-                          ? SYMBOL_SWEEP_ALPHABET.length
-                          : Math.min(256, Math.pow(2, sweepSource.bits.length));
+
+                      if (sweepSource.kind === 'symbol-source') {
+                        // Symbol sweep: iterate A–Z, collect character outputs
+                        const symbolResult = runSymbolSweep(project, sweepSource, registry, effectiveSinkId);
+                        if (symbolResult.outputChars.filter((c) => c !== null).length < 1) {
+                          setOutputStatsError('No symbol outputs collected. Check that the project runs and has a symbol output sink.');
+                          setOutputStatsRunning(false);
+                          return;
+                        }
+                        setOutputStatsSymbolResult(symbolResult);
+                        setOutputStatsResult(null);
+                        setOutputStatsKeyDep(null);
+                        setOutputStatsRunning(false);
+                        return;
+                      }
+
+                      // Bit sweep
+                      const sweepCount = Math.min(256, Math.pow(2, sweepSource.bits.length));
                       const sampleKind: 'exhaustive' | 'sampled' =
-                        sweepSource.kind === 'symbol-source'
-                          ? 'exhaustive'
-                          : sweepCount === Math.pow(2, sweepSource.bits.length) ? 'exhaustive' : 'sampled';
+                        sweepCount === Math.pow(2, sweepSource.bits.length) ? 'exhaustive' : 'sampled';
 
                       const { observations, outputWidth, errors } = runOutputStatsSweep(
                         project,
@@ -1802,7 +1829,6 @@ export function CryptanalysisPanel({
                         return;
                       }
 
-                      // Key dependency check
                       const keyDep = runKeyDependencyCheck(
                         project,
                         sweepSource,
@@ -1819,11 +1845,12 @@ export function CryptanalysisPanel({
                         keyDep.keyModuleFound ? keyDep.confirmed : null,
                       );
                       setOutputStatsResult(stats);
+                      setOutputStatsSymbolResult(null);
                       setOutputStatsRunning(false);
                     }, 0);
                   }}
                 >
-                  {outputStatsRunning ? 'Running…' : outputStatsResult ? 'Re-run Analysis' : 'Run Analysis'}
+                  {outputStatsRunning ? 'Running…' : (outputStatsResult ?? outputStatsSymbolResult) ? 'Re-run Analysis' : 'Run Analysis'}
                 </button>
               </div>
             )}
@@ -1891,6 +1918,106 @@ export function CryptanalysisPanel({
                 <p className="comparison-copy">Key dependency check could not complete.</p>
               )}
             </div>
+          ) : null}
+
+          {/* Symbol sweep results (classical symbol-domain ciphers) */}
+          {outputStatsSymbolResult ? (
+            <>
+              <div className="comparison-card comparison-card-wide">
+                <span className="meta-label">Character Frequency</span>
+                <strong>
+                  {outputStatsSymbolResult.isPermutation
+                    ? 'Perfect permutation — every letter maps to a different letter.'
+                    : `Collision detected — ${26 - Object.keys(outputStatsSymbolResult.charFreq).length} letters missing from output.`}
+                </strong>
+                <p className="comparison-copy cryptanalysis-help-copy">
+                  Each of the 26 input letters (A–Z) was fed to the cipher once.
+                  A permutation cipher maps each input to a unique output,
+                  producing a flat distribution. A flat distribution does not mean the cipher is strong —
+                  a Caesar shift is also a permutation.
+                </p>
+                <div className="output-stats-balance-chart" role="img" aria-label="Character frequency bars">
+                  {SYMBOL_SWEEP_ALPHABET.split('').map((ch) => {
+                    const count = outputStatsSymbolResult.charFreq[ch] ?? 0;
+                    return (
+                      <div key={ch} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ flex: '0 0 18px', fontSize: 11, textAlign: 'right', color: 'var(--ink-secondary)', fontFamily: 'monospace' }}>{ch}</span>
+                        <div className="output-stats-bar-track" style={{ flex: '1 1 auto' }}>
+                          <div
+                            className="output-stats-bar-fill"
+                            style={{
+                              width: `${count * 100}%`,
+                              background: count === 0 ? 'var(--signal-error)' : count === 1 ? 'color-mix(in srgb, var(--accent) 82%, transparent)' : 'color-mix(in srgb, #d97706 70%, transparent)',
+                            }}
+                          />
+                        </div>
+                        <span style={{ flex: '0 0 16px', fontSize: 11, color: 'var(--ink-secondary)', fontVariantNumeric: 'tabular-nums' }}>{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="comparison-card comparison-card-wide">
+                <span className="meta-label">Self-Mapping Check</span>
+                {outputStatsSymbolResult.selfMappings.length === 0 ? (
+                  <>
+                    <strong>No letter maps to itself.</strong>
+                    <p className="comparison-copy">
+                      The Enigma was specifically designed so no letter could encrypt to itself.
+                      This was both a mathematical consequence of the reflector and a known cryptographic weakness —
+                      an intercepted message could never contain the original plaintext letter at the same position.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <strong>
+                      {outputStatsSymbolResult.selfMappings.length === 1
+                        ? `1 letter maps to itself: ${outputStatsSymbolResult.selfMappings[0]}`
+                        : `${outputStatsSymbolResult.selfMappings.length} letters map to themselves: ${outputStatsSymbolResult.selfMappings.join(', ')}`}
+                    </strong>
+                    <p className="comparison-copy cryptanalysis-help-copy">
+                      A letter mapping to itself is a fixed point in the permutation.
+                      The original Enigma reflector was designed to prevent this, but not all substitution ciphers share that constraint.
+                    </p>
+                  </>
+                )}
+              </div>
+
+              <div className="comparison-card comparison-card-wide">
+                <span className="meta-label">Mapping Table</span>
+                <strong>Input → Output for each letter</strong>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(52px, 1fr))', gap: 4, marginTop: 10 }}>
+                  {outputStatsSymbolResult.inputChars.map((ch, i) => {
+                    const out = outputStatsSymbolResult.outputChars[i];
+                    const isSelf = out === ch;
+                    return (
+                      <div
+                        key={ch}
+                        style={{
+                          padding: '4px 6px',
+                          borderRadius: 6,
+                          border: '1px solid var(--border)',
+                          background: isSelf
+                            ? 'color-mix(in srgb, #d97706 12%, var(--surface-1))'
+                            : out === null
+                            ? 'color-mix(in srgb, var(--signal-error) 10%, var(--surface-1))'
+                            : 'var(--surface-1)',
+                          textAlign: 'center',
+                          fontSize: 12,
+                        }}
+                      >
+                        <span style={{ color: 'var(--ink-secondary)' }}>{ch}</span>
+                        <span style={{ color: 'var(--ink-secondary)', margin: '0 2px' }}>→</span>
+                        <strong style={{ color: isSelf ? '#d97706' : out === null ? 'var(--signal-error)' : 'var(--ink)' }}>
+                          {out ?? '?'}
+                        </strong>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
           ) : null}
 
           {outputStatsResult ? (
@@ -2067,24 +2194,24 @@ export function CryptanalysisPanel({
                 </p>
               </div>
             </>
-          ) : !outputStatsRunning ? (
+          ) : !outputStatsRunning && !outputStatsSymbolResult ? (
             <div className="comparison-card comparison-card-wide">
               <span className="meta-label">Ready</span>
               <strong>Click Run Analysis to sweep the workspace.</strong>
               <p className="comparison-copy">
-                The engine will run your workspace across{' '}
-                <strong>
-                  {(() => {
-                    const src = flippableSources.find(
-                      (s) => s.moduleId === (outputStatsSourceId ?? flippableSources.find((x) => x.kind !== 'text-symbol-bridge')?.moduleId),
-                    );
-                    if (!src) return 'N';
-                    if (src.kind === 'symbol-source') return SYMBOL_SWEEP_ALPHABET.length.toFixed(0);
-                    return Math.min(256, Math.pow(2, src.bits.length)).toFixed(0);
-                  })()}
-                </strong>{' '}
-                distinct inputs, then compute bit balance, entropy, byte frequency, sequential
-                correlation, and runs uniformity.
+                {outputStatsIsSymbolMode
+                  ? 'The engine will feed each letter A–Z through the cipher and map the full input→output substitution table.'
+                  : <>
+                      The engine will run your workspace across{' '}
+                      <strong>
+                        {(() => {
+                          const src = effectiveOutputStatsSweepSource;
+                          if (!src) return 'N';
+                          return Math.min(256, Math.pow(2, src.bits.length)).toFixed(0);
+                        })()}
+                      </strong>{' '}
+                      distinct inputs, then compute bit balance, entropy, byte frequency, sequential correlation, and runs uniformity.
+                    </>}
               </p>
             </div>
           ) : null}
@@ -3358,4 +3485,80 @@ function renderRunsChart(
       })}
     </div>
   );
+}
+
+// ── Symbol sweep helpers ──────────────────────────────────────────────────────
+
+function getSymbolSignalForSink(result: ExecutionResult | null, moduleId: string): string | null {
+  if (!result) return null;
+  const traceEntry =
+    result.trace.find((entry) => entry.moduleId === moduleId && isOutputSinkDefId(entry.defId)) ?? null;
+  const signal =
+    result.outputsByModuleId[moduleId]?.out ??
+    traceEntry?.outputs.out ??
+    traceEntry?.inputs.in ??
+    null;
+  return signal?.type === 'symbol' ? signal.value : null;
+}
+
+function getSymbolSinkOptions(
+  project: Project,
+  execution: ExecutionResult | null,
+): Array<{ moduleId: string; label: string }> {
+  return project.modules
+    .filter((m) => isOutputSinkDefId(m.defId))
+    .flatMap((m) => {
+      const sym = getSymbolSignalForSink(execution, m.id);
+      if (sym === null) return [];
+      return [{ moduleId: m.id, label: m.id }];
+    });
+}
+
+function runSymbolSweep(
+  project: Project,
+  sweepSource: FlippableProjectSource,
+  registry: ModuleRegistry,
+  sinkModuleId: string,
+): {
+  inputChars: string[];
+  outputChars: (string | null)[];
+  charFreq: Record<string, number>;
+  isPermutation: boolean;
+  selfMappings: string[];
+} {
+  const inputChars: string[] = [];
+  const outputChars: (string | null)[] = [];
+
+  for (const ch of SYMBOL_SWEEP_ALPHABET) {
+    inputChars.push(ch);
+    const variantProject = buildVariantProject(project, sweepSource, [], ch);
+    if (!variantProject) { outputChars.push(null); continue; }
+    const validation = validateProject(variantProject, registry);
+    if (!validation.ok) { outputChars.push(null); continue; }
+    try {
+      const result = runDemoProject(variantProject, registry);
+      outputChars.push(getSymbolSignalForSink(result, sinkModuleId));
+    } catch {
+      outputChars.push(null);
+    }
+  }
+
+  const charFreq: Record<string, number> = {};
+  for (const out of outputChars) {
+    if (out !== null && out.length > 0) {
+      const key = out.toUpperCase();
+      charFreq[key] = (charFreq[key] ?? 0) + 1;
+    }
+  }
+
+  const validOutputs = outputChars.filter((c): c is string => c !== null);
+  const uniqueOutputs = new Set(validOutputs.map((c) => c.toUpperCase()));
+  const isPermutation = uniqueOutputs.size === inputChars.length && validOutputs.length === inputChars.length;
+
+  const selfMappings = inputChars.filter((ch, i) => {
+    const out = outputChars[i];
+    return out !== null && out.toUpperCase() === ch.toUpperCase();
+  });
+
+  return { inputChars, outputChars, charFreq, isPermutation, selfMappings };
 }
