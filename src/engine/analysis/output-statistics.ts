@@ -37,12 +37,28 @@ function chiSquaredPValue(chi2: number, df: number): number {
 
 function bitsToNatural(bits: number[]): number {
   if (bits.length > 30) {
-    // For wide outputs we use the first 30 bits to stay within safe integer range
     return bits
       .slice(0, 30)
       .reduce((acc, bit) => (acc << 1) | (bit ? 1 : 0), 0) >>> 0;
   }
   return bits.reduce((acc, bit) => (acc << 1) | (bit ? 1 : 0), 0) >>> 0;
+}
+
+/**
+ * Flatten observations into a byte stream (8-bit chunks).
+ * Used for wide outputs (>30 bits) where word-level analysis is not meaningful.
+ * Each 128-bit observation yields 16 byte values; 128 observations → 2048 bytes.
+ */
+function extractByteStream(observations: number[][]): number[] {
+  const bytes: number[] = [];
+  for (const obs of observations) {
+    for (let i = 0; i + 7 < obs.length; i += 8) {
+      let byte = 0;
+      for (let b = 0; b < 8; b++) byte = (byte << 1) | (obs[i + b] ?? 0);
+      bytes.push(byte >>> 0);
+    }
+  }
+  return bytes;
 }
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
@@ -113,8 +129,10 @@ export type ProfileLabel =
 export interface OutputStatistics {
   outputWidth: number;
   observationCount: number;
-  sampleKind: 'exhaustive' | 'sampled';
+  sampleKind: 'exhaustive' | 'sampled' | 'bit-flip';
   keyDependencyConfirmed: boolean | null;
+  /** True when outputWidth > 30: entropy/frequency/scatter operate at byte granularity. */
+  isWideOutput: boolean;
   bitBalance: BitBalanceStats;
   byteEntropy: ByteEntropyStats;
   byteFrequency: ByteFrequencyStats;
@@ -496,19 +514,26 @@ function deriveProfileLabel(
 export function computeOutputStatistics(
   observations: number[][],
   outputWidth: number,
-  sampleKind: 'exhaustive' | 'sampled',
+  sampleKind: 'exhaustive' | 'sampled' | 'bit-flip',
   keyDependencyConfirmed: boolean | null,
 ): OutputStatistics {
   const allBits = observations.flat();
-  const naturalValues =
-    outputWidth <= 30 ? observations.map((obs) => bitsToNatural(obs)) : [];
-
   const effectiveOutputWidth = outputWidth > 0 ? outputWidth : 1;
 
+  // For wide outputs (>30 bits per word) the word-level integer representation overflows.
+  // Instead we flatten each observation into its individual bytes (8-bit chunks) and run
+  // entropy/frequency/correlation at byte granularity — exactly what the PRNG scatter
+  // plots do. 128 bit-flip variants × 16 bytes = 2 048 byte values: enough for clear visuals.
+  const isWide = effectiveOutputWidth > 30;
+  const naturalValues = isWide
+    ? extractByteStream(observations)
+    : observations.map((obs) => bitsToNatural(obs));
+  const analysisWidth = isWide ? 8 : effectiveOutputWidth;
+
   const bitBalance = computeBitBalance(allBits, effectiveOutputWidth, observations);
-  const byteEntropy = computeByteEntropy(naturalValues, effectiveOutputWidth);
-  const byteFrequency = computeByteFrequency(naturalValues, effectiveOutputWidth);
-  const correlation = computeCorrelation(naturalValues, effectiveOutputWidth);
+  const byteEntropy = computeByteEntropy(naturalValues, analysisWidth);
+  const byteFrequency = computeByteFrequency(naturalValues, analysisWidth);
+  const correlation = computeCorrelation(naturalValues, analysisWidth);
   const runs = computeRunsUniformity(allBits);
 
   const profileLabel = deriveProfileLabel(
@@ -525,6 +550,7 @@ export function computeOutputStatistics(
     observationCount: observations.length,
     sampleKind,
     keyDependencyConfirmed,
+    isWideOutput: isWide,
     bitBalance,
     byteEntropy,
     byteFrequency,

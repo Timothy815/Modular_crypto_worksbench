@@ -177,6 +177,7 @@ export function CryptanalysisPanel({
   const [lastKeyScheduleRunSignature, setLastKeyScheduleRunSignature] = useState<string | null>(null);
   const [outputStatsSinkId, setOutputStatsSinkId] = useState<string | null>(null);
   const [outputStatsSourceId, setOutputStatsSourceId] = useState<string | null>(null);
+  const [outputStatsSweepMode, setOutputStatsSweepMode] = useState<'value' | 'bitflip'>('bitflip');
   const [outputStatsResult, setOutputStatsResult] = useState<OutputStatistics | null>(null);
   const [outputStatsSymbolResult, setOutputStatsSymbolResult] = useState<{
     inputChars: string[];
@@ -1837,6 +1838,21 @@ export function CryptanalysisPanel({
                 </label>
               </div>
             ) : null}
+            {/* Sweep mode selector */}
+            {effectiveOutputStatsSweepSource?.kind !== 'symbol-source' && (
+              <div className="content-filter-row">
+                <label className="param-field">
+                  <span>Sweep mode</span>
+                  <select
+                    value={outputStatsSweepMode}
+                    onChange={(event) => setOutputStatsSweepMode(event.target.value as 'value' | 'bitflip')}
+                  >
+                    <option value="bitflip">Bit-flip variants — flip each input bit in turn (recommended for wide keys)</option>
+                    <option value="value">Enumerate inputs — increment from 0 (best for narrow sources ≤8 bits)</option>
+                  </select>
+                </label>
+              </div>
+            )}
             {flippableSources.filter((s) => s.kind !== 'text-symbol-bridge').length === 0 || outputStatsActiveSinkOptions.length === 0 ? (
               <p className="comparison-copy">
                 This workspace needs at least one sweepable source (BitSource, HexSource, AsciiSource, or TextInput) and at least one output sink.
@@ -1884,22 +1900,33 @@ export function CryptanalysisPanel({
                         return;
                       }
 
-                      // Bit sweep
-                      const sweepCount = Math.min(256, Math.pow(2, sweepSource.bits.length));
-                      const sampleKind: 'exhaustive' | 'sampled' =
-                        sweepCount === Math.pow(2, sweepSource.bits.length) ? 'exhaustive' : 'sampled';
+                      let observations: number[][];
+                      let outputWidth: number;
+                      let errors: number;
+                      let sampleKind: 'exhaustive' | 'sampled' | 'bit-flip';
 
-                      const { observations, outputWidth, errors } = runOutputStatsSweep(
-                        project,
-                        sweepSource,
-                        registry,
-                        effectiveSinkId,
-                        sweepCount,
-                      );
+                      if (outputStatsSweepMode === 'bitflip') {
+                        // Bit-flip sweep: flip each source bit in turn, collect one output per flip.
+                        // For a 128-bit key: 128 observations × 16 bytes = 2,048 byte values for
+                        // scatter/entropy — enough for clear visual results.
+                        const result = runBitFlipOutputSweep(project, sweepSource, registry, effectiveSinkId);
+                        observations = result.observations;
+                        outputWidth = result.outputWidth;
+                        errors = result.errors;
+                        sampleKind = 'bit-flip';
+                      } else {
+                        // Value sweep: increment input from 0 upward (up to 256 samples)
+                        const sweepCount = Math.min(256, Math.pow(2, sweepSource.bits.length));
+                        sampleKind = sweepCount === Math.pow(2, sweepSource.bits.length) ? 'exhaustive' : 'sampled';
+                        const result = runOutputStatsSweep(project, sweepSource, registry, effectiveSinkId, sweepCount);
+                        observations = result.observations;
+                        outputWidth = result.outputWidth;
+                        errors = result.errors;
+                      }
 
-                      if (observations.length < 16) {
+                      if (observations.length < 8) {
                         setOutputStatsError(
-                          `Too few successful observations (${observations.length}/${Math.floor(sweepCount)} — ${errors} errors). Check that the project runs without errors.`,
+                          `Too few successful observations (${observations.length} — ${errors} errors). Check that the project runs without errors.`,
                         );
                         setOutputStatsRunning(false);
                         return;
@@ -1939,10 +1966,14 @@ export function CryptanalysisPanel({
               <div className="cryptanalysis-output-summary-row">
                 <span className="content-status-chip">
                   {outputStatsResult.observationCount} observations
+                  {outputStatsResult.isWideOutput ? ` → ${outputStatsResult.observationCount * Math.floor(outputStatsResult.outputWidth / 8)} bytes` : ''}
                 </span>
                 <span className="content-status-chip">
-                  {outputStatsResult.sampleKind === 'exhaustive' ? 'exhaustive sweep' : 'sampled sweep'}
+                  {outputStatsResult.sampleKind === 'exhaustive' ? 'exhaustive sweep' : outputStatsResult.sampleKind === 'bit-flip' ? 'bit-flip sweep' : 'value sweep'}
                 </span>
+                {outputStatsResult.isWideOutput ? (
+                  <span className="content-status-chip">byte-level analysis</span>
+                ) : null}
                 <span className={`content-status-chip ${
                   outputStatsResult.profileLabel === 'uniform distribution' ? '' :
                   outputStatsResult.profileLabel === 'near-uniform' ? 'status-chip-warning' :
@@ -2163,20 +2194,27 @@ export function CryptanalysisPanel({
 
               {/* Section 3: Shannon Entropy */}
               <div className="comparison-card">
-                <span className="meta-label">Shannon Entropy</span>
+                <span className="meta-label">
+                  {outputStatsResult.isWideOutput ? 'Byte Entropy (per output byte)' : 'Shannon Entropy'}
+                </span>
                 <strong>
-                  {outputStatsResult.byteEntropy.shannonEntropy.toFixed(3)} bits / {outputStatsResult.outputWidth}-bit max
+                  {outputStatsResult.byteEntropy.shannonEntropy.toFixed(3)} bits
+                  {' '}/ {outputStatsResult.isWideOutput ? '8-bit' : `${outputStatsResult.outputWidth}-bit`} max
                 </strong>
+                {outputStatsResult.isWideOutput ? (
+                  <p className="comparison-copy cryptanalysis-help-copy" style={{ marginTop: 4 }}>
+                    Wide output analyzed at byte granularity — each {outputStatsResult.outputWidth}-bit cipher word contributes {Math.floor(outputStatsResult.outputWidth / 8)} byte values to this distribution.
+                  </p>
+                ) : null}
                 {/* Gauge with reference markers */}
                 {(() => {
-                  const maxH = outputStatsResult.outputWidth;
+                  const maxH = outputStatsResult.isWideOutput ? 8 : outputStatsResult.outputWidth;
                   const H = outputStatsResult.byteEntropy.shannonEntropy;
-                  const pct = (H / maxH) * 100;
+                  const pct = Math.min((H / maxH) * 100, 100);
                   const fillColor =
                     H / maxH > 0.92 ? 'rgba(64,168,255,0.85)' :
                     H / maxH > 0.70 ? 'rgba(200,140,40,0.85)' :
                                       'rgba(210,50,40,0.85)';
-                  // Reference markers as fractions of maxH
                   const markers: Array<{ val: number; label: string }> = maxH >= 7
                     ? [{ val: 0, label: '0' }, { val: 3.5 / maxH, label: '3.5\nEng' }, { val: 6.5 / maxH, label: '6.5' }, { val: 7.9 / maxH, label: '7.9\nAES' }, { val: 1, label: maxH.toFixed(0) }]
                     : [{ val: 0, label: '0' }, { val: 0.5, label: (maxH / 2).toFixed(0) }, { val: 1, label: maxH.toFixed(0) }];
@@ -2211,7 +2249,7 @@ export function CryptanalysisPanel({
                 <p className="comparison-copy" style={{ marginTop: 6 }}>
                   {(outputStatsResult.byteEntropy.entropyFraction * 100).toFixed(1)}% of max
                   {' '}· {outputStatsResult.byteEntropy.uniqueValueCount} of{' '}
-                  {Math.min(Math.pow(2, outputStatsResult.outputWidth), 65536).toFixed(0)} distinct values seen
+                  {outputStatsResult.isWideOutput ? '256' : Math.min(Math.pow(2, outputStatsResult.outputWidth), 65536).toFixed(0)} distinct {outputStatsResult.isWideOutput ? 'byte values' : 'values'} seen
                 </p>
                 <p className="comparison-copy cryptanalysis-help-copy">
                   High entropy is required but not sufficient — a Caesar cipher swept across all inputs scores near-maximum entropy too.
@@ -2231,18 +2269,21 @@ export function CryptanalysisPanel({
                   {Math.abs(outputStatsResult.correlation.serialCorrelationCoefficient) > 0.3 ? ' — linear structure detected' : ' — no obvious linear structure'}
                 </strong>
                 <p className="comparison-copy cryptanalysis-help-copy">
-                  Each dot = (output[i], output[i+1]). A cipher with structure shows diagonals or clusters.
-                  A cloud means consecutive outputs are not linearly related.
+                  {outputStatsResult.isWideOutput
+                    ? `Each dot = (byte[i], byte[i+1]) across ${outputStatsResult.correlation.valuePairs} consecutive output bytes. A cipher with structure shows diagonals or clusters; a cloud means bytes are uncorrelated.`
+                    : 'Each dot = (output[i], output[i+1]). A cipher with structure shows diagonals or clusters. A cloud means consecutive outputs are not linearly related.'}
                 </p>
                 <ScatterCanvas
                   grid={outputStatsResult.correlation.scatterGrid}
                   gridSize={outputStatsResult.correlation.gridSize}
                 />
-                {outputStatsResult.correlation.bucketDivisor > 1 && (
-                  <p className="comparison-copy" style={{ fontSize: '0.7rem', color: 'var(--ink-secondary)', marginTop: 4 }}>
-                    Values bucketed into {outputStatsResult.correlation.gridSize}×{outputStatsResult.correlation.gridSize} grid ({outputStatsResult.correlation.valuePairs} pairs).
-                  </p>
-                )}
+                <p className="comparison-copy" style={{ fontSize: '0.7rem', color: 'var(--ink-secondary)', marginTop: 4 }}>
+                  {outputStatsResult.isWideOutput
+                    ? `${outputStatsResult.correlation.valuePairs} byte pairs · ${outputStatsResult.correlation.gridSize}×${outputStatsResult.correlation.gridSize} grid (${outputStatsResult.correlation.bucketDivisor} bytes/cell)`
+                    : outputStatsResult.correlation.bucketDivisor > 1
+                      ? `Values bucketed into ${outputStatsResult.correlation.gridSize}×${outputStatsResult.correlation.gridSize} grid (${outputStatsResult.correlation.valuePairs} pairs).`
+                      : `${outputStatsResult.correlation.valuePairs} value pairs`}
+                </p>
               </div>
 
               {/* Section 5: Runs Uniformity */}
@@ -2296,17 +2337,25 @@ export function CryptanalysisPanel({
               <p className="comparison-copy">
                 {outputStatsIsSymbolMode
                   ? 'The engine will feed each letter A–Z through the cipher and map the full input→output substitution table.'
-                  : <>
-                      The engine will run your workspace across{' '}
-                      <strong>
-                        {(() => {
-                          const src = effectiveOutputStatsSweepSource;
-                          if (!src) return 'N';
-                          return Math.min(256, Math.pow(2, src.bits.length)).toFixed(0);
-                        })()}
-                      </strong>{' '}
-                      distinct inputs, then compute bit balance, entropy, byte frequency, sequential correlation, and runs uniformity.
-                    </>}
+                  : outputStatsSweepMode === 'bitflip'
+                    ? <>
+                        Bit-flip sweep: flips each bit of your source in turn, collects one output per flip.
+                        {' '}<strong>{effectiveOutputStatsSweepSource?.bits.length ?? 'N'} observations</strong>
+                        {effectiveOutputStatsSweepSource && effectiveOutputStatsSweepSource.bits.length > 30
+                          ? <> × {Math.floor(effectiveOutputStatsSweepSource.bits.length / 8)} bytes each = <strong>{Math.floor(effectiveOutputStatsSweepSource.bits.length / 8) * (effectiveOutputStatsSweepSource?.bits.length ?? 0)} byte values</strong> for entropy and scatter.</>
+                          : '.'}
+                      </>
+                    : <>
+                        The engine will run your workspace across{' '}
+                        <strong>
+                          {(() => {
+                            const src = effectiveOutputStatsSweepSource;
+                            if (!src) return 'N';
+                            return Math.min(256, Math.pow(2, src.bits.length)).toFixed(0);
+                          })()}
+                        </strong>{' '}
+                        distinct inputs, then compute bit balance, entropy, byte frequency, sequential correlation, and runs uniformity.
+                      </>}
               </p>
             </div>
           ) : null}
@@ -3409,6 +3458,39 @@ function runOutputStatsSweep(
     } catch {
       errors += 1;
     }
+  }
+
+  return { observations, outputWidth, errors };
+}
+
+/**
+ * Bit-flip sweep: flip each source bit in turn, run the project, collect one output per flip.
+ * For a 128-bit key this produces 128 observations × outputWidth bits each.
+ * The engine's computeOutputStatistics then extracts byte-level values for entropy and scatter.
+ */
+function runBitFlipOutputSweep(
+  project: Project,
+  sweepSource: FlippableProjectSource,
+  registry: ModuleRegistry,
+  sinkModuleId: string,
+): { observations: number[][]; outputWidth: number; errors: number } {
+  const observations: number[][] = [];
+  let outputWidth = 0;
+  let errors = 0;
+
+  for (let i = 0; i < sweepSource.bits.length; i++) {
+    const variantBits = flipBitAtIndex(sweepSource.bits, i);
+    const vProject = buildVariantProject(project, sweepSource, variantBits);
+    if (!vProject) { errors++; continue; }
+    const validation = validateProject(vProject, registry);
+    if (!validation.ok) { errors++; continue; }
+    try {
+      const result = runDemoProject(vProject, registry);
+      const outputBits = getBitSignalForSink(result, sinkModuleId);
+      if (!outputBits || outputBits.length === 0) { errors++; continue; }
+      outputWidth = outputBits.length;
+      observations.push(outputBits);
+    } catch { errors++; }
   }
 
   return { observations, outputWidth, errors };
