@@ -211,6 +211,7 @@ export function InspectorAnalyzeView({
                     }
                     onStepChange(stepIndex === null ? 0 : Math.max(0, stepIndex - 1));
                   }}
+                  title="Previous step ([)"
                 >
                   Prev
                 </button>
@@ -228,6 +229,7 @@ export function InspectorAnalyzeView({
                     }
                     onStepChange(stepIndex === null ? 0 : Math.min(execution.trace.length - 1, stepIndex + 1));
                   }}
+                  title="Next step (])"
                 >
                   {effectiveStepperMode === 'nested'
                     ? effectiveNestedStepIndex === null

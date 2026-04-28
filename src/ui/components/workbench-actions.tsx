@@ -739,13 +739,13 @@ export function WorkbenchActions({
             <div className="workbench-inline-toolbar-group" aria-label="History tools">
               <WorkbenchInlineActionButton
                 content={<WorkbenchInlineIcon name="undo" />}
-                title="Undo"
+                title="Undo (Cmd/Ctrl+Z)"
                 onSelect={onRequestUndo}
                 disabled={!canUndo}
               />
               <WorkbenchInlineActionButton
                 content={<WorkbenchInlineIcon name="redo" />}
-                title="Redo"
+                title="Redo (Cmd/Ctrl+Shift+Z)"
                 onSelect={onRequestRedo}
                 disabled={!canRedo}
               />
@@ -1091,6 +1091,7 @@ export function WorkbenchActions({
               label="Duplicate Cluster"
               onSelect={onRequestDuplicateSelection}
               disabled={!hasSelection}
+              title="Duplicate selected modules (Cmd/Ctrl+D)"
             />
             <WorkbenchMenuActionButton
               label="Repeat Right"
@@ -1106,6 +1107,7 @@ export function WorkbenchActions({
               label="Delete Cluster"
               onSelect={onRequestDeleteSelection}
               disabled={!hasSelection}
+              title="Delete selected modules (Delete)"
             />
           </WorkbenchActionMenu>
 

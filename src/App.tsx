@@ -96,8 +96,10 @@ import {
   getDraftValue,
   getSelectedModuleId,
   getSelectedModuleIds,
+  WORKBENCH_GRID_SIZE,
   uiReducer,
 } from './ui/store';
+import { isEditableShortcutTarget, matchesShortcutCombo } from './ui/keyboard-shortcuts';
 import { resolveWorkspaceExecution } from './ui/workspace-execution';
 import type { WorkspaceMode } from './ui/workspace-mode';
 import {
@@ -2423,6 +2425,202 @@ function MainApp() {
     });
     setImportError(null);
   }
+
+  useEffect(() => {
+    function handleWindowKeyDown(event: KeyboardEvent) {
+      if (isEditableShortcutTarget(event.target) || state.compositeEditor || isCompositeDrilldownActive) {
+        return;
+      }
+
+      if (
+        event.repeat &&
+        event.key !== 'ArrowLeft' &&
+        event.key !== 'ArrowRight' &&
+        event.key !== 'ArrowUp' &&
+        event.key !== 'ArrowDown' &&
+        event.key !== '[' &&
+        event.key !== ']'
+      ) {
+        return;
+      }
+
+      const hasSelection = effectiveSelectedModuleIds.length > 0;
+
+      if (matchesShortcutCombo(event, { key: 'z', metaOrCtrl: true, shift: true })) {
+        if (!canRedoWorkspaceHistory) {
+          return;
+        }
+        event.preventDefault();
+        handleRedoWorkspaceHistory();
+        return;
+      }
+
+      if (matchesShortcutCombo(event, { key: 'z', metaOrCtrl: true })) {
+        if (!canUndoWorkspaceHistory) {
+          return;
+        }
+        event.preventDefault();
+        handleUndoWorkspaceHistory();
+        return;
+      }
+
+      if (matchesShortcutCombo(event, { key: 'd', metaOrCtrl: true })) {
+        if (!hasSelection) {
+          return;
+        }
+        event.preventDefault();
+        handleDuplicateSelectedCluster();
+        return;
+      }
+
+      if ((event.key === 'Backspace' || event.key === 'Delete') && hasSelection) {
+        event.preventDefault();
+        handleDeleteSelectedCluster();
+        return;
+      }
+
+      if (event.key === 'Escape' && hasSelection) {
+        event.preventDefault();
+        dispatch({
+          type: 'selectModules',
+          projectId: activeProjectDefinition.id,
+          moduleIds: [],
+        });
+        return;
+      }
+
+      if (
+        hasSelection &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        (event.key === 'ArrowLeft' ||
+          event.key === 'ArrowRight' ||
+          event.key === 'ArrowUp' ||
+          event.key === 'ArrowDown')
+      ) {
+        const deltaX =
+          event.key === 'ArrowLeft'
+            ? -WORKBENCH_GRID_SIZE
+            : event.key === 'ArrowRight'
+              ? WORKBENCH_GRID_SIZE
+              : 0;
+        const deltaY =
+          event.key === 'ArrowUp'
+            ? -WORKBENCH_GRID_SIZE
+            : event.key === 'ArrowDown'
+              ? WORKBENCH_GRID_SIZE
+              : 0;
+        const positions = Object.fromEntries(
+          effectiveSelectedModuleIds
+            .map((moduleId) => {
+              const currentPosition = activeLayout[moduleId];
+              if (!currentPosition) {
+                return null;
+              }
+              return [
+                moduleId,
+                {
+                  x: Math.max(16, currentPosition.x + deltaX),
+                  y: Math.max(16, currentPosition.y + deltaY),
+                },
+              ] as const;
+            })
+            .filter((entry): entry is readonly [string, { x: number; y: number }] => Boolean(entry)),
+        );
+
+        if (Object.keys(positions).length === 0) {
+          return;
+        }
+
+        event.preventDefault();
+        dispatch({
+          type: 'moveModules',
+          projectId: activeProjectDefinition.id,
+          positions,
+        });
+        return;
+      }
+
+      if (
+        event.code === 'Space' &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        isTickedMode &&
+        effectiveTickCount > 1
+      ) {
+        event.preventDefault();
+        dispatch({
+          type: 'setTickPlaybackActive',
+          projectId: activeProjectDefinition.id,
+          active: !isTickPlaybackActive,
+        });
+        return;
+      }
+
+      if (
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        (event.key === '[' || event.key === ']')
+      ) {
+        if (state.showInspector && execution && execution.trace.length > 0 && stepIndex !== null) {
+          event.preventDefault();
+          if (event.key === ']') {
+            syncTutorialStepFromTrace(Math.min(execution.trace.length - 1, stepIndex + 1));
+            return;
+          }
+          syncTutorialStepFromTrace(Math.max(0, stepIndex - 1));
+          return;
+        }
+
+        if (isTickedMode && effectiveTickCount > 0 && !isTickPlaybackActive) {
+          if (event.key === ']' && effectiveCurrentTick < effectiveTickCount - 1) {
+            event.preventDefault();
+            dispatch({
+              type: 'setCurrentTick',
+              projectId: activeProjectDefinition.id,
+              tick: effectiveCurrentTick + 1,
+            });
+            return;
+          }
+          if (event.key === '[' && effectiveCurrentTick > 0) {
+            event.preventDefault();
+            dispatch({
+              type: 'setCurrentTick',
+              projectId: activeProjectDefinition.id,
+              tick: effectiveCurrentTick - 1,
+            });
+          }
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleWindowKeyDown);
+    return () => window.removeEventListener('keydown', handleWindowKeyDown);
+  }, [
+    activeLayout,
+    activeProjectDefinition.id,
+    canRedoWorkspaceHistory,
+    canUndoWorkspaceHistory,
+    dispatch,
+    effectiveCurrentTick,
+    effectiveSelectedModuleIds,
+    effectiveTickCount,
+    execution,
+    handleDeleteSelectedCluster,
+    handleDuplicateSelectedCluster,
+    handleRedoWorkspaceHistory,
+    handleUndoWorkspaceHistory,
+    isCompositeDrilldownActive,
+    isTickPlaybackActive,
+    isTickedMode,
+    state.compositeEditor,
+    state.showInspector,
+    stepIndex,
+    syncTutorialStepFromTrace,
+  ]);
 
   function handleSaveWorkspaceVersion() {
     if (state.compositeEditor) {

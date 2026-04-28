@@ -8,7 +8,12 @@ describe('manual support helpers', () => {
     const index = buildManualIndex(USER_MANUAL_SECTIONS);
 
     expect(index.length).toBeGreaterThan(10);
-    expect(index[0]?.term).toBe('about');
+    expect(index.every((entry, indexPosition) => {
+      if (indexPosition === 0) {
+        return true;
+      }
+      return index[indexPosition - 1]!.term.localeCompare(entry.term) <= 0;
+    })).toBe(true);
   });
 
   it('searches titles, body text, and index terms', () => {

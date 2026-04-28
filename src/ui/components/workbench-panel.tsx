@@ -3909,6 +3909,7 @@ export function WorkbenchPanel({
                 disabled={currentTick <= 0 || isTickPlaybackActive}
                 onClick={() => onSetCurrentTick?.(currentTick - 1)}
                 aria-label="Previous tick"
+                title="Previous tick ([)"
               >
                 Prev
               </button>
@@ -3918,6 +3919,7 @@ export function WorkbenchPanel({
                 disabled={tickCount <= 1 || currentTick >= tickCount - 1}
                 onClick={() => onSetTickPlaybackActive?.(!isTickPlaybackActive)}
                 aria-label={isTickPlaybackActive ? 'Pause tick playback' : 'Play tick playback'}
+                title={isTickPlaybackActive ? 'Pause tick playback (Space)' : 'Play tick playback (Space)'}
               >
                 {isTickPlaybackActive ? 'Pause' : 'Play'}
               </button>
@@ -3927,6 +3929,7 @@ export function WorkbenchPanel({
                 disabled={currentTick >= tickCount - 1 || isTickPlaybackActive}
                 onClick={() => onSetCurrentTick?.(currentTick + 1)}
                 aria-label="Next tick"
+                title="Next tick (])"
               >
                 Next
               </button>
