@@ -1,263 +1,62 @@
 # MCW — Implementation Status
 
-Last updated: April 21, 2026
+Last updated: April 29, 2026
 
 ---
 
 ## Current State
 
-### State Of The Union
+The old status surface drifted behind the code.
+
+The current canonical reset is:
+- [docs/live/contracts/2026-04/CODE-FIRST-CAPABILITIES-AUDIT-2026-04-29.md](/Users/timothykoerner/Desktop/modular_cryptography/docs/live/contracts/2026-04/CODE-FIRST-CAPABILITIES-AUDIT-2026-04-29.md)
+- [docs/live/contracts/2026-04/STATE-OF-THE-UNION-2026-04-29.md](/Users/timothykoerner/Desktop/modular_cryptography/docs/live/contracts/2026-04/STATE-OF-THE-UNION-2026-04-29.md)
 
 If a new agent session starts from scratch, the shortest accurate read is:
 
-- `main` is stable, deployable, and currently ahead of the original `v2.1.0` checkpoint by a long post-release follow-on run
-- the recent product-facing work has been a bounded teaching / wayfinding line, not new engine semantics
-- the recent slices have concentrated on making MCW's existing vocabulary easier to read on canvas:
-  - reference-aware chain repair
-  - strict-vs-repair policy teaching
-  - block / bridge / operator / stateful / control family comparison boards
-  - stepped rotor and stepped reverse-rotor primitive micro demos
-- the recent engine-adjacent work that matters is already shipped:
-  - authored iterators
-  - clocked iterators
-  - canonical chain insertion
-- the project should now be treated as past the first big `v2.1` builder-power run and into bounded product-facing follow-ons, documentation hygiene, and selective next-slice choices
+- `main` is stable, deployable, and materially ahead of the old `v2.1.0` checkpoint summary
+- MCW is already a substantial teaching-oriented cryptography IDE, not just a visual construction toy
+- several features previously treated as “next” or “open” are already shipped in source
+- future work should now start from a code-first baseline, not from older queue memory
 
-Recent shipped commits on `main`:
-- `18a3add` — stepped rotor reverse primitive micro demo
-- `ec30b24` — stepped rotor primitive micro demo
-- `b6c64c8` — control family comparison teaching demo
-- `4d664fa` — stepped mechanism comparison teaching demo
-- `6d800b9` — stateful family comparison teaching demo
-- `0e2d34d` — operator family comparison teaching demo
-- `54adec7` — bridge family comparison teaching demo
-- `cbb9d6e` — mismatch policy comparison teaching demo
-- `2960db7` — hex block path teaching demo
-- `bf06df1` — strict length policy teaching demo
-- `0d93ae7` — reference-aware chain teaching demo
+## Highest-Confidence Reality Checks
 
-Practical restart guidance:
-- read this file first
-- then read `ACTIVE-DOCS.md` for the current live-doc surface and archive policy
-- then read `V2.1-NEXT-DOCKET.md` for the still-open sequencing question
-- then read `CLAUDE.md` / `AGENTS.md` for standing local instructions
-- before starting a contract, verify in source that it is still actually unshipped
-- every time something lands, update the contract `Status:` line and this file before ending the session
+These features are already shipped on `main` and should not be treated as open first-pass work:
 
-### Unshipped Contracts Shortlist
+- `Output Statistics`
+- `Stage / Signal Inspection`
+- substantial `S-Box Properties` analysis
+- shareable `Lab Pack` import / export infrastructure
+- iterator, clocked iterator, conditional, and multi-conditional authoring
+- saved cryptanalysis cases
+- keyboard shortcuts with manual coverage
 
-These are the most credible still-unshipped candidates visible from the current repo state.
-Everything else with a non-`Shipped` status is usually one of:
-- a planning note
-- an audit note
-- a superseded/closed note
-- a long-range architecture note rather than an immediate slice
+## Practical Restart Guidance
 
-Current actionable shortlist:
+Read in this order:
 
-1. `WORD-LEVEL-OPERATIONS-V1.md`
-- status: `Open` — written 2026-04-26
-- type: new engine primitives (`WordSplit`, `WordJoin`) + demo + tutorial
-- why it matters: unlocks ChaCha20, SHA-256, and AES expression on canvas; fills the gap between flat bit arrays and word-granularity modern cipher construction
+1. `AGENTS.md`
+2. `PROJECT.md`
+3. `ENGINE-V1-CONTRACT.md`
+4. `EXPERIENTIAL-NORTH-STAR-V1.md`
+5. this file
+6. the current audit pair:
+   - `docs/live/contracts/2026-04/CODE-FIRST-CAPABILITIES-AUDIT-2026-04-29.md`
+   - `docs/live/contracts/2026-04/STATE-OF-THE-UNION-2026-04-29.md`
 
-2. `AVALANCHE-INFLUENCE-ENGINE-V1.md`
-- status: `Open` — written 2026-04-27
-- type: redesign of cryptanalysis panel's Modern Analysis mode
-- why it matters: replaces the current disconnected single-flip view and illegible heatmap with a first-class `InfluenceMatrix` artifact, quality score, and plain-language callouts
+Then:
+- verify in source before assuming a contract is still unshipped
+- treat roadmap notes as context, not as truth
+- prefer updating status after any shipped slice so this drift does not recur
 
-3. `OUTPUT-STATISTICS-V1.md`
-- status: `Open` — written 2026-04-27
-- type: new "Output Statistics" tab in the Cryptanalysis workspace
-- why it matters: aggregates output across N swept inputs into Shannon entropy, byte frequency, bit balance, sequential correlation, and runs test — the visual narrative arc from "is this output biased?" through "does it look random?"
+## What This File Now Does
 
-4. `docs/live/contracts/2026-04/PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
-- status: `Future planning note`
-- type: strategic export-architecture note, not an immediate build target
-- why it matters: still useful context if Python export productization is revisited, but it should not be mistaken for a currently open bounded slice because the first runtime-library productization follow-ons are already shipped
+This file is no longer the place for a giant hand-maintained shipped-feature changelog.
 
-2. `EXPERIENTIAL-NORTH-STAR-V1.md`, `V2.1-AUTHORING-POWER-PLAN.md`, `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md`
-- status: active notes / roadmap notes
-- type: decision context only
-- why they matter: these should guide prioritization, not be treated as implementation targets by themselves
-
-Recommended default interpretation for a fresh agent:
-- wiring-ceremony reduction is already shipped in source and should not be treated as the next open feature
-- inspector structured-editor extraction is already shipped in source and should not be treated as the next maintenance slice
-- cryptanalysis workspace is already shipped in source and should not be treated as an open first-pass workspace contract
-- there is currently no trustworthy pre-existing “next implementation contract” in this old shortlist
-- if the goal is concrete new feature work, first choose or write a fresh bounded contract against current source rather than relying on older stale “next” labels
-- do not treat planning notes as if they were ready-to-code feature contracts
-
-The latest shipped release checkpoint is `v2.1.0`.
-The previous major boundary was `v2.0.0`.
-
-`v2.1.0` now includes:
-- first-session onboarding
-- user manual
-- instructor pilot pack
-- AI toolkit
-- cryptanalysis visibility and visualization improvements
-- Pollux fractionation and inverse round-trip teaching line
-- S-box authoring and table transforms
-- PRNG teaching workspaces
-- flagship classical and modern lab sequences
-- verification explainability
-
-Current `main` now also includes later post-`v2.1.0` follow-ons:
-- `SHAREABLE-LAB-PACKS-V1.md`
-- `BITSTREAM-RANDOMNESS-LAB-V1.md`
-- `CRYPTANALYSIS-PROMINENCE-V1.md`
-- `SEQUENTIAL-STATE-AUTHORING-V1.md`
-- `SBOX-GENERATION-WORKFLOW-V1.md`
-- `UI-ARCHITECTURE-STABILIZATION-V1.md`
-- `ITERATOR-DEFINITION-AUTHORING-V1.md`
-- `ITERATOR-WORKFLOW-POLISH-V1.md`
-- `CLOCKED-ITERATOR-V1.md`
-- `docs/archive/contracts/2026-04/WIRING-CEREMONY-REDUCTION-V1.md`
-- `CANONICAL-CHAIN-INSERTION-V1.md`
-- `REFERENCE-AWARE-CHAIN-TEACHING-V1.md`
-- `STRICT-LENGTH-POLICY-TEACHING-V1.md`
-- `HEX-BLOCK-PATH-TEACHING-V1.md`
-- `MISMATCH-POLICY-COMPARISON-TEACHING-V1.md`
-- `BRIDGE-FAMILY-COMPARISON-TEACHING-V1.md`
-- `OPERATOR-FAMILY-COMPARISON-TEACHING-V1.md`
-- `STATEFUL-FAMILY-COMPARISON-TEACHING-V1.md`
-- `STEPPED-MECHANISM-COMPARISON-TEACHING-V1.md`
-- `CONTROL-FAMILY-COMPARISON-TEACHING-V1.md`
-
-Reference-aware chain teaching is now also shipped on `main`:
-- a bounded `Visible Repeated-Key Repair` seeded demo now shows the full explicit repaired graph on canvas
-- a matching starter tutorial now walks through message reference, repeated key expansion, ASCII-to-bit bridging, and collected hex output
-- this slice stays intentionally compact and teaches the Stage 3 repair result directly without adding another authoring surface
-
-Strict length policy teaching is now also shipped on `main`:
-- a bounded `Visible Strict-Length Gate` seeded demo now shows a successful strict path beside an explicit repeated-key repair alternative
-- a matching starter tutorial now explains that `RequireSymbolLengthMatch` is a graph policy gate, not hidden XOR behavior
-- this slice keeps the seeded workspace executable while still making the difference between `require` and `repair` legible on canvas
-
-Hex block path teaching is now also shipped on `main`:
-- a bounded `Visible Hex Block Paths` seeded demo now shows both the direct equal-width block XOR path and an explicit truncate-plus-pad normalization sibling
-- a matching starter tutorial now explains where hex authoring ends, where byte-word ticking begins, and why block-width policy still belongs in visible mismatch helpers
-- this slice keeps both branches executable and makes the clean-path versus normalized-path contrast readable on one canvas
-
-Mismatch policy comparison teaching is now also shipped on `main`:
-- a bounded `Visible Mismatch Policy Family` seeded demo now places `Require`, `Repeat`, `Truncate`, and `Pad` side by side against one shared reference sequence
-- a matching starter tutorial now frames the mismatch-helper family as a decision grammar: assert, cycle, clip, or fill
-- this slice stays deliberately in the symbol domain so the policy differences remain readable without bridge noise
-
-Bridge family comparison teaching is now also shipped on `main`:
-- a bounded `Visible Bridge Family` seeded demo now places whole-buffer ASCII bridging, ASCII ticked-byte bridging, and hex ticked-byte bridging on one canvas
-- a matching starter tutorial now explains where whole-sequence bridging stops, where ticking begins, and why collected return is the honest counterpart to ticked emission
-- this slice makes the common representation crossings read as one bridge grammar rather than as isolated examples
-
-Operator family comparison teaching is now also shipped on `main`:
-- a bounded `Visible Operator Family` seeded demo now fans one shared pair of words into XOR, AND, modular addition, and rotate branches
-- a matching starter tutorial now frames the operator family as distinct choices: reversible mixing, masking, word arithmetic, and structural movement
-- this slice gives users a compact operator grammar before they step into more composed round structures
-
-Stateful family comparison teaching is now also shipped on `main`:
-- a bounded `Visible Stateful Family` seeded demo now fans one shared clock into pulse emission, counting, evolving keystream state, and clocked structural traversal branches
-- a matching starter tutorial now explains the difference between a time source, a counted time word, a state register stream, and one-step-per-pulse structural traversal
-- this slice gives users a compact stateful grammar before they step into more elaborate conditional-clocking and iterator machines
-
-Stepped mechanism comparison teaching is now also shipped on `main`:
-- a bounded `Visible Stepped Mechanisms` seeded demo now places one stepped rotor branch beside one clocked iterator branch under the same shared pulse source
-- a matching starter tutorial now explains the difference between stateful substitution and one-step-per-pulse structural traversal
-- this slice turns the broader stateful-family grammar into one smaller applied machine comparison without reopening the full rotor-realism line
-
-Control family comparison teaching is now also shipped on `main`:
-- a bounded `Visible Control Family` seeded demo now places `Gate`, `Mux`, and `MultiRouter` side by side under one shared clocked control context
-- a matching starter tutorial now explains the difference between blocking a signal, choosing one candidate, and routing one signal into one visible lane
-- this slice gives users a compact live control grammar before they step into larger stream-cipher and conditional-clocking machines
-
-Canonical chain insertion is now also shipped on `main`:
-- pending-connection quick add can insert bounded named bridge / collector chains in one atomic action
-- V1 stays intentionally narrow: `ASCII sequence -> bit words`, `Collect ticked bits -> hex`, and `Collect ticked bits -> ASCII`
-- inserted chains remain fully explicit on canvas as ordinary modules and wires, with no hidden coercion or free-form synthesis
-- Stage 2A is now also shipped: hovering an unconnected input port can surface a bounded `Common chains` strip in the palette when a canonical chain's output shape matches that hovered target
-- clicking a hovered-input chain suggestion inserts the same explicit Stage 1 chain and attaches its tail directly to the hovered port, leaving the chain head exposed upstream for the next move
-- wire hit testing is also slightly widened so selecting and severing narrow connections requires less cursor precision
-- Stage 3 is now also shipped: pending-connection quick add can offer `Expand key -> bit words (choose reference)` as the first reference-aware canonical chain
-- choosing that option enters an explicit follow-up state where the user must click a visible compatible symbol-sequence output as the `RepeatSymbolToMatch.reference` source
-- the final insertion still lands as one atomic action, adding the mismatch helper, the bridge chain, the source attachment, and the chosen reference attachment without hidden inference
-- Stage 3B is now also shipped: the mismatch-repair popup can offer that same reference-aware chain when the failed source/target pair already matches its head and tail
-- choosing the popup offer hands off into the same explicit reference chooser rather than guessing a visible reference branch
-- the completed repair still lands as one atomic action, now preserving the failed target attachment as well as the source and chosen reference attachments
-
-Palette wayfinding is now also tightened on `main`:
-- expanded palette cards now surface role chips and typical-path guidance directly on the card instead of burying workflow language behind the `?` affordance
-- hovered-input palette guidance now knows the target module definition as well as the port type, so compatible sources and bridges rank ahead of generic matches
-- existing `Comes after` / `Chains into` metadata now assists default ordering and visible chain cues for modules without a dedicated typical-path line
-
-Connection failure language is now also tightened on `main`:
-- live wire-drop blocking now rejects explicit sequence/scalar kind mismatches during authoring instead of letting them slip through to later validation
-- both live connection feedback and full-graph validation now name the missing explicit bridge or collector on type/kind mismatch paths
-- `Require*LengthMatch` runtime failures now include the exact count difference plus the visible repair-family alternatives (`Repeat*ToMatch`, `Pad*ToMatch`, `Truncate*ToMatch`)
-
-Iterator definition authoring is now shipped on `main`:
-- a bounded `Create Iterator` flow is available from the workbench structure actions
-- a user can wrap an eligible `in -> out` primitive or reusable body as a real `IteratorDef`
-- authored iterators are saved into the reusable library and instantiate like other structured definitions
-- the inspector now shows iterator definition metadata, repeated body identity, and default round count
-- V1 stays keyless and read-only with respect to the repeated body; nested iterator bodies remain out of scope
-
-Iterator workflow polish is now also shipped on `main`:
-- selected iterator instances now show both definition default rounds and the resolved per-instance round count
-- the inspector explicitly distinguishes inherited iterator count from instance override state
-- a bounded `ByteRoundIterator` micro demo now compares a single round body against its iterator wrapper
-- this slice stays within the existing bounded iterator execution model and does not add signal-driven stop semantics
-
-Clocked iterator traversal is now also shipped on `main`:
-- a separate `clocked-iterator` reusable-definition kind now exists alongside the structural iterator family
-- ticked execution treats it as a pulse-driven bounded traversal machine with explicit `clock`, `roundCount`, and `endPolicy`
-- V1 uses cumulative state, visible `step 0` seed behavior, and bounded `halt` / `wrap` traversal semantics
-- a built-in `ClockedByteRoundIterator` and matching micro demo now expose the slice without adding iterator authoring drift or reset semantics
-- a dedicated `Clocked Byte Round Iterator` demo project and `One Pulse Per Round` tutorial now turn the runtime slice into a guided teaching surface
-
-The older `v2.1` builder-power / maintainability queue is now largely already present on `main`:
-- `REPEATED-STRUCTURE-AUTHORING-V1.md`
-- `SELECTED-CLUSTER-OPERATIONS-V1.md`
-- `WORKSPACE-HISTORY-V1.md`
-- `WORKSPACE-VERSIONING-V1.md`
-- `WORKSPACE-VISIBILITY-NAVIGATION-V1.md`
-- `CONNECTION-AUTHORING-ERGONOMICS-V1.md`
-- `PARAMETER-AUTHORING-ERGONOMICS-V1.md`
-- `PARAMETER-COMPARISON-ERGONOMICS-V1.md`
-- `INSPECTOR-REFACTOR-V1.md`
-- `WORKBENCH-REFACTOR-V1.md`
-- `STORE-REFACTOR-V1.md`
-- `APP-SHELL-REFACTOR-V1.md`
-- `UI-ARCHITECTURE-STABILIZATION-V1.md`
-
-Wiring ceremony reduction is now also shipped on `main`:
-- drag from an output port into empty canvas opens a compatible quick-add popup and inserts and wires the chosen module at the drop point
-- selected modules can now be swapped in place through `Replace with…`, preserving same-name same-type connections where possible
-- a bounded allow-list of dominant scalar params is editable directly on canvas nodes
-- clicking an output port can arm a pending connection and complete it later on a compatible input
-- expanded palette cards can be dragged directly onto the canvas for explicit positioned placement
-
-Current active sequencing should now be read as:
-- choose the next product-facing slice from the remaining unshipped contracts
-- keep future work explicit, bounded, and evidence-driven
-
-The next dense-workspace node-legibility slice is now shipped as:
-- `PORT-ORDER-AUTHORING-V1.md`
-- a bounded per-instance port-order authoring pass for reducing local crossings and card clutter
-- keeps the work in workspace UI metadata only and stops short of per-port side placement or engine-level port-definition changes
-
-The next dense-workspace node-legibility follow-on is now also shipped as:
-- `PORT-SIDE-LAYOUT-PRESETS-V1.md`
-- a bounded per-instance visual port posture pass with `Default`, `Horizontal`, and `Vertical`
-- keeps the work in workspace UI metadata only and stops short of arbitrary per-port side placement
-
-The next dense-workspace node-legibility candidate after that is now also shipped as:
-- `PER-PORT-SIDE-AUTHORING-V1.md`
-- a bounded per-instance individual-port side assignment pass with `Left`, `Right`, `Top`, and `Bottom`
-- now solves real local crossover cases without drifting into arbitrary per-port free placement
-
-The next dense-workspace signal-reading candidate after that is now also shipped as:
-- `BOUNDED-WIRE-DIRECTION-CUES-V1.md`
-- a bounded active-only wire-direction pass for hovered, selected, and traced wires
+Its job is:
+- point to the current audit baseline
+- state the restart rule
+- prevent old queue memory from masquerading as current product truth
 - now improves path reading without turning the canvas into a permanently arrowed traffic map
 
 The next dense-workspace wire-authoring candidate is now:
