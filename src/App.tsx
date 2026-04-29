@@ -268,6 +268,11 @@ interface CompositeDrilldownState {
   conditionalBranch?: 'then' | 'else';
 }
 
+function isDialogSubmitBlockedTarget(target: EventTarget | null) {
+  const tagName = (target as { tagName?: string } | null)?.tagName?.toUpperCase();
+  return tagName === 'TEXTAREA' || tagName === 'SELECT' || isInteractiveShortcutTarget(target);
+}
+
 interface PaletteCanvasDragState {
   panelWindowId: string | null;
   defId: string;
@@ -2761,6 +2766,85 @@ function MainApp() {
     setImportError(null);
   }
 
+  function closeCompositeDialog() {
+    setIsCompositeDialogOpen(false);
+    setCompositeDialogError(null);
+    setExcludedCompositeBoundaryPortKeys([]);
+    setCompositePortNameOverrides({});
+    setCompositePurpose('');
+  }
+
+  function handleConfirmCompositeDialog() {
+    const result = createCompositeFromSelection({
+      project: activeProjectState,
+      registry: effectiveRegistry,
+      name: compositeName,
+      id: compositeId,
+      selectedModuleIds: effectiveSelectedModuleIds,
+      excludedBoundaryPortKeys: excludedCompositeBoundaryPortKeys,
+      portNameOverrides: effectivePortNameOverrides,
+      purpose: compositePurpose,
+    });
+
+    if (!result.ok || !result.entry) {
+      setCompositeDialogError(result.error ?? 'Unable to create composite.');
+      return;
+    }
+
+    dispatch({
+      type: 'addCompositeToLibrary',
+      entry: result.entry,
+    });
+
+    if (replaceSelectionAfterCreate && !state.compositeEditor) {
+      const replacement = replaceSelectionWithComposite({
+        project: activeProjectState,
+        layout: activeLayout,
+        entry: result.entry,
+        selectedModuleIds: effectiveSelectedModuleIds,
+      });
+
+      if (!replacement.ok || !replacement.project || !replacement.layout) {
+        setCompositeDialogError(
+          replacement.error ?? 'Composite was created, but replacement failed.',
+        );
+        return;
+      }
+
+      dispatch({
+        type: 'loadDocument',
+        projectId: activeProjectDefinition.id,
+        document: {
+          version: 1,
+          project: replacement.project,
+          ui: {
+            layout: replacement.layout,
+            annotations: state.annotationsByProject[activeProjectDefinition.id] ?? [],
+            stageLabels: state.stageLabelsByProject[activeProjectDefinition.id] ?? [],
+            groupBoxes: state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
+            guideRails: state.guideRailsByProject[activeProjectDefinition.id] ?? [],
+            showFurniture:
+              state.showFurnitureByProject[activeProjectDefinition.id] ?? true,
+            showOverviewNavigator:
+              state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
+            showGrid:
+              state.showGridByProject[activeProjectDefinition.id] ?? false,
+            snapToGrid:
+              state.snapToGridByProject[activeProjectDefinition.id] ?? false,
+            snapToGuides:
+              state.snapToGuidesByProject[activeProjectDefinition.id] ?? false,
+            layoutDirection: activeLayoutDirection,
+            routingMode: activeRoutingMode,
+            wireColorMode: activeWireColorMode,
+            connectionLayout: activeConnectionLayout,
+          },
+        },
+      });
+    }
+
+    closeCompositeDialog();
+  }
+
   function handleRestoreWorkspaceVersion(versionId: string) {
     if (state.compositeEditor) {
       return;
@@ -2890,6 +2974,27 @@ function MainApp() {
       setError: setImportError,
     });
   }, [detachedPanelGroups]);
+
+  function createDialogKeyHandler(onConfirm: () => void, onCancel: () => void) {
+    return (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCancel();
+        return;
+      }
+
+      if (
+        event.key === 'Enter'
+        && !event.metaKey
+        && !event.ctrlKey
+        && !event.altKey
+        && !isDialogSubmitBlockedTarget(event.target)
+      ) {
+        event.preventDefault();
+        onConfirm();
+      }
+    };
+  }
 
   const openDetachedPanelInExistingWindow = useCallback(
     (kind: DetachedPanelKind, panelWindowId: string) => {
@@ -5470,16 +5575,11 @@ function MainApp() {
       {isCompositeDialogOpen ? (
         <div
           className="dialog-backdrop"
-          onClick={() => {
-            setIsCompositeDialogOpen(false);
-            setCompositeDialogError(null);
-            setExcludedCompositeBoundaryPortKeys([]);
-            setCompositePortNameOverrides({});
-            setCompositePurpose('');
-          }}
+          onClick={closeCompositeDialog}
         >
           <div
             className="dialog-panel"
+            onKeyDown={createDialogKeyHandler(handleConfirmCompositeDialog, closeCompositeDialog)}
             onClick={(event) => event.stopPropagation()}
           >
             <p className="panel-label">Composite Authoring</p>
@@ -5687,93 +5787,14 @@ function MainApp() {
               <button
                 type="button"
                 className="secondary-dialog-button"
-                onClick={() => {
-                  setIsCompositeDialogOpen(false);
-                  setCompositeDialogError(null);
-                  setExcludedCompositeBoundaryPortKeys([]);
-                  setCompositePortNameOverrides({});
-                  setCompositePurpose('');
-                }}
+                onClick={closeCompositeDialog}
               >
                 Cancel
               </button>
               <button
                 type="button"
                 className="primary-dialog-button"
-                onClick={() => {
-                  const result = createCompositeFromSelection({
-                    project: activeProjectState,
-                    registry: effectiveRegistry,
-                    name: compositeName,
-                    id: compositeId,
-                    selectedModuleIds: effectiveSelectedModuleIds,
-                    excludedBoundaryPortKeys: excludedCompositeBoundaryPortKeys,
-                    portNameOverrides: effectivePortNameOverrides,
-                    purpose: compositePurpose,
-                  });
-
-                  if (!result.ok || !result.entry) {
-                    setCompositeDialogError(result.error ?? 'Unable to create composite.');
-                    return;
-                  }
-
-                  dispatch({
-                    type: 'addCompositeToLibrary',
-                    entry: result.entry,
-                  });
-
-                  if (replaceSelectionAfterCreate && !state.compositeEditor) {
-                    const replacement = replaceSelectionWithComposite({
-                      project: activeProjectState,
-                      layout: activeLayout,
-                      entry: result.entry,
-                      selectedModuleIds: effectiveSelectedModuleIds,
-                    });
-
-                    if (!replacement.ok || !replacement.project || !replacement.layout) {
-                      setCompositeDialogError(
-                        replacement.error ?? 'Composite was created, but replacement failed.',
-                      );
-                      return;
-                    }
-
-                    dispatch({
-                      type: 'loadDocument',
-                      projectId: activeProjectDefinition.id,
-                      document: {
-                        version: 1,
-                        project: replacement.project,
-                        ui: {
-                          layout: replacement.layout,
-                          annotations: state.annotationsByProject[activeProjectDefinition.id] ?? [],
-                          stageLabels: state.stageLabelsByProject[activeProjectDefinition.id] ?? [],
-                          groupBoxes: state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
-                          guideRails: state.guideRailsByProject[activeProjectDefinition.id] ?? [],
-                          showFurniture:
-                            state.showFurnitureByProject[activeProjectDefinition.id] ?? true,
-                          showOverviewNavigator:
-                            state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
-                          showGrid:
-                            state.showGridByProject[activeProjectDefinition.id] ?? false,
-                          snapToGrid:
-                            state.snapToGridByProject[activeProjectDefinition.id] ?? false,
-                          snapToGuides:
-                            state.snapToGuidesByProject[activeProjectDefinition.id] ?? false,
-                          layoutDirection: activeLayoutDirection,
-                          routingMode: activeRoutingMode,
-                          wireColorMode: activeWireColorMode,
-                          connectionLayout: activeConnectionLayout,
-                        },
-                      },
-                    });
-                  }
-
-                  setIsCompositeDialogOpen(false);
-                  setCompositeDialogError(null);
-                  setExcludedCompositeBoundaryPortKeys([]);
-                  setCompositePortNameOverrides({});
-                  setCompositePurpose('');
-                }}
+                onClick={handleConfirmCompositeDialog}
               >
                 Create Composite
               </button>
@@ -5790,9 +5811,30 @@ function MainApp() {
           setIsIteratorDialogOpen(false);
           setIteratorDialogError(null);
         };
+        const handleConfirmIteratorDialog = () => {
+          const parsedIterationCount = Number(iteratorIterationCount);
+          const result = createIteratorDefinition({
+            registry: effectiveRegistry,
+            name: iteratorName,
+            id: iteratorId,
+            roundDefId: iteratorRoundDefId,
+            iterationCount: parsedIterationCount,
+          });
+          if (!result.ok || !result.entry) {
+            setIteratorDialogError(result.error ?? 'Iterator definition is invalid.');
+            return;
+          }
+
+          dispatch({ type: 'addCompositeToLibrary', entry: result.entry });
+          closeIteratorDialog();
+        };
         return (
           <div className="dialog-backdrop" onClick={closeIteratorDialog}>
-            <div className="dialog-panel" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="dialog-panel"
+              onKeyDown={createDialogKeyHandler(handleConfirmIteratorDialog, closeIteratorDialog)}
+              onClick={(e) => e.stopPropagation()}
+            >
               <h2 className="dialog-title">New Iterator</h2>
               <p className="dialog-description">
                 Author a bounded repeated-round wrapper around one eligible machine body. V1 iterators
@@ -5867,23 +5909,7 @@ function MainApp() {
                 <button
                   type="button"
                   className="primary-dialog-button"
-                  onClick={() => {
-                    const parsedIterationCount = Number(iteratorIterationCount);
-                    const result = createIteratorDefinition({
-                      registry: effectiveRegistry,
-                      name: iteratorName,
-                      id: iteratorId,
-                      roundDefId: iteratorRoundDefId,
-                      iterationCount: parsedIterationCount,
-                    });
-                    if (!result.ok || !result.entry) {
-                      setIteratorDialogError(result.error ?? 'Iterator definition is invalid.');
-                      return;
-                    }
-
-                    dispatch({ type: 'addCompositeToLibrary', entry: result.entry });
-                    closeIteratorDialog();
-                  }}
+                  onClick={handleConfirmIteratorDialog}
                 >
                   Create Iterator
                 </button>
@@ -5902,9 +5928,40 @@ function MainApp() {
           setClockedIteratorEditingId(null);
           setClockedIteratorDialogError(null);
         };
+        const handleConfirmClockedIteratorDialog = () => {
+          const parsedRoundCount = Number(clockedIteratorRoundCount);
+          const registryForValidation = clockedIteratorEditingId
+            ? Object.fromEntries(
+                Object.entries(effectiveRegistry).filter(([k]) => k !== clockedIteratorEditingId),
+              )
+            : effectiveRegistry;
+          const result = createClockedIteratorDefinition({
+            registry: registryForValidation,
+            name: clockedIteratorName,
+            id: clockedIteratorId,
+            roundDefId: clockedIteratorRoundDefId,
+            roundCount: parsedRoundCount,
+            endPolicy: clockedIteratorEndPolicy,
+          });
+          if (!result.ok || !result.entry) {
+            setClockedIteratorDialogError(result.error ?? 'Clocked iterator definition is invalid.');
+            return;
+          }
+
+          if (clockedIteratorEditingId) {
+            dispatch({ type: 'updateCompositeInLibrary', entry: result.entry });
+          } else {
+            dispatch({ type: 'addCompositeToLibrary', entry: result.entry });
+          }
+          closeClockedIteratorDialog();
+        };
         return (
           <div className="dialog-backdrop" onClick={closeClockedIteratorDialog}>
-            <div className="dialog-panel" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="dialog-panel"
+              onKeyDown={createDialogKeyHandler(handleConfirmClockedIteratorDialog, closeClockedIteratorDialog)}
+              onClick={(e) => e.stopPropagation()}
+            >
               <h2 className="dialog-title">{clockedIteratorEditingId ? 'Edit Clocked Iterator' : 'New Clocked Iterator'}</h2>
               <p className="dialog-description">
                 Author a pulse-driven bounded traversal machine. One clock pulse advances the
@@ -5994,33 +6051,7 @@ function MainApp() {
                 <button
                   type="button"
                   className="primary-dialog-button"
-                  onClick={() => {
-                    const parsedRoundCount = Number(clockedIteratorRoundCount);
-                    const registryForValidation = clockedIteratorEditingId
-                      ? Object.fromEntries(
-                          Object.entries(effectiveRegistry).filter(([k]) => k !== clockedIteratorEditingId),
-                        )
-                      : effectiveRegistry;
-                    const result = createClockedIteratorDefinition({
-                      registry: registryForValidation,
-                      name: clockedIteratorName,
-                      id: clockedIteratorId,
-                      roundDefId: clockedIteratorRoundDefId,
-                      roundCount: parsedRoundCount,
-                      endPolicy: clockedIteratorEndPolicy,
-                    });
-                    if (!result.ok || !result.entry) {
-                      setClockedIteratorDialogError(result.error ?? 'Clocked iterator definition is invalid.');
-                      return;
-                    }
-
-                    if (clockedIteratorEditingId) {
-                      dispatch({ type: 'updateCompositeInLibrary', entry: result.entry });
-                    } else {
-                      dispatch({ type: 'addCompositeToLibrary', entry: result.entry });
-                    }
-                    closeClockedIteratorDialog();
-                  }}
+                  onClick={handleConfirmClockedIteratorDialog}
                 >
                   {clockedIteratorEditingId ? 'Update Clocked Iterator' : 'Create Clocked Iterator'}
                 </button>
@@ -6038,9 +6069,51 @@ function MainApp() {
           setIsConditionalDialogOpen(false);
           setConditionalDialogError(null);
         };
+        const handleConfirmConditionalDialog = () => {
+          const name = conditionalName.trim();
+          const id = conditionalId.trim();
+          if (!name) { setConditionalDialogError('Display name is required.'); return; }
+          if (!id) { setConditionalDialogError('Stable ID is required.'); return; }
+          if (!conditionalThenDefId) { setConditionalDialogError('Choose a then-branch definition.'); return; }
+          if (!conditionalElseDefId) { setConditionalDialogError('Choose an else-branch definition.'); return; }
+          if (state.compositeLibrary.some((entry) => entry.id === id)) {
+            setConditionalDialogError(`A reusable with id "${id}" already exists.`);
+            return;
+          }
+          const thenDef = effectiveRegistry[conditionalThenDefId];
+          const elseDef = effectiveRegistry[conditionalElseDefId];
+          if (!thenDef || !elseDef) { setConditionalDialogError('Selected branch definitions not found.'); return; }
+          const portMismatch =
+            thenDef.inputs.length !== elseDef.inputs.length ||
+            thenDef.outputs.length !== elseDef.outputs.length ||
+            thenDef.inputs.some((p, i) => p.name !== elseDef.inputs[i]?.name || p.type !== elseDef.inputs[i]?.type) ||
+            thenDef.outputs.some((p, i) => p.name !== elseDef.outputs[i]?.name || p.type !== elseDef.outputs[i]?.type);
+          if (portMismatch) {
+            setConditionalDialogError('Both branches must have the same input and output port names and types.');
+            return;
+          }
+          const conditionalDef: ConditionalDef = {
+            id,
+            name,
+            kind: 'conditional',
+            version: 1,
+            inputs: [{ name: 'select', type: 'bits', kind: 'scalar' }, ...thenDef.inputs],
+            outputs: thenDef.outputs,
+            paramSchema: {},
+            thenDefId: conditionalThenDefId,
+            elseDefId: conditionalElseDefId,
+          };
+          const entry: CompositeLibraryEntry = { id, name, version: 1, source: 'user', definition: conditionalDef };
+          dispatch({ type: 'addCompositeToLibrary', entry });
+          closeConditionalDialog();
+        };
         return (
           <div className="dialog-backdrop" onClick={closeConditionalDialog}>
-            <div className="dialog-panel" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="dialog-panel"
+              onKeyDown={createDialogKeyHandler(handleConfirmConditionalDialog, closeConditionalDialog)}
+              onClick={(e) => e.stopPropagation()}
+            >
               <h2 className="dialog-title">New Conditional</h2>
               <p className="dialog-description">
                 Author a conditional module that routes its input through one of two branch definitions
@@ -6108,44 +6181,7 @@ function MainApp() {
                 <button
                   type="button"
                   className="primary-dialog-button"
-                  onClick={() => {
-                    const name = conditionalName.trim();
-                    const id = conditionalId.trim();
-                    if (!name) { setConditionalDialogError('Display name is required.'); return; }
-                    if (!id) { setConditionalDialogError('Stable ID is required.'); return; }
-                    if (!conditionalThenDefId) { setConditionalDialogError('Choose a then-branch definition.'); return; }
-                    if (!conditionalElseDefId) { setConditionalDialogError('Choose an else-branch definition.'); return; }
-                    if (state.compositeLibrary.some((entry) => entry.id === id)) {
-                      setConditionalDialogError(`A reusable with id "${id}" already exists.`);
-                      return;
-                    }
-                    const thenDef = effectiveRegistry[conditionalThenDefId];
-                    const elseDef = effectiveRegistry[conditionalElseDefId];
-                    if (!thenDef || !elseDef) { setConditionalDialogError('Selected branch definitions not found.'); return; }
-                    const portMismatch =
-                      thenDef.inputs.length !== elseDef.inputs.length ||
-                      thenDef.outputs.length !== elseDef.outputs.length ||
-                      thenDef.inputs.some((p, i) => p.name !== elseDef.inputs[i]?.name || p.type !== elseDef.inputs[i]?.type) ||
-                      thenDef.outputs.some((p, i) => p.name !== elseDef.outputs[i]?.name || p.type !== elseDef.outputs[i]?.type);
-                    if (portMismatch) {
-                      setConditionalDialogError('Both branches must have the same input and output port names and types.');
-                      return;
-                    }
-                    const conditionalDef: ConditionalDef = {
-                      id,
-                      name,
-                      kind: 'conditional',
-                      version: 1,
-                      inputs: [{ name: 'select', type: 'bits', kind: 'scalar' }, ...thenDef.inputs],
-                      outputs: thenDef.outputs,
-                      paramSchema: {},
-                      thenDefId: conditionalThenDefId,
-                      elseDefId: conditionalElseDefId,
-                    };
-                    const entry: CompositeLibraryEntry = { id, name, version: 1, source: 'user', definition: conditionalDef };
-                    dispatch({ type: 'addCompositeToLibrary', entry });
-                    closeConditionalDialog();
-                  }}
+                  onClick={handleConfirmConditionalDialog}
                 >
                   Create Conditional
                 </button>
@@ -6164,9 +6200,57 @@ function MainApp() {
           setMultiConditionalDialogError(null);
         };
         const selectWidth = multiConditionalBranchCount <= 2 ? 1 : multiConditionalBranchCount <= 4 ? 2 : 3;
+        const handleConfirmMultiConditionalDialog = () => {
+          const name = multiConditionalName.trim();
+          const id = multiConditionalId.trim();
+          if (!name) { setMultiConditionalDialogError('Display name is required.'); return; }
+          if (!id) { setMultiConditionalDialogError('Stable ID is required.'); return; }
+          if (multiConditionalBranchDefIds.slice(0, multiConditionalBranchCount).some((defId) => !defId)) {
+            setMultiConditionalDialogError('All branch definitions must be chosen.');
+            return;
+          }
+          if (state.compositeLibrary.some((entry) => entry.id === id)) {
+            setMultiConditionalDialogError(`A reusable with id "${id}" already exists.`);
+            return;
+          }
+          const activeBranchDefIds = multiConditionalBranchDefIds.slice(0, multiConditionalBranchCount);
+          const branchDefs = activeBranchDefIds.map((defId) => effectiveRegistry[defId]);
+          if (branchDefs.some((def) => !def)) {
+            setMultiConditionalDialogError('One or more selected branch definitions were not found.');
+            return;
+          }
+          const referenceDef = branchDefs[0]!;
+          const portMismatch = branchDefs.slice(1).some((def) =>
+            def!.inputs.length !== referenceDef.inputs.length ||
+            def!.outputs.length !== referenceDef.outputs.length ||
+            def!.inputs.some((p, i) => p.name !== referenceDef.inputs[i]?.name || p.type !== referenceDef.inputs[i]?.type) ||
+            def!.outputs.some((p, i) => p.name !== referenceDef.outputs[i]?.name || p.type !== referenceDef.outputs[i]?.type),
+          );
+          if (portMismatch) {
+            setMultiConditionalDialogError('All branches must have the same input and output port names and types.');
+            return;
+          }
+          const multiConditionalDef: MultiConditionalDef = {
+            id,
+            name,
+            kind: 'multi-conditional',
+            version: 1,
+            inputs: [{ name: 'select', type: 'bits' }, ...referenceDef.inputs],
+            outputs: referenceDef.outputs,
+            paramSchema: {},
+            branchDefIds: activeBranchDefIds,
+          };
+          const entry: CompositeLibraryEntry = { id, name, version: 1, source: 'user', definition: multiConditionalDef };
+          dispatch({ type: 'addCompositeToLibrary', entry });
+          closeDialog();
+        };
         return (
           <div className="dialog-backdrop" onClick={closeDialog}>
-            <div className="dialog-panel" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="dialog-panel"
+              onKeyDown={createDialogKeyHandler(handleConfirmMultiConditionalDialog, closeDialog)}
+              onClick={(e) => e.stopPropagation()}
+            >
               <h2 className="dialog-title">New Multi-Conditional</h2>
               <p className="dialog-description">
                 Author a multi-branch module where a {selectWidth}-bit control word selects which branch
@@ -6243,50 +6327,7 @@ function MainApp() {
                 <button
                   type="button"
                   className="primary-dialog-button"
-                  onClick={() => {
-                    const name = multiConditionalName.trim();
-                    const id = multiConditionalId.trim();
-                    if (!name) { setMultiConditionalDialogError('Display name is required.'); return; }
-                    if (!id) { setMultiConditionalDialogError('Stable ID is required.'); return; }
-                    if (multiConditionalBranchDefIds.slice(0, multiConditionalBranchCount).some((defId) => !defId)) {
-                      setMultiConditionalDialogError('All branch definitions must be chosen.');
-                      return;
-                    }
-                    if (state.compositeLibrary.some((entry) => entry.id === id)) {
-                      setMultiConditionalDialogError(`A reusable with id "${id}" already exists.`);
-                      return;
-                    }
-                    const activeBranchDefIds = multiConditionalBranchDefIds.slice(0, multiConditionalBranchCount);
-                    const branchDefs = activeBranchDefIds.map((defId) => effectiveRegistry[defId]);
-                    if (branchDefs.some((def) => !def)) {
-                      setMultiConditionalDialogError('One or more selected branch definitions were not found.');
-                      return;
-                    }
-                    const referenceDef = branchDefs[0]!;
-                    const portMismatch = branchDefs.slice(1).some((def) =>
-                      def!.inputs.length !== referenceDef.inputs.length ||
-                      def!.outputs.length !== referenceDef.outputs.length ||
-                      def!.inputs.some((p, i) => p.name !== referenceDef.inputs[i]?.name || p.type !== referenceDef.inputs[i]?.type) ||
-                      def!.outputs.some((p, i) => p.name !== referenceDef.outputs[i]?.name || p.type !== referenceDef.outputs[i]?.type),
-                    );
-                    if (portMismatch) {
-                      setMultiConditionalDialogError('All branches must have the same input and output port names and types.');
-                      return;
-                    }
-                    const multiConditionalDef: MultiConditionalDef = {
-                      id,
-                      name,
-                      kind: 'multi-conditional',
-                      version: 1,
-                      inputs: [{ name: 'select', type: 'bits' }, ...referenceDef.inputs],
-                      outputs: referenceDef.outputs,
-                      paramSchema: {},
-                      branchDefIds: activeBranchDefIds,
-                    };
-                    const entry: CompositeLibraryEntry = { id, name, version: 1, source: 'user', definition: multiConditionalDef };
-                    dispatch({ type: 'addCompositeToLibrary', entry });
-                    closeDialog();
-                  }}
+                  onClick={handleConfirmMultiConditionalDialog}
                 >
                   Create Multi-Conditional
                 </button>
@@ -6303,6 +6344,13 @@ function MainApp() {
         >
           <div
             className="dialog-panel"
+            onKeyDown={createDialogKeyHandler(
+              () => {
+                setIsCloseConfirmOpen(false);
+                dispatch({ type: 'closeCompositeEditor' });
+              },
+              () => setIsCloseConfirmOpen(false),
+            )}
             onClick={(event) => event.stopPropagation()}
           >
             <p className="panel-label">Unsaved Changes</p>
@@ -6340,6 +6388,53 @@ function MainApp() {
         >
           <div
             className="dialog-panel"
+            onKeyDown={createDialogKeyHandler(
+              () => {
+                if (selectedChallengeProjectId !== activeProjectDefinition.id) {
+                  dispatch({
+                    type: 'switchProject',
+                    projectId: selectedChallengeProjectId,
+                  });
+                }
+                dispatch({
+                  type: 'loadDocument',
+                  projectId: selectedChallengeProjectId,
+                  document: {
+                    version: 1,
+                    project: cloneProject(selectedChallenge.startingProject),
+                    ui: {
+                      layout:
+                        selectedChallenge.startingLayout ?? selectedChallengeProjectDefinition.layout,
+                      annotations: [],
+                      stageLabels: [],
+                      groupBoxes: [],
+                      guideRails: [],
+                      showFurniture:
+                        state.showFurnitureByProject[selectedChallengeProjectId] ?? true,
+                      showOverviewNavigator:
+                        state.showOverviewNavigatorByProject[selectedChallengeProjectId] ?? false,
+                      showGrid:
+                        state.showGridByProject[selectedChallengeProjectId] ?? false,
+                      snapToGrid:
+                        state.snapToGridByProject[selectedChallengeProjectId] ?? false,
+                      snapToGuides:
+                        state.snapToGuidesByProject[selectedChallengeProjectId] ?? false,
+                      layoutDirection:
+                        state.layoutDirectionByProject[selectedChallengeProjectId] ??
+                        'horizontal',
+                      routingMode:
+                        state.routingModeByProject[selectedChallengeProjectId] ?? 'curved',
+                      wireColorMode:
+                        state.wireColorModeByProject[selectedChallengeProjectId] ?? 'domain',
+                      connectionLayout:
+                        state.connectionLayoutByProject[selectedChallengeProjectId] ?? {},
+                    },
+                  },
+                });
+                setIsChallengeResetConfirmOpen(false);
+              },
+              () => setIsChallengeResetConfirmOpen(false),
+            )}
             onClick={(event) => event.stopPropagation()}
           >
             <p className="panel-label">Challenge Reset</p>
