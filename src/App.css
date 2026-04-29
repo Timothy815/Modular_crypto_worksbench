@@ -2099,6 +2099,10 @@ body.dock-resizing {
 }
 
 .workbench-menu-action-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   text-align: left;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -2107,6 +2111,17 @@ body.dock-resizing {
   font: inherit;
   font-weight: 600;
   padding: 10px 12px;
+}
+
+.workbench-menu-action-text {
+  min-width: 0;
+}
+
+.workbench-menu-action-shortcut {
+  flex-shrink: 0;
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
 }
 
 .workbench-menu-action-button:hover:not(:disabled),
@@ -2119,6 +2134,18 @@ body.dock-resizing {
 .workbench-menu-action-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.manual-entry-key-points {
+  margin: 10px 0 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 8px;
+}
+
+.manual-entry-key-points li {
+  color: var(--ink);
+  line-height: 1.45;
 }
 
 .comparison-panel {

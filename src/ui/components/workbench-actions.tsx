@@ -107,6 +107,7 @@ interface WorkbenchMenuAction {
   onSelect: () => void;
   disabled?: boolean;
   title?: string;
+  shortcutLabel?: string;
 }
 
 const WIRE_COLOR_OVERRIDE_OPTIONS: Array<{
@@ -169,6 +170,7 @@ function WorkbenchMenuActionButton({
   onSelect,
   disabled = false,
   title,
+  shortcutLabel,
 }: WorkbenchMenuAction) {
   return (
     <button
@@ -181,7 +183,12 @@ function WorkbenchMenuActionButton({
         event.currentTarget.closest('details')?.removeAttribute('open');
       }}
     >
-      {label}
+      <span className="workbench-menu-action-text">{label}</span>
+      {shortcutLabel ? (
+        <span className="workbench-menu-action-shortcut" aria-hidden="true">
+          {shortcutLabel}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -1065,6 +1072,7 @@ export function WorkbenchActions({
               onSelect={onRequestCreateComposite}
               disabled={!hasSelection}
               title="Create composite from selection (Cmd/Ctrl+G)"
+              shortcutLabel="Cmd/Ctrl+G"
             />
             <WorkbenchMenuActionButton
               label="Create Iterator"
@@ -1101,18 +1109,21 @@ export function WorkbenchActions({
               onSelect={onRequestCopySelection}
               disabled={!hasSelection}
               title="Copy selected modules (Cmd/Ctrl+C)"
+              shortcutLabel="Cmd/Ctrl+C"
             />
             <WorkbenchMenuActionButton
               label="Paste Cluster"
               onSelect={onRequestPasteSelection}
               disabled={!canPasteSelection}
               title="Paste copied modules (Cmd/Ctrl+V)"
+              shortcutLabel="Cmd/Ctrl+V"
             />
             <WorkbenchMenuActionButton
               label="Duplicate Cluster"
               onSelect={onRequestDuplicateSelection}
               disabled={!hasSelection}
               title="Duplicate selected modules (Cmd/Ctrl+D)"
+              shortcutLabel="Cmd/Ctrl+D"
             />
             <WorkbenchMenuActionButton
               label="Repeat Right"
@@ -1129,6 +1140,7 @@ export function WorkbenchActions({
               onSelect={onRequestDeleteSelection}
               disabled={!hasSelection}
               title="Delete selected modules (Delete)"
+              shortcutLabel="Delete"
             />
           </WorkbenchActionMenu>
 
@@ -1137,11 +1149,13 @@ export function WorkbenchActions({
               label="Save Current Workspace"
               onSelect={onRequestSaveWorkspace}
               title="Save current workspace (Cmd/Ctrl+S)"
+              shortcutLabel="Cmd/Ctrl+S"
             />
             <WorkbenchMenuActionButton
               label="Save Version"
               onSelect={onRequestSaveVersion}
               title="Save named version checkpoint (Cmd/Ctrl+Shift+S)"
+              shortcutLabel="Cmd/Ctrl+Shift+S"
             />
           </WorkbenchActionMenu>
 
@@ -1160,6 +1174,7 @@ export function WorkbenchActions({
               onSelect={onRequestCreateComposite}
               disabled={!hasSelection}
               title="Create composite from selection (Cmd/Ctrl+G)"
+              shortcutLabel="Cmd/Ctrl+G"
             />
           <WorkbenchMenuActionButton
             label="Create Iterator"

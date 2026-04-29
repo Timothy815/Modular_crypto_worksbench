@@ -2,6 +2,7 @@ export interface ManualEntry {
   id: string;
   title: string;
   body: string;
+  keyPoints?: string[];
   indexTerms: string[];
 }
 
@@ -64,7 +65,25 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         id: 'keyboard-shortcuts',
         title: 'Keyboard Shortcuts',
         body:
-          'MCW supports a small set of workbench shortcuts for repeated actions. These are accelerators for visible controls, not hidden commands. Current V1 shortcuts: Cmd/Ctrl+S for Save Current Workspace, Cmd/Ctrl+Shift+S for Save Version, Cmd/Ctrl+Z for Undo, Cmd/Ctrl+Shift+Z for Redo, Cmd/Ctrl+C for Copy Cluster, Cmd/Ctrl+V for Paste Cluster, Cmd/Ctrl+D for Duplicate Cluster, Cmd/Ctrl+G for Create Composite from the current selection, Cmd/Ctrl+Shift+U to unzip the selected composite instance, Delete or Backspace for Delete Cluster, Enter to open the selected composite instance when the inspector already shows Open Instance, arrow keys to nudge the current selection by one workbench grid step, Space to play or pause tick playback when tick controls are active, and [ / ] to move backward or forward through tick or trace stepping contexts that are already visible. In the main composite, iterator, and conditional authoring dialogs, Enter confirms the primary action and Escape cancels. Shortcuts do not fire while you are typing in parameter editors, rename fields, CSV boxes, or other text inputs.',
+          'MCW supports a small set of workbench shortcuts for repeated actions. These are accelerators for visible controls, not hidden commands.',
+        keyPoints: [
+          'Cmd/Ctrl+S — Save Current Workspace',
+          'Cmd/Ctrl+Shift+S — Save Version',
+          'Cmd/Ctrl+Z — Undo',
+          'Cmd/Ctrl+Shift+Z — Redo',
+          'Cmd/Ctrl+C — Copy Cluster',
+          'Cmd/Ctrl+V — Paste Cluster',
+          'Cmd/Ctrl+D — Duplicate Cluster',
+          'Cmd/Ctrl+G — Create Composite',
+          'Cmd/Ctrl+Shift+U — Unzip Composite',
+          'Delete or Backspace — Delete Cluster',
+          'Enter — Open selected composite instance when Open Instance is available',
+          'Arrow keys — Nudge the current selection by one workbench grid step',
+          'Space — Play or pause tick playback when tick controls are active',
+          '[ / ] — Step backward or forward through active tick or trace stepping views',
+          'In composite, iterator, and conditional authoring dialogs: Enter confirms the primary action and Escape cancels',
+          'Shortcuts do not fire while you are typing in parameter editors, rename fields, CSV boxes, or other text inputs',
+        ],
         indexTerms: ['keyboard shortcuts', 'hotkeys', 'quick keys', 'save shortcut', 'save version shortcut', 'copy shortcut', 'paste shortcut', 'undo shortcut', 'redo shortcut', 'duplicate shortcut', 'create composite shortcut', 'open instance shortcut', 'unzip composite shortcut', 'dialog enter', 'dialog escape', 'delete shortcut', 'playback shortcut', 'step shortcut'],
       },
       {

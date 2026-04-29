@@ -122,6 +122,13 @@ export function ManualWindow({ initialTheme }: ManualWindowProps) {
                   <article key={entry.id} id={entry.id} className="manual-entry-card">
                     <h3>{entry.title}</h3>
                     <p>{entry.body}</p>
+                    {entry.keyPoints?.length ? (
+                      <ul className="manual-entry-key-points">
+                        {entry.keyPoints.map((point) => (
+                          <li key={point}>{point}</li>
+                        ))}
+                      </ul>
+                    ) : null}
                     <p className="manual-entry-terms">
                       <strong>Index Terms:</strong> {entry.indexTerms.join(', ')}
                     </p>
