@@ -10,14 +10,23 @@ interface ShortcutTargetShape {
   isContentEditable?: boolean;
 }
 
+function getShortcutTargetTagName(target: EventTarget | null) {
+  return (target as ShortcutTargetShape | null)?.tagName?.toUpperCase() ?? null;
+}
+
 export function isEditableShortcutTarget(target: EventTarget | null) {
   const maybeElement = target as ShortcutTargetShape | null;
-  const tagName = maybeElement?.tagName?.toUpperCase();
+  const tagName = getShortcutTargetTagName(target);
   if (tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT') {
     return true;
   }
 
   return maybeElement?.isContentEditable === true;
+}
+
+export function isInteractiveShortcutTarget(target: EventTarget | null) {
+  const tagName = getShortcutTargetTagName(target);
+  return tagName === 'BUTTON' || tagName === 'A' || tagName === 'SUMMARY';
 }
 
 export function matchesShortcutCombo(event: KeyboardEvent, combo: ShortcutCombo) {

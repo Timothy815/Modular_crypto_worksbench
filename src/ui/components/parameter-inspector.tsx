@@ -2087,6 +2087,7 @@ export function ParameterInspector({
               <button
                 type="button"
                 className="mini-action-button"
+                title="Open selected composite instance (Enter)"
                 onClick={() => onOpenCompositeInstanceDrilldown(moduleInstance.id)}
               >
                 Open Instance

@@ -99,7 +99,11 @@ import {
   WORKBENCH_GRID_SIZE,
   uiReducer,
 } from './ui/store';
-import { isEditableShortcutTarget, matchesShortcutCombo } from './ui/keyboard-shortcuts';
+import {
+  isEditableShortcutTarget,
+  isInteractiveShortcutTarget,
+  matchesShortcutCombo,
+} from './ui/keyboard-shortcuts';
 import { resolveWorkspaceExecution } from './ui/workspace-execution';
 import type { WorkspaceMode } from './ui/workspace-mode';
 import {
@@ -2484,6 +2488,30 @@ function MainApp() {
       }
 
       const hasSelection = effectiveSelectedModuleIds.length > 0;
+      const hasSingleCompositeSelection =
+        effectiveSelectedModuleIds.length === 1 &&
+        selectedModule !== null &&
+        effectiveSelectedModuleIds[0] === selectedModule.id &&
+        (() => {
+          const definition = effectiveRegistry[selectedModule.defId];
+          return Boolean(
+            definition && (isCompositeDefinition(definition) || isConditionalDefinition(definition)),
+          );
+        })();
+
+      if (matchesShortcutCombo(event, { key: 'g', metaOrCtrl: true })) {
+        if (!hasSelection) {
+          return;
+        }
+        event.preventDefault();
+        setCompositeName('');
+        setCompositeId('');
+        setCompositeDialogError(null);
+        setExcludedCompositeBoundaryPortKeys([]);
+        setReplaceSelectionAfterCreate(!state.compositeEditor);
+        setIsCompositeDialogOpen(true);
+        return;
+      }
 
       if (matchesShortcutCombo(event, { key: 'z', metaOrCtrl: true, shift: true })) {
         if (!canRedoWorkspaceHistory) {
@@ -2503,6 +2531,15 @@ function MainApp() {
       if (matchesShortcutCombo(event, { key: 's', metaOrCtrl: true })) {
         event.preventDefault();
         handleSaveCurrentWorkspace();
+        return;
+      }
+
+      if (event.key === 'Enter' && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        if (!hasSingleCompositeSelection || isInteractiveShortcutTarget(event.target)) {
+          return;
+        }
+        event.preventDefault();
+        handleOpenCompositeInstanceDrilldown(selectedModule.id);
         return;
       }
 
@@ -2675,12 +2712,14 @@ function MainApp() {
     canUndoWorkspaceHistory,
     dispatch,
     effectiveCurrentTick,
+    effectiveRegistry,
     effectiveSelectedModuleIds,
     effectiveTickCount,
     execution,
     handleDeleteSelectedCluster,
     handleCopySelectedCluster,
     handleDuplicateSelectedCluster,
+    handleOpenCompositeInstanceDrilldown,
     handlePasteWorkspaceClipboard,
     handleRedoWorkspaceHistory,
     handleSaveCurrentWorkspace,
@@ -2689,6 +2728,7 @@ function MainApp() {
     isCompositeDrilldownActive,
     isTickPlaybackActive,
     isTickedMode,
+    selectedModule,
     state.compositeEditor,
     state.showInspector,
     stepIndex,

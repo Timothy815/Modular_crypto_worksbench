@@ -1064,6 +1064,7 @@ export function WorkbenchActions({
               label="Create Composite"
               onSelect={onRequestCreateComposite}
               disabled={!hasSelection}
+              title="Create composite from selection (Cmd/Ctrl+G)"
             />
             <WorkbenchMenuActionButton
               label="Create Iterator"
@@ -1153,12 +1154,13 @@ export function WorkbenchActions({
           </WorkbenchActionMenu>
         </>
       ) : (
-        <WorkbenchActionMenu label="Edit" description="Composite capture">
-          <WorkbenchMenuActionButton
-            label="Create Composite"
-            onSelect={onRequestCreateComposite}
-            disabled={!hasSelection}
-          />
+          <WorkbenchActionMenu label="Edit" description="Composite capture">
+            <WorkbenchMenuActionButton
+              label="Create Composite"
+              onSelect={onRequestCreateComposite}
+              disabled={!hasSelection}
+              title="Create composite from selection (Cmd/Ctrl+G)"
+            />
           <WorkbenchMenuActionButton
             label="Create Iterator"
             onSelect={onRequestCreateIterator}
