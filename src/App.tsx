@@ -2732,17 +2732,18 @@ function MainApp() {
           event.key === 'ArrowUp' ||
           event.key === 'ArrowDown')
       ) {
+        const movementStep = event.shiftKey ? WORKBENCH_GRID_SIZE * 4 : WORKBENCH_GRID_SIZE;
         const deltaX =
           event.key === 'ArrowLeft'
-            ? -WORKBENCH_GRID_SIZE
+            ? -movementStep
             : event.key === 'ArrowRight'
-              ? WORKBENCH_GRID_SIZE
+              ? movementStep
               : 0;
         const deltaY =
           event.key === 'ArrowUp'
-            ? -WORKBENCH_GRID_SIZE
+            ? -movementStep
             : event.key === 'ArrowDown'
-              ? WORKBENCH_GRID_SIZE
+              ? movementStep
               : 0;
         const positions = Object.fromEntries(
           effectiveSelectedModuleIds

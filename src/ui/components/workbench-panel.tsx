@@ -99,6 +99,7 @@ import {
   getPortKindSignature,
   type CanonicalChainDefinition,
 } from '../canonical-chain-insertion';
+import { isEditableShortcutTarget } from '../keyboard-shortcuts';
 import { WORKBENCH_GRID_SIZE } from '../store';
 const WorkbenchActions = lazy(() =>
   import('./workbench-actions').then((module) => ({
@@ -2181,6 +2182,47 @@ export function WorkbenchPanel({
   function clearReferenceChainSelection() {
     setPendingReferenceChainSelection(null);
   }
+
+  useEffect(() => {
+    const handleWindowKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.key !== 'Escape' ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        isEditableShortcutTarget(event.target)
+      ) {
+        return;
+      }
+
+      if (quickAdd) {
+        event.preventDefault();
+        setQuickAdd(null);
+        return;
+      }
+
+      if (pendingReferenceChainSelection) {
+        event.preventDefault();
+        clearReferenceChainSelection();
+        return;
+      }
+
+      if (pendingRepairInsertion) {
+        event.preventDefault();
+        setPendingRepairInsertion(null);
+        return;
+      }
+
+      if (pendingConnection) {
+        event.preventDefault();
+        setPendingConnection(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleWindowKeyDown);
+    return () => window.removeEventListener('keydown', handleWindowKeyDown);
+  }, [pendingConnection, pendingReferenceChainSelection, pendingRepairInsertion, quickAdd]);
 
   function isCompatibleReferenceOutput(port: {
     type: SignalType;
