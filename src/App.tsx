@@ -2503,6 +2503,14 @@ function MainApp() {
             definition && (isCompositeDefinition(definition) || isConditionalDefinition(definition)),
           );
         })();
+      const hasSingleUnzippableCompositeSelection =
+        effectiveSelectedModuleIds.length === 1 &&
+        selectedModule !== null &&
+        effectiveSelectedModuleIds[0] === selectedModule.id &&
+        (() => {
+          const definition = effectiveRegistry[selectedModule.defId];
+          return Boolean(definition && isCompositeDefinition(definition));
+        })();
 
       if (matchesShortcutCombo(event, { key: 'g', metaOrCtrl: true })) {
         if (!hasSelection) {
@@ -2515,6 +2523,15 @@ function MainApp() {
         setExcludedCompositeBoundaryPortKeys([]);
         setReplaceSelectionAfterCreate(!state.compositeEditor);
         setIsCompositeDialogOpen(true);
+        return;
+      }
+
+      if (matchesShortcutCombo(event, { key: 'u', metaOrCtrl: true, shift: true })) {
+        if (!hasSingleUnzippableCompositeSelection) {
+          return;
+        }
+        event.preventDefault();
+        handleUnzipComposite(selectedModule.id);
         return;
       }
 
@@ -2729,6 +2746,7 @@ function MainApp() {
     handleRedoWorkspaceHistory,
     handleSaveCurrentWorkspace,
     handleSaveWorkspaceVersion,
+    handleUnzipComposite,
     handleUndoWorkspaceHistory,
     isCompositeDrilldownActive,
     isTickPlaybackActive,
@@ -2870,98 +2888,79 @@ function MainApp() {
     setImportError(null);
   }
 
-  const handleUnzipComposite = useCallback(
-    (moduleId: string) => {
-      if (!selectedModule || selectedModule.id !== moduleId) {
-        return;
-      }
-      const compositeEntry = state.compositeLibrary.find(
-        (entry) => entry.id === selectedModule.defId,
-      );
-      if (!compositeEntry) {
-        return;
-      }
+  function handleUnzipComposite(moduleId: string) {
+    if (!selectedModule || selectedModule.id !== moduleId) {
+      return;
+    }
+    const compositeEntry = state.compositeLibrary.find(
+      (entry) => entry.id === selectedModule.defId,
+    );
+    if (!compositeEntry) {
+      return;
+    }
 
-      const unzipped = unzipCompositeInstance({
-        project: activeProjectState,
-        layout: activeLayout,
-        entry: compositeEntry,
-        moduleId,
-        moduleParams: selectedModule.params,
-      });
+    const unzipped = unzipCompositeInstance({
+      project: activeProjectState,
+      layout: activeLayout,
+      entry: compositeEntry,
+      moduleId,
+      moduleParams: selectedModule.params,
+    });
 
-      if (!unzipped.ok || !unzipped.project || !unzipped.layout) {
-        setImportError(unzipped.error ?? 'Unable to unzip the selected composite.');
-        return;
-      }
+    if (!unzipped.ok || !unzipped.project || !unzipped.layout) {
+      setImportError(unzipped.error ?? 'Unable to unzip the selected composite.');
+      return;
+    }
 
-      dispatch({
-        type: 'loadDocument',
-        projectId: activeProjectDefinition.id,
-        document: {
-          version: 1,
-          project: unzipped.project,
-          ui: {
-            layout: unzipped.layout,
-            annotations: state.compositeEditor
-              ? []
-              : state.annotationsByProject[activeProjectDefinition.id] ?? [],
-            groupBoxes: state.compositeEditor
-              ? []
-              : state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
-            guideRails: state.compositeEditor
-              ? []
-              : state.guideRailsByProject[activeProjectDefinition.id] ?? [],
-            showFurniture: state.compositeEditor
-              ? true
-              : state.showFurnitureByProject[activeProjectDefinition.id] ?? true,
-            showOverviewNavigator: state.compositeEditor
-              ? false
-              : state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
-            layoutDirection: activeLayoutDirection,
-            routingMode: activeRoutingMode,
-            wireColorMode: activeWireColorMode,
-            connectionLayout: activeConnectionLayout,
-          },
+    dispatch({
+      type: 'loadDocument',
+      projectId: activeProjectDefinition.id,
+      document: {
+        version: 1,
+        project: unzipped.project,
+        ui: {
+          layout: unzipped.layout,
+          annotations: state.compositeEditor
+            ? []
+            : state.annotationsByProject[activeProjectDefinition.id] ?? [],
+          groupBoxes: state.compositeEditor
+            ? []
+            : state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
+          guideRails: state.compositeEditor
+            ? []
+            : state.guideRailsByProject[activeProjectDefinition.id] ?? [],
+          showFurniture: state.compositeEditor
+            ? true
+            : state.showFurnitureByProject[activeProjectDefinition.id] ?? true,
+          showOverviewNavigator: state.compositeEditor
+            ? false
+            : state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
+          layoutDirection: activeLayoutDirection,
+          routingMode: activeRoutingMode,
+          wireColorMode: activeWireColorMode,
+          connectionLayout: activeConnectionLayout,
         },
-      });
-      setImportError(null);
+      },
+    });
+    setImportError(null);
 
-      const [firstModuleId, ...restModuleIds] = unzipped.selectedModuleIds ?? [];
-      if (firstModuleId) {
+    const [firstModuleId, ...restModuleIds] = unzipped.selectedModuleIds ?? [];
+    if (firstModuleId) {
+      dispatch({
+        type: 'selectModule',
+        projectId: activeProjectDefinition.id,
+        moduleId: firstModuleId,
+      });
+      for (const selectedModuleId of restModuleIds) {
         dispatch({
           type: 'selectModule',
           projectId: activeProjectDefinition.id,
-          moduleId: firstModuleId,
+          moduleId: selectedModuleId,
+          additive: true,
         });
-        for (const selectedModuleId of restModuleIds) {
-          dispatch({
-            type: 'selectModule',
-            projectId: activeProjectDefinition.id,
-            moduleId: selectedModuleId,
-            additive: true,
-          });
-        }
       }
-    },
-    [
-      activeLayout,
-      activeLayoutDirection,
-      activeRoutingMode,
-      activeWireColorMode,
-      activeConnectionLayout,
-      activeProjectDefinition.id,
-      activeProjectState,
-      selectedModule,
-      state.annotationsByProject,
-      state.compositeEditor,
-      state.compositeLibrary,
-      state.guideRailsByProject,
-      state.groupBoxesByProject,
-      state.showFurnitureByProject,
-      state.showOverviewNavigatorByProject,
-    ],
-  );
+    }
+  }
 
   const openDetachedPanelInNewWindow = useCallback((kind: DetachedPanelKind) => {
     openDetachedPanelInNewWindowHelper({

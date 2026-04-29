@@ -2097,6 +2097,7 @@ export function ParameterInspector({
               <button
                 type="button"
                 className="primitive-add-button"
+                title="Unzip selected composite instance (Cmd/Ctrl+Shift+U)"
                 onClick={() => onUnzipComposite(moduleInstance.id)}
               >
                 Unzip Composite

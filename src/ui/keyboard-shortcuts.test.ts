@@ -44,6 +44,10 @@ describe('matchesShortcutCombo', () => {
 
     const createCompositeEvent = { key: 'g', ctrlKey: true, metaKey: false, shiftKey: false, altKey: false } as KeyboardEvent;
     expect(matchesShortcutCombo(createCompositeEvent, { key: 'g', metaOrCtrl: true })).toBe(true);
+
+    const unzipCompositeEvent = { key: 'u', ctrlKey: false, metaKey: true, shiftKey: true, altKey: false } as KeyboardEvent;
+    expect(matchesShortcutCombo(unzipCompositeEvent, { key: 'u', metaOrCtrl: true, shift: true })).toBe(true);
+    expect(matchesShortcutCombo(unzipCompositeEvent, { key: 'u', metaOrCtrl: true })).toBe(false);
   });
 
   it('matches plain keys only when no modifiers are present', () => {
