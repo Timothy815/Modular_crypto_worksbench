@@ -1077,18 +1077,26 @@ export function WorkbenchActions({
             <WorkbenchMenuActionButton
               label="Create Iterator"
               onSelect={onRequestCreateIterator}
+              title="Create iterator reusable (Cmd/Ctrl+Shift+G)"
+              shortcutLabel="Cmd/Ctrl+Shift+G"
             />
             <WorkbenchMenuActionButton
               label="Create Clocked Iterator"
               onSelect={onRequestCreateClockedIterator}
+              title="Create clocked iterator reusable (Cmd/Ctrl+Alt+G)"
+              shortcutLabel="Cmd/Ctrl+Alt+G"
             />
             <WorkbenchMenuActionButton
               label="New Conditional"
               onSelect={onRequestCreateConditional}
+              title="Create conditional reusable (Cmd/Ctrl+Alt+C)"
+              shortcutLabel="Cmd/Ctrl+Alt+C"
             />
             <WorkbenchMenuActionButton
               label="New Multi-Conditional"
               onSelect={onRequestCreateMultiConditional}
+              title="Create multi-conditional reusable (Cmd/Ctrl+Alt+M)"
+              shortcutLabel="Cmd/Ctrl+Alt+M"
             />
             <WorkbenchMenuActionButton label="Add Group Box" onSelect={onRequestAddGroupBox} />
             <WorkbenchMenuActionButton
@@ -1179,18 +1187,26 @@ export function WorkbenchActions({
           <WorkbenchMenuActionButton
             label="Create Iterator"
             onSelect={onRequestCreateIterator}
+            title="Create iterator reusable (Cmd/Ctrl+Shift+G)"
+            shortcutLabel="Cmd/Ctrl+Shift+G"
           />
           <WorkbenchMenuActionButton
             label="Create Clocked Iterator"
             onSelect={onRequestCreateClockedIterator}
+            title="Create clocked iterator reusable (Cmd/Ctrl+Alt+G)"
+            shortcutLabel="Cmd/Ctrl+Alt+G"
           />
           <WorkbenchMenuActionButton
             label="New Conditional"
             onSelect={onRequestCreateConditional}
+            title="Create conditional reusable (Cmd/Ctrl+Alt+C)"
+            shortcutLabel="Cmd/Ctrl+Alt+C"
           />
           <WorkbenchMenuActionButton
             label="New Multi-Conditional"
             onSelect={onRequestCreateMultiConditional}
+            title="Create multi-conditional reusable (Cmd/Ctrl+Alt+M)"
+            shortcutLabel="Cmd/Ctrl+Alt+M"
           />
         </WorkbenchActionMenu>
       )}

@@ -45,6 +45,19 @@ describe('matchesShortcutCombo', () => {
     const createCompositeEvent = { key: 'g', ctrlKey: true, metaKey: false, shiftKey: false, altKey: false } as KeyboardEvent;
     expect(matchesShortcutCombo(createCompositeEvent, { key: 'g', metaOrCtrl: true })).toBe(true);
 
+    const createIteratorEvent = { key: 'g', ctrlKey: true, metaKey: false, shiftKey: true, altKey: false } as KeyboardEvent;
+    expect(matchesShortcutCombo(createIteratorEvent, { key: 'g', metaOrCtrl: true, shift: true })).toBe(true);
+    expect(matchesShortcutCombo(createIteratorEvent, { key: 'g', metaOrCtrl: true })).toBe(false);
+
+    const createClockedIteratorEvent = { key: 'g', ctrlKey: false, metaKey: true, shiftKey: false, altKey: true } as KeyboardEvent;
+    expect(matchesShortcutCombo(createClockedIteratorEvent, { key: 'g', metaOrCtrl: true, alt: true })).toBe(true);
+
+    const createConditionalEvent = { key: 'c', ctrlKey: true, metaKey: false, shiftKey: false, altKey: true } as KeyboardEvent;
+    expect(matchesShortcutCombo(createConditionalEvent, { key: 'c', metaOrCtrl: true, alt: true })).toBe(true);
+
+    const createMultiConditionalEvent = { key: 'm', ctrlKey: false, metaKey: true, shiftKey: false, altKey: true } as KeyboardEvent;
+    expect(matchesShortcutCombo(createMultiConditionalEvent, { key: 'm', metaOrCtrl: true, alt: true })).toBe(true);
+
     const unzipCompositeEvent = { key: 'u', ctrlKey: false, metaKey: true, shiftKey: true, altKey: false } as KeyboardEvent;
     expect(matchesShortcutCombo(unzipCompositeEvent, { key: 'u', metaOrCtrl: true, shift: true })).toBe(true);
     expect(matchesShortcutCombo(unzipCompositeEvent, { key: 'u', metaOrCtrl: true })).toBe(false);

@@ -2526,6 +2526,52 @@ function MainApp() {
         return;
       }
 
+      if (matchesShortcutCombo(event, { key: 'g', metaOrCtrl: true, shift: true })) {
+        event.preventDefault();
+        setIteratorName('');
+        setIteratorId('');
+        setIteratorRoundDefId('');
+        setIteratorIterationCount('2');
+        setIteratorDialogError(null);
+        setIsIteratorDialogOpen(true);
+        return;
+      }
+
+      if (matchesShortcutCombo(event, { key: 'g', metaOrCtrl: true, alt: true })) {
+        event.preventDefault();
+        setClockedIteratorEditingId(null);
+        setClockedIteratorName('');
+        setClockedIteratorId('');
+        setClockedIteratorRoundDefId('');
+        setClockedIteratorRoundCount('4');
+        setClockedIteratorEndPolicy('halt');
+        setClockedIteratorDialogError(null);
+        setIsClockedIteratorDialogOpen(true);
+        return;
+      }
+
+      if (matchesShortcutCombo(event, { key: 'c', metaOrCtrl: true, alt: true })) {
+        event.preventDefault();
+        setConditionalName('');
+        setConditionalId('');
+        setConditionalThenDefId('');
+        setConditionalElseDefId('');
+        setConditionalDialogError(null);
+        setIsConditionalDialogOpen(true);
+        return;
+      }
+
+      if (matchesShortcutCombo(event, { key: 'm', metaOrCtrl: true, alt: true })) {
+        event.preventDefault();
+        setMultiConditionalName('');
+        setMultiConditionalId('');
+        setMultiConditionalBranchCount(2);
+        setMultiConditionalBranchDefIds(['', '']);
+        setMultiConditionalDialogError(null);
+        setIsMultiConditionalDialogOpen(true);
+        return;
+      }
+
       if (matchesShortcutCombo(event, { key: 'u', metaOrCtrl: true, shift: true })) {
         if (!hasSingleUnzippableCompositeSelection) {
           return;
@@ -2816,6 +2862,32 @@ function MainApp() {
     selectedModule,
     setLearningPanelTab,
     state.compositeEditor,
+    setClockedIteratorDialogError,
+    setClockedIteratorEditingId,
+    setClockedIteratorEndPolicy,
+    setClockedIteratorId,
+    setClockedIteratorName,
+    setClockedIteratorRoundCount,
+    setClockedIteratorRoundDefId,
+    setConditionalDialogError,
+    setConditionalElseDefId,
+    setConditionalId,
+    setConditionalName,
+    setConditionalThenDefId,
+    setIsClockedIteratorDialogOpen,
+    setIsConditionalDialogOpen,
+    setIsIteratorDialogOpen,
+    setIsMultiConditionalDialogOpen,
+    setIteratorDialogError,
+    setIteratorId,
+    setIteratorIterationCount,
+    setIteratorName,
+    setIteratorRoundDefId,
+    setMultiConditionalBranchCount,
+    setMultiConditionalBranchDefIds,
+    setMultiConditionalDialogError,
+    setMultiConditionalId,
+    setMultiConditionalName,
     state.showInspector,
     stepIndex,
     syncTutorialStepFromTrace,
