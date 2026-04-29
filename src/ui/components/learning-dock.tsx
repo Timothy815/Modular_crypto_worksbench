@@ -204,7 +204,10 @@ export function LearningDock({
             }
             onClick={() => onSetLearningPanelTab('tutorial')}
           >
-            Tutorial
+            <span>Tutorial</span>
+            <kbd className="learning-dock-tab-shortcut" aria-hidden="true">
+              G
+            </kbd>
           </button>
         ) : null}
         {hasChallengePanel ? (
@@ -219,7 +222,10 @@ export function LearningDock({
             }
             onClick={() => onSetLearningPanelTab('challenge')}
           >
-            Challenge
+            <span>Challenge</span>
+            <kbd className="learning-dock-tab-shortcut" aria-hidden="true">
+              C
+            </kbd>
           </button>
         ) : null}
         {hasCryptanalysisPanel ? (
@@ -234,7 +240,10 @@ export function LearningDock({
             }
             onClick={() => onSetLearningPanelTab('cryptanalysis')}
           >
-            Cryptanalysis
+            <span>Cryptanalysis</span>
+            <kbd className="learning-dock-tab-shortcut" aria-hidden="true">
+              A
+            </kbd>
           </button>
         ) : null}
       </div>

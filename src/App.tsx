@@ -2565,6 +2565,65 @@ function MainApp() {
         return;
       }
 
+      if (
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        !event.shiftKey &&
+        !isInteractiveShortcutTarget(event.target)
+      ) {
+        if (matchesShortcutCombo(event, { key: 'b' })) {
+          event.preventDefault();
+          if (activeLearningPanelTab === 'cryptanalysis') {
+            setLearningPanelTab('quickstart');
+          }
+          dispatch({
+            type: 'setWorkspaceMode',
+            projectId: activeProjectDefinition.id,
+            mode: 'build',
+          });
+          return;
+        }
+
+        if (matchesShortcutCombo(event, { key: 'g' })) {
+          event.preventDefault();
+          setLearningPanelTab(hasTutorialPanel ? 'tutorial' : 'quickstart');
+          dispatch({
+            type: 'setWorkspaceMode',
+            projectId: activeProjectDefinition.id,
+            mode: 'guide',
+          });
+          return;
+        }
+
+        if (matchesShortcutCombo(event, { key: 'a' })) {
+          event.preventDefault();
+          applyLearningPanelTabSelection({
+            tab: 'cryptanalysis',
+            activeProjectId: activeProjectDefinition.id,
+            workspaceMode,
+            dispatch,
+            setLearningPanelTab,
+          });
+          return;
+        }
+
+        if (matchesShortcutCombo(event, { key: 'c' })) {
+          if (!hasChallengePanel) {
+            return;
+          }
+          event.preventDefault();
+          applyLearningPanelTabSelection({
+            tab: 'challenge',
+            activeProjectId: activeProjectDefinition.id,
+            workspaceMode,
+            dispatch,
+            setLearningPanelTab,
+          });
+          return;
+        }
+      }
+
       if (matchesShortcutCombo(event, { key: 'z', metaOrCtrl: true })) {
         if (!canUndoWorkspaceHistory) {
           return;
@@ -2729,6 +2788,7 @@ function MainApp() {
     return () => window.removeEventListener('keydown', handleWindowKeyDown);
   }, [
     activeLayout,
+    activeLearningPanelTab,
     activeProjectDefinition.id,
     canRedoWorkspaceHistory,
     canUndoWorkspaceHistory,
@@ -2748,14 +2808,18 @@ function MainApp() {
     handleSaveWorkspaceVersion,
     handleUnzipComposite,
     handleUndoWorkspaceHistory,
+    hasChallengePanel,
+    hasTutorialPanel,
     isCompositeDrilldownActive,
     isTickPlaybackActive,
     isTickedMode,
     selectedModule,
+    setLearningPanelTab,
     state.compositeEditor,
     state.showInspector,
     stepIndex,
     syncTutorialStepFromTrace,
+    workspaceMode,
     workspaceClipboard,
   ]);
 
@@ -3610,6 +3674,9 @@ function MainApp() {
               <option value="guide">Guide</option>
               <option value="cryptanalysis">Cryptanalysis</option>
             </select>
+            <span className="header-menu-shortcut-hint" aria-hidden="true">
+              B Build · G Guide · A Analyze
+            </span>
           </label>
           <label className="header-menu-select">
             <span className="meta-label">Resources</span>

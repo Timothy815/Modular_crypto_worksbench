@@ -56,6 +56,12 @@ describe('matchesShortcutCombo', () => {
 
     const modifiedDeleteEvent = { key: 'Delete', ctrlKey: false, metaKey: false, shiftKey: false, altKey: true } as KeyboardEvent;
     expect(matchesShortcutCombo(modifiedDeleteEvent, { key: 'Delete' })).toBe(false);
+
+    const buildModeEvent = { key: 'b', ctrlKey: false, metaKey: false, shiftKey: false, altKey: false } as KeyboardEvent;
+    expect(matchesShortcutCombo(buildModeEvent, { key: 'b' })).toBe(true);
+
+    const shiftedAnalyzeEvent = { key: 'A', ctrlKey: false, metaKey: false, shiftKey: true, altKey: false } as KeyboardEvent;
+    expect(matchesShortcutCombo(shiftedAnalyzeEvent, { key: 'a' })).toBe(false);
   });
 });
 
