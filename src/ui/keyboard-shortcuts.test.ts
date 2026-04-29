@@ -33,6 +33,14 @@ describe('matchesShortcutCombo', () => {
     const redoEvent = { key: 'z', ctrlKey: false, metaKey: true, shiftKey: true, altKey: false } as KeyboardEvent;
     expect(matchesShortcutCombo(redoEvent, { key: 'z', metaOrCtrl: true, shift: true })).toBe(true);
     expect(matchesShortcutCombo(redoEvent, { key: 'z', metaOrCtrl: true })).toBe(false);
+
+    const saveWorkspaceEvent = { key: 's', ctrlKey: true, metaKey: false, shiftKey: false, altKey: false } as KeyboardEvent;
+    expect(matchesShortcutCombo(saveWorkspaceEvent, { key: 's', metaOrCtrl: true })).toBe(true);
+    expect(matchesShortcutCombo(saveWorkspaceEvent, { key: 's', metaOrCtrl: true, shift: true })).toBe(false);
+
+    const saveVersionEvent = { key: 's', ctrlKey: false, metaKey: true, shiftKey: true, altKey: false } as KeyboardEvent;
+    expect(matchesShortcutCombo(saveVersionEvent, { key: 's', metaOrCtrl: true, shift: true })).toBe(true);
+    expect(matchesShortcutCombo(saveVersionEvent, { key: 's', metaOrCtrl: true })).toBe(false);
   });
 
   it('matches plain keys only when no modifiers are present', () => {

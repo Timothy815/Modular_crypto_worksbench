@@ -508,6 +508,7 @@ interface WorkbenchPanelProps {
   canRedo: boolean;
   canPasteSelection?: boolean;
   workspaceVersions: WorkspaceVersionDocument[];
+  onRequestSaveWorkspace: () => void;
   onRequestSaveVersion: () => void;
   onRequestArrangeSelection: (
     mode:
@@ -750,6 +751,7 @@ export function WorkbenchPanel({
   canRedo,
   canPasteSelection = false,
   workspaceVersions,
+  onRequestSaveWorkspace,
   onRequestSaveVersion,
   onRequestArrangeSelection,
   onRequestRestoreVersion,
@@ -3666,6 +3668,7 @@ export function WorkbenchPanel({
           onToggleSnapToGuides={onSetSnapToGuides}
           onRequestUndo={onRequestUndo}
           onRequestRedo={onRequestRedo}
+          onRequestSaveWorkspace={onRequestSaveWorkspace}
           onToggleTheme={onToggleTheme}
           onZoomOut={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'out'))}
           onZoomIn={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'in'))}

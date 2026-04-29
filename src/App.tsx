@@ -2494,6 +2494,18 @@ function MainApp() {
         return;
       }
 
+      if (matchesShortcutCombo(event, { key: 's', metaOrCtrl: true, shift: true })) {
+        event.preventDefault();
+        handleSaveWorkspaceVersion();
+        return;
+      }
+
+      if (matchesShortcutCombo(event, { key: 's', metaOrCtrl: true })) {
+        event.preventDefault();
+        handleSaveCurrentWorkspace();
+        return;
+      }
+
       if (matchesShortcutCombo(event, { key: 'z', metaOrCtrl: true })) {
         if (!canUndoWorkspaceHistory) {
           return;
@@ -2671,6 +2683,8 @@ function MainApp() {
     handleDuplicateSelectedCluster,
     handlePasteWorkspaceClipboard,
     handleRedoWorkspaceHistory,
+    handleSaveCurrentWorkspace,
+    handleSaveWorkspaceVersion,
     handleUndoWorkspaceHistory,
     isCompositeDrilldownActive,
     isTickPlaybackActive,
@@ -4147,6 +4161,7 @@ function MainApp() {
             canRedo={isCompositeDrilldownActive ? false : canRedoWorkspaceHistory}
             canPasteSelection={!isCompositeDrilldownActive && workspaceClipboard !== null}
             workspaceVersions={isCompositeDrilldownActive ? [] : activeWorkspaceVersions}
+            onRequestSaveWorkspace={handleSaveCurrentWorkspace}
             onRequestSaveVersion={handleSaveWorkspaceVersion}
             onRequestArrangeSelection={(mode) =>
               isCompositeDrilldownActive

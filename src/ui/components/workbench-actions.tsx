@@ -59,6 +59,7 @@ interface WorkbenchActionsProps {
   onZoomIn: () => void;
   onResetView: () => void;
   onFitView: () => void;
+  onRequestSaveWorkspace: () => void;
   onRequestSaveVersion: () => void;
   onRequestArrangeSelection: (
     mode:
@@ -648,6 +649,7 @@ export function WorkbenchActions({
   onZoomIn,
   onResetView,
   onFitView,
+  onRequestSaveWorkspace,
   onRequestSaveVersion,
   onRequestArrangeSelection,
   onRequestAddGroupBox,
@@ -757,7 +759,7 @@ export function WorkbenchActions({
               />
               <WorkbenchInlineActionButton
                 content={<WorkbenchInlineIcon name="save-version" />}
-                title="Save Version"
+                title="Save Version (Cmd/Ctrl+Shift+S)"
                 onSelect={onRequestSaveVersion}
               />
             </div>
@@ -1130,7 +1132,16 @@ export function WorkbenchActions({
           </WorkbenchActionMenu>
 
           <WorkbenchActionMenu label="Project" description="Save and recover">
-            <WorkbenchMenuActionButton label="Save Version" onSelect={onRequestSaveVersion} />
+            <WorkbenchMenuActionButton
+              label="Save Current Workspace"
+              onSelect={onRequestSaveWorkspace}
+              title="Save current workspace (Cmd/Ctrl+S)"
+            />
+            <WorkbenchMenuActionButton
+              label="Save Version"
+              onSelect={onRequestSaveVersion}
+              title="Save named version checkpoint (Cmd/Ctrl+Shift+S)"
+            />
           </WorkbenchActionMenu>
 
           <WorkbenchActionMenu label="Import/Export" description="Move artifacts">

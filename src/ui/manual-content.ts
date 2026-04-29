@@ -57,15 +57,15 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         id: 'editing-and-recovery',
         title: 'Editing, Versions, And Recovery',
         body:
-          'Use the grouped workbench menus for common actions. View contains zoom and navigation actions. Edit contains authoring operations such as notes, composite creation, layout cleanup, and selection actions. Project contains recovery actions such as undo, redo, and save version. Import/Export contains JSON and Python export. MCW also supports workspace-local undo and redo, named saved versions, and restore workflows. If you are trying something risky, save a version first so you can return to a known checkpoint without rebuilding the graph by hand.',
-        indexTerms: ['undo', 'redo', 'save version', 'restore', 'workbench menus', 'project menu'],
+          'Use the grouped workbench menus for common actions. View contains zoom and navigation actions. Edit contains authoring operations such as notes, composite creation, layout cleanup, and selection actions. Project contains recovery actions such as save current workspace, save version, undo, and redo. Import/Export contains JSON and Python export. MCW also supports workspace-local undo and redo, named saved versions, and restore workflows. Save Current Workspace updates the live workspace record in place. Save Version creates a named checkpoint you can restore later. If you are trying something risky, save a version first so you can return to a known checkpoint without rebuilding the graph by hand.',
+        indexTerms: ['undo', 'redo', 'save workspace', 'save current workspace', 'save version', 'restore', 'workbench menus', 'project menu'],
       },
       {
         id: 'keyboard-shortcuts',
         title: 'Keyboard Shortcuts',
         body:
-          'MCW supports a small set of workbench shortcuts for repeated actions. These are accelerators for visible controls, not hidden commands. Current V1 shortcuts: Cmd/Ctrl+Z for Undo, Cmd/Ctrl+Shift+Z for Redo, Cmd/Ctrl+C for Copy Cluster, Cmd/Ctrl+V for Paste Cluster, Cmd/Ctrl+D for Duplicate Cluster, Delete or Backspace for Delete Cluster, arrow keys to nudge the current selection by one workbench grid step, Space to play or pause tick playback when tick controls are active, and [ / ] to move backward or forward through tick or trace stepping contexts that are already visible. Shortcuts do not fire while you are typing in parameter editors, rename fields, CSV boxes, or other text inputs. Look for shortcut hints on the matching buttons and controls.',
-        indexTerms: ['keyboard shortcuts', 'hotkeys', 'quick keys', 'copy shortcut', 'paste shortcut', 'undo shortcut', 'redo shortcut', 'duplicate shortcut', 'delete shortcut', 'playback shortcut', 'step shortcut'],
+          'MCW supports a small set of workbench shortcuts for repeated actions. These are accelerators for visible controls, not hidden commands. Current V1 shortcuts: Cmd/Ctrl+S for Save Current Workspace, Cmd/Ctrl+Shift+S for Save Version, Cmd/Ctrl+Z for Undo, Cmd/Ctrl+Shift+Z for Redo, Cmd/Ctrl+C for Copy Cluster, Cmd/Ctrl+V for Paste Cluster, Cmd/Ctrl+D for Duplicate Cluster, Delete or Backspace for Delete Cluster, arrow keys to nudge the current selection by one workbench grid step, Space to play or pause tick playback when tick controls are active, and [ / ] to move backward or forward through tick or trace stepping contexts that are already visible. Shortcuts do not fire while you are typing in parameter editors, rename fields, CSV boxes, or other text inputs. Look for shortcut hints on the matching buttons and controls.',
+        indexTerms: ['keyboard shortcuts', 'hotkeys', 'quick keys', 'save shortcut', 'save version shortcut', 'copy shortcut', 'paste shortcut', 'undo shortcut', 'redo shortcut', 'duplicate shortcut', 'delete shortcut', 'playback shortcut', 'step shortcut'],
       },
       {
         id: 'wiring-and-placement',

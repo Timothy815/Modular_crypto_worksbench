@@ -265,6 +265,7 @@ export function DetachedWorkspaceWindow({
             canRedo={false}
             canPasteSelection={false}
             workspaceVersions={[]}
+            onRequestSaveWorkspace={() => undefined}
             onRequestSaveVersion={() => undefined}
             onRequestArrangeSelection={() => undefined}
             onRequestRestoreVersion={() => undefined}
