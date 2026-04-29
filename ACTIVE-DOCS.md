@@ -1,6 +1,6 @@
 # MCW Active Docs
 
-Last updated: April 21, 2026
+Last updated: April 29, 2026
 
 This is the canonical starting point for humans and agents.
 
@@ -13,6 +13,7 @@ This is the canonical starting point for humans and agents.
 - `EXPERIENTIAL-NORTH-STAR-V1.md`
 - `docs/live/contracts/2026-04/CODE-FIRST-CAPABILITIES-AUDIT-2026-04-29.md`
 - `docs/live/contracts/2026-04/STATE-OF-THE-UNION-2026-04-29.md`
+- `docs/live/contracts/2026-04/ANALYTICAL-RIGOR-ROADMAP-V1.md` when analysis quality, validity, or interpretation is in scope
 
 ## Read As Needed
 
