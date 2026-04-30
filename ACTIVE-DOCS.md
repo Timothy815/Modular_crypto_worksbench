@@ -14,6 +14,7 @@ This is the canonical starting point for humans and agents.
 - `docs/live/contracts/2026-04/CODE-FIRST-CAPABILITIES-AUDIT-2026-04-29.md`
 - `docs/live/contracts/2026-04/STATE-OF-THE-UNION-2026-04-29.md`
 - `docs/live/contracts/2026-04/ANALYTICAL-RIGOR-ROADMAP-V1.md` when analysis quality, validity, or interpretation is in scope
+- `docs/live/contracts/2026-04/SBOX-ANALYSIS-RIGOR-PASS-V1.md` when tightening local cryptographic metric framing and consequence language
 
 ## Read As Needed
 

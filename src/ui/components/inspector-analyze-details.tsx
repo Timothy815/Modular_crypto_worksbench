@@ -20,49 +20,49 @@ import type { TutorialStep } from '../tutorials';
 
 function getNLConsequence(nl: number, maxNL: number): string {
   if (nl === 0) {
-    return 'Every output bit is a linear function of the inputs. An attacker can recover the S-box mapping with a handful of known pairs — no brute force needed. In a cipher, linear S-boxes make the whole construction solvable with linear algebra.';
+    return 'Every output bit is a linear function of the inputs. That gives linear attacks the strongest possible foothold and makes this substitution a very weak nonlinear layer in any SPN-style design.';
   }
   if (nl < maxNL * 0.5) {
-    return 'Strong linear approximations exist. Matsui\'s linear cryptanalysis can exploit these to recover key bits with far fewer plaintexts than brute force — the weaker the nonlinearity, the fewer pairs needed.';
+    return 'Strong linear approximations exist. That gives linear cryptanalysis more useful bias to work with than a stronger box of the same size.';
   }
   if (nl < maxNL * 0.75) {
-    return 'Moderate nonlinearity. Linear approximations have reduced but usable bias. Linear cryptanalysis is harder but not closed off — a determined attacker with enough data can still find key information.';
+    return 'Moderate nonlinearity. Linear approximations are weaker than in a poor box, but there is still more linear structure here than in a stronger alternative.';
   }
-  return 'High nonlinearity. Linear approximations are weak. Matsui\'s linear cryptanalysis needs an impractical number of known plaintexts — this S-box actively resists the most common attack on block ciphers.';
+  return 'High nonlinearity. Linear approximations are comparatively weak, which is what you want from a substitution layer. This helps locally, but it does not by itself establish whole-cipher strength.';
 }
 
 function getDDTConsequence(maxUniformity: number, maxIdeal: number, inputBits: number): string {
   const n = 1 << inputBits;
   if (maxUniformity === n) {
-    return `Every input difference produces a completely predictable output difference. Differential cryptanalysis (Biham-Shamir) succeeds with a single chosen plaintext pair. This S-box provides zero differential resistance.`;
+    return 'Every input difference produces a completely predictable output difference. That gives differential attacks the strongest possible propagation signal and makes this a very poor substitution layer.';
   }
   if (maxUniformity > maxIdeal * 2) {
-    return `High differential uniformity means certain input differences propagate to output differences with high probability. A differential characteristic through this S-box is easy to build and exploit across rounds.`;
+    return 'High differential uniformity means some input differences propagate with noticeably elevated probability. That gives differential cryptanalysis more leverage than a stronger box of the same size.';
   }
   if (maxUniformity <= maxIdeal) {
-    return `Optimal for this size. Every nonzero input difference spreads to output differences as evenly as possible. Differential characteristics through this S-box have the lowest achievable probability — Biham-Shamir differential cryptanalysis is maximally expensive.`;
+    return 'Optimal for this size. Nonzero input differences spread to output differences as evenly as this box size allows, which is the local differential behavior you want from a strong substitution layer.';
   }
-  return `Above the ideal threshold. Some differential characteristics propagate with higher than necessary probability, giving an attacker more leverage than an optimal design would allow.`;
+  return 'Above the ideal threshold. Some differential characteristics propagate with higher than necessary probability, so this box leaves more differential structure than an optimal design would.';
 }
 
 function getDegreeConsequence(degree: number, maxDegree: number): string {
   if (degree <= 1) {
-    return 'Degree 1 means every output bit is an affine (linear) function of the inputs. The cipher reduces entirely to a system of linear equations — solvable in milliseconds by any computer, regardless of key length.';
+    return 'Degree 1 means every output bit is affine in the inputs. That keeps the Boolean structure extremely simple and gives algebraic reasoning very little nonlinear complexity to fight through.';
   }
   if (degree < maxDegree - 1) {
-    return `Low algebraic degree. Algebraic attacks using Gröbner bases or XL algorithms become tractable — the polynomial system describing this S-box has less complexity than an ${maxDegree}-degree system. Key recovery may be feasible without exhaustive search.`;
+    return `Low algebraic degree. The coordinate functions stay simpler than a ${maxDegree}-degree alternative, so this box contributes less algebraic complexity to the surrounding design.`;
   }
-  return `High algebraic degree. The polynomial system describing this S-box is maximally complex. Algebraic attacks face exponentially hard equations — this is what makes modern ciphers resistant to algebraic cryptanalysis.`;
+  return 'High algebraic degree. The coordinate functions are locally more complex, which is what you want from a substitution layer when trying to avoid overly simple Boolean structure.';
 }
 
 function getFixedPointConsequence(fixedPoints: number): string {
   if (fixedPoints === 0) {
-    return 'No input maps to itself — good. In certain cipher modes, fixed points create inputs where a block encrypts to itself, which can simplify attacker models or reveal information about the key.';
+    return 'No input maps to itself. That avoids one simple structural symmetry and is usually cleaner than leaving obvious unchanged values inside the substitution table.';
   }
   if (fixedPoints === 1) {
-    return '1 input maps to itself (S(x) = x). In ECB mode this creates a block that encrypts to itself unchanged. In differential analysis, this means one trivial "characteristic" always holds.';
+    return '1 input maps to itself (S(x) = x). A single fixed point is a local structural blemish: one value passes through this substitution unchanged.';
   }
-  return `${fixedPoints} inputs map to themselves (S(x) = x). Multiple fixed points increase the probability that a real message block passes through unchanged, creating exploitable patterns in certain cipher modes.`;
+  return `${fixedPoints} inputs map to themselves (S(x) = x). Multiple fixed points make the table look more self-similar than a cleaner substitution, which is usually undesirable in an SPN-style design.`;
 }
 
 function getLFSRPrimitivityConsequence(isPrimitive: boolean | null, period: number | null, maxPeriod: number, degree: number): string {
@@ -913,6 +913,9 @@ export function InspectorAnalyzeDetails({
             <p className="sbox-analysis-disclaimer">
               These measurements describe this S-box table in isolation. They do not account for how surrounding cipher components interact with this substitution.
             </p>
+            <p className="sbox-analysis-disclaimer">
+              A strong-looking S-box helps locally, but it does not prove the full cipher is strong. Round structure, diffusion, key schedule, and round count still matter.
+            </p>
 
             {/* At-a-glance property strip */}
             <div className="sbox-analysis-strip">
@@ -1235,6 +1238,9 @@ export function InspectorAnalyzeDetails({
                   <span className="sbox-analysis-ref"> (0.000 = perfect SAC)</span>
                 </span>
               </div>
+              <p className="sbox-analysis-note">
+                These local properties are useful for comparing substitution tables. They do not by themselves prove attack cost, adequate round count, or full-cipher security.
+              </p>
             </div>
 
             {/* Reference row */}
