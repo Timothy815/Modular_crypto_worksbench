@@ -731,7 +731,7 @@ describe('getPythonExportCompatibility', () => {
 
     const compatibility = getPythonExportCompatibility(compatibleProject, compatibilityRegistry);
 
-    expect(compatibility.ok).toBe(true);
+    expect(compatibility).toEqual({ ok: true, issues: [] });
     expect(compatibility.issues).toEqual([]);
   });
 
@@ -1185,6 +1185,48 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
   });
 
+  it('matches executeProject for bit-select, bit-expand, multi-selector, and constant-bit workspaces', () => {
+    const project: Project = {
+      modules: [
+        { id: 'source-8', defId: 'BitSource', params: { stream: [1, 0, 1, 1, 0, 0, 1, 0] } },
+        { id: 'select-1', defId: 'BitSelect', params: { order: '0,1,2,4,5,7' } },
+        { id: 'select-out', defId: 'BitOutput', params: {} },
+        { id: 'source-4', defId: 'BitSource', params: { stream: [1, 0, 1, 1] } },
+        { id: 'expand-1', defId: 'BitExpand', params: { order: '3,0,1,2,3,0' } },
+        { id: 'expand-out', defId: 'BitOutput', params: {} },
+        { id: 'select-bits', defId: 'BitSource', params: { stream: [1, 0] } },
+        { id: 'const-0', defId: 'ConstantBit', params: { value: 0 } },
+        { id: 'const-1', defId: 'ConstantBit', params: { value: 1 } },
+        { id: 'in-2', defId: 'BitSource', params: { stream: [0] } },
+        { id: 'in-3', defId: 'BitSource', params: { stream: [1] } },
+        { id: 'selector-1', defId: 'MultiSelector', params: { selectCount: '4' } },
+        { id: 'selector-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'source-8', port: 'out' }, to: { moduleId: 'select-1', port: 'in' } },
+        { from: { moduleId: 'select-1', port: 'out' }, to: { moduleId: 'select-out', port: 'in' } },
+        { from: { moduleId: 'source-4', port: 'out' }, to: { moduleId: 'expand-1', port: 'in' } },
+        { from: { moduleId: 'expand-1', port: 'out' }, to: { moduleId: 'expand-out', port: 'in' } },
+        { from: { moduleId: 'select-bits', port: 'out' }, to: { moduleId: 'selector-1', port: 'select' } },
+        { from: { moduleId: 'const-0', port: 'out' }, to: { moduleId: 'selector-1', port: 'in0' } },
+        { from: { moduleId: 'const-1', port: 'out' }, to: { moduleId: 'selector-1', port: 'in1' } },
+        { from: { moduleId: 'in-2', port: 'out' }, to: { moduleId: 'selector-1', port: 'in2' } },
+        { from: { moduleId: 'in-3', port: 'out' }, to: { moduleId: 'selector-1', port: 'in3' } },
+        { from: { moduleId: 'const-0', port: 'out' }, to: { moduleId: 'selector-1', port: 'in4' } },
+        { from: { moduleId: 'const-0', port: 'out' }, to: { moduleId: 'selector-1', port: 'in5' } },
+        { from: { moduleId: 'const-0', port: 'out' }, to: { moduleId: 'selector-1', port: 'in6' } },
+        { from: { moduleId: 'const-0', port: 'out' }, to: { moduleId: 'selector-1', port: 'in7' } },
+        { from: { moduleId: 'selector-1', port: 'out' }, to: { moduleId: 'selector-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
   it('preserves forwarded 6->4 s-box dimensions during Python export', () => {
     const project: Project = {
       modules: [
@@ -1375,6 +1417,52 @@ parityDescribe('generatePythonExport', () => {
     expect(pythonSource).toContain('def composite_ClockedRotorComposite_init_state');
     expect(pythonSource).toContain('def composite_ClockedRotorComposite_tick');
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, compositeRegistry));
+  });
+
+  it('matches executeTickedProject for sequence-to-ticked bridge workspaces', () => {
+    const project: Project = {
+      modules: [
+        { id: 'clock-1', defId: 'Clock', params: { period: 1, offset: 0, length: 2 } },
+        { id: 'ascii-in', defId: 'AsciiSequenceInput', params: { value: 'AB' } },
+        { id: 'ascii-tick', defId: 'AsciiSequenceToTicked', params: { index: 0, wrap: false } },
+        { id: 'ascii-collect', defId: 'TickedSymbolsToSequence', params: { collected: '', count: 0 } },
+        { id: 'ascii-out', defId: 'Output', params: {} },
+        { id: 'symbol-in', defId: 'SymbolSequenceInput', params: { value: 'YZ' } },
+        { id: 'symbol-tick', defId: 'SymbolSequenceToTicked', params: { index: 0, wrap: false } },
+        { id: 'symbol-collect', defId: 'TickedSymbolsToSequence', params: { collected: '', count: 0 } },
+        { id: 'symbol-out', defId: 'Output', params: {} },
+        { id: 'bits-in', defId: 'BitSequenceInput', params: { stream: [1, 0, 1, 1, 0, 0, 1, 0] } },
+        { id: 'bits-tick', defId: 'BitsSequenceToTicked', params: { index: 0, wordWidth: 4, wrap: false, remainderMode: 'error' } },
+        { id: 'bits-collect', defId: 'TickedBitsToSequence', params: { collected: [], count: 0 } },
+        { id: 'bits-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'ascii-in', port: 'out' }, to: { moduleId: 'ascii-tick', port: 'in' } },
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'ascii-tick', port: 'clock' } },
+        { from: { moduleId: 'ascii-tick', port: 'out' }, to: { moduleId: 'ascii-collect', port: 'in' } },
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'ascii-collect', port: 'clock' } },
+        { from: { moduleId: 'ascii-collect', port: 'out' }, to: { moduleId: 'ascii-out', port: 'in' } },
+        { from: { moduleId: 'symbol-in', port: 'out' }, to: { moduleId: 'symbol-tick', port: 'in' } },
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'symbol-tick', port: 'clock' } },
+        { from: { moduleId: 'symbol-tick', port: 'out' }, to: { moduleId: 'symbol-collect', port: 'in' } },
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'symbol-collect', port: 'clock' } },
+        { from: { moduleId: 'symbol-collect', port: 'out' }, to: { moduleId: 'symbol-out', port: 'in' } },
+        { from: { moduleId: 'bits-in', port: 'out' }, to: { moduleId: 'bits-tick', port: 'in' } },
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'bits-tick', port: 'clock' } },
+        { from: { moduleId: 'bits-tick', port: 'out' }, to: { moduleId: 'bits-collect', port: 'in' } },
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'bits-collect', port: 'clock' } },
+        { from: { moduleId: 'bits-collect', port: 'out' }, to: { moduleId: 'bits-out', port: 'in' } },
+      ],
+    };
+
+    const compatibility = getPythonExportCompatibility(project, V1_REGISTRY);
+    expect(compatibility).toEqual({ ok: true, issues: [] });
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, V1_REGISTRY));
   });
 
   it('matches executeTickedProject for a temporal nested composite workspace', () => {

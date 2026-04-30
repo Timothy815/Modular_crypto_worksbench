@@ -23,11 +23,14 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'KeyInput',
   'AsciiSequenceInput',
   'AsciiSequenceToBits',
+  'AsciiSequenceToTicked',
+  'SymbolSequenceInput',
   'BitSequenceInput',
   'AsciiSource',
   'AsciiCharToBits',
   'BaudotSource',
   'BitSource',
+  'ConstantBit',
   'HexSource',
   'HexSequenceInput',
   'HexSequenceToBits',
@@ -72,6 +75,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'Mux',
   'Demux',
   'MultiRouter',
+  'MultiSelector',
   'SBox',
   'AddMod',
   'SubMod',
@@ -87,6 +91,8 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'BitPad',
   'BitUnpad',
   'BitWindow',
+  'BitSelect',
+  'BitExpand',
   'RepeatBitsToLength',
   'RepeatBitsToMatch',
   'PadBitsToMatch',
@@ -103,6 +109,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'Reflector',
   'RotorReverse',
   'Plugboard',
+  'SymbolSequenceToTicked',
   'TickedSymbolsToSequence',
   'TickedBitsToSequence',
   'BitsSequenceToTicked',
@@ -118,6 +125,7 @@ const SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS = new Set([
   'TickedBitsToSequence',
   'AsciiSequenceToTicked',
   'SymbolSequenceToTicked',
+  'BitsSequenceToTicked',
 ]);
 const SUPPORTED_STATEFUL_PYTHON_EXPORT_COMPANION_DEF_IDS = new Set([
   'TextInput',
@@ -172,6 +180,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'baudot_source',
   'baudot_source_tick',
   'bit_source',
+  'constant_bit',
   'bit_source_tick',
   'hex_source',
   'hex_sequence_input',
@@ -223,6 +232,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'mux_bits',
   'demux_bits',
   'multi_router_bits',
+  'multi_selector_bits',
   's_box',
   'add_mod_bits',
   'sub_mod_bits',
@@ -236,6 +246,8 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'bit_pad',
   'bit_unpad',
   'bit_window',
+  'bit_select',
+  'bit_expand',
   'repeat_bits_to_length',
   'repeat_bits_to_match',
   'pad_bits_to_match',
@@ -429,6 +441,10 @@ def baudot_source_tick(value, tick):
 
 def bit_source(stream):
     return {"out": _expect_bits(stream, "BitSource")}
+
+
+def constant_bit(value):
+    return {"out": [0 if int(value) == 0 else 1]}
 
 
 def bit_source_tick(stream, tick):
@@ -1008,6 +1024,23 @@ def multi_router(select, signal, route_count):
     return outputs
 
 
+def multi_selector(select, inputs, select_count):
+    select_bits = _expect_bits(select, "MultiSelector")
+    select_count = int(select_count)
+    if select_count not in (2, 4, 8):
+        raise ValueError('MultiSelector requires "selectCount" to be 2, 4, or 8')
+    required_select_width = {2: 1, 4: 2, 8: 3}[select_count]
+    if len(select_bits) != required_select_width:
+        raise ValueError(
+            f"MultiSelector expects select to be a {required_select_width}-bit word when selectCount is {select_count}"
+        )
+    if len(inputs) != 8:
+        raise ValueError("MultiSelector expects exactly 8 candidate inputs in the export runtime")
+    selected_index = _bits_to_unsigned_number(select_bits)
+    selected_input = inputs[selected_index if selected_index < select_count else 0]
+    return {"out": _expect_bits(selected_input, "MultiSelector")}
+
+
 def _parse_s_box_dimensions(input_bits, output_bits, table_value):
     if input_bits in (None, "") and output_bits in (None, ""):
         parts = [part.strip() for part in str(table_value).split(",") if part.strip()]
@@ -1257,6 +1290,42 @@ def bit_window(signal, start, width):
     if start + width > len(bits):
         raise ValueError(f"BitWindow range ({start}-{start + width - 1}) exceeds input length ({len(bits)})")
     return {"out": bits[start:start + width]}
+
+
+def bit_select(signal, order):
+    bits = _expect_bits(signal, "BitSelect")
+    parts = [part.strip() for part in str(order).split(",") if part.strip()]
+    if not parts:
+        raise ValueError("BitSelect order cannot be empty")
+    selection = []
+    seen = set()
+    for part in parts:
+        index = int(part)
+        if index < 0:
+            raise ValueError("BitSelect order must contain only non-negative integers")
+        if index >= len(bits):
+            raise ValueError(f"BitSelect index {index} is out of range for input width {len(bits)}")
+        if index in seen:
+            raise ValueError(f"BitSelect index {index} appears more than once in the selection order")
+        seen.add(index)
+        selection.append(index)
+    return {"out": [bits[index] for index in selection]}
+
+
+def bit_expand(signal, order):
+    bits = _expect_bits(signal, "BitExpand")
+    parts = [part.strip() for part in str(order).split(",") if part.strip()]
+    if not parts:
+        raise ValueError("BitExpand order cannot be empty")
+    expansion = []
+    for part in parts:
+        index = int(part)
+        if index < 0:
+            raise ValueError("BitExpand order must contain only non-negative integers")
+        if index >= len(bits):
+            raise ValueError(f"BitExpand index {index} is out of range for input width {len(bits)}")
+        expansion.append(index)
+    return {"out": [bits[index] for index in expansion]}
 
 
 def repeat_bits_to_length(signal, target_length):
@@ -2751,6 +2820,8 @@ function buildModuleExpression(
       return `baudot_source(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
     case 'BitSource':
       return `bit_source(${expressionContext.getParamExpression(moduleInstance, def, 'stream')})`;
+    case 'ConstantBit':
+      return `constant_bit(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
     case 'HexSource':
       return `hex_source(${expressionContext.getParamExpression(moduleInstance, def, 'value')})`;
     case 'HexSequenceInput':
@@ -2833,6 +2904,17 @@ function buildModuleExpression(
       return `demux_bit(${expressionContext.getInputExpression(moduleId, 'select')}, ${expressionContext.getInputExpression(moduleId, 'in')})`;
     case 'MultiRouter':
       return `multi_router(${expressionContext.getInputExpression(moduleId, 'select')}, ${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'routeCount')})`;
+    case 'MultiSelector':
+      return `multi_selector(${expressionContext.getInputExpression(moduleId, 'select')}, [${[
+        'in0',
+        'in1',
+        'in2',
+        'in3',
+        'in4',
+        'in5',
+        'in6',
+        'in7',
+      ].map((inputName) => expressionContext.getInputExpression(moduleId, inputName)).join(', ')}], ${expressionContext.getParamExpression(moduleInstance, def, 'selectCount')})`;
     case 'SBox': {
       const inputBitsArgument =
         moduleInstance.params.inputBits !== undefined || expressionContext.hasParamOverride(moduleId, 'inputBits')
@@ -2872,6 +2954,10 @@ function buildModuleExpression(
       return `bit_unpad(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'originalWidth')}, ${expressionContext.getParamExpression(moduleInstance, def, 'side')})`;
     case 'BitWindow':
       return `bit_window(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'start')}, ${expressionContext.getParamExpression(moduleInstance, def, 'width')})`;
+    case 'BitSelect':
+      return `bit_select(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'order')})`;
+    case 'BitExpand':
+      return `bit_expand(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'order')})`;
     case 'RepeatBitsToLength':
       return `repeat_bits_to_length(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'targetLength')})`;
     case 'PadBitsToMatch':
