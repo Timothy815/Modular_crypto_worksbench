@@ -69,6 +69,7 @@ export interface BitBalanceStats {
   perPositionFractions: number[];
   monobitPValue: number;
   sampleValid: boolean;
+  validity: 'valid' | 'low-sample';
 }
 
 export interface ByteEntropyStats {
@@ -79,18 +80,21 @@ export interface ByteEntropyStats {
   uniqueValueCount: number;
   uniqueValueFraction: number;
   sampleValid: boolean;
+  validity: 'valid' | 'low-sample';
 }
 
 export interface ByteFrequencyStats {
   bucketCount: number;
   /** naturalRange / bucketCount — how many distinct values map to one bucket. */
   bucketDivisor: number;
+  bucketMode: 'full-range' | 'coarse';
   counts: number[];
   expectedCount: number;
   chiSquared: number;
   degreesOfFreedom: number;
   chiSquaredPValue: number;
   sampleValid: boolean;
+  validity: 'valid' | 'coarse-buckets' | 'low-sample';
   maxDeviationBucket: number;
   maxDeviationFraction: number;
 }
@@ -105,6 +109,7 @@ export interface CorrelationStats {
   hasLinearStructure: boolean;
   valuePairs: number;
   sampleValid: boolean;
+  validity: 'valid' | 'low-sample';
 }
 
 export interface RunsStats {
@@ -118,13 +123,15 @@ export interface RunsStats {
   runLengthCounts: number[];
   expectedRunLengthCounts: number[];
   sampleValid: boolean;
+  validity: 'valid' | 'low-sample' | 'prerequisite-failed';
 }
 
 export type ProfileLabel =
-  | 'uniform distribution'
-  | 'near-uniform'
-  | 'structured'
-  | 'highly structured';
+  | 'limited evidence'
+  | 'near-uniform sample'
+  | 'mixed sample'
+  | 'visible structure'
+  | 'strong structure';
 
 export interface OutputStatistics {
   outputWidth: number;
@@ -133,6 +140,8 @@ export interface OutputStatistics {
   keyDependencyConfirmed: boolean | null;
   /** True when outputWidth > 30: entropy/frequency/scatter operate at byte granularity. */
   isWideOutput: boolean;
+  analysisUnitWidth: number;
+  analysisUnitLabel: 'output value' | 'projected byte';
   bitBalance: BitBalanceStats;
   byteEntropy: ByteEntropyStats;
   byteFrequency: ByteFrequencyStats;
@@ -170,6 +179,7 @@ export function computeBitBalance(
     perPositionFractions,
     monobitPValue,
     sampleValid: totalBits >= 1000,
+    validity: totalBits >= 1000 ? 'valid' : 'low-sample',
   };
 }
 
@@ -187,6 +197,7 @@ export function computeByteEntropy(
       uniqueValueCount: 0,
       uniqueValueFraction: 0,
       sampleValid: false,
+      validity: 'low-sample',
     };
   }
 
@@ -210,6 +221,7 @@ export function computeByteEntropy(
     uniqueValueCount,
     uniqueValueFraction: naturalRange > 0 ? uniqueValueCount / naturalRange : 0,
     sampleValid: n >= 32,
+    validity: n >= 32 ? 'valid' : 'low-sample',
   };
 }
 
@@ -224,12 +236,14 @@ export function computeByteFrequency(
     return {
       bucketCount: 16,
       bucketDivisor: 1,
+      bucketMode: 'coarse',
       counts: new Array(16).fill(0),
       expectedCount: 0,
       chiSquared: 0,
       degreesOfFreedom: 15,
       chiSquaredPValue: 1,
       sampleValid: false,
+      validity: 'low-sample',
       maxDeviationBucket: 0,
       maxDeviationFraction: 0,
     };
@@ -240,19 +254,23 @@ export function computeByteFrequency(
   // Choose bucket count: use full range if small enough; else fall back to coarse buckets
   let bucketCount: number;
   let bucketDivisor: number;
+  let bucketMode: 'full-range' | 'coarse';
 
   if (naturalRange <= 16) {
     // 4-bit or narrower: direct buckets
     bucketCount = naturalRange;
     bucketDivisor = 1;
+    bucketMode = 'full-range';
   } else if (n / 256 >= 5 && naturalRange >= 256) {
     // Enough observations for 256 buckets
     bucketCount = 256;
     bucketDivisor = Math.ceil(naturalRange / 256);
+    bucketMode = 'full-range';
   } else {
     // Fall back to 16 coarse buckets
     bucketCount = 16;
     bucketDivisor = Math.ceil(naturalRange / 16);
+    bucketMode = 'coarse';
   }
 
   const counts = new Array<number>(bucketCount).fill(0);
@@ -285,12 +303,14 @@ export function computeByteFrequency(
   return {
     bucketCount,
     bucketDivisor,
+    bucketMode,
     counts,
     expectedCount,
     chiSquared,
     degreesOfFreedom: df,
     chiSquaredPValue: pValue,
     sampleValid,
+    validity: sampleValid ? (bucketMode === 'coarse' ? 'coarse-buckets' : 'valid') : 'low-sample',
     maxDeviationBucket,
     maxDeviationFraction: maxDeviation,
   };
@@ -354,6 +374,7 @@ export function computeCorrelation(
     hasLinearStructure: Math.abs(scc) > 0.1,
     valuePairs: pairs,
     sampleValid: pairs >= 128,
+    validity: pairs >= 128 ? 'valid' : 'low-sample',
   };
 }
 
@@ -372,6 +393,7 @@ export function computeRunsUniformity(allBits: number[]): RunsStats {
       runLengthCounts: new Array(8).fill(0),
       expectedRunLengthCounts: new Array(8).fill(0),
       sampleValid: false,
+      validity: 'low-sample',
     };
   }
 
@@ -432,6 +454,7 @@ export function computeRunsUniformity(allBits: number[]): RunsStats {
     runLengthCounts: runLengthBuckets,
     expectedRunLengthCounts,
     sampleValid: n >= 1000 && prerequisitePasses,
+    validity: !prerequisitePasses ? 'prerequisite-failed' : n >= 1000 ? 'valid' : 'low-sample',
   };
 }
 
@@ -446,7 +469,7 @@ function deriveProfileLabel(
   runs: RunsStats,
 ): ProfileLabel {
   if (keyDependencyConfirmed === false) {
-    return 'highly structured';
+    return 'strong structure';
   }
 
   // Severity per test: 0=invalid, 1=pass, 2=mild, 3=structured, 4=highly-structured
@@ -502,11 +525,14 @@ function deriveProfileLabel(
     correlationSeverity(),
     runsSeverity(),
   );
+  const validTestCount = [bitBalance.sampleValid, byteEntropy.sampleValid, byteFrequency.sampleValid, correlation.sampleValid, runs.sampleValid].filter(Boolean).length;
 
-  if (maxSeverity >= 4) return 'highly structured';
-  if (maxSeverity >= 3) return 'structured';
-  if (maxSeverity >= 2) return 'near-uniform';
-  return 'uniform distribution';
+  if (validTestCount < 2) return 'limited evidence';
+
+  if (maxSeverity >= 4) return 'strong structure';
+  if (maxSeverity >= 3) return 'visible structure';
+  if (maxSeverity >= 2) return 'mixed sample';
+  return 'near-uniform sample';
 }
 
 // ── Main entry point ──────────────────────────────────────────────────────────
@@ -551,6 +577,8 @@ export function computeOutputStatistics(
     sampleKind,
     keyDependencyConfirmed,
     isWideOutput: isWide,
+    analysisUnitWidth: analysisWidth,
+    analysisUnitLabel: isWide ? 'projected byte' : 'output value',
     bitBalance,
     byteEntropy,
     byteFrequency,
@@ -613,30 +641,34 @@ export function generateNarrativeSummary(
     stats.keyDependencyConfirmed === true
       ? ' Key dependency was confirmed — the output changes with the key.'
       : '';
+  const projectionNote = stats.isWideOutput
+    ? ' Wide outputs were projected into byte-sized units for the frequency, entropy, and correlation sections, so those sections describe byte-level structure rather than the full output word as one symbol.'
+    : '';
 
   if (failures.length === 0) {
     return (
-      `This workspace's output has the statistical shape of a uniform distribution across ${kind}.` +
-      ' Byte frequencies are near-flat, bit positions show no strong bias, consecutive values ' +
-      'appear unrelated, and run lengths follow the expected pattern.' +
+      `Across ${kind}, this sample looks near-uniform on the tests that were valid enough to run.` +
+      ' Byte frequencies are fairly flat, bit positions show no obvious strong bias, consecutive values ' +
+      'do not show strong linear dependence, and observed run lengths are not obviously unusual.' +
       keyNote +
-      ' Note: statistical uniformity is consistent with both strong ciphers and simple bijective ' +
-      'mappings — the scatter plot and correlation tests are the sharpest discriminators here.'
+      projectionNote +
+      ' This is descriptive evidence only. It does not prove cryptographic randomness, unpredictability, or cipher strength.'
     );
   }
 
   if (failures.length === 1) {
     return (
-      `Across ${kind}, most statistical measures look near-uniform, but one anomaly stands out: ` +
+      `Across ${kind}, most valid measures look near-uniform, but one anomaly stands out: ` +
       `${failures[0]}. This pattern would be unusual for a truly random source and may indicate ` +
-      'exploitable structure.' + keyNote
+      'visible structure in the observed sample.' + keyNote + projectionNote +
+      ' This is still not a security verdict.'
     );
   }
 
   const listed = failures.slice(0, -1).join('; ') + '; and ' + failures[failures.length - 1];
   return (
     `Across ${kind}, the output shows multiple statistical deviations: ${listed}. ` +
-    'Each of these patterns would be unusual for a random source and together suggest ' +
-    'significant exploitable structure.' + keyNote
+    'Together they suggest visible structure in this observed sample.' + keyNote + projectionNote +
+    ' That is useful comparative evidence, not proof of attack practicality by itself.'
   );
 }

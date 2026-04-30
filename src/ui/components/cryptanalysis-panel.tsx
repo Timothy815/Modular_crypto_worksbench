@@ -1963,25 +1963,29 @@ export function CryptanalysisPanel({
               </p>
             ) : null}
             {outputStatsResult ? (
-              <div className="cryptanalysis-output-summary-row">
-                <span className="content-status-chip">
-                  {outputStatsResult.observationCount} observations
-                  {outputStatsResult.isWideOutput ? ` → ${outputStatsResult.observationCount * Math.floor(outputStatsResult.outputWidth / 8)} bytes` : ''}
-                </span>
-                <span className="content-status-chip">
-                  {outputStatsResult.sampleKind === 'exhaustive' ? 'exhaustive sweep' : outputStatsResult.sampleKind === 'bit-flip' ? 'bit-flip sweep' : 'value sweep'}
-                </span>
+              <>
+                <div className="cryptanalysis-output-summary-row">
+                  <span className="content-status-chip">
+                    {outputStatsResult.observationCount} observations
+                    {outputStatsResult.isWideOutput ? ` → ${outputStatsResult.observationCount * Math.floor(outputStatsResult.outputWidth / 8)} bytes` : ''}
+                  </span>
+                  <span className="content-status-chip">
+                    {outputStatsResult.sampleKind === 'exhaustive' ? 'exhaustive sweep' : outputStatsResult.sampleKind === 'bit-flip' ? 'bit-flip sweep' : 'value sweep'}
+                  </span>
+                  {outputStatsResult.isWideOutput ? (
+                    <span className="content-status-chip status-chip-warning">projected bytes</span>
+                  ) : null}
+                  <span className={`content-status-chip ${getOutputStatsProfileChipClass(outputStatsResult.profileLabel)}`}>
+                    {outputStatsResult.profileLabel}
+                  </span>
+                </div>
                 {outputStatsResult.isWideOutput ? (
-                  <span className="content-status-chip">byte-level analysis</span>
+                  <p className="comparison-copy cryptanalysis-help-copy">
+                    Wide outputs are projected into byte-sized units for the frequency, entropy, and correlation sections.
+                    Those sections describe byte-level structure, not the full {outputStatsResult.outputWidth}-bit output word as one symbol.
+                  </p>
                 ) : null}
-                <span className={`content-status-chip ${
-                  outputStatsResult.profileLabel === 'uniform distribution' ? '' :
-                  outputStatsResult.profileLabel === 'near-uniform' ? 'status-chip-warning' :
-                  'status-chip-error'
-                }`}>
-                  {outputStatsResult.profileLabel}
-                </span>
-              </div>
+              </>
             ) : null}
           </div>
 
@@ -2132,20 +2136,23 @@ export function CryptanalysisPanel({
               {/* Section 1: Byte Frequency */}
               <div className="comparison-card comparison-card-wide">
                 <span className="meta-label">
-                  Byte Frequency
-                  {!outputStatsResult.byteFrequency.sampleValid ? (
-                    <span className="cryptanalysis-validity-badge"> · low sample</span>
-                  ) : null}
+                  {outputStatsResult.analysisUnitLabel === 'projected byte' ? 'Byte Frequency' : 'Value Frequency'}
+                  {getFrequencyValidityBadge(outputStatsResult.byteFrequency)}
                 </span>
                 <strong>
-                  {outputStatsResult.byteFrequency.bucketCount === outputStatsResult.byteFrequency.counts.length
-                    ? `${outputStatsResult.byteFrequency.bucketCount}-bucket distribution`
-                    : 'Coarse distribution (sample too small for full histogram)'}
+                  {outputStatsResult.byteFrequency.validity === 'coarse-buckets'
+                    ? `${outputStatsResult.byteFrequency.bucketCount}-bucket coarse distribution`
+                    : `${outputStatsResult.byteFrequency.bucketCount}-bucket distribution`}
                 </strong>
                 <p className="comparison-copy cryptanalysis-help-copy">
-                  A bijective cipher swept across all its inputs always produces a flat distribution.
-                  This test detects frequency imbalance but cannot distinguish a Caesar cipher from a strong cipher at small sample sizes.
+                  This section measures frequency imbalance only. A bijective cipher swept across all its inputs can look flat here, and a flat result does not distinguish a simple permutation from a strong cipher.
                 </p>
+                {outputStatsResult.byteFrequency.validity === 'coarse-buckets' ? (
+                  <p className="comparison-copy cryptanalysis-help-copy">
+                    The sample is too small for a trustworthy 256-bucket chi-squared test, so the engine grouped values into {outputStatsResult.byteFrequency.bucketCount} coarse buckets instead.
+                    Read this as a rough shape check, not a full byte-frequency verdict.
+                  </p>
+                ) : null}
                 <div className="output-stats-freq-chart" role="img" aria-label="Byte frequency histogram">
                   {renderFrequencyBars(
                     outputStatsResult.byteFrequency.counts,
@@ -2161,8 +2168,8 @@ export function CryptanalysisPanel({
                   </p>
                 ) : (
                   <p className="comparison-copy cryptanalysis-help-copy">
-                    Insufficient sample for a valid chi-squared test.
-                    Increase sweep count or reduce output width.
+                    Chi-squared is not applicable here because the expected count per bucket is too low.
+                    Increase sweep count or use a narrower natural output unit if you need a stronger frequency test.
                   </p>
                 )}
               </div>
@@ -2171,15 +2178,13 @@ export function CryptanalysisPanel({
               <div className="comparison-card comparison-card-wide">
                 <span className="meta-label">
                   Bit Balance
-                  {!outputStatsResult.bitBalance.sampleValid ? (
-                    <span className="cryptanalysis-validity-badge"> · low sample</span>
-                  ) : null}
+                  {getBitBalanceValidityBadge(outputStatsResult.bitBalance)}
                 </span>
                 <strong>
                   {(outputStatsResult.bitBalance.onesFraction * 100).toFixed(1)}% ones across all output bits
                 </strong>
                 <p className="comparison-copy cryptanalysis-help-copy">
-                  A stuck bit position — one that is almost always 0 or always 1 — carries almost no information.
+                  A stuck bit position — one that is almost always 0 or always 1 — carries almost no information. This is a balance check only, not a randomness verdict.
                 </p>
                 <BitBalanceHeatmap fractions={outputStatsResult.bitBalance.perPositionFractions} />
                 <p className="comparison-copy" style={{ marginTop: 10 }}>
@@ -2195,7 +2200,8 @@ export function CryptanalysisPanel({
               {/* Section 3: Shannon Entropy */}
               <div className="comparison-card">
                 <span className="meta-label">
-                  {outputStatsResult.isWideOutput ? 'Byte Entropy (per output byte)' : 'Shannon Entropy'}
+                  {outputStatsResult.isWideOutput ? 'Byte Entropy (per projected byte)' : 'Value Entropy'}
+                  {getEntropyValidityBadge(outputStatsResult.byteEntropy)}
                 </span>
                 <strong>
                   {outputStatsResult.byteEntropy.shannonEntropy.toFixed(3)} bits
@@ -2252,17 +2258,15 @@ export function CryptanalysisPanel({
                   {outputStatsResult.isWideOutput ? '256' : Math.min(Math.pow(2, outputStatsResult.outputWidth), 65536).toFixed(0)} distinct {outputStatsResult.isWideOutput ? 'byte values' : 'values'} seen
                 </p>
                 <p className="comparison-copy cryptanalysis-help-copy">
-                  High entropy is required but not sufficient — a Caesar cipher swept across all inputs scores near-maximum entropy too.
+                  High entropy is descriptive only. It tells you the observed values are spread out, not that the source is unpredictable or secure.
                 </p>
               </div>
 
               {/* Section 4: Sequential Correlation */}
               <div className="comparison-card">
                 <span className="meta-label">
-                  Sequential Correlation
-                  {!outputStatsResult.correlation.sampleValid ? (
-                    <span className="cryptanalysis-validity-badge"> · low sample</span>
-                  ) : null}
+                  {outputStatsResult.analysisUnitLabel === 'projected byte' ? 'Adjacent-Byte Correlation' : 'Sequential Correlation'}
+                  {getCorrelationValidityBadge(outputStatsResult.correlation)}
                 </span>
                 <strong>
                   r = {outputStatsResult.correlation.serialCorrelationCoefficient.toFixed(3)}
@@ -2270,8 +2274,8 @@ export function CryptanalysisPanel({
                 </strong>
                 <p className="comparison-copy cryptanalysis-help-copy">
                   {outputStatsResult.isWideOutput
-                    ? `Each dot = (byte[i], byte[i+1]) across ${outputStatsResult.correlation.valuePairs} consecutive output bytes. A cipher with structure shows diagonals or clusters; a cloud means bytes are uncorrelated.`
-                    : 'Each dot = (output[i], output[i+1]). A cipher with structure shows diagonals or clusters. A cloud means consecutive outputs are not linearly related.'}
+                    ? `Each dot = (byte[i], byte[i+1]) across ${outputStatsResult.correlation.valuePairs} consecutive projected bytes. This is only a lag-1 linear-dependence check.`
+                    : 'Each dot = (output[i], output[i+1]). This is only a lag-1 linear-dependence check, so nonlinear or longer-range structure can still be present.'}
                 </p>
                 <ScatterCanvas
                   grid={outputStatsResult.correlation.scatterGrid}
@@ -2290,11 +2294,7 @@ export function CryptanalysisPanel({
               <div className="comparison-card comparison-card-wide">
                 <span className="meta-label">
                   Runs Uniformity
-                  {!outputStatsResult.runs.sampleValid ? (
-                    <span className="cryptanalysis-validity-badge">
-                      {' '}· {outputStatsResult.runs.prerequisitePasses ? 'low sample' : 'prerequisite failed'}
-                    </span>
-                  ) : null}
+                  {getRunsValidityBadge(outputStatsResult.runs)}
                 </span>
                 <strong>
                   {outputStatsResult.runs.totalRuns} runs
@@ -2319,12 +2319,17 @@ export function CryptanalysisPanel({
                         : 'n/a (monobit prerequisite failed)'}
                   </strong>
                 </p>
+                {outputStatsResult.runs.validity === 'prerequisite-failed' ? (
+                  <p className="comparison-copy cryptanalysis-help-copy">
+                    The runs test is intentionally withheld when the monobit prerequisite fails. If the stream is already too imbalanced, run-count significance is not trustworthy.
+                  </p>
+                ) : null}
               </div>
 
               {/* Narrative summary */}
               <div className="comparison-card comparison-card-wide">
                 <span className="meta-label">Summary</span>
-                <strong>What this output looks like</strong>
+                <strong>What this sample looks like</strong>
                 <p className="comparison-copy">
                   {generateNarrativeSummary(outputStatsResult)}
                 </p>
@@ -3078,6 +3083,61 @@ function moveStageId(stageIds: string[], moduleId: string, direction: -1 | 1): s
 
 function formatPercent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
+}
+
+function getOutputStatsProfileChipClass(label: OutputStatistics['profileLabel']) {
+  switch (label) {
+    case 'near-uniform sample':
+      return '';
+    case 'mixed sample':
+      return 'status-chip-warning';
+    case 'visible structure':
+    case 'strong structure':
+      return 'status-chip-error';
+    case 'limited evidence':
+    default:
+      return 'status-chip-warning';
+  }
+}
+
+function renderOutputStatsValidityBadge(label: string, tone: 'warning' | 'error' = 'warning') {
+  return (
+    <span
+      className={
+        tone === 'error'
+          ? 'cryptanalysis-validity-badge cryptanalysis-validity-badge-error'
+          : 'cryptanalysis-validity-badge'
+      }
+    >
+      {' '}· {label}
+    </span>
+  );
+}
+
+function getFrequencyValidityBadge(stats: OutputStatistics['byteFrequency']) {
+  if (stats.validity === 'valid') return null;
+  if (stats.validity === 'coarse-buckets') return renderOutputStatsValidityBadge('coarse buckets');
+  return renderOutputStatsValidityBadge('chi-squared not applicable');
+}
+
+function getBitBalanceValidityBadge(stats: OutputStatistics['bitBalance']) {
+  return stats.validity === 'valid' ? null : renderOutputStatsValidityBadge('low sample');
+}
+
+function getEntropyValidityBadge(stats: OutputStatistics['byteEntropy']) {
+  return stats.validity === 'valid' ? null : renderOutputStatsValidityBadge('descriptive only');
+}
+
+function getCorrelationValidityBadge(stats: OutputStatistics['correlation']) {
+  return stats.validity === 'valid' ? null : renderOutputStatsValidityBadge('low sample');
+}
+
+function getRunsValidityBadge(stats: OutputStatistics['runs']) {
+  if (stats.validity === 'valid') return null;
+  if (stats.validity === 'prerequisite-failed') {
+    return renderOutputStatsValidityBadge('prerequisite failed', 'error');
+  }
+  return renderOutputStatsValidityBadge('low sample');
 }
 
 function buildHeatCellStyle(intensity: number) {

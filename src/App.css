@@ -8547,7 +8547,7 @@ body.canvas-resizing {
   min-height: 0;
 }
 
-/* Validity badge (low-sample warning suffix) */
+/* Validity badge */
 .cryptanalysis-validity-badge {
   display: inline-flex;
   align-items: center;
@@ -8559,6 +8559,9 @@ body.canvas-resizing {
   text-transform: uppercase;
   vertical-align: middle;
   margin-left: 6px;
+  background: color-mix(in srgb, #d97706 14%, var(--surface-1));
+  color: color-mix(in srgb, #92400e 86%, var(--text));
+  border: 1px solid color-mix(in srgb, #d97706 32%, var(--border));
 }
 
 .cryptanalysis-validity-badge.low-sample {
@@ -8571,6 +8574,12 @@ body.canvas-resizing {
   background: color-mix(in srgb, var(--accent) 12%, var(--surface-1));
   color: var(--accent);
   border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+
+.cryptanalysis-validity-badge.cryptanalysis-validity-badge-error {
+  background: color-mix(in srgb, #dc2626 12%, var(--surface-1));
+  color: color-mix(in srgb, #7f1d1d 88%, var(--text));
+  border: 1px solid color-mix(in srgb, #dc2626 28%, var(--border));
 }
 
 /* Key dependency result cards */
