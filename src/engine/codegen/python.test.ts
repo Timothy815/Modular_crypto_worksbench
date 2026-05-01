@@ -1935,6 +1935,37 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
   });
 
+  it('matches executeProject for wide-word arithmetic above the old 31-bit boundary', () => {
+    const width = 40;
+    const project: Project = {
+      modules: [
+        {
+          id: 'left-word',
+          defId: 'BitSource',
+          params: { stream: [1, ...Array.from({ length: width - 1 }, () => 0)] },
+        },
+        {
+          id: 'right-word',
+          defId: 'BitSource',
+          params: { stream: [...Array.from({ length: width - 1 }, () => 0), 1] },
+        },
+        { id: 'add-1', defId: 'AddMod', params: {} },
+        { id: 'bits-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'left-word', port: 'out' }, to: { moduleId: 'add-1', port: 'a' } },
+        { from: { moduleId: 'right-word', port: 'out' }, to: { moduleId: 'add-1', port: 'b' } },
+        { from: { moduleId: 'add-1', port: 'out' }, to: { moduleId: 'bits-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
   it('matches executeProject for a control and arithmetic workspace', () => {
     const project: Project = {
       modules: [

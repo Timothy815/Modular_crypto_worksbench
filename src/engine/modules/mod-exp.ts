@@ -1,9 +1,9 @@
 import type { ModuleDef } from '../types';
 import {
-  bitsToUnsignedNumber,
+  bitsToUnsignedBigInt,
   expectBitsSignal,
-  normalizePositiveInteger,
-  unsignedNumberToBits,
+  normalizePositiveSafeInteger,
+  unsignedBigIntToBits,
 } from './bit-word';
 
 export function validateModExpParam(key: string, value: unknown): string | null {
@@ -11,27 +11,33 @@ export function validateModExpParam(key: string, value: unknown): string | null 
     return null;
   }
 
-  if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isInteger(value) || value < 2) {
-    return 'ModExp requires an integer modulus of at least 2.';
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    !Number.isInteger(value) ||
+    !Number.isSafeInteger(value) ||
+    value < 2
+  ) {
+    return 'ModExp requires a safe integer modulus of at least 2.';
   }
 
   return null;
 }
 
-function modularExponentiation(base: number, exp: number, mod: number): number {
-  if (mod === 1) {
-    return 0;
+function modularExponentiation(base: bigint, exp: bigint, mod: bigint): bigint {
+  if (mod === 1n) {
+    return 0n;
   }
 
-  let result = 1;
+  let result = 1n;
   let b = base % mod;
 
   let e = exp;
-  while (e > 0) {
-    if (e % 2 === 1) {
+  while (e > 0n) {
+    if (e % 2n === 1n) {
       result = (result * b) % mod;
     }
-    e = Math.floor(e / 2);
+    e /= 2n;
     b = (b * b) % mod;
   }
 
@@ -59,9 +65,9 @@ export const ModExp: ModuleDef = {
   evaluate: (inputs, params) => {
     const baseBits = expectBitsSignal(inputs.base, 'ModExp');
     const expBits = expectBitsSignal(inputs.exp, 'ModExp');
-    const modulus = normalizePositiveInteger(params.modulus, 'ModExp', 'modulus');
+    const modulus = BigInt(normalizePositiveSafeInteger(params.modulus, 'ModExp', 'modulus'));
 
-    if (modulus < 2) {
+    if (modulus < 2n) {
       throw new Error('ModExp requires a modulus of at least 2');
     }
 
@@ -71,17 +77,17 @@ export const ModExp: ModuleDef = {
       return { out: { type: 'bits', value: [] } };
     }
 
-    const maxValue = 2 ** width;
+    const maxValue = 1n << BigInt(width);
     if (modulus > maxValue) {
       throw new Error('ModExp modulus must not exceed the base word range');
     }
 
-    const base = bitsToUnsignedNumber(baseBits);
-    const exp = bitsToUnsignedNumber(expBits);
+    const base = bitsToUnsignedBigInt(baseBits);
+    const exp = bitsToUnsignedBigInt(expBits);
     const result = modularExponentiation(base, exp, modulus);
 
     return {
-      out: { type: 'bits', value: unsignedNumberToBits(result, width) },
+      out: { type: 'bits', value: unsignedBigIntToBits(result, width) },
     };
   },
 };

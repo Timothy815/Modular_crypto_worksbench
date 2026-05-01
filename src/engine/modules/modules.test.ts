@@ -107,6 +107,7 @@ import { GreaterThan } from './greater-than';
 import { ModExp } from './mod-exp';
 import { ModInverse } from './mod-inverse';
 import { MulMod } from './mul-mod';
+import { bitsToUnsignedNumber, unsignedNumberToBits } from './bit-word';
 import { LFSR } from './lfsr';
 import {
   buildIdentitySBoxTable,
@@ -1563,6 +1564,18 @@ describe('Boolean operators', () => {
 });
 
 describe('Word arithmetic operators', () => {
+  it('bit-word conversions stay exact above the old 31-bit boundary', () => {
+    const width = 40;
+    const bits = [1, ...Array.from({ length: width - 2 }, () => 0), 1];
+
+    expect(bitsToUnsignedNumber(bits)).toBe(549755813889);
+    expect(unsignedNumberToBits(549755813889, width)).toEqual(bits);
+  });
+
+  it('bit-word number conversion rejects unsafe integers', () => {
+    expect(() => unsignedNumberToBits(Number.MAX_SAFE_INTEGER + 1, 54)).toThrow(/safe integer/i);
+  });
+
   it('ADD mod 2^n uses big-endian fixed-width arithmetic', () => {
     const result = AddMod.evaluate(
       {
@@ -1621,6 +1634,25 @@ describe('Word arithmetic operators', () => {
     expect(() =>
       Modulo.evaluate({ in: { type: 'bits', value: [1, 0, 1, 0] } }, { modulus: 32 }),
     ).toThrow('word range');
+  });
+
+  it('ADD mod 2^n stays exact above the old 31-bit coercion boundary', () => {
+    const width = 40;
+    const left = [1, ...Array.from({ length: width - 1 }, () => 0)];
+    const right = [...Array.from({ length: width - 1 }, () => 0), 1];
+
+    const result = AddMod.evaluate(
+      {
+        a: { type: 'bits', value: left },
+        b: { type: 'bits', value: right },
+      },
+      {},
+    );
+
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [1, ...Array.from({ length: width - 2 }, () => 0), 1],
+    });
   });
 });
 
@@ -2439,6 +2471,25 @@ describe('MulMod', () => {
     );
     expect(result.out).toEqual({ type: 'bits', value: [] });
   });
+
+  it('stays exact for products above the old 31-bit conversion boundary', () => {
+    const width = 40;
+    const left = [0, ...Array.from({ length: width - 3 }, () => 0), 1, 0];
+    const right = [0, ...Array.from({ length: width - 3 }, () => 0), 1, 1];
+
+    const result = MulMod.evaluate(
+      {
+        a: { type: 'bits', value: left },
+        b: { type: 'bits', value: right },
+      },
+      {},
+    );
+
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [...Array.from({ length: width - 3 }, () => 0), 1, 1, 0],
+    });
+  });
 });
 
 describe('GreaterThan', () => {
@@ -2584,6 +2635,25 @@ describe('ModExp', () => {
         { modulus: 32 },
       ),
     ).toThrow('word range');
+  });
+
+  it('handles exact modular exponentiation above the old 31-bit conversion boundary', () => {
+    const width = 40;
+    const result = ModExp.evaluate(
+      {
+        base: {
+          type: 'bits',
+          value: [0, 0, 0, 0, 1, ...Array.from({ length: width - 6 }, () => 0), 1],
+        },
+        exp: { type: 'bits', value: [0, ...Array.from({ length: width - 3 }, () => 0), 1, 0] },
+      },
+      { modulus: 97 },
+    );
+
+    expect(result.out).toEqual({
+      type: 'bits',
+      value: [...Array.from({ length: width - 2 }, () => 0), 1, 1],
+    });
   });
 });
 

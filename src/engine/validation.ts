@@ -645,12 +645,18 @@ function validateBitWidthConstraints(
     if (def.id === 'Modulo' || def.id === 'ModInverse') {
       const upstream = incomingConnections.get(`${moduleInstance.id}:in`);
       const modulus = moduleInstance.params.modulus;
-      if (!upstream || typeof modulus !== 'number' || !Number.isInteger(modulus) || modulus <= 0) {
+      if (
+        !upstream ||
+        typeof modulus !== 'number' ||
+        !Number.isInteger(modulus) ||
+        !Number.isSafeInteger(modulus) ||
+        modulus <= 0
+      ) {
         continue;
       }
 
       const inputWidth = getWidth(upstream.moduleId);
-      if (inputWidth !== null && modulus > 2 ** inputWidth) {
+      if (inputWidth !== null && BigInt(modulus) > (1n << BigInt(inputWidth))) {
         issues.push({
           code: 'invalid-param-type',
           message: `Module "${moduleInstance.id}" parameter "modulus" is invalid. ${def.id} modulus must not exceed the input word range for a ${inputWidth}-bit input.`,
@@ -662,12 +668,18 @@ function validateBitWidthConstraints(
     if (def.id === 'ModExp') {
       const upstream = incomingConnections.get(`${moduleInstance.id}:base`);
       const modulus = moduleInstance.params.modulus;
-      if (!upstream || typeof modulus !== 'number' || !Number.isInteger(modulus) || modulus < 2) {
+      if (
+        !upstream ||
+        typeof modulus !== 'number' ||
+        !Number.isInteger(modulus) ||
+        !Number.isSafeInteger(modulus) ||
+        modulus < 2
+      ) {
         continue;
       }
 
       const baseWidth = getWidth(upstream.moduleId);
-      if (baseWidth !== null && modulus > 2 ** baseWidth) {
+      if (baseWidth !== null && BigInt(modulus) > (1n << BigInt(baseWidth))) {
         issues.push({
           code: 'invalid-param-type',
           message: `Module "${moduleInstance.id}" parameter "modulus" is invalid. ModExp modulus must not exceed the base word range for a ${baseWidth}-bit input.`,

@@ -839,7 +839,7 @@ describe('validateProject', () => {
       result.issues.some(
         (issue) =>
           issue.moduleId === 'counter-1' &&
-          issue.message.includes('positive integer'),
+          issue.message.includes('positive safe integer'),
       ),
     ).toBe(true);
   });
@@ -1087,6 +1087,29 @@ describe('validateProject', () => {
     ).toBe(true);
   });
 
+  it('rejects ModExp modulus that is not a safe integer', () => {
+    const project: Project = {
+      modules: [
+        { id: 'base', defId: 'BitSource', params: { stream: [1, 0, 1, 0] } },
+        { id: 'exp', defId: 'BitSource', params: { stream: [0, 0, 1, 0] } },
+        { id: 'mexp', defId: 'ModExp', params: { modulus: Number.MAX_SAFE_INTEGER + 1 } },
+      ],
+      connections: [
+        { from: { moduleId: 'base', port: 'out' }, to: { moduleId: 'mexp', port: 'base' } },
+        { from: { moduleId: 'exp', port: 'out' }, to: { moduleId: 'mexp', port: 'exp' } },
+      ],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) => issue.moduleId === 'mexp' && issue.message.toLowerCase().includes('safe integer'),
+      ),
+    ).toBe(true);
+  });
+
   it('rejects ModInverse modulus that exceeds input word range', () => {
     const project: Project = {
       modules: [
@@ -1106,6 +1129,28 @@ describe('validateProject', () => {
         (issue) =>
           issue.moduleId === 'inv' &&
           issue.message.includes('word range'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects Counter params that are not safe integers', () => {
+    const project: Project = {
+      modules: [
+        {
+          id: 'counter',
+          defId: 'Counter',
+          params: { width: Number.MAX_SAFE_INTEGER + 1, value: 0, step: 1 },
+        },
+      ],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) => issue.moduleId === 'counter' && issue.message.toLowerCase().includes('safe integer'),
       ),
     ).toBe(true);
   });

@@ -1,9 +1,9 @@
 import type { ModuleDef } from '../types';
 import {
-  bitsToUnsignedNumber,
+  bitsToUnsignedBigInt,
   expectBitsSignal,
-  normalizePositiveInteger,
-  unsignedNumberToBits,
+  normalizePositiveSafeInteger,
+  unsignedBigIntToBits,
 } from './bit-word';
 
 export function validateModInverseParam(key: string, value: unknown): string | null {
@@ -11,21 +11,27 @@ export function validateModInverseParam(key: string, value: unknown): string | n
     return null;
   }
 
-  if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isInteger(value) || value < 2) {
-    return 'ModInverse requires an integer modulus of at least 2.';
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    !Number.isInteger(value) ||
+    !Number.isSafeInteger(value) ||
+    value < 2
+  ) {
+    return 'ModInverse requires a safe integer modulus of at least 2.';
   }
 
   return null;
 }
 
-function extendedGcd(a: number, b: number): { gcd: number; x: number } {
+function extendedGcd(a: bigint, b: bigint): { gcd: bigint; x: bigint } {
   let oldR = a;
   let r = b;
-  let oldS = 1;
-  let s = 0;
+  let oldS = 1n;
+  let s = 0n;
 
-  while (r !== 0) {
-    const q = Math.floor(oldR / r);
+  while (r !== 0n) {
+    const q = oldR / r;
     const tempR = r;
     r = oldR - q * r;
     oldR = tempR;
@@ -54,9 +60,9 @@ export const ModInverse: ModuleDef = {
   },
   evaluate: (inputs, params) => {
     const bits = expectBitsSignal(inputs.in, 'ModInverse');
-    const modulus = normalizePositiveInteger(params.modulus, 'ModInverse', 'modulus');
+    const modulus = BigInt(normalizePositiveSafeInteger(params.modulus, 'ModInverse', 'modulus'));
 
-    if (modulus < 2) {
+    if (modulus < 2n) {
       throw new Error('ModInverse requires a modulus of at least 2');
     }
 
@@ -66,15 +72,15 @@ export const ModInverse: ModuleDef = {
       return { out: { type: 'bits', value: [] } };
     }
 
-    const maxValue = 2 ** width;
+    const maxValue = 1n << BigInt(width);
     if (modulus > maxValue) {
       throw new Error('ModInverse modulus must not exceed the input word range');
     }
 
-    const value = bitsToUnsignedNumber(bits);
+    const value = bitsToUnsignedBigInt(bits);
     const { gcd, x } = extendedGcd(value, modulus);
 
-    if (gcd !== 1) {
+    if (gcd !== 1n) {
       throw new Error(
         `ModInverse: ${value} has no inverse mod ${modulus} (GCD is ${gcd})`,
       );
@@ -83,7 +89,7 @@ export const ModInverse: ModuleDef = {
     const result = ((x % modulus) + modulus) % modulus;
 
     return {
-      out: { type: 'bits', value: unsignedNumberToBits(result, width) },
+      out: { type: 'bits', value: unsignedBigIntToBits(result, width) },
     };
   },
 };

@@ -1,31 +1,19 @@
 import type { StatefulModuleDef } from '../types';
-import { unsignedNumberToBits } from './bit-word';
-
-function normalizePositiveInteger(value: unknown, fieldName: string): number {
-  if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isInteger(value) || value <= 0) {
-    throw new Error(`Counter requires "${fieldName}" to be a positive integer`);
-  }
-
-  return value;
-}
-
-function normalizeNonNegativeInteger(value: unknown, fieldName: string): number {
-  if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isInteger(value) || value < 0) {
-    throw new Error(`Counter requires "${fieldName}" to be a non-negative integer`);
-  }
-
-  return value;
-}
+import {
+  normalizeNonNegativeSafeInteger,
+  normalizePositiveSafeInteger,
+  unsignedBigIntToBits,
+} from './bit-word';
 
 export function validateCounterParam(fieldKey: string, value: unknown): string | null {
   try {
     switch (fieldKey) {
       case 'width':
       case 'step':
-        normalizePositiveInteger(value, fieldKey);
+        normalizePositiveSafeInteger(value, 'Counter', fieldKey);
         return null;
       case 'value':
-        normalizeNonNegativeInteger(value, fieldKey);
+        normalizeNonNegativeSafeInteger(value, 'Counter', fieldKey);
         return null;
       default:
         return null;
@@ -36,14 +24,14 @@ export function validateCounterParam(fieldKey: string, value: unknown): string |
 }
 
 function normalizeValue(params: Record<string, unknown>): { width: number; step: number; value: number } {
-  const width = normalizePositiveInteger(params.width, 'width');
-  const step = normalizePositiveInteger(params.step, 'step');
-  const value = normalizeNonNegativeInteger(params.value, 'value');
-  const modulus = 2 ** width;
+  const width = normalizePositiveSafeInteger(params.width, 'Counter', 'width');
+  const step = normalizePositiveSafeInteger(params.step, 'Counter', 'step');
+  const value = normalizeNonNegativeSafeInteger(params.value, 'Counter', 'value');
+  const modulus = 1n << BigInt(width);
   return {
     width,
     step,
-    value: modulus > 0 ? value % modulus : value,
+    value: Number(BigInt(value) % modulus),
   };
 }
 
@@ -85,15 +73,15 @@ export const Counter: StatefulModuleDef = {
   evaluate: (_inputs, params) => {
     const { width, value } = normalizeValue(params);
     return {
-      out: { type: 'bits', value: unsignedNumberToBits(value, width) },
+      out: { type: 'bits', value: unsignedBigIntToBits(BigInt(value), width) },
     };
   },
   advance: (params) => {
     const { width, value, step } = normalizeValue(params);
-    const modulus = 2 ** width;
+    const modulus = 1n << BigInt(width);
     return {
       ...params,
-      value: (value + step) % modulus,
+      value: Number((BigInt(value) + BigInt(step)) % modulus),
     };
   },
 };

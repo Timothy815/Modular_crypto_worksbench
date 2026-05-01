@@ -1,9 +1,9 @@
 import type { ModuleDef } from '../types';
 import {
-  bitsToUnsignedNumber,
+  bitsToUnsignedBigInt,
   expectBitsSignal,
   requireEqualBitWidths,
-  unsignedNumberToBits,
+  unsignedBigIntToBits,
 } from './bit-word';
 
 export const MulMod: ModuleDef = {
@@ -24,11 +24,11 @@ export const MulMod: ModuleDef = {
       return { out: { type: 'bits', value: [] } };
     }
 
-    const modulus = 2 ** width;
-    const result = (bitsToUnsignedNumber(left) * bitsToUnsignedNumber(right)) % modulus;
+    const modulus = 1n << BigInt(width);
+    const result = (bitsToUnsignedBigInt(left) * bitsToUnsignedBigInt(right)) % modulus;
 
     return {
-      out: { type: 'bits', value: unsignedNumberToBits(result, width) },
+      out: { type: 'bits', value: unsignedBigIntToBits(result, width) },
     };
   },
 };

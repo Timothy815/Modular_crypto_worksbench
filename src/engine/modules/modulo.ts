@@ -1,14 +1,20 @@
 import type { ModuleDef } from '../types';
 import {
-  bitsToUnsignedNumber,
+  bitsToUnsignedBigInt,
   expectBitsSignal,
-  normalizePositiveInteger,
-  unsignedNumberToBits,
+  normalizePositiveSafeInteger,
+  unsignedBigIntToBits,
 } from './bit-word';
 
 export function validateModuloParam(value: unknown): string | null {
-  if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isInteger(value) || value <= 0) {
-    return 'Modulo requires a positive integer modulus';
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    !Number.isInteger(value) ||
+    !Number.isSafeInteger(value) ||
+    value <= 0
+  ) {
+    return 'Modulo requires a positive safe integer modulus';
   }
 
   return null;
@@ -31,8 +37,8 @@ export const Modulo: ModuleDef = {
   },
   evaluate: (inputs, params) => {
     const bits = expectBitsSignal(inputs.in, 'Modulo');
-    const modulus = normalizePositiveInteger(params.modulus, 'Modulo', 'modulus');
-    const maxValue = 2 ** bits.length;
+    const modulus = BigInt(normalizePositiveSafeInteger(params.modulus, 'Modulo', 'modulus'));
+    const maxValue = 1n << BigInt(bits.length);
 
     if (modulus > maxValue) {
       throw new Error('Modulo requires a modulus no larger than the input word range');
@@ -42,9 +48,9 @@ export const Modulo: ModuleDef = {
       return { out: { type: 'bits', value: [] } };
     }
 
-    const result = bitsToUnsignedNumber(bits) % modulus;
+    const result = bitsToUnsignedBigInt(bits) % modulus;
     return {
-      out: { type: 'bits', value: unsignedNumberToBits(result, bits.length) },
+      out: { type: 'bits', value: unsignedBigIntToBits(result, bits.length) },
     };
   },
 };
