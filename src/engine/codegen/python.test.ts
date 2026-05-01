@@ -1790,6 +1790,60 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, compositeRegistry));
   });
 
+  it('matches executeProject for a conditional branch workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'bits-1', defId: 'HexSource', params: { value: '3C' } },
+        { id: 'select-1', defId: 'ConstantBit', params: { value: 1 } },
+        { id: 'cond-1', defId: 'ConditionalBranchDemo', params: {} },
+        { id: 'hex-1', defId: 'BitsToHex', params: {} },
+        { id: 'out-1', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'bits-1', port: 'out' }, to: { moduleId: 'cond-1', port: 'in' } },
+        { from: { moduleId: 'select-1', port: 'out' }, to: { moduleId: 'cond-1', port: 'select' } },
+        { from: { moduleId: 'cond-1', port: 'out' }, to: { moduleId: 'hex-1', port: 'in' } },
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, starterDefinitionRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('def conditional_ConditionalBranchDemo(');
+    expect(execution.stdout.trim().split('\n')).toEqual(
+      getExpectedSinkLines(project, starterDefinitionRegistry),
+    );
+  });
+
+  it('matches executeProject for a multi-conditional workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'bits-1', defId: 'HexSource', params: { value: '3C' } },
+        { id: 'select-1', defId: 'BitSource', params: { stream: [1, 0] } },
+        { id: 'cond-1', defId: 'MultiCondSwitch4', params: {} },
+        { id: 'hex-1', defId: 'BitsToHex', params: {} },
+        { id: 'out-1', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'bits-1', port: 'out' }, to: { moduleId: 'cond-1', port: 'in' } },
+        { from: { moduleId: 'select-1', port: 'out' }, to: { moduleId: 'cond-1', port: 'select' } },
+        { from: { moduleId: 'cond-1', port: 'out' }, to: { moduleId: 'hex-1', port: 'in' } },
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, starterDefinitionRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('def conditional_MultiCondSwitch4(');
+    expect(execution.stdout.trim().split('\n')).toEqual(
+      getExpectedSinkLines(project, starterDefinitionRegistry),
+    );
+  });
+
   it('matches executeTickedProject for a temporal nested iterator workspace', () => {
     const project: Project = {
       modules: [
@@ -2739,6 +2793,33 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.status).toBe(0);
     expect(pythonSource).toContain('step_m_rotor_b = _is_active_control_pulse(m_rotor_a["turnover"])');
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedTickedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeTickedProject for a clocked iterator workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'hex-1', defId: 'HexSource', params: { value: '3C96AF' } },
+        { id: 'clock-1', defId: 'Clock', params: { period: 1, offset: 0, length: 3 } },
+        { id: 'iter-1', defId: 'ClockedByteRoundIterator', params: {} },
+        { id: 'hex-2', defId: 'BitsToHex', params: {} },
+        { id: 'out-1', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'hex-1', port: 'out' }, to: { moduleId: 'iter-1', port: 'in' } },
+        { from: { moduleId: 'clock-1', port: 'pulse' }, to: { moduleId: 'iter-1', port: 'clock' } },
+        { from: { moduleId: 'iter-1', port: 'out' }, to: { moduleId: 'hex-2', port: 'in' } },
+        { from: { moduleId: 'hex-2', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, starterDefinitionRegistry);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(pythonSource).toContain('def clocked_iterator_ClockedByteRoundIterator_tick(');
+    expect(execution.stdout.trim().split('\n')).toEqual(
+      getExpectedTickedSinkLines(project, starterDefinitionRegistry),
+    );
   });
 
   it('matches executeTickedProject when gated turnover prevents a downstream rotor from advancing every tick', () => {

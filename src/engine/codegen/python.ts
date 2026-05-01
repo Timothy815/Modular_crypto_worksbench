@@ -1,8 +1,14 @@
 import {
+  isClockedIteratorDefinition,
+  isConditionalDefinition,
   isCompositeDefinition,
   isIteratorDefinition,
+  isMultiConditionalDefinition,
+  type ClockedIteratorDef,
   type CompositeDef,
+  type ConditionalDef,
   type IteratorDef,
+  type MultiConditionalDef,
 } from '../composites';
 import { deriveTickCount, executeProject, executeTickedProject } from '../executor';
 import type {
@@ -134,6 +140,7 @@ const SUPPORTED_STATEFUL_PYTHON_EXPORT_COMPANION_DEF_IDS = new Set([
   'SymbolSequenceInput',
   'BitSequenceInput',
   'BitSource',
+  'HexSource',
   'HexSequenceInput',
   'BaudotSource',
   'BitOutput',
@@ -177,12 +184,14 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'bit_sequence_input',
   'key_input',
   'ascii_source',
+  'ascii_source_tick',
   'baudot_source',
   'baudot_source_tick',
   'bit_source',
   'constant_bit',
   'bit_source_tick',
   'hex_source',
+  'hex_source_tick',
   'hex_sequence_input',
   'hex_sequence_to_bits',
   'protocol_material_source',
@@ -379,6 +388,12 @@ def ascii_source(value):
     return {"out": bits}
 
 
+def ascii_source_tick(value, tick):
+    text = value if isinstance(value, str) else ""
+    sliced = text[tick] if tick < len(text) else ""
+    return ascii_source(sliced)
+
+
 def _validate_baudot_text(value):
     if not isinstance(value, str):
         raise ValueError("BaudotSource requires a text string")
@@ -462,6 +477,12 @@ def hex_source(value):
         for shift in (3, 2, 1, 0):
             bits.append((nibble >> shift) & 1)
     return {"out": bits}
+
+
+def hex_source_tick(value, tick):
+    normalized = str(value).strip().replace(" ", "").upper()
+    start = tick * 2
+    return hex_source(normalized[start:start + 2])
 
 
 def hex_sequence_input(value):
@@ -2002,6 +2023,22 @@ interface IteratorExportDefinition {
   definitionHelper: boolean;
 }
 
+interface ConditionalExportDefinition {
+  def: ConditionalDef | MultiConditionalDef;
+  functionName: string;
+  stateful: boolean;
+  inputArgNames: Map<string, string>;
+  paramArgNames: Map<string, string>;
+}
+
+interface ClockedIteratorExportDefinition {
+  def: ClockedIteratorDef;
+  roundDef: ModuleDefinition;
+  functionName: string;
+  inputArgNames: Map<string, string>;
+  paramArgNames: Map<string, string>;
+}
+
 function getModuleInstanceMap(project: Project) {
   return new Map(project.modules.map((moduleInstance) => [moduleInstance.id, moduleInstance]));
 }
@@ -3046,6 +3083,10 @@ function buildPythonNameMap(values: string[], prefix: string) {
   return mapping;
 }
 
+function getDefinitionParamKeys(def: ModuleDefinition) {
+  return Object.keys(def.paramSchema);
+}
+
 function getCompositeForwardedParamKeys(def: CompositeDef) {
   const keys: string[] = [];
   const seen = new Set<string>();
@@ -3117,10 +3158,14 @@ function projectHasStatefulExportCandidate(
   registry: ModuleRegistry,
   compositeDefinitionStack = new Set<string>(),
   iteratorDefinitionStack = new Set<string>(),
+  conditionalDefinitionStack = new Set<string>(),
+  clockedIteratorDefinitionStack = new Set<string>(),
 ): boolean {
   const roundDefinitionHasStatefulCandidate = (
     definition: ModuleDefinition,
     nestedIteratorDefinitionStack = iteratorDefinitionStack,
+    nestedConditionalDefinitionStack = conditionalDefinitionStack,
+    nestedClockedIteratorDefinitionStack = clockedIteratorDefinitionStack,
   ): boolean => {
     if (isCompositeDefinition(definition)) {
       if (compositeDefinitionStack.has(definition.id)) {
@@ -3133,6 +3178,8 @@ function projectHasStatefulExportCandidate(
         registry,
         nextCompositeStack,
         nestedIteratorDefinitionStack,
+        nestedConditionalDefinitionStack,
+        nestedClockedIteratorDefinitionStack,
       );
     }
 
@@ -3146,7 +3193,66 @@ function projectHasStatefulExportCandidate(
       }
       const nextIteratorStack = new Set(nestedIteratorDefinitionStack);
       nextIteratorStack.add(definition.id);
-      return roundDefinitionHasStatefulCandidate(roundDef, nextIteratorStack);
+      return roundDefinitionHasStatefulCandidate(
+        roundDef,
+        nextIteratorStack,
+        nestedConditionalDefinitionStack,
+        nestedClockedIteratorDefinitionStack,
+      );
+    }
+
+    if (isConditionalDefinition(definition)) {
+      if (nestedConditionalDefinitionStack.has(definition.id)) {
+        return false;
+      }
+      const thenDef = registry[definition.thenDefId];
+      const elseDef = registry[definition.elseDefId];
+      if (!thenDef || !elseDef) {
+        return false;
+      }
+      const nextConditionalStack = new Set(nestedConditionalDefinitionStack);
+      nextConditionalStack.add(definition.id);
+      return (
+        roundDefinitionHasStatefulCandidate(
+          thenDef,
+          nestedIteratorDefinitionStack,
+          nextConditionalStack,
+          nestedClockedIteratorDefinitionStack,
+        ) ||
+        roundDefinitionHasStatefulCandidate(
+          elseDef,
+          nestedIteratorDefinitionStack,
+          nextConditionalStack,
+          nestedClockedIteratorDefinitionStack,
+        )
+      );
+    }
+
+    if (isMultiConditionalDefinition(definition)) {
+      if (nestedConditionalDefinitionStack.has(definition.id)) {
+        return false;
+      }
+      const nextConditionalStack = new Set(nestedConditionalDefinitionStack);
+      nextConditionalStack.add(definition.id);
+      return definition.branchDefIds.some((branchDefId) => {
+        const branchDef = registry[branchDefId];
+        if (!branchDef) {
+          return false;
+        }
+        return roundDefinitionHasStatefulCandidate(
+          branchDef,
+          nestedIteratorDefinitionStack,
+          nextConditionalStack,
+          nestedClockedIteratorDefinitionStack,
+        );
+      });
+    }
+
+    if (isClockedIteratorDefinition(definition)) {
+      if (nestedClockedIteratorDefinitionStack.has(definition.id)) {
+        return false;
+      }
+      return true;
     }
 
     return SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS.has(definition.id);
@@ -3165,7 +3271,16 @@ function projectHasStatefulExportCandidate(
       const internalProject = applyForwardedCompositeParamsForExport(def, moduleInstance.params);
       const nextStack = new Set(compositeDefinitionStack);
       nextStack.add(def.id);
-      if (projectHasStatefulExportCandidate(internalProject, registry, nextStack, iteratorDefinitionStack)) {
+      if (
+        projectHasStatefulExportCandidate(
+          internalProject,
+          registry,
+          nextStack,
+          iteratorDefinitionStack,
+          conditionalDefinitionStack,
+          clockedIteratorDefinitionStack,
+        )
+      ) {
         return true;
       }
       continue;
@@ -3173,10 +3288,50 @@ function projectHasStatefulExportCandidate(
 
     if (isIteratorDefinition(def)) {
       const roundDef = registry[def.roundDefId];
-      if (roundDef && roundDefinitionHasStatefulCandidate(roundDef, new Set(iteratorDefinitionStack).add(def.id))) {
+      if (
+        roundDef &&
+        roundDefinitionHasStatefulCandidate(
+          roundDef,
+          new Set(iteratorDefinitionStack).add(def.id),
+          conditionalDefinitionStack,
+          clockedIteratorDefinitionStack,
+        )
+      ) {
         return true;
       }
       continue;
+    }
+
+    if (isConditionalDefinition(def)) {
+      if (
+        roundDefinitionHasStatefulCandidate(
+          def,
+          iteratorDefinitionStack,
+          new Set(conditionalDefinitionStack).add(def.id),
+          clockedIteratorDefinitionStack,
+        )
+      ) {
+        return true;
+      }
+      continue;
+    }
+
+    if (isMultiConditionalDefinition(def)) {
+      if (
+        roundDefinitionHasStatefulCandidate(
+          def,
+          iteratorDefinitionStack,
+          new Set(conditionalDefinitionStack).add(def.id),
+          clockedIteratorDefinitionStack,
+        )
+      ) {
+        return true;
+      }
+      continue;
+    }
+
+    if (isClockedIteratorDefinition(def)) {
+      return true;
     }
 
     if (SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS.has(def.id)) {
@@ -3228,66 +3383,211 @@ function collectPythonExportCompatibilityIssues(
   allowIteratorsInCompositeBodies = compositeDepth === 0,
 ): PythonExportCompatibilityIssue[] {
   const issues: PythonExportCompatibilityIssue[] = [];
-  const collectIteratorRoundDefinitionIssues = (
-    iteratorDef: IteratorDef,
+  const collectDefinitionIssues = (
+    definition: ModuleDefinition,
     scopedModuleId: string,
     iteratorDefinitionPath: string[] = [],
+    conditionalDefinitionPath: string[] = [],
+    clockedIteratorDefinitionPath: string[] = [],
   ): PythonExportCompatibilityIssue[] => {
-    if (iteratorDefinitionPath.includes(iteratorDef.id)) {
-      return [
-        {
-          moduleId: scopedModuleId,
-          defId: iteratorDef.id,
-          reason: 'Iterator definition cycles are not exportable in V1.',
-        },
-      ];
-    }
-
-    const roundDef = registry[iteratorDef.roundDefId];
-    if (!roundDef) {
-      return [
-        {
-          moduleId: scopedModuleId,
-          defId: iteratorDef.id,
-          reason: `Iterator round definition "${iteratorDef.roundDefId}" is unknown.`,
-        },
-      ];
-    }
-
-    const nextIteratorDefinitionPath = [...iteratorDefinitionPath, iteratorDef.id];
-
-    if (isIteratorDefinition(roundDef)) {
-      return collectIteratorRoundDefinitionIssues(roundDef, scopedModuleId, nextIteratorDefinitionPath);
-    }
-
-    if (isCompositeDefinition(roundDef)) {
-      const internalProject = applyForwardedCompositeParamsForExport(roundDef, {});
+    if (isCompositeDefinition(definition)) {
+      const internalProject = applyForwardedCompositeParamsForExport(definition, {});
       return collectPythonExportCompatibilityIssues(
         internalProject,
         registry,
-        `${scopedModuleId}/round-def`,
+        `${scopedModuleId}/${sanitizeIdentifierPart(definition.id)}`,
         1,
-        [...compositeDefinitionPath, roundDef.id],
+        [...compositeDefinitionPath, definition.id],
         true,
       );
     }
 
-    if (isStatefulModule(roundDef) && !SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS.has(roundDef.id)) {
+    if (isIteratorDefinition(definition)) {
+      if (iteratorDefinitionPath.includes(definition.id)) {
+        return [
+          {
+            moduleId: scopedModuleId,
+            defId: definition.id,
+            reason: 'Iterator definition cycles are not exportable in V1.',
+          },
+        ];
+      }
+      const roundDef = registry[definition.roundDefId];
+      if (!roundDef) {
+        return [
+          {
+            moduleId: scopedModuleId,
+            defId: definition.id,
+            reason: `Iterator round definition "${definition.roundDefId}" is unknown.`,
+          },
+        ];
+      }
+      return collectDefinitionIssues(
+        roundDef,
+        scopedModuleId,
+        [...iteratorDefinitionPath, definition.id],
+        conditionalDefinitionPath,
+        clockedIteratorDefinitionPath,
+      );
+    }
+
+    if (isClockedIteratorDefinition(definition)) {
+      if (clockedIteratorDefinitionPath.includes(definition.id)) {
+        return [
+          {
+            moduleId: scopedModuleId,
+            defId: definition.id,
+            reason: 'Clocked iterator definition cycles are not exportable in V1.',
+          },
+        ];
+      }
+      const roundDef = registry[definition.roundDefId];
+      if (!roundDef) {
+        return [
+          {
+            moduleId: scopedModuleId,
+            defId: definition.id,
+            reason: `Clocked iterator round definition "${definition.roundDefId}" is unknown.`,
+          },
+        ];
+      }
+      if (isIteratorDefinition(roundDef) || isClockedIteratorDefinition(roundDef)) {
+        return [
+          {
+            moduleId: scopedModuleId,
+            defId: definition.id,
+            reason: 'Clocked iterator round definitions cannot currently be iterator bodies in Python export.',
+          },
+        ];
+      }
+      return collectDefinitionIssues(
+        roundDef,
+        scopedModuleId,
+        iteratorDefinitionPath,
+        conditionalDefinitionPath,
+        [...clockedIteratorDefinitionPath, definition.id],
+      );
+    }
+
+    if (isConditionalDefinition(definition)) {
+      if (conditionalDefinitionPath.includes(definition.id)) {
+        return [
+          {
+            moduleId: scopedModuleId,
+            defId: definition.id,
+            reason: 'Conditional definition cycles are not exportable in V1.',
+          },
+        ];
+      }
+      const thenDef = registry[definition.thenDefId];
+      const elseDef = registry[definition.elseDefId];
+      const nextConditionalPath = [...conditionalDefinitionPath, definition.id];
+      const directStatefulPrimitiveIssue = (branchDef: ModuleDefinition | undefined, branchLabel: 'then' | 'else') =>
+        branchDef &&
+        isStatefulModule(branchDef) &&
+        !isCompositeDefinition(branchDef) &&
+        !isIteratorDefinition(branchDef) &&
+        !isConditionalDefinition(branchDef) &&
+        !isMultiConditionalDefinition(branchDef) &&
+        !isClockedIteratorDefinition(branchDef)
+          ? [{
+              moduleId: scopedModuleId,
+              defId: definition.id,
+              reason: `Conditional ${branchLabel} branch "${branchDef.id}" uses a direct stateful primitive branch, which Python export does not yet support in V1.`,
+            }]
+          : [];
+      return [
+        ...directStatefulPrimitiveIssue(thenDef, 'then'),
+        ...(thenDef
+          ? collectDefinitionIssues(
+              thenDef,
+              `${scopedModuleId}/then-def`,
+              iteratorDefinitionPath,
+              nextConditionalPath,
+              clockedIteratorDefinitionPath,
+            )
+          : [{
+              moduleId: scopedModuleId,
+              defId: definition.id,
+              reason: `Conditional then definition "${definition.thenDefId}" is unknown.`,
+            }]),
+        ...directStatefulPrimitiveIssue(elseDef, 'else'),
+        ...(elseDef
+          ? collectDefinitionIssues(
+              elseDef,
+              `${scopedModuleId}/else-def`,
+              iteratorDefinitionPath,
+              nextConditionalPath,
+              clockedIteratorDefinitionPath,
+            )
+          : [{
+              moduleId: scopedModuleId,
+              defId: definition.id,
+              reason: `Conditional else definition "${definition.elseDefId}" is unknown.`,
+            }]),
+      ];
+    }
+
+    if (isMultiConditionalDefinition(definition)) {
+      if (conditionalDefinitionPath.includes(definition.id)) {
+        return [
+          {
+            moduleId: scopedModuleId,
+            defId: definition.id,
+            reason: 'Multi-conditional definition cycles are not exportable in V1.',
+          },
+        ];
+      }
+      const nextConditionalPath = [...conditionalDefinitionPath, definition.id];
+      return definition.branchDefIds.flatMap((branchDefId, index) => {
+        const branchDef = registry[branchDefId];
+        if (!branchDef) {
+          return [{
+            moduleId: scopedModuleId,
+            defId: definition.id,
+            reason: `Multi-conditional branch definition "${branchDefId}" at index ${index} is unknown.`,
+          }];
+        }
+        if (
+          isStatefulModule(branchDef) &&
+          !isCompositeDefinition(branchDef) &&
+          !isIteratorDefinition(branchDef) &&
+          !isConditionalDefinition(branchDef) &&
+          !isMultiConditionalDefinition(branchDef) &&
+          !isClockedIteratorDefinition(branchDef)
+        ) {
+          return [{
+            moduleId: scopedModuleId,
+            defId: definition.id,
+            reason: `Multi-conditional branch "${branchDef.id}" at index ${index} uses a direct stateful primitive branch, which Python export does not yet support in V1.`,
+          }];
+        }
+        return collectDefinitionIssues(
+          branchDef,
+          `${scopedModuleId}/branch-def-${index}`,
+          iteratorDefinitionPath,
+          nextConditionalPath,
+          clockedIteratorDefinitionPath,
+        );
+      });
+    }
+
+    if (isStatefulModule(definition) && !SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS.has(definition.id)) {
       return [
         {
           moduleId: scopedModuleId,
-          defId: iteratorDef.id,
-          reason: 'This iterator round definition is outside the Python export stateful supported subset.',
+          defId: definition.id,
+          reason: 'This stateful definition is outside the Python export stateful supported subset.',
         },
       ];
     }
 
-    if (!SUPPORTED_PYTHON_EXPORT_DEF_IDS.has(roundDef.id)) {
+    if (!SUPPORTED_PYTHON_EXPORT_DEF_IDS.has(definition.id)) {
       return [
         {
           moduleId: scopedModuleId,
-          defId: iteratorDef.id,
-          reason: 'This iterator round definition is outside the Python export V1 supported subset.',
+          defId: definition.id,
+          reason: 'This definition is outside the Python export V1 supported subset.',
         },
       ];
     }
@@ -3367,7 +3667,12 @@ function collectPythonExportCompatibilityIssues(
         });
       }
 
-      issues.push(...collectIteratorRoundDefinitionIssues(def, scopedModuleId));
+      issues.push(...collectDefinitionIssues(def, scopedModuleId));
+      continue;
+    }
+
+    if (isConditionalDefinition(def) || isMultiConditionalDefinition(def) || isClockedIteratorDefinition(def)) {
+      issues.push(...collectDefinitionIssues(def, scopedModuleId));
       continue;
     }
 
@@ -3452,6 +3757,8 @@ function collectCompositeExportDefinitions(
   };
   const visiting = new Set<string>();
   const visitedIteratorDefs = new Set<string>();
+  const visitedConditionalDefs = new Set<string>();
+  const visitedClockedIteratorDefs = new Set<string>();
 
   const registerCompositeDefinition = (def: CompositeDef) => {
     if (context.definitionsById.has(def.id)) {
@@ -3463,30 +3770,10 @@ function collectCompositeExportDefinitions(
     visiting.add(def.id);
 
     try {
-      const childCompositeIds = Array.from(
-        new Set(
-          def.project.modules
-            .flatMap((moduleInstance) => {
-              const candidate = registry[moduleInstance.defId];
-              if (candidate && isCompositeDefinition(candidate)) {
-                return [candidate];
-              }
-              if (candidate && isIteratorDefinition(candidate)) {
-                const roundDef = registry[candidate.roundDefId];
-                if (roundDef && isCompositeDefinition(roundDef)) {
-                  return [roundDef];
-                }
-              }
-              return [];
-            })
-            .map((candidate) => candidate.id),
-        ),
-      ).sort((left, right) => left.localeCompare(right));
-
-      for (const childCompositeId of childCompositeIds) {
-        const childDef = registry[childCompositeId];
-        if (childDef && isCompositeDefinition(childDef)) {
-          registerCompositeDefinition(childDef);
+      for (const moduleInstance of def.project.modules) {
+        const childDef = registry[moduleInstance.defId];
+        if (childDef) {
+          visitDefinition(childDef);
         }
       }
 
@@ -3532,6 +3819,61 @@ function collectCompositeExportDefinitions(
 
     if (isIteratorDefinition(roundDef)) {
       visitIteratorRoundDefinition(roundDef);
+      return;
+    }
+
+    if (isConditionalDefinition(roundDef) || isMultiConditionalDefinition(roundDef)) {
+      visitConditionalDefinition(roundDef);
+      return;
+    }
+
+    if (isClockedIteratorDefinition(roundDef)) {
+      visitClockedIteratorDefinition(roundDef);
+    }
+  };
+
+  const visitConditionalDefinition = (definition: ConditionalDef | MultiConditionalDef) => {
+    if (visitedConditionalDefs.has(definition.id)) {
+      return;
+    }
+    visitedConditionalDefs.add(definition.id);
+    const branchDefIds = isConditionalDefinition(definition)
+      ? [definition.thenDefId, definition.elseDefId]
+      : definition.branchDefIds;
+    for (const branchDefId of branchDefIds) {
+      const branchDef = registry[branchDefId];
+      if (branchDef) {
+        visitDefinition(branchDef);
+      }
+    }
+  };
+
+  const visitClockedIteratorDefinition = (definition: ClockedIteratorDef) => {
+    if (visitedClockedIteratorDefs.has(definition.id)) {
+      return;
+    }
+    visitedClockedIteratorDefs.add(definition.id);
+    const roundDef = registry[definition.roundDefId];
+    if (roundDef) {
+      visitDefinition(roundDef);
+    }
+  };
+
+  const visitDefinition = (definition: ModuleDefinition) => {
+    if (isCompositeDefinition(definition)) {
+      registerCompositeDefinition(definition);
+      return;
+    }
+    if (isIteratorDefinition(definition)) {
+      visitIteratorRoundDefinition(definition);
+      return;
+    }
+    if (isConditionalDefinition(definition) || isMultiConditionalDefinition(definition)) {
+      visitConditionalDefinition(definition);
+      return;
+    }
+    if (isClockedIteratorDefinition(definition)) {
+      visitClockedIteratorDefinition(definition);
     }
   };
 
@@ -3541,14 +3883,7 @@ function collectCompositeExportDefinitions(
       continue;
     }
 
-    if (isCompositeDefinition(def)) {
-      registerCompositeDefinition(def);
-      continue;
-    }
-
-    if (isIteratorDefinition(def)) {
-      visitIteratorRoundDefinition(def);
-    }
+    visitDefinition(def);
   }
 
   return context.orderedDefs.map((def) => {
@@ -3680,6 +4015,8 @@ function buildCompositeHelperDefinitions(
   compositeDefinitions: CompositeExportDefinition[],
   registry: ModuleRegistry,
   iteratorDefinitionsByLookupKey: Map<string, IteratorExportDefinition>,
+  conditionalDefinitionsById: Map<string, ConditionalExportDefinition>,
+  clockedIteratorDefinitionsById: Map<string, ClockedIteratorExportDefinition>,
 ) {
   const helperBlocks: string[] = [];
   const compositeDefinitionsById = new Map(
@@ -3765,6 +4102,40 @@ function buildCompositeHelperDefinitions(
           continue;
         }
 
+        if (isConditionalDefinition(def) || isMultiConditionalDefinition(def)) {
+          const conditionalDefinition = conditionalDefinitionsById.get(def.id);
+          if (!conditionalDefinition) {
+            throw new Error(`Python export could not resolve nested conditional helper for "${def.id}".`);
+          }
+          const callArguments = buildConditionalCallArguments(
+            conditionalDefinition,
+            expressionContext,
+            moduleInstance,
+          );
+          bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+          bodyLines.push(
+            `    ${variableName} = ${conditionalDefinition.functionName}(${callArguments.join(', ')})`,
+          );
+          continue;
+        }
+
+        if (isClockedIteratorDefinition(def)) {
+          const clockedIteratorDefinition = clockedIteratorDefinitionsById.get(def.id);
+          if (!clockedIteratorDefinition) {
+            throw new Error(`Python export could not resolve nested clocked iterator helper for "${def.id}".`);
+          }
+          const callArguments = buildClockedIteratorCallArguments(
+            clockedIteratorDefinition,
+            expressionContext,
+            moduleInstance,
+          );
+          bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+          bodyLines.push(
+            `    ${variableName} = ${clockedIteratorDefinition.functionName}(${callArguments.join(', ')})`,
+          );
+          continue;
+        }
+
         bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
         bodyLines.push(
           `    ${variableName} = ${buildModuleExpression(moduleInstance, def, expressionContext)}`,
@@ -3818,6 +4189,23 @@ function buildCompositeHelperDefinitions(
             `    state[${JSON.stringify(variableName)}] = ${iteratorDefinition.functionName}_init_state(${initArgs.join(', ')})`,
           );
         }
+      } else if (isConditionalDefinition(def) || isMultiConditionalDefinition(def)) {
+        const conditionalDefinition = conditionalDefinitionsById.get(def.id);
+        if (conditionalDefinition?.stateful) {
+          const paramExpressions = new Map<string, string>();
+          for (const paramKey of getDefinitionParamKeys(def)) {
+            paramExpressions.set(paramKey, expressionContext.getParamExpression(moduleInstance, def, paramKey));
+          }
+          initLines.push(
+            buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+            `    state[${JSON.stringify(variableName)}] = ${buildStatefulHigherOrderDefinitionInitExpression(def, paramExpressions, compositeDefinitionsById, iteratorDefinitionsByLookupKey, conditionalDefinitionsById, clockedIteratorDefinitionsById)}`,
+          );
+        }
+      } else if (isClockedIteratorDefinition(def)) {
+        initLines.push(
+          buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+          `    state[${JSON.stringify(variableName)}] = ${buildStatefulHigherOrderDefinitionInitExpression(def, new Map<string, string>(), compositeDefinitionsById, iteratorDefinitionsByLookupKey, conditionalDefinitionsById, clockedIteratorDefinitionsById)}`,
+        );
       } else if (def.id === 'Counter') {
         initLines.push(
           buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
@@ -3937,6 +4325,48 @@ function buildCompositeHelperDefinitions(
         continue;
       }
 
+      if (isConditionalDefinition(def) || isMultiConditionalDefinition(def)) {
+        const conditionalDefinition = conditionalDefinitionsById.get(def.id);
+        if (!conditionalDefinition) {
+          throw new Error(`Python export could not resolve nested conditional helper for "${def.id}".`);
+        }
+        const inputExpressions = new Map<string, string>();
+        for (const input of def.inputs) {
+          inputExpressions.set(input.name, expressionContext.getInputExpression(moduleId, input.name));
+        }
+        const paramExpressions = new Map<string, string>();
+        for (const paramKey of getDefinitionParamKeys(def)) {
+          paramExpressions.set(paramKey, expressionContext.getParamExpression(moduleInstance, def, paramKey));
+        }
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        if (conditionalDefinition.stateful) {
+          tickLines.push(
+            `    ${variableName} = ${buildStatefulHigherOrderDefinitionInvocationExpression(def, `state[${JSON.stringify(variableName)}]`, 'tick', inputExpressions, paramExpressions, compositeDefinitionsById, iteratorDefinitionsByLookupKey, conditionalDefinitionsById, clockedIteratorDefinitionsById)}`,
+          );
+        } else {
+          tickLines.push(
+            `    ${variableName} = ${buildDefinitionInvocationExpression(def, moduleInstance, inputExpressions, paramExpressions, compositeDefinitionsById, iteratorDefinitionsByLookupKey, conditionalDefinitionsById, clockedIteratorDefinitionsById)}`,
+          );
+        }
+        continue;
+      }
+
+      if (isClockedIteratorDefinition(def)) {
+        const inputExpressions = new Map<string, string>();
+        for (const input of def.inputs) {
+          inputExpressions.set(input.name, expressionContext.getInputExpression(moduleId, input.name));
+        }
+        const paramExpressions = new Map<string, string>();
+        for (const paramKey of getDefinitionParamKeys(def)) {
+          paramExpressions.set(paramKey, expressionContext.getParamExpression(moduleInstance, def, paramKey));
+        }
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        tickLines.push(
+          `    ${variableName} = ${buildStatefulHigherOrderDefinitionInvocationExpression(def, `state[${JSON.stringify(variableName)}]`, 'tick', inputExpressions, paramExpressions, compositeDefinitionsById, iteratorDefinitionsByLookupKey, conditionalDefinitionsById, clockedIteratorDefinitionsById)}`,
+        );
+        continue;
+      }
+
       if (def.id === 'Clock') {
         tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
         tickLines.push(
@@ -4045,10 +4475,26 @@ function buildCompositeHelperDefinitions(
         continue;
       }
 
+      if (def.id === 'AsciiSource') {
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        tickLines.push(
+          `    ${variableName} = ascii_source_tick(${expressionContext.getParamExpression(moduleInstance, def, 'value')}, tick)`,
+        );
+        continue;
+      }
+
       if (def.id === 'BaudotSource') {
         tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
         tickLines.push(
           `    ${variableName} = baudot_source_tick(${expressionContext.getParamExpression(moduleInstance, def, 'value')}, tick)`,
+        );
+        continue;
+      }
+
+      if (def.id === 'HexSource') {
+        tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+        tickLines.push(
+          `    ${variableName} = hex_source_tick(${expressionContext.getParamExpression(moduleInstance, def, 'value')}, tick)`,
         );
         continue;
       }
@@ -4128,6 +4574,299 @@ function buildCompositeHelperDefinitions(
 
     tickLines.push(buildCompositeOutputReturnLine(compositeDefinition, variablesByModuleId, '    '));
     helperBlocks.push(initLines.join('\n'));
+    helperBlocks.push(tickLines.join('\n'));
+  }
+
+  return helperBlocks;
+}
+
+function buildConditionalHelperDefinitions(
+  conditionalDefinitions: ConditionalExportDefinition[],
+  registry: ModuleRegistry,
+  compositeDefinitionsById: Map<string, CompositeExportDefinition>,
+  iteratorDefinitionsByLookupKey: Map<string, IteratorExportDefinition>,
+  clockedIteratorDefinitionsById: Map<string, ClockedIteratorExportDefinition>,
+) {
+  const helperBlocks: string[] = [];
+  const conditionalDefinitionsById = new Map(
+    conditionalDefinitions.map((definition) => [definition.def.id, definition]),
+  );
+
+  for (const conditionalDefinition of conditionalDefinitions) {
+    const args = buildConditionalFunctionArgumentList(conditionalDefinition);
+    const selectInputName = conditionalDefinition.inputArgNames.get('select');
+    if (!selectInputName) {
+      throw new Error(`Python export requires conditional "${conditionalDefinition.def.id}" to expose "select".`);
+    }
+    const forwardedInputs = conditionalDefinition.def.inputs.filter((input) => input.name !== 'select');
+    const inputExpressions = new Map<string, string>();
+    for (const input of forwardedInputs) {
+      const argName = conditionalDefinition.inputArgNames.get(input.name);
+      if (!argName) {
+        throw new Error(`Python export could not resolve conditional input "${input.name}".`);
+      }
+      inputExpressions.set(input.name, argName);
+    }
+    const paramExpressions = new Map<string, string>();
+    for (const paramKey of getDefinitionParamKeys(conditionalDefinition.def)) {
+      const argName = conditionalDefinition.paramArgNames.get(paramKey);
+      if (!argName) {
+        throw new Error(`Python export could not resolve conditional param "${paramKey}".`);
+      }
+      paramExpressions.set(paramKey, argName);
+    }
+
+    const buildBranchInvocation = (branchDefId: string, branchLabel: string) => {
+      const branchDef = iteratorDefinitionsByLookupKey.get(buildIteratorDefinitionLookupKey(branchDefId))?.def
+        ?? compositeDefinitionsById.get(branchDefId)?.def
+        ?? conditionalDefinitionsById.get(branchDefId)?.def
+        ?? clockedIteratorDefinitionsById.get(branchDefId)?.def
+        ?? registry[branchDefId];
+      const resolvedBranchDef = branchDef ?? null;
+      if (!resolvedBranchDef) {
+        throw new Error(`Python export could not resolve conditional branch "${branchDefId}".`);
+      }
+      return buildDefinitionInvocationExpression(
+        resolvedBranchDef,
+        { id: branchLabel, defId: resolvedBranchDef.id, params: {} },
+        inputExpressions,
+        paramExpressions,
+        compositeDefinitionsById,
+        iteratorDefinitionsByLookupKey,
+        conditionalDefinitionsById,
+        clockedIteratorDefinitionsById,
+      );
+    };
+
+    const buildStatefulBranchInvocation = (branchDefId: string, branchLabel: string) => {
+      const branchDef = iteratorDefinitionsByLookupKey.get(buildIteratorDefinitionLookupKey(branchDefId))?.def
+        ?? compositeDefinitionsById.get(branchDefId)?.def
+        ?? conditionalDefinitionsById.get(branchDefId)?.def
+        ?? clockedIteratorDefinitionsById.get(branchDefId)?.def
+        ?? registry[branchDefId];
+      const resolvedBranchDef = branchDef ?? null;
+      if (!resolvedBranchDef) {
+        throw new Error(`Python export could not resolve conditional branch "${branchDefId}".`);
+      }
+      return buildStatefulHigherOrderDefinitionInvocationExpression(
+        resolvedBranchDef,
+        `state[${JSON.stringify(branchLabel)}]`,
+        'tick',
+        inputExpressions,
+        paramExpressions,
+        compositeDefinitionsById,
+        iteratorDefinitionsByLookupKey,
+        conditionalDefinitionsById,
+        clockedIteratorDefinitionsById,
+      );
+    };
+
+    if (!conditionalDefinition.stateful) {
+      const lines: string[] = [
+        `def ${conditionalDefinition.functionName}(${args.allArgs.join(', ')}):`,
+        `    # Conditional helper: ${conditionalDefinition.def.id}`,
+      ];
+      if (isConditionalDefinition(conditionalDefinition.def)) {
+        lines.push(
+          `    select_bits = _expect_bits(${selectInputName}, ${JSON.stringify(conditionalDefinition.def.id)})`,
+          '    if len(select_bits) != 1:',
+          `        raise ValueError(${JSON.stringify(`Conditional "${conditionalDefinition.def.id}" select must be exactly one bit.`)})`,
+          '    if select_bits[0] == 1:',
+          `        return ${buildBranchInvocation(conditionalDefinition.def.thenDefId, 'then_runtime')}`,
+          `    return ${buildBranchInvocation(conditionalDefinition.def.elseDefId, 'else_runtime')}`,
+        );
+      } else {
+        const branchCount = conditionalDefinition.def.branchDefIds.length;
+        const requiredWidth = branchCount <= 2 ? 1 : branchCount <= 4 ? 2 : 3;
+        lines.push(
+          `    select_bits = _expect_bits(${selectInputName}, ${JSON.stringify(conditionalDefinition.def.id)})`,
+          `    if len(select_bits) != ${requiredWidth}:`,
+          `        raise ValueError(${JSON.stringify(`MultiConditional "${conditionalDefinition.def.id}" select must be ${requiredWidth} bit(s).`)})`,
+          '    branch_index = min(_bits_to_unsigned_number(select_bits), ' + String(branchCount - 1) + ')',
+        );
+        conditionalDefinition.def.branchDefIds.forEach((branchDefId, index) => {
+          lines.push(
+            `${index === 0 ? '    if' : '    elif'} branch_index == ${index}:`,
+            `        return ${buildBranchInvocation(branchDefId, `branch${index}_runtime`)}`,
+          );
+        });
+        lines.push(`    raise ValueError(${JSON.stringify(`MultiConditional "${conditionalDefinition.def.id}" could not resolve selected branch.`)})`);
+      }
+      helperBlocks.push(lines.join('\n'));
+      continue;
+    }
+
+    const initLines: string[] = [
+      `def ${conditionalDefinition.functionName}_init_state(${args.paramArgs.join(', ')}):`,
+      `    # Conditional state init: ${conditionalDefinition.def.id}`,
+      '    state = {}',
+    ];
+    const addStateInitIfNeeded = (branchDefId: string, branchLabel: string) => {
+      const compositeDef = compositeDefinitionsById.get(branchDefId);
+      const iteratorDef = iteratorDefinitionsByLookupKey.get(buildIteratorDefinitionLookupKey(branchDefId));
+      const nestedConditionalDef = conditionalDefinitionsById.get(branchDefId);
+      const clockedIteratorDef = clockedIteratorDefinitionsById.get(branchDefId);
+      const needsState = Boolean(
+        compositeDef?.stateful ||
+          iteratorDef?.stateful ||
+          nestedConditionalDef?.stateful ||
+          clockedIteratorDef,
+      );
+      if (!needsState) {
+        return;
+      }
+      initLines.push(
+        `    state[${JSON.stringify(branchLabel)}] = ${buildStatefulHigherOrderDefinitionInitExpression(
+          compositeDef?.def ?? iteratorDef?.def ?? nestedConditionalDef?.def ?? clockedIteratorDef?.def ?? conditionalDefinition.def,
+          paramExpressions,
+          compositeDefinitionsById,
+          iteratorDefinitionsByLookupKey,
+          conditionalDefinitionsById,
+          clockedIteratorDefinitionsById,
+        )}`,
+      );
+    };
+    if (isConditionalDefinition(conditionalDefinition.def)) {
+      addStateInitIfNeeded(conditionalDefinition.def.thenDefId, 'then');
+      addStateInitIfNeeded(conditionalDefinition.def.elseDefId, 'else');
+    } else {
+      conditionalDefinition.def.branchDefIds.forEach((branchDefId, index) =>
+        addStateInitIfNeeded(branchDefId, `branch${index}`),
+      );
+    }
+    initLines.push('    return state');
+
+    const tickLines: string[] = [
+      `def ${conditionalDefinition.functionName}_tick(state, tick${args.allArgs.length > 0 ? `, ${args.allArgs.join(', ')}` : ''}):`,
+      `    # Conditional helper: ${conditionalDefinition.def.id}`,
+    ];
+    if (isConditionalDefinition(conditionalDefinition.def)) {
+      const thenStateful =
+        compositeDefinitionsById.get(conditionalDefinition.def.thenDefId)?.stateful ||
+        iteratorDefinitionsByLookupKey.get(buildIteratorDefinitionLookupKey(conditionalDefinition.def.thenDefId))?.stateful ||
+        conditionalDefinitionsById.get(conditionalDefinition.def.thenDefId)?.stateful ||
+        clockedIteratorDefinitionsById.has(conditionalDefinition.def.thenDefId);
+      const elseStateful =
+        compositeDefinitionsById.get(conditionalDefinition.def.elseDefId)?.stateful ||
+        iteratorDefinitionsByLookupKey.get(buildIteratorDefinitionLookupKey(conditionalDefinition.def.elseDefId))?.stateful ||
+        conditionalDefinitionsById.get(conditionalDefinition.def.elseDefId)?.stateful ||
+        clockedIteratorDefinitionsById.has(conditionalDefinition.def.elseDefId);
+      tickLines.push(
+        `    select_bits = _expect_bits(${selectInputName}, ${JSON.stringify(conditionalDefinition.def.id)})`,
+        '    if len(select_bits) != 1:',
+        `        raise ValueError(${JSON.stringify(`Conditional "${conditionalDefinition.def.id}" select must be exactly one bit.`)})`,
+        '    if select_bits[0] == 1:',
+        `        return ${thenStateful ? buildStatefulBranchInvocation(conditionalDefinition.def.thenDefId, 'then') : buildBranchInvocation(conditionalDefinition.def.thenDefId, 'then_runtime')}`,
+        `    return ${elseStateful ? buildStatefulBranchInvocation(conditionalDefinition.def.elseDefId, 'else') : buildBranchInvocation(conditionalDefinition.def.elseDefId, 'else_runtime')}`,
+      );
+    } else {
+      const branchCount = conditionalDefinition.def.branchDefIds.length;
+      const requiredWidth = branchCount <= 2 ? 1 : branchCount <= 4 ? 2 : 3;
+      tickLines.push(
+        `    select_bits = _expect_bits(${selectInputName}, ${JSON.stringify(conditionalDefinition.def.id)})`,
+        `    if len(select_bits) != ${requiredWidth}:`,
+        `        raise ValueError(${JSON.stringify(`MultiConditional "${conditionalDefinition.def.id}" select must be ${requiredWidth} bit(s).`)})`,
+        '    branch_index = min(_bits_to_unsigned_number(select_bits), ' + String(branchCount - 1) + ')',
+      );
+      conditionalDefinition.def.branchDefIds.forEach((branchDefId, index) => {
+        const branchStateful =
+          compositeDefinitionsById.get(branchDefId)?.stateful ||
+          iteratorDefinitionsByLookupKey.get(buildIteratorDefinitionLookupKey(branchDefId))?.stateful ||
+          conditionalDefinitionsById.get(branchDefId)?.stateful ||
+          clockedIteratorDefinitionsById.has(branchDefId);
+        tickLines.push(
+          `${index === 0 ? '    if' : '    elif'} branch_index == ${index}:`,
+          `        return ${branchStateful ? buildStatefulBranchInvocation(branchDefId, `branch${index}`) : buildBranchInvocation(branchDefId, `branch${index}_runtime`)}`,
+        );
+      });
+      tickLines.push(`    raise ValueError(${JSON.stringify(`MultiConditional "${conditionalDefinition.def.id}" could not resolve selected branch.`)})`);
+    }
+
+    helperBlocks.push(initLines.join('\n'));
+    helperBlocks.push(tickLines.join('\n'));
+  }
+
+  return helperBlocks;
+}
+
+function buildClockedIteratorHelperDefinitions(
+  clockedIteratorDefinitions: ClockedIteratorExportDefinition[],
+  compositeDefinitionsById: Map<string, CompositeExportDefinition>,
+  iteratorDefinitionsByLookupKey: Map<string, IteratorExportDefinition>,
+  conditionalDefinitionsById: Map<string, ConditionalExportDefinition>,
+  clockedIteratorDefinitionsById: Map<string, ClockedIteratorExportDefinition>,
+) {
+  const helperBlocks: string[] = [];
+
+  for (const clockedIteratorDefinition of clockedIteratorDefinitions) {
+    const args = buildClockedIteratorFunctionArgumentList(clockedIteratorDefinition);
+    const inputName = clockedIteratorDefinition.inputArgNames.get('in');
+    const clockName = clockedIteratorDefinition.inputArgNames.get('clock');
+    if (!inputName || !clockName) {
+      throw new Error(`Python export requires clocked iterator "${clockedIteratorDefinition.def.id}" to expose "in" and "clock".`);
+    }
+    const paramExpressions = new Map<string, string>();
+    for (const paramKey of getDefinitionParamKeys(clockedIteratorDefinition.def)) {
+      const argName = clockedIteratorDefinition.paramArgNames.get(paramKey);
+      if (!argName) {
+        throw new Error(`Python export could not resolve clocked iterator param "${paramKey}".`);
+      }
+      paramExpressions.set(paramKey, argName);
+    }
+    const roundInputExpressions = new Map<string, string>([['in', 'state["accumulated"]']]);
+    const roundModuleInstance: ModuleInstance = {
+      id: 'round_runtime',
+      defId: clockedIteratorDefinition.roundDef.id,
+      params: {},
+    };
+
+    const tickLines: string[] = [
+      `def ${clockedIteratorDefinition.functionName}_init_state():`,
+      `    # Clocked iterator state init: ${clockedIteratorDefinition.def.id}`,
+      '    return {}',
+      '',
+      `def ${clockedIteratorDefinition.functionName}_tick(state, tick${args.allArgs.length > 0 ? `, ${args.allArgs.join(', ')}` : ''}):`,
+      `    # Clocked iterator helper: ${clockedIteratorDefinition.def.id}`,
+      '    if "current_step" not in state:',
+      `        state["current_step"] = 0`,
+      '        state["halted"] = False',
+      `        state["accumulated"] = ${inputName}[:] if isinstance(${inputName}, list) else ${inputName}`,
+      '    current_output = state["accumulated"][:] if isinstance(state["accumulated"], list) else state["accumulated"]',
+      '    result = {"out": current_output}',
+      `    if not _is_active_control_pulse(${clockName}):`,
+      '        return result',
+      `    if state["current_step"] >= ${clockedIteratorDefinition.def.roundCount}:`,
+    ];
+    if (clockedIteratorDefinition.def.endPolicy === 'wrap') {
+      tickLines.push(
+        `        state["current_step"] = 0`,
+        '        state["halted"] = False',
+        `        state["accumulated"] = ${inputName}[:] if isinstance(${inputName}, list) else ${inputName}`,
+      );
+    } else {
+      tickLines.push('        state["halted"] = True');
+    }
+    tickLines.push('        return result');
+    tickLines.push(
+      `    round_result = ${buildDefinitionInvocationExpression(
+        clockedIteratorDefinition.roundDef,
+        roundModuleInstance,
+        roundInputExpressions,
+        paramExpressions,
+        compositeDefinitionsById,
+        iteratorDefinitionsByLookupKey,
+        conditionalDefinitionsById,
+        clockedIteratorDefinitionsById,
+      )}`,
+      '    state["accumulated"] = round_result["out"][:] if isinstance(round_result["out"], list) else round_result["out"]',
+      '    state["current_step"] += 1',
+    );
+    if (clockedIteratorDefinition.def.endPolicy === 'halt') {
+      tickLines.push(`    state["halted"] = state["current_step"] >= ${clockedIteratorDefinition.def.roundCount}`);
+    } else {
+      tickLines.push('    state["halted"] = False');
+    }
+    tickLines.push('    return result');
     helperBlocks.push(tickLines.join('\n'));
   }
 
@@ -4223,6 +4962,7 @@ function collectIteratorExportDefinitions(
       ),
       sourceLabel: `definition:${def.id}`,
       definitionHelper: true,
+      iterationCountArgName: def.paramSchema.iterationCount ? 'param_iterationCount' : undefined,
     };
     definitionsByKey.set(lookupKey, iteratorDefinition);
     orderedDefinitions.push(iteratorDefinition);
@@ -4320,6 +5060,263 @@ function collectIteratorExportDefinitions(
   return orderedDefinitions;
 }
 
+function collectConditionalExportDefinitions(
+  project: Project,
+  registry: ModuleRegistry,
+): ConditionalExportDefinition[] {
+  const orderedDefinitions: ConditionalExportDefinition[] = [];
+  const definitionsById = new Map<string, ConditionalExportDefinition>();
+  const visitedCompositeDefs = new Set<string>();
+  const visitedIteratorDefs = new Set<string>();
+  const visitedConditionalDefs = new Set<string>();
+  const visitingConditionalDefs = new Set<string>();
+  const visitedClockedIteratorDefs = new Set<string>();
+
+  const registerConditionalDefinition = (definition: ConditionalDef | MultiConditionalDef) => {
+    if (definitionsById.has(definition.id)) {
+      return;
+    }
+
+    const exportDefinition: ConditionalExportDefinition = {
+      def: definition,
+      functionName: `conditional_${sanitizeIdentifierPart(definition.id)}`,
+      stateful: isConditionalDefinition(definition)
+        ? [definition.thenDefId, definition.elseDefId].some((branchDefId) => {
+            const branchDef = registry[branchDefId];
+            return branchDef ? definitionHasStatefulCandidate(branchDef) : false;
+          })
+        : definition.branchDefIds.some((branchDefId) => {
+            const branchDef = registry[branchDefId];
+            return branchDef ? definitionHasStatefulCandidate(branchDef) : false;
+          }),
+      inputArgNames: buildPythonNameMap(
+        definition.inputs.map((input) => input.name),
+        'input',
+      ),
+      paramArgNames: buildPythonNameMap(getDefinitionParamKeys(definition), 'param'),
+    };
+    definitionsById.set(definition.id, exportDefinition);
+    orderedDefinitions.push(exportDefinition);
+  };
+
+  const definitionHasStatefulCandidate = (definition: ModuleDefinition): boolean => {
+    if (isCompositeDefinition(definition)) {
+      return projectHasStatefulExportCandidate(definition.project, registry, new Set([definition.id]));
+    }
+    if (isIteratorDefinition(definition)) {
+      const roundDef = registry[definition.roundDefId];
+      return Boolean(roundDef && definitionHasStatefulCandidate(roundDef));
+    }
+    if (isConditionalDefinition(definition)) {
+      const thenDef = registry[definition.thenDefId];
+      const elseDef = registry[definition.elseDefId];
+      return Boolean(
+        (thenDef && definitionHasStatefulCandidate(thenDef)) ||
+          (elseDef && definitionHasStatefulCandidate(elseDef)),
+      );
+    }
+    if (isMultiConditionalDefinition(definition)) {
+      return definition.branchDefIds.some((branchDefId) => {
+        const branchDef = registry[branchDefId];
+        return Boolean(branchDef && definitionHasStatefulCandidate(branchDef));
+      });
+    }
+    if (isClockedIteratorDefinition(definition)) {
+      return true;
+    }
+    return SUPPORTED_STATEFUL_PYTHON_EXPORT_DEF_IDS.has(definition.id);
+  };
+
+  const visitDefinition = (definition: ModuleDefinition) => {
+    if (isCompositeDefinition(definition)) {
+      visitCompositeDefinition(definition);
+      return;
+    }
+    if (isIteratorDefinition(definition)) {
+      visitIteratorDefinition(definition);
+      return;
+    }
+    if (isConditionalDefinition(definition) || isMultiConditionalDefinition(definition)) {
+      visitConditionalDefinition(definition);
+      return;
+    }
+    if (isClockedIteratorDefinition(definition)) {
+      visitClockedIteratorDefinition(definition);
+    }
+  };
+
+  const visitIteratorDefinition = (iteratorDef: IteratorDef) => {
+    if (visitedIteratorDefs.has(iteratorDef.id)) {
+      return;
+    }
+    visitedIteratorDefs.add(iteratorDef.id);
+    const roundDef = registry[iteratorDef.roundDefId];
+    if (roundDef) {
+      visitDefinition(roundDef);
+    }
+  };
+
+  const visitClockedIteratorDefinition = (clockedIteratorDef: ClockedIteratorDef) => {
+    if (visitedClockedIteratorDefs.has(clockedIteratorDef.id)) {
+      return;
+    }
+    visitedClockedIteratorDefs.add(clockedIteratorDef.id);
+    const roundDef = registry[clockedIteratorDef.roundDefId];
+    if (roundDef) {
+      visitDefinition(roundDef);
+    }
+  };
+
+  const visitConditionalDefinition = (definition: ConditionalDef | MultiConditionalDef) => {
+    if (visitedConditionalDefs.has(definition.id)) {
+      return;
+    }
+    if (visitingConditionalDefs.has(definition.id)) {
+      throw new Error(`Python export encountered cyclic conditional definitions at "${definition.id}".`);
+    }
+    visitingConditionalDefs.add(definition.id);
+
+    const branchDefIds = isConditionalDefinition(definition)
+      ? [definition.thenDefId, definition.elseDefId]
+      : definition.branchDefIds;
+    for (const branchDefId of branchDefIds) {
+      const branchDef = registry[branchDefId];
+      if (branchDef) {
+        visitDefinition(branchDef);
+      }
+    }
+
+    registerConditionalDefinition(definition);
+    visitingConditionalDefs.delete(definition.id);
+    visitedConditionalDefs.add(definition.id);
+  };
+
+  const visitCompositeDefinition = (compositeDef: CompositeDef) => {
+    if (visitedCompositeDefs.has(compositeDef.id)) {
+      return;
+    }
+    visitedCompositeDefs.add(compositeDef.id);
+
+    for (const moduleInstance of compositeDef.project.modules) {
+      const def = registry[moduleInstance.defId];
+      if (def) {
+        visitDefinition(def);
+      }
+    }
+  };
+
+  for (const moduleInstance of project.modules) {
+    const def = registry[moduleInstance.defId];
+    if (def) {
+      visitDefinition(def);
+    }
+  }
+
+  return orderedDefinitions;
+}
+
+function collectClockedIteratorExportDefinitions(
+  project: Project,
+  registry: ModuleRegistry,
+): ClockedIteratorExportDefinition[] {
+  const orderedDefinitions: ClockedIteratorExportDefinition[] = [];
+  const definitionsById = new Map<string, ClockedIteratorExportDefinition>();
+  const visitedCompositeDefs = new Set<string>();
+  const visitedConditionalDefs = new Set<string>();
+  const visitingClockedIteratorDefs = new Set<string>();
+  const visitedClockedIteratorDefs = new Set<string>();
+
+  const registerClockedIteratorDefinition = (
+    clockedIteratorDef: ClockedIteratorDef,
+    roundDef: ModuleDefinition,
+  ) => {
+    if (definitionsById.has(clockedIteratorDef.id)) {
+      return;
+    }
+    const exportDefinition: ClockedIteratorExportDefinition = {
+      def: clockedIteratorDef,
+      roundDef,
+      functionName: `clocked_iterator_${sanitizeIdentifierPart(clockedIteratorDef.id)}`,
+      inputArgNames: buildPythonNameMap(
+        clockedIteratorDef.inputs.map((input) => input.name),
+        'input',
+      ),
+      paramArgNames: buildPythonNameMap(getDefinitionParamKeys(clockedIteratorDef), 'param'),
+    };
+    definitionsById.set(clockedIteratorDef.id, exportDefinition);
+    orderedDefinitions.push(exportDefinition);
+  };
+
+  const visitDefinition = (definition: ModuleDefinition) => {
+    if (isCompositeDefinition(definition)) {
+      visitCompositeDefinition(definition);
+      return;
+    }
+    if (isConditionalDefinition(definition) || isMultiConditionalDefinition(definition)) {
+      visitConditionalDefinition(definition);
+      return;
+    }
+    if (isClockedIteratorDefinition(definition)) {
+      visitClockedIteratorDefinition(definition);
+    }
+  };
+
+  const visitConditionalDefinition = (definition: ConditionalDef | MultiConditionalDef) => {
+    if (visitedConditionalDefs.has(definition.id)) {
+      return;
+    }
+    visitedConditionalDefs.add(definition.id);
+    const branchDefIds = isConditionalDefinition(definition)
+      ? [definition.thenDefId, definition.elseDefId]
+      : definition.branchDefIds;
+    for (const branchDefId of branchDefIds) {
+      const branchDef = registry[branchDefId];
+      if (branchDef) {
+        visitDefinition(branchDef);
+      }
+    }
+  };
+
+  const visitCompositeDefinition = (compositeDef: CompositeDef) => {
+    if (visitedCompositeDefs.has(compositeDef.id)) {
+      return;
+    }
+    visitedCompositeDefs.add(compositeDef.id);
+    for (const moduleInstance of compositeDef.project.modules) {
+      const def = registry[moduleInstance.defId];
+      if (def) {
+        visitDefinition(def);
+      }
+    }
+  };
+
+  const visitClockedIteratorDefinition = (clockedIteratorDef: ClockedIteratorDef) => {
+    if (visitedClockedIteratorDefs.has(clockedIteratorDef.id)) {
+      return;
+    }
+    if (visitingClockedIteratorDefs.has(clockedIteratorDef.id)) {
+      throw new Error(`Python export encountered cyclic clocked iterator definitions at "${clockedIteratorDef.id}".`);
+    }
+    visitingClockedIteratorDefs.add(clockedIteratorDef.id);
+    const roundDef = registry[clockedIteratorDef.roundDefId];
+    if (roundDef) {
+      visitDefinition(roundDef);
+      registerClockedIteratorDefinition(clockedIteratorDef, roundDef);
+    }
+    visitingClockedIteratorDefs.delete(clockedIteratorDef.id);
+    visitedClockedIteratorDefs.add(clockedIteratorDef.id);
+  };
+
+  for (const moduleInstance of project.modules) {
+    const def = registry[moduleInstance.defId];
+    if (def) {
+      visitDefinition(def);
+    }
+  }
+
+  return orderedDefinitions;
+}
+
 function buildIteratorFunctionArgumentList(
   iteratorDefinition: IteratorExportDefinition,
 ) {
@@ -4366,84 +5363,343 @@ function buildIteratorStateInitArguments(
   return [expressionContext.getParamExpression(moduleInstance, iteratorDefinition.def, 'iterationCount')];
 }
 
+function buildConditionalFunctionArgumentList(
+  conditionalDefinition: ConditionalExportDefinition,
+) {
+  const inputArgs = conditionalDefinition.def.inputs.map(
+    (input) =>
+      conditionalDefinition.inputArgNames.get(input.name) ?? sanitizeIdentifierPart(input.name),
+  );
+  const paramArgs = getDefinitionParamKeys(conditionalDefinition.def).map(
+    (paramKey) =>
+      conditionalDefinition.paramArgNames.get(paramKey) ?? sanitizeIdentifierPart(paramKey),
+  );
+
+  return {
+    inputArgs,
+    paramArgs,
+    allArgs: [...inputArgs, ...paramArgs],
+  };
+}
+
+function buildConditionalCallArguments(
+  conditionalDefinition: ConditionalExportDefinition,
+  expressionContext: PythonExpressionContext,
+  moduleInstance: ModuleInstance,
+) {
+  const args = conditionalDefinition.def.inputs.map((input) =>
+    expressionContext.getInputExpression(moduleInstance.id, input.name),
+  );
+
+  for (const paramKey of getDefinitionParamKeys(conditionalDefinition.def)) {
+    args.push(expressionContext.getParamExpression(moduleInstance, conditionalDefinition.def, paramKey));
+  }
+
+  return args;
+}
+
+function buildClockedIteratorFunctionArgumentList(
+  clockedIteratorDefinition: ClockedIteratorExportDefinition,
+) {
+  const inputArgs = clockedIteratorDefinition.def.inputs.map(
+    (input) =>
+      clockedIteratorDefinition.inputArgNames.get(input.name) ?? sanitizeIdentifierPart(input.name),
+  );
+  const paramArgs = getDefinitionParamKeys(clockedIteratorDefinition.def).map(
+    (paramKey) =>
+      clockedIteratorDefinition.paramArgNames.get(paramKey) ?? sanitizeIdentifierPart(paramKey),
+  );
+
+  return {
+    inputArgs,
+    paramArgs,
+    allArgs: [...inputArgs, ...paramArgs],
+  };
+}
+
+function buildClockedIteratorCallArguments(
+  clockedIteratorDefinition: ClockedIteratorExportDefinition,
+  expressionContext: PythonExpressionContext,
+  moduleInstance: ModuleInstance,
+) {
+  const args = clockedIteratorDefinition.def.inputs.map((input) =>
+    expressionContext.getInputExpression(moduleInstance.id, input.name),
+  );
+
+  for (const paramKey of getDefinitionParamKeys(clockedIteratorDefinition.def)) {
+    args.push(expressionContext.getParamExpression(moduleInstance, clockedIteratorDefinition.def, paramKey));
+  }
+
+  return args;
+}
+
+function buildDefinitionInvocationExpression(
+  definition: ModuleDefinition,
+  moduleInstance: ModuleInstance,
+  inputExpressionsByPort: Map<string, string>,
+  paramExpressionsByKey: Map<string, string>,
+  compositeDefinitionsById: Map<string, CompositeExportDefinition>,
+  iteratorDefinitionsByLookupKey: Map<string, IteratorExportDefinition>,
+  conditionalDefinitionsById: Map<string, ConditionalExportDefinition>,
+  clockedIteratorDefinitionsById: Map<string, ClockedIteratorExportDefinition>,
+) {
+  const getInputExpression = (portName: string) => {
+    const expression = inputExpressionsByPort.get(portName);
+    if (!expression) {
+      throw new Error(
+        `Python export could not resolve input "${portName}" for definition "${definition.id}".`,
+      );
+    }
+    return expression;
+  };
+  const getParamExpression = (key: string) =>
+    paramExpressionsByKey.get(key) ?? getDefaultParamExpression(moduleInstance, definition, key);
+
+  if (isCompositeDefinition(definition)) {
+    const compositeDefinition = compositeDefinitionsById.get(definition.id);
+    if (!compositeDefinition) {
+      throw new Error(`Python export could not resolve composite helper for "${definition.id}".`);
+    }
+    const args = definition.inputs.map((input) => getInputExpression(input.name));
+    for (const paramKey of getCompositeForwardedParamKeys(definition)) {
+      args.push(getParamExpression(paramKey));
+    }
+    return `${compositeDefinition.functionName}(${args.join(', ')})`;
+  }
+
+  if (isIteratorDefinition(definition)) {
+    const iteratorDefinition = iteratorDefinitionsByLookupKey.get(
+      buildIteratorDefinitionLookupKey(definition.id),
+    );
+    if (!iteratorDefinition) {
+      throw new Error(`Python export could not resolve iterator helper for "${definition.id}".`);
+    }
+    const args = definition.inputs.map((input) => getInputExpression(input.name));
+    if (iteratorDefinition.iterationCountArgName) {
+      args.push(getParamExpression('iterationCount'));
+    }
+    return `${iteratorDefinition.functionName}(${args.join(', ')})`;
+  }
+
+  if (isConditionalDefinition(definition) || isMultiConditionalDefinition(definition)) {
+    const conditionalDefinition = conditionalDefinitionsById.get(definition.id);
+    if (!conditionalDefinition) {
+      throw new Error(`Python export could not resolve conditional helper for "${definition.id}".`);
+    }
+    const args = definition.inputs.map((input) => getInputExpression(input.name));
+    for (const paramKey of getDefinitionParamKeys(definition)) {
+      args.push(getParamExpression(paramKey));
+    }
+    return `${conditionalDefinition.functionName}(${args.join(', ')})`;
+  }
+
+  if (isClockedIteratorDefinition(definition)) {
+    const clockedIteratorDefinition = clockedIteratorDefinitionsById.get(definition.id);
+    if (!clockedIteratorDefinition) {
+      throw new Error(`Python export could not resolve clocked iterator helper for "${definition.id}".`);
+    }
+    const args = definition.inputs.map((input) => getInputExpression(input.name));
+    for (const paramKey of getDefinitionParamKeys(definition)) {
+      args.push(getParamExpression(paramKey));
+    }
+    return `${clockedIteratorDefinition.functionName}_tick(state, tick${args.length > 0 ? `, ${args.join(', ')}` : ''})`;
+  }
+
+  const inputOverrides = new Map<string, string>();
+  for (const input of definition.inputs) {
+    inputOverrides.set(`${moduleInstance.id}:${input.name}`, getInputExpression(input.name));
+  }
+  const paramOverrides = new Map<string, string>();
+  for (const paramKey of getDefinitionParamKeys(definition)) {
+    paramOverrides.set(`${moduleInstance.id}:${paramKey}`, getParamExpression(paramKey));
+  }
+
+  const expressionContext = createPythonExpressionContext(
+    new Map<string, ConnectionEndpoint>(),
+    new Map<string, string>(),
+    inputOverrides,
+    paramOverrides,
+  );
+
+  return buildModuleExpression(moduleInstance, definition, expressionContext);
+}
+
+function buildStatefulHigherOrderDefinitionInitExpression(
+  definition: ModuleDefinition,
+  paramExpressionsByKey: Map<string, string>,
+  compositeDefinitionsById: Map<string, CompositeExportDefinition>,
+  iteratorDefinitionsByLookupKey: Map<string, IteratorExportDefinition>,
+  conditionalDefinitionsById: Map<string, ConditionalExportDefinition>,
+  clockedIteratorDefinitionsById: Map<string, ClockedIteratorExportDefinition>,
+) {
+  const getParamExpression = (key: string) => {
+    const expression = paramExpressionsByKey.get(key);
+    if (!expression) {
+      throw new Error(
+        `Python export could not resolve param "${key}" for definition "${definition.id}".`,
+      );
+    }
+    return expression;
+  };
+
+  if (isCompositeDefinition(definition)) {
+    const compositeDefinition = compositeDefinitionsById.get(definition.id);
+    if (!compositeDefinition?.stateful) {
+      throw new Error(`Python export does not need state init for stateless composite "${definition.id}".`);
+    }
+    const args = getCompositeForwardedParamKeys(definition).map((paramKey) => getParamExpression(paramKey));
+    return `${compositeDefinition.functionName}_init_state(${args.join(', ')})`;
+  }
+
+  if (isIteratorDefinition(definition)) {
+    const iteratorDefinition = iteratorDefinitionsByLookupKey.get(
+      buildIteratorDefinitionLookupKey(definition.id),
+    );
+    if (!iteratorDefinition?.stateful) {
+      throw new Error(`Python export does not need state init for stateless iterator "${definition.id}".`);
+    }
+    const args = iteratorDefinition.iterationCountArgName
+      ? [getParamExpression('iterationCount')]
+      : [];
+    return `${iteratorDefinition.functionName}_init_state(${args.join(', ')})`;
+  }
+
+  if (isConditionalDefinition(definition) || isMultiConditionalDefinition(definition)) {
+    const conditionalDefinition = conditionalDefinitionsById.get(definition.id);
+    if (!conditionalDefinition?.stateful) {
+      throw new Error(`Python export does not need state init for stateless conditional "${definition.id}".`);
+    }
+    const args = getDefinitionParamKeys(definition).map((paramKey) => getParamExpression(paramKey));
+    return `${conditionalDefinition.functionName}_init_state(${args.join(', ')})`;
+  }
+
+  if (isClockedIteratorDefinition(definition)) {
+    const clockedIteratorDefinition = clockedIteratorDefinitionsById.get(definition.id);
+    if (!clockedIteratorDefinition) {
+      throw new Error(`Python export could not resolve clocked iterator helper for "${definition.id}".`);
+    }
+    return `${clockedIteratorDefinition.functionName}_init_state()`;
+  }
+
+  throw new Error(`Python export does not support higher-order state init for "${definition.id}".`);
+}
+
+function buildStatefulHigherOrderDefinitionInvocationExpression(
+  definition: ModuleDefinition,
+  stateExpression: string,
+  tickExpression: string,
+  inputExpressionsByPort: Map<string, string>,
+  paramExpressionsByKey: Map<string, string>,
+  compositeDefinitionsById: Map<string, CompositeExportDefinition>,
+  iteratorDefinitionsByLookupKey: Map<string, IteratorExportDefinition>,
+  conditionalDefinitionsById: Map<string, ConditionalExportDefinition>,
+  clockedIteratorDefinitionsById: Map<string, ClockedIteratorExportDefinition>,
+) {
+  const getInputExpression = (portName: string) => {
+    const expression = inputExpressionsByPort.get(portName);
+    if (!expression) {
+      throw new Error(
+        `Python export could not resolve input "${portName}" for definition "${definition.id}".`,
+      );
+    }
+    return expression;
+  };
+  const getParamExpression = (key: string) => {
+    const expression = paramExpressionsByKey.get(key);
+    if (!expression) {
+      throw new Error(
+        `Python export could not resolve param "${key}" for definition "${definition.id}".`,
+      );
+    }
+    return expression;
+  };
+
+  if (isCompositeDefinition(definition)) {
+    const compositeDefinition = compositeDefinitionsById.get(definition.id);
+    if (!compositeDefinition?.stateful) {
+      throw new Error(`Python export does not need stateful invocation for stateless composite "${definition.id}".`);
+    }
+    const args = definition.inputs.map((input) => getInputExpression(input.name));
+    for (const paramKey of getCompositeForwardedParamKeys(definition)) {
+      args.push(getParamExpression(paramKey));
+    }
+    return `${compositeDefinition.functionName}_tick(${stateExpression}, ${tickExpression}${args.length > 0 ? `, ${args.join(', ')}` : ''})`;
+  }
+
+  if (isIteratorDefinition(definition)) {
+    const iteratorDefinition = iteratorDefinitionsByLookupKey.get(
+      buildIteratorDefinitionLookupKey(definition.id),
+    );
+    if (!iteratorDefinition?.stateful) {
+      throw new Error(`Python export does not need stateful invocation for stateless iterator "${definition.id}".`);
+    }
+    const args = definition.inputs.map((input) => getInputExpression(input.name));
+    if (iteratorDefinition.iterationCountArgName) {
+      args.push(getParamExpression('iterationCount'));
+    }
+    return `${iteratorDefinition.functionName}_tick(${stateExpression}, ${tickExpression}${args.length > 0 ? `, ${args.join(', ')}` : ''})`;
+  }
+
+  if (isConditionalDefinition(definition) || isMultiConditionalDefinition(definition)) {
+    const conditionalDefinition = conditionalDefinitionsById.get(definition.id);
+    if (!conditionalDefinition?.stateful) {
+      throw new Error(`Python export does not need stateful invocation for stateless conditional "${definition.id}".`);
+    }
+    const args = definition.inputs.map((input) => getInputExpression(input.name));
+    for (const paramKey of getDefinitionParamKeys(definition)) {
+      args.push(getParamExpression(paramKey));
+    }
+    return `${conditionalDefinition.functionName}_tick(${stateExpression}, ${tickExpression}${args.length > 0 ? `, ${args.join(', ')}` : ''})`;
+  }
+
+  if (isClockedIteratorDefinition(definition)) {
+    const clockedIteratorDefinition = clockedIteratorDefinitionsById.get(definition.id);
+    if (!clockedIteratorDefinition) {
+      throw new Error(`Python export could not resolve clocked iterator helper for "${definition.id}".`);
+    }
+    const args = definition.inputs.map((input) => getInputExpression(input.name));
+    for (const paramKey of getDefinitionParamKeys(definition)) {
+      args.push(getParamExpression(paramKey));
+    }
+    return `${clockedIteratorDefinition.functionName}_tick(${stateExpression}, ${tickExpression}${args.length > 0 ? `, ${args.join(', ')}` : ''})`;
+  }
+
+  throw new Error(`Python export does not support stateful invocation for "${definition.id}".`);
+}
+
 function buildIteratorRoundExpression(
-  iteratorDefinition: IteratorExportDefinition,
   roundDef: ModuleDefinition,
   roundModuleId: string,
   roundInputExpression: string,
   roundKeyExpression: string | null,
   compositeDefinitionsById: Map<string, CompositeExportDefinition>,
   iteratorDefinitionsByLookupKey: Map<string, IteratorExportDefinition>,
+  conditionalDefinitionsById: Map<string, ConditionalExportDefinition>,
+  clockedIteratorDefinitionsById: Map<string, ClockedIteratorExportDefinition>,
 ) {
-  if (isCompositeDefinition(roundDef)) {
-    const compositeDefinition = compositeDefinitionsById.get(roundDef.id);
-    if (!compositeDefinition) {
-      throw new Error(`Python export could not resolve composite round helper for "${roundDef.id}".`);
-    }
-
-    const args = roundDef.inputs.map((input) => {
-      if (input.name === 'in') {
-        return roundInputExpression;
-      }
-      if (input.name === 'key') {
-        if (!roundKeyExpression) {
-          throw new Error(`Python export could not resolve keyed iterator input for "${iteratorDefinition.def.id}".`);
-        }
-        return roundKeyExpression;
-      }
-      throw new Error(`Python export does not support iterator round input "${input.name}" for "${iteratorDefinition.def.id}".`);
-    });
-
-    for (const forwardedParamKey of getCompositeForwardedParamKeys(roundDef)) {
-      args.push(
-        getDefaultParamExpression(
-          { id: roundModuleId, defId: roundDef.id, params: {} },
-          roundDef,
-          forwardedParamKey,
-        ),
-      );
-    }
-
-    return `${compositeDefinition.functionName}(${args.join(', ')})`;
-  }
-
-  if (isIteratorDefinition(roundDef)) {
-    const nestedIteratorDefinition = iteratorDefinitionsByLookupKey.get(
-      buildIteratorDefinitionLookupKey(roundDef.id),
-    );
-    if (!nestedIteratorDefinition) {
-      throw new Error(`Python export could not resolve nested iterator definition helper for "${roundDef.id}".`);
-    }
-    const args = buildIteratorRoundCallArguments(
-      roundDef,
-      iteratorDefinition.def.id,
-      roundInputExpression,
-      roundKeyExpression,
-    );
-    return `${nestedIteratorDefinition.functionName}(${args.join(', ')})`;
-  }
-
-  const roundInputOverrides = new Map<string, string>([[`${roundModuleId}:in`, roundInputExpression]]);
+  const inputExpressionsByPort = new Map<string, string>([['in', roundInputExpression]]);
   if (roundKeyExpression) {
-    roundInputOverrides.set(`${roundModuleId}:key`, roundKeyExpression);
+    inputExpressionsByPort.set('key', roundKeyExpression);
   }
+  const roundModuleInstance: ModuleInstance = { id: roundModuleId, defId: roundDef.id, params: {} };
 
-  const roundExpressionContext = createPythonExpressionContext(
-    new Map<string, ConnectionEndpoint>(),
-    new Map<string, string>(),
-    roundInputOverrides,
-  );
-
-  return buildModuleExpression(
-    { id: roundModuleId, defId: roundDef.id, params: {} },
+  return buildDefinitionInvocationExpression(
     roundDef,
-    roundExpressionContext,
+    roundModuleInstance,
+    inputExpressionsByPort,
+    new Map<string, string>(),
+    compositeDefinitionsById,
+    iteratorDefinitionsByLookupKey,
+    conditionalDefinitionsById,
+    clockedIteratorDefinitionsById,
   );
 }
 
 function buildIteratorHelperDefinitions(
   iteratorDefinitions: IteratorExportDefinition[],
   compositeDefinitionsById: Map<string, CompositeExportDefinition>,
+  conditionalDefinitionsById: Map<string, ConditionalExportDefinition>,
+  clockedIteratorDefinitionsById: Map<string, ClockedIteratorExportDefinition>,
 ) {
   const helperBlocks: string[] = [];
   const iteratorDefinitionsByLookupKey = new Map(
@@ -4490,13 +5746,14 @@ function buildIteratorHelperDefinitions(
         bodyLines.push(
           `        # Round ${'${round_index + 1}'}: ${iteratorDefinition.def.roundDefId}`.replace("${'${round_index + 1}'}", '{round_index + 1}'),
           `        round_result = ${buildIteratorRoundExpression(
-            iteratorDefinition,
             roundDef,
             'round-runtime',
             'previous_round',
             roundKeyExpression,
             compositeDefinitionsById,
             iteratorDefinitionsByLookupKey,
+            conditionalDefinitionsById,
+            clockedIteratorDefinitionsById,
           )}`,
           '        previous_round = round_result["out"]',
           '    return {"out": previous_round}',
@@ -4536,8 +5793,17 @@ function buildIteratorHelperDefinitions(
         if (!nestedIteratorDefinition) {
           throw new Error(`Python export could not resolve nested iterator definition helper for "${roundDef.id}".`);
         }
+        const nestedInitArgs = nestedIteratorDefinition.iterationCountArgName
+          ? [
+              getDefaultParamExpression(
+                { id: 'round-runtime', defId: roundDef.id, params: {} },
+                roundDef,
+                'iterationCount',
+              ),
+            ]
+          : [];
         initLines.push(
-          `        state.append(${nestedIteratorDefinition.functionName}_init_state())`,
+          `        state.append(${nestedIteratorDefinition.functionName}_init_state(${nestedInitArgs.join(', ')}))`,
         );
       } else if (roundDef.id === 'Rotor') {
         initLines.push(
@@ -4611,6 +5877,15 @@ function buildIteratorHelperDefinitions(
           'previous_round',
           dynamicRoundKeyExpression,
         );
+        if (nestedIteratorDefinition.iterationCountArgName) {
+          roundArgs.push(
+            getDefaultParamExpression(
+              { id: 'round-runtime', defId: roundDef.id, params: {} },
+              roundDef,
+              'iterationCount',
+            ),
+          );
+        }
         tickLines.push(
           `        # Round {round_index + 1}: ${iteratorDefinition.def.roundDefId}`,
           `        round_result = ${nestedIteratorDefinition.functionName}_tick(state[round_index], tick${roundArgs.length > 0 ? `, ${roundArgs.join(', ')}` : ''})`,
@@ -4661,13 +5936,14 @@ function buildIteratorHelperDefinitions(
         bodyLines.push(
           `    # Round ${roundNumber}: ${iteratorDefinition.def.roundDefId}`,
           `    ${roundVariableName} = ${buildIteratorRoundExpression(
-            iteratorDefinition,
             roundDef,
             roundModuleId,
             previousRoundExpression,
             roundKeyExpression,
             compositeDefinitionsById,
             iteratorDefinitionsByLookupKey,
+            conditionalDefinitionsById,
+            clockedIteratorDefinitionsById,
           )}`,
         );
         previousRoundExpression = `${roundVariableName}["out"]`;
@@ -4717,8 +5993,17 @@ function buildIteratorHelperDefinitions(
         if (!nestedIteratorDefinition) {
           throw new Error(`Python export could not resolve nested iterator definition helper for "${roundDef.id}".`);
         }
+        const nestedInitArgs = nestedIteratorDefinition.iterationCountArgName
+          ? [
+              getDefaultParamExpression(
+                { id: roundModuleId, defId: roundDef.id, params: {} },
+                roundDef,
+                'iterationCount',
+              ),
+            ]
+          : [];
         initLines.push(
-          `    state[${JSON.stringify(roundStateKey)}] = ${nestedIteratorDefinition.functionName}_init_state()`,
+          `    state[${JSON.stringify(roundStateKey)}] = ${nestedIteratorDefinition.functionName}_init_state(${nestedInitArgs.join(', ')})`,
         );
         continue;
       }
@@ -4791,6 +6076,15 @@ function buildIteratorHelperDefinitions(
           previousRoundExpression,
           roundKeyExpression,
         );
+        if (nestedIteratorDefinition.iterationCountArgName) {
+          roundArgs.push(
+            getDefaultParamExpression(
+              { id: `round-${roundNumber}`, defId: roundDef.id, params: {} },
+              roundDef,
+              'iterationCount',
+            ),
+          );
+        }
         tickLines.push(
           `    # Round ${roundNumber}: ${iteratorDefinition.def.roundDefId}`,
           `    ${roundVariableName} = ${nestedIteratorDefinition.functionName}_tick(state[${JSON.stringify(roundStateKey)}], tick${roundArgs.length > 0 ? `, ${roundArgs.join(', ')}` : ''})`,
@@ -4892,6 +6186,14 @@ export function generatePythonExport(project: Project, registry: ModuleRegistry)
   const iteratorDefinitionsByLookupKey = new Map(
     iteratorDefinitions.map((definition) => [definition.lookupKey, definition]),
   );
+  const conditionalDefinitions = collectConditionalExportDefinitions(project, registry);
+  const conditionalDefinitionsById = new Map(
+    conditionalDefinitions.map((definition) => [definition.def.id, definition]),
+  );
+  const clockedIteratorDefinitions = collectClockedIteratorExportDefinitions(project, registry);
+  const clockedIteratorDefinitionsById = new Map(
+    clockedIteratorDefinitions.map((definition) => [definition.def.id, definition]),
+  );
   const topLevelIteratorDefinitions = iteratorDefinitions.filter(
     (definition) => !definition.ownerCompositeDefId,
   );
@@ -4899,9 +6201,39 @@ export function generatePythonExport(project: Project, registry: ModuleRegistry)
     (definition) => Boolean(definition.ownerCompositeDefId),
   );
   const helperBlocks = [
-    ...buildIteratorHelperDefinitions(nestedIteratorDefinitions, compositeDefinitionsById),
-    ...buildCompositeHelperDefinitions(compositeDefinitions, registry, iteratorDefinitionsByLookupKey),
-    ...buildIteratorHelperDefinitions(topLevelIteratorDefinitions, compositeDefinitionsById),
+    ...buildIteratorHelperDefinitions(
+      nestedIteratorDefinitions,
+      compositeDefinitionsById,
+      conditionalDefinitionsById,
+      clockedIteratorDefinitionsById,
+    ),
+    ...buildCompositeHelperDefinitions(
+      compositeDefinitions,
+      registry,
+      iteratorDefinitionsByLookupKey,
+      conditionalDefinitionsById,
+      clockedIteratorDefinitionsById,
+    ),
+    ...buildConditionalHelperDefinitions(
+      conditionalDefinitions,
+      registry,
+      compositeDefinitionsById,
+      iteratorDefinitionsByLookupKey,
+      clockedIteratorDefinitionsById,
+    ),
+    ...buildClockedIteratorHelperDefinitions(
+      clockedIteratorDefinitions,
+      compositeDefinitionsById,
+      iteratorDefinitionsByLookupKey,
+      conditionalDefinitionsById,
+      clockedIteratorDefinitionsById,
+    ),
+    ...buildIteratorHelperDefinitions(
+      topLevelIteratorDefinitions,
+      compositeDefinitionsById,
+      conditionalDefinitionsById,
+      clockedIteratorDefinitionsById,
+    ),
   ];
   const hasStatefulModules = projectHasStatefulExportCandidate(project, registry);
 
@@ -4911,6 +6243,8 @@ export function generatePythonExport(project: Project, registry: ModuleRegistry)
       registry,
       compositeDefinitionsById,
       iteratorDefinitionsByLookupKey,
+      conditionalDefinitionsById,
+      clockedIteratorDefinitionsById,
       helperBlocks,
     );
   }
@@ -4996,6 +6330,40 @@ export function generatePythonExport(project: Project, registry: ModuleRegistry)
       continue;
     }
 
+    if (isConditionalDefinition(def) || isMultiConditionalDefinition(def)) {
+      const conditionalDefinition = conditionalDefinitionsById.get(def.id);
+      if (!conditionalDefinition) {
+        throw new Error(`Python export could not resolve conditional helper for "${def.id}".`);
+      }
+      const callArguments = buildConditionalCallArguments(
+        conditionalDefinition,
+        expressionContext,
+        moduleInstance,
+      );
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+      bodyLines.push(
+        `    ${variableName} = ${conditionalDefinition.functionName}(${callArguments.join(', ')})`,
+      );
+      continue;
+    }
+
+    if (isClockedIteratorDefinition(def)) {
+      const clockedIteratorDefinition = clockedIteratorDefinitionsById.get(def.id);
+      if (!clockedIteratorDefinition) {
+        throw new Error(`Python export could not resolve clocked iterator helper for "${def.id}".`);
+      }
+      const callArguments = buildClockedIteratorCallArguments(
+        clockedIteratorDefinition,
+        expressionContext,
+        moduleInstance,
+      );
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
+      bodyLines.push(
+        `    ${variableName} = ${clockedIteratorDefinition.functionName}(${callArguments.join(', ')})`,
+      );
+      continue;
+    }
+
     bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    '));
     bodyLines.push(
       `    ${variableName} = ${buildModuleExpression(moduleInstance, def, expressionContext)}`,
@@ -5066,6 +6434,8 @@ function generateStatefulPythonExport(
   registry: ModuleRegistry,
   compositeDefinitionsById: Map<string, CompositeExportDefinition>,
   iteratorDefinitionsByLookupKey: Map<string, IteratorExportDefinition>,
+  conditionalDefinitionsById: Map<string, ConditionalExportDefinition>,
+  clockedIteratorDefinitionsById: Map<string, ClockedIteratorExportDefinition>,
   helperBlocks: string[],
 ) {
   const tickCount = derivePythonExportTickCount(project, registry);
@@ -5146,6 +6516,38 @@ function generateStatefulPythonExport(
       bodyLines.push(
         buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
         `    ${variableName}_state = ${iteratorDefinition.functionName}_init_state(${buildIteratorStateInitArguments(iteratorDefinition, expressionContext).join(', ')})`,
+      );
+      continue;
+    }
+
+    if (isConditionalDefinition(def) || isMultiConditionalDefinition(def)) {
+      const conditionalDefinition = conditionalDefinitionsById.get(def.id);
+      if (!conditionalDefinition || !conditionalDefinition.stateful) {
+        continue;
+      }
+      const variableName = variablesByModuleId.get(moduleInstance.id);
+      if (!variableName) {
+        throw new Error(`Python export could not resolve a variable for "${moduleInstance.id}".`);
+      }
+      const paramExpressions = new Map<string, string>();
+      for (const paramKey of getDefinitionParamKeys(def)) {
+        paramExpressions.set(paramKey, expressionContext.getParamExpression(moduleInstance, def, paramKey));
+      }
+      bodyLines.push(
+        buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+        `    ${variableName}_state = ${buildStatefulHigherOrderDefinitionInitExpression(def, paramExpressions, compositeDefinitionsById, iteratorDefinitionsByLookupKey, conditionalDefinitionsById, clockedIteratorDefinitionsById)}`,
+      );
+      continue;
+    }
+
+    if (isClockedIteratorDefinition(def)) {
+      const variableName = variablesByModuleId.get(moduleInstance.id);
+      if (!variableName) {
+        throw new Error(`Python export could not resolve a variable for "${moduleInstance.id}".`);
+      }
+      bodyLines.push(
+        buildGeneratedModuleComment(moduleInstance, def, '    ', 'State init'),
+        `    ${variableName}_state = ${buildStatefulHigherOrderDefinitionInitExpression(def, new Map<string, string>(), compositeDefinitionsById, iteratorDefinitionsByLookupKey, conditionalDefinitionsById, clockedIteratorDefinitionsById)}`,
       );
       continue;
     }
@@ -5330,6 +6732,48 @@ function generateStatefulPythonExport(
       continue;
     }
 
+    if (isConditionalDefinition(def) || isMultiConditionalDefinition(def)) {
+      const conditionalDefinition = conditionalDefinitionsById.get(def.id);
+      if (!conditionalDefinition) {
+        throw new Error(`Python export could not resolve conditional helper for "${def.id}".`);
+      }
+      const inputExpressions = new Map<string, string>();
+      for (const input of def.inputs) {
+        inputExpressions.set(input.name, expressionContext.getInputExpression(moduleId, input.name));
+      }
+      const paramExpressions = new Map<string, string>();
+      for (const paramKey of getDefinitionParamKeys(def)) {
+        paramExpressions.set(paramKey, expressionContext.getParamExpression(moduleInstance, def, paramKey));
+      }
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
+      if (conditionalDefinition.stateful) {
+        bodyLines.push(
+          `        ${variableName} = ${buildStatefulHigherOrderDefinitionInvocationExpression(def, `${variableName}_state`, 'tick', inputExpressions, paramExpressions, compositeDefinitionsById, iteratorDefinitionsByLookupKey, conditionalDefinitionsById, clockedIteratorDefinitionsById)}`,
+        );
+      } else {
+        bodyLines.push(
+          `        ${variableName} = ${buildDefinitionInvocationExpression(def, moduleInstance, inputExpressions, paramExpressions, compositeDefinitionsById, iteratorDefinitionsByLookupKey, conditionalDefinitionsById, clockedIteratorDefinitionsById)}`,
+        );
+      }
+      continue;
+    }
+
+    if (isClockedIteratorDefinition(def)) {
+      const inputExpressions = new Map<string, string>();
+      for (const input of def.inputs) {
+        inputExpressions.set(input.name, expressionContext.getInputExpression(moduleId, input.name));
+      }
+      const paramExpressions = new Map<string, string>();
+      for (const paramKey of getDefinitionParamKeys(def)) {
+        paramExpressions.set(paramKey, expressionContext.getParamExpression(moduleInstance, def, paramKey));
+      }
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
+      bodyLines.push(
+        `        ${variableName} = ${buildStatefulHigherOrderDefinitionInvocationExpression(def, `${variableName}_state`, 'tick', inputExpressions, paramExpressions, compositeDefinitionsById, iteratorDefinitionsByLookupKey, conditionalDefinitionsById, clockedIteratorDefinitionsById)}`,
+      );
+      continue;
+    }
+
     if (def.id === 'Clock') {
       bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
       bodyLines.push(
@@ -5398,10 +6842,26 @@ function generateStatefulPythonExport(
       continue;
     }
 
+    if (def.id === 'AsciiSource') {
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
+      bodyLines.push(
+        `        ${variableName} = ascii_source_tick(${expressionContext.getParamExpression(moduleInstance, def, 'value')}, tick)`,
+      );
+      continue;
+    }
+
     if (def.id === 'BaudotSource') {
       bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
       bodyLines.push(
         `        ${variableName} = baudot_source_tick(${expressionContext.getParamExpression(moduleInstance, def, 'value')}, tick)`,
+      );
+      continue;
+    }
+
+    if (def.id === 'HexSource') {
+      bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        '));
+      bodyLines.push(
+        `        ${variableName} = hex_source_tick(${expressionContext.getParamExpression(moduleInstance, def, 'value')}, tick)`,
       );
       continue;
     }
