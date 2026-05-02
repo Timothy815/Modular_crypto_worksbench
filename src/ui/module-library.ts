@@ -217,6 +217,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when a bit-domain machine should end as bits instead of converting back into symbols.',
     searchTerms: ['bit output', 'output', 'sink', 'bits', 'final'],
   },
+  IntegerOutput: {
+    sectionId: 'inputs-outputs',
+    sortOrder: 115,
+    purpose: 'Collects the final integer-domain value at the end of a graph.',
+    detail: 'Use this when a graph should end as an explicitly visible integer rather than pretending the result is just another bitstream or text value.',
+    searchTerms: ['integer output', 'output', 'sink', 'integer', 'number', 'decimal', 'final'],
+  },
   Rotor: {
     sectionId: 'symbol-domain',
     sortOrder: 10,
@@ -686,12 +693,26 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when a bit-domain machine should end as hex so students can compare byte-oriented results directly.',
     searchTerms: ['bridge', 'hex', 'encode', 'bits', 'byte', 'output'],
   },
+  BitsToInteger: {
+    sectionId: 'bridges',
+    sortOrder: 52,
+    purpose: 'Converts one visible bit word into one exact integer-domain value.',
+    detail: 'Use this when a bit-authored value should become an honest integer signal instead of hiding the representation change inside arithmetic.',
+    searchTerms: ['bridge', 'bits', 'integer', 'decimal', 'number', 'exact'],
+  },
   BitsToHexDigit: {
     sectionId: 'bridges',
     sortOrder: 55,
     purpose: 'Converts one 4-bit calculation word into one uppercase hex digit.',
     detail: 'Use this when a ticked nibble-scale result should become one collected hex digit instead of a whole hex string at once.',
     searchTerms: ['bridge', 'bits', 'hex', 'digit', 'nibble', 'encode', 'tick'],
+  },
+  IntegerToBits: {
+    sectionId: 'bridges',
+    sortOrder: 57,
+    purpose: 'Converts one exact integer-domain value into a fixed-width bit word.',
+    detail: 'Use this when an integer-domain value should re-enter the bit domain explicitly. The selected width must fit the integer exactly.',
+    searchTerms: ['bridge', 'integer', 'bits', 'decimal', 'number', 'width', 'exact'],
   },
   HexToAscii: {
     sectionId: 'bridges',

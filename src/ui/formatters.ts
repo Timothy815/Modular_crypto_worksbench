@@ -13,7 +13,9 @@ export function formatSignal(signal: Signal | undefined): string {
 
   return signal.type === 'symbol'
     ? signal.value
-    : `[${signal.value.join(', ')}]`;
+    : signal.type === 'bits'
+      ? `[${signal.value.join(', ')}]`
+      : signal.value;
 }
 
 export function formatParamValue(value: unknown, field: ParamFieldDef): string {

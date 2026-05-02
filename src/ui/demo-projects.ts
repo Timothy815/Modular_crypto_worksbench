@@ -691,6 +691,37 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'integer-round-trip',
+    name: 'Integer Round Trip',
+    group: 'Number Theory',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 220,
+    summary: 'A visible bit word becomes an exact integer-domain value, then re-enters the bit domain at an explicit width.',
+    pipeline: 'BitSource -> BitsToInteger -> IntegerOutput, plus IntegerToBits(width=8) -> BitOutput',
+    project: {
+      modules: [
+        { id: 'bits', defId: 'BitSource', params: { stream: [1, 0, 1, 0, 0, 1, 1, 0] } },
+        { id: 'to-integer', defId: 'BitsToInteger', params: {} },
+        { id: 'integer-out', defId: 'IntegerOutput', params: {} },
+        { id: 'to-bits', defId: 'IntegerToBits', params: { width: 8 } },
+        { id: 'bits-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'bits', port: 'out' }, to: { moduleId: 'to-integer', port: 'in' } },
+        { from: { moduleId: 'to-integer', port: 'out' }, to: { moduleId: 'integer-out', port: 'in' } },
+        { from: { moduleId: 'to-integer', port: 'out' }, to: { moduleId: 'to-bits', port: 'in' } },
+        { from: { moduleId: 'to-bits', port: 'out' }, to: { moduleId: 'bits-out', port: 'in' } },
+      ],
+    },
+    layout: {
+      bits: { x: 72, y: 188 },
+      'to-integer': { x: 340, y: 188 },
+      'integer-out': { x: 612, y: 80 },
+      'to-bits': { x: 612, y: 292 },
+      'bits-out': { x: 884, y: 292 },
+    },
+  },
+  {
     id: 'toy-rsa',
     name: 'Toy RSA',
     group: 'Number Theory',

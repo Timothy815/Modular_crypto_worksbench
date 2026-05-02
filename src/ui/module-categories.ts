@@ -62,6 +62,8 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   SBox: 'operator',
   AsciiSequenceToBits: 'bridge',
   AsciiCharToBits: 'bridge',
+  BitsToInteger: 'bridge',
+  IntegerToBits: 'bridge',
   SymbolToBits: 'bridge',
   BitsToAscii: 'bridge',
   BitsToAsciiChar: 'bridge',
@@ -81,6 +83,7 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   HexOutput: 'sink',
   BaudotOutput: 'sink',
   BitOutput: 'sink',
+  IntegerOutput: 'sink',
 };
 
 export function getModuleCategory(definitionOrDefId: ModuleDefinition | string): ModuleCategory {

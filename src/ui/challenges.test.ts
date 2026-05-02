@@ -302,7 +302,11 @@ describe('evaluateChallengeAttempt', () => {
       }
 
       const digestValue =
-        terminalSignal.type === 'symbol' ? terminalSignal.value : formatBitsAsHex(terminalSignal.value);
+        terminalSignal.type === 'symbol'
+          ? terminalSignal.value
+          : terminalSignal.type === 'bits'
+            ? formatBitsAsHex(terminalSignal.value)
+            : terminalSignal.value;
 
       seen.add(digestValue);
       if (previousDigest === digestValue) {

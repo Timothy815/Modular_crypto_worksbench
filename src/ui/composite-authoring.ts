@@ -4,7 +4,7 @@ import {
   type CompositeLibraryEntry,
   type CompositePortBinding,
 } from '../engine/composites';
-import type { Connection, ModuleParams, ModuleRegistry, Project } from '../engine/types';
+import type { Connection, ModuleParams, ModuleRegistry, Project, SignalType } from '../engine/types';
 import { validateCompositeDef } from '../engine/validation';
 
 interface CreateCompositeFromSelectionArgs {
@@ -43,8 +43,8 @@ export interface CompositeSelectionPreview {
   ok: boolean;
   moduleCount: number;
   internalConnectionCount: number;
-  inputs: Array<{ name: string; type: 'symbol' | 'bits' }>;
-  outputs: Array<{ name: string; type: 'symbol' | 'bits' }>;
+  inputs: Array<{ name: string; type: SignalType }>;
+  outputs: Array<{ name: string; type: SignalType }>;
   inputCandidates: CompositeBoundaryPortPreview[];
   outputCandidates: CompositeBoundaryPortPreview[];
   error?: string;
@@ -53,7 +53,7 @@ export interface CompositeSelectionPreview {
 export interface CompositeBoundaryPortPreview {
   key: string;
   name: string;
-  type: 'symbol' | 'bits';
+  type: SignalType;
   internalModuleId: string;
   internalPort: string;
   included: boolean;
@@ -451,7 +451,7 @@ function buildBoundaryPorts(
   excludedBoundaryPortKeys: Set<string>,
   portNameOverrides: Record<string, string> = {},
 ) {
-  const ports: Array<{ name: string; type: 'symbol' | 'bits' }> = [];
+  const ports: Array<{ name: string; type: SignalType }> = [];
   const usedNames = new Set<string>();
   const seenInternalPorts = new Set<string>();
 
@@ -556,8 +556,8 @@ function deriveCompositeSelection({
   internalConnections?: Project['connections'];
   inputBindings: CompositePortBinding[];
   outputBindings: CompositePortBinding[];
-  inputs: Array<{ name: string; type: 'symbol' | 'bits' }>;
-  outputs: Array<{ name: string; type: 'symbol' | 'bits' }>;
+  inputs: Array<{ name: string; type: SignalType }>;
+  outputs: Array<{ name: string; type: SignalType }>;
   inputCandidates: CompositeBoundaryPortPreview[];
   outputCandidates: CompositeBoundaryPortPreview[];
   error?: string;

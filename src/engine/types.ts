@@ -1,6 +1,6 @@
 import type { ClockedIteratorDef, CompositeDef, ConditionalDef, IteratorDef, MultiConditionalDef } from './composites';
 
-export type SignalType = 'symbol' | 'bits';
+export type SignalType = 'symbol' | 'bits' | 'integer';
 export type PortKind = 'scalar' | 'sequence';
 
 export interface SymbolSignal {
@@ -13,7 +13,12 @@ export interface BitsSignal {
   value: number[];
 }
 
-export type Signal = SymbolSignal | BitsSignal;
+export interface IntegerSignal {
+  type: 'integer';
+  value: string;
+}
+
+export type Signal = SymbolSignal | BitsSignal | IntegerSignal;
 
 export interface PortDef {
   name: string;

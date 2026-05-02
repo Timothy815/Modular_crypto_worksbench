@@ -11,6 +11,11 @@ export function formatSignalChip(signal: Signal): string {
     const str = value.slice(0, MAX_BITS).join('');
     return value.length > MAX_BITS ? `${str}\u2026` : str;
   }
+  if (signal.type === 'integer') {
+    const { value } = signal;
+    if (value.length === 0) return '\u2205';
+    return value.length > MAX_SYMBOL_CHARS ? `${value.slice(0, MAX_SYMBOL_CHARS)}\u2026` : value;
+  }
   const { value } = signal;
   if (value.length === 0) return '\u2205'; // ∅
   return value.length > MAX_SYMBOL_CHARS ? `${value.slice(0, MAX_SYMBOL_CHARS)}\u2026` : value;
@@ -55,6 +60,16 @@ export function buildSignalChipDetail(signal: Signal): SignalChipDetail {
 
     const meta = `${value.length} bit${value.length === 1 ? '' : 's'}`;
     return { primary, hex, decimal, meta };
+  }
+
+  if (signal.type === 'integer') {
+    const { value } = signal;
+    return {
+      primary: value,
+      hex: null,
+      decimal: value,
+      meta: `${value.length} digit${value.length === 1 ? '' : 's'}`,
+    };
   }
 
   const { value } = signal;

@@ -14,6 +14,19 @@ import type {
 import { formatSignal } from '../formatters';
 import { ComparisonPanel } from './comparison-panel';
 
+function getSignalDomainLabel(signal: Signal | undefined): string | null {
+  if (!signal) {
+    return null;
+  }
+  if (signal.type === 'bits') {
+    return 'Bits';
+  }
+  if (signal.type === 'integer') {
+    return 'Integer';
+  }
+  return 'Symbol';
+}
+
 export interface OutputSummaryItem {
   moduleId: string;
   signal: Signal | undefined;
@@ -132,13 +145,20 @@ export function InspectorOutputSummary({
           <div key={`output-summary-${activeOutputSummary.moduleId}`} className="inspector-output-card">
             <div className="inspector-output-card-head">
               <strong>{activeOutputSummary.moduleId}</strong>
-              {outputSummaries.length > 1 ? (
-                <span className="content-status-chip">
-                  Sink{' '}
-                  {outputSummaries.findIndex((summary) => summary.moduleId === activeOutputSummary.moduleId) + 1} /{' '}
-                  {outputSummaries.length}
-                </span>
-              ) : null}
+              <div className="inspector-output-card-chips">
+                {getSignalDomainLabel(activeOutputSummary.signal) ? (
+                  <span className="content-status-chip">
+                    {getSignalDomainLabel(activeOutputSummary.signal)}
+                  </span>
+                ) : null}
+                {outputSummaries.length > 1 ? (
+                  <span className="content-status-chip">
+                    Sink{' '}
+                    {outputSummaries.findIndex((summary) => summary.moduleId === activeOutputSummary.moduleId) + 1} /{' '}
+                    {outputSummaries.length}
+                  </span>
+                ) : null}
+              </div>
             </div>
             <code>{activeOutputSummary.signal ? formatSignal(activeOutputSummary.signal) : ''}</code>
             {activeOutputSummary.effectiveRepresentationOption ? (

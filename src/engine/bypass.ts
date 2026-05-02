@@ -72,6 +72,8 @@ export function evaluateBypass(def: ModuleDefinition, inputs: ModuleInputs): Mod
     [outputPort.name]:
       signal.type === 'bits'
         ? { type: 'bits', value: [...signal.value] }
-        : { type: 'symbol', value: signal.value },
+        : signal.type === 'symbol'
+          ? { type: 'symbol', value: signal.value }
+          : { type: 'integer', value: signal.value },
   };
 }

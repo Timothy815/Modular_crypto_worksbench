@@ -19,6 +19,8 @@ import { IV } from './iv';
 import { Nonce } from './nonce';
 import { Salt } from './salt';
 import { SymbolToBits } from './symbol-to-bits';
+import { BitsToInteger } from './bits-to-integer';
+import { IntegerToBits } from './integer-to-bits';
 import { BitsToAscii } from './bits-to-ascii';
 import { BitsToAsciiChar } from './bits-to-ascii-char';
 import { BitsToBaudot } from './bits-to-baudot';
@@ -127,6 +129,7 @@ import {
   swapPermutationOrderPositions,
 } from './permutation';
 import { BitOutput } from './bit-output';
+import { IntegerOutput } from './integer-output';
 import { TextOutput } from './text-output';
 import { HexOutput } from './hex-output';
 import { BaudotOutput } from './baudot-output';
@@ -242,6 +245,26 @@ describe('BitsToHexDigit', () => {
     expect(() => BitsToHexDigit.evaluate({ in: { type: 'bits', value: [1, 0, 1] } }, {})).toThrow(
       /exactly 4 bits/i,
     );
+  });
+});
+
+describe('BitsToInteger', () => {
+  it('converts a bit word into an exact decimal integer signal', () => {
+    const result = BitsToInteger.evaluate({ in: { type: 'bits', value: [1, 0, 1, 0] } }, {});
+    expect(result.out).toEqual({ type: 'integer', value: '10' });
+  });
+});
+
+describe('IntegerToBits', () => {
+  it('converts an integer signal into a fixed-width bit word', () => {
+    const result = IntegerToBits.evaluate({ in: { type: 'integer', value: '10' } }, { width: 8 });
+    expect(result.out).toEqual({ type: 'bits', value: [0, 0, 0, 0, 1, 0, 1, 0] });
+  });
+
+  it('rejects integers that do not fit in the requested width', () => {
+    expect(() =>
+      IntegerToBits.evaluate({ in: { type: 'integer', value: '10' } }, { width: 3 }),
+    ).toThrow(/cannot fit/i);
   });
 });
 
@@ -1759,6 +1782,13 @@ describe('BitOutput', () => {
       { in: { type: 'bits', value: [1, 0, 1, 0, 1, 1, 0, 0] } },
       {},
     );
+    expect(result).toEqual({});
+  });
+});
+
+describe('IntegerOutput', () => {
+  it('accepts an integer signal and produces no outputs', () => {
+    const result = IntegerOutput.evaluate({ in: { type: 'integer', value: '65535' } }, {});
     expect(result).toEqual({});
   });
 });

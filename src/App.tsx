@@ -6841,6 +6841,10 @@ function formatTickSignal(
     return signal.value.length > 0 ? signal.value : '--';
   }
 
+  if (signal.type === 'integer') {
+    return signal.value.length > 0 ? signal.value : '--';
+  }
+
   return signal.value.length > 0 ? signal.value.join('') : '--';
 }
 

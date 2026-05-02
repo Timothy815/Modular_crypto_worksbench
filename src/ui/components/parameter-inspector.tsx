@@ -202,8 +202,10 @@ async function writeTextToClipboard(text: string) {
   document.body.removeChild(textarea);
 }
 
-function getStageSignalRepresentationLabel(representation: 'text' | 'bits' | 'bytes' | 'hex' | 'ascii') {
+function getStageSignalRepresentationLabel(representation: 'text' | 'bits' | 'bytes' | 'hex' | 'ascii' | 'decimal') {
   switch (representation) {
+    case 'decimal':
+      return 'Decimal';
     case 'text':
       return 'Text';
     case 'bits':
@@ -219,11 +221,16 @@ function getStageSignalRepresentationLabel(representation: 'text' | 'bits' | 'by
   }
 }
 
-function getStageSignalTypeLabel(signalType: 'symbol' | 'bits' | null, signalLength: number | null) {
+function getStageSignalTypeLabel(signalType: 'symbol' | 'bits' | 'integer' | null, signalLength: number | null) {
   if (!signalType) {
     return null;
   }
-  const base = signalType === 'bits' ? 'Bit signal' : 'Symbol signal';
+  const base =
+    signalType === 'bits'
+      ? 'Bit signal'
+      : signalType === 'integer'
+        ? 'Integer signal'
+        : 'Symbol signal';
   return signalLength !== null ? `${base} • ${signalLength}` : base;
 }
 
@@ -1748,6 +1755,14 @@ export function ParameterInspector({
               {stageSignalInspection.display ? (
                 <div className="inspector-stage-signal-value">
                   <code>{stageSignalInspection.display.value || '∅'}</code>
+                  {stageSignalInspection.alternateDisplay ? (
+                    <p className="comparison-copy inspector-stage-signal-alternate">
+                      <span className="meta-label">
+                        {getStageSignalRepresentationLabel(stageSignalInspection.alternateDisplay.representation)}
+                      </span>{' '}
+                      <code>{stageSignalInspection.alternateDisplay.value || '∅'}</code>
+                    </p>
+                  ) : null}
                   <div className="inspector-stage-signal-meta">
                     <span className="content-status-chip">
                       {getStageSignalRepresentationLabel(stageSignalInspection.display.representation)}

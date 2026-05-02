@@ -12,9 +12,10 @@ import {
   getRepresentationAvailability,
   getUnavailableReason,
 } from './sink-representations';
+import { formatUnsignedIntegerAsHex } from '../engine/modules/integer-signal';
 
 export interface StageSignalDisplay {
-  representation: 'text' | 'bits' | 'bytes' | 'hex' | 'ascii';
+  representation: 'text' | 'bits' | 'bytes' | 'hex' | 'ascii' | 'decimal';
   value: string;
   available: boolean;
   reason: string | null;
@@ -43,7 +44,8 @@ export interface StageSignalComparison {
 export interface StageSignalInspection {
   signal: Signal | null;
   display: StageSignalDisplay | null;
-  signalType: 'symbol' | 'bits' | null;
+  alternateDisplay: StageSignalDisplay | null;
+  signalType: 'symbol' | 'bits' | 'integer' | null;
   signalLength: number | null;
   roleDetail: string;
   traceState: 'ready' | 'no-execution' | 'execution-error' | 'no-signal';
@@ -66,6 +68,10 @@ export function serializeStageSignalForClipboard(
     return signal.value;
   }
 
+  if (signal.type === 'integer') {
+    return preference === 'bits' ? null : signal.value;
+  }
+
   if (preference === 'bits') {
     return signal.value.join('');
   }
@@ -77,7 +83,13 @@ function getSignalLength(signal: Signal | null) {
   if (!signal) {
     return null;
   }
-  return signal.type === 'bits' ? signal.value.length : signal.value.length;
+  if (signal.type === 'bits') {
+    return signal.value.length;
+  }
+  if (signal.type === 'symbol') {
+    return signal.value.length;
+  }
+  return null;
 }
 
 function formatGenericSignal(signal: Signal | null): StageSignalDisplay | null {
@@ -88,6 +100,15 @@ function formatGenericSignal(signal: Signal | null): StageSignalDisplay | null {
   if (signal.type === 'symbol') {
     return {
       representation: 'text',
+      value: signal.value,
+      available: true,
+      reason: null,
+    };
+  }
+
+  if (signal.type === 'integer') {
+    return {
+      representation: 'decimal',
       value: signal.value,
       available: true,
       reason: null,
@@ -119,11 +140,27 @@ function formatGenericSignal(signal: Signal | null): StageSignalDisplay | null {
   };
 }
 
+function getAlternateSignalDisplay(signal: Signal | null): StageSignalDisplay | null {
+  if (!signal || signal.type !== 'integer') {
+    return null;
+  }
+
+  return {
+    representation: 'hex',
+    value: formatUnsignedIntegerAsHex(signal.value),
+    available: true,
+    reason: null,
+  };
+}
+
 function areSignalsEqual(left: Signal | null, right: Signal | null) {
   if (!left || !right || left.type !== right.type) {
     return false;
   }
   if (left.type === 'symbol') {
+    return left.value === right.value;
+  }
+  if (left.type === 'integer') {
     return left.value === right.value;
   }
   if (left.value.length !== right.value.length) {
@@ -187,6 +224,7 @@ export function buildStageSignalInspection(args: {
     return {
       signal: null,
       display: null,
+      alternateDisplay: null,
       signalType: null,
       signalLength: null,
       roleDetail: roleDetail ?? 'Selected stage',
@@ -241,6 +279,7 @@ export function buildStageSignalInspection(args: {
   return {
     signal: current.signal,
     display: formatGenericSignal(current.signal),
+    alternateDisplay: getAlternateSignalDisplay(current.signal),
     signalType: current.signal?.type ?? null,
     signalLength: getSignalLength(current.signal),
     roleDetail: roleDetail ?? 'Selected stage',

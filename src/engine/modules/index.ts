@@ -20,6 +20,8 @@ import { HexDigitToBits } from './hex-digit-to-bits';
 import { IV } from './iv';
 import { Nonce } from './nonce';
 import { SymbolToBits } from './symbol-to-bits';
+import { BitsToInteger } from './bits-to-integer';
+import { IntegerToBits } from './integer-to-bits';
 import { Salt } from './salt';
 import { BitsToAscii } from './bits-to-ascii';
 import { BitsToAsciiChar } from './bits-to-ascii-char';
@@ -59,6 +61,7 @@ import { TextOutput } from './text-output';
 import { HexOutput } from './hex-output';
 import { BaudotOutput } from './baudot-output';
 import { BitOutput } from './bit-output';
+import { IntegerOutput } from './integer-output';
 import { Rotor } from './rotor';
 import { RotorReverse } from './rotor-reverse';
 import { Reflector } from './reflector';
@@ -118,6 +121,8 @@ export {
   IV,
   Nonce,
   SymbolToBits,
+  BitsToInteger,
+  IntegerToBits,
   Salt,
   BitsToAscii,
   BitsToAsciiChar,
@@ -155,6 +160,7 @@ export {
   HexOutput,
   BaudotOutput,
   BitOutput,
+  IntegerOutput,
   Rotor,
   RotorReverse,
   Reflector,
@@ -215,6 +221,8 @@ export const V1_REGISTRY: ModuleRegistry = {
   [IV.id]: IV,
   [Nonce.id]: Nonce,
   [SymbolToBits.id]: SymbolToBits,
+  [BitsToInteger.id]: BitsToInteger,
+  [IntegerToBits.id]: IntegerToBits,
   [Salt.id]: Salt,
   [BitsToAscii.id]: BitsToAscii,
   [BitsToAsciiChar.id]: BitsToAsciiChar,
@@ -252,6 +260,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [HexOutput.id]: HexOutput,
   [BaudotOutput.id]: BaudotOutput,
   [BitOutput.id]: BitOutput,
+  [IntegerOutput.id]: IntegerOutput,
   [Rotor.id]: Rotor,
   [RotorReverse.id]: RotorReverse,
   [Reflector.id]: Reflector,

@@ -5790,6 +5790,13 @@ body.canvas-resizing {
   gap: 8px;
 }
 
+.inspector-output-card-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
 .inspector-output-card > code {
   font-family: var(--mono);
   font-size: 0.92rem;
@@ -6069,6 +6076,21 @@ body.canvas-resizing {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.inspector-stage-signal-alternate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.inspector-stage-signal-alternate code {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-soft) 70%, white);
 }
 
 .inspector-stage-signal-actions {

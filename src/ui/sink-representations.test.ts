@@ -144,6 +144,16 @@ describe('getSinkRepresentationOptions', () => {
     expect(options.find((option) => option.id === 'hex')?.available).toBe(false);
   });
 
+  it('returns decimal and hex options for integer outputs', () => {
+    const options = getSinkRepresentationOptions('IntegerOutput', {
+      type: 'integer',
+      value: '255',
+    });
+    expect(options.map((option) => option.id)).toEqual(['decimal', 'hex']);
+    expect(options.find((option) => option.id === 'decimal')?.value).toBe('255');
+    expect(options.find((option) => option.id === 'hex')?.value).toBe('0xFF');
+  });
+
   it('keeps generic output text-first instead of guessing hex semantics', () => {
     const options = getSinkRepresentationOptions('Output', {
       type: 'symbol',

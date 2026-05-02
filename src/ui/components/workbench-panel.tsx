@@ -4795,7 +4795,12 @@ export function WorkbenchPanel({
                   {isTickedMode && isOutputSinkDefId(moduleInstance.defId) ? (() => {
                     const signal = executionSignalByModuleId[moduleInstance.id];
                     if (!signal) return null;
-                    const value = signal.type === 'symbol' ? signal.value : `[${signal.value.join(',')}]`;
+                    const value =
+                      signal.type === 'symbol'
+                        ? signal.value
+                        : signal.type === 'bits'
+                          ? `[${signal.value.join(',')}]`
+                          : signal.value;
                     return (
                       <span className="graph-node-tick-state" title={`current value = ${value}`}>
                         {value}
@@ -4805,7 +4810,12 @@ export function WorkbenchPanel({
                   {activeAnalysisTraceEntry && moduleInstance.id === activeAnalysisOwnerModuleId ? (() => {
                     const signal = activeAnalysisSignalByModuleId[moduleInstance.id];
                     if (!signal) return null;
-                    const value = signal.type === 'symbol' ? signal.value : `[${signal.value.join(',')}]`;
+                    const value =
+                      signal.type === 'symbol'
+                        ? signal.value
+                        : signal.type === 'bits'
+                          ? `[${signal.value.join(',')}]`
+                          : signal.value;
                     const nestedModuleName =
                       activeAnalysisTraceEntry.moduleId.split('/').at(-1) ?? activeAnalysisTraceEntry.moduleId;
                     return (

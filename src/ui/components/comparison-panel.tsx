@@ -646,12 +646,20 @@ function getDivergentSignals(
   };
 }
 
-function formatSignalForCompare(signal: { type: 'symbol'; value: string } | { type: 'bits'; value: number[] } | undefined) {
+function formatSignalForCompare(
+  signal:
+    | { type: 'symbol'; value: string }
+    | { type: 'bits'; value: number[] }
+    | { type: 'integer'; value: string }
+    | undefined,
+) {
   if (!signal) {
     return 'n/a';
   }
 
   return signal.type === 'symbol'
     ? signal.value
-    : `[${signal.value.join(', ')}]`;
+    : signal.type === 'bits'
+      ? `[${signal.value.join(', ')}]`
+      : signal.value;
 }

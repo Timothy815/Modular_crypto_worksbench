@@ -99,7 +99,9 @@ export function collectTickedOutput(
         ? ''
         : signal.type === 'symbol'
           ? signal.value
-          : signal.value.join('');
+          : signal.type === 'bits'
+            ? signal.value.join('')
+            : signal.value;
 
     if (currentTickValue.length === 0) {
       previousTickValue = currentTickValue;
@@ -296,6 +298,10 @@ function areSignalsEqual(left: Signal | null, right: Signal | null) {
     return left.value === right.value;
   }
 
+  if (left.type === 'integer') {
+    return left.value === right.value;
+  }
+
   return left.value.length === right.value.length && left.value.every((value, index) => value === right.value[index]);
 }
 
@@ -306,5 +312,7 @@ function formatComparedSignal(signal: Signal | null) {
 
   return signal.type === 'symbol'
     ? signal.value
-    : `[${signal.value.join(', ')}]`;
+    : signal.type === 'bits'
+      ? `[${signal.value.join(', ')}]`
+      : signal.value;
 }

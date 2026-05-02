@@ -38,6 +38,7 @@ const SINK_MODULE_IDS = new Set([
   'HexOutput',
   'BaudotOutput',
   'BitOutput',
+  'IntegerOutput',
 ]);
 
 const COLLECTOR_MODULE_IDS = new Set([
@@ -69,6 +70,8 @@ const BRIDGE_MODULE_IDS = new Set([
   'AsciiSequenceToTicked',
   'BitsSequenceToTicked',
   'AsciiCharToBits',
+  'BitsToInteger',
+  'IntegerToBits',
   'BitsToAsciiChar',
   'HexDigitToBits',
   'BitsToHexDigit',
@@ -91,6 +94,10 @@ const TYPICAL_PATH: Record<string, string> = {
     'Typical path: ticked symbol operator → this collector → sink',
   AsciiCharToBits:
     'Typical path: after AsciiSequenceToTicked, before a bitwise operator like XOR',
+  BitsToInteger:
+    'Typical path: visible bit word → this bridge → integer-domain inspection or integer sink',
+  IntegerToBits:
+    'Typical path: integer-domain value → this bridge → bit-domain operator or bit sink',
   BitsToAsciiChar:
     'Typical path: after a ticked bit operator, before TickedSymbolsToSequence',
   BitsToHexDigit:
@@ -121,6 +128,8 @@ function getBridgeDetail(definition: ModuleDefinition): string {
     case 'BitsSequenceToTicked':
       return 'whole sequence -> fixed-width word per tick';
     case 'AsciiCharToBits':
+    case 'BitsToInteger':
+    case 'IntegerToBits':
     case 'BitsToAsciiChar':
     case 'HexDigitToBits':
     case 'BitsToHexDigit':
@@ -245,6 +254,14 @@ const CHAINS_WITH: Record<string, { before?: string[]; after?: string[] }> = {
   AsciiCharToBits: {
     before: ['AsciiSequenceToTicked'],
     after: ['XOR', 'Permutation', 'SBox'],
+  },
+  BitsToInteger: {
+    before: ['BitSource', 'HexSource', 'BitJoin', 'TickedBitsToSequence'],
+    after: ['IntegerOutput', 'IntegerToBits'],
+  },
+  IntegerToBits: {
+    before: ['BitsToInteger'],
+    after: ['BitOutput', 'Permutation', 'XOR'],
   },
   BitsToAsciiChar: {
     before: ['XOR', 'SBox', 'Permutation'],

@@ -2,9 +2,10 @@ import type { OutputSinkDefId } from '../engine/output-sinks';
 import type { Signal } from '../engine/types';
 import { validateAsciiSourceValue } from '../engine/modules/ascii-source';
 import { validateHexSourceValue } from '../engine/modules/hex-source';
+import { formatUnsignedIntegerAsHex } from '../engine/modules/integer-signal';
 import { encodeBaudotText, validateBaudotText } from '../engine/modules/baudot-codec';
 
-export type SinkRepresentation = 'text' | 'bits' | 'bytes' | 'hex' | 'ascii';
+export type SinkRepresentation = 'text' | 'bits' | 'bytes' | 'hex' | 'ascii' | 'decimal';
 
 export interface RepresentationAvailability {
   bits: true;
@@ -103,6 +104,10 @@ export function getSinkRepresentationOptions(
 
   if (sinkDefId === 'BitOutput') {
     return signal.type === 'bits' ? buildBitOptions(signal.value) : [];
+  }
+
+  if (sinkDefId === 'IntegerOutput') {
+    return signal.type === 'integer' ? buildIntegerOutputOptions(signal.value) : [];
   }
 
   if (signal.type !== 'symbol') {
@@ -246,6 +251,25 @@ function buildBaudotOutputOptions(text: string): SinkRepresentationOption[] {
         baudotError === null
           ? getUnavailableReason('hex', bits, availability ?? getRepresentationAvailability([]))
           : 'Requires valid Baudot letters-mode text',
+    },
+  ];
+}
+
+function buildIntegerOutputOptions(value: string): SinkRepresentationOption[] {
+  return [
+    {
+      id: 'decimal',
+      label: 'Decimal',
+      value,
+      available: true,
+      reason: null,
+    },
+    {
+      id: 'hex',
+      label: 'Hex',
+      value: formatUnsignedIntegerAsHex(value),
+      available: true,
+      reason: null,
     },
   ];
 }
