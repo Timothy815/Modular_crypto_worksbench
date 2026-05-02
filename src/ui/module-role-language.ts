@@ -257,11 +257,27 @@ const CHAINS_WITH: Record<string, { before?: string[]; after?: string[] }> = {
   },
   BitsToInteger: {
     before: ['BitSource', 'HexSource', 'BitJoin', 'TickedBitsToSequence'],
-    after: ['IntegerOutput', 'IntegerToBits'],
+    after: ['IntegerOutput', 'IntegerToBits', 'FieldAdd', 'FieldSub', 'FieldMul', 'FieldInverse'],
   },
   IntegerToBits: {
-    before: ['BitsToInteger'],
+    before: ['BitsToInteger', 'FieldAdd', 'FieldSub', 'FieldMul', 'FieldInverse'],
     after: ['BitOutput', 'Permutation', 'XOR'],
+  },
+  FieldAdd: {
+    before: ['BitsToInteger', 'FieldSub', 'FieldMul'],
+    after: ['IntegerOutput', 'IntegerToBits', 'FieldMul'],
+  },
+  FieldSub: {
+    before: ['BitsToInteger', 'FieldAdd', 'FieldMul'],
+    after: ['IntegerOutput', 'IntegerToBits', 'FieldAdd'],
+  },
+  FieldMul: {
+    before: ['BitsToInteger', 'FieldInverse'],
+    after: ['IntegerOutput', 'IntegerToBits', 'FieldAdd'],
+  },
+  FieldInverse: {
+    before: ['BitsToInteger'],
+    after: ['FieldMul', 'IntegerOutput'],
   },
   BitsToAsciiChar: {
     before: ['XOR', 'SBox', 'Permutation'],

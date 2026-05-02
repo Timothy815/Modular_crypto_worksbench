@@ -46,6 +46,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'Salt',
   'Output',
   'TextOutput',
+  'IntegerOutput',
   'BitsToAscii',
   'BitsToAsciiChar',
   'BitsToBaudot',
@@ -60,6 +61,8 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'TruncateSymbolSequence',
   'TruncateSymbolToMatch',
   'SymbolToBits',
+  'BitsToInteger',
+  'IntegerToBits',
   'BitsToSymbol',
   'PolluxFractionation',
   'PolluxControlledFractionation',
@@ -85,6 +88,10 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'SBox',
   'AddMod',
   'SubMod',
+  'FieldAdd',
+  'FieldSub',
+  'FieldMul',
+  'FieldInverse',
   'Modulo',
   'MulMod',
   'Majority',
@@ -169,6 +176,7 @@ const SUPPORTED_STATEFUL_PYTHON_EXPORT_COMPANION_DEF_IDS = new Set([
 const SYMBOL_SINK_DEF_IDS = new Set(['Output', 'TextOutput', 'BaudotOutput']);
 const BIT_SINK_DEF_IDS = new Set(['BitOutput']);
 const HEX_SINK_DEF_IDS = new Set(['HexOutput']);
+const INTEGER_SINK_DEF_IDS = new Set(['IntegerOutput']);
 
 const PYTHON_RUNTIME_VERSION = '1.0.0';
 
@@ -282,6 +290,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'format_symbol_sink',
   'format_bit_sink',
   'format_hex_sink',
+  'format_integer_sink',
   'format_ticked_sink_line',
 ] as const;
 
@@ -347,6 +356,57 @@ def _require_positive_int(value, label, module_name):
     return value
 
 
+def _expect_integer(signal, module_name):
+    if not isinstance(signal, int) or isinstance(signal, bool) or signal < 0:
+        raise ValueError(f"{module_name} expects a non-negative integer signal")
+    return int(signal)
+
+
+def _is_prime_safe_integer(value):
+    if value < 2:
+        return False
+    if value in (2, 3):
+        return True
+    if value % 2 == 0:
+        return False
+    d = value - 1
+    s = 0
+    while d % 2 == 0:
+        d //= 2
+        s += 1
+    for base in (2, 325, 9375, 28178, 450775, 9780504, 1795265022):
+        if base % value == 0:
+            continue
+        x = pow(base, d, value)
+        if x in (1, value - 1):
+            continue
+        composite = True
+        for _ in range(1, s):
+            x = (x * x) % value
+            if x == value - 1:
+                composite = False
+                break
+        if composite:
+            return False
+    return True
+
+
+def _normalize_prime_modulus(modulus, module_name):
+    modulus_value = _require_positive_int(modulus, "modulus", module_name)
+    if not _is_prime_safe_integer(modulus_value):
+        raise ValueError(f"{module_name} requires \\"modulus\\" to be prime in V1.")
+    return modulus_value
+
+
+def _expect_field_element(signal, modulus, module_name, label):
+    value = _expect_integer(signal, module_name)
+    if value >= modulus:
+        raise ValueError(
+            f"{module_name} expects {label} to be in the range 0..{modulus - 1} for modulus {modulus}"
+        )
+    return value
+
+
 def text_input(value):
     return {"out": str(value)}
 
@@ -374,6 +434,19 @@ def bit_sequence_input(stream):
 
 def key_input(value):
     return {"out": str(value)}
+
+
+def bits_to_integer(signal):
+    bits = _expect_bits(signal, "BitsToInteger")
+    return {"out": _bits_to_unsigned_number(bits)}
+
+
+def integer_to_bits(signal, width):
+    value = _expect_integer(signal, "IntegerToBits")
+    width_value = _require_positive_int(width, "width", "IntegerToBits")
+    if value >= (1 << width_value):
+        raise ValueError(f"IntegerToBits cannot fit {value} into {width_value} bits")
+    return {"out": _unsigned_number_to_bits(value, width_value)}
 
 
 def ascii_source(value):
@@ -1178,6 +1251,48 @@ def mul_mod(a, b):
     return {"out": _unsigned_number_to_bits(result, width)}
 
 
+def field_add(a, b, modulus):
+    modulus_value = _normalize_prime_modulus(modulus, "FieldAdd")
+    left = _expect_field_element(a, modulus_value, "FieldAdd", "input a")
+    right = _expect_field_element(b, modulus_value, "FieldAdd", "input b")
+    return {"out": (left + right) % modulus_value}
+
+
+def field_sub(a, b, modulus):
+    modulus_value = _normalize_prime_modulus(modulus, "FieldSub")
+    left = _expect_field_element(a, modulus_value, "FieldSub", "input a")
+    right = _expect_field_element(b, modulus_value, "FieldSub", "input b")
+    return {"out": (left - right) % modulus_value}
+
+
+def field_mul(a, b, modulus):
+    modulus_value = _normalize_prime_modulus(modulus, "FieldMul")
+    left = _expect_field_element(a, modulus_value, "FieldMul", "input a")
+    right = _expect_field_element(b, modulus_value, "FieldMul", "input b")
+    return {"out": (left * right) % modulus_value}
+
+
+def field_inverse(signal, modulus):
+    modulus_value = _normalize_prime_modulus(modulus, "FieldInverse")
+    value = _expect_field_element(signal, modulus_value, "FieldInverse", "input")
+    if value == 0:
+        raise ValueError(f"FieldInverse is undefined for 0 modulo {modulus_value}")
+
+    old_r = value
+    r = modulus_value
+    old_s = 1
+    s = 0
+    while r != 0:
+        quotient = old_r // r
+        old_r, r = r, old_r - quotient * r
+        old_s, s = s, old_s - quotient * s
+
+    if old_r != 1:
+        raise ValueError(f"Prime-field inverse is undefined for {value} modulo {modulus_value}")
+
+    return {"out": old_s % modulus_value}
+
+
 def mod_exp(base, exp, modulus):
     base_bits = _expect_bits(base, "ModExp")
     exp_bits = _expect_bits(exp, "ModExp")
@@ -1530,6 +1645,10 @@ def format_bit_sink(value):
 
 def format_hex_sink(value):
     return str(value).upper()
+
+
+def format_integer_sink(value):
+    return str(_expect_integer(value, "IntegerOutput"))
 
 
 def clock_tick(period, offset, length, tick):
@@ -2288,6 +2407,13 @@ function formatPythonParitySinkValue(defId: string, signal: Signal) {
     return String(signal.value).toUpperCase();
   }
 
+  if (INTEGER_SINK_DEF_IDS.has(defId)) {
+    if (signal.type !== 'integer') {
+      throw new Error('Integer sink expected an integer signal.');
+    }
+    return String(signal.value);
+  }
+
   throw new Error(`Unsupported parity sink ${defId}.`);
 }
 
@@ -2346,7 +2472,8 @@ function resolvePythonParitySinkCandidate(
       return (
         (SYMBOL_SINK_DEF_IDS.has(entry.defId) ||
           BIT_SINK_DEF_IDS.has(entry.defId) ||
-          HEX_SINK_DEF_IDS.has(entry.defId)) &&
+          HEX_SINK_DEF_IDS.has(entry.defId) ||
+          INTEGER_SINK_DEF_IDS.has(entry.defId)) &&
         outputSignal !== null
       );
     })
@@ -2401,7 +2528,8 @@ function resolvePythonParityTerminalSinkCandidate(
     if (
       (SYMBOL_SINK_DEF_IDS.has(entry.defId) ||
         BIT_SINK_DEF_IDS.has(entry.defId) ||
-        HEX_SINK_DEF_IDS.has(entry.defId)) &&
+        HEX_SINK_DEF_IDS.has(entry.defId) ||
+        INTEGER_SINK_DEF_IDS.has(entry.defId)) &&
       outputSignal !== null
     ) {
       return {
@@ -2963,10 +3091,22 @@ function buildModuleExpression(
           : 'None';
       return `s_box(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'table')}, ${inputBitsArgument}, ${outputBitsArgument})`;
     }
+    case 'BitsToInteger':
+      return `bits_to_integer(${expressionContext.getInputExpression(moduleId, 'in')})`;
+    case 'IntegerToBits':
+      return `integer_to_bits(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'width')})`;
     case 'AddMod':
       return `add_mod(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
     case 'SubMod':
       return `sub_mod(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
+    case 'FieldAdd':
+      return `field_add(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
+    case 'FieldSub':
+      return `field_sub(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
+    case 'FieldMul':
+      return `field_mul(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
+    case 'FieldInverse':
+      return `field_inverse(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
     case 'ModExp':
       return `mod_exp(${expressionContext.getInputExpression(moduleId, 'base')}, ${expressionContext.getInputExpression(moduleId, 'exp')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
     case 'ModInverse':
@@ -3036,6 +3176,10 @@ function buildSinkCaptureLine(
 
   if (HEX_SINK_DEF_IDS.has(def.id)) {
     return `${indent}sink_outputs.append((${JSON.stringify(moduleInstance.id)}, format_hex_sink(${inputExpression})))`;
+  }
+
+  if (INTEGER_SINK_DEF_IDS.has(def.id)) {
+    return `${indent}sink_outputs.append((${JSON.stringify(moduleInstance.id)}, format_integer_sink(${inputExpression})))`;
   }
 
   throw new Error(`Python export does not support sink "${def.id}".`);
@@ -4060,7 +4204,7 @@ function buildCompositeHelperDefinitions(
           throw new Error(`Python export could not resolve composite variable for "${moduleId}".`);
         }
 
-        if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id)) {
+        if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id) || INTEGER_SINK_DEF_IDS.has(def.id)) {
           bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    ', 'Sink'));
           bodyLines.push('    pass');
           continue;
@@ -4271,7 +4415,7 @@ function buildCompositeHelperDefinitions(
         throw new Error(`Python export could not resolve composite variable for "${moduleId}".`);
       }
 
-      if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id)) {
+      if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id) || INTEGER_SINK_DEF_IDS.has(def.id)) {
         tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    ', 'Sink'));
         tickLines.push(`    ${variableName} = {}`);
         continue;
@@ -6286,7 +6430,7 @@ export function generatePythonExport(project: Project, registry: ModuleRegistry)
       throw new Error(`Python export encountered unsupported definition "${moduleInstance.defId}".`);
     }
 
-    if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id)) {
+    if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id) || INTEGER_SINK_DEF_IDS.has(def.id)) {
       bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    ', 'Sink'));
       bodyLines.push(...buildSinkCaptureLines(moduleInstance, def, expressionContext, '    ', 'terminal_output'));
       continue;
@@ -6463,7 +6607,7 @@ function generateStatefulPythonExport(
     order.find((moduleId) => {
       const moduleInstance = instancesById.get(moduleId);
       const def = moduleInstance ? registry[moduleInstance.defId] : null;
-      return Boolean(def && (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id)));
+      return Boolean(def && (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id) || INTEGER_SINK_DEF_IDS.has(def.id)));
     }) ?? null;
   const bodyLines: string[] = [
     'def _mcw_source_override(source_overrides, module_id, default_value):',
@@ -6667,7 +6811,7 @@ function generateStatefulPythonExport(
       throw new Error(`Python export could not resolve a variable for "${moduleId}".`);
     }
 
-    if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id)) {
+    if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id) || INTEGER_SINK_DEF_IDS.has(def.id)) {
       const inputExpression = expressionContext.getInputExpression(moduleInstance.id, 'in');
       const sinkValueVariable = `${variableName}_sink_value`;
       bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        ', 'Sink'));
@@ -6675,6 +6819,8 @@ function generateStatefulPythonExport(
         bodyLines.push(`        ${sinkValueVariable} = format_symbol_sink(${inputExpression})`);
       } else if (BIT_SINK_DEF_IDS.has(def.id)) {
         bodyLines.push(`        ${sinkValueVariable} = format_bit_sink(${inputExpression})`);
+      } else if (INTEGER_SINK_DEF_IDS.has(def.id)) {
+        bodyLines.push(`        ${sinkValueVariable} = format_integer_sink(${inputExpression})`);
       } else {
         bodyLines.push(`        ${sinkValueVariable} = format_hex_sink(${inputExpression})`);
       }

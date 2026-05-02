@@ -39,6 +39,10 @@ import {
 import { HexToAscii } from './hex-to-ascii';
 import { AsciiToHex } from './ascii-to-hex';
 import { AddMod } from './add-mod';
+import { FieldAdd } from './field-add';
+import { FieldSub } from './field-sub';
+import { FieldMul } from './field-mul';
+import { FieldInverse } from './field-inverse';
 import { AND } from './and';
 import { AtLeast } from './at-least';
 import { Counter } from './counter';
@@ -265,6 +269,73 @@ describe('IntegerToBits', () => {
     expect(() =>
       IntegerToBits.evaluate({ in: { type: 'integer', value: '10' } }, { width: 3 }),
     ).toThrow(/cannot fit/i);
+  });
+});
+
+describe('FieldAdd', () => {
+  it('adds two field elements modulo a visible prime p', () => {
+    const result = FieldAdd.evaluate(
+      {
+        a: { type: 'integer', value: '3' },
+        b: { type: 'integer', value: '4' },
+      },
+      { modulus: 5 },
+    );
+
+    expect(result.out).toEqual({ type: 'integer', value: '2' });
+  });
+});
+
+describe('FieldSub', () => {
+  it('subtracts two field elements modulo a visible prime p', () => {
+    const result = FieldSub.evaluate(
+      {
+        a: { type: 'integer', value: '1' },
+        b: { type: 'integer', value: '4' },
+      },
+      { modulus: 5 },
+    );
+
+    expect(result.out).toEqual({ type: 'integer', value: '2' });
+  });
+});
+
+describe('FieldMul', () => {
+  it('multiplies two field elements modulo a visible prime p', () => {
+    const result = FieldMul.evaluate(
+      {
+        a: { type: 'integer', value: '3' },
+        b: { type: 'integer', value: '4' },
+      },
+      { modulus: 5 },
+    );
+
+    expect(result.out).toEqual({ type: 'integer', value: '2' });
+  });
+
+  it('rejects inputs outside the declared field range', () => {
+    expect(() =>
+      FieldMul.evaluate(
+        {
+          a: { type: 'integer', value: '5' },
+          b: { type: 'integer', value: '1' },
+        },
+        { modulus: 5 },
+      ),
+    ).toThrow(/range 0\.\.4/i);
+  });
+});
+
+describe('FieldInverse', () => {
+  it('finds the multiplicative inverse of a nonzero field element', () => {
+    const result = FieldInverse.evaluate({ in: { type: 'integer', value: '3' } }, { modulus: 5 });
+    expect(result.out).toEqual({ type: 'integer', value: '2' });
+  });
+
+  it('fails visibly for zero', () => {
+    expect(() => FieldInverse.evaluate({ in: { type: 'integer', value: '0' } }, { modulus: 5 })).toThrow(
+      /undefined for 0 modulo 5/i,
+    );
   });
 });
 

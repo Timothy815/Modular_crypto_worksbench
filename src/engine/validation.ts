@@ -36,6 +36,7 @@ import { validateSBoxParams } from './modules/s-box';
 import { validateModExpParam } from './modules/mod-exp';
 import { validateModInverseParam } from './modules/mod-inverse';
 import { validateModuloParam } from './modules/modulo';
+import { validatePrimeFieldModulusParam } from './modules/prime-field';
 import { validateCounterParam } from './modules/counter';
 import { validateBitSplitParam } from './modules/bit-split';
 import { validateBitPadParam } from './modules/bit-pad';
@@ -251,6 +252,15 @@ function getModuleSpecificParamMessage(
 
   if (def.id === 'ModInverse') {
     return validateModInverseParam(field.key, value);
+  }
+
+  if (
+    def.id === 'FieldAdd' ||
+    def.id === 'FieldSub' ||
+    def.id === 'FieldMul' ||
+    def.id === 'FieldInverse'
+  ) {
+    return validatePrimeFieldModulusParam(def.id, field.key, value);
   }
 
   if (def.id === 'Counter') {

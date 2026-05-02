@@ -6,6 +6,10 @@ import { AsciiSequenceToTicked } from './modules/ascii-sequence-to-ticked';
 import { TickedBitsToSequence } from './modules/ticked-bits-to-sequence';
 import { TickedSymbolsToSequence } from './modules/ticked-symbols-to-sequence';
 import { AddMod } from './modules/add-mod';
+import { FieldAdd } from './modules/field-add';
+import { FieldSub } from './modules/field-sub';
+import { FieldMul } from './modules/field-mul';
+import { FieldInverse } from './modules/field-inverse';
 import { AND } from './modules/and';
 import { AtLeast } from './modules/at-least';
 import { BaudotSource } from './modules/baudot-source';
@@ -131,6 +135,10 @@ const registry: ModuleRegistry = {
   [Gate.id]: Gate,
   [AddMod.id]: AddMod,
   [SubMod.id]: SubMod,
+  [FieldAdd.id]: FieldAdd,
+  [FieldSub.id]: FieldSub,
+  [FieldMul.id]: FieldMul,
+  [FieldInverse.id]: FieldInverse,
   [ModExp.id]: ModExp,
   [ModInverse.id]: ModInverse,
   [Modulo.id]: Modulo,
@@ -1129,6 +1137,38 @@ describe('validateProject', () => {
         (issue) =>
           issue.moduleId === 'inv' &&
           issue.message.includes('word range'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects FieldInverse modulus that is not prime', () => {
+    const project: Project = {
+      modules: [{ id: 'finv', defId: 'FieldInverse', params: { modulus: 15 } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) => issue.moduleId === 'finv' && issue.message.toLowerCase().includes('prime'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects FieldAdd modulus that is not a safe integer', () => {
+    const project: Project = {
+      modules: [{ id: 'fadd', defId: 'FieldAdd', params: { modulus: Number.MAX_SAFE_INTEGER + 1 } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) => issue.moduleId === 'fadd' && issue.message.toLowerCase().includes('safe integer'),
       ),
     ).toBe(true);
   });

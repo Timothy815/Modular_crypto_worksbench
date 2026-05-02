@@ -4,6 +4,7 @@ import { parsePlugboardWiring } from '../engine/modules/plugboard';
 import { parseReflectorWiring } from '../engine/modules/reflector';
 import { getSBoxShape, parseSBoxTable } from '../engine/modules/s-box';
 import { serializeRotorWiring } from '../engine/modules/rotor';
+import { formatUnsignedIntegerAsHex, parseUnsignedIntegerString } from '../engine/modules/integer-signal';
 import { computeSBoxAnalysis } from '../engine/analysis/sbox-analysis';
 import type { SBoxAnalysis } from '../engine/analysis/sbox-analysis';
 export type { SBoxAnalysis } from '../engine/analysis/sbox-analysis';
@@ -216,6 +217,27 @@ interface ArithmeticTransformationView {
   summary: string;
 }
 
+interface IntegerArithmeticOperandView {
+  label: string;
+  decimal: string;
+  hex: string;
+}
+
+interface IntegerArithmeticTransformationView {
+  entry: ExecutionTraceEntry;
+  kind: 'integer-arithmetic';
+  title: string;
+  copy: string;
+  operationLabel: string;
+  operationExpression: string;
+  operands: IntegerArithmeticOperandView[];
+  modulusDecimal: string;
+  modulusHex: string;
+  resultDecimal: string;
+  resultHex: string;
+  summary: string;
+}
+
 interface UnpadTransformationView {
   entry: ExecutionTraceEntry;
   kind: 'unpad';
@@ -241,6 +263,7 @@ export type TransformationView =
   | SplitTransformationView
   | PadTransformationView
   | ArithmeticTransformationView
+  | IntegerArithmeticTransformationView
   | UnpadTransformationView;
 
 export const PERMUTATION_EDITOR_PORT_HEIGHT = 52;
@@ -346,6 +369,12 @@ export function getTransformationView(
   }
   if (entry.defId === 'ModInverse') {
     return getModInverseTransformation(entry, project, registry);
+  }
+  if (entry.defId === 'FieldAdd' || entry.defId === 'FieldSub' || entry.defId === 'FieldMul') {
+    return getPrimeFieldBinaryTransformation(entry, project, registry);
+  }
+  if (entry.defId === 'FieldInverse') {
+    return getPrimeFieldInverseTransformation(entry, project, registry);
   }
   if (entry.defId === 'BitUnpad') {
     return getUnpadTransformation(entry, project, registry);
@@ -1160,6 +1189,124 @@ function getModInverseTransformation(
     inputBits: input.value,
     outputBits: output.value,
     summary: `The inverse of ${inputValue} mod ${modulus} is ${resultValue}. Verify: ${inputValue} × ${resultValue} = ${inputValue * resultValue}, and ${inputValue * resultValue} mod ${modulus} = ${(inputValue * resultValue) % modulus}.`,
+  };
+}
+
+function makeIntegerOperand(label: string, decimal: string): IntegerArithmeticOperandView {
+  return {
+    label,
+    decimal,
+    hex: formatUnsignedIntegerAsHex(decimal),
+  };
+}
+
+function getPrimeFieldBinaryTransformation(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): IntegerArithmeticTransformationView | null {
+  const resolved = resolveTraceModuleInstance(entry.moduleId, project, registry);
+  if (!resolved) {
+    return null;
+  }
+
+  const inputA = entry.inputs.a;
+  const inputB = entry.inputs.b;
+  const output = entry.outputs.out;
+  if (inputA?.type !== 'integer' || inputB?.type !== 'integer' || output?.type !== 'integer') {
+    return null;
+  }
+
+  const modulusValue =
+    typeof resolved.instance.params.modulus === 'number' ? resolved.instance.params.modulus.toString(10) : '2';
+  const aValue = parseUnsignedIntegerString(inputA.value, resolved.definition.id);
+  const bValue = parseUnsignedIntegerString(inputB.value, resolved.definition.id);
+  const resultValue = parseUnsignedIntegerString(output.value, resolved.definition.id);
+
+  const configByDefId = {
+    FieldAdd: {
+      title: 'Prime-Field Addition',
+      copy:
+        'FieldAdd adds two visible field elements modulo a prime p. The inputs are integer-domain field elements, not fixed-width bit words.',
+      symbol: '+',
+      summary: `${aValue.toString(10)} + ${bValue.toString(10)} reduced modulo ${modulusValue} gives ${resultValue.toString(10)}.`,
+    },
+    FieldSub: {
+      title: 'Prime-Field Subtraction',
+      copy:
+        'FieldSub subtracts one visible field element from another modulo a prime p. The result stays in the field range 0..p-1.',
+      symbol: '−',
+      summary: `${aValue.toString(10)} − ${bValue.toString(10)} reduced modulo ${modulusValue} gives ${resultValue.toString(10)}.`,
+    },
+    FieldMul: {
+      title: 'Prime-Field Multiplication',
+      copy:
+        'FieldMul multiplies two visible field elements modulo a prime p. This is field arithmetic, not fixed-width word wraparound.',
+      symbol: '×',
+      summary: `${aValue.toString(10)} × ${bValue.toString(10)} reduced modulo ${modulusValue} gives ${resultValue.toString(10)}.`,
+    },
+  } as const;
+
+  const config = configByDefId[resolved.definition.id as keyof typeof configByDefId];
+  if (!config) {
+    return null;
+  }
+
+  return {
+    entry,
+    kind: 'integer-arithmetic',
+    title: config.title,
+    copy: config.copy,
+    operationLabel: 'Operation',
+    operationExpression: `${aValue.toString(10)} ${config.symbol} ${bValue.toString(10)} mod ${modulusValue} = ${resultValue.toString(10)}`,
+    operands: [
+      makeIntegerOperand('A', aValue.toString(10)),
+      makeIntegerOperand('B', bValue.toString(10)),
+    ],
+    modulusDecimal: modulusValue,
+    modulusHex: formatUnsignedIntegerAsHex(modulusValue),
+    resultDecimal: resultValue.toString(10),
+    resultHex: formatUnsignedIntegerAsHex(resultValue.toString(10)),
+    summary: config.summary,
+  };
+}
+
+function getPrimeFieldInverseTransformation(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): IntegerArithmeticTransformationView | null {
+  const resolved = resolveTraceModuleInstance(entry.moduleId, project, registry);
+  if (!resolved) {
+    return null;
+  }
+
+  const input = entry.inputs.in;
+  const output = entry.outputs.out;
+  if (input?.type !== 'integer' || output?.type !== 'integer') {
+    return null;
+  }
+
+  const modulusValue =
+    typeof resolved.instance.params.modulus === 'number' ? resolved.instance.params.modulus.toString(10) : '2';
+  const inputValue = parseUnsignedIntegerString(input.value, 'FieldInverse');
+  const resultValue = parseUnsignedIntegerString(output.value, 'FieldInverse');
+  const checkValue = (inputValue * resultValue) % BigInt(modulusValue);
+
+  return {
+    entry,
+    kind: 'integer-arithmetic',
+    title: 'Prime-Field Inverse',
+    copy:
+      'FieldInverse finds the multiplicative inverse of one visible field element modulo a prime p. A nonzero field element multiplied by its inverse lands on 1.',
+    operationLabel: 'Operation',
+    operationExpression: `${inputValue.toString(10)}⁻¹ mod ${modulusValue} = ${resultValue.toString(10)}`,
+    operands: [makeIntegerOperand('Input', inputValue.toString(10))],
+    modulusDecimal: modulusValue,
+    modulusHex: formatUnsignedIntegerAsHex(modulusValue),
+    resultDecimal: resultValue.toString(10),
+    resultHex: formatUnsignedIntegerAsHex(resultValue.toString(10)),
+    summary: `${inputValue.toString(10)} × ${resultValue.toString(10)} mod ${modulusValue} = ${checkValue.toString(10)}, so the inverse check lands on the multiplicative identity.`,
   };
 }
 

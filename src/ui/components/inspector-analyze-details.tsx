@@ -670,6 +670,36 @@ export function InspectorAnalyzeDetails({
                   })}
                 </div>
               </>
+            ) : transformationView.kind === 'integer-arithmetic' ? (
+              <>
+                <div className="transformation-order">
+                  <span className="meta-label">{transformationView.operationLabel}</span>
+                  <code>{transformationView.operationExpression}</code>
+                </div>
+                <div className="transformation-order">
+                  <span className="meta-label">Modulus</span>
+                  <code>{transformationView.modulusDecimal} ({transformationView.modulusHex})</code>
+                </div>
+                <div className="xor-grid">
+                  <div className="xor-grid-head">
+                    <span className="meta-label">Value</span>
+                    <span className="meta-label">Decimal</span>
+                    <span className="meta-label">Hex</span>
+                  </div>
+                  {transformationView.operands.map((operand) => (
+                    <div key={`int-arith-${operand.label}`} className="xor-grid-row">
+                      <span className="xor-grid-index">{operand.label}</span>
+                      <span className="xor-grid-bit">{operand.decimal}</span>
+                      <span className="xor-grid-compare">{operand.hex}</span>
+                    </div>
+                  ))}
+                  <div className="xor-grid-row">
+                    <span className="xor-grid-index">Out</span>
+                    <span className="xor-grid-bit xor-grid-bit-active">{transformationView.resultDecimal}</span>
+                    <span className="xor-grid-compare xor-grid-compare-different">{transformationView.resultHex}</span>
+                  </div>
+                </div>
+              </>
             ) : transformationView.kind === 'arithmetic' ? (
               <>
                 <div className="transformation-order">

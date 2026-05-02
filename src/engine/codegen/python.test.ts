@@ -35,6 +35,13 @@ function formatExpectedSinkValue(defId: string, signal: Signal) {
     return String(signal.value).toUpperCase();
   }
 
+  if (defId === 'IntegerOutput') {
+    if (signal.type !== 'integer') {
+      throw new Error('IntegerOutput expects an integer signal');
+    }
+    return String(signal.value);
+  }
+
   throw new Error(`Unsupported sink ${defId}`);
 }
 
@@ -44,7 +51,7 @@ function getExpectedSinkLines(project: Project, registry: ModuleRegistry) {
 
   return project.modules
     .filter((moduleInstance) =>
-      ['Output', 'TextOutput', 'BaudotOutput', 'BitOutput', 'HexOutput'].includes(moduleInstance.defId),
+      ['Output', 'TextOutput', 'BaudotOutput', 'BitOutput', 'HexOutput', 'IntegerOutput'].includes(moduleInstance.defId),
     )
     .map((moduleInstance) => {
       const traceEntry = traceByModuleId.get(moduleInstance.id);
@@ -68,7 +75,7 @@ function getExpectedTickedSinkLines(project: Project, registry: ModuleRegistry) 
 
     return project.modules
       .filter((moduleInstance) =>
-        ['Output', 'TextOutput', 'BaudotOutput', 'BitOutput', 'HexOutput'].includes(moduleInstance.defId),
+        ['Output', 'TextOutput', 'BaudotOutput', 'BitOutput', 'HexOutput', 'IntegerOutput'].includes(moduleInstance.defId),
       )
       .map((moduleInstance) => {
         const traceEntry = traceByModuleId.get(moduleInstance.id);
@@ -1217,6 +1224,37 @@ parityDescribe('generatePythonExport', () => {
         { from: { moduleId: 'const-0', port: 'out' }, to: { moduleId: 'selector-1', port: 'in6' } },
         { from: { moduleId: 'const-0', port: 'out' }, to: { moduleId: 'selector-1', port: 'in7' } },
         { from: { moduleId: 'selector-1', port: 'out' }, to: { moduleId: 'selector-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeProject for integer bridges and prime-field arithmetic workspaces', () => {
+    const project: Project = {
+      modules: [
+        { id: 'bits', defId: 'BitSource', params: { stream: [0, 0, 1, 1] } },
+        { id: 'to-integer', defId: 'BitsToInteger', params: {} },
+        { id: 'field-inverse', defId: 'FieldInverse', params: { modulus: 5 } },
+        { id: 'inverse-out', defId: 'IntegerOutput', params: {} },
+        { id: 'field-mul', defId: 'FieldMul', params: { modulus: 5 } },
+        { id: 'check-out', defId: 'IntegerOutput', params: {} },
+        { id: 'back-to-bits', defId: 'IntegerToBits', params: { width: 4 } },
+        { id: 'bits-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'bits', port: 'out' }, to: { moduleId: 'to-integer', port: 'in' } },
+        { from: { moduleId: 'to-integer', port: 'out' }, to: { moduleId: 'field-inverse', port: 'in' } },
+        { from: { moduleId: 'field-inverse', port: 'out' }, to: { moduleId: 'inverse-out', port: 'in' } },
+        { from: { moduleId: 'to-integer', port: 'out' }, to: { moduleId: 'field-mul', port: 'a' } },
+        { from: { moduleId: 'field-inverse', port: 'out' }, to: { moduleId: 'field-mul', port: 'b' } },
+        { from: { moduleId: 'field-mul', port: 'out' }, to: { moduleId: 'check-out', port: 'in' } },
+        { from: { moduleId: 'field-mul', port: 'out' }, to: { moduleId: 'back-to-bits', port: 'in' } },
+        { from: { moduleId: 'back-to-bits', port: 'out' }, to: { moduleId: 'bits-out', port: 'in' } },
       ],
     };
 

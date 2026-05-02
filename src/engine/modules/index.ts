@@ -42,6 +42,10 @@ import { OR } from './or';
 import { NOT } from './not';
 import { AddMod } from './add-mod';
 import { SubMod } from './sub-mod';
+import { FieldAdd } from './field-add';
+import { FieldSub } from './field-sub';
+import { FieldMul } from './field-mul';
+import { FieldInverse } from './field-inverse';
 import { ModExp } from './mod-exp';
 import { ModInverse } from './mod-inverse';
 import { Modulo } from './modulo';
@@ -141,6 +145,10 @@ export {
   NOT,
   AddMod,
   SubMod,
+  FieldAdd,
+  FieldSub,
+  FieldMul,
+  FieldInverse,
   ModExp,
   ModInverse,
   Modulo,
@@ -241,6 +249,10 @@ export const V1_REGISTRY: ModuleRegistry = {
   [NOT.id]: NOT,
   [AddMod.id]: AddMod,
   [SubMod.id]: SubMod,
+  [FieldAdd.id]: FieldAdd,
+  [FieldSub.id]: FieldSub,
+  [FieldMul.id]: FieldMul,
+  [FieldInverse.id]: FieldInverse,
   [ModExp.id]: ModExp,
   [ModInverse.id]: ModInverse,
   [Modulo.id]: Modulo,

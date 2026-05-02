@@ -371,6 +371,30 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         indexTerms: ['subtraction', 'modulo', 'arithmetic'],
       },
       {
+        id: 'FieldAdd',
+        title: 'FieldAdd',
+        body: 'Adds two visible integer-domain field elements modulo a prime p. Unlike AddMod, this is not fixed-width word arithmetic over bits. Both inputs must already be in the field range 0..p-1, and the modulus must be prime.',
+        indexTerms: ['field add', 'prime field', 'finite field', 'integer arithmetic', 'mod p'],
+      },
+      {
+        id: 'FieldSub',
+        title: 'FieldSub',
+        body: 'Subtracts one visible integer-domain field element from another modulo a prime p. This is prime-field subtraction, not bit-word wraparound. Both inputs must already be in the field range 0..p-1, and the modulus must be prime.',
+        indexTerms: ['field sub', 'prime field', 'finite field', 'integer arithmetic', 'mod p'],
+      },
+      {
+        id: 'FieldMul',
+        title: 'FieldMul',
+        body: 'Multiplies two visible integer-domain field elements modulo a prime p. This is prime-field multiplication, not fixed-width word multiplication. Both inputs must already be in the field range 0..p-1, and the modulus must be prime.',
+        indexTerms: ['field mul', 'prime field', 'finite field', 'integer arithmetic', 'mod p'],
+      },
+      {
+        id: 'FieldInverse',
+        title: 'FieldInverse',
+        body: 'Computes the multiplicative inverse of one visible integer-domain field element modulo a prime p. Zero fails visibly because it has no multiplicative inverse in the field. Prime-field arithmetic is foundational for later elliptic-curve work, but it does not by itself imply curve or protocol security.',
+        indexTerms: ['field inverse', 'prime field', 'finite field', 'inverse', 'mod p'],
+      },
+      {
         id: 'ModExp',
         title: 'ModExp',
         body: 'Performs modular exponentiation: (base ^ exp) mod n. Essential for public-key algorithms like RSA and Diffie-Hellman.',
