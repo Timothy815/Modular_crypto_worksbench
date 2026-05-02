@@ -1,6 +1,6 @@
 # MCW Active Docs
 
-Last updated: April 29, 2026
+Last updated: May 2, 2026
 
 This is the canonical starting point for humans and agents.
 
@@ -15,6 +15,13 @@ This is the canonical starting point for humans and agents.
 - `docs/live/contracts/2026-04/STATE-OF-THE-UNION-2026-04-29.md`
 - `docs/live/contracts/2026-04/ANALYTICAL-RIGOR-ROADMAP-V1.md` when analysis quality, validity, or interpretation is in scope
 - `docs/live/contracts/2026-04/SBOX-ANALYSIS-RIGOR-PASS-V1.md` when tightening local cryptographic metric framing and consequence language
+- `docs/live/contracts/2026-05/ECC-FOUNDATIONS-ROADMAP-V1.md` when evaluating whether and how algebraic or elliptic-curve cryptography should enter MCW
+- `docs/live/contracts/2026-05/ARITHMETIC-EXACTNESS-AUDIT-2026-05-01.md` when evaluating arithmetic exactness boundaries before future field or ECC work
+- `docs/live/contracts/2026-05/EXACT-INTEGER-SUBSTRATE-V1.md` when planning the first bounded arithmetic substrate hardening slice
+- `docs/live/contracts/2026-05/ALGEBRAIC-SIGNALS-V1.md` when planning the first visible algebraic signal-domain expansion
+- `docs/live/contracts/2026-05/PRIME-FIELD-ARITHMETIC-V1.md` when planning the first honest finite-field layer for future ECC work
+- `docs/live/contracts/2026-05/ELLIPTIC-CURVE-POINT-MECHANICS-V1.md` when planning the first honest visible elliptic-curve point layer
+- `docs/live/contracts/2026-05/SCALAR-MULTIPLICATION-V1.md` when planning the first honest repeated-point-action layer before any visible ECDH work
 
 ## Read As Needed
 

@@ -9,6 +9,10 @@ Instead of selecting a prebuilt cipher, users assemble machines from parts:
 
 The goal is to make cryptographic structure visible. MCW is designed as a workshop, not a museum.
 
+Active documentation now starts at `ACTIVE-DOCS.md`.
+Historical shipped contracts can be archived under `docs/archive/` so they stop crowding the live restart surface.
+Active but non-core contracts now live under `docs/live/contracts/`.
+
 ## Current State
 
 The latest shipped release checkpoint is `v2.1.0`.
@@ -29,6 +33,7 @@ Current `main` now also includes post-`v2.1.0` follow-on work that was not yet r
 - peer-footing `Tutorial` / `Challenge` / `Cryptanalysis` navigation in the learning dock
 - sequential `State` / `Control` / `Observe` role badges in ticked workspaces
 - dimension-first S-box generation workflow
+- wiring-ceremony reduction across quick-add, replace-in-place, click-to-connect, inline param edits, and drag-to-canvas placement
 - `App.tsx` shell-orchestration stabilization
 
 The older `v2.1` builder-power queue is now largely present on `main` as shipped work:
@@ -629,7 +634,7 @@ That generalized mixed-recursion export slice is now also shipped:
 - the Python export leg is now structurally complete for common authored machine shapes
 
 The next Python export frontier is now productization:
-- `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
+- `docs/live/contracts/2026-04/PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
 - the next deliberate step is the reusable `mcw_runtime.py` split plus separate generated workspace implementation file
 - this is now a productization move, not a remaining coverage blocker
 - `PYTHON-EXPORT-V1-COMPLETE.md`
@@ -645,7 +650,7 @@ The next Python export frontier is now productization:
 - Python export now hands off one flat ZIP archive containing `mcw_runtime.py`, the generated workspace file, and `verify_parity.py`
 
 The future Python export architecture note after that is now explicitly recorded as:
-- `PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
+- `docs/live/contracts/2026-04/PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md`
 - records the future split between a reusable `mcw_runtime.py` library surface and a separate generated workspace implementation file
 - keeps the current single-file exporter as the correct bounded foundations architecture for now
 - treats the runtime/library split as a future deliberate productization step, not an ad hoc exporter rewrite
@@ -931,7 +936,7 @@ Implemented and shipped:
 - `MODERN-PRIMITIVES-V1-CONTRACT.md`: locked direction for modern primitive expansion
 - `V1-POLISH-AND-TUTORIALS.md`: locked direction for v1 polish and tutorials
 - `ADVANCED-FOUNDRY-CLOCK-V1.md`: locked direction for ticked/stateful execution
-- `CRYPTANALYSIS-WORKSPACE-V1.md`: locked direction for the dedicated cryptanalysis workspace
+- `docs/archive/contracts/2026-04/CRYPTANALYSIS-WORKSPACE-V1.md`: locked direction for the dedicated cryptanalysis workspace
 - `MODERN-ANALYSIS-V1.md`: shipped direction for the post-`v1.4.0` modern-analysis line
 - `HASHING-V1.md`: shipped first hashing milestone contract and scope boundary
 - `HASH-COLLISION-CHALLENGE-V1.md`: shipped first bounded hash weakness challenge

@@ -1,140 +1,23 @@
 # MCW — Claude Code Context
 
+Read ACTIVE-DOCS.md first for the current live documentation surface and archive policy.
 Read AI-COLLABORATION-CONTINUITY.md first for the standing team roles, reviewer workflow, and restart expectations.
 Read PROJECT.md for full project specification.
 Read ENGINE-V1-CONTRACT.md for locked implementation decisions.
-Read ITERATIVE-ROUNDS-AND-KEYSCHEDULES-V1.md before starting work on iterative-round abstractions or key-schedule groundwork.
-Read KEY-SCHEDULE-GROUNDWORK-V1.md before extending iterator-aware key distribution or round-key generation.
-Read CRYPTANALYSIS-WORKSPACE-V1.md before starting work on the post-v1.3 cryptanalysis workspace.
-Read MODERN-ANALYSIS-V1.md before starting work on the post-v1.4 modern-analysis line.
-Read HASHING-V1.md before starting work on the hashing line.
-Read HASH-COLLISION-CHALLENGE-V1.md before starting work on the first post-`v1.7.0` hashing challenge slice.
-Read SPONGE-COLLISION-CHALLENGE-V1.md before starting work on the bounded sponge-collision follow-on.
-Read POST-COLLISION-INTERPRETATION-V1.md before extending the collision-teaching line beyond the shipped nudges/comparison slice.
-Read CUSTOM-SBOX-AUTHORING-V1.md before starting work on editable substitution-table authoring.
-Read SBOX-TABLE-TRANSFORMS-V1.md before starting work on bounded transform operations for authored `SBox` tables.
-Read SBOX-GENERATION-WORKFLOW-V1.md before changing dimension-first S-box creation, generation presets, or the faster initial workflow for authored `SBox` tables.
-Read POLLUX-FRACTIONATION-V1.md before starting work on classical fractionation, homophonic encoding, or Pollux-style bit-to-symbol disguise primitives.
-Read POLLUX-INVERSE-V1.md before starting work on inverse Pollux decoding, Pollux round-trip workflows, or symbol-to-bit recovery using known Pollux alphabets.
-Read POLLUX-ROUNDTRIP-CONTENT-V1.md before starting work on Pollux demo/tutorial/challenge/manual follow-ons that teach explicit encode/decode round-trips.
-Read FIRST-SESSION-ONBOARDING-V1.md before starting work on onboarding flow, `Start Here` entrypoints, or first-session guidance across demo/tutorial/challenge/manual/verification surfaces.
-Read FLAGSHIP-LAB-CLASSICAL-V1.md before starting work on a classroom-first rotor / Enigma-style flagship sequence that ties together tutorials, challenges, verification, and export/parity as one coherent lab family.
-Read FLAGSHIP-LAB-MODERN-V1.md before starting work on a classroom-first modern flagship sequence that ties together visible rounds, S-boxes, diffusion analysis, verification, and export/parity as one coherent lab family.
-Read VERIFICATION-EXPLAINABILITY-V1.md before changing compare-surface wording, verification-station failure summaries, or baseline/known-answer interpretation guidance.
-Read INSTRUCTOR-PILOT-PACK-V1.md before changing instructor-facing pilot resources, professor outreach guidance, or the classroom adoption support surface in Resources.
-Read SHAREABLE-LAB-PACKS-V1.md before changing lab distribution, packaged workspace portability, or import/export of attached teaching and verification context.
-Read BITSTREAM-RANDOMNESS-LAB-V1.md before changing PRNG-analysis workspaces, bitstream randomness metrics, or any teaching surface that compares random-looking output against simple statistical weakness.
-Read SEQUENTIAL-STATE-AUTHORING-V1.md before changing derived ticked-mode `State` / `Control` / `Observe` role badges or broader ergonomics for reading time-evolving machines.
-Read UI-ARCHITECTURE-STABILIZATION-V1.md before restructuring `App.tsx`, extracting top-level UI orchestration, or changing the ownership boundaries of import/export, learning/verification, or detached-window coordination.
-Read PRNG-TEACHING-WORKSPACE-V1.md before starting work on bounded PRNG teaching demos, visible generator comparison workspaces, or any broader “what makes a generator good or bad” educational slice.
-Read TRANSFORMATION-VISUALIZATION-V1.md before starting work on primitive-level drill-down or transformation-legibility features.
-Read SBOX-TRANSFORMATION-V1.md before starting work on the first S-Box transformation view.
-Read CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md before starting work on new primitive-language families, operator/control expansion, or long-range roadmap framing.
-Read CRYPTO-OPERATORS-V1.md before starting work on the first post-`v1.13.0` operator-expansion slice.
-Read CONTROL-PRIMITIVES-V1.md before starting work on counters, triggers, gates, or explicit conditional machine behavior.
-Read BLOCK-FRAMING-V1.md before starting work on block splitting, padding, rejoining, or framing follow-ons.
-Read BLOCK-CHAINING-V1.md before starting work on visible multi-block dependence, chaining, or mode-teaching follow-ons.
-Read BYTE-ORIENTED-PRIMITIVES-V1.md before starting work on byte/word structure helpers, endianness transforms, or modern word-level follow-ons.
-Read INTEGRITY-AUTHENTICATION-V1.md before starting work on visible tamper detection, MAC-style teaching, or authentication follow-ons.
-Read AEAD-FOUNDATIONS-V1.md before starting work on authenticated-encryption composition, associated-data teaching, or combined confidentiality+integrity follow-ons.
-Read DIGITAL-SIGNATURE-FOUNDATIONS-V1.md before starting work on visible signing, asymmetric authentication, or signature/verification follow-ons.
-Read PROTOCOL-HANDSHAKES-V1.md before starting work on visible transcript composition, handshake teaching, or post-signature systems-level follow-ons.
-Read MCW-V2-SANITY-PASS.md before starting work on post-`v1.44.0` product framing, library reorganization, or large-workspace cohesion follow-ons.
-Read MCW-V2-SANITY-AUDIT.md before deciding what post-`v1.44.0` cohesion issue is actually highest leverage.
-Read LEARNING-SEQUENCE-V2.md before extending the late learning spine or reorganizing the post-number-theory teaching surface.
-Read PALETTE-COHERENCE-V1.md before reorganizing the primitive palette, module-library sections, or palette-facing domain-tab coherence.
-Read LARGE-WORKSPACE-UX-TRIAGE-V1.md before changing large-workspace orientation, workspace-level navigation, or bounded canvas-orientation aids.
-Read LARGE-WORKSPACE-UX-AUDIT.md before deciding whether large-workspace usability justifies anything broader than the current bounded landmarks fix.
-Read V2.0-READINESS.md before debating whether MCW should still be treated as a late-`v1.x` project.
-Read V2.0-READINESS-AUDIT.md before proposing extra pre-`v2.0` blocker work.
-Read V2.0-RELEASE-CONTRACT.md before reframing the project’s major-version boundary.
-Read V2.0-RELEASE-NOTES.md for the official meaning of `v2.0.0`.
-Read SYSTEMS-IDE-COHERENCE-V1.md before reframing MCW’s global north star, reordering major product lines by product identity rather than local leverage, or proposing a coherence-first consolidation pass after the recent Python-export and multi-window milestones.
-Read VERIFIED-MACHINE-COHERENCE-V1.md before reframing compare/trace/export as a unified verification story, defining what “verified” should mean in MCW, or proposing trust-first follow-on work after the current Python-export and multi-window milestones.
-Read EXPERIENTIAL-NORTH-STAR-V1.md before proposing any slice that affects how the workbench feels to use — wiring fluency, live state visibility, parameter interaction, pipeline legibility, or graph readability. This is the experiential standard all future slices are evaluated against.
-Read VERIFIED-MACHINE-WORKFLOW-V1.md before extending compare/analyze into a first-class verification station, adding known-answer verification cases, or proposing pass/fail reference checking against the current workspace.
-Read VERIFIED-MACHINE-TICKED-WORKFLOW-V1.md before extending the verification station into temporal/ticked machines, adding bounded multi-tick known-answer verification cases, or proposing tick-aware first-divergence trust workflows for stateful machines.
-Read EXPORT-ENGINE-PARITY-WORKFLOW-V1.md before adding a user-facing export-vs-engine trust workflow, generating parity-check artifacts for exported Python, or proposing engine/export behavior-checking beyond the current internal parity tests.
-Read KNOWN-VECTOR-IMPORT-V1.md before adding bulk known-answer case input, vector paste/import workflows, or classroom-oriented verification-case acceleration inside the existing verification station.
-Read USER-MANUAL-V1.md before adding a first-class user manual surface, searchable in-product help, a Resources-linked manual window, or structured manual/index content for onboarding and feature lookup.
-Read AI-TOOLKIT-V1.md before adding an AI-facing toolkit package, a Resources-linked external-LLM handoff bundle, prompt scaffolds for MCW JSON generation, or any broader “AI assistant for layout generation” product surface.
-Read CRYPTANALYSIS-VISUALS-V1.md before expanding the existing cryptanalysis workspace with new charts, stronger statistical visualizations, or bounded modern/classical analysis legibility upgrades.
-Read CRYPTANALYSIS-PROMINENCE-V1.md before changing how cryptanalysis is reached relative to Tutorial and Challenge, promoting cryptanalysis to peer local-navigation footing, or reframing the learning/analysis dock structure.
-Read V2.1-AUTHORING-POWER-PLAN.md before proposing the first post-`v2.0.0` builder-power line.
-Read REPEATED-STRUCTURE-AUTHORING-V1.md before changing same-workspace cluster duplication, repeated-structure authoring, or first-wave `v2.1` builder acceleration.
-Read SELECTED-CLUSTER-OPERATIONS-V1.md before changing drag-box selection, selected-cluster deletion, or the second bounded `v2.1` authoring-power slice.
-Read WORKSPACE-HISTORY-V1.md before changing workspace-local undo/redo, reducer history, or bounded authoring safety nets.
-Read WORKSPACE-VERSIONING-V1.md before changing named workspace checkpoints, restore points, or longer-horizon workspace recovery.
-Read WORKSPACE-VISIBILITY-NAVIGATION-V1.md before changing zoom, fit/reset view, or trace-driven workspace focus recovery.
-Read CONNECTION-AUTHORING-ERGONOMICS-V1.md before changing direct rewiring, input-connection replacement, or first-wave wire-editing ergonomics.
-Read PARAMETER-AUTHORING-ERGONOMICS-V1.md before changing bulk parameter application, parameter clipboard behavior, or first-wave inspector tuning ergonomics.
-Read PARAMETER-COMPARISON-ERGONOMICS-V1.md before changing selected-sibling parameter comparison, inline divergence chips, or inspector-local comparison summaries.
-Read PRIMITIVE-MICRO-DEMOS-V1.md before changing primitive-local `Try Demo` actions, micro-demo registry behavior, or palette-local seeded examples.
-Read PRIMITIVE-MICRO-DEMOS-V2.md before extending primitive-local micro demos into timing, state, or framing examples.
-Read PRIMITIVE-MICRO-DEMOS-V3.md before extending primitive-local micro demos into rotor traversal or reverse-path examples.
-Read WIRING-CEREMONY-REDUCTION-V1.md before implementing drag-from-port quick-add, replace-module-in-place, inline parameter editing, click-to-connect, or drag-from-palette placement.
-Read WIRE-LEGIBILITY-ERGONOMICS-V1.md before changing wire selection, one-hop connection emphasis, or workspace-level path legibility behavior.
-Read TRACE-WORKSPACE-BRIDGING-V1.md before changing active trace emphasis in the workspace, one-hop step-context highlighting, or trace/workspace visual bridging behavior.
-Read COMPOSITE-REUSE-ERGONOMICS-V1.md before changing composite promotion clarity, composite boundary workflow, or composite-reuse ergonomics.
-Read WORKSPACE-COMPARISON-ERGONOMICS-V1.md before changing saved-version workspace comparison, structural diff overlays, or current-vs-baseline comparison behavior.
-Read MULTIWAY-ROUTING-V1.md before proposing multi-way case-switch routing, indexed output selection, or multi-output control-flow primitives.
-Read CONDITIONAL-COMPOSITION-V1.md before proposing explicit finite branch composition, if/else style graph behavior, or bounded conditional graph structure.
-Read ITERATOR-CONTROL-V1.md before proposing stronger iterator control, bounded repeated-condition behavior, or iterator-level control-flow extensions.
-Read ROTOR-REVERSE-PATH-V1.md before proposing reverse rotor traversal, inverse rotor signal paths, or historically faithful forward / reflect / reverse rotor behavior.
-Read LINKED-ROTOR-PAIRING-V1.md before changing how `Rotor` and `RotorReverse` share state, stepping ownership, or linked forward/reverse rotor behavior.
-Read ROTOR-DRIVEN-STEPPING-V1.md before proposing rotor-driven stepping, rotor-control submachines, or SIGABA-style stepping behavior.
-Read ROTOR-CONTROL-BANK-V1.md before proposing visible control-bank rotor patterns, SIGABA-like authored stepping, or one-bank-drives-another rotor mechanics.
-Read PYTHON-EXPORT-V1.md before proposing workspace-to-code export, standalone Python generation, or implementation-oriented codegen lines.
-Read PYTHON-EXPORT-FOUNDATIONS-V1.md before extending the shipped stateless Python export slice, broadening the supported module subset, or changing export compatibility/parity behavior.
-Read PYTHON-EXPORT-EXPANSION-V1.md before extending Python export support beyond the foundations subset toward stateless modern-construction primitives such as `SBox`, `AddMod`, `SubMod`, and `Modulo`.
-Read PYTHON-EXPORT-EXPANSION-V2.md before extending Python export support further across stateless arithmetic, control, or byte-structure primitives such as `Majority`, `GreaterThan`, `MulMod`, `ByteRotate`, `ByteSwap`, or `BitUnpad`.
-Read PYTHON-EXPORT-EXPANSION-V3.md before extending Python export support further across stateless protocol-material or symbol-structure primitives such as `KeyInput`, `IV`, `Nonce`, `Salt`, `SymbolPermutation`, or `SymbolWindow`.
-Read PYTHON-EXPORT-EXPANSION-V4.md before extending Python export support further across stateless Baudot bridge/sink support such as `BitsToBaudot` or `BaudotOutput`, or before beginning the transition to stateful export.
-Read PYTHON-EXPORT-STATEFUL-FOUNDATIONS-V1.md before extending the shipped stateful/ticked Python export slice, changing exported `Clock`/`Counter` tick-loop parity, or broadening temporal export toward rotors, `LFSR`, or other stateful families.
-Read PYTHON-EXPORT-STATEFUL-EXPANSION-V1.md before extending the shipped `LFSR` temporal Python export bridge, changing keystream-style state export behavior, or broadening stateful export from `Clock`/`Counter`/`LFSR` toward the rotor family.
-Read PYTHON-EXPORT-ROTOR-FOUNDATIONS-V1.md before extending the shipped forward-`Rotor` Python export slice, changing rotor traversal/turnover/clock-gated parity behavior, or broadening stateful export toward `RotorReverse`, linked pairs, reflector return paths, or control-bank behavior.
-Read PYTHON-EXPORT-ROTOR-RETURN-PATH-V1.md before extending Python export into `Reflector`/`RotorReverse`, implementing linked forward/reverse rotor return-path export, or broadening historical-machine export toward control-bank or broader multi-rotor behavior.
-Read PYTHON-EXPORT-ROTOR-CONTROL-V1.md before extending Python export toward turnover-driven multi-rotor stepping, rotor-control teaching paths, or broader historical-machine control behavior short of full structured-machine export.
-Read PYTHON-EXPORT-COMPOSITE-FOUNDATIONS-V1.md before extending Python export into first-class composite helpers, structured-machine export, or broader export support that preserves authored submachine boundaries rather than flattening them away.
-Read PYTHON-EXPORT-ITERATOR-FOUNDATIONS-V1.md before extending Python export into first-class iterator helpers, bounded repeated-round machine export, or broader structured export that preserves iterator round boundaries and key-bus slicing behavior.
-Read PYTHON-EXPORT-STRUCTURED-COMPATIBILITY-V1.md before loosening the current structured export boundary, allowing iterator-containing composites, or changing Python export compatibility behavior for nested/recursive structured cases.
-Read PYTHON-EXPORT-FULL-COVERAGE-AUDIT-V1.md before claiming near-complete Python export coverage, choosing the next export-completeness milestone, or broadening the export line without an explicit gap audit.
-Read PYTHON-EXPORT-COVERAGE-MAP-V1.md before choosing the next Python export implementation target after the audit, especially when deciding between remaining primitive/runtime gaps and broader recursive structured export.
-Read PYTHON-EXPORT-PLUGBOARD-V1.md before extending Python export into `Plugboard`, changing the remaining Enigma-class primitive export gap, or widening the historical-machine export line beyond the current bounded target.
-Read PYTHON-EXPORT-NESTED-COMPOSITES-V1.md before extending Python export into nested composite helper generation, recursive composite structure, or broader mixed recursive structure export.
-Read PYTHON-EXPORT-ITERATOR-CONTAINING-COMPOSITES-V1.md before extending Python export into composites whose bodies contain iterator helpers, loosening the current mixed-structure export boundary, or broadening toward generalized recursive composite/iterator export.
-Read PYTHON-EXPORT-NESTED-ITERATORS-V1.md before extending Python export into iterator round definitions that are themselves iterators, nested iterator helper generation, or broader generalized recursive export beyond common authored machine shapes.
-Read PYTHON-EXPORT-GENERALIZED-MIXED-RECURSION-V1.md before claiming full structural completeness for Python export, extending helper generation across the remaining mixed recursive composite/iterator cases, or changing the current boundary between explicit helper export and hidden runtime behavior.
-Read PYTHON-EXPORT-V1-COMPLETE.md before describing the current Python export leg as complete, summarizing what is now fully covered, or framing the remaining export work as productization rather than ordinary capability gaps.
-Read PYTHON-EXPORT-RUNTIME-LIBRARY-V1.md before changing Python export from the current self-contained one-file artifact into a reusable runtime-library plus generated-workspace split.
-Read PYTHON-EXPORT-RUNTIME-LIBRARY-FOUNDATIONS-V1.md before implementing the first two-file runtime-library export slice, changing emitted artifact layout, or moving reusable helper/runtime code out of the generated workspace file.
-Read PYTHON-EXPORT-RUNTIME-SURFACE-V1.md before reshaping the public surface of `mcw_runtime.py`, changing workspace/runtime provenance headers, or tightening the intended stable API boundary of the two-file Python export.
-Read PYTHON-EXPORT-DELIVERY-UX-V1.md before changing how two-file Python exports are handed off to the user, bundling runtime/workspace artifacts together, or refining the delivery UX of the split runtime export.
-Read V2.1-NEXT-DOCKET.md before reordering the current near-future priorities across builder power, Python export expansion, UI refactoring, or multi-window workspace support.
-Read WORKBENCH-MENU-CLEANUP-V1.md before reorganizing the workbench control strip, grouping workspace actions into dropdown categories, or reframing the top workbench shell around intent-based menus.
-Read INSPECTOR-REFACTOR-V1.md before restructuring `parameter-inspector.tsx`, moving more inspector logic into helper modules, or beginning a larger inspector decomposition pass.
-Read WORKBENCH-REFACTOR-V1.md before restructuring `workbench-panel.tsx`, moving more workbench helper logic into extracted modules, or beginning a larger workbench decomposition pass.
-Read STAGE-ASSEMBLY-ERGONOMICS-V1.md before changing selected stage-row / stage-column layout actions or broader stage-oriented builder-power assembly helpers.
-Read CLUSTER-BOUNDARY-PORT-AUTHORING-V1.md before changing inferred composite boundary-port capture, adding capture-time boundary controls, or expanding composite-boundary authoring behavior.
-Read MULTI-WINDOW-WORKSPACE-V1.md before extending the shipped detachable `Palette` / `Inspector` windows, broadening multi-tab workspace surfaces, or changing the host-authoritative synchronization model.
-Read MULTI-WINDOW-WORKSPACE-V2.md before extending the shipped detachable `Learning` window, splitting tutorials and challenges apart, or broadening the detached learning surface toward cryptanalysis or other panes.
-Read MULTI-WINDOW-TABBED-WINDOWS-V1.md before extending the shipped tabbed detached-window groupings, broadening the `Windows` control surface, or allowing detached combinations beyond `Palette`, `Inspector`, and `Learning`.
-Read MULTI-WINDOW-DETACHED-POLISH-V1.md before extending the shipped detached-window polish pass, broadening grouped-window naming/title behavior further, or turning the `Windows` surface into something more than a bounded refinement of the current tabbed-window model.
-Read MULTI-WINDOW-COMBINED-VIEWS-V1.md before extending the shipped `tabs` / `combined` detached presentation modes, broadening ordered combined pane stacks beyond `Palette`, `Inspector`, and `Learning`, or turning combined detached windows into a richer layout engine.
-Read MULTI-WINDOW-SPLIT-VIEWS-V1.md before extending the shipped detached `split` presentation mode, changing resizable horizontal detached pane pairs, or widening the current `tabs` / `combined` / `split` model toward broader split-tree layout composition.
-Read APP-SHELL-REFACTOR-V1.md before extracting more `App.tsx` panel-routing or challenge-capture logic, or beginning a larger App-shell decomposition pass.
-Read STORE-REFACTOR-V1.md before restructuring `src/ui/store.ts`, moving more workspace-history/versioning behavior into helper modules, or beginning a larger reducer decomposition pass.
-Read PROTOCOL-MATERIAL-V1.md before starting work on IV, nonce, salt, or protocol-input sources.
-Read SYMBOL-STRUCTURE-V1.md before starting work on symbol/message slicing, symbol windows, or post-permutation message-structure follow-ons.
-Read LEARNING-SEQUENCE-V1.md before restructuring the teaching library, adding staged progression, or changing how demos/tutorials/challenges are ordered.
-Read ARITHMETIC-EXPANSION-V1.md before starting work on modular multiplication, strict comparison, unpadding, or number-theoretic follow-ons.
-Read NUMBER-THEORETIC-V1.md before starting work on modular exponentiation, modular inverse, or number-theoretic follow-ons.
-Read BYPASS-V1.md before adding instance-level transform bypass, mute/solo behavior, or “turn this module off” controls.
-Read INVERSE-PERMUTATION-AUTHORING-V1.md before extending permutation-editor helpers, inverse mapping tools, or decrypt-path permutation authoring.
-Read BRIDGE-ERGONOMICS-V1.md before changing raw bit entry, byte-oriented bridges, or reversible/lossy bridge guidance.
-Read OUTPUT-SINKS-V1.md before changing sink semantics, adding sink-specific outputs, or broadening output interpretation rules.
-Read V1-POLISH-AND-TUTORIALS.md before starting work on `feature/v1-polish-and-tutorials`.
 Read IMPLEMENTATION-STATUS.md for the latest safe checkpoint and handoff notes.
+Read EXPERIENTIAL-NORTH-STAR-V1.md before proposing any slice that affects how the workbench feels to use.
+Read V2.1-NEXT-DOCKET.md only for broad priority framing, not as a literal task queue.
+
+Before starting work on any named slice or contract:
+- check `ACTIVE-DOCS.md` and `IMPLEMENTATION-STATUS.md` first
+- if the contract is not at repo root, search `docs/archive/`
+- if the contract status says `Shipped`, `Completed`, `Closed`, `Superseded`, or `Recorded`, treat it as historical context, not open work
+- if the contract has no clear status, verify in source before treating it as active
+
+For legacy contract lookup:
+- use `rg --files -g '*.md' . docs/archive` to find the document
+- prefer live root docs for active planning/context
+- prefer `docs/archive/contracts/` for shipped historical implementation contracts
 
 ## Project: Modular Cryptography Workbench
 
@@ -539,7 +422,7 @@ Key contracts to check before implementation:
 - `ADVANCED-FOUNDRY-CLOCK-V1.md` for ticked execution decisions (especially §7 for deferred work)
 - `ITERATIVE-ROUNDS-AND-KEYSCHEDULES-V1.md` for bounded iterator decisions
 - `KEY-SCHEDULE-GROUNDWORK-V1.md` for explicit round-key decisions
-- `CRYPTANALYSIS-WORKSPACE-V1.md` for product boundary and first-slice scope
+- `docs/archive/contracts/2026-04/CRYPTANALYSIS-WORKSPACE-V1.md` for product boundary and first-slice scope
 - `MODERN-ANALYSIS-V1.md` for the first post-`v1.4.0` visual analysis milestone
 - `HASHING-V1.md` for the current hashing line and scope boundary
 - `HASH-COLLISION-CHALLENGE-V1.md` for the first bounded post-hashing milestone challenge slice

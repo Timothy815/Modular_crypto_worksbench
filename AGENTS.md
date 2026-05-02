@@ -1,5 +1,6 @@
 # MCW — Codex Agent Context
 
+Read ACTIVE-DOCS.md first for the current live documentation surface.
 Read PROJECT.md for full project specification.
 Read ENGINE-V1-CONTRACT.md for locked implementation decisions.
 Read EXPERIENTIAL-NORTH-STAR-V1.md for the experiential standard all future slices are evaluated against: the workbench should feel like working on a live machine, not assembling a static diagram.
