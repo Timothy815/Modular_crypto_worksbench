@@ -919,7 +919,13 @@ describe('Signal-driven advance', () => {
 
       const result = executeTickedProject(project, registry, 6);
 
-      const gateBits = result.ticks.map((tick) => tick.outputsByModuleId.gate.out.value[0]);
+      const gateBits = result.ticks.map((tick) => {
+        const signal = tick.outputsByModuleId.gate.out;
+        if (signal.type !== 'bits') {
+          throw new Error('Expected gate output to stay in the bit domain.');
+        }
+        return signal.value[0];
+      });
       const dataSeeds = result.paramsByModuleByTick.data.map((params) => params.seed as number[]);
 
       expect(gateBits).toEqual([1, 1, 0, 0, 1, 1]);

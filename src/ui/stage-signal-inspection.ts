@@ -1,5 +1,6 @@
 import { isOutputSinkDefId } from '../engine/output-sinks';
 import type {
+  EcPointSignalValue,
   ExecutionResult,
   ModuleDefinition,
   ModuleInstance,
@@ -7,6 +8,7 @@ import type {
   Project,
   Signal,
 } from '../engine/types';
+import { areEcPointValuesEqual, formatEcPointAsHex, formatEcPointAsText } from '../engine/modules/ec-point';
 import {
   formatBitsAs,
   getRepresentationAvailability,
@@ -15,7 +17,7 @@ import {
 import { formatUnsignedIntegerAsHex } from '../engine/modules/integer-signal';
 
 export interface StageSignalDisplay {
-  representation: 'text' | 'bits' | 'bytes' | 'hex' | 'ascii' | 'decimal';
+  representation: 'text' | 'bits' | 'bytes' | 'hex' | 'ascii' | 'decimal' | 'point';
   value: string;
   available: boolean;
   reason: string | null;
@@ -45,7 +47,7 @@ export interface StageSignalInspection {
   signal: Signal | null;
   display: StageSignalDisplay | null;
   alternateDisplay: StageSignalDisplay | null;
-  signalType: 'symbol' | 'bits' | 'integer' | null;
+  signalType: 'symbol' | 'bits' | 'integer' | 'ec-point' | null;
   signalLength: number | null;
   roleDetail: string;
   traceState: 'ready' | 'no-execution' | 'execution-error' | 'no-signal';
@@ -70,6 +72,10 @@ export function serializeStageSignalForClipboard(
 
   if (signal.type === 'integer') {
     return preference === 'bits' ? null : signal.value;
+  }
+
+  if (signal.type === 'ec-point') {
+    return preference === 'bits' ? null : formatEcPointAsText(signal.value);
   }
 
   if (preference === 'bits') {
@@ -115,6 +121,15 @@ function formatGenericSignal(signal: Signal | null): StageSignalDisplay | null {
     };
   }
 
+  if (signal.type === 'ec-point') {
+    return {
+      representation: 'point',
+      value: formatEcPointAsText(signal.value),
+      available: true,
+      reason: null,
+    };
+  }
+
   const availability = getRepresentationAvailability(signal.value);
   if (availability.hex) {
     return {
@@ -140,17 +155,34 @@ function formatGenericSignal(signal: Signal | null): StageSignalDisplay | null {
   };
 }
 
-function getAlternateSignalDisplay(signal: Signal | null): StageSignalDisplay | null {
-  if (!signal || signal.type !== 'integer') {
-    return null;
-  }
-
+function getPointHexDisplay(value: EcPointSignalValue): StageSignalDisplay {
   return {
     representation: 'hex',
-    value: formatUnsignedIntegerAsHex(signal.value),
+    value: formatEcPointAsHex(value),
     available: true,
     reason: null,
   };
+}
+
+function getAlternateSignalDisplay(signal: Signal | null): StageSignalDisplay | null {
+  if (!signal) {
+    return null;
+  }
+
+  if (signal.type === 'integer') {
+    return {
+      representation: 'hex',
+      value: formatUnsignedIntegerAsHex(signal.value),
+      available: true,
+      reason: null,
+    };
+  }
+
+  if (signal.type === 'ec-point') {
+    return getPointHexDisplay(signal.value);
+  }
+
+  return null;
 }
 
 function areSignalsEqual(left: Signal | null, right: Signal | null) {
@@ -163,7 +195,10 @@ function areSignalsEqual(left: Signal | null, right: Signal | null) {
   if (left.type === 'integer') {
     return left.value === right.value;
   }
-  if (left.value.length !== right.value.length) {
+  if (left.type === 'ec-point') {
+    return right.type === 'ec-point' && areEcPointValuesEqual(left.value, right.value);
+  }
+  if (left.type !== 'bits' || right.type !== 'bits' || left.value.length !== right.value.length) {
     return false;
   }
   return left.value.every((bit, index) => bit === right.value[index]);

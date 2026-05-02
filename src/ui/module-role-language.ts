@@ -26,6 +26,7 @@ const SOURCE_MODULE_IDS = new Set([
   'BaudotSource',
   'HexSource',
   'HexSequenceInput',
+  'PointSource',
   'IV',
   'Nonce',
   'Salt',
@@ -39,6 +40,7 @@ const SINK_MODULE_IDS = new Set([
   'BaudotOutput',
   'BitOutput',
   'IntegerOutput',
+  'PointOutput',
 ]);
 
 const COLLECTOR_MODULE_IDS = new Set([
@@ -81,6 +83,7 @@ const BRIDGE_MODULE_IDS = new Set([
   'HexSequenceToBits',
   'BitsToAscii',
   'BitsToHex',
+  'PointOnCurve',
 ]);
 
 const TYPICAL_PATH: Record<string, string> = {
@@ -98,6 +101,8 @@ const TYPICAL_PATH: Record<string, string> = {
     'Typical path: visible bit word → this bridge → integer-domain inspection or integer sink',
   IntegerToBits:
     'Typical path: integer-domain value → this bridge → bit-domain operator or bit sink',
+  PointOnCurve:
+    'Typical path: PointSource or point operator → this checker → BitOutput to verify visible curve membership',
   BitsToAsciiChar:
     'Typical path: after a ticked bit operator, before TickedSymbolsToSequence',
   BitsToHexDigit:
@@ -135,6 +140,7 @@ function getBridgeDetail(definition: ModuleDefinition): string {
     case 'BitsToHexDigit':
     case 'SymbolToBits':
     case 'BitsToSymbol':
+    case 'PointOnCurve':
       return 'scalar representation bridge';
     case 'AsciiSequenceToBits':
     case 'HexSequenceToBits':
@@ -278,6 +284,25 @@ const CHAINS_WITH: Record<string, { before?: string[]; after?: string[] }> = {
   FieldInverse: {
     before: ['BitsToInteger'],
     after: ['FieldMul', 'IntegerOutput'],
+  },
+  PointSource: {
+    after: ['PointNegate', 'PointAdd', 'PointDouble', 'PointOnCurve', 'PointOutput'],
+  },
+  PointOnCurve: {
+    before: ['PointSource', 'PointNegate', 'PointAdd', 'PointDouble'],
+    after: ['BitOutput'],
+  },
+  PointNegate: {
+    before: ['PointSource'],
+    after: ['PointAdd', 'PointOutput', 'PointOnCurve'],
+  },
+  PointAdd: {
+    before: ['PointSource', 'PointNegate', 'PointDouble'],
+    after: ['PointOutput', 'PointOnCurve'],
+  },
+  PointDouble: {
+    before: ['PointSource', 'PointAdd'],
+    after: ['PointOutput', 'PointOnCurve'],
   },
   BitsToAsciiChar: {
     before: ['XOR', 'SBox', 'Permutation'],

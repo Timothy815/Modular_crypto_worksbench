@@ -1,11 +1,12 @@
 import type { OutputSinkDefId } from '../engine/output-sinks';
-import type { Signal } from '../engine/types';
+import type { EcPointSignalValue, Signal } from '../engine/types';
 import { validateAsciiSourceValue } from '../engine/modules/ascii-source';
+import { formatEcPointAsHex, formatEcPointAsText } from '../engine/modules/ec-point';
 import { validateHexSourceValue } from '../engine/modules/hex-source';
 import { formatUnsignedIntegerAsHex } from '../engine/modules/integer-signal';
 import { encodeBaudotText, validateBaudotText } from '../engine/modules/baudot-codec';
 
-export type SinkRepresentation = 'text' | 'bits' | 'bytes' | 'hex' | 'ascii' | 'decimal';
+export type SinkRepresentation = 'text' | 'bits' | 'bytes' | 'hex' | 'ascii' | 'decimal' | 'point';
 
 export interface RepresentationAvailability {
   bits: true;
@@ -108,6 +109,10 @@ export function getSinkRepresentationOptions(
 
   if (sinkDefId === 'IntegerOutput') {
     return signal.type === 'integer' ? buildIntegerOutputOptions(signal.value) : [];
+  }
+
+  if (sinkDefId === 'PointOutput') {
+    return signal.type === 'ec-point' ? buildPointOutputOptions(signal.value) : [];
   }
 
   if (signal.type !== 'symbol') {
@@ -268,6 +273,25 @@ function buildIntegerOutputOptions(value: string): SinkRepresentationOption[] {
       id: 'hex',
       label: 'Hex',
       value: formatUnsignedIntegerAsHex(value),
+      available: true,
+      reason: null,
+    },
+  ];
+}
+
+function buildPointOutputOptions(signalValue: EcPointSignalValue): SinkRepresentationOption[] {
+  return [
+    {
+      id: 'point',
+      label: 'Point',
+      value: formatEcPointAsText(signalValue),
+      available: true,
+      reason: null,
+    },
+    {
+      id: 'hex',
+      label: 'Hex',
+      value: formatEcPointAsHex(signalValue),
       available: true,
       reason: null,
     },

@@ -154,6 +154,21 @@ describe('getSinkRepresentationOptions', () => {
     expect(options.find((option) => option.id === 'hex')?.value).toBe('0xFF');
   });
 
+  it('returns point and hex options for point outputs', () => {
+    const options = getSinkRepresentationOptions('PointOutput', {
+      type: 'ec-point',
+      value: {
+        kind: 'affine',
+        curve: { p: 17, a: 2, b: 3 },
+        x: '5',
+        y: '6',
+      },
+    });
+    expect(options.map((option) => option.id)).toEqual(['point', 'hex']);
+    expect(options.find((option) => option.id === 'point')?.value).toBe('(5, 6)');
+    expect(options.find((option) => option.id === 'hex')?.value).toBe('(0x5, 0x6)');
+  });
+
   it('keeps generic output text-first instead of guessing hex semantics', () => {
     const options = getSinkRepresentationOptions('Output', {
       type: 'symbol',

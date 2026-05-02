@@ -131,6 +131,33 @@ describe('buildStageSignalInspection', () => {
     expect(executionError?.traceState).toBe('execution-error');
     expect(executionError?.traceMessage).toContain('failed validation or execution');
   });
+
+  it('renders point-domain signals with point and hex views', () => {
+    const project: Project = {
+      modules: [
+        { id: 'point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 5, y: 6 } },
+        { id: 'out', defId: 'PointOutput', params: {} },
+      ],
+      connections: [{ from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'out', port: 'in' } }],
+    };
+
+    const execution = executeProject(project, V1_REGISTRY);
+    const inspection = buildStageSignalInspection({
+      execution,
+      executionError: null,
+      project,
+      registry: V1_REGISTRY,
+      moduleInstance: project.modules[1] ?? null,
+      moduleDef: V1_REGISTRY.PointOutput,
+      roleDetail: 'final endpoint for the visible result',
+    });
+
+    expect(inspection?.signalType).toBe('ec-point');
+    expect(inspection?.display?.representation).toBe('point');
+    expect(inspection?.display?.value).toBe('(5, 6)');
+    expect(inspection?.alternateDisplay?.representation).toBe('hex');
+    expect(inspection?.alternateDisplay?.value).toBe('(0x5, 0x6)');
+  });
 });
 
 describe('serializeStageSignalForClipboard', () => {
@@ -146,5 +173,19 @@ describe('serializeStageSignalForClipboard', () => {
   it('returns symbol values directly and null for absent signals', () => {
     expect(serializeStageSignalForClipboard({ type: 'symbol', value: 'HELLO' })).toBe('HELLO');
     expect(serializeStageSignalForClipboard(null)).toBeNull();
+  });
+
+  it('returns point text for ec-point signals', () => {
+    expect(
+      serializeStageSignalForClipboard({
+        type: 'ec-point',
+        value: {
+          kind: 'affine',
+          curve: { p: 17, a: 2, b: 3 },
+          x: '5',
+          y: '6',
+        },
+      }),
+    ).toBe('(5, 6)');
   });
 });

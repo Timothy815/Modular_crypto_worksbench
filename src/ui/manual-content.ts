@@ -395,6 +395,36 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         indexTerms: ['field inverse', 'prime field', 'finite field', 'inverse', 'mod p'],
       },
       {
+        id: 'PointSource',
+        title: 'PointSource',
+        body: 'Introduces one visible point on one explicit pedagogical short Weierstrass curve. The parameters p, a, b, x, and y must describe a real point on a non-singular curve, or the module fails before execution.',
+        indexTerms: ['point source', 'elliptic curve', 'ec point', 'curve point', 'weierstrass'],
+      },
+      {
+        id: 'PointOnCurve',
+        title: 'PointOnCurve',
+        body: 'Checks whether one visible point belongs to the declared curve and emits a one-bit success result. It fails visibly on cross-curve mismatches instead of silently guessing.',
+        indexTerms: ['point on curve', 'curve membership', 'ec point', 'elliptic curve', 'validate point'],
+      },
+      {
+        id: 'PointNegate',
+        title: 'PointNegate',
+        body: 'Reflects one visible point to its additive inverse on the same declared curve. A point and its negation add to the point at infinity.',
+        indexTerms: ['point negate', 'inverse point', 'ec point', 'elliptic curve', 'point inverse'],
+      },
+      {
+        id: 'PointAdd',
+        title: 'PointAdd',
+        body: 'Adds two visible points on the same declared pedagogical curve. It returns the point at infinity where mathematically appropriate and fails visibly when the incoming points do not belong to the receiving curve.',
+        indexTerms: ['point add', 'elliptic curve', 'ec point', 'point addition', 'infinity'],
+      },
+      {
+        id: 'PointDouble',
+        title: 'PointDouble',
+        body: 'Doubles one visible point on the same declared curve. MCW exposes this as its own stage because doubling is a special formula branch students should be able to inspect directly.',
+        indexTerms: ['point double', 'elliptic curve', 'ec point', 'doubling'],
+      },
+      {
         id: 'ModExp',
         title: 'ModExp',
         body: 'Performs modular exponentiation: (base ^ exp) mod n. Essential for public-key algorithms like RSA and Diffie-Hellman.',

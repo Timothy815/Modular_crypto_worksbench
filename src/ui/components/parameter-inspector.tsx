@@ -202,7 +202,7 @@ async function writeTextToClipboard(text: string) {
   document.body.removeChild(textarea);
 }
 
-function getStageSignalRepresentationLabel(representation: 'text' | 'bits' | 'bytes' | 'hex' | 'ascii' | 'decimal') {
+function getStageSignalRepresentationLabel(representation: 'text' | 'bits' | 'bytes' | 'hex' | 'ascii' | 'decimal' | 'point') {
   switch (representation) {
     case 'decimal':
       return 'Decimal';
@@ -216,12 +216,14 @@ function getStageSignalRepresentationLabel(representation: 'text' | 'bits' | 'by
       return 'Hex';
     case 'ascii':
       return 'ASCII';
+    case 'point':
+      return 'Point';
     default:
       return representation;
   }
 }
 
-function getStageSignalTypeLabel(signalType: 'symbol' | 'bits' | 'integer' | null, signalLength: number | null) {
+function getStageSignalTypeLabel(signalType: 'symbol' | 'bits' | 'integer' | 'ec-point' | null, signalLength: number | null) {
   if (!signalType) {
     return null;
   }
@@ -230,6 +232,8 @@ function getStageSignalTypeLabel(signalType: 'symbol' | 'bits' | 'integer' | nul
       ? 'Bit signal'
       : signalType === 'integer'
         ? 'Integer signal'
+        : signalType === 'ec-point'
+          ? 'EC point signal'
         : 'Symbol signal';
   return signalLength !== null ? `${base} • ${signalLength}` : base;
 }

@@ -46,6 +46,11 @@ import { FieldAdd } from './field-add';
 import { FieldSub } from './field-sub';
 import { FieldMul } from './field-mul';
 import { FieldInverse } from './field-inverse';
+import { PointSource } from './point-source';
+import { PointOnCurve } from './point-on-curve';
+import { PointNegate } from './point-negate';
+import { PointAdd } from './point-add';
+import { PointDouble } from './point-double';
 import { ModExp } from './mod-exp';
 import { ModInverse } from './mod-inverse';
 import { Modulo } from './modulo';
@@ -66,6 +71,7 @@ import { HexOutput } from './hex-output';
 import { BaudotOutput } from './baudot-output';
 import { BitOutput } from './bit-output';
 import { IntegerOutput } from './integer-output';
+import { PointOutput } from './point-output';
 import { Rotor } from './rotor';
 import { RotorReverse } from './rotor-reverse';
 import { Reflector } from './reflector';
@@ -149,6 +155,11 @@ export {
   FieldSub,
   FieldMul,
   FieldInverse,
+  PointSource,
+  PointOnCurve,
+  PointNegate,
+  PointAdd,
+  PointDouble,
   ModExp,
   ModInverse,
   Modulo,
@@ -169,6 +180,7 @@ export {
   BaudotOutput,
   BitOutput,
   IntegerOutput,
+  PointOutput,
   Rotor,
   RotorReverse,
   Reflector,
@@ -253,6 +265,11 @@ export const V1_REGISTRY: ModuleRegistry = {
   [FieldSub.id]: FieldSub,
   [FieldMul.id]: FieldMul,
   [FieldInverse.id]: FieldInverse,
+  [PointSource.id]: PointSource,
+  [PointOnCurve.id]: PointOnCurve,
+  [PointNegate.id]: PointNegate,
+  [PointAdd.id]: PointAdd,
+  [PointDouble.id]: PointDouble,
   [ModExp.id]: ModExp,
   [ModInverse.id]: ModInverse,
   [Modulo.id]: Modulo,
@@ -273,6 +290,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [BaudotOutput.id]: BaudotOutput,
   [BitOutput.id]: BitOutput,
   [IntegerOutput.id]: IntegerOutput,
+  [PointOutput.id]: PointOutput,
   [Rotor.id]: Rotor,
   [RotorReverse.id]: RotorReverse,
   [Reflector.id]: Reflector,

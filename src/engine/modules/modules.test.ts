@@ -43,6 +43,11 @@ import { FieldAdd } from './field-add';
 import { FieldSub } from './field-sub';
 import { FieldMul } from './field-mul';
 import { FieldInverse } from './field-inverse';
+import { PointSource } from './point-source';
+import { PointOnCurve } from './point-on-curve';
+import { PointNegate } from './point-negate';
+import { PointAdd } from './point-add';
+import { PointDouble } from './point-double';
 import { AND } from './and';
 import { AtLeast } from './at-least';
 import { Counter } from './counter';
@@ -336,6 +341,195 @@ describe('FieldInverse', () => {
     expect(() => FieldInverse.evaluate({ in: { type: 'integer', value: '0' } }, { modulus: 5 })).toThrow(
       /undefined for 0 modulo 5/i,
     );
+  });
+});
+
+describe('PointSource', () => {
+  it('constructs a visible point on a declared pedagogical curve', () => {
+    const result = PointSource.evaluate({}, { p: 17, a: 2, b: 3, x: 5, y: 6 });
+    expect(result.out).toEqual({
+      type: 'ec-point',
+      value: {
+        kind: 'affine',
+        curve: { p: 17, a: 2, b: 3 },
+        x: '5',
+        y: '6',
+      },
+    });
+  });
+});
+
+describe('PointOnCurve', () => {
+  it('emits a one-bit success result for a valid point on the declared curve', () => {
+    const result = PointOnCurve.evaluate(
+      {
+        in: {
+          type: 'ec-point',
+          value: {
+            kind: 'affine',
+            curve: { p: 17, a: 2, b: 3 },
+            x: '5',
+            y: '6',
+          },
+        },
+      },
+      { p: 17, a: 2, b: 3 },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1] });
+  });
+});
+
+describe('PointNegate', () => {
+  it('negates a point within the same curve context', () => {
+    const result = PointNegate.evaluate(
+      {
+        in: {
+          type: 'ec-point',
+          value: {
+            kind: 'affine',
+            curve: { p: 17, a: 2, b: 3 },
+            x: '5',
+            y: '6',
+          },
+        },
+      },
+      { p: 17, a: 2, b: 3 },
+    );
+    expect(result.out).toEqual({
+      type: 'ec-point',
+      value: {
+        kind: 'affine',
+        curve: { p: 17, a: 2, b: 3 },
+        x: '5',
+        y: '11',
+      },
+    });
+  });
+});
+
+describe('PointAdd', () => {
+  it('adds a point to its inverse and reaches visible infinity', () => {
+    const result = PointAdd.evaluate(
+      {
+        a: {
+          type: 'ec-point',
+          value: {
+            kind: 'affine',
+            curve: { p: 17, a: 2, b: 3 },
+            x: '5',
+            y: '6',
+          },
+        },
+        b: {
+          type: 'ec-point',
+          value: {
+            kind: 'affine',
+            curve: { p: 17, a: 2, b: 3 },
+            x: '5',
+            y: '11',
+          },
+        },
+      },
+      { p: 17, a: 2, b: 3 },
+    );
+    expect(result.out).toEqual({
+      type: 'ec-point',
+      value: {
+        kind: 'infinity',
+        curve: { p: 17, a: 2, b: 3 },
+      },
+    });
+  });
+
+  it('handles the equal-input case honestly as doubling', () => {
+    const result = PointAdd.evaluate(
+      {
+        a: {
+          type: 'ec-point',
+          value: {
+            kind: 'affine',
+            curve: { p: 17, a: 2, b: 3 },
+            x: '5',
+            y: '6',
+          },
+        },
+        b: {
+          type: 'ec-point',
+          value: {
+            kind: 'affine',
+            curve: { p: 17, a: 2, b: 3 },
+            x: '5',
+            y: '6',
+          },
+        },
+      },
+      { p: 17, a: 2, b: 3 },
+    );
+    expect(result.out).toEqual({
+      type: 'ec-point',
+      value: {
+        kind: 'affine',
+        curve: { p: 17, a: 2, b: 3 },
+        x: '15',
+        y: '12',
+      },
+    });
+  });
+
+  it('fails visibly on cross-curve mismatches', () => {
+    expect(() =>
+      PointAdd.evaluate(
+        {
+          a: {
+            type: 'ec-point',
+            value: {
+              kind: 'affine',
+              curve: { p: 17, a: 2, b: 3 },
+              x: '5',
+              y: '6',
+            },
+          },
+          b: {
+            type: 'ec-point',
+            value: {
+              kind: 'affine',
+              curve: { p: 17, a: 4, b: 3 },
+              x: '5',
+              y: '5',
+            },
+          },
+        },
+        { p: 17, a: 2, b: 3 },
+      ),
+    ).toThrow(/declared curve/i);
+  });
+});
+
+describe('PointDouble', () => {
+  it('doubles a visible point on the same curve', () => {
+    const result = PointDouble.evaluate(
+      {
+        in: {
+          type: 'ec-point',
+          value: {
+            kind: 'affine',
+            curve: { p: 17, a: 2, b: 3 },
+            x: '5',
+            y: '6',
+          },
+        },
+      },
+      { p: 17, a: 2, b: 3 },
+    );
+    expect(result.out).toEqual({
+      type: 'ec-point',
+      value: {
+        kind: 'affine',
+        curve: { p: 17, a: 2, b: 3 },
+        x: '15',
+        y: '12',
+      },
+    });
   });
 });
 

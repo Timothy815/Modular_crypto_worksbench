@@ -24,6 +24,7 @@ import {
 } from '../learning-sequence';
 import { getModuleCategory } from '../module-categories';
 import { buildLiveStateSummary } from '../live-state-display';
+import { formatEcPointAsText } from '../../engine/modules/ec-point';
 import { buildSignalChipDetail, formatSignalChip } from '../signal-chip-format';
 import {
   getModulesInSelectionBox,
@@ -4800,7 +4801,9 @@ export function WorkbenchPanel({
                         ? signal.value
                         : signal.type === 'bits'
                           ? `[${signal.value.join(',')}]`
-                          : signal.value;
+                          : signal.type === 'integer'
+                            ? signal.value
+                            : formatEcPointAsText(signal.value);
                     return (
                       <span className="graph-node-tick-state" title={`current value = ${value}`}>
                         {value}
@@ -4815,7 +4818,9 @@ export function WorkbenchPanel({
                         ? signal.value
                         : signal.type === 'bits'
                           ? `[${signal.value.join(',')}]`
-                          : signal.value;
+                          : signal.type === 'integer'
+                            ? signal.value
+                            : formatEcPointAsText(signal.value);
                     const nestedModuleName =
                       activeAnalysisTraceEntry.moduleId.split('/').at(-1) ?? activeAnalysisTraceEntry.moduleId;
                     return (

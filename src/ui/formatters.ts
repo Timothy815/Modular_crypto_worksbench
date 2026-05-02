@@ -1,4 +1,5 @@
 import type { ParamFieldDef, Signal } from '../engine/types';
+import { formatEcPointAsText } from '../engine/modules/ec-point';
 
 export interface ParsedParamResult {
   ok: boolean;
@@ -15,7 +16,9 @@ export function formatSignal(signal: Signal | undefined): string {
     ? signal.value
     : signal.type === 'bits'
       ? `[${signal.value.join(', ')}]`
-      : signal.value;
+      : signal.type === 'integer'
+        ? signal.value
+        : formatEcPointAsText(signal.value);
 }
 
 export function formatParamValue(value: unknown, field: ParamFieldDef): string {

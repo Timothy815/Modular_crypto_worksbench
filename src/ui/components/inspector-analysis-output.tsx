@@ -24,6 +24,9 @@ function getSignalDomainLabel(signal: Signal | undefined): string | null {
   if (signal.type === 'integer') {
     return 'Integer';
   }
+  if (signal.type === 'ec-point') {
+    return 'EC Point';
+  }
   return 'Symbol';
 }
 

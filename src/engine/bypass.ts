@@ -74,6 +74,19 @@ export function evaluateBypass(def: ModuleDefinition, inputs: ModuleInputs): Mod
         ? { type: 'bits', value: [...signal.value] }
         : signal.type === 'symbol'
           ? { type: 'symbol', value: signal.value }
-          : { type: 'integer', value: signal.value },
+          : signal.type === 'integer'
+            ? { type: 'integer', value: signal.value }
+            : {
+                type: 'ec-point',
+                value:
+                  signal.value.kind === 'infinity'
+                    ? { kind: 'infinity', curve: { ...signal.value.curve } }
+                    : {
+                        kind: 'affine',
+                        curve: { ...signal.value.curve },
+                        x: signal.value.x,
+                        y: signal.value.y,
+                      },
+              },
   };
 }

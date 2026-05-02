@@ -37,6 +37,11 @@ import { validateModExpParam } from './modules/mod-exp';
 import { validateModInverseParam } from './modules/mod-inverse';
 import { validateModuloParam } from './modules/modulo';
 import { validatePrimeFieldModulusParam } from './modules/prime-field';
+import {
+  validateEcCurveParamsStatic,
+  validateEcPointParam,
+  validatePointSourceParamsStatic,
+} from './modules/ec-point';
 import { validateCounterParam } from './modules/counter';
 import { validateBitSplitParam } from './modules/bit-split';
 import { validateBitPadParam } from './modules/bit-pad';
@@ -261,6 +266,19 @@ function getModuleSpecificParamMessage(
     def.id === 'FieldInverse'
   ) {
     return validatePrimeFieldModulusParam(def.id, field.key, value);
+  }
+
+  if (
+    def.id === 'PointSource' ||
+    def.id === 'PointOnCurve' ||
+    def.id === 'PointNegate' ||
+    def.id === 'PointAdd' ||
+    def.id === 'PointDouble'
+  ) {
+    if (field.key === 'p' || field.key === 'a' || field.key === 'b' || field.key === 'x' || field.key === 'y') {
+      return validateEcPointParam(def.id, field.key as 'p' | 'a' | 'b' | 'x' | 'y', value);
+    }
+    return null;
   }
 
   if (def.id === 'Counter') {
@@ -1072,6 +1090,38 @@ function validateParams(
           message: `Module "${moduleInstance.id}" parameter "value" is invalid. ${widthMessage}`,
           moduleId: moduleInstance.id,
         });
+      }
+    }
+
+    if (
+      def.id === 'PointSource' ||
+      def.id === 'PointOnCurve' ||
+      def.id === 'PointNegate' ||
+      def.id === 'PointAdd' ||
+      def.id === 'PointDouble'
+    ) {
+      const curveMessage = validateEcCurveParamsStatic(
+        { p: params.p, a: params.a, b: params.b },
+        def.id,
+      );
+      if (curveMessage) {
+        issues.push({
+          code: 'invalid-param-type',
+          message: `Module "${moduleInstance.id}" curve parameters are invalid. ${curveMessage}`,
+          moduleId: moduleInstance.id,
+        });
+      } else if (def.id === 'PointSource') {
+        const pointMessage = validatePointSourceParamsStatic(
+          { p: params.p, a: params.a, b: params.b, x: params.x, y: params.y },
+          def.id,
+        );
+        if (pointMessage) {
+          issues.push({
+            code: 'invalid-param-type',
+            message: `Module "${moduleInstance.id}" point parameters are invalid. ${pointMessage}`,
+            moduleId: moduleInstance.id,
+          });
+        }
       }
     }
   }

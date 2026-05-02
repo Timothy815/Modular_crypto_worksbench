@@ -1,6 +1,6 @@
 import type { ClockedIteratorDef, CompositeDef, ConditionalDef, IteratorDef, MultiConditionalDef } from './composites';
 
-export type SignalType = 'symbol' | 'bits' | 'integer';
+export type SignalType = 'symbol' | 'bits' | 'integer' | 'ec-point';
 export type PortKind = 'scalar' | 'sequence';
 
 export interface SymbolSignal {
@@ -18,7 +18,32 @@ export interface IntegerSignal {
   value: string;
 }
 
-export type Signal = SymbolSignal | BitsSignal | IntegerSignal;
+export interface EcCurveDescriptor {
+  p: number;
+  a: number;
+  b: number;
+}
+
+export interface EcPointAffineValue {
+  kind: 'affine';
+  curve: EcCurveDescriptor;
+  x: string;
+  y: string;
+}
+
+export interface EcPointInfinityValue {
+  kind: 'infinity';
+  curve: EcCurveDescriptor;
+}
+
+export type EcPointSignalValue = EcPointAffineValue | EcPointInfinityValue;
+
+export interface EcPointSignal {
+  type: 'ec-point';
+  value: EcPointSignalValue;
+}
+
+export type Signal = SymbolSignal | BitsSignal | IntegerSignal | EcPointSignal;
 
 export interface PortDef {
   name: string;

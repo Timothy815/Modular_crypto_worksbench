@@ -1,4 +1,5 @@
 import type { Signal } from '../engine/types';
+import { formatEcPointAsText, formatEcPointAsHex } from '../engine/modules/ec-point';
 
 const MAX_BITS = 8;
 const MAX_SYMBOL_CHARS = 10;
@@ -14,6 +15,10 @@ export function formatSignalChip(signal: Signal): string {
   if (signal.type === 'integer') {
     const { value } = signal;
     if (value.length === 0) return '\u2205';
+    return value.length > MAX_SYMBOL_CHARS ? `${value.slice(0, MAX_SYMBOL_CHARS)}\u2026` : value;
+  }
+  if (signal.type === 'ec-point') {
+    const value = formatEcPointAsText(signal.value);
     return value.length > MAX_SYMBOL_CHARS ? `${value.slice(0, MAX_SYMBOL_CHARS)}\u2026` : value;
   }
   const { value } = signal;
@@ -69,6 +74,18 @@ export function buildSignalChipDetail(signal: Signal): SignalChipDetail {
       hex: null,
       decimal: value,
       meta: `${value.length} digit${value.length === 1 ? '' : 's'}`,
+    };
+  }
+
+  if (signal.type === 'ec-point') {
+    return {
+      primary: formatEcPointAsText(signal.value),
+      hex: signal.value.kind === 'infinity' ? null : formatEcPointAsHex(signal.value),
+      decimal: null,
+      meta:
+        signal.value.kind === 'infinity'
+          ? 'point at infinity'
+          : `curve mod ${signal.value.curve.p}`,
     };
   }
 

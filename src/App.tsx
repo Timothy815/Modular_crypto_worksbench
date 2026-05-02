@@ -6845,6 +6845,11 @@ function formatTickSignal(
     return signal.value.length > 0 ? signal.value : '--';
   }
 
+  if (signal.type === 'ec-point') {
+    const value = formatEcPointAsText(signal.value);
+    return value.length > 0 ? value : '--';
+  }
+
   return signal.value.length > 0 ? signal.value.join('') : '--';
 }
 
@@ -6951,3 +6956,4 @@ function createDuplicateReusableName(sourceName: string, existingNames: Set<stri
 
   return candidate;
 }
+import { formatEcPointAsText } from './engine/modules/ec-point';

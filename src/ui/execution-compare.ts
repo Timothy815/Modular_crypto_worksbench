@@ -1,10 +1,6 @@
-import type {
-  ExecutionResult,
-  ExecutionTraceEntry,
-  Signal,
-  TickedExecutionResult,
-} from '../engine/types';
+import type { ExecutionResult, ExecutionTraceEntry, Signal, TickedExecutionResult } from '../engine/types';
 import { isOutputSinkDefId } from '../engine/output-sinks';
+import { areEcPointValuesEqual, formatEcPointAsText } from '../engine/modules/ec-point';
 
 export interface ComparedSignal {
   raw: Signal | null;
@@ -101,7 +97,9 @@ export function collectTickedOutput(
           ? signal.value
           : signal.type === 'bits'
             ? signal.value.join('')
-            : signal.value;
+            : signal.type === 'integer'
+              ? signal.value
+              : formatEcPointAsText(signal.value);
 
     if (currentTickValue.length === 0) {
       previousTickValue = currentTickValue;
@@ -302,7 +300,16 @@ function areSignalsEqual(left: Signal | null, right: Signal | null) {
     return left.value === right.value;
   }
 
-  return left.value.length === right.value.length && left.value.every((value, index) => value === right.value[index]);
+  if (left.type === 'ec-point') {
+    return right.type === 'ec-point' && areEcPointValuesEqual(left.value, right.value);
+  }
+
+  return (
+    left.type === 'bits' &&
+    right.type === 'bits' &&
+    left.value.length === right.value.length &&
+    left.value.every((value, index) => value === right.value[index])
+  );
 }
 
 function formatComparedSignal(signal: Signal | null) {
@@ -314,5 +321,7 @@ function formatComparedSignal(signal: Signal | null) {
     ? signal.value
     : signal.type === 'bits'
       ? `[${signal.value.join(', ')}]`
-      : signal.value;
+      : signal.type === 'integer'
+        ? signal.value
+        : formatEcPointAsText(signal.value);
 }

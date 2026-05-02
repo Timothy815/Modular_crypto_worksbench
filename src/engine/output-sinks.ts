@@ -5,6 +5,7 @@ export const OUTPUT_SINK_DEF_IDS = [
   'BaudotOutput',
   'BitOutput',
   'IntegerOutput',
+  'PointOutput',
 ] as const;
 
 export type OutputSinkDefId = (typeof OUTPUT_SINK_DEF_IDS)[number];

@@ -1,4 +1,5 @@
 import type { ModuleRegistry, Project } from '../../engine/types';
+import { formatEcPointAsText } from '../../engine/modules/ec-point';
 import type { ComparisonBaselineDocument } from '../workbench-document';
 import type { ExecutionComparison } from '../execution-compare';
 import { analyzeSymbolSignal } from '../cryptanalysis';
@@ -651,6 +652,7 @@ function formatSignalForCompare(
     | { type: 'symbol'; value: string }
     | { type: 'bits'; value: number[] }
     | { type: 'integer'; value: string }
+    | { type: 'ec-point'; value: { kind: 'affine'; curve: { p: number; a: number; b: number }; x: string; y: string } | { kind: 'infinity'; curve: { p: number; a: number; b: number } } }
     | undefined,
 ) {
   if (!signal) {
@@ -661,5 +663,7 @@ function formatSignalForCompare(
     ? signal.value
     : signal.type === 'bits'
       ? `[${signal.value.join(', ')}]`
-      : signal.value;
+      : signal.type === 'integer'
+        ? signal.value
+        : formatEcPointAsText(signal.value);
 }

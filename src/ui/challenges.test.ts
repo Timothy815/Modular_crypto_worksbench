@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { executeProject } from '../engine/executor';
+import { formatEcPointAsText } from '../engine/modules/ec-point';
 import { V1_REGISTRY } from '../engine/modules';
 import type { Project } from '../engine/types';
 import { demoProjects } from './demo-projects';
@@ -306,7 +307,9 @@ describe('evaluateChallengeAttempt', () => {
           ? terminalSignal.value
           : terminalSignal.type === 'bits'
             ? formatBitsAsHex(terminalSignal.value)
-            : terminalSignal.value;
+            : terminalSignal.type === 'integer'
+              ? terminalSignal.value
+              : formatEcPointAsText(terminalSignal.value);
 
       seen.add(digestValue);
       if (previousDigest === digestValue) {

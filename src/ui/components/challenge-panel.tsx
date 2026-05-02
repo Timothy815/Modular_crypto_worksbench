@@ -11,6 +11,7 @@ import {
   inferLearningStage,
   isCoreLearningItem,
 } from '../learning-sequence';
+import { formatEcPointAsText } from '../../engine/modules/ec-point';
 import type { Project } from '../../engine/types';
 
 interface ChallengePanelProps {
@@ -561,6 +562,7 @@ function formatSignalForDisplay(
     | { type: 'symbol'; value: string }
     | { type: 'bits'; value: number[] }
     | { type: 'integer'; value: string }
+    | { type: 'ec-point'; value: { kind: 'affine'; curve: { p: number; a: number; b: number }; x: string; y: string } | { kind: 'infinity'; curve: { p: number; a: number; b: number } } }
     | undefined,
 ) {
   if (!signal) {
@@ -571,5 +573,7 @@ function formatSignalForDisplay(
     ? signal.value
     : signal.type === 'bits'
       ? `[${signal.value.join(', ')}]`
-      : signal.value;
+      : signal.type === 'integer'
+        ? signal.value
+        : formatEcPointAsText(signal.value);
 }

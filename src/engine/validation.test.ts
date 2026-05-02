@@ -10,6 +10,11 @@ import { FieldAdd } from './modules/field-add';
 import { FieldSub } from './modules/field-sub';
 import { FieldMul } from './modules/field-mul';
 import { FieldInverse } from './modules/field-inverse';
+import { PointSource } from './modules/point-source';
+import { PointOnCurve } from './modules/point-on-curve';
+import { PointNegate } from './modules/point-negate';
+import { PointAdd } from './modules/point-add';
+import { PointDouble } from './modules/point-double';
 import { AND } from './modules/and';
 import { AtLeast } from './modules/at-least';
 import { BaudotSource } from './modules/baudot-source';
@@ -139,6 +144,11 @@ const registry: ModuleRegistry = {
   [FieldSub.id]: FieldSub,
   [FieldMul.id]: FieldMul,
   [FieldInverse.id]: FieldInverse,
+  [PointSource.id]: PointSource,
+  [PointOnCurve.id]: PointOnCurve,
+  [PointNegate.id]: PointNegate,
+  [PointAdd.id]: PointAdd,
+  [PointDouble.id]: PointDouble,
   [ModExp.id]: ModExp,
   [ModInverse.id]: ModInverse,
   [Modulo.id]: Modulo,
@@ -1191,6 +1201,38 @@ describe('validateProject', () => {
     expect(
       result.issues.some(
         (issue) => issue.moduleId === 'counter' && issue.message.toLowerCase().includes('safe integer'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects PointSource coordinates that do not lie on the declared curve', () => {
+    const project: Project = {
+      modules: [{ id: 'point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 5, y: 5 } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) => issue.moduleId === 'point' && issue.message.toLowerCase().includes('point parameters are invalid'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects singular curve parameters for point primitives', () => {
+    const project: Project = {
+      modules: [{ id: 'double', defId: 'PointDouble', params: { p: 5, a: 0, b: 0 } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) => issue.moduleId === 'double' && issue.message.toLowerCase().includes('curve parameters are invalid'),
       ),
     ).toBe(true);
   });
