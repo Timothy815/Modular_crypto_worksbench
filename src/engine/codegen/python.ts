@@ -3217,7 +3217,24 @@ function getDefaultParamExpression(
   def: ModuleDefinition,
   key: string,
 ) {
-  return toPythonLiteral(getResolvedParamValue(moduleInstance, def, key));
+  const field = def.paramSchema[key];
+  const value = getResolvedParamValue(moduleInstance, def, key);
+
+  // bigint-hex params are stored as uppercase hex strings or legacy numbers.
+  // Emit as Python integer literals to preserve full precision.
+  if (field?.kind === 'bigint-hex') {
+    if (typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value)) {
+      return String(Math.trunc(value));
+    }
+    if (typeof value === 'string') {
+      const stripped = value.trim().replace(/^0x/i, '');
+      if (/^[0-9a-fA-F]+$/.test(stripped) && stripped.length > 0) {
+        return `0x${stripped.toUpperCase()}`;
+      }
+    }
+  }
+
+  return toPythonLiteral(value);
 }
 
 function createPythonExpressionContext(

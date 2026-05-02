@@ -10,8 +10,8 @@ export const PointOrder: ModuleDef = {
     p: {
       key: 'p',
       label: 'Prime Modulus p',
-      kind: 'number',
-      defaultValue: 17,
+      kind: 'bigint-hex',
+      defaultValue: '11',
       required: true,
       description: 'Prime modulus for the receiving curve context.',
     },

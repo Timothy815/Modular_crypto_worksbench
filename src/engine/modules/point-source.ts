@@ -1,4 +1,5 @@
 import type { ModuleDef } from '../types';
+import { normalizeBigIntHexParam } from './bigint-param';
 import { createAffineEcPointSignal, normalizeEcCurveParams, validatePointSourceParamsStatic } from './ec-point';
 
 export const PointSource: ModuleDef = {
@@ -10,42 +11,42 @@ export const PointSource: ModuleDef = {
     p: {
       key: 'p',
       label: 'Prime Modulus p',
-      kind: 'number',
-      defaultValue: 17,
+      kind: 'bigint-hex',
+      defaultValue: '11',
       required: true,
-      description: 'Prime modulus for the visible pedagogical curve.',
+      description: 'Prime modulus for the curve (hex). For secp256k1 use FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F.',
     },
     a: {
       key: 'a',
       label: 'Curve Parameter a',
-      kind: 'number',
-      defaultValue: 2,
+      kind: 'bigint-hex',
+      defaultValue: '2',
       required: true,
-      description: 'Short Weierstrass curve parameter a, reduced into 0..p-1.',
+      description: 'Short Weierstrass curve parameter a (hex), reduced into 0..p-1.',
     },
     b: {
       key: 'b',
       label: 'Curve Parameter b',
-      kind: 'number',
-      defaultValue: 3,
+      kind: 'bigint-hex',
+      defaultValue: '3',
       required: true,
-      description: 'Short Weierstrass curve parameter b, reduced into 0..p-1.',
+      description: 'Short Weierstrass curve parameter b (hex), reduced into 0..p-1.',
     },
     x: {
       key: 'x',
       label: 'Point X',
-      kind: 'number',
-      defaultValue: 5,
+      kind: 'bigint-hex',
+      defaultValue: '5',
       required: true,
-      description: 'Affine x-coordinate in the field range 0..p-1.',
+      description: 'Affine x-coordinate (hex) in the field range 0..p-1.',
     },
     y: {
       key: 'y',
       label: 'Point Y',
-      kind: 'number',
-      defaultValue: 6,
+      kind: 'bigint-hex',
+      defaultValue: '6',
       required: true,
-      description: 'Affine y-coordinate in the field range 0..p-1.',
+      description: 'Affine y-coordinate (hex) in the field range 0..p-1.',
     },
   },
   evaluate: (_inputs, params) => {
@@ -57,8 +58,10 @@ export const PointSource: ModuleDef = {
       throw new Error(validationMessage);
     }
     const curve = normalizeEcCurveParams({ p: params.p, a: params.a, b: params.b }, 'PointSource');
+    const x = normalizeBigIntHexParam(params.x, 'PointSource', 'x');
+    const y = normalizeBigIntHexParam(params.y, 'PointSource', 'y');
     return {
-      out: createAffineEcPointSignal(BigInt(params.x as number), BigInt(params.y as number), curve.curve),
+      out: createAffineEcPointSignal(x, y, curve.curve),
     };
   },
 };

@@ -181,7 +181,7 @@ describe('serializeStageSignalForClipboard', () => {
         type: 'ec-point',
         value: {
           kind: 'affine',
-          curve: { p: 17, a: 2, b: 3 },
+          curve: { p: 17n, a: 2n, b: 3n },
           x: '5',
           y: '6',
         },

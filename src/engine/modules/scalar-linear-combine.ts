@@ -14,8 +14,8 @@ export const ScalarLinearCombine: ModuleDef = {
     n: {
       key: 'n',
       label: 'Subgroup Order n',
-      kind: 'number',
-      defaultValue: 11,
+      kind: 'bigint-hex',
+      defaultValue: 'B',
       required: true,
       description: 'Visible scalar-order modulus for response arithmetic.',
     },

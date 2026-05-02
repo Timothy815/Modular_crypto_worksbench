@@ -13,8 +13,8 @@ export const FieldSub: ModuleDef = {
     modulus: {
       key: 'modulus',
       label: 'Prime Modulus p',
-      kind: 'number',
-      defaultValue: 5,
+      kind: 'bigint-hex',
+      defaultValue: '5',
       required: true,
       description: 'Prime modulus p. Inputs must already be field elements in the range 0..p-1.',
     },

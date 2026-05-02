@@ -10,8 +10,8 @@ export const FieldInverse: ModuleDef = {
     modulus: {
       key: 'modulus',
       label: 'Prime Modulus p',
-      kind: 'number',
-      defaultValue: 5,
+      kind: 'bigint-hex',
+      defaultValue: '5',
       required: true,
       description: 'Prime modulus p. The input must already be a field element in the range 0..p-1.',
     },

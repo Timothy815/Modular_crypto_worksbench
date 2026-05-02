@@ -356,7 +356,7 @@ describe('PointSource', () => {
       type: 'ec-point',
       value: {
         kind: 'affine',
-        curve: { p: 17, a: 2, b: 3 },
+        curve: { p: 17n, a: 2n, b: 3n },
         x: '5',
         y: '6',
       },
@@ -372,13 +372,13 @@ describe('PointOnCurve', () => {
           type: 'ec-point',
           value: {
             kind: 'affine',
-            curve: { p: 17, a: 2, b: 3 },
+            curve: { p: 17n, a: 2n, b: 3n },
             x: '5',
             y: '6',
           },
         },
       },
-      { p: 17, a: 2, b: 3 },
+      { p: 17n, a: 2n, b: 3n },
     );
     expect(result.out).toEqual({ type: 'bits', value: [1] });
   });
@@ -392,19 +392,19 @@ describe('PointNegate', () => {
           type: 'ec-point',
           value: {
             kind: 'affine',
-            curve: { p: 17, a: 2, b: 3 },
+            curve: { p: 17n, a: 2n, b: 3n },
             x: '5',
             y: '6',
           },
         },
       },
-      { p: 17, a: 2, b: 3 },
+      { p: 17n, a: 2n, b: 3n },
     );
     expect(result.out).toEqual({
       type: 'ec-point',
       value: {
         kind: 'affine',
-        curve: { p: 17, a: 2, b: 3 },
+        curve: { p: 17n, a: 2n, b: 3n },
         x: '5',
         y: '11',
       },
@@ -420,7 +420,7 @@ describe('PointAdd', () => {
           type: 'ec-point',
           value: {
             kind: 'affine',
-            curve: { p: 17, a: 2, b: 3 },
+            curve: { p: 17n, a: 2n, b: 3n },
             x: '5',
             y: '6',
           },
@@ -429,19 +429,19 @@ describe('PointAdd', () => {
           type: 'ec-point',
           value: {
             kind: 'affine',
-            curve: { p: 17, a: 2, b: 3 },
+            curve: { p: 17n, a: 2n, b: 3n },
             x: '5',
             y: '11',
           },
         },
       },
-      { p: 17, a: 2, b: 3 },
+      { p: 17n, a: 2n, b: 3n },
     );
     expect(result.out).toEqual({
       type: 'ec-point',
       value: {
         kind: 'infinity',
-        curve: { p: 17, a: 2, b: 3 },
+        curve: { p: 17n, a: 2n, b: 3n },
       },
     });
   });
@@ -453,7 +453,7 @@ describe('PointAdd', () => {
           type: 'ec-point',
           value: {
             kind: 'affine',
-            curve: { p: 17, a: 2, b: 3 },
+            curve: { p: 17n, a: 2n, b: 3n },
             x: '5',
             y: '6',
           },
@@ -462,19 +462,19 @@ describe('PointAdd', () => {
           type: 'ec-point',
           value: {
             kind: 'affine',
-            curve: { p: 17, a: 2, b: 3 },
+            curve: { p: 17n, a: 2n, b: 3n },
             x: '5',
             y: '6',
           },
         },
       },
-      { p: 17, a: 2, b: 3 },
+      { p: 17n, a: 2n, b: 3n },
     );
     expect(result.out).toEqual({
       type: 'ec-point',
       value: {
         kind: 'affine',
-        curve: { p: 17, a: 2, b: 3 },
+        curve: { p: 17n, a: 2n, b: 3n },
         x: '15',
         y: '12',
       },
@@ -489,7 +489,7 @@ describe('PointAdd', () => {
             type: 'ec-point',
             value: {
               kind: 'affine',
-              curve: { p: 17, a: 2, b: 3 },
+              curve: { p: 17n, a: 2n, b: 3n },
               x: '5',
               y: '6',
             },
@@ -498,13 +498,13 @@ describe('PointAdd', () => {
             type: 'ec-point',
             value: {
               kind: 'affine',
-              curve: { p: 17, a: 4, b: 3 },
+              curve: { p: 17n, a: 4n, b: 3n },
               x: '5',
               y: '5',
             },
           },
         },
-        { p: 17, a: 2, b: 3 },
+        { p: 17n, a: 2n, b: 3n },
       ),
     ).toThrow(/declared curve/i);
   });
@@ -518,19 +518,19 @@ describe('PointDouble', () => {
           type: 'ec-point',
           value: {
             kind: 'affine',
-            curve: { p: 17, a: 2, b: 3 },
+            curve: { p: 17n, a: 2n, b: 3n },
             x: '5',
             y: '6',
           },
         },
       },
-      { p: 17, a: 2, b: 3 },
+      { p: 17n, a: 2n, b: 3n },
     );
     expect(result.out).toEqual({
       type: 'ec-point',
       value: {
         kind: 'affine',
-        curve: { p: 17, a: 2, b: 3 },
+        curve: { p: 17n, a: 2n, b: 3n },
         x: '15',
         y: '12',
       },
@@ -546,7 +546,7 @@ describe('PointEquals', () => {
           type: 'ec-point',
           value: {
             kind: 'affine',
-            curve: { p: 17, a: 2, b: 3 },
+            curve: { p: 17n, a: 2n, b: 3n },
             x: '13',
             y: '13',
           },
@@ -555,13 +555,13 @@ describe('PointEquals', () => {
           type: 'ec-point',
           value: {
             kind: 'affine',
-            curve: { p: 17, a: 2, b: 3 },
+            curve: { p: 17n, a: 2n, b: 3n },
             x: '13',
             y: '13',
           },
         },
       },
-      { p: 17, a: 2, b: 3 },
+      { p: 17n, a: 2n, b: 3n },
     );
     expect(result.out).toEqual({ type: 'bits', value: [1] });
   });
@@ -573,7 +573,7 @@ describe('PointEquals', () => {
           type: 'ec-point',
           value: {
             kind: 'affine',
-            curve: { p: 17, a: 2, b: 3 },
+            curve: { p: 17n, a: 2n, b: 3n },
             x: '13',
             y: '13',
           },
@@ -582,13 +582,13 @@ describe('PointEquals', () => {
           type: 'ec-point',
           value: {
             kind: 'affine',
-            curve: { p: 17, a: 2, b: 3 },
+            curve: { p: 17n, a: 2n, b: 3n },
             x: '5',
             y: '6',
           },
         },
       },
-      { p: 17, a: 2, b: 3 },
+      { p: 17n, a: 2n, b: 3n },
     );
     expect(result.out).toEqual({ type: 'bits', value: [0] });
   });
@@ -603,19 +603,19 @@ describe('ScalarMultiply', () => {
           type: 'ec-point',
           value: {
             kind: 'affine',
-            curve: { p: 17, a: 2, b: 3 },
+            curve: { p: 17n, a: 2n, b: 3n },
             x: '5',
             y: '6',
           },
         },
       },
-      { p: 17, a: 2, b: 3 },
+      { p: 17n, a: 2n, b: 3n },
     );
     expect(result.out).toEqual({
       type: 'ec-point',
       value: {
         kind: 'affine',
-        curve: { p: 17, a: 2, b: 3 },
+        curve: { p: 17n, a: 2n, b: 3n },
         x: '13',
         y: '13',
       },
@@ -630,19 +630,19 @@ describe('ScalarMultiply', () => {
           type: 'ec-point',
           value: {
             kind: 'affine',
-            curve: { p: 17, a: 2, b: 3 },
+            curve: { p: 17n, a: 2n, b: 3n },
             x: '5',
             y: '6',
           },
         },
       },
-      { p: 17, a: 2, b: 3 },
+      { p: 17n, a: 2n, b: 3n },
     );
     expect(result.out).toEqual({
       type: 'ec-point',
       value: {
         kind: 'infinity',
-        curve: { p: 17, a: 2, b: 3 },
+        curve: { p: 17n, a: 2n, b: 3n },
       },
     });
   });
@@ -656,13 +656,13 @@ describe('PointOrder', () => {
           type: 'ec-point',
           value: {
             kind: 'affine',
-            curve: { p: 17, a: 0, b: 13 },
+            curve: { p: 17n, a: 0n, b: 13n },
             x: '5',
             y: '6',
           },
         },
       },
-      { p: 17, a: 0, b: 13 },
+      { p: 17n, a: 0n, b: 13n },
     );
 
     expect(result.out).toEqual({
@@ -678,13 +678,13 @@ describe('PointOrder', () => {
           type: 'ec-point',
           value: {
             kind: 'affine',
-            curve: { p: 17, a: 0, b: 13 },
+            curve: { p: 17n, a: 0n, b: 13n },
             x: '2',
             y: '2',
           },
         },
       },
-      { p: 17, a: 0, b: 13 },
+      { p: 17n, a: 0n, b: 13n },
     );
 
     expect(result.out).toEqual({
@@ -700,11 +700,11 @@ describe('PointOrder', () => {
           type: 'ec-point',
           value: {
             kind: 'infinity',
-            curve: { p: 17, a: 0, b: 13 },
+            curve: { p: 17n, a: 0n, b: 13n },
           },
         },
       },
-      { p: 17, a: 0, b: 13 },
+      { p: 17n, a: 0n, b: 13n },
     );
 
     expect(result.out).toEqual({
@@ -722,7 +722,7 @@ describe('ChallengeCombine', () => {
           type: 'ec-point',
           value: {
             kind: 'affine',
-            curve: { p: 17, a: 2, b: 3 },
+            curve: { p: 17n, a: 2n, b: 3n },
             x: '3',
             y: '11',
           },
@@ -731,7 +731,7 @@ describe('ChallengeCombine', () => {
           type: 'ec-point',
           value: {
             kind: 'affine',
-            curve: { p: 17, a: 2, b: 3 },
+            curve: { p: 17n, a: 2n, b: 3n },
             x: '12',
             y: '2',
           },
@@ -755,14 +755,14 @@ describe('ChallengeCombine', () => {
             type: 'ec-point',
             value: {
               kind: 'infinity',
-              curve: { p: 17, a: 2, b: 3 },
+              curve: { p: 17n, a: 2n, b: 3n },
             },
           },
           publicKey: {
             type: 'ec-point',
             value: {
               kind: 'affine',
-              curve: { p: 17, a: 2, b: 3 },
+              curve: { p: 17n, a: 2n, b: 3n },
               x: '12',
               y: '2',
             },

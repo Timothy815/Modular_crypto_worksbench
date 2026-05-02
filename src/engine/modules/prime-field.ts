@@ -1,6 +1,6 @@
 import type { Signal } from '../types';
-import { normalizePositiveSafeInteger } from './bit-word';
 import { parseUnsignedIntegerString } from './integer-signal';
+import { normalizeBigIntHexParam } from './bigint-param';
 
 const PRIME_TEST_BASES = [2n, 325n, 9375n, 28178n, 450775n, 9780504n, 1795265022n] as const;
 
@@ -68,19 +68,20 @@ export function isPrimeSafeIntegerBigInt(value: bigint): boolean {
 }
 
 function getPrimeFieldModulusError(value: unknown, moduleName: string): string | null {
-  if (
-    typeof value !== 'number' ||
-    !Number.isFinite(value) ||
-    !Number.isInteger(value) ||
-    !Number.isSafeInteger(value) ||
-    value < 2
-  ) {
-    return `${moduleName} requires a prime safe integer modulus of at least 2.`;
+  let parsed: bigint;
+  try {
+    parsed = normalizeBigIntHexParam(value, moduleName, 'modulus');
+  } catch (error) {
+    return error instanceof Error ? error.message : `${moduleName} requires a valid prime modulus.`;
   }
 
-  return isPrimeSafeIntegerBigInt(BigInt(value))
+  if (parsed < 2n) {
+    return `${moduleName} requires a prime modulus of at least 2.`;
+  }
+
+  return isPrimeSafeIntegerBigInt(parsed)
     ? null
-    : `${moduleName} requires "modulus" to be prime in V1.`;
+    : `${moduleName} requires "modulus" to be prime.`;
 }
 
 export function validatePrimeFieldModulusParam(moduleName: string, key: string, value: unknown): string | null {
@@ -92,13 +93,12 @@ export function validatePrimeFieldModulusParam(moduleName: string, key: string, 
 }
 
 export function normalizePrimeFieldModulus(value: unknown, moduleName: string): bigint {
-  const base = normalizePositiveSafeInteger(value, moduleName, 'modulus');
-  const error = getPrimeFieldModulusError(base, moduleName);
+  const error = getPrimeFieldModulusError(value, moduleName);
   if (error) {
     throw new Error(error);
   }
 
-  return BigInt(base);
+  return normalizeBigIntHexParam(value, moduleName, 'modulus');
 }
 
 export function expectFieldElementSignal(

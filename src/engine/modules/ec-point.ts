@@ -1,4 +1,5 @@
 import type { EcCurveDescriptor, EcPointSignal, EcPointSignalValue, Signal } from '../types';
+import { normalizeBigIntHexParam } from './bigint-param';
 import { parseUnsignedIntegerString } from './integer-signal';
 import { isPrimeSafeIntegerBigInt, multiplicativeInverse } from './prime-field';
 
@@ -27,37 +28,24 @@ export type NormalizedPoint = NormalizedAffinePoint | NormalizedInfinityPoint;
 
 export const POINT_ORDER_OBSERVATION_LIMIT = 256n;
 
-function normalizeNonNegativeSafeInteger(value: unknown, moduleName: string, fieldName: string): number {
-  if (
-    typeof value !== 'number' ||
-    !Number.isFinite(value) ||
-    !Number.isInteger(value) ||
-    !Number.isSafeInteger(value) ||
-    value < 0
-  ) {
-    throw new Error(`${moduleName} requires "${fieldName}" to be a non-negative safe integer in V1.`);
+function getCurveParamError(moduleName: string, key: 'p' | 'a' | 'b' | 'x' | 'y', value: unknown): string | null {
+  let parsed: bigint;
+  try {
+    parsed = normalizeBigIntHexParam(value, moduleName, key);
+  } catch (error) {
+    return error instanceof Error ? error.message : `${moduleName} requires "${key}" to be a valid hex integer.`;
   }
 
-  return value;
-}
-
-function getCurveParamError(moduleName: string, key: 'p' | 'a' | 'b' | 'x' | 'y', value: unknown): string | null {
-  if (
-    typeof value !== 'number' ||
-    !Number.isFinite(value) ||
-    !Number.isInteger(value) ||
-    !Number.isSafeInteger(value) ||
-    value < 0
-  ) {
-    return `${moduleName} requires "${key}" to be a non-negative safe integer in V1.`;
+  if (parsed < 0n) {
+    return `${moduleName} requires "${key}" to be non-negative.`;
   }
 
   if (key === 'p') {
-    if (value < 2) {
-      return `${moduleName} requires "p" to be a prime safe integer modulus of at least 2.`;
+    if (parsed < 2n) {
+      return `${moduleName} requires "p" to be a prime modulus of at least 2.`;
     }
-    if (!isPrimeSafeIntegerBigInt(BigInt(value))) {
-      return `${moduleName} requires "p" to be prime in V1.`;
+    if (!isPrimeSafeIntegerBigInt(parsed)) {
+      return `${moduleName} requires "p" to be prime.`;
     }
   }
 
@@ -80,37 +68,34 @@ export function normalizeEcCurveParams(
   params: { p: unknown; a: unknown; b: unknown },
   moduleName: string,
 ): NormalizedCurveParams {
-  const pNumber = normalizeNonNegativeSafeInteger(params.p, moduleName, 'p');
-  const pError = getCurveParamError(moduleName, 'p', pNumber);
+  const pError = getCurveParamError(moduleName, 'p', params.p);
   if (pError) {
     throw new Error(pError);
   }
-
-  const aNumber = normalizeNonNegativeSafeInteger(params.a, moduleName, 'a');
-  const bNumber = normalizeNonNegativeSafeInteger(params.b, moduleName, 'b');
-  const aError = getCurveParamError(moduleName, 'a', aNumber);
-  const bError = getCurveParamError(moduleName, 'b', bNumber);
+  const aError = getCurveParamError(moduleName, 'a', params.a);
   if (aError) {
     throw new Error(aError);
   }
+  const bError = getCurveParamError(moduleName, 'b', params.b);
   if (bError) {
     throw new Error(bError);
   }
 
-  if (aNumber >= pNumber || bNumber >= pNumber) {
-    throw new Error(`${moduleName} requires "a" and "b" to be in the field range 0..${pNumber - 1}.`);
+  const p = normalizeBigIntHexParam(params.p, moduleName, 'p');
+  const a = normalizeBigIntHexParam(params.a, moduleName, 'a');
+  const b = normalizeBigIntHexParam(params.b, moduleName, 'b');
+
+  if (a >= p || b >= p) {
+    throw new Error(`${moduleName} requires "a" and "b" to be in the field range 0..${(p - 1n).toString(10)}.`);
   }
 
-  const p = BigInt(pNumber);
-  const a = BigInt(aNumber);
-  const b = BigInt(bNumber);
   const discriminant = mod(4n * a * a * a + 27n * b * b, p);
   if (discriminant === 0n) {
     throw new Error(`${moduleName} requires a non-singular curve: 4a^3 + 27b^2 must be nonzero modulo p.`);
   }
 
   return {
-    curve: { p: pNumber, a: aNumber, b: bNumber },
+    curve: { p, a, b },
     p,
     a,
     b,
@@ -132,20 +117,20 @@ export function validatePointSourceParamsStatic(
 ): string | null {
   try {
     const curve = normalizeEcCurveParams(params, moduleName);
-    const xNumber = normalizeNonNegativeSafeInteger(params.x, moduleName, 'x');
-    const yNumber = normalizeNonNegativeSafeInteger(params.y, moduleName, 'y');
-    const xError = getCurveParamError(moduleName, 'x', xNumber);
-    const yError = getCurveParamError(moduleName, 'y', yNumber);
+    const xError = getCurveParamError(moduleName, 'x', params.x);
+    const yError = getCurveParamError(moduleName, 'y', params.y);
     if (xError) {
       throw new Error(xError);
     }
     if (yError) {
       throw new Error(yError);
     }
-    if (xNumber >= curve.curve.p || yNumber >= curve.curve.p) {
-      throw new Error(`${moduleName} requires "x" and "y" to be in the field range 0..${curve.curve.p - 1}.`);
+    const x = normalizeBigIntHexParam(params.x, moduleName, 'x');
+    const y = normalizeBigIntHexParam(params.y, moduleName, 'y');
+    if (x >= curve.p || y >= curve.p) {
+      throw new Error(`${moduleName} requires "x" and "y" to be in the field range 0..${(curve.p - 1n).toString(10)}.`);
     }
-    if (!isAffinePointOnCurve(BigInt(xNumber), BigInt(yNumber), curve)) {
+    if (!isAffinePointOnCurve(x, y, curve)) {
       throw new Error(`${moduleName} requires the declared point to lie on the declared curve.`);
     }
     return null;
@@ -165,14 +150,18 @@ function parseCurveDescriptor(value: unknown, moduleName: string, label: string)
     throw new Error(`${moduleName} expects ${label} to carry explicit curve provenance.`);
   }
 
-  const { p, a, b } = value as Partial<EcCurveDescriptor>;
-  const pError = getCurveParamError(moduleName, 'p', p);
-  const aError = getCurveParamError(moduleName, 'a', a);
-  const bError = getCurveParamError(moduleName, 'b', b);
-  if (pError || aError || bError) {
-    throw new Error(`${moduleName} expects ${label} to carry valid curve provenance.`);
+  const raw = value as Record<string, unknown>;
+  // EcCurveDescriptor.p/a/b are bigint at runtime, but may arrive as number or string from signal values
+  const p = raw['p'];
+  const a = raw['a'];
+  const b = raw['b'];
+
+  // If already bigint (normal runtime path), use directly
+  if (typeof p === 'bigint' && typeof a === 'bigint' && typeof b === 'bigint') {
+    return { p, a, b };
   }
 
+  // Fallback: parse from number or string (for deserialized or mixed signals)
   const normalized = normalizeEcCurveParams({ p, a, b }, moduleName);
   return normalized.curve;
 }
@@ -197,9 +186,8 @@ export function normalizeEcPointSignal(
 
   const x = parseUnsignedIntegerString(value.x, moduleName);
   const y = parseUnsignedIntegerString(value.y, moduleName);
-  const p = BigInt(curve.p);
-  if (x >= p || y >= p) {
-    throw new Error(`${moduleName} expects ${label} coordinates to be in the field range 0..${curve.p - 1}.`);
+  if (x >= curve.p || y >= curve.p) {
+    throw new Error(`${moduleName} expects ${label} coordinates to be in the field range 0..${(curve.p - 1n).toString(10)}.`);
   }
   const normalizedCurve = normalizeEcCurveParams(curve, moduleName);
   if (!isAffinePointOnCurve(x, y, normalizedCurve)) {
@@ -229,7 +217,7 @@ export function expectPointOnCurveSignal(
     point.curve.b !== curve.curve.b
   ) {
     throw new Error(
-      `${moduleName} expects ${label} to belong to curve y^2 = x^3 + ${curve.curve.a}x + ${curve.curve.b} (mod ${curve.curve.p}).`,
+      `${moduleName} expects ${label} to belong to curve y^2 = x^3 + ${curve.curve.a.toString(10)}x + ${curve.curve.b.toString(10)} (mod ${curve.curve.p.toString(10)}).`,
     );
   }
   return point;

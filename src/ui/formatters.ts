@@ -97,6 +97,16 @@ export function parseParamValue(rawValue: string, field: ParamFieldDef): ParsedP
 
       return { ok: true, value: parts };
     }
+    case 'bigint-hex': {
+      const stripped = rawValue.trim().replace(/^0x/i, '');
+      if (stripped === '') {
+        return { ok: false, error: 'Enter a hex value (e.g. 11 for 17).' };
+      }
+      if (!/^[0-9a-fA-F]+$/.test(stripped)) {
+        return { ok: false, error: 'Enter a valid hex string (digits 0-9, A-F).' };
+      }
+      return { ok: true, value: stripped.toUpperCase() };
+    }
     case 'select':
       return { ok: true, value: rawValue };
     case 'string':

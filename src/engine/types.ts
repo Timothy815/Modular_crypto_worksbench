@@ -19,9 +19,9 @@ export interface IntegerSignal {
 }
 
 export interface EcCurveDescriptor {
-  p: number;
-  a: number;
-  b: number;
+  p: bigint;
+  a: bigint;
+  b: bigint;
 }
 
 export interface EcPointAffineValue {
@@ -53,6 +53,7 @@ export interface PortDef {
 
 export type ParamKind =
   | 'number'
+  | 'bigint-hex'
   | 'string'
   | 'boolean'
   | 'select'

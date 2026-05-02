@@ -562,7 +562,7 @@ function formatSignalForDisplay(
     | { type: 'symbol'; value: string }
     | { type: 'bits'; value: number[] }
     | { type: 'integer'; value: string }
-    | { type: 'ec-point'; value: { kind: 'affine'; curve: { p: number; a: number; b: number }; x: string; y: string } | { kind: 'infinity'; curve: { p: number; a: number; b: number } } }
+    | { type: 'ec-point'; value: { kind: 'affine'; curve: { p: bigint; a: bigint; b: bigint }; x: string; y: string } | { kind: 'infinity'; curve: { p: bigint; a: bigint; b: bigint } } }
     | undefined,
 ) {
   if (!signal) {

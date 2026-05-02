@@ -152,6 +152,20 @@ function validateParamValue(field: ParamFieldDef, value: unknown): ValidationIss
       if (unique.size !== 26) return 'invalid-wiring';
       return null;
     }
+    case 'bigint-hex': {
+      // Accept bigint (runtime), finite non-negative integer number (backward compat), or hex string
+      if (typeof value === 'bigint') return value >= 0n ? null : 'invalid-param-type';
+      if (typeof value === 'number') {
+        return Number.isFinite(value) && Number.isInteger(value) && value >= 0
+          ? null
+          : 'invalid-param-type';
+      }
+      if (typeof value === 'string') {
+        const stripped = value.trim().replace(/^0x/i, '');
+        return stripped.length > 0 && /^[0-9a-fA-F]+$/.test(stripped) ? null : 'invalid-param-type';
+      }
+      return 'invalid-param-type';
+    }
     case 'select': {
       if (typeof value !== 'string') return 'invalid-param-type';
       if (!field.options || field.options.length === 0) return null;

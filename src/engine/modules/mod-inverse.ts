@@ -2,23 +2,27 @@ import type { ModuleDef } from '../types';
 import {
   bitsToUnsignedBigInt,
   expectBitsSignal,
-  normalizePositiveSafeInteger,
   unsignedBigIntToBits,
 } from './bit-word';
+import { normalizeBigIntHexParam, validateBigIntHexParam } from './bigint-param';
 
 export function validateModInverseParam(key: string, value: unknown): string | null {
   if (key !== 'modulus') {
     return null;
   }
 
-  if (
-    typeof value !== 'number' ||
-    !Number.isFinite(value) ||
-    !Number.isInteger(value) ||
-    !Number.isSafeInteger(value) ||
-    value < 2
-  ) {
-    return 'ModInverse requires a safe integer modulus of at least 2.';
+  const error = validateBigIntHexParam('ModInverse', 'modulus', value);
+  if (error) {
+    return error;
+  }
+
+  try {
+    const parsed = normalizeBigIntHexParam(value, 'ModInverse', 'modulus');
+    if (parsed < 2n) {
+      return 'ModInverse requires a modulus of at least 2.';
+    }
+  } catch {
+    return 'ModInverse requires a valid hex integer modulus of at least 2.';
   }
 
   return null;
@@ -52,15 +56,15 @@ export const ModInverse: ModuleDef = {
     modulus: {
       key: 'modulus',
       label: 'Modulus',
-      kind: 'number',
-      defaultValue: 15,
+      kind: 'bigint-hex',
+      defaultValue: 'F',
       required: true,
       description: 'Integer modulus (>= 2). Result is the modular inverse of the input.',
     },
   },
   evaluate: (inputs, params) => {
     const bits = expectBitsSignal(inputs.in, 'ModInverse');
-    const modulus = BigInt(normalizePositiveSafeInteger(params.modulus, 'ModInverse', 'modulus'));
+    const modulus = normalizeBigIntHexParam(params.modulus, 'ModInverse', 'modulus');
 
     if (modulus < 2n) {
       throw new Error('ModInverse requires a modulus of at least 2');

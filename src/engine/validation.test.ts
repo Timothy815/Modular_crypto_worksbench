@@ -1115,12 +1115,12 @@ describe('validateProject', () => {
     ).toBe(true);
   });
 
-  it('rejects ModExp modulus that is not a safe integer', () => {
+  it('rejects ModExp modulus that is an invalid hex string', () => {
     const project: Project = {
       modules: [
         { id: 'base', defId: 'BitSource', params: { stream: [1, 0, 1, 0] } },
         { id: 'exp', defId: 'BitSource', params: { stream: [0, 0, 1, 0] } },
-        { id: 'mexp', defId: 'ModExp', params: { modulus: Number.MAX_SAFE_INTEGER + 1 } },
+        { id: 'mexp', defId: 'ModExp', params: { modulus: 'not-hex' } },
       ],
       connections: [
         { from: { moduleId: 'base', port: 'out' }, to: { moduleId: 'mexp', port: 'base' } },
@@ -1133,7 +1133,7 @@ describe('validateProject', () => {
     expect(result.ok).toBe(false);
     expect(
       result.issues.some(
-        (issue) => issue.moduleId === 'mexp' && issue.message.toLowerCase().includes('safe integer'),
+        (issue) => issue.moduleId === 'mexp',
       ),
     ).toBe(true);
   });
@@ -1177,9 +1177,9 @@ describe('validateProject', () => {
     ).toBe(true);
   });
 
-  it('rejects FieldAdd modulus that is not a safe integer', () => {
+  it('rejects FieldAdd modulus that is an invalid hex string', () => {
     const project: Project = {
-      modules: [{ id: 'fadd', defId: 'FieldAdd', params: { modulus: Number.MAX_SAFE_INTEGER + 1 } }],
+      modules: [{ id: 'fadd', defId: 'FieldAdd', params: { modulus: 'not-hex' } }],
       connections: [],
     };
 
@@ -1188,7 +1188,7 @@ describe('validateProject', () => {
     expect(result.ok).toBe(false);
     expect(
       result.issues.some(
-        (issue) => issue.moduleId === 'fadd' && issue.message.toLowerCase().includes('safe integer'),
+        (issue) => issue.moduleId === 'fadd',
       ),
     ).toBe(true);
   });
@@ -1279,11 +1279,11 @@ describe('validateProject', () => {
     ).toBe(true);
   });
 
-  it('rejects invalid subgroup order params for Schnorr helpers', () => {
+  it('rejects subgroup order n=1 as below minimum for Schnorr helpers', () => {
     const project: Project = {
       modules: [
         { id: 'challenge', defId: 'ChallengeCombine', params: { p: 17, a: 2, b: 3, n: 1 } },
-        { id: 'response', defId: 'ScalarLinearCombine', params: { n: Number.MAX_SAFE_INTEGER + 1 } },
+        { id: 'response', defId: 'ScalarLinearCombine', params: { n: 1 } },
       ],
       connections: [],
     };

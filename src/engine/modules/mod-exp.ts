@@ -2,23 +2,27 @@ import type { ModuleDef } from '../types';
 import {
   bitsToUnsignedBigInt,
   expectBitsSignal,
-  normalizePositiveSafeInteger,
   unsignedBigIntToBits,
 } from './bit-word';
+import { normalizeBigIntHexParam, validateBigIntHexParam } from './bigint-param';
 
 export function validateModExpParam(key: string, value: unknown): string | null {
   if (key !== 'modulus') {
     return null;
   }
 
-  if (
-    typeof value !== 'number' ||
-    !Number.isFinite(value) ||
-    !Number.isInteger(value) ||
-    !Number.isSafeInteger(value) ||
-    value < 2
-  ) {
-    return 'ModExp requires a safe integer modulus of at least 2.';
+  const error = validateBigIntHexParam('ModExp', 'modulus', value);
+  if (error) {
+    return error;
+  }
+
+  try {
+    const parsed = normalizeBigIntHexParam(value, 'ModExp', 'modulus');
+    if (parsed < 2n) {
+      return 'ModExp requires a modulus of at least 2.';
+    }
+  } catch {
+    return 'ModExp requires a valid hex integer modulus of at least 2.';
   }
 
   return null;
@@ -56,8 +60,8 @@ export const ModExp: ModuleDef = {
     modulus: {
       key: 'modulus',
       label: 'Modulus',
-      kind: 'number',
-      defaultValue: 15,
+      kind: 'bigint-hex',
+      defaultValue: 'F',
       required: true,
       description: 'Integer modulus (>= 2). Result is base^exp mod modulus.',
     },
@@ -65,7 +69,7 @@ export const ModExp: ModuleDef = {
   evaluate: (inputs, params) => {
     const baseBits = expectBitsSignal(inputs.base, 'ModExp');
     const expBits = expectBitsSignal(inputs.exp, 'ModExp');
-    const modulus = BigInt(normalizePositiveSafeInteger(params.modulus, 'ModExp', 'modulus'));
+    const modulus = normalizeBigIntHexParam(params.modulus, 'ModExp', 'modulus');
 
     if (modulus < 2n) {
       throw new Error('ModExp requires a modulus of at least 2');
