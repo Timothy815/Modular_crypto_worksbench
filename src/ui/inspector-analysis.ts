@@ -1390,7 +1390,7 @@ function getScalarMultiplyTransformation(
     kind: 'point-action',
     title: 'Scalar Multiplication',
     copy:
-      'ScalarMultiply applies one visible non-negative integer scalar to one visible point on the same curve. It is repeated point addition and doubling on that curve, not ordinary multiplication of coordinates.',
+      'ScalarMultiply applies one visible non-negative integer scalar to one visible point on the same visible pedagogical curve. It is repeated point action on that curve, not ordinary multiplication of coordinates, and a visible result here does not by itself imply production-safe ECC.',
     operationLabel: 'Operation',
     operationExpression: `${scalarValue.toString(10)} · P = ${formatEcPointAsText(output.value)}`,
     scalarDecimal: scalarValue.toString(10),
@@ -1404,7 +1404,7 @@ function getScalarMultiplyTransformation(
         ? 'Zero sends every visible point to infinity, the group identity.'
         : scalarValue === 1n
           ? 'One preserves the original point, so the point domain stays explicit.'
-          : `${scalarValue.toString(10)}P is produced by repeated point addition and doubling on the same declared curve.`,
+          : `${scalarValue.toString(10)}P is produced by repeated point action on the same visible pedagogical curve; that structure is informative here, not deployment validation.`,
   };
 }
 
@@ -1425,7 +1425,7 @@ function getPointCompareTransformation(entry: ExecutionTraceEntry): PointCompare
     kind: 'point-compare',
     title: 'Point Equality',
     copy:
-      'PointEquals checks whether two visible points are exactly the same point on the same declared curve, then emits a one-bit control result.',
+      'PointEquals checks whether two visible points are exactly the same point on the same visible pedagogical curve, then emits a one-bit control result. In visible ECDH this verifies a shared point, not finished key material.',
     leftText,
     leftHex: formatEcPointAsHex(left.value),
     rightText,
@@ -1433,8 +1433,8 @@ function getPointCompareTransformation(entry: ExecutionTraceEntry): PointCompare
     outputBit,
     summary:
       outputBit === 1
-        ? 'Both point-domain paths converge to the same visible point, so the equality output is active.'
-        : 'The two point-domain paths do not match, so the equality output stays inactive.',
+        ? 'Both point-domain paths converge to the same visible point, so the equality output is active. That confirms a shared point on this curve, not a finished symmetric key.'
+        : 'The two point-domain paths do not match, so the equality output stays inactive and the graph has not reached the same shared point.',
   };
 }
 
@@ -1453,7 +1453,7 @@ function getPointOrderTransformation(entry: ExecutionTraceEntry): PointOrderTran
     kind: 'point-order',
     title: 'Point Order',
     copy:
-      'PointOrder measures the smallest positive repeated point action that sends this visible point to infinity on this same declared curve. The result belongs to this point on this curve, not to every point on the curve.',
+      'PointOrder measures the smallest positive repeated point action that sends this visible point to infinity on this same visible pedagogical curve. The result belongs to this point on this curve, not to every point on the curve.',
     operationLabel: 'Operation',
     operationExpression: `ord(P) = ${orderValue.toString(10)} and ${orderValue.toString(10)} · P = ∞`,
     pointText,
@@ -1463,7 +1463,7 @@ function getPointOrderTransformation(entry: ExecutionTraceEntry): PointOrderTran
     summary:
       orderValue === 1n
         ? 'This point is already infinity, so one visible group action lands on the identity immediately.'
-        : `This point generates a visible cyclic subgroup of size ${orderValue.toString(10)} on the declared pedagogical curve. Small visible orders clarify subgroup structure, but they do not certify production-safe ECC parameters.`,
+        : `This point generates visible point-local subgroup structure of size ${orderValue.toString(10)} on the declared curve. Small visible orders clarify structure, but they do not validate deployment safety.`,
   };
 }
 

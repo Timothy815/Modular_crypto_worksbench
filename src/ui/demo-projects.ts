@@ -895,7 +895,7 @@ export const demoProjects: DemoProject[] = [
     order: 228,
     recommendedAfter: ['visible-scalar-multiplication'],
     summary:
-      'One shared base point fans out to Alice and Bob, each side derives a visible public point, and both shared-point paths are verified with PointEquals.',
+      'One shared base point fans out to Alice and Bob, each side derives a visible public point, and both repeated point action paths land on the same shared point, not finished key material.',
     pipeline:
       'PointSource(G) fan-out + private scalar bridges -> ScalarMultiply(publics/shared points) -> PointEquals -> PointOutput + BitOutput',
     project: {
@@ -962,7 +962,7 @@ export const demoProjects: DemoProject[] = [
     order: 229,
     recommendedAfter: ['visible-ecdh-key-agreement'],
     summary:
-      'Two visible points on the same small pedagogical curve generate different subgroup sizes, and each order is verified by sending nP to visible infinity.',
+      'Two visible points on the same small pedagogical curve generate different subgroup sizes, and each order is verified by sending nP to visible infinity as point-local subgroup structure, not deployment validation.',
     pipeline:
       'PointSource(P,Q) -> PointOrder -> IntegerOutput, then PointOrder -> ScalarMultiply -> PointOutput to verify nP = ∞ on the same curve',
     project: {

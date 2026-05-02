@@ -3086,35 +3086,35 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       {
         id: 'private-scalars-visible',
         title: 'Private Scalars Stay Visible Here On Purpose',
-        body: 'Alice and Bob each start with a separate bit pattern that is bridged into one visible integer scalar. In a real deployment those values would not be shown together, but this workbench keeps them visible deliberately so the algebra can be inspected rather than hidden.',
+        body: 'Alice and Bob each start with a separate bit pattern that is bridged into one visible integer scalar. In a real deployment those values would not be shown together, but this workbench keeps them visible deliberately so the algebra can be inspected rather than hidden. Here "private" means role in the protocol story, not secrecy from everyone in the current workspace.',
         focusModuleId: 'alice-private',
         targetStepIndex: 1,
       },
       {
         id: 'public-points',
         title: 'Derive Two Public Points From The Same G',
-        body: 'The first pair of ScalarMultiply modules computes aG and bG from the same shared base point. These are visible public points, not hidden protocol objects.',
+        body: 'The first pair of ScalarMultiply modules computes aG and bG from the same shared base point. These are visible public points on one visible pedagogical curve, not hidden protocol objects or deployment claims.',
         focusModuleId: 'alice-public',
         targetStepIndex: 2,
       },
       {
         id: 'shared-points',
         title: 'Reapply Each Private Scalar To The Other Public Point',
-        body: 'Alice computes a(bG) and Bob computes b(aG). The paths look different, but both remain repeated point action on the same declared curve.',
+        body: 'Alice computes a(bG) and Bob computes b(aG). The paths look different, but both remain repeated point action on the same visible pedagogical curve.',
         focusModuleId: 'alice-shared',
         targetStepIndex: 3,
       },
       {
         id: 'shared-equality',
         title: 'Verify Both Sides Land On The Same Shared Point',
-        body: 'PointEquals is the honest equality surface here: it compares the two shared points directly and emits a one-bit match result. When the BitOutput is 1, both sides agree on the same shared point.',
+        body: 'PointEquals is the honest equality surface here: it compares the two shared points directly and emits a one-bit match result. When the BitOutput is 1, both sides agree on the same shared point, not finished key material.',
         focusModuleId: 'shared-match',
         targetStepIndex: 4,
       },
       {
         id: 'not-a-finished-key',
         title: 'The Shared Point Is Not Yet A Finished Symmetric Key',
-        body: 'This visible shared point is the algebraic meeting point of the exchange, not a finished encryption key by itself. Real systems still derive symmetric key material from that shared result with additional key-derivation steps that MCW is not claiming yet.',
+        body: 'This visible shared point is the algebraic meeting point of the exchange, not a finished symmetric key by itself. Real systems still derive symmetric key material from that shared result with additional key-derivation steps that MCW is not claiming yet.',
         focusModuleId: 'alice-shared-out',
         targetStepIndex: 5,
       },
@@ -3129,7 +3129,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
     order: 229,
     recommendedAfter: ['visible-ecdh-key-agreement'],
     summary:
-      'See that two visible points on the same curve can generate different subgroup sizes, then verify that nP really lands on infinity.',
+      'See that two visible points on the same visible pedagogical curve can generate different subgroup sizes, then verify that nP really lands on infinity as point-local subgroup structure, not deployment validation.',
     projectId: 'visible-point-order-and-subgroups',
     steps: [
       {
@@ -3142,7 +3142,7 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       {
         id: 'read-point-order',
         title: 'Read Each Point Order As A Structural Property',
-        body: 'PointOrder finds the smallest positive repeated point action that sends this visible point to infinity. The integer outputs here are not a claim about all ECC; they are local structural facts about these visible points on this one small curve.',
+        body: 'PointOrder finds the smallest positive repeated point action that sends this visible point to infinity. The integer outputs here are not a claim about all ECC; they are point-local subgroup structure on this one small visible pedagogical curve.',
         focusModuleId: 'order-p',
         targetStepIndex: 1,
       },
@@ -3156,14 +3156,14 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
       {
         id: 'verify-cycles',
         title: 'Verify That nP Really Lands On Infinity',
-        body: 'Each ScalarMultiply branch reuses the computed order as its scalar. When the PointOutput shows ∞, MCW is not hiding a failure — it is making the group identity visible and verifying the claim nP = ∞ directly in the graph.',
+        body: 'Each ScalarMultiply branch reuses the computed order as its scalar. When the PointOutput shows ∞, MCW is not hiding a failure — it is making the group identity visible and verifying the claim nP = ∞ directly in the graph through repeated point action.',
         focusModuleId: 'verify-p-out',
         targetStepIndex: 3,
       },
       {
         id: 'why-ecdh-cares',
         title: 'Connect Order Back To Visible ECDH',
-        body: 'Visible ECDH needs a base point whose repeated action does not cycle too quickly. Small-order points are structurally weak because they give only a tiny set of shared results. MCW is showing that structure on a pedagogical curve, not certifying production-safe ECC parameters.',
+        body: 'Visible ECDH needs a base point whose repeated point action does not cycle too quickly. Small-order points are structurally weak because they give only a tiny set of shared results. MCW is showing point-local subgroup structure on a pedagogical curve, not certifying production-safe ECC parameters.',
         focusModuleId: 'verify-q-out',
         targetStepIndex: 4,
       },

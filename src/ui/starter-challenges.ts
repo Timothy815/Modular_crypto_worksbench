@@ -1805,7 +1805,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     recommendedAfter: ['visible-scalar-multiplication'],
     difficulty: 'intermediate',
     prompt:
-      'This visible elliptic-curve key-agreement graph no longer lands on the same shared point on both sides. Restore the broken shared-secret leg so PointEquals returns a match again.',
+      'This visible elliptic-curve key-agreement graph no longer lands on the same shared point on both sides. Restore the broken repeated point action leg so PointEquals returns the shared-point equality result again.',
     startingProject: brokenVisibleEcdhStart,
     startingLayout: cloneProject(visibleEcdhProject.layout),
     targetProject: visibleEcdhTarget,
@@ -1815,7 +1815,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     hints: [
       'There should be one shared base point G, but each shared-secret branch must consume the other side’s public point, not G directly.',
       'Alice should compute a(bG) and Bob should compute b(aG).',
-      'The PointEquals output should be 1 only when both shared-point paths land on the same visible point.',
+      'The PointEquals output should be 1 only when both shared-point paths land on the same visible point. That confirms a shared point, not finished key material.',
     ],
   },
   {
@@ -1829,7 +1829,7 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     recommendedAfter: ['visible-ecdh-key-agreement'],
     difficulty: 'intermediate',
     prompt:
-      'This subgroup workspace no longer verifies the second point order correctly. Restore the broken scalar leg so each point is tested against its own visible order and both verification branches land on infinity.',
+      'This subgroup workspace no longer verifies the second point order correctly. Restore the broken repeated point action leg so each point is tested against its own visible order and both verification branches land on infinity.',
     startingProject: brokenVisiblePointOrderStart,
     startingLayout: cloneProject(visiblePointOrderProject.layout),
     targetProject: visiblePointOrderTarget,
@@ -1838,8 +1838,8 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
     },
     hints: [
       'Each verification branch should reuse the PointOrder result from the same point it is checking.',
-      'The first branch verifies 9P = ∞ and the second verifies 18Q = ∞ on the same declared curve.',
-      'If one branch uses the other point’s order, the PointOutput will stop showing visible infinity.',
+      'The first branch verifies 9P = ∞ and the second verifies 18Q = ∞ on the same declared visible pedagogical curve.',
+      'If one branch uses the other point’s order, the PointOutput will stop showing visible infinity and the point-local subgroup structure claim will fail.',
     ],
   },
   {
