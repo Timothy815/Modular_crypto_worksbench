@@ -1434,6 +1434,126 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.stdout.trim().split('\n').sort()).toEqual(getExpectedSinkLines(project, V1_REGISTRY).sort());
   });
 
+  it('matches executeProject for PointOnCurve primitive', () => {
+    const project: Project = {
+      modules: [
+        { id: 'point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 5, y: 6 } },
+        { id: 'on-curve', defId: 'PointOnCurve', params: { p: 17, a: 2, b: 3 } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'on-curve', port: 'in' } },
+        { from: { moduleId: 'on-curve', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeProject for PointNegate primitive', () => {
+    const project: Project = {
+      modules: [
+        { id: 'point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 5, y: 6 } },
+        { id: 'negate', defId: 'PointNegate', params: { p: 17, a: 2, b: 3 } },
+        { id: 'out', defId: 'PointOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'negate', port: 'in' } },
+        { from: { moduleId: 'negate', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeProject for PointDouble primitive', () => {
+    const project: Project = {
+      modules: [
+        { id: 'point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 5, y: 6 } },
+        { id: 'double', defId: 'PointDouble', params: { p: 17, a: 2, b: 3 } },
+        { id: 'out', defId: 'PointOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'double', port: 'in' } },
+        { from: { moduleId: 'double', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeProject for PointDouble infinity passthrough on y=0 point', () => {
+    // On curve y^2 = x^3 + 0x + 13 mod 17, point (0,0) satisfies 0 = 0+0+13=13 mod 17 — not on curve.
+    // Use curve y^2 = x^3 + 0x + 7 mod 11. Check (0,0): 0 = 7 mod 11, no.
+    // Use curve with a known y=0 point: y^2 = x^3 + ax + b mod p where x^3+ax+b=0 mod p.
+    // p=7, a=1, b=0: discriminant = 4+0 = 4 != 0 mod 7. Point (0,0): 0 = 0 mod 7. Yes!
+    // Doubling (0,0): y=0 so result is infinity.
+    const project: Project = {
+      modules: [
+        { id: 'point', defId: 'PointSource', params: { p: 7, a: 1, b: 0, x: 0, y: 0 } },
+        { id: 'double', defId: 'PointDouble', params: { p: 7, a: 1, b: 0 } },
+        { id: 'out', defId: 'PointOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'double', port: 'in' } },
+        { from: { moduleId: 'double', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeProject for visible point mechanics workspace using PointNegate and PointDouble', () => {
+    // Demonstrates: point source, on-curve validation, negation, doubling, and equality of P + (-P) via PointAdd.
+    // Curve p=17, a=2, b=3; base point (5,6).
+    const project: Project = {
+      modules: [
+        { id: 'point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 5, y: 6 } },
+        { id: 'on-curve', defId: 'PointOnCurve', params: { p: 17, a: 2, b: 3 } },
+        { id: 'on-curve-out', defId: 'BitOutput', params: {} },
+        { id: 'negate', defId: 'PointNegate', params: { p: 17, a: 2, b: 3 } },
+        { id: 'negate-out', defId: 'PointOutput', params: {} },
+        { id: 'double', defId: 'PointDouble', params: { p: 17, a: 2, b: 3 } },
+        { id: 'double-out', defId: 'PointOutput', params: {} },
+        { id: 'add-inverse', defId: 'PointAdd', params: { p: 17, a: 2, b: 3 } },
+        { id: 'add-inverse-out', defId: 'PointOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'on-curve', port: 'in' } },
+        { from: { moduleId: 'on-curve', port: 'out' }, to: { moduleId: 'on-curve-out', port: 'in' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'negate', port: 'in' } },
+        { from: { moduleId: 'negate', port: 'out' }, to: { moduleId: 'negate-out', port: 'in' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'double', port: 'in' } },
+        { from: { moduleId: 'double', port: 'out' }, to: { moduleId: 'double-out', port: 'in' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'add-inverse', port: 'a' } },
+        { from: { moduleId: 'negate', port: 'out' }, to: { moduleId: 'add-inverse', port: 'b' } },
+        { from: { moduleId: 'add-inverse', port: 'out' }, to: { moduleId: 'add-inverse-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n').sort()).toEqual(getExpectedSinkLines(project, V1_REGISTRY).sort());
+  });
+
   it('preserves forwarded 6->4 s-box dimensions during Python export', () => {
     const project: Project = {
       modules: [

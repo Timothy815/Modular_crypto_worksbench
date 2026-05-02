@@ -48,6 +48,12 @@ const multiplyCompareUnpadProject = demoProjects.find((project) => project.id ==
 const visibleMessageWindowProject = demoProjects.find((project) => project.id === 'visible-message-window');
 const toyRsaProject = demoProjects.find((project) => project.id === 'toy-rsa');
 const diffieHellmanProject = demoProjects.find((project) => project.id === 'diffie-hellman-key-exchange');
+const visiblePointMechanicsProject = demoProjects.find(
+  (project) => project.id === 'visible-point-mechanics',
+);
+const visibleScalarMultiplicationProject = demoProjects.find(
+  (project) => project.id === 'visible-scalar-multiplication',
+);
 const visibleEcdhProject = demoProjects.find((project) => project.id === 'visible-ecdh-key-agreement');
 const visiblePointOrderProject = demoProjects.find(
   (project) => project.id === 'visible-point-order-and-subgroups',
@@ -203,6 +209,12 @@ if (!toyRsaProject) {
 if (!diffieHellmanProject) {
   throw new Error('Expected diffie-hellman-key-exchange demo project to seed starter challenges.');
 }
+if (!visiblePointMechanicsProject) {
+  throw new Error('Expected visible-point-mechanics demo project to seed starter challenges.');
+}
+if (!visibleScalarMultiplicationProject) {
+  throw new Error('Expected visible-scalar-multiplication demo project to seed starter challenges.');
+}
 if (!visibleEcdhProject) {
   throw new Error('Expected visible-ecdh-key-agreement demo project to seed starter challenges.');
 }
@@ -325,6 +337,10 @@ const toyRsaTarget = cloneProject(toyRsaProject.project);
 const brokenToyRsaStart = cloneProject(toyRsaProject.project);
 const diffieHellmanTarget = cloneProject(diffieHellmanProject.project);
 const brokenDiffieHellmanStart = cloneProject(diffieHellmanProject.project);
+const visiblePointMechanicsTarget = cloneProject(visiblePointMechanicsProject.project);
+const brokenVisiblePointMechanicsStart = cloneProject(visiblePointMechanicsProject.project);
+const visibleScalarMultiplicationTarget = cloneProject(visibleScalarMultiplicationProject.project);
+const brokenVisibleScalarMultiplicationStart = cloneProject(visibleScalarMultiplicationProject.project);
 const visibleEcdhTarget = cloneProject(visibleEcdhProject.project);
 const brokenVisibleEcdhStart = cloneProject(visibleEcdhProject.project);
 const visiblePointOrderTarget = cloneProject(visiblePointOrderProject.project);
@@ -517,6 +533,41 @@ if (!brokenBobPrivateExp) {
   throw new Error('Expected diffie-hellman-key-exchange demo project to contain bob-private.');
 }
 brokenBobPrivateExp.params.value = '0E';
+
+const brokenVisiblePointMechanicsConnections = brokenVisiblePointMechanicsStart.connections;
+const brokenVisiblePointMechanicsInverseIndex = brokenVisiblePointMechanicsConnections.findIndex(
+  (connection) =>
+    connection.from.moduleId === 'negate' &&
+    connection.from.port === 'out' &&
+    connection.to.moduleId === 'inverse-sum' &&
+    connection.to.port === 'b',
+);
+if (brokenVisiblePointMechanicsInverseIndex === -1) {
+  throw new Error('Expected visible-point-mechanics demo project to contain the negate -> inverse-sum.b leg.');
+}
+brokenVisiblePointMechanicsConnections[brokenVisiblePointMechanicsInverseIndex] = {
+  from: { moduleId: 'point', port: 'out' },
+  to: { moduleId: 'inverse-sum', port: 'b' },
+};
+
+const brokenVisibleScalarMultiplicationConnections = brokenVisibleScalarMultiplicationStart.connections;
+const brokenVisibleScalarMultiplicationVerifyIndex =
+  brokenVisibleScalarMultiplicationConnections.findIndex(
+    (connection) =>
+      connection.from.moduleId === 'point' &&
+      connection.from.port === 'out' &&
+      connection.to.moduleId === 'verify-3-add' &&
+      connection.to.port === 'b',
+  );
+if (brokenVisibleScalarMultiplicationVerifyIndex === -1) {
+  throw new Error(
+    'Expected visible-scalar-multiplication demo project to contain the point -> verify-3-add.b leg.',
+  );
+}
+brokenVisibleScalarMultiplicationConnections[brokenVisibleScalarMultiplicationVerifyIndex] = {
+  from: { moduleId: 'times-2', port: 'out' },
+  to: { moduleId: 'verify-3-add', port: 'b' },
+};
 
 const brokenVisibleEcdhConnections = brokenVisibleEcdhStart.connections;
 const brokenVisibleEcdhSharedLegIndex = brokenVisibleEcdhConnections.findIndex(
@@ -1814,6 +1865,54 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The generator g and the shared modulus p are already correct on every ModExp.',
       'Only Bob’s private exponent source is wrong.',
       'The correct exponent is one hex word larger than 0E.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-visible-point-mechanics',
+    title: 'Repair the Visible Point Mechanics',
+    projectId: 'visible-point-mechanics',
+    group: 'Number Theory',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 226,
+    recommendedAfter: ['diffie-hellman-key-exchange'],
+    difficulty: 'intermediate',
+    prompt:
+      'This point mechanics workspace no longer shows P + (−P) = ∞. The negation module is still correct, but the wrong point is feeding the second port of the inverse-sum. Restore the connection so the sum of a point and its negation is visible infinity again.',
+    startingProject: brokenVisiblePointMechanicsStart,
+    startingLayout: cloneProject(visiblePointMechanicsProject.layout),
+    targetProject: visiblePointMechanicsTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The inverse-sum module should receive P on its first port and −P on its second port.',
+      'PointNegate outputs the negation of whatever point feeds it — that output, not the original point, should connect to port b.',
+      'When P and −P are added, the result is the point at infinity, which PointOutput should display as ∞.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-visible-scalar-multiplication',
+    title: 'Repair the Visible Scalar Multiplication',
+    projectId: 'visible-scalar-multiplication',
+    group: 'Number Theory',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 227,
+    recommendedAfter: ['visible-point-mechanics'],
+    difficulty: 'intermediate',
+    prompt:
+      'This scalar multiplication workspace no longer confirms that 2P + P = 3P. The third port of the verify-3-add module receives 2P twice instead of 2P and P. Restore the connection so the visible cross-check matches the direct scalar result.',
+    startingProject: brokenVisibleScalarMultiplicationStart,
+    startingLayout: cloneProject(visibleScalarMultiplicationProject.layout),
+    targetProject: visibleScalarMultiplicationTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The verify-3-add module should receive 2P on port a and P (the original base point) on port b.',
+      'Port b currently receives 2P — trace back to find the source that produces the plain unscaled base point instead.',
+      'When port b carries the original base point, 2P + P = 3P and the PointEquals cross-check should emit 1.',
     ],
   },
   {

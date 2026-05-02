@@ -94,6 +94,9 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'FieldMul',
   'FieldInverse',
   'PointSource',
+  'PointOnCurve',
+  'PointNegate',
+  'PointDouble',
   'PointAdd',
   'PointOrder',
   'PointEquals',
@@ -1532,6 +1535,27 @@ def point_order(point_signal, p, a, b):
         current = _ec_point_add(current, point, curve)
         order += 1
     return {"out": order}
+
+
+def point_on_curve(point_signal, p, a, b):
+    curve = _normalize_ec_curve(p, a, b, "PointOnCurve")
+    _expect_ec_point(point_signal, curve, "PointOnCurve", "input")
+    return {"out": [1]}
+
+
+def point_negate(point_signal, p, a, b):
+    curve = _normalize_ec_curve(p, a, b, "PointNegate")
+    point = _expect_ec_point(point_signal, curve, "PointNegate", "input")
+    if point["kind"] == "infinity":
+        return {"out": _create_infinity_point(curve)}
+    negated_y = (-point["y"]) % curve["p"]
+    return {"out": _create_affine_point(curve, point["x"], negated_y)}
+
+
+def point_double(point_signal, p, a, b):
+    curve = _normalize_ec_curve(p, a, b, "PointDouble")
+    point = _expect_ec_point(point_signal, curve, "PointDouble", "input")
+    return {"out": _ec_point_double(point, curve)}
 
 
 def mod_exp(base, exp, modulus):
@@ -3382,6 +3406,12 @@ function buildModuleExpression(
       return `challenge_combine(${expressionContext.getInputExpression(moduleId, 'commitment')}, ${expressionContext.getInputExpression(moduleId, 'publicKey')}, ${expressionContext.getInputExpression(moduleId, 'message')}, ${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')}, ${expressionContext.getParamExpression(moduleInstance, def, 'n')})`;
     case 'ScalarLinearCombine':
       return `scalar_linear_combine(${expressionContext.getInputExpression(moduleId, 'nonce')}, ${expressionContext.getInputExpression(moduleId, 'challenge')}, ${expressionContext.getInputExpression(moduleId, 'private')}, ${expressionContext.getParamExpression(moduleInstance, def, 'n')})`;
+    case 'PointOnCurve':
+      return `point_on_curve(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')})`;
+    case 'PointNegate':
+      return `point_negate(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')})`;
+    case 'PointDouble':
+      return `point_double(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')})`;
     case 'ModExp':
       return `mod_exp(${expressionContext.getInputExpression(moduleId, 'base')}, ${expressionContext.getInputExpression(moduleId, 'exp')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
     case 'ModInverse':
