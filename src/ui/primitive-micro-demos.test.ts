@@ -66,6 +66,8 @@ describe('primitive micro demos', () => {
       'ScalarMultiply',
       'PointOrder',
       'PointEquals',
+      'ChallengeCombine',
+      'ScalarLinearCombine',
     ]);
   });
 
@@ -181,6 +183,8 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('ScalarMultiply')?.name).toBe('Scalar Multiply Micro Demo');
     expect(getPrimitiveMicroDemo('PointOrder')?.name).toBe('Point Order Micro Demo');
     expect(getPrimitiveMicroDemo('PointEquals')?.name).toBe('Point Equals Micro Demo');
+    expect(getPrimitiveMicroDemo('ChallengeCombine')?.name).toBe('Challenge Combine Micro Demo');
+    expect(getPrimitiveMicroDemo('ScalarLinearCombine')?.name).toBe('Scalar Linear Combine Micro Demo');
     expect(getPrimitiveMicroDemo('XOR')).toBeNull();
   });
 

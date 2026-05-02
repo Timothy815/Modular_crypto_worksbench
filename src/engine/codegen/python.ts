@@ -94,9 +94,12 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'FieldMul',
   'FieldInverse',
   'PointSource',
+  'PointAdd',
   'PointOrder',
   'PointEquals',
   'ScalarMultiply',
+  'ChallengeCombine',
+  'ScalarLinearCombine',
   'Modulo',
   'MulMod',
   'Majority',
@@ -413,6 +416,22 @@ def _expect_field_element(signal, modulus, module_name, label):
     if value >= modulus:
         raise ValueError(
             f"{module_name} expects {label} to be in the range 0..{modulus - 1} for modulus {modulus}"
+        )
+    return value
+
+
+def _normalize_scalar_order(value, module_name):
+    order_value = _require_positive_int(value, "n", module_name)
+    if order_value < 2:
+        raise ValueError(f'{module_name} requires "n" to be a subgroup-order safe integer of at least 2 in V1.')
+    return order_value
+
+
+def _expect_scalar_in_range(signal, order_value, module_name, label):
+    value = _expect_integer(signal, module_name)
+    if value >= order_value:
+        raise ValueError(
+            f"{module_name} expects {label} to be in the scalar range 0..{order_value - 1} for subgroup order n={order_value}."
         )
     return value
 
@@ -1425,6 +1444,13 @@ def point_source(p, a, b, x, y):
     return {"out": _create_affine_point(curve, x_value, y_value)}
 
 
+def point_add(left_signal, right_signal, p, a, b):
+    curve = _normalize_ec_curve(p, a, b, "PointAdd")
+    left = _expect_ec_point(left_signal, curve, "PointAdd", "input a")
+    right = _expect_ec_point(right_signal, curve, "PointAdd", "input b")
+    return {"out": _ec_point_add(left, right, curve)}
+
+
 def point_equals(left_signal, right_signal, p, a, b):
     curve = _normalize_ec_curve(p, a, b, "PointEquals")
     left = _expect_ec_point(left_signal, curve, "PointEquals", "input a")
@@ -1455,6 +1481,36 @@ def scalar_multiply(scalar_signal, point_signal, p, a, b):
         if remaining > 0:
             current = _ec_point_double(current, curve)
     return {"out": accumulator}
+
+
+def challenge_combine(commitment_signal, public_key_signal, message_signal, p, a, b, n):
+    curve = _normalize_ec_curve(p, a, b, "ChallengeCombine")
+    order_value = _normalize_scalar_order(n, "ChallengeCombine")
+    commitment = _expect_ec_point(commitment_signal, curve, "ChallengeCombine", "commitment input")
+    public_key = _expect_ec_point(public_key_signal, curve, "ChallengeCombine", "public-key input")
+    if commitment["kind"] == "infinity":
+        raise ValueError("ChallengeCombine expects the commitment input to be an affine point on the declared curve.")
+    if public_key["kind"] == "infinity":
+        raise ValueError("ChallengeCombine expects the public-key input to be an affine point on the declared curve.")
+    message = _expect_integer(message_signal, "ChallengeCombine")
+    challenge_value = (
+        commitment["x"] + commitment["y"] + public_key["x"] + public_key["y"] + message
+    ) % order_value
+    return {"out": challenge_value}
+
+
+def scalar_linear_combine(nonce_signal, challenge_signal, private_signal, n):
+    order_value = _normalize_scalar_order(n, "ScalarLinearCombine")
+    nonce = _expect_scalar_in_range(nonce_signal, order_value, "ScalarLinearCombine", "nonce input")
+    challenge = _expect_scalar_in_range(
+        challenge_signal,
+        order_value,
+        "ScalarLinearCombine",
+        "challenge input",
+    )
+    private_scalar = _expect_scalar_in_range(private_signal, order_value, "ScalarLinearCombine", "private input")
+    response = (nonce + challenge * private_scalar) % order_value
+    return {"out": response}
 
 
 POINT_ORDER_OBSERVATION_LIMIT = 256
@@ -3314,12 +3370,18 @@ function buildModuleExpression(
       return `field_inverse(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
     case 'PointSource':
       return `point_source(${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')}, ${expressionContext.getParamExpression(moduleInstance, def, 'x')}, ${expressionContext.getParamExpression(moduleInstance, def, 'y')})`;
+    case 'PointAdd':
+      return `point_add(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')}, ${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')})`;
     case 'PointOrder':
       return `point_order(${expressionContext.getInputExpression(moduleId, 'point')}, ${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')})`;
     case 'PointEquals':
       return `point_equals(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')}, ${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')})`;
     case 'ScalarMultiply':
       return `scalar_multiply(${expressionContext.getInputExpression(moduleId, 'scalar')}, ${expressionContext.getInputExpression(moduleId, 'point')}, ${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')})`;
+    case 'ChallengeCombine':
+      return `challenge_combine(${expressionContext.getInputExpression(moduleId, 'commitment')}, ${expressionContext.getInputExpression(moduleId, 'publicKey')}, ${expressionContext.getInputExpression(moduleId, 'message')}, ${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')}, ${expressionContext.getParamExpression(moduleInstance, def, 'n')})`;
+    case 'ScalarLinearCombine':
+      return `scalar_linear_combine(${expressionContext.getInputExpression(moduleId, 'nonce')}, ${expressionContext.getInputExpression(moduleId, 'challenge')}, ${expressionContext.getInputExpression(moduleId, 'private')}, ${expressionContext.getParamExpression(moduleInstance, def, 'n')})`;
     case 'ModExp':
       return `mod_exp(${expressionContext.getInputExpression(moduleId, 'base')}, ${expressionContext.getInputExpression(moduleId, 'exp')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
     case 'ModInverse':

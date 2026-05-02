@@ -2048,6 +2048,90 @@ const POINT_EQUALS_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const CHALLENGE_COMBINE_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'ChallengeCombine',
+  name: 'Challenge Combine Micro Demo',
+  summary:
+    'Minimal visible challenge stage: one commitment point R, one public key point P, and one visible message m combine into one bounded pedagogical challenge value c.',
+  pipeline: 'PointSource(R,P) + BitSource -> BitsToInteger -> ChallengeCombine -> IntegerOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'challenge-combine', defId: 'ChallengeCombine', params: { p: 17, a: 2, b: 3, n: 11 } },
+        { id: 'commitment', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 3, y: 11 } },
+        { id: 'public-key', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 12, y: 2 } },
+        { id: 'message-bits', defId: 'BitSource', params: { stream: [0, 1, 1, 0] } },
+        { id: 'message', defId: 'BitsToInteger', params: {} },
+        { id: 'out', defId: 'IntegerOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'commitment', port: 'out' }, to: { moduleId: 'challenge-combine', port: 'commitment' } },
+        { from: { moduleId: 'public-key', port: 'out' }, to: { moduleId: 'challenge-combine', port: 'publicKey' } },
+        { from: { moduleId: 'message-bits', port: 'out' }, to: { moduleId: 'message', port: 'in' } },
+        { from: { moduleId: 'message', port: 'out' }, to: { moduleId: 'challenge-combine', port: 'message' } },
+        { from: { moduleId: 'challenge-combine', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        'challenge-combine': { x: 476, y: 176 },
+        commitment: { x: 76, y: 52 },
+        'public-key': { x: 76, y: 232 },
+        'message-bits': { x: 76, y: 412 },
+        message: { x: 296, y: 412 },
+        out: { x: 808, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const SCALAR_LINEAR_COMBINE_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'ScalarLinearCombine',
+  name: 'Scalar Linear Combine Micro Demo',
+  summary:
+    'Minimal visible response stage: nonce r, challenge c, and private scalar x stay in the scalar domain and produce one response value s modulo n.',
+  pipeline: 'BitSource(r,c,x) -> BitsToInteger -> ScalarLinearCombine -> IntegerOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'scalar-linear-combine', defId: 'ScalarLinearCombine', params: { n: 11 } },
+        { id: 'nonce-bits', defId: 'BitSource', params: { stream: [0, 1, 0, 0] } },
+        { id: 'nonce', defId: 'BitsToInteger', params: {} },
+        { id: 'challenge-bits', defId: 'BitSource', params: { stream: [0, 0, 0, 1] } },
+        { id: 'challenge', defId: 'BitsToInteger', params: {} },
+        { id: 'private-bits', defId: 'BitSource', params: { stream: [0, 0, 1, 1] } },
+        { id: 'private', defId: 'BitsToInteger', params: {} },
+        { id: 'out', defId: 'IntegerOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'nonce-bits', port: 'out' }, to: { moduleId: 'nonce', port: 'in' } },
+        { from: { moduleId: 'nonce', port: 'out' }, to: { moduleId: 'scalar-linear-combine', port: 'nonce' } },
+        { from: { moduleId: 'challenge-bits', port: 'out' }, to: { moduleId: 'challenge', port: 'in' } },
+        { from: { moduleId: 'challenge', port: 'out' }, to: { moduleId: 'scalar-linear-combine', port: 'challenge' } },
+        { from: { moduleId: 'private-bits', port: 'out' }, to: { moduleId: 'private', port: 'in' } },
+        { from: { moduleId: 'private', port: 'out' }, to: { moduleId: 'scalar-linear-combine', port: 'private' } },
+        { from: { moduleId: 'scalar-linear-combine', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        'scalar-linear-combine': { x: 516, y: 176 },
+        'nonce-bits': { x: 76, y: 52 },
+        nonce: { x: 292, y: 52 },
+        'challenge-bits': { x: 76, y: 232 },
+        challenge: { x: 292, y: 232 },
+        'private-bits': { x: 76, y: 412 },
+        private: { x: 292, y: 412 },
+        out: { x: 856, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   MUX_MICRO_DEMO,
   DEMUX_MICRO_DEMO,
@@ -2110,6 +2194,8 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   SCALAR_MULTIPLY_MICRO_DEMO,
   POINT_ORDER_MICRO_DEMO,
   POINT_EQUALS_MICRO_DEMO,
+  CHALLENGE_COMBINE_MICRO_DEMO,
+  SCALAR_LINEAR_COMBINE_MICRO_DEMO,
 ];
 
 const PRIMITIVE_MICRO_DEMO_BY_DEF_ID = Object.fromEntries(

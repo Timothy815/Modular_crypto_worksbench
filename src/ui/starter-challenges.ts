@@ -52,6 +52,7 @@ const visibleEcdhProject = demoProjects.find((project) => project.id === 'visibl
 const visiblePointOrderProject = demoProjects.find(
   (project) => project.id === 'visible-point-order-and-subgroups',
 );
+const visibleSchnorrProject = demoProjects.find((project) => project.id === 'visible-schnorr-signature');
 const visibleSignatureVerificationProject = demoProjects.find(
   (project) => project.id === 'visible-signature-verification',
 );
@@ -208,6 +209,9 @@ if (!visibleEcdhProject) {
 if (!visiblePointOrderProject) {
   throw new Error('Expected visible-point-order-and-subgroups demo project to seed starter challenges.');
 }
+if (!visibleSchnorrProject) {
+  throw new Error('Expected visible-schnorr-signature demo project to seed starter challenges.');
+}
 if (!visibleSignatureVerificationProject) {
   throw new Error('Expected visible-signature-verification demo project to seed starter challenges.');
 }
@@ -325,6 +329,8 @@ const visibleEcdhTarget = cloneProject(visibleEcdhProject.project);
 const brokenVisibleEcdhStart = cloneProject(visibleEcdhProject.project);
 const visiblePointOrderTarget = cloneProject(visiblePointOrderProject.project);
 const brokenVisiblePointOrderStart = cloneProject(visiblePointOrderProject.project);
+const visibleSchnorrTarget = cloneProject(visibleSchnorrProject.project);
+const brokenVisibleSchnorrStart = cloneProject(visibleSchnorrProject.project);
 const visibleSignatureVerificationTarget = cloneProject(visibleSignatureVerificationProject.project);
 const brokenVisibleSignatureVerificationStart = cloneProject(
   visibleSignatureVerificationProject.project,
@@ -544,6 +550,22 @@ if (brokenVisiblePointOrderScalarIndex === -1) {
 brokenVisiblePointOrderConnections[brokenVisiblePointOrderScalarIndex] = {
   from: { moduleId: 'order-p', port: 'out' },
   to: { moduleId: 'verify-q', port: 'scalar' },
+};
+
+const brokenVisibleSchnorrConnections = brokenVisibleSchnorrStart.connections;
+const brokenVisibleSchnorrPublicBranchIndex = brokenVisibleSchnorrConnections.findIndex(
+  (connection) =>
+    connection.from.moduleId === 'public' &&
+    connection.from.port === 'out' &&
+    connection.to.moduleId === 'verify-scale-public' &&
+    connection.to.port === 'point',
+);
+if (brokenVisibleSchnorrPublicBranchIndex === -1) {
+  throw new Error('Expected visible-schnorr-signature demo project to contain the public -> verify-scale-public leg.');
+}
+brokenVisibleSchnorrConnections[brokenVisibleSchnorrPublicBranchIndex] = {
+  from: { moduleId: 'base-point', port: 'out' },
+  to: { moduleId: 'verify-scale-public', port: 'point' },
 };
 
 const brokenSignatureVerifyExp = brokenVisibleSignatureVerificationStart.modules.find(
@@ -1840,6 +1862,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'Each verification branch should reuse the PointOrder result from the same point it is checking.',
       'The first branch verifies 9P = ∞ and the second verifies 18Q = ∞ on the same declared visible pedagogical curve.',
       'If one branch uses the other point’s order, the PointOutput will stop showing visible infinity and the point-local subgroup structure claim will fail.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-visible-schnorr-verification',
+    title: 'Repair The Visible Schnorr Verification',
+    projectId: 'visible-schnorr-signature',
+    group: 'Asymmetric Verification',
+    stage: 'asymmetric-verification-and-systems-composition',
+    order: 230,
+    recommendedAfter: ['visible-point-order-and-subgroups'],
+    difficulty: 'intermediate',
+    prompt:
+      'This visible pedagogical Schnorr-style graph no longer verifies correctly. Repair the broken verification branch so the right-hand path really computes R + cP and PointEquals returns the visible equality result again.',
+    startingProject: brokenVisibleSchnorrStart,
+    startingLayout: cloneProject(visibleSchnorrProject.layout),
+    targetProject: visibleSchnorrTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The left verification branch sG is still correct.',
+      'The right verification branch should scale the public key P by c before adding R. It should not scale the shared base point G again.',
+      'When the graph really compares sG against R + cP, PointEquals should emit 1 on this visible pedagogical curve.',
     ],
   },
   {

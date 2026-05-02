@@ -42,6 +42,7 @@ import {
   validateEcPointParam,
   validatePointSourceParamsStatic,
 } from './modules/ec-point';
+import { validateScalarOrderParam } from './modules/scalar-order';
 import { validateCounterParam } from './modules/counter';
 import { validateBitSplitParam } from './modules/bit-split';
 import { validateBitPadParam } from './modules/bit-pad';
@@ -276,10 +277,21 @@ function getModuleSpecificParamMessage(
     def.id === 'PointDouble' ||
     def.id === 'PointOrder' ||
     def.id === 'PointEquals' ||
-    def.id === 'ScalarMultiply'
+    def.id === 'ScalarMultiply' ||
+    def.id === 'ChallengeCombine'
   ) {
     if (field.key === 'p' || field.key === 'a' || field.key === 'b' || field.key === 'x' || field.key === 'y') {
       return validateEcPointParam(def.id, field.key as 'p' | 'a' | 'b' | 'x' | 'y', value);
+    }
+    if (field.key === 'n') {
+      return validateScalarOrderParam(def.id, field.key, value);
+    }
+    return null;
+  }
+
+  if (def.id === 'ScalarLinearCombine') {
+    if (field.key === 'n') {
+      return validateScalarOrderParam(def.id, field.key, value);
     }
     return null;
   }
@@ -1104,7 +1116,8 @@ function validateParams(
       def.id === 'PointDouble' ||
       def.id === 'PointOrder' ||
       def.id === 'PointEquals' ||
-      def.id === 'ScalarMultiply'
+      def.id === 'ScalarMultiply' ||
+      def.id === 'ChallengeCombine'
     ) {
       const curveMessage = validateEcCurveParamsStatic(
         { p: params.p, a: params.a, b: params.b },
@@ -1128,6 +1141,17 @@ function validateParams(
             moduleId: moduleInstance.id,
           });
         }
+      }
+    }
+
+    if (def.id === 'ChallengeCombine' || def.id === 'ScalarLinearCombine') {
+      const scalarOrderMessage = validateScalarOrderParam(def.id, 'n', params.n);
+      if (scalarOrderMessage) {
+        issues.push({
+          code: 'invalid-param-type',
+          message: `Module "${moduleInstance.id}" parameter "n" is invalid. ${scalarOrderMessage}`,
+          moduleId: moduleInstance.id,
+        });
       }
     }
   }

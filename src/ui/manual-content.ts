@@ -439,8 +439,20 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
       {
         id: 'PointEquals',
         title: 'PointEquals',
-        body: 'Checks whether two visible points are exactly the same point on the same declared visible pedagogical curve and emits a one-bit result. Use this when two different point-domain paths should converge visibly, such as the shared-point equality step in a glass-box ECDH demo. In that ECDH setting it confirms a shared point, not finished key material.',
+        body: 'Checks whether two visible points are exactly the same point on the same declared visible pedagogical curve and emits a one-bit result. Use this when two different point-domain paths should converge visibly, such as the shared-point equality step in glass-box ECDH or the final verification equation in a pedagogical Schnorr-style signature flow.',
         indexTerms: ['point equals', 'point equality', 'elliptic curve', 'ec point', 'shared secret match'],
+      },
+      {
+        id: 'ChallengeCombine',
+        title: 'ChallengeCombine',
+        body: 'Combines one visible commitment point R, one visible public key P, and one visible message m into one bounded pedagogical challenge value c modulo the subgroup order n. This stands in for the challenge-forming role of hashing in real Schnorr-style signatures, but it is a teaching combiner rather than production-safe hashing or encoding.',
+        indexTerms: ['challenge combine', 'schnorr', 'signature', 'challenge', 'nonce commitment', 'message'],
+      },
+      {
+        id: 'ScalarLinearCombine',
+        title: 'ScalarLinearCombine',
+        body: 'Computes one visible scalar response s = r + cx mod n from visible nonce, challenge, and private-scalar inputs. This is scalar-order arithmetic modulo the subgroup order n, not prime-field arithmetic modulo the curve prime p, and it keeps a Schnorr-style response stage explicit instead of hidden.',
+        indexTerms: ['scalar linear combine', 'schnorr', 'signature', 'response', 'mod n', 'scalar order'],
       },
       {
         id: 'ModExp',

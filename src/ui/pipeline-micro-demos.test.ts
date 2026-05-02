@@ -20,6 +20,7 @@ describe('pipeline micro demos', () => {
       'visible-ecdh-shared-secret-equality',
       'point-order-cycles-to-infinity',
       'contrasting-point-orders',
+      'visible-schnorr-verification-equality',
       'ascii-repeated-key-xor-encrypt-decrypt',
       'ascii-strict-match-xor-encrypt-decrypt',
       'hex-block-xor',
@@ -45,6 +46,9 @@ describe('pipeline micro demos', () => {
     );
     expect(getPipelineMicroDemo('contrasting-point-orders')?.name).toBe(
       'Contrasting Point Orders',
+    );
+    expect(getPipelineMicroDemo('visible-schnorr-verification-equality')?.name).toBe(
+      'Visible Schnorr Verification Equality',
     );
     expect(getPipelineMicroDemo('ascii-repeated-key-xor-encrypt-decrypt')?.name).toBe(
       'ASCII Repeated-Key XOR Encrypt/Decrypt',
@@ -78,6 +82,7 @@ describe('pipeline micro demos', () => {
     expect(getPipelineMicroDemo('visible-ecdh-shared-secret-equality')?.defaultTickedMode).toBeUndefined();
     expect(getPipelineMicroDemo('point-order-cycles-to-infinity')?.defaultTickedMode).toBeUndefined();
     expect(getPipelineMicroDemo('contrasting-point-orders')?.defaultTickedMode).toBeUndefined();
+    expect(getPipelineMicroDemo('visible-schnorr-verification-equality')?.defaultTickedMode).toBeUndefined();
     expect(getPipelineMicroDemo('representation-round-trip')?.defaultTickedMode).toBeUndefined();
   });
 
@@ -144,6 +149,7 @@ describe('pipeline micro demos', () => {
     const timesThree = getPipelineMicroDemo('scalar-times-three');
     const pointOrderCycle = getPipelineMicroDemo('point-order-cycles-to-infinity');
     const contrastingOrders = getPipelineMicroDemo('contrasting-point-orders');
+    const schnorr = getPipelineMicroDemo('visible-schnorr-verification-equality');
 
     expect(timesTwo?.document.project.modules.map((module) => module.defId)).toEqual([
       'BitSource',
@@ -206,6 +212,25 @@ describe('pipeline micro demos', () => {
       'IntegerOutput',
       'ScalarMultiply',
       'PointOutput',
+    ]);
+
+    expect(schnorr?.document.project.modules.map((module) => module.defId)).toEqual([
+      'PointSource',
+      'BitSource',
+      'BitsToInteger',
+      'ScalarMultiply',
+      'BitSource',
+      'BitsToInteger',
+      'ScalarMultiply',
+      'BitSource',
+      'BitsToInteger',
+      'ChallengeCombine',
+      'ScalarLinearCombine',
+      'ScalarMultiply',
+      'ScalarMultiply',
+      'PointAdd',
+      'PointEquals',
+      'BitOutput',
     ]);
   });
 

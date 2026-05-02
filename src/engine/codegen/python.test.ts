@@ -1369,6 +1369,71 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.stdout.trim().split('\n').sort()).toEqual(getExpectedSinkLines(project, V1_REGISTRY).sort());
   });
 
+  it('matches executeProject for visible Schnorr-style verification workspaces', () => {
+    const project: Project = {
+      modules: [
+        { id: 'base-point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 15, y: 12 } },
+        { id: 'private-bits', defId: 'BitSource', params: { stream: [0, 0, 1, 1] } },
+        { id: 'private', defId: 'BitsToInteger', params: {} },
+        { id: 'public', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'public-out', defId: 'PointOutput', params: {} },
+        { id: 'nonce-bits', defId: 'BitSource', params: { stream: [0, 1, 0, 0] } },
+        { id: 'nonce', defId: 'BitsToInteger', params: {} },
+        { id: 'commitment', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'commitment-out', defId: 'PointOutput', params: {} },
+        { id: 'message-bits', defId: 'BitSource', params: { stream: [0, 1, 1, 0] } },
+        { id: 'message', defId: 'BitsToInteger', params: {} },
+        { id: 'challenge', defId: 'ChallengeCombine', params: { p: 17, a: 2, b: 3, n: 11 } },
+        { id: 'challenge-out', defId: 'IntegerOutput', params: {} },
+        { id: 'response', defId: 'ScalarLinearCombine', params: { n: 11 } },
+        { id: 'response-out', defId: 'IntegerOutput', params: {} },
+        { id: 'verify-left', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'verify-left-out', defId: 'PointOutput', params: {} },
+        { id: 'verify-scale-public', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'verify-right-add', defId: 'PointAdd', params: { p: 17, a: 2, b: 3 } },
+        { id: 'verify-right-out', defId: 'PointOutput', params: {} },
+        { id: 'verify-equals', defId: 'PointEquals', params: { p: 17, a: 2, b: 3 } },
+        { id: 'verify-equals-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'private-bits', port: 'out' }, to: { moduleId: 'private', port: 'in' } },
+        { from: { moduleId: 'private', port: 'out' }, to: { moduleId: 'public', port: 'scalar' } },
+        { from: { moduleId: 'base-point', port: 'out' }, to: { moduleId: 'public', port: 'point' } },
+        { from: { moduleId: 'public', port: 'out' }, to: { moduleId: 'public-out', port: 'in' } },
+        { from: { moduleId: 'nonce-bits', port: 'out' }, to: { moduleId: 'nonce', port: 'in' } },
+        { from: { moduleId: 'nonce', port: 'out' }, to: { moduleId: 'commitment', port: 'scalar' } },
+        { from: { moduleId: 'base-point', port: 'out' }, to: { moduleId: 'commitment', port: 'point' } },
+        { from: { moduleId: 'commitment', port: 'out' }, to: { moduleId: 'commitment-out', port: 'in' } },
+        { from: { moduleId: 'message-bits', port: 'out' }, to: { moduleId: 'message', port: 'in' } },
+        { from: { moduleId: 'commitment', port: 'out' }, to: { moduleId: 'challenge', port: 'commitment' } },
+        { from: { moduleId: 'public', port: 'out' }, to: { moduleId: 'challenge', port: 'publicKey' } },
+        { from: { moduleId: 'message', port: 'out' }, to: { moduleId: 'challenge', port: 'message' } },
+        { from: { moduleId: 'challenge', port: 'out' }, to: { moduleId: 'challenge-out', port: 'in' } },
+        { from: { moduleId: 'nonce', port: 'out' }, to: { moduleId: 'response', port: 'nonce' } },
+        { from: { moduleId: 'challenge', port: 'out' }, to: { moduleId: 'response', port: 'challenge' } },
+        { from: { moduleId: 'private', port: 'out' }, to: { moduleId: 'response', port: 'private' } },
+        { from: { moduleId: 'response', port: 'out' }, to: { moduleId: 'response-out', port: 'in' } },
+        { from: { moduleId: 'response', port: 'out' }, to: { moduleId: 'verify-left', port: 'scalar' } },
+        { from: { moduleId: 'base-point', port: 'out' }, to: { moduleId: 'verify-left', port: 'point' } },
+        { from: { moduleId: 'verify-left', port: 'out' }, to: { moduleId: 'verify-left-out', port: 'in' } },
+        { from: { moduleId: 'challenge', port: 'out' }, to: { moduleId: 'verify-scale-public', port: 'scalar' } },
+        { from: { moduleId: 'public', port: 'out' }, to: { moduleId: 'verify-scale-public', port: 'point' } },
+        { from: { moduleId: 'commitment', port: 'out' }, to: { moduleId: 'verify-right-add', port: 'a' } },
+        { from: { moduleId: 'verify-scale-public', port: 'out' }, to: { moduleId: 'verify-right-add', port: 'b' } },
+        { from: { moduleId: 'verify-right-add', port: 'out' }, to: { moduleId: 'verify-right-out', port: 'in' } },
+        { from: { moduleId: 'verify-left', port: 'out' }, to: { moduleId: 'verify-equals', port: 'a' } },
+        { from: { moduleId: 'verify-right-add', port: 'out' }, to: { moduleId: 'verify-equals', port: 'b' } },
+        { from: { moduleId: 'verify-equals', port: 'out' }, to: { moduleId: 'verify-equals-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n').sort()).toEqual(getExpectedSinkLines(project, V1_REGISTRY).sort());
+  });
+
   it('preserves forwarded 6->4 s-box dimensions during Python export', () => {
     const project: Project = {
       modules: [

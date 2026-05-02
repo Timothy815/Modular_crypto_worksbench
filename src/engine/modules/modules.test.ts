@@ -51,6 +51,8 @@ import { PointDouble } from './point-double';
 import { PointOrder } from './point-order';
 import { PointEquals } from './point-equals';
 import { ScalarMultiply } from './scalar-multiply';
+import { ChallengeCombine } from './challenge-combine';
+import { ScalarLinearCombine } from './scalar-linear-combine';
 import { AND } from './and';
 import { AtLeast } from './at-least';
 import { Counter } from './counter';
@@ -709,6 +711,98 @@ describe('PointOrder', () => {
       type: 'integer',
       value: '1',
     });
+  });
+});
+
+describe('ChallengeCombine', () => {
+  it('derives one bounded pedagogical challenge from visible R, P, and m inputs', () => {
+    const result = ChallengeCombine.evaluate(
+      {
+        commitment: {
+          type: 'ec-point',
+          value: {
+            kind: 'affine',
+            curve: { p: 17, a: 2, b: 3 },
+            x: '3',
+            y: '11',
+          },
+        },
+        publicKey: {
+          type: 'ec-point',
+          value: {
+            kind: 'affine',
+            curve: { p: 17, a: 2, b: 3 },
+            x: '12',
+            y: '2',
+          },
+        },
+        message: { type: 'integer', value: '6' },
+      },
+      { p: 17, a: 2, b: 3, n: 11 },
+    );
+
+    expect(result.out).toEqual({
+      type: 'integer',
+      value: '1',
+    });
+  });
+
+  it('rejects infinity as a commitment input', () => {
+    expect(() =>
+      ChallengeCombine.evaluate(
+        {
+          commitment: {
+            type: 'ec-point',
+            value: {
+              kind: 'infinity',
+              curve: { p: 17, a: 2, b: 3 },
+            },
+          },
+          publicKey: {
+            type: 'ec-point',
+            value: {
+              kind: 'affine',
+              curve: { p: 17, a: 2, b: 3 },
+              x: '12',
+              y: '2',
+            },
+          },
+          message: { type: 'integer', value: '6' },
+        },
+        { p: 17, a: 2, b: 3, n: 11 },
+      ),
+    ).toThrow(/affine point/i);
+  });
+});
+
+describe('ScalarLinearCombine', () => {
+  it('computes the visible Schnorr-style response scalar modulo n', () => {
+    const result = ScalarLinearCombine.evaluate(
+      {
+        nonce: { type: 'integer', value: '4' },
+        challenge: { type: 'integer', value: '1' },
+        private: { type: 'integer', value: '3' },
+      },
+      { n: 11 },
+    );
+
+    expect(result.out).toEqual({
+      type: 'integer',
+      value: '7',
+    });
+  });
+
+  it('rejects scalar inputs that exceed the declared subgroup order range', () => {
+    expect(() =>
+      ScalarLinearCombine.evaluate(
+        {
+          nonce: { type: 'integer', value: '11' },
+          challenge: { type: 'integer', value: '1' },
+          private: { type: 'integer', value: '3' },
+        },
+        { n: 11 },
+      ),
+    ).toThrow(/scalar range/i);
   });
 });
 

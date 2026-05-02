@@ -429,6 +429,12 @@ export function getTransformationView(
   if (entry.defId === 'FieldInverse') {
     return getPrimeFieldInverseTransformation(entry, project, registry);
   }
+  if (entry.defId === 'ChallengeCombine') {
+    return getChallengeCombineTransformation(entry, project, registry);
+  }
+  if (entry.defId === 'ScalarLinearCombine') {
+    return getScalarLinearCombineTransformation(entry, project, registry);
+  }
   if (entry.defId === 'ScalarMultiply') {
     return getScalarMultiplyTransformation(entry, project, registry);
   }
@@ -1366,6 +1372,101 @@ function getPrimeFieldInverseTransformation(
   };
 }
 
+function getChallengeCombineTransformation(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): IntegerArithmeticTransformationView | null {
+  const resolved = resolveTraceModuleInstance(entry.moduleId, project, registry);
+  if (!resolved) {
+    return null;
+  }
+
+  const commitment = entry.inputs.commitment;
+  const publicKey = entry.inputs.publicKey;
+  const message = entry.inputs.message;
+  const output = entry.outputs.out;
+  if (commitment?.type !== 'ec-point' || publicKey?.type !== 'ec-point' || message?.type !== 'integer' || output?.type !== 'integer') {
+    return null;
+  }
+  if (commitment.value.kind !== 'affine' || publicKey.value.kind !== 'affine') {
+    return null;
+  }
+
+  const modulusValue = typeof resolved.instance.params.n === 'number' ? resolved.instance.params.n.toString(10) : '2';
+  const messageValue = parseUnsignedIntegerString(message.value, 'ChallengeCombine');
+  const resultValue = parseUnsignedIntegerString(output.value, 'ChallengeCombine');
+
+  return {
+    entry,
+    kind: 'integer-arithmetic',
+    title: 'Challenge Combine',
+    copy:
+      'ChallengeCombine derives one visible pedagogical challenge from the visible commitment point R, the visible public key P, and the visible message m. This stands in for challenge-forming hash work in real Schnorr; it is a teaching combiner, not production-safe hashing or encoding.',
+    operationLabel: 'Operation',
+    operationExpression: `c = (R.x + R.y + P.x + P.y + m) mod ${modulusValue} = ${resultValue.toString(10)}`,
+    operands: [
+      makeIntegerOperand('R.x', commitment.value.x),
+      makeIntegerOperand('R.y', commitment.value.y),
+      makeIntegerOperand('P.x', publicKey.value.x),
+      makeIntegerOperand('P.y', publicKey.value.y),
+      makeIntegerOperand('m', messageValue.toString(10)),
+    ],
+    modulusDecimal: modulusValue,
+    modulusHex: formatUnsignedIntegerAsHex(modulusValue),
+    resultDecimal: resultValue.toString(10),
+    resultHex: formatUnsignedIntegerAsHex(resultValue.toString(10)),
+    summary:
+      'Signer and verifier reuse the same visible ingredients to reach the same challenge value. That structural agreement matters here; this stage is not claiming real hash or domain-separation safety.',
+  };
+}
+
+function getScalarLinearCombineTransformation(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): IntegerArithmeticTransformationView | null {
+  const resolved = resolveTraceModuleInstance(entry.moduleId, project, registry);
+  if (!resolved) {
+    return null;
+  }
+
+  const nonce = entry.inputs.nonce;
+  const challenge = entry.inputs.challenge;
+  const privateScalar = entry.inputs.private;
+  const output = entry.outputs.out;
+  if (nonce?.type !== 'integer' || challenge?.type !== 'integer' || privateScalar?.type !== 'integer' || output?.type !== 'integer') {
+    return null;
+  }
+
+  const modulusValue = typeof resolved.instance.params.n === 'number' ? resolved.instance.params.n.toString(10) : '2';
+  const nonceValue = parseUnsignedIntegerString(nonce.value, 'ScalarLinearCombine');
+  const challengeValue = parseUnsignedIntegerString(challenge.value, 'ScalarLinearCombine');
+  const privateValue = parseUnsignedIntegerString(privateScalar.value, 'ScalarLinearCombine');
+  const resultValue = parseUnsignedIntegerString(output.value, 'ScalarLinearCombine');
+
+  return {
+    entry,
+    kind: 'integer-arithmetic',
+    title: 'Scalar Response Combine',
+    copy:
+      'ScalarLinearCombine computes the visible Schnorr-style response scalar s = r + cx mod n. This is scalar-order arithmetic modulo the subgroup order n, not prime-field arithmetic modulo the curve prime p.',
+    operationLabel: 'Operation',
+    operationExpression: `s = (${nonceValue.toString(10)} + ${challengeValue.toString(10)} × ${privateValue.toString(10)}) mod ${modulusValue} = ${resultValue.toString(10)}`,
+    operands: [
+      makeIntegerOperand('r', nonceValue.toString(10)),
+      makeIntegerOperand('c', challengeValue.toString(10)),
+      makeIntegerOperand('x', privateValue.toString(10)),
+    ],
+    modulusDecimal: modulusValue,
+    modulusHex: formatUnsignedIntegerAsHex(modulusValue),
+    resultDecimal: resultValue.toString(10),
+    resultHex: formatUnsignedIntegerAsHex(resultValue.toString(10)),
+    summary:
+      'The response stays in the scalar domain modulo n. That makes the verification equation visible without pretending the scalar arithmetic happens in the curve field modulo p.',
+  };
+}
+
 function getScalarMultiplyTransformation(
   entry: ExecutionTraceEntry,
   project: Project,
@@ -1425,7 +1526,7 @@ function getPointCompareTransformation(entry: ExecutionTraceEntry): PointCompare
     kind: 'point-compare',
     title: 'Point Equality',
     copy:
-      'PointEquals checks whether two visible points are exactly the same point on the same visible pedagogical curve, then emits a one-bit control result. In visible ECDH this verifies a shared point, not finished key material.',
+      'PointEquals checks whether two visible points are exactly the same point on the same visible pedagogical curve, then emits a one-bit control result. It is the honest equality surface for visible point-domain payoffs such as shared-point agreement in ECDH or the final verification equation in a pedagogical Schnorr-style signature flow.',
     leftText,
     leftHex: formatEcPointAsHex(left.value),
     rightText,
@@ -1433,8 +1534,8 @@ function getPointCompareTransformation(entry: ExecutionTraceEntry): PointCompare
     outputBit,
     summary:
       outputBit === 1
-        ? 'Both point-domain paths converge to the same visible point, so the equality output is active. That confirms a shared point on this curve, not a finished symmetric key.'
-        : 'The two point-domain paths do not match, so the equality output stays inactive and the graph has not reached the same shared point.',
+        ? 'Both point-domain paths converge to the same visible point, so the equality output is active. In ECDH that confirms a shared point, not a finished key; in visible Schnorr-style verification it confirms the point-equation payoff.'
+        : 'The two point-domain paths do not match, so the equality output stays inactive and the graph has not reached the same visible point on both branches.',
   };
 }
 

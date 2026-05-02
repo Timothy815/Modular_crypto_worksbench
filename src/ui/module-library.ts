@@ -382,8 +382,22 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     sectionId: 'number-theory',
     sortOrder: 9.95,
     purpose: 'Checks whether two visible points are exactly the same point on the same declared visible pedagogical curve.',
-    detail: 'Use this to verify that two visible point-domain paths really converge to the same result. It emits a one-bit control signal, fails visibly on cross-curve mismatches, and is the honest equality surface for visible ECDH-style teaching where both sides reach a shared point, not finished key material.',
+    detail: 'Use this to verify that two visible point-domain paths really converge to the same result. It emits a one-bit control signal, fails visibly on cross-curve mismatches, and is the honest equality surface for point-domain payoffs such as visible ECDH shared-point agreement or a pedagogical Schnorr-style verification equation.',
     searchTerms: ['point equals', 'point equality', 'ec point', 'ecc point', 'elliptic curve', 'shared secret match'],
+  },
+  ChallengeCombine: {
+    sectionId: 'number-theory',
+    sortOrder: 9.96,
+    purpose: 'Combines one visible commitment point R, one visible public key P, and one visible message m into a bounded pedagogical challenge value c.',
+    detail: 'Use this when a glass-box Schnorr-style teaching graph needs one explicit challenge stage. It derives c from visible ingredients modulo the subgroup order n, but it is a teaching combiner, not production-safe hashing or encoding.',
+    searchTerms: ['challenge combine', 'schnorr', 'signature', 'challenge', 'nonce commitment', 'public key', 'message'],
+  },
+  ScalarLinearCombine: {
+    sectionId: 'number-theory',
+    sortOrder: 9.97,
+    purpose: 'Computes one visible scalar response s = r + cx mod n from nonce, challenge, and private scalar inputs.',
+    detail: 'Use this when the scalar-side response arithmetic should stay explicit. It works modulo the subgroup order n, not the curve prime p, and helps keep a Schnorr-style response stage honest and inspectable.',
+    searchTerms: ['scalar linear combine', 'schnorr', 'signature', 'response', 'scalar order', 'mod n'],
   },
   ModExp: {
     sectionId: 'number-theory',

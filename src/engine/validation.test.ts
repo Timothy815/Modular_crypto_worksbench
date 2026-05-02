@@ -18,6 +18,8 @@ import { PointDouble } from './modules/point-double';
 import { PointOrder } from './modules/point-order';
 import { PointEquals } from './modules/point-equals';
 import { ScalarMultiply } from './modules/scalar-multiply';
+import { ChallengeCombine } from './modules/challenge-combine';
+import { ScalarLinearCombine } from './modules/scalar-linear-combine';
 import { AND } from './modules/and';
 import { AtLeast } from './modules/at-least';
 import { BaudotSource } from './modules/baudot-source';
@@ -155,6 +157,8 @@ const registry: ModuleRegistry = {
   [PointOrder.id]: PointOrder,
   [PointEquals.id]: PointEquals,
   [ScalarMultiply.id]: ScalarMultiply,
+  [ChallengeCombine.id]: ChallengeCombine,
+  [ScalarLinearCombine.id]: ScalarLinearCombine,
   [ModExp.id]: ModExp,
   [ModInverse.id]: ModInverse,
   [Modulo.id]: Modulo,
@@ -1256,6 +1260,42 @@ describe('validateProject', () => {
       result.issues.some(
         (issue) => issue.moduleId === 'scalar' && issue.message.toLowerCase().includes('curve parameters are invalid'),
       ),
+    ).toBe(true);
+  });
+
+  it('rejects singular curve parameters for ChallengeCombine', () => {
+    const project: Project = {
+      modules: [{ id: 'challenge', defId: 'ChallengeCombine', params: { p: 5, a: 0, b: 0, n: 11 } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) => issue.moduleId === 'challenge' && issue.message.toLowerCase().includes('curve parameters are invalid'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects invalid subgroup order params for Schnorr helpers', () => {
+    const project: Project = {
+      modules: [
+        { id: 'challenge', defId: 'ChallengeCombine', params: { p: 17, a: 2, b: 3, n: 1 } },
+        { id: 'response', defId: 'ScalarLinearCombine', params: { n: Number.MAX_SAFE_INTEGER + 1 } },
+      ],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some((issue) => issue.moduleId === 'challenge' && issue.message.toLowerCase().includes('parameter "n"')),
+    ).toBe(true);
+    expect(
+      result.issues.some((issue) => issue.moduleId === 'response' && issue.message.toLowerCase().includes('parameter "n"')),
     ).toBe(true);
   });
 
