@@ -431,6 +431,12 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         indexTerms: ['scalar multiply', 'elliptic curve', 'ec point', 'repeated point action', 'double and add'],
       },
       {
+        id: 'PointOrder',
+        title: 'PointOrder',
+        body: 'Finds the smallest positive repeated point action that sends one visible point to infinity on the same declared pedagogical curve. The result belongs to this point on this curve, not to every point on the curve. V1 only searches inside a fixed observable workbench budget, so very large orders are reported as too large to observe here rather than guessed.',
+        indexTerms: ['point order', 'subgroup', 'elliptic curve', 'ec point', 'nP infinity', 'cyclic subgroup'],
+      },
+      {
         id: 'PointEquals',
         title: 'PointEquals',
         body: 'Checks whether two visible points are exactly the same point on the same declared pedagogical curve and emits a one-bit result. Use this when two different point-domain paths should converge visibly, such as the shared-point equality step in a glass-box ECDH demo.',

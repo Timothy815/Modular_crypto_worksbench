@@ -371,6 +371,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this to show repeated point action directly. Scalar multiplication is repeated point addition and doubling on the same declared curve, not ordinary multiplication of point coordinates. It is foundational for later ECC public-key stories, but it does not by itself imply ECDH, signatures, or real-world curve support.',
     searchTerms: ['scalar multiply', 'ec point', 'ecc point', 'elliptic curve', 'repeated point action', 'double and add'],
   },
+  PointOrder: {
+    sectionId: 'number-theory',
+    sortOrder: 9.92,
+    purpose: 'Finds the smallest positive repeated point action that sends one visible point to infinity on the same pedagogical curve.',
+    detail: 'Use this to make subgroup structure visible. Point order belongs to this point on this curve, not to every point on the curve. V1 searches only within a fixed observable workbench budget; if the order is too large to observe here, the module fails visibly instead of pretending to know it.',
+    searchTerms: ['point order', 'subgroup', 'ec point', 'ecc point', 'elliptic curve', 'cyclic subgroup', 'nP infinity'],
+  },
   PointEquals: {
     sectionId: 'number-theory',
     sortOrder: 9.95,

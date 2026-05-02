@@ -882,6 +882,90 @@ const CANVAS_AUTHORING_XOR_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
   },
 };
 
+const POINT_ORDER_CYCLES_TO_INFINITY_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
+  id: 'point-order-cycles-to-infinity',
+  name: 'Point Order Cycles To Infinity',
+  summary:
+    'A visible point order feeds directly into scalar multiplication so the graph verifies nP = ∞ on the same small pedagogical curve.',
+  pipeline:
+    'PointSource -> PointOrder -> ScalarMultiply(point) -> PointOutput, with IntegerOutput showing the visible subgroup size',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'point', defId: 'PointSource', params: { p: 17, a: 0, b: 13, x: 5, y: 6 } },
+        { id: 'order', defId: 'PointOrder', params: { p: 17, a: 0, b: 13 } },
+        { id: 'order-out', defId: 'IntegerOutput', params: {} },
+        { id: 'verify', defId: 'ScalarMultiply', params: { p: 17, a: 0, b: 13 } },
+        { id: 'verify-out', defId: 'PointOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'order', port: 'point' } },
+        { from: { moduleId: 'order', port: 'out' }, to: { moduleId: 'order-out', port: 'in' } },
+        { from: { moduleId: 'order', port: 'out' }, to: { moduleId: 'verify', port: 'scalar' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'verify', port: 'point' } },
+        { from: { moduleId: 'verify', port: 'out' }, to: { moduleId: 'verify-out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        point: { x: 76, y: 176 },
+        order: { x: 360, y: 176 },
+        'order-out': { x: 648, y: 112 },
+        verify: { x: 648, y: 240 },
+        'verify-out': { x: 940, y: 240 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const CONTRASTING_POINT_ORDERS_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
+  id: 'contrasting-point-orders',
+  name: 'Contrasting Point Orders',
+  summary:
+    'Two visible points on the same curve produce different subgroup sizes, showing that order belongs to the chosen point rather than to the whole curve.',
+  pipeline:
+    'PointSource(P,Q) -> PointOrder -> IntegerOutput, with one branch verifying 18Q = ∞ to keep the subgroup story visible',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'point-p', defId: 'PointSource', params: { p: 17, a: 0, b: 13, x: 5, y: 6 } },
+        { id: 'order-p', defId: 'PointOrder', params: { p: 17, a: 0, b: 13 } },
+        { id: 'order-p-out', defId: 'IntegerOutput', params: {} },
+        { id: 'point-q', defId: 'PointSource', params: { p: 17, a: 0, b: 13, x: 2, y: 2 } },
+        { id: 'order-q', defId: 'PointOrder', params: { p: 17, a: 0, b: 13 } },
+        { id: 'order-q-out', defId: 'IntegerOutput', params: {} },
+        { id: 'verify-q', defId: 'ScalarMultiply', params: { p: 17, a: 0, b: 13 } },
+        { id: 'verify-q-out', defId: 'PointOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'point-p', port: 'out' }, to: { moduleId: 'order-p', port: 'point' } },
+        { from: { moduleId: 'order-p', port: 'out' }, to: { moduleId: 'order-p-out', port: 'in' } },
+        { from: { moduleId: 'point-q', port: 'out' }, to: { moduleId: 'order-q', port: 'point' } },
+        { from: { moduleId: 'order-q', port: 'out' }, to: { moduleId: 'order-q-out', port: 'in' } },
+        { from: { moduleId: 'order-q', port: 'out' }, to: { moduleId: 'verify-q', port: 'scalar' } },
+        { from: { moduleId: 'point-q', port: 'out' }, to: { moduleId: 'verify-q', port: 'point' } },
+        { from: { moduleId: 'verify-q', port: 'out' }, to: { moduleId: 'verify-q-out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        'point-p': { x: 76, y: 92 },
+        'order-p': { x: 360, y: 92 },
+        'order-p-out': { x: 648, y: 92 },
+        'point-q': { x: 76, y: 360 },
+        'order-q': { x: 360, y: 360 },
+        'order-q-out': { x: 648, y: 296 },
+        'verify-q': { x: 648, y: 424 },
+        'verify-q-out': { x: 940, y: 424 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 export const PIPELINE_MICRO_DEMOS: PipelineMicroDemo[] = [
   ASCII_REPEATED_KEY_XOR_PIPELINE_MICRO_DEMO,
   STRICT_MATCH_BEFORE_XOR_PIPELINE_MICRO_DEMO,
@@ -892,6 +976,8 @@ export const PIPELINE_MICRO_DEMOS: PipelineMicroDemo[] = [
   SCALAR_TIMES_ZERO_PIPELINE_MICRO_DEMO,
   SCALAR_TIMES_THREE_PIPELINE_MICRO_DEMO,
   VISIBLE_ECDH_SHARED_SECRET_EQUALITY_PIPELINE_MICRO_DEMO,
+  POINT_ORDER_CYCLES_TO_INFINITY_PIPELINE_MICRO_DEMO,
+  CONTRASTING_POINT_ORDERS_PIPELINE_MICRO_DEMO,
   ASCII_REPEATED_KEY_XOR_ENCRYPT_DECRYPT_PIPELINE_MICRO_DEMO,
   ASCII_STRICT_MATCH_XOR_ENCRYPT_DECRYPT_PIPELINE_MICRO_DEMO,
   HEX_BLOCK_XOR_PIPELINE_MICRO_DEMO,

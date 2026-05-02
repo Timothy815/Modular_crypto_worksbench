@@ -268,6 +268,20 @@ interface PointCompareTransformationView {
   summary: string;
 }
 
+interface PointOrderTransformationView {
+  entry: ExecutionTraceEntry;
+  kind: 'point-order';
+  title: string;
+  copy: string;
+  operationLabel: string;
+  operationExpression: string;
+  pointText: string;
+  pointHex: string;
+  orderDecimal: string;
+  orderHex: string;
+  summary: string;
+}
+
 interface UnpadTransformationView {
   entry: ExecutionTraceEntry;
   kind: 'unpad';
@@ -296,6 +310,7 @@ export type TransformationView =
   | IntegerArithmeticTransformationView
   | PointActionTransformationView
   | PointCompareTransformationView
+  | PointOrderTransformationView
   | UnpadTransformationView;
 
 export const PERMUTATION_EDITOR_PORT_HEIGHT = 52;
@@ -365,6 +380,9 @@ export function getTransformationView(
   }
   if (entry.defId === 'PointEquals') {
     return getPointCompareTransformation(entry);
+  }
+  if (entry.defId === 'PointOrder') {
+    return getPointOrderTransformation(entry);
   }
   if (entry.defId === 'Gate') {
     return getGateTransformation(entry);
@@ -1417,6 +1435,35 @@ function getPointCompareTransformation(entry: ExecutionTraceEntry): PointCompare
       outputBit === 1
         ? 'Both point-domain paths converge to the same visible point, so the equality output is active.'
         : 'The two point-domain paths do not match, so the equality output stays inactive.',
+  };
+}
+
+function getPointOrderTransformation(entry: ExecutionTraceEntry): PointOrderTransformationView | null {
+  const point = entry.inputs.point;
+  const output = entry.outputs.out;
+  if (point?.type !== 'ec-point' || output?.type !== 'integer') {
+    return null;
+  }
+
+  const orderValue = parseUnsignedIntegerString(output.value, 'PointOrder');
+  const pointText = formatEcPointAsText(point.value);
+
+  return {
+    entry,
+    kind: 'point-order',
+    title: 'Point Order',
+    copy:
+      'PointOrder measures the smallest positive repeated point action that sends this visible point to infinity on this same declared curve. The result belongs to this point on this curve, not to every point on the curve.',
+    operationLabel: 'Operation',
+    operationExpression: `ord(P) = ${orderValue.toString(10)} and ${orderValue.toString(10)} · P = ∞`,
+    pointText,
+    pointHex: formatEcPointAsHex(point.value),
+    orderDecimal: orderValue.toString(10),
+    orderHex: formatUnsignedIntegerAsHex(output.value),
+    summary:
+      orderValue === 1n
+        ? 'This point is already infinity, so one visible group action lands on the identity immediately.'
+        : `This point generates a visible cyclic subgroup of size ${orderValue.toString(10)} on the declared pedagogical curve. Small visible orders clarify subgroup structure, but they do not certify production-safe ECC parameters.`,
   };
 }
 

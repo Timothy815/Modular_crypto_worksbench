@@ -49,6 +49,9 @@ const visibleMessageWindowProject = demoProjects.find((project) => project.id ==
 const toyRsaProject = demoProjects.find((project) => project.id === 'toy-rsa');
 const diffieHellmanProject = demoProjects.find((project) => project.id === 'diffie-hellman-key-exchange');
 const visibleEcdhProject = demoProjects.find((project) => project.id === 'visible-ecdh-key-agreement');
+const visiblePointOrderProject = demoProjects.find(
+  (project) => project.id === 'visible-point-order-and-subgroups',
+);
 const visibleSignatureVerificationProject = demoProjects.find(
   (project) => project.id === 'visible-signature-verification',
 );
@@ -202,6 +205,9 @@ if (!diffieHellmanProject) {
 if (!visibleEcdhProject) {
   throw new Error('Expected visible-ecdh-key-agreement demo project to seed starter challenges.');
 }
+if (!visiblePointOrderProject) {
+  throw new Error('Expected visible-point-order-and-subgroups demo project to seed starter challenges.');
+}
 if (!visibleSignatureVerificationProject) {
   throw new Error('Expected visible-signature-verification demo project to seed starter challenges.');
 }
@@ -317,6 +323,8 @@ const diffieHellmanTarget = cloneProject(diffieHellmanProject.project);
 const brokenDiffieHellmanStart = cloneProject(diffieHellmanProject.project);
 const visibleEcdhTarget = cloneProject(visibleEcdhProject.project);
 const brokenVisibleEcdhStart = cloneProject(visibleEcdhProject.project);
+const visiblePointOrderTarget = cloneProject(visiblePointOrderProject.project);
+const brokenVisiblePointOrderStart = cloneProject(visiblePointOrderProject.project);
 const visibleSignatureVerificationTarget = cloneProject(visibleSignatureVerificationProject.project);
 const brokenVisibleSignatureVerificationStart = cloneProject(
   visibleSignatureVerificationProject.project,
@@ -518,6 +526,24 @@ if (brokenVisibleEcdhSharedLegIndex === -1) {
 brokenVisibleEcdhConnections[brokenVisibleEcdhSharedLegIndex] = {
   from: { moduleId: 'base-point', port: 'out' },
   to: { moduleId: 'bob-shared', port: 'point' },
+};
+
+const brokenVisiblePointOrderConnections = brokenVisiblePointOrderStart.connections;
+const brokenVisiblePointOrderScalarIndex = brokenVisiblePointOrderConnections.findIndex(
+  (connection) =>
+    connection.from.moduleId === 'order-q' &&
+    connection.from.port === 'out' &&
+    connection.to.moduleId === 'verify-q' &&
+    connection.to.port === 'scalar',
+);
+if (brokenVisiblePointOrderScalarIndex === -1) {
+  throw new Error(
+    'Expected visible-point-order-and-subgroups demo project to contain the order-q -> verify-q scalar leg.',
+  );
+}
+brokenVisiblePointOrderConnections[brokenVisiblePointOrderScalarIndex] = {
+  from: { moduleId: 'order-p', port: 'out' },
+  to: { moduleId: 'verify-q', port: 'scalar' },
 };
 
 const brokenSignatureVerifyExp = brokenVisibleSignatureVerificationStart.modules.find(
@@ -1790,6 +1816,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'There should be one shared base point G, but each shared-secret branch must consume the other side’s public point, not G directly.',
       'Alice should compute a(bG) and Bob should compute b(aG).',
       'The PointEquals output should be 1 only when both shared-point paths land on the same visible point.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-point-order-cycle',
+    title: 'Repair The Point Order Cycle',
+    projectId: 'visible-point-order-and-subgroups',
+    group: 'Number Theory',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 229,
+    recommendedAfter: ['visible-ecdh-key-agreement'],
+    difficulty: 'intermediate',
+    prompt:
+      'This subgroup workspace no longer verifies the second point order correctly. Restore the broken scalar leg so each point is tested against its own visible order and both verification branches land on infinity.',
+    startingProject: brokenVisiblePointOrderStart,
+    startingLayout: cloneProject(visiblePointOrderProject.layout),
+    targetProject: visiblePointOrderTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Each verification branch should reuse the PointOrder result from the same point it is checking.',
+      'The first branch verifies 9P = ∞ and the second verifies 18Q = ∞ on the same declared curve.',
+      'If one branch uses the other point’s order, the PointOutput will stop showing visible infinity.',
     ],
   },
   {

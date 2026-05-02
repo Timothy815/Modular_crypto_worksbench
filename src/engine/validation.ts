@@ -274,6 +274,7 @@ function getModuleSpecificParamMessage(
     def.id === 'PointNegate' ||
     def.id === 'PointAdd' ||
     def.id === 'PointDouble' ||
+    def.id === 'PointOrder' ||
     def.id === 'PointEquals' ||
     def.id === 'ScalarMultiply'
   ) {
@@ -1101,6 +1102,7 @@ function validateParams(
       def.id === 'PointNegate' ||
       def.id === 'PointAdd' ||
       def.id === 'PointDouble' ||
+      def.id === 'PointOrder' ||
       def.id === 'PointEquals' ||
       def.id === 'ScalarMultiply'
     ) {

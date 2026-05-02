@@ -756,6 +756,30 @@ export function InspectorAnalyzeDetails({
                   </div>
                 </div>
               </>
+            ) : transformationView.kind === 'point-order' ? (
+              <>
+                <div className="transformation-order">
+                  <span className="meta-label">{transformationView.operationLabel}</span>
+                  <code>{transformationView.operationExpression}</code>
+                </div>
+                <div className="xor-grid">
+                  <div className="xor-grid-head">
+                    <span className="meta-label">Value</span>
+                    <span className="meta-label">Visible Result</span>
+                    <span className="meta-label">Hex</span>
+                  </div>
+                  <div className="xor-grid-row">
+                    <span className="xor-grid-index">P</span>
+                    <span className="xor-grid-bit">{transformationView.pointText}</span>
+                    <span className="xor-grid-compare">{transformationView.pointHex}</span>
+                  </div>
+                  <div className="xor-grid-row">
+                    <span className="xor-grid-index">ord(P)</span>
+                    <span className="xor-grid-bit xor-grid-bit-active">{transformationView.orderDecimal}</span>
+                    <span className="xor-grid-compare xor-grid-compare-different">{transformationView.orderHex}</span>
+                  </div>
+                </div>
+              </>
             ) : transformationView.kind === 'arithmetic' ? (
               <>
                 <div className="transformation-order">

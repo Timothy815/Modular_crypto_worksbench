@@ -1,5 +1,4 @@
 import type { EcCurveDescriptor, EcPointSignal, EcPointSignalValue, Signal } from '../types';
-import { normalizePositiveSafeInteger } from './bit-word';
 import { parseUnsignedIntegerString } from './integer-signal';
 import { isPrimeSafeIntegerBigInt, multiplicativeInverse } from './prime-field';
 
@@ -25,6 +24,22 @@ export interface NormalizedInfinityPoint {
 }
 
 export type NormalizedPoint = NormalizedAffinePoint | NormalizedInfinityPoint;
+
+export const POINT_ORDER_OBSERVATION_LIMIT = 256n;
+
+function normalizeNonNegativeSafeInteger(value: unknown, moduleName: string, fieldName: string): number {
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    !Number.isInteger(value) ||
+    !Number.isSafeInteger(value) ||
+    value < 0
+  ) {
+    throw new Error(`${moduleName} requires "${fieldName}" to be a non-negative safe integer in V1.`);
+  }
+
+  return value;
+}
 
 function getCurveParamError(moduleName: string, key: 'p' | 'a' | 'b' | 'x' | 'y', value: unknown): string | null {
   if (
@@ -65,14 +80,14 @@ export function normalizeEcCurveParams(
   params: { p: unknown; a: unknown; b: unknown },
   moduleName: string,
 ): NormalizedCurveParams {
-  const pNumber = normalizePositiveSafeInteger(params.p, moduleName, 'p');
+  const pNumber = normalizeNonNegativeSafeInteger(params.p, moduleName, 'p');
   const pError = getCurveParamError(moduleName, 'p', pNumber);
   if (pError) {
     throw new Error(pError);
   }
 
-  const aNumber = normalizePositiveSafeInteger(params.a, moduleName, 'a');
-  const bNumber = normalizePositiveSafeInteger(params.b, moduleName, 'b');
+  const aNumber = normalizeNonNegativeSafeInteger(params.a, moduleName, 'a');
+  const bNumber = normalizeNonNegativeSafeInteger(params.b, moduleName, 'b');
   const aError = getCurveParamError(moduleName, 'a', aNumber);
   const bError = getCurveParamError(moduleName, 'b', bNumber);
   if (aError) {
@@ -117,8 +132,8 @@ export function validatePointSourceParamsStatic(
 ): string | null {
   try {
     const curve = normalizeEcCurveParams(params, moduleName);
-    const xNumber = normalizePositiveSafeInteger(params.x, moduleName, 'x');
-    const yNumber = normalizePositiveSafeInteger(params.y, moduleName, 'y');
+    const xNumber = normalizeNonNegativeSafeInteger(params.x, moduleName, 'x');
+    const yNumber = normalizeNonNegativeSafeInteger(params.y, moduleName, 'y');
     const xError = getCurveParamError(moduleName, 'x', xNumber);
     const yError = getCurveParamError(moduleName, 'y', yNumber);
     if (xError) {
@@ -359,4 +374,41 @@ export function scalarMultiplyPoint(
   return accumulator.kind === 'infinity'
     ? createInfinityEcPointSignal(curve.curve)
     : createAffineEcPointSignal(accumulator.x, accumulator.y, curve.curve);
+}
+
+export function getPointOrder(
+  point: NormalizedPoint,
+  curve: NormalizedCurveParams,
+  options?: { limit?: bigint; moduleName?: string },
+): bigint {
+  const moduleName = options?.moduleName ?? 'PointOrder';
+  const limit = options?.limit ?? POINT_ORDER_OBSERVATION_LIMIT;
+
+  if (limit < 1n) {
+    throw new Error(`${moduleName} requires an observable order limit of at least 1.`);
+  }
+
+  if (point.kind === 'infinity') {
+    return 1n;
+  }
+
+  let current: NormalizedPoint = point;
+  let order = 1n;
+
+  while (current.kind !== 'infinity') {
+    if (order > limit) {
+      throw new Error(
+        `${moduleName} order exceeds the observable workbench limit of ${limit.toString(10)} repeated point actions on this curve.`,
+      );
+    }
+
+    current = normalizeEcPointSignal(
+      addPoints(current, point, curve),
+      moduleName,
+      'order search',
+    );
+    order += 1n;
+  }
+
+  return order;
 }

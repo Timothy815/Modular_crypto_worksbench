@@ -1987,6 +1987,35 @@ const SCALAR_MULTIPLY_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const POINT_ORDER_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'PointOrder',
+  name: 'Point Order Micro Demo',
+  summary: 'Minimal visible subgroup check: one explicit pedagogical curve point is measured until repeated point action reaches visible infinity.',
+  pipeline: 'PointSource -> PointOrder -> IntegerOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'point-order', defId: 'PointOrder', params: { p: 17, a: 0, b: 13 } },
+        { id: 'point', defId: 'PointSource', params: { p: 17, a: 0, b: 13, x: 5, y: 6 } },
+        { id: 'out', defId: 'IntegerOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'point-order', port: 'point' } },
+        { from: { moduleId: 'point-order', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        'point-order': { x: 396, y: 176 },
+        point: { x: 76, y: 176 },
+        out: { x: 700, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const POINT_EQUALS_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'PointEquals',
   name: 'Point Equals Micro Demo',
@@ -2079,6 +2108,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   BIT_SELECT_MICRO_DEMO,
   BIT_EXPAND_MICRO_DEMO,
   SCALAR_MULTIPLY_MICRO_DEMO,
+  POINT_ORDER_MICRO_DEMO,
   POINT_EQUALS_MICRO_DEMO,
 ];
 

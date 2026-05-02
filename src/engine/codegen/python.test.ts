@@ -1297,6 +1297,31 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
   });
 
+  it('matches executeProject for visible point-order workspaces', () => {
+    const project: Project = {
+      modules: [
+        { id: 'point', defId: 'PointSource', params: { p: 17, a: 0, b: 13, x: 5, y: 6 } },
+        { id: 'order', defId: 'PointOrder', params: { p: 17, a: 0, b: 13 } },
+        { id: 'order-out', defId: 'IntegerOutput', params: {} },
+        { id: 'verify', defId: 'ScalarMultiply', params: { p: 17, a: 0, b: 13 } },
+        { id: 'verify-out', defId: 'PointOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'order', port: 'point' } },
+        { from: { moduleId: 'order', port: 'out' }, to: { moduleId: 'order-out', port: 'in' } },
+        { from: { moduleId: 'order', port: 'out' }, to: { moduleId: 'verify', port: 'scalar' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'verify', port: 'point' } },
+        { from: { moduleId: 'verify', port: 'out' }, to: { moduleId: 'verify-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
   it('matches executeProject for visible ECDH workspaces built from the shipped point layer', () => {
     const project: Project = {
       modules: [

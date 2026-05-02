@@ -48,6 +48,7 @@ import { PointOnCurve } from './point-on-curve';
 import { PointNegate } from './point-negate';
 import { PointAdd } from './point-add';
 import { PointDouble } from './point-double';
+import { PointOrder } from './point-order';
 import { PointEquals } from './point-equals';
 import { ScalarMultiply } from './scalar-multiply';
 import { AND } from './and';
@@ -641,6 +642,72 @@ describe('ScalarMultiply', () => {
         kind: 'infinity',
         curve: { p: 17, a: 2, b: 3 },
       },
+    });
+  });
+});
+
+describe('PointOrder', () => {
+  it('computes the observable order of a visible point on a pedagogical curve', () => {
+    const result = PointOrder.evaluate(
+      {
+        point: {
+          type: 'ec-point',
+          value: {
+            kind: 'affine',
+            curve: { p: 17, a: 0, b: 13 },
+            x: '5',
+            y: '6',
+          },
+        },
+      },
+      { p: 17, a: 0, b: 13 },
+    );
+
+    expect(result.out).toEqual({
+      type: 'integer',
+      value: '9',
+    });
+  });
+
+  it('shows that different points on the same curve can have different observable orders', () => {
+    const result = PointOrder.evaluate(
+      {
+        point: {
+          type: 'ec-point',
+          value: {
+            kind: 'affine',
+            curve: { p: 17, a: 0, b: 13 },
+            x: '2',
+            y: '2',
+          },
+        },
+      },
+      { p: 17, a: 0, b: 13 },
+    );
+
+    expect(result.out).toEqual({
+      type: 'integer',
+      value: '18',
+    });
+  });
+
+  it('treats visible infinity as order 1', () => {
+    const result = PointOrder.evaluate(
+      {
+        point: {
+          type: 'ec-point',
+          value: {
+            kind: 'infinity',
+            curve: { p: 17, a: 0, b: 13 },
+          },
+        },
+      },
+      { p: 17, a: 0, b: 13 },
+    );
+
+    expect(result.out).toEqual({
+      type: 'integer',
+      value: '1',
     });
   });
 });

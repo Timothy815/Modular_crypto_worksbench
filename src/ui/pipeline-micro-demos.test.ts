@@ -18,6 +18,8 @@ describe('pipeline micro demos', () => {
       'scalar-times-zero',
       'scalar-times-three',
       'visible-ecdh-shared-secret-equality',
+      'point-order-cycles-to-infinity',
+      'contrasting-point-orders',
       'ascii-repeated-key-xor-encrypt-decrypt',
       'ascii-strict-match-xor-encrypt-decrypt',
       'hex-block-xor',
@@ -37,6 +39,12 @@ describe('pipeline micro demos', () => {
     expect(getPipelineMicroDemo('scalar-times-three')?.name).toBe('Scalar × 3');
     expect(getPipelineMicroDemo('visible-ecdh-shared-secret-equality')?.name).toBe(
       'Visible ECDH Shared Secret Equality',
+    );
+    expect(getPipelineMicroDemo('point-order-cycles-to-infinity')?.name).toBe(
+      'Point Order Cycles To Infinity',
+    );
+    expect(getPipelineMicroDemo('contrasting-point-orders')?.name).toBe(
+      'Contrasting Point Orders',
     );
     expect(getPipelineMicroDemo('ascii-repeated-key-xor-encrypt-decrypt')?.name).toBe(
       'ASCII Repeated-Key XOR Encrypt/Decrypt',
@@ -68,6 +76,8 @@ describe('pipeline micro demos', () => {
     expect(getPipelineMicroDemo('scalar-times-zero')?.defaultTickedMode).toBeUndefined();
     expect(getPipelineMicroDemo('scalar-times-three')?.defaultTickedMode).toBeUndefined();
     expect(getPipelineMicroDemo('visible-ecdh-shared-secret-equality')?.defaultTickedMode).toBeUndefined();
+    expect(getPipelineMicroDemo('point-order-cycles-to-infinity')?.defaultTickedMode).toBeUndefined();
+    expect(getPipelineMicroDemo('contrasting-point-orders')?.defaultTickedMode).toBeUndefined();
     expect(getPipelineMicroDemo('representation-round-trip')?.defaultTickedMode).toBeUndefined();
   });
 
@@ -132,6 +142,8 @@ describe('pipeline micro demos', () => {
     const timesTwo = getPipelineMicroDemo('scalar-times-two');
     const timesZero = getPipelineMicroDemo('scalar-times-zero');
     const timesThree = getPipelineMicroDemo('scalar-times-three');
+    const pointOrderCycle = getPipelineMicroDemo('point-order-cycles-to-infinity');
+    const contrastingOrders = getPipelineMicroDemo('contrasting-point-orders');
 
     expect(timesTwo?.document.project.modules.map((module) => module.defId)).toEqual([
       'BitSource',
@@ -175,6 +187,25 @@ describe('pipeline micro demos', () => {
       'ScalarMultiply',
       'PointEquals',
       'BitOutput',
+    ]);
+
+    expect(pointOrderCycle?.document.project.modules.map((module) => module.defId)).toEqual([
+      'PointSource',
+      'PointOrder',
+      'IntegerOutput',
+      'ScalarMultiply',
+      'PointOutput',
+    ]);
+
+    expect(contrastingOrders?.document.project.modules.map((module) => module.defId)).toEqual([
+      'PointSource',
+      'PointOrder',
+      'IntegerOutput',
+      'PointSource',
+      'PointOrder',
+      'IntegerOutput',
+      'ScalarMultiply',
+      'PointOutput',
     ]);
   });
 

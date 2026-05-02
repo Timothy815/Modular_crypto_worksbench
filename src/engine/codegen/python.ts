@@ -94,6 +94,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'FieldMul',
   'FieldInverse',
   'PointSource',
+  'PointOrder',
   'PointEquals',
   'ScalarMultiply',
   'Modulo',
@@ -1454,6 +1455,27 @@ def scalar_multiply(scalar_signal, point_signal, p, a, b):
         if remaining > 0:
             current = _ec_point_double(current, curve)
     return {"out": accumulator}
+
+
+POINT_ORDER_OBSERVATION_LIMIT = 256
+
+
+def point_order(point_signal, p, a, b):
+    curve = _normalize_ec_curve(p, a, b, "PointOrder")
+    point = _expect_ec_point(point_signal, curve, "PointOrder", "point input")
+    if point["kind"] == "infinity":
+        return {"out": 1}
+
+    current = point
+    order = 1
+    while current["kind"] != "infinity":
+        if order > POINT_ORDER_OBSERVATION_LIMIT:
+            raise ValueError(
+                f"PointOrder order exceeds the observable workbench limit of {POINT_ORDER_OBSERVATION_LIMIT} repeated point actions on this curve."
+            )
+        current = _ec_point_add(current, point, curve)
+        order += 1
+    return {"out": order}
 
 
 def mod_exp(base, exp, modulus):
@@ -3292,6 +3314,8 @@ function buildModuleExpression(
       return `field_inverse(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
     case 'PointSource':
       return `point_source(${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')}, ${expressionContext.getParamExpression(moduleInstance, def, 'x')}, ${expressionContext.getParamExpression(moduleInstance, def, 'y')})`;
+    case 'PointOrder':
+      return `point_order(${expressionContext.getInputExpression(moduleId, 'point')}, ${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')})`;
     case 'PointEquals':
       return `point_equals(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')}, ${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')})`;
     case 'ScalarMultiply':
