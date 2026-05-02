@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: April 29, 2026
+Last updated: May 2, 2026
 
 ---
 
@@ -30,6 +30,20 @@ These features are already shipped on `main` and should not be treated as open f
 - iterator, clocked iterator, conditional, and multi-conditional authoring
 - saved cryptanalysis cases
 - keyboard shortcuts with manual coverage
+
+## Current Product Direction: Real-World Crypto Capability
+
+As of May 2, 2026, MCW has shipped a complete ECC teaching line including Python export parity. The current open phase is the transition from toy-scale to real-scale cryptography.
+
+Read `docs/live/contracts/2026-05/REAL-WORLD-CRYPTO-CAPABILITY-ROADMAP-V1.md` first for the full framing.
+
+The three active contracts are:
+
+1. **REAL-SCALE-ARITHMETIC-SUBSTRATE-V1** — Lift the `Number.isSafeInteger` ceiling from ECC/field arithmetic module params. Add `bigint-hex` param kind. Change `EcCurveDescriptor.p/a/b` to `bigint`. This is the prerequisite for everything in Track A. Status: Proposed.
+
+2. **NAMED-CURVE-SOURCES-V1** — `NamedCurveBasePoint` module with secp256k1 and P-256 presets. Inspector "Load Curve Preset" helper. Depends on (1). Status: Proposed.
+
+3. **GF2-FIELD-ARITHMETIC-V1** — `GF2Mul` and `GF2Inv` over GF(2⁸) in the bits domain. Independent of (1) and (2). Enables real AES MixColumns. Status: Proposed.
 
 ## Practical Restart Guidance
 
