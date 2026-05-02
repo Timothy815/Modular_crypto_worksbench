@@ -17,6 +17,7 @@ describe('pipeline micro demos', () => {
       'scalar-times-two',
       'scalar-times-zero',
       'scalar-times-three',
+      'visible-ecdh-shared-secret-equality',
       'ascii-repeated-key-xor-encrypt-decrypt',
       'ascii-strict-match-xor-encrypt-decrypt',
       'hex-block-xor',
@@ -34,6 +35,9 @@ describe('pipeline micro demos', () => {
     expect(getPipelineMicroDemo('scalar-times-two')?.name).toBe('Scalar × 2');
     expect(getPipelineMicroDemo('scalar-times-zero')?.name).toBe('Scalar × 0');
     expect(getPipelineMicroDemo('scalar-times-three')?.name).toBe('Scalar × 3');
+    expect(getPipelineMicroDemo('visible-ecdh-shared-secret-equality')?.name).toBe(
+      'Visible ECDH Shared Secret Equality',
+    );
     expect(getPipelineMicroDemo('ascii-repeated-key-xor-encrypt-decrypt')?.name).toBe(
       'ASCII Repeated-Key XOR Encrypt/Decrypt',
     );
@@ -63,6 +67,7 @@ describe('pipeline micro demos', () => {
     expect(getPipelineMicroDemo('scalar-times-two')?.defaultTickedMode).toBeUndefined();
     expect(getPipelineMicroDemo('scalar-times-zero')?.defaultTickedMode).toBeUndefined();
     expect(getPipelineMicroDemo('scalar-times-three')?.defaultTickedMode).toBeUndefined();
+    expect(getPipelineMicroDemo('visible-ecdh-shared-secret-equality')?.defaultTickedMode).toBeUndefined();
     expect(getPipelineMicroDemo('representation-round-trip')?.defaultTickedMode).toBeUndefined();
   });
 
@@ -155,6 +160,21 @@ describe('pipeline micro demos', () => {
       'PointDouble',
       'PointAdd',
       'PointOutput',
+    ]);
+
+    const ecdh = getPipelineMicroDemo('visible-ecdh-shared-secret-equality');
+    expect(ecdh?.document.project.modules.map((module) => module.defId)).toEqual([
+      'PointSource',
+      'BitSource',
+      'BitsToInteger',
+      'ScalarMultiply',
+      'BitSource',
+      'BitsToInteger',
+      'ScalarMultiply',
+      'ScalarMultiply',
+      'ScalarMultiply',
+      'PointEquals',
+      'BitOutput',
     ]);
   });
 

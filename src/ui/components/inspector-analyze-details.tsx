@@ -444,6 +444,34 @@ export function InspectorAnalyzeDetails({
                   ))}
                 </div>
               </>
+            ) : transformationView.kind === 'point-compare' ? (
+              <>
+                <div className="transformation-order">
+                  <span className="meta-label">Rule</span>
+                  <code>Left point == right point -&gt; [1], else [0]</code>
+                </div>
+                <div className="transformation-order">
+                  <span className="meta-label">Result</span>
+                  <code>{transformationView.outputBit}</code>
+                </div>
+                <div className="xor-grid">
+                  <div className="xor-grid-head">
+                    <span className="meta-label">Path</span>
+                    <span className="meta-label">Point</span>
+                    <span className="meta-label">Hex</span>
+                  </div>
+                  <div className="xor-grid-row">
+                    <span className="xor-grid-index">Left</span>
+                    <span className="xor-grid-bit">{transformationView.leftText}</span>
+                    <span className="xor-grid-compare">{transformationView.leftHex}</span>
+                  </div>
+                  <div className="xor-grid-row">
+                    <span className="xor-grid-index">Right</span>
+                    <span className="xor-grid-bit">{transformationView.rightText}</span>
+                    <span className="xor-grid-compare">{transformationView.rightHex}</span>
+                  </div>
+                </div>
+              </>
             ) : transformationView.kind === 'gate' ? (
               <>
                 <div className="transformation-order">

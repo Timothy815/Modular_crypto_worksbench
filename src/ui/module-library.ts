@@ -371,6 +371,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this to show repeated point action directly. Scalar multiplication is repeated point addition and doubling on the same declared curve, not ordinary multiplication of point coordinates. It is foundational for later ECC public-key stories, but it does not by itself imply ECDH, signatures, or real-world curve support.',
     searchTerms: ['scalar multiply', 'ec point', 'ecc point', 'elliptic curve', 'repeated point action', 'double and add'],
   },
+  PointEquals: {
+    sectionId: 'number-theory',
+    sortOrder: 9.95,
+    purpose: 'Checks whether two visible points are exactly the same point on the same declared pedagogical curve.',
+    detail: 'Use this to verify that two visible point-domain paths really converge to the same result. It emits a one-bit control signal, fails visibly on cross-curve mismatches, and is the honest equality surface for visible ECDH-style teaching.',
+    searchTerms: ['point equals', 'point equality', 'ec point', 'ecc point', 'elliptic curve', 'shared secret match'],
+  },
   ModExp: {
     sectionId: 'number-theory',
     sortOrder: 10,

@@ -382,6 +382,64 @@ const SCALAR_TIMES_THREE_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
   },
 };
 
+const VISIBLE_ECDH_SHARED_SECRET_EQUALITY_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
+  id: 'visible-ecdh-shared-secret-equality',
+  name: 'Visible ECDH Shared Secret Equality',
+  summary:
+    'One shared base point fans into Alice and Bob, both sides derive visible public points, and PointEquals verifies that the two shared-point paths converge.',
+  pipeline:
+    'PointSource(G) fan-out + private scalar bridges -> ScalarMultiply(public/shared points) -> PointEquals -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'base-point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 5, y: 6 } },
+        { id: 'alice-private-bits', defId: 'BitSource', params: { stream: [0, 0, 1, 1] } },
+        { id: 'alice-private', defId: 'BitsToInteger', params: {} },
+        { id: 'alice-public', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'bob-private-bits', defId: 'BitSource', params: { stream: [0, 1, 0, 1] } },
+        { id: 'bob-private', defId: 'BitsToInteger', params: {} },
+        { id: 'bob-public', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'alice-shared', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'bob-shared', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'shared-match', defId: 'PointEquals', params: { p: 17, a: 2, b: 3 } },
+        { id: 'shared-match-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'alice-private-bits', port: 'out' }, to: { moduleId: 'alice-private', port: 'in' } },
+        { from: { moduleId: 'alice-private', port: 'out' }, to: { moduleId: 'alice-public', port: 'scalar' } },
+        { from: { moduleId: 'base-point', port: 'out' }, to: { moduleId: 'alice-public', port: 'point' } },
+        { from: { moduleId: 'bob-private-bits', port: 'out' }, to: { moduleId: 'bob-private', port: 'in' } },
+        { from: { moduleId: 'bob-private', port: 'out' }, to: { moduleId: 'bob-public', port: 'scalar' } },
+        { from: { moduleId: 'base-point', port: 'out' }, to: { moduleId: 'bob-public', port: 'point' } },
+        { from: { moduleId: 'alice-private', port: 'out' }, to: { moduleId: 'alice-shared', port: 'scalar' } },
+        { from: { moduleId: 'bob-public', port: 'out' }, to: { moduleId: 'alice-shared', port: 'point' } },
+        { from: { moduleId: 'bob-private', port: 'out' }, to: { moduleId: 'bob-shared', port: 'scalar' } },
+        { from: { moduleId: 'alice-public', port: 'out' }, to: { moduleId: 'bob-shared', port: 'point' } },
+        { from: { moduleId: 'alice-shared', port: 'out' }, to: { moduleId: 'shared-match', port: 'a' } },
+        { from: { moduleId: 'bob-shared', port: 'out' }, to: { moduleId: 'shared-match', port: 'b' } },
+        { from: { moduleId: 'shared-match', port: 'out' }, to: { moduleId: 'shared-match-out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        'base-point': { x: 72, y: 300 },
+        'alice-private-bits': { x: 72, y: 56 },
+        'alice-private': { x: 328, y: 56 },
+        'alice-public': { x: 612, y: 56 },
+        'bob-private-bits': { x: 72, y: 556 },
+        'bob-private': { x: 328, y: 556 },
+        'bob-public': { x: 612, y: 556 },
+        'alice-shared': { x: 900, y: 176 },
+        'bob-shared': { x: 900, y: 428 },
+        'shared-match': { x: 1192, y: 300 },
+        'shared-match-out': { x: 1460, y: 300 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const REPRESENTATION_ROUND_TRIP_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
   id: 'representation-round-trip',
   name: 'Representation Round Trip',
@@ -833,6 +891,7 @@ export const PIPELINE_MICRO_DEMOS: PipelineMicroDemo[] = [
   SCALAR_TIMES_TWO_PIPELINE_MICRO_DEMO,
   SCALAR_TIMES_ZERO_PIPELINE_MICRO_DEMO,
   SCALAR_TIMES_THREE_PIPELINE_MICRO_DEMO,
+  VISIBLE_ECDH_SHARED_SECRET_EQUALITY_PIPELINE_MICRO_DEMO,
   ASCII_REPEATED_KEY_XOR_ENCRYPT_DECRYPT_PIPELINE_MICRO_DEMO,
   ASCII_STRICT_MATCH_XOR_ENCRYPT_DECRYPT_PIPELINE_MICRO_DEMO,
   HEX_BLOCK_XOR_PIPELINE_MICRO_DEMO,

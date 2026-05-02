@@ -431,6 +431,12 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         indexTerms: ['scalar multiply', 'elliptic curve', 'ec point', 'repeated point action', 'double and add'],
       },
       {
+        id: 'PointEquals',
+        title: 'PointEquals',
+        body: 'Checks whether two visible points are exactly the same point on the same declared pedagogical curve and emits a one-bit result. Use this when two different point-domain paths should converge visibly, such as the shared-point equality step in a glass-box ECDH demo.',
+        indexTerms: ['point equals', 'point equality', 'elliptic curve', 'ec point', 'shared secret match'],
+      },
+      {
         id: 'ModExp',
         title: 'ModExp',
         body: 'Performs modular exponentiation: (base ^ exp) mod n. Essential for public-key algorithms like RSA and Diffie-Hellman.',

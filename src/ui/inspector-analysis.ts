@@ -255,6 +255,19 @@ interface PointActionTransformationView {
   summary: string;
 }
 
+interface PointCompareTransformationView {
+  entry: ExecutionTraceEntry;
+  kind: 'point-compare';
+  title: string;
+  copy: string;
+  leftText: string;
+  leftHex: string;
+  rightText: string;
+  rightHex: string;
+  outputBit: number;
+  summary: string;
+}
+
 interface UnpadTransformationView {
   entry: ExecutionTraceEntry;
   kind: 'unpad';
@@ -282,6 +295,7 @@ export type TransformationView =
   | ArithmeticTransformationView
   | IntegerArithmeticTransformationView
   | PointActionTransformationView
+  | PointCompareTransformationView
   | UnpadTransformationView;
 
 export const PERMUTATION_EDITOR_PORT_HEIGHT = 52;
@@ -348,6 +362,9 @@ export function getTransformationView(
   }
   if (entry.defId === 'Equals' || entry.defId === 'AtLeast' || entry.defId === 'GreaterThan') {
     return getCompareTransformation(entry);
+  }
+  if (entry.defId === 'PointEquals') {
+    return getPointCompareTransformation(entry);
   }
   if (entry.defId === 'Gate') {
     return getGateTransformation(entry);
@@ -1370,6 +1387,36 @@ function getScalarMultiplyTransformation(
         : scalarValue === 1n
           ? 'One preserves the original point, so the point domain stays explicit.'
           : `${scalarValue.toString(10)}P is produced by repeated point addition and doubling on the same declared curve.`,
+  };
+}
+
+function getPointCompareTransformation(entry: ExecutionTraceEntry): PointCompareTransformationView | null {
+  const left = entry.inputs.a;
+  const right = entry.inputs.b;
+  const output = entry.outputs.out;
+  if (left?.type !== 'ec-point' || right?.type !== 'ec-point' || output?.type !== 'bits') {
+    return null;
+  }
+
+  const outputBit = output.value[0] ?? 0;
+  const leftText = formatEcPointAsText(left.value);
+  const rightText = formatEcPointAsText(right.value);
+
+  return {
+    entry,
+    kind: 'point-compare',
+    title: 'Point Equality',
+    copy:
+      'PointEquals checks whether two visible points are exactly the same point on the same declared curve, then emits a one-bit control result.',
+    leftText,
+    leftHex: formatEcPointAsHex(left.value),
+    rightText,
+    rightHex: formatEcPointAsHex(right.value),
+    outputBit,
+    summary:
+      outputBit === 1
+        ? 'Both point-domain paths converge to the same visible point, so the equality output is active.'
+        : 'The two point-domain paths do not match, so the equality output stays inactive.',
   };
 }
 

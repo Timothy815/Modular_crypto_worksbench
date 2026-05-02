@@ -15,6 +15,7 @@ import { PointOnCurve } from './modules/point-on-curve';
 import { PointNegate } from './modules/point-negate';
 import { PointAdd } from './modules/point-add';
 import { PointDouble } from './modules/point-double';
+import { PointEquals } from './modules/point-equals';
 import { ScalarMultiply } from './modules/scalar-multiply';
 import { AND } from './modules/and';
 import { AtLeast } from './modules/at-least';
@@ -150,6 +151,7 @@ const registry: ModuleRegistry = {
   [PointNegate.id]: PointNegate,
   [PointAdd.id]: PointAdd,
   [PointDouble.id]: PointDouble,
+  [PointEquals.id]: PointEquals,
   [ScalarMultiply.id]: ScalarMultiply,
   [ModExp.id]: ModExp,
   [ModInverse.id]: ModInverse,

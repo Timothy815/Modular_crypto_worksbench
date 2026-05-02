@@ -22,6 +22,7 @@ This is the canonical starting point for humans and agents.
 - `docs/live/contracts/2026-05/PRIME-FIELD-ARITHMETIC-V1.md` when planning the first honest finite-field layer for future ECC work
 - `docs/live/contracts/2026-05/ELLIPTIC-CURVE-POINT-MECHANICS-V1.md` when planning the first honest visible elliptic-curve point layer
 - `docs/live/contracts/2026-05/SCALAR-MULTIPLICATION-V1.md` when planning the first honest repeated-point-action layer before any visible ECDH work
+- `docs/live/contracts/2026-05/VISIBLE-ECDH-V1.md` when planning the first honest elliptic-curve key-agreement teaching slice
 
 ## Read As Needed
 

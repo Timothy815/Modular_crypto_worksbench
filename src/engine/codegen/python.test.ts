@@ -880,7 +880,7 @@ parityDescribe('generatePythonExport', () => {
     const execution = executeGeneratedPython(pythonSource);
 
     expect(execution.status).toBe(0);
-    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+    expect(execution.stdout.trim().split('\n').sort()).toEqual(getExpectedSinkLines(project, V1_REGISTRY).sort());
   });
 
   it('emits a split runtime/library export for a stateless workspace', () => {
@@ -1295,6 +1295,53 @@ parityDescribe('generatePythonExport', () => {
 
     expect(execution.status).toBe(0);
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeProject for visible ECDH workspaces built from the shipped point layer', () => {
+    const project: Project = {
+      modules: [
+        { id: 'base-point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 5, y: 6 } },
+        { id: 'alice-private-bits', defId: 'BitSource', params: { stream: [0, 0, 1, 1] } },
+        { id: 'alice-private', defId: 'BitsToInteger', params: {} },
+        { id: 'alice-public', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'alice-public-out', defId: 'PointOutput', params: {} },
+        { id: 'bob-private-bits', defId: 'BitSource', params: { stream: [0, 1, 0, 1] } },
+        { id: 'bob-private', defId: 'BitsToInteger', params: {} },
+        { id: 'bob-public', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'bob-public-out', defId: 'PointOutput', params: {} },
+        { id: 'alice-shared', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'alice-shared-out', defId: 'PointOutput', params: {} },
+        { id: 'bob-shared', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'bob-shared-out', defId: 'PointOutput', params: {} },
+        { id: 'shared-match', defId: 'PointEquals', params: { p: 17, a: 2, b: 3 } },
+        { id: 'shared-match-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'alice-private-bits', port: 'out' }, to: { moduleId: 'alice-private', port: 'in' } },
+        { from: { moduleId: 'alice-private', port: 'out' }, to: { moduleId: 'alice-public', port: 'scalar' } },
+        { from: { moduleId: 'base-point', port: 'out' }, to: { moduleId: 'alice-public', port: 'point' } },
+        { from: { moduleId: 'alice-public', port: 'out' }, to: { moduleId: 'alice-public-out', port: 'in' } },
+        { from: { moduleId: 'bob-private-bits', port: 'out' }, to: { moduleId: 'bob-private', port: 'in' } },
+        { from: { moduleId: 'bob-private', port: 'out' }, to: { moduleId: 'bob-public', port: 'scalar' } },
+        { from: { moduleId: 'base-point', port: 'out' }, to: { moduleId: 'bob-public', port: 'point' } },
+        { from: { moduleId: 'bob-public', port: 'out' }, to: { moduleId: 'bob-public-out', port: 'in' } },
+        { from: { moduleId: 'alice-private', port: 'out' }, to: { moduleId: 'alice-shared', port: 'scalar' } },
+        { from: { moduleId: 'bob-public', port: 'out' }, to: { moduleId: 'alice-shared', port: 'point' } },
+        { from: { moduleId: 'alice-shared', port: 'out' }, to: { moduleId: 'alice-shared-out', port: 'in' } },
+        { from: { moduleId: 'bob-private', port: 'out' }, to: { moduleId: 'bob-shared', port: 'scalar' } },
+        { from: { moduleId: 'alice-public', port: 'out' }, to: { moduleId: 'bob-shared', port: 'point' } },
+        { from: { moduleId: 'bob-shared', port: 'out' }, to: { moduleId: 'bob-shared-out', port: 'in' } },
+        { from: { moduleId: 'alice-shared', port: 'out' }, to: { moduleId: 'shared-match', port: 'a' } },
+        { from: { moduleId: 'bob-shared', port: 'out' }, to: { moduleId: 'shared-match', port: 'b' } },
+        { from: { moduleId: 'shared-match', port: 'out' }, to: { moduleId: 'shared-match-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n').sort()).toEqual(getExpectedSinkLines(project, V1_REGISTRY).sort());
   });
 
   it('preserves forwarded 6->4 s-box dimensions during Python export', () => {

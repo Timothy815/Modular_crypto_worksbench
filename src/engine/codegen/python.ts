@@ -94,6 +94,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'FieldMul',
   'FieldInverse',
   'PointSource',
+  'PointEquals',
   'ScalarMultiply',
   'Modulo',
   'MulMod',
@@ -296,6 +297,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'format_hex_sink',
   'format_integer_sink',
   'point_source',
+  'point_equals',
   'scalar_multiply',
   'format_point_sink',
   'format_ticked_sink_line',
@@ -1420,6 +1422,20 @@ def point_source(p, a, b, x, y):
     if not _is_affine_point_on_curve(x_value, y_value, curve):
         raise ValueError("PointSource requires the declared point to lie on the declared curve.")
     return {"out": _create_affine_point(curve, x_value, y_value)}
+
+
+def point_equals(left_signal, right_signal, p, a, b):
+    curve = _normalize_ec_curve(p, a, b, "PointEquals")
+    left = _expect_ec_point(left_signal, curve, "PointEquals", "input a")
+    right = _expect_ec_point(right_signal, curve, "PointEquals", "input b")
+    points_equal = (
+        left["kind"] == right["kind"]
+        and (
+            left["kind"] == "infinity"
+            or (left["x"] == right["x"] and left["y"] == right["y"])
+        )
+    )
+    return {"out": _single_bit_control(points_equal)}
 
 
 def scalar_multiply(scalar_signal, point_signal, p, a, b):
@@ -3276,6 +3292,8 @@ function buildModuleExpression(
       return `field_inverse(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
     case 'PointSource':
       return `point_source(${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')}, ${expressionContext.getParamExpression(moduleInstance, def, 'x')}, ${expressionContext.getParamExpression(moduleInstance, def, 'y')})`;
+    case 'PointEquals':
+      return `point_equals(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')}, ${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')})`;
     case 'ScalarMultiply':
       return `scalar_multiply(${expressionContext.getInputExpression(moduleId, 'scalar')}, ${expressionContext.getInputExpression(moduleId, 'point')}, ${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')})`;
     case 'ModExp':

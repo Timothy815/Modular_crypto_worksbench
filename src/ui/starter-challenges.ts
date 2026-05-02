@@ -48,6 +48,7 @@ const multiplyCompareUnpadProject = demoProjects.find((project) => project.id ==
 const visibleMessageWindowProject = demoProjects.find((project) => project.id === 'visible-message-window');
 const toyRsaProject = demoProjects.find((project) => project.id === 'toy-rsa');
 const diffieHellmanProject = demoProjects.find((project) => project.id === 'diffie-hellman-key-exchange');
+const visibleEcdhProject = demoProjects.find((project) => project.id === 'visible-ecdh-key-agreement');
 const visibleSignatureVerificationProject = demoProjects.find(
   (project) => project.id === 'visible-signature-verification',
 );
@@ -198,6 +199,9 @@ if (!toyRsaProject) {
 if (!diffieHellmanProject) {
   throw new Error('Expected diffie-hellman-key-exchange demo project to seed starter challenges.');
 }
+if (!visibleEcdhProject) {
+  throw new Error('Expected visible-ecdh-key-agreement demo project to seed starter challenges.');
+}
 if (!visibleSignatureVerificationProject) {
   throw new Error('Expected visible-signature-verification demo project to seed starter challenges.');
 }
@@ -311,6 +315,8 @@ const toyRsaTarget = cloneProject(toyRsaProject.project);
 const brokenToyRsaStart = cloneProject(toyRsaProject.project);
 const diffieHellmanTarget = cloneProject(diffieHellmanProject.project);
 const brokenDiffieHellmanStart = cloneProject(diffieHellmanProject.project);
+const visibleEcdhTarget = cloneProject(visibleEcdhProject.project);
+const brokenVisibleEcdhStart = cloneProject(visibleEcdhProject.project);
 const visibleSignatureVerificationTarget = cloneProject(visibleSignatureVerificationProject.project);
 const brokenVisibleSignatureVerificationStart = cloneProject(
   visibleSignatureVerificationProject.project,
@@ -497,6 +503,22 @@ if (!brokenBobPrivateExp) {
   throw new Error('Expected diffie-hellman-key-exchange demo project to contain bob-private.');
 }
 brokenBobPrivateExp.params.value = '0E';
+
+const brokenVisibleEcdhConnections = brokenVisibleEcdhStart.connections;
+const brokenVisibleEcdhSharedLegIndex = brokenVisibleEcdhConnections.findIndex(
+  (connection) =>
+    connection.from.moduleId === 'alice-public' &&
+    connection.from.port === 'out' &&
+    connection.to.moduleId === 'bob-shared' &&
+    connection.to.port === 'point',
+);
+if (brokenVisibleEcdhSharedLegIndex === -1) {
+  throw new Error('Expected visible-ecdh-key-agreement demo project to contain the Alice public -> Bob shared leg.');
+}
+brokenVisibleEcdhConnections[brokenVisibleEcdhSharedLegIndex] = {
+  from: { moduleId: 'base-point', port: 'out' },
+  to: { moduleId: 'bob-shared', port: 'point' },
+};
 
 const brokenSignatureVerifyExp = brokenVisibleSignatureVerificationStart.modules.find(
   (moduleInstance) => moduleInstance.id === 'public-exp',
@@ -1744,6 +1766,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The generator g and the shared modulus p are already correct on every ModExp.',
       'Only Bob’s private exponent source is wrong.',
       'The correct exponent is one hex word larger than 0E.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-visible-ecdh',
+    title: 'Repair the Visible ECDH',
+    projectId: 'visible-ecdh-key-agreement',
+    group: 'Number Theory',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228,
+    recommendedAfter: ['visible-scalar-multiplication'],
+    difficulty: 'intermediate',
+    prompt:
+      'This visible elliptic-curve key-agreement graph no longer lands on the same shared point on both sides. Restore the broken shared-secret leg so PointEquals returns a match again.',
+    startingProject: brokenVisibleEcdhStart,
+    startingLayout: cloneProject(visibleEcdhProject.layout),
+    targetProject: visibleEcdhTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'There should be one shared base point G, but each shared-secret branch must consume the other side’s public point, not G directly.',
+      'Alice should compute a(bG) and Bob should compute b(aG).',
+      'The PointEquals output should be 1 only when both shared-point paths land on the same visible point.',
     ],
   },
   {

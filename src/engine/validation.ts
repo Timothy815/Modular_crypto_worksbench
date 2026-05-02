@@ -274,6 +274,7 @@ function getModuleSpecificParamMessage(
     def.id === 'PointNegate' ||
     def.id === 'PointAdd' ||
     def.id === 'PointDouble' ||
+    def.id === 'PointEquals' ||
     def.id === 'ScalarMultiply'
   ) {
     if (field.key === 'p' || field.key === 'a' || field.key === 'b' || field.key === 'x' || field.key === 'y') {
@@ -1100,6 +1101,7 @@ function validateParams(
       def.id === 'PointNegate' ||
       def.id === 'PointAdd' ||
       def.id === 'PointDouble' ||
+      def.id === 'PointEquals' ||
       def.id === 'ScalarMultiply'
     ) {
       const curveMessage = validateEcCurveParamsStatic(

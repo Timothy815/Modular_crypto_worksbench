@@ -1987,6 +1987,38 @@ const SCALAR_MULTIPLY_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const POINT_EQUALS_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'PointEquals',
+  name: 'Point Equals Micro Demo',
+  summary: 'Minimal visible point comparison: two explicit curve points are checked for exact equality and the result becomes one visible control bit.',
+  pipeline: 'PointSource(a,b) -> PointEquals -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'point-equals', defId: 'PointEquals', params: { p: 17, a: 2, b: 3 } },
+        { id: 'left-point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 5, y: 6 } },
+        { id: 'right-point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 5, y: 6 } },
+        { id: 'out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'left-point', port: 'out' }, to: { moduleId: 'point-equals', port: 'a' } },
+        { from: { moduleId: 'right-point', port: 'out' }, to: { moduleId: 'point-equals', port: 'b' } },
+        { from: { moduleId: 'point-equals', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        'point-equals': { x: 388, y: 176 },
+        'left-point': { x: 76, y: 84 },
+        'right-point': { x: 76, y: 300 },
+        out: { x: 700, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   MUX_MICRO_DEMO,
   DEMUX_MICRO_DEMO,
@@ -2047,6 +2079,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   BIT_SELECT_MICRO_DEMO,
   BIT_EXPAND_MICRO_DEMO,
   SCALAR_MULTIPLY_MICRO_DEMO,
+  POINT_EQUALS_MICRO_DEMO,
 ];
 
 const PRIMITIVE_MICRO_DEMO_BY_DEF_ID = Object.fromEntries(

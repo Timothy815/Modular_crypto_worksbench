@@ -48,6 +48,7 @@ import { PointOnCurve } from './point-on-curve';
 import { PointNegate } from './point-negate';
 import { PointAdd } from './point-add';
 import { PointDouble } from './point-double';
+import { PointEquals } from './point-equals';
 import { ScalarMultiply } from './scalar-multiply';
 import { AND } from './and';
 import { AtLeast } from './at-least';
@@ -531,6 +532,62 @@ describe('PointDouble', () => {
         y: '12',
       },
     });
+  });
+});
+
+describe('PointEquals', () => {
+  it('emits a one-bit match result for equal points on the same curve', () => {
+    const result = PointEquals.evaluate(
+      {
+        a: {
+          type: 'ec-point',
+          value: {
+            kind: 'affine',
+            curve: { p: 17, a: 2, b: 3 },
+            x: '13',
+            y: '13',
+          },
+        },
+        b: {
+          type: 'ec-point',
+          value: {
+            kind: 'affine',
+            curve: { p: 17, a: 2, b: 3 },
+            x: '13',
+            y: '13',
+          },
+        },
+      },
+      { p: 17, a: 2, b: 3 },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [1] });
+  });
+
+  it('emits an inactive bit for unequal points on the same curve', () => {
+    const result = PointEquals.evaluate(
+      {
+        a: {
+          type: 'ec-point',
+          value: {
+            kind: 'affine',
+            curve: { p: 17, a: 2, b: 3 },
+            x: '13',
+            y: '13',
+          },
+        },
+        b: {
+          type: 'ec-point',
+          value: {
+            kind: 'affine',
+            curve: { p: 17, a: 2, b: 3 },
+            x: '5',
+            y: '6',
+          },
+        },
+      },
+      { p: 17, a: 2, b: 3 },
+    );
+    expect(result.out).toEqual({ type: 'bits', value: [0] });
   });
 });
 
