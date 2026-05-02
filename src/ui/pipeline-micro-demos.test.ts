@@ -14,6 +14,9 @@ describe('pipeline micro demos', () => {
       'truncate-to-block',
       'pad-to-block',
       'representation-round-trip',
+      'scalar-times-two',
+      'scalar-times-zero',
+      'scalar-times-three',
       'ascii-repeated-key-xor-encrypt-decrypt',
       'ascii-strict-match-xor-encrypt-decrypt',
       'hex-block-xor',
@@ -28,6 +31,9 @@ describe('pipeline micro demos', () => {
     expect(getPipelineMicroDemo('truncate-to-block')?.name).toBe('Truncate To Block');
     expect(getPipelineMicroDemo('pad-to-block')?.name).toBe('Pad To Block');
     expect(getPipelineMicroDemo('representation-round-trip')?.name).toBe('Representation Round Trip');
+    expect(getPipelineMicroDemo('scalar-times-two')?.name).toBe('Scalar × 2');
+    expect(getPipelineMicroDemo('scalar-times-zero')?.name).toBe('Scalar × 0');
+    expect(getPipelineMicroDemo('scalar-times-three')?.name).toBe('Scalar × 3');
     expect(getPipelineMicroDemo('ascii-repeated-key-xor-encrypt-decrypt')?.name).toBe(
       'ASCII Repeated-Key XOR Encrypt/Decrypt',
     );
@@ -54,6 +60,9 @@ describe('pipeline micro demos', () => {
     expect(getPipelineMicroDemo('hex-block-xor')?.defaultTickedMode).toBe(true);
     expect(getPipelineMicroDemo('hex-normalize-then-xor')?.defaultTickedMode).toBe(true);
     expect(getPipelineMicroDemo('canvas-authoring-xor')?.defaultTickedMode).toBe(true);
+    expect(getPipelineMicroDemo('scalar-times-two')?.defaultTickedMode).toBeUndefined();
+    expect(getPipelineMicroDemo('scalar-times-zero')?.defaultTickedMode).toBeUndefined();
+    expect(getPipelineMicroDemo('scalar-times-three')?.defaultTickedMode).toBeUndefined();
     expect(getPipelineMicroDemo('representation-round-trip')?.defaultTickedMode).toBeUndefined();
   });
 
@@ -111,6 +120,41 @@ describe('pipeline micro demos', () => {
       'HexSequenceInput',
       'BitsToAscii',
       'TextOutput',
+    ]);
+  });
+
+  it('keeps the scalar micro demos honest about visible point action and bounded checks', () => {
+    const timesTwo = getPipelineMicroDemo('scalar-times-two');
+    const timesZero = getPipelineMicroDemo('scalar-times-zero');
+    const timesThree = getPipelineMicroDemo('scalar-times-three');
+
+    expect(timesTwo?.document.project.modules.map((module) => module.defId)).toEqual([
+      'BitSource',
+      'BitsToInteger',
+      'PointSource',
+      'ScalarMultiply',
+      'PointOutput',
+      'PointDouble',
+      'PointOutput',
+    ]);
+
+    expect(timesZero?.document.project.modules.map((module) => module.defId)).toEqual([
+      'BitSource',
+      'BitsToInteger',
+      'PointSource',
+      'ScalarMultiply',
+      'PointOutput',
+    ]);
+
+    expect(timesThree?.document.project.modules.map((module) => module.defId)).toEqual([
+      'BitSource',
+      'BitsToInteger',
+      'PointSource',
+      'ScalarMultiply',
+      'PointOutput',
+      'PointDouble',
+      'PointAdd',
+      'PointOutput',
     ]);
   });
 

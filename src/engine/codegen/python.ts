@@ -47,6 +47,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'Output',
   'TextOutput',
   'IntegerOutput',
+  'PointOutput',
   'BitsToAscii',
   'BitsToAsciiChar',
   'BitsToBaudot',
@@ -92,6 +93,8 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'FieldSub',
   'FieldMul',
   'FieldInverse',
+  'PointSource',
+  'ScalarMultiply',
   'Modulo',
   'MulMod',
   'Majority',
@@ -177,6 +180,7 @@ const SYMBOL_SINK_DEF_IDS = new Set(['Output', 'TextOutput', 'BaudotOutput']);
 const BIT_SINK_DEF_IDS = new Set(['BitOutput']);
 const HEX_SINK_DEF_IDS = new Set(['HexOutput']);
 const INTEGER_SINK_DEF_IDS = new Set(['IntegerOutput']);
+const POINT_SINK_DEF_IDS = new Set(['PointOutput']);
 
 const PYTHON_RUNTIME_VERSION = '1.0.0';
 
@@ -291,6 +295,9 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'format_bit_sink',
   'format_hex_sink',
   'format_integer_sink',
+  'point_source',
+  'scalar_multiply',
+  'format_point_sink',
   'format_ticked_sink_line',
 ] as const;
 
@@ -1293,6 +1300,146 @@ def field_inverse(signal, modulus):
     return {"out": old_s % modulus_value}
 
 
+def _normalize_curve_param(value, key, module_name):
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0 or value > 9007199254740991:
+        raise ValueError(f"{module_name} requires {key} to be a non-negative safe integer in V1.")
+    return int(value)
+
+
+def _modp(value, modulus):
+    return ((value % modulus) + modulus) % modulus
+
+
+def _normalize_ec_curve(p, a, b, module_name):
+    p_value = _normalize_curve_param(p, "p", module_name)
+    a_value = _normalize_curve_param(a, "a", module_name)
+    b_value = _normalize_curve_param(b, "b", module_name)
+    if not _is_prime_safe_integer(p_value):
+        raise ValueError(f'{module_name} requires "p" to be prime in V1.')
+    if a_value >= p_value or b_value >= p_value:
+        raise ValueError(f'{module_name} requires "a" and "b" to be in the field range 0..{p_value - 1}.')
+    if _modp(4 * a_value * a_value * a_value + 27 * b_value * b_value, p_value) == 0:
+        raise ValueError(
+            f"{module_name} requires a non-singular curve: 4a^3 + 27b^2 must be nonzero modulo p."
+        )
+    return {"p": p_value, "a": a_value, "b": b_value}
+
+
+def _is_affine_point_on_curve(x, y, curve):
+    left = _modp(y * y, curve["p"])
+    right = _modp(x * x * x + curve["a"] * x + curve["b"], curve["p"])
+    return left == right
+
+
+def _create_affine_point(curve, x, y):
+    return {
+        "kind": "affine",
+        "curve": {"p": curve["p"], "a": curve["a"], "b": curve["b"]},
+        "x": int(x),
+        "y": int(y),
+    }
+
+
+def _create_infinity_point(curve):
+    return {
+        "kind": "infinity",
+        "curve": {"p": curve["p"], "a": curve["a"], "b": curve["b"]},
+    }
+
+
+def _expect_ec_point(signal, curve, module_name, label):
+    if not isinstance(signal, dict):
+        raise ValueError(f"{module_name} expects {label} to be an ec-point signal")
+    kind = signal.get("kind")
+    signal_curve = signal.get("curve")
+    if not isinstance(signal_curve, dict):
+        raise ValueError(f"{module_name} expects {label} to carry explicit curve provenance.")
+    normalized_curve = _normalize_ec_curve(
+        signal_curve.get("p"),
+        signal_curve.get("a"),
+        signal_curve.get("b"),
+        module_name,
+    )
+    if normalized_curve != curve:
+        raise ValueError(
+            f'{module_name} expects {label} to belong to curve y^2 = x^3 + {curve["a"]}x + {curve["b"]} (mod {curve["p"]}).'
+        )
+    if kind == "infinity":
+        return {"kind": "infinity", "curve": curve}
+    if kind != "affine":
+        raise ValueError(f"{module_name} expects {label} to be an affine point or infinity.")
+    x = _expect_integer(signal.get("x"), module_name)
+    y = _expect_integer(signal.get("y"), module_name)
+    if x >= curve["p"] or y >= curve["p"]:
+        raise ValueError(
+            f'{module_name} expects {label} coordinates to be in the field range 0..{curve["p"] - 1}.'
+        )
+    if not _is_affine_point_on_curve(x, y, curve):
+        raise ValueError(f"{module_name} expects {label} to lie on the declared curve.")
+    return {"kind": "affine", "curve": curve, "x": x, "y": y}
+
+
+def _ec_point_double(point, curve):
+    if point["kind"] == "infinity":
+        return _create_infinity_point(curve)
+    if point["y"] == 0:
+        return _create_infinity_point(curve)
+    slope = _modp(
+        (3 * point["x"] * point["x"] + curve["a"]) * pow(_modp(2 * point["y"], curve["p"]), -1, curve["p"]),
+        curve["p"],
+    )
+    x3 = _modp(slope * slope - 2 * point["x"], curve["p"])
+    y3 = _modp(slope * (point["x"] - x3) - point["y"], curve["p"])
+    return _create_affine_point(curve, x3, y3)
+
+
+def _ec_point_add(left, right, curve):
+    if left["kind"] == "infinity":
+        return _create_infinity_point(curve) if right["kind"] == "infinity" else _create_affine_point(curve, right["x"], right["y"])
+    if right["kind"] == "infinity":
+        return _create_affine_point(curve, left["x"], left["y"])
+    if left["x"] == right["x"]:
+        if _modp(left["y"] + right["y"], curve["p"]) == 0:
+            return _create_infinity_point(curve)
+        return _ec_point_double(left, curve)
+    slope = _modp(
+        (right["y"] - left["y"]) * pow(_modp(right["x"] - left["x"], curve["p"]), -1, curve["p"]),
+        curve["p"],
+    )
+    x3 = _modp(slope * slope - left["x"] - right["x"], curve["p"])
+    y3 = _modp(slope * (left["x"] - x3) - left["y"], curve["p"])
+    return _create_affine_point(curve, x3, y3)
+
+
+def point_source(p, a, b, x, y):
+    curve = _normalize_ec_curve(p, a, b, "PointSource")
+    x_value = _normalize_curve_param(x, "x", "PointSource")
+    y_value = _normalize_curve_param(y, "y", "PointSource")
+    if x_value >= curve["p"] or y_value >= curve["p"]:
+        raise ValueError(f'PointSource requires "x" and "y" to be in the field range 0..{curve["p"] - 1}.')
+    if not _is_affine_point_on_curve(x_value, y_value, curve):
+        raise ValueError("PointSource requires the declared point to lie on the declared curve.")
+    return {"out": _create_affine_point(curve, x_value, y_value)}
+
+
+def scalar_multiply(scalar_signal, point_signal, p, a, b):
+    curve = _normalize_ec_curve(p, a, b, "ScalarMultiply")
+    scalar = _expect_integer(scalar_signal, "ScalarMultiply")
+    point = _expect_ec_point(point_signal, curve, "ScalarMultiply", "point input")
+    if scalar == 0 or point["kind"] == "infinity":
+        return {"out": _create_infinity_point(curve)}
+    remaining = scalar
+    accumulator = _create_infinity_point(curve)
+    current = point
+    while remaining > 0:
+        if remaining & 1:
+            accumulator = _ec_point_add(accumulator, current, curve)
+        remaining >>= 1
+        if remaining > 0:
+            current = _ec_point_double(current, curve)
+    return {"out": accumulator}
+
+
 def mod_exp(base, exp, modulus):
     base_bits = _expect_bits(base, "ModExp")
     exp_bits = _expect_bits(exp, "ModExp")
@@ -1649,6 +1796,19 @@ def format_hex_sink(value):
 
 def format_integer_sink(value):
     return str(_expect_integer(value, "IntegerOutput"))
+
+
+def format_point_sink(value):
+    if not isinstance(value, dict):
+        raise ValueError("PointOutput expects an ec-point signal")
+    curve_data = value.get("curve")
+    if not isinstance(curve_data, dict):
+        raise ValueError("PointOutput expects point output to carry explicit curve provenance.")
+    curve = _normalize_ec_curve(curve_data.get("p"), curve_data.get("a"), curve_data.get("b"), "PointOutput")
+    point = _expect_ec_point(value, curve, "PointOutput", "input")
+    if point["kind"] == "infinity":
+        return "∞"
+    return f'({point["x"]}, {point["y"]})'
 
 
 def clock_tick(period, offset, length, tick):
@@ -2414,6 +2574,13 @@ function formatPythonParitySinkValue(defId: string, signal: Signal) {
     return String(signal.value);
   }
 
+  if (POINT_SINK_DEF_IDS.has(defId)) {
+    if (signal.type !== 'ec-point') {
+      throw new Error('Point sink expected an ec-point signal.');
+    }
+    return signal.value.kind === 'infinity' ? '∞' : `(${signal.value.x}, ${signal.value.y})`;
+  }
+
   throw new Error(`Unsupported parity sink ${defId}.`);
 }
 
@@ -3107,6 +3274,10 @@ function buildModuleExpression(
       return `field_mul(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
     case 'FieldInverse':
       return `field_inverse(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
+    case 'PointSource':
+      return `point_source(${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')}, ${expressionContext.getParamExpression(moduleInstance, def, 'x')}, ${expressionContext.getParamExpression(moduleInstance, def, 'y')})`;
+    case 'ScalarMultiply':
+      return `scalar_multiply(${expressionContext.getInputExpression(moduleId, 'scalar')}, ${expressionContext.getInputExpression(moduleId, 'point')}, ${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')})`;
     case 'ModExp':
       return `mod_exp(${expressionContext.getInputExpression(moduleId, 'base')}, ${expressionContext.getInputExpression(moduleId, 'exp')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
     case 'ModInverse':
@@ -3180,6 +3351,10 @@ function buildSinkCaptureLine(
 
   if (INTEGER_SINK_DEF_IDS.has(def.id)) {
     return `${indent}sink_outputs.append((${JSON.stringify(moduleInstance.id)}, format_integer_sink(${inputExpression})))`;
+  }
+
+  if (POINT_SINK_DEF_IDS.has(def.id)) {
+    return `${indent}sink_outputs.append((${JSON.stringify(moduleInstance.id)}, format_point_sink(${inputExpression})))`;
   }
 
   throw new Error(`Python export does not support sink "${def.id}".`);
@@ -4204,7 +4379,7 @@ function buildCompositeHelperDefinitions(
           throw new Error(`Python export could not resolve composite variable for "${moduleId}".`);
         }
 
-        if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id) || INTEGER_SINK_DEF_IDS.has(def.id)) {
+        if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id) || INTEGER_SINK_DEF_IDS.has(def.id) || POINT_SINK_DEF_IDS.has(def.id)) {
           bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    ', 'Sink'));
           bodyLines.push('    pass');
           continue;
@@ -4415,7 +4590,7 @@ function buildCompositeHelperDefinitions(
         throw new Error(`Python export could not resolve composite variable for "${moduleId}".`);
       }
 
-      if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id) || INTEGER_SINK_DEF_IDS.has(def.id)) {
+      if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id) || INTEGER_SINK_DEF_IDS.has(def.id) || POINT_SINK_DEF_IDS.has(def.id)) {
         tickLines.push(buildGeneratedModuleComment(moduleInstance, def, '    ', 'Sink'));
         tickLines.push(`    ${variableName} = {}`);
         continue;
@@ -6430,7 +6605,7 @@ export function generatePythonExport(project: Project, registry: ModuleRegistry)
       throw new Error(`Python export encountered unsupported definition "${moduleInstance.defId}".`);
     }
 
-    if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id) || INTEGER_SINK_DEF_IDS.has(def.id)) {
+    if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id) || INTEGER_SINK_DEF_IDS.has(def.id) || POINT_SINK_DEF_IDS.has(def.id)) {
       bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '    ', 'Sink'));
       bodyLines.push(...buildSinkCaptureLines(moduleInstance, def, expressionContext, '    ', 'terminal_output'));
       continue;
@@ -6607,7 +6782,7 @@ function generateStatefulPythonExport(
     order.find((moduleId) => {
       const moduleInstance = instancesById.get(moduleId);
       const def = moduleInstance ? registry[moduleInstance.defId] : null;
-      return Boolean(def && (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id) || INTEGER_SINK_DEF_IDS.has(def.id)));
+      return Boolean(def && (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id) || INTEGER_SINK_DEF_IDS.has(def.id) || POINT_SINK_DEF_IDS.has(def.id)));
     }) ?? null;
   const bodyLines: string[] = [
     'def _mcw_source_override(source_overrides, module_id, default_value):',
@@ -6811,7 +6986,13 @@ function generateStatefulPythonExport(
       throw new Error(`Python export could not resolve a variable for "${moduleId}".`);
     }
 
-    if (SYMBOL_SINK_DEF_IDS.has(def.id) || BIT_SINK_DEF_IDS.has(def.id) || HEX_SINK_DEF_IDS.has(def.id) || INTEGER_SINK_DEF_IDS.has(def.id)) {
+    if (
+      SYMBOL_SINK_DEF_IDS.has(def.id) ||
+      BIT_SINK_DEF_IDS.has(def.id) ||
+      HEX_SINK_DEF_IDS.has(def.id) ||
+      INTEGER_SINK_DEF_IDS.has(def.id) ||
+      POINT_SINK_DEF_IDS.has(def.id)
+    ) {
       const inputExpression = expressionContext.getInputExpression(moduleInstance.id, 'in');
       const sinkValueVariable = `${variableName}_sink_value`;
       bodyLines.push(buildGeneratedModuleComment(moduleInstance, def, '        ', 'Sink'));
@@ -6821,6 +7002,8 @@ function generateStatefulPythonExport(
         bodyLines.push(`        ${sinkValueVariable} = format_bit_sink(${inputExpression})`);
       } else if (INTEGER_SINK_DEF_IDS.has(def.id)) {
         bodyLines.push(`        ${sinkValueVariable} = format_integer_sink(${inputExpression})`);
+      } else if (POINT_SINK_DEF_IDS.has(def.id)) {
+        bodyLines.push(`        ${sinkValueVariable} = format_point_sink(${inputExpression})`);
       } else {
         bodyLines.push(`        ${sinkValueVariable} = format_hex_sink(${inputExpression})`);
       }

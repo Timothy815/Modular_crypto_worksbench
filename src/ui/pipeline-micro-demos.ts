@@ -261,6 +261,127 @@ const PAD_TO_BLOCK_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
   },
 };
 
+const SCALAR_TIMES_TWO_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
+  id: 'scalar-times-two',
+  name: 'Scalar × 2',
+  summary: 'Bridge one visible scalar into the integer domain, apply it to one visible point, and compare the result with PointDouble on the same curve.',
+  pipeline: 'BitSource -> BitsToInteger -> ScalarMultiply(point) alongside PointDouble -> PointOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'scalar-bits', defId: 'BitSource', params: { stream: [0, 0, 1, 0] } },
+        { id: 'scalar', defId: 'BitsToInteger', params: {} },
+        { id: 'point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 5, y: 6 } },
+        { id: 'scalar-multiply', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'scalar-out', defId: 'PointOutput', params: {} },
+        { id: 'double', defId: 'PointDouble', params: { p: 17, a: 2, b: 3 } },
+        { id: 'double-out', defId: 'PointOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'scalar-bits', port: 'out' }, to: { moduleId: 'scalar', port: 'in' } },
+        { from: { moduleId: 'scalar', port: 'out' }, to: { moduleId: 'scalar-multiply', port: 'scalar' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'scalar-multiply', port: 'point' } },
+        { from: { moduleId: 'scalar-multiply', port: 'out' }, to: { moduleId: 'scalar-out', port: 'in' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'double', port: 'in' } },
+        { from: { moduleId: 'double', port: 'out' }, to: { moduleId: 'double-out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        'scalar-bits': { x: 68, y: 76 },
+        scalar: { x: 328, y: 76 },
+        point: { x: 68, y: 264 },
+        'scalar-multiply': { x: 620, y: 76 },
+        'scalar-out': { x: 900, y: 76 },
+        double: { x: 620, y: 264 },
+        'double-out': { x: 900, y: 264 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const SCALAR_TIMES_ZERO_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
+  id: 'scalar-times-zero',
+  name: 'Scalar × 0',
+  summary: 'A zero scalar acts on one visible point and lands on explicit infinity instead of a fake coordinate pair.',
+  pipeline: 'BitSource -> BitsToInteger -> ScalarMultiply(point) -> PointOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'scalar-bits', defId: 'BitSource', params: { stream: [0, 0, 0, 0] } },
+        { id: 'scalar', defId: 'BitsToInteger', params: {} },
+        { id: 'point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 5, y: 6 } },
+        { id: 'scalar-multiply', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'out', defId: 'PointOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'scalar-bits', port: 'out' }, to: { moduleId: 'scalar', port: 'in' } },
+        { from: { moduleId: 'scalar', port: 'out' }, to: { moduleId: 'scalar-multiply', port: 'scalar' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'scalar-multiply', port: 'point' } },
+        { from: { moduleId: 'scalar-multiply', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        'scalar-bits': { x: 76, y: 84 },
+        scalar: { x: 336, y: 84 },
+        point: { x: 76, y: 276 },
+        'scalar-multiply': { x: 632, y: 176 },
+        out: { x: 920, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const SCALAR_TIMES_THREE_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
+  id: 'scalar-times-three',
+  name: 'Scalar × 3',
+  summary: 'A nontrivial scalar acts on one visible point and is checked against the visible identity 3P = 2P + P on the same curve.',
+  pipeline: 'BitSource -> BitsToInteger -> ScalarMultiply(point) compared with PointDouble + PointAdd -> PointOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'scalar-bits', defId: 'BitSource', params: { stream: [0, 0, 1, 1] } },
+        { id: 'scalar', defId: 'BitsToInteger', params: {} },
+        { id: 'point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 5, y: 6 } },
+        { id: 'scalar-multiply', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'scalar-out', defId: 'PointOutput', params: {} },
+        { id: 'double', defId: 'PointDouble', params: { p: 17, a: 2, b: 3 } },
+        { id: 'verify-add', defId: 'PointAdd', params: { p: 17, a: 2, b: 3 } },
+        { id: 'verify-out', defId: 'PointOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'scalar-bits', port: 'out' }, to: { moduleId: 'scalar', port: 'in' } },
+        { from: { moduleId: 'scalar', port: 'out' }, to: { moduleId: 'scalar-multiply', port: 'scalar' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'scalar-multiply', port: 'point' } },
+        { from: { moduleId: 'scalar-multiply', port: 'out' }, to: { moduleId: 'scalar-out', port: 'in' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'double', port: 'in' } },
+        { from: { moduleId: 'double', port: 'out' }, to: { moduleId: 'verify-add', port: 'a' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'verify-add', port: 'b' } },
+        { from: { moduleId: 'verify-add', port: 'out' }, to: { moduleId: 'verify-out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        'scalar-bits': { x: 68, y: 76 },
+        scalar: { x: 328, y: 76 },
+        point: { x: 68, y: 272 },
+        'scalar-multiply': { x: 620, y: 76 },
+        'scalar-out': { x: 900, y: 76 },
+        double: { x: 620, y: 272 },
+        'verify-add': { x: 900, y: 272 },
+        'verify-out': { x: 1168, y: 272 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const REPRESENTATION_ROUND_TRIP_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
   id: 'representation-round-trip',
   name: 'Representation Round Trip',
@@ -709,6 +830,9 @@ export const PIPELINE_MICRO_DEMOS: PipelineMicroDemo[] = [
   TRUNCATE_TO_BLOCK_PIPELINE_MICRO_DEMO,
   PAD_TO_BLOCK_PIPELINE_MICRO_DEMO,
   REPRESENTATION_ROUND_TRIP_PIPELINE_MICRO_DEMO,
+  SCALAR_TIMES_TWO_PIPELINE_MICRO_DEMO,
+  SCALAR_TIMES_ZERO_PIPELINE_MICRO_DEMO,
+  SCALAR_TIMES_THREE_PIPELINE_MICRO_DEMO,
   ASCII_REPEATED_KEY_XOR_ENCRYPT_DECRYPT_PIPELINE_MICRO_DEMO,
   ASCII_STRICT_MATCH_XOR_ENCRYPT_DECRYPT_PIPELINE_MICRO_DEMO,
   HEX_BLOCK_XOR_PIPELINE_MICRO_DEMO,

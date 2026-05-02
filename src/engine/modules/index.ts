@@ -51,6 +51,7 @@ import { PointOnCurve } from './point-on-curve';
 import { PointNegate } from './point-negate';
 import { PointAdd } from './point-add';
 import { PointDouble } from './point-double';
+import { ScalarMultiply } from './scalar-multiply';
 import { ModExp } from './mod-exp';
 import { ModInverse } from './mod-inverse';
 import { Modulo } from './modulo';
@@ -160,6 +161,7 @@ export {
   PointNegate,
   PointAdd,
   PointDouble,
+  ScalarMultiply,
   ModExp,
   ModInverse,
   Modulo,
@@ -270,6 +272,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [PointNegate.id]: PointNegate,
   [PointAdd.id]: PointAdd,
   [PointDouble.id]: PointDouble,
+  [ScalarMultiply.id]: ScalarMultiply,
   [ModExp.id]: ModExp,
   [ModInverse.id]: ModInverse,
   [Modulo.id]: Modulo,

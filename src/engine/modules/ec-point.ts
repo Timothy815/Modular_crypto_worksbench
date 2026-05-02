@@ -324,3 +324,39 @@ export function addPoints(
   const y3 = mod(slope * (left.x - x3) - left.y, curve.p);
   return createAffineEcPointSignal(x3, y3, curve.curve);
 }
+
+export function scalarMultiplyPoint(
+  scalar: bigint,
+  point: NormalizedPoint,
+  curve: NormalizedCurveParams,
+): EcPointSignal {
+  if (scalar < 0n) {
+    throw new Error('ScalarMultiply expects a non-negative scalar.');
+  }
+
+  if (scalar === 0n || point.kind === 'infinity') {
+    return createInfinityEcPointSignal(curve.curve);
+  }
+
+  let remaining = scalar;
+  let accumulator: NormalizedPoint = { kind: 'infinity', curve: curve.curve };
+  let current: NormalizedPoint = point;
+
+  while (remaining > 0n) {
+    if ((remaining & 1n) === 1n) {
+      accumulator = normalizeEcPointSignal(
+        addPoints(accumulator, current, curve),
+        'ScalarMultiply',
+        'accumulator',
+      );
+    }
+    remaining >>= 1n;
+    if (remaining > 0n) {
+      current = normalizeEcPointSignal(doublePoint(current, curve), 'ScalarMultiply', 'current');
+    }
+  }
+
+  return accumulator.kind === 'infinity'
+    ? createInfinityEcPointSignal(curve.curve)
+    : createAffineEcPointSignal(accumulator.x, accumulator.y, curve.curve);
+}

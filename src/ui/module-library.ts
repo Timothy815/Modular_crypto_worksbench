@@ -364,6 +364,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when the special doubling branch should be visible as its own machine stage. It is foundational for later scalar-multiplication teaching, but it is not scalar multiplication by itself.',
     searchTerms: ['point double', 'ec point', 'ecc point', 'doubling', 'curve double', 'elliptic doubling'],
   },
+  ScalarMultiply: {
+    sectionId: 'number-theory',
+    sortOrder: 9.9,
+    purpose: 'Applies one visible non-negative integer scalar to one visible point on the same pedagogical short Weierstrass curve.',
+    detail: 'Use this to show repeated point action directly. Scalar multiplication is repeated point addition and doubling on the same declared curve, not ordinary multiplication of point coordinates. It is foundational for later ECC public-key stories, but it does not by itself imply ECDH, signatures, or real-world curve support.',
+    searchTerms: ['scalar multiply', 'ec point', 'ecc point', 'elliptic curve', 'repeated point action', 'double and add'],
+  },
   ModExp: {
     sectionId: 'number-theory',
     sortOrder: 10,

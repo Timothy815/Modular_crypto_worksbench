@@ -15,6 +15,7 @@ import { PointOnCurve } from './modules/point-on-curve';
 import { PointNegate } from './modules/point-negate';
 import { PointAdd } from './modules/point-add';
 import { PointDouble } from './modules/point-double';
+import { ScalarMultiply } from './modules/scalar-multiply';
 import { AND } from './modules/and';
 import { AtLeast } from './modules/at-least';
 import { BaudotSource } from './modules/baudot-source';
@@ -149,6 +150,7 @@ const registry: ModuleRegistry = {
   [PointNegate.id]: PointNegate,
   [PointAdd.id]: PointAdd,
   [PointDouble.id]: PointDouble,
+  [ScalarMultiply.id]: ScalarMultiply,
   [ModExp.id]: ModExp,
   [ModInverse.id]: ModInverse,
   [Modulo.id]: Modulo,
@@ -1233,6 +1235,22 @@ describe('validateProject', () => {
     expect(
       result.issues.some(
         (issue) => issue.moduleId === 'double' && issue.message.toLowerCase().includes('curve parameters are invalid'),
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects singular curve parameters for ScalarMultiply', () => {
+    const project: Project = {
+      modules: [{ id: 'scalar', defId: 'ScalarMultiply', params: { p: 5, a: 0, b: 0 } }],
+      connections: [],
+    };
+
+    const result = validateProject(project, registry);
+
+    expect(result.ok).toBe(false);
+    expect(
+      result.issues.some(
+        (issue) => issue.moduleId === 'scalar' && issue.message.toLowerCase().includes('curve parameters are invalid'),
       ),
     ).toBe(true);
   });

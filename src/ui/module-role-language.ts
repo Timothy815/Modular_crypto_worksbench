@@ -286,10 +286,10 @@ const CHAINS_WITH: Record<string, { before?: string[]; after?: string[] }> = {
     after: ['FieldMul', 'IntegerOutput'],
   },
   PointSource: {
-    after: ['PointNegate', 'PointAdd', 'PointDouble', 'PointOnCurve', 'PointOutput'],
+    after: ['PointNegate', 'PointAdd', 'PointDouble', 'ScalarMultiply', 'PointOnCurve', 'PointOutput'],
   },
   PointOnCurve: {
-    before: ['PointSource', 'PointNegate', 'PointAdd', 'PointDouble'],
+    before: ['PointSource', 'PointNegate', 'PointAdd', 'PointDouble', 'ScalarMultiply'],
     after: ['BitOutput'],
   },
   PointNegate: {
@@ -297,12 +297,16 @@ const CHAINS_WITH: Record<string, { before?: string[]; after?: string[] }> = {
     after: ['PointAdd', 'PointOutput', 'PointOnCurve'],
   },
   PointAdd: {
-    before: ['PointSource', 'PointNegate', 'PointDouble'],
+    before: ['PointSource', 'PointNegate', 'PointDouble', 'ScalarMultiply'],
     after: ['PointOutput', 'PointOnCurve'],
   },
   PointDouble: {
-    before: ['PointSource', 'PointAdd'],
+    before: ['PointSource', 'PointAdd', 'ScalarMultiply'],
     after: ['PointOutput', 'PointOnCurve'],
+  },
+  ScalarMultiply: {
+    before: ['BitsToInteger', 'PointSource'],
+    after: ['PointOutput', 'PointOnCurve', 'PointAdd'],
   },
   BitsToAsciiChar: {
     before: ['XOR', 'SBox', 'Permutation'],

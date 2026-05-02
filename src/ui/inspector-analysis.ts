@@ -5,6 +5,7 @@ import { parseReflectorWiring } from '../engine/modules/reflector';
 import { getSBoxShape, parseSBoxTable } from '../engine/modules/s-box';
 import { serializeRotorWiring } from '../engine/modules/rotor';
 import { formatUnsignedIntegerAsHex, parseUnsignedIntegerString } from '../engine/modules/integer-signal';
+import { formatEcPointAsHex, formatEcPointAsText } from '../engine/modules/ec-point';
 import { computeSBoxAnalysis } from '../engine/analysis/sbox-analysis';
 import type { SBoxAnalysis } from '../engine/analysis/sbox-analysis';
 export type { SBoxAnalysis } from '../engine/analysis/sbox-analysis';
@@ -238,6 +239,22 @@ interface IntegerArithmeticTransformationView {
   summary: string;
 }
 
+interface PointActionTransformationView {
+  entry: ExecutionTraceEntry;
+  kind: 'point-action';
+  title: string;
+  copy: string;
+  operationLabel: string;
+  operationExpression: string;
+  scalarDecimal: string;
+  scalarHex: string;
+  pointText: string;
+  pointHex: string;
+  resultText: string;
+  resultHex: string;
+  summary: string;
+}
+
 interface UnpadTransformationView {
   entry: ExecutionTraceEntry;
   kind: 'unpad';
@@ -264,6 +281,7 @@ export type TransformationView =
   | PadTransformationView
   | ArithmeticTransformationView
   | IntegerArithmeticTransformationView
+  | PointActionTransformationView
   | UnpadTransformationView;
 
 export const PERMUTATION_EDITOR_PORT_HEIGHT = 52;
@@ -375,6 +393,9 @@ export function getTransformationView(
   }
   if (entry.defId === 'FieldInverse') {
     return getPrimeFieldInverseTransformation(entry, project, registry);
+  }
+  if (entry.defId === 'ScalarMultiply') {
+    return getScalarMultiplyTransformation(entry, project, registry);
   }
   if (entry.defId === 'BitUnpad') {
     return getUnpadTransformation(entry, project, registry);
@@ -1307,6 +1328,48 @@ function getPrimeFieldInverseTransformation(
     resultDecimal: resultValue.toString(10),
     resultHex: formatUnsignedIntegerAsHex(resultValue.toString(10)),
     summary: `${inputValue.toString(10)} × ${resultValue.toString(10)} mod ${modulusValue} = ${checkValue.toString(10)}, so the inverse check lands on the multiplicative identity.`,
+  };
+}
+
+function getScalarMultiplyTransformation(
+  entry: ExecutionTraceEntry,
+  project: Project,
+  registry: ModuleRegistry,
+): PointActionTransformationView | null {
+  const resolved = resolveTraceModuleInstance(entry.moduleId, project, registry);
+  if (!resolved) {
+    return null;
+  }
+
+  const scalar = entry.inputs.scalar;
+  const point = entry.inputs.point;
+  const output = entry.outputs.out;
+  if (scalar?.type !== 'integer' || point?.type !== 'ec-point' || output?.type !== 'ec-point') {
+    return null;
+  }
+
+  const scalarValue = parseUnsignedIntegerString(scalar.value, 'ScalarMultiply');
+
+  return {
+    entry,
+    kind: 'point-action',
+    title: 'Scalar Multiplication',
+    copy:
+      'ScalarMultiply applies one visible non-negative integer scalar to one visible point on the same curve. It is repeated point addition and doubling on that curve, not ordinary multiplication of coordinates.',
+    operationLabel: 'Operation',
+    operationExpression: `${scalarValue.toString(10)} · P = ${formatEcPointAsText(output.value)}`,
+    scalarDecimal: scalarValue.toString(10),
+    scalarHex: formatUnsignedIntegerAsHex(scalar.value),
+    pointText: formatEcPointAsText(point.value),
+    pointHex: formatEcPointAsHex(point.value),
+    resultText: formatEcPointAsText(output.value),
+    resultHex: formatEcPointAsHex(output.value),
+    summary:
+      scalarValue === 0n
+        ? 'Zero sends every visible point to infinity, the group identity.'
+        : scalarValue === 1n
+          ? 'One preserves the original point, so the point domain stays explicit.'
+          : `${scalarValue.toString(10)}P is produced by repeated point addition and doubling on the same declared curve.`,
   };
 }
 

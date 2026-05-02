@@ -63,6 +63,7 @@ describe('primitive micro demos', () => {
       'ConditionalBranchDemo',
       'BitSelect',
       'BitExpand',
+      'ScalarMultiply',
     ]);
   });
 
@@ -175,6 +176,7 @@ describe('primitive micro demos', () => {
     expect(getPrimitiveMicroDemo('ConditionalBranchDemo')?.name).toBe(
       'Conditional Branch Demo Micro Demo',
     );
+    expect(getPrimitiveMicroDemo('ScalarMultiply')?.name).toBe('Scalar Multiply Micro Demo');
     expect(getPrimitiveMicroDemo('XOR')).toBeNull();
   });
 

@@ -18,6 +18,7 @@ import { collectTickedOutput } from '../../ui/execution-compare';
 import type { CompositeDef, IteratorDef } from '../composites';
 import type { ModuleRegistry, Project, Signal } from '../types';
 import { STARTER_COMPOSITE_LIBRARY } from '../../ui/starter-composites';
+import { formatEcPointAsText } from '../modules/ec-point';
 
 function formatExpectedSinkValue(defId: string, signal: Signal) {
   if (defId === 'Output' || defId === 'TextOutput' || defId === 'BaudotOutput') {
@@ -42,6 +43,13 @@ function formatExpectedSinkValue(defId: string, signal: Signal) {
     return String(signal.value);
   }
 
+  if (defId === 'PointOutput') {
+    if (signal.type !== 'ec-point') {
+      throw new Error('PointOutput expects an ec-point signal');
+    }
+    return formatEcPointAsText(signal.value);
+  }
+
   throw new Error(`Unsupported sink ${defId}`);
 }
 
@@ -51,7 +59,7 @@ function getExpectedSinkLines(project: Project, registry: ModuleRegistry) {
 
   return project.modules
     .filter((moduleInstance) =>
-      ['Output', 'TextOutput', 'BaudotOutput', 'BitOutput', 'HexOutput', 'IntegerOutput'].includes(moduleInstance.defId),
+      ['Output', 'TextOutput', 'BaudotOutput', 'BitOutput', 'HexOutput', 'IntegerOutput', 'PointOutput'].includes(moduleInstance.defId),
     )
     .map((moduleInstance) => {
       const traceEntry = traceByModuleId.get(moduleInstance.id);
@@ -75,7 +83,7 @@ function getExpectedTickedSinkLines(project: Project, registry: ModuleRegistry) 
 
     return project.modules
       .filter((moduleInstance) =>
-        ['Output', 'TextOutput', 'BaudotOutput', 'BitOutput', 'HexOutput', 'IntegerOutput'].includes(moduleInstance.defId),
+        ['Output', 'TextOutput', 'BaudotOutput', 'BitOutput', 'HexOutput', 'IntegerOutput', 'PointOutput'].includes(moduleInstance.defId),
       )
       .map((moduleInstance) => {
         const traceEntry = traceByModuleId.get(moduleInstance.id);
@@ -1255,6 +1263,30 @@ parityDescribe('generatePythonExport', () => {
         { from: { moduleId: 'field-mul', port: 'out' }, to: { moduleId: 'check-out', port: 'in' } },
         { from: { moduleId: 'field-mul', port: 'out' }, to: { moduleId: 'back-to-bits', port: 'in' } },
         { from: { moduleId: 'back-to-bits', port: 'out' }, to: { moduleId: 'bits-out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
+  it('matches executeProject for visible scalar multiplication workspaces', () => {
+    const project: Project = {
+      modules: [
+        { id: 'scalar-bits', defId: 'BitSource', params: { stream: [0, 0, 1, 1] } },
+        { id: 'scalar', defId: 'BitsToInteger', params: {} },
+        { id: 'point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 5, y: 6 } },
+        { id: 'scalar-multiply', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'out', defId: 'PointOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'scalar-bits', port: 'out' }, to: { moduleId: 'scalar', port: 'in' } },
+        { from: { moduleId: 'scalar', port: 'out' }, to: { moduleId: 'scalar-multiply', port: 'scalar' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'scalar-multiply', port: 'point' } },
+        { from: { moduleId: 'scalar-multiply', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
       ],
     };
 

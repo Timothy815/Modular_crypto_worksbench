@@ -1952,6 +1952,41 @@ const BIT_EXPAND_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const SCALAR_MULTIPLY_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'ScalarMultiply',
+  name: 'Scalar Multiply Micro Demo',
+  summary: 'Minimal visible scalar action: one integer scalar acts on one explicit pedagogical curve point and the result stays in the point domain.',
+  pipeline: 'BitSource -> BitsToInteger -> ScalarMultiply(point) -> PointOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'scalar-multiply', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'scalar-bits', defId: 'BitSource', params: { stream: [0, 0, 1, 0] } },
+        { id: 'scalar', defId: 'BitsToInteger', params: {} },
+        { id: 'point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 5, y: 6 } },
+        { id: 'out', defId: 'PointOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'scalar-bits', port: 'out' }, to: { moduleId: 'scalar', port: 'in' } },
+        { from: { moduleId: 'scalar', port: 'out' }, to: { moduleId: 'scalar-multiply', port: 'scalar' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'scalar-multiply', port: 'point' } },
+        { from: { moduleId: 'scalar-multiply', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        'scalar-multiply': { x: 396, y: 176 },
+        'scalar-bits': { x: 76, y: 68 },
+        scalar: { x: 76, y: 244 },
+        point: { x: 76, y: 396 },
+        out: { x: 700, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   MUX_MICRO_DEMO,
   DEMUX_MICRO_DEMO,
@@ -2011,6 +2046,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   CONDITIONAL_BRANCH_DEMO_MICRO_DEMO,
   BIT_SELECT_MICRO_DEMO,
   BIT_EXPAND_MICRO_DEMO,
+  SCALAR_MULTIPLY_MICRO_DEMO,
 ];
 
 const PRIMITIVE_MICRO_DEMO_BY_DEF_ID = Object.fromEntries(

@@ -425,6 +425,12 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         indexTerms: ['point double', 'elliptic curve', 'ec point', 'doubling'],
       },
       {
+        id: 'ScalarMultiply',
+        title: 'ScalarMultiply',
+        body: 'Applies one visible non-negative integer scalar to one visible point on the same declared curve. This is repeated point addition and doubling on that curve, not ordinary multiplication of coordinates. It is foundational for later ECC public-key ideas, but it does not by itself imply ECDH, signatures, or real-world curve coverage.',
+        indexTerms: ['scalar multiply', 'elliptic curve', 'ec point', 'repeated point action', 'double and add'],
+      },
+      {
         id: 'ModExp',
         title: 'ModExp',
         body: 'Performs modular exponentiation: (base ^ exp) mod n. Essential for public-key algorithms like RSA and Diffie-Hellman.',

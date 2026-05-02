@@ -48,6 +48,7 @@ import { PointOnCurve } from './point-on-curve';
 import { PointNegate } from './point-negate';
 import { PointAdd } from './point-add';
 import { PointDouble } from './point-double';
+import { ScalarMultiply } from './scalar-multiply';
 import { AND } from './and';
 import { AtLeast } from './at-least';
 import { Counter } from './counter';
@@ -528,6 +529,60 @@ describe('PointDouble', () => {
         curve: { p: 17, a: 2, b: 3 },
         x: '15',
         y: '12',
+      },
+    });
+  });
+});
+
+describe('ScalarMultiply', () => {
+  it('computes repeated point action for a nontrivial scalar', () => {
+    const result = ScalarMultiply.evaluate(
+      {
+        scalar: { type: 'integer', value: '3' },
+        point: {
+          type: 'ec-point',
+          value: {
+            kind: 'affine',
+            curve: { p: 17, a: 2, b: 3 },
+            x: '5',
+            y: '6',
+          },
+        },
+      },
+      { p: 17, a: 2, b: 3 },
+    );
+    expect(result.out).toEqual({
+      type: 'ec-point',
+      value: {
+        kind: 'affine',
+        curve: { p: 17, a: 2, b: 3 },
+        x: '13',
+        y: '13',
+      },
+    });
+  });
+
+  it('maps 0 * P to visible infinity', () => {
+    const result = ScalarMultiply.evaluate(
+      {
+        scalar: { type: 'integer', value: '0' },
+        point: {
+          type: 'ec-point',
+          value: {
+            kind: 'affine',
+            curve: { p: 17, a: 2, b: 3 },
+            x: '5',
+            y: '6',
+          },
+        },
+      },
+      { p: 17, a: 2, b: 3 },
+    );
+    expect(result.out).toEqual({
+      type: 'ec-point',
+      value: {
+        kind: 'infinity',
+        curve: { p: 17, a: 2, b: 3 },
       },
     });
   });
