@@ -1,6 +1,6 @@
 # MCW Active Docs
 
-Last updated: May 2, 2026
+Last updated: May 3, 2026
 
 This is the canonical starting point for humans and agents.
 
@@ -30,7 +30,7 @@ This is the canonical starting point for humans and agents.
 - `docs/live/contracts/2026-05/REAL-WORLD-CRYPTO-CAPABILITY-ROADMAP-V1.md` when evaluating the overall trajectory from toy-scale to real-scale cryptography — read this before starting any of the three real-world layers
 - `docs/live/contracts/2026-05/REAL-SCALE-ARITHMETIC-SUBSTRATE-V1.md` when planning the param-layer change that lifts the Number.isSafeInteger ceiling from all ECC and field arithmetic modules
 - `docs/live/contracts/2026-05/NAMED-CURVE-SOURCES-V1.md` when planning the named-curve source modules (secp256k1, P-256) and inspector preset ergonomics — depends on REAL-SCALE-ARITHMETIC-SUBSTRATE-V1
-- `docs/live/contracts/2026-05/GF2-FIELD-ARITHMETIC-V1.md` when planning GF(2⁸) field arithmetic primitives (GF2Mul, GF2Inv) and the path toward real AES MixColumns — independent of the ECC substrate layers
+- `docs/live/contracts/2026-05/GF2-FIELD-ARITHMETIC-V1.md` when reviewing shipped GF(2⁸) field arithmetic (GF2Mul, GF2Inv, Visible MixColumns) — use as historical context for the next AES round slice
 
 ## Read As Needed
 

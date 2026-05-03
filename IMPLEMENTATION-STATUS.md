@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: May 2, 2026
+Last updated: May 3, 2026
 
 ---
 
@@ -33,17 +33,19 @@ These features are already shipped on `main` and should not be treated as open f
 
 ## Current Product Direction: Real-World Crypto Capability
 
-As of May 2, 2026, MCW has shipped a complete ECC teaching line including Python export parity. The current open phase is the transition from toy-scale to real-scale cryptography.
+As of May 2026, MCW has shipped a complete ECC teaching line, Python export parity, and the first AES field arithmetic layer. The current open phase is extending the AES capability toward a full visible AES round.
 
 Read `docs/live/contracts/2026-05/REAL-WORLD-CRYPTO-CAPABILITY-ROADMAP-V1.md` first for the full framing.
 
-The three active contracts are:
+The three contracts from this line are now all shipped:
 
-1. **REAL-SCALE-ARITHMETIC-SUBSTRATE-V1** — Lift the `Number.isSafeInteger` ceiling from ECC/field arithmetic module params. Add `bigint-hex` param kind. Change `EcCurveDescriptor.p/a/b` to `bigint`. This is the prerequisite for everything in Track A. Status: Proposed.
+1. **REAL-SCALE-ARITHMETIC-SUBSTRATE-V1** — `bigint-hex` param kind, lifted `Number.isSafeInteger` ceiling from ECC/field arithmetic module params. Status: Shipped.
 
-2. **NAMED-CURVE-SOURCES-V1** — `NamedCurveBasePoint` module with secp256k1 and P-256 presets. Inspector "Load Curve Preset" helper. Depends on (1). Status: Proposed.
+2. **NAMED-CURVE-SOURCES-V1** — `NamedCurveBasePoint` module with secp256k1 and P-256 presets. Status: Shipped.
 
-3. **GF2-FIELD-ARITHMETIC-V1** — `GF2Mul` and `GF2Inv` over GF(2⁸) in the bits domain. Independent of (1) and (2). Enables real AES MixColumns. Status: Proposed.
+3. **GF2-FIELD-ARITHMETIC-V1** — `GF2Mul` and `GF2Inv` over GF(2⁸) in the bits domain, including `Visible MixColumns` demo (NIST FIPS 197 test vector), tutorial, and challenge. Status: Shipped.
+
+**Genuine next open work:** full visible AES round — SubBytes (GF2Inv + affine transform over GF(2⁸)) + ShiftRows (byte permutation) + AddRoundKey (XOR) to go with the already-shipped MixColumns. All math foundations are in place.
 
 ## Practical Restart Guidance
 
