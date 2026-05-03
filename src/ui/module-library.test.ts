@@ -12,8 +12,8 @@ import {
 } from './module-library';
 
 describe('module library palette coherence', () => {
-  it('keeps the palette bounded to ten top-level sections', () => {
-    expect(MODULE_LIBRARY_SECTIONS).toHaveLength(10);
+  it('keeps the palette bounded to eleven top-level sections', () => {
+    expect(MODULE_LIBRARY_SECTIONS).toHaveLength(11);
   });
 
   it('moves protocol context inputs out of generic inputs and outputs', () => {

@@ -19,6 +19,7 @@ export type ModuleLibrarySectionId =
   | 'symbol-domain'
   | 'bit-logic'
   | 'number-theory'
+  | 'elliptic-curves-and-fields'
   | 'framing-routing'
   | 'word-diffusion'
   | 'state-keystream'
@@ -302,98 +303,98 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     searchTerms: ['sub', 'subtract', 'mod', 'word', 'bits', 'operator', 'word arithmetic'],
   },
   FieldAdd: {
-    sectionId: 'number-theory',
+    sectionId: 'elliptic-curves-and-fields',
     sortOrder: 5,
     purpose: 'Adds two integer-domain field elements modulo a visible prime modulus p.',
     detail: 'This is prime-field arithmetic, not fixed-width word addition. Inputs and outputs are visible integers, and both inputs must already be in the range 0..p-1. It is foundational for later curve work, but it does not by itself imply curve or protocol security.',
     searchTerms: ['field add', 'prime field', 'mod p', 'integer', 'field arithmetic', 'finite field'],
   },
   FieldSub: {
-    sectionId: 'number-theory',
+    sectionId: 'elliptic-curves-and-fields',
     sortOrder: 6,
     purpose: 'Subtracts one integer-domain field element from another modulo a visible prime modulus p.',
     detail: 'This is prime-field subtraction, not bit-word wraparound. Inputs and outputs are visible integers, and both inputs must already be in the range 0..p-1. It is foundational for later curve work, but it does not by itself imply curve or protocol security.',
     searchTerms: ['field sub', 'prime field', 'subtract', 'mod p', 'integer', 'field arithmetic', 'finite field'],
   },
   FieldMul: {
-    sectionId: 'number-theory',
+    sectionId: 'elliptic-curves-and-fields',
     sortOrder: 7,
     purpose: 'Multiplies two integer-domain field elements modulo a visible prime modulus p.',
     detail: 'This is prime-field multiplication, not fixed-width word multiplication. Inputs and outputs are visible integers, and both inputs must already be in the range 0..p-1. It is foundational for later curve work, but it does not by itself imply curve or protocol security.',
     searchTerms: ['field mul', 'prime field', 'multiply', 'mod p', 'integer', 'field arithmetic', 'finite field'],
   },
   FieldInverse: {
-    sectionId: 'number-theory',
+    sectionId: 'elliptic-curves-and-fields',
     sortOrder: 8,
     purpose: 'Computes the multiplicative inverse of one integer-domain field element modulo a visible prime modulus p.',
     detail: 'This is a prime-field inverse. It fails visibly when the input is 0, because zero has no multiplicative inverse in the field. It is foundational for later curve work, but it does not by itself imply curve or protocol security.',
     searchTerms: ['field inverse', 'prime field', 'inverse', 'mod p', 'integer', 'field arithmetic', 'finite field'],
   },
   PointSource: {
-    sectionId: 'number-theory',
+    sectionId: 'elliptic-curves-and-fields',
     sortOrder: 9,
     purpose: 'Introduces one explicit point on one visible pedagogical short Weierstrass curve.',
     detail: 'Use this to place a visible point into the graph with explicit p, a, b, x, and y parameters. It rejects invalid source points instead of pretending every coordinate pair is meaningful, and it is for visible structure rather than real-world curve selection.',
     searchTerms: ['point source', 'ec point', 'ecc point', 'curve point', 'short weierstrass', 'elliptic curve'],
   },
   PointOnCurve: {
-    sectionId: 'number-theory',
+    sectionId: 'elliptic-curves-and-fields',
     sortOrder: 9.2,
     purpose: 'Checks whether one visible point belongs to one visible pedagogical curve.',
     detail: 'Use this as a visible curve-membership check. It reads a point-domain signal and emits a one-bit result, while failing visibly if the incoming point belongs to a different declared curve context. This confirms local structure on the current curve, not deployment safety.',
     searchTerms: ['point on curve', 'curve membership', 'ec point', 'ecc point', 'checker', 'validate point'],
   },
   PointNegate: {
-    sectionId: 'number-theory',
+    sectionId: 'elliptic-curves-and-fields',
     sortOrder: 9.4,
     purpose: 'Reflects one visible point to its additive inverse on the same visible pedagogical curve.',
     detail: 'Use this to show repeated point action inside the same curve context: a point and its negation add to the point at infinity. The curve parameters stay explicit, and cross-curve mismatches fail visibly instead of being guessed away.',
     searchTerms: ['point negate', 'inverse point', 'ec point', 'ecc point', 'curve inverse', 'negation'],
   },
   PointAdd: {
-    sectionId: 'number-theory',
+    sectionId: 'elliptic-curves-and-fields',
     sortOrder: 9.6,
     purpose: 'Adds two visible points on the same visible pedagogical short Weierstrass curve.',
     detail: 'Use this to show visible repeated point action over a prime field. It handles the equal-input case honestly, returns visible infinity where mathematically appropriate, and fails visibly if the incoming points do not belong to the declared curve. It shows structure, not deployment validation.',
     searchTerms: ['point add', 'ec point', 'ecc point', 'curve add', 'elliptic addition', 'infinity'],
   },
   PointDouble: {
-    sectionId: 'number-theory',
+    sectionId: 'elliptic-curves-and-fields',
     sortOrder: 9.8,
     purpose: 'Doubles one visible point on the same visible pedagogical short Weierstrass curve.',
     detail: 'Use this when the special doubling branch should be visible as its own machine stage. It is foundational for later repeated point action teaching, but it is not scalar multiplication by itself and it does not imply protocol security.',
     searchTerms: ['point double', 'ec point', 'ecc point', 'doubling', 'curve double', 'elliptic doubling'],
   },
   ScalarMultiply: {
-    sectionId: 'number-theory',
+    sectionId: 'elliptic-curves-and-fields',
     sortOrder: 9.9,
     purpose: 'Applies one visible non-negative integer scalar to one visible point on the same visible pedagogical short Weierstrass curve.',
     detail: 'Use this to show repeated point action directly. Scalar multiplication is repeated point action on the same declared curve, not ordinary multiplication of point coordinates. It is foundational for later ECC public-key stories, but it does not by itself imply ECDH, signatures, or production-safe ECC.',
     searchTerms: ['scalar multiply', 'ec point', 'ecc point', 'elliptic curve', 'repeated point action', 'double and add'],
   },
   PointOrder: {
-    sectionId: 'number-theory',
+    sectionId: 'elliptic-curves-and-fields',
     sortOrder: 9.92,
     purpose: 'Finds the smallest positive repeated point action that sends one visible point to infinity on the same visible pedagogical curve.',
     detail: 'Use this to make point-local subgroup structure visible. Point order belongs to this point on this curve, not to every point on the curve. V1 searches only within a fixed observable workbench budget; if the order is too large to observe here, the module fails visibly instead of pretending to know it. That is structure, not deployment validation.',
     searchTerms: ['point order', 'subgroup', 'ec point', 'ecc point', 'elliptic curve', 'cyclic subgroup', 'nP infinity'],
   },
   PointEquals: {
-    sectionId: 'number-theory',
+    sectionId: 'elliptic-curves-and-fields',
     sortOrder: 9.95,
     purpose: 'Checks whether two visible points are exactly the same point on the same declared visible pedagogical curve.',
     detail: 'Use this to verify that two visible point-domain paths really converge to the same result. It emits a one-bit control signal, fails visibly on cross-curve mismatches, and is the honest equality surface for point-domain payoffs such as visible ECDH shared-point agreement or a pedagogical Schnorr-style verification equation.',
     searchTerms: ['point equals', 'point equality', 'ec point', 'ecc point', 'elliptic curve', 'shared secret match'],
   },
   ChallengeCombine: {
-    sectionId: 'number-theory',
+    sectionId: 'elliptic-curves-and-fields',
     sortOrder: 9.96,
     purpose: 'Combines one visible commitment point R, one visible public key P, and one visible message m into a bounded pedagogical challenge value c.',
     detail: 'Use this when a glass-box Schnorr-style teaching graph needs one explicit challenge stage. It derives c from visible ingredients modulo the subgroup order n, but it is a teaching combiner, not production-safe hashing or encoding.',
     searchTerms: ['challenge combine', 'schnorr', 'signature', 'challenge', 'nonce commitment', 'public key', 'message'],
   },
   ScalarLinearCombine: {
-    sectionId: 'number-theory',
+    sectionId: 'elliptic-curves-and-fields',
     sortOrder: 9.97,
     purpose: 'Computes one visible scalar response s = r + cx mod n from nonce, challenge, and private scalar inputs.',
     detail: 'Use this when the scalar-side response arithmetic should stay explicit. It works modulo the subgroup order n, not the curve prime p, and helps keep a Schnorr-style response stage honest and inspectable.',
@@ -736,7 +737,7 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     searchTerms: ['gf2', 'gf2inv', 'galois field', 'field inverse', 'aes', 'subbytes', 's-box', 'bits', 'polynomial', 'irreducible', 'finite field', 'nonlinear'],
   },
   NamedCurveBasePoint: {
-    sectionId: 'number-theory',
+    sectionId: 'elliptic-curves-and-fields',
     sortOrder: 9.1,
     purpose: 'Emits the standard base point and subgroup order for a named real-world elliptic curve.',
     detail: 'Use this to introduce secp256k1 or P-256 into a graph with verified parameters from SEC 2 and NIST FIPS 186-5. The base point G and order n are the two values needed for scalar multiplication, ECDH, and Schnorr-style signature teaching at real-world scale.',
@@ -881,7 +882,12 @@ export const MODULE_LIBRARY_SECTIONS: ModuleLibrarySection[] = [
   {
     id: 'number-theory',
     title: 'Modular Arithmetic',
-    description: 'Number-theoretic operators for modular reduction, inversion, and exponentiation.',
+    description: 'Bit-domain modular operators: exponentiation, inversion, reduction, and GF(2⁸) field arithmetic for AES.',
+  },
+  {
+    id: 'elliptic-curves-and-fields',
+    title: 'Elliptic Curves & Fields',
+    description: 'Prime-field arithmetic and elliptic curve point operations for ECDH, Schnorr, and public-key teaching.',
   },
   {
     id: 'framing-routing',
@@ -890,8 +896,8 @@ export const MODULE_LIBRARY_SECTIONS: ModuleLibrarySection[] = [
   },
   {
     id: 'word-diffusion',
-    title: 'Word & Diffusion',
-    description: 'Bit and byte transforms for rotation, substitution, and diffusion-style rearrangement.',
+    title: 'Block Transforms',
+    description: 'Bit and byte transforms for rotation, permutation, and substitution — the building blocks of block cipher rounds.',
   },
   {
     id: 'state-keystream',
@@ -1057,6 +1063,7 @@ export function matchesModuleDomainTab(
     case 'bit':
       return sectionId === 'bit-logic'
         || sectionId === 'number-theory'
+        || sectionId === 'elliptic-curves-and-fields'
         || sectionId === 'framing-routing'
         || sectionId === 'word-diffusion'
         || sectionId === 'state-keystream';
