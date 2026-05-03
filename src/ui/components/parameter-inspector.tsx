@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { isClockedIteratorDefinition, isCompositeDefinition, isConditionalDefinition } from '../../engine/composites';
+import { ECC_CURVE_PARAM_MODULE_IDS, NAMED_CURVE_REGISTRY } from '../../engine/modules/named-curve';
 import { getBypassIneligibilityReason, isBypassEligibleDefinition } from '../../engine/bypass';
 import { isOutputSinkDefId } from '../../engine/output-sinks';
 import type {
@@ -2371,6 +2372,73 @@ export function ParameterInspector({
                         Mirrored from the linked forward rotor. Edit the forward rotor to change this value.
                       </p>
                     </label>
+                  );
+                }
+
+                // Load Curve Preset: inject once before the "p" field on ECC primitive modules
+                if (
+                  !isReadOnlyMode &&
+                  field.key === 'p' &&
+                  ECC_CURVE_PARAM_MODULE_IDS.has(moduleDef.id)
+                ) {
+                  const curvePresetBlock = (
+                    <div key="__curve-preset" className="param-field param-curve-preset">
+                      <span className="param-field-label">
+                        <span className="param-field-label-text">Load curve preset</span>
+                      </span>
+                      <select
+                        value=""
+                        onChange={(event) => {
+                          const curveName = event.target.value;
+                          if (!curveName) return;
+                          const entry = NAMED_CURVE_REGISTRY[curveName];
+                          if (!entry) return;
+                          onParamChange(moduleInstance.id, 'p', entry.p);
+                          onParamChange(moduleInstance.id, 'a', entry.a);
+                          onParamChange(moduleInstance.id, 'b', entry.b);
+                        }}
+                      >
+                        <option value="">— select to fill p, a, b —</option>
+                        {Object.entries(NAMED_CURVE_REGISTRY).map(([curveName, entry]) => (
+                          <option key={curveName} value={curveName}>
+                            {entry.label}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="meta-copy">
+                        Fills the field parameters below from a standard curve definition.
+                        You can verify or change any value after loading.
+                      </p>
+                    </div>
+                  );
+                  // Return the preset block + fall through to normal field rendering below
+                  // We use a React Fragment trick: render preset, then continue rendering the field
+                  // by NOT returning here — instead insert the preset before the normal field
+                  return (
+                    <>
+                      {curvePresetBlock}
+                      <label key={field.key} className="param-field">
+                        {renderParamFieldLabel(field.label, field.key, isForwardedParam)}
+                        {!areParameterValuesEqual(value, baselineValue) ? (
+                          <span className="baseline-chip">
+                            Baseline: {formatParamValue(baselineValue, field)}
+                          </span>
+                        ) : null}
+                        <input
+                          type="text"
+                          value={renderedValue}
+                          onChange={(event) => {
+                            const rawValue = event.target.value;
+                            onParamDraftChange(moduleInstance.id, field.key, rawValue);
+                            const parsed = parseParamValue(rawValue, field);
+                            if (parsed.ok) {
+                              onParamChange(moduleInstance.id, field.key, parsed.value);
+                            }
+                          }}
+                        />
+                        {fieldError ? <p className="field-error">{fieldError}</p> : null}
+                      </label>
+                    </>
                   );
                 }
 

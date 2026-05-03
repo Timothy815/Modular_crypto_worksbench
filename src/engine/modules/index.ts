@@ -56,6 +56,7 @@ import { PointEquals } from './point-equals';
 import { ScalarMultiply } from './scalar-multiply';
 import { ChallengeCombine } from './challenge-combine';
 import { ScalarLinearCombine } from './scalar-linear-combine';
+import { NamedCurveBasePoint } from './named-curve';
 import { ModExp } from './mod-exp';
 import { ModInverse } from './mod-inverse';
 import { Modulo } from './modulo';
@@ -170,6 +171,7 @@ export {
   ScalarMultiply,
   ChallengeCombine,
   ScalarLinearCombine,
+  NamedCurveBasePoint,
   ModExp,
   ModInverse,
   Modulo,
@@ -285,6 +287,7 @@ export const V1_REGISTRY: ModuleRegistry = {
   [ScalarMultiply.id]: ScalarMultiply,
   [ChallengeCombine.id]: ChallengeCombine,
   [ScalarLinearCombine.id]: ScalarLinearCombine,
+  [NamedCurveBasePoint.id]: NamedCurveBasePoint,
   [ModExp.id]: ModExp,
   [ModInverse.id]: ModInverse,
   [Modulo.id]: Modulo,

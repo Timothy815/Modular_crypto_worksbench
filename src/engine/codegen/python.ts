@@ -103,6 +103,7 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'ScalarMultiply',
   'ChallengeCombine',
   'ScalarLinearCombine',
+  'NamedCurveBasePoint',
   'Modulo',
   'MulMod',
   'Majority',
@@ -304,6 +305,7 @@ const PYTHON_RUNTIME_PUBLIC_EXPORT_NAMES = [
   'format_hex_sink',
   'format_integer_sink',
   'point_source',
+  'named_curve_base_point',
   'point_equals',
   'scalar_multiply',
   'format_point_sink',
@@ -1445,6 +1447,35 @@ def point_source(p, a, b, x, y):
     if not _is_affine_point_on_curve(x_value, y_value, curve):
         raise ValueError("PointSource requires the declared point to lie on the declared curve.")
     return {"out": _create_affine_point(curve, x_value, y_value)}
+
+
+def named_curve_base_point(curve_name):
+    _NAMED_CURVES = {
+        "secp256k1": {
+            "p":  0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F,
+            "a":  0,
+            "b":  7,
+            "gx": 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798,
+            "gy": 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8,
+            "n":  0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141,
+        },
+        "P-256": {
+            "p":  0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF,
+            "a":  0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC,
+            "b":  0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B,
+            "gx": 0x6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296,
+            "gy": 0x4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5,
+            "n":  0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551,
+        },
+    }
+    if curve_name not in _NAMED_CURVES:
+        raise ValueError(f"NamedCurveBasePoint: unknown curve '{curve_name}'")
+    c = _NAMED_CURVES[curve_name]
+    curve = {"p": c["p"], "a": c["a"], "b": c["b"]}
+    return {
+        "point": {"kind": "affine", "curve": curve, "x": str(c["gx"]), "y": str(c["gy"])},
+        "order": {"type": "integer", "value": str(c["n"])},
+    }
 
 
 def point_add(left_signal, right_signal, p, a, b):
@@ -3411,6 +3442,8 @@ function buildModuleExpression(
       return `field_inverse(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'modulus')})`;
     case 'PointSource':
       return `point_source(${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')}, ${expressionContext.getParamExpression(moduleInstance, def, 'x')}, ${expressionContext.getParamExpression(moduleInstance, def, 'y')})`;
+    case 'NamedCurveBasePoint':
+      return `named_curve_base_point(${expressionContext.getParamExpression(moduleInstance, def, 'curve')})`;
     case 'PointAdd':
       return `point_add(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')}, ${expressionContext.getParamExpression(moduleInstance, def, 'p')}, ${expressionContext.getParamExpression(moduleInstance, def, 'a')}, ${expressionContext.getParamExpression(moduleInstance, def, 'b')})`;
     case 'PointOrder':

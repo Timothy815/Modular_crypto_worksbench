@@ -6,7 +6,7 @@ const distAssetsDir = join(process.cwd(), 'dist', 'assets');
 const thresholds = {
   index: 312 * 1024,
   react: 210 * 1024,
-  maxChunk: 312 * 1024,
+  maxChunk: 320 * 1024, // raised to accommodate real-scale curve hex params in named-curve demos
 };
 
 function formatKiB(bytes) {
