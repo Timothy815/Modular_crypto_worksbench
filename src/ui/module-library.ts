@@ -721,6 +721,27 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'A nonlinear substitution block. A 16-entry table gives 4-bit substitution, while a 256-entry table gives 8-bit substitution.',
     searchTerms: ['sbox', 's-box', 'substitute', 'nibble', 'byte', 'nonlinear', 'bits', 'diffusion', 'substitution'],
   },
+  GF2Mul: {
+    sectionId: 'number-theory',
+    sortOrder: 1,
+    purpose: 'Multiplies two 8-bit values in GF(2⁸) under a configurable reduction polynomial.',
+    detail: 'Use this for AES field arithmetic — multiplying two bytes modulo the AES irreducible polynomial 0x11B. The carry-less multiplication keeps every result inside 8 bits, unlike ordinary integer multiplication. Essential for MixColumns and understanding why AES diffusion works.',
+    searchTerms: ['gf2', 'gf2mul', 'galois field', 'field multiply', 'aes', 'mix columns', 'bits', 'polynomial', 'irreducible', 'finite field', 'carry-less'],
+  },
+  GF2Inv: {
+    sectionId: 'number-theory',
+    sortOrder: 2,
+    purpose: 'Finds the multiplicative inverse of an 8-bit value in GF(2⁸).',
+    detail: 'Use this for AES SubBytes — the nonlinear core of the S-box. For any nonzero byte a, GF2Inv returns the unique byte b such that a × b = 0x01 under the AES polynomial 0x11B. Zero maps to zero by convention. This is the step that makes AES resistant to linear approximation.',
+    searchTerms: ['gf2', 'gf2inv', 'galois field', 'field inverse', 'aes', 'subbytes', 's-box', 'bits', 'polynomial', 'irreducible', 'finite field', 'nonlinear'],
+  },
+  NamedCurveBasePoint: {
+    sectionId: 'number-theory',
+    sortOrder: 9.1,
+    purpose: 'Emits the standard base point and subgroup order for a named real-world elliptic curve.',
+    detail: 'Use this to introduce secp256k1 or P-256 into a graph with verified parameters from SEC 2 and NIST FIPS 186-5. The base point G and order n are the two values needed for scalar multiplication, ECDH, and Schnorr-style signature teaching at real-world scale.',
+    searchTerms: ['named curve', 'base point', 'secp256k1', 'p-256', 'bitcoin', 'nist', 'ecc', 'elliptic curve', 'generator', 'order', 'real scale', 'standard curve'],
+  },
   LFSR: {
     sectionId: 'state-keystream',
     sortOrder: 20,

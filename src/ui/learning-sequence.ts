@@ -82,6 +82,9 @@ const GROUP_STAGE_MAP: Record<string, LearningStage> = {
   'Systems Composition': 'asymmetric-verification-and-systems-composition',
   'Hash Foundations': 'advanced-arithmetic-and-number-theory',
   Cryptanalysis: 'advanced-arithmetic-and-number-theory',
+  'Cryptanalysis Labs': 'advanced-arithmetic-and-number-theory',
+  ECC: 'advanced-arithmetic-and-number-theory',
+  'AES Building Blocks': 'advanced-arithmetic-and-number-theory',
 };
 
 const OPTIONAL_GROUPS = new Set(['Cryptanalysis', 'Hash Foundations']);
@@ -107,6 +110,9 @@ const GROUP_ORDER_HINTS: Record<string, number> = {
   'Systems Composition': 170,
   'Hash Foundations': 180,
   Cryptanalysis: 190,
+  'Cryptanalysis Labs': 192,
+  ECC: 200,
+  'AES Building Blocks': 210,
 };
 
 const ITEM_ORDER_HINTS: Record<string, number> = {
