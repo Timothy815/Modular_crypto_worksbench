@@ -50,6 +50,7 @@ const toyRsaProject = demoProjects.find((project) => project.id === 'toy-rsa');
 const diffieHellmanProject = demoProjects.find((project) => project.id === 'diffie-hellman-key-exchange');
 const gf2MultiplyProject = demoProjects.find((project) => project.id === 'gf2-multiply');
 const visibleMixColumnsProject = demoProjects.find((project) => project.id === 'visible-mix-columns');
+const visibleSubBytesProject = demoProjects.find((project) => project.id === 'visible-subbytes');
 const visiblePointMechanicsProject = demoProjects.find(
   (project) => project.id === 'visible-point-mechanics',
 );
@@ -216,6 +217,9 @@ if (!gf2MultiplyProject) {
 }
 if (!visibleMixColumnsProject) {
   throw new Error('Expected visible-mix-columns demo project to seed starter challenges.');
+}
+if (!visibleSubBytesProject) {
+  throw new Error('Expected visible-subbytes demo project to seed starter challenges.');
 }
 if (!visiblePointMechanicsProject) {
   throw new Error('Expected visible-point-mechanics demo project to seed starter challenges.');
@@ -561,6 +565,16 @@ if (!brokenMixColumnsMulModule) {
   throw new Error('Expected visible-mix-columns demo project to contain gf-2s0 module.');
 }
 brokenMixColumnsMulModule.params.poly = '11D';
+
+const visibleSubBytesTarget = cloneProject(visibleSubBytesProject.project);
+const brokenVisibleSubBytesStart = cloneProject(visibleSubBytesProject.project);
+const brokenSubBytesConstant = brokenVisibleSubBytesStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'c63',
+);
+if (!brokenSubBytesConstant) {
+  throw new Error('Expected visible-subbytes demo project to contain c63 module.');
+}
+brokenSubBytesConstant.params.value = '65';
 
 const brokenVisiblePointMechanicsConnections = brokenVisiblePointMechanicsStart.connections;
 const brokenVisiblePointMechanicsInverseIndex = brokenVisiblePointMechanicsConnections.findIndex(
@@ -1941,6 +1955,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'Only one GF2Mul module has the wrong polynomial. Look at the modules in the top row (row 0).',
       'The module computing 2·s0 has its "poly" parameter set to 11D. Change it to the AES polynomial.',
       'The AES reduction polynomial in hex is 11B.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-affine-constant',
+    title: 'Repair the Affine Constant',
+    projectId: 'visible-subbytes',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.95,
+    recommendedAfter: ['visible-mix-columns'],
+    difficulty: 'beginner',
+    prompt:
+      'The AES affine transform ends with an XOR against a specific constant chosen by the Rijndael designers to eliminate fixed points. This board has the wrong constant: 0x65 instead of the correct value. Restore the affine constant so the SubBytes output matches the NIST-specified result for input 0x53.',
+    startingProject: brokenVisibleSubBytesStart,
+    startingLayout: cloneProject(visibleSubBytesProject.layout),
+    targetProject: visibleSubBytesTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The constant is the HexSource labeled c63. Only its value parameter needs to change.',
+      'The AES affine constant was chosen so that SubBytes has no fixed points — no input maps to itself.',
+      'The correct constant in hex is 63.',
     ],
   },
   {

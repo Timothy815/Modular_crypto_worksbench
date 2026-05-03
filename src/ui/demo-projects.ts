@@ -1286,6 +1286,113 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'visible-subbytes',
+    name: 'Visible SubBytes',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.9,
+    recommendedAfter: ['visible-mix-columns'],
+    summary:
+      'One AES SubBytes step built two ways side by side: the explicit GF(2⁸) inverse followed by the four-rotation affine transform, and the equivalent AES S-box lookup. Both produce the NIST-specified output for input 0x53 → 0xED, confirming that the S-box is exactly the composed function.',
+    pipeline:
+      'HexSource(53) → GF2Inv → [BitShifter×4 rotations + XOR chain + 0x63] → BitsToHex → HexOutput, in parallel with HexSource(53) → SBox(AES) → BitsToHex → HexOutput',
+    project: {
+      modules: [
+        // Shared input
+        { id: 'src', defId: 'HexSource', params: { value: '53' } },
+        // Explicit path: GF2Inv → affine transform (M·a ⊕ 0x63)
+        { id: 'gf-inv', defId: 'GF2Inv', params: { poly: '11B' } },
+        { id: 'rot1', defId: 'BitShifter', params: { mode: 'rotate-left', amount: 1 } },
+        { id: 'rot2', defId: 'BitShifter', params: { mode: 'rotate-left', amount: 2 } },
+        { id: 'rot3', defId: 'BitShifter', params: { mode: 'rotate-left', amount: 3 } },
+        { id: 'rot4', defId: 'BitShifter', params: { mode: 'rotate-left', amount: 4 } },
+        { id: 'xor-1', defId: 'XOR', params: {} },
+        { id: 'xor-2', defId: 'XOR', params: {} },
+        { id: 'xor-3', defId: 'XOR', params: {} },
+        { id: 'xor-4', defId: 'XOR', params: {} },
+        { id: 'c63', defId: 'HexSource', params: { value: '63' } },
+        { id: 'xor-5', defId: 'XOR', params: {} },
+        { id: 'bth', defId: 'BitsToHex', params: {} },
+        { id: 'out', defId: 'HexOutput', params: {} },
+        // S-box path: AES S-box lookup (equivalent shortcut)
+        {
+          id: 'sbox',
+          defId: 'SBox',
+          params: {
+            table: [
+               99,124,119,123,242,107,111,197, 48,  1,103, 43,254,215,171,118,
+              202,130,201,125,250, 89, 71,240,173,212,162,175,156,164,114,192,
+              183,253,147, 38, 54, 63,247,204, 52,165,229,241,113,216, 49, 21,
+                4,199, 35,195, 24,150,  5,154,  7, 18,128,226,235, 39,178,117,
+                9,131, 44, 26, 27,110, 90,160, 82, 59,214,179, 41,227, 47,132,
+               83,209,  0,237, 32,252,177, 91,106,203,190, 57, 74, 76, 88,207,
+              208,239,170,251, 67, 77, 51,133, 69,249,  2,127, 80, 60,159,168,
+               81,163, 64,143,146,157, 56,245,188,182,218, 33, 16,255,243,210,
+              205, 12, 19,236, 95,151, 68, 23,196,167,126, 61,100, 93, 25,115,
+               96,129, 79,220, 34, 42,144,136, 70,238,184, 20,222, 94, 11,219,
+              224, 50, 58, 10, 73,  6, 36, 92,194,211,172, 98,145,149,228,121,
+              231,200, 55,109,141,213, 78,169,108, 86,244,234,101,122,174,  8,
+              186,120, 37, 46, 28,166,180,198,232,221,116, 31, 75,189,139,138,
+              112, 62,181,102, 72,  3,246, 14, 97, 53, 87,185,134,193, 29,158,
+              225,248,152, 17,105,217,142,148,155, 30,135,233,206, 85, 40,223,
+              140,161,137, 13,191,230, 66,104, 65,153, 45, 15,176, 84,187, 22,
+            ].join(','),
+          },
+        },
+        { id: 'bth-sb', defId: 'BitsToHex', params: {} },
+        { id: 'out-sb', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        // Shared input → explicit path
+        { from: { moduleId: 'src',   port: 'out' }, to: { moduleId: 'gf-inv', port: 'in' } },
+        // GF2Inv fans out to all four rotations and the first XOR accumulator
+        { from: { moduleId: 'gf-inv', port: 'out' }, to: { moduleId: 'rot1',  port: 'in' } },
+        { from: { moduleId: 'gf-inv', port: 'out' }, to: { moduleId: 'rot2',  port: 'in' } },
+        { from: { moduleId: 'gf-inv', port: 'out' }, to: { moduleId: 'rot3',  port: 'in' } },
+        { from: { moduleId: 'gf-inv', port: 'out' }, to: { moduleId: 'rot4',  port: 'in' } },
+        { from: { moduleId: 'gf-inv', port: 'out' }, to: { moduleId: 'xor-1', port: 'a' } },
+        // XOR accumulator chain
+        { from: { moduleId: 'rot1',  port: 'out' }, to: { moduleId: 'xor-1', port: 'b' } },
+        { from: { moduleId: 'xor-1', port: 'out' }, to: { moduleId: 'xor-2', port: 'a' } },
+        { from: { moduleId: 'rot2',  port: 'out' }, to: { moduleId: 'xor-2', port: 'b' } },
+        { from: { moduleId: 'xor-2', port: 'out' }, to: { moduleId: 'xor-3', port: 'a' } },
+        { from: { moduleId: 'rot3',  port: 'out' }, to: { moduleId: 'xor-3', port: 'b' } },
+        { from: { moduleId: 'xor-3', port: 'out' }, to: { moduleId: 'xor-4', port: 'a' } },
+        { from: { moduleId: 'rot4',  port: 'out' }, to: { moduleId: 'xor-4', port: 'b' } },
+        // Final XOR with affine constant 0x63
+        { from: { moduleId: 'xor-4', port: 'out' }, to: { moduleId: 'xor-5', port: 'a' } },
+        { from: { moduleId: 'c63',   port: 'out' }, to: { moduleId: 'xor-5', port: 'b' } },
+        { from: { moduleId: 'xor-5', port: 'out' }, to: { moduleId: 'bth',   port: 'in' } },
+        { from: { moduleId: 'bth',   port: 'out' }, to: { moduleId: 'out',   port: 'in' } },
+        // Shared input → S-box path
+        { from: { moduleId: 'src',   port: 'out' }, to: { moduleId: 'sbox',  port: 'in' } },
+        { from: { moduleId: 'sbox',  port: 'out' }, to: { moduleId: 'bth-sb',port: 'in' } },
+        { from: { moduleId: 'bth-sb',port: 'out' }, to: { moduleId: 'out-sb',port: 'in' } },
+      ],
+    },
+    layout: {
+      'src':    { x: 80,   y: 360 },
+      // Explicit path
+      'gf-inv': { x: 260,  y: 360 },
+      'rot1':   { x: 440,  y: 80  },
+      'rot2':   { x: 440,  y: 220 },
+      'rot3':   { x: 440,  y: 360 },
+      'rot4':   { x: 440,  y: 500 },
+      'xor-1':  { x: 640,  y: 140 },
+      'xor-2':  { x: 640,  y: 280 },
+      'xor-3':  { x: 640,  y: 420 },
+      'xor-4':  { x: 640,  y: 560 },
+      'c63':    { x: 840,  y: 700 },
+      'xor-5':  { x: 840,  y: 560 },
+      'bth':    { x: 1020, y: 560 },
+      'out':    { x: 1200, y: 560 },
+      // S-box path
+      'sbox':   { x: 260,  y: 700 },
+      'bth-sb': { x: 440,  y: 700 },
+      'out-sb': { x: 620,  y: 700 },
+    },
+  },
+  {
     id: 'visible-point-order-and-subgroups',
     name: 'Visible Point Order And Subgroups',
     group: 'Number Theory',
