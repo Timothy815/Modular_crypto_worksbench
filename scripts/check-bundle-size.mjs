@@ -6,7 +6,7 @@ const distAssetsDir = join(process.cwd(), 'dist', 'assets');
 const thresholds = {
   index: 312 * 1024,
   react: 210 * 1024,
-  maxChunk: 334 * 1024, // raised to accommodate GF2/MixColumns/SubBytes demo modules and real-scale curve hex params
+  maxChunk: 340 * 1024, // raised to accommodate GF2/MixColumns/SubBytes/ShiftRows/AddRoundKey demo modules and real-scale curve hex params
 };
 
 function formatKiB(bytes) {

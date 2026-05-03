@@ -51,6 +51,7 @@ const diffieHellmanProject = demoProjects.find((project) => project.id === 'diff
 const gf2MultiplyProject = demoProjects.find((project) => project.id === 'gf2-multiply');
 const visibleMixColumnsProject = demoProjects.find((project) => project.id === 'visible-mix-columns');
 const visibleSubBytesProject = demoProjects.find((project) => project.id === 'visible-subbytes');
+const visibleAddRoundKeyProject = demoProjects.find((project) => project.id === 'visible-add-round-key');
 const visiblePointMechanicsProject = demoProjects.find(
   (project) => project.id === 'visible-point-mechanics',
 );
@@ -220,6 +221,9 @@ if (!visibleMixColumnsProject) {
 }
 if (!visibleSubBytesProject) {
   throw new Error('Expected visible-subbytes demo project to seed starter challenges.');
+}
+if (!visibleAddRoundKeyProject) {
+  throw new Error('Expected visible-add-round-key demo project to seed starter challenges.');
 }
 if (!visiblePointMechanicsProject) {
   throw new Error('Expected visible-point-mechanics demo project to seed starter challenges.');
@@ -575,6 +579,16 @@ if (!brokenSubBytesConstant) {
   throw new Error('Expected visible-subbytes demo project to contain c63 module.');
 }
 brokenSubBytesConstant.params.value = '65';
+
+const visibleAddRoundKeyTarget = cloneProject(visibleAddRoundKeyProject.project);
+const brokenVisibleAddRoundKeyStart = cloneProject(visibleAddRoundKeyProject.project);
+const brokenAddRoundKeyModule = brokenVisibleAddRoundKeyStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'k0',
+);
+if (!brokenAddRoundKeyModule) {
+  throw new Error('Expected visible-add-round-key demo project to contain k0 module.');
+}
+brokenAddRoundKeyModule.params.value = 'B0';
 
 const brokenVisiblePointMechanicsConnections = brokenVisiblePointMechanicsStart.connections;
 const brokenVisiblePointMechanicsInverseIndex = brokenVisiblePointMechanicsConnections.findIndex(
@@ -1979,6 +1993,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The constant is the HexSource labeled c63. Only its value parameter needs to change.',
       'The AES affine constant was chosen so that SubBytes has no fixed points — no input maps to itself.',
       'The correct constant in hex is 63.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-round-key',
+    title: 'Repair the Round Key',
+    projectId: 'visible-add-round-key',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.96,
+    recommendedAfter: ['visible-add-round-key'],
+    difficulty: 'beginner',
+    prompt:
+      'The first key byte has been changed from A0 to B0. The first XOR output no longer matches the NIST FIPS 197 expected result for the AddRoundKey step. Restore the correct key byte so all four output bytes match the specification again.',
+    startingProject: brokenVisibleAddRoundKeyStart,
+    startingLayout: cloneProject(visibleAddRoundKeyProject.layout),
+    targetProject: visibleAddRoundKeyTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Only the first key byte (k0) needs to change.',
+      'The NIST FIPS 197 round 1 key byte for the first column position is A0.',
+      '04 XOR A0 = A4 is the expected first output byte.',
     ],
   },
   {

@@ -1393,6 +1393,123 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'visible-shiftrows',
+    name: 'Visible ShiftRows',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.91,
+    recommendedAfter: ['visible-subbytes'],
+    summary:
+      'The full 16-byte AES state passes through a single Permutation module wired with the ShiftRows byte positions. Row 0 stays put, row 1 rotates left by one byte, row 2 by two, row 3 by three — all encoded as an explicit 128-bit index mapping. FIPS 197 test vector: D42711AE… → D4BF5D30…',
+    pipeline:
+      'HexSource(128-bit state) -> Permutation(128-element ShiftRows index map) -> BitsToHex -> HexOutput',
+    project: {
+      modules: [
+        { id: 'state',      defId: 'HexSource',   params: { value: 'D42711AEE0BF98F1B8B45DE51E415230' } },
+        { id: 'shift-rows', defId: 'Permutation',  params: { order: '0,1,2,3,4,5,6,7,40,41,42,43,44,45,46,47,80,81,82,83,84,85,86,87,120,121,122,123,124,125,126,127,32,33,34,35,36,37,38,39,72,73,74,75,76,77,78,79,112,113,114,115,116,117,118,119,24,25,26,27,28,29,30,31,64,65,66,67,68,69,70,71,104,105,106,107,108,109,110,111,16,17,18,19,20,21,22,23,56,57,58,59,60,61,62,63,96,97,98,99,100,101,102,103,8,9,10,11,12,13,14,15,48,49,50,51,52,53,54,55,88,89,90,91,92,93,94,95' } },
+        { id: 'bth',        defId: 'BitsToHex',    params: {} },
+        { id: 'out',        defId: 'HexOutput',    params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'state',      port: 'out' }, to: { moduleId: 'shift-rows', port: 'in' } },
+        { from: { moduleId: 'shift-rows', port: 'out' }, to: { moduleId: 'bth',        port: 'in' } },
+        { from: { moduleId: 'bth',        port: 'out' }, to: { moduleId: 'out',        port: 'in' } },
+      ],
+    },
+    layout: {
+      'state':      { x: 80,  y: 200 },
+      'shift-rows': { x: 400, y: 200 },
+      'bth':        { x: 700, y: 200 },
+      'out':        { x: 960, y: 200 },
+    },
+  },
+  {
+    id: 'visible-add-round-key',
+    name: 'Visible AddRoundKey',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.92,
+    recommendedAfter: ['visible-shiftrows'],
+    summary:
+      'Four data bytes from MixColumns ([04,66,81,E5]) and four round-key bytes ([A0,FA,FE,17]) feed four independent XOR modules. Each output byte is one byte of data XOR one byte of key — the round-key injection step. FIPS 197 output: [A4,9C,7F,F2].',
+    pipeline:
+      '4x HexSource(data) + 4x HexSource(key) -> 4x XOR(data[i] ⊕ key[i]) -> 4x BitsToHex -> 4x HexOutput',
+    project: {
+      modules: [
+        // Data bytes (MixColumns output)
+        { id: 'd0', defId: 'HexSource', params: { value: '04' } },
+        { id: 'd1', defId: 'HexSource', params: { value: '66' } },
+        { id: 'd2', defId: 'HexSource', params: { value: '81' } },
+        { id: 'd3', defId: 'HexSource', params: { value: 'E5' } },
+        // Round-key bytes
+        { id: 'k0', defId: 'HexSource', params: { value: 'A0' } },
+        { id: 'k1', defId: 'HexSource', params: { value: 'FA' } },
+        { id: 'k2', defId: 'HexSource', params: { value: 'FE' } },
+        { id: 'k3', defId: 'HexSource', params: { value: '17' } },
+        // XOR each byte with its key byte
+        { id: 'xor0', defId: 'XOR', params: {} },
+        { id: 'xor1', defId: 'XOR', params: {} },
+        { id: 'xor2', defId: 'XOR', params: {} },
+        { id: 'xor3', defId: 'XOR', params: {} },
+        // Convert to hex
+        { id: 'bth0', defId: 'BitsToHex', params: {} },
+        { id: 'bth1', defId: 'BitsToHex', params: {} },
+        { id: 'bth2', defId: 'BitsToHex', params: {} },
+        { id: 'bth3', defId: 'BitsToHex', params: {} },
+        // Outputs
+        { id: 'out0', defId: 'HexOutput', params: {} },
+        { id: 'out1', defId: 'HexOutput', params: {} },
+        { id: 'out2', defId: 'HexOutput', params: {} },
+        { id: 'out3', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'd0',   port: 'out' }, to: { moduleId: 'xor0', port: 'a' } },
+        { from: { moduleId: 'k0',   port: 'out' }, to: { moduleId: 'xor0', port: 'b' } },
+        { from: { moduleId: 'd1',   port: 'out' }, to: { moduleId: 'xor1', port: 'a' } },
+        { from: { moduleId: 'k1',   port: 'out' }, to: { moduleId: 'xor1', port: 'b' } },
+        { from: { moduleId: 'd2',   port: 'out' }, to: { moduleId: 'xor2', port: 'a' } },
+        { from: { moduleId: 'k2',   port: 'out' }, to: { moduleId: 'xor2', port: 'b' } },
+        { from: { moduleId: 'd3',   port: 'out' }, to: { moduleId: 'xor3', port: 'a' } },
+        { from: { moduleId: 'k3',   port: 'out' }, to: { moduleId: 'xor3', port: 'b' } },
+        { from: { moduleId: 'xor0', port: 'out' }, to: { moduleId: 'bth0', port: 'in' } },
+        { from: { moduleId: 'xor1', port: 'out' }, to: { moduleId: 'bth1', port: 'in' } },
+        { from: { moduleId: 'xor2', port: 'out' }, to: { moduleId: 'bth2', port: 'in' } },
+        { from: { moduleId: 'xor3', port: 'out' }, to: { moduleId: 'bth3', port: 'in' } },
+        { from: { moduleId: 'bth0', port: 'out' }, to: { moduleId: 'out0', port: 'in' } },
+        { from: { moduleId: 'bth1', port: 'out' }, to: { moduleId: 'out1', port: 'in' } },
+        { from: { moduleId: 'bth2', port: 'out' }, to: { moduleId: 'out2', port: 'in' } },
+        { from: { moduleId: 'bth3', port: 'out' }, to: { moduleId: 'out3', port: 'in' } },
+      ],
+    },
+    layout: {
+      // Data column
+      'd0': { x: 80, y: 60  },
+      'd1': { x: 80, y: 180 },
+      'd2': { x: 80, y: 300 },
+      'd3': { x: 80, y: 420 },
+      // Key column
+      'k0': { x: 80, y: 120 },
+      'k1': { x: 80, y: 240 },
+      'k2': { x: 80, y: 360 },
+      'k3': { x: 80, y: 480 },
+      // XOR column
+      'xor0': { x: 340, y: 80  },
+      'xor1': { x: 340, y: 200 },
+      'xor2': { x: 340, y: 320 },
+      'xor3': { x: 340, y: 440 },
+      // BitsToHex column
+      'bth0': { x: 560, y: 80  },
+      'bth1': { x: 560, y: 200 },
+      'bth2': { x: 560, y: 320 },
+      'bth3': { x: 560, y: 440 },
+      // Output column
+      'out0': { x: 760, y: 80  },
+      'out1': { x: 760, y: 200 },
+      'out2': { x: 760, y: 320 },
+      'out3': { x: 760, y: 440 },
+    },
+  },
+  {
     id: 'visible-point-order-and-subgroups',
     name: 'Visible Point Order And Subgroups',
     group: 'Number Theory',
