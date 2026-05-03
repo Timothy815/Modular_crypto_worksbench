@@ -49,6 +49,7 @@ const visibleMessageWindowProject = demoProjects.find((project) => project.id ==
 const toyRsaProject = demoProjects.find((project) => project.id === 'toy-rsa');
 const diffieHellmanProject = demoProjects.find((project) => project.id === 'diffie-hellman-key-exchange');
 const gf2MultiplyProject = demoProjects.find((project) => project.id === 'gf2-multiply');
+const visibleMixColumnsProject = demoProjects.find((project) => project.id === 'visible-mix-columns');
 const visiblePointMechanicsProject = demoProjects.find(
   (project) => project.id === 'visible-point-mechanics',
 );
@@ -212,6 +213,9 @@ if (!diffieHellmanProject) {
 }
 if (!gf2MultiplyProject) {
   throw new Error('Expected gf2-multiply demo project to seed starter challenges.');
+}
+if (!visibleMixColumnsProject) {
+  throw new Error('Expected visible-mix-columns demo project to seed starter challenges.');
 }
 if (!visiblePointMechanicsProject) {
   throw new Error('Expected visible-point-mechanics demo project to seed starter challenges.');
@@ -547,6 +551,16 @@ if (!brokenGf2MulModule) {
   throw new Error('Expected gf2-multiply demo project to contain gf-mul module.');
 }
 brokenGf2MulModule.params.poly = '11D';
+
+const visibleMixColumnsTarget = cloneProject(visibleMixColumnsProject.project);
+const brokenVisibleMixColumnsStart = cloneProject(visibleMixColumnsProject.project);
+const brokenMixColumnsMulModule = brokenVisibleMixColumnsStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'gf-2s0',
+);
+if (!brokenMixColumnsMulModule) {
+  throw new Error('Expected visible-mix-columns demo project to contain gf-2s0 module.');
+}
+brokenMixColumnsMulModule.params.poly = '11D';
 
 const brokenVisiblePointMechanicsConnections = brokenVisiblePointMechanicsStart.connections;
 const brokenVisiblePointMechanicsInverseIndex = brokenVisiblePointMechanicsConnections.findIndex(
@@ -1903,6 +1917,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The GF2Mul module has a "poly" parameter. That is the only thing that needs to change.',
       'The AES reduction polynomial is x⁸ + x⁴ + x³ + x + 1.',
       'In hex, the AES polynomial is 11B.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-mix-columns-coefficient',
+    title: 'Repair the MixColumns Coefficient',
+    projectId: 'visible-mix-columns',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.85,
+    recommendedAfter: ['gf2-aes-field'],
+    difficulty: 'beginner',
+    prompt:
+      'One of the GF(2⁸) multipliers in row 0 is using the wrong reduction polynomial. The coefficient 0x02 is being multiplied under polynomial 0x11D instead of the AES polynomial, so the first output byte is wrong. Restore the correct polynomial so the column output matches the NIST FIPS 197 test vector.',
+    startingProject: brokenVisibleMixColumnsStart,
+    startingLayout: cloneProject(visibleMixColumnsProject.layout),
+    targetProject: visibleMixColumnsTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Only one GF2Mul module has the wrong polynomial. Look at the modules in the top row (row 0).',
+      'The module computing 2·s0 has its "poly" parameter set to 11D. Change it to the AES polynomial.',
+      'The AES reduction polynomial in hex is 11B.',
     ],
   },
   {
