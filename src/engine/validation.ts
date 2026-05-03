@@ -51,6 +51,7 @@ import { validateBitWindowParam } from './modules/bit-window';
 import { validateBitSelectOrderParam, parseBitSelectOrder } from './modules/bit-select';
 import { validateBitExpandOrderParam, parseBitExpandOrder } from './modules/bit-expand';
 import { validateByteRotateParam } from './modules/byte-rotate';
+import { validateGF2Param } from './modules/gf2-field';
 import { validateBroadcastBitsParam } from './modules/broadcast-bits';
 import { validateBitsSequenceToTickedParam } from './modules/bits-sequence-to-ticked';
 import { validatePadBitsToMatchParam } from './modules/pad-bits-to-match';
@@ -392,6 +393,10 @@ function getModuleSpecificParamMessage(
     return validateByteRotateParam(field.key, value);
   }
 
+  if (def.id === 'GF2Mul' || def.id === 'GF2Inv') {
+    return validateGF2Param(def.id, field.key, value);
+  }
+
   if (
     def.id === 'PolluxFractionation' ||
     def.id === 'PolluxControlledFractionation' ||
@@ -561,6 +566,10 @@ function inferStaticBitWidth(
     case 'SBox':
     case 'Gate':
       width = inferFromInput();
+      break;
+    case 'GF2Mul':
+    case 'GF2Inv':
+      width = 8;
       break;
     case 'ModExp':
       width = inferFromInput('base');
@@ -871,6 +880,35 @@ function validateBitWidthConstraints(
           message: `Module "${moduleInstance.id}" requires an input width divisible by 8.`,
           moduleId: moduleInstance.id,
         });
+      }
+    }
+
+    if (def.id === 'GF2Mul') {
+      for (const port of ['a', 'b'] as const) {
+        const upstream = incomingConnections.get(`${moduleInstance.id}:${port}`);
+        if (!upstream) continue;
+        const inputWidth = getWidth(upstream.moduleId);
+        if (inputWidth !== null && inputWidth !== 8) {
+          issues.push({
+            code: 'signal-width-mismatch',
+            message: `Module "${moduleInstance.id}" requires exactly 8 bits on port "${port}".`,
+            moduleId: moduleInstance.id,
+          });
+        }
+      }
+    }
+
+    if (def.id === 'GF2Inv') {
+      const upstream = incomingConnections.get(`${moduleInstance.id}:in`);
+      if (upstream) {
+        const inputWidth = getWidth(upstream.moduleId);
+        if (inputWidth !== null && inputWidth !== 8) {
+          issues.push({
+            code: 'signal-width-mismatch',
+            message: `Module "${moduleInstance.id}" requires exactly 8 bits on port "in".`,
+            moduleId: moduleInstance.id,
+          });
+        }
       }
     }
 

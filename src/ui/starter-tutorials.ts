@@ -3313,6 +3313,48 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
   },
   {
     version: 1,
+    id: 'gf2-aes-field',
+    title: 'Why AES Needs GF(2⁸)',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.7,
+    recommendedAfter: ['diffie-hellman-key-exchange'],
+    summary:
+      'Walk through GF(2⁸) multiplication and inverse on concrete AES byte values and see why carry reduction through the polynomial keeps every intermediate value inside one byte.',
+    projectId: 'gf2-multiply',
+    steps: [
+      {
+        id: 'gf2-input-bytes',
+        title: 'Two Visible Byte Values',
+        body: 'BitSource feeds two concrete 8-bit values into the field multiplier. In AES MixColumns, the same structure multiplies each column byte by one of the fixed MDS constants (0x01, 0x02, or 0x03).',
+        focusModuleId: 'byte-a',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'gf2-mul-analyze',
+        title: 'Multiply In The Field',
+        body: 'GF2Mul applies the Russian peasant algorithm under the AES polynomial 0x11B. Select it and open Analyze to see the two byte values, the polynomial, and the reduced result. Unlike integer multiplication, carry-out bits are folded back through the polynomial instead of growing into a wider number.',
+        focusModuleId: 'gf-mul',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'gf2-second-mul',
+        title: 'Another Pair: 0x02 × 0x02',
+        body: '0x02 × 0x02 = 0x04 in GF(2⁸) under 0x11B. Try 0x80 × 0x02 to see the polynomial reduction fire: 0x80 shifted left gives 0x100, which exceeds one byte, so the high bit is folded back by XOR with 0x11B, yielding 0x1B.',
+        focusModuleId: 'gf-mul2',
+        targetStepIndex: 6,
+      },
+      {
+        id: 'gf2-inv-analyze',
+        title: 'Field Inverse',
+        body: 'GF2Inv finds the unique b such that a × b = 0x01 in GF(2⁸). Select it and open Analyze. For 0x35, the inverse is visible. This inverse step is the first transformation inside AES SubBytes before the affine mix.',
+        focusModuleId: 'gf-inv',
+        targetStepIndex: 10,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'visible-signature-verification',
     title: 'Signing Is Not Encrypting',
     group: 'Asymmetric Verification',

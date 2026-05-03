@@ -441,6 +441,12 @@ export function getTransformationView(
   if (entry.defId === 'BitUnpad') {
     return getUnpadTransformation(entry, project, registry);
   }
+  if (entry.defId === 'GF2Mul') {
+    return getGF2MulTransformation(entry);
+  }
+  if (entry.defId === 'GF2Inv') {
+    return getGF2InvTransformation(entry);
+  }
   return null;
 }
 
@@ -1603,6 +1609,70 @@ function getUnpadTransformation(
     summary: strippedCount > 0
       ? `${strippedCount} bit${strippedCount === 1 ? '' : 's'} stripped from the ${side} to recover ${output.value.length}-bit original.`
       : `Input already matches the original width (${output.value.length} bits), so nothing was stripped.`,
+  };
+}
+
+function getGF2MulTransformation(entry: ExecutionTraceEntry): ArithmeticTransformationView | null {
+  const inputA = entry.inputs.a;
+  const inputB = entry.inputs.b;
+  const output = entry.outputs.out;
+  if (inputA?.type !== 'bits' || inputB?.type !== 'bits' || output?.type !== 'bits') {
+    return null;
+  }
+
+  const aValue = bitsToNumber(inputA.value);
+  const bValue = bitsToNumber(inputB.value);
+  const resultValue = bitsToNumber(output.value);
+
+  const toHex = (n: number) => `0x${n.toString(16).toUpperCase().padStart(2, '0')}`;
+
+  return {
+    entry,
+    kind: 'arithmetic',
+    title: 'GF(2⁸) Multiplication',
+    copy:
+      'GF2Mul multiplies two 8-bit byte values in GF(2⁸) using the Russian peasant algorithm. Carry-out bits are reduced modulo the irreducible polynomial, keeping every result inside one byte. For AES, the reduction polynomial is 0x11B (x⁸ + x⁴ + x³ + x + 1).',
+    operationLabel: 'Operation',
+    operationExpression: `${toHex(aValue)} × ${toHex(bValue)} in GF(2⁸) = ${toHex(resultValue)}`,
+    resultValue,
+    inputBits: inputA.value,
+    outputBits: output.value,
+    summary: `${toHex(aValue)} × ${toHex(bValue)} under the polynomial gives ${toHex(resultValue)}. Field multiplication wraps carry out through the polynomial, not through 256.`,
+  };
+}
+
+function getGF2InvTransformation(entry: ExecutionTraceEntry): ArithmeticTransformationView | null {
+  const input = entry.inputs.in;
+  const output = entry.outputs.out;
+  if (input?.type !== 'bits' || output?.type !== 'bits') {
+    return null;
+  }
+
+  const aValue = bitsToNumber(input.value);
+  const resultValue = bitsToNumber(output.value);
+
+  const toHex = (n: number) => `0x${n.toString(16).toUpperCase().padStart(2, '0')}`;
+
+  const summaryText =
+    aValue === 0
+      ? `${toHex(aValue)} maps to ${toHex(resultValue)} by convention. Zero has no true multiplicative inverse in a field, so GF2Inv returns zero for the AES SubBytes zero-element convention.`
+      : `${toHex(aValue)} × ${toHex(resultValue)} = 0x01 in GF(2⁸) — the pair are field inverses. AES SubBytes applies this inverse before the affine map.`;
+
+  return {
+    entry,
+    kind: 'arithmetic',
+    title: 'GF(2⁸) Multiplicative Inverse',
+    copy:
+      'GF2Inv finds the multiplicative inverse of an 8-bit byte value in GF(2⁸). For every nonzero input a, the output b satisfies a × b = 1 in the field. Zero maps to zero by the AES convention. This is the first step inside the AES SubBytes transform.',
+    operationLabel: 'Operation',
+    operationExpression:
+      aValue === 0
+        ? `inv(${toHex(aValue)}) = ${toHex(resultValue)} (convention)`
+        : `inv(${toHex(aValue)}) = ${toHex(resultValue)},  ${toHex(aValue)} × ${toHex(resultValue)} = 0x01`,
+    resultValue,
+    inputBits: input.value,
+    outputBits: output.value,
+    summary: summaryText,
   };
 }
 

@@ -57,6 +57,7 @@ import { ScalarMultiply } from './scalar-multiply';
 import { ChallengeCombine } from './challenge-combine';
 import { ScalarLinearCombine } from './scalar-linear-combine';
 import { NamedCurveBasePoint } from './named-curve';
+import { GF2Mul, GF2Inv } from './gf2-field';
 import { ModExp } from './mod-exp';
 import { ModInverse } from './mod-inverse';
 import { Modulo } from './modulo';
@@ -172,6 +173,8 @@ export {
   ChallengeCombine,
   ScalarLinearCombine,
   NamedCurveBasePoint,
+  GF2Mul,
+  GF2Inv,
   ModExp,
   ModInverse,
   Modulo,
@@ -288,6 +291,8 @@ export const V1_REGISTRY: ModuleRegistry = {
   [ChallengeCombine.id]: ChallengeCombine,
   [ScalarLinearCombine.id]: ScalarLinearCombine,
   [NamedCurveBasePoint.id]: NamedCurveBasePoint,
+  [GF2Mul.id]: GF2Mul,
+  [GF2Inv.id]: GF2Inv,
   [ModExp.id]: ModExp,
   [ModInverse.id]: ModInverse,
   [Modulo.id]: Modulo,

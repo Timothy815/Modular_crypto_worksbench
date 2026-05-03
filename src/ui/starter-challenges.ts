@@ -48,6 +48,7 @@ const multiplyCompareUnpadProject = demoProjects.find((project) => project.id ==
 const visibleMessageWindowProject = demoProjects.find((project) => project.id === 'visible-message-window');
 const toyRsaProject = demoProjects.find((project) => project.id === 'toy-rsa');
 const diffieHellmanProject = demoProjects.find((project) => project.id === 'diffie-hellman-key-exchange');
+const gf2MultiplyProject = demoProjects.find((project) => project.id === 'gf2-multiply');
 const visiblePointMechanicsProject = demoProjects.find(
   (project) => project.id === 'visible-point-mechanics',
 );
@@ -209,6 +210,9 @@ if (!toyRsaProject) {
 if (!diffieHellmanProject) {
   throw new Error('Expected diffie-hellman-key-exchange demo project to seed starter challenges.');
 }
+if (!gf2MultiplyProject) {
+  throw new Error('Expected gf2-multiply demo project to seed starter challenges.');
+}
 if (!visiblePointMechanicsProject) {
   throw new Error('Expected visible-point-mechanics demo project to seed starter challenges.');
 }
@@ -337,6 +341,8 @@ const toyRsaTarget = cloneProject(toyRsaProject.project);
 const brokenToyRsaStart = cloneProject(toyRsaProject.project);
 const diffieHellmanTarget = cloneProject(diffieHellmanProject.project);
 const brokenDiffieHellmanStart = cloneProject(diffieHellmanProject.project);
+const gf2MultiplyTarget = cloneProject(gf2MultiplyProject.project);
+const brokenGf2MultiplyStart = cloneProject(gf2MultiplyProject.project);
 const visiblePointMechanicsTarget = cloneProject(visiblePointMechanicsProject.project);
 const brokenVisiblePointMechanicsStart = cloneProject(visiblePointMechanicsProject.project);
 const visibleScalarMultiplicationTarget = cloneProject(visibleScalarMultiplicationProject.project);
@@ -533,6 +539,14 @@ if (!brokenBobPrivateExp) {
   throw new Error('Expected diffie-hellman-key-exchange demo project to contain bob-private.');
 }
 brokenBobPrivateExp.params.value = '0E';
+
+const brokenGf2MulModule = brokenGf2MultiplyStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'gf-mul',
+);
+if (!brokenGf2MulModule) {
+  throw new Error('Expected gf2-multiply demo project to contain gf-mul module.');
+}
+brokenGf2MulModule.params.poly = '11D';
 
 const brokenVisiblePointMechanicsConnections = brokenVisiblePointMechanicsStart.connections;
 const brokenVisiblePointMechanicsInverseIndex = brokenVisiblePointMechanicsConnections.findIndex(
@@ -1865,6 +1879,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The generator g and the shared modulus p are already correct on every ModExp.',
       'Only Bob’s private exponent source is wrong.',
       'The correct exponent is one hex word larger than 0E.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-gf-multiply',
+    title: 'Repair the GF Multiply',
+    projectId: 'gf2-multiply',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 225.7,
+    recommendedAfter: ['diffie-hellman-key-exchange'],
+    difficulty: 'beginner',
+    prompt:
+      'This GF(2⁸) multiplier is using the wrong reduction polynomial. The polynomial 0x11D is irreducible but it is not the AES polynomial, so the output byte no longer matches the AES spec. Restore the polynomial to the correct AES value so the multiplication result matches the reference output.',
+    startingProject: brokenGf2MultiplyStart,
+    startingLayout: cloneProject(gf2MultiplyProject.layout),
+    targetProject: gf2MultiplyTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The GF2Mul module has a "poly" parameter. That is the only thing that needs to change.',
+      'The AES reduction polynomial is x⁸ + x⁴ + x³ + x + 1.',
+      'In hex, the AES polynomial is 11B.',
     ],
   },
   {

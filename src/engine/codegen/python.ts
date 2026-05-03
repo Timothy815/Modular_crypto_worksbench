@@ -111,6 +111,8 @@ const SUPPORTED_PYTHON_EXPORT_DEF_IDS = new Set([
   'Permutation',
   'ByteRotate',
   'ByteSwap',
+  'GF2Mul',
+  'GF2Inv',
   'BitJoin',
   'BitSplit',
   'BitPad',
@@ -1930,6 +1932,64 @@ def byte_swap(signal):
     return {"out": flattened}
 
 
+def _gf2_mul_byte(a, b, poly):
+    result = 0
+    a_val = a & 0xFF
+    b_val = b & 0xFF
+    while b_val > 0:
+        if b_val & 1:
+            result ^= a_val
+        high_bit = a_val & 0x80
+        a_val = (a_val << 1) & 0xFF
+        if high_bit:
+            a_val ^= (poly & 0xFF)
+        b_val >>= 1
+    return result
+
+
+def _bits_to_byte(bits):
+    val = 0
+    for bit in bits:
+        val = (val << 1) | (bit & 1)
+    return val & 0xFF
+
+
+def _byte_to_bits(val):
+    return [(val >> i) & 1 for i in range(7, -1, -1)]
+
+
+def gf2_mul(signal_a, signal_b, poly_hex):
+    bits_a = _expect_bits(signal_a, "GF2Mul")
+    bits_b = _expect_bits(signal_b, "GF2Mul")
+    if len(bits_a) != 8:
+        raise ValueError("GF2Mul requires exactly 8 bits on input a")
+    if len(bits_b) != 8:
+        raise ValueError("GF2Mul requires exactly 8 bits on input b")
+    poly = int(poly_hex, 16) if isinstance(poly_hex, str) else int(poly_hex)
+    if poly < 0x100 or poly > 0x1FF:
+        raise ValueError("GF2Mul poly must be a 9-bit degree-8 polynomial (0x100-0x1FF)")
+    a_val = _bits_to_byte(bits_a)
+    b_val = _bits_to_byte(bits_b)
+    result = _gf2_mul_byte(a_val, b_val, poly)
+    return {"out": _byte_to_bits(result)}
+
+
+def gf2_inv(signal_in, poly_hex):
+    bits_in = _expect_bits(signal_in, "GF2Inv")
+    if len(bits_in) != 8:
+        raise ValueError("GF2Inv requires exactly 8 bits on input in")
+    poly = int(poly_hex, 16) if isinstance(poly_hex, str) else int(poly_hex)
+    if poly < 0x100 or poly > 0x1FF:
+        raise ValueError("GF2Inv poly must be a 9-bit degree-8 polynomial (0x100-0x1FF)")
+    a_val = _bits_to_byte(bits_in)
+    if a_val == 0:
+        return {"out": _byte_to_bits(0)}
+    for b in range(1, 256):
+        if _gf2_mul_byte(a_val, b, poly) == 1:
+            return {"out": _byte_to_bits(b)}
+    raise ValueError(f"GF2Inv: no inverse found for {a_val:#04x} under poly {poly:#05x}")
+
+
 def format_symbol_sink(value):
     return str(value)
 
@@ -3476,6 +3536,10 @@ function buildModuleExpression(
       return `byte_rotate(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'amount')}, ${expressionContext.getParamExpression(moduleInstance, def, 'direction')})`;
     case 'ByteSwap':
       return `byte_swap(${expressionContext.getInputExpression(moduleId, 'in')})`;
+    case 'GF2Mul':
+      return `gf2_mul(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')}, ${expressionContext.getParamExpression(moduleInstance, def, 'poly')})`;
+    case 'GF2Inv':
+      return `gf2_inv(${expressionContext.getInputExpression(moduleId, 'in')}, ${expressionContext.getParamExpression(moduleInstance, def, 'poly')})`;
     case 'BitJoin':
       return `bit_join(${expressionContext.getInputExpression(moduleId, 'a')}, ${expressionContext.getInputExpression(moduleId, 'b')})`;
     case 'BitSplit':
