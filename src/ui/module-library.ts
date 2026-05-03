@@ -36,8 +36,15 @@ export type ModuleLibraryDomainTab =
   | 'all'
   | 'inputs'
   | 'outputs'
+  | 'protocol'
   | 'symbol'
   | 'bit'
+  | 'bit-logic'
+  | 'framing'
+  | 'block-transforms'
+  | 'modular-arithmetic'
+  | 'elliptic-curves'
+  | 'keystream'
   | 'bridge'
   | 'composites';
 
@@ -1058,6 +1065,8 @@ export function matchesModuleDomainTab(
         'BaudotOutput',
         'BitOutput',
       ].includes(definition.id);
+    case 'protocol':
+      return sectionId === 'protocol-context';
     case 'symbol':
       return sectionId === 'symbol-domain' || definition.id === 'TextInput' || definition.id === 'KeyInput';
     case 'bit':
@@ -1067,6 +1076,18 @@ export function matchesModuleDomainTab(
         || sectionId === 'framing-routing'
         || sectionId === 'word-diffusion'
         || sectionId === 'state-keystream';
+    case 'bit-logic':
+      return sectionId === 'bit-logic';
+    case 'framing':
+      return sectionId === 'framing-routing';
+    case 'block-transforms':
+      return sectionId === 'word-diffusion';
+    case 'modular-arithmetic':
+      return sectionId === 'number-theory';
+    case 'elliptic-curves':
+      return sectionId === 'elliptic-curves-and-fields';
+    case 'keystream':
+      return sectionId === 'state-keystream';
     case 'bridge':
       return sectionId === 'bridges';
     default:

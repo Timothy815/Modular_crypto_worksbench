@@ -361,12 +361,29 @@ export function PrimitivePalette({
             <span className="meta-label">Filter</span>
             <select value={activeTab} onChange={(event) => setActiveTab(event.target.value as ModuleLibraryDomainTab)}>
               <option value="all">All Primitives</option>
-              <option value="inputs">Inputs</option>
-              <option value="outputs">Outputs</option>
-              <option value="symbol">Symbol</option>
-              <option value="bit">Bit</option>
-              <option value="bridge">Bridges</option>
-              <option value="composites">Composites</option>
+              <optgroup label="Sources &amp; Sinks">
+                <option value="inputs">Inputs</option>
+                <option value="outputs">Outputs</option>
+                <option value="protocol">Protocol &amp; Timing</option>
+              </optgroup>
+              <optgroup label="Symbol Domain">
+                <option value="symbol">Symbol Machines</option>
+              </optgroup>
+              <optgroup label="Bit Domain">
+                <option value="bit">All Bit Domain</option>
+                <option value="bit-logic">Bit Logic</option>
+                <option value="framing">Framing &amp; Routing</option>
+                <option value="block-transforms">Block Transforms</option>
+                <option value="modular-arithmetic">Modular Arithmetic</option>
+                <option value="elliptic-curves">Elliptic Curves &amp; Fields</option>
+                <option value="keystream">State &amp; Keystream</option>
+              </optgroup>
+              <optgroup label="Cross-Domain">
+                <option value="bridge">Bridges</option>
+              </optgroup>
+              <optgroup label="Authored">
+                <option value="composites">Composites</option>
+              </optgroup>
             </select>
           </label>
           {activeTab === 'composites' ? (
