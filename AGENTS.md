@@ -1,13 +1,18 @@
 # MCW — Codex Agent Context
 
-Read ACTIVE-DOCS.md first for the current live documentation surface.
-Read PROJECT.md for full project specification.
-Read ENGINE-V1-CONTRACT.md for locked implementation decisions.
-Read EXPERIENTIAL-NORTH-STAR-V1.md for the experiential standard all future slices are evaluated against: the workbench should feel like working on a live machine, not assembling a static diagram.
+Read `ACTIVE-DOCS.md` first for the current live documentation surface.
+Read `PROJECT.md` for full project specification.
+Read `ENGINE-V1-CONTRACT.md` for locked implementation decisions.
+Read `IMPLEMENTATION-STATUS.md` for the authoritative shipped-feature record and safe-next-task guidance.
+Read `EXPERIENTIAL-NORTH-STAR-V1.md` for the experiential standard all future slices are evaluated against: the workbench should feel like working on a live machine, not assembling a static diagram.
+
+**Before starting any work:** verify in source that a contract is genuinely unshipped. AGENTS.md drifts; the code does not. `IMPLEMENTATION-STATUS.md` is the authoritative record.
 
 ## Project: Modular Cryptography Workbench
 
 A visual, composable cryptographic construction environment — a "cryptographic erector set" inspired by modular synthesizers. Cryptography as a signal-processing system: data flows through typed transformation modules connected in a DAG.
+
+Educational tool for a cybersecurity teacher's classroom. MCW is now a cryptographic systems IDE: `Author / Understand / Verify / Export`.
 
 ## Repository
 
@@ -15,7 +20,6 @@ A visual, composable cryptographic construction environment — a "cryptographic
 - **GitHub Pages:** https://timothy815.github.io/Modular_crypto_worksbench/
 - **Deployment:** GitHub Actions workflow in `.github/workflows/deploy.yml` — auto-deploys on push to `main`
 - **Vite base path:** `/Modular_crypto_worksbench/` (required for GitHub Pages subdirectory hosting)
-- **Current release checkpoint:** `v2.1.0` (previous major boundary: `v2.0.0`)
 
 ## Git Workflow & Branching Strategy
 
@@ -26,36 +30,31 @@ A visual, composable cryptographic construction environment — a "cryptographic
 
 ### Branch Strategy
 - **`main`** — stable, deployable. All pushes trigger GitHub Pages deployment.
-- **Feature branches** — `feature/<name>` for new work (e.g., `feature/primitive-modules`, `feature/ui-editor`)
-- **Merge to `main`** when tests pass and work is complete
+- **Feature branches** — `feature/<name>` for risky or experimental changes
 
-### When to Create a Branch
-Create a new branch at these checkpoints:
-1. Before starting a new sprint backlog step (e.g., `feature/primitive-modules`, `feature/validation`)
-2. Before any risky or experimental change — anything that touches `types.ts`, `executor.ts`, or `validation.ts` in a non-additive way
-3. Before UI work begins — the transition from engine-only to UI is a major boundary
-4. Before adding stateful execution — this will be the hardest architectural evolution
+### Stable Release Tags
 
-### Tags (Logical Checkpoints)
-Tag `main` at these milestones for safe rollback points:
-- `v0.1.0` — Engine infrastructure complete (types, validation, executor)
-- `v0.2.0` — All V1 primitive modules implemented and tested
-- `v0.3.0` — Reference hybrid pipeline passing end-to-end
-- `v0.4.0` — Minimal UI functional
-- `v0.5.0` — Save/load working
-- `v1.0.0` — V1 milestone complete
-- `v2.0.0` — Cryptographic Systems IDE boundary
-- `v2.1.0` — Onboarding, flagship labs, verification explainability, and pilot-readiness checkpoint
+All tags through `v2.0.0` are shipped on `main`.
+
+| Tag | Milestone |
+|---|---|
+| `v0.2.0` | Primitive engine |
+| `v0.4.0` | Minimal UI shell |
+| `v0.5.0` | Composite workflow |
+| `v1.0.0` | V1 milestone complete |
+| `v1.13.0` | Builder workflow (multi-select, Tidy Layout, workspace library, composite unzip) |
+| `v1.44.0` | Protocol handshakes |
+| `v2.0.0` | Cryptographic Systems IDE boundary |
 
 For current release policy, read `RELEASE-VERSIONING.md`.
 
 ### Recovery
-If something goes wrong, tags provide safe rollback points. Use `git log --oneline --graph` to understand history before any reset.
+Use `git log --oneline --graph` to understand history before any reset.
 
 ## Key Constraints
 
 - Engine layer (`src/engine/`) has zero external dependencies — no UI, no persistence, no side effects
-- Signals are typed (`symbol` or `bits`) — never silently coerce between domains
+- Signals are typed — never silently coerce between domains
 - All transformations are explicit — every domain conversion must be a visible module in the graph
 - Composite modules are first-class — they behave identically to primitives
 - Execution is deterministic — iterative topological order, synchronous, no side effects in `evaluate()`
@@ -71,11 +70,24 @@ type Project = { modules: ModuleInstance[], connections: Connection[] };
 type ModuleRegistry = Record<string, ModuleDef>;
 ```
 
+## Signal Domains (current)
+
+Four signal domains exist:
+
+| Domain | Value type | Notes |
+|---|---|---|
+| `symbol` | `string` | Text, single characters, or ASCII |
+| `bits` | `number[]` | Array of 0/1 values, explicit width |
+| `integer` | `string` (decimal) | Arbitrary-precision non-negative integer |
+| `ec-point` | `EcPointSignalValue` | Affine point or infinity, with embedded curve descriptor |
+
+Bridges between domains must always be explicit visible modules in the graph.
+
 ## Tech Stack
 
 - TypeScript (strict mode), Vite + React 18+, Vitest
-- Graph rendering: React Flow or custom SVG/Canvas
-- State: reducer-backed local UI state (`src/ui/store.ts`) for the current editor slice
+- Graph rendering: custom SVG/Canvas
+- State: reducer-backed local UI state (`src/ui/store.ts`)
 - Persistence: localStorage / IndexedDB
 
 ## Architecture
@@ -99,56 +111,39 @@ src/utils/     — Shared helpers
 - Run tests: `npx vitest run`
 - Build check: `npm run build`
 - Engine modules need unit tests for all signal type combinations
-- Graph execution tested with known-answer vectors
+- Graph execution tested with known-answer vectors (NIST FIPS 197, etc.)
+- Seeded-content tests in `starter-challenges.ts` catch demo/challenge drift
 
 ## Important Rules
 
 - The engine must remain independent — never import from `ui/` or `persistence/` into `engine/`
 - Validate signal types at port boundaries, not inside module logic
-- No hidden conversions — if symbol-to-bit conversion is needed, it must be an explicit `SymbolToBits` module in the graph
+- No hidden conversions — if symbol-to-bit conversion is needed, it must be an explicit module in the graph
 - All module `evaluate()` functions must be pure
-- Check ENGINE-V1-CONTRACT.md for locked decisions before making implementation choices
+- Check `ENGINE-V1-CONTRACT.md` for locked decisions before making implementation choices
 
-## Current Product Trajectory: Real-World Crypto Capability
+## Current State (as of May 2026)
 
-**Read `docs/live/contracts/2026-05/REAL-WORLD-CRYPTO-CAPABILITY-ROADMAP-V1.md` before starting any new slice.**
+**`v2.0.0` is shipped.** MCW is a full cryptographic systems IDE.
 
-As of May 2026, MCW has shipped a complete ECC teaching line (point mechanics, scalar multiplication, ECDH, subgroups, Schnorr, Python export parity). The next phase moves from toy-scale pedagogy to real-scale arithmetic: the goal is to express secp256k1 ECDH, AES rounds, RSA-2048, and other standard algorithms as they actually are — not simplified versions.
+**Post-`v2.0.0` additions on `main` (all shipped):**
 
-Three contracts define this phase. They are independent tracks that can proceed in parallel:
+- **REAL-SCALE-ARITHMETIC-SUBSTRATE-V1**: `bigint-hex` param kind added. `EcCurveDescriptor.p/a/b` now `bigint`. `Number.isSafeInteger` ceiling lifted from all ECC and field arithmetic modules. secp256k1 and P-256 operate at real scale.
+- **NAMED-CURVE-SOURCES-V1**: `NamedCurveBasePoint` module with secp256k1 and P-256 presets. Inspector "Load Curve Preset" helper.
+- **GF2-FIELD-ARITHMETIC-V1**: `GF2Mul` and `GF2Inv` over GF(2⁸) with configurable reduction polynomial (default AES 0x11B). Python export parity included. `Visible MixColumns` demo, tutorial, and challenge using NIST FIPS 197 test vector [D4,BF,5D,30] → [04,66,81,E5] — all four output bytes correct.
 
-### Track A — Real-Scale ECC and Number Theory
+**Genuine next open work:**
+Full visible AES round — SubBytes (GF2Inv + affine transform over GF(2⁸), XOR with 0x63) + ShiftRows (byte permutation) + AddRoundKey (XOR) to go with the already-shipped MixColumns. All math foundations are in place.
 
-**REAL-SCALE-ARITHMETIC-SUBSTRATE-V1** (no dependencies): Adds a `bigint-hex` param kind for module params that represent large integers. Changes `EcCurveDescriptor.p/a/b` from `number` to `bigint`. This removes the `Number.isSafeInteger` ceiling that currently blocks real-scale ECC. After this, every shipped ECC and number-theory module works at secp256k1/RSA-2048 scale.
+**Bundle guard:** `maxChunk` is 330 KiB. demo-data chunk is currently ~327 KiB. Watch this before adding more large demos.
 
-**NAMED-CURVE-SOURCES-V1** (depends on REAL-SCALE-ARITHMETIC-SUBSTRATE-V1): Adds a `NamedCurveBasePoint` module with a curve dropdown (secp256k1, P-256) that outputs the real generator point G and subgroup order n. Adds an inspector "Load Curve Preset" helper for ECC modules. Removes the hex-copy-paste friction from real-curve workspaces.
+## Key Contracts to Check Before Implementation
 
-### Track B — AES Foundation
+- `ENGINE-V1-CONTRACT.md` — locked engine decisions (always check)
+- `ADVANCED-FOUNDRY-CLOCK-V1.md` — ticked execution decisions
+- `docs/live/contracts/2026-05/REAL-WORLD-CRYPTO-CAPABILITY-ROADMAP-V1.md` — overall real-scale trajectory
+- `docs/live/contracts/2026-05/GF2-FIELD-ARITHMETIC-V1.md` — GF(2⁸) scope and AES path (historical context for next AES round slice)
+- `docs/live/contracts/2026-05/ECC-FOUNDATIONS-ROADMAP-V1.md` — ECC line scope and bounds
+- `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` — long-range vocabulary direction
 
-**GF2-FIELD-ARITHMETIC-V1** (no dependencies, can proceed in parallel): Adds `GF2Mul` and `GF2Inv` primitives operating in the `bits` domain over GF(2⁸) with configurable reduction polynomial (default: AES 0x11B). This is the last missing primitive needed to construct a full AES round. After this, AES SubBytes + ShiftRows + MixColumns + AddRoundKey can all be wired in a single workspace.
-
-### Current arithmetic architecture facts (as of May 2026)
-
-- `IntegerSignal.value` is a `string` (decimal) — already supports arbitrary precision
-- `EcPointAffineValue.x/.y` are `string` (decimal) — already supports arbitrary precision
-- `EcCurveDescriptor.p/a/b` are `number` — **this is the wall for real-scale ECC**
-- All module `evaluate()` functions use `bigint` internally — arithmetic is correct at any scale
-- Module params for curve and modulus values use `kind: 'number'` — **this is the ceiling**
-- `normalizePrimeFieldModulus()` and `normalizeEcCurveParams()` require `Number.isSafeInteger` — **this is the ceiling**
-
-The substrate fix is additive. No existing behavior changes. Small toy-curve params remain valid as short hex strings.
-
-## Signal Domains (current)
-
-Four signal domains exist:
-
-| Domain | Value type | Notes |
-|---|---|---|
-| `symbol` | `string` | Text, single characters, or ASCII |
-| `bits` | `number[]` | Array of 0/1 values, explicit width |
-| `integer` | `string` (decimal) | Arbitrary-precision non-negative integer |
-| `ec-point` | `EcPointSignalValue` | Affine point or infinity, with embedded curve descriptor |
-
-The `bits` and `symbol` domains are bridged by explicit conversion modules.
-The `integer` and `bits` domains are bridged by `BitsToInteger` and `IntegerToBits`.
-The `ec-point` domain is produced by `PointSource` and consumed by all point arithmetic modules.
+For any contract not listed here, check `ACTIVE-DOCS.md` for the current live contract directory.
