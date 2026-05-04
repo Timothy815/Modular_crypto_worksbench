@@ -454,21 +454,20 @@ export function InspectorAnalyzeDetails({
                   <span className="meta-label">Result</span>
                   <code>{transformationView.outputBit}</code>
                 </div>
-                <div className="xor-grid">
-                  <div className="xor-grid-head">
-                    <span className="meta-label">Path</span>
-                    <span className="meta-label">Point</span>
-                    <span className="meta-label">Hex</span>
-                  </div>
+                <div className="xor-grid xor-grid--ec-point">
                   <div className="xor-grid-row">
                     <span className="xor-grid-index">Left</span>
-                    <span className="xor-grid-bit">{transformationView.leftText}</span>
-                    <span className="xor-grid-compare">{transformationView.leftHex}</span>
+                    <div className="ec-point-value">
+                      <span className="ec-point-text">{transformationView.leftText}</span>
+                      <span className="ec-point-hex">{transformationView.leftHex}</span>
+                    </div>
                   </div>
                   <div className="xor-grid-row">
                     <span className="xor-grid-index">Right</span>
-                    <span className="xor-grid-bit">{transformationView.rightText}</span>
-                    <span className="xor-grid-compare">{transformationView.rightHex}</span>
+                    <div className="ec-point-value">
+                      <span className="ec-point-text">{transformationView.rightText}</span>
+                      <span className="ec-point-hex">{transformationView.rightHex}</span>
+                    </div>
                   </div>
                 </div>
               </>
@@ -738,21 +737,20 @@ export function InspectorAnalyzeDetails({
                   <span className="meta-label">Scalar</span>
                   <code>{transformationView.scalarDecimal} ({transformationView.scalarHex})</code>
                 </div>
-                <div className="xor-grid">
-                  <div className="xor-grid-head">
-                    <span className="meta-label">Value</span>
-                    <span className="meta-label">Point</span>
-                    <span className="meta-label">Hex</span>
-                  </div>
+                <div className="xor-grid xor-grid--ec-point">
                   <div className="xor-grid-row">
                     <span className="xor-grid-index">P</span>
-                    <span className="xor-grid-bit">{transformationView.pointText}</span>
-                    <span className="xor-grid-compare">{transformationView.pointHex}</span>
+                    <div className="ec-point-value">
+                      <span className="ec-point-text">{transformationView.pointText}</span>
+                      <span className="ec-point-hex">{transformationView.pointHex}</span>
+                    </div>
                   </div>
                   <div className="xor-grid-row">
                     <span className="xor-grid-index">kP</span>
-                    <span className="xor-grid-bit xor-grid-bit-active">{transformationView.resultText}</span>
-                    <span className="xor-grid-compare xor-grid-compare-different">{transformationView.resultHex}</span>
+                    <div className="ec-point-value ec-point-value--active">
+                      <span className="ec-point-text">{transformationView.resultText}</span>
+                      <span className="ec-point-hex">{transformationView.resultHex}</span>
+                    </div>
                   </div>
                 </div>
               </>
@@ -762,21 +760,20 @@ export function InspectorAnalyzeDetails({
                   <span className="meta-label">{transformationView.operationLabel}</span>
                   <code>{transformationView.operationExpression}</code>
                 </div>
-                <div className="xor-grid">
-                  <div className="xor-grid-head">
-                    <span className="meta-label">Value</span>
-                    <span className="meta-label">Visible Result</span>
-                    <span className="meta-label">Hex</span>
-                  </div>
+                <div className="xor-grid xor-grid--ec-point">
                   <div className="xor-grid-row">
                     <span className="xor-grid-index">P</span>
-                    <span className="xor-grid-bit">{transformationView.pointText}</span>
-                    <span className="xor-grid-compare">{transformationView.pointHex}</span>
+                    <div className="ec-point-value">
+                      <span className="ec-point-text">{transformationView.pointText}</span>
+                      <span className="ec-point-hex">{transformationView.pointHex}</span>
+                    </div>
                   </div>
                   <div className="xor-grid-row">
                     <span className="xor-grid-index">ord(P)</span>
-                    <span className="xor-grid-bit xor-grid-bit-active">{transformationView.orderDecimal}</span>
-                    <span className="xor-grid-compare xor-grid-compare-different">{transformationView.orderHex}</span>
+                    <div className="ec-point-value ec-point-value--active">
+                      <span className="ec-point-text">{transformationView.orderDecimal}</span>
+                      <span className="ec-point-hex">{transformationView.orderHex}</span>
+                    </div>
                   </div>
                 </div>
               </>
