@@ -7,7 +7,7 @@ import {
   getDisplayTraceModuleId,
   getIteratorRoundPath,
 } from '../inspector-analysis';
-import { formatSignal } from '../formatters';
+import { formatSignalCompact } from '../formatters';
 
 interface CollapsedAnalyzeSections {
   tick: boolean;
@@ -277,13 +277,13 @@ export function InspectorAnalyzeView({
                   <p>
                     Inputs:{' '}
                     {Object.entries(steppedAnalysisEntry.inputs)
-                      .map(([, signal]) => formatSignal(signal))
+                      .map(([, signal]) => formatSignalCompact(signal))
                       .join(' | ') || 'none'}
                   </p>
                   <p>
                     Outputs:{' '}
                     {Object.entries(steppedAnalysisEntry.outputs)
-                      .map(([, signal]) => formatSignal(signal))
+                      .map(([, signal]) => formatSignalCompact(signal))
                       .join(' | ') || 'none'}
                   </p>
                 </>
@@ -303,13 +303,13 @@ export function InspectorAnalyzeView({
                 <p>
                   Inputs:{' '}
                   {Object.entries(steppedTrace.inputs)
-                    .map(([, signal]) => formatSignal(signal))
+                    .map(([, signal]) => formatSignalCompact(signal))
                     .join(' | ') || 'none'}
                 </p>
                 <p>
                   Outputs:{' '}
                   {Object.entries(steppedTrace.outputs)
-                    .map(([, signal]) => formatSignal(signal))
+                    .map(([, signal]) => formatSignalCompact(signal))
                     .join(' | ') || 'none'}
                 </p>
               </>
@@ -361,13 +361,13 @@ export function InspectorAnalyzeView({
                       <p>
                         In:{' '}
                         {Object.entries(probeTrace.inputs)
-                          .map(([, signal]) => formatSignal(signal))
+                          .map(([, signal]) => formatSignalCompact(signal))
                           .join(' | ') || 'none'}
                       </p>
                       <p>
                         Out:{' '}
                         {Object.entries(probeTrace.outputs)
-                          .map(([, signal]) => formatSignal(signal))
+                          .map(([, signal]) => formatSignalCompact(signal))
                           .join(' | ') || 'none'}
                       </p>
                     </>

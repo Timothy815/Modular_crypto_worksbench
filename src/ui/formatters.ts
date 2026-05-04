@@ -21,6 +21,25 @@ export function formatSignal(signal: Signal | undefined): string {
         : formatEcPointAsText(signal.value);
 }
 
+function truncateHex(hex: string, keep = 6): string {
+  if (hex.length <= keep * 2 + 2) return hex;
+  return `${hex.slice(0, keep)}…${hex.slice(-keep)}`;
+}
+
+/** Compact variant for trace/step contexts where space is limited. */
+export function formatSignalCompact(signal: Signal | undefined): string {
+  if (!signal) return 'n/a';
+
+  if (signal.type === 'ec-point') {
+    if (signal.value.kind === 'infinity') return '∞';
+    const xHex = BigInt(signal.value.x).toString(16).toUpperCase();
+    const yHex = BigInt(signal.value.y).toString(16).toUpperCase();
+    return `(0x${truncateHex(xHex)}, 0x${truncateHex(yHex)})`;
+  }
+
+  return formatSignal(signal);
+}
+
 export function formatParamValue(value: unknown, field: ParamFieldDef): string {
   if (value === undefined) {
     return String(field.defaultValue ?? '');

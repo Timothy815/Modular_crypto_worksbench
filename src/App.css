@@ -6743,6 +6743,12 @@ body.canvas-resizing {
   padding: 14px 16px;
   border-radius: 18px;
   background: var(--surface-soft);
+  overflow: hidden;
+}
+
+.selected-trace p {
+  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 .selected-trace-order {
