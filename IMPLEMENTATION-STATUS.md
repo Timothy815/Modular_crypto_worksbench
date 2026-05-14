@@ -68,8 +68,9 @@ All use NIST FIPS 197 test vectors. Group routing, GROUP_STAGE_MAP, and PRIMITIV
 
 This board wires 16 byte-wise SubBytes transforms into a visible ShiftRows bus permutation, four explicit MixColumns column mixers, and 16 AddRoundKey XORs. It is verified against the FIPS 197 Appendix B round-1 output, and the repair challenge now teaches diffusion by breaking one SubBytes cell and producing exactly one wrong final output column.
 
-**Genuine next open work (in order):**
-1. **parameter-inspector.tsx Refactor** — architecture-protection split of the largest UI surface; no behavior change
+**Latest architecture-protection work:** `parameter-inspector.tsx` configure-tab extraction shipped. The inspector now keeps orchestration in `ParameterInspector` while the remaining configure-tab render family lives in extracted local components.
+
+**Genuine next open work:** no new bounded post-refactor maintenance contract is drafted yet. Choose the next architecture-protection slice from `V2.1-NEXT-DOCKET.md` rather than assuming another inspector pass.
 
 ## Practical Restart Guidance
 
