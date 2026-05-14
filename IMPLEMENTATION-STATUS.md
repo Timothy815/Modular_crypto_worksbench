@@ -101,15 +101,13 @@ Its job is:
 - prevent old queue memory from masquerading as current product truth
 - now improves path reading without turning the canvas into a permanently arrowed traffic map
 
-The next dense-workspace wire-authoring candidate is now:
+Recent dense-workspace readability slices already shipped:
 - `MULTI-ANCHOR-ORTHOGONAL-WIRE-AUTHORING-V1.md`
-- a bounded selected-wire multi-anchor authoring model for orthogonal paths
-- intended to feel closer to drawing while staying grid-snapped, orthogonal, and UI-only
-
-Another shipped bounded readability slice after that is:
+- selected-wire multi-anchor authoring for orthogonal paths, with persistent anchor storage and anchor-handle editing
 - `COMPOSITE-INSTANCE-DRILLDOWN-V1.md`
-- instance-scoped composite inspection in a transient drill-down view
-- explicitly read/trace/analyze first, with no instance override model in V1
+- instance-scoped composite inspection in a transient drill-down view, explicitly read/trace/analyze first with no instance override model in V1
+
+There is no newer bounded wire-authoring or drilldown contract currently drafted as the canonical next step.
 
 The product-shaping north-star note is now also shipped:
 - `SYSTEMS-IDE-COHERENCE-V1.md`

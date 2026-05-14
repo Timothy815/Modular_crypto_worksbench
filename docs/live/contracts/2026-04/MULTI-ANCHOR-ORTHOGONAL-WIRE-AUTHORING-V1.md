@@ -1,6 +1,7 @@
 # MULTI-ANCHOR-ORTHOGONAL-WIRE-AUTHORING-V1
 
 Last updated: April 5, 2026
+Status: Shipped on main
 
 ---
 
