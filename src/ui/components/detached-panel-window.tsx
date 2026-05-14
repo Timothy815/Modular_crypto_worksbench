@@ -786,6 +786,8 @@ function DetachedInspectorView({
       baselineModuleInstance={baselineModuleInstance}
       moduleDef={moduleDef}
       moduleInstance={moduleInstance}
+      modulePosition={snapshot.modulePosition}
+      layoutDirection={snapshot.layoutDirection}
       selectedModuleIds={snapshot.selectedModuleIds}
       parameterClipboard={snapshot.parameterClipboard}
       getParamDraft={(moduleId, key) => snapshot.paramDrafts[`${moduleId}:${key}`]}
@@ -825,6 +827,34 @@ function DetachedInspectorView({
           projectId: snapshot.projectId,
           moduleId,
           bypass,
+        })
+      }
+      onSetModulePortLayoutPreset={(moduleId, preset) =>
+        onDispatchAction({
+          type: 'setModulePortLayoutPreset',
+          projectId: snapshot.projectId,
+          moduleId,
+          preset,
+        })
+      }
+      onMoveModulePortOrder={(moduleId, direction, portName, delta) =>
+        onDispatchAction({
+          type: 'moveModulePortOrder',
+          projectId: snapshot.projectId,
+          moduleId,
+          direction,
+          portName,
+          delta,
+        })
+      }
+      onSetModulePortSide={(moduleId, direction, portName, side) =>
+        onDispatchAction({
+          type: 'setModulePortSide',
+          projectId: snapshot.projectId,
+          moduleId,
+          direction,
+          portName,
+          side,
         })
       }
       onRenameModuleInstance={(moduleId, nextModuleId) =>

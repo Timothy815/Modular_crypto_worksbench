@@ -46,6 +46,8 @@ describe('detached-window-orchestration', () => {
           baselineExecutionError: null,
           baselineModuleId: null,
           selectedModuleId: null,
+          modulePosition: null,
+          layoutDirection: 'horizontal',
           selectedModuleIds: [],
           parameterClipboard: null,
           paramDrafts: {},

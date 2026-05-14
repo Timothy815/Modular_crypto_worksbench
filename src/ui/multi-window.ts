@@ -10,7 +10,12 @@ import type { UiAction } from './store';
 import type { TutorialStep } from './tutorials';
 import type { GuidedTutorial } from './tutorials';
 import type { GuidedChallenge, ChallengeEvaluation } from './challenges';
-import type { ComparisonBaselineDocument, SavedAnalysisCase } from './workbench-document';
+import type {
+  ComparisonBaselineDocument,
+  SavedAnalysisCase,
+  WorkbenchLayoutDirection,
+  WorkbenchPosition,
+} from './workbench-document';
 import type { CryptanalysisMode } from './cryptanalysis-mode';
 import type { ExecutionComparison } from './execution-compare';
 import type {
@@ -57,6 +62,8 @@ export interface DetachedInspectorSnapshot {
   baselineExecutionError: string | null;
   baselineModuleId: string | null;
   selectedModuleId: string | null;
+  modulePosition: WorkbenchPosition | null;
+  layoutDirection: WorkbenchLayoutDirection;
   selectedModuleIds: string[];
   parameterClipboard: {
     sourceModuleId: string;
