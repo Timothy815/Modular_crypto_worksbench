@@ -32,6 +32,7 @@ This is the canonical starting point for humans and agents.
 - `docs/live/contracts/2026-05/REAL-SCALE-ARITHMETIC-SUBSTRATE-V1.md` when planning the param-layer change that lifts the Number.isSafeInteger ceiling from all ECC and field arithmetic modules
 - `docs/live/contracts/2026-05/NAMED-CURVE-SOURCES-V1.md` when planning the named-curve source modules (secp256k1, P-256) and inspector preset ergonomics — depends on REAL-SCALE-ARITHMETIC-SUBSTRATE-V1
 - `docs/live/contracts/2026-05/GF2-FIELD-ARITHMETIC-V1.md` when reviewing shipped GF(2⁸) field arithmetic (GF2Mul, GF2Inv, Visible MixColumns) — use as historical context for the next AES round slice
+- `docs/live/contracts/2026-05/AES-ROUND-COMPOSITE-V1.md` when implementing the full AES round composite — read this before starting; covers scope, wiring strategy, BitConcat prerequisite check, FIPS 197 acceptance test, and Phase 2/3 follow-ons
 
 ## Read As Needed
 
