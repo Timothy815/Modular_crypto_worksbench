@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: May 3, 2026
+Last updated: May 14, 2026
 
 ---
 
@@ -45,7 +45,25 @@ The three contracts from this line are now all shipped:
 
 3. **GF2-FIELD-ARITHMETIC-V1** — `GF2Mul` and `GF2Inv` over GF(2⁸) in the bits domain, including `Visible MixColumns` demo (NIST FIPS 197 test vector), tutorial, and challenge. Status: Shipped.
 
-**Genuine next open work:** full visible AES round — SubBytes (GF2Inv + affine transform over GF(2⁸)) + ShiftRows (byte permutation) + AddRoundKey (XOR) to go with the already-shipped MixColumns. All math foundations are in place.
+**AES Building Blocks complete (May 14, 2026).** All four individual AES round operations now have demos, tutorials, and challenges on `main`:
+
+| Operation | Demo | Tutorial | Challenge |
+|---|---|---|---|
+| MixColumns | Visible MixColumns | How AES Mixes a Column | Repair the MixColumns Coefficient |
+| SubBytes | Visible SubBytes | Where The AES S-Box Comes From | Repair the Affine Constant |
+| ShiftRows | Visible ShiftRows | Why AES Shuffles Bytes Between Columns | — |
+| AddRoundKey | Visible AddRoundKey | How The Round Key Enters Each Round | Repair the Round Key |
+
+All use NIST FIPS 197 test vectors. Group routing, GROUP_STAGE_MAP, and PRIMITIVE_LIBRARY_META are all current.
+
+**Also shipped (May 14, 2026):**
+- Palette reorganization: new `Elliptic Curves & Fields` section; optgroup filter dropdown with section-level granularity
+- EC point inspector: stacked card layout for real-scale secp256k1/P-256 coordinates; `formatSignalCompact` in trace/stepper contexts
+
+**Genuine next open work:**
+- Full AES round composite: SubBytes + ShiftRows + MixColumns + AddRoundKey wired as a single composed module
+- Python export parity for GF2/AES domain (`GF2Mul`, `GF2Inv`)
+- UI refactor: `parameter-inspector.tsx` is the primary large-surface candidate
 
 ## Practical Restart Guidance
 
@@ -56,9 +74,10 @@ Read in this order:
 3. `ENGINE-V1-CONTRACT.md`
 4. `EXPERIENTIAL-NORTH-STAR-V1.md`
 5. this file
-6. the current audit pair:
-   - `docs/live/contracts/2026-04/CODE-FIRST-CAPABILITIES-AUDIT-2026-04-29.md`
-   - `docs/live/contracts/2026-04/STATE-OF-THE-UNION-2026-04-29.md`
+6. the current state snapshot:
+   - `docs/live/contracts/2026-05/STATE-OF-THE-UNION-2026-05-14.md` — most recent
+   - `docs/live/contracts/2026-04/CODE-FIRST-CAPABILITIES-AUDIT-2026-04-29.md` — April baseline
+   - `docs/live/contracts/2026-04/STATE-OF-THE-UNION-2026-04-29.md` — April narrative
 
 Then:
 - verify in source before assuming a contract is still unshipped

@@ -139,20 +139,26 @@ src/utils/     — Shared helpers
 - `REAL-SCALE-ARITHMETIC-SUBSTRATE-V1`: `bigint-hex` param kind, lifted `Number.isSafeInteger` ceiling
 - `NAMED-CURVE-SOURCES-V1`: `NamedCurveBasePoint` with secp256k1 and P-256 presets
 - `GF2-FIELD-ARITHMETIC-V1`: `GF2Mul` and `GF2Inv` over GF(2⁸) in the bits domain
-- `Visible MixColumns` demo, tutorial, and challenge using NIST FIPS 197 test vector [D4,BF,5D,30] → [04,66,81,E5]
+- `Visible MixColumns` demo, tutorial, and `Repair the MixColumns Coefficient` challenge (NIST FIPS 197 [D4,BF,5D,30] → [04,66,81,E5])
+- `Visible SubBytes` demo, tutorial, and `Repair the Affine Constant` challenge (GF2Inv + affine; FIPS 197 vector)
+- `Visible ShiftRows` demo and tutorial (128-bit byte permutation; FIPS 197 vector D4271…30 → D4BF5…E5)
+- `Visible AddRoundKey` demo, tutorial, and `Repair the Round Key` challenge (4-byte XOR; FIPS 197 vector)
+- Palette reorganization: new `Elliptic Curves & Fields` section split from Modular Arithmetic; optgroup filter dropdown with section-level granularity; GF2Mul/GF2Inv/NamedCurveBasePoint properly catalogued
+- EC point inspector rework: stacked card layout for real-scale secp256k1 coordinates; `formatSignalCompact` truncation in trace/stepper contexts
 
 **Genuine next open work:**
-- Full visible AES round: SubBytes (GF2Inv + affine transform) + ShiftRows (permutation) + AddRoundKey (XOR) to go with the already-shipped MixColumns
-- All math foundations are in place; no new engine primitives required beyond `SubBytes` affine transform
+- Full AES round composite: wire SubBytes + ShiftRows + MixColumns + AddRoundKey as a single composed module — all four building blocks now individually visible and verified
+- Python export parity for GF2/AES domain primitives (`GF2Mul`, `GF2Inv`)
+- UI refactor pass on large surfaces (`parameter-inspector.tsx` is the primary candidate)
 
-**Bundle guard:** `maxChunk` is 330 KiB. demo-data chunk is currently ~327 KiB. Watch this before adding more large demos.
+**Bundle guard:** `maxChunk` is 340 KiB (raised from 330 KiB for ShiftRows/AddRoundKey). demo-data chunk sits near the ceiling. Watch before adding more large demos.
 
 ## Key Contracts to Check Before Implementation
 
 - `ENGINE-V1-CONTRACT.md` — locked engine decisions (always check)
 - `ADVANCED-FOUNDRY-CLOCK-V1.md` — ticked execution decisions
 - `ITERATIVE-ROUNDS-AND-KEYSCHEDULES-V1.md` — bounded iterator decisions
-- `docs/live/contracts/2026-05/GF2-FIELD-ARITHMETIC-V1.md` — GF(2⁸) scope and AES path
+- `docs/live/contracts/2026-05/GF2-FIELD-ARITHMETIC-V1.md` — GF(2⁸) scope and AES path (shipped; use as historical context for the next AES composite slice)
 - `docs/live/contracts/2026-05/REAL-WORLD-CRYPTO-CAPABILITY-ROADMAP-V1.md` — overall real-scale trajectory
 - `docs/live/contracts/2026-05/ECC-FOUNDATIONS-ROADMAP-V1.md` — ECC line scope and bounds
 - `CRYPTOGRAPHIC-VOCABULARY-ROADMAP.md` — long-range language direction

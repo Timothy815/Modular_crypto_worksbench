@@ -1,6 +1,6 @@
 # AI Collaboration Continuity
 
-Last updated: April 11, 2026
+Last updated: May 14, 2026
 
 ## Purpose
 
@@ -164,3 +164,15 @@ At the current stage of MCW:
 - the team should continue working through bounded contracts with explicit review before implementation
 
 That operating model is part of the project, not an incidental preference.
+
+## Session Note (May 14, 2026)
+
+The May 14, 2026 session was implemented directly by Claude Code (acting as implementor in this instance, not as reviewer). The project owner directed the work interactively.
+
+Work completed in this session:
+- Visible ShiftRows and Visible AddRoundKey demos, tutorials, and challenges
+- Palette reorganization (Elliptic Curves & Fields section, optgroup filter dropdown)
+- EC point inspector rework for real-scale coordinates
+- Documentation update (this file, IMPLEMENTATION-STATUS.md, CLAUDE.md, GF2-FIELD-ARITHMETIC-V1.md, ACTIVE-DOCS.md, new STATE-OF-THE-UNION-2026-05-14.md)
+
+The AES Building Blocks series is now complete. The next bounded contract — full AES round composite — is ready to be drafted by Codex under the standard workflow.

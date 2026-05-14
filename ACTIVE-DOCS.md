@@ -1,6 +1,6 @@
 # MCW Active Docs
 
-Last updated: May 3, 2026
+Last updated: May 14, 2026
 
 This is the canonical starting point for humans and agents.
 
@@ -13,6 +13,7 @@ This is the canonical starting point for humans and agents.
 - `EXPERIENTIAL-NORTH-STAR-V1.md`
 - `docs/live/contracts/2026-04/CODE-FIRST-CAPABILITIES-AUDIT-2026-04-29.md`
 - `docs/live/contracts/2026-04/STATE-OF-THE-UNION-2026-04-29.md`
+- `docs/live/contracts/2026-05/STATE-OF-THE-UNION-2026-05-14.md` — current canonical state snapshot (AES Building Blocks complete, palette reorganization, EC inspector fixes)
 - `docs/live/contracts/2026-04/ANALYTICAL-RIGOR-ROADMAP-V1.md` when analysis quality, validity, or interpretation is in scope
 - `docs/live/contracts/2026-04/SBOX-ANALYSIS-RIGOR-PASS-V1.md` when tightening local cryptographic metric framing and consequence language
 - `docs/live/contracts/2026-05/ECC-FOUNDATIONS-ROADMAP-V1.md` when evaluating whether and how algebraic or elliptic-curve cryptography should enter MCW

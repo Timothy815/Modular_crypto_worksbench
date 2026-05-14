@@ -1,7 +1,7 @@
 # GF(2⁸) Field Arithmetic V1
 
 Last updated: May 2, 2026
-Status: Proposed
+Status: Shipped
 
 ## Purpose
 
