@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import type { ChallengeEvaluation, GuidedChallenge } from '../challenges';
 import type { ExecutionResult, ModuleRegistry, Project, TickedExecutionResult } from '../../engine/types';
 import type { CryptanalysisMode } from '../cryptanalysis-mode';
+import type { LearningPanelTab } from '../learning-orchestration';
 import type { GuidedTutorial, TutorialStep } from '../tutorials';
 import type { WorkspaceMode } from '../workspace-mode';
 import type { SavedAnalysisCase } from '../workbench-document';
@@ -12,6 +13,9 @@ const ChallengePanel = lazy(() =>
 );
 const QuickStartPanel = lazy(() =>
   import('./quick-start-panel').then((module) => ({ default: module.QuickStartPanel })),
+);
+const DemoAtlasPanel = lazy(() =>
+  import('./demo-atlas-panel').then((module) => ({ default: module.DemoAtlasPanel })),
 );
 const TutorialPanel = lazy(() =>
   import('./tutorial-panel').then((module) => ({ default: module.TutorialPanel })),
@@ -41,8 +45,8 @@ interface LearningDockProps {
   hasTutorialPanel: boolean;
   hasChallengePanel: boolean;
   hasCryptanalysisPanel: boolean;
-  activeLearningPanelTab: 'quickstart' | 'tutorial' | 'challenge' | 'cryptanalysis';
-  onSetLearningPanelTab: (tab: 'quickstart' | 'tutorial' | 'challenge' | 'cryptanalysis') => void;
+  activeLearningPanelTab: LearningPanelTab;
+  onSetLearningPanelTab: (tab: LearningPanelTab) => void;
   selectedChallenge: GuidedChallenge | null;
   challenges: GuidedChallenge[];
   challengeEvaluation: ChallengeEvaluation | null;
@@ -192,6 +196,19 @@ export function LearningDock({
         >
           Quick Start
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeLearningPanelTab === 'atlas'}
+          className={
+            activeLearningPanelTab === 'atlas'
+              ? 'learning-dock-tab active'
+              : 'learning-dock-tab'
+          }
+          onClick={() => onSetLearningPanelTab('atlas')}
+        >
+          Atlas
+        </button>
         {hasTutorialPanel ? (
           <button
             type="button"
@@ -264,6 +281,16 @@ export function LearningDock({
               onSetWorkspaceMode('cryptanalysis');
               onSetLearningPanelTab('cryptanalysis');
             }}
+          />
+        </Suspense>
+      ) : null}
+
+      {activeLearningPanelTab === 'atlas' ? (
+        <Suspense fallback={<LazyPanelFallback label="Atlas" title="Loading demo atlas…" />}>
+          <DemoAtlasPanel
+            currentProjectId={currentProjectId}
+            onOpenProject={onSwitchProject}
+            onOpenPipelineMicroDemo={onOpenPipelineMicroDemo}
           />
         </Suspense>
       ) : null}

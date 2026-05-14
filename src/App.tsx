@@ -1143,6 +1143,9 @@ function MainApp() {
     if (learningPanelTab === 'quickstart') {
       return 'quickstart';
     }
+    if (learningPanelTab === 'atlas') {
+      return 'atlas';
+    }
     if (learningPanelTab === 'challenge') {
       return hasChallengePanel
         ? 'challenge'

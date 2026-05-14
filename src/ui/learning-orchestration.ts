@@ -15,7 +15,7 @@ import {
 } from './verification-workflow';
 import type { ComparisonBaselineDocument } from './workbench-document';
 
-export type LearningPanelTab = 'quickstart' | 'tutorial' | 'challenge' | 'cryptanalysis';
+export type LearningPanelTab = 'quickstart' | 'atlas' | 'tutorial' | 'challenge' | 'cryptanalysis';
 
 export interface TutorialSelectionPlan {
   panelTab: LearningPanelTab;

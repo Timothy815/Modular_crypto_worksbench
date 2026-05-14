@@ -48,6 +48,11 @@ const QuickStartPanel = lazy(() =>
     default: module.QuickStartPanel,
   })),
 );
+const DemoAtlasPanel = lazy(() =>
+  import('./demo-atlas-panel').then((module) => ({
+    default: module.DemoAtlasPanel,
+  })),
+);
 const CryptanalysisPanel = lazy(() =>
   import('./cryptanalysis-panel').then((module) => ({
     default: module.CryptanalysisPanel,
@@ -970,6 +975,19 @@ function DetachedLearningView({
         >
           Quick Start
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={snapshot.learningPanelTab === 'atlas'}
+          className={
+            snapshot.learningPanelTab === 'atlas'
+              ? 'learning-dock-tab active'
+              : 'learning-dock-tab'
+          }
+          onClick={() => onSendCommand({ type: 'setLearningTab', tab: 'atlas' })}
+        >
+          Atlas
+        </button>
         {snapshot.hasTutorialPanel ? (
           <button
             type="button"
@@ -1046,6 +1064,18 @@ function DetachedLearningView({
             onSendCommand({ type: 'setLearningTab', tab: 'cryptanalysis' });
           }}
         />
+      ) : null}
+
+      {snapshot.learningPanelTab === 'atlas' ? (
+        <Suspense fallback={<LazyPanelFallback label="Atlas" title="Loading demo atlas…" />}>
+          <DemoAtlasPanel
+            currentProjectId={snapshot.currentProjectId}
+            onOpenProject={(projectId) => onSendCommand({ type: 'switchProject', projectId })}
+            onOpenPipelineMicroDemo={(pipelineId) =>
+              onSendCommand({ type: 'openPipelineMicroDemo', pipelineId })
+            }
+          />
+        </Suspense>
       ) : null}
 
       {snapshot.learningPanelTab === 'challenge' && snapshot.selectedChallengeId ? (

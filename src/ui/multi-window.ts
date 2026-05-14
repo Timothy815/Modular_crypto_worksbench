@@ -18,6 +18,7 @@ import type {
 } from './workbench-document';
 import type { CryptanalysisMode } from './cryptanalysis-mode';
 import type { ExecutionComparison } from './execution-compare';
+import type { LearningPanelTab } from './learning-orchestration';
 import type {
   VerificationCase,
   VerificationCaseResult,
@@ -87,7 +88,7 @@ export interface DetachedInspectorSnapshot {
 
 export interface DetachedLearningSnapshot {
   theme: ThemeMode;
-  learningPanelTab: 'quickstart' | 'tutorial' | 'challenge' | 'cryptanalysis';
+  learningPanelTab: LearningPanelTab;
   hasTutorialPanel: boolean;
   hasChallengePanel: boolean;
   hasCryptanalysisPanel: boolean;
@@ -194,7 +195,7 @@ export type DetachedPanelCommand =
   | { type: 'removeVerificationCase'; caseId: string }
   | { type: 'clearVerificationCases' }
   | { type: 'unzipComposite'; moduleId: string }
-  | { type: 'setLearningTab'; tab: 'quickstart' | 'tutorial' | 'challenge' | 'cryptanalysis' }
+  | { type: 'setLearningTab'; tab: LearningPanelTab }
   | { type: 'selectChallenge'; challengeId: string }
   | { type: 'loadChallengeStart' }
   | { type: 'exportChallenge' }

@@ -2281,6 +2281,140 @@ body.dock-resizing {
   display: block;
 }
 
+.demo-atlas-hero {
+  gap: 1rem;
+}
+
+.demo-atlas-hero-actions {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.demo-atlas-search-shell {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem 1.1rem;
+  border-radius: 1rem;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--accent-soft) 78%, white) 0%, var(--surface-soft) 100%);
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--panel-border));
+}
+
+.demo-atlas-hero-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.demo-atlas-start-card {
+  gap: 1rem;
+}
+
+.demo-atlas-search-card {
+  gap: 0.75rem;
+}
+
+.demo-atlas-search-input {
+  width: 100%;
+  max-width: 42rem;
+  min-height: 2.8rem;
+  font-size: 0.98rem;
+}
+
+.demo-atlas-grid {
+  align-items: start;
+}
+
+.demo-atlas-map-card,
+.demo-atlas-search-results-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.demo-atlas-section-chooser-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.9rem;
+}
+
+.demo-atlas-section-chooser {
+  display: grid;
+  gap: 0.45rem;
+  padding: 1rem 1rem 1.05rem;
+  text-align: left;
+  border-radius: 1rem;
+  border: 1px solid var(--panel-border);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--panel-bg) 80%, white) 0%, var(--surface-soft) 100%);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 65%, transparent),
+    0 10px 24px color-mix(in srgb, black 4%, transparent);
+  transition: border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+}
+
+.demo-atlas-section-chooser:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--panel-border));
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--accent-soft) 32%, transparent);
+}
+
+.demo-atlas-section-chooser.active {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--panel-border));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 55%, white) 0%, var(--surface-soft) 100%);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--accent-soft) 30%, transparent);
+}
+
+.demo-atlas-section-card {
+  display: grid;
+  gap: 1rem;
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 60%, transparent),
+    0 12px 28px color-mix(in srgb, black 5%, transparent);
+}
+
+.demo-atlas-section-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.demo-atlas-entry-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.demo-atlas-entry {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 0.9rem;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--panel-bg) 82%, white) 0%, color-mix(in srgb, var(--surface-soft) 82%, var(--canvas-bg)) 100%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 55%, transparent),
+    0 8px 22px color-mix(in srgb, black 4%, transparent);
+}
+
+.demo-atlas-entry-head {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.demo-atlas-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+@media (max-width: 900px) {
+  .demo-atlas-section-header {
+    display: grid;
+  }
+}
+
 .comparison-diff-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -3,6 +3,7 @@ import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { ExecutionTraceEntry } from '../engine/types';
 import type { UiAction } from './store';
 import type { CryptanalysisMode } from './cryptanalysis-mode';
+import type { LearningPanelTab } from './learning-orchestration';
 import type { WorkspaceMode } from './workspace-mode';
 import {
   createDetachedPanelGroup,
@@ -175,7 +176,7 @@ export interface DetachedPanelCommandHandlers {
   clearVerificationCases: () => void;
   importVerificationCases: (cases: VerificationCase[]) => void;
   unzipComposite: (moduleId: string) => void;
-  setLearningTab: (tab: 'quickstart' | 'tutorial' | 'challenge' | 'cryptanalysis') => void;
+  setLearningTab: (tab: LearningPanelTab) => void;
   selectChallenge: (challengeId: string) => void;
   loadChallengeStart: () => void;
   exportChallenge: () => void;

@@ -70,7 +70,9 @@ This board wires 16 byte-wise SubBytes transforms into a visible ShiftRows bus p
 
 **Latest architecture-protection work:** `parameter-inspector.tsx` configure-tab extraction shipped. The inspector now keeps orchestration in `ParameterInspector` while the remaining configure-tab render family lives in extracted local components.
 
-**Genuine next open work:** no new bounded post-refactor maintenance contract is drafted yet. Choose the next architecture-protection slice from `V2.1-NEXT-DOCKET.md` rather than assuming another inspector pass.
+**Latest product-facing discovery work:** `DEMO-ATLAS-V1` is now shipped. The Learning dock now includes an always-visible `Atlas` tab that acts as a searchable concept map for full demos and pipeline micro demos without replacing the current Demo menu.
+
+**Genuine next open work:** no new bounded post-Atlas contract is drafted yet. Choose the next slice from `V2.1-NEXT-DOCKET.md` or draft a new bounded product/authoring contract explicitly rather than assuming the old discovery candidate is still open.
 
 ## Practical Restart Guidance
 
