@@ -80,4 +80,14 @@ describe('demo atlas', () => {
         .flatMap((section) => section.entries.map((entry) => entry.id)),
     ).toEqual([]);
   });
+
+  it('keeps symmetric round structure out of the public-key and ECC section', () => {
+    const publicKeySection = getDemoAtlasSections().find(
+      (section) => section.id === 'public-key-and-ecc',
+    );
+
+    expect(publicKeySection?.entries.map((entry) => entry.id)).not.toContain('visible-des-f-function');
+    expect(publicKeySection?.entries.map((entry) => entry.id)).not.toContain('visible-feistel-round');
+    expect(publicKeySection?.entries.map((entry) => entry.id)).not.toContain('visible-key-expansion');
+  });
 });

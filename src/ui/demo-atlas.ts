@@ -69,9 +69,9 @@ export const DEMO_ATLAS_SECTIONS: readonly DemoAtlasSectionDefinition[] = [
   },
   {
     id: 'protocols-and-integrity',
-    title: 'Protocols, Integrity, And Hashing',
+    title: 'Protocols, Integrity, Hashing, And Analysis',
     description:
-      'These boards focus on message framing, tamper detection, authentication structure, and how protocol materials change what a machine means.',
+      'These boards cover protocol context, keyed materials, tamper detection, hash structure, and the analysis labs that help explain what those machines are doing.',
     entryKindLabel: 'Full Demo',
   },
   {
@@ -187,14 +187,14 @@ const FULL_DEMO_SECTION_MAP: Record<string, AtlasSectionId> = {
   'diffie-hellman-key-exchange': 'public-key-and-ecc',
   'visible-signature-verification': 'public-key-and-ecc',
   'visible-secure-handshake': 'public-key-and-ecc',
-  'visible-message-window': 'public-key-and-ecc',
-  'visible-symbol-scramble': 'public-key-and-ecc',
-  'visible-key-selection': 'public-key-and-ecc',
-  'visible-key-remap': 'public-key-and-ecc',
-  'visible-key-expansion': 'public-key-and-ecc',
-  'visible-des-f-function': 'public-key-and-ecc',
-  'visible-feistel-round': 'public-key-and-ecc',
-  sequential: 'public-key-and-ecc',
+  'visible-message-window': 'modern-machines',
+  'visible-symbol-scramble': 'modern-machines',
+  'visible-key-selection': 'protocols-and-integrity',
+  'visible-key-remap': 'protocols-and-integrity',
+  'visible-key-expansion': 'protocols-and-integrity',
+  'visible-des-f-function': 'modern-machines',
+  'visible-feistel-round': 'modern-machines',
+  sequential: 'modern-machines',
 } as const;
 
 const START_HERE_OVERRIDE_IDS = [
