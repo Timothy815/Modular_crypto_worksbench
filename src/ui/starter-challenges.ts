@@ -52,6 +52,7 @@ const gf2MultiplyProject = demoProjects.find((project) => project.id === 'gf2-mu
 const visibleMixColumnsProject = demoProjects.find((project) => project.id === 'visible-mix-columns');
 const visibleSubBytesProject = demoProjects.find((project) => project.id === 'visible-subbytes');
 const visibleAddRoundKeyProject = demoProjects.find((project) => project.id === 'visible-add-round-key');
+const aesRoundFullProject = demoProjects.find((project) => project.id === 'aes-round-full');
 const visiblePointMechanicsProject = demoProjects.find(
   (project) => project.id === 'visible-point-mechanics',
 );
@@ -224,6 +225,9 @@ if (!visibleSubBytesProject) {
 }
 if (!visibleAddRoundKeyProject) {
   throw new Error('Expected visible-add-round-key demo project to seed starter challenges.');
+}
+if (!aesRoundFullProject) {
+  throw new Error('Expected aes-round-full demo project to seed starter challenges.');
 }
 if (!visiblePointMechanicsProject) {
   throw new Error('Expected visible-point-mechanics demo project to seed starter challenges.');
@@ -589,6 +593,16 @@ if (!brokenAddRoundKeyModule) {
   throw new Error('Expected visible-add-round-key demo project to contain k0 module.');
 }
 brokenAddRoundKeyModule.params.value = 'B0';
+
+const aesRoundFullTarget = cloneProject(aesRoundFullProject.project);
+const brokenAesRoundFullStart = cloneProject(aesRoundFullProject.project);
+const brokenAesRoundSBox = brokenAesRoundFullStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'sub-2-1',
+);
+if (!brokenAesRoundSBox) {
+  throw new Error('Expected aes-round-full demo project to contain sub-2-1 module.');
+}
+brokenAesRoundSBox.params.table = Array.from({ length: 256 }, (_, index) => index).join(',');
 
 const brokenVisiblePointMechanicsConnections = brokenVisiblePointMechanicsStart.connections;
 const brokenVisiblePointMechanicsInverseIndex = brokenVisiblePointMechanicsConnections.findIndex(
@@ -2017,6 +2031,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'Only the first key byte (k0) needs to change.',
       'The NIST FIPS 197 round 1 key byte for the first column position is A0.',
       '04 XOR A0 = A4 is the expected first output byte.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-aes-round',
+    title: 'Repair the AES Round',
+    projectId: 'aes-round-full',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.97,
+    recommendedAfter: ['aes-round-full'],
+    difficulty: 'intermediate',
+    prompt:
+      'One SubBytes board inside this full AES round has been replaced with the identity mapping, so one byte is no longer being substituted at all. The final round output now disagrees with FIPS 197 in exactly one output column. Find the broken S-box and restore the correct Rijndael table.',
+    startingProject: brokenAesRoundFullStart,
+    startingLayout: cloneProject(aesRoundFullProject.layout),
+    targetProject: aesRoundFullTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Exactly four output bytes are wrong. That is the diffusion signature of one corrupted byte entering MixColumns.',
+      'The wrong byte starts in the SubBytes stage, then ShiftRows moves it before MixColumns spreads it across one full output column.',
+      'The broken module is sub-2-1. Its table should be the AES Rijndael table, not the identity mapping 0,1,2,3,...,255.',
     ],
   },
   {

@@ -60,10 +60,17 @@ All use NIST FIPS 197 test vectors. Group routing, GROUP_STAGE_MAP, and PRIMITIV
 - Palette reorganization: new `Elliptic Curves & Fields` section; optgroup filter dropdown with section-level granularity
 - EC point inspector: stacked card layout for real-scale secp256k1/P-256 coordinates; `formatSignalCompact` in trace/stepper contexts
 
+**AES Round Composite shipped (May 14, 2026).** AES now has a first full-round board on `main`:
+
+| Composite | Demo | Tutorial | Challenge |
+|---|---|---|---|
+| Full AES round | AES Round (Full) | How One AES Round Works | Repair the AES Round |
+
+This board wires 16 byte-wise SubBytes transforms into a visible ShiftRows bus permutation, four explicit MixColumns column mixers, and 16 AddRoundKey XORs. It is verified against the FIPS 197 Appendix B round-1 output, and the repair challenge now teaches diffusion by breaking one SubBytes cell and producing exactly one wrong final output column.
+
 **Genuine next open work (in order):**
-1. **AES Round Composite V1** — SubBytes + ShiftRows + MixColumns + AddRoundKey wired as a single composed module with FIPS 197 Appendix B verification. Contract: `docs/live/contracts/2026-05/AES-ROUND-COMPOSITE-V1.md`
-2. **GF2/AES Python Export Parity V1** — confirm or complete Python export for `GF2Mul`, `GF2Inv`, and the full round workspace; round-trip test against FIPS 197 vector
-3. **parameter-inspector.tsx Refactor** — architecture-protection split of the largest UI surface; no behavior change
+1. **GF2/AES Python Export Parity V1** — confirm or complete Python export for `GF2Mul`, `GF2Inv`, and the full round workspace; round-trip test against FIPS 197 vector
+2. **parameter-inspector.tsx Refactor** — architecture-protection split of the largest UI surface; no behavior change
 
 ## Practical Restart Guidance
 

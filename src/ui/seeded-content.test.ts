@@ -37,6 +37,23 @@ function executeSeededProject(project: Project) {
   return executeProject(project, registry);
 }
 
+function getHexOutputMap(project: Project) {
+  const result = executeProject(project, registry);
+  const traceByModuleId = new Map(result.trace.map((entry) => [entry.moduleId, entry]));
+
+  return Object.fromEntries(
+    project.modules
+      .filter((moduleInstance) => moduleInstance.defId === 'HexOutput')
+      .map((moduleInstance) => {
+        const traceEntry = traceByModuleId.get(moduleInstance.id);
+        if (!traceEntry?.inputs.in) {
+          throw new Error(`Missing HexOutput input for ${moduleInstance.id}`);
+        }
+        return [moduleInstance.id, String(traceEntry.inputs.in.value).toUpperCase()];
+      }),
+  );
+}
+
 describe('seeded teaching content', () => {
   it('validates and executes every demo project', () => {
     for (const demo of demoProjects) {
@@ -106,5 +123,46 @@ describe('seeded teaching content', () => {
         ).toBe('success');
       }
     }
+  });
+
+  it('keeps the AES full round demo aligned to the FIPS 197 round-1 output', () => {
+    const demo = demoProjects.find((project) => project.id === 'aes-round-full');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    expect(getHexOutputMap(demo.project)).toEqual({
+      'out-0-0': 'A4',
+      'out-1-0': '9C',
+      'out-2-0': '7F',
+      'out-3-0': 'F2',
+      'out-0-1': '68',
+      'out-1-1': '9F',
+      'out-2-1': '35',
+      'out-3-1': '2B',
+      'out-0-2': '6B',
+      'out-1-2': '5B',
+      'out-2-2': 'EA',
+      'out-3-2': '43',
+      'out-0-3': '02',
+      'out-1-3': '6A',
+      'out-2-3': '50',
+      'out-3-3': '49',
+    });
+  });
+
+  it('keeps the AES round repair challenge broken in exactly the final fourth column', () => {
+    const challenge = STARTER_CHALLENGES.find((entry) => entry.id === 'repair-the-aes-round');
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    const target = getHexOutputMap(challenge.targetProject);
+    const starting = getHexOutputMap(challenge.startingProject);
+    const mismatchedOutputs = Object.keys(target).filter((moduleId) => target[moduleId] !== starting[moduleId]);
+
+    expect(mismatchedOutputs.sort()).toEqual(['out-0-3', 'out-1-3', 'out-2-3', 'out-3-3']);
   });
 });

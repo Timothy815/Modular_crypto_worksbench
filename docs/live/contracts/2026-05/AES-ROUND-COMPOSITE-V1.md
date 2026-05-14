@@ -1,7 +1,7 @@
 # AES Round Composite V1
 
 Last updated: May 14, 2026
-Status: Proposed
+Status: Shipped
 
 ---
 
@@ -9,7 +9,7 @@ Status: Proposed
 
 Compose the four individually-shipped AES round operations into a single first-class `AES Round` composite module — the first time a student can watch a complete AES round compute in one workspace, with every intermediate signal visible.
 
-This slice is pure composition and wiring work. No new engine primitives are required. Every building block is already shipped and FIPS 197 verified:
+This slice is composition-first wiring work. Every cryptographic building block is already shipped and FIPS 197 verified:
 
 | Operation | Shipped As | FIPS 197 Verified |
 |---|---|---|
@@ -19,6 +19,8 @@ This slice is pure composition and wiring work. No new engine primitives are req
 | AddRoundKey | 4× `XOR` per byte | Yes — [A4,9C,7F,F2] |
 
 The gap is that these live as four separate demos. A student cannot currently see a round as a unit — they have to mentally stitch four workspaces together. This contract closes that gap.
+
+One bounded wiring prerequisite may still be needed: the shipped ShiftRows board operates on one `bits[128]` state, while the full round naturally produces 16 separate `bits[8]` byte wires after SubBytes. If no concat primitive already exists, this slice may add one minimal bits-domain glue primitive (`BitConcat`) before building the round composite. That prerequisite is not new cryptographic capability; it is bus assembly glue required to keep the round wiring explicit and legible.
 
 ---
 
@@ -56,7 +58,9 @@ This is also the slice that turns MCW's AES Building Blocks from a teaching seri
   - Student task: find which SBox is broken and restore the Rijndael table
   - Hints: the output diverges from the FIPS 197 Round 1 expected value; the error is in the SubBytes stage; exactly one of the 16 SBox modules is misconfigured
 
-- A Python export check confirming that exporting the full round workspace produces output matching `executeProject()` on the same FIPS 197 test vector (verification only — no new Python module code needed if all four operation families already export)
+- A Python export check confirming that exporting the full round workspace produces output matching `executeProject()` on the same FIPS 197 test vector
+  - Phase 1 expectation: validate the already-shipped export path against the full round workspace and record any blocking gaps
+  - If validation exposes real GF2/AES exporter/runtime holes, close them in the explicit follow-on parity slice rather than silently widening this composition slice
 
 ### Out of scope
 
@@ -99,6 +103,30 @@ f2 2b 43 49
 
 This is the non-negotiable acceptance test. The workspace pre-loaded with these values must produce this output exactly.
 
+**Expected intermediate state after SubBytes:**
+```
+d4 e0 b8 1e
+27 bf b4 41
+11 98 5d 52
+ae f1 e5 30
+```
+
+**Expected intermediate state after ShiftRows:**
+```
+d4 e0 b8 1e
+bf b4 41 27
+5d 52 11 98
+30 ae f1 e5
+```
+
+**Expected intermediate state after MixColumns:**
+```
+04 e0 48 28
+66 cb f8 06
+81 19 d3 26
+e5 9a 7a 4c
+```
+
 ### 2. The intermediate states must be legible
 
 At each stage boundary, the signal values must be readable without running the stepper. The workspace should be structured so the four stage groups are visually distinct and a student can probe any intermediate byte.
@@ -107,7 +135,7 @@ At each stage boundary, the signal values must be readable without running the s
 
 Disabling one SBox sends one wrong byte into ShiftRows, which moves it to a new column position, which then enters MixColumns where it contaminates the entire 4-byte output column. The resulting repair challenge should produce exactly 4 wrong output bytes — a pattern that teaches MixColumns diffusion as a side effect of finding the fault.
 
-Choose the broken SBox position so the wrong byte enters a column where it is not already in the first row (to ensure ShiftRows visibly moves it before MixColumns amplifies it).
+Choose the broken SBox position so the wrong byte enters a column where it is not already in the first row (to ensure ShiftRows visibly moves it before MixColumns amplifies it). Once the broken position is chosen in implementation, the challenge test must name the four specific final output byte positions expected to diverge.
 
 ### 4. The tutorial must reference exact FIPS 197 hex values at each step
 
@@ -122,7 +150,7 @@ The full round workspace is inherently large — 16 state inputs, 4 stage groups
 Recommended structure:
 - **Left column**: 16 HexSource state inputs (s00–s33), arranged in 4×4 column-major grid, labelled by AES matrix position
 - **Left-centre**: SubBytes stage — 16 SBox instances, one per state byte, in a group box
-- **Centre**: ShiftRows stage — one Permutation module with all 128 bits collected into it via a group box. Note: this requires 16 BitsToHex → concat or direct bits concatenation. If direct concat is not ergonomic, the ShiftRows can stay as a separate bytes-wired section.
+- **Centre**: ShiftRows stage — one Permutation module with all 128 bits collected into it via a group box. This requires explicit byte-to-bus concatenation before the permutation and explicit bit-window extraction afterward.
 - **Right-centre**: MixColumns stage — 4 column groups, each with its GF2Mul chain, in a group box
 - **Right**: AddRoundKey stage — 16 XOR instances (one per byte), with the 16 round key HexSource inputs feeding from the right side, in a group box
 - **Far right**: 16 BitsToHex + HexOutput instances
@@ -133,12 +161,16 @@ The workspace will exceed comfortable single-screen size. This is acceptable —
 
 **Important wiring note for ShiftRows:**
 
-The shipped Visible ShiftRows demo uses a `Permutation` module receiving a single `bits[128]` input (all 16 bytes concatenated). The AES Round composite needs to collect 16 separate `bits[8]` outputs from SubBytes and feed them into this single Permutation. The cleanest approach depends on what bus/concat primitives are available:
+The shipped Visible ShiftRows demo uses a `Permutation` module receiving a single `bits[128]` input (all 16 bytes concatenated). The AES Round composite needs to collect 16 separate `bits[8]` outputs from SubBytes and feed them into this single Permutation.
 
-- If a `BitConcat` or bus merge primitive exists: use it to collect the 16 bytes into a single `bits[128]` signal before the Permutation module
-- If not: the ShiftRows stage can be expressed as 16 individual `BitSelect` operations reading from a 16-byte input signal — but this may require a different wiring model
+The required order of implementation is:
 
-Verify in source whether a bits concatenation primitive exists (`BitConcat`, `Bus`, or similar) before implementing this stage. If none exists, note the gap and treat ShiftRows as a separate 16-byte wiring layer that may require a follow-on `BitConcat` primitive.
+1. Verify in source whether a bits concatenation primitive already exists (`BitConcat`, `Bus`, or similar).
+2. If it exists, use it.
+3. If it does not exist, add one minimal `BitConcat` primitive as a bounded prerequisite for this slice.
+4. Do not fall back to 128 manual bit wires unless blocked and documented as a temporary stopgap.
+
+The round composite should not defer this wiring need into a vague follow-on. Either use the shipped primitive or add the minimal prerequisite first so the ShiftRows stage remains inspectable and structurally honest.
 
 ---
 
@@ -209,12 +241,12 @@ The full-round wiring requires collecting 16 separate `bits[8]` signals into one
 rg "BitConcat\|BitBus\|bit-concat\|bit-bus" src/engine/modules/
 ```
 
-If no concat primitive exists, the options are:
-- **Option A**: implement a minimal `BitConcat` primitive (8 inputs, each `bits[8]`, output `bits[64]` or `bits[128]`) as a prerequisite for this slice
-- **Option B**: restructure ShiftRows as 16 `BitSelect` operations on a wider input signal
-- **Option C**: express ShiftRows directly as 128 individual bit connections without a Permutation module (ugly but technically correct)
+If no concat primitive exists, implement a minimal `BitConcat` primitive as a bounded pre-step before the demo:
+- byte-oriented inputs (`in0`…`in15`, each `bits[8]`)
+- one `bits[128]` output
+- deterministic concatenation in declared input order
 
-Option A is cleanest. If `BitConcat` does not exist, add it as a bounded pre-step before implementing the demo. Keep it out of scope for the challenge (the challenge only tests the four operations, not the wiring glue).
+Keep it out of scope for the challenge and tutorial framing. It is wiring glue, not a new AES teaching object.
 
 ### 2. Demo size and the bundle guard
 
@@ -254,7 +286,9 @@ The `Repair the AES Round` challenge workspace, when executed without repair, mu
 
 ### 3. Python export check
 
-Export the full round demo to Python and execute it with the FIPS 197 test inputs. The Python output must match `executeProject()`. This is a validation-only test — no new Python module code should be needed.
+Export the full round demo to Python and execute it with the FIPS 197 test inputs. The Python output must match `executeProject()`.
+
+If this validation exposes a real export gap in the already-shipped GF2/AES path, record that gap explicitly and close it in the follow-on parity slice rather than silently ballooning the scope of this composition slice.
 
 ### 4. Existing content unbroken
 

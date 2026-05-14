@@ -15,6 +15,7 @@ import {
   getPythonExportCompatibility,
 } from './python';
 import { collectTickedOutput } from '../../ui/execution-compare';
+import { demoProjects } from '../../ui/demo-projects';
 import type { CompositeDef, IteratorDef } from '../composites';
 import type { ModuleRegistry, Project, Signal } from '../types';
 import { STARTER_COMPOSITE_LIBRARY } from '../../ui/starter-composites';
@@ -1432,6 +1433,22 @@ parityDescribe('generatePythonExport', () => {
 
     expect(execution.status).toBe(0);
     expect(execution.stdout.trim().split('\n').sort()).toEqual(getExpectedSinkLines(project, V1_REGISTRY).sort());
+  });
+
+  it('matches executeProject for the seeded AES full-round workspace', () => {
+    const demo = demoProjects.find((project) => project.id === 'aes-round-full');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    const pythonSource = generatePythonExport(demo.project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n').sort()).toEqual(
+      getExpectedSinkLines(demo.project, V1_REGISTRY).sort(),
+    );
   });
 
   it('matches executeProject for PointOnCurve primitive', () => {

@@ -29,6 +29,182 @@ const DES_S1_TABLE = serializeSBoxTable(generateSBoxTable(getSBoxGenerationShape
 // PRESENT cipher 4→4 S-box: bijective, high nonlinearity, used in Feistel round demos
 const PRESENT_SBOX_TABLE = '12,5,6,11,9,0,10,13,3,14,15,8,4,7,1,2';
 
+const AES_SHIFT_ROWS_ORDER =
+  '0,1,2,3,4,5,6,7,40,41,42,43,44,45,46,47,80,81,82,83,84,85,86,87,120,121,122,123,124,125,126,127,32,33,34,35,36,37,38,39,72,73,74,75,76,77,78,79,112,113,114,115,116,117,118,119,24,25,26,27,28,29,30,31,64,65,66,67,68,69,70,71,104,105,106,107,108,109,110,111,16,17,18,19,20,21,22,23,56,57,58,59,60,61,62,63,96,97,98,99,100,101,102,103,8,9,10,11,12,13,14,15,48,49,50,51,52,53,54,55,88,89,90,91,92,93,94,95';
+
+const AES_ROUND_STATE_BYTES = [
+  '19', '3D', 'E3', 'BE',
+  'A0', 'F4', 'E2', '2B',
+  '9A', 'C6', '8D', '2A',
+  'E9', 'F8', '48', '08',
+];
+
+const AES_ROUND_KEY_BYTES = [
+  'A0', 'FA', 'FE', '17',
+  '88', '54', '2C', 'B1',
+  '23', 'A3', '39', '39',
+  '2A', '6C', '76', '05',
+];
+
+const MIX_COLUMNS_COEFFICIENT_ROWS = [
+  [2, 3, 1, 1],
+  [1, 2, 3, 1],
+  [1, 1, 2, 3],
+  [3, 1, 1, 2],
+] as const;
+
+function aesByteId(prefix: string, row: number, column: number) {
+  return `${prefix}-${row}-${column}`;
+}
+
+function buildAesRoundDemoWorkspace(): {
+  project: Project;
+  layout: Record<string, { x: number; y: number }>;
+} {
+  const modules: Project['modules'] = [];
+  const connections: Project['connections'] = [];
+  const layout: Record<string, { x: number; y: number }> = {};
+
+  const subByteIds: string[] = [];
+
+  for (let column = 0; column < 4; column += 1) {
+    for (let row = 0; row < 4; row += 1) {
+      const flatIndex = column * 4 + row;
+      const stateId = aesByteId('s', row, column);
+      const keyId = aesByteId('k', row, column);
+      const sboxId = aesByteId('sub', row, column);
+      const shiftByteId = aesByteId('shift-byte', row, column);
+      const addRoundKeyId = aesByteId('ark', row, column);
+      const toHexId = aesByteId('hex', row, column);
+      const outId = aesByteId('out', row, column);
+
+      subByteIds.push(sboxId);
+
+      modules.push({ id: stateId, defId: 'HexSource', params: { value: AES_ROUND_STATE_BYTES[flatIndex] } });
+      modules.push({ id: keyId, defId: 'HexSource', params: { value: AES_ROUND_KEY_BYTES[flatIndex] } });
+      modules.push({ id: sboxId, defId: 'SBox', params: { table: AES_SBOX_TABLE } });
+      modules.push({ id: shiftByteId, defId: 'BitWindow', params: { start: flatIndex * 8, width: 8 } });
+      modules.push({ id: addRoundKeyId, defId: 'XOR', params: {} });
+      modules.push({ id: toHexId, defId: 'BitsToHex', params: {} });
+      modules.push({ id: outId, defId: 'HexOutput', params: {} });
+
+      connections.push({ from: { moduleId: stateId, port: 'out' }, to: { moduleId: sboxId, port: 'in' } });
+      connections.push({ from: { moduleId: addRoundKeyId, port: 'out' }, to: { moduleId: toHexId, port: 'in' } });
+      connections.push({ from: { moduleId: toHexId, port: 'out' }, to: { moduleId: outId, port: 'in' } });
+
+      layout[stateId] = { x: 80 + column * 120, y: 80 + row * 120 };
+      layout[sboxId] = { x: 560 + column * 120, y: 80 + row * 120 };
+      layout[shiftByteId] = { x: 1620 + column * 120, y: 80 + row * 120 };
+      layout[keyId] = { x: 3400 + column * 120, y: 80 + row * 120 };
+      layout[addRoundKeyId] = { x: 3660 + column * 120, y: 80 + row * 120 };
+      layout[toHexId] = { x: 3880 + column * 120, y: 80 + row * 120 };
+      layout[outId] = { x: 4100 + column * 120, y: 80 + row * 120 };
+    }
+  }
+
+  let currentLevel = [...subByteIds];
+  let levelIndex = 0;
+  while (currentLevel.length > 1) {
+    const nextLevel: string[] = [];
+    for (let pairIndex = 0; pairIndex < currentLevel.length; pairIndex += 2) {
+      const joinId = `join-${levelIndex}-${pairIndex / 2}`;
+      modules.push({ id: joinId, defId: 'BitJoin', params: {} });
+      connections.push({ from: { moduleId: currentLevel[pairIndex], port: 'out' }, to: { moduleId: joinId, port: 'a' } });
+      connections.push({ from: { moduleId: currentLevel[pairIndex + 1], port: 'out' }, to: { moduleId: joinId, port: 'b' } });
+
+      const leftPosition = layout[currentLevel[pairIndex]];
+      const rightPosition = layout[currentLevel[pairIndex + 1]];
+      layout[joinId] = {
+        x: 900 + levelIndex * 120,
+        y: ((leftPosition?.y ?? 0) + (rightPosition?.y ?? 0)) / 2,
+      };
+
+      nextLevel.push(joinId);
+    }
+    currentLevel = nextLevel;
+    levelIndex += 1;
+  }
+
+  const joinedStateId = currentLevel[0];
+  modules.push({ id: 'shift-rows', defId: 'Permutation', params: { order: AES_SHIFT_ROWS_ORDER } });
+  connections.push({ from: { moduleId: joinedStateId, port: 'out' }, to: { moduleId: 'shift-rows', port: 'in' } });
+  layout['shift-rows'] = { x: 1380, y: 260 };
+
+  for (let column = 0; column < 4; column += 1) {
+    for (let row = 0; row < 4; row += 1) {
+      const shiftByteId = aesByteId('shift-byte', row, column);
+      connections.push({ from: { moduleId: 'shift-rows', port: 'out' }, to: { moduleId: shiftByteId, port: 'in' } });
+    }
+  }
+
+  for (let column = 0; column < 4; column += 1) {
+    const const2Id = `mix-const2-${column}`;
+    const const3Id = `mix-const3-${column}`;
+    modules.push({ id: const2Id, defId: 'HexSource', params: { value: '02' } });
+    modules.push({ id: const3Id, defId: 'HexSource', params: { value: '03' } });
+    layout[const2Id] = { x: 1880 + column * 440, y: 20 };
+    layout[const3Id] = { x: 1880 + column * 440, y: 620 };
+
+    const columnInputIds = [
+      aesByteId('shift-byte', 0, column),
+      aesByteId('shift-byte', 1, column),
+      aesByteId('shift-byte', 2, column),
+      aesByteId('shift-byte', 3, column),
+    ];
+
+    for (let row = 0; row < 4; row += 1) {
+      const terms: string[] = [];
+      for (let sourceRow = 0; sourceRow < 4; sourceRow += 1) {
+        const coefficient = MIX_COLUMNS_COEFFICIENT_ROWS[row][sourceRow];
+        if (coefficient === 1) {
+          terms.push(columnInputIds[sourceRow]);
+          continue;
+        }
+
+        const multiplyId = `mix-c${column}-r${row}-m${sourceRow}`;
+        modules.push({ id: multiplyId, defId: 'GF2Mul', params: { poly: '11B' } });
+        connections.push({ from: { moduleId: columnInputIds[sourceRow], port: 'out' }, to: { moduleId: multiplyId, port: 'a' } });
+        connections.push({
+          from: { moduleId: coefficient === 2 ? const2Id : const3Id, port: 'out' },
+          to: { moduleId: multiplyId, port: 'b' },
+        });
+        layout[multiplyId] = { x: 2060 + column * 440, y: 80 + row * 140 + sourceRow * 24 };
+        terms.push(multiplyId);
+      }
+
+      const xor0Id = `mix-c${column}-r${row}-xor0`;
+      const xor1Id = `mix-c${column}-r${row}-xor1`;
+      const xor2Id = `mix-c${column}-r${row}-xor2`;
+      const addRoundKeyId = aesByteId('ark', row, column);
+      const keyId = aesByteId('k', row, column);
+
+      modules.push({ id: xor0Id, defId: 'XOR', params: {} });
+      modules.push({ id: xor1Id, defId: 'XOR', params: {} });
+      modules.push({ id: xor2Id, defId: 'XOR', params: {} });
+
+      connections.push({ from: { moduleId: terms[0], port: 'out' }, to: { moduleId: xor0Id, port: 'a' } });
+      connections.push({ from: { moduleId: terms[1], port: 'out' }, to: { moduleId: xor0Id, port: 'b' } });
+      connections.push({ from: { moduleId: xor0Id, port: 'out' }, to: { moduleId: xor1Id, port: 'a' } });
+      connections.push({ from: { moduleId: terms[2], port: 'out' }, to: { moduleId: xor1Id, port: 'b' } });
+      connections.push({ from: { moduleId: xor1Id, port: 'out' }, to: { moduleId: xor2Id, port: 'a' } });
+      connections.push({ from: { moduleId: terms[3], port: 'out' }, to: { moduleId: xor2Id, port: 'b' } });
+      connections.push({ from: { moduleId: xor2Id, port: 'out' }, to: { moduleId: addRoundKeyId, port: 'a' } });
+      connections.push({ from: { moduleId: keyId, port: 'out' }, to: { moduleId: addRoundKeyId, port: 'b' } });
+
+      layout[xor0Id] = { x: 2300 + column * 440, y: 80 + row * 140 };
+      layout[xor1Id] = { x: 2520 + column * 440, y: 80 + row * 140 };
+      layout[xor2Id] = { x: 2740 + column * 440, y: 80 + row * 140 };
+    }
+  }
+
+  return {
+    project: { modules, connections },
+    layout,
+  };
+}
+
+const AES_ROUND_FULL_WORKSPACE = buildAesRoundDemoWorkspace();
+
 export const demoProjects: DemoProject[] = [
   {
     id: 'bit-sequence-segment-and-rejoin',
@@ -1508,6 +1684,20 @@ export const demoProjects: DemoProject[] = [
       'out2': { x: 760, y: 320 },
       'out3': { x: 760, y: 440 },
     },
+  },
+  {
+    id: 'aes-round-full',
+    name: 'AES Round (Full)',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.93,
+    recommendedAfter: ['visible-add-round-key'],
+    summary:
+      'A complete AES round from FIPS 197 Appendix B wired as one explicit machine: 16 byte-wise SubBytes lookups, one 128-bit ShiftRows permutation, four MixColumns column mixers, and 16 AddRoundKey XORs. Every intermediate byte remains probeable.',
+    pipeline:
+      '16x HexSource(state) -> 16x SBox(AES) -> BitJoin tree -> Permutation(ShiftRows) -> 16x BitWindow -> 4x MixColumns GF2Mul/XOR columns -> 16x XOR(round key) -> 16x BitsToHex -> 16x HexOutput',
+    project: AES_ROUND_FULL_WORKSPACE.project,
+    layout: AES_ROUND_FULL_WORKSPACE.layout,
   },
   {
     id: 'visible-point-order-and-subgroups',

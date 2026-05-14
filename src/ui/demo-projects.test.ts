@@ -113,4 +113,14 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('MultiRouter');
     expect(demo?.pipeline).toContain('BitsSequenceToTicked');
   });
+
+  it('includes the full AES round demo as a composed FIPS-verified workspace', () => {
+    const demo = demoProjects.find((project) => project.id === 'aes-round-full');
+
+    expect(demo?.name).toBe('AES Round (Full)');
+    expect(demo?.pipeline).toContain('16x SBox(AES)');
+    expect(demo?.pipeline).toContain('Permutation(ShiftRows)');
+    expect(demo?.pipeline).toContain('MixColumns');
+    expect(demo?.pipeline).toContain('16x XOR(round key)');
+  });
 });
