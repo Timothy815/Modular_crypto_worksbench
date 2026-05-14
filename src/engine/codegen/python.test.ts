@@ -132,6 +132,26 @@ function executeGeneratedPythonFiles(
   return result;
 }
 
+function getDemoProjectById(id: string) {
+  const demo = demoProjects.find((project) => project.id === id);
+  expect(demo, `Expected demo project ${id} to exist`).toBeTruthy();
+  if (!demo) {
+    throw new Error(`Expected demo project ${id} to exist`);
+  }
+  return demo;
+}
+
+function expectPythonExportMatchesDemo(id: string) {
+  const demo = getDemoProjectById(id);
+  const pythonSource = generatePythonExport(demo.project, V1_REGISTRY);
+  const execution = executeGeneratedPython(pythonSource);
+
+  expect(execution.status).toBe(0);
+  expect(execution.stdout.trim().split('\n').sort()).toEqual(
+    getExpectedSinkLines(demo.project, V1_REGISTRY).sort(),
+  );
+}
+
 const pythonAvailability = spawnSync('python3', ['--version'], { encoding: 'utf8' });
 const hasPython3 = pythonAvailability.status === 0;
 const parityDescribe = hasPython3 ? describe : describe.skip;
@@ -1201,6 +1221,30 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
   });
 
+  it('matches executeProject for a direct bit-join workspace', () => {
+    const project: Project = {
+      modules: [
+        { id: 'left', defId: 'HexSource', params: { value: 'D4' } },
+        { id: 'right', defId: 'HexSource', params: { value: '27' } },
+        { id: 'join-1', defId: 'BitJoin', params: {} },
+        { id: 'to-hex', defId: 'BitsToHex', params: {} },
+        { id: 'out', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'left', port: 'out' }, to: { moduleId: 'join-1', port: 'a' } },
+        { from: { moduleId: 'right', port: 'out' }, to: { moduleId: 'join-1', port: 'b' } },
+        { from: { moduleId: 'join-1', port: 'out' }, to: { moduleId: 'to-hex', port: 'in' } },
+        { from: { moduleId: 'to-hex', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    };
+
+    const pythonSource = generatePythonExport(project, V1_REGISTRY);
+    const execution = executeGeneratedPython(pythonSource);
+
+    expect(execution.status).toBe(0);
+    expect(execution.stdout.trim().split('\n')).toEqual(getExpectedSinkLines(project, V1_REGISTRY));
+  });
+
   it('matches executeProject for bit-select, bit-expand, multi-selector, and constant-bit workspaces', () => {
     const project: Project = {
       modules: [
@@ -1435,20 +1479,28 @@ parityDescribe('generatePythonExport', () => {
     expect(execution.stdout.trim().split('\n').sort()).toEqual(getExpectedSinkLines(project, V1_REGISTRY).sort());
   });
 
+  it('matches executeProject for the shipped GF2/AES primitive demo workspace', () => {
+    expectPythonExportMatchesDemo('gf2-multiply');
+  });
+
+  it('matches executeProject for the shipped Visible MixColumns workspace', () => {
+    expectPythonExportMatchesDemo('visible-mix-columns');
+  });
+
+  it('matches executeProject for the shipped Visible SubBytes workspace', () => {
+    expectPythonExportMatchesDemo('visible-subbytes');
+  });
+
+  it('matches executeProject for the shipped Visible ShiftRows workspace', () => {
+    expectPythonExportMatchesDemo('visible-shiftrows');
+  });
+
+  it('matches executeProject for the shipped Visible AddRoundKey workspace', () => {
+    expectPythonExportMatchesDemo('visible-add-round-key');
+  });
+
   it('matches executeProject for the seeded AES full-round workspace', () => {
-    const demo = demoProjects.find((project) => project.id === 'aes-round-full');
-    expect(demo).toBeTruthy();
-    if (!demo) {
-      return;
-    }
-
-    const pythonSource = generatePythonExport(demo.project, V1_REGISTRY);
-    const execution = executeGeneratedPython(pythonSource);
-
-    expect(execution.status).toBe(0);
-    expect(execution.stdout.trim().split('\n').sort()).toEqual(
-      getExpectedSinkLines(demo.project, V1_REGISTRY).sort(),
-    );
+    expectPythonExportMatchesDemo('aes-round-full');
   });
 
   it('matches executeProject for PointOnCurve primitive', () => {

@@ -69,8 +69,7 @@ All use NIST FIPS 197 test vectors. Group routing, GROUP_STAGE_MAP, and PRIMITIV
 This board wires 16 byte-wise SubBytes transforms into a visible ShiftRows bus permutation, four explicit MixColumns column mixers, and 16 AddRoundKey XORs. It is verified against the FIPS 197 Appendix B round-1 output, and the repair challenge now teaches diffusion by breaking one SubBytes cell and producing exactly one wrong final output column.
 
 **Genuine next open work (in order):**
-1. **GF2/AES Python Export Parity V1** — confirm or complete Python export for `GF2Mul`, `GF2Inv`, and the full round workspace; round-trip test against FIPS 197 vector
-2. **parameter-inspector.tsx Refactor** — architecture-protection split of the largest UI surface; no behavior change
+1. **parameter-inspector.tsx Refactor** — architecture-protection split of the largest UI surface; no behavior change
 
 ## Practical Restart Guidance
 

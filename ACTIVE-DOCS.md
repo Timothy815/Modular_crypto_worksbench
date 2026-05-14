@@ -33,6 +33,7 @@ This is the canonical starting point for humans and agents.
 - `docs/live/contracts/2026-05/NAMED-CURVE-SOURCES-V1.md` when planning the named-curve source modules (secp256k1, P-256) and inspector preset ergonomics — depends on REAL-SCALE-ARITHMETIC-SUBSTRATE-V1
 - `docs/live/contracts/2026-05/GF2-FIELD-ARITHMETIC-V1.md` when reviewing shipped GF(2⁸) field arithmetic (GF2Mul, GF2Inv, Visible MixColumns) — use as historical context for the next AES round slice
 - `docs/live/contracts/2026-05/AES-ROUND-COMPOSITE-V1.md` when reviewing the shipped full AES round composite — composition scope, ShiftRows bus wiring, FIPS 197 round-1 acceptance, and the follow-on parity/refactor phases
+- `docs/live/contracts/2026-05/GF2-AES-PYTHON-EXPORT-PARITY-V1.md` when reviewing the shipped GF2/AES Python export parity slice after the AES round composite — primitive/workspace parity, FIPS replay, and bounded test-coverage completion
 
 ## Read As Needed
 
