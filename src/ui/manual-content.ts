@@ -617,6 +617,12 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         indexTerms: ['sbox', 'substitution box', 'confusion', 'block cipher'],
       },
       {
+        id: 'KeyedSBox4',
+        title: 'KeyedSBox4',
+        body: 'A bounded keyed 4-bit substitution surface. One visible 2-bit key selects one of four explicit table variants, the output nibble comes from that selected table, and a second one-bit output says whether the selected table is still a valid permutation. It is for visible control and consequence, not for claiming stronger cryptography.',
+        indexTerms: ['keyed sbox', '4-bit sbox', 'present', 'permutation validity', 'keyed substitution'],
+      },
+      {
         id: 'Permutation',
         title: 'Permutation',
         body: 'A bit-level transposition module. It rearranges the bits of its input according to a fixed or configurable pattern, providing diffusion.',

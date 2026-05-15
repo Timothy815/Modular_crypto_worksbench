@@ -52,6 +52,7 @@ import { PointOrder } from './point-order';
 import { PointEquals } from './point-equals';
 import { PointSelector } from './point-selector';
 import { ToyPointMap } from './toy-point-map';
+import { KeyedSBox4 } from './keyed-sbox4';
 import { ScalarMultiply } from './scalar-multiply';
 import { ChallengeCombine } from './challenge-combine';
 import { ScalarLinearCombine } from './scalar-linear-combine';
@@ -735,6 +736,72 @@ describe('ToyPointMap', () => {
         walkLength: 5,
       }),
     ).toThrow(/bounded toy curve/i);
+  });
+});
+
+describe('KeyedSBox4', () => {
+  it('uses the baseline table for key 00', () => {
+    const result = KeyedSBox4.evaluate(
+      {
+        in: { type: 'bits', value: [0, 0, 0, 0] },
+        key: { type: 'bits', value: [0, 0] },
+      },
+      {},
+    );
+
+    expect(result.out).toEqual({ type: 'bits', value: [1, 1, 0, 0] });
+    expect(result.valid).toEqual({ type: 'bits', value: [1] });
+  });
+
+  it('uses the swap variant for key 01', () => {
+    const result = KeyedSBox4.evaluate(
+      {
+        in: { type: 'bits', value: [0, 0, 0, 1] },
+        key: { type: 'bits', value: [0, 1] },
+      },
+      {},
+    );
+
+    expect(result.out).toEqual({ type: 'bits', value: [1, 1, 0, 0] });
+    expect(result.valid).toEqual({ type: 'bits', value: [1] });
+  });
+
+  it('uses the rotated-row variant for key 10', () => {
+    const result = KeyedSBox4.evaluate(
+      {
+        in: { type: 'bits', value: [0, 0, 0, 1] },
+        key: { type: 'bits', value: [1, 0] },
+      },
+      {},
+    );
+
+    expect(result.out).toEqual({ type: 'bits', value: [0, 1, 1, 0] });
+    expect(result.valid).toEqual({ type: 'bits', value: [1] });
+  });
+
+  it('marks the intentionally broken table invalid for key 11', () => {
+    const result = KeyedSBox4.evaluate(
+      {
+        in: { type: 'bits', value: [1, 0, 0, 1] },
+        key: { type: 'bits', value: [1, 1] },
+      },
+      {},
+    );
+
+    expect(result.out).toEqual({ type: 'bits', value: [0, 0, 0, 0] });
+    expect(result.valid).toEqual({ type: 'bits', value: [0] });
+  });
+
+  it('rejects keys that are not 2 bits wide', () => {
+    expect(() =>
+      KeyedSBox4.evaluate(
+        {
+          in: { type: 'bits', value: [0, 0, 0, 0] },
+          key: { type: 'bits', value: [1] },
+        },
+        {},
+      ),
+    ).toThrow(/2-bit key/i);
   });
 });
 

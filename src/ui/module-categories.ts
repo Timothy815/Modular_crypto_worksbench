@@ -64,6 +64,7 @@ const CATEGORY_MAP: Record<string, ModuleCategory> = {
   RequireBitsLengthMatch: 'bridge',
   TruncateBitsToMatch: 'bridge',
   SBox: 'operator',
+  KeyedSBox4: 'operator',
   ToyPointMap: 'source',
   AsciiSequenceToBits: 'bridge',
   AsciiCharToBits: 'bridge',

@@ -71,6 +71,23 @@ function getBitOutputMap(project: Project) {
   );
 }
 
+function getSymbolOutputMap(project: Project) {
+  const result = executeProject(project, registry);
+  const traceByModuleId = new Map(result.trace.map((entry) => [entry.moduleId, entry]));
+
+  return Object.fromEntries(
+    project.modules
+      .filter((moduleInstance) => moduleInstance.defId === 'Output')
+      .map((moduleInstance) => {
+        const traceEntry = traceByModuleId.get(moduleInstance.id);
+        if (!traceEntry?.inputs.in || traceEntry.inputs.in.type !== 'symbol') {
+          throw new Error(`Missing Output input for ${moduleInstance.id}`);
+        }
+        return [moduleInstance.id, String(traceEntry.inputs.in.value).toUpperCase()];
+      }),
+  );
+}
+
 describe('seeded teaching content', () => {
   it('validates and executes every demo project', () => {
     for (const demo of demoProjects) {
@@ -217,6 +234,39 @@ describe('seeded teaching content', () => {
       'shift-match-out': '0',
       'final-match-out': '0',
     });
+  });
+
+  it('keeps the keyed S-box authoring demo aligned to the named valid keyed variant', () => {
+    const demo = demoProjects.find((project) => project.id === 'keyed-sbox-authoring');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    expect(getSymbolOutputMap(demo.project)).toMatchObject({
+      'baseline-a-out': '5',
+      'keyed-a-out': 'C',
+      'baseline-b-out': 'E',
+      'keyed-b-out': 'E',
+    });
+    expect(getBitOutputMap(demo.project)).toMatchObject({
+      'match-a-out': '0',
+      'match-b-out': '1',
+      'valid-out': '1',
+    });
+  });
+
+  it('keeps the keyed S-box repair challenge invalid until the key-source is restored', () => {
+    const challenge = STARTER_CHALLENGES.find((entry) => entry.id === 'repair-the-keyed-sbox');
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    expect(getBitOutputMap(challenge.targetProject)['valid-out']).toBe('1');
+    expect(getBitOutputMap(challenge.startingProject)['valid-out']).toBe('0');
+    expect(getSymbolOutputMap(challenge.targetProject)['keyed-a-out']).toBe('5');
+    expect(getSymbolOutputMap(challenge.startingProject)['keyed-b-out']).toBe('0');
   });
 
   it('keeps the visible double-and-add demo aligned with the shipped ScalarMultiply result', () => {

@@ -54,6 +54,7 @@ const visibleSubBytesProject = demoProjects.find((project) => project.id === 'vi
 const visibleAddRoundKeyProject = demoProjects.find((project) => project.id === 'visible-add-round-key');
 const aesRoundFullProject = demoProjects.find((project) => project.id === 'aes-round-full');
 const aesRowPerturbationProject = demoProjects.find((project) => project.id === 'aes-row-perturbation');
+const keyedSBoxAuthoringProject = demoProjects.find((project) => project.id === 'keyed-sbox-authoring');
 const visiblePointMechanicsProject = demoProjects.find(
   (project) => project.id === 'visible-point-mechanics',
 );
@@ -237,6 +238,9 @@ if (!aesRoundFullProject) {
 if (!aesRowPerturbationProject) {
   throw new Error('Expected aes-row-perturbation demo project to seed starter challenges.');
 }
+if (!keyedSBoxAuthoringProject) {
+  throw new Error('Expected keyed-sbox-authoring demo project to seed starter challenges.');
+}
 if (!visiblePointMechanicsProject) {
   throw new Error('Expected visible-point-mechanics demo project to seed starter challenges.');
 }
@@ -381,6 +385,16 @@ const visibleDoubleAndAddTarget = cloneProject(visibleDoubleAndAddProject.projec
 const brokenVisibleDoubleAndAddStart = cloneProject(visibleDoubleAndAddProject.project);
 const toyCurvePointMapTarget = cloneProject(toyCurvePointMapProject.project);
 const brokenToyCurvePointMapStart = cloneProject(toyCurvePointMapProject.project);
+const keyedSBoxAuthoringTarget = cloneProject(keyedSBoxAuthoringProject.project);
+const brokenKeyedSBoxAuthoringStart = cloneProject(keyedSBoxAuthoringProject.project);
+const keyedSBoxAuthoringTargetKeySource = keyedSBoxAuthoringTarget.modules.find((module) => module.id === 'key-source');
+if (!keyedSBoxAuthoringTargetKeySource) {
+  throw new Error('Expected keyed-sbox-authoring target project to contain the key-source module.');
+}
+keyedSBoxAuthoringTargetKeySource.params = {
+  ...keyedSBoxAuthoringTargetKeySource.params,
+  stream: [0, 0],
+};
 const visibleEcdhTarget = cloneProject(visibleEcdhProject.project);
 const brokenVisibleEcdhStart = cloneProject(visibleEcdhProject.project);
 const visiblePointOrderTarget = cloneProject(visiblePointOrderProject.project);
@@ -695,6 +709,15 @@ if (!brokenToyCurvePointMapModule) {
 brokenToyCurvePointMapModule.params = {
   ...brokenToyCurvePointMapModule.params,
   selectedY: 11,
+};
+
+const brokenKeyedSBoxKeySource = brokenKeyedSBoxAuthoringStart.modules.find((module) => module.id === 'key-source');
+if (!brokenKeyedSBoxKeySource) {
+  throw new Error('Expected keyed-sbox-authoring demo project to contain the key-source module.');
+}
+brokenKeyedSBoxKeySource.params = {
+  ...brokenKeyedSBoxKeySource.params,
+  stream: [1, 1],
 };
 
 const brokenVisibleEcdhConnections = brokenVisibleEcdhStart.connections;
@@ -2233,6 +2256,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The independent PointSource branch still carries the intended point P = (5, 6).',
       'ToyPointMap currently highlights the opposite affine partner (5, 11) on the same curve.',
       'Restore the selected-point params so both PointEquals checks emit 1 again.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-keyed-sbox',
+    title: 'Repair the Keyed S-Box',
+    projectId: 'keyed-sbox-authoring',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.95,
+    recommendedAfter: ['aes-row-perturbation'],
+    difficulty: 'beginner',
+    prompt:
+      'The visible key source is selecting the intentionally invalid keyed S-box table. Restore the intended bounded key value so the keyed table becomes the baseline valid permutation again.',
+    startingProject: brokenKeyedSBoxAuthoringStart,
+    startingLayout: cloneProject(keyedSBoxAuthoringProject.layout),
+    targetProject: keyedSBoxAuthoringTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The repair is not a rewiring task. The visible key source itself is wrong.',
+      'Key 11 duplicates output value 0 and removes 14, so the validity sink should stay low until the key is corrected.',
+      'Restore the key-source bits to 00, not 01 or 10.',
     ],
   },
   {

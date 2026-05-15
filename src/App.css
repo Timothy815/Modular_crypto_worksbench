@@ -7560,6 +7560,35 @@ body.canvas-resizing {
   min-width: 48px;
 }
 
+.keyed-sbox-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.keyed-sbox-table-block {
+  display: grid;
+  gap: 6px;
+}
+
+.keyed-sbox-table-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.keyed-sbox-table-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 6px;
+  border-radius: 8px;
+  background: var(--surface-raised, rgba(128, 128, 128, 0.06));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  font-variant-numeric: tabular-nums;
+}
+
 .sbox-comp-nl-row {
   display: flex;
   gap: 4px;

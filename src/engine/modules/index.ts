@@ -116,6 +116,7 @@ import { TruncateBitsToMatch } from './truncate-bits-to-match';
 import { PadBitsSequence } from './pad-bits-sequence';
 import { LFSR } from './lfsr';
 import { SBox } from './s-box';
+import { KeyedSBox4 } from './keyed-sbox4';
 import { Clock } from './clock';
 
 export {
@@ -235,6 +236,7 @@ export {
   PadBitsSequence,
   LFSR,
   SBox,
+  KeyedSBox4,
   Clock,
 };
 
@@ -355,5 +357,6 @@ export const V1_REGISTRY: ModuleRegistry = {
   [PadBitsSequence.id]: PadBitsSequence,
   [LFSR.id]: LFSR,
   [SBox.id]: SBox,
+  [KeyedSBox4.id]: KeyedSBox4,
   [Clock.id]: Clock,
 };

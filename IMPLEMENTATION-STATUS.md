@@ -70,13 +70,17 @@ This board wires 16 byte-wise SubBytes transforms into a visible ShiftRows bus p
 
 **Latest AES control-and-consequence work:** `AES-ROW-COLUMN-PERTURBATION-V1` is now shipped. MCW now has a bounded dual-branch AES board where the canonical round and one ShiftRows row-rotation perturbation share the same FIPS input state and round key, making the changed ShiftRows state and changed final output visible without drifting into a generic cipher-lab surface.
 
+**Latest substitution-authoring work:** `KEYED-SBOX-AUTHORING-V1` is now shipped. MCW now has a bounded keyed-substitution board where one visible 2-bit key selects one of four explicit 4-bit table variants, the selected table stays inspectable, and permutation validity remains machine-visible as a separate result from local output change.
+
 **Latest architecture-protection work:** `parameter-inspector.tsx` configure-tab extraction shipped. The inspector now keeps orchestration in `ParameterInspector` while the remaining configure-tab render family lives in extracted local components.
 
 **Latest product-facing discovery work:** `DEMO-ATLAS-V1` is now shipped. The Learning dock now includes an always-visible `Atlas` tab that acts as a searchable concept map for full demos and pipeline micro demos without replacing the current Demo menu.
 
 **Latest ECC visibility work:** both `VISIBLE-DOUBLE-AND-ADD-V1` and `TOY-CURVE-POINT-MAP-V1` are now shipped. MCW now has an explicit repeated-doubling / conditional-addition board that agrees visibly with shipped `ScalarMultiply`, plus a toy-curve point-map surface that makes one finite-field curve legible as a visible point landscape with a machine-checked repeated-action walk.
 
-**Genuine next open work:** no newer bounded AES perturbation follow-on is drafted yet after the ShiftRows row-rotation slice. Keyed S-box exploration remains interesting, but it should stay as its own later bounded authoring slice rather than being folded into the first AES perturbation pass.
+**Genuine next open work:** no newer post-keyed-S-box bounded contract is canonical yet. The most natural follow-on from the current AES line is a separate column-perturbation slice if we want to continue the bounded control-and-consequence path without drifting into generic cipher authoring.
+
+This should stay separate from later AES column perturbation work and separate from any broader custom-cipher authoring surface.
 
 ## Practical Restart Guidance
 

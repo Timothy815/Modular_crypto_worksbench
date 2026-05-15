@@ -20,6 +20,8 @@ import { getModulusAnalysisFromParams } from '../engine/analysis/modexp-analysis
 export type { ModulusAnalysis } from '../engine/analysis/modexp-analysis';
 import { computeToyPointMapAnalysis } from '../engine/analysis/toy-point-map-analysis';
 export type { ToyPointMapAnalysis } from '../engine/analysis/toy-point-map-analysis';
+import { computeKeyedSBoxAnalysis } from '../engine/analysis/keyed-sbox-analysis';
+export type { KeyedSBoxAnalysis } from '../engine/analysis/keyed-sbox-analysis';
 import type {
   Connection,
   ExecutionResult,
@@ -400,6 +402,9 @@ export function getTransformationView(
   }
   if (entry.defId === 'SBox') {
     return getSBoxTransformation(entry, project, registry);
+  }
+  if (entry.defId === 'KeyedSBox4') {
+    return getKeyedSBoxTransformation(entry, project, registry);
   }
   if (entry.defId === 'BitSplit') {
     return getSplitTransformation(entry, project, registry);
@@ -1085,6 +1090,58 @@ function getSBoxTransformation(
         return null;
       }
     })(),
+  };
+}
+
+function getKeyedSBoxTransformation(
+  entry: ExecutionTraceEntry,
+  _project: Project,
+  _registry: ModuleRegistry,
+): LookupTransformationView | null {
+  const inputSignal = entry.inputs.in;
+  const outputSignal = entry.outputs.out;
+  const keySignal = entry.inputs.key;
+  if (inputSignal?.type !== 'bits' || outputSignal?.type !== 'bits' || keySignal?.type !== 'bits') {
+    return null;
+  }
+
+  const analysis = computeKeyedSBoxAnalysis({ keyBits: keySignal.value });
+  const table = [...analysis.selectedTable];
+  const gridColumns = 4;
+  const displayOrder = buildSBoxDisplayOrder(table.length, { inputWidth: 4, outputWidth: 4 });
+  const displayIndexByInputValue = Array.from({ length: table.length }, (_, inputValue) =>
+    getSBoxDisplayIndexForInputValue(inputValue, { inputWidth: 4, outputWidth: 4 }),
+  );
+  const inputValue = bitsToNumber(inputSignal.value);
+  const outputValue = bitsToNumber(outputSignal.value);
+  const activeDisplayIndex = displayIndexByInputValue[inputValue];
+
+  return {
+    entry,
+    kind: 'lookup',
+    title: 'Keyed Substitution Lookup',
+    copy:
+      `KeyedSBox4 keeps one bounded family of visible 4-bit tables. The current 2-bit key selects the ${analysis.keyBits} variant before the nibble is substituted.`,
+    inputWidth: 4,
+    outputWidth: 4,
+    gridColumns,
+    table,
+    displayOrder,
+    displayIndexByInputValue,
+    usesHexGrid: false,
+    activeRowIndex: Math.floor(activeDisplayIndex / gridColumns),
+    activeColumnIndex: activeDisplayIndex % gridColumns,
+    chunks: [
+      {
+        index: 0,
+        inputBits: inputSignal.value,
+        inputValue,
+        outputValue,
+        outputBits: outputSignal.value,
+      },
+    ],
+    summary: `Key ${analysis.keyBits} selects the "${analysis.keyLabel}" table, so input ${inputValue} substitutes to ${outputValue}.`,
+    sboxAnalysis: analysis.sboxAnalysis,
   };
 }
 
@@ -2291,4 +2348,8 @@ export function getModulusAnalysis(params: Record<string, unknown>) {
 
 export function getToyPointMapAnalysis(params: Record<string, unknown>) {
   return computeToyPointMapAnalysis(params);
+}
+
+export function getKeyedSBoxAnalysis(keyBits: unknown) {
+  return computeKeyedSBoxAnalysis({ keyBits });
 }

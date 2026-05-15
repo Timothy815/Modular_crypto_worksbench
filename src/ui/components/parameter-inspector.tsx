@@ -62,13 +62,14 @@ import {
   getSBoxAnalysisFromParams,
   getPermutationAnalysisFromParams,
   getToyPointMapAnalysis,
+  getKeyedSBoxAnalysis,
   getLFSRAnalysis,
   getPlugboardAnalysis,
   getReflectorAnalysis,
   getModulusAnalysis,
   groupIssuesByTarget,
 } from '../inspector-analysis';
-import type { SBoxAnalysis, PermutationAnalysis, ToyPointMapAnalysis, LFSRAnalysis, PlugboardAnalysis, ReflectorAnalysis, ModulusAnalysis } from '../inspector-analysis';
+import type { SBoxAnalysis, PermutationAnalysis, ToyPointMapAnalysis, KeyedSBoxAnalysis, LFSRAnalysis, PlugboardAnalysis, ReflectorAnalysis, ModulusAnalysis } from '../inspector-analysis';
 import { InspectorTabButton, PORT_SIDE_ORDER } from './inspector-controls';
 
 interface ParameterInspectorProps {
@@ -289,6 +290,7 @@ export function ParameterInspector({
     tutorial: true,
     transformation: false,
     toyPointMapProperties: false,
+    keyedSBoxProperties: false,
     sboxProperties: false,
     permutationProperties: false,
     lfsrProperties: false,
@@ -789,6 +791,16 @@ export function ParameterInspector({
     }
     return getToyPointMapAnalysis(moduleInstance.params as Record<string, unknown>);
   }, [inspectorTab, moduleInstance]);
+  const staticKeyedSBoxAnalysis: KeyedSBoxAnalysis | null = useMemo(() => {
+    if (inspectorTab !== 'analyze' || moduleInstance?.defId !== 'KeyedSBox4' || !moduleInstance || !selectedTrace) {
+      return null;
+    }
+    const keySignal = selectedTrace.inputs.key;
+    if (selectedTrace.moduleId !== moduleInstance.id || selectedTrace.defId !== 'KeyedSBox4' || keySignal?.type !== 'bits') {
+      return null;
+    }
+    return getKeyedSBoxAnalysis(keySignal.value);
+  }, [inspectorTab, moduleInstance, selectedTrace]);
   const canBypassSelectedModule = moduleDef ? isBypassEligibleDefinition(moduleDef) : false;
   const orderedInputPorts = useMemo(
     () =>
@@ -1021,6 +1033,7 @@ export function ParameterInspector({
         staticReflectorAnalysis={staticReflectorAnalysis}
         staticModulusAnalysis={staticModulusAnalysis}
         staticToyPointMapAnalysis={staticToyPointMapAnalysis}
+        staticKeyedSBoxAnalysis={staticKeyedSBoxAnalysis}
         activeLookupChunk={activeLookupChunk}
         effectiveLookupChunkIndex={effectiveLookupChunkIndex}
         setRequestedLookupChunkIndex={setRequestedLookupChunkIndex}

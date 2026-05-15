@@ -14,6 +14,7 @@ import {
   type SBoxAnalysis,
   type PermutationAnalysis,
   type ToyPointMapAnalysis,
+  type KeyedSBoxAnalysis,
 } from '../inspector-analysis';
 import { KNOWN_SBOX_REFERENCES } from '../../engine/analysis/sbox-analysis';
 import type { LFSRAnalysis, PlugboardAnalysis, ReflectorAnalysis, ModulusAnalysis } from '../inspector-analysis';
@@ -117,6 +118,7 @@ interface CollapsedAnalyzeSections {
   tutorial: boolean;
   transformation: boolean;
   toyPointMapProperties: boolean;
+  keyedSBoxProperties: boolean;
   sboxProperties: boolean;
   permutationProperties: boolean;
   lfsrProperties: boolean;
@@ -190,6 +192,7 @@ interface InspectorAnalyzeDetailsProps {
   staticReflectorAnalysis: ReflectorAnalysis | null;
   staticModulusAnalysis: ModulusAnalysis | null;
   staticToyPointMapAnalysis: ToyPointMapAnalysis | null;
+  staticKeyedSBoxAnalysis: KeyedSBoxAnalysis | null;
   activeLookupChunk: LookupChunk | null;
   effectiveLookupChunkIndex: number;
   setRequestedLookupChunkIndex: (index: number) => void;
@@ -234,6 +237,7 @@ export function InspectorAnalyzeDetails({
   staticReflectorAnalysis,
   staticModulusAnalysis,
   staticToyPointMapAnalysis,
+  staticKeyedSBoxAnalysis,
   activeLookupChunk,
   effectiveLookupChunkIndex,
   setRequestedLookupChunkIndex,
@@ -1117,6 +1121,75 @@ export function InspectorAnalyzeDetails({
                 If the walk reaches ∞, MCW shows it as a labeled non-affine result in the list rather than placing it on the coordinate grid.
               </p>
             ) : null}
+          </div>
+        </InspectorSection>
+      ) : null}
+
+      {inspectorTab === 'analyze' && staticKeyedSBoxAnalysis ? (
+        <InspectorSection
+          label="Keyed S-Box"
+          collapsible
+          collapsed={collapsedAnalyzeSections.keyedSBoxProperties}
+          onToggle={() => toggleAnalyzeSection('keyedSBoxProperties')}
+        >
+          <div className="sbox-analysis-panel" style={{ borderTop: 'none', paddingTop: 0, marginTop: 0 }}>
+            <p className="sbox-analysis-disclaimer">
+              This board keeps the table choice bounded and explicit. A changed table, a valid permutation, and local S-box quality are separate questions.
+            </p>
+            <div className="sbox-analysis-strip">
+              <div className="sbox-analysis-strip-cell">
+                <span className="meta-label">Key</span>
+                <strong>{staticKeyedSBoxAnalysis.keyBits}</strong>
+              </div>
+              <div className="sbox-analysis-strip-cell">
+                <span className="meta-label">Variant</span>
+                <strong>{staticKeyedSBoxAnalysis.keyLabel}</strong>
+              </div>
+              <div className="sbox-analysis-strip-cell">
+                <span className="meta-label">Permutation</span>
+                <strong className={staticKeyedSBoxAnalysis.selectedVariant.isValidPermutation ? 'sbox-analysis-value-good' : 'sbox-analysis-value-warn'}>
+                  {staticKeyedSBoxAnalysis.selectedVariant.isValidPermutation ? 'valid' : 'invalid'}
+                </strong>
+              </div>
+              <div className="sbox-analysis-strip-cell">
+                <span className="meta-label">NL</span>
+                <strong className="sbox-analysis-value">{staticKeyedSBoxAnalysis.sboxAnalysis.lat.nonlinearity}</strong>
+              </div>
+            </div>
+            <div className="keyed-sbox-compare-grid">
+              <div className="keyed-sbox-table-block">
+                <span className="meta-label">Baseline table</span>
+                <div className="keyed-sbox-table-grid">
+                  {staticKeyedSBoxAnalysis.baselineTable.map((value, index) => (
+                    <div key={`baseline-${index}`} className="keyed-sbox-table-cell">
+                      <span className="meta-label">{index.toString(16).toUpperCase()}</span>
+                      <strong>{value.toString(16).toUpperCase()}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="keyed-sbox-table-block">
+                <span className="meta-label">Selected keyed table</span>
+                <div className="keyed-sbox-table-grid">
+                  {staticKeyedSBoxAnalysis.selectedTable.map((value, index) => (
+                    <div key={`selected-${index}`} className="keyed-sbox-table-cell">
+                      <span className="meta-label">{index.toString(16).toUpperCase()}</span>
+                      <strong>{value.toString(16).toUpperCase()}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <p className="sbox-analysis-note">{staticKeyedSBoxAnalysis.selectedVariant.explanation}</p>
+            {!staticKeyedSBoxAnalysis.selectedVariant.isValidPermutation ? (
+              <p className="sbox-analysis-consequence">
+                This keyed table is not invertible: repeated values {staticKeyedSBoxAnalysis.repeatedValues.map((value) => value.toString(16).toUpperCase()).join(', ')} appear and values {staticKeyedSBoxAnalysis.missingValues.map((value) => value.toString(16).toUpperCase()).join(', ')} disappear.
+              </p>
+            ) : (
+              <p className="sbox-analysis-consequence">
+                This keyed table is still a valid 4-bit permutation, but that only means every input still has one output and every output appears once. It does not by itself prove this is a stronger substitution layer.
+              </p>
+            )}
           </div>
         </InspectorSection>
       ) : null}

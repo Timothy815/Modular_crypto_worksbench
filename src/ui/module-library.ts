@@ -743,6 +743,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'A nonlinear substitution block. A 16-entry table gives 4-bit substitution, while a 256-entry table gives 8-bit substitution.',
     searchTerms: ['sbox', 's-box', 'substitute', 'nibble', 'byte', 'nonlinear', 'bits', 'diffusion', 'substitution'],
   },
+  KeyedSBox4: {
+    sectionId: 'word-diffusion',
+    sortOrder: 51,
+    purpose: 'Uses one visible 2-bit key to choose one of four explicit 4-bit substitution-table variants and emits both the substituted nibble and a validity bit.',
+    detail: 'Use this when the key should visibly select a bounded keyed substitution family rather than editing an unconstrained table. It keeps the selected 4-bit table explicit in Analyze, emits a one-bit validity result, and distinguishes table change from permutation validity and cryptographic quality.',
+    searchTerms: ['keyed sbox', 'keyed s-box', '4-bit sbox', 'present sbox', 'valid permutation', 'keyed substitution', 'bits'],
+  },
   GF2Mul: {
     sectionId: 'number-theory',
     sortOrder: 1,

@@ -132,4 +132,13 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('Perturbed AES Round(row1=0)');
     expect(demo?.pipeline).toContain('Equals(branch comparisons)');
   });
+
+  it('includes the keyed S-box authoring demo as a bounded table-selection workspace', () => {
+    const demo = demoProjects.find((project) => project.id === 'keyed-sbox-authoring');
+
+    expect(demo?.name).toBe('Keyed S-Box Authoring');
+    expect(demo?.pipeline).toContain('KeyedSBox4');
+    expect(demo?.pipeline).toContain('SBox(PRESENT)');
+    expect(demo?.pipeline).toContain('BitOutput(valid permutation)');
+  });
 });

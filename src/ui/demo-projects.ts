@@ -460,6 +460,85 @@ function buildAesRowPerturbationWorkspace(): {
 
 const AES_ROW_PERTURBATION_WORKSPACE = buildAesRowPerturbationWorkspace();
 
+function buildKeyedSBoxAuthoringWorkspace(keyBits: [number, number]): {
+  project: Project;
+  layout: Record<string, { x: number; y: number }>;
+} {
+  return {
+    project: {
+      modules: [
+        { id: 'input-a', defId: 'BitSource', params: { stream: [0, 0, 0, 1] } },
+        { id: 'input-b', defId: 'BitSource', params: { stream: [1, 0, 0, 1] } },
+        { id: 'key-source', defId: 'BitSource', params: { stream: [...keyBits] } },
+        { id: 'baseline-a', defId: 'SBox', params: { table: PRESENT_SBOX_TABLE } },
+        { id: 'keyed-a', defId: 'KeyedSBox4', params: {} },
+        { id: 'baseline-b', defId: 'SBox', params: { table: PRESENT_SBOX_TABLE } },
+        { id: 'keyed-b', defId: 'KeyedSBox4', params: {} },
+        { id: 'baseline-a-hex', defId: 'BitsToHexDigit', params: {} },
+        { id: 'keyed-a-hex', defId: 'BitsToHexDigit', params: {} },
+        { id: 'baseline-b-hex', defId: 'BitsToHexDigit', params: {} },
+        { id: 'keyed-b-hex', defId: 'BitsToHexDigit', params: {} },
+        { id: 'baseline-a-out', defId: 'Output', params: {} },
+        { id: 'keyed-a-out', defId: 'Output', params: {} },
+        { id: 'baseline-b-out', defId: 'Output', params: {} },
+        { id: 'keyed-b-out', defId: 'Output', params: {} },
+        { id: 'match-a', defId: 'Equals', params: {} },
+        { id: 'match-b', defId: 'Equals', params: {} },
+        { id: 'match-a-out', defId: 'BitOutput', params: {} },
+        { id: 'match-b-out', defId: 'BitOutput', params: {} },
+        { id: 'valid-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'input-a', port: 'out' }, to: { moduleId: 'baseline-a', port: 'in' } },
+        { from: { moduleId: 'input-a', port: 'out' }, to: { moduleId: 'keyed-a', port: 'in' } },
+        { from: { moduleId: 'input-b', port: 'out' }, to: { moduleId: 'baseline-b', port: 'in' } },
+        { from: { moduleId: 'input-b', port: 'out' }, to: { moduleId: 'keyed-b', port: 'in' } },
+        { from: { moduleId: 'key-source', port: 'out' }, to: { moduleId: 'keyed-a', port: 'key' } },
+        { from: { moduleId: 'key-source', port: 'out' }, to: { moduleId: 'keyed-b', port: 'key' } },
+        { from: { moduleId: 'baseline-a', port: 'out' }, to: { moduleId: 'baseline-a-hex', port: 'in' } },
+        { from: { moduleId: 'keyed-a', port: 'out' }, to: { moduleId: 'keyed-a-hex', port: 'in' } },
+        { from: { moduleId: 'baseline-b', port: 'out' }, to: { moduleId: 'baseline-b-hex', port: 'in' } },
+        { from: { moduleId: 'keyed-b', port: 'out' }, to: { moduleId: 'keyed-b-hex', port: 'in' } },
+        { from: { moduleId: 'baseline-a-hex', port: 'out' }, to: { moduleId: 'baseline-a-out', port: 'in' } },
+        { from: { moduleId: 'keyed-a-hex', port: 'out' }, to: { moduleId: 'keyed-a-out', port: 'in' } },
+        { from: { moduleId: 'baseline-b-hex', port: 'out' }, to: { moduleId: 'baseline-b-out', port: 'in' } },
+        { from: { moduleId: 'keyed-b-hex', port: 'out' }, to: { moduleId: 'keyed-b-out', port: 'in' } },
+        { from: { moduleId: 'baseline-a', port: 'out' }, to: { moduleId: 'match-a', port: 'a' } },
+        { from: { moduleId: 'keyed-a', port: 'out' }, to: { moduleId: 'match-a', port: 'b' } },
+        { from: { moduleId: 'baseline-b', port: 'out' }, to: { moduleId: 'match-b', port: 'a' } },
+        { from: { moduleId: 'keyed-b', port: 'out' }, to: { moduleId: 'match-b', port: 'b' } },
+        { from: { moduleId: 'match-a', port: 'out' }, to: { moduleId: 'match-a-out', port: 'in' } },
+        { from: { moduleId: 'match-b', port: 'out' }, to: { moduleId: 'match-b-out', port: 'in' } },
+        { from: { moduleId: 'keyed-a', port: 'valid' }, to: { moduleId: 'valid-out', port: 'in' } },
+      ],
+    },
+    layout: {
+      'input-a': { x: 88, y: 144 },
+      'input-b': { x: 88, y: 404 },
+      'key-source': { x: 88, y: 664 },
+      'baseline-a': { x: 320, y: 144 },
+      'keyed-a': { x: 320, y: 404 },
+      'baseline-b': { x: 320, y: 664 },
+      'keyed-b': { x: 320, y: 924 },
+      'baseline-a-hex': { x: 600, y: 144 },
+      'keyed-a-hex': { x: 600, y: 404 },
+      'baseline-b-hex': { x: 600, y: 664 },
+      'keyed-b-hex': { x: 600, y: 924 },
+      'baseline-a-out': { x: 840, y: 144 },
+      'keyed-a-out': { x: 840, y: 404 },
+      'baseline-b-out': { x: 840, y: 664 },
+      'keyed-b-out': { x: 840, y: 924 },
+      'match-a': { x: 1080, y: 264 },
+      'match-b': { x: 1080, y: 784 },
+      'match-a-out': { x: 1320, y: 264 },
+      'match-b-out': { x: 1320, y: 784 },
+      'valid-out': { x: 1080, y: 1084 },
+    },
+  };
+}
+
+const KEYED_SBOX_AUTHORING_WORKSPACE = buildKeyedSBoxAuthoringWorkspace([0, 1]);
+
 export const demoProjects: DemoProject[] = [
   {
     id: 'bit-sequence-segment-and-rejoin',
@@ -2158,6 +2237,20 @@ export const demoProjects: DemoProject[] = [
       'Shared HexSource(state,key) -> [Canonical AES Round | Perturbed AES Round(row1=0)] -> BitsToHex(ShiftRows and final state) -> Equals(branch comparisons) -> BitOutput',
     project: AES_ROW_PERTURBATION_WORKSPACE.project,
     layout: AES_ROW_PERTURBATION_WORKSPACE.layout,
+  },
+  {
+    id: 'keyed-sbox-authoring',
+    name: 'Keyed S-Box Authoring',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.95,
+    recommendedAfter: ['aes-row-perturbation'],
+    summary:
+      'One visible 2-bit key selects one of four explicit 4-bit table variants. The board keeps a fixed baseline branch beside the keyed branch so table change, output change, and permutation validity can be compared without claiming stronger cryptography.',
+    pipeline:
+      'Shared BitSource(input) + BitSource(key) -> [SBox(PRESENT) | KeyedSBox4] -> BitsToHexDigit -> Output, plus Equals(output comparisons) and BitOutput(valid permutation)',
+    project: KEYED_SBOX_AUTHORING_WORKSPACE.project,
+    layout: KEYED_SBOX_AUTHORING_WORKSPACE.layout,
   },
   {
     id: 'visible-point-order-and-subgroups',

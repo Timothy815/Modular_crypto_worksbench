@@ -37,6 +37,7 @@ This is the canonical starting point for humans and agents.
 - `docs/live/contracts/2026-05/AES-ROUND-COMPOSITE-V1.md` when reviewing the shipped full AES round composite — composition scope, ShiftRows bus wiring, FIPS 197 round-1 acceptance, and the follow-on parity/refactor phases
 - `docs/live/contracts/2026-05/GF2-AES-PYTHON-EXPORT-PARITY-V1.md` when reviewing the shipped GF2/AES Python export parity slice after the AES round composite — primitive/workspace parity, FIPS replay, and bounded test-coverage completion
 - `docs/live/contracts/2026-05/AES-ROW-COLUMN-PERTURBATION-V1.md` when reviewing the shipped bounded AES control-and-consequence slice after the round composite — row-rotation perturbation with explicit visible consequences and no generic cipher-lab sprawl
+- `docs/live/contracts/2026-05/KEYED-SBOX-AUTHORING-V1.md` when reviewing the shipped bounded keyed-substitution slice after AES row perturbation — visible 2-bit key selection over one explicit 4-bit S-box family, machine-visible permutation validity, and honest local consequence language
 - `docs/live/contracts/2026-05/PARAMETER-INSPECTOR-REFACTOR-V1.md` when reviewing the shipped configure-tab extraction from `parameter-inspector.tsx` — architecture protection only, no behavior change
 - `docs/live/contracts/2026-05/DEMO-ATLAS-V1.md` when reviewing the shipped Demo Atlas discovery surface — Learning-dock Atlas tab, searchable concept-map sections, and explicit separation from the fast-launch Demo menu
 
