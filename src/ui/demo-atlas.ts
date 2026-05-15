@@ -176,6 +176,7 @@ const FULL_DEMO_SECTION_MAP: Record<string, AtlasSectionId> = {
   'visible-shiftrows': 'arithmetic-and-aes',
   'visible-add-round-key': 'arithmetic-and-aes',
   'aes-round-full': 'arithmetic-and-aes',
+  'aes-row-perturbation': 'arithmetic-and-aes',
 
   'visible-point-mechanics': 'public-key-and-ecc',
   'visible-scalar-multiplication': 'public-key-and-ecc',
@@ -249,6 +250,10 @@ const FULL_DEMO_FLAGS: Record<string, DemoAtlasEntryFlags> = {
   'aes-round-full': {
     advanced: true,
     keywords: ['aes', 'round', 'fips 197'],
+  },
+  'aes-row-perturbation': {
+    advanced: true,
+    keywords: ['aes', 'shiftrows', 'perturbation', 'row rotation', 'fips 197', 'comparison'],
   },
   'secp256k1-ecdh': {
     advanced: true,

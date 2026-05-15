@@ -68,13 +68,15 @@ All use NIST FIPS 197 test vectors. Group routing, GROUP_STAGE_MAP, and PRIMITIV
 
 This board wires 16 byte-wise SubBytes transforms into a visible ShiftRows bus permutation, four explicit MixColumns column mixers, and 16 AddRoundKey XORs. It is verified against the FIPS 197 Appendix B round-1 output, and the repair challenge now teaches diffusion by breaking one SubBytes cell and producing exactly one wrong final output column.
 
+**Latest AES control-and-consequence work:** `AES-ROW-COLUMN-PERTURBATION-V1` is now shipped. MCW now has a bounded dual-branch AES board where the canonical round and one ShiftRows row-rotation perturbation share the same FIPS input state and round key, making the changed ShiftRows state and changed final output visible without drifting into a generic cipher-lab surface.
+
 **Latest architecture-protection work:** `parameter-inspector.tsx` configure-tab extraction shipped. The inspector now keeps orchestration in `ParameterInspector` while the remaining configure-tab render family lives in extracted local components.
 
 **Latest product-facing discovery work:** `DEMO-ATLAS-V1` is now shipped. The Learning dock now includes an always-visible `Atlas` tab that acts as a searchable concept map for full demos and pipeline micro demos without replacing the current Demo menu.
 
 **Latest ECC visibility work:** both `VISIBLE-DOUBLE-AND-ADD-V1` and `TOY-CURVE-POINT-MAP-V1` are now shipped. MCW now has an explicit repeated-doubling / conditional-addition board that agrees visibly with shipped `ScalarMultiply`, plus a toy-curve point-map surface that makes one finite-field curve legible as a visible point landscape with a machine-checked repeated-action walk.
 
-**Genuine next open work:** no newer bounded ECC intuition contract is drafted yet after the point-map slice. The next honest follow-on should likely apply the same authorable-structure standard to AES row/column perturbation as its own slice rather than trying to combine ECC and AES control work in one contract.
+**Genuine next open work:** no newer bounded AES perturbation follow-on is drafted yet after the ShiftRows row-rotation slice. Keyed S-box exploration remains interesting, but it should stay as its own later bounded authoring slice rather than being folded into the first AES perturbation pass.
 
 ## Practical Restart Guidance
 

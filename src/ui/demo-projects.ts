@@ -29,8 +29,22 @@ const DES_S1_TABLE = serializeSBoxTable(generateSBoxTable(getSBoxGenerationShape
 // PRESENT cipher 4→4 S-box: bijective, high nonlinearity, used in Feistel round demos
 const PRESENT_SBOX_TABLE = '12,5,6,11,9,0,10,13,3,14,15,8,4,7,1,2';
 
-const AES_SHIFT_ROWS_ORDER =
-  '0,1,2,3,4,5,6,7,40,41,42,43,44,45,46,47,80,81,82,83,84,85,86,87,120,121,122,123,124,125,126,127,32,33,34,35,36,37,38,39,72,73,74,75,76,77,78,79,112,113,114,115,116,117,118,119,24,25,26,27,28,29,30,31,64,65,66,67,68,69,70,71,104,105,106,107,108,109,110,111,16,17,18,19,20,21,22,23,56,57,58,59,60,61,62,63,96,97,98,99,100,101,102,103,8,9,10,11,12,13,14,15,48,49,50,51,52,53,54,55,88,89,90,91,92,93,94,95';
+function buildAesShiftRowsOrder(rowShifts: readonly [number, number, number, number]): string {
+  const order: number[] = [];
+  for (let column = 0; column < 4; column += 1) {
+    for (let row = 0; row < 4; row += 1) {
+      const sourceColumn = (column + rowShifts[row]) % 4;
+      const sourceByteIndex = sourceColumn * 4 + row;
+      for (let bit = 0; bit < 8; bit += 1) {
+        order.push(sourceByteIndex * 8 + bit);
+      }
+    }
+  }
+  return order.join(',');
+}
+
+const AES_SHIFT_ROWS_ORDER = buildAesShiftRowsOrder([0, 1, 2, 3]);
+const AES_SHIFT_ROWS_ROW1_ZERO_ORDER = buildAesShiftRowsOrder([0, 0, 2, 3]);
 
 const AES_ROUND_STATE_BYTES = [
   '19', '3D', 'E3', 'BE',
@@ -204,6 +218,247 @@ function buildAesRoundDemoWorkspace(): {
 }
 
 const AES_ROUND_FULL_WORKSPACE = buildAesRoundDemoWorkspace();
+
+function appendBitJoinTree(
+  modules: Project['modules'],
+  connections: Project['connections'],
+  layout: Record<string, { x: number; y: number }>,
+  sourceIds: string[],
+  joinPrefix: string,
+  baseX: number,
+): string {
+  let currentLevel = [...sourceIds];
+  let levelIndex = 0;
+  while (currentLevel.length > 1) {
+    const nextLevel: string[] = [];
+    for (let pairIndex = 0; pairIndex < currentLevel.length; pairIndex += 2) {
+      const joinId = `${joinPrefix}-${levelIndex}-${pairIndex / 2}`;
+      modules.push({ id: joinId, defId: 'BitJoin', params: {} });
+      connections.push({ from: { moduleId: currentLevel[pairIndex], port: 'out' }, to: { moduleId: joinId, port: 'a' } });
+      connections.push({ from: { moduleId: currentLevel[pairIndex + 1], port: 'out' }, to: { moduleId: joinId, port: 'b' } });
+
+      const leftPosition = layout[currentLevel[pairIndex]];
+      const rightPosition = layout[currentLevel[pairIndex + 1]];
+      layout[joinId] = {
+        x: baseX + levelIndex * 120,
+        y: ((leftPosition?.y ?? 0) + (rightPosition?.y ?? 0)) / 2,
+      };
+
+      nextLevel.push(joinId);
+    }
+    currentLevel = nextLevel;
+    levelIndex += 1;
+  }
+
+  return currentLevel[0];
+}
+
+function buildAesRoundBranch(
+  modules: Project['modules'],
+  connections: Project['connections'],
+  layout: Record<string, { x: number; y: number }>,
+  options: {
+    prefix: string;
+    yOffset: number;
+    shiftOrder: string;
+    stateSourceIds: string[][];
+    keySourceIds: string[][];
+  },
+): {
+  shiftBusId: string;
+  finalBusId: string;
+  shiftOutputId: string;
+  finalOutputId: string;
+} {
+  const { prefix, yOffset, shiftOrder, stateSourceIds, keySourceIds } = options;
+  const subByteIds: string[] = [];
+  const shiftByteIds: string[] = [];
+  const finalByteIds: string[] = [];
+
+  for (let column = 0; column < 4; column += 1) {
+    for (let row = 0; row < 4; row += 1) {
+      const sboxId = `${prefix}-sub-${row}-${column}`;
+      const shiftByteId = `${prefix}-shift-byte-${row}-${column}`;
+      const addRoundKeyId = `${prefix}-ark-${row}-${column}`;
+
+      modules.push({ id: sboxId, defId: 'SBox', params: { table: AES_SBOX_TABLE } });
+      modules.push({ id: shiftByteId, defId: 'BitWindow', params: { start: (column * 4 + row) * 8, width: 8 } });
+      modules.push({ id: addRoundKeyId, defId: 'XOR', params: {} });
+
+      connections.push({ from: { moduleId: stateSourceIds[row][column], port: 'out' }, to: { moduleId: sboxId, port: 'in' } });
+
+      layout[sboxId] = { x: 500 + column * 120, y: yOffset + 80 + row * 120 };
+      layout[shiftByteId] = { x: 1660 + column * 120, y: yOffset + 80 + row * 120 };
+      layout[addRoundKeyId] = { x: 3420 + column * 120, y: yOffset + 80 + row * 120 };
+
+      subByteIds.push(sboxId);
+      shiftByteIds.push(shiftByteId);
+      finalByteIds.push(addRoundKeyId);
+    }
+  }
+
+  const joinedStateId = appendBitJoinTree(modules, connections, layout, subByteIds, `${prefix}-join`, 840);
+  const shiftRowsId = `${prefix}-shift-rows`;
+  modules.push({ id: shiftRowsId, defId: 'Permutation', params: { order: shiftOrder } });
+  connections.push({ from: { moduleId: joinedStateId, port: 'out' }, to: { moduleId: shiftRowsId, port: 'in' } });
+  layout[shiftRowsId] = { x: 1320, y: yOffset + 260 };
+
+  for (let column = 0; column < 4; column += 1) {
+    for (let row = 0; row < 4; row += 1) {
+      connections.push({ from: { moduleId: shiftRowsId, port: 'out' }, to: { moduleId: `${prefix}-shift-byte-${row}-${column}`, port: 'in' } });
+    }
+  }
+
+  const shiftBusId = appendBitJoinTree(modules, connections, layout, shiftByteIds, `${prefix}-shift-join`, 1880);
+  const shiftHexId = `${prefix}-shift-hex`;
+  const shiftOutputId = `${prefix}-shift-out`;
+  modules.push({ id: shiftHexId, defId: 'BitsToHex', params: {} });
+  modules.push({ id: shiftOutputId, defId: 'HexOutput', params: {} });
+  connections.push({ from: { moduleId: shiftBusId, port: 'out' }, to: { moduleId: shiftHexId, port: 'in' } });
+  connections.push({ from: { moduleId: shiftHexId, port: 'out' }, to: { moduleId: shiftOutputId, port: 'in' } });
+  layout[shiftHexId] = { x: 2360, y: yOffset + 240 };
+  layout[shiftOutputId] = { x: 2580, y: yOffset + 240 };
+
+  for (let column = 0; column < 4; column += 1) {
+    const const2Id = `${prefix}-mix-const2-${column}`;
+    const const3Id = `${prefix}-mix-const3-${column}`;
+    modules.push({ id: const2Id, defId: 'HexSource', params: { value: '02' } });
+    modules.push({ id: const3Id, defId: 'HexSource', params: { value: '03' } });
+    layout[const2Id] = { x: 2820 + column * 440, y: yOffset + 20 };
+    layout[const3Id] = { x: 2820 + column * 440, y: yOffset + 620 };
+
+    const columnInputIds = [
+      `${prefix}-shift-byte-0-${column}`,
+      `${prefix}-shift-byte-1-${column}`,
+      `${prefix}-shift-byte-2-${column}`,
+      `${prefix}-shift-byte-3-${column}`,
+    ];
+
+    for (let row = 0; row < 4; row += 1) {
+      const terms: string[] = [];
+      for (let sourceRow = 0; sourceRow < 4; sourceRow += 1) {
+        const coefficient = MIX_COLUMNS_COEFFICIENT_ROWS[row][sourceRow];
+        if (coefficient === 1) {
+          terms.push(columnInputIds[sourceRow]);
+          continue;
+        }
+
+        const multiplyId = `${prefix}-mix-c${column}-r${row}-m${sourceRow}`;
+        modules.push({ id: multiplyId, defId: 'GF2Mul', params: { poly: '11B' } });
+        connections.push({ from: { moduleId: columnInputIds[sourceRow], port: 'out' }, to: { moduleId: multiplyId, port: 'a' } });
+        connections.push({
+          from: { moduleId: coefficient === 2 ? const2Id : const3Id, port: 'out' },
+          to: { moduleId: multiplyId, port: 'b' },
+        });
+        layout[multiplyId] = { x: 3000 + column * 440, y: yOffset + 80 + row * 140 + sourceRow * 24 };
+        terms.push(multiplyId);
+      }
+
+      const xor0Id = `${prefix}-mix-c${column}-r${row}-xor0`;
+      const xor1Id = `${prefix}-mix-c${column}-r${row}-xor1`;
+      const xor2Id = `${prefix}-mix-c${column}-r${row}-xor2`;
+
+      modules.push({ id: xor0Id, defId: 'XOR', params: {} });
+      modules.push({ id: xor1Id, defId: 'XOR', params: {} });
+      modules.push({ id: xor2Id, defId: 'XOR', params: {} });
+
+      connections.push({ from: { moduleId: terms[0], port: 'out' }, to: { moduleId: xor0Id, port: 'a' } });
+      connections.push({ from: { moduleId: terms[1], port: 'out' }, to: { moduleId: xor0Id, port: 'b' } });
+      connections.push({ from: { moduleId: xor0Id, port: 'out' }, to: { moduleId: xor1Id, port: 'a' } });
+      connections.push({ from: { moduleId: terms[2], port: 'out' }, to: { moduleId: xor1Id, port: 'b' } });
+      connections.push({ from: { moduleId: xor1Id, port: 'out' }, to: { moduleId: xor2Id, port: 'a' } });
+      connections.push({ from: { moduleId: terms[3], port: 'out' }, to: { moduleId: xor2Id, port: 'b' } });
+      connections.push({ from: { moduleId: xor2Id, port: 'out' }, to: { moduleId: `${prefix}-ark-${row}-${column}`, port: 'a' } });
+      connections.push({ from: { moduleId: keySourceIds[row][column], port: 'out' }, to: { moduleId: `${prefix}-ark-${row}-${column}`, port: 'b' } });
+
+      layout[xor0Id] = { x: 3240 + column * 440, y: yOffset + 80 + row * 140 };
+      layout[xor1Id] = { x: 3460 + column * 440, y: yOffset + 80 + row * 140 };
+      layout[xor2Id] = { x: 3680 + column * 440, y: yOffset + 80 + row * 140 };
+    }
+  }
+
+  const finalBusId = appendBitJoinTree(modules, connections, layout, finalByteIds, `${prefix}-final-join`, 3920);
+  const finalHexId = `${prefix}-final-hex`;
+  const finalOutputId = `${prefix}-final-out`;
+  modules.push({ id: finalHexId, defId: 'BitsToHex', params: {} });
+  modules.push({ id: finalOutputId, defId: 'HexOutput', params: {} });
+  connections.push({ from: { moduleId: finalBusId, port: 'out' }, to: { moduleId: finalHexId, port: 'in' } });
+  connections.push({ from: { moduleId: finalHexId, port: 'out' }, to: { moduleId: finalOutputId, port: 'in' } });
+  layout[finalHexId] = { x: 4400, y: yOffset + 240 };
+  layout[finalOutputId] = { x: 4620, y: yOffset + 240 };
+
+  return {
+    shiftBusId,
+    finalBusId,
+    shiftOutputId,
+    finalOutputId,
+  };
+}
+
+function buildAesRowPerturbationWorkspace(): {
+  project: Project;
+  layout: Record<string, { x: number; y: number }>;
+} {
+  const modules: Project['modules'] = [];
+  const connections: Project['connections'] = [];
+  const layout: Record<string, { x: number; y: number }> = {};
+  const stateSourceIds: string[][] = Array.from({ length: 4 }, () => Array(4).fill(''));
+  const keySourceIds: string[][] = Array.from({ length: 4 }, () => Array(4).fill(''));
+
+  for (let column = 0; column < 4; column += 1) {
+    for (let row = 0; row < 4; row += 1) {
+      const flatIndex = column * 4 + row;
+      const stateId = `shared-s-${row}-${column}`;
+      const keyId = `shared-k-${row}-${column}`;
+      stateSourceIds[row][column] = stateId;
+      keySourceIds[row][column] = keyId;
+      modules.push({ id: stateId, defId: 'HexSource', params: { value: AES_ROUND_STATE_BYTES[flatIndex] } });
+      modules.push({ id: keyId, defId: 'HexSource', params: { value: AES_ROUND_KEY_BYTES[flatIndex] } });
+      layout[stateId] = { x: 80 + column * 120, y: 120 + row * 120 };
+      layout[keyId] = { x: 80 + column * 120, y: 1180 + row * 120 };
+    }
+  }
+
+  const canonical = buildAesRoundBranch(modules, connections, layout, {
+    prefix: 'canonical',
+    yOffset: 40,
+    shiftOrder: AES_SHIFT_ROWS_ORDER,
+    stateSourceIds,
+    keySourceIds,
+  });
+
+  const perturbed = buildAesRoundBranch(modules, connections, layout, {
+    prefix: 'perturbed',
+    yOffset: 1020,
+    shiftOrder: AES_SHIFT_ROWS_ROW1_ZERO_ORDER,
+    stateSourceIds,
+    keySourceIds,
+  });
+
+  modules.push({ id: 'shift-match', defId: 'Equals', params: {} });
+  modules.push({ id: 'shift-match-out', defId: 'BitOutput', params: {} });
+  modules.push({ id: 'final-match', defId: 'Equals', params: {} });
+  modules.push({ id: 'final-match-out', defId: 'BitOutput', params: {} });
+
+  connections.push({ from: { moduleId: canonical.shiftBusId, port: 'out' }, to: { moduleId: 'shift-match', port: 'a' } });
+  connections.push({ from: { moduleId: perturbed.shiftBusId, port: 'out' }, to: { moduleId: 'shift-match', port: 'b' } });
+  connections.push({ from: { moduleId: 'shift-match', port: 'out' }, to: { moduleId: 'shift-match-out', port: 'in' } });
+  connections.push({ from: { moduleId: canonical.finalBusId, port: 'out' }, to: { moduleId: 'final-match', port: 'a' } });
+  connections.push({ from: { moduleId: perturbed.finalBusId, port: 'out' }, to: { moduleId: 'final-match', port: 'b' } });
+  connections.push({ from: { moduleId: 'final-match', port: 'out' }, to: { moduleId: 'final-match-out', port: 'in' } });
+
+  layout['shift-match'] = { x: 4900, y: 740 };
+  layout['shift-match-out'] = { x: 5160, y: 740 };
+  layout['final-match'] = { x: 4900, y: 860 };
+  layout['final-match-out'] = { x: 5160, y: 860 };
+
+  return {
+    project: { modules, connections },
+    layout,
+  };
+}
+
+const AES_ROW_PERTURBATION_WORKSPACE = buildAesRowPerturbationWorkspace();
 
 export const demoProjects: DemoProject[] = [
   {
@@ -1889,6 +2144,20 @@ export const demoProjects: DemoProject[] = [
       '16x HexSource(state) -> 16x SBox(AES) -> BitJoin tree -> Permutation(ShiftRows) -> 16x BitWindow -> 4x MixColumns GF2Mul/XOR columns -> 16x XOR(round key) -> 16x BitsToHex -> 16x HexOutput',
     project: AES_ROUND_FULL_WORKSPACE.project,
     layout: AES_ROUND_FULL_WORKSPACE.layout,
+  },
+  {
+    id: 'aes-row-perturbation',
+    name: 'AES Row Perturbation',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.94,
+    recommendedAfter: ['aes-round-full'],
+    summary:
+      'One canonical AES round branch and one ShiftRows-perturbed branch share the same FIPS 197 state and round key. The canonical branch keeps row 1 at a left rotation of 1 byte; the perturbed branch changes only that rule to 0 bytes so the changed ShiftRows state and changed final round output stay visible as machine consequences.',
+    pipeline:
+      'Shared HexSource(state,key) -> [Canonical AES Round | Perturbed AES Round(row1=0)] -> BitsToHex(ShiftRows and final state) -> Equals(branch comparisons) -> BitOutput',
+    project: AES_ROW_PERTURBATION_WORKSPACE.project,
+    layout: AES_ROW_PERTURBATION_WORKSPACE.layout,
   },
   {
     id: 'visible-point-order-and-subgroups',

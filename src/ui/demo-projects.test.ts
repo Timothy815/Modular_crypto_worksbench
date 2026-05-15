@@ -123,4 +123,13 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('MixColumns');
     expect(demo?.pipeline).toContain('16x XOR(round key)');
   });
+
+  it('includes the AES row perturbation demo as a canonical-vs-perturbed comparison workspace', () => {
+    const demo = demoProjects.find((project) => project.id === 'aes-row-perturbation');
+
+    expect(demo?.name).toBe('AES Row Perturbation');
+    expect(demo?.pipeline).toContain('Canonical AES Round');
+    expect(demo?.pipeline).toContain('Perturbed AES Round(row1=0)');
+    expect(demo?.pipeline).toContain('Equals(branch comparisons)');
+  });
 });

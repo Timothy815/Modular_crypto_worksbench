@@ -183,6 +183,42 @@ describe('seeded teaching content', () => {
     expect(mismatchedOutputs.sort()).toEqual(['out-0-3', 'out-1-3', 'out-2-3', 'out-3-3']);
   });
 
+  it('keeps the AES row perturbation demo aligned to the named ShiftRows and final-output consequences', () => {
+    const demo = demoProjects.find((project) => project.id === 'aes-row-perturbation');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    expect(getHexOutputMap(demo.project)).toMatchObject({
+      'canonical-shift-out': 'D4BF5D30E0B452AEB84111F11E2798E5',
+      'perturbed-shift-out': 'D4275D30E0BF52AEB8B411F11E4198E5',
+      'canonical-final-out': 'A49C7FF2689F352B6B5BEA43026A5049',
+      'perturbed-final-out': '17B7E76A75893E206FAA1FB6A8A6362F',
+    });
+    expect(getBitOutputMap(demo.project)).toMatchObject({
+      'shift-match-out': '0',
+      'final-match-out': '0',
+    });
+  });
+
+  it('keeps the ShiftRows repair challenge broken until the perturbed branch is restored to the canonical rule', () => {
+    const challenge = STARTER_CHALLENGES.find((entry) => entry.id === 'repair-the-shiftrows-rule');
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    expect(getBitOutputMap(challenge.targetProject)).toMatchObject({
+      'shift-match-out': '1',
+      'final-match-out': '1',
+    });
+    expect(getBitOutputMap(challenge.startingProject)).toMatchObject({
+      'shift-match-out': '0',
+      'final-match-out': '0',
+    });
+  });
+
   it('keeps the visible double-and-add demo aligned with the shipped ScalarMultiply result', () => {
     const demo = demoProjects.find((project) => project.id === 'visible-double-and-add');
     expect(demo).toBeTruthy();

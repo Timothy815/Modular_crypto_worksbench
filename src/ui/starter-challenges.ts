@@ -53,6 +53,7 @@ const visibleMixColumnsProject = demoProjects.find((project) => project.id === '
 const visibleSubBytesProject = demoProjects.find((project) => project.id === 'visible-subbytes');
 const visibleAddRoundKeyProject = demoProjects.find((project) => project.id === 'visible-add-round-key');
 const aesRoundFullProject = demoProjects.find((project) => project.id === 'aes-round-full');
+const aesRowPerturbationProject = demoProjects.find((project) => project.id === 'aes-row-perturbation');
 const visiblePointMechanicsProject = demoProjects.find(
   (project) => project.id === 'visible-point-mechanics',
 );
@@ -232,6 +233,9 @@ if (!visibleAddRoundKeyProject) {
 }
 if (!aesRoundFullProject) {
   throw new Error('Expected aes-round-full demo project to seed starter challenges.');
+}
+if (!aesRowPerturbationProject) {
+  throw new Error('Expected aes-row-perturbation demo project to seed starter challenges.');
 }
 if (!visiblePointMechanicsProject) {
   throw new Error('Expected visible-point-mechanics demo project to seed starter challenges.');
@@ -617,6 +621,19 @@ if (!brokenAesRoundSBox) {
   throw new Error('Expected aes-round-full demo project to contain sub-2-1 module.');
 }
 brokenAesRoundSBox.params.table = Array.from({ length: 256 }, (_, index) => index).join(',');
+
+const aesRowPerturbationTarget = cloneProject(aesRowPerturbationProject.project);
+const brokenAesRowPerturbationStart = cloneProject(aesRowPerturbationProject.project);
+const canonicalShiftRowsModule = aesRowPerturbationTarget.modules.find(
+  (moduleInstance) => moduleInstance.id === 'canonical-shift-rows',
+);
+const correctedPerturbedShiftRowsModule = aesRowPerturbationTarget.modules.find(
+  (moduleInstance) => moduleInstance.id === 'perturbed-shift-rows',
+);
+if (!canonicalShiftRowsModule || !correctedPerturbedShiftRowsModule) {
+  throw new Error('Expected aes-row-perturbation demo project to contain both ShiftRows branches.');
+}
+correctedPerturbedShiftRowsModule.params.order = canonicalShiftRowsModule.params.order;
 
 const brokenVisiblePointMechanicsConnections = brokenVisiblePointMechanicsStart.connections;
 const brokenVisiblePointMechanicsInverseIndex = brokenVisiblePointMechanicsConnections.findIndex(
@@ -2096,6 +2113,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'Exactly four output bytes are wrong. That is the diffusion signature of one corrupted byte entering MixColumns.',
       'The wrong byte starts in the SubBytes stage, then ShiftRows moves it before MixColumns spreads it across one full output column.',
       'The broken module is sub-2-1. Its table should be the AES Rijndael table, not the identity mapping 0,1,2,3,...,255.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-shiftrows-rule',
+    title: 'Repair the ShiftRows Rule',
+    projectId: 'aes-row-perturbation',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.975,
+    recommendedAfter: ['aes-row-perturbation'],
+    difficulty: 'intermediate',
+    prompt:
+      'The lower AES branch should match the canonical branch, but its ShiftRows rule still leaves row 1 unrotated. Restore the canonical AES row-1 rotation so the ShiftRows comparison and final output comparison both agree again.',
+    startingProject: brokenAesRowPerturbationStart,
+    startingLayout: cloneProject(aesRowPerturbationProject.layout),
+    targetProject: aesRowPerturbationTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The canonical branch is already correct. Only the perturbed ShiftRows permutation needs to change.',
+      'Row 1 should rotate left by one byte in AES, not stay at offset 0.',
+      'When repaired, both comparison sinks flip high: the ShiftRows state matches and the final round output matches.',
     ],
   },
   {
