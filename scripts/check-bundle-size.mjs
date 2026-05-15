@@ -6,7 +6,7 @@ const distAssetsDir = join(process.cwd(), 'dist', 'assets');
 const thresholds = {
   index: 312 * 1024,
   react: 210 * 1024,
-  maxChunk: 340 * 1024, // raised to accommodate GF2/MixColumns/SubBytes/ShiftRows/AddRoundKey demo modules and real-scale curve hex params
+  maxChunk: 360 * 1024, // raised to accommodate the shipped AES round, Atlas metadata, and visible ECC teaching boards without splitting demo-data prematurely
 };
 
 function formatKiB(bytes) {

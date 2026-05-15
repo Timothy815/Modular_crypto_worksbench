@@ -17,6 +17,8 @@ describe('pipeline micro demos', () => {
       'scalar-times-two',
       'scalar-times-zero',
       'scalar-times-three',
+      'visible-double-and-add-agreement',
+      'toy-curve-walk-agreement',
       'visible-ecdh-shared-secret-equality',
       'point-order-cycles-to-infinity',
       'contrasting-point-orders',
@@ -38,6 +40,12 @@ describe('pipeline micro demos', () => {
     expect(getPipelineMicroDemo('scalar-times-two')?.name).toBe('Scalar × 2');
     expect(getPipelineMicroDemo('scalar-times-zero')?.name).toBe('Scalar × 0');
     expect(getPipelineMicroDemo('scalar-times-three')?.name).toBe('Scalar × 3');
+    expect(getPipelineMicroDemo('visible-double-and-add-agreement')?.name).toBe(
+      'Visible Double-And-Add Agreement',
+    );
+    expect(getPipelineMicroDemo('toy-curve-walk-agreement')?.name).toBe(
+      'Toy Curve 3P Agreement',
+    );
     expect(getPipelineMicroDemo('visible-ecdh-shared-secret-equality')?.name).toBe(
       'Visible ECDH Shared Secret Equality',
     );
@@ -79,6 +87,8 @@ describe('pipeline micro demos', () => {
     expect(getPipelineMicroDemo('scalar-times-two')?.defaultTickedMode).toBeUndefined();
     expect(getPipelineMicroDemo('scalar-times-zero')?.defaultTickedMode).toBeUndefined();
     expect(getPipelineMicroDemo('scalar-times-three')?.defaultTickedMode).toBeUndefined();
+    expect(getPipelineMicroDemo('visible-double-and-add-agreement')?.defaultTickedMode).toBeUndefined();
+    expect(getPipelineMicroDemo('toy-curve-walk-agreement')?.defaultTickedMode).toBeUndefined();
     expect(getPipelineMicroDemo('visible-ecdh-shared-secret-equality')?.defaultTickedMode).toBeUndefined();
     expect(getPipelineMicroDemo('point-order-cycles-to-infinity')?.defaultTickedMode).toBeUndefined();
     expect(getPipelineMicroDemo('contrasting-point-orders')?.defaultTickedMode).toBeUndefined();
@@ -147,6 +157,8 @@ describe('pipeline micro demos', () => {
     const timesTwo = getPipelineMicroDemo('scalar-times-two');
     const timesZero = getPipelineMicroDemo('scalar-times-zero');
     const timesThree = getPipelineMicroDemo('scalar-times-three');
+    const visibleDoubleAndAdd = getPipelineMicroDemo('visible-double-and-add-agreement');
+    const toyCurveWalk = getPipelineMicroDemo('toy-curve-walk-agreement');
     const pointOrderCycle = getPipelineMicroDemo('point-order-cycles-to-infinity');
     const contrastingOrders = getPipelineMicroDemo('contrasting-point-orders');
     const schnorr = getPipelineMicroDemo('visible-schnorr-verification-equality');
@@ -178,6 +190,35 @@ describe('pipeline micro demos', () => {
       'PointDouble',
       'PointAdd',
       'PointOutput',
+    ]);
+
+    expect(visibleDoubleAndAdd?.document.project.modules.map((module) => module.defId)).toEqual([
+      'BitSource',
+      'BitsToInteger',
+      'IntegerToBits',
+      'BitWindow',
+      'BitWindow',
+      'PointSource',
+      'PointNegate',
+      'PointAdd',
+      'PointAdd',
+      'PointSelector',
+      'PointDouble',
+      'PointAdd',
+      'PointSelector',
+      'ScalarMultiply',
+      'PointEquals',
+      'BitOutput',
+    ]);
+
+    expect(toyCurveWalk?.document.project.modules.map((module) => module.defId)).toEqual([
+      'ToyPointMap',
+      'PointSource',
+      'BitSource',
+      'BitsToInteger',
+      'ScalarMultiply',
+      'PointEquals',
+      'BitOutput',
     ]);
 
     const ecdh = getPipelineMicroDemo('visible-ecdh-shared-secret-equality');

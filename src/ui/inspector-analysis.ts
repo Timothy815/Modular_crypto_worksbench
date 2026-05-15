@@ -18,6 +18,8 @@ import { getPlugboardAnalysisFromParams, getReflectorAnalysisFromParams } from '
 export type { PlugboardAnalysis, ReflectorAnalysis } from '../engine/analysis/plugboard-analysis';
 import { getModulusAnalysisFromParams } from '../engine/analysis/modexp-analysis';
 export type { ModulusAnalysis } from '../engine/analysis/modexp-analysis';
+import { computeToyPointMapAnalysis } from '../engine/analysis/toy-point-map-analysis';
+export type { ToyPointMapAnalysis } from '../engine/analysis/toy-point-map-analysis';
 import type {
   Connection,
   ExecutionResult,
@@ -2285,4 +2287,8 @@ export function getReflectorAnalysis(params: Record<string, unknown>) {
 
 export function getModulusAnalysis(params: Record<string, unknown>) {
   return getModulusAnalysisFromParams(params);
+}
+
+export function getToyPointMapAnalysis(params: Record<string, unknown>) {
+  return computeToyPointMapAnalysis(params);
 }

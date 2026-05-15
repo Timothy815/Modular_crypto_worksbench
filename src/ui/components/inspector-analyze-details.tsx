@@ -13,6 +13,7 @@ import {
   type TransformationView,
   type SBoxAnalysis,
   type PermutationAnalysis,
+  type ToyPointMapAnalysis,
 } from '../inspector-analysis';
 import { KNOWN_SBOX_REFERENCES } from '../../engine/analysis/sbox-analysis';
 import type { LFSRAnalysis, PlugboardAnalysis, ReflectorAnalysis, ModulusAnalysis } from '../inspector-analysis';
@@ -115,6 +116,7 @@ interface CollapsedAnalyzeSections {
   pinned: boolean;
   tutorial: boolean;
   transformation: boolean;
+  toyPointMapProperties: boolean;
   sboxProperties: boolean;
   permutationProperties: boolean;
   lfsrProperties: boolean;
@@ -187,6 +189,7 @@ interface InspectorAnalyzeDetailsProps {
   staticPlugboardAnalysis: PlugboardAnalysis | null;
   staticReflectorAnalysis: ReflectorAnalysis | null;
   staticModulusAnalysis: ModulusAnalysis | null;
+  staticToyPointMapAnalysis: ToyPointMapAnalysis | null;
   activeLookupChunk: LookupChunk | null;
   effectiveLookupChunkIndex: number;
   setRequestedLookupChunkIndex: (index: number) => void;
@@ -230,6 +233,7 @@ export function InspectorAnalyzeDetails({
   staticPlugboardAnalysis,
   staticReflectorAnalysis,
   staticModulusAnalysis,
+  staticToyPointMapAnalysis,
   activeLookupChunk,
   effectiveLookupChunkIndex,
   setRequestedLookupChunkIndex,
@@ -1005,6 +1009,114 @@ export function InspectorAnalyzeDetails({
                 ? `Input chunk ${activeLookupChunk.inputBits.join('')} is index ${activeLookupChunk.inputValue}. The substitution table maps ${activeLookupChunk.inputValue} to ${activeLookupChunk.outputValue}, so the output chunk becomes ${activeLookupChunk.outputBits.join('')}.`
                 : transformationView.summary}
             </p>
+          </div>
+        </InspectorSection>
+      ) : null}
+
+      {inspectorTab === 'analyze' && staticToyPointMapAnalysis ? (
+        <InspectorSection
+          label="Toy Curve Point Map"
+          collapsible
+          collapsed={collapsedAnalyzeSections.toyPointMapProperties}
+          onToggle={() => toggleAnalyzeSection('toyPointMapProperties')}
+        >
+          <div className="toy-point-map-panel">
+            <p className="sbox-analysis-disclaimer">
+              This is a finite-field point map for one small visible curve, not a continuous real-number curve drawing. The grid shows discrete coordinate pairs over mod p only.
+            </p>
+            <div className="toy-point-map-strip">
+              <div className="toy-point-map-strip-cell">
+                <span className="meta-label">Curve</span>
+                <strong>{staticToyPointMapAnalysis.curveLabel}</strong>
+              </div>
+              <div className="toy-point-map-strip-cell">
+                <span className="meta-label">Affine points</span>
+                <strong>{staticToyPointMapAnalysis.totalAffinePoints}</strong>
+              </div>
+              <div className="toy-point-map-strip-cell">
+                <span className="meta-label">Selected</span>
+                <strong>{staticToyPointMapAnalysis.selectedPointText}</strong>
+              </div>
+              <div className="toy-point-map-strip-cell">
+                <span className="meta-label">Walk length</span>
+                <strong>{staticToyPointMapAnalysis.walkLength}</strong>
+              </div>
+            </div>
+            <div className="toy-point-map-grid-shell">
+              <svg
+                className="toy-point-map-svg"
+                viewBox={`0 0 ${staticToyPointMapAnalysis.fieldSize * 20 + 36} ${staticToyPointMapAnalysis.fieldSize * 20 + 36}`}
+                role="img"
+                aria-label={`Toy curve point map for ${staticToyPointMapAnalysis.curveLabel}`}
+              >
+                {Array.from({ length: staticToyPointMapAnalysis.fieldSize }, (_, index) => {
+                  const x = 28 + index * 20;
+                  const y = 28 + index * 20;
+                  const max = 28 + (staticToyPointMapAnalysis.fieldSize - 1) * 20;
+                  return (
+                    <Fragment key={`grid-${index}`}>
+                      <line className="toy-point-map-grid-line" x1={28} y1={y} x2={max} y2={y} />
+                      <line className="toy-point-map-grid-line" x1={x} y1={28} x2={x} y2={max} />
+                      <text className="toy-point-map-axis-label" x={x} y={18} textAnchor="middle">{index}</text>
+                      <text className="toy-point-map-axis-label" x={14} y={y + 4} textAnchor="middle">{index}</text>
+                    </Fragment>
+                  );
+                })}
+                {staticToyPointMapAnalysis.validPoints.map((point) => {
+                  const cx = 28 + point.x * 20;
+                  const cy = 28 + (staticToyPointMapAnalysis.fieldSize - 1 - point.y) * 20;
+                  const walkLabel = point.walkLabels[0] ?? null;
+                  return (
+                    <Fragment key={point.label}>
+                      <circle
+                        className={
+                          point.isSelected
+                            ? 'toy-point-map-dot toy-point-map-dot-selected'
+                            : point.walkLabels.length > 0
+                              ? 'toy-point-map-dot toy-point-map-dot-walk'
+                              : 'toy-point-map-dot'
+                        }
+                        cx={cx}
+                        cy={cy}
+                        r={point.isSelected ? 6 : point.walkLabels.length > 0 ? 5 : 3.5}
+                      />
+                      {walkLabel ? (
+                        <text className="toy-point-map-walk-label" x={cx + 8} y={cy - 8}>
+                          {walkLabel}
+                        </text>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
+              </svg>
+            </div>
+            <div className="toy-point-map-legend">
+              <span className="toy-point-map-chip">
+                <span className="toy-point-map-chip-dot" />
+                Valid affine point
+              </span>
+              <span className="toy-point-map-chip">
+                <span className="toy-point-map-chip-dot selected" />
+                Selected point
+              </span>
+              <span className="toy-point-map-chip">
+                <span className="toy-point-map-chip-dot walk" />
+                Repeated-action walk
+              </span>
+            </div>
+            <div className="toy-point-map-walk-list">
+              {staticToyPointMapAnalysis.walkEntries.map((entry) => (
+                <div key={entry.label} className="toy-point-map-walk-row">
+                  <strong>{entry.label}</strong>
+                  <span>{entry.pointText}</span>
+                </div>
+              ))}
+            </div>
+            {staticToyPointMapAnalysis.walkEntries.some((entry) => entry.isInfinity) ? (
+              <p className="toy-point-map-infinity-note">
+                If the walk reaches ∞, MCW shows it as a labeled non-affine result in the list rather than placing it on the coordinate grid.
+              </p>
+            ) : null}
           </div>
         </InspectorSection>
       ) : null}

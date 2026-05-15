@@ -344,6 +344,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this to place a visible point into the graph with explicit p, a, b, x, and y parameters. It rejects invalid source points instead of pretending every coordinate pair is meaningful, and it is for visible structure rather than real-world curve selection.',
     searchTerms: ['point source', 'ec point', 'ecc point', 'curve point', 'short weierstrass', 'elliptic curve'],
   },
+  ToyPointMap: {
+    sectionId: 'elliptic-curves-and-fields',
+    sortOrder: 9.1,
+    purpose: 'Maps one bounded toy elliptic curve as a visible finite-field point set and emits a selected point plus one machine-checkable 3P checkpoint.',
+    detail: 'Use this when ECC needs a visible point landscape rather than only coordinate pairs. The inspector analyze view shows the full finite-field point set, the selected point, and a bounded repeated-action walk. It is finite-field intuition, not a continuous real-number curve plot or a real-world ECC claim.',
+    searchTerms: ['toy point map', 'curve map', 'finite field', 'elliptic curve', 'selected point', 'point landscape', '3P'],
+  },
   PointOnCurve: {
     sectionId: 'elliptic-curves-and-fields',
     sortOrder: 9.2,
@@ -385,6 +392,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     purpose: 'Finds the smallest positive repeated point action that sends one visible point to infinity on the same visible pedagogical curve.',
     detail: 'Use this to make point-local subgroup structure visible. Point order belongs to this point on this curve, not to every point on the curve. V1 searches only within a fixed observable workbench budget; if the order is too large to observe here, the module fails visibly instead of pretending to know it. That is structure, not deployment validation.',
     searchTerms: ['point order', 'subgroup', 'ec point', 'ecc point', 'elliptic curve', 'cyclic subgroup', 'nP infinity'],
+  },
+  PointSelector: {
+    sectionId: 'elliptic-curves-and-fields',
+    sortOrder: 9.93,
+    purpose: 'Chooses between two visible point-domain paths on the same visible pedagogical curve using one explicit 1-bit control signal.',
+    detail: 'Use this when one ECC teaching board needs to keep the current accumulator or absorb a visible add-candidate point without hiding the branch logic. Select 0 keeps the current point, select 1 takes the candidate point, and both inputs must belong to the declared curve.',
+    searchTerms: ['point selector', 'point select', 'ec point switch', 'double and add', 'branch select', 'ecc control'],
   },
   PointEquals: {
     sectionId: 'elliptic-curves-and-fields',

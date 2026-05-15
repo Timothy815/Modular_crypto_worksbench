@@ -382,6 +382,127 @@ const SCALAR_TIMES_THREE_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
   },
 };
 
+const VISIBLE_DOUBLE_AND_ADD_AGREEMENT_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
+  id: 'visible-double-and-add-agreement',
+  name: 'Visible Double-And-Add Agreement',
+  summary:
+    'A compact explicit double-and-add path for 3P is compared directly with shipped ScalarMultiply so the repeated-action machine and the primitive visibly agree.',
+  pipeline:
+    'BitSource -> BitsToInteger -> IntegerToBits -> BitWindow(step bits) + PointSource(G) -> PointNegate/PointAdd(start at ∞) -> PointDouble + PointAdd + PointSelector -> PointEquals -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'scalar-bits', defId: 'BitSource', params: { stream: [1, 1] } },
+        { id: 'scalar', defId: 'BitsToInteger', params: {} },
+        { id: 'scalar-expanded', defId: 'IntegerToBits', params: { width: 2 } },
+        { id: 'bit-lsb', defId: 'BitWindow', params: { start: 1, width: 1 } },
+        { id: 'bit-msb', defId: 'BitWindow', params: { start: 0, width: 1 } },
+        { id: 'point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 5, y: 6 } },
+        { id: 'negate', defId: 'PointNegate', params: { p: 17, a: 2, b: 3 } },
+        { id: 'zero', defId: 'PointAdd', params: { p: 17, a: 2, b: 3 } },
+        { id: 'candidate-0', defId: 'PointAdd', params: { p: 17, a: 2, b: 3 } },
+        { id: 'select-0', defId: 'PointSelector', params: { p: 17, a: 2, b: 3 } },
+        { id: 'double-0', defId: 'PointDouble', params: { p: 17, a: 2, b: 3 } },
+        { id: 'candidate-1', defId: 'PointAdd', params: { p: 17, a: 2, b: 3 } },
+        { id: 'select-1', defId: 'PointSelector', params: { p: 17, a: 2, b: 3 } },
+        { id: 'reference', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'verify', defId: 'PointEquals', params: { p: 17, a: 2, b: 3 } },
+        { id: 'verify-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'scalar-bits', port: 'out' }, to: { moduleId: 'scalar', port: 'in' } },
+        { from: { moduleId: 'scalar', port: 'out' }, to: { moduleId: 'scalar-expanded', port: 'in' } },
+        { from: { moduleId: 'scalar', port: 'out' }, to: { moduleId: 'reference', port: 'scalar' } },
+        { from: { moduleId: 'scalar-expanded', port: 'out' }, to: { moduleId: 'bit-lsb', port: 'in' } },
+        { from: { moduleId: 'scalar-expanded', port: 'out' }, to: { moduleId: 'bit-msb', port: 'in' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'negate', port: 'in' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'zero', port: 'a' } },
+        { from: { moduleId: 'negate', port: 'out' }, to: { moduleId: 'zero', port: 'b' } },
+        { from: { moduleId: 'zero', port: 'out' }, to: { moduleId: 'candidate-0', port: 'a' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'candidate-0', port: 'b' } },
+        { from: { moduleId: 'zero', port: 'out' }, to: { moduleId: 'select-0', port: 'keep' } },
+        { from: { moduleId: 'candidate-0', port: 'out' }, to: { moduleId: 'select-0', port: 'take' } },
+        { from: { moduleId: 'bit-lsb', port: 'out' }, to: { moduleId: 'select-0', port: 'select' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'double-0', port: 'in' } },
+        { from: { moduleId: 'select-0', port: 'out' }, to: { moduleId: 'candidate-1', port: 'a' } },
+        { from: { moduleId: 'double-0', port: 'out' }, to: { moduleId: 'candidate-1', port: 'b' } },
+        { from: { moduleId: 'select-0', port: 'out' }, to: { moduleId: 'select-1', port: 'keep' } },
+        { from: { moduleId: 'candidate-1', port: 'out' }, to: { moduleId: 'select-1', port: 'take' } },
+        { from: { moduleId: 'bit-msb', port: 'out' }, to: { moduleId: 'select-1', port: 'select' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'reference', port: 'point' } },
+        { from: { moduleId: 'select-1', port: 'out' }, to: { moduleId: 'verify', port: 'a' } },
+        { from: { moduleId: 'reference', port: 'out' }, to: { moduleId: 'verify', port: 'b' } },
+        { from: { moduleId: 'verify', port: 'out' }, to: { moduleId: 'verify-out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        'scalar-bits': { x: 72, y: 60 },
+        scalar: { x: 304, y: 60 },
+        'scalar-expanded': { x: 548, y: 60 },
+        'bit-msb': { x: 796, y: 60 },
+        'bit-lsb': { x: 796, y: 180 },
+        point: { x: 72, y: 308 },
+        negate: { x: 304, y: 308 },
+        zero: { x: 548, y: 308 },
+        'candidate-0': { x: 1040, y: 180 },
+        'select-0': { x: 1288, y: 180 },
+        'double-0': { x: 1040, y: 356 },
+        'candidate-1': { x: 1540, y: 180 },
+        'select-1': { x: 1788, y: 180 },
+        reference: { x: 1540, y: 40 },
+        verify: { x: 2040, y: 112 },
+        'verify-out': { x: 2300, y: 112 },
+      },
+      annotations: [],
+    },
+  },
+};
+
+const TOY_CURVE_WALK_AGREEMENT_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
+  id: 'toy-curve-walk-agreement',
+  name: 'Toy Curve 3P Agreement',
+  summary:
+    'ToyPointMap emits one bounded 3P checkpoint and PointEquals confirms that it matches shipped ScalarMultiply for the same visible point on the same toy curve.',
+  pipeline:
+    'ToyPointMap(walk3) + PointSource(P) + BitSource(3) -> BitsToInteger -> ScalarMultiply -> PointEquals -> BitOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'map', defId: 'ToyPointMap', params: { p: 17, a: 2, b: 3, selectedX: 5, selectedY: 6, walkLength: 5 } },
+        { id: 'point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 5, y: 6 } },
+        { id: 'scalar-bits', defId: 'BitSource', params: { stream: [0, 0, 1, 1] } },
+        { id: 'scalar', defId: 'BitsToInteger', params: {} },
+        { id: 'reference', defId: 'ScalarMultiply', params: { p: 17, a: 2, b: 3 } },
+        { id: 'verify', defId: 'PointEquals', params: { p: 17, a: 2, b: 3 } },
+        { id: 'verify-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'scalar-bits', port: 'out' }, to: { moduleId: 'scalar', port: 'in' } },
+        { from: { moduleId: 'scalar', port: 'out' }, to: { moduleId: 'reference', port: 'scalar' } },
+        { from: { moduleId: 'point', port: 'out' }, to: { moduleId: 'reference', port: 'point' } },
+        { from: { moduleId: 'map', port: 'walk3' }, to: { moduleId: 'verify', port: 'a' } },
+        { from: { moduleId: 'reference', port: 'out' }, to: { moduleId: 'verify', port: 'b' } },
+        { from: { moduleId: 'verify', port: 'out' }, to: { moduleId: 'verify-out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        map: { x: 72, y: 84 },
+        point: { x: 72, y: 292 },
+        'scalar-bits': { x: 372, y: 292 },
+        scalar: { x: 620, y: 292 },
+        reference: { x: 900, y: 292 },
+        verify: { x: 1180, y: 172 },
+        'verify-out': { x: 1440, y: 172 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const VISIBLE_ECDH_SHARED_SECRET_EQUALITY_PIPELINE_MICRO_DEMO: PipelineMicroDemo = {
   id: 'visible-ecdh-shared-secret-equality',
   name: 'Visible ECDH Shared Secret Equality',
@@ -1052,6 +1173,8 @@ export const PIPELINE_MICRO_DEMOS: PipelineMicroDemo[] = [
   SCALAR_TIMES_TWO_PIPELINE_MICRO_DEMO,
   SCALAR_TIMES_ZERO_PIPELINE_MICRO_DEMO,
   SCALAR_TIMES_THREE_PIPELINE_MICRO_DEMO,
+  VISIBLE_DOUBLE_AND_ADD_AGREEMENT_PIPELINE_MICRO_DEMO,
+  TOY_CURVE_WALK_AGREEMENT_PIPELINE_MICRO_DEMO,
   VISIBLE_ECDH_SHARED_SECRET_EQUALITY_PIPELINE_MICRO_DEMO,
   POINT_ORDER_CYCLES_TO_INFINITY_PIPELINE_MICRO_DEMO,
   CONTRASTING_POINT_ORDERS_PIPELINE_MICRO_DEMO,

@@ -54,6 +54,23 @@ function getHexOutputMap(project: Project) {
   );
 }
 
+function getBitOutputMap(project: Project) {
+  const result = executeProject(project, registry);
+  const traceByModuleId = new Map(result.trace.map((entry) => [entry.moduleId, entry]));
+
+  return Object.fromEntries(
+    project.modules
+      .filter((moduleInstance) => moduleInstance.defId === 'BitOutput')
+      .map((moduleInstance) => {
+        const traceEntry = traceByModuleId.get(moduleInstance.id);
+        if (!traceEntry?.inputs.in || traceEntry.inputs.in.type !== 'bits') {
+          throw new Error(`Missing BitOutput input for ${moduleInstance.id}`);
+        }
+        return [moduleInstance.id, traceEntry.inputs.in.value.join('')];
+      }),
+  );
+}
+
 describe('seeded teaching content', () => {
   it('validates and executes every demo project', () => {
     for (const demo of demoProjects) {
@@ -164,5 +181,57 @@ describe('seeded teaching content', () => {
     const mismatchedOutputs = Object.keys(target).filter((moduleId) => target[moduleId] !== starting[moduleId]);
 
     expect(mismatchedOutputs.sort()).toEqual(['out-0-3', 'out-1-3', 'out-2-3', 'out-3-3']);
+  });
+
+  it('keeps the visible double-and-add demo aligned with the shipped ScalarMultiply result', () => {
+    const demo = demoProjects.find((project) => project.id === 'visible-double-and-add');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    expect(getBitOutputMap(demo.project)).toMatchObject({
+      'bit-lsb-out': '1',
+      'bit-mid-out': '0',
+      'bit-msb-out': '1',
+      'match-out': '1',
+    });
+  });
+
+  it('keeps the double-and-add repair challenge broken before the branch bit is restored', () => {
+    const challenge = STARTER_CHALLENGES.find((entry) => entry.id === 'repair-the-double-and-add-path');
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    expect(getBitOutputMap(challenge.targetProject)['match-out']).toBe('1');
+    expect(getBitOutputMap(challenge.startingProject)['match-out']).toBe('0');
+  });
+
+  it('keeps the toy curve point map demo aligned with the selected-point and 3P reference checks', () => {
+    const demo = demoProjects.find((project) => project.id === 'toy-curve-point-map');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    expect(getBitOutputMap(demo.project)).toMatchObject({
+      'selected-match-out': '1',
+      'walk3-match-out': '1',
+    });
+  });
+
+  it('keeps the toy curve point map repair challenge broken before the selected point is restored', () => {
+    const challenge = STARTER_CHALLENGES.find((entry) => entry.id === 'repair-the-point-walk');
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    expect(getBitOutputMap(challenge.targetProject)['selected-match-out']).toBe('1');
+    expect(getBitOutputMap(challenge.targetProject)['walk3-match-out']).toBe('1');
+    expect(getBitOutputMap(challenge.startingProject)['selected-match-out']).toBe('0');
+    expect(getBitOutputMap(challenge.startingProject)['walk3-match-out']).toBe('0');
   });
 });

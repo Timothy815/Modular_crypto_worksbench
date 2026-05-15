@@ -72,7 +72,9 @@ This board wires 16 byte-wise SubBytes transforms into a visible ShiftRows bus p
 
 **Latest product-facing discovery work:** `DEMO-ATLAS-V1` is now shipped. The Learning dock now includes an always-visible `Atlas` tab that acts as a searchable concept map for full demos and pipeline micro demos without replacing the current Demo menu.
 
-**Genuine next open work:** no new bounded post-Atlas contract is drafted yet. Choose the next slice from `V2.1-NEXT-DOCKET.md` or draft a new bounded product/authoring contract explicitly rather than assuming the old discovery candidate is still open.
+**Latest ECC visibility work:** both `VISIBLE-DOUBLE-AND-ADD-V1` and `TOY-CURVE-POINT-MAP-V1` are now shipped. MCW now has an explicit repeated-doubling / conditional-addition board that agrees visibly with shipped `ScalarMultiply`, plus a toy-curve point-map surface that makes one finite-field curve legible as a visible point landscape with a machine-checked repeated-action walk.
+
+**Genuine next open work:** no newer bounded ECC intuition contract is drafted yet after the point-map slice. The next honest follow-on should likely apply the same authorable-structure standard to AES row/column perturbation as its own slice rather than trying to combine ECC and AES control work in one contract.
 
 ## Practical Restart Guidance
 

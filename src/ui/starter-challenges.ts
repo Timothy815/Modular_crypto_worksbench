@@ -59,6 +59,10 @@ const visiblePointMechanicsProject = demoProjects.find(
 const visibleScalarMultiplicationProject = demoProjects.find(
   (project) => project.id === 'visible-scalar-multiplication',
 );
+const visibleDoubleAndAddProject = demoProjects.find(
+  (project) => project.id === 'visible-double-and-add',
+);
+const toyCurvePointMapProject = demoProjects.find((project) => project.id === 'toy-curve-point-map');
 const visibleEcdhProject = demoProjects.find((project) => project.id === 'visible-ecdh-key-agreement');
 const visiblePointOrderProject = demoProjects.find(
   (project) => project.id === 'visible-point-order-and-subgroups',
@@ -235,6 +239,12 @@ if (!visiblePointMechanicsProject) {
 if (!visibleScalarMultiplicationProject) {
   throw new Error('Expected visible-scalar-multiplication demo project to seed starter challenges.');
 }
+if (!visibleDoubleAndAddProject) {
+  throw new Error('Expected visible-double-and-add demo project to seed starter challenges.');
+}
+if (!toyCurvePointMapProject) {
+  throw new Error('Expected toy-curve-point-map demo project to seed starter challenges.');
+}
 if (!visibleEcdhProject) {
   throw new Error('Expected visible-ecdh-key-agreement demo project to seed starter challenges.');
 }
@@ -363,6 +373,10 @@ const visiblePointMechanicsTarget = cloneProject(visiblePointMechanicsProject.pr
 const brokenVisiblePointMechanicsStart = cloneProject(visiblePointMechanicsProject.project);
 const visibleScalarMultiplicationTarget = cloneProject(visibleScalarMultiplicationProject.project);
 const brokenVisibleScalarMultiplicationStart = cloneProject(visibleScalarMultiplicationProject.project);
+const visibleDoubleAndAddTarget = cloneProject(visibleDoubleAndAddProject.project);
+const brokenVisibleDoubleAndAddStart = cloneProject(visibleDoubleAndAddProject.project);
+const toyCurvePointMapTarget = cloneProject(toyCurvePointMapProject.project);
+const brokenToyCurvePointMapStart = cloneProject(toyCurvePointMapProject.project);
 const visibleEcdhTarget = cloneProject(visibleEcdhProject.project);
 const brokenVisibleEcdhStart = cloneProject(visibleEcdhProject.project);
 const visiblePointOrderTarget = cloneProject(visiblePointOrderProject.project);
@@ -637,6 +651,33 @@ if (brokenVisibleScalarMultiplicationVerifyIndex === -1) {
 brokenVisibleScalarMultiplicationConnections[brokenVisibleScalarMultiplicationVerifyIndex] = {
   from: { moduleId: 'times-2', port: 'out' },
   to: { moduleId: 'verify-3-add', port: 'b' },
+};
+
+const brokenVisibleDoubleAndAddConnections = brokenVisibleDoubleAndAddStart.connections;
+const brokenVisibleDoubleAndAddSelectIndex = brokenVisibleDoubleAndAddConnections.findIndex(
+  (connection) =>
+    connection.from.moduleId === 'bit-mid' &&
+    connection.from.port === 'out' &&
+    connection.to.moduleId === 'step1-select' &&
+    connection.to.port === 'select',
+);
+if (brokenVisibleDoubleAndAddSelectIndex === -1) {
+  throw new Error(
+    'Expected visible-double-and-add demo project to contain the bit-mid -> step1-select.select leg.',
+  );
+}
+brokenVisibleDoubleAndAddConnections[brokenVisibleDoubleAndAddSelectIndex] = {
+  from: { moduleId: 'bit-lsb', port: 'out' },
+  to: { moduleId: 'step1-select', port: 'select' },
+};
+
+const brokenToyCurvePointMapModule = brokenToyCurvePointMapStart.modules.find((module) => module.id === 'map');
+if (!brokenToyCurvePointMapModule) {
+  throw new Error('Expected toy-curve-point-map demo project to contain the map module.');
+}
+brokenToyCurvePointMapModule.params = {
+  ...brokenToyCurvePointMapModule.params,
+  selectedY: 11,
 };
 
 const brokenVisibleEcdhConnections = brokenVisibleEcdhStart.connections;
@@ -2107,13 +2148,61 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
   },
   {
     version: 1,
+    id: 'repair-the-double-and-add-path',
+    title: 'Repair The Double-And-Add Path',
+    projectId: 'visible-double-and-add',
+    group: 'Number Theory',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 227.5,
+    recommendedAfter: ['visible-scalar-multiplication'],
+    difficulty: 'intermediate',
+    prompt:
+      'This visible double-and-add board no longer lands on the same final point as shipped ScalarMultiply. One branch-selection step is listening to the wrong scalar bit. Restore the correct control bit so the explicit repeated-action machine agrees with the reference result again.',
+    startingProject: brokenVisibleDoubleAndAddStart,
+    startingLayout: cloneProject(visibleDoubleAndAddProject.layout),
+    targetProject: visibleDoubleAndAddTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Each PointSelector should receive the one extracted scalar bit for its own step.',
+      'The middle step should listen to the middle extracted bit, not the least-significant bit reused from the first step.',
+      'When the branch pattern is restored to 1, then 0, then 1, the final PointEquals check should emit 1.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-point-walk',
+    title: 'Repair The Point Walk',
+    projectId: 'toy-curve-point-map',
+    group: 'Number Theory',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 227.75,
+    recommendedAfter: ['visible-double-and-add'],
+    difficulty: 'intermediate',
+    prompt:
+      'This toy-curve point map no longer highlights the intended repeated-action walk for P = (5, 6). The ToyPointMap module is using the wrong selected-point parameter, so both the selected-point and 3P agreement checks fail. Restore the intended selected point.',
+    startingProject: brokenToyCurvePointMapStart,
+    startingLayout: cloneProject(toyCurvePointMapProject.layout),
+    targetProject: toyCurvePointMapTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The independent PointSource branch still carries the intended point P = (5, 6).',
+      'ToyPointMap currently highlights the opposite affine partner (5, 11) on the same curve.',
+      'Restore the selected-point params so both PointEquals checks emit 1 again.',
+    ],
+  },
+  {
+    version: 1,
     id: 'repair-visible-ecdh',
     title: 'Repair the Visible ECDH',
     projectId: 'visible-ecdh-key-agreement',
     group: 'Number Theory',
     stage: 'advanced-arithmetic-and-number-theory',
     order: 228,
-    recommendedAfter: ['visible-scalar-multiplication'],
+    recommendedAfter: ['visible-double-and-add'],
     difficulty: 'intermediate',
     prompt:
       'This visible elliptic-curve key-agreement graph no longer lands on the same shared point on both sides. Restore the broken repeated point action leg so PointEquals returns the shared-point equality result again.',

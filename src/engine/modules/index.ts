@@ -53,6 +53,8 @@ import { PointAdd } from './point-add';
 import { PointDouble } from './point-double';
 import { PointOrder } from './point-order';
 import { PointEquals } from './point-equals';
+import { PointSelector } from './point-selector';
+import { ToyPointMap } from './toy-point-map';
 import { ScalarMultiply } from './scalar-multiply';
 import { ChallengeCombine } from './challenge-combine';
 import { ScalarLinearCombine } from './scalar-linear-combine';
@@ -169,6 +171,8 @@ export {
   PointDouble,
   PointOrder,
   PointEquals,
+  PointSelector,
+  ToyPointMap,
   ScalarMultiply,
   ChallengeCombine,
   ScalarLinearCombine,
@@ -287,6 +291,8 @@ export const V1_REGISTRY: ModuleRegistry = {
   [PointDouble.id]: PointDouble,
   [PointOrder.id]: PointOrder,
   [PointEquals.id]: PointEquals,
+  [PointSelector.id]: PointSelector,
+  [ToyPointMap.id]: ToyPointMap,
   [ScalarMultiply.id]: ScalarMultiply,
   [ChallengeCombine.id]: ChallengeCombine,
   [ScalarLinearCombine.id]: ScalarLinearCombine,

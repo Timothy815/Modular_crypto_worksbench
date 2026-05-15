@@ -17,6 +17,7 @@ interface CollapsedAnalyzeSections {
   pinned: boolean;
   tutorial: boolean;
   transformation: boolean;
+  toyPointMapProperties: boolean;
   sboxProperties: boolean;
   permutationProperties: boolean;
   lfsrProperties: boolean;

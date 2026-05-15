@@ -401,6 +401,12 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         indexTerms: ['point source', 'elliptic curve', 'ec point', 'curve point', 'weierstrass'],
       },
       {
+        id: 'ToyPointMap',
+        title: 'ToyPointMap',
+        body: 'Maps one bounded toy elliptic curve as a finite-field point set and exposes one selected point plus one visible 3P checkpoint. Its inspector analyze view shows the full valid affine point set, the selected point, and a bounded repeated-action walk. This is finite-field intuition, not a continuous real-number curve plot or a real-world ECC claim.',
+        indexTerms: ['toy point map', 'curve map', 'finite field', 'elliptic curve', 'selected point', '3P', 'point landscape'],
+      },
+      {
         id: 'PointOnCurve',
         title: 'PointOnCurve',
         body: 'Checks whether one visible point belongs to the declared visible pedagogical curve and emits a one-bit success result. It fails visibly on cross-curve mismatches instead of silently guessing, and it confirms local structure rather than deployment safety.',
@@ -435,6 +441,12 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         title: 'PointOrder',
         body: 'Finds the smallest positive repeated point action that sends one visible point to infinity on the same declared visible pedagogical curve. The result belongs to this point on this curve, not to every point on the curve. V1 only searches inside a fixed observable workbench budget, so very large orders are reported as too large to observe here rather than guessed. This is point-local subgroup structure, not deployment validation.',
         indexTerms: ['point order', 'subgroup', 'elliptic curve', 'ec point', 'nP infinity', 'cyclic subgroup'],
+      },
+      {
+        id: 'PointSelector',
+        title: 'PointSelector',
+        body: 'Chooses between two visible point-domain candidates on the same declared visible pedagogical curve using one explicit 1-bit control signal. This is control glue for ECC teaching boards such as visible double-and-add: select 0 keeps the current accumulator, select 1 takes the visible add-candidate point. It is not new point arithmetic and it does not hide the branch structure behind a protocol shell.',
+        indexTerms: ['point selector', 'point select', 'elliptic curve', 'ec point', 'double and add', 'branch select'],
       },
       {
         id: 'PointEquals',

@@ -50,6 +50,8 @@ import { PointAdd } from './point-add';
 import { PointDouble } from './point-double';
 import { PointOrder } from './point-order';
 import { PointEquals } from './point-equals';
+import { PointSelector } from './point-selector';
+import { ToyPointMap } from './toy-point-map';
 import { ScalarMultiply } from './scalar-multiply';
 import { ChallengeCombine } from './challenge-combine';
 import { ScalarLinearCombine } from './scalar-linear-combine';
@@ -591,6 +593,148 @@ describe('PointEquals', () => {
       { p: 17n, a: 2n, b: 3n },
     );
     expect(result.out).toEqual({ type: 'bits', value: [0] });
+  });
+});
+
+describe('PointSelector', () => {
+  it('keeps the current point when select is zero', () => {
+    const result = PointSelector.evaluate(
+      {
+        select: { type: 'bits', value: [0] },
+        keep: {
+          type: 'ec-point',
+          value: { kind: 'affine', curve: { p: 17n, a: 2n, b: 3n }, x: '5', y: '6' },
+        },
+        take: {
+          type: 'ec-point',
+          value: { kind: 'affine', curve: { p: 17n, a: 2n, b: 3n }, x: '3', y: '11' },
+        },
+      },
+      { p: 17, a: 2, b: 3 },
+    );
+
+    expect(result.out).toEqual({
+      type: 'ec-point',
+      value: { kind: 'affine', curve: { p: 17n, a: 2n, b: 3n }, x: '5', y: '6' },
+    });
+  });
+
+  it('takes the candidate point when select is one', () => {
+    const result = PointSelector.evaluate(
+      {
+        select: { type: 'bits', value: [1] },
+        keep: {
+          type: 'ec-point',
+          value: { kind: 'infinity', curve: { p: 17n, a: 2n, b: 3n } },
+        },
+        take: {
+          type: 'ec-point',
+          value: { kind: 'affine', curve: { p: 17n, a: 2n, b: 3n }, x: '3', y: '11' },
+        },
+      },
+      { p: 17, a: 2, b: 3 },
+    );
+
+    expect(result.out).toEqual({
+      type: 'ec-point',
+      value: { kind: 'affine', curve: { p: 17n, a: 2n, b: 3n }, x: '3', y: '11' },
+    });
+  });
+
+  it('throws when the select signal is not one bit wide', () => {
+    expect(() =>
+      PointSelector.evaluate(
+        {
+          select: { type: 'bits', value: [1, 0] },
+          keep: {
+            type: 'ec-point',
+            value: { kind: 'affine', curve: { p: 17n, a: 2n, b: 3n }, x: '5', y: '6' },
+          },
+          take: {
+            type: 'ec-point',
+            value: { kind: 'affine', curve: { p: 17n, a: 2n, b: 3n }, x: '3', y: '11' },
+          },
+        },
+        { p: 17, a: 2, b: 3 },
+      ),
+    ).toThrow('1-bit select');
+  });
+
+  it('throws on cross-curve mismatches', () => {
+    expect(() =>
+      PointSelector.evaluate(
+        {
+          select: { type: 'bits', value: [1] },
+          keep: {
+            type: 'ec-point',
+            value: { kind: 'affine', curve: { p: 17n, a: 2n, b: 3n }, x: '5', y: '6' },
+          },
+          take: {
+            type: 'ec-point',
+            value: { kind: 'affine', curve: { p: 19n, a: 2n, b: 3n }, x: '5', y: '5' },
+          },
+        },
+        { p: 17, a: 2, b: 3 },
+      ),
+    ).toThrow('take input');
+  });
+});
+
+describe('ToyPointMap', () => {
+  it('emits the selected point and the third multiple on the declared toy curve', () => {
+    const result = ToyPointMap.evaluate({}, {
+      p: 17,
+      a: 2,
+      b: 3,
+      selectedX: 5,
+      selectedY: 6,
+      walkLength: 5,
+    });
+
+    expect(result.selectedPoint).toEqual({
+      type: 'ec-point',
+      value: {
+        kind: 'affine',
+        curve: { p: 17n, a: 2n, b: 3n },
+        x: '5',
+        y: '6',
+      },
+    });
+    expect(result.walk3).toEqual({
+      type: 'ec-point',
+      value: {
+        kind: 'affine',
+        curve: { p: 17n, a: 2n, b: 3n },
+        x: '13',
+        y: '13',
+      },
+    });
+  });
+
+  it('rejects selected points that are not on the declared curve', () => {
+    expect(() =>
+      ToyPointMap.evaluate({}, {
+        p: 17,
+        a: 2,
+        b: 3,
+        selectedX: 1,
+        selectedY: 1,
+        walkLength: 5,
+      }),
+    ).toThrow(/declared point to lie on the declared curve/i);
+  });
+
+  it('rejects oversized toy fields that would not stay readable', () => {
+    expect(() =>
+      ToyPointMap.evaluate({}, {
+        p: 37,
+        a: 2,
+        b: 3,
+        selectedX: 5,
+        selectedY: 6,
+        walkLength: 5,
+      }),
+    ).toThrow(/bounded toy curve/i);
   });
 });
 

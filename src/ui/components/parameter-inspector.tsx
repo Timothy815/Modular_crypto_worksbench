@@ -61,13 +61,14 @@ import {
   getTransformationView,
   getSBoxAnalysisFromParams,
   getPermutationAnalysisFromParams,
+  getToyPointMapAnalysis,
   getLFSRAnalysis,
   getPlugboardAnalysis,
   getReflectorAnalysis,
   getModulusAnalysis,
   groupIssuesByTarget,
 } from '../inspector-analysis';
-import type { SBoxAnalysis, PermutationAnalysis, LFSRAnalysis, PlugboardAnalysis, ReflectorAnalysis, ModulusAnalysis } from '../inspector-analysis';
+import type { SBoxAnalysis, PermutationAnalysis, ToyPointMapAnalysis, LFSRAnalysis, PlugboardAnalysis, ReflectorAnalysis, ModulusAnalysis } from '../inspector-analysis';
 import { InspectorTabButton, PORT_SIDE_ORDER } from './inspector-controls';
 
 interface ParameterInspectorProps {
@@ -287,6 +288,7 @@ export function ParameterInspector({
     pinned: false,
     tutorial: true,
     transformation: false,
+    toyPointMapProperties: false,
     sboxProperties: false,
     permutationProperties: false,
     lfsrProperties: false,
@@ -781,6 +783,12 @@ export function ParameterInspector({
     if (moduleInstance.defId !== 'ModExp' && moduleInstance.defId !== 'ModInverse') return null;
     return getModulusAnalysis(moduleInstance.params as Record<string, unknown>);
   }, [inspectorTab, moduleInstance]);
+  const staticToyPointMapAnalysis: ToyPointMapAnalysis | null = useMemo(() => {
+    if (inspectorTab !== 'analyze' || moduleInstance?.defId !== 'ToyPointMap' || !moduleInstance) {
+      return null;
+    }
+    return getToyPointMapAnalysis(moduleInstance.params as Record<string, unknown>);
+  }, [inspectorTab, moduleInstance]);
   const canBypassSelectedModule = moduleDef ? isBypassEligibleDefinition(moduleDef) : false;
   const orderedInputPorts = useMemo(
     () =>
@@ -1012,6 +1020,7 @@ export function ParameterInspector({
         staticPlugboardAnalysis={staticPlugboardAnalysis}
         staticReflectorAnalysis={staticReflectorAnalysis}
         staticModulusAnalysis={staticModulusAnalysis}
+        staticToyPointMapAnalysis={staticToyPointMapAnalysis}
         activeLookupChunk={activeLookupChunk}
         effectiveLookupChunkIndex={effectiveLookupChunkIndex}
         setRequestedLookupChunkIndex={setRequestedLookupChunkIndex}

@@ -2016,6 +2016,42 @@ const POINT_ORDER_MICRO_DEMO: PrimitiveMicroDemo = {
   },
 };
 
+const POINT_SELECTOR_MICRO_DEMO: PrimitiveMicroDemo = {
+  defId: 'PointSelector',
+  name: 'Point Selector Micro Demo',
+  summary:
+    'Minimal visible point-branch control: one 1-bit select signal chooses whether the current point path stays put or takes the candidate point on the same pedagogical curve.',
+  pipeline: 'BitSource + PointSource(keep,take) -> PointSelector -> PointOutput',
+  document: {
+    version: 1,
+    project: {
+      modules: [
+        { id: 'point-selector', defId: 'PointSelector', params: { p: 17, a: 2, b: 3 } },
+        { id: 'select', defId: 'BitSource', params: { stream: [1] } },
+        { id: 'keep-point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 5, y: 6 } },
+        { id: 'take-point', defId: 'PointSource', params: { p: 17, a: 2, b: 3, x: 3, y: 11 } },
+        { id: 'out', defId: 'PointOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'select', port: 'out' }, to: { moduleId: 'point-selector', port: 'select' } },
+        { from: { moduleId: 'keep-point', port: 'out' }, to: { moduleId: 'point-selector', port: 'keep' } },
+        { from: { moduleId: 'take-point', port: 'out' }, to: { moduleId: 'point-selector', port: 'take' } },
+        { from: { moduleId: 'point-selector', port: 'out' }, to: { moduleId: 'out', port: 'in' } },
+      ],
+    },
+    ui: {
+      layout: {
+        'point-selector': { x: 404, y: 176 },
+        select: { x: 76, y: 60 },
+        'keep-point': { x: 76, y: 176 },
+        'take-point': { x: 76, y: 312 },
+        out: { x: 732, y: 176 },
+      },
+      annotations: [],
+    },
+  },
+};
+
 const POINT_EQUALS_MICRO_DEMO: PrimitiveMicroDemo = {
   defId: 'PointEquals',
   name: 'Point Equals Micro Demo',
@@ -2193,6 +2229,7 @@ export const PRIMITIVE_MICRO_DEMOS: PrimitiveMicroDemo[] = [
   BIT_EXPAND_MICRO_DEMO,
   SCALAR_MULTIPLY_MICRO_DEMO,
   POINT_ORDER_MICRO_DEMO,
+  POINT_SELECTOR_MICRO_DEMO,
   POINT_EQUALS_MICRO_DEMO,
   CHALLENGE_COMBINE_MICRO_DEMO,
   SCALAR_LINEAR_COMBINE_MICRO_DEMO,

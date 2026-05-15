@@ -179,6 +179,8 @@ const FULL_DEMO_SECTION_MAP: Record<string, AtlasSectionId> = {
 
   'visible-point-mechanics': 'public-key-and-ecc',
   'visible-scalar-multiplication': 'public-key-and-ecc',
+  'visible-double-and-add': 'public-key-and-ecc',
+  'toy-curve-point-map': 'public-key-and-ecc',
   'visible-ecdh-key-agreement': 'public-key-and-ecc',
   'secp256k1-ecdh': 'public-key-and-ecc',
   'visible-point-order-and-subgroups': 'public-key-and-ecc',
@@ -225,6 +227,12 @@ const FULL_DEMO_FLAGS: Record<string, DemoAtlasEntryFlags> = {
   'visible-point-mechanics': {
     goodFirstBoard: true,
     keywords: ['ecc', 'elliptic curve', 'point'],
+  },
+  'visible-double-and-add': {
+    keywords: ['ecc', 'double and add', 'scalar multiplication', 'repeated point action'],
+  },
+  'toy-curve-point-map': {
+    keywords: ['ecc', 'finite field', 'point map', 'toy curve', '3P', 'selected point'],
   },
   'visible-strict-length-gate': {
     keywords: ['length', 'xor', 'strict'],
@@ -293,6 +301,12 @@ const PIPELINE_DEMO_FLAGS: Record<string, DemoAtlasEntryFlags> = {
   },
   'scalar-times-three': {
     keywords: ['ecc', 'scalar multiplication'],
+  },
+  'visible-double-and-add-agreement': {
+    keywords: ['ecc', 'double and add', 'scalar multiplication'],
+  },
+  'toy-curve-walk-agreement': {
+    keywords: ['ecc', 'toy curve', '3P', 'point map'],
   },
   'representation-round-trip': {
     keywords: ['representation', 'bridges', 'round trip'],

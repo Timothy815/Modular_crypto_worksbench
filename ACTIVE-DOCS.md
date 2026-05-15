@@ -28,6 +28,8 @@ This is the canonical starting point for humans and agents.
 - `docs/live/contracts/2026-05/ECC-RIGOR-PASS-V1.md` when tightening how the shipped ECC line is framed, interpreted, and bounded
 - `docs/live/contracts/2026-05/VISIBLE-SCHNORR-V1.md` when planning the first honest glass-box ECC signature teaching slice
 - `docs/live/contracts/2026-05/ECC-POINT-PYTHON-EXPORT-PARITY-V1.md` when closing the remaining Python export gap for the shipped ECC point family
+- `docs/live/contracts/2026-05/VISIBLE-DOUBLE-AND-ADD-V1.md` when reviewing the shipped ECC visibility slice after the scalar-multiplication/ECDH/Schnorr line — unpacking scalar multiplication into an explicit repeated-action machine
+- `docs/live/contracts/2026-05/TOY-CURVE-POINT-MAP-V1.md` when reviewing the shipped toy-curve ECC intuition slice after visible double-and-add — making one toy finite-field curve legible as a visible point set and repeated-action landscape
 - `docs/live/contracts/2026-05/REAL-WORLD-CRYPTO-CAPABILITY-ROADMAP-V1.md` when evaluating the overall trajectory from toy-scale to real-scale cryptography — read this before starting any of the three real-world layers
 - `docs/live/contracts/2026-05/REAL-SCALE-ARITHMETIC-SUBSTRATE-V1.md` when planning the param-layer change that lifts the Number.isSafeInteger ceiling from all ECC and field arithmetic modules
 - `docs/live/contracts/2026-05/NAMED-CURVE-SOURCES-V1.md` when planning the named-curve source modules (secp256k1, P-256) and inspector preset ergonomics — depends on REAL-SCALE-ARITHMETIC-SUBSTRATE-V1
