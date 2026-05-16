@@ -269,6 +269,42 @@ describe('seeded teaching content', () => {
     expect(getSymbolOutputMap(challenge.startingProject)['keyed-b-out']).toBe('0');
   });
 
+  it('keeps the AES column perturbation demo aligned to the named post-MixColumns and final-output consequences', () => {
+    const demo = demoProjects.find((project) => project.id === 'aes-column-perturbation');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    expect(getHexOutputMap(demo.project)).toMatchObject({
+      'canonical-postmix-out': '046681E5E0CB199A48F8D37A2806264C',
+      'perturbed-postmix-out': 'BB6681E554CB199A09F8D37A0F06264C',
+      'canonical-final-out': 'A49C7FF2689F352B6B5BEA43026A5049',
+      'perturbed-final-out': '1B9C7FF2DC9F352B2A5BEA43256A5049',
+    });
+    expect(getBitOutputMap(demo.project)).toMatchObject({
+      'postmix-match-out': '0',
+      'final-match-out': '0',
+    });
+  });
+
+  it('keeps the MixColumns repair challenge broken until the perturbed coefficient is restored to the canonical rule', () => {
+    const challenge = STARTER_CHALLENGES.find((entry) => entry.id === 'repair-the-mixcolumns-rule');
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    expect(getBitOutputMap(challenge.targetProject)).toMatchObject({
+      'postmix-match-out': '1',
+      'final-match-out': '1',
+    });
+    expect(getBitOutputMap(challenge.startingProject)).toMatchObject({
+      'postmix-match-out': '0',
+      'final-match-out': '0',
+    });
+  });
+
   it('keeps the visible double-and-add demo aligned with the shipped ScalarMultiply result', () => {
     const demo = demoProjects.find((project) => project.id === 'visible-double-and-add');
     expect(demo).toBeTruthy();

@@ -141,4 +141,14 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('SBox(PRESENT)');
     expect(demo?.pipeline).toContain('BitOutput(valid permutation)');
   });
+
+  it('includes the AES column perturbation demo as a canonical-vs-perturbed diffusion comparison workspace', () => {
+    const demo = demoProjects.find((project) => project.id === 'aes-column-perturbation');
+
+    expect(demo?.name).toBe('AES Column Perturbation');
+    expect(demo?.pipeline).toContain('Canonical AES Round');
+    expect(demo?.pipeline).toContain('Perturbed AES Round(mix row0 = 02 02 01 01)');
+    expect(demo?.pipeline).toContain('BitsToHex(post-MixColumns and final state)');
+    expect(demo?.pipeline).toContain('Equals(branch comparisons)');
+  });
 });

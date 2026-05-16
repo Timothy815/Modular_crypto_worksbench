@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: May 14, 2026
+Last updated: May 16, 2026
 
 ---
 
@@ -68,7 +68,7 @@ All use NIST FIPS 197 test vectors. Group routing, GROUP_STAGE_MAP, and PRIMITIV
 
 This board wires 16 byte-wise SubBytes transforms into a visible ShiftRows bus permutation, four explicit MixColumns column mixers, and 16 AddRoundKey XORs. It is verified against the FIPS 197 Appendix B round-1 output, and the repair challenge now teaches diffusion by breaking one SubBytes cell and producing exactly one wrong final output column.
 
-**Latest AES control-and-consequence work:** `AES-ROW-COLUMN-PERTURBATION-V1` is now shipped. MCW now has a bounded dual-branch AES board where the canonical round and one ShiftRows row-rotation perturbation share the same FIPS input state and round key, making the changed ShiftRows state and changed final output visible without drifting into a generic cipher-lab surface.
+**Latest AES control-and-consequence work:** both `AES-ROW-COLUMN-PERTURBATION-V1` and `AES-COLUMN-PERTURBATION-V1` are now shipped. MCW now has bounded dual-branch AES boards where the canonical round can be compared against one ShiftRows row-rotation perturbation and against one MixColumns coefficient perturbation, making changed intermediate state and changed final output visible without drifting into a generic cipher-lab surface.
 
 **Latest substitution-authoring work:** `KEYED-SBOX-AUTHORING-V1` is now shipped. MCW now has a bounded keyed-substitution board where one visible 2-bit key selects one of four explicit 4-bit table variants, the selected table stays inspectable, and permutation validity remains machine-visible as a separate result from local output change.
 
@@ -78,9 +78,15 @@ This board wires 16 byte-wise SubBytes transforms into a visible ShiftRows bus p
 
 **Latest ECC visibility work:** both `VISIBLE-DOUBLE-AND-ADD-V1` and `TOY-CURVE-POINT-MAP-V1` are now shipped. MCW now has an explicit repeated-doubling / conditional-addition board that agrees visibly with shipped `ScalarMultiply`, plus a toy-curve point-map surface that makes one finite-field curve legible as a visible point landscape with a machine-checked repeated-action walk.
 
-**Genuine next open work:** no newer post-keyed-S-box bounded contract is canonical yet. The most natural follow-on from the current AES line is a separate column-perturbation slice if we want to continue the bounded control-and-consequence path without drifting into generic cipher authoring.
+**Genuine next open work:** there is no newer canonical post-column-perturbation contract drafted yet.
 
-This should stay separate from later AES column perturbation work and separate from any broader custom-cipher authoring surface.
+The immediate AES controllability line now includes:
+
+1. **AES-ROW-COLUMN-PERTURBATION-V1** — shipped ShiftRows perturbation against the canonical AES round.
+2. **AES-COLUMN-PERTURBATION-V1** — shipped MixColumns coefficient perturbation against the canonical AES round.
+3. **KEYED-SBOX-AUTHORING-V1** — shipped bounded keyed-substitution authoring with machine-visible permutation validity.
+
+Any follow-on should be drafted fresh rather than inferred automatically from the older AES queue.
 
 ## Practical Restart Guidance
 

@@ -178,6 +178,7 @@ const FULL_DEMO_SECTION_MAP: Record<string, AtlasSectionId> = {
   'aes-round-full': 'arithmetic-and-aes',
   'aes-row-perturbation': 'arithmetic-and-aes',
   'keyed-sbox-authoring': 'arithmetic-and-aes',
+  'aes-column-perturbation': 'arithmetic-and-aes',
 
   'visible-point-mechanics': 'public-key-and-ecc',
   'visible-scalar-multiplication': 'public-key-and-ecc',
@@ -259,6 +260,10 @@ const FULL_DEMO_FLAGS: Record<string, DemoAtlasEntryFlags> = {
   'keyed-sbox-authoring': {
     advanced: true,
     keywords: ['aes', 's-box', 'keyed table', 'present', 'permutation validity', 'substitution'],
+  },
+  'aes-column-perturbation': {
+    advanced: true,
+    keywords: ['aes', 'mixcolumns', 'column diffusion', 'perturbation', 'gf2', 'fips 197', 'comparison'],
   },
   'secp256k1-ecdh': {
     advanced: true,

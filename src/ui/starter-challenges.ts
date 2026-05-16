@@ -54,6 +54,7 @@ const visibleSubBytesProject = demoProjects.find((project) => project.id === 'vi
 const visibleAddRoundKeyProject = demoProjects.find((project) => project.id === 'visible-add-round-key');
 const aesRoundFullProject = demoProjects.find((project) => project.id === 'aes-round-full');
 const aesRowPerturbationProject = demoProjects.find((project) => project.id === 'aes-row-perturbation');
+const aesColumnPerturbationProject = demoProjects.find((project) => project.id === 'aes-column-perturbation');
 const keyedSBoxAuthoringProject = demoProjects.find((project) => project.id === 'keyed-sbox-authoring');
 const visiblePointMechanicsProject = demoProjects.find(
   (project) => project.id === 'visible-point-mechanics',
@@ -237,6 +238,9 @@ if (!aesRoundFullProject) {
 }
 if (!aesRowPerturbationProject) {
   throw new Error('Expected aes-row-perturbation demo project to seed starter challenges.');
+}
+if (!aesColumnPerturbationProject) {
+  throw new Error('Expected aes-column-perturbation demo project to seed starter challenges.');
 }
 if (!keyedSBoxAuthoringProject) {
   throw new Error('Expected keyed-sbox-authoring demo project to seed starter challenges.');
@@ -648,6 +652,16 @@ if (!canonicalShiftRowsModule || !correctedPerturbedShiftRowsModule) {
   throw new Error('Expected aes-row-perturbation demo project to contain both ShiftRows branches.');
 }
 correctedPerturbedShiftRowsModule.params.order = canonicalShiftRowsModule.params.order;
+
+const aesColumnPerturbationTarget = cloneProject(aesColumnPerturbationProject.project);
+const brokenAesColumnPerturbationStart = cloneProject(aesColumnPerturbationProject.project);
+const repairedAesColumnCoefficient = aesColumnPerturbationTarget.modules.find(
+  (moduleInstance) => moduleInstance.id === 'perturbed-mix-row0-col1-coeff',
+);
+if (!repairedAesColumnCoefficient) {
+  throw new Error('Expected aes-column-perturbation demo project to contain the perturbed coefficient source.');
+}
+repairedAesColumnCoefficient.params.value = '03';
 
 const brokenVisiblePointMechanicsConnections = brokenVisiblePointMechanicsStart.connections;
 const brokenVisiblePointMechanicsInverseIndex = brokenVisiblePointMechanicsConnections.findIndex(
@@ -2280,6 +2294,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The repair is not a rewiring task. The visible key source itself is wrong.',
       'Key 11 duplicates output value 0 and removes 14, so the validity sink should stay low until the key is corrected.',
       'Restore the key-source bits to 00, not 01 or 10.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-mixcolumns-rule',
+    title: 'Repair the MixColumns Rule',
+    projectId: 'aes-column-perturbation',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.96,
+    recommendedAfter: ['aes-column-perturbation'],
+    difficulty: 'intermediate',
+    prompt:
+      'The lower AES branch should match the canonical branch, but its first MixColumns row still uses 02 02 01 01 instead of the canonical 02 03 01 01. Restore the canonical coefficient rule so the post-MixColumns comparison and final output comparison both agree again.',
+    startingProject: brokenAesColumnPerturbationStart,
+    startingLayout: cloneProject(aesColumnPerturbationProject.layout),
+    targetProject: aesColumnPerturbationTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The canonical branch is already correct. Only the visible perturbed coefficient source needs to change.',
+      'The wrong slot is the second coefficient in the first MixColumns row: it is 02 now, but AES expects 03 there.',
+      'When repaired, both comparison sinks flip high: the post-MixColumns state matches and the final round output matches.',
     ],
   },
   {

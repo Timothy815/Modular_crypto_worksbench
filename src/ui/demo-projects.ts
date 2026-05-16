@@ -263,17 +263,41 @@ function buildAesRoundBranch(
     shiftOrder: string;
     stateSourceIds: string[][];
     keySourceIds: string[][];
+    includePostMixOutputs?: boolean;
+    mixRow0SecondCoefficientHex?: string;
   },
 ): {
   shiftBusId: string;
   finalBusId: string;
   shiftOutputId: string;
   finalOutputId: string;
+  postMixBusId?: string;
+  postMixOutputId?: string;
 } {
-  const { prefix, yOffset, shiftOrder, stateSourceIds, keySourceIds } = options;
+  const {
+    prefix,
+    yOffset,
+    shiftOrder,
+    stateSourceIds,
+    keySourceIds,
+    includePostMixOutputs = false,
+    mixRow0SecondCoefficientHex,
+  } = options;
   const subByteIds: string[] = [];
   const shiftByteIds: string[] = [];
+  const postMixByteIds: string[] = [];
   const finalByteIds: string[] = [];
+
+  const mixRow0SecondCoefficientId =
+    mixRow0SecondCoefficientHex !== undefined ? `${prefix}-mix-row0-col1-coeff` : null;
+  if (mixRow0SecondCoefficientId) {
+    modules.push({
+      id: mixRow0SecondCoefficientId,
+      defId: 'HexSource',
+      params: { value: mixRow0SecondCoefficientHex },
+    });
+    layout[mixRow0SecondCoefficientId] = { x: 2820, y: yOffset + 700 };
+  }
 
   for (let column = 0; column < 4; column += 1) {
     for (let row = 0; row < 4; row += 1) {
@@ -346,8 +370,14 @@ function buildAesRoundBranch(
         const multiplyId = `${prefix}-mix-c${column}-r${row}-m${sourceRow}`;
         modules.push({ id: multiplyId, defId: 'GF2Mul', params: { poly: '11B' } });
         connections.push({ from: { moduleId: columnInputIds[sourceRow], port: 'out' }, to: { moduleId: multiplyId, port: 'a' } });
+        const coefficientSourceId =
+          row === 0 && sourceRow === 1 && mixRow0SecondCoefficientId
+            ? mixRow0SecondCoefficientId
+            : coefficient === 2
+              ? const2Id
+              : const3Id;
         connections.push({
-          from: { moduleId: coefficient === 2 ? const2Id : const3Id, port: 'out' },
+          from: { moduleId: coefficientSourceId, port: 'out' },
           to: { moduleId: multiplyId, port: 'b' },
         });
         layout[multiplyId] = { x: 3000 + column * 440, y: yOffset + 80 + row * 140 + sourceRow * 24 };
@@ -374,7 +404,22 @@ function buildAesRoundBranch(
       layout[xor0Id] = { x: 3240 + column * 440, y: yOffset + 80 + row * 140 };
       layout[xor1Id] = { x: 3460 + column * 440, y: yOffset + 80 + row * 140 };
       layout[xor2Id] = { x: 3680 + column * 440, y: yOffset + 80 + row * 140 };
+      postMixByteIds.push(xor2Id);
     }
+  }
+
+  let postMixBusId: string | undefined;
+  let postMixOutputId: string | undefined;
+  if (includePostMixOutputs) {
+    postMixBusId = appendBitJoinTree(modules, connections, layout, postMixByteIds, `${prefix}-postmix-join`, 3920);
+    const postMixHexId = `${prefix}-postmix-hex`;
+    postMixOutputId = `${prefix}-postmix-out`;
+    modules.push({ id: postMixHexId, defId: 'BitsToHex', params: {} });
+    modules.push({ id: postMixOutputId, defId: 'HexOutput', params: {} });
+    connections.push({ from: { moduleId: postMixBusId, port: 'out' }, to: { moduleId: postMixHexId, port: 'in' } });
+    connections.push({ from: { moduleId: postMixHexId, port: 'out' }, to: { moduleId: postMixOutputId, port: 'in' } });
+    layout[postMixHexId] = { x: 3920, y: yOffset + 240 };
+    layout[postMixOutputId] = { x: 4140, y: yOffset + 240 };
   }
 
   const finalBusId = appendBitJoinTree(modules, connections, layout, finalByteIds, `${prefix}-final-join`, 3920);
@@ -392,6 +437,8 @@ function buildAesRoundBranch(
     finalBusId,
     shiftOutputId,
     finalOutputId,
+    postMixBusId,
+    postMixOutputId,
   };
 }
 
@@ -459,6 +506,79 @@ function buildAesRowPerturbationWorkspace(): {
 }
 
 const AES_ROW_PERTURBATION_WORKSPACE = buildAesRowPerturbationWorkspace();
+
+function buildAesColumnPerturbationWorkspace(): {
+  project: Project;
+  layout: Record<string, { x: number; y: number }>;
+} {
+  const modules: Project['modules'] = [];
+  const connections: Project['connections'] = [];
+  const layout: Record<string, { x: number; y: number }> = {};
+  const stateSourceIds: string[][] = Array.from({ length: 4 }, () => Array(4).fill(''));
+  const keySourceIds: string[][] = Array.from({ length: 4 }, () => Array(4).fill(''));
+
+  for (let column = 0; column < 4; column += 1) {
+    for (let row = 0; row < 4; row += 1) {
+      const flatIndex = column * 4 + row;
+      const stateId = `shared-s-${row}-${column}`;
+      const keyId = `shared-k-${row}-${column}`;
+      stateSourceIds[row][column] = stateId;
+      keySourceIds[row][column] = keyId;
+      modules.push({ id: stateId, defId: 'HexSource', params: { value: AES_ROUND_STATE_BYTES[flatIndex] } });
+      modules.push({ id: keyId, defId: 'HexSource', params: { value: AES_ROUND_KEY_BYTES[flatIndex] } });
+      layout[stateId] = { x: 80 + column * 120, y: 120 + row * 120 };
+      layout[keyId] = { x: 80 + column * 120, y: 1420 + row * 120 };
+    }
+  }
+
+  const canonical = buildAesRoundBranch(modules, connections, layout, {
+    prefix: 'canonical',
+    yOffset: 40,
+    shiftOrder: AES_SHIFT_ROWS_ORDER,
+    stateSourceIds,
+    keySourceIds,
+    includePostMixOutputs: true,
+    mixRow0SecondCoefficientHex: '03',
+  });
+
+  const perturbed = buildAesRoundBranch(modules, connections, layout, {
+    prefix: 'perturbed',
+    yOffset: 1260,
+    shiftOrder: AES_SHIFT_ROWS_ORDER,
+    stateSourceIds,
+    keySourceIds,
+    includePostMixOutputs: true,
+    mixRow0SecondCoefficientHex: '02',
+  });
+
+  if (!canonical.postMixBusId || !perturbed.postMixBusId) {
+    throw new Error('Expected AES column perturbation branches to expose post-MixColumns buses.');
+  }
+
+  modules.push({ id: 'postmix-match', defId: 'Equals', params: {} });
+  modules.push({ id: 'postmix-match-out', defId: 'BitOutput', params: {} });
+  modules.push({ id: 'final-match', defId: 'Equals', params: {} });
+  modules.push({ id: 'final-match-out', defId: 'BitOutput', params: {} });
+
+  connections.push({ from: { moduleId: canonical.postMixBusId, port: 'out' }, to: { moduleId: 'postmix-match', port: 'a' } });
+  connections.push({ from: { moduleId: perturbed.postMixBusId, port: 'out' }, to: { moduleId: 'postmix-match', port: 'b' } });
+  connections.push({ from: { moduleId: 'postmix-match', port: 'out' }, to: { moduleId: 'postmix-match-out', port: 'in' } });
+  connections.push({ from: { moduleId: canonical.finalBusId, port: 'out' }, to: { moduleId: 'final-match', port: 'a' } });
+  connections.push({ from: { moduleId: perturbed.finalBusId, port: 'out' }, to: { moduleId: 'final-match', port: 'b' } });
+  connections.push({ from: { moduleId: 'final-match', port: 'out' }, to: { moduleId: 'final-match-out', port: 'in' } });
+
+  layout['postmix-match'] = { x: 4900, y: 980 };
+  layout['postmix-match-out'] = { x: 5160, y: 980 };
+  layout['final-match'] = { x: 4900, y: 1100 };
+  layout['final-match-out'] = { x: 5160, y: 1100 };
+
+  return {
+    project: { modules, connections },
+    layout,
+  };
+}
+
+const AES_COLUMN_PERTURBATION_WORKSPACE = buildAesColumnPerturbationWorkspace();
 
 function buildKeyedSBoxAuthoringWorkspace(keyBits: [number, number]): {
   project: Project;
@@ -2251,6 +2371,20 @@ export const demoProjects: DemoProject[] = [
       'Shared BitSource(input) + BitSource(key) -> [SBox(PRESENT) | KeyedSBox4] -> BitsToHexDigit -> Output, plus Equals(output comparisons) and BitOutput(valid permutation)',
     project: KEYED_SBOX_AUTHORING_WORKSPACE.project,
     layout: KEYED_SBOX_AUTHORING_WORKSPACE.layout,
+  },
+  {
+    id: 'aes-column-perturbation',
+    name: 'AES Column Perturbation',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.96,
+    recommendedAfter: ['keyed-sbox-authoring'],
+    summary:
+      'One canonical AES round branch and one MixColumns-perturbed branch share the same FIPS 197 state and round key. The canonical branch keeps the first MixColumns row at 02 03 01 01, while the perturbed branch changes only that second coefficient to 02 so the changed post-MixColumns state and changed final round output stay visible as machine consequences.',
+    pipeline:
+      'Shared HexSource(state,key) -> [Canonical AES Round | Perturbed AES Round(mix row0 = 02 02 01 01)] -> BitsToHex(post-MixColumns and final state) -> Equals(branch comparisons) -> BitOutput',
+    project: AES_COLUMN_PERTURBATION_WORKSPACE.project,
+    layout: AES_COLUMN_PERTURBATION_WORKSPACE.layout,
   },
   {
     id: 'visible-point-order-and-subgroups',
