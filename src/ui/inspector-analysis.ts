@@ -22,6 +22,8 @@ import { computeToyPointMapAnalysis } from '../engine/analysis/toy-point-map-ana
 export type { ToyPointMapAnalysis } from '../engine/analysis/toy-point-map-analysis';
 import { computeKeyedSBoxAnalysis } from '../engine/analysis/keyed-sbox-analysis';
 export type { KeyedSBoxAnalysis } from '../engine/analysis/keyed-sbox-analysis';
+import { computeAesConsequenceAnalysis } from '../engine/analysis/aes-consequence-analysis';
+export type { AesConsequenceAnalysis } from '../engine/analysis/aes-consequence-analysis';
 import type {
   Connection,
   ExecutionResult,
@@ -2348,6 +2350,10 @@ export function getModulusAnalysis(params: Record<string, unknown>) {
 
 export function getToyPointMapAnalysis(params: Record<string, unknown>) {
   return computeToyPointMapAnalysis(params);
+}
+
+export function getAesConsequenceAnalysis(params: Parameters<typeof computeAesConsequenceAnalysis>[0]) {
+  return computeAesConsequenceAnalysis(params);
 }
 
 export function getKeyedSBoxAnalysis(keyBits: unknown) {

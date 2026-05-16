@@ -8997,3 +8997,88 @@ body.canvas-resizing {
   color: var(--muted-text);
   margin: 0;
 }
+
+.aes-consequence-panel {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.aes-consequence-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.7rem;
+}
+
+.aes-consequence-strip-cell {
+  padding: 0.8rem 0.95rem;
+  border-radius: 14px;
+  border: 1px solid rgba(130, 153, 177, 0.22);
+  background: rgba(15, 23, 42, 0.38);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+  display: grid;
+  gap: 0.25rem;
+}
+
+.aes-consequence-summary-copy {
+  margin: 0;
+  color: var(--muted-text);
+}
+
+.aes-consequence-stage-table {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.aes-consequence-stage-row {
+  border-radius: 16px;
+  border: 1px solid rgba(130, 153, 177, 0.22);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
+    rgba(15, 23, 42, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 12px 28px rgba(15, 23, 42, 0.18);
+  padding: 0.9rem 1rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.aes-consequence-stage-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+}
+
+.aes-consequence-stage-metrics {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.aes-consequence-stage-values {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.aes-consequence-stage-values > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.aes-consequence-stage-values code {
+  display: block;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  word-break: break-all;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.48);
+  border: 1px solid rgba(130, 153, 177, 0.18);
+}
+
+.aes-consequence-boundary {
+  margin: 0;
+  color: var(--muted-text);
+  font-size: 0.9rem;
+}

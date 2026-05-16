@@ -623,6 +623,12 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         indexTerms: ['keyed sbox', '4-bit sbox', 'present', 'permutation validity', 'keyed substitution'],
       },
       {
+        id: 'AesConsequenceSummary',
+        title: 'AesConsequenceSummary',
+        body: 'Reads two tracked pairs of 128-bit AES state checkpoints and summarizes where a canonical and perturbed branch first diverge, how many bytes changed at each stage, and what that local consequence does not prove. Its Analyze view is for bounded AES interpretation, not generic cryptanalysis.',
+        indexTerms: ['aes consequence summary', 'first divergence', 'changed bytes', 'shiftrows consequence', 'mixcolumns consequence', 'aes interpretation'],
+      },
+      {
         id: 'Permutation',
         title: 'Permutation',
         body: 'A bit-level transposition module. It rearranges the bits of its input according to a fixed or configurable pattern, providing diffusion.',

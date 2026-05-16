@@ -131,6 +131,7 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('Canonical AES Round');
     expect(demo?.pipeline).toContain('Perturbed AES Round(row1=0)');
     expect(demo?.pipeline).toContain('Equals(branch comparisons)');
+    expect(demo?.pipeline).toContain('AesConsequenceSummary');
   });
 
   it('includes the keyed S-box authoring demo as a bounded table-selection workspace', () => {
@@ -150,5 +151,6 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('Perturbed AES Round(mix row0 = 02 02 01 01)');
     expect(demo?.pipeline).toContain('BitsToHex(post-MixColumns and final state)');
     expect(demo?.pipeline).toContain('Equals(branch comparisons)');
+    expect(demo?.pipeline).toContain('AesConsequenceSummary');
   });
 });

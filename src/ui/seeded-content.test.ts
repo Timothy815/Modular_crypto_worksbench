@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { deriveTickCount, executeProject, executeTickedProject } from '../engine/executor';
+import { computeAesConsequenceAnalysis } from '../engine/analysis/aes-consequence-analysis';
 import { V1_REGISTRY } from '../engine/modules';
 import { isStatefulModule, type ModuleRegistry, type Project } from '../engine/types';
 import { validateProject } from '../engine/validation';
@@ -86,6 +87,11 @@ function getSymbolOutputMap(project: Project) {
         return [moduleInstance.id, String(traceEntry.inputs.in.value).toUpperCase()];
       }),
   );
+}
+
+function getTraceEntry(project: Project, moduleId: string) {
+  const result = executeProject(project, registry);
+  return result.trace.find((entry) => entry.moduleId === moduleId) ?? null;
 }
 
 describe('seeded teaching content', () => {
@@ -219,6 +225,34 @@ describe('seeded teaching content', () => {
     });
   });
 
+  it('keeps the AES row consequence summary aligned to the named first-divergence and byte-count facts', () => {
+    const demo = demoProjects.find((project) => project.id === 'aes-row-perturbation');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    const traceEntry = getTraceEntry(demo.project, 'row-consequence-summary');
+    expect(traceEntry).toBeTruthy();
+    if (!traceEntry) {
+      return;
+    }
+
+    const analysis = computeAesConsequenceAnalysis({
+      stage0Label: 'ShiftRows',
+      stage1Label: 'Final output',
+      ruleChanged: 'Row 1 ShiftRows rotation changed from 1 byte to 0 bytes in the perturbed branch.',
+      claimBoundary: 'This is a local routing consequence inside one visible AES round, not a proof of cryptographic quality or failure.',
+      canonicalStage0: traceEntry.inputs.canonicalStage0 as never,
+      perturbedStage0: traceEntry.inputs.perturbedStage0 as never,
+      canonicalStage1: traceEntry.inputs.canonicalStage1 as never,
+      perturbedStage1: traceEntry.inputs.perturbedStage1 as never,
+    });
+
+    expect(analysis.firstDivergenceLabel).toBe('ShiftRows');
+    expect(analysis.stages.map((stage) => stage.changedBytes)).toEqual([4, 16]);
+  });
+
   it('keeps the ShiftRows repair challenge broken until the perturbed branch is restored to the canonical rule', () => {
     const challenge = STARTER_CHALLENGES.find((entry) => entry.id === 'repair-the-shiftrows-rule');
     expect(challenge).toBeTruthy();
@@ -286,6 +320,34 @@ describe('seeded teaching content', () => {
       'postmix-match-out': '0',
       'final-match-out': '0',
     });
+  });
+
+  it('keeps the AES column consequence summary aligned to the named first-divergence and byte-count facts', () => {
+    const demo = demoProjects.find((project) => project.id === 'aes-column-perturbation');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    const traceEntry = getTraceEntry(demo.project, 'column-consequence-summary');
+    expect(traceEntry).toBeTruthy();
+    if (!traceEntry) {
+      return;
+    }
+
+    const analysis = computeAesConsequenceAnalysis({
+      stage0Label: 'post-MixColumns',
+      stage1Label: 'Final output',
+      ruleChanged: 'The first MixColumns row changed from 02 03 01 01 to 02 02 01 01 across all four visible column mixers in the perturbed branch.',
+      claimBoundary: 'This is one local diffusion-rule consequence inside one visible AES round, not a proof of strength, weakness, or breakability.',
+      canonicalStage0: traceEntry.inputs.canonicalStage0 as never,
+      perturbedStage0: traceEntry.inputs.perturbedStage0 as never,
+      canonicalStage1: traceEntry.inputs.canonicalStage1 as never,
+      perturbedStage1: traceEntry.inputs.perturbedStage1 as never,
+    });
+
+    expect(analysis.firstDivergenceLabel).toBe('post-MixColumns');
+    expect(analysis.stages.map((stage) => stage.changedBytes)).toEqual([4, 4]);
   });
 
   it('keeps the MixColumns repair challenge broken until the perturbed coefficient is restored to the canonical rule', () => {

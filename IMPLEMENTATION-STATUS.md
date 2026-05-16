@@ -78,7 +78,7 @@ This board wires 16 byte-wise SubBytes transforms into a visible ShiftRows bus p
 
 **Latest ECC visibility work:** both `VISIBLE-DOUBLE-AND-ADD-V1` and `TOY-CURVE-POINT-MAP-V1` are now shipped. MCW now has an explicit repeated-doubling / conditional-addition board that agrees visibly with shipped `ScalarMultiply`, plus a toy-curve point-map surface that makes one finite-field curve legible as a visible point landscape with a machine-checked repeated-action walk.
 
-**Genuine next open work:** there is no newer canonical post-column-perturbation contract drafted yet.
+**Latest AES interpretation work:** `AES-LOCAL-CONSEQUENCE-ANALYSIS-V1` is now shipped on `feature/aes-column-perturbation`. The AES row and column perturbation boards now include a board-resident consequence-summary module whose Analyze view names first divergence, changed-byte counts, and local claim boundaries from live checkpoint buses.
 
 The immediate AES controllability line now includes:
 
@@ -86,7 +86,11 @@ The immediate AES controllability line now includes:
 2. **AES-COLUMN-PERTURBATION-V1** — shipped MixColumns coefficient perturbation against the canonical AES round.
 3. **KEYED-SBOX-AUTHORING-V1** — shipped bounded keyed-substitution authoring with machine-visible permutation validity.
 
-Any follow-on should be drafted fresh rather than inferred automatically from the older AES queue.
+The next most likely high-leverage follow-on is:
+
+4. **AES-LOCAL-CONSEQUENCE-ANALYSIS-V1** — shipped consequence-reading slice across the AES perturbation boards, making first divergence, changed-byte counts, and local claim boundaries machine-visible without adding new AES authoring power.
+
+Any further follow-on after that should still be drafted fresh rather than inferred automatically from the older AES queue. The most plausible next AES interpretation follow-on is now a keyed-S-box consequence-reading slice, but that work is not yet contracted.
 
 ## Practical Restart Guidance
 

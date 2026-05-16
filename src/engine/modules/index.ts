@@ -117,6 +117,7 @@ import { PadBitsSequence } from './pad-bits-sequence';
 import { LFSR } from './lfsr';
 import { SBox } from './s-box';
 import { KeyedSBox4 } from './keyed-sbox4';
+import { AesConsequenceSummary } from './aes-consequence-summary';
 import { Clock } from './clock';
 
 export {
@@ -237,6 +238,7 @@ export {
   LFSR,
   SBox,
   KeyedSBox4,
+  AesConsequenceSummary,
   Clock,
 };
 
@@ -358,5 +360,6 @@ export const V1_REGISTRY: ModuleRegistry = {
   [LFSR.id]: LFSR,
   [SBox.id]: SBox,
   [KeyedSBox4.id]: KeyedSBox4,
+  [AesConsequenceSummary.id]: AesConsequenceSummary,
   [Clock.id]: Clock,
 };

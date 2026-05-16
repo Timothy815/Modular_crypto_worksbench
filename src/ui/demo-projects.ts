@@ -486,6 +486,16 @@ function buildAesRowPerturbationWorkspace(): {
   modules.push({ id: 'shift-match-out', defId: 'BitOutput', params: {} });
   modules.push({ id: 'final-match', defId: 'Equals', params: {} });
   modules.push({ id: 'final-match-out', defId: 'BitOutput', params: {} });
+  modules.push({
+    id: 'row-consequence-summary',
+    defId: 'AesConsequenceSummary',
+    params: {
+      stage0Label: 'ShiftRows',
+      stage1Label: 'Final output',
+      ruleChanged: 'Row 1 ShiftRows rotation changed from 1 byte to 0 bytes in the perturbed branch.',
+      claimBoundary: 'This is a local routing consequence inside one visible AES round, not a proof of cryptographic quality or failure.',
+    },
+  });
 
   connections.push({ from: { moduleId: canonical.shiftBusId, port: 'out' }, to: { moduleId: 'shift-match', port: 'a' } });
   connections.push({ from: { moduleId: perturbed.shiftBusId, port: 'out' }, to: { moduleId: 'shift-match', port: 'b' } });
@@ -493,11 +503,16 @@ function buildAesRowPerturbationWorkspace(): {
   connections.push({ from: { moduleId: canonical.finalBusId, port: 'out' }, to: { moduleId: 'final-match', port: 'a' } });
   connections.push({ from: { moduleId: perturbed.finalBusId, port: 'out' }, to: { moduleId: 'final-match', port: 'b' } });
   connections.push({ from: { moduleId: 'final-match', port: 'out' }, to: { moduleId: 'final-match-out', port: 'in' } });
+  connections.push({ from: { moduleId: canonical.shiftBusId, port: 'out' }, to: { moduleId: 'row-consequence-summary', port: 'canonicalStage0' } });
+  connections.push({ from: { moduleId: perturbed.shiftBusId, port: 'out' }, to: { moduleId: 'row-consequence-summary', port: 'perturbedStage0' } });
+  connections.push({ from: { moduleId: canonical.finalBusId, port: 'out' }, to: { moduleId: 'row-consequence-summary', port: 'canonicalStage1' } });
+  connections.push({ from: { moduleId: perturbed.finalBusId, port: 'out' }, to: { moduleId: 'row-consequence-summary', port: 'perturbedStage1' } });
 
   layout['shift-match'] = { x: 4900, y: 740 };
   layout['shift-match-out'] = { x: 5160, y: 740 };
   layout['final-match'] = { x: 4900, y: 860 };
   layout['final-match-out'] = { x: 5160, y: 860 };
+  layout['row-consequence-summary'] = { x: 4900, y: 560 };
 
   return {
     project: { modules, connections },
@@ -559,6 +574,16 @@ function buildAesColumnPerturbationWorkspace(): {
   modules.push({ id: 'postmix-match-out', defId: 'BitOutput', params: {} });
   modules.push({ id: 'final-match', defId: 'Equals', params: {} });
   modules.push({ id: 'final-match-out', defId: 'BitOutput', params: {} });
+  modules.push({
+    id: 'column-consequence-summary',
+    defId: 'AesConsequenceSummary',
+    params: {
+      stage0Label: 'post-MixColumns',
+      stage1Label: 'Final output',
+      ruleChanged: 'The first MixColumns row changed from 02 03 01 01 to 02 02 01 01 across all four visible column mixers in the perturbed branch.',
+      claimBoundary: 'This is one local diffusion-rule consequence inside one visible AES round, not a proof of strength, weakness, or breakability.',
+    },
+  });
 
   connections.push({ from: { moduleId: canonical.postMixBusId, port: 'out' }, to: { moduleId: 'postmix-match', port: 'a' } });
   connections.push({ from: { moduleId: perturbed.postMixBusId, port: 'out' }, to: { moduleId: 'postmix-match', port: 'b' } });
@@ -566,11 +591,16 @@ function buildAesColumnPerturbationWorkspace(): {
   connections.push({ from: { moduleId: canonical.finalBusId, port: 'out' }, to: { moduleId: 'final-match', port: 'a' } });
   connections.push({ from: { moduleId: perturbed.finalBusId, port: 'out' }, to: { moduleId: 'final-match', port: 'b' } });
   connections.push({ from: { moduleId: 'final-match', port: 'out' }, to: { moduleId: 'final-match-out', port: 'in' } });
+  connections.push({ from: { moduleId: canonical.postMixBusId, port: 'out' }, to: { moduleId: 'column-consequence-summary', port: 'canonicalStage0' } });
+  connections.push({ from: { moduleId: perturbed.postMixBusId, port: 'out' }, to: { moduleId: 'column-consequence-summary', port: 'perturbedStage0' } });
+  connections.push({ from: { moduleId: canonical.finalBusId, port: 'out' }, to: { moduleId: 'column-consequence-summary', port: 'canonicalStage1' } });
+  connections.push({ from: { moduleId: perturbed.finalBusId, port: 'out' }, to: { moduleId: 'column-consequence-summary', port: 'perturbedStage1' } });
 
   layout['postmix-match'] = { x: 4900, y: 980 };
   layout['postmix-match-out'] = { x: 5160, y: 980 };
   layout['final-match'] = { x: 4900, y: 1100 };
   layout['final-match-out'] = { x: 5160, y: 1100 };
+  layout['column-consequence-summary'] = { x: 4900, y: 780 };
 
   return {
     project: { modules, connections },
@@ -2354,7 +2384,7 @@ export const demoProjects: DemoProject[] = [
     summary:
       'One canonical AES round branch and one ShiftRows-perturbed branch share the same FIPS 197 state and round key. The canonical branch keeps row 1 at a left rotation of 1 byte; the perturbed branch changes only that rule to 0 bytes so the changed ShiftRows state and changed final round output stay visible as machine consequences.',
     pipeline:
-      'Shared HexSource(state,key) -> [Canonical AES Round | Perturbed AES Round(row1=0)] -> BitsToHex(ShiftRows and final state) -> Equals(branch comparisons) -> BitOutput',
+      'Shared HexSource(state,key) -> [Canonical AES Round | Perturbed AES Round(row1=0)] -> BitsToHex(ShiftRows and final state) -> Equals(branch comparisons) + AesConsequenceSummary -> BitOutput',
     project: AES_ROW_PERTURBATION_WORKSPACE.project,
     layout: AES_ROW_PERTURBATION_WORKSPACE.layout,
   },
@@ -2382,7 +2412,7 @@ export const demoProjects: DemoProject[] = [
     summary:
       'One canonical AES round branch and one MixColumns-perturbed branch share the same FIPS 197 state and round key. The canonical branch keeps the first MixColumns row at 02 03 01 01, while the perturbed branch changes only that second coefficient to 02 so the changed post-MixColumns state and changed final round output stay visible as machine consequences.',
     pipeline:
-      'Shared HexSource(state,key) -> [Canonical AES Round | Perturbed AES Round(mix row0 = 02 02 01 01)] -> BitsToHex(post-MixColumns and final state) -> Equals(branch comparisons) -> BitOutput',
+      'Shared HexSource(state,key) -> [Canonical AES Round | Perturbed AES Round(mix row0 = 02 02 01 01)] -> BitsToHex(post-MixColumns and final state) -> Equals(branch comparisons) + AesConsequenceSummary -> BitOutput',
     project: AES_COLUMN_PERTURBATION_WORKSPACE.project,
     layout: AES_COLUMN_PERTURBATION_WORKSPACE.layout,
   },

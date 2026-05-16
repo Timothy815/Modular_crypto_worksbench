@@ -53,6 +53,7 @@ import { PointEquals } from './point-equals';
 import { PointSelector } from './point-selector';
 import { ToyPointMap } from './toy-point-map';
 import { KeyedSBox4 } from './keyed-sbox4';
+import { AesConsequenceSummary } from './aes-consequence-summary';
 import { ScalarMultiply } from './scalar-multiply';
 import { ChallengeCombine } from './challenge-combine';
 import { ScalarLinearCombine } from './scalar-linear-combine';
@@ -802,6 +803,34 @@ describe('KeyedSBox4', () => {
         {},
       ),
     ).toThrow(/2-bit key/i);
+  });
+});
+
+describe('AesConsequenceSummary', () => {
+  it('accepts two pairs of 128-bit AES states', () => {
+    const state = { type: 'bits' as const, value: Array(128).fill(0) };
+    expect(
+      AesConsequenceSummary.evaluate({
+        canonicalStage0: state,
+        perturbedStage0: state,
+        canonicalStage1: state,
+        perturbedStage1: state,
+      }, {}),
+    ).toEqual({});
+  });
+
+  it('rejects checkpoint inputs that are not 128 bits wide', () => {
+    expect(() =>
+      AesConsequenceSummary.evaluate(
+        {
+          canonicalStage0: { type: 'bits', value: Array(120).fill(0) },
+          perturbedStage0: { type: 'bits', value: Array(128).fill(0) },
+          canonicalStage1: { type: 'bits', value: Array(128).fill(0) },
+          perturbedStage1: { type: 'bits', value: Array(128).fill(0) },
+        },
+        {},
+      ),
+    ).toThrow(/128 bits/i);
   });
 });
 

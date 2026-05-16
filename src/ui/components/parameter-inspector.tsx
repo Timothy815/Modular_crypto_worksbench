@@ -63,13 +63,14 @@ import {
   getPermutationAnalysisFromParams,
   getToyPointMapAnalysis,
   getKeyedSBoxAnalysis,
+  getAesConsequenceAnalysis,
   getLFSRAnalysis,
   getPlugboardAnalysis,
   getReflectorAnalysis,
   getModulusAnalysis,
   groupIssuesByTarget,
 } from '../inspector-analysis';
-import type { SBoxAnalysis, PermutationAnalysis, ToyPointMapAnalysis, KeyedSBoxAnalysis, LFSRAnalysis, PlugboardAnalysis, ReflectorAnalysis, ModulusAnalysis } from '../inspector-analysis';
+import type { SBoxAnalysis, PermutationAnalysis, ToyPointMapAnalysis, KeyedSBoxAnalysis, AesConsequenceAnalysis, LFSRAnalysis, PlugboardAnalysis, ReflectorAnalysis, ModulusAnalysis } from '../inspector-analysis';
 import { InspectorTabButton, PORT_SIDE_ORDER } from './inspector-controls';
 
 interface ParameterInspectorProps {
@@ -291,6 +292,7 @@ export function ParameterInspector({
     transformation: false,
     toyPointMapProperties: false,
     keyedSBoxProperties: false,
+    aesConsequenceProperties: false,
     sboxProperties: false,
     permutationProperties: false,
     lfsrProperties: false,
@@ -801,6 +803,36 @@ export function ParameterInspector({
     }
     return getKeyedSBoxAnalysis(keySignal.value);
   }, [inspectorTab, moduleInstance, selectedTrace]);
+  const staticAesConsequenceAnalysis: AesConsequenceAnalysis | null = useMemo(() => {
+    if (inspectorTab !== 'analyze' || moduleInstance?.defId !== 'AesConsequenceSummary' || !moduleInstance || !selectedTrace) {
+      return null;
+    }
+    if (selectedTrace.moduleId !== moduleInstance.id || selectedTrace.defId !== 'AesConsequenceSummary') {
+      return null;
+    }
+    const canonicalStage0 = selectedTrace.inputs.canonicalStage0;
+    const perturbedStage0 = selectedTrace.inputs.perturbedStage0;
+    const canonicalStage1 = selectedTrace.inputs.canonicalStage1;
+    const perturbedStage1 = selectedTrace.inputs.perturbedStage1;
+    if (
+      canonicalStage0?.type !== 'bits' ||
+      perturbedStage0?.type !== 'bits' ||
+      canonicalStage1?.type !== 'bits' ||
+      perturbedStage1?.type !== 'bits'
+    ) {
+      return null;
+    }
+    return getAesConsequenceAnalysis({
+      stage0Label: moduleInstance.params.stage0Label,
+      stage1Label: moduleInstance.params.stage1Label,
+      ruleChanged: moduleInstance.params.ruleChanged,
+      claimBoundary: moduleInstance.params.claimBoundary,
+      canonicalStage0,
+      perturbedStage0,
+      canonicalStage1,
+      perturbedStage1,
+    });
+  }, [inspectorTab, moduleInstance, selectedTrace]);
   const canBypassSelectedModule = moduleDef ? isBypassEligibleDefinition(moduleDef) : false;
   const orderedInputPorts = useMemo(
     () =>
@@ -1034,6 +1066,7 @@ export function ParameterInspector({
         staticModulusAnalysis={staticModulusAnalysis}
         staticToyPointMapAnalysis={staticToyPointMapAnalysis}
         staticKeyedSBoxAnalysis={staticKeyedSBoxAnalysis}
+        staticAesConsequenceAnalysis={staticAesConsequenceAnalysis}
         activeLookupChunk={activeLookupChunk}
         effectiveLookupChunkIndex={effectiveLookupChunkIndex}
         setRequestedLookupChunkIndex={setRequestedLookupChunkIndex}

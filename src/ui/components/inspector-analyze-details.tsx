@@ -15,6 +15,7 @@ import {
   type PermutationAnalysis,
   type ToyPointMapAnalysis,
   type KeyedSBoxAnalysis,
+  type AesConsequenceAnalysis,
 } from '../inspector-analysis';
 import { KNOWN_SBOX_REFERENCES } from '../../engine/analysis/sbox-analysis';
 import type { LFSRAnalysis, PlugboardAnalysis, ReflectorAnalysis, ModulusAnalysis } from '../inspector-analysis';
@@ -119,6 +120,7 @@ interface CollapsedAnalyzeSections {
   transformation: boolean;
   toyPointMapProperties: boolean;
   keyedSBoxProperties: boolean;
+  aesConsequenceProperties: boolean;
   sboxProperties: boolean;
   permutationProperties: boolean;
   lfsrProperties: boolean;
@@ -193,6 +195,7 @@ interface InspectorAnalyzeDetailsProps {
   staticModulusAnalysis: ModulusAnalysis | null;
   staticToyPointMapAnalysis: ToyPointMapAnalysis | null;
   staticKeyedSBoxAnalysis: KeyedSBoxAnalysis | null;
+  staticAesConsequenceAnalysis: AesConsequenceAnalysis | null;
   activeLookupChunk: LookupChunk | null;
   effectiveLookupChunkIndex: number;
   setRequestedLookupChunkIndex: (index: number) => void;
@@ -238,6 +241,7 @@ export function InspectorAnalyzeDetails({
   staticModulusAnalysis,
   staticToyPointMapAnalysis,
   staticKeyedSBoxAnalysis,
+  staticAesConsequenceAnalysis,
   activeLookupChunk,
   effectiveLookupChunkIndex,
   setRequestedLookupChunkIndex,
@@ -1190,6 +1194,65 @@ export function InspectorAnalyzeDetails({
                 This keyed table is still a valid 4-bit permutation, but that only means every input still has one output and every output appears once. It does not by itself prove this is a stronger substitution layer.
               </p>
             )}
+          </div>
+        </InspectorSection>
+      ) : null}
+
+      {inspectorTab === 'analyze' && staticAesConsequenceAnalysis ? (
+        <InspectorSection
+          label="AES Consequence Summary"
+          collapsible
+          collapsed={collapsedAnalyzeSections.aesConsequenceProperties}
+          onToggle={() => toggleAnalyzeSection('aesConsequenceProperties')}
+        >
+          <div className="aes-consequence-panel">
+            <p className="sbox-analysis-disclaimer">{staticAesConsequenceAnalysis.ruleChanged}</p>
+            <div className="aes-consequence-strip">
+              <div className="aes-consequence-strip-cell">
+                <span className="meta-label">First divergence</span>
+                <strong>
+                  {staticAesConsequenceAnalysis.firstDivergenceLabel ?? 'None'}
+                </strong>
+              </div>
+              <div className="aes-consequence-strip-cell">
+                <span className="meta-label">Tracked stages</span>
+                <strong>{staticAesConsequenceAnalysis.stages.length}</strong>
+              </div>
+              <div className="aes-consequence-strip-cell">
+                <span className="meta-label">Current state</span>
+                <strong className={staticAesConsequenceAnalysis.hasAnyDifference ? 'sbox-analysis-value-warn' : 'sbox-analysis-value-good'}>
+                  {staticAesConsequenceAnalysis.hasAnyDifference ? 'diverges' : 'matches'}
+                </strong>
+              </div>
+            </div>
+            <p className="aes-consequence-summary-copy">{staticAesConsequenceAnalysis.firstDivergenceSummary}</p>
+            <div className="aes-consequence-stage-table">
+              {staticAesConsequenceAnalysis.stages.map((stage) => (
+                <div key={stage.label} className="aes-consequence-stage-row">
+                  <div className="aes-consequence-stage-head">
+                    <strong>{stage.label}</strong>
+                    <span className={stage.matches ? 'sbox-analysis-value-good' : 'sbox-analysis-value-warn'}>
+                      {stage.matches ? 'match' : 'differ'}
+                    </span>
+                  </div>
+                  <div className="aes-consequence-stage-metrics">
+                    <span className="meta-label">Changed bytes</span>
+                    <strong>{stage.changedBytes}</strong>
+                  </div>
+                  <div className="aes-consequence-stage-values">
+                    <div>
+                      <span className="meta-label">Canonical</span>
+                      <code>{stage.canonicalHex}</code>
+                    </div>
+                    <div>
+                      <span className="meta-label">Perturbed</span>
+                      <code>{stage.perturbedHex}</code>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="aes-consequence-boundary">{staticAesConsequenceAnalysis.claimBoundary}</p>
           </div>
         </InspectorSection>
       ) : null}

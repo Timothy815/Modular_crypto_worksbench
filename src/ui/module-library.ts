@@ -750,6 +750,13 @@ const PRIMITIVE_LIBRARY_META: Record<string, PrimitiveLibraryMeta> = {
     detail: 'Use this when the key should visibly select a bounded keyed substitution family rather than editing an unconstrained table. It keeps the selected 4-bit table explicit in Analyze, emits a one-bit validity result, and distinguishes table change from permutation validity and cryptographic quality.',
     searchTerms: ['keyed sbox', 'keyed s-box', '4-bit sbox', 'present sbox', 'valid permutation', 'keyed substitution', 'bits'],
   },
+  AesConsequenceSummary: {
+    sectionId: 'word-diffusion',
+    sortOrder: 52,
+    purpose: 'Reads two pairs of visible 128-bit AES checkpoints and summarizes where divergence begins and how many bytes changed.',
+    detail: 'Use this when a bounded AES comparison board already exposes canonical and perturbed checkpoint buses and you want one Analyze card that names first divergence, changed-byte counts, and the local claim boundary without becoming a generic cryptanalysis surface.',
+    searchTerms: ['aes consequence', 'difference summary', 'first divergence', 'changed bytes', 'shiftrows', 'mixcolumns', 'aes analysis'],
+  },
   GF2Mul: {
     sectionId: 'number-theory',
     sortOrder: 1,
