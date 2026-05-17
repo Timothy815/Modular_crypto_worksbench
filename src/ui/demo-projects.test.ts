@@ -153,4 +153,15 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('Equals(branch comparisons)');
     expect(demo?.pipeline).toContain('AesConsequenceSummary');
   });
+
+  it('includes the Schnorr nonce reuse consequence demo as a visible misuse-autopsy workspace', () => {
+    const demo = demoProjects.find((project) => project.id === 'schnorr-nonce-reuse-consequence');
+
+    expect(demo?.name).toBe('Schnorr Nonce Reuse Consequence');
+    expect(demo?.pipeline).toContain('two Schnorr-style lanes sharing nonce R');
+    expect(demo?.pipeline).toContain('ScalarLinearCombine(s1,s2)');
+    expect(demo?.pipeline).toContain('FieldSub(Δs,Δc)');
+    expect(demo?.pipeline).toContain('FieldInverse');
+    expect(demo?.pipeline).toContain('Equals(secret recovery)');
+  });
 });

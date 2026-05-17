@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: May 16, 2026
+Last updated: May 17, 2026
 
 ---
 
@@ -91,6 +91,14 @@ The next most likely high-leverage follow-on is:
 4. **AES-LOCAL-CONSEQUENCE-ANALYSIS-V1** — shipped consequence-reading slice across the AES perturbation boards, making first divergence, changed-byte counts, and local claim boundaries machine-visible without adding new AES authoring power.
 
 Any further follow-on after that should still be drafted fresh rather than inferred automatically from the older AES queue. The most plausible next AES interpretation follow-on is now a keyed-S-box consequence-reading slice, but that work is not yet contracted.
+
+**Latest ECC misuse-consequence work:** `SCHNORR-NONCE-REUSE-CONSEQUENCE-V1` is now shipped on `feature/aes-column-perturbation`. MCW now has one bounded Schnorr misuse-autopsy board where two pedagogical signatures reuse the same nonce commitment point, expose the scalar recovery ingredients `Δs` and `Δc`, show the modular inversion step over subgroup order `n`, and machine-check that the recovered secret matches the original pedagogical signer secret.
+
+The latest ECC follow-on line now includes:
+
+5. **SCHNORR-NONCE-REUSE-CONSEQUENCE-V1** — shipped misuse-teaching follow-on after the visible Schnorr line, making one concrete nonce-reuse failure mode legible as a graph-visible secret-scalar recovery path.
+
+This is intentionally narrower than a generic ECC attack lab and should be read as an operational-legibility slice, not as a prestige expansion.
 
 ## Practical Restart Guidance
 

@@ -188,6 +188,7 @@ const FULL_DEMO_SECTION_MAP: Record<string, AtlasSectionId> = {
   'secp256k1-ecdh': 'public-key-and-ecc',
   'visible-point-order-and-subgroups': 'public-key-and-ecc',
   'visible-schnorr-signature': 'public-key-and-ecc',
+  'schnorr-nonce-reuse-consequence': 'public-key-and-ecc',
   'toy-rsa': 'public-key-and-ecc',
   'diffie-hellman-key-exchange': 'public-key-and-ecc',
   'visible-signature-verification': 'public-key-and-ecc',
@@ -272,6 +273,10 @@ const FULL_DEMO_FLAGS: Record<string, DemoAtlasEntryFlags> = {
   'visible-schnorr-signature': {
     advanced: true,
     keywords: ['ecc', 'signature', 'schnorr'],
+  },
+  'schnorr-nonce-reuse-consequence': {
+    advanced: true,
+    keywords: ['ecc', 'schnorr', 'nonce reuse', 'signature failure', 'secret recovery'],
   },
   'toy-rsa': {
     keywords: ['rsa', 'public key'],

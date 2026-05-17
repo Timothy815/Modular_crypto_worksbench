@@ -72,6 +72,23 @@ function getBitOutputMap(project: Project) {
   );
 }
 
+function getIntegerOutputMap(project: Project) {
+  const result = executeProject(project, registry);
+  const traceByModuleId = new Map(result.trace.map((entry) => [entry.moduleId, entry]));
+
+  return Object.fromEntries(
+    project.modules
+      .filter((moduleInstance) => moduleInstance.defId === 'IntegerOutput')
+      .map((moduleInstance) => {
+        const traceEntry = traceByModuleId.get(moduleInstance.id);
+        if (!traceEntry?.inputs.in || traceEntry.inputs.in.type !== 'integer') {
+          throw new Error(`Missing IntegerOutput input for ${moduleInstance.id}`);
+        }
+        return [moduleInstance.id, String(traceEntry.inputs.in.value)];
+      }),
+  );
+}
+
 function getSymbolOutputMap(project: Project) {
   const result = executeProject(project, registry);
   const traceByModuleId = new Map(result.trace.map((entry) => [entry.moduleId, entry]));
@@ -417,5 +434,57 @@ describe('seeded teaching content', () => {
     expect(getBitOutputMap(challenge.targetProject)['walk3-match-out']).toBe('1');
     expect(getBitOutputMap(challenge.startingProject)['selected-match-out']).toBe('0');
     expect(getBitOutputMap(challenge.startingProject)['walk3-match-out']).toBe('0');
+  });
+
+  it('keeps the Schnorr nonce reuse consequence demo aligned to the named recovered-secret transcript', () => {
+    const demo = demoProjects.find((project) => project.id === 'schnorr-nonce-reuse-consequence');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    expect(getIntegerOutputMap(demo.project)).toMatchObject({
+      'base-order-out': '11',
+      'private-out': '7',
+      'nonce-a-out': '3',
+      'nonce-b-out': '5',
+      'challenge-a-out': '4',
+      'challenge-b-out': '9',
+      'response-a-out': '9',
+      'response-b-out': '0',
+      'delta-s-out': '9',
+      'delta-c-out': '6',
+      'delta-c-inverse-out': '2',
+      'recovered-secret-out': '7',
+    });
+    expect(getBitOutputMap(demo.project)).toMatchObject({
+      'reused-r-equals-out': '1',
+      'recovered-secret-equals-out': '1',
+    });
+  });
+
+  it('keeps the Schnorr nonce reuse repair challenge broken until the second lane uses its distinct nonce source', () => {
+    const challenge = STARTER_CHALLENGES.find((entry) => entry.id === 'repair-the-schnorr-nonce-reuse');
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    expect(getBitOutputMap(challenge.startingProject)).toMatchObject({
+      'reused-r-equals-out': '1',
+      'recovered-secret-equals-out': '1',
+    });
+    expect(getBitOutputMap(challenge.targetProject)).toMatchObject({
+      'reused-r-equals-out': '0',
+      'recovered-secret-equals-out': '0',
+    });
+    expect(getIntegerOutputMap(challenge.targetProject)).toMatchObject({
+      'challenge-b-out': '2',
+      'response-b-out': '8',
+      'delta-s-out': '1',
+      'delta-c-out': '2',
+      'delta-c-inverse-out': '6',
+      'recovered-secret-out': '6',
+    });
   });
 });

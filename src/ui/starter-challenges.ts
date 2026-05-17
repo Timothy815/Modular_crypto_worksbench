@@ -71,6 +71,7 @@ const visiblePointOrderProject = demoProjects.find(
   (project) => project.id === 'visible-point-order-and-subgroups',
 );
 const visibleSchnorrProject = demoProjects.find((project) => project.id === 'visible-schnorr-signature');
+const schnorrNonceReuseProject = demoProjects.find((project) => project.id === 'schnorr-nonce-reuse-consequence');
 const visibleSignatureVerificationProject = demoProjects.find(
   (project) => project.id === 'visible-signature-verification',
 );
@@ -266,6 +267,9 @@ if (!visiblePointOrderProject) {
 if (!visibleSchnorrProject) {
   throw new Error('Expected visible-schnorr-signature demo project to seed starter challenges.');
 }
+if (!schnorrNonceReuseProject) {
+  throw new Error('Expected schnorr-nonce-reuse-consequence demo project to seed starter challenges.');
+}
 if (!visibleSignatureVerificationProject) {
   throw new Error('Expected visible-signature-verification demo project to seed starter challenges.');
 }
@@ -405,6 +409,8 @@ const visiblePointOrderTarget = cloneProject(visiblePointOrderProject.project);
 const brokenVisiblePointOrderStart = cloneProject(visiblePointOrderProject.project);
 const visibleSchnorrTarget = cloneProject(visibleSchnorrProject.project);
 const brokenVisibleSchnorrStart = cloneProject(visibleSchnorrProject.project);
+const schnorrNonceReuseTarget = cloneProject(schnorrNonceReuseProject.project);
+const brokenSchnorrNonceReuseStart = cloneProject(schnorrNonceReuseProject.project);
 const visibleSignatureVerificationTarget = cloneProject(visibleSignatureVerificationProject.project);
 const brokenVisibleSignatureVerificationStart = cloneProject(
   visibleSignatureVerificationProject.project,
@@ -782,6 +788,41 @@ if (brokenVisibleSchnorrPublicBranchIndex === -1) {
 brokenVisibleSchnorrConnections[brokenVisibleSchnorrPublicBranchIndex] = {
   from: { moduleId: 'base-point', port: 'out' },
   to: { moduleId: 'verify-scale-public', port: 'point' },
+};
+
+const repairedSchnorrNonceReuseTargetConnections = schnorrNonceReuseTarget.connections;
+const repairedSchnorrNonceReuseCommitmentIndex = repairedSchnorrNonceReuseTargetConnections.findIndex(
+  (connection) =>
+    connection.from.moduleId === 'nonce-a' &&
+    connection.from.port === 'out' &&
+    connection.to.moduleId === 'commitment-b' &&
+    connection.to.port === 'scalar',
+);
+if (repairedSchnorrNonceReuseCommitmentIndex === -1) {
+  throw new Error(
+    'Expected schnorr-nonce-reuse-consequence target project to contain the reused nonce -> commitment-b scalar leg.',
+  );
+}
+repairedSchnorrNonceReuseTargetConnections[repairedSchnorrNonceReuseCommitmentIndex] = {
+  from: { moduleId: 'nonce-b', port: 'out' },
+  to: { moduleId: 'commitment-b', port: 'scalar' },
+};
+
+const repairedSchnorrNonceReuseResponseIndex = repairedSchnorrNonceReuseTargetConnections.findIndex(
+  (connection) =>
+    connection.from.moduleId === 'nonce-a' &&
+    connection.from.port === 'out' &&
+    connection.to.moduleId === 'response-b' &&
+    connection.to.port === 'nonce',
+);
+if (repairedSchnorrNonceReuseResponseIndex === -1) {
+  throw new Error(
+    'Expected schnorr-nonce-reuse-consequence target project to contain the reused nonce -> response-b nonce leg.',
+  );
+}
+repairedSchnorrNonceReuseTargetConnections[repairedSchnorrNonceReuseResponseIndex] = {
+  from: { moduleId: 'nonce-b', port: 'out' },
+  to: { moduleId: 'response-b', port: 'nonce' },
 };
 
 const brokenSignatureVerifyExp = brokenVisibleSignatureVerificationStart.modules.find(
@@ -2390,6 +2431,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The left verification branch sG is still correct.',
       'The right verification branch should scale the public key P by c before adding R. It should not scale the shared base point G again.',
       'When the graph really compares sG against R + cP, PointEquals should emit 1 on this visible pedagogical curve.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-schnorr-nonce-reuse',
+    title: 'Repair The Schnorr Nonce Reuse',
+    projectId: 'schnorr-nonce-reuse-consequence',
+    group: 'Asymmetric Verification',
+    stage: 'asymmetric-verification-and-systems-composition',
+    order: 235,
+    recommendedAfter: ['visible-schnorr-signature'],
+    difficulty: 'intermediate',
+    prompt:
+      'This Schnorr misuse board is catastrophically reusing the same nonce across both signature lanes. Repair the second lane so it draws from its own distinct nonce source instead of sharing the first lane nonce.',
+    startingProject: brokenSchnorrNonceReuseStart,
+    startingLayout: cloneProject(schnorrNonceReuseProject.layout),
+    targetProject: schnorrNonceReuseTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The first lane is allowed to keep the visible nonce r = 3.',
+      'The second lane should use the separate nonce source that already exists on the board, not the reused first-lane source.',
+      'After the repair, the two commitment points should stop matching and the recovery-equality sink should stop claiming the recovered scalar equals the original secret.',
     ],
   },
   {

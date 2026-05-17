@@ -1,6 +1,6 @@
 # MCW Active Docs
 
-Last updated: May 16, 2026
+Last updated: May 17, 2026
 
 This is the canonical starting point for humans and agents.
 
@@ -27,6 +27,7 @@ This is the canonical starting point for humans and agents.
 - `docs/live/contracts/2026-05/POINT-ORDER-AND-SUBGROUPS-V1.md` when planning the first honest subgroup/point-order teaching layer after visible ECDH
 - `docs/live/contracts/2026-05/ECC-RIGOR-PASS-V1.md` when tightening how the shipped ECC line is framed, interpreted, and bounded
 - `docs/live/contracts/2026-05/VISIBLE-SCHNORR-V1.md` when planning the first honest glass-box ECC signature teaching slice
+- `docs/live/contracts/2026-05/SCHNORR-NONCE-REUSE-CONSEQUENCE-V1.md` when reviewing the shipped bounded ECC misuse-teaching slice after visible Schnorr — making nonce reuse and secret-scalar recovery legible as a live machine consequence
 - `docs/live/contracts/2026-05/ECC-POINT-PYTHON-EXPORT-PARITY-V1.md` when closing the remaining Python export gap for the shipped ECC point family
 - `docs/live/contracts/2026-05/VISIBLE-DOUBLE-AND-ADD-V1.md` when reviewing the shipped ECC visibility slice after the scalar-multiplication/ECDH/Schnorr line — unpacking scalar multiplication into an explicit repeated-action machine
 - `docs/live/contracts/2026-05/TOY-CURVE-POINT-MAP-V1.md` when reviewing the shipped toy-curve ECC intuition slice after visible double-and-add — making one toy finite-field curve legible as a visible point set and repeated-action landscape
