@@ -109,14 +109,13 @@ This is intentionally narrower than a generic ECC attack lab and should be read 
 
 The motivation is straightforward: local browser persistence is now a real project-risk surface because larger authored machines can be painful to lose. This slice is about moving primary workspace documents off `localStorage`, adding bounded autosave recovery, and making accidental local loss less final without pretending local persistence is equivalent to backup or sync.
 
-**Next ranked ECC follow-on:** `ECDH-LOW-ORDER-POINT-CONSEQUENCE-V1` is now drafted as the strongest next crypto slice. It is intended to land before the durability work because it closes the sharpest remaining ECC protocol-consequence gap: showing that a low-order peer point can collapse the visible ECDH shared-secret space into a tiny subgroup.
+**Latest ECC signature-integrity work:** `SCHNORR-CHALLENGE-BINDING-CONSEQUENCE-V1` is now shipped on `feature/aes-column-perturbation`. MCW now has one bounded Schnorr verifier-integrity board where the same visible signature pair is checked against two visible messages, and one broken verifier lane still emits success only because its challenge stage is wired back to the original signed message source.
 
-The current ranked queue after the new shipped low-order ECDH slice is:
+The current ranked queue after the shipped low-order ECDH slice is:
 
-1. `SCHNORR-CHALLENGE-BINDING-CONSEQUENCE-V1`
-2. `ECC-PUBLIC-KEY-VALIDATION-CONSEQUENCE-V1`
-3. `WORKSPACE-DURABILITY-SAFETY-V1`
-4. authoring/packaging ergonomics
+1. `ECC-PUBLIC-KEY-VALIDATION-CONSEQUENCE-V1`
+2. `WORKSPACE-DURABILITY-SAFETY-V1`
+3. authoring/packaging ergonomics
 
 ## Practical Restart Guidance
 

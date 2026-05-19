@@ -75,6 +75,9 @@ const ecdhLowOrderPointProject = demoProjects.find(
 );
 const visibleSchnorrProject = demoProjects.find((project) => project.id === 'visible-schnorr-signature');
 const schnorrNonceReuseProject = demoProjects.find((project) => project.id === 'schnorr-nonce-reuse-consequence');
+const schnorrChallengeBindingProject = demoProjects.find(
+  (project) => project.id === 'schnorr-challenge-binding-consequence',
+);
 const visibleSignatureVerificationProject = demoProjects.find(
   (project) => project.id === 'visible-signature-verification',
 );
@@ -276,6 +279,9 @@ if (!visibleSchnorrProject) {
 if (!schnorrNonceReuseProject) {
   throw new Error('Expected schnorr-nonce-reuse-consequence demo project to seed starter challenges.');
 }
+if (!schnorrChallengeBindingProject) {
+  throw new Error('Expected schnorr-challenge-binding-consequence demo project to seed starter challenges.');
+}
 if (!visibleSignatureVerificationProject) {
   throw new Error('Expected visible-signature-verification demo project to seed starter challenges.');
 }
@@ -419,6 +425,8 @@ const visibleSchnorrTarget = cloneProject(visibleSchnorrProject.project);
 const brokenVisibleSchnorrStart = cloneProject(visibleSchnorrProject.project);
 const schnorrNonceReuseTarget = cloneProject(schnorrNonceReuseProject.project);
 const brokenSchnorrNonceReuseStart = cloneProject(schnorrNonceReuseProject.project);
+const schnorrChallengeBindingTarget = cloneProject(schnorrChallengeBindingProject.project);
+const brokenSchnorrChallengeBindingStart = cloneProject(schnorrChallengeBindingProject.project);
 const visibleSignatureVerificationTarget = cloneProject(visibleSignatureVerificationProject.project);
 const brokenVisibleSignatureVerificationStart = cloneProject(
   visibleSignatureVerificationProject.project,
@@ -865,6 +873,24 @@ if (repairedSchnorrNonceReuseResponseIndex === -1) {
 repairedSchnorrNonceReuseTargetConnections[repairedSchnorrNonceReuseResponseIndex] = {
   from: { moduleId: 'nonce-b', port: 'out' },
   to: { moduleId: 'response-b', port: 'nonce' },
+};
+
+const repairedSchnorrChallengeBindingTargetConnections = schnorrChallengeBindingTarget.connections;
+const repairedSchnorrChallengeBindingMessageIndex = repairedSchnorrChallengeBindingTargetConnections.findIndex(
+  (connection) =>
+    connection.from.moduleId === 'message-sig' &&
+    connection.from.port === 'out' &&
+    connection.to.moduleId === 'broken-verify-challenge' &&
+    connection.to.port === 'message',
+);
+if (repairedSchnorrChallengeBindingMessageIndex === -1) {
+  throw new Error(
+    'Expected schnorr-challenge-binding-consequence target project to contain the message-sig -> broken-verify-challenge message leg.',
+  );
+}
+repairedSchnorrChallengeBindingTargetConnections[repairedSchnorrChallengeBindingMessageIndex] = {
+  from: { moduleId: 'message-claim', port: 'out' },
+  to: { moduleId: 'broken-verify-challenge', port: 'message' },
 };
 
 const brokenSignatureVerifyExp = brokenVisibleSignatureVerificationStart.modules.find(
@@ -2521,6 +2547,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The first lane is allowed to keep the visible nonce r = 3.',
       'The second lane should use the separate nonce source that already exists on the board, not the reused first-lane source.',
       'After the repair, the two commitment points should stop matching and the recovery-equality sink should stop claiming the recovered scalar equals the original secret.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-schnorr-challenge-binding',
+    title: 'Repair The Schnorr Challenge Binding',
+    projectId: 'schnorr-challenge-binding-consequence',
+    group: 'Asymmetric Verification',
+    stage: 'asymmetric-verification-and-systems-composition',
+    order: 236,
+    recommendedAfter: ['schnorr-nonce-reuse-consequence'],
+    difficulty: 'intermediate',
+    prompt:
+      'This Schnorr verifier is falsely reporting success for the claimed message because its broken verifier challenge is still reading the original signed message source. Rewire that one message leg so the verifier really binds to the claimed message instead.',
+    startingProject: brokenSchnorrChallengeBindingStart,
+    startingLayout: cloneProject(schnorrChallengeBindingProject.layout),
+    targetProject: schnorrChallengeBindingTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Do not change the signer transcript. The original signed message and signature are supposed to stay intact.',
+      'Only the broken verifier challenge is wrong; the honest reference verifier already reads the claimed message source.',
+      'Reconnect broken-verify-challenge.message from message-sig to message-claim so the false-looking success bit drops from 1 to 0.',
     ],
   },
   {

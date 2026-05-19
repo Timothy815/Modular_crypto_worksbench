@@ -190,6 +190,7 @@ const FULL_DEMO_SECTION_MAP: Record<string, AtlasSectionId> = {
   'ecdh-low-order-point-consequence': 'public-key-and-ecc',
   'visible-schnorr-signature': 'public-key-and-ecc',
   'schnorr-nonce-reuse-consequence': 'public-key-and-ecc',
+  'schnorr-challenge-binding-consequence': 'public-key-and-ecc',
   'toy-rsa': 'public-key-and-ecc',
   'diffie-hellman-key-exchange': 'public-key-and-ecc',
   'visible-signature-verification': 'public-key-and-ecc',
@@ -278,6 +279,10 @@ const FULL_DEMO_FLAGS: Record<string, DemoAtlasEntryFlags> = {
   'schnorr-nonce-reuse-consequence': {
     advanced: true,
     keywords: ['ecc', 'schnorr', 'nonce reuse', 'signature failure', 'secret recovery'],
+  },
+  'schnorr-challenge-binding-consequence': {
+    advanced: true,
+    keywords: ['ecc', 'schnorr', 'challenge binding', 'transcript integrity', 'wrong message verification'],
   },
   'toy-rsa': {
     keywords: ['rsa', 'public key'],

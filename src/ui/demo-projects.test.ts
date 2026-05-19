@@ -174,4 +174,14 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('ScalarMultiply(aG,B,aB,aQ_low,a-prime Q_low)');
     expect(demo?.pipeline).toContain('PointEquals(low-order collapse)');
   });
+
+  it('includes the Schnorr challenge binding consequence demo as a visible transcript-integrity workspace', () => {
+    const demo = demoProjects.find((project) => project.id === 'schnorr-challenge-binding-consequence');
+
+    expect(demo?.name).toBe('Schnorr Challenge Binding Consequence');
+    expect(demo?.pipeline).toContain('visible signer transcript');
+    expect(demo?.pipeline).toContain('ChallengeCombine(c_sig,c_broken,c_claim)');
+    expect(demo?.pipeline).toContain('ScalarLinearCombine(s)');
+    expect(demo?.pipeline).toContain('PointEquals(broken verifier vs honest verifier)');
+  });
 });

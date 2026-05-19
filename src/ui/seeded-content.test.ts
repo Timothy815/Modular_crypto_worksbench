@@ -556,4 +556,61 @@ describe('seeded teaching content', () => {
       'collapse-match-out': '0',
     });
   });
+
+  it('keeps the Schnorr challenge binding consequence demo aligned to the named transcript-binding facts', () => {
+    const demo = demoProjects.find((project) => project.id === 'schnorr-challenge-binding-consequence');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    expect(getIntegerOutputMap(demo.project)).toMatchObject({
+      'base-order-out': '11',
+      'private-out': '7',
+      'nonce-out': '3',
+      'message-sig-out': '3',
+      'message-claim-out': '8',
+      'signer-challenge-out': '4',
+      'response-out': '9',
+      'broken-verify-challenge-out': '4',
+      'honest-verify-challenge-out': '9',
+    });
+    expect(getPointOutputMap(demo.project)).toMatchObject({
+      'public-out': '(3,6)',
+      'commitment-out': '(12,2)',
+      'verify-left-out': '(8,15)',
+      'broken-verify-right-out': '(8,15)',
+      'honest-verify-right-out': '∞',
+    });
+    expect(getBitOutputMap(demo.project)).toMatchObject({
+      'broken-verify-equals-out': '1',
+      'honest-verify-equals-out': '0',
+    });
+  });
+
+  it('keeps the Schnorr challenge binding repair challenge broken until the verifier challenge is rebound to the claimed message', () => {
+    const challenge = STARTER_CHALLENGES.find((entry) => entry.id === 'repair-the-schnorr-challenge-binding');
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    expect(getIntegerOutputMap(challenge.startingProject)).toMatchObject({
+      'broken-verify-challenge-out': '4',
+    });
+    expect(getBitOutputMap(challenge.startingProject)).toMatchObject({
+      'broken-verify-equals-out': '1',
+      'honest-verify-equals-out': '0',
+    });
+    expect(getIntegerOutputMap(challenge.targetProject)).toMatchObject({
+      'broken-verify-challenge-out': '9',
+    });
+    expect(getPointOutputMap(challenge.targetProject)).toMatchObject({
+      'broken-verify-right-out': '∞',
+    });
+    expect(getBitOutputMap(challenge.targetProject)).toMatchObject({
+      'broken-verify-equals-out': '0',
+      'honest-verify-equals-out': '0',
+    });
+  });
 });
