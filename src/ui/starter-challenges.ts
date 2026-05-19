@@ -70,6 +70,9 @@ const visibleEcdhProject = demoProjects.find((project) => project.id === 'visibl
 const visiblePointOrderProject = demoProjects.find(
   (project) => project.id === 'visible-point-order-and-subgroups',
 );
+const ecdhLowOrderPointProject = demoProjects.find(
+  (project) => project.id === 'ecdh-low-order-point-consequence',
+);
 const visibleSchnorrProject = demoProjects.find((project) => project.id === 'visible-schnorr-signature');
 const schnorrNonceReuseProject = demoProjects.find((project) => project.id === 'schnorr-nonce-reuse-consequence');
 const visibleSignatureVerificationProject = demoProjects.find(
@@ -264,6 +267,9 @@ if (!visibleEcdhProject) {
 if (!visiblePointOrderProject) {
   throw new Error('Expected visible-point-order-and-subgroups demo project to seed starter challenges.');
 }
+if (!ecdhLowOrderPointProject) {
+  throw new Error('Expected ecdh-low-order-point-consequence demo project to seed starter challenges.');
+}
 if (!visibleSchnorrProject) {
   throw new Error('Expected visible-schnorr-signature demo project to seed starter challenges.');
 }
@@ -407,6 +413,8 @@ const visibleEcdhTarget = cloneProject(visibleEcdhProject.project);
 const brokenVisibleEcdhStart = cloneProject(visibleEcdhProject.project);
 const visiblePointOrderTarget = cloneProject(visiblePointOrderProject.project);
 const brokenVisiblePointOrderStart = cloneProject(visiblePointOrderProject.project);
+const ecdhLowOrderPointTarget = cloneProject(ecdhLowOrderPointProject.project);
+const brokenEcdhLowOrderPointStart = cloneProject(ecdhLowOrderPointProject.project);
 const visibleSchnorrTarget = cloneProject(visibleSchnorrProject.project);
 const brokenVisibleSchnorrStart = cloneProject(visibleSchnorrProject.project);
 const schnorrNonceReuseTarget = cloneProject(schnorrNonceReuseProject.project);
@@ -772,6 +780,40 @@ if (brokenVisiblePointOrderScalarIndex === -1) {
 brokenVisiblePointOrderConnections[brokenVisiblePointOrderScalarIndex] = {
   from: { moduleId: 'order-p', port: 'out' },
   to: { moduleId: 'verify-q', port: 'scalar' },
+};
+
+const repairedLowOrderSharedAIndex = ecdhLowOrderPointTarget.connections.findIndex(
+  (connection) =>
+    connection.from.moduleId === 'low-order-peer' &&
+    connection.from.port === 'out' &&
+    connection.to.moduleId === 'collapse-shared-a' &&
+    connection.to.port === 'point',
+);
+if (repairedLowOrderSharedAIndex === -1) {
+  throw new Error(
+    'Expected ecdh-low-order-point-consequence target project to contain the low-order-peer -> collapse-shared-a leg.',
+  );
+}
+ecdhLowOrderPointTarget.connections[repairedLowOrderSharedAIndex] = {
+  from: { moduleId: 'honest-peer-public', port: 'out' },
+  to: { moduleId: 'collapse-shared-a', port: 'point' },
+};
+
+const repairedLowOrderSharedAprimeIndex = ecdhLowOrderPointTarget.connections.findIndex(
+  (connection) =>
+    connection.from.moduleId === 'low-order-peer' &&
+    connection.from.port === 'out' &&
+    connection.to.moduleId === 'collapse-shared-aprime' &&
+    connection.to.port === 'point',
+);
+if (repairedLowOrderSharedAprimeIndex === -1) {
+  throw new Error(
+    'Expected ecdh-low-order-point-consequence target project to contain the low-order-peer -> collapse-shared-aprime leg.',
+  );
+}
+ecdhLowOrderPointTarget.connections[repairedLowOrderSharedAprimeIndex] = {
+  from: { moduleId: 'honest-peer-public', port: 'out' },
+  to: { moduleId: 'collapse-shared-aprime', port: 'point' },
 };
 
 const brokenVisibleSchnorrConnections = brokenVisibleSchnorrStart.connections;
@@ -2407,6 +2449,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'Each verification branch should reuse the PointOrder result from the same point it is checking.',
       'The first branch verifies 9P = ∞ and the second verifies 18Q = ∞ on the same declared visible pedagogical curve.',
       'If one branch uses the other point’s order, the PointOutput will stop showing visible infinity and the point-local subgroup structure claim will fail.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-low-order-ecdh-peer',
+    title: 'Repair The Low-Order ECDH Peer',
+    projectId: 'ecdh-low-order-point-consequence',
+    group: 'Number Theory',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 229.5,
+    recommendedAfter: ['visible-point-order-and-subgroups'],
+    difficulty: 'intermediate',
+    prompt:
+      'This ECDH consequence board is still feeding both shared-secret consequence lanes from the low-order peer point Q_low = (16, 0). Repair the two peer-point connections so both lanes use the honest peer public point B instead.',
+    startingProject: brokenEcdhLowOrderPointStart,
+    startingLayout: cloneProject(ecdhLowOrderPointProject.layout),
+    targetProject: ecdhLowOrderPointTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The low-order peer point should stay visible on the board for comparison, but it should not feed the repaired shared-secret lanes.',
+      'Both broken wires currently come from Q_low and land on the two collapse-shared modules.',
+      'Reconnect both of those point inputs to the honest peer public-point source B so the collapse equality bit drops back to 0.',
     ],
   },
   {

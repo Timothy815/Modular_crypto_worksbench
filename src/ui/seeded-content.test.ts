@@ -89,6 +89,26 @@ function getIntegerOutputMap(project: Project) {
   );
 }
 
+function getPointOutputMap(project: Project) {
+  const result = executeProject(project, registry);
+  const traceByModuleId = new Map(result.trace.map((entry) => [entry.moduleId, entry]));
+
+  return Object.fromEntries(
+    project.modules
+      .filter((moduleInstance) => moduleInstance.defId === 'PointOutput')
+      .map((moduleInstance) => {
+        const traceEntry = traceByModuleId.get(moduleInstance.id);
+        if (!traceEntry?.inputs.in || traceEntry.inputs.in.type !== 'ec-point') {
+          throw new Error(`Missing PointOutput input for ${moduleInstance.id}`);
+        }
+        const value = traceEntry.inputs.in.value;
+        const formatted =
+          value.kind === 'infinity' ? '∞' : `(${String(value.x)},${String(value.y)})`;
+        return [moduleInstance.id, formatted];
+      }),
+  );
+}
+
 function getSymbolOutputMap(project: Project) {
   const result = executeProject(project, registry);
   const traceByModuleId = new Map(result.trace.map((entry) => [entry.moduleId, entry]));
@@ -485,6 +505,55 @@ describe('seeded teaching content', () => {
       'delta-c-out': '2',
       'delta-c-inverse-out': '6',
       'recovered-secret-out': '6',
+    });
+  });
+
+  it('keeps the low-order ECDH consequence demo aligned to the named peer-point collapse facts', () => {
+    const demo = demoProjects.find((project) => project.id === 'ecdh-low-order-point-consequence');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    expect(getIntegerOutputMap(demo.project)).toMatchObject({
+      'base-order-out': '11',
+      'peer-scalar-out': '2',
+      'low-order-order-out': '2',
+      'private-a-out': '3',
+      'private-aprime-out': '5',
+    });
+    expect(getPointOutputMap(demo.project)).toMatchObject({
+      'honest-peer-public-out': '(8,2)',
+      'public-a-out': '(12,2)',
+      'honest-shared-a-out': '(14,2)',
+      'collapse-shared-a-out': '(16,0)',
+      'collapse-shared-aprime-out': '(16,0)',
+    });
+    expect(getBitOutputMap(demo.project)).toMatchObject({
+      'collapse-match-out': '1',
+    });
+  });
+
+  it('keeps the low-order ECDH repair challenge broken until both shared branches are rewired to the honest peer point', () => {
+    const challenge = STARTER_CHALLENGES.find((entry) => entry.id === 'repair-low-order-ecdh-peer');
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    expect(getPointOutputMap(challenge.startingProject)).toMatchObject({
+      'collapse-shared-a-out': '(16,0)',
+      'collapse-shared-aprime-out': '(16,0)',
+    });
+    expect(getBitOutputMap(challenge.startingProject)).toMatchObject({
+      'collapse-match-out': '1',
+    });
+    expect(getPointOutputMap(challenge.targetProject)).toMatchObject({
+      'collapse-shared-a-out': '(14,2)',
+      'collapse-shared-aprime-out': '(15,5)',
+    });
+    expect(getBitOutputMap(challenge.targetProject)).toMatchObject({
+      'collapse-match-out': '0',
     });
   });
 });

@@ -100,6 +100,24 @@ The latest ECC follow-on line now includes:
 
 This is intentionally narrower than a generic ECC attack lab and should be read as an operational-legibility slice, not as a prestige expansion.
 
+**Latest ECC protocol-consequence work:** `ECDH-LOW-ORDER-POINT-CONSEQUENCE-V1` is now shipped on `feature/aes-column-perturbation`. MCW now has one bounded ECDH misuse board where a low-order peer point of order `2` collapses two different private scalars onto the same visible shared point, with the honest `aB` path kept beside it as contrast.
+
+**Queued durability follow-on:** `WORKSPACE-DURABILITY-SAFETY-V1` is now drafted as a non-crypto safety slice. It is intentionally ranked:
+
+- after the remaining top ECC consequence/validation slices
+- before authoring/packaging ergonomics
+
+The motivation is straightforward: local browser persistence is now a real project-risk surface because larger authored machines can be painful to lose. This slice is about moving primary workspace documents off `localStorage`, adding bounded autosave recovery, and making accidental local loss less final without pretending local persistence is equivalent to backup or sync.
+
+**Next ranked ECC follow-on:** `ECDH-LOW-ORDER-POINT-CONSEQUENCE-V1` is now drafted as the strongest next crypto slice. It is intended to land before the durability work because it closes the sharpest remaining ECC protocol-consequence gap: showing that a low-order peer point can collapse the visible ECDH shared-secret space into a tiny subgroup.
+
+The current ranked queue after the new shipped low-order ECDH slice is:
+
+1. `SCHNORR-CHALLENGE-BINDING-CONSEQUENCE-V1`
+2. `ECC-PUBLIC-KEY-VALIDATION-CONSEQUENCE-V1`
+3. `WORKSPACE-DURABILITY-SAFETY-V1`
+4. authoring/packaging ergonomics
+
 ## Practical Restart Guidance
 
 Read in this order:

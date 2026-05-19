@@ -164,4 +164,14 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('FieldInverse');
     expect(demo?.pipeline).toContain('Equals(secret recovery)');
   });
+
+  it('includes the low-order ECDH consequence demo as a visible subgroup-collapse workspace', () => {
+    const demo = demoProjects.find((project) => project.id === 'ecdh-low-order-point-consequence');
+
+    expect(demo?.name).toBe('ECDH Low-Order Point Consequence');
+    expect(demo?.pipeline).toContain('PointSource(G,Q_low)');
+    expect(demo?.pipeline).toContain('PointOrder(Q_low)');
+    expect(demo?.pipeline).toContain('ScalarMultiply(aG,B,aB,aQ_low,a-prime Q_low)');
+    expect(demo?.pipeline).toContain('PointEquals(low-order collapse)');
+  });
 });

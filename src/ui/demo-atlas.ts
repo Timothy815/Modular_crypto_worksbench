@@ -187,6 +187,7 @@ const FULL_DEMO_SECTION_MAP: Record<string, AtlasSectionId> = {
   'visible-ecdh-key-agreement': 'public-key-and-ecc',
   'secp256k1-ecdh': 'public-key-and-ecc',
   'visible-point-order-and-subgroups': 'public-key-and-ecc',
+  'ecdh-low-order-point-consequence': 'public-key-and-ecc',
   'visible-schnorr-signature': 'public-key-and-ecc',
   'schnorr-nonce-reuse-consequence': 'public-key-and-ecc',
   'toy-rsa': 'public-key-and-ecc',
@@ -290,6 +291,10 @@ const FULL_DEMO_FLAGS: Record<string, DemoAtlasEntryFlags> = {
   'visible-point-order-and-subgroups': {
     advanced: true,
     keywords: ['ecc', 'subgroup', 'order'],
+  },
+  'ecdh-low-order-point-consequence': {
+    advanced: true,
+    keywords: ['ecc', 'ecdh', 'low-order point', 'subgroup collapse', 'peer validation'],
   },
   'visible-signature-verification': {
     advanced: true,
