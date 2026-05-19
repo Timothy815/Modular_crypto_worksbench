@@ -54,7 +54,6 @@ import {
   downloadCompositeLibraryDocument,
   downloadGuidedChallengeDocument,
   parseGuidedChallengeDocument,
-  saveWorkspaceToStorage,
 } from './ui/persistence';
 import { cloneProject } from './ui/project-clone';
 import type { SavedAnalysisCase } from './ui/workbench-document';
@@ -107,12 +106,20 @@ import {
 import { resolveWorkspaceExecution } from './ui/workspace-execution';
 import type { WorkspaceMode } from './ui/workspace-mode';
 import {
+  buildHydratedUiState,
   createUniqueWorkspaceId,
   createWorkspaceNameFromBase,
   describeWorkspacePipeline,
   hydrateInitialUiState,
   loadInitialVerificationCasesByProject,
 } from './ui/workspace-artifacts';
+import {
+  bootstrapDurableWorkspace,
+  loadWorkspaceAutosaves,
+  persistWorkspaceDurably,
+} from './ui/workspace-durability';
+import { buildWorkbenchDocument } from './ui/workspace-state-support';
+import type { AutosaveSnapshotDocument } from './ui/workbench-document';
 import { getPrimitiveMicroDemo } from './ui/primitive-micro-demos';
 import { getPipelineMicroDemo } from './ui/pipeline-micro-demos';
 import { buildCompositeInstanceDrilldownContext } from './ui/composite-instance-drilldown';
@@ -535,6 +542,11 @@ function MainApp() {
   const [verificationCasesByProject, setVerificationCasesByProject] = useState<
     Record<string, VerificationCase[]>
   >(() => loadInitialVerificationCasesByProject(demoProjects));
+  const [autosaveSnapshotsByProject, setAutosaveSnapshotsByProject] = useState<
+    Record<string, AutosaveSnapshotDocument[]>
+  >({});
+  const [persistenceWarning, setPersistenceWarning] = useState<string | null>(null);
+  const [isDurabilityBootReady, setIsDurabilityBootReady] = useState(false);
   const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
   const [hoveredTraceModuleId, setHoveredTraceModuleId] = useState<string | null>(null);
   const [stepIndex, setStepIndex] = useState<number | null>(null);
@@ -557,6 +569,7 @@ function MainApp() {
   const [requestedWorkspaceFocusModuleId, setRequestedWorkspaceFocusModuleId] =
     useState<string | null>(null);
   const [compositeDrilldown, setCompositeDrilldown] = useState<CompositeDrilldownState | null>(null);
+  const autosaveFingerprintByProjectRef = useRef<Record<string, string>>({});
 
   useEffect(() => {
     if (activePendingConnection) {
@@ -823,6 +836,8 @@ function MainApp() {
     state.workspaceHistoryByProject[activeProjectDefinition.id] ?? { past: [], future: [] };
   const activeWorkspaceVersions =
     state.workspaceVersionsByProject[activeProjectDefinition.id] ?? [];
+  const activeAutosaveSnapshots =
+    autosaveSnapshotsByProject[activeProjectDefinition.id] ?? [];
   const canUndoWorkspaceHistory = !state.compositeEditor && activeWorkspaceHistory.past.length > 0;
   const canRedoWorkspaceHistory = !state.compositeEditor && activeWorkspaceHistory.future.length > 0;
   const effectivePortNameOverrides = useMemo(() => {
@@ -2003,14 +2018,103 @@ function MainApp() {
       return;
     }
 
+    let cancelled = false;
+
+    async function bootDurableWorkspace() {
+      const result = await bootstrapDurableWorkspace({
+        projects: demoProjects,
+      });
+      if (cancelled) {
+        return;
+      }
+
+      setPersistenceWarning(result.warning?.message ?? null);
+      if (result.workspace) {
+        dispatch({
+          type: 'hydratePersistedState',
+          state: buildHydratedUiState(demoProjects, result.workspace),
+        });
+        setVerificationCasesByProject(result.workspace.verificationCasesByProjectId ?? {});
+      }
+      setIsDurabilityBootReady(true);
+    }
+
+    void bootDurableWorkspace();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isDurabilityBootReady) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function refreshAutosaves() {
+      const snapshots = await loadWorkspaceAutosaves(state.activeProjectId);
+      if (cancelled) {
+        return;
+      }
+      setAutosaveSnapshotsByProject((current) => ({
+        ...current,
+        [state.activeProjectId]: snapshots,
+      }));
+    }
+
+    void refreshAutosaves();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isDurabilityBootReady, state.activeProjectId]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (!isDurabilityBootReady) {
+      return;
+    }
+
     const timeoutId = window.setTimeout(() => {
-      saveWorkspaceToStorage(state, verificationCasesByProject);
+      const activeProjectId = state.activeProjectId;
+      const activeDocument = buildWorkbenchDocument(state, activeProjectId);
+      const nextFingerprint = activeDocument
+        ? JSON.stringify({
+            document: activeDocument,
+            tickedMode: state.tickedModeByProject[activeProjectId] ?? false,
+          })
+        : null;
+      const previousFingerprint =
+        autosaveFingerprintByProjectRef.current[activeProjectId] ?? null;
+
+      void persistWorkspaceDurably({
+        state,
+        verificationCasesByProjectId: verificationCasesByProject,
+        activeProjectId,
+        skipAutosave: nextFingerprint !== null && nextFingerprint === previousFingerprint,
+      }).then((result) => {
+        setPersistenceWarning(result.warning?.message ?? null);
+        if (nextFingerprint !== null) {
+          autosaveFingerprintByProjectRef.current[activeProjectId] = nextFingerprint;
+        }
+        if (result.autosaves.length > 0) {
+          setAutosaveSnapshotsByProject((current) => ({
+            ...current,
+            [activeProjectId]: result.autosaves,
+          }));
+        }
+      });
     }, 500);
 
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [state, verificationCasesByProject]);
+  }, [isDurabilityBootReady, state, verificationCasesByProject]);
 
   useEffect(() => {
     if (typeof document === 'undefined' || typeof window === 'undefined') {
@@ -3028,6 +3132,30 @@ function MainApp() {
       type: 'restoreWorkspaceVersion',
       projectId: activeProjectDefinition.id,
       versionId,
+    });
+    setImportError(null);
+  }
+
+  function handleRestoreAutosave(snapshotId: string) {
+    if (state.compositeEditor) {
+      return;
+    }
+
+    const snapshot = activeAutosaveSnapshots.find((entry) => entry.id === snapshotId);
+    if (!snapshot) {
+      return;
+    }
+
+    const shouldRestore = window.confirm(
+      'Restore this recent autosave? This replaces the current live workspace state.',
+    );
+    if (!shouldRestore) {
+      return;
+    }
+
+    dispatch({
+      type: 'restoreAutosaveSnapshot',
+      snapshot,
     });
     setImportError(null);
   }
@@ -4452,6 +4580,8 @@ function MainApp() {
             canRedo={isCompositeDrilldownActive ? false : canRedoWorkspaceHistory}
             canPasteSelection={!isCompositeDrilldownActive && workspaceClipboard !== null}
             workspaceVersions={isCompositeDrilldownActive ? [] : activeWorkspaceVersions}
+            autosaveSnapshots={isCompositeDrilldownActive ? [] : activeAutosaveSnapshots}
+            persistenceWarning={isCompositeDrilldownActive ? null : persistenceWarning}
             onRequestSaveWorkspace={handleSaveCurrentWorkspace}
             onRequestSaveVersion={handleSaveWorkspaceVersion}
             onRequestArrangeSelection={(mode) =>
@@ -4464,6 +4594,7 @@ function MainApp() {
                   })
             }
             onRequestRestoreVersion={handleRestoreWorkspaceVersion}
+            onRequestRestoreAutosave={handleRestoreAutosave}
             requestedFocusModuleId={
               isCompositeDrilldownActive
                 ? compositeDrilldown?.requestedFocusModuleId ?? null

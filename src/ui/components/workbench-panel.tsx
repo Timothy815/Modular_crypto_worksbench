@@ -56,6 +56,7 @@ import {
   getElasticWorkspaceWorldBounds,
 } from '../workspace-bounds';
 import type {
+  AutosaveSnapshotDocument,
   WorkbenchAnnotation,
   WorkbenchConnectionColorOverride,
   WorkbenchConnectionLayout,
@@ -510,6 +511,8 @@ interface WorkbenchPanelProps {
   canRedo: boolean;
   canPasteSelection?: boolean;
   workspaceVersions: WorkspaceVersionDocument[];
+  autosaveSnapshots: AutosaveSnapshotDocument[];
+  persistenceWarning: string | null;
   onRequestSaveWorkspace: () => void;
   onRequestSaveVersion: () => void;
   onRequestArrangeSelection: (
@@ -526,6 +529,7 @@ interface WorkbenchPanelProps {
       | 'distribute-vertical',
   ) => void;
   onRequestRestoreVersion: (versionId: string) => void;
+  onRequestRestoreAutosave: (snapshotId: string) => void;
   requestedFocusModuleId?: string | null;
   onWorkspaceFocusHandled?: () => void;
   onSwitchProject: (projectId: string) => void;
@@ -753,10 +757,13 @@ export function WorkbenchPanel({
   canRedo,
   canPasteSelection = false,
   workspaceVersions,
+  autosaveSnapshots,
+  persistenceWarning,
   onRequestSaveWorkspace,
   onRequestSaveVersion,
   onRequestArrangeSelection,
   onRequestRestoreVersion,
+  onRequestRestoreAutosave,
   requestedFocusModuleId = null,
   onWorkspaceFocusHandled,
   onSwitchProject,
@@ -3655,12 +3662,15 @@ export function WorkbenchPanel({
           showWorkspaceLandmarks={showWorkspaceLandmarks}
           workspaceLandmarks={workspaceLandmarks}
           workspaceVersions={workspaceVersions}
+          autosaveSnapshots={autosaveSnapshots}
           workspaceComparison={workspaceComparison}
           activeComparisonVersion={activeComparisonVersion}
           comparisonVersionId={comparisonVersionId}
+          persistenceWarning={persistenceWarning}
           onSwitchProject={onSwitchProject}
           onJumpToModule={jumpToModule}
           onRequestRestoreVersion={onRequestRestoreVersion}
+          onRequestRestoreAutosave={onRequestRestoreAutosave}
           onSetComparisonVersionId={setComparisonVersionId}
           formatVersionTimestamp={formatVersionTimestamp}
         />

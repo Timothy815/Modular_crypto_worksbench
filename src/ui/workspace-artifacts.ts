@@ -138,12 +138,14 @@ export type WorkspaceArtifactParseResult =
       document: CompositeLibraryDocument;
     };
 
-export function hydrateInitialUiState(projects: DemoProject[]): UiState {
-  if (typeof window === 'undefined') {
+export function buildHydratedUiState(
+  projects: DemoProject[],
+  persistedWorkspace: ReturnType<typeof loadWorkspaceFromStorage>,
+): UiState {
+  if (!persistedWorkspace) {
     return createInitialUiState(projects);
   }
 
-  const persistedWorkspace = loadWorkspaceFromStorage(projects);
   const userWorkspaceProjects = (persistedWorkspace?.userWorkspaceLibrary ?? []).map(
     (workspace) => ({
       id: workspace.id,
@@ -162,10 +164,6 @@ export function hydrateInitialUiState(projects: DemoProject[]): UiState {
   );
   const allProjects = [...projects, ...userWorkspaceProjects];
   const initialState = createInitialUiState(allProjects);
-  if (!persistedWorkspace) {
-    return initialState;
-  }
-
   const restoredProjectStates = Object.fromEntries(
     allProjects.map((project) => [
       project.id,
@@ -473,6 +471,14 @@ export function hydrateInitialUiState(projects: DemoProject[]): UiState {
       ]),
     ),
   };
+}
+
+export function hydrateInitialUiState(projects: DemoProject[]): UiState {
+  if (typeof window === 'undefined') {
+    return createInitialUiState(projects);
+  }
+
+  return buildHydratedUiState(projects, loadWorkspaceFromStorage(projects));
 }
 
 export function loadInitialVerificationCasesByProject(projects: DemoProject[]) {

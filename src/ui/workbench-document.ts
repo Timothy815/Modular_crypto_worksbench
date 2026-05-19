@@ -117,6 +117,14 @@ export interface WorkspaceVersionDocument {
   document: WorkbenchDocument;
 }
 
+export interface AutosaveSnapshotDocument {
+  id: string;
+  projectId: string;
+  savedAt: string;
+  tickedMode: boolean;
+  document: WorkbenchDocument;
+}
+
 export interface ComparisonBaselineDocument {
   project: Project;
   capturedAt: string;

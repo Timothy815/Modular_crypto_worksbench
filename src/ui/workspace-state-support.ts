@@ -1,9 +1,11 @@
 import type { CompositeLayoutPosition } from '../engine/composites';
 import type { Project } from '../engine/types';
 import type {
+  AutosaveSnapshotDocument,
   ComparisonBaselineDocument,
   WorkbenchAnnotation,
   WorkbenchConnectionLayout,
+  WorkbenchDocument,
   WorkbenchGuideRail,
   WorkbenchGroupBox,
   WorkbenchLayoutDirection,
@@ -324,9 +326,8 @@ export function buildWorkspaceVersionDocument<State extends WorkspaceVersionHost
   projectId: string,
   details: { versionId: string; name: string; savedAt: string },
 ): WorkspaceVersionDocument | null {
-  const project = state.projectStates[projectId];
-  const layout = state.layoutByProject[projectId];
-  if (!project || !layout) {
+  const document = buildWorkbenchDocument(state, projectId);
+  if (!document) {
     return null;
   }
 
@@ -335,25 +336,38 @@ export function buildWorkspaceVersionDocument<State extends WorkspaceVersionHost
     name: details.name,
     savedAt: details.savedAt,
     tickedMode: state.tickedModeByProject[projectId] ?? false,
-    document: {
-      version: 1,
-      project: cloneProject(project),
-      ui: {
-        layout: cloneLayout(layout),
-        annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
-        stageLabels: cloneStageLabels(state.stageLabelsByProject[projectId] ?? []),
-        groupBoxes: cloneGroupBoxes(state.groupBoxesByProject[projectId] ?? []),
-        guideRails: cloneGuideRails(state.guideRailsByProject[projectId] ?? []),
-        showFurniture: state.showFurnitureByProject[projectId] ?? true,
-        showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
-        showGrid: state.showGridByProject[projectId] ?? false,
-        snapToGrid: state.snapToGridByProject[projectId] ?? false,
-        snapToGuides: state.snapToGuidesByProject[projectId] ?? false,
-        layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
-        routingMode: state.routingModeByProject[projectId] ?? 'curved',
-        wireColorMode: state.wireColorModeByProject[projectId] ?? 'domain',
-        connectionLayout: cloneConnectionLayout(state.connectionLayoutByProject[projectId] ?? {}),
-      },
+    document,
+  };
+}
+
+export function buildWorkbenchDocument<State extends WorkspaceVersionHostState>(
+  state: State,
+  projectId: string,
+): WorkbenchDocument | null {
+  const project = state.projectStates[projectId];
+  const layout = state.layoutByProject[projectId];
+  if (!project || !layout) {
+    return null;
+  }
+
+  return {
+    version: 1,
+    project: cloneProject(project),
+    ui: {
+      layout: cloneLayout(layout),
+      annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
+      stageLabels: cloneStageLabels(state.stageLabelsByProject[projectId] ?? []),
+      groupBoxes: cloneGroupBoxes(state.groupBoxesByProject[projectId] ?? []),
+      guideRails: cloneGuideRails(state.guideRailsByProject[projectId] ?? []),
+      showFurniture: state.showFurnitureByProject[projectId] ?? true,
+      showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
+      showGrid: state.showGridByProject[projectId] ?? false,
+      snapToGrid: state.snapToGridByProject[projectId] ?? false,
+      snapToGuides: state.snapToGuidesByProject[projectId] ?? false,
+      layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
+      routingMode: state.routingModeByProject[projectId] ?? 'curved',
+      wireColorMode: state.wireColorModeByProject[projectId] ?? 'domain',
+      connectionLayout: cloneConnectionLayout(state.connectionLayoutByProject[projectId] ?? {}),
     },
   };
 }
@@ -452,6 +466,21 @@ export function applyRestoreWorkspaceVersion<State extends WorkspaceVersionHostS
     return state;
   }
 
+  return applyRestoreWorkbenchDocument(state, projectId, version.document, {
+    comparisonBaseline: null,
+    tickedMode: version.tickedMode,
+  });
+}
+
+export function applyRestoreWorkbenchDocument<State extends WorkspaceVersionHostState>(
+  state: State,
+  projectId: string,
+  document: WorkbenchDocument,
+  options?: {
+    comparisonBaseline?: ComparisonBaselineDocument | null;
+    tickedMode?: boolean;
+  },
+): State {
   const nextDrafts = Object.fromEntries(
     Object.entries(state.paramDrafts).filter(([key]) => !key.startsWith(`${projectId}:`)),
   );
@@ -460,77 +489,75 @@ export function applyRestoreWorkspaceVersion<State extends WorkspaceVersionHostS
     ...state,
     projectStates: {
       ...state.projectStates,
-      [projectId]: cloneProject(version.document.project),
+      [projectId]: cloneProject(document.project),
     },
     layoutByProject: {
       ...state.layoutByProject,
-      [projectId]: cloneLayout(version.document.ui.layout),
+      [projectId]: cloneLayout(document.ui.layout),
     },
     annotationsByProject: {
       ...state.annotationsByProject,
-      [projectId]: cloneAnnotations(version.document.ui.annotations),
+      [projectId]: cloneAnnotations(document.ui.annotations),
     },
     stageLabelsByProject: {
       ...state.stageLabelsByProject,
-      [projectId]: cloneStageLabels(version.document.ui.stageLabels ?? []),
+      [projectId]: cloneStageLabels(document.ui.stageLabels ?? []),
     },
     groupBoxesByProject: {
       ...state.groupBoxesByProject,
-      [projectId]: cloneGroupBoxes(version.document.ui.groupBoxes ?? []),
+      [projectId]: cloneGroupBoxes(document.ui.groupBoxes ?? []),
     },
     guideRailsByProject: {
       ...state.guideRailsByProject,
-      [projectId]: cloneGuideRails(version.document.ui.guideRails ?? []),
+      [projectId]: cloneGuideRails(document.ui.guideRails ?? []),
     },
     showFurnitureByProject: {
       ...state.showFurnitureByProject,
-      [projectId]: version.document.ui.showFurniture ?? true,
+      [projectId]: document.ui.showFurniture ?? true,
     },
     showOverviewNavigatorByProject: {
       ...state.showOverviewNavigatorByProject,
-      [projectId]: version.document.ui.showOverviewNavigator ?? false,
+      [projectId]: document.ui.showOverviewNavigator ?? false,
     },
     showGridByProject: {
       ...state.showGridByProject,
-      [projectId]: version.document.ui.showGrid ?? false,
+      [projectId]: document.ui.showGrid ?? false,
     },
     snapToGridByProject: {
       ...state.snapToGridByProject,
-      [projectId]: version.document.ui.snapToGrid ?? false,
+      [projectId]: document.ui.snapToGrid ?? false,
     },
     snapToGuidesByProject: {
       ...state.snapToGuidesByProject,
-      [projectId]: version.document.ui.snapToGuides ?? false,
+      [projectId]: document.ui.snapToGuides ?? false,
     },
     layoutDirectionByProject: {
       ...state.layoutDirectionByProject,
-      [projectId]: version.document.ui.layoutDirection ?? 'horizontal',
+      [projectId]: document.ui.layoutDirection ?? 'horizontal',
     },
     routingModeByProject: {
       ...state.routingModeByProject,
-      [projectId]: version.document.ui.routingMode ?? 'curved',
+      [projectId]: document.ui.routingMode ?? 'curved',
     },
     wireColorModeByProject: {
       ...state.wireColorModeByProject,
-      [projectId]: version.document.ui.wireColorMode ?? 'domain',
+      [projectId]: document.ui.wireColorMode ?? 'domain',
     },
     connectionLayoutByProject: {
       ...state.connectionLayoutByProject,
-      [projectId]: cloneConnectionLayout(version.document.ui.connectionLayout ?? {}),
+      [projectId]: cloneConnectionLayout(document.ui.connectionLayout ?? {}),
     },
     comparisonBaselinesByProject: {
       ...state.comparisonBaselinesByProject,
-      [projectId]: null,
+      [projectId]: options?.comparisonBaseline ?? null,
     },
     selectedModuleIdByProject: {
       ...state.selectedModuleIdByProject,
-      [projectId]: version.document.project.modules[0]?.id ?? null,
+      [projectId]: document.project.modules[0]?.id ?? null,
     },
     selectedModuleIdsByProject: {
       ...state.selectedModuleIdsByProject,
-      [projectId]: version.document.project.modules[0]?.id
-        ? [version.document.project.modules[0].id]
-        : [],
+      [projectId]: document.project.modules[0]?.id ? [document.project.modules[0].id] : [],
     },
     probedModuleIdsByProject: {
       ...state.probedModuleIdsByProject,
@@ -538,7 +565,7 @@ export function applyRestoreWorkspaceVersion<State extends WorkspaceVersionHostS
     },
     tickedModeByProject: {
       ...state.tickedModeByProject,
-      [projectId]: version.tickedMode,
+      [projectId]: options?.tickedMode ?? (state.tickedModeByProject[projectId] ?? false),
     },
     currentTickByProject: {
       ...state.currentTickByProject,
@@ -550,6 +577,16 @@ export function applyRestoreWorkspaceVersion<State extends WorkspaceVersionHostS
     },
     paramDrafts: nextDrafts,
   };
+}
+
+export function applyRestoreAutosaveSnapshot<State extends WorkspaceVersionHostState>(
+  state: State,
+  snapshot: AutosaveSnapshotDocument,
+): State {
+  return applyRestoreWorkbenchDocument(state, snapshot.projectId, snapshot.document, {
+    comparisonBaseline: null,
+    tickedMode: snapshot.tickedMode,
+  });
 }
 
 export function recordWorkspaceHistoryTransition<State extends WorkspaceHistoryHostState>(

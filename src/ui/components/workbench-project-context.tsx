@@ -12,7 +12,7 @@ import type { RecommendedLearningTarget } from '../learning-sequence';
 import type { WorkspaceComparisonSummary } from '../workspace-comparison';
 import { getConnectionComparisonKey } from '../workspace-comparison';
 import type { WorkspaceLandmark, } from '../workspace-landmarks';
-import type { WorkspaceVersionDocument } from '../workbench-document';
+import type { AutosaveSnapshotDocument, WorkspaceVersionDocument } from '../workbench-document';
 
 interface WorkbenchProjectContextProps {
   isCompositeEditor: boolean;
@@ -34,12 +34,15 @@ interface WorkbenchProjectContextProps {
     outputs: WorkspaceLandmark[];
   };
   workspaceVersions: WorkspaceVersionDocument[];
+  autosaveSnapshots: AutosaveSnapshotDocument[];
   workspaceComparison: WorkspaceComparisonSummary | null;
   activeComparisonVersion: WorkspaceVersionDocument | null;
   comparisonVersionId: string | null;
+  persistenceWarning: string | null;
   onSwitchProject: (projectId: string) => void;
   onJumpToModule: (moduleId: string) => void;
   onRequestRestoreVersion: (versionId: string) => void;
+  onRequestRestoreAutosave: (snapshotId: string) => void;
   onSetComparisonVersionId: (versionId: string | null) => void;
   formatVersionTimestamp: (savedAt: string) => string;
 }
@@ -89,12 +92,15 @@ export function WorkbenchProjectContext({
   showWorkspaceLandmarks,
   workspaceLandmarks,
   workspaceVersions,
+  autosaveSnapshots,
   workspaceComparison,
   activeComparisonVersion,
   comparisonVersionId,
+  persistenceWarning,
   onSwitchProject,
   onJumpToModule,
   onRequestRestoreVersion,
+  onRequestRestoreAutosave,
   onSetComparisonVersionId,
   formatVersionTimestamp,
 }: WorkbenchProjectContextProps) {
@@ -272,7 +278,36 @@ export function WorkbenchProjectContext({
                 {renderLandmarkGroup('Outputs', workspaceLandmarks.outputs, onJumpToModule)}
               </div>
             ) : null}
+            {persistenceWarning ? (
+              <div className="workspace-versions-card">
+                <strong>Recovery Status</strong>
+                <p>{persistenceWarning}</p>
+              </div>
+            ) : null}
           </>
+        ) : null}
+        {autosaveSnapshots.length > 0 ? (
+          <div className="workspace-versions-card">
+            <strong>Recover Recent Autosaves</strong>
+            <p>Restore a recent local snapshot if you lost work before saving a named version.</p>
+            <div className="workspace-version-list">
+              {autosaveSnapshots.map((snapshot) => (
+                <div key={snapshot.id} className="workspace-version-item">
+                  <div>
+                    <strong>{snapshot.tickedMode ? 'Ticked Snapshot' : 'Workspace Snapshot'}</strong>
+                    <p>{formatVersionTimestamp(snapshot.savedAt)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="workspace-version-button"
+                    onClick={() => onRequestRestoreAutosave(snapshot.id)}
+                  >
+                    Restore Autosave
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         ) : null}
         {workspaceVersions.length > 0 ? (
           <div className="workspace-versions-card">

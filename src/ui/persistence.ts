@@ -32,7 +32,7 @@ import type {
   WorkspaceVersionDocument,
 } from './workbench-document';
 
-const STORAGE_KEY = 'mcw:workspace:v1';
+export const WORKSPACE_STORAGE_KEY = 'mcw:workspace:v1';
 const CRC32_TABLE = (() => {
   const table = new Uint32Array(256);
   for (let index = 0; index < 256; index += 1) {
@@ -522,7 +522,7 @@ export function saveWorkspaceToStorage(
   storage: Storage = window.localStorage,
 ): void {
   storage.setItem(
-    STORAGE_KEY,
+    WORKSPACE_STORAGE_KEY,
     JSON.stringify(buildPersistedWorkspace(state, verificationCasesByProjectId)),
   );
 }
@@ -531,7 +531,7 @@ export function loadWorkspaceFromStorage(
   projects: DemoProject[],
   storage: Storage = window.localStorage,
 ): PersistedWorkspaceDocument | null {
-  const rawValue = storage.getItem(STORAGE_KEY);
+  const rawValue = storage.getItem(WORKSPACE_STORAGE_KEY);
   if (!rawValue) {
     return null;
   }

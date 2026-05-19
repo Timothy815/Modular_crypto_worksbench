@@ -265,10 +265,13 @@ export function DetachedWorkspaceWindow({
             canRedo={false}
             canPasteSelection={false}
             workspaceVersions={[]}
+            autosaveSnapshots={[]}
+            persistenceWarning={null}
             onRequestSaveWorkspace={() => undefined}
             onRequestSaveVersion={() => undefined}
             onRequestArrangeSelection={() => undefined}
             onRequestRestoreVersion={() => undefined}
+            onRequestRestoreAutosave={() => undefined}
             onSwitchProject={() => undefined}
             onAddConnection={() => undefined}
             onReplaceConnection={() => undefined}

@@ -15,6 +15,7 @@ import { STARTER_COMPOSITE_LIBRARY } from './starter-composites';
 import { STARTER_CHALLENGES } from './starter-challenges';
 import { STARTER_TUTORIALS } from './starter-tutorials';
 import type {
+  AutosaveSnapshotDocument,
   ComparisonBaselineDocument,
   CompositeLibraryDocument,
   SavedAnalysisCase,
@@ -41,6 +42,8 @@ import {
 import { cloneProject } from './project-clone';
 import {
   applyRedoWorkspaceHistory,
+  applyRestoreAutosaveSnapshot,
+  applyRestoreWorkbenchDocument,
   applyRestoreWorkspaceVersion,
   applySaveWorkspaceVersion,
   applyUndoWorkspaceHistory,
@@ -153,6 +156,7 @@ type ArrangeSelectedModulesMode =
   | 'distribute-vertical';
 
 export type UiAction =
+  | { type: 'hydratePersistedState'; state: UiState }
   | { type: 'switchProject'; projectId: string }
   | {
       type: 'createBlankWorkspace';
@@ -501,7 +505,9 @@ export type UiAction =
   | { type: 'undoWorkspaceHistory'; projectId: string }
   | { type: 'redoWorkspaceHistory'; projectId: string }
   | { type: 'saveWorkspaceVersion'; projectId: string; versionId: string; name: string; savedAt: string }
-  | { type: 'restoreWorkspaceVersion'; projectId: string; versionId: string };
+  | { type: 'restoreWorkspaceVersion'; projectId: string; versionId: string }
+  | { type: 'restoreAutosaveSnapshot'; snapshot: AutosaveSnapshotDocument }
+  | { type: 'loadWorkbenchDocument'; projectId: string; document: WorkbenchDocument; tickedMode?: boolean };
 
 function getDraftKey(projectId: string, moduleId: string, key: string): string {
   return `${projectId}:${moduleId}:${key}`;
@@ -1224,6 +1230,8 @@ function cloneReusableEntry(entry: CompositeLibraryEntry): CompositeLibraryEntry
 
 function reduceUiStateCore(state: UiState, action: UiAction): UiState {
   switch (action.type) {
+    case 'hydratePersistedState':
+      return action.state;
     case 'switchProject':
       return {
         ...state,
@@ -5108,6 +5116,13 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
     }
     case 'restoreWorkspaceVersion':
       return applyRestoreWorkspaceVersion(state, action.projectId, action.versionId);
+    case 'restoreAutosaveSnapshot':
+      return applyRestoreAutosaveSnapshot(state, action.snapshot);
+    case 'loadWorkbenchDocument':
+      return applyRestoreWorkbenchDocument(state, action.projectId, action.document, {
+        comparisonBaseline: null,
+        tickedMode: action.tickedMode,
+      });
     case 'togglePalette':
       return {
         ...state,
