@@ -557,6 +557,69 @@ describe('seeded teaching content', () => {
     });
   });
 
+  it('keeps the ECC public-key validation consequence demo aligned to the named validation and collapse facts', () => {
+    const demo = demoProjects.find((project) => project.id === 'ecc-public-key-validation-consequence');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    expect(getIntegerOutputMap(demo.project)).toMatchObject({
+      'peer-scalar-out': '2',
+      'order-scalar-out': '11',
+      'zero-scalar-out': '0',
+      'private-a-out': '3',
+      'private-aprime-out': '5',
+    });
+    expect(getPointOutputMap(demo.project)).toMatchObject({
+      'honest-peer-public-out': '(8,2)',
+      'infinity-reference-out': '∞',
+      'subgroup-check-honest-out': '∞',
+      'subgroup-check-low-order-out': '(16,0)',
+      'accepted-peer-broken-out': '(16,0)',
+      'accepted-peer-honest-out': '(8,2)',
+      'honest-shared-a-out': '(14,2)',
+      'honest-shared-aprime-out': '(15,5)',
+      'collapse-shared-a-out': '(16,0)',
+      'collapse-shared-aprime-out': '(16,0)',
+    });
+    expect(getBitOutputMap(demo.project)).toMatchObject({
+      'curve-check-honest-out': '1',
+      'curve-check-low-order-out': '1',
+      'subgroup-check-honest-match-out': '1',
+      'subgroup-check-low-order-match-out': '0',
+      'honest-shared-match-out': '0',
+      'collapse-match-out': '1',
+    });
+  });
+
+  it('keeps the ECC public-key validation repair challenge broken until both consequence branches are rewired to the honest accepted peer', () => {
+    const challenge = STARTER_CHALLENGES.find((entry) => entry.id === 'repair-ecc-public-key-validation');
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    expect(getPointOutputMap(challenge.startingProject)).toMatchObject({
+      'accepted-peer-broken-out': '(16,0)',
+      'accepted-peer-honest-out': '(8,2)',
+      'collapse-shared-a-out': '(16,0)',
+      'collapse-shared-aprime-out': '(16,0)',
+    });
+    expect(getBitOutputMap(challenge.startingProject)).toMatchObject({
+      'collapse-match-out': '1',
+      'honest-shared-match-out': '0',
+    });
+    expect(getPointOutputMap(challenge.targetProject)).toMatchObject({
+      'collapse-shared-a-out': '(14,2)',
+      'collapse-shared-aprime-out': '(15,5)',
+    });
+    expect(getBitOutputMap(challenge.targetProject)).toMatchObject({
+      'collapse-match-out': '0',
+      'honest-shared-match-out': '0',
+    });
+  });
+
   it('keeps the Schnorr challenge binding consequence demo aligned to the named transcript-binding facts', () => {
     const demo = demoProjects.find((project) => project.id === 'schnorr-challenge-binding-consequence');
     expect(demo).toBeTruthy();

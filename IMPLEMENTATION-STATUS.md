@@ -102,20 +102,17 @@ This is intentionally narrower than a generic ECC attack lab and should be read 
 
 **Latest ECC protocol-consequence work:** `ECDH-LOW-ORDER-POINT-CONSEQUENCE-V1` is now shipped on `feature/aes-column-perturbation`. MCW now has one bounded ECDH misuse board where a low-order peer point of order `2` collapses two different private scalars onto the same visible shared point, with the honest `aB` path kept beside it as contrast.
 
-**Queued durability follow-on:** `WORKSPACE-DURABILITY-SAFETY-V1` is now drafted as a non-crypto safety slice. It is intentionally ranked:
-
-- after the remaining top ECC consequence/validation slices
-- before authoring/packaging ergonomics
+**Latest durability work:** `WORKSPACE-DURABILITY-SAFETY-V1` is now shipped on `feature/aes-column-perturbation`. MCW now persists primary workspace documents through IndexedDB-backed durable local storage, keeps bounded autosave recovery per workspace, migrates legacy `localStorage` state forward, and exposes recent autosaves directly in the workspace context instead of treating browser-local work as a single fragile blob.
 
 The motivation is straightforward: local browser persistence is now a real project-risk surface because larger authored machines can be painful to lose. This slice is about moving primary workspace documents off `localStorage`, adding bounded autosave recovery, and making accidental local loss less final without pretending local persistence is equivalent to backup or sync.
 
 **Latest ECC signature-integrity work:** `SCHNORR-CHALLENGE-BINDING-CONSEQUENCE-V1` is now shipped on `feature/aes-column-perturbation`. MCW now has one bounded Schnorr verifier-integrity board where the same visible signature pair is checked against two visible messages, and one broken verifier lane still emits success only because its challenge stage is wired back to the original signed message source.
 
-The current ranked queue after the shipped low-order ECDH slice is:
+**Latest ECC validation-consequence work:** `ECC-PUBLIC-KEY-VALIDATION-CONSEQUENCE-V1` is now shipped on `feature/aes-column-perturbation`. MCW now has one bounded peer-acceptance board where a low-order point on the same toy curve still passes `PointOnCurve`, visibly fails the intended subgroup check, and still collapses the shared-secret space if a broken acceptance path feeds it into ECDH anyway.
 
-1. `ECC-PUBLIC-KEY-VALIDATION-CONSEQUENCE-V1`
-2. `WORKSPACE-DURABILITY-SAFETY-V1`
-3. authoring/packaging ergonomics
+The current ranked queue after the shipped ECC validation slice is:
+
+1. authoring/packaging ergonomics
 
 ## Practical Restart Guidance
 

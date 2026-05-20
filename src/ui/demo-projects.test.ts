@@ -184,4 +184,14 @@ describe('demoProjects', () => {
     expect(demo?.pipeline).toContain('ScalarLinearCombine(s)');
     expect(demo?.pipeline).toContain('PointEquals(broken verifier vs honest verifier)');
   });
+
+  it('includes the ECC public-key validation consequence demo as a visible peer-acceptance workspace', () => {
+    const demo = demoProjects.find((project) => project.id === 'ecc-public-key-validation-consequence');
+
+    expect(demo?.name).toBe('ECC Public-Key Validation Consequence');
+    expect(demo?.pipeline).toContain('PointOnCurve');
+    expect(demo?.pipeline).toContain('ScalarMultiply(11B,11Q_low,0B,aB,a-prime B,aQ_low,a-prime Q_low)');
+    expect(demo?.pipeline).toContain('PointSelector(accepted peers)');
+    expect(demo?.pipeline).toContain('PointEquals(validation + collapse contrast)');
+  });
 });

@@ -73,6 +73,9 @@ const visiblePointOrderProject = demoProjects.find(
 const ecdhLowOrderPointProject = demoProjects.find(
   (project) => project.id === 'ecdh-low-order-point-consequence',
 );
+const eccPublicKeyValidationProject = demoProjects.find(
+  (project) => project.id === 'ecc-public-key-validation-consequence',
+);
 const visibleSchnorrProject = demoProjects.find((project) => project.id === 'visible-schnorr-signature');
 const schnorrNonceReuseProject = demoProjects.find((project) => project.id === 'schnorr-nonce-reuse-consequence');
 const schnorrChallengeBindingProject = demoProjects.find(
@@ -273,6 +276,9 @@ if (!visiblePointOrderProject) {
 if (!ecdhLowOrderPointProject) {
   throw new Error('Expected ecdh-low-order-point-consequence demo project to seed starter challenges.');
 }
+if (!eccPublicKeyValidationProject) {
+  throw new Error('Expected ecc-public-key-validation-consequence demo project to seed starter challenges.');
+}
 if (!visibleSchnorrProject) {
   throw new Error('Expected visible-schnorr-signature demo project to seed starter challenges.');
 }
@@ -421,6 +427,8 @@ const visiblePointOrderTarget = cloneProject(visiblePointOrderProject.project);
 const brokenVisiblePointOrderStart = cloneProject(visiblePointOrderProject.project);
 const ecdhLowOrderPointTarget = cloneProject(ecdhLowOrderPointProject.project);
 const brokenEcdhLowOrderPointStart = cloneProject(ecdhLowOrderPointProject.project);
+const eccPublicKeyValidationTarget = cloneProject(eccPublicKeyValidationProject.project);
+const brokenEccPublicKeyValidationStart = cloneProject(eccPublicKeyValidationProject.project);
 const visibleSchnorrTarget = cloneProject(visibleSchnorrProject.project);
 const brokenVisibleSchnorrStart = cloneProject(visibleSchnorrProject.project);
 const schnorrNonceReuseTarget = cloneProject(schnorrNonceReuseProject.project);
@@ -821,6 +829,40 @@ if (repairedLowOrderSharedAprimeIndex === -1) {
 }
 ecdhLowOrderPointTarget.connections[repairedLowOrderSharedAprimeIndex] = {
   from: { moduleId: 'honest-peer-public', port: 'out' },
+  to: { moduleId: 'collapse-shared-aprime', port: 'point' },
+};
+
+const repairedPublicKeyValidationSharedAIndex = eccPublicKeyValidationTarget.connections.findIndex(
+  (connection) =>
+    connection.from.moduleId === 'accepted-peer-broken' &&
+    connection.from.port === 'out' &&
+    connection.to.moduleId === 'collapse-shared-a' &&
+    connection.to.port === 'point',
+);
+if (repairedPublicKeyValidationSharedAIndex === -1) {
+  throw new Error(
+    'Expected ecc-public-key-validation-consequence target project to contain the accepted-peer-broken -> collapse-shared-a leg.',
+  );
+}
+eccPublicKeyValidationTarget.connections[repairedPublicKeyValidationSharedAIndex] = {
+  from: { moduleId: 'accepted-peer-honest', port: 'out' },
+  to: { moduleId: 'collapse-shared-a', port: 'point' },
+};
+
+const repairedPublicKeyValidationSharedAprimeIndex = eccPublicKeyValidationTarget.connections.findIndex(
+  (connection) =>
+    connection.from.moduleId === 'accepted-peer-broken' &&
+    connection.from.port === 'out' &&
+    connection.to.moduleId === 'collapse-shared-aprime' &&
+    connection.to.port === 'point',
+);
+if (repairedPublicKeyValidationSharedAprimeIndex === -1) {
+  throw new Error(
+    'Expected ecc-public-key-validation-consequence target project to contain the accepted-peer-broken -> collapse-shared-aprime leg.',
+  );
+}
+eccPublicKeyValidationTarget.connections[repairedPublicKeyValidationSharedAprimeIndex] = {
+  from: { moduleId: 'accepted-peer-honest', port: 'out' },
   to: { moduleId: 'collapse-shared-aprime', port: 'point' },
 };
 
@@ -2499,6 +2541,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The low-order peer point should stay visible on the board for comparison, but it should not feed the repaired shared-secret lanes.',
       'Both broken wires currently come from Q_low and land on the two collapse-shared modules.',
       'Reconnect both of those point inputs to the honest peer public-point source B so the collapse equality bit drops back to 0.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-ecc-public-key-validation',
+    title: 'Repair The ECC Public-Key Validation Acceptance',
+    projectId: 'ecc-public-key-validation-consequence',
+    group: 'Number Theory',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 229.75,
+    recommendedAfter: ['ecdh-low-order-point-consequence'],
+    difficulty: 'intermediate',
+    prompt:
+      'This validation-consequence board still feeds both shared-secret consequence lanes from the broken accepted peer path, which only followed the on-curve check and still emits Q_low = (16, 0). Repair the two consequence-lane peer inputs so both lanes use the honest accepted peer output instead.',
+    startingProject: brokenEccPublicKeyValidationStart,
+    startingLayout: cloneProject(eccPublicKeyValidationProject.layout),
+    targetProject: eccPublicKeyValidationTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The peer-point comparison lane should stay visible. You are not deleting Q_low or the subgroup check.',
+      'Only the two consequence-lane point inputs are wrong: both currently come from accepted-peer-broken.',
+      'Reconnect both of those point inputs to accepted-peer-honest so the collapse equality bit drops to 0 and the honest shared points stay distinct.',
     ],
   },
   {

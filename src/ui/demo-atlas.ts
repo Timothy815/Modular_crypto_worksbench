@@ -188,6 +188,7 @@ const FULL_DEMO_SECTION_MAP: Record<string, AtlasSectionId> = {
   'secp256k1-ecdh': 'public-key-and-ecc',
   'visible-point-order-and-subgroups': 'public-key-and-ecc',
   'ecdh-low-order-point-consequence': 'public-key-and-ecc',
+  'ecc-public-key-validation-consequence': 'public-key-and-ecc',
   'visible-schnorr-signature': 'public-key-and-ecc',
   'schnorr-nonce-reuse-consequence': 'public-key-and-ecc',
   'schnorr-challenge-binding-consequence': 'public-key-and-ecc',
