@@ -29,6 +29,7 @@ import type {
   WorkbenchGroupBox,
   WorkbenchStageLabel,
   WorkbenchDocument,
+  WorkspaceExportStatus,
   WorkspaceVersionDocument,
 } from './workbench-document';
 
@@ -500,6 +501,15 @@ export function buildPersistedWorkspace(
         (state.workspaceVersionsByProject[projectId] ?? []).map(cloneWorkspaceVersion),
       ]),
     ),
+    exportStatusByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        {
+          lastExportedAt: state.exportStatusByProject[projectId]?.lastExportedAt ?? null,
+          exportedFingerprint: state.exportStatusByProject[projectId]?.exportedFingerprint ?? null,
+        } satisfies WorkspaceExportStatus,
+      ]),
+    ),
     challengeLibrary: state.challengeLibrary.map(cloneChallenge),
     tutorialLibrary: state.tutorialLibrary.map(cloneTutorial),
     compositeLibrary: {
@@ -567,6 +577,12 @@ export function loadWorkspaceFromStorage(
               Array.isArray(versions) &&
               versions.every(isWorkspaceVersionDocument),
           ))
+      ) ||
+      !(
+        parsed.exportStatusByProjectId === undefined ||
+        (typeof parsed.exportStatusByProjectId === 'object' &&
+          parsed.exportStatusByProjectId !== null &&
+          Object.values(parsed.exportStatusByProjectId).every(isWorkspaceExportStatus))
       ) ||
       !(
         parsed.userWorkspaceLibrary === undefined ||
@@ -775,6 +791,18 @@ export function loadWorkspaceFromStorage(
           versions.map(cloneWorkspaceVersion),
         ]),
       ),
+      exportStatusByProjectId: Object.fromEntries(
+        Object.entries(parsed.exportStatusByProjectId ?? {}).filter(
+          ([projectId, status]) =>
+            allowedProjectIds.has(projectId) && isWorkspaceExportStatus(status),
+        ).map(([projectId, status]) => [
+          projectId,
+          {
+            lastExportedAt: status.lastExportedAt,
+            exportedFingerprint: status.exportedFingerprint,
+          } satisfies WorkspaceExportStatus,
+        ]),
+      ),
       challengeLibrary: parsed.challengeLibrary.map(cloneChallenge),
       tutorialLibrary: parsed.tutorialLibrary.map(cloneTutorial),
       userWorkspaceLibrary: (parsed.userWorkspaceLibrary ?? []).map(
@@ -823,6 +851,20 @@ function isWorkspaceVersionDocument(value: unknown): value is WorkspaceVersionDo
     typeof version.savedAt === 'string' &&
     typeof version.tickedMode === 'boolean' &&
     isWorkbenchDocument(version.document)
+  );
+}
+
+function isWorkspaceExportStatus(value: unknown): value is WorkspaceExportStatus {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const status = value as Partial<WorkspaceExportStatus>;
+  return (
+    (status.lastExportedAt === null || typeof status.lastExportedAt === 'string' || status.lastExportedAt === undefined) &&
+    (status.exportedFingerprint === null ||
+      typeof status.exportedFingerprint === 'string' ||
+      status.exportedFingerprint === undefined)
   );
 }
 

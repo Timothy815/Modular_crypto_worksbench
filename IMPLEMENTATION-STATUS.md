@@ -110,9 +110,14 @@ The motivation is straightforward: local browser persistence is now a real proje
 
 **Latest ECC validation-consequence work:** `ECC-PUBLIC-KEY-VALIDATION-CONSEQUENCE-V1` is now shipped on `feature/aes-column-perturbation`. MCW now has one bounded peer-acceptance board where a low-order point on the same toy curve still passes `PointOnCurve`, visibly fails the intended subgroup check, and still collapses the shared-secret space if a broken acceptance path feeds it into ECDH anyway.
 
-The current ranked queue after the shipped ECC validation slice is:
+The current ranked ergonomics queue after the shipped ECC validation slice is:
 
-1. authoring/packaging ergonomics
+1. `AUTHORING-DURABILITY-UX-V1`
+2. `COMPOSITE-AUTHORING-ERGONOMICS-V1`
+3. `WORKSPACE-NAVIGATION-AND-SCALE-V1`
+4. `PACKAGE-LIBRARY-AND-REUSE-V1`
+
+**Next ergonomics work:** `AUTHORING-DURABILITY-UX-V1` is now the first planned follow-on after the shipped durability-safety infrastructure. It does not reopen the storage engine. It refines trust and usability around the already-shipped IndexedDB/autosave/recovery system by making current save health, recoverability, degraded mode, and export boundaries easier to read in the existing workspace/project context surface.
 
 ## Practical Restart Guidance
 

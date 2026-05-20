@@ -58,6 +58,7 @@ describe('workspace durability', () => {
     const persisted = await store.loadCurrentWorkspace();
 
     expect(result.warning).toBeNull();
+    expect(result.savedAt).toMatch(/T/);
     expect(result.workspace?.documentsByProjectId.sequential?.ui.layoutDirection).toBe('vertical');
     expect(persisted?.documentsByProjectId.sequential?.ui.layoutDirection).toBe('vertical');
   });
@@ -110,6 +111,7 @@ describe('workspace durability', () => {
     });
 
     expect(result.autosaves).toHaveLength(2);
+    expect(result.savedAt).toMatch(/T/);
     expect(result.autosaves[0]?.document.ui.wireColorMode).toBe('high-contrast');
     expect(result.autosaves[1]?.document.ui.routingMode).toBe('orthogonal');
   });
@@ -126,6 +128,9 @@ describe('workspace durability', () => {
     });
 
     expect(result.workspace?.activeProjectId).toBe(initialState.activeProjectId);
-    expect(result.warning?.message).toMatch(/Durable local recovery is unavailable/i);
+    expect(result.savedAt).toBeNull();
+    expect(result.warning?.message).toMatch(/Durable local storage is unavailable/i);
+    expect(result.warning?.message).toMatch(/weaker local protection/i);
+    expect(result.warning?.message).toMatch(/export is recommended now/i);
   });
 });

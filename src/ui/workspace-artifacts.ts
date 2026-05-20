@@ -470,6 +470,15 @@ export function buildHydratedUiState(
         persistedWorkspace.workspaceVersionsByProjectId?.[project.id] ?? [],
       ]),
     ),
+    exportStatusByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.exportStatusByProjectId?.[project.id] ?? {
+          lastExportedAt: null,
+          exportedFingerprint: null,
+        },
+      ]),
+    ),
   };
 }
 

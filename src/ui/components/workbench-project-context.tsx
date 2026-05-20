@@ -12,7 +12,12 @@ import type { RecommendedLearningTarget } from '../learning-sequence';
 import type { WorkspaceComparisonSummary } from '../workspace-comparison';
 import { getConnectionComparisonKey } from '../workspace-comparison';
 import type { WorkspaceLandmark, } from '../workspace-landmarks';
-import type { AutosaveSnapshotDocument, WorkspaceVersionDocument } from '../workbench-document';
+import type {
+  AutosaveSnapshotDocument,
+  WorkspaceExportStatus,
+  WorkspaceVersionDocument,
+} from '../workbench-document';
+import { buildWorkspaceDurabilitySummary } from '../workspace-durability-ux';
 
 interface WorkbenchProjectContextProps {
   isCompositeEditor: boolean;
@@ -39,6 +44,9 @@ interface WorkbenchProjectContextProps {
   activeComparisonVersion: WorkspaceVersionDocument | null;
   comparisonVersionId: string | null;
   persistenceWarning: string | null;
+  lastDurableSaveAt: string | null;
+  exportStatus: WorkspaceExportStatus | null;
+  currentDocumentFingerprint: string | null;
   onSwitchProject: (projectId: string) => void;
   onJumpToModule: (moduleId: string) => void;
   onRequestRestoreVersion: (versionId: string) => void;
@@ -97,6 +105,9 @@ export function WorkbenchProjectContext({
   activeComparisonVersion,
   comparisonVersionId,
   persistenceWarning,
+  lastDurableSaveAt,
+  exportStatus,
+  currentDocumentFingerprint,
   onSwitchProject,
   onJumpToModule,
   onRequestRestoreVersion,
@@ -105,6 +116,7 @@ export function WorkbenchProjectContext({
   formatVersionTimestamp,
 }: WorkbenchProjectContextProps) {
   const [projectSearch, setProjectSearch] = useState('');
+  const [isSnapshotsViewOpen, setIsSnapshotsViewOpen] = useState(false);
   const [isProjectContextCollapsed, setIsProjectContextCollapsed] = useState(() => {
     if (typeof window === 'undefined') {
       return false;
@@ -131,6 +143,16 @@ export function WorkbenchProjectContext({
       return haystack.includes(normalizedProjectSearch);
     });
   }, [normalizedProjectSearch, projects]);
+  const durabilitySummary = useMemo(
+    () =>
+      buildWorkspaceDurabilitySummary({
+        persistenceWarning,
+        autosaveSnapshots,
+        exportStatus,
+        currentFingerprint: currentDocumentFingerprint,
+      }),
+    [autosaveSnapshots, currentDocumentFingerprint, exportStatus, persistenceWarning],
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -278,36 +300,100 @@ export function WorkbenchProjectContext({
                 {renderLandmarkGroup('Outputs', workspaceLandmarks.outputs, onJumpToModule)}
               </div>
             ) : null}
-            {persistenceWarning ? (
-              <div className="workspace-versions-card">
-                <strong>Recovery Status</strong>
-                <p>{persistenceWarning}</p>
-              </div>
-            ) : null}
-          </>
-        ) : null}
-        {autosaveSnapshots.length > 0 ? (
-          <div className="workspace-versions-card">
-            <strong>Recover Recent Autosaves</strong>
-            <p>Restore a recent local snapshot if you lost work before saving a named version.</p>
-            <div className="workspace-version-list">
-              {autosaveSnapshots.map((snapshot) => (
-                <div key={snapshot.id} className="workspace-version-item">
+            <div className="workspace-versions-card">
+              <strong>Workspace Durability</strong>
+              <div className="workspace-version-list">
+                <div className="workspace-version-item">
                   <div>
-                    <strong>{snapshot.tickedMode ? 'Ticked Snapshot' : 'Workspace Snapshot'}</strong>
-                    <p>{formatVersionTimestamp(snapshot.savedAt)}</p>
+                    <strong>Current Safety</strong>
+                    <p>{durabilitySummary.modeLabel}</p>
+                    <p>
+                      Last durable save:{' '}
+                      <strong>{lastDurableSaveAt ? formatVersionTimestamp(lastDurableSaveAt) : 'Not recorded yet'}</strong>
+                    </p>
+                    {durabilitySummary.latestRecoverySnapshot ? (
+                      <p>
+                        Latest autosave:{' '}
+                        <strong>{formatVersionTimestamp(durabilitySummary.latestRecoverySnapshot.savedAt)}</strong>
+                      </p>
+                    ) : (
+                      <p>No recent autosave snapshot recorded yet.</p>
+                    )}
                   </div>
-                  <button
-                    type="button"
-                    className="workspace-version-button"
-                    onClick={() => onRequestRestoreAutosave(snapshot.id)}
-                  >
-                    Restore Autosave
-                  </button>
                 </div>
-              ))}
+                <div className="workspace-version-item">
+                  <div>
+                    <strong>Recent Recovery</strong>
+                    <p>
+                      {durabilitySummary.latestRecoverySnapshot
+                        ? `A local recovery snapshot is available from ${formatVersionTimestamp(
+                            durabilitySummary.latestRecoverySnapshot.savedAt,
+                          )}.`
+                        : 'No recoverable local autosave is available yet for this workspace.'}
+                    </p>
+                    {autosaveSnapshots.length > 0 ? (
+                      <button
+                        type="button"
+                        className="workspace-version-button"
+                        onClick={() => setIsSnapshotsViewOpen((current) => !current)}
+                      >
+                        {isSnapshotsViewOpen ? 'Hide Snapshots' : `Open Snapshots (${autosaveSnapshots.length})`}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="workspace-version-item">
+                  <div>
+                    <strong>Portable Backup</strong>
+                    <p>
+                      {exportStatus?.lastExportedAt
+                        ? `Last export: ${formatVersionTimestamp(exportStatus.lastExportedAt)}.`
+                        : 'This workspace has not been exported yet.'}
+                    </p>
+                    {durabilitySummary.showExportReminder ? (
+                      <p>
+                        Local durability is active, but export is still the portable backup path. Use
+                        Import/Export to create a JSON, lab-pack, or Python handoff after meaningful changes.
+                      </p>
+                    ) : (
+                      <p>Portable backup is up to date with the latest exported workspace state.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {persistenceWarning ? <p>{persistenceWarning}</p> : null}
+              <details className="workspace-comparison-card">
+                <summary>How local durability works</summary>
+                <p>Durable local save is active when healthy.</p>
+                <p>Recent autosave recovery is available in this same surface when snapshots exist.</p>
+                <p>Export is still the portable backup path.</p>
+                <p>If durable save is degraded, export sooner rather than later.</p>
+              </details>
+              {isSnapshotsViewOpen ? (
+                <div className="workspace-comparison-card">
+                  <strong>Recent Snapshots</strong>
+                  <p>Restore a recent local snapshot only when you want to inspect or recover one.</p>
+                  <div className="workspace-version-list">
+                    {autosaveSnapshots.map((snapshot) => (
+                      <div key={snapshot.id} className="workspace-version-item">
+                        <div>
+                          <strong>{snapshot.tickedMode ? 'Ticked Snapshot' : 'Workspace Snapshot'}</strong>
+                          <p>{formatVersionTimestamp(snapshot.savedAt)}</p>
+                        </div>
+                        <button
+                          type="button"
+                          className="workspace-version-button"
+                          onClick={() => onRequestRestoreAutosave(snapshot.id)}
+                        >
+                          Restore Snapshot
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
-          </div>
+          </>
         ) : null}
         {workspaceVersions.length > 0 ? (
           <div className="workspace-versions-card">

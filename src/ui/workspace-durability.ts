@@ -32,7 +32,8 @@ export interface WorkspaceDurabilityWarning {
 
 export interface WorkspaceDocumentStore {
   loadCurrentWorkspace(): Promise<PersistedWorkspaceDocument | null>;
-  saveCurrentWorkspace(document: PersistedWorkspaceDocument): Promise<void>;
+  loadCurrentWorkspaceSavedAt(): Promise<string | null>;
+  saveCurrentWorkspace(document: PersistedWorkspaceDocument): Promise<string>;
   listAutosaves(projectId: string): Promise<AutosaveSnapshotDocument[]>;
   saveAutosave(
     snapshot: AutosaveSnapshotDocument,
@@ -43,15 +44,18 @@ export interface WorkspaceDocumentStore {
 export interface DurableWorkspaceBootstrapResult {
   workspace: PersistedWorkspaceDocument | null;
   warning: WorkspaceDurabilityWarning | null;
+  savedAt: string | null;
 }
 
 export interface PersistWorkspaceDurablyResult {
   autosaves: AutosaveSnapshotDocument[];
   warning: WorkspaceDurabilityWarning | null;
+  savedAt: string | null;
 }
 
 export class MemoryWorkspaceDocumentStore implements WorkspaceDocumentStore {
   private currentWorkspace: PersistedWorkspaceDocument | null = null;
+  private currentWorkspaceSavedAt: string | null = null;
 
   private autosavesByProjectId = new Map<string, AutosaveSnapshotDocument[]>();
 
@@ -59,8 +63,14 @@ export class MemoryWorkspaceDocumentStore implements WorkspaceDocumentStore {
     return this.currentWorkspace ? JSON.parse(JSON.stringify(this.currentWorkspace)) : null;
   }
 
-  async saveCurrentWorkspace(document: PersistedWorkspaceDocument): Promise<void> {
+  async loadCurrentWorkspaceSavedAt(): Promise<string | null> {
+    return this.currentWorkspaceSavedAt;
+  }
+
+  async saveCurrentWorkspace(document: PersistedWorkspaceDocument): Promise<string> {
     this.currentWorkspace = JSON.parse(JSON.stringify(document)) as PersistedWorkspaceDocument;
+    this.currentWorkspaceSavedAt = new Date().toISOString();
+    return this.currentWorkspaceSavedAt;
   }
 
   async listAutosaves(projectId: string): Promise<AutosaveSnapshotDocument[]> {
@@ -160,17 +170,34 @@ class BrowserWorkspaceDocumentStore implements WorkspaceDocumentStore {
     }
   }
 
-  async saveCurrentWorkspace(document: PersistedWorkspaceDocument): Promise<void> {
+  async loadCurrentWorkspaceSavedAt(): Promise<string | null> {
+    const database = await openWorkspaceDatabase();
+    try {
+      const transaction = database.transaction(WORKSPACE_DOCUMENT_STORE, 'readonly');
+      const store = transaction.objectStore(WORKSPACE_DOCUMENT_STORE);
+      const record = await requestToPromise(
+        store.get(CURRENT_WORKSPACE_DOCUMENT_KEY),
+      ) as StoredWorkspaceDocumentRecord | undefined;
+      await transactionDone(transaction);
+      return record?.savedAt ?? null;
+    } finally {
+      database.close();
+    }
+  }
+
+  async saveCurrentWorkspace(document: PersistedWorkspaceDocument): Promise<string> {
     const database = await openWorkspaceDatabase();
     try {
       const transaction = database.transaction(WORKSPACE_DOCUMENT_STORE, 'readwrite');
       const store = transaction.objectStore(WORKSPACE_DOCUMENT_STORE);
+      const savedAt = new Date().toISOString();
       store.put({
         key: CURRENT_WORKSPACE_DOCUMENT_KEY,
         document,
-        savedAt: new Date().toISOString(),
+        savedAt,
       } satisfies StoredWorkspaceDocumentRecord);
       await transactionDone(transaction);
+      return savedAt;
     } finally {
       database.close();
     }
@@ -246,27 +273,33 @@ export async function bootstrapDurableWorkspace({
     return {
       workspace: legacyWorkspace,
       warning: createDurabilityWarning(
-        'Durable local recovery is unavailable in this browser session. Export remains the safest backup.',
+        'Durable local storage is unavailable in this browser session. MCW is using weaker local protection, and export is recommended now.',
       ),
+      savedAt: null,
     };
   }
 
   try {
     const persistedWorkspace = await workspaceStore.loadCurrentWorkspace();
     if (persistedWorkspace) {
-      return { workspace: persistedWorkspace, warning: null };
+      return {
+        workspace: persistedWorkspace,
+        warning: null,
+        savedAt: await workspaceStore.loadCurrentWorkspaceSavedAt(),
+      };
     }
     if (legacyWorkspace) {
-      await workspaceStore.saveCurrentWorkspace(legacyWorkspace);
-      return { workspace: legacyWorkspace, warning: null };
+      const savedAt = await workspaceStore.saveCurrentWorkspace(legacyWorkspace);
+      return { workspace: legacyWorkspace, warning: null, savedAt };
     }
-    return { workspace: null, warning: null };
+    return { workspace: null, warning: null, savedAt: null };
   } catch {
     return {
       workspace: legacyWorkspace,
       warning: createDurabilityWarning(
-        'Durable local recovery is temporarily unavailable. Work still saves in browser-local compatibility storage, but export remains important.',
+        'Durable local storage is temporarily unavailable. MCW is using weaker local protection, and export is recommended now.',
       ),
+      savedAt: null,
     };
   }
 }
@@ -298,23 +331,25 @@ export async function persistWorkspaceDurably({
     return {
       autosaves: [],
       warning: createDurabilityWarning(
-        'Durable local recovery is unavailable in this browser session. Export remains the safest backup.',
+        'Durable local storage is unavailable in this browser session. MCW is using weaker local protection, and export is recommended now.',
       ),
+      savedAt: null,
     };
   }
 
   const document = buildWorkbenchDocument(state, activeProjectId);
   if (!document) {
-    await workspaceStore.saveCurrentWorkspace(persistedWorkspace);
-    return { autosaves: [], warning: null };
+    const savedAt = await workspaceStore.saveCurrentWorkspace(persistedWorkspace);
+    return { autosaves: [], warning: null, savedAt };
   }
 
   try {
-    await workspaceStore.saveCurrentWorkspace(persistedWorkspace);
+    const savedAt = await workspaceStore.saveCurrentWorkspace(persistedWorkspace);
     if (skipAutosave) {
       return {
         autosaves: await workspaceStore.listAutosaves(activeProjectId),
         warning: null,
+        savedAt,
       };
     }
     const snapshot: AutosaveSnapshotDocument = {
@@ -325,13 +360,14 @@ export async function persistWorkspaceDurably({
       document,
     };
     const autosaves = await workspaceStore.saveAutosave(snapshot, maxAutosavesPerWorkspace);
-    return { autosaves, warning: null };
+    return { autosaves, warning: null, savedAt };
   } catch {
     return {
       autosaves: [],
       warning: createDurabilityWarning(
-        'Durable local recovery is temporarily unavailable. Work still saves in browser-local compatibility storage, but export remains important.',
+        'Durable local storage is temporarily unavailable. MCW is using weaker local protection, and export is recommended now.',
       ),
+      savedAt: null,
     };
   }
 }

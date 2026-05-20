@@ -267,6 +267,9 @@ export function DetachedWorkspaceWindow({
             workspaceVersions={[]}
             autosaveSnapshots={[]}
             persistenceWarning={null}
+            lastDurableSaveAt={null}
+            exportStatus={null}
+            currentDocumentFingerprint={null}
             onRequestSaveWorkspace={() => undefined}
             onRequestSaveVersion={() => undefined}
             onRequestArrangeSelection={() => undefined}

@@ -68,6 +68,7 @@ import type {
   WorkbenchRoutingMode,
   WorkbenchWireColorMode,
   WorkbenchStageLabel,
+  WorkspaceExportStatus,
   WorkspaceVersionDocument,
 } from '../workbench-document';
 import {
@@ -513,6 +514,9 @@ interface WorkbenchPanelProps {
   workspaceVersions: WorkspaceVersionDocument[];
   autosaveSnapshots: AutosaveSnapshotDocument[];
   persistenceWarning: string | null;
+  lastDurableSaveAt: string | null;
+  exportStatus: WorkspaceExportStatus | null;
+  currentDocumentFingerprint: string | null;
   onRequestSaveWorkspace: () => void;
   onRequestSaveVersion: () => void;
   onRequestArrangeSelection: (
@@ -759,6 +763,9 @@ export function WorkbenchPanel({
   workspaceVersions,
   autosaveSnapshots,
   persistenceWarning,
+  lastDurableSaveAt,
+  exportStatus,
+  currentDocumentFingerprint,
   onRequestSaveWorkspace,
   onRequestSaveVersion,
   onRequestArrangeSelection,
@@ -3667,6 +3674,9 @@ export function WorkbenchPanel({
           activeComparisonVersion={activeComparisonVersion}
           comparisonVersionId={comparisonVersionId}
           persistenceWarning={persistenceWarning}
+          lastDurableSaveAt={lastDurableSaveAt}
+          exportStatus={exportStatus}
+          currentDocumentFingerprint={currentDocumentFingerprint}
           onSwitchProject={onSwitchProject}
           onJumpToModule={jumpToModule}
           onRequestRestoreVersion={onRequestRestoreVersion}

@@ -33,6 +33,7 @@ import type {
   WorkbenchPosition,
   WorkbenchStageLabel,
   WorkbenchDocument,
+  WorkspaceExportStatus,
   WorkspaceVersionDocument,
 } from './workbench-document';
 import {
@@ -126,6 +127,7 @@ export interface UiState {
   selectedModuleIdsByProject: Record<string, string[]>;
   workspaceHistoryByProject: Record<string, WorkspaceHistoryState>;
   workspaceVersionsByProject: Record<string, WorkspaceVersionDocument[]>;
+  exportStatusByProject: Record<string, WorkspaceExportStatus>;
   paramDrafts: Record<string, string>;
   showPalette: boolean;
   showInspector: boolean;
@@ -157,6 +159,12 @@ type ArrangeSelectedModulesMode =
 
 export type UiAction =
   | { type: 'hydratePersistedState'; state: UiState }
+  | {
+      type: 'recordWorkspaceExport';
+      projectId: string;
+      exportedAt: string;
+      fingerprint: string;
+    }
   | { type: 'switchProject'; projectId: string }
   | {
       type: 'createBlankWorkspace';
@@ -1196,6 +1204,15 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     workspaceVersionsByProject: Object.fromEntries(
       projects.map((project) => [project.id, []]),
     ),
+    exportStatusByProject: Object.fromEntries(
+      projects.map((project) => [
+        project.id,
+        {
+          lastExportedAt: null,
+          exportedFingerprint: null,
+        } satisfies WorkspaceExportStatus,
+      ]),
+    ),
     paramDrafts: {},
     showPalette: true,
     showInspector: true,
@@ -1232,6 +1249,17 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
   switch (action.type) {
     case 'hydratePersistedState':
       return action.state;
+    case 'recordWorkspaceExport':
+      return {
+        ...state,
+        exportStatusByProject: {
+          ...state.exportStatusByProject,
+          [action.projectId]: {
+            lastExportedAt: action.exportedAt,
+            exportedFingerprint: action.fingerprint,
+          },
+        },
+      };
     case 'switchProject':
       return {
         ...state,

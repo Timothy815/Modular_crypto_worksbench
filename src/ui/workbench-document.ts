@@ -125,6 +125,11 @@ export interface AutosaveSnapshotDocument {
   document: WorkbenchDocument;
 }
 
+export interface WorkspaceExportStatus {
+  lastExportedAt: string | null;
+  exportedFingerprint: string | null;
+}
+
 export interface ComparisonBaselineDocument {
   project: Project;
   capturedAt: string;
@@ -214,6 +219,7 @@ export interface PersistedWorkspaceDocument {
   currentTickByProjectId?: Record<string, number>;
   tickPlaybackSpeedMsByProjectId?: Record<string, number>;
   workspaceVersionsByProjectId?: Record<string, WorkspaceVersionDocument[]>;
+  exportStatusByProjectId?: Record<string, WorkspaceExportStatus>;
   challengeLibrary: GuidedChallenge[];
   tutorialLibrary: GuidedTutorial[];
   compositeLibrary: CompositeLibraryDocument;

@@ -118,8 +118,12 @@ import {
   loadWorkspaceAutosaves,
   persistWorkspaceDurably,
 } from './ui/workspace-durability';
+import {
+  createWorkspaceDocumentFingerprint,
+  RESTORE_AUTOSAVE_CONFIRMATION_MESSAGE,
+} from './ui/workspace-durability-ux';
 import { buildWorkbenchDocument } from './ui/workspace-state-support';
-import type { AutosaveSnapshotDocument } from './ui/workbench-document';
+import type { AutosaveSnapshotDocument, WorkspaceExportStatus } from './ui/workbench-document';
 import { getPrimitiveMicroDemo } from './ui/primitive-micro-demos';
 import { getPipelineMicroDemo } from './ui/pipeline-micro-demos';
 import { buildCompositeInstanceDrilldownContext } from './ui/composite-instance-drilldown';
@@ -546,6 +550,7 @@ function MainApp() {
     Record<string, AutosaveSnapshotDocument[]>
   >({});
   const [persistenceWarning, setPersistenceWarning] = useState<string | null>(null);
+  const [lastDurableSaveAt, setLastDurableSaveAt] = useState<string | null>(null);
   const [isDurabilityBootReady, setIsDurabilityBootReady] = useState(false);
   const [replaceSelectionAfterCreate, setReplaceSelectionAfterCreate] = useState(true);
   const [hoveredTraceModuleId, setHoveredTraceModuleId] = useState<string | null>(null);
@@ -838,6 +843,19 @@ function MainApp() {
     state.workspaceVersionsByProject[activeProjectDefinition.id] ?? [];
   const activeAutosaveSnapshots =
     autosaveSnapshotsByProject[activeProjectDefinition.id] ?? [];
+  const activeWorkbenchDocument = useMemo(
+    () => buildWorkbenchDocument(state, activeProjectDefinition.id),
+    [activeProjectDefinition.id, state],
+  );
+  const activeDocumentFingerprint = useMemo(
+    () => createWorkspaceDocumentFingerprint(activeWorkbenchDocument),
+    [activeWorkbenchDocument],
+  );
+  const activeExportStatus: WorkspaceExportStatus =
+    state.exportStatusByProject[activeProjectDefinition.id] ?? {
+      lastExportedAt: null,
+      exportedFingerprint: null,
+    };
   const canUndoWorkspaceHistory = !state.compositeEditor && activeWorkspaceHistory.past.length > 0;
   const canRedoWorkspaceHistory = !state.compositeEditor && activeWorkspaceHistory.future.length > 0;
   const effectivePortNameOverrides = useMemo(() => {
@@ -1366,6 +1384,14 @@ function MainApp() {
         challenge: selectedProjectChallenge,
       }),
     );
+    if (activeDocumentFingerprint) {
+      dispatch({
+        type: 'recordWorkspaceExport',
+        projectId: activeProjectDefinition.id,
+        exportedAt: new Date().toISOString(),
+        fingerprint: activeDocumentFingerprint,
+      });
+    }
     setImportError(null);
   }, [
     activeAnnotations,
@@ -1385,6 +1411,7 @@ function MainApp() {
     activeProjectDefinition.id,
     activeProjectDefinition.name,
     activeProjectDefinition.summary,
+    activeDocumentFingerprint,
     activeProjectState,
     comparisonBaseline,
     selectedChallenge,
@@ -2029,6 +2056,7 @@ function MainApp() {
       }
 
       setPersistenceWarning(result.warning?.message ?? null);
+      setLastDurableSaveAt(result.savedAt);
       if (result.workspace) {
         dispatch({
           type: 'hydratePersistedState',
@@ -2099,6 +2127,7 @@ function MainApp() {
         skipAutosave: nextFingerprint !== null && nextFingerprint === previousFingerprint,
       }).then((result) => {
         setPersistenceWarning(result.warning?.message ?? null);
+        setLastDurableSaveAt(result.savedAt);
         if (nextFingerprint !== null) {
           autosaveFingerprintByProjectRef.current[activeProjectId] = nextFingerprint;
         }
@@ -3147,7 +3176,7 @@ function MainApp() {
     }
 
     const shouldRestore = window.confirm(
-      'Restore this recent autosave? This replaces the current live workspace state.',
+      RESTORE_AUTOSAVE_CONFIRMATION_MESSAGE,
     );
     if (!shouldRestore) {
       return;
@@ -4582,6 +4611,9 @@ function MainApp() {
             workspaceVersions={isCompositeDrilldownActive ? [] : activeWorkspaceVersions}
             autosaveSnapshots={isCompositeDrilldownActive ? [] : activeAutosaveSnapshots}
             persistenceWarning={isCompositeDrilldownActive ? null : persistenceWarning}
+            lastDurableSaveAt={isCompositeDrilldownActive ? null : lastDurableSaveAt}
+            exportStatus={isCompositeDrilldownActive ? null : activeExportStatus}
+            currentDocumentFingerprint={isCompositeDrilldownActive ? null : activeDocumentFingerprint}
             onRequestSaveWorkspace={handleSaveCurrentWorkspace}
             onRequestSaveVersion={handleSaveWorkspaceVersion}
             onRequestArrangeSelection={(mode) =>
@@ -4770,6 +4802,14 @@ function MainApp() {
                   connectionLayout: activeConnectionLayout,
                 },
               });
+              if (activeDocumentFingerprint) {
+                dispatch({
+                  type: 'recordWorkspaceExport',
+                  projectId: activeProjectDefinition.id,
+                  exportedAt: new Date().toISOString(),
+                  fingerprint: activeDocumentFingerprint,
+                });
+              }
               setImportError(null);
             }}
             onExportLabPack={isCompositeDrilldownActive ? () => undefined : handleExportShareableLabPack}
@@ -4784,6 +4824,14 @@ function MainApp() {
                 projectName: activeProjectDefinition.name,
                 verificationCases,
               });
+              if (!error && activeDocumentFingerprint) {
+                dispatch({
+                  type: 'recordWorkspaceExport',
+                  projectId: activeProjectDefinition.id,
+                  exportedAt: new Date().toISOString(),
+                  fingerprint: activeDocumentFingerprint,
+                });
+              }
               setImportError(error);
             }}
             onImportDocument={async (file) => {
