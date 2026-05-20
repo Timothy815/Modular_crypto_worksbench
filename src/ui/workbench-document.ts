@@ -130,6 +130,13 @@ export interface WorkspaceExportStatus {
   exportedFingerprint: string | null;
 }
 
+export type WorkspaceFileBindingStatus = 'confirmed' | 'needs-reconfirm';
+
+export interface WorkspaceFileBinding {
+  fileName: string;
+  status: WorkspaceFileBindingStatus;
+}
+
 export interface ComparisonBaselineDocument {
   project: Project;
   capturedAt: string;
@@ -220,6 +227,7 @@ export interface PersistedWorkspaceDocument {
   tickPlaybackSpeedMsByProjectId?: Record<string, number>;
   workspaceVersionsByProjectId?: Record<string, WorkspaceVersionDocument[]>;
   exportStatusByProjectId?: Record<string, WorkspaceExportStatus>;
+  fileBindingByProjectId?: Record<string, WorkspaceFileBinding | null>;
   challengeLibrary: GuidedChallenge[];
   tutorialLibrary: GuidedTutorial[];
   compositeLibrary: CompositeLibraryDocument;

@@ -44,6 +44,7 @@ describe('WorkbenchProjectContext durability UX', () => {
         lastDurableSaveAt="2026-05-20T12:05:00.000Z"
         exportStatus={{ lastExportedAt: null, exportedFingerprint: null }}
         currentDocumentFingerprint="fingerprint-1"
+        fileBinding={null}
         onSwitchProject={() => undefined}
         onJumpToModule={() => undefined}
         onRequestRestoreVersion={() => undefined}
@@ -56,11 +57,13 @@ describe('WorkbenchProjectContext durability UX', () => {
     expect(markup).toContain('Workspace Durability');
     expect(markup).toContain('Degraded local save mode');
     expect(markup).toContain('Last durable save:');
+    expect(markup).toContain('Browser-local workspace only.');
     expect(markup).toContain('A local recovery snapshot is available');
     expect(markup).toContain('Open Snapshots (1)');
     expect(markup).toContain('This workspace has not been exported yet.');
     expect(markup).toContain('portable backup path');
     expect(markup).toContain('How local durability works');
+    expect(markup).toContain('How local workspace files work');
     expect(markup).not.toContain('Recent Snapshots');
   });
 });

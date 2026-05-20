@@ -270,7 +270,11 @@ export function DetachedWorkspaceWindow({
             lastDurableSaveAt={null}
             exportStatus={null}
             currentDocumentFingerprint={null}
-            onRequestSaveWorkspace={() => undefined}
+            fileBinding={null}
+            onRequestOpenWorkspace={() => undefined}
+            onRequestSaveDocument={() => undefined}
+            onRequestSaveDocumentAs={() => undefined}
+            onRequestSaveWorkspaceToLibrary={() => undefined}
             onRequestSaveVersion={() => undefined}
             onRequestArrangeSelection={() => undefined}
             onRequestRestoreVersion={() => undefined}

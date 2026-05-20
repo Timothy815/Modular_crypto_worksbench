@@ -15,6 +15,7 @@ import type { WorkspaceLandmark, } from '../workspace-landmarks';
 import type {
   AutosaveSnapshotDocument,
   WorkspaceExportStatus,
+  WorkspaceFileBinding,
   WorkspaceVersionDocument,
 } from '../workbench-document';
 import { buildWorkspaceDurabilitySummary } from '../workspace-durability-ux';
@@ -47,6 +48,7 @@ interface WorkbenchProjectContextProps {
   lastDurableSaveAt: string | null;
   exportStatus: WorkspaceExportStatus | null;
   currentDocumentFingerprint: string | null;
+  fileBinding: WorkspaceFileBinding | null;
   onSwitchProject: (projectId: string) => void;
   onJumpToModule: (moduleId: string) => void;
   onRequestRestoreVersion: (versionId: string) => void;
@@ -108,6 +110,7 @@ export function WorkbenchProjectContext({
   lastDurableSaveAt,
   exportStatus,
   currentDocumentFingerprint,
+  fileBinding,
   onSwitchProject,
   onJumpToModule,
   onRequestRestoreVersion,
@@ -150,8 +153,9 @@ export function WorkbenchProjectContext({
         autosaveSnapshots,
         exportStatus,
         currentFingerprint: currentDocumentFingerprint,
+        fileBinding,
       }),
-    [autosaveSnapshots, currentDocumentFingerprint, exportStatus, persistenceWarning],
+    [autosaveSnapshots, currentDocumentFingerprint, exportStatus, fileBinding, persistenceWarning],
   );
 
   useEffect(() => {
@@ -323,6 +327,18 @@ export function WorkbenchProjectContext({
                 </div>
                 <div className="workspace-version-item">
                   <div>
+                    <strong>Document File</strong>
+                    <p>
+                      {fileBinding
+                        ? fileBinding.status === 'confirmed'
+                          ? `File-bound workspace: ${fileBinding.fileName}.`
+                          : `Remembered file binding: ${fileBinding.fileName}. Reconfirm local file access on Save.`
+                        : 'Browser-local workspace only.'}
+                    </p>
+                  </div>
+                </div>
+                <div className="workspace-version-item">
+                  <div>
                     <strong>Recent Recovery</strong>
                     <p>
                       {durabilitySummary.latestRecoverySnapshot
@@ -355,6 +371,11 @@ export function WorkbenchProjectContext({
                         Local durability is active, but export is still the portable backup path. Use
                         Import/Export to create a JSON, lab-pack, or Python handoff after meaningful changes.
                       </p>
+                    ) : fileBinding?.status === 'confirmed' ? (
+                      <p>
+                        This workspace is already file-backed. Save writes to its bound local file, and
+                        Import/Export remains available for separate artifact handoff.
+                      </p>
                     ) : (
                       <p>Portable backup is up to date with the latest exported workspace state.</p>
                     )}
@@ -368,6 +389,14 @@ export function WorkbenchProjectContext({
                 <p>Recent autosave recovery is available in this same surface when snapshots exist.</p>
                 <p>Export is still the portable backup path.</p>
                 <p>If durable save is degraded, export sooner rather than later.</p>
+              </details>
+              <details className="workspace-comparison-card">
+                <summary>How local workspace files work</summary>
+                <p>Open Workspace opens a local workspace document as a file-backed workspace.</p>
+                <p>Save writes back to the current bound file when file access is still confirmed.</p>
+                <p>Save As creates or replaces the current file binding.</p>
+                <p>Import Workspace is different: it loads an artifact into the current session and does not bind a file.</p>
+                <p>Browser-local durability and recent recovery still protect the live workspace while you edit.</p>
               </details>
               {isSnapshotsViewOpen ? (
                 <div className="workspace-comparison-card">

@@ -42,6 +42,13 @@ describe('workspace durability UX', () => {
     expect(shouldShowExportReminder({ exportStatus: noExport, currentFingerprint: fingerprint })).toBe(true);
     expect(shouldShowExportReminder({ exportStatus: staleExport, currentFingerprint: fingerprint })).toBe(true);
     expect(shouldShowExportReminder({ exportStatus: matchingExport, currentFingerprint: fingerprint })).toBe(false);
+    expect(
+      shouldShowExportReminder({
+        exportStatus: noExport,
+        currentFingerprint: fingerprint,
+        fileBinding: { fileName: 'lab.mcw.json', status: 'confirmed' },
+      }),
+    ).toBe(false);
   });
 
   it('derives healthy and degraded durability summaries from live state', () => {
@@ -54,6 +61,7 @@ describe('workspace durability UX', () => {
         exportedFingerprint: fingerprint,
       },
       currentFingerprint: fingerprint,
+      fileBinding: { fileName: 'lab.mcw.json', status: 'confirmed' },
     });
     const degraded = buildWorkspaceDurabilitySummary({
       persistenceWarning:

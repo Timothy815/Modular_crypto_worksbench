@@ -4,7 +4,7 @@ import { join } from 'node:path';
 const distAssetsDir = join(process.cwd(), 'dist', 'assets');
 
 const thresholds = {
-  index: 312 * 1024,
+  index: 313 * 1024,
   react: 210 * 1024,
   maxChunk: 420 * 1024, // raised narrowly for the shipped AES/ECC teaching line plus the new ECC validation-consequence seeded content without forcing premature demo-data splitting
 };

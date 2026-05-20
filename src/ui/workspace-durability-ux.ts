@@ -1,4 +1,9 @@
-import type { AutosaveSnapshotDocument, WorkspaceExportStatus, WorkbenchDocument } from './workbench-document';
+import type {
+  AutosaveSnapshotDocument,
+  WorkspaceExportStatus,
+  WorkspaceFileBinding,
+  WorkbenchDocument,
+} from './workbench-document';
 
 export interface WorkspaceDurabilitySummary {
   modeLabel: string;
@@ -17,11 +22,17 @@ export function createWorkspaceDocumentFingerprint(document: WorkbenchDocument |
 export function shouldShowExportReminder({
   exportStatus,
   currentFingerprint,
+  fileBinding,
 }: {
   exportStatus: WorkspaceExportStatus | null | undefined;
   currentFingerprint: string | null;
+  fileBinding?: WorkspaceFileBinding | null;
 }) {
   if (!currentFingerprint) {
+    return false;
+  }
+
+  if (fileBinding?.status === 'confirmed') {
     return false;
   }
 
@@ -37,16 +48,18 @@ export function buildWorkspaceDurabilitySummary({
   autosaveSnapshots,
   exportStatus,
   currentFingerprint,
+  fileBinding,
 }: {
   persistenceWarning: string | null;
   autosaveSnapshots: AutosaveSnapshotDocument[];
   exportStatus: WorkspaceExportStatus | null | undefined;
   currentFingerprint: string | null;
+  fileBinding?: WorkspaceFileBinding | null;
 }): WorkspaceDurabilitySummary {
   return {
     modeLabel: persistenceWarning ? 'Degraded local save mode' : 'Durable local save active',
     statusTone: persistenceWarning ? 'degraded' : 'healthy',
     latestRecoverySnapshot: autosaveSnapshots[0] ?? null,
-    showExportReminder: shouldShowExportReminder({ exportStatus, currentFingerprint }),
+    showExportReminder: shouldShowExportReminder({ exportStatus, currentFingerprint, fileBinding }),
   };
 }

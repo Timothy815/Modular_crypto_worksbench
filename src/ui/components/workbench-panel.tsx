@@ -69,6 +69,7 @@ import type {
   WorkbenchWireColorMode,
   WorkbenchStageLabel,
   WorkspaceExportStatus,
+  WorkspaceFileBinding,
   WorkspaceVersionDocument,
 } from '../workbench-document';
 import {
@@ -517,7 +518,11 @@ interface WorkbenchPanelProps {
   lastDurableSaveAt: string | null;
   exportStatus: WorkspaceExportStatus | null;
   currentDocumentFingerprint: string | null;
-  onRequestSaveWorkspace: () => void;
+  fileBinding: WorkspaceFileBinding | null;
+  onRequestOpenWorkspace: () => void;
+  onRequestSaveDocument: () => void;
+  onRequestSaveDocumentAs: () => void;
+  onRequestSaveWorkspaceToLibrary: () => void;
   onRequestSaveVersion: () => void;
   onRequestArrangeSelection: (
     mode:
@@ -766,7 +771,11 @@ export function WorkbenchPanel({
   lastDurableSaveAt,
   exportStatus,
   currentDocumentFingerprint,
-  onRequestSaveWorkspace,
+  fileBinding,
+  onRequestOpenWorkspace,
+  onRequestSaveDocument,
+  onRequestSaveDocumentAs,
+  onRequestSaveWorkspaceToLibrary,
   onRequestSaveVersion,
   onRequestArrangeSelection,
   onRequestRestoreVersion,
@@ -3677,6 +3686,7 @@ export function WorkbenchPanel({
           lastDurableSaveAt={lastDurableSaveAt}
           exportStatus={exportStatus}
           currentDocumentFingerprint={currentDocumentFingerprint}
+          fileBinding={fileBinding}
           onSwitchProject={onSwitchProject}
           onJumpToModule={jumpToModule}
           onRequestRestoreVersion={onRequestRestoreVersion}
@@ -3731,7 +3741,10 @@ export function WorkbenchPanel({
           onToggleSnapToGuides={onSetSnapToGuides}
           onRequestUndo={onRequestUndo}
           onRequestRedo={onRequestRedo}
-          onRequestSaveWorkspace={onRequestSaveWorkspace}
+          onRequestOpenWorkspace={onRequestOpenWorkspace}
+          onRequestSaveDocument={onRequestSaveDocument}
+          onRequestSaveDocumentAs={onRequestSaveDocumentAs}
+          onRequestSaveWorkspaceToLibrary={onRequestSaveWorkspaceToLibrary}
           onToggleTheme={onToggleTheme}
           onZoomOut={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'out'))}
           onZoomIn={() => setWorkspaceZoom((currentZoom) => getNextWorkspaceZoom(currentZoom, 'in'))}

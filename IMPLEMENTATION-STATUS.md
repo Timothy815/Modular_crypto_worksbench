@@ -112,12 +112,15 @@ The motivation is straightforward: local browser persistence is now a real proje
 
 The current ranked ergonomics queue after the shipped ECC validation slice is:
 
-1. `AUTHORING-DURABILITY-UX-V1`
-2. `COMPOSITE-AUTHORING-ERGONOMICS-V1`
-3. `WORKSPACE-NAVIGATION-AND-SCALE-V1`
-4. `PACKAGE-LIBRARY-AND-REUSE-V1`
+1. `COMPOSITE-AUTHORING-ERGONOMICS-V1`
+2. `WORKSPACE-NAVIGATION-AND-SCALE-V1`
+3. `PACKAGE-LIBRARY-AND-REUSE-V1`
 
-**Next ergonomics work:** `AUTHORING-DURABILITY-UX-V1` is now the first planned follow-on after the shipped durability-safety infrastructure. It does not reopen the storage engine. It refines trust and usability around the already-shipped IndexedDB/autosave/recovery system by making current save health, recoverability, degraded mode, and export boundaries easier to read in the existing workspace/project context surface.
+**Latest durability ergonomics work:** `AUTHORING-DURABILITY-UX-V1` is now shipped on `feature/aes-column-perturbation`. MCW now exposes current save health, latest durable-save recency, export reminder state, degraded-mode honesty, and an on-demand snapshots view inside the existing workspace/project context surface instead of forcing recovery metadata to occupy large permanent screen space.
+
+**Latest document-workflow work:** `LOCAL-DOCUMENT-WORKFLOW-V1` is now shipped on `feature/aes-column-perturbation`. MCW now separates `Open Workspace...`, `Save`, and `Save As...` from import/export artifact flow, remembers file bindings through the durable local store, shows whether a workspace is file-bound or browser-local, and keeps import explicitly distinct from open so reopening a local file feels like reopening a named document rather than importing into an anonymous workspace.
+
+**Next ergonomics work:** `COMPOSITE-AUTHORING-ERGONOMICS-V1` is now the leading packaging/authoring follow-on after the shipped durability and local-document slices. The remaining emphasis shifts from trust and persistence to making large live machines easier to package into reusable composites without losing drilldown or truthfulness.
 
 ## Practical Restart Guidance
 

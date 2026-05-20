@@ -58,8 +58,8 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         id: 'editing-and-recovery',
         title: 'Editing, Versions, And Recovery',
         body:
-          'Use the grouped workbench menus for common actions. View contains zoom and navigation actions. Edit contains authoring operations such as notes, composite creation, layout cleanup, and selection actions. Project contains recovery actions such as save current workspace, save version, undo, and redo. Import/Export contains JSON and Python export. MCW also supports workspace-local undo and redo, named saved versions, and restore workflows. Save Current Workspace updates the live workspace record in place. Save Version creates a named checkpoint you can restore later. If you are trying something risky, save a version first so you can return to a known checkpoint without rebuilding the graph by hand.',
-        indexTerms: ['undo', 'redo', 'save workspace', 'save current workspace', 'save version', 'restore', 'workbench menus', 'project menu'],
+          'Use the grouped workbench menus for common actions. View contains zoom and navigation actions. Edit contains authoring operations such as notes, composite creation, layout cleanup, and selection actions. Project now separates document saves from in-app library saves: Open Workspace opens a file-backed workspace document, Save writes back to the current bound file, Save As chooses or replaces that file binding, Save To Workspace Library stores a copy inside MCW, and Save Version creates a named checkpoint you can restore later. Import/Export remains the artifact flow for JSON, lab-pack, and Python handoff. MCW also supports workspace-local undo and redo, named saved versions, and restore workflows. If you are trying something risky, save a version first so you can return to a known checkpoint without rebuilding the graph by hand.',
+        indexTerms: ['undo', 'redo', 'save workspace', 'save to workspace library', 'save version', 'restore', 'workbench menus', 'project menu', 'open workspace', 'save as'],
       },
       {
         id: 'keyboard-shortcuts',
@@ -67,7 +67,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         body:
           'MCW supports a small set of workbench shortcuts for repeated actions. These are accelerators for visible controls, not hidden commands.',
         keyPoints: [
-          'Cmd/Ctrl+S — Save Current Workspace',
+          'Cmd/Ctrl+S — Save to the current bound workspace file, or open Save As when no file binding exists',
           'Cmd/Ctrl+Shift+S — Save Version',
           'Cmd/Ctrl+Z — Undo',
           'Cmd/Ctrl+Shift+Z — Redo',

@@ -20,6 +20,7 @@ import type {
   ShareableLabPack,
   WorkbenchAnnotation,
   WorkbenchDocument,
+  WorkspaceFileBinding,
   WorkbenchGuideRail,
   WorkbenchGroupBox,
   WorkbenchPosition,
@@ -125,7 +126,20 @@ function cloneComparisonBaseline(
         capturedAt: baseline.capturedAt,
         project: cloneProject(baseline.project),
       }
-    : null;
+      : null;
+}
+
+function cloneWorkspaceFileBinding(
+  binding: WorkspaceFileBinding | null | undefined,
+): WorkspaceFileBinding | null {
+  if (!binding) {
+    return null;
+  }
+
+  return {
+    fileName: binding.fileName,
+    status: 'needs-reconfirm',
+  };
 }
 
 export type WorkspaceArtifactParseResult =
@@ -477,6 +491,12 @@ export function buildHydratedUiState(
           lastExportedAt: null,
           exportedFingerprint: null,
         },
+      ]),
+    ),
+    fileBindingByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        cloneWorkspaceFileBinding(persistedWorkspace.fileBindingByProjectId?.[project.id]),
       ]),
     ),
   };

@@ -13,9 +13,10 @@ import type { VerificationCase } from './verification-workflow';
 import { buildWorkbenchDocument } from './workspace-state-support';
 
 const WORKSPACE_DATABASE_NAME = 'mcw-workspace-documents';
-const WORKSPACE_DATABASE_VERSION = 1;
+const WORKSPACE_DATABASE_VERSION = 2;
 const WORKSPACE_DOCUMENT_STORE = 'workspace-documents';
 const AUTOSAVE_STORE = 'workspace-autosaves';
+const FILE_HANDLE_STORE = 'workspace-file-handles';
 const CURRENT_WORKSPACE_DOCUMENT_KEY = 'current-workspace';
 const DEFAULT_AUTOSAVE_LIMIT = 5;
 
@@ -23,6 +24,11 @@ interface StoredWorkspaceDocumentRecord {
   key: string;
   document: PersistedWorkspaceDocument;
   savedAt: string;
+}
+
+interface StoredWorkspaceFileHandleRecord {
+  projectId: string;
+  handle: FileSystemFileHandle;
 }
 
 export interface WorkspaceDurabilityWarning {
@@ -34,6 +40,9 @@ export interface WorkspaceDocumentStore {
   loadCurrentWorkspace(): Promise<PersistedWorkspaceDocument | null>;
   loadCurrentWorkspaceSavedAt(): Promise<string | null>;
   saveCurrentWorkspace(document: PersistedWorkspaceDocument): Promise<string>;
+  loadWorkspaceFileHandle(projectId: string): Promise<FileSystemFileHandle | null>;
+  saveWorkspaceFileHandle(projectId: string, handle: FileSystemFileHandle): Promise<void>;
+  clearWorkspaceFileHandle(projectId: string): Promise<void>;
   listAutosaves(projectId: string): Promise<AutosaveSnapshotDocument[]>;
   saveAutosave(
     snapshot: AutosaveSnapshotDocument,
@@ -58,6 +67,7 @@ export class MemoryWorkspaceDocumentStore implements WorkspaceDocumentStore {
   private currentWorkspaceSavedAt: string | null = null;
 
   private autosavesByProjectId = new Map<string, AutosaveSnapshotDocument[]>();
+  private fileHandlesByProjectId = new Map<string, FileSystemFileHandle>();
 
   async loadCurrentWorkspace(): Promise<PersistedWorkspaceDocument | null> {
     return this.currentWorkspace ? JSON.parse(JSON.stringify(this.currentWorkspace)) : null;
@@ -71,6 +81,18 @@ export class MemoryWorkspaceDocumentStore implements WorkspaceDocumentStore {
     this.currentWorkspace = JSON.parse(JSON.stringify(document)) as PersistedWorkspaceDocument;
     this.currentWorkspaceSavedAt = new Date().toISOString();
     return this.currentWorkspaceSavedAt;
+  }
+
+  async loadWorkspaceFileHandle(projectId: string): Promise<FileSystemFileHandle | null> {
+    return this.fileHandlesByProjectId.get(projectId) ?? null;
+  }
+
+  async saveWorkspaceFileHandle(projectId: string, handle: FileSystemFileHandle): Promise<void> {
+    this.fileHandlesByProjectId.set(projectId, handle);
+  }
+
+  async clearWorkspaceFileHandle(projectId: string): Promise<void> {
+    this.fileHandlesByProjectId.delete(projectId);
   }
 
   async listAutosaves(projectId: string): Promise<AutosaveSnapshotDocument[]> {
@@ -130,6 +152,9 @@ function openWorkspaceDatabase(): Promise<IDBDatabase> {
       if (!database.objectStoreNames.contains(AUTOSAVE_STORE)) {
         const autosaveStore = database.createObjectStore(AUTOSAVE_STORE, { keyPath: 'id' });
         autosaveStore.createIndex('projectId', 'projectId', { unique: false });
+      }
+      if (!database.objectStoreNames.contains(FILE_HANDLE_STORE)) {
+        database.createObjectStore(FILE_HANDLE_STORE, { keyPath: 'projectId' });
       }
     };
 
@@ -198,6 +223,48 @@ class BrowserWorkspaceDocumentStore implements WorkspaceDocumentStore {
       } satisfies StoredWorkspaceDocumentRecord);
       await transactionDone(transaction);
       return savedAt;
+    } finally {
+      database.close();
+    }
+  }
+
+  async loadWorkspaceFileHandle(projectId: string): Promise<FileSystemFileHandle | null> {
+    const database = await openWorkspaceDatabase();
+    try {
+      const transaction = database.transaction(FILE_HANDLE_STORE, 'readonly');
+      const store = transaction.objectStore(FILE_HANDLE_STORE);
+      const record = (await requestToPromise(
+        store.get(projectId),
+      )) as StoredWorkspaceFileHandleRecord | undefined;
+      await transactionDone(transaction);
+      return record?.handle ?? null;
+    } finally {
+      database.close();
+    }
+  }
+
+  async saveWorkspaceFileHandle(projectId: string, handle: FileSystemFileHandle): Promise<void> {
+    const database = await openWorkspaceDatabase();
+    try {
+      const transaction = database.transaction(FILE_HANDLE_STORE, 'readwrite');
+      const store = transaction.objectStore(FILE_HANDLE_STORE);
+      store.put({
+        projectId,
+        handle,
+      } satisfies StoredWorkspaceFileHandleRecord);
+      await transactionDone(transaction);
+    } finally {
+      database.close();
+    }
+  }
+
+  async clearWorkspaceFileHandle(projectId: string): Promise<void> {
+    const database = await openWorkspaceDatabase();
+    try {
+      const transaction = database.transaction(FILE_HANDLE_STORE, 'readwrite');
+      const store = transaction.objectStore(FILE_HANDLE_STORE);
+      store.delete(projectId);
+      await transactionDone(transaction);
     } finally {
       database.close();
     }

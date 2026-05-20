@@ -34,6 +34,7 @@ import type {
   WorkbenchStageLabel,
   WorkbenchDocument,
   WorkspaceExportStatus,
+  WorkspaceFileBinding,
   WorkspaceVersionDocument,
 } from './workbench-document';
 import {
@@ -128,6 +129,7 @@ export interface UiState {
   workspaceHistoryByProject: Record<string, WorkspaceHistoryState>;
   workspaceVersionsByProject: Record<string, WorkspaceVersionDocument[]>;
   exportStatusByProject: Record<string, WorkspaceExportStatus>;
+  fileBindingByProject: Record<string, WorkspaceFileBinding | null>;
   paramDrafts: Record<string, string>;
   showPalette: boolean;
   showInspector: boolean;
@@ -165,7 +167,23 @@ export type UiAction =
       exportedAt: string;
       fingerprint: string;
     }
+  | {
+      type: 'setWorkspaceFileBinding';
+      projectId: string;
+      binding: WorkspaceFileBinding | null;
+    }
   | { type: 'switchProject'; projectId: string }
+  | {
+      type: 'upsertWorkspaceDocument';
+      workspaceId: string;
+      name: string;
+      summary: string;
+      pipeline: string;
+      document: WorkbenchDocument;
+      group?: string;
+      defaultTickedMode?: boolean;
+      activate?: boolean;
+    }
   | {
       type: 'createBlankWorkspace';
       workspaceId: string;
@@ -1213,6 +1231,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
         } satisfies WorkspaceExportStatus,
       ]),
     ),
+    fileBindingByProject: Object.fromEntries(
+      projects.map((project) => [project.id, null]),
+    ),
     paramDrafts: {},
     showPalette: true,
     showInspector: true,
@@ -1260,11 +1281,60 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           },
         },
       };
+    case 'setWorkspaceFileBinding':
+      return {
+        ...state,
+        fileBindingByProject: {
+          ...state.fileBindingByProject,
+          [action.projectId]: action.binding ? { ...action.binding } : null,
+        },
+      };
     case 'switchProject':
       return {
         ...state,
         activeProjectId: action.projectId,
       };
+    case 'upsertWorkspaceDocument': {
+      const workspaceExists = state.userWorkspaceLibrary.some(
+        (workspace) => workspace.id === action.workspaceId,
+      );
+      const baseState = workspaceExists
+        ? state
+        : reduceUiStateCore(state, {
+            type: 'createBlankWorkspace',
+            workspaceId: action.workspaceId,
+            name: action.name,
+            summary: action.summary,
+            pipeline: action.pipeline,
+            group: action.group,
+            defaultTickedMode: action.defaultTickedMode,
+          });
+      const loadedState = reduceUiStateCore(baseState, {
+        type: 'loadDocument',
+        projectId: action.workspaceId,
+        document: action.document,
+      });
+      return {
+        ...loadedState,
+        activeProjectId: action.activate === false ? loadedState.activeProjectId : action.workspaceId,
+        userWorkspaceLibrary: [
+          ...loadedState.userWorkspaceLibrary.filter(
+            (workspace) => workspace.id !== action.workspaceId,
+          ),
+          {
+            id: action.workspaceId,
+            name: action.name,
+            group: action.group ?? 'My Workspaces',
+            summary: action.summary,
+            pipeline: action.pipeline,
+            defaultTickedMode:
+              action.defaultTickedMode ??
+              loadedState.tickedModeByProject[action.workspaceId] ??
+              false,
+          },
+        ],
+      };
+    }
     case 'createBlankWorkspace': {
       return {
         ...state,
@@ -1446,6 +1516,17 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         workspaceVersionsByProject: {
           ...state.workspaceVersionsByProject,
           [action.workspaceId]: [],
+        },
+        exportStatusByProject: {
+          ...state.exportStatusByProject,
+          [action.workspaceId]: {
+            lastExportedAt: null,
+            exportedFingerprint: null,
+          },
+        },
+        fileBindingByProject: {
+          ...state.fileBindingByProject,
+          [action.workspaceId]: null,
         },
       };
     }
@@ -1640,6 +1721,17 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.workspaceVersionsByProject,
           [action.workspaceId]: [],
         },
+        exportStatusByProject: {
+          ...state.exportStatusByProject,
+          [action.workspaceId]: {
+            lastExportedAt: null,
+            exportedFingerprint: null,
+          },
+        },
+        fileBindingByProject: {
+          ...state.fileBindingByProject,
+          [action.workspaceId]: null,
+        },
       };
     }
     case 'copySelectedClusterToWorkspace': {
@@ -1821,6 +1913,17 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.workspaceVersionsByProject,
           [action.workspaceId]: [],
         },
+        exportStatusByProject: {
+          ...state.exportStatusByProject,
+          [action.workspaceId]: {
+            lastExportedAt: null,
+            exportedFingerprint: null,
+          },
+        },
+        fileBindingByProject: {
+          ...state.fileBindingByProject,
+          [action.workspaceId]: null,
+        },
       };
     }
     case 'removeWorkspace': {
@@ -1963,6 +2066,14 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         ),
         workspaceVersionsByProject: removeProjectEntry(
           state.workspaceVersionsByProject,
+          action.workspaceId,
+        ),
+        exportStatusByProject: removeProjectEntry(
+          state.exportStatusByProject,
+          action.workspaceId,
+        ),
+        fileBindingByProject: removeProjectEntry(
+          state.fileBindingByProject,
           action.workspaceId,
         ),
         paramDrafts: Object.fromEntries(

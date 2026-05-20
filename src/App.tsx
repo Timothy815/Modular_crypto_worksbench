@@ -115,6 +115,7 @@ import {
 } from './ui/workspace-artifacts';
 import {
   bootstrapDurableWorkspace,
+  getWorkspaceDocumentStore,
   loadWorkspaceAutosaves,
   persistWorkspaceDurably,
 } from './ui/workspace-durability';
@@ -123,7 +124,16 @@ import {
   RESTORE_AUTOSAVE_CONFIRMATION_MESSAGE,
 } from './ui/workspace-durability-ux';
 import { buildWorkbenchDocument } from './ui/workspace-state-support';
-import type { AutosaveSnapshotDocument, WorkspaceExportStatus } from './ui/workbench-document';
+import type {
+  AutosaveSnapshotDocument,
+  WorkspaceExportStatus,
+  WorkspaceFileBinding,
+} from './ui/workbench-document';
+import {
+  openWorkspaceFromLocalFile,
+  saveWorkspaceToBoundLocalFile,
+  saveWorkspaceToLocalFileAs,
+} from './ui/workspace-local-document';
 import { getPrimitiveMicroDemo } from './ui/primitive-micro-demos';
 import { getPipelineMicroDemo } from './ui/pipeline-micro-demos';
 import { buildCompositeInstanceDrilldownContext } from './ui/composite-instance-drilldown';
@@ -856,6 +866,8 @@ function MainApp() {
       lastExportedAt: null,
       exportedFingerprint: null,
     };
+  const activeFileBinding: WorkspaceFileBinding | null =
+    state.fileBindingByProject[activeProjectDefinition.id] ?? null;
   const canUndoWorkspaceHistory = !state.compositeEditor && activeWorkspaceHistory.past.length > 0;
   const canRedoWorkspaceHistory = !state.compositeEditor && activeWorkspaceHistory.future.length > 0;
   const effectivePortNameOverrides = useMemo(() => {
@@ -2246,12 +2258,140 @@ function MainApp() {
     });
   }
 
-  function handleSaveCurrentWorkspace() {
+  function getSuggestedWorkspaceFileName() {
+    const existingWorkspace = state.userWorkspaceLibrary.find(
+      (workspace) => workspace.id === activeProjectDefinition.id,
+    );
+    const baseName = existingWorkspace?.name ?? activeProjectDefinition.name;
+    return baseName
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'workspace';
+  }
+
+  async function clearActiveWorkspaceFileBinding() {
+    await getWorkspaceDocumentStore()?.clearWorkspaceFileHandle(activeProjectDefinition.id);
+    dispatch({
+      type: 'setWorkspaceFileBinding',
+      projectId: activeProjectDefinition.id,
+      binding: null,
+    });
+  }
+
+  async function handleOpenWorkspaceDocument() {
+    const result = await openWorkspaceFromLocalFile();
+    if (result.kind === 'unsupported' || result.kind === 'invalid') {
+      setImportError(result.error ?? 'Unable to open the selected local workspace file.');
+      return;
+    }
+    if (result.kind !== 'opened' || !result.document || !result.handle || !result.fileName) {
+      return;
+    }
+
+    const baseName = result.fileName.replace(/\.mcw\.json$/i, '').replace(/\.json$/i, '');
+    const workspaceName = createWorkspaceNameFromBase(
+      baseName || 'Opened Workspace',
+      new Set(state.userWorkspaceLibrary.map((workspace) => workspace.name)),
+    );
+    const workspaceId = createUniqueWorkspaceId(
+      workspaceName,
+      new Set(availableProjects.map((project) => project.id)),
+    );
+    dispatch({
+      type: 'upsertWorkspaceDocument',
+      workspaceId,
+      name: workspaceName,
+      summary: `Opened from local file ${result.fileName}.`,
+      pipeline: describeWorkspacePipeline(result.document.project),
+      document: result.document,
+      defaultTickedMode: false,
+    });
+    await getWorkspaceDocumentStore()?.saveWorkspaceFileHandle(
+      workspaceId,
+      result.handle as unknown as FileSystemFileHandle,
+    );
+    dispatch({
+      type: 'setWorkspaceFileBinding',
+      projectId: workspaceId,
+      binding: {
+        fileName: result.fileName,
+        status: 'confirmed',
+      },
+    });
+    setImportError(null);
+  }
+
+  async function handleSaveWorkspaceDocumentAs() {
+    if (!activeWorkbenchDocument) {
+      return;
+    }
+
+    const result = await saveWorkspaceToLocalFileAs({
+      projectId: activeProjectDefinition.id,
+      document: activeWorkbenchDocument,
+      suggestedName: getSuggestedWorkspaceFileName(),
+      store: getWorkspaceDocumentStore(),
+    });
+    if (result.kind === 'saved' && result.binding) {
+      dispatch({
+        type: 'setWorkspaceFileBinding',
+        projectId: activeProjectDefinition.id,
+        binding: result.binding,
+      });
+      setImportError(null);
+      return;
+    }
+    if (result.kind === 'unsupported') {
+      setImportError(result.error ?? 'Direct local workspace saving is unavailable in this browser.');
+    }
+  }
+
+  async function handleSaveWorkspaceDocument() {
+    if (!activeWorkbenchDocument) {
+      return;
+    }
+
+    if (!activeFileBinding) {
+      await handleSaveWorkspaceDocumentAs();
+      return;
+    }
+
+    const result = await saveWorkspaceToBoundLocalFile({
+      projectId: activeProjectDefinition.id,
+      document: activeWorkbenchDocument,
+      binding: activeFileBinding,
+      store: getWorkspaceDocumentStore(),
+    });
+    if (result.kind === 'saved' && result.binding) {
+      dispatch({
+        type: 'setWorkspaceFileBinding',
+        projectId: activeProjectDefinition.id,
+        binding: result.binding,
+      });
+      setImportError(null);
+      return;
+    }
+    if (result.kind === 'needs-reconfirm') {
+      await clearActiveWorkspaceFileBinding();
+      setImportError(
+        'Local file access needs to be re-confirmed. This workspace is back in browser-local mode until you use Save As... or reopen the file.',
+      );
+      return;
+    }
+    if (result.kind === 'unsupported') {
+      setImportError(
+        result.error ?? 'This workspace is not file-bound. Use Save As... or Export Workspace instead.',
+      );
+    }
+  }
+
+  function handleSaveWorkspaceToLibrary() {
     const existingWorkspace = state.userWorkspaceLibrary.find(
       (workspace) => workspace.id === activeProjectDefinition.id,
     );
     const proposedName = window.prompt(
-      'Save workspace as:',
+      'Save workspace to library as:',
       existingWorkspace?.name ?? `${activeProjectDefinition.name} Copy`,
     );
     const name = proposedName?.trim();
@@ -2738,7 +2878,7 @@ function MainApp() {
 
       if (matchesShortcutCombo(event, { key: 's', metaOrCtrl: true })) {
         event.preventDefault();
-        handleSaveCurrentWorkspace();
+        void handleSaveWorkspaceDocument();
         return;
       }
 
@@ -2991,7 +3131,7 @@ function MainApp() {
     handleOpenCompositeInstanceDrilldown,
     handlePasteWorkspaceClipboard,
     handleRedoWorkspaceHistory,
-    handleSaveCurrentWorkspace,
+    handleSaveWorkspaceDocument,
     handleSaveWorkspaceVersion,
     handleUnzipComposite,
     handleUndoWorkspaceHistory,
@@ -3974,7 +4114,7 @@ function MainApp() {
                 } else if (value === 'duplicate-current-workspace') {
                   handleDuplicateCurrentWorkspace();
                 } else if (value === 'save-current-workspace') {
-                  handleSaveCurrentWorkspace();
+                  handleSaveWorkspaceToLibrary();
                 } else if (value === 'save-workspace-version') {
                   handleSaveWorkspaceVersion();
                 } else if (value === 'delete-current-workspace') {
@@ -3985,7 +4125,7 @@ function MainApp() {
               <option value="">Manage…</option>
               <option value="new-blank-workspace">New Blank Workspace</option>
               <option value="duplicate-current-workspace">Duplicate Workspace</option>
-              <option value="save-current-workspace">Save Current Workspace</option>
+              <option value="save-current-workspace">Save To Workspace Library</option>
               <option value="save-workspace-version">Save Version</option>
               {state.userWorkspaceLibrary.some(
                 (workspace) => workspace.id === activeProjectDefinition.id,
@@ -4614,7 +4754,11 @@ function MainApp() {
             lastDurableSaveAt={isCompositeDrilldownActive ? null : lastDurableSaveAt}
             exportStatus={isCompositeDrilldownActive ? null : activeExportStatus}
             currentDocumentFingerprint={isCompositeDrilldownActive ? null : activeDocumentFingerprint}
-            onRequestSaveWorkspace={handleSaveCurrentWorkspace}
+            fileBinding={isCompositeDrilldownActive ? null : activeFileBinding}
+            onRequestOpenWorkspace={handleOpenWorkspaceDocument}
+            onRequestSaveDocument={handleSaveWorkspaceDocument}
+            onRequestSaveDocumentAs={handleSaveWorkspaceDocumentAs}
+            onRequestSaveWorkspaceToLibrary={handleSaveWorkspaceToLibrary}
             onRequestSaveVersion={handleSaveWorkspaceVersion}
             onRequestArrangeSelection={(mode) =>
               isCompositeDrilldownActive
@@ -4847,6 +4991,7 @@ function MainApp() {
                   projectId: activeProjectDefinition.id,
                   document: artifact.document,
                 });
+                await clearActiveWorkspaceFileBinding();
                 setImportError(null);
                 return;
               }

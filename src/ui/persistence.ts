@@ -30,6 +30,7 @@ import type {
   WorkbenchStageLabel,
   WorkbenchDocument,
   WorkspaceExportStatus,
+  WorkspaceFileBinding,
   WorkspaceVersionDocument,
 } from './workbench-document';
 
@@ -173,6 +174,12 @@ function cloneUserWorkspaceMetadata(
   workspace: UserWorkspaceMetadata,
 ): UserWorkspaceMetadata {
   return { ...workspace };
+}
+
+function cloneWorkspaceFileBinding(
+  binding: WorkspaceFileBinding | null | undefined,
+): WorkspaceFileBinding | null {
+  return binding ? { ...binding } : null;
 }
 
 function cloneWorkspaceDocument(document: WorkbenchDocument): WorkbenchDocument {
@@ -508,6 +515,12 @@ export function buildPersistedWorkspace(
           lastExportedAt: state.exportStatusByProject[projectId]?.lastExportedAt ?? null,
           exportedFingerprint: state.exportStatusByProject[projectId]?.exportedFingerprint ?? null,
         } satisfies WorkspaceExportStatus,
+      ]),
+    ),
+    fileBindingByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        cloneWorkspaceFileBinding(state.fileBindingByProject[projectId]),
       ]),
     ),
     challengeLibrary: state.challengeLibrary.map(cloneChallenge),

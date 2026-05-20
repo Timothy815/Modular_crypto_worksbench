@@ -59,7 +59,10 @@ interface WorkbenchActionsProps {
   onZoomIn: () => void;
   onResetView: () => void;
   onFitView: () => void;
-  onRequestSaveWorkspace: () => void;
+  onRequestOpenWorkspace: () => void;
+  onRequestSaveDocument: () => void;
+  onRequestSaveDocumentAs: () => void;
+  onRequestSaveWorkspaceToLibrary: () => void;
   onRequestSaveVersion: () => void;
   onRequestArrangeSelection: (
     mode:
@@ -656,7 +659,10 @@ export function WorkbenchActions({
   onZoomIn,
   onResetView,
   onFitView,
-  onRequestSaveWorkspace,
+  onRequestOpenWorkspace,
+  onRequestSaveDocument,
+  onRequestSaveDocumentAs,
+  onRequestSaveWorkspaceToLibrary,
   onRequestSaveVersion,
   onRequestArrangeSelection,
   onRequestAddGroupBox,
@@ -1154,10 +1160,25 @@ export function WorkbenchActions({
 
           <WorkbenchActionMenu label="Project" description="Save and recover">
             <WorkbenchMenuActionButton
-              label="Save Current Workspace"
-              onSelect={onRequestSaveWorkspace}
-              title="Save current workspace (Cmd/Ctrl+S)"
+              label="Open Workspace..."
+              onSelect={onRequestOpenWorkspace}
+              title="Open a file-backed local workspace"
+            />
+            <WorkbenchMenuActionButton
+              label="Save"
+              onSelect={onRequestSaveDocument}
+              title="Save to the current local workspace file (Cmd/Ctrl+S)"
               shortcutLabel="Cmd/Ctrl+S"
+            />
+            <WorkbenchMenuActionButton
+              label="Save As..."
+              onSelect={onRequestSaveDocumentAs}
+              title="Choose or replace the current local workspace file"
+            />
+            <WorkbenchMenuActionButton
+              label="Save To Workspace Library"
+              onSelect={onRequestSaveWorkspaceToLibrary}
+              title="Save the current workspace inside MCW's local library"
             />
             <WorkbenchMenuActionButton
               label="Save Version"
