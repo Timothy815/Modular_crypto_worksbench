@@ -1200,7 +1200,9 @@ function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
       candidate.ui.wireColorMode === 'domain' ||
       candidate.ui.wireColorMode === 'neutral' ||
       candidate.ui.wireColorMode === 'high-contrast') &&
-    isConnectionLayoutMap(candidate.ui.connectionLayout)
+    isConnectionLayoutMap(candidate.ui.connectionLayout) &&
+    (candidate.embeddedCompositeLibrary === undefined ||
+      isCompositeLibraryDocument(candidate.embeddedCompositeLibrary))
   );
 }
 

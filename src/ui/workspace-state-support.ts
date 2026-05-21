@@ -17,6 +17,8 @@ import type {
 } from './workbench-document';
 import { cloneProject } from './project-clone';
 import { clonePortOrder } from './port-ordering';
+import { buildEmbeddedCompositeLibraryForProject } from './workspace-document-reusables';
+import type { CompositeLibraryEntry } from '../engine/composites';
 
 export interface WorkspaceHistorySnapshot {
   project: Project;
@@ -78,6 +80,7 @@ interface WorkspaceVersionHostState extends WorkspaceSnapshotState {
   workspaceVersionsByProject: Record<string, WorkspaceVersionDocument[]>;
   comparisonBaselinesByProject: Record<string, ComparisonBaselineDocument | null>;
   tickedModeByProject: Record<string, boolean>;
+  compositeLibrary: CompositeLibraryEntry[];
 }
 
 export function cloneAnnotations(annotations: WorkbenchAnnotation[]): WorkbenchAnnotation[] {
@@ -353,6 +356,14 @@ export function buildWorkbenchDocument<State extends WorkspaceVersionHostState>(
   return {
     version: 1,
     project: cloneProject(project),
+    ...(buildEmbeddedCompositeLibraryForProject(project, state.compositeLibrary)
+      ? {
+          embeddedCompositeLibrary: buildEmbeddedCompositeLibraryForProject(
+            project,
+            state.compositeLibrary,
+          ),
+        }
+      : {}),
     ui: {
       layout: cloneLayout(layout),
       annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),

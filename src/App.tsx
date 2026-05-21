@@ -135,6 +135,7 @@ import {
   saveWorkspaceToBoundLocalFile,
   saveWorkspaceToLocalFileAs,
 } from './ui/workspace-local-document';
+import { prepareWorkbenchDocumentImport } from './ui/workspace-document-reusables';
 import { getPrimitiveMicroDemo } from './ui/primitive-micro-demos';
 import { getPipelineMicroDemo } from './ui/pipeline-micro-demos';
 import { buildCompositeInstanceDrilldownContext } from './ui/composite-instance-drilldown';
@@ -2304,6 +2305,14 @@ function MainApp() {
       return;
     }
 
+    const preparedImport = prepareWorkbenchDocumentImport(
+      result.document,
+      state.compositeLibrary,
+    );
+    for (const entry of preparedImport.reusableEntriesToAdd) {
+      dispatch({ type: 'addCompositeToLibrary', entry });
+    }
+
     const baseName = result.fileName.replace(/\.mcw\.json$/i, '').replace(/\.json$/i, '');
     const workspaceName = createWorkspaceNameFromBase(
       baseName || 'Opened Workspace',
@@ -2318,8 +2327,8 @@ function MainApp() {
       workspaceId,
       name: workspaceName,
       summary: `Opened from local file ${result.fileName}.`,
-      pipeline: describeWorkspacePipeline(result.document.project),
-      document: result.document,
+      pipeline: describeWorkspacePipeline(preparedImport.document.project),
+      document: preparedImport.document,
       defaultTickedMode: false,
     });
     await getWorkspaceDocumentStore()?.saveWorkspaceFileHandle(
@@ -5001,10 +5010,17 @@ function MainApp() {
               const { parseWorkspaceArtifact } = await import('./ui/workspace-artifact-actions');
               const artifact = parseWorkspaceArtifact(rawValue);
               if (artifact?.kind === 'workbench') {
+                const preparedImport = prepareWorkbenchDocumentImport(
+                  artifact.document,
+                  state.compositeLibrary,
+                );
+                for (const entry of preparedImport.reusableEntriesToAdd) {
+                  dispatch({ type: 'addCompositeToLibrary', entry });
+                }
                 dispatch({
                   type: 'loadDocument',
                   projectId: activeProjectDefinition.id,
-                  document: artifact.document,
+                  document: preparedImport.document,
                 });
                 await clearActiveWorkspaceFileBinding();
                 setImportError(null);

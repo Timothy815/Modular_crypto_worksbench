@@ -107,6 +107,7 @@ export interface WorkbenchDocument {
   version: 1;
   project: Project;
   ui: WorkbenchUiMetadata;
+  embeddedCompositeLibrary?: CompositeLibraryDocument;
 }
 
 export interface WorkspaceVersionDocument {
