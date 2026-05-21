@@ -46,8 +46,8 @@ import {
 } from '../workspace-landmarks';
 import {
   DEFAULT_WORKSPACE_ZOOM,
+  MAX_WORKSPACE_ZOOM,
   getCanvasViewportPoint,
-  getFitWorkspaceZoom,
   getModuleFocusScrollPosition,
   getNextWorkspaceZoom,
 } from '../workspace-viewport';
@@ -70,6 +70,7 @@ import type {
   WorkbenchStageLabel,
   WorkspaceExportStatus,
   WorkspaceFileBinding,
+  WorkspaceSavedViewRegion,
   WorkspaceVersionDocument,
 } from '../workbench-document';
 import {
@@ -105,6 +106,12 @@ import {
 } from '../canonical-chain-insertion';
 import { isEditableShortcutTarget } from '../keyboard-shortcuts';
 import { WORKBENCH_GRID_SIZE } from '../store';
+import {
+  computeViewportForRect,
+  createWorkspaceSavedViewRegion,
+  type WorkspaceFrameRect,
+  type WorkspaceViewState,
+} from '../workspace-navigation';
 const WorkbenchActions = lazy(() =>
   import('./workbench-actions').then((module) => ({
     default: module.WorkbenchActions,
@@ -519,6 +526,7 @@ interface WorkbenchPanelProps {
   exportStatus: WorkspaceExportStatus | null;
   currentDocumentFingerprint: string | null;
   fileBinding: WorkspaceFileBinding | null;
+  savedViewRegions: WorkspaceSavedViewRegion[];
   onRequestOpenWorkspace: () => void;
   onRequestSaveDocument: () => void;
   onRequestSaveDocumentAs: () => void;
@@ -539,6 +547,8 @@ interface WorkbenchPanelProps {
   ) => void;
   onRequestRestoreVersion: (versionId: string) => void;
   onRequestRestoreAutosave: (snapshotId: string) => void;
+  onSaveWorkspaceViewRegion: (region: WorkspaceSavedViewRegion) => void;
+  onRemoveWorkspaceViewRegion: (regionId: string) => void;
   requestedFocusModuleId?: string | null;
   onWorkspaceFocusHandled?: () => void;
   onSwitchProject: (projectId: string) => void;
@@ -772,6 +782,7 @@ export function WorkbenchPanel({
   exportStatus,
   currentDocumentFingerprint,
   fileBinding,
+  savedViewRegions,
   onRequestOpenWorkspace,
   onRequestSaveDocument,
   onRequestSaveDocumentAs,
@@ -780,6 +791,8 @@ export function WorkbenchPanel({
   onRequestArrangeSelection,
   onRequestRestoreVersion,
   onRequestRestoreAutosave,
+  onSaveWorkspaceViewRegion,
+  onRemoveWorkspaceViewRegion,
   requestedFocusModuleId = null,
   onWorkspaceFocusHandled,
   onSwitchProject,
@@ -991,6 +1004,10 @@ export function WorkbenchPanel({
     clientWidth: 0,
     clientHeight: 0,
   });
+  const [previousView, setPreviousView] = useState<WorkspaceViewState | null>(null);
+  const pendingViewportRef = useRef<{ view: WorkspaceViewState; behavior: ScrollBehavior } | null>(
+    null,
+  );
   const [comparisonVersionId, setComparisonVersionId] = useState<string | null>(null);
   const projectGroups = useMemo(
     () => getSortedLearningGroups(projects),
@@ -1432,21 +1449,119 @@ export function WorkbenchPanel({
     };
   }
 
+  function getCurrentViewportView(): WorkspaceViewState {
+    return {
+      scrollLeft: viewportMetrics.scrollLeft,
+      scrollTop: viewportMetrics.scrollTop,
+      zoom: workspaceZoom,
+    };
+  }
+
+  function applyViewportView(
+    view: WorkspaceViewState,
+    options?: { behavior?: ScrollBehavior; rememberPrevious?: boolean },
+  ) {
+    const canvasSurface = canvasSurfaceRef.current;
+    if (!canvasSurface) {
+      return;
+    }
+
+    if (options?.rememberPrevious) {
+      setPreviousView(getCurrentViewportView());
+    }
+
+    if (Math.abs(workspaceZoom - view.zoom) > 0.001) {
+      pendingViewportRef.current = {
+        view,
+        behavior: options?.behavior ?? 'smooth',
+      };
+      setWorkspaceZoom(view.zoom);
+      return;
+    }
+
+    canvasSurface.scrollTo({
+      left: view.scrollLeft,
+      top: view.scrollTop,
+      behavior: options?.behavior ?? 'smooth',
+    });
+    syncViewportMetrics();
+  }
+
   function fitWorkspaceView() {
     const canvasSurface = canvasSurfaceRef.current;
     if (!canvasSurface) {
       return;
     }
 
-    setWorkspaceZoom(
-      getFitWorkspaceZoom({
-        viewportWidth: canvasSurface.clientWidth,
-        viewportHeight: canvasSurface.clientHeight,
-        canvasWidth: authoredCanvasWidth,
-        canvasHeight: authoredCanvasHeight,
-      }),
-    );
-    canvasSurface.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+    const targetView = computeViewportForRect({
+      rect: {
+        left: 0,
+        top: 0,
+        right: authoredCanvasWidth,
+        bottom: authoredCanvasHeight,
+      },
+      viewportWidth: canvasSurface.clientWidth,
+      viewportHeight: canvasSurface.clientHeight,
+      maxZoom: DEFAULT_WORKSPACE_ZOOM,
+    });
+
+    applyViewportView(targetView, { behavior: 'smooth', rememberPrevious: true });
+  }
+
+  function frameSelectionView() {
+    const canvasSurface = canvasSurfaceRef.current;
+    if (!canvasSurface || selectedModuleIds.length === 0) {
+      return;
+    }
+
+    const rect = selectedModuleIds.reduce<WorkspaceFrameRect | null>((currentRect, moduleId) => {
+      const position = effectiveLayout[moduleId];
+      const size = nodeSizeByModuleId[moduleId]?.config ?? NODE_SIZE_CONFIGS.standard;
+      if (!position) {
+        return currentRect;
+      }
+
+      const nextRect: WorkspaceFrameRect = {
+        left: position.x,
+        top: position.y,
+        right: position.x + size.width,
+        bottom: position.y + size.height,
+      };
+
+      if (!currentRect) {
+        return nextRect;
+      }
+
+      return {
+        left: Math.min(currentRect.left, nextRect.left),
+        top: Math.min(currentRect.top, nextRect.top),
+        right: Math.max(currentRect.right, nextRect.right),
+        bottom: Math.max(currentRect.bottom, nextRect.bottom),
+      };
+    }, null);
+
+    if (!rect) {
+      return;
+    }
+
+    const targetView = computeViewportForRect({
+      rect,
+      viewportWidth: canvasSurface.clientWidth,
+      viewportHeight: canvasSurface.clientHeight,
+      maxZoom: MAX_WORKSPACE_ZOOM,
+    });
+
+    applyViewportView(targetView, { behavior: 'smooth', rememberPrevious: true });
+  }
+
+  function returnToPreviousView() {
+    if (!previousView) {
+      return;
+    }
+
+    const target = previousView;
+    setPreviousView(null);
+    applyViewportView(target, { behavior: 'smooth' });
   }
 
   function syncViewportMetrics() {
@@ -1513,6 +1628,22 @@ export function WorkbenchPanel({
       window.removeEventListener('resize', update);
     };
   }, [canvasHeight, canvasViewportHeight, canvasWidth, workspaceZoom]);
+
+  useEffect(() => {
+    const pending = pendingViewportRef.current;
+    const canvasSurface = canvasSurfaceRef.current;
+    if (!pending || !canvasSurface) {
+      return;
+    }
+
+    pendingViewportRef.current = null;
+    canvasSurface.scrollTo({
+      left: pending.view.scrollLeft,
+      top: pending.view.scrollTop,
+      behavior: pending.behavior,
+    });
+    syncViewportMetrics();
+  }, [workspaceZoom]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -2784,16 +2915,42 @@ export function WorkbenchPanel({
       nodeHeight: NODE_HEIGHT,
     });
 
-    canvasSurface.scrollTo({
-      left: target.left,
-      top: target.top,
-      behavior: 'smooth',
-    });
+    applyViewportView(
+      {
+        scrollLeft: target.left,
+        scrollTop: target.top,
+        zoom: workspaceZoom,
+      },
+      { behavior: 'smooth', rememberPrevious: true },
+    );
     setSelectedGuideRailId(null);
     setSelectedStageLabelId(null);
     setSelectedConnectionIndex(null);
     onSelectModule(moduleId, false);
   }
+
+  function saveCurrentView(name: string) {
+    onSaveWorkspaceViewRegion(createWorkspaceSavedViewRegion(name, getCurrentViewportView()));
+  }
+
+  function recallSavedView(regionId: string) {
+    const region = savedViewRegions.find((candidate) => candidate.id === regionId);
+    if (!region) {
+      return;
+    }
+
+    applyViewportView(
+      {
+        scrollLeft: region.scrollLeft,
+        scrollTop: region.scrollTop,
+        zoom: region.zoom,
+      },
+      { behavior: 'smooth', rememberPrevious: true },
+    );
+  }
+
+  const navigationZoomPercent = Math.round(workspaceZoom * 100);
+  const canFrameSelection = selectedModuleIds.length > 0;
 
   useEffect(() => {
     if (!requestedFocusModuleId) {
@@ -2816,11 +2973,14 @@ export function WorkbenchPanel({
       nodeHeight: NODE_HEIGHT,
     });
 
-    canvasSurface.scrollTo({
-      left: target.left,
-      top: target.top,
-      behavior: 'smooth',
-    });
+    applyViewportView(
+      {
+        scrollLeft: target.left,
+        scrollTop: target.top,
+        zoom: workspaceZoom,
+      },
+      { behavior: 'smooth', rememberPrevious: true },
+    );
     onSelectModule(requestedFocusModuleId, false);
     onWorkspaceFocusHandled?.();
   }, [effectiveLayout, onSelectModule, onWorkspaceFocusHandled, requestedFocusModuleId, workspaceZoom]);
@@ -3687,8 +3847,18 @@ export function WorkbenchPanel({
           exportStatus={exportStatus}
           currentDocumentFingerprint={currentDocumentFingerprint}
           fileBinding={fileBinding}
+          navigationZoomPercent={navigationZoomPercent}
+          canFrameSelection={canFrameSelection}
+          canReturnToPreviousView={previousView !== null}
+          savedViewRegions={savedViewRegions}
           onSwitchProject={onSwitchProject}
           onJumpToModule={jumpToModule}
+          onFrameWorkspace={fitWorkspaceView}
+          onFrameSelection={frameSelectionView}
+          onReturnToPreviousView={returnToPreviousView}
+          onSaveCurrentView={saveCurrentView}
+          onRecallSavedView={recallSavedView}
+          onDeleteSavedView={onRemoveWorkspaceViewRegion}
           onRequestRestoreVersion={onRequestRestoreVersion}
           onRequestRestoreAutosave={onRequestRestoreAutosave}
           onSetComparisonVersionId={setComparisonVersionId}

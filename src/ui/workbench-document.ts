@@ -79,6 +79,14 @@ export interface WorkbenchConnectionLayout {
   colorOverride?: WorkbenchConnectionColorOverride;
 }
 
+export interface WorkspaceSavedViewRegion {
+  id: string;
+  name: string;
+  scrollLeft: number;
+  scrollTop: number;
+  zoom: number;
+}
+
 export type WorkbenchLayoutDirection = 'horizontal' | 'vertical';
 export type WorkbenchNodeOrientation = 'east' | 'south' | 'west' | 'north';
 export type WorkbenchPortLayoutPreset = 'horizontal' | 'vertical';
@@ -89,6 +97,7 @@ export type WorkbenchWireColorMode = 'domain' | 'neutral' | 'high-contrast';
 export interface WorkbenchUiMetadata {
   layout: Record<string, WorkbenchPosition>;
   annotations: WorkbenchAnnotation[];
+  savedViewRegions?: WorkspaceSavedViewRegion[];
   stageLabels?: WorkbenchStageLabel[];
   groupBoxes?: WorkbenchGroupBox[];
   guideRails?: WorkbenchGuideRail[];

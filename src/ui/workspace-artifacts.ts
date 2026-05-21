@@ -24,9 +24,11 @@ import type {
   WorkbenchGuideRail,
   WorkbenchGroupBox,
   WorkbenchPosition,
+  WorkspaceSavedViewRegion,
   WorkbenchStageLabel,
 } from './workbench-document';
 import { clonePortOrder } from './port-ordering';
+import { cloneWorkspaceSavedViewRegions } from './workspace-navigation';
 
 export function slugifyWorkspaceName(value: string) {
   return value
@@ -112,6 +114,10 @@ function cloneGroupBoxes(groupBoxes: WorkbenchGroupBox[]) {
 
 function cloneGuideRails(guideRails: WorkbenchGuideRail[]) {
   return guideRails.map((guideRail) => ({ ...guideRail }));
+}
+
+function cloneSavedViewRegions(regions: WorkspaceSavedViewRegion[]) {
+  return cloneWorkspaceSavedViewRegions(regions);
 }
 
 function cloneComparisonBaseline(
@@ -255,6 +261,16 @@ export function buildHydratedUiState(
         project.id,
         persistedWorkspace.documentsByProjectId[project.id]?.ui.showOverviewNavigator ??
           initialState.showOverviewNavigatorByProject[project.id],
+      ]),
+    ),
+    savedViewRegionsByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        cloneSavedViewRegions(
+          persistedWorkspace.documentsByProjectId[project.id]?.ui.savedViewRegions ??
+            initialState.savedViewRegionsByProject[project.id] ??
+            [],
+        ),
       ]),
     ),
     showGridByProject: Object.fromEntries(

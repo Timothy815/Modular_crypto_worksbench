@@ -35,6 +35,7 @@ import type {
   WorkbenchDocument,
   WorkspaceExportStatus,
   WorkspaceFileBinding,
+  WorkspaceSavedViewRegion,
   WorkspaceVersionDocument,
 } from './workbench-document';
 import {
@@ -73,6 +74,7 @@ import { isLargeWorkspace } from './workspace-landmarks';
 import { clonePortOrder, movePortInOrder, type OrderedPortDirection } from './port-ordering';
 import { getConnectionComparisonKey } from './workspace-comparison';
 import { snapModulePositionToGuideRails } from './workbench-support';
+import { appendWorkspaceSavedViewRegion, cloneWorkspaceSavedViewRegions } from './workspace-navigation';
 import type {
   InsertChainConnectionTemplate,
   InsertChainModuleTemplate,
@@ -94,6 +96,7 @@ export interface UiState {
   guideRailsByProject: Record<string, WorkbenchGuideRail[]>;
   showFurnitureByProject: Record<string, boolean>;
   showOverviewNavigatorByProject: Record<string, boolean>;
+  savedViewRegionsByProject: Record<string, WorkspaceSavedViewRegion[]>;
   showGridByProject: Record<string, boolean>;
   snapToGridByProject: Record<string, boolean>;
   snapToGuidesByProject: Record<string, boolean>;
@@ -171,6 +174,16 @@ export type UiAction =
       type: 'setWorkspaceFileBinding';
       projectId: string;
       binding: WorkspaceFileBinding | null;
+    }
+  | {
+      type: 'saveWorkspaceViewRegion';
+      projectId: string;
+      region: WorkspaceSavedViewRegion;
+    }
+  | {
+      type: 'removeWorkspaceViewRegion';
+      projectId: string;
+      regionId: string;
     }
   | { type: 'switchProject'; projectId: string }
   | {
@@ -1113,6 +1126,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     showOverviewNavigatorByProject: Object.fromEntries(
       projects.map((project) => [project.id, isLargeWorkspace(project.project)]),
     ),
+    savedViewRegionsByProject: Object.fromEntries(
+      projects.map((project) => [project.id, []]),
+    ),
     showGridByProject: Object.fromEntries(
       projects.map((project) => [project.id, false]),
     ),
@@ -1385,6 +1401,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.showOverviewNavigatorByProject,
           [action.workspaceId]: false,
         },
+        savedViewRegionsByProject: {
+          ...state.savedViewRegionsByProject,
+          [action.workspaceId]: [],
+        },
         showGridByProject: {
           ...state.showGridByProject,
           [action.workspaceId]: false,
@@ -1595,6 +1615,12 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         showOverviewNavigatorByProject: {
           ...state.showOverviewNavigatorByProject,
           [action.workspaceId]: sourceShowOverviewNavigator,
+        },
+        savedViewRegionsByProject: {
+          ...state.savedViewRegionsByProject,
+          [action.workspaceId]: cloneWorkspaceSavedViewRegions(
+            state.savedViewRegionsByProject[action.sourceProjectId] ?? [],
+          ),
         },
         showGridByProject: {
           ...state.showGridByProject,
@@ -1809,6 +1835,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.showOverviewNavigatorByProject,
           [action.workspaceId]: false,
         },
+        savedViewRegionsByProject: {
+          ...state.savedViewRegionsByProject,
+          [action.workspaceId]: [],
+        },
         showGridByProject: {
           ...state.showGridByProject,
           [action.workspaceId]: false,
@@ -1949,6 +1979,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         showFurnitureByProject: removeProjectEntry(state.showFurnitureByProject, action.workspaceId),
         showOverviewNavigatorByProject: removeProjectEntry(
           state.showOverviewNavigatorByProject,
+          action.workspaceId,
+        ),
+        savedViewRegionsByProject: removeProjectEntry(
+          state.savedViewRegionsByProject,
           action.workspaceId,
         ),
         showGridByProject: removeProjectEntry(state.showGridByProject, action.workspaceId),
@@ -2523,6 +2557,44 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         showOverviewNavigatorByProject: {
           ...state.showOverviewNavigatorByProject,
           [action.projectId]: action.visible,
+        },
+      };
+    }
+    case 'saveWorkspaceViewRegion': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentRegions = state.savedViewRegionsByProject[action.projectId] ?? [];
+      const nextRegions = appendWorkspaceSavedViewRegion(currentRegions, action.region);
+      if (nextRegions === currentRegions) {
+        return state;
+      }
+
+      return {
+        ...state,
+        savedViewRegionsByProject: {
+          ...state.savedViewRegionsByProject,
+          [action.projectId]: nextRegions,
+        },
+      };
+    }
+    case 'removeWorkspaceViewRegion': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentRegions = state.savedViewRegionsByProject[action.projectId] ?? [];
+      const nextRegions = currentRegions.filter((region) => region.id !== action.regionId);
+      if (nextRegions.length === currentRegions.length) {
+        return state;
+      }
+
+      return {
+        ...state,
+        savedViewRegionsByProject: {
+          ...state.savedViewRegionsByProject,
+          [action.projectId]: nextRegions,
         },
       };
     }
@@ -4650,6 +4722,12 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         showOverviewNavigatorByProject: {
           ...state.showOverviewNavigatorByProject,
           [action.projectId]: action.document.ui.showOverviewNavigator ?? false,
+        },
+        savedViewRegionsByProject: {
+          ...state.savedViewRegionsByProject,
+          [action.projectId]: cloneWorkspaceSavedViewRegions(
+            action.document.ui.savedViewRegions ?? [],
+          ),
         },
         showGridByProject: {
           ...state.showGridByProject,

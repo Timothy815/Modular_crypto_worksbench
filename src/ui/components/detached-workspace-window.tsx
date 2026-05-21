@@ -271,6 +271,7 @@ export function DetachedWorkspaceWindow({
             exportStatus={null}
             currentDocumentFingerprint={null}
             fileBinding={null}
+            savedViewRegions={[]}
             onRequestOpenWorkspace={() => undefined}
             onRequestSaveDocument={() => undefined}
             onRequestSaveDocumentAs={() => undefined}
@@ -279,6 +280,8 @@ export function DetachedWorkspaceWindow({
             onRequestArrangeSelection={() => undefined}
             onRequestRestoreVersion={() => undefined}
             onRequestRestoreAutosave={() => undefined}
+            onSaveWorkspaceViewRegion={() => undefined}
+            onRemoveWorkspaceViewRegion={() => undefined}
             onSwitchProject={() => undefined}
             onAddConnection={() => undefined}
             onReplaceConnection={() => undefined}

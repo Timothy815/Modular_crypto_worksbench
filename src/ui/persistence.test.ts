@@ -159,11 +159,24 @@ describe('workspace persistence', () => {
     const storage = new MemoryStorage();
 
     saveWorkspaceToStorage(
-      uiReducer(stateWithStageLabel, {
-        type: 'setSnapToGuides',
-        projectId: 'my-scratchpad',
-        enabled: true,
-      }),
+      uiReducer(
+        uiReducer(stateWithStageLabel, {
+          type: 'setSnapToGuides',
+          projectId: 'my-scratchpad',
+          enabled: true,
+        }),
+        {
+          type: 'saveWorkspaceViewRegion',
+          projectId: 'my-scratchpad',
+          region: {
+            id: 'view-1',
+            name: 'Round output',
+            scrollLeft: 120,
+            scrollTop: 48,
+            zoom: 0.82,
+          },
+        },
+      ),
       {},
       storage,
     );
@@ -217,6 +230,15 @@ describe('workspace persistence', () => {
       },
     ]);
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.showOverviewNavigator).toBe(false);
+    expect(restored?.documentsByProjectId['my-scratchpad']?.ui.savedViewRegions).toEqual([
+      {
+        id: 'view-1',
+        name: 'Round output',
+        scrollLeft: 120,
+        scrollTop: 48,
+        zoom: 0.82,
+      },
+    ]);
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.showGrid).toBe(false);
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.snapToGrid).toBe(false);
     expect(restored?.documentsByProjectId['my-scratchpad']?.ui.snapToGuides).toBe(true);

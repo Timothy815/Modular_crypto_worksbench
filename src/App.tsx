@@ -4779,6 +4779,11 @@ function MainApp() {
             exportStatus={isCompositeDrilldownActive ? null : activeExportStatus}
             currentDocumentFingerprint={isCompositeDrilldownActive ? null : activeDocumentFingerprint}
             fileBinding={isCompositeDrilldownActive ? null : activeFileBinding}
+            savedViewRegions={
+              isCompositeDrilldownActive
+                ? []
+                : state.savedViewRegionsByProject[activeProjectDefinition.id] ?? []
+            }
             onRequestOpenWorkspace={handleOpenWorkspaceDocument}
             onRequestSaveDocument={handleSaveWorkspaceDocument}
             onRequestSaveDocumentAs={handleSaveWorkspaceDocumentAs}
@@ -4795,6 +4800,24 @@ function MainApp() {
             }
             onRequestRestoreVersion={handleRestoreWorkspaceVersion}
             onRequestRestoreAutosave={handleRestoreAutosave}
+            onSaveWorkspaceViewRegion={(region) =>
+              isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'saveWorkspaceViewRegion',
+                    projectId: activeProjectDefinition.id,
+                    region,
+                  })
+            }
+            onRemoveWorkspaceViewRegion={(regionId) =>
+              isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'removeWorkspaceViewRegion',
+                    projectId: activeProjectDefinition.id,
+                    regionId,
+                  })
+            }
             requestedFocusModuleId={
               isCompositeDrilldownActive
                 ? compositeDrilldown?.requestedFocusModuleId ?? null

@@ -33,6 +33,10 @@ import type {
   WorkspaceFileBinding,
   WorkspaceVersionDocument,
 } from './workbench-document';
+import {
+  cloneWorkspaceSavedViewRegions,
+  isWorkspaceSavedViewRegion,
+} from './workspace-navigation';
 
 export const WORKSPACE_STORAGE_KEY = 'mcw:workspace:v1';
 const CRC32_TABLE = (() => {
@@ -340,6 +344,9 @@ export function buildPersistedWorkspace(
               ),
             ),
             annotations: cloneAnnotations(state.annotationsByProject[projectId] ?? []),
+            savedViewRegions: cloneWorkspaceSavedViewRegions(
+              state.savedViewRegionsByProject[projectId] ?? [],
+            ),
             stageLabels: cloneStageLabels(state.stageLabelsByProject[projectId] ?? []),
             groupBoxes: cloneGroupBoxes(state.groupBoxesByProject[projectId] ?? []),
             guideRails: cloneGuideRails(state.guideRailsByProject[projectId] ?? []),
@@ -1144,6 +1151,9 @@ function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
         typeof annotation.y === 'number' &&
         typeof annotation.text === 'string',
     ) &&
+    (candidate.ui.savedViewRegions === undefined ||
+      (Array.isArray(candidate.ui.savedViewRegions) &&
+        candidate.ui.savedViewRegions.every((region) => isWorkspaceSavedViewRegion(region)))) &&
     (candidate.ui.stageLabels === undefined ||
       (Array.isArray(candidate.ui.stageLabels) &&
         candidate.ui.stageLabels.every(

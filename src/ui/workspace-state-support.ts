@@ -11,6 +11,7 @@ import type {
   WorkbenchLayoutDirection,
   WorkbenchPosition,
   WorkbenchRoutingMode,
+  WorkspaceSavedViewRegion,
   WorkbenchWireColorMode,
   WorkbenchStageLabel,
   WorkspaceVersionDocument,
@@ -19,6 +20,7 @@ import { cloneProject } from './project-clone';
 import { clonePortOrder } from './port-ordering';
 import { buildEmbeddedCompositeLibraryForProject } from './workspace-document-reusables';
 import type { CompositeLibraryEntry } from '../engine/composites';
+import { cloneWorkspaceSavedViewRegions } from './workspace-navigation';
 
 export interface WorkspaceHistorySnapshot {
   project: Project;
@@ -57,6 +59,7 @@ interface WorkspaceSnapshotState {
   guideRailsByProject: Record<string, WorkbenchGuideRail[]>;
   showFurnitureByProject: Record<string, boolean>;
   showOverviewNavigatorByProject: Record<string, boolean>;
+  savedViewRegionsByProject: Record<string, WorkspaceSavedViewRegion[]>;
   showGridByProject: Record<string, boolean>;
   snapToGridByProject: Record<string, boolean>;
   snapToGuidesByProject: Record<string, boolean>;
@@ -267,6 +270,12 @@ export function applyWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
       ...state.showOverviewNavigatorByProject,
       [projectId]: snapshot.showOverviewNavigator,
     },
+    savedViewRegionsByProject: {
+      ...state.savedViewRegionsByProject,
+      [projectId]: cloneWorkspaceSavedViewRegions(
+        state.savedViewRegionsByProject[projectId] ?? [],
+      ),
+    },
     showGridByProject: {
       ...state.showGridByProject,
       [projectId]: snapshot.showGrid,
@@ -372,6 +381,9 @@ export function buildWorkbenchDocument<State extends WorkspaceVersionHostState>(
       guideRails: cloneGuideRails(state.guideRailsByProject[projectId] ?? []),
       showFurniture: state.showFurnitureByProject[projectId] ?? true,
       showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
+      savedViewRegions: cloneWorkspaceSavedViewRegions(
+        state.savedViewRegionsByProject[projectId] ?? [],
+      ),
       showGrid: state.showGridByProject[projectId] ?? false,
       snapToGrid: state.snapToGridByProject[projectId] ?? false,
       snapToGuides: state.snapToGuidesByProject[projectId] ?? false,
@@ -529,6 +541,10 @@ export function applyRestoreWorkbenchDocument<State extends WorkspaceVersionHost
     showOverviewNavigatorByProject: {
       ...state.showOverviewNavigatorByProject,
       [projectId]: document.ui.showOverviewNavigator ?? false,
+    },
+    savedViewRegionsByProject: {
+      ...state.savedViewRegionsByProject,
+      [projectId]: cloneWorkspaceSavedViewRegions(document.ui.savedViewRegions ?? []),
     },
     showGridByProject: {
       ...state.showGridByProject,

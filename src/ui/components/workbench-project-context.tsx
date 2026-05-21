@@ -16,9 +16,11 @@ import type {
   AutosaveSnapshotDocument,
   WorkspaceExportStatus,
   WorkspaceFileBinding,
+  WorkspaceSavedViewRegion,
   WorkspaceVersionDocument,
 } from '../workbench-document';
 import { buildWorkspaceDurabilitySummary } from '../workspace-durability-ux';
+import { MAX_WORKSPACE_SAVED_VIEW_REGIONS } from '../workspace-navigation';
 
 interface WorkbenchProjectContextProps {
   isCompositeEditor: boolean;
@@ -49,8 +51,18 @@ interface WorkbenchProjectContextProps {
   exportStatus: WorkspaceExportStatus | null;
   currentDocumentFingerprint: string | null;
   fileBinding: WorkspaceFileBinding | null;
+  navigationZoomPercent: number;
+  canFrameSelection: boolean;
+  canReturnToPreviousView: boolean;
+  savedViewRegions: WorkspaceSavedViewRegion[];
   onSwitchProject: (projectId: string) => void;
   onJumpToModule: (moduleId: string) => void;
+  onFrameWorkspace: () => void;
+  onFrameSelection: () => void;
+  onReturnToPreviousView: () => void;
+  onSaveCurrentView: (name: string) => void;
+  onRecallSavedView: (regionId: string) => void;
+  onDeleteSavedView: (regionId: string) => void;
   onRequestRestoreVersion: (versionId: string) => void;
   onRequestRestoreAutosave: (snapshotId: string) => void;
   onSetComparisonVersionId: (versionId: string | null) => void;
@@ -111,8 +123,18 @@ export function WorkbenchProjectContext({
   exportStatus,
   currentDocumentFingerprint,
   fileBinding,
+  navigationZoomPercent,
+  canFrameSelection,
+  canReturnToPreviousView,
+  savedViewRegions,
   onSwitchProject,
   onJumpToModule,
+  onFrameWorkspace,
+  onFrameSelection,
+  onReturnToPreviousView,
+  onSaveCurrentView,
+  onRecallSavedView,
+  onDeleteSavedView,
   onRequestRestoreVersion,
   onRequestRestoreAutosave,
   onSetComparisonVersionId,
@@ -120,6 +142,7 @@ export function WorkbenchProjectContext({
 }: WorkbenchProjectContextProps) {
   const [projectSearch, setProjectSearch] = useState('');
   const [isSnapshotsViewOpen, setIsSnapshotsViewOpen] = useState(false);
+  const [savedViewName, setSavedViewName] = useState('');
   const [isProjectContextCollapsed, setIsProjectContextCollapsed] = useState(() => {
     if (typeof window === 'undefined') {
       return false;
@@ -304,6 +327,126 @@ export function WorkbenchProjectContext({
                 {renderLandmarkGroup('Outputs', workspaceLandmarks.outputs, onJumpToModule)}
               </div>
             ) : null}
+            <div className="workspace-versions-card">
+              <strong>Workspace Navigation</strong>
+              <div className="workspace-version-list">
+                <div className="workspace-version-item">
+                  <div>
+                    <strong>Current View</strong>
+                    <p>
+                      Zoom: <strong>{navigationZoomPercent}%</strong> · Saved regions:{' '}
+                      <strong>{savedViewRegions.length}</strong> · Previous view:{' '}
+                      <strong>{canReturnToPreviousView ? 'available' : 'none'}</strong>
+                    </p>
+                  </div>
+                </div>
+                <div className="workspace-version-item">
+                  <div>
+                    <strong>Frame</strong>
+                    <p>Move the real workspace camera to the current selection or the full machine.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="workspace-version-button"
+                    onClick={onFrameWorkspace}
+                  >
+                    Frame Workspace
+                  </button>
+                  <button
+                    type="button"
+                    className="workspace-version-button"
+                    onClick={onFrameSelection}
+                    disabled={!canFrameSelection}
+                  >
+                    Frame Selection
+                  </button>
+                  <button
+                    type="button"
+                    className="workspace-version-button"
+                    onClick={onReturnToPreviousView}
+                    disabled={!canReturnToPreviousView}
+                  >
+                    Back To Previous View
+                  </button>
+                </div>
+                <div className="workspace-version-item">
+                  <div>
+                    <strong>Saved Regions</strong>
+                    <p>
+                      Save a few named views for this workspace only. Regions remember viewport
+                      position and zoom, not machine meaning.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="content-filter-row project-selector-row">
+                <label className="project-selector">
+                  <span className="meta-label">Region Name</span>
+                  <input
+                    type="text"
+                    value={savedViewName}
+                    onChange={(event) => setSavedViewName(event.target.value)}
+                    placeholder="Round output"
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="workspace-version-button"
+                  disabled={
+                    savedViewName.trim().length === 0 ||
+                    savedViewRegions.length >= MAX_WORKSPACE_SAVED_VIEW_REGIONS
+                  }
+                  onClick={() => {
+                    const normalized = savedViewName.trim();
+                    if (!normalized) {
+                      return;
+                    }
+                    onSaveCurrentView(normalized);
+                    setSavedViewName('');
+                  }}
+                >
+                  Save Current View
+                </button>
+              </div>
+              {savedViewRegions.length >= MAX_WORKSPACE_SAVED_VIEW_REGIONS ? (
+                <p>
+                  This workspace has reached the saved-region cap of{' '}
+                  <strong>{MAX_WORKSPACE_SAVED_VIEW_REGIONS}</strong>. Remove one to save another.
+                </p>
+              ) : null}
+              {savedViewRegions.length > 0 ? (
+                <div className="workspace-version-list">
+                  {savedViewRegions.map((region) => (
+                    <div key={region.id} className="workspace-version-item">
+                      <div>
+                        <strong>{region.name}</strong>
+                        <p>{Math.round(region.zoom * 100)}% zoom view</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="workspace-version-button"
+                        onClick={() => onRecallSavedView(region.id)}
+                      >
+                        Open View
+                      </button>
+                      <button
+                        type="button"
+                        className="workspace-version-button"
+                        onClick={() => onDeleteSavedView(region.id)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p>No saved regions yet for this workspace.</p>
+              )}
+              <p>
+                Back To Previous View returns from the latest navigation jump only. It does not
+                replace understanding the workspace or good composite structure.
+              </p>
+            </div>
             <div className="workspace-versions-card">
               <strong>Workspace Durability</strong>
               <div className="workspace-version-list">
