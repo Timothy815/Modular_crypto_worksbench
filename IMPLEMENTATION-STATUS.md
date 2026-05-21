@@ -120,7 +120,7 @@ The current ranked ergonomics queue after the shipped ECC validation slice is:
 
 **Latest document-workflow work:** `LOCAL-DOCUMENT-WORKFLOW-V1` is now shipped on `feature/aes-column-perturbation`. MCW now separates `Open Workspace...`, `Save`, and `Save As...` from import/export artifact flow, remembers file bindings through the durable local store, shows whether a workspace is file-bound or browser-local, and keeps import explicitly distinct from open so reopening a local file feels like reopening a named document rather than importing into an anonymous workspace.
 
-**Next ergonomics work:** `COMPOSITE-AUTHORING-ERGONOMICS-V1` is now the leading packaging/authoring follow-on after the shipped durability and local-document slices. The remaining emphasis shifts from trust and persistence to making large live machines easier to package into reusable composites without losing drilldown or truthfulness.
+**Next ergonomics work:** `COMPOSITE-AUTHORING-ERGONOMICS-V1` is now the leading packaging/authoring follow-on after the shipped durability and local-document slices. The remaining emphasis shifts from trust and persistence to making large live machines easier to package into reusable composites without losing drilldown or truthfulness. The contract is now drafted as the next bounded ergonomics pass.
 
 ## Practical Restart Guidance
 

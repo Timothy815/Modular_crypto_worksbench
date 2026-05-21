@@ -30,6 +30,12 @@ import {
 } from '../module-library';
 import { getPrimitiveMicroDemo } from '../primitive-micro-demos';
 import { PIPELINE_STARTERS } from '../pipeline-starters';
+import {
+  formatReusableInterfaceSummary,
+  formatReusablePortCounts,
+  formatReusableStructuralSummary,
+  getReusableOriginLabel,
+} from '../reusable-definition-summary';
 
 interface PrimitivePaletteProps {
   registry: ModuleRegistry;
@@ -469,6 +475,7 @@ export function PrimitivePalette({
               <ModuleLibraryCard
                 key={def.id}
                 def={def}
+                registry={registry}
                 viewMode={viewMode}
                 usageCount={compositeUsageCountById[def.id] ?? 0}
                 isBuiltInReusable={builtInReusableIds.includes(def.id)}
@@ -505,6 +512,7 @@ export function PrimitivePalette({
                   <ModuleLibraryCard
                     key={def.id}
                     def={def}
+                    registry={registry}
                     viewMode={viewMode}
                     usageCount={compositeUsageCountById[def.id] ?? 0}
                     isBuiltInReusable={false}
@@ -614,6 +622,7 @@ export function PrimitivePalette({
                     <ModuleLibraryCard
                       key={def.id}
                       def={def}
+                      registry={registry}
                       viewMode={viewMode}
                       usageCount={compositeUsageCountById[def.id] ?? 0}
                       isBuiltInReusable={builtInReusableIds.includes(def.id)}
@@ -651,6 +660,7 @@ export function PrimitivePalette({
 
 interface ModuleLibraryCardProps {
   def: ModuleRegistry[string];
+  registry: ModuleRegistry;
   viewMode: 'compact' | 'expanded';
   usageCount: number;
   isBuiltInReusable: boolean;
@@ -672,6 +682,7 @@ function getRoleClassName(def: ModuleRegistry[string]) {
 
 function ModuleLibraryCard({
   def,
+  registry,
   viewMode,
   usageCount,
   isBuiltInReusable,
@@ -699,6 +710,12 @@ function ModuleLibraryCard({
   const moduleTypicalPath = getModuleTypicalPath(def);
   const chainsBefore = getModuleChainsBefore(def);
   const chainsAfter = getModuleChainsAfter(def);
+  const reusableOriginLabel = isReusable
+    ? getReusableOriginLabel({ source: isBuiltInReusable ? 'built-in' : 'user' })
+    : null;
+  const reusableStructuralSummary = isReusable ? formatReusableStructuralSummary(def, registry) : '';
+  const reusablePortCounts = isReusable ? formatReusablePortCounts(def) : '';
+  const reusableInterfaceSummary = isReusable ? formatReusableInterfaceSummary(def) : '';
 
   const compatibleDropPort = pendingConnectionSourceType
     ? def.inputs.find((p) => p.type === pendingConnectionSourceType) ?? null
@@ -753,7 +770,8 @@ function ModuleLibraryCard({
             <span className={`primitive-role-chip ${getRoleClassName(def)}`}>{moduleRole}</span>
             {isReusable ? (
               <p className="primitive-reuse-summary">
-                {def.inputs.length} in / {def.outputs.length} out
+                {reusablePortCounts}
+                {reusableStructuralSummary ? ` · ${reusableStructuralSummary}` : ''}
                 {usageCount > 0 ? ` · In use ${usageCount} time${usageCount === 1 ? '' : 's'}` : ''}
               </p>
             ) : null}
@@ -889,7 +907,13 @@ function ModuleLibraryCard({
           ) : null}
           {isReusable ? (
             <span className={isComposite ? 'module-kind-badge' : 'module-kind-badge module-kind-badge-iterator'}>
-              {isBuiltInReusable ? 'Architecture' : isComposite ? 'Composite' : 'Iterator'}
+              {isBuiltInReusable
+                ? 'Architecture'
+                : isComposite
+                  ? 'Composite'
+                  : isClockedIterator
+                    ? 'Clocked Iterator'
+                    : 'Iterator'}
             </span>
           ) : null}
         </div>
@@ -982,19 +1006,19 @@ function ModuleLibraryCard({
           {isReusable ? (
             <p className="primitive-composite-note">
               {usageCount > 0
-                ? `In use ${usageCount} time${usageCount === 1 ? '' : 's'}`
-                : isComposite
-                  ? 'Reusable composite'
-                  : 'Reusable iterator chain'}
+                ? `${reusableOriginLabel} · In use ${usageCount} time${usageCount === 1 ? '' : 's'}`
+                : reusableOriginLabel}
             </p>
           ) : null}
           {isReusable ? (
             <p className="primitive-reuse-summary">
-              Inputs:{' '}
-              <strong>{def.inputs.map((port) => `${port.name}:${port.type}`).join(', ') || 'none'}</strong>
-              {' · '}
-              Outputs:{' '}
-              <strong>{def.outputs.map((port) => `${port.name}:${port.type}`).join(', ') || 'none'}</strong>
+              <strong>{reusablePortCounts}</strong>
+              {reusableStructuralSummary ? ` · ${reusableStructuralSummary}` : ''}
+            </p>
+          ) : null}
+          {isReusable ? (
+            <p className="primitive-reuse-summary">
+              <strong>{reusableInterfaceSummary}</strong>
             </p>
           ) : null}
         </div>

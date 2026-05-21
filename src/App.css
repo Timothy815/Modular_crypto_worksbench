@@ -6713,6 +6713,10 @@ body.canvas-resizing {
   color: var(--muted);
 }
 
+.dialog-inline-help {
+  margin-top: 12px;
+}
+
 .dialog-selected-ports {
   margin-top: 0;
 }

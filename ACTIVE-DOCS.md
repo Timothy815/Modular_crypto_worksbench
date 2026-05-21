@@ -1,6 +1,6 @@
 # MCW Active Docs
 
-Last updated: May 17, 2026
+Last updated: May 20, 2026
 
 This is the canonical starting point for humans and agents.
 
@@ -34,6 +34,7 @@ This is the canonical starting point for humans and agents.
 - `docs/live/contracts/2026-05/WORKSPACE-DURABILITY-SAFETY-V1.md` when reviewing the shipped bounded persistence-safety slice after the ECC consequence line — moving primary document storage off `localStorage`, adding autosave recovery, and reducing accidental local loss before any packaging-focused pass
 - `docs/live/contracts/2026-05/AUTHORING-DURABILITY-UX-V1.md` when planning the first authoring ergonomics follow-on after the shipped persistence-safety slice — making current save health, recovery recency, degraded mode, and export/back-up boundaries legible enough to trust during real work
 - `docs/live/contracts/2026-05/LOCAL-DOCUMENT-WORKFLOW-V1.md` when reviewing the shipped filesystem-backed document workflow slice after durability UX — separating open/save/save-as document flow from import/export artifact flow and making file-backed work feel like opening a named workspace document instead of importing an artifact
+- `docs/live/contracts/2026-05/COMPOSITE-AUTHORING-ERGONOMICS-V1.md` when planning the next packaging/authoring ergonomics slice after durability and local-document workflow — making reusable composite capture, palette summaries, and drill-in/out flows legible before deeper boundary-port authoring
 - `docs/live/contracts/2026-05/ECC-POINT-PYTHON-EXPORT-PARITY-V1.md` when closing the remaining Python export gap for the shipped ECC point family
 - `docs/live/contracts/2026-05/VISIBLE-DOUBLE-AND-ADD-V1.md` when reviewing the shipped ECC visibility slice after the scalar-multiplication/ECDH/Schnorr line — unpacking scalar multiplication into an explicit repeated-action machine
 - `docs/live/contracts/2026-05/TOY-CURVE-POINT-MAP-V1.md` when reviewing the shipped toy-curve ECC intuition slice after visible double-and-add — making one toy finite-field curve legible as a visible point set and repeated-action landscape

@@ -617,7 +617,7 @@ export function InspectorConfigureView({
           <button
             type="button"
             className="mini-action-button"
-            title="Open selected composite instance (Enter)"
+            title="Inspect this placed composite instance in context (Enter)"
             onClick={() => onOpenCompositeInstanceDrilldown(moduleInstance.id)}
           >
             Open Instance
@@ -627,7 +627,7 @@ export function InspectorConfigureView({
           <button
             type="button"
             className="primitive-add-button"
-            title="Unzip selected composite instance (Cmd/Ctrl+Shift+U)"
+            title="Replace this instance with its explicit internal modules (Cmd/Ctrl+Shift+U)"
             onClick={() => onUnzipComposite(moduleInstance.id)}
           >
             Unzip Composite
@@ -645,12 +645,20 @@ export function InspectorConfigureView({
           <button
             type="button"
             className="mini-action-button"
+            title="Edit the shared reusable definition used by every instance"
             onClick={() => onOpenCompositeDefinition(moduleDef.id)}
           >
             Edit Shared Definition
           </button>
         ) : null}
       </div>
+      {isCompositeDefinition(moduleDef) ? (
+        <p className="comparison-copy">
+          {isReadOnlyMode
+            ? 'You are viewing one placed instance. Edit Shared Definition changes the reusable used by every instance.'
+            : 'Open Instance inspects this placed machine in context. Unzip Composite restores its explicit internal modules here.'}
+        </p>
+      ) : null}
       {!isReadOnlyMode && onReplaceModule ? (
         <div className="content-selector-card">
           <div className="param-field">

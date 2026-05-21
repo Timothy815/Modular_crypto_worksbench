@@ -63,6 +63,7 @@ import {
   createClockedIteratorDefinition,
   isEligibleClockedIteratorBodyDefinition,
 } from './ui/clocked-iterator-authoring';
+import { previewClockedIteratorDefinition, previewIteratorDefinition } from './ui/iterator-preview';
 import {
   broadcastDetachedSnapshots,
   connectDetachedPanelChannel,
@@ -889,6 +890,20 @@ function MainApp() {
         portNameOverrides: effectivePortNameOverrides,
       }),
     [activeProjectState, effectiveRegistry, effectiveSelectedModuleIds, excludedCompositeBoundaryPortKeys, effectivePortNameOverrides],
+  );
+  const iteratorDefinitionPreview = useMemo(
+    () => previewIteratorDefinition(effectiveRegistry, iteratorRoundDefId, Number(iteratorIterationCount) || 0),
+    [effectiveRegistry, iteratorIterationCount, iteratorRoundDefId],
+  );
+  const clockedIteratorDefinitionPreview = useMemo(
+    () =>
+      previewClockedIteratorDefinition(
+        effectiveRegistry,
+        clockedIteratorRoundDefId,
+        Number(clockedIteratorRoundCount) || 0,
+        clockedIteratorEndPolicy,
+      ),
+    [clockedIteratorEndPolicy, clockedIteratorRoundCount, clockedIteratorRoundDefId, effectiveRegistry],
   );
 
   let execution: ExecutionResult | null = null;
@@ -6195,6 +6210,11 @@ function MainApp() {
                   </div>
                 </div>
               )}
+              <p className="comparison-copy dialog-inline-help">
+                MCW inferred this boundary from the current selection. You can refine which inferred
+                ports stay exposed and rename them before creation. The resulting reusable still
+                supports instance-open and unzip workflows later.
+              </p>
             </div>
 
             <label className="param-field">
@@ -6361,6 +6381,49 @@ function MainApp() {
                 />
               </label>
 
+              <div className="dialog-composite-preview">
+                <span className="meta-label">Boundary Preview</span>
+                <p className="dialog-composite-preview-copy">
+                  {iteratorDefinitionPreview.bodyName
+                    ? `${iteratorDefinitionPreview.structuralSummary}.`
+                    : 'Choose a repeated body to preview the iterator interface.'}
+                </p>
+                {iteratorDefinitionPreview.error ? (
+                  <p className="field-error">{iteratorDefinitionPreview.error}</p>
+                ) : null}
+                {iteratorDefinitionPreview.bodyName ? (
+                  <div className="selected-ports dialog-selected-ports">
+                    <div className="port-group">
+                      <span className="meta-label">Inputs</span>
+                      <ul className="port-list">
+                        {iteratorDefinitionPreview.inputs.map((port) => (
+                          <li key={`iterator-in-${port.name}`}>
+                            <span>{port.name}</span>
+                            <span className="port-type-badge">{port.type}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="port-group">
+                      <span className="meta-label">Outputs</span>
+                      <ul className="port-list">
+                        {iteratorDefinitionPreview.outputs.map((port) => (
+                          <li key={`iterator-out-${port.name}`}>
+                            <span>{port.name}</span>
+                            <span className="port-type-badge">{port.type}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                ) : null}
+                <p className="comparison-copy dialog-inline-help">
+                  This preview is read from the currently chosen body definition. V1 keeps iterator
+                  boundary shape inspectable before creation instead of making you create first and
+                  inspect later.
+                </p>
+              </div>
+
               {iteratorRoundDefId ? (
                 <p className="comparison-copy">
                   Body must expose exactly one input named <strong>in</strong> and one output named
@@ -6502,6 +6565,48 @@ function MainApp() {
                   <option value="wrap">Wrap — return to round 1 after the last</option>
                 </select>
               </label>
+
+              <div className="dialog-composite-preview">
+                <span className="meta-label">Boundary Preview</span>
+                <p className="dialog-composite-preview-copy">
+                  {clockedIteratorDefinitionPreview.bodyName
+                    ? `${clockedIteratorDefinitionPreview.structuralSummary}.`
+                    : 'Choose a round body to preview the clocked iterator interface.'}
+                </p>
+                {clockedIteratorDefinitionPreview.error ? (
+                  <p className="field-error">{clockedIteratorDefinitionPreview.error}</p>
+                ) : null}
+                {clockedIteratorDefinitionPreview.bodyName ? (
+                  <div className="selected-ports dialog-selected-ports">
+                    <div className="port-group">
+                      <span className="meta-label">Inputs</span>
+                      <ul className="port-list">
+                        {clockedIteratorDefinitionPreview.inputs.map((port) => (
+                          <li key={`clocked-iterator-in-${port.name}`}>
+                            <span>{port.name}</span>
+                            <span className="port-type-badge">{port.type}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="port-group">
+                      <span className="meta-label">Outputs</span>
+                      <ul className="port-list">
+                        {clockedIteratorDefinitionPreview.outputs.map((port) => (
+                          <li key={`clocked-iterator-out-${port.name}`}>
+                            <span>{port.name}</span>
+                            <span className="port-type-badge">{port.type}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                ) : null}
+                <p className="comparison-copy dialog-inline-help">
+                  This preview is read from the chosen round body and current policy. The extra
+                  <code>clock</code> input is always part of the clocked iterator boundary.
+                </p>
+              </div>
 
               {clockedIteratorRoundDefId ? (
                 <p className="comparison-copy">
