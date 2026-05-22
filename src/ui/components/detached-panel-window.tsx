@@ -710,6 +710,9 @@ function renderDetachedPane(
         }
         onEditClockedIterator={(defId) => sendCommand('palette', { type: 'editClockedIterator', defId })}
         onDuplicateReusable={(defId) => sendCommand('palette', { type: 'duplicateReusable', defId })}
+        onRenameReusable={(defId, nextName) =>
+          sendCommand('palette', { type: 'renameReusable', defId, nextName })
+        }
         onOpenPrimitiveMicroDemo={(defId) =>
           sendCommand('palette', { type: 'openPrimitiveMicroDemo', defId })
         }

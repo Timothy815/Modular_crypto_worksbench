@@ -47,6 +47,7 @@ interface PrimitivePaletteProps {
   onOpenComposite: (defId: string) => void;
   onEditClockedIterator: (defId: string) => void;
   onDuplicateReusable: (defId: string) => void;
+  onRenameReusable: (defId: string, nextName: string) => void;
   onOpenPrimitiveMicroDemo: (defId: string) => void;
   onExportCompositeLibrary: () => void;
   onRemoveComposite: (defId: string) => void;
@@ -180,6 +181,7 @@ export function PrimitivePalette({
   onOpenComposite,
   onEditClockedIterator,
   onDuplicateReusable,
+  onRenameReusable,
   onOpenPrimitiveMicroDemo,
   onExportCompositeLibrary,
   onRemoveComposite,
@@ -191,6 +193,7 @@ export function PrimitivePalette({
   onInsertChainForHoveredInput,
 }: PrimitivePaletteProps) {
   const [activeTab, setActiveTab] = useState<ModuleLibraryDomainTab>('all');
+  const [compositesView, setCompositesView] = useState<'all' | 'authored' | 'built-in'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -254,6 +257,22 @@ export function PrimitivePalette({
       }),
     [contextRank, sortOrderIndex, visibleDefs],
   );
+
+  const filteredCompositeDefs = useMemo(() => {
+    if (activeTab !== 'composites') {
+      return orderedVisibleDefs;
+    }
+
+    if (compositesView === 'authored') {
+      return orderedVisibleDefs.filter((def) => !builtInReusableIds.includes(def.id));
+    }
+
+    if (compositesView === 'built-in') {
+      return orderedVisibleDefs.filter((def) => builtInReusableIds.includes(def.id));
+    }
+
+    return orderedVisibleDefs;
+  }, [activeTab, builtInReusableIds, compositesView, orderedVisibleDefs]);
 
   const hoveredTargetChains = useMemo<CanonicalChainDefinition[]>(
     () =>
@@ -462,7 +481,29 @@ export function PrimitivePalette({
           </div>
         </div>
       ) : null}
-      {searchActive ? (
+          {activeTab === 'composites' ? (
+            <div className="palette-starters">
+              <p className="palette-starters-label">Reusable Library</p>
+              <div className="palette-starters-chips">
+                {(['all', 'authored', 'built-in'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    className={`palette-starter-chip${compositesView === mode ? ' palette-starter-chip-active' : ''}`}
+                    onClick={() => setCompositesView(mode)}
+                  >
+                    {mode === 'all' ? 'All Reusables' : mode === 'authored' ? 'Your Reusables' : 'Built-In'}
+                  </button>
+                ))}
+              </div>
+              <p className="primitive-section-copy">
+                Built-in architectures stay distinct from your reusables. Duplicate makes a new reusable
+                definition. Place adds an instance to the workspace. Rename changes one reusable name, not
+                one placed instance.
+              </p>
+            </div>
+          ) : null}
+          {searchActive ? (
         <div className="primitive-sections primitive-search-results" role="list" aria-label="Palette search results">
           <div className="primitive-search-summary">
             <p className="panel-label">Results</p>
@@ -471,7 +512,7 @@ export function PrimitivePalette({
             </p>
           </div>
           <ul className="primitive-list">
-            {rankedVisibleDefs.map((def) => (
+            {filteredCompositeDefs.map((def) => (
               <ModuleLibraryCard
                 key={def.id}
                 def={def}
@@ -481,9 +522,10 @@ export function PrimitivePalette({
                 isBuiltInReusable={builtInReusableIds.includes(def.id)}
                   onAddModule={onAddModule}
                   onStartCanvasDrag={onStartCanvasDrag}
-                  onOpenComposite={onOpenComposite}
-                  onEditClockedIterator={onEditClockedIterator}
+                onOpenComposite={onOpenComposite}
+                onEditClockedIterator={onEditClockedIterator}
                 onDuplicateReusable={onDuplicateReusable}
+                onRenameReusable={onRenameReusable}
                 onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                 onRemoveComposite={onRemoveComposite}
                 pendingConnectionSourceType={pendingConnectionSourceType}
@@ -518,9 +560,10 @@ export function PrimitivePalette({
                     isBuiltInReusable={false}
                 onAddModule={onAddModule}
                 onStartCanvasDrag={onStartCanvasDrag}
-                onOpenComposite={onOpenComposite}
+                    onOpenComposite={onOpenComposite}
                     onEditClockedIterator={onEditClockedIterator}
                     onDuplicateReusable={onDuplicateReusable}
+                    onRenameReusable={onRenameReusable}
                     onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                     onRemoveComposite={onRemoveComposite}
                     pendingConnectionSourceType={pendingConnectionSourceType}
@@ -539,73 +582,73 @@ export function PrimitivePalette({
               id: 'built-in-composites',
               title: 'Built-In Composites',
               description: 'Shipped composite architecture modules provided by the product.',
-              defs: orderedVisibleDefs.filter(
-                (def) => builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'composite',
-              ),
+                defs: filteredCompositeDefs.filter(
+                  (def) => builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'composite',
+                ),
             },
             {
               id: 'built-in-iterators',
               title: 'Built-In Iterators',
               description: 'Shipped bounded iterator architectures provided by the product.',
-              defs: orderedVisibleDefs.filter(
-                (def) => builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'iterator',
-              ),
+                defs: filteredCompositeDefs.filter(
+                  (def) => builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'iterator',
+                ),
             },
             {
               id: 'built-in-clocked-iterators',
               title: 'Built-In Clocked Iterators',
               description: 'Shipped pulse-driven bounded iterator architectures provided by the product.',
-              defs: orderedVisibleDefs.filter(
-                (def) => builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'clocked-iterator',
-              ),
+                defs: filteredCompositeDefs.filter(
+                  (def) => builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'clocked-iterator',
+                ),
             },
             {
               id: 'built-in-conditionals',
               title: 'Built-In Conditionals',
               description: 'Shipped conditional branching modules — one control bit selects which branch definition runs.',
-              defs: orderedVisibleDefs.filter(
-                (def) => builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'conditional',
-              ),
+                defs: filteredCompositeDefs.filter(
+                  (def) => builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'conditional',
+                ),
             },
             {
               id: 'user-conditionals',
               title: 'My Conditionals',
               description: 'Conditional modules you authored — one control bit selects which branch runs.',
-              defs: orderedVisibleDefs.filter(
-                (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'conditional',
-              ),
+                defs: filteredCompositeDefs.filter(
+                  (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'conditional',
+                ),
             },
             {
               id: 'user-multi-conditionals',
               title: 'My Multi-Conditionals',
               description: 'Multi-branch modules you authored — a multi-bit control word selects which branch runs.',
-              defs: orderedVisibleDefs.filter(
-                (def) => 'kind' in def && def.kind === 'multi-conditional',
-              ),
+                defs: filteredCompositeDefs.filter(
+                  (def) => 'kind' in def && def.kind === 'multi-conditional',
+                ),
             },
             {
               id: 'user-composites',
               title: 'My Composites',
               description: 'Editable composite modules you created yourself.',
-              defs: orderedVisibleDefs.filter(
-                (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'composite',
-              ),
+                defs: filteredCompositeDefs.filter(
+                  (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'composite',
+                ),
             },
             {
               id: 'user-iterators',
               title: 'My Iterators',
               description: 'Editable bounded iterator modules you created yourself.',
-              defs: orderedVisibleDefs.filter(
-                (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'iterator',
-              ),
+                defs: filteredCompositeDefs.filter(
+                  (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'iterator',
+                ),
             },
             {
               id: 'user-clocked-iterators',
               title: 'My Clocked Iterators',
               description: 'Pulse-driven bounded iterator modules you created yourself.',
-              defs: orderedVisibleDefs.filter(
-                (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'clocked-iterator',
-              ),
+                defs: filteredCompositeDefs.filter(
+                  (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'clocked-iterator',
+                ),
             },
           ]
             .filter((section) => section.defs.length > 0)
@@ -631,6 +674,7 @@ export function PrimitivePalette({
                       onOpenComposite={onOpenComposite}
                       onEditClockedIterator={onEditClockedIterator}
                       onDuplicateReusable={onDuplicateReusable}
+                      onRenameReusable={onRenameReusable}
                       onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                       onRemoveComposite={onRemoveComposite}
                       pendingConnectionSourceType={pendingConnectionSourceType}
@@ -643,7 +687,7 @@ export function PrimitivePalette({
             ))}
         </div>
       )}
-      {visibleDefs.length === 0 ? (
+      {(activeTab === 'composites' ? filteredCompositeDefs.length : visibleDefs.length) === 0 ? (
         <p className="empty-state">
           {searchActive
             ? activeTab === 'composites'
@@ -669,6 +713,7 @@ interface ModuleLibraryCardProps {
   onOpenComposite: (defId: string) => void;
   onEditClockedIterator: (defId: string) => void;
   onDuplicateReusable: (defId: string) => void;
+  onRenameReusable: (defId: string, nextName: string) => void;
   onOpenPrimitiveMicroDemo: (defId: string) => void;
   onRemoveComposite: (defId: string) => void;
   pendingConnectionSourceType?: string | null;
@@ -691,6 +736,7 @@ function ModuleLibraryCard({
   onOpenComposite,
   onEditClockedIterator,
   onDuplicateReusable,
+  onRenameReusable,
   onOpenPrimitiveMicroDemo,
   onRemoveComposite,
   pendingConnectionSourceType,
@@ -704,6 +750,8 @@ function ModuleLibraryCard({
   const isMultiConditional = 'kind' in def && def.kind === 'multi-conditional';
   const isReusable = isComposite || isIterator || isClockedIterator || isConditional || isMultiConditional;
   const [showHelp, setShowHelp] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameDraft, setRenameDraft] = useState(def.name);
   const primitiveMicroDemo = getPrimitiveMicroDemo(def.id);
   const moduleRole = getModuleRole(def);
   const moduleRoleDetail = getModuleRoleDetail(def);
@@ -716,6 +764,21 @@ function ModuleLibraryCard({
   const reusableStructuralSummary = isReusable ? formatReusableStructuralSummary(def, registry) : '';
   const reusablePortCounts = isReusable ? formatReusablePortCounts(def) : '';
   const reusableInterfaceSummary = isReusable ? formatReusableInterfaceSummary(def) : '';
+
+  useEffect(() => {
+    setRenameDraft(def.name);
+  }, [def.name]);
+
+  function submitRename() {
+    const normalized = renameDraft.trim();
+    if (!normalized || normalized === def.name) {
+      setIsRenaming(false);
+      setRenameDraft(def.name);
+      return;
+    }
+    onRenameReusable(def.id, normalized);
+    setIsRenaming(false);
+  }
 
   const compatibleDropPort = pendingConnectionSourceType
     ? def.inputs.find((p) => p.type === pendingConnectionSourceType) ?? null
@@ -796,6 +859,16 @@ function ModuleLibraryCard({
               >
                 ⧉
               </button>
+            ) : isReusable ? (
+              <button
+                type="button"
+                className="primitive-action-button"
+                onClick={() => onDuplicateReusable(def.id)}
+                title={`Duplicate ${def.name} as a new reusable definition`}
+                aria-label={`Duplicate ${def.name} as a new reusable definition`}
+              >
+                ⧉
+              </button>
             ) : null}
             {primitiveMicroDemo ? (
               <button
@@ -836,6 +909,17 @@ function ModuleLibraryCard({
                 aria-label={`Edit ${def.name}`}
               >
                 ✎
+              </button>
+            ) : null}
+            {isReusable && !isBuiltInReusable ? (
+              <button
+                type="button"
+                className="primitive-action-button"
+                onClick={() => setIsRenaming((current) => !current)}
+                title={`Rename ${def.name}`}
+                aria-label={`Rename ${def.name}`}
+              >
+                Aa
               </button>
             ) : null}
             {isReusable && !isBuiltInReusable ? (
@@ -1020,6 +1104,54 @@ function ModuleLibraryCard({
             <p className="primitive-reuse-summary">
               <strong>{reusableInterfaceSummary}</strong>
             </p>
+          ) : null}
+          {isReusable && !isBuiltInReusable && isRenaming ? (
+            <div className="primitive-help-card" data-no-palette-drag="true">
+              <p className="primitive-help-role">
+                <span className="meta-label">Rename Reusable</span> Display name only. Stable id stays{' '}
+                <strong>{def.id}</strong>.
+              </p>
+              <label className="workspace-version-item">
+                <div>
+                  <strong>Display Name</strong>
+                </div>
+                <input
+                  type="text"
+                  value={renameDraft}
+                  onChange={(event) => setRenameDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      submitRename();
+                    }
+                    if (event.key === 'Escape') {
+                      event.preventDefault();
+                      setIsRenaming(false);
+                      setRenameDraft(def.name);
+                    }
+                  }}
+                />
+              </label>
+              <div className="primitive-button-row">
+                <button
+                  type="button"
+                  className="primitive-action-button"
+                  onClick={submitRename}
+                >
+                  Save Name
+                </button>
+                <button
+                  type="button"
+                  className="primitive-action-button"
+                  onClick={() => {
+                    setIsRenaming(false);
+                    setRenameDraft(def.name);
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           ) : null}
         </div>
       </div>

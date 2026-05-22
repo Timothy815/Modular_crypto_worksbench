@@ -61,6 +61,7 @@ describe('PrimitivePalette reusable summaries', () => {
         onOpenComposite={() => undefined}
         onEditClockedIterator={() => undefined}
         onDuplicateReusable={() => undefined}
+        onRenameReusable={() => undefined}
         onOpenPrimitiveMicroDemo={() => undefined}
         onExportCompositeLibrary={() => undefined}
         onRemoveComposite={() => undefined}
@@ -74,5 +75,33 @@ describe('PrimitivePalette reusable summaries', () => {
     expect(markup).toContain('Your reusable');
     expect(markup).toContain('Built-in architecture');
     expect(markup).toContain('Inputs: in:bits · Outputs: out:bits');
+  });
+
+  it('renders authored-library guidance in the composites view', () => {
+    const markup = renderToStaticMarkup(
+      <PrimitivePalette
+        registry={registry}
+        viewMode="expanded"
+        onToggleViewMode={() => undefined}
+        onAddModule={() => undefined}
+        onInsertStarterChain={() => undefined}
+        onOpenComposite={() => undefined}
+        onEditClockedIterator={() => undefined}
+        onDuplicateReusable={() => undefined}
+        onRenameReusable={() => undefined}
+        onOpenPrimitiveMicroDemo={() => undefined}
+        onExportCompositeLibrary={() => undefined}
+        onRemoveComposite={() => undefined}
+        compositeUsageCountById={{ RoundPair: 1 }}
+        builtInReusableIds={['ByteRoundIterator']}
+      />,
+    );
+
+    expect(markup).toContain('Reusable Library');
+    expect(markup).toContain('All Reusables');
+    expect(markup).toContain('Your Reusables');
+    expect(markup).toContain('Built-In');
+    expect(markup).toContain('Duplicate makes a new reusable definition');
+    expect(markup).toContain('Rename changes one reusable name, not one placed instance');
   });
 });

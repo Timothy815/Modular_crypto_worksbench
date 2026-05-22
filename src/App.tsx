@@ -136,6 +136,10 @@ import {
   saveWorkspaceToLocalFileAs,
 } from './ui/workspace-local-document';
 import { prepareWorkbenchDocumentImport } from './ui/workspace-document-reusables';
+import {
+  createUserOwnedReusableDuplicate,
+  renameReusableDisplayName,
+} from './ui/reusable-library';
 import { getPrimitiveMicroDemo } from './ui/primitive-micro-demos';
 import { getPipelineMicroDemo } from './ui/pipeline-micro-demos';
 import { buildCompositeInstanceDrilldownContext } from './ui/composite-instance-drilldown';
@@ -3664,6 +3668,17 @@ function MainApp() {
           dispatch({ type: 'openCompositeEditor', entryId: nextEntry.id });
         }
       },
+      renameReusable: (defId: string, nextName: string) => {
+        const entry = state.compositeLibrary.find((candidate) => candidate.id === defId);
+        if (!entry || entry.source === 'built-in') {
+          return;
+        }
+        const nextEntry = renameReusableDisplayName(entry, nextName);
+        if (nextEntry === entry) {
+          return;
+        }
+        dispatch({ type: 'updateCompositeInLibrary', entry: nextEntry });
+      },
       insertStarterChain: (starterId: string) => {
         const starter = getStarterById(starterId);
         if (!starter) return;
@@ -5473,6 +5488,20 @@ function MainApp() {
                       entryId: nextEntry.id,
                     });
                   }
+                }}
+                onRenameReusable={(defId, nextName) => {
+                  const entry = state.compositeLibrary.find((candidate) => candidate.id === defId);
+                  if (!entry || entry.source === 'built-in') {
+                    return;
+                  }
+                  const nextEntry = renameReusableDisplayName(entry, nextName);
+                  if (nextEntry === entry) {
+                    return;
+                  }
+                  dispatch({
+                    type: 'updateCompositeInLibrary',
+                    entry: nextEntry,
+                  });
                 }}
                 onOpenPrimitiveMicroDemo={handleOpenPrimitiveMicroDemo}
                 onRemoveComposite={(defId) =>
@@ -7358,77 +7387,4 @@ function isCompositeBoundaryModule(entry: CompositeLibraryEntry, moduleId: strin
   );
 }
 
-function createUserOwnedReusableDuplicate(
-  entry: CompositeLibraryEntry,
-  library: CompositeLibraryEntry[],
-): CompositeLibraryEntry {
-  const nextId = createDuplicateReusableId(entry.id, new Set(library.map((candidate) => candidate.id)));
-  const nextName = createDuplicateReusableName(
-    entry.name,
-    new Set(library.map((candidate) => candidate.name)),
-  );
-
-  if (isCompositeDefinition(entry.definition)) {
-    return {
-      ...entry,
-      id: nextId,
-      name: nextName,
-      source: 'user',
-      definition: {
-        ...entry.definition,
-        id: nextId,
-        name: nextName,
-        project: cloneProject(entry.definition.project),
-        layout: entry.definition.layout
-          ? Object.fromEntries(
-              Object.entries(entry.definition.layout).map(([moduleId, position]) => [
-                moduleId,
-                { ...position },
-              ]),
-            )
-          : undefined,
-        inputBindings: entry.definition.inputBindings.map((binding) => ({ ...binding })),
-        outputBindings: entry.definition.outputBindings.map((binding) => ({ ...binding })),
-      },
-    };
-  }
-
-  return {
-    ...entry,
-    id: nextId,
-    name: nextName,
-    source: 'user',
-    definition: {
-      ...entry.definition,
-      id: nextId,
-      name: nextName,
-    },
-  };
-}
-
-function createDuplicateReusableId(sourceId: string, existingIds: Set<string>) {
-  const baseId = `${sourceId}Custom`;
-  let candidate = baseId;
-  let suffix = 2;
-
-  while (existingIds.has(candidate)) {
-    candidate = `${baseId}${suffix}`;
-    suffix += 1;
-  }
-
-  return candidate;
-}
-
-function createDuplicateReusableName(sourceName: string, existingNames: Set<string>) {
-  const baseName = `${sourceName} Custom`;
-  let candidate = baseName;
-  let suffix = 2;
-
-  while (existingNames.has(candidate)) {
-    candidate = `${baseName} ${suffix}`;
-    suffix += 1;
-  }
-
-  return candidate;
-}
 import { formatEcPointAsText } from './engine/modules/ec-point';

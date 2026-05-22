@@ -120,9 +120,9 @@ The current ranked ergonomics queue after the shipped ECC validation slice is:
 
 **Latest composite ergonomics work:** `COMPOSITE-AUTHORING-ERGONOMICS-V1` is now shipped on `main`. MCW now shows clearer iterator boundary previews before creation, stronger reusable-library summaries, and more legible drilldown action language around opening an instance, editing a shared definition, and unzipping a composite.
 
-**Latest workspace navigation work:** `WORKSPACE-NAVIGATION-AND-SCALE-V1` is now shipped locally. MCW now adds explicit `Frame Workspace` / `Frame Selection` actions, workspace-local named view regions, a one-step `Back To Previous View` return path for navigation jumps, and a compact live navigation summary inside the existing workspace context surface.
+**Latest workspace navigation work:** `WORKSPACE-NAVIGATION-AND-SCALE-V1` is now shipped on `main`. MCW now adds explicit `Frame Workspace` / `Frame Selection` actions, workspace-local named view regions, a one-step `Back To Previous View` return path for navigation jumps, and a compact live navigation summary inside the existing workspace context surface.
 
-**Next ergonomics work:** `PACKAGE-LIBRARY-AND-REUSE-V1` is now the leading follow-on after the shipped durability, local-document, self-contained-document, composite-packaging, and workspace-navigation slices. The remaining emphasis shifts from navigation/orientation toward organizing and reusing authored definitions more intentionally once large live machines are easier to traverse and revisit.
+**Next ergonomics work:** `PACKAGE-LIBRARY-AND-REUSE-V1` is now the leading follow-on after the shipped durability, local-document, self-contained-document, composite-packaging, and workspace-navigation slices. The remaining emphasis shifts from navigation/orientation toward organizing and reusing authored definitions more intentionally once large live machines are easier to traverse and revisit. The contract is now drafted as the next bounded ergonomics pass.
 
 ## Practical Restart Guidance
 

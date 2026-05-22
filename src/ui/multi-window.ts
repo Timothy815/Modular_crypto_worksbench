@@ -162,6 +162,7 @@ export type DetachedPanelCommand =
   | { type: 'openComposite'; defId: string }
   | { type: 'editClockedIterator'; defId: string }
   | { type: 'duplicateReusable'; defId: string }
+  | { type: 'renameReusable'; defId: string; nextName: string }
   | { type: 'openPrimitiveMicroDemo'; defId: string }
   | { type: 'openPipelineMicroDemo'; pipelineId: string }
   | { type: 'exportCompositeLibrary' }
