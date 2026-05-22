@@ -136,6 +136,7 @@ import {
   saveWorkspaceToLocalFileAs,
 } from './ui/workspace-local-document';
 import { prepareWorkbenchDocumentImport } from './ui/workspace-document-reusables';
+import { getReusableDependencyVisibility } from './ui/reusable-dependency-visibility';
 import {
   createPersonalReusablePromotionCopy,
   createWorkspaceScopedReusableEntry,
@@ -3698,10 +3699,22 @@ function MainApp() {
         }
 
         const promotion = createPersonalReusablePromotionCopy(entry, state.compositeLibrary);
+        const dependencyVisibility = getReusableDependencyVisibility(
+          entry,
+          state.compositeLibrary,
+          activeProjectDefinition.id,
+        );
+        const confirmationParts: string[] = [];
         if (promotion.hadConflict) {
-          const confirmed = window.confirm(
+          confirmationParts.push(
             `A personal-library reusable with id "${entry.id}" already exists. Promote this workspace reusable as "${promotion.entry.name}" (${promotion.entry.id}) instead?`,
           );
+        }
+        if (dependencyVisibility.promotionWarning) {
+          confirmationParts.push(dependencyVisibility.promotionWarning);
+        }
+        if (confirmationParts.length > 0) {
+          const confirmed = window.confirm(confirmationParts.join('\n\n'));
           if (!confirmed) {
             return;
           }
@@ -5553,10 +5566,22 @@ function MainApp() {
                     return;
                   }
                   const promotion = createPersonalReusablePromotionCopy(entry, state.compositeLibrary);
+                  const dependencyVisibility = getReusableDependencyVisibility(
+                    entry,
+                    state.compositeLibrary,
+                    activeProjectDefinition.id,
+                  );
+                  const confirmationParts: string[] = [];
                   if (promotion.hadConflict) {
-                    const confirmed = window.confirm(
+                    confirmationParts.push(
                       `A personal-library reusable with id "${entry.id}" already exists. Promote this workspace reusable as "${promotion.entry.name}" (${promotion.entry.id}) instead?`,
                     );
+                  }
+                  if (dependencyVisibility.promotionWarning) {
+                    confirmationParts.push(dependencyVisibility.promotionWarning);
+                  }
+                  if (confirmationParts.length > 0) {
+                    const confirmed = window.confirm(confirmationParts.join('\n\n'));
                     if (!confirmed) {
                       return;
                     }

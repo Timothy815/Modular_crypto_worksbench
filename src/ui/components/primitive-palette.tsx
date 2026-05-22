@@ -37,6 +37,7 @@ import {
   formatReusableStructuralSummary,
   getReusableOriginLabel,
 } from '../reusable-definition-summary';
+import { getReusableDependencyVisibility } from '../reusable-dependency-visibility';
 
 interface PrimitivePaletteProps {
   registry: ModuleRegistry;
@@ -442,9 +443,9 @@ export function PrimitivePalette({
                 ))}
               </div>
               <p className="primitive-section-copy">
-                New authored reusables belong to this workspace by default. Personal Library is for
-                explicit cross-workspace reuse. Workspace-local reusables still travel with the workspace
-                document. Place adds an instance to the workspace. Promote shares a copy beyond it.
+                Dependency scope shows what a reusable still relies on. Promote creates a personal-library
+                copy, not a fully independent package. Workspace-local dependencies remain local unless
+                explicitly promoted later.
               </p>
             </div>
           ) : null}
@@ -462,6 +463,7 @@ export function PrimitivePalette({
                 key={def.id}
                 def={def}
                 entry={reusableEntryById.get(def.id) ?? null}
+                compositeLibrary={compositeLibrary}
                 registry={registry}
                 activeWorkspaceId={activeWorkspaceId}
                 viewMode={viewMode}
@@ -503,6 +505,7 @@ export function PrimitivePalette({
                     key={def.id}
                     def={def}
                     entry={reusableEntryById.get(def.id) ?? null}
+                    compositeLibrary={compositeLibrary}
                     registry={registry}
                     activeWorkspaceId={activeWorkspaceId}
                     viewMode={viewMode}
@@ -697,6 +700,7 @@ export function PrimitivePalette({
                       key={def.id}
                       def={def}
                       entry={reusableEntryById.get(def.id) ?? null}
+                      compositeLibrary={compositeLibrary}
                       registry={registry}
                       activeWorkspaceId={activeWorkspaceId}
                       viewMode={viewMode}
@@ -739,6 +743,7 @@ export function PrimitivePalette({
 interface ModuleLibraryCardProps {
   def: ModuleRegistry[string];
   entry: CompositeLibraryEntry | null;
+  compositeLibrary: CompositeLibraryEntry[];
   registry: ModuleRegistry;
   activeWorkspaceId: string;
   viewMode: 'compact' | 'expanded';
@@ -765,6 +770,7 @@ function getRoleClassName(def: ModuleRegistry[string]) {
 function ModuleLibraryCard({
   def,
   entry,
+  compositeLibrary,
   registry,
   activeWorkspaceId,
   viewMode,
@@ -809,6 +815,10 @@ function ModuleLibraryCard({
   const reusableStructuralSummary = isReusable ? formatReusableStructuralSummary(def, registry) : '';
   const reusablePortCounts = isReusable ? formatReusablePortCounts(def) : '';
   const reusableInterfaceSummary = isReusable ? formatReusableInterfaceSummary(def) : '';
+  const reusableDependencyVisibility =
+    isReusable && entry
+      ? getReusableDependencyVisibility(entry, compositeLibrary, activeWorkspaceId)
+      : null;
 
   useEffect(() => {
     setRenameDraft(def.name);
@@ -882,6 +892,9 @@ function ModuleLibraryCard({
                 {reusableStructuralSummary ? ` · ${reusableStructuralSummary}` : ''}
                 {usageCount > 0 ? ` · In use ${usageCount} time${usageCount === 1 ? '' : 's'}` : ''}
               </p>
+            ) : null}
+            {isReusable && reusableDependencyVisibility ? (
+              <p className="primitive-reuse-summary">{reusableDependencyVisibility.summary}</p>
             ) : null}
           </div>
           <div className="primitive-compact-actions">
@@ -1171,6 +1184,31 @@ function ModuleLibraryCard({
             <p className="primitive-reuse-summary">
               <strong>{reusableInterfaceSummary}</strong>
             </p>
+          ) : null}
+          {isReusable && reusableDependencyVisibility ? (
+            <p className="primitive-reuse-summary">
+              <strong>{reusableDependencyVisibility.summary}</strong>
+            </p>
+          ) : null}
+          {isReusable && reusableDependencyVisibility && reusableDependencyVisibility.immediateDependencies.length > 0 ? (
+            <div className="primitive-help-card" data-no-palette-drag="true">
+              <p className="primitive-help-role">
+                <span className="meta-label">Immediate Dependencies</span> Immediate reusable names and scopes only.
+              </p>
+              <ul className="primitive-list">
+                {reusableDependencyVisibility.immediateDependencies.map((dependency) => (
+                  <li key={`${def.id}-${dependency.id}`} className="primitive-card primitive-compact-row">
+                    <div className="primitive-compact-main">
+                      <div className="primitive-compact-meta">
+                        <strong className="primitive-title">{dependency.name}</strong>
+                        <span className="primitive-def-id">{dependency.id}</span>
+                        <p className="primitive-reuse-summary">{dependency.scopeLabel}</p>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ) : null}
           {isReusable && !isBuiltInReusable && isRenaming ? (
             <div className="primitive-help-card" data-no-palette-drag="true">

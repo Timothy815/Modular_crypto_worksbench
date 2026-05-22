@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: May 17, 2026
+Last updated: May 22, 2026
 
 ---
 
@@ -110,10 +110,6 @@ The motivation is straightforward: local browser persistence is now a real proje
 
 **Latest ECC validation-consequence work:** `ECC-PUBLIC-KEY-VALIDATION-CONSEQUENCE-V1` is now shipped on `feature/aes-column-perturbation`. MCW now has one bounded peer-acceptance board where a low-order point on the same toy curve still passes `PointOnCurve`, visibly fails the intended subgroup check, and still collapses the shared-secret space if a broken acceptance path feeds it into ECDH anyway.
 
-The current ranked ergonomics queue after the shipped ECC validation slice is:
-
-1. `WORKSPACE-SCOPED-REUSABLES-V1`
-
 **Latest durability ergonomics work:** `AUTHORING-DURABILITY-UX-V1` is now shipped on `feature/aes-column-perturbation`. MCW now exposes current save health, latest durable-save recency, export reminder state, degraded-mode honesty, and an on-demand snapshots view inside the existing workspace/project context surface instead of forcing recovery metadata to occupy large permanent screen space.
 
 **Latest document-workflow work:** `LOCAL-DOCUMENT-WORKFLOW-V1` is now shipped on `feature/aes-column-perturbation`. MCW now separates `Open Workspace...`, `Save`, and `Save As...` from import/export artifact flow, remembers file bindings through the durable local store, shows whether a workspace is file-bound or browser-local, and keeps import explicitly distinct from open so reopening a local file feels like reopening a named document rather than importing into an anonymous workspace.
@@ -124,7 +120,9 @@ The current ranked ergonomics queue after the shipped ECC validation slice is:
 
 **Latest reusable-library ergonomics work:** `PACKAGE-LIBRARY-AND-REUSE-V1` is now shipped on `main`. MCW now separates built-in and authored reusables more clearly at browse time, exposes stronger authored-entry recognition details, supports bounded display-name rename and duplicate-as-new-reusable flows, and keeps placement distinct from revision actions inside the existing library surface.
 
-**Next ergonomics work:** `WORKSPACE-SCOPED-REUSABLES-V1` is now the leading follow-on after the shipped durability, local-document, self-contained-document, composite-packaging, workspace-navigation, and reusable-library slices. The remaining emphasis shifts from generic authored-library legibility toward a better ownership model: workspace-local reusables by default, explicit promotion into a personal shared library, and less cross-project clutter without regressing self-contained workspace portability.
+**Latest reusable-ownership work:** `WORKSPACE-SCOPED-REUSABLES-V1` is now shipped on `main`. MCW now stores new authored reusables as workspace-local by default, keeps personal-library promotion explicit and copy-based, separates built-in/workspace/personal authored browse groups, and preserves self-contained workspace-document portability without forcing a flat global authored shelf.
+
+**Latest reusable-dependency trust work:** `REUSABLE-DEPENDENCY-AND-PROMOTION-VISIBILITY-V1` is now shipped on `main`. MCW now shows immediate reusable dependency scope in the library surface, exposes which dependencies are built-in / workspace-local / personal-library, and warns during promotion when a personal-library copy still relies on workspace-local internals that are not being promoted with it.
 
 ## Practical Restart Guidance
 

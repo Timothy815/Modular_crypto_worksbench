@@ -82,7 +82,7 @@ export function prepareWorkbenchDocumentImport(
     }
 
     const dependencyMap = new Map<string, string>();
-    for (const dependencyId of getReusableDependencyIds(originalEntry.definition, embeddedById)) {
+    for (const dependencyId of getImmediateReusableDependencyIds(originalEntry.definition, embeddedById)) {
       dependencyMap.set(dependencyId, materializeEntry(dependencyId));
     }
 
@@ -157,13 +157,13 @@ function collectReusableDependencies(
   }
 
   visited.add(defId);
-  for (const dependencyId of getReusableDependencyIds(entry.definition, reusableById)) {
+  for (const dependencyId of getImmediateReusableDependencyIds(entry.definition, reusableById)) {
     collectReusableDependencies(dependencyId, reusableById, visited, orderedIds);
   }
   orderedIds.push(defId);
 }
 
-function getReusableDependencyIds(
+export function getImmediateReusableDependencyIds(
   definition:
     | CompositeDef
     | IteratorDef

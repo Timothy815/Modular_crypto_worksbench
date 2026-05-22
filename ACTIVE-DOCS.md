@@ -1,6 +1,6 @@
 # MCW Active Docs
 
-Last updated: May 20, 2026
+Last updated: May 22, 2026
 
 This is the canonical starting point for humans and agents.
 
@@ -37,7 +37,8 @@ This is the canonical starting point for humans and agents.
 - `docs/live/contracts/2026-05/COMPOSITE-AUTHORING-ERGONOMICS-V1.md` when reviewing the shipped packaging/authoring ergonomics slice after durability and local-document workflow — making reusable composite capture, palette summaries, and drill-in/out flows legible before deeper boundary-port authoring
 - `docs/live/contracts/2026-05/WORKSPACE-NAVIGATION-AND-SCALE-V1.md` when reviewing the shipped workspace-scale ergonomics slice after composite authoring improvements — adding framing, named workspace regions, and bounded return-to-previous-view support without inventing a second workspace representation
 - `docs/live/contracts/2026-05/PACKAGE-LIBRARY-AND-REUSE-V1.md` when reviewing the shipped reusable-library ergonomics slice after workspace navigation improvements — making authored definitions easier to find, rename, duplicate, and place without turning MCW into a package manager
-- `docs/live/contracts/2026-05/WORKSPACE-SCOPED-REUSABLES-V1.md` when planning the next authored-reuse storage-model slice after package-library ergonomics — making new reusables workspace-local by default and promotion into a personal shared library explicit
+- `docs/live/contracts/2026-05/WORKSPACE-SCOPED-REUSABLES-V1.md` when reviewing the shipped authored-reuse storage-model slice after package-library ergonomics — making new reusables workspace-local by default and promotion into a personal shared library explicit
+- `docs/live/contracts/2026-05/REUSABLE-DEPENDENCY-AND-PROMOTION-VISIBILITY-V1.md` when reviewing the shipped authored-reuse trust slice after workspace-scoped reusables — making immediate dependency scope and promotion consequence visible before authors treat promoted reusables as broadly reusable
 - `docs/live/contracts/2026-05/ECC-POINT-PYTHON-EXPORT-PARITY-V1.md` when closing the remaining Python export gap for the shipped ECC point family
 - `docs/live/contracts/2026-05/VISIBLE-DOUBLE-AND-ADD-V1.md` when reviewing the shipped ECC visibility slice after the scalar-multiplication/ECDH/Schnorr line — unpacking scalar multiplication into an explicit repeated-action machine
 - `docs/live/contracts/2026-05/TOY-CURVE-POINT-MAP-V1.md` when reviewing the shipped toy-curve ECC intuition slice after visible double-and-add — making one toy finite-field curve legible as a visible point set and repeated-action landscape
