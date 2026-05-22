@@ -33,13 +33,15 @@ function createCompositeEntry(
     outputBindings: [],
   };
 
-  return {
-    id,
-    name,
-    version: 1,
-    source: 'user',
-    definition,
-  };
+    return {
+      id,
+      name,
+      version: 1,
+      source: 'user',
+      scope: 'workspace',
+      workspaceId: 'source-workspace',
+      definition,
+    };
 }
 
 describe('workspace document reusables', () => {
@@ -74,12 +76,14 @@ describe('workspace document reusables', () => {
       },
     };
 
-    const prepared = prepareWorkbenchDocumentImport(document, []);
+    const prepared = prepareWorkbenchDocumentImport(document, [], 'target-workspace');
 
     expect(prepared.document.project.modules[0]?.defId).toBe('RoundPair');
     expect(prepared.reusableEntriesToAdd.map((entry: CompositeLibraryEntry) => entry.id)).toEqual([
       'RoundPair',
     ]);
+    expect(prepared.reusableEntriesToAdd[0]?.scope).toBe('workspace');
+    expect(prepared.reusableEntriesToAdd[0]?.workspaceId).toBe('target-workspace');
   });
 
   it('renames conflicting embedded reusables and rewrites the project to match', () => {
@@ -103,7 +107,7 @@ describe('workspace document reusables', () => {
       },
     };
 
-    const prepared = prepareWorkbenchDocumentImport(document, [existingEntry]);
+    const prepared = prepareWorkbenchDocumentImport(document, [existingEntry], 'target-workspace');
 
     expect(prepared.document.project.modules[0]?.defId).toBe('RoundPair-imported');
     expect(prepared.reusableEntriesToAdd.map((entry: CompositeLibraryEntry) => entry.id)).toEqual([
@@ -117,5 +121,10 @@ describe('workspace document reusables', () => {
       throw new Error('Expected imported parent composite definition.');
     }
     expect(importedParentDefinition.project.modules[0]?.defId).toBe('RoundBody');
+    expect(
+      prepared.reusableEntriesToAdd.every(
+        (entry) => entry.scope === 'workspace' && entry.workspaceId === 'target-workspace',
+      ),
+    ).toBe(true);
   });
 });

@@ -137,6 +137,8 @@ import {
 } from './ui/workspace-local-document';
 import { prepareWorkbenchDocumentImport } from './ui/workspace-document-reusables';
 import {
+  createPersonalReusablePromotionCopy,
+  createWorkspaceScopedReusableEntry,
   createUserOwnedReusableDuplicate,
   renameReusableDisplayName,
 } from './ui/reusable-library';
@@ -1841,12 +1843,13 @@ function MainApp() {
   const detachedPaletteSnapshot = useMemo<DetachedPaletteSnapshot>(
     () => ({
       theme,
+      activeWorkspaceId: activeProjectDefinition.id,
       paletteViewMode,
       compositeLibrary: state.compositeLibrary,
       compositeUsageCountById,
       builtInReusableIds,
     }),
-    [builtInReusableIds, compositeUsageCountById, paletteViewMode, state.compositeLibrary, theme],
+    [activeProjectDefinition.id, builtInReusableIds, compositeUsageCountById, paletteViewMode, state.compositeLibrary, theme],
   );
   const detachedInspectorSnapshot = useMemo<DetachedInspectorSnapshot>(
     () => ({
@@ -2309,14 +2312,6 @@ function MainApp() {
       return;
     }
 
-    const preparedImport = prepareWorkbenchDocumentImport(
-      result.document,
-      state.compositeLibrary,
-    );
-    for (const entry of preparedImport.reusableEntriesToAdd) {
-      dispatch({ type: 'addCompositeToLibrary', entry });
-    }
-
     const baseName = result.fileName.replace(/\.mcw\.json$/i, '').replace(/\.json$/i, '');
     const workspaceName = createWorkspaceNameFromBase(
       baseName || 'Opened Workspace',
@@ -2326,6 +2321,14 @@ function MainApp() {
       workspaceName,
       new Set(availableProjects.map((project) => project.id)),
     );
+    const preparedImport = prepareWorkbenchDocumentImport(
+      result.document,
+      state.compositeLibrary,
+      workspaceId,
+    );
+    for (const entry of preparedImport.reusableEntriesToAdd) {
+      dispatch({ type: 'addCompositeToLibrary', entry });
+    }
     dispatch({
       type: 'upsertWorkspaceDocument',
       workspaceId,
@@ -3256,7 +3259,7 @@ function MainApp() {
 
     dispatch({
       type: 'addCompositeToLibrary',
-      entry: result.entry,
+      entry: createWorkspaceScopedReusableEntry(result.entry, activeProjectDefinition.id),
     });
 
     if (replaceSelectionAfterCreate && !state.compositeEditor) {
@@ -3662,7 +3665,11 @@ function MainApp() {
         if (!entry) {
           return;
         }
-        const nextEntry = createUserOwnedReusableDuplicate(entry, state.compositeLibrary);
+        const nextEntry = createUserOwnedReusableDuplicate(
+          entry,
+          state.compositeLibrary,
+          activeProjectDefinition.id,
+        );
         dispatch({ type: 'addCompositeToLibrary', entry: nextEntry });
         if (isCompositeDefinition(nextEntry.definition)) {
           dispatch({ type: 'openCompositeEditor', entryId: nextEntry.id });
@@ -3678,6 +3685,29 @@ function MainApp() {
           return;
         }
         dispatch({ type: 'updateCompositeInLibrary', entry: nextEntry });
+      },
+      promoteReusable: (defId: string) => {
+        const entry = state.compositeLibrary.find((candidate) => candidate.id === defId);
+        if (
+          !entry ||
+          entry.source === 'built-in' ||
+          entry.scope !== 'workspace' ||
+          entry.workspaceId !== activeProjectDefinition.id
+        ) {
+          return;
+        }
+
+        const promotion = createPersonalReusablePromotionCopy(entry, state.compositeLibrary);
+        if (promotion.hadConflict) {
+          const confirmed = window.confirm(
+            `A personal-library reusable with id "${entry.id}" already exists. Promote this workspace reusable as "${promotion.entry.name}" (${promotion.entry.id}) instead?`,
+          );
+          if (!confirmed) {
+            return;
+          }
+        }
+
+        dispatch({ type: 'addCompositeToLibrary', entry: promotion.entry });
       },
       insertStarterChain: (starterId: string) => {
         const starter = getStarterById(starterId);
@@ -3701,7 +3731,9 @@ function MainApp() {
       exportCompositeLibrary: () =>
         downloadCompositeLibraryDocument({
           version: 1,
-          entries: state.compositeLibrary,
+          entries: state.compositeLibrary.filter(
+            (entry) => entry.source !== 'built-in' && (entry.scope ?? 'personal') === 'personal',
+          ),
         }),
       removeComposite: (defId: string) =>
         dispatch({
@@ -5051,6 +5083,7 @@ function MainApp() {
                 const preparedImport = prepareWorkbenchDocumentImport(
                   artifact.document,
                   state.compositeLibrary,
+                  activeProjectDefinition.id,
                 );
                 for (const entry of preparedImport.reusableEntriesToAdd) {
                   dispatch({ type: 'addCompositeToLibrary', entry });
@@ -5391,6 +5424,8 @@ function MainApp() {
             <Suspense fallback={<LazyPanelFallback label="Tools" title="Loading palette…" />}>
               <PrimitivePalette
                 registry={effectiveRegistry}
+                activeWorkspaceId={activeProjectDefinition.id}
+                compositeLibrary={state.compositeLibrary}
                 viewMode={paletteViewMode}
                 onToggleViewMode={() =>
                   setPaletteViewMode((currentMode) =>
@@ -5444,7 +5479,10 @@ function MainApp() {
                 onExportCompositeLibrary={() =>
                   downloadCompositeLibraryDocument({
                     version: 1,
-                    entries: state.compositeLibrary,
+                    entries: state.compositeLibrary.filter(
+                      (entry) =>
+                        entry.source !== 'built-in' && (entry.scope ?? 'personal') === 'personal',
+                    ),
                   })
                 }
                 onOpenComposite={(defId) => {
@@ -5475,6 +5513,7 @@ function MainApp() {
                   const nextEntry = createUserOwnedReusableDuplicate(
                     entry,
                     state.compositeLibrary,
+                    activeProjectDefinition.id,
                   );
 
                   dispatch({
@@ -5501,6 +5540,30 @@ function MainApp() {
                   dispatch({
                     type: 'updateCompositeInLibrary',
                     entry: nextEntry,
+                  });
+                }}
+                onPromoteReusable={(defId) => {
+                  const entry = state.compositeLibrary.find((candidate) => candidate.id === defId);
+                  if (
+                    !entry ||
+                    entry.source === 'built-in' ||
+                    entry.scope !== 'workspace' ||
+                    entry.workspaceId !== activeProjectDefinition.id
+                  ) {
+                    return;
+                  }
+                  const promotion = createPersonalReusablePromotionCopy(entry, state.compositeLibrary);
+                  if (promotion.hadConflict) {
+                    const confirmed = window.confirm(
+                      `A personal-library reusable with id "${entry.id}" already exists. Promote this workspace reusable as "${promotion.entry.name}" (${promotion.entry.id}) instead?`,
+                    );
+                    if (!confirmed) {
+                      return;
+                    }
+                  }
+                  dispatch({
+                    type: 'addCompositeToLibrary',
+                    entry: promotion.entry,
                   });
                 }}
                 onOpenPrimitiveMicroDemo={handleOpenPrimitiveMicroDemo}
@@ -6383,7 +6446,10 @@ function MainApp() {
             return;
           }
 
-          dispatch({ type: 'addCompositeToLibrary', entry: result.entry });
+          dispatch({
+            type: 'addCompositeToLibrary',
+            entry: createWorkspaceScopedReusableEntry(result.entry, activeProjectDefinition.id),
+          });
           closeIteratorDialog();
         };
         return (
@@ -6550,9 +6616,25 @@ function MainApp() {
           }
 
           if (clockedIteratorEditingId) {
-            dispatch({ type: 'updateCompositeInLibrary', entry: result.entry });
+            const existingEntry = state.compositeLibrary.find((entry) => entry.id === clockedIteratorEditingId);
+            dispatch({
+              type: 'updateCompositeInLibrary',
+              entry: existingEntry
+                ? {
+                    ...existingEntry,
+                    id: result.entry.id,
+                    name: result.entry.name,
+                    version: result.entry.version,
+                    source: result.entry.source,
+                    definition: result.entry.definition,
+                  }
+                : createWorkspaceScopedReusableEntry(result.entry, activeProjectDefinition.id),
+            });
           } else {
-            dispatch({ type: 'addCompositeToLibrary', entry: result.entry });
+            dispatch({
+              type: 'addCompositeToLibrary',
+              entry: createWorkspaceScopedReusableEntry(result.entry, activeProjectDefinition.id),
+            });
           }
           closeClockedIteratorDialog();
         };
@@ -6746,7 +6828,10 @@ function MainApp() {
             thenDefId: conditionalThenDefId,
             elseDefId: conditionalElseDefId,
           };
-          const entry: CompositeLibraryEntry = { id, name, version: 1, source: 'user', definition: conditionalDef };
+          const entry: CompositeLibraryEntry = createWorkspaceScopedReusableEntry(
+            { id, name, version: 1, source: 'user', definition: conditionalDef },
+            activeProjectDefinition.id,
+          );
           dispatch({ type: 'addCompositeToLibrary', entry });
           closeConditionalDialog();
         };
@@ -6883,7 +6968,10 @@ function MainApp() {
             paramSchema: {},
             branchDefIds: activeBranchDefIds,
           };
-          const entry: CompositeLibraryEntry = { id, name, version: 1, source: 'user', definition: multiConditionalDef };
+          const entry: CompositeLibraryEntry = createWorkspaceScopedReusableEntry(
+            { id, name, version: 1, source: 'user', definition: multiConditionalDef },
+            activeProjectDefinition.id,
+          );
           dispatch({ type: 'addCompositeToLibrary', entry });
           closeDialog();
         };

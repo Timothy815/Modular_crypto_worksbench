@@ -37,6 +37,7 @@ export const DETACHED_PANEL_WINDOW_QUERY_KEY = 'panelWindowId';
 
 export interface DetachedPaletteSnapshot {
   theme: ThemeMode;
+  activeWorkspaceId: string;
   paletteViewMode: 'compact' | 'expanded';
   compositeLibrary: CompositeLibraryEntry[];
   compositeUsageCountById: Record<string, number>;
@@ -163,6 +164,7 @@ export type DetachedPanelCommand =
   | { type: 'editClockedIterator'; defId: string }
   | { type: 'duplicateReusable'; defId: string }
   | { type: 'renameReusable'; defId: string; nextName: string }
+  | { type: 'promoteReusable'; defId: string }
   | { type: 'openPrimitiveMicroDemo'; defId: string }
   | { type: 'openPipelineMicroDemo'; pipelineId: string }
   | { type: 'exportCompositeLibrary' }

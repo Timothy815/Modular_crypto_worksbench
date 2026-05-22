@@ -82,11 +82,20 @@ describe('reusable definition summaries', () => {
     expect(formatReusableStructuralSummary(clockedIteratorDef, registry)).toBe('4-step halt body: Byte Round');
   });
 
-  it('distinguishes built-in and user-authored reusable origins', () => {
-    const builtInEntry: Pick<CompositeLibraryEntry, 'source'> = { source: 'built-in' };
-    const userEntry: Pick<CompositeLibraryEntry, 'source'> = { source: 'user' };
+  it('distinguishes built-in, workspace, and personal reusable origins', () => {
+    const builtInEntry: Pick<CompositeLibraryEntry, 'source' | 'scope' | 'workspaceId'> = { source: 'built-in' };
+    const workspaceEntry: Pick<CompositeLibraryEntry, 'source' | 'scope' | 'workspaceId'> = {
+      source: 'user',
+      scope: 'workspace',
+      workspaceId: 'workspace-a',
+    };
+    const personalEntry: Pick<CompositeLibraryEntry, 'source' | 'scope' | 'workspaceId'> = {
+      source: 'user',
+      scope: 'personal',
+    };
 
     expect(getReusableOriginLabel(builtInEntry)).toBe('Built-in architecture');
-    expect(getReusableOriginLabel(userEntry)).toBe('Your reusable');
+    expect(getReusableOriginLabel(workspaceEntry, 'workspace-a')).toBe('This workspace');
+    expect(getReusableOriginLabel(personalEntry, 'workspace-a')).toBe('Personal library');
   });
 });

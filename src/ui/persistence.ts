@@ -146,10 +146,13 @@ function cloneSavedAnalysisCase(savedCase: SavedAnalysisCase): SavedAnalysisCase
 function cloneReusableEntry(entry: CompositeLibraryEntry): CompositeLibraryEntry {
   const starterEntry = STARTER_COMPOSITE_LIBRARY.find((candidate) => candidate.id === entry.id);
   const source = entry.source ?? starterEntry?.source ?? 'user';
+  const scope = source === 'built-in' ? undefined : entry.scope ?? 'personal';
   if (isCompositeDefinition(entry.definition)) {
     return {
       ...entry,
       source,
+      ...(scope ? { scope } : {}),
+      ...(scope === 'workspace' && entry.workspaceId ? { workspaceId: entry.workspaceId } : { workspaceId: undefined }),
       definition: {
         ...entry.definition,
         project: cloneProject(entry.definition.project),
@@ -170,6 +173,8 @@ function cloneReusableEntry(entry: CompositeLibraryEntry): CompositeLibraryEntry
   return {
     ...entry,
     source,
+    ...(scope ? { scope } : {}),
+    ...(scope === 'workspace' && entry.workspaceId ? { workspaceId: entry.workspaceId } : { workspaceId: undefined }),
     definition: { ...entry.definition },
   };
 }
@@ -1455,6 +1460,10 @@ function isCompositeLibraryEntry(value: unknown): value is CompositeLibraryEntry
     (candidate.source === undefined ||
       candidate.source === 'built-in' ||
       candidate.source === 'user') &&
+    (candidate.scope === undefined ||
+      candidate.scope === 'workspace' ||
+      candidate.scope === 'personal') &&
+    (candidate.workspaceId === undefined || typeof candidate.workspaceId === 'string') &&
     (isCompositeDef(candidate.definition) || isIteratorDef(candidate.definition) || isClockedIteratorDef(candidate.definition) || isConditionalDef(candidate.definition) || isMultiConditionalDef(candidate.definition))
   );
 }

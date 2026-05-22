@@ -112,7 +112,7 @@ The motivation is straightforward: local browser persistence is now a real proje
 
 The current ranked ergonomics queue after the shipped ECC validation slice is:
 
-1. `PACKAGE-LIBRARY-AND-REUSE-V1`
+1. `WORKSPACE-SCOPED-REUSABLES-V1`
 
 **Latest durability ergonomics work:** `AUTHORING-DURABILITY-UX-V1` is now shipped on `feature/aes-column-perturbation`. MCW now exposes current save health, latest durable-save recency, export reminder state, degraded-mode honesty, and an on-demand snapshots view inside the existing workspace/project context surface instead of forcing recovery metadata to occupy large permanent screen space.
 
@@ -122,7 +122,9 @@ The current ranked ergonomics queue after the shipped ECC validation slice is:
 
 **Latest workspace navigation work:** `WORKSPACE-NAVIGATION-AND-SCALE-V1` is now shipped on `main`. MCW now adds explicit `Frame Workspace` / `Frame Selection` actions, workspace-local named view regions, a one-step `Back To Previous View` return path for navigation jumps, and a compact live navigation summary inside the existing workspace context surface.
 
-**Next ergonomics work:** `PACKAGE-LIBRARY-AND-REUSE-V1` is now the leading follow-on after the shipped durability, local-document, self-contained-document, composite-packaging, and workspace-navigation slices. The remaining emphasis shifts from navigation/orientation toward organizing and reusing authored definitions more intentionally once large live machines are easier to traverse and revisit. The contract is now drafted as the next bounded ergonomics pass.
+**Latest reusable-library ergonomics work:** `PACKAGE-LIBRARY-AND-REUSE-V1` is now shipped on `main`. MCW now separates built-in and authored reusables more clearly at browse time, exposes stronger authored-entry recognition details, supports bounded display-name rename and duplicate-as-new-reusable flows, and keeps placement distinct from revision actions inside the existing library surface.
+
+**Next ergonomics work:** `WORKSPACE-SCOPED-REUSABLES-V1` is now the leading follow-on after the shipped durability, local-document, self-contained-document, composite-packaging, workspace-navigation, and reusable-library slices. The remaining emphasis shifts from generic authored-library legibility toward a better ownership model: workspace-local reusables by default, explicit promotion into a personal shared library, and less cross-project clutter without regressing self-contained workspace portability.
 
 ## Practical Restart Guidance
 

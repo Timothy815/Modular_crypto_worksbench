@@ -52,6 +52,7 @@ export function buildEmbeddedCompositeLibraryForProject(
 export function prepareWorkbenchDocumentImport(
   document: WorkbenchDocument,
   existingCompositeLibrary: CompositeLibraryEntry[],
+  targetWorkspaceId: string,
 ): PreparedWorkbenchDocumentImport {
   if (!document.embeddedCompositeLibrary || document.embeddedCompositeLibrary.entries.length === 0) {
     return {
@@ -98,11 +99,11 @@ export function prepareWorkbenchDocumentImport(
       ? createUniqueReusableId(originalId, usedIds)
       : originalId;
 
-    const finalEntry = rewriteReusableEntry(
+    const finalEntry = localizeImportedReusableEntry(rewriteReusableEntry(
       originalEntry,
       resolvedId,
       dependencyMap,
-    );
+    ), targetWorkspaceId);
 
     idMap.set(originalId, resolvedId);
 
@@ -233,6 +234,26 @@ function rewriteReusableEntry(
   return cloned;
 }
 
+function localizeImportedReusableEntry(
+  entry: CompositeLibraryEntry,
+  workspaceId: string,
+): CompositeLibraryEntry {
+  if (entry.source === 'built-in') {
+    return entry;
+  }
+
+  if (entry.scope === 'personal') {
+    return entry;
+  }
+
+  return {
+    ...entry,
+    source: 'user',
+    scope: 'workspace',
+    workspaceId,
+  };
+}
+
 function createUniqueReusableId(baseId: string, usedIds: Set<string>) {
   const normalizedBase =
     baseId
@@ -257,6 +278,9 @@ function entriesAreEquivalent(left: CompositeLibraryEntry, right: CompositeLibra
 function normalizeReusableEntry(entry: CompositeLibraryEntry) {
   const cloned = cloneReusableEntry(entry);
   cloned.source = cloned.source ?? 'user';
+  if (cloned.source !== 'built-in') {
+    cloned.scope = cloned.scope ?? 'personal';
+  }
   return cloned;
 }
 
@@ -274,9 +298,14 @@ function cloneProject(project: Project): Project {
 }
 
 function cloneReusableEntry(entry: CompositeLibraryEntry): CompositeLibraryEntry {
+  const source = entry.source ?? 'user';
+  const scope = source === 'built-in' ? undefined : entry.scope ?? 'personal';
   if (isCompositeDefinition(entry.definition)) {
     return {
       ...entry,
+      source,
+      ...(scope ? { scope } : {}),
+      ...(scope === 'workspace' && entry.workspaceId ? { workspaceId: entry.workspaceId } : { workspaceId: undefined }),
       definition: {
         ...entry.definition,
         project: cloneProject(entry.definition.project),
@@ -297,6 +326,9 @@ function cloneReusableEntry(entry: CompositeLibraryEntry): CompositeLibraryEntry
 
   return {
     ...entry,
+    source,
+    ...(scope ? { scope } : {}),
+    ...(scope === 'workspace' && entry.workspaceId ? { workspaceId: entry.workspaceId } : { workspaceId: undefined }),
     definition: {
       ...entry.definition,
       ...(isMultiConditionalDefinition(entry.definition)

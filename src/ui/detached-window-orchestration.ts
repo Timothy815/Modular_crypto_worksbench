@@ -153,6 +153,7 @@ export interface DetachedPanelCommandHandlers {
   editClockedIterator: (defId: string) => void;
   duplicateReusable: (defId: string) => void;
   renameReusable: (defId: string, nextName: string) => void;
+  promoteReusable: (defId: string) => void;
   openPrimitiveMicroDemo: (defId: string) => void;
   openPipelineMicroDemo: (pipelineId: string) => void;
   exportCompositeLibrary: () => void;
@@ -320,6 +321,9 @@ export function connectDetachedPanelChannel(args: DetachedPanelChannelBridgeArgs
         return;
       case 'renameReusable':
         args.commandHandlers.renameReusable(command.defId, command.nextName);
+        return;
+      case 'promoteReusable':
+        args.commandHandlers.promoteReusable(command.defId);
         return;
       case 'openPrimitiveMicroDemo':
         args.commandHandlers.openPrimitiveMicroDemo(command.defId);

@@ -692,6 +692,8 @@ function renderDetachedPane(
     return (
       <PrimitivePalette
         registry={registry}
+        activeWorkspaceId={(payload as DetachedPaletteSnapshot).activeWorkspaceId}
+        compositeLibrary={(payload as DetachedPaletteSnapshot).compositeLibrary}
         viewMode={(payload as DetachedPaletteSnapshot).paletteViewMode}
         onToggleViewMode={() => sendCommand('palette', { type: 'togglePaletteViewMode' })}
         compositeUsageCountById={(payload as DetachedPaletteSnapshot).compositeUsageCountById}
@@ -713,6 +715,7 @@ function renderDetachedPane(
         onRenameReusable={(defId, nextName) =>
           sendCommand('palette', { type: 'renameReusable', defId, nextName })
         }
+        onPromoteReusable={(defId) => sendCommand('palette', { type: 'promoteReusable', defId })}
         onOpenPrimitiveMicroDemo={(defId) =>
           sendCommand('palette', { type: 'openPrimitiveMicroDemo', defId })
         }

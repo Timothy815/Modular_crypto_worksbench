@@ -1484,6 +1484,104 @@ describe('uiReducer', () => {
     expect(nextState.compositeLibrary.some((entry) => entry.id === builtInEntry.id)).toBe(true);
   });
 
+  it('removes workspace-scoped reusables when their workspace is deleted', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const createdState = uiReducer(initialState, {
+      type: 'createBlankWorkspace',
+      workspaceId: 'workspace-a',
+      name: 'Workspace A',
+      summary: 'Test workspace',
+      pipeline: 'Blank canvas',
+    });
+    const workspaceEntry = {
+      id: 'WorkspaceOnlyRound',
+      name: 'Workspace Only Round',
+      version: 1,
+      source: 'user' as const,
+      scope: 'workspace' as const,
+      workspaceId: 'workspace-a',
+      definition: {
+        id: 'WorkspaceOnlyRound',
+        name: 'Workspace Only Round',
+        kind: 'iterator' as const,
+        version: 1,
+        inputs: [{ name: 'in', type: 'bits' as const }],
+        outputs: [{ name: 'out', type: 'bits' as const }],
+        paramSchema: {},
+        roundDefId: 'PassBits',
+        iterationCount: 2,
+      },
+    };
+
+    const withEntry = uiReducer(createdState, {
+      type: 'addCompositeToLibrary',
+      entry: workspaceEntry,
+    });
+
+    const nextState = uiReducer(withEntry, {
+      type: 'removeWorkspace',
+      workspaceId: 'workspace-a',
+      fallbackProjectId: demoProjects[0].id,
+    });
+
+    expect(nextState.compositeLibrary.some((entry) => entry.id === 'WorkspaceOnlyRound')).toBe(false);
+  });
+
+  it('preserves workspace-scoped reusables when loading a personal library document', () => {
+    const initialState = createInitialUiState(demoProjects);
+    const withWorkspaceEntry = uiReducer(initialState, {
+      type: 'addCompositeToLibrary',
+      entry: {
+        id: 'WorkspaceOnlyRound',
+        name: 'Workspace Only Round',
+        version: 1,
+        source: 'user',
+        scope: 'workspace',
+        workspaceId: demoProjects[0].id,
+        definition: {
+          id: 'WorkspaceOnlyRound',
+          name: 'Workspace Only Round',
+          kind: 'iterator',
+          version: 1,
+          inputs: [{ name: 'in', type: 'bits' }],
+          outputs: [{ name: 'out', type: 'bits' }],
+          paramSchema: {},
+          roundDefId: 'PassBits',
+          iterationCount: 2,
+        },
+      },
+    });
+
+    const nextState = uiReducer(withWorkspaceEntry, {
+      type: 'loadCompositeLibrary',
+      document: {
+        version: 1,
+        entries: [
+          {
+            id: 'PersonalRound',
+            name: 'Personal Round',
+            version: 1,
+            source: 'user',
+            definition: {
+              id: 'PersonalRound',
+              name: 'Personal Round',
+              kind: 'iterator',
+              version: 1,
+              inputs: [{ name: 'in', type: 'bits' }],
+              outputs: [{ name: 'out', type: 'bits' }],
+              paramSchema: {},
+              roundDefId: 'PassBits',
+              iterationCount: 2,
+            },
+          },
+        ],
+      },
+    });
+
+    expect(nextState.compositeLibrary.some((entry) => entry.id === 'WorkspaceOnlyRound')).toBe(true);
+    expect(nextState.compositeLibrary.find((entry) => entry.id === 'PersonalRound')?.scope).toBe('personal');
+  });
+
   it('opens the editor for built-in composite entries so users can experiment with their internals', () => {
     const initialState = createInitialUiState(demoProjects);
     const builtInComposite = initialState.compositeLibrary.find(

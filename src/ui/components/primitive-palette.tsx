@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 
+import type { CompositeLibraryEntry } from '../../engine/composites';
 import type { ModuleRegistry } from '../../engine/types';
 import {
   getMatchingCanonicalChainsForTarget,
@@ -39,6 +40,8 @@ import {
 
 interface PrimitivePaletteProps {
   registry: ModuleRegistry;
+  activeWorkspaceId: string;
+  compositeLibrary: CompositeLibraryEntry[];
   viewMode: 'compact' | 'expanded';
   onToggleViewMode: () => void;
   onAddModule: (defId: string) => void;
@@ -48,6 +51,7 @@ interface PrimitivePaletteProps {
   onEditClockedIterator: (defId: string) => void;
   onDuplicateReusable: (defId: string) => void;
   onRenameReusable: (defId: string, nextName: string) => void;
+  onPromoteReusable: (defId: string) => void;
   onOpenPrimitiveMicroDemo: (defId: string) => void;
   onExportCompositeLibrary: () => void;
   onRemoveComposite: (defId: string) => void;
@@ -107,72 +111,10 @@ function normalizePaletteSearchQuery(query: string) {
   return query.trim().toLowerCase();
 }
 
-function getPaletteSearchCandidates(definition: ModuleRegistry[string]) {
-  return {
-    id: definition.id,
-    name: definition.name,
-    purpose: getModulePurpose(definition),
-    detail: getModuleDetail(definition),
-    role: getModuleRole(definition),
-    roleDetail: getModuleRoleDetail(definition),
-    typicalPath: getModuleTypicalPath(definition) ?? '',
-    section: getModuleLibrarySectionId(definition).replace(/-/g, ' '),
-  };
-}
-
-function getPaletteSearchRank(definition: ModuleRegistry[string], query: string) {
-  const normalized = normalizePaletteSearchQuery(query);
-  if (!normalized) {
-    return 0;
-  }
-
-  const { id, name, purpose, detail, role, roleDetail, typicalPath, section } = getPaletteSearchCandidates(definition);
-  const normalizedId = id.toLowerCase();
-  const normalizedName = name.toLowerCase();
-  const normalizedPurpose = purpose.toLowerCase();
-  const normalizedDetail = detail.toLowerCase();
-  const normalizedRole = role.toLowerCase();
-  const normalizedRoleDetail = roleDetail.toLowerCase();
-  const normalizedTypicalPath = typicalPath.toLowerCase();
-  const normalizedSection = section.toLowerCase();
-
-  if (normalizedId === normalized || normalizedName === normalized) {
-    return 1000;
-  }
-
-  if (normalizedId.startsWith(normalized) || normalizedName.startsWith(normalized)) {
-    return 800;
-  }
-
-  if (normalizedId.includes(normalized) || normalizedName.includes(normalized)) {
-    return 600;
-  }
-
-  if (normalizedSection.includes(normalized)) {
-    return 300;
-  }
-
-  if (normalizedPurpose.includes(normalized)) {
-    return 200;
-  }
-
-  if (normalizedRole.includes(normalized) || normalizedRoleDetail.includes(normalized)) {
-    return 150;
-  }
-
-  if (
-    normalizedDetail.includes(normalized) ||
-    normalizedTypicalPath.includes(normalized) ||
-    matchesModuleSearch(definition, normalized)
-  ) {
-    return 100;
-  }
-
-  return 0;
-}
-
 export function PrimitivePalette({
   registry,
+  activeWorkspaceId,
+  compositeLibrary,
   viewMode,
   onToggleViewMode,
   onAddModule,
@@ -182,6 +124,7 @@ export function PrimitivePalette({
   onEditClockedIterator,
   onDuplicateReusable,
   onRenameReusable,
+  onPromoteReusable,
   onOpenPrimitiveMicroDemo,
   onExportCompositeLibrary,
   onRemoveComposite,
@@ -193,7 +136,7 @@ export function PrimitivePalette({
   onInsertChainForHoveredInput,
 }: PrimitivePaletteProps) {
   const [activeTab, setActiveTab] = useState<ModuleLibraryDomainTab>('all');
-  const [compositesView, setCompositesView] = useState<'all' | 'authored' | 'built-in'>('all');
+  const [compositesView, setCompositesView] = useState<'all' | 'workspace' | 'personal' | 'built-in'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -231,6 +174,11 @@ export function PrimitivePalette({
     return matchesModuleDomainTab(def, activeTab) && matchesModuleSearch(def, normalizedSearchQuery);
   });
 
+  const reusableEntryById = useMemo(
+    () => new Map(compositeLibrary.map((entry) => [entry.id, entry])),
+    [compositeLibrary],
+  );
+
   const contextRank = useMemo(
     () =>
       new Map(
@@ -263,8 +211,18 @@ export function PrimitivePalette({
       return orderedVisibleDefs;
     }
 
-    if (compositesView === 'authored') {
-      return orderedVisibleDefs.filter((def) => !builtInReusableIds.includes(def.id));
+    if (compositesView === 'workspace') {
+      return orderedVisibleDefs.filter((def) => {
+        const entry = reusableEntryById.get(def.id);
+        return entry?.scope === 'workspace' && entry.workspaceId === activeWorkspaceId;
+      });
+    }
+
+    if (compositesView === 'personal') {
+      return orderedVisibleDefs.filter((def) => {
+        const entry = reusableEntryById.get(def.id);
+        return !builtInReusableIds.includes(def.id) && (entry?.scope ?? 'personal') === 'personal';
+      });
     }
 
     if (compositesView === 'built-in') {
@@ -272,7 +230,7 @@ export function PrimitivePalette({
     }
 
     return orderedVisibleDefs;
-  }, [activeTab, builtInReusableIds, compositesView, orderedVisibleDefs]);
+  }, [activeTab, activeWorkspaceId, builtInReusableIds, compositesView, orderedVisibleDefs, reusableEntryById]);
 
   const hoveredTargetChains = useMemo<CanonicalChainDefinition[]>(
     () =>
@@ -284,25 +242,6 @@ export function PrimitivePalette({
           })
         : [],
     [hoveredInputPort, registry],
-  );
-
-  const rankedVisibleDefs = useMemo(
-    () =>
-      [...visibleDefs].sort((left, right) => {
-        const searchRankDifference =
-          getPaletteSearchRank(right, normalizedSearchQuery) - getPaletteSearchRank(left, normalizedSearchQuery);
-        if (searchRankDifference !== 0) {
-          return searchRankDifference;
-        }
-
-        const contextRankDifference = (contextRank.get(right.id) ?? 0) - (contextRank.get(left.id) ?? 0);
-        if (contextRankDifference !== 0) {
-          return contextRankDifference;
-        }
-
-        return (sortOrderIndex.get(left.id) ?? 0) - (sortOrderIndex.get(right.id) ?? 0);
-      }),
-    [contextRank, normalizedSearchQuery, sortOrderIndex, visibleDefs],
   );
 
   const primitiveSections = useMemo(
@@ -485,21 +424,27 @@ export function PrimitivePalette({
             <div className="palette-starters">
               <p className="palette-starters-label">Reusable Library</p>
               <div className="palette-starters-chips">
-                {(['all', 'authored', 'built-in'] as const).map((mode) => (
+                {(['all', 'workspace', 'personal', 'built-in'] as const).map((mode) => (
                   <button
                     key={mode}
                     type="button"
                     className={`palette-starter-chip${compositesView === mode ? ' palette-starter-chip-active' : ''}`}
                     onClick={() => setCompositesView(mode)}
                   >
-                    {mode === 'all' ? 'All Reusables' : mode === 'authored' ? 'Your Reusables' : 'Built-In'}
+                    {mode === 'all'
+                      ? 'All Reusables'
+                      : mode === 'workspace'
+                        ? 'This Workspace'
+                        : mode === 'personal'
+                          ? 'Personal Library'
+                          : 'Built-In'}
                   </button>
                 ))}
               </div>
               <p className="primitive-section-copy">
-                Built-in architectures stay distinct from your reusables. Duplicate makes a new reusable
-                definition. Place adds an instance to the workspace. Rename changes one reusable name, not
-                one placed instance.
+                New authored reusables belong to this workspace by default. Personal Library is for
+                explicit cross-workspace reuse. Workspace-local reusables still travel with the workspace
+                document. Place adds an instance to the workspace. Promote shares a copy beyond it.
               </p>
             </div>
           ) : null}
@@ -508,7 +453,7 @@ export function PrimitivePalette({
           <div className="primitive-search-summary">
             <p className="panel-label">Results</p>
             <p className="primitive-search-copy">
-              {rankedVisibleDefs.length} match{rankedVisibleDefs.length === 1 ? '' : 'es'} for “{searchQuery.trim()}”
+              {filteredCompositeDefs.length} match{filteredCompositeDefs.length === 1 ? '' : 'es'} for “{searchQuery.trim()}”
             </p>
           </div>
           <ul className="primitive-list">
@@ -516,7 +461,9 @@ export function PrimitivePalette({
               <ModuleLibraryCard
                 key={def.id}
                 def={def}
+                entry={reusableEntryById.get(def.id) ?? null}
                 registry={registry}
+                activeWorkspaceId={activeWorkspaceId}
                 viewMode={viewMode}
                 usageCount={compositeUsageCountById[def.id] ?? 0}
                 isBuiltInReusable={builtInReusableIds.includes(def.id)}
@@ -526,6 +473,7 @@ export function PrimitivePalette({
                 onEditClockedIterator={onEditClockedIterator}
                 onDuplicateReusable={onDuplicateReusable}
                 onRenameReusable={onRenameReusable}
+                onPromoteReusable={onPromoteReusable}
                 onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                 onRemoveComposite={onRemoveComposite}
                 pendingConnectionSourceType={pendingConnectionSourceType}
@@ -554,7 +502,9 @@ export function PrimitivePalette({
                   <ModuleLibraryCard
                     key={def.id}
                     def={def}
+                    entry={reusableEntryById.get(def.id) ?? null}
                     registry={registry}
+                    activeWorkspaceId={activeWorkspaceId}
                     viewMode={viewMode}
                     usageCount={compositeUsageCountById[def.id] ?? 0}
                     isBuiltInReusable={false}
@@ -564,6 +514,7 @@ export function PrimitivePalette({
                     onEditClockedIterator={onEditClockedIterator}
                     onDuplicateReusable={onDuplicateReusable}
                     onRenameReusable={onRenameReusable}
+                    onPromoteReusable={onPromoteReusable}
                     onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                     onRemoveComposite={onRemoveComposite}
                     pendingConnectionSourceType={pendingConnectionSourceType}
@@ -611,43 +562,123 @@ export function PrimitivePalette({
                 ),
             },
             {
-              id: 'user-conditionals',
-              title: 'My Conditionals',
-              description: 'Conditional modules you authored — one control bit selects which branch runs.',
-                defs: filteredCompositeDefs.filter(
-                  (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'conditional',
+              id: 'workspace-conditionals',
+              title: 'This Workspace Conditionals',
+              description: 'Conditional modules local to this workspace.',
+              defs: filteredCompositeDefs.filter(
+                  (def) =>
+                    reusableEntryById.get(def.id)?.scope === 'workspace' &&
+                    reusableEntryById.get(def.id)?.workspaceId === activeWorkspaceId &&
+                    'kind' in def &&
+                    def.kind === 'conditional',
                 ),
             },
             {
-              id: 'user-multi-conditionals',
-              title: 'My Multi-Conditionals',
-              description: 'Multi-branch modules you authored — a multi-bit control word selects which branch runs.',
-                defs: filteredCompositeDefs.filter(
-                  (def) => 'kind' in def && def.kind === 'multi-conditional',
+              id: 'workspace-multi-conditionals',
+              title: 'This Workspace Multi-Conditionals',
+              description: 'Multi-branch modules local to this workspace.',
+              defs: filteredCompositeDefs.filter(
+                  (def) =>
+                    reusableEntryById.get(def.id)?.scope === 'workspace' &&
+                    reusableEntryById.get(def.id)?.workspaceId === activeWorkspaceId &&
+                    'kind' in def &&
+                    def.kind === 'multi-conditional',
                 ),
             },
             {
-              id: 'user-composites',
-              title: 'My Composites',
-              description: 'Editable composite modules you created yourself.',
-                defs: filteredCompositeDefs.filter(
-                  (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'composite',
+              id: 'workspace-composites',
+              title: 'This Workspace Composites',
+              description: 'Editable composite modules created for this workspace.',
+              defs: filteredCompositeDefs.filter(
+                  (def) =>
+                    reusableEntryById.get(def.id)?.scope === 'workspace' &&
+                    reusableEntryById.get(def.id)?.workspaceId === activeWorkspaceId &&
+                    'kind' in def &&
+                    def.kind === 'composite',
                 ),
             },
             {
-              id: 'user-iterators',
-              title: 'My Iterators',
-              description: 'Editable bounded iterator modules you created yourself.',
-                defs: filteredCompositeDefs.filter(
-                  (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'iterator',
+              id: 'workspace-iterators',
+              title: 'This Workspace Iterators',
+              description: 'Editable bounded iterator modules created for this workspace.',
+              defs: filteredCompositeDefs.filter(
+                  (def) =>
+                    reusableEntryById.get(def.id)?.scope === 'workspace' &&
+                    reusableEntryById.get(def.id)?.workspaceId === activeWorkspaceId &&
+                    'kind' in def &&
+                    def.kind === 'iterator',
                 ),
             },
             {
-              id: 'user-clocked-iterators',
-              title: 'My Clocked Iterators',
-              description: 'Pulse-driven bounded iterator modules you created yourself.',
-                defs: filteredCompositeDefs.filter(
-                  (def) => !builtInReusableIds.includes(def.id) && 'kind' in def && def.kind === 'clocked-iterator',
+              id: 'workspace-clocked-iterators',
+              title: 'This Workspace Clocked Iterators',
+              description: 'Pulse-driven bounded iterator modules created for this workspace.',
+              defs: filteredCompositeDefs.filter(
+                  (def) =>
+                    reusableEntryById.get(def.id)?.scope === 'workspace' &&
+                    reusableEntryById.get(def.id)?.workspaceId === activeWorkspaceId &&
+                    'kind' in def &&
+                    def.kind === 'clocked-iterator',
+                ),
+            },
+            {
+              id: 'personal-conditionals',
+              title: 'Personal Library Conditionals',
+              description: 'Conditional modules promoted for cross-workspace reuse.',
+              defs: filteredCompositeDefs.filter(
+                  (def) =>
+                    !builtInReusableIds.includes(def.id) &&
+                    (reusableEntryById.get(def.id)?.scope ?? 'personal') === 'personal' &&
+                    'kind' in def &&
+                    def.kind === 'conditional',
+                ),
+            },
+            {
+              id: 'personal-multi-conditionals',
+              title: 'Personal Library Multi-Conditionals',
+              description: 'Multi-branch modules promoted for cross-workspace reuse.',
+              defs: filteredCompositeDefs.filter(
+                  (def) =>
+                    !builtInReusableIds.includes(def.id) &&
+                    (reusableEntryById.get(def.id)?.scope ?? 'personal') === 'personal' &&
+                    'kind' in def &&
+                    def.kind === 'multi-conditional',
+                ),
+            },
+            {
+              id: 'personal-composites',
+              title: 'Personal Library Composites',
+              description: 'Composite modules promoted for cross-workspace reuse.',
+              defs: filteredCompositeDefs.filter(
+                  (def) =>
+                    !builtInReusableIds.includes(def.id) &&
+                    (reusableEntryById.get(def.id)?.scope ?? 'personal') === 'personal' &&
+                    'kind' in def &&
+                    def.kind === 'composite',
+                ),
+            },
+            {
+              id: 'personal-iterators',
+              title: 'Personal Library Iterators',
+              description: 'Iterator modules promoted for cross-workspace reuse.',
+              defs: filteredCompositeDefs.filter(
+                  (def) =>
+                    !builtInReusableIds.includes(def.id) &&
+                    (reusableEntryById.get(def.id)?.scope ?? 'personal') === 'personal' &&
+                    'kind' in def &&
+                    def.kind === 'iterator',
+                ),
+            },
+            {
+              id: 'personal-clocked-iterators',
+              title: 'Personal Library Clocked Iterators',
+              description: 'Clocked iterator modules promoted for cross-workspace reuse.',
+              defs: filteredCompositeDefs.filter(
+                  (def) =>
+                    !builtInReusableIds.includes(def.id) &&
+                    (reusableEntryById.get(def.id)?.scope ?? 'personal') === 'personal' &&
+                    'kind' in def &&
+                    def.kind === 'clocked-iterator',
                 ),
             },
           ]
@@ -665,7 +696,9 @@ export function PrimitivePalette({
                     <ModuleLibraryCard
                       key={def.id}
                       def={def}
+                      entry={reusableEntryById.get(def.id) ?? null}
                       registry={registry}
+                      activeWorkspaceId={activeWorkspaceId}
                       viewMode={viewMode}
                       usageCount={compositeUsageCountById[def.id] ?? 0}
                       isBuiltInReusable={builtInReusableIds.includes(def.id)}
@@ -675,6 +708,7 @@ export function PrimitivePalette({
                       onEditClockedIterator={onEditClockedIterator}
                       onDuplicateReusable={onDuplicateReusable}
                       onRenameReusable={onRenameReusable}
+                      onPromoteReusable={onPromoteReusable}
                       onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                       onRemoveComposite={onRemoveComposite}
                       pendingConnectionSourceType={pendingConnectionSourceType}
@@ -694,7 +728,7 @@ export function PrimitivePalette({
               ? 'No composites or iterators match this search. Press Escape to clear and browse again.'
               : 'No modules match this search. Press Escape to clear and browse again.'
             : activeTab === 'composites'
-              ? 'No built-in architectures or personal composites match this search.'
+              ? 'No built-in, workspace, or personal-library reusables match this view.'
               : 'No primitive modules match this search.'}
         </p>
       ) : null}
@@ -704,7 +738,9 @@ export function PrimitivePalette({
 
 interface ModuleLibraryCardProps {
   def: ModuleRegistry[string];
+  entry: CompositeLibraryEntry | null;
   registry: ModuleRegistry;
+  activeWorkspaceId: string;
   viewMode: 'compact' | 'expanded';
   usageCount: number;
   isBuiltInReusable: boolean;
@@ -714,6 +750,7 @@ interface ModuleLibraryCardProps {
   onEditClockedIterator: (defId: string) => void;
   onDuplicateReusable: (defId: string) => void;
   onRenameReusable: (defId: string, nextName: string) => void;
+  onPromoteReusable: (defId: string) => void;
   onOpenPrimitiveMicroDemo: (defId: string) => void;
   onRemoveComposite: (defId: string) => void;
   pendingConnectionSourceType?: string | null;
@@ -727,7 +764,9 @@ function getRoleClassName(def: ModuleRegistry[string]) {
 
 function ModuleLibraryCard({
   def,
+  entry,
   registry,
+  activeWorkspaceId,
   viewMode,
   usageCount,
   isBuiltInReusable,
@@ -737,6 +776,7 @@ function ModuleLibraryCard({
   onEditClockedIterator,
   onDuplicateReusable,
   onRenameReusable,
+  onPromoteReusable,
   onOpenPrimitiveMicroDemo,
   onRemoveComposite,
   pendingConnectionSourceType,
@@ -759,8 +799,13 @@ function ModuleLibraryCard({
   const chainsBefore = getModuleChainsBefore(def);
   const chainsAfter = getModuleChainsAfter(def);
   const reusableOriginLabel = isReusable
-    ? getReusableOriginLabel({ source: isBuiltInReusable ? 'built-in' : 'user' })
+    ? getReusableOriginLabel(
+        entry ?? { source: isBuiltInReusable ? 'built-in' : 'user' },
+        activeWorkspaceId,
+      )
     : null;
+  const canPromoteReusable =
+    Boolean(entry) && entry?.scope === 'workspace' && entry.workspaceId === activeWorkspaceId;
   const reusableStructuralSummary = isReusable ? formatReusableStructuralSummary(def, registry) : '';
   const reusablePortCounts = isReusable ? formatReusablePortCounts(def) : '';
   const reusableInterfaceSummary = isReusable ? formatReusableInterfaceSummary(def) : '';
@@ -854,8 +899,8 @@ function ModuleLibraryCard({
                 type="button"
                 className="primitive-action-button"
                 onClick={() => onDuplicateReusable(def.id)}
-                title={`Duplicate ${def.name} into My Reusables`}
-                aria-label={`Duplicate ${def.name} into My Reusables`}
+                title={`Duplicate ${def.name} into This Workspace`}
+                aria-label={`Duplicate ${def.name} into This Workspace`}
               >
                 ⧉
               </button>
@@ -920,6 +965,17 @@ function ModuleLibraryCard({
                 aria-label={`Rename ${def.name}`}
               >
                 Aa
+              </button>
+            ) : null}
+            {canPromoteReusable ? (
+              <button
+                type="button"
+                className="primitive-action-button"
+                onClick={() => onPromoteReusable(def.id)}
+                title={`Promote ${def.name} to Personal Library`}
+                aria-label={`Promote ${def.name} to Personal Library`}
+              >
+                ⇪
               </button>
             ) : null}
             {isReusable && !isBuiltInReusable ? (
@@ -1020,8 +1076,8 @@ function ModuleLibraryCard({
                 type="button"
                 className="primitive-action-button"
                 onClick={() => onDuplicateReusable(def.id)}
-                title={`Duplicate ${def.name} into My Reusables`}
-                aria-label={`Duplicate ${def.name} into My Reusables`}
+                title={`Duplicate ${def.name} into This Workspace`}
+                aria-label={`Duplicate ${def.name} into This Workspace`}
               >
                 ⧉
               </button>
@@ -1057,6 +1113,17 @@ function ModuleLibraryCard({
                 aria-label={`Edit ${def.name}`}
               >
                 ✎
+              </button>
+            ) : null}
+            {canPromoteReusable ? (
+              <button
+                type="button"
+                className="primitive-action-button"
+                onClick={() => onPromoteReusable(def.id)}
+                title={`Promote ${def.name} to Personal Library`}
+                aria-label={`Promote ${def.name} to Personal Library`}
+              >
+                ⇪
               </button>
             ) : null}
             {viewMode === 'expanded' ? (

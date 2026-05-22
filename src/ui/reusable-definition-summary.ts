@@ -1,4 +1,5 @@
 import {
+  getReusableScope,
   isClockedIteratorDefinition,
   isCompositeDefinition,
   isIteratorDefinition,
@@ -14,8 +15,24 @@ export function formatReusableInterfaceSummary(definition: ModuleDefinition) {
   return `Inputs: ${formatPorts(definition.inputs)} · Outputs: ${formatPorts(definition.outputs)}`;
 }
 
-export function getReusableOriginLabel(entry: Pick<CompositeLibraryEntry, 'source'>) {
-  return entry.source === 'built-in' ? 'Built-in architecture' : 'Your reusable';
+export function getReusableOriginLabel(
+  entry: Pick<CompositeLibraryEntry, 'source' | 'scope' | 'workspaceId'>,
+  activeWorkspaceId?: string | null,
+) {
+  const scope = getReusableScope(entry as CompositeLibraryEntry);
+  if (scope === 'built-in') {
+    return 'Built-in architecture';
+  }
+
+  if (
+    scope === 'workspace' &&
+    typeof entry.workspaceId === 'string' &&
+    (!activeWorkspaceId || entry.workspaceId === activeWorkspaceId)
+  ) {
+    return 'This workspace';
+  }
+
+  return 'Personal library';
 }
 
 export function formatReusableStructuralSummary(

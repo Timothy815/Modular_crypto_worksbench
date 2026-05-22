@@ -82,16 +82,44 @@ export interface MultiConditionalDef {
   version: number;
 }
 
+export type ReusableScope = 'workspace' | 'personal';
+
 export interface CompositeLibraryEntry {
   id: string;
   name: string;
   version: number;
   source?: 'built-in' | 'user';
+  scope?: ReusableScope;
+  workspaceId?: string;
   definition: CompositeDef | IteratorDef | ClockedIteratorDef | ConditionalDef | MultiConditionalDef;
 }
 
 export function isBuiltInCompositeLibraryEntry(entry: CompositeLibraryEntry) {
   return entry.source === 'built-in';
+}
+
+export function getReusableScope(entry: CompositeLibraryEntry): ReusableScope | 'built-in' {
+  if (isBuiltInCompositeLibraryEntry(entry)) {
+    return 'built-in';
+  }
+
+  return entry.scope ?? 'personal';
+}
+
+export function isWorkspaceScopedReusableEntry(
+  entry: CompositeLibraryEntry,
+  workspaceId?: string | null,
+) {
+  return (
+    entry.source !== 'built-in' &&
+    (entry.scope ?? 'personal') === 'workspace' &&
+    typeof entry.workspaceId === 'string' &&
+    (!workspaceId || entry.workspaceId === workspaceId)
+  );
+}
+
+export function isPersonalReusableEntry(entry: CompositeLibraryEntry) {
+  return entry.source !== 'built-in' && (entry.scope ?? 'personal') === 'personal';
 }
 
 export function isCompositeDefinition(definition: ModuleDefinition): definition is CompositeDef {

@@ -1259,10 +1259,13 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
 function cloneReusableEntry(entry: CompositeLibraryEntry): CompositeLibraryEntry {
   const starterEntry = STARTER_COMPOSITE_LIBRARY.find((candidate) => candidate.id === entry.id);
   const source = entry.source ?? starterEntry?.source ?? 'user';
+  const scope = source === 'built-in' ? undefined : entry.scope ?? 'personal';
   if (isCompositeDefinition(entry.definition)) {
     return {
       ...entry,
       source,
+      ...(scope ? { scope } : {}),
+      ...(scope === 'workspace' && entry.workspaceId ? { workspaceId: entry.workspaceId } : { workspaceId: undefined }),
       definition: {
         ...entry.definition,
         project: cloneProject(entry.definition.project),
@@ -1278,6 +1281,8 @@ function cloneReusableEntry(entry: CompositeLibraryEntry): CompositeLibraryEntry
   return {
     ...entry,
     source,
+    ...(scope ? { scope } : {}),
+    ...(scope === 'workspace' && entry.workspaceId ? { workspaceId: entry.workspaceId } : { workspaceId: undefined }),
     definition: { ...entry.definition },
   };
 }
@@ -2109,6 +2114,9 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         fileBindingByProject: removeProjectEntry(
           state.fileBindingByProject,
           action.workspaceId,
+        ),
+        compositeLibrary: state.compositeLibrary.filter(
+          (entry) => !(entry.scope === 'workspace' && entry.workspaceId === action.workspaceId),
         ),
         paramDrafts: Object.fromEntries(
           Object.entries(state.paramDrafts).filter(
@@ -5236,10 +5244,18 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       return {
         ...state,
         compositeLibrary: [
-          ...state.compositeLibrary.filter((entry) => isBuiltInCompositeLibraryEntry(entry)),
+          ...state.compositeLibrary.filter(
+            (entry) => isBuiltInCompositeLibraryEntry(entry) || entry.scope === 'workspace',
+          ),
           ...action.document.entries
             .map(cloneReusableEntry)
-            .filter((entry) => !isBuiltInCompositeLibraryEntry(entry)),
+            .filter((entry) => !isBuiltInCompositeLibraryEntry(entry))
+            .map((entry) => ({
+              ...entry,
+              source: 'user' as const,
+              scope: 'personal' as const,
+              workspaceId: undefined,
+            })),
         ],
       };
     case 'addCompositeToLibrary':

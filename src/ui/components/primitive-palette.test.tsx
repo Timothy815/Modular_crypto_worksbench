@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import type { CompositeDef, IteratorDef } from '../../engine/composites';
+import type { CompositeDef, CompositeLibraryEntry, IteratorDef } from '../../engine/composites';
 import type { ModuleRegistry } from '../../engine/types';
 import { PrimitivePalette } from './primitive-palette';
 
@@ -36,6 +36,25 @@ const iteratorDef: IteratorDef = {
   iterationCount: 3,
 };
 
+const compositeLibrary: CompositeLibraryEntry[] = [
+  {
+    id: 'RoundPair',
+    name: 'Round Pair',
+    version: 1,
+    source: 'user',
+    scope: 'workspace',
+    workspaceId: 'workspace-a',
+    definition: compositeDef,
+  },
+  {
+    id: 'ByteRoundIterator',
+    name: 'Byte Round Iterator',
+    version: 1,
+    source: 'built-in',
+    definition: iteratorDef,
+  },
+];
+
 const registry: ModuleRegistry = {
   PassBits: {
     id: 'PassBits',
@@ -54,6 +73,8 @@ describe('PrimitivePalette reusable summaries', () => {
     const markup = renderToStaticMarkup(
       <PrimitivePalette
         registry={registry}
+        activeWorkspaceId="workspace-a"
+        compositeLibrary={compositeLibrary}
         viewMode="expanded"
         onToggleViewMode={() => undefined}
         onAddModule={() => undefined}
@@ -62,6 +83,7 @@ describe('PrimitivePalette reusable summaries', () => {
         onEditClockedIterator={() => undefined}
         onDuplicateReusable={() => undefined}
         onRenameReusable={() => undefined}
+        onPromoteReusable={() => undefined}
         onOpenPrimitiveMicroDemo={() => undefined}
         onExportCompositeLibrary={() => undefined}
         onRemoveComposite={() => undefined}
@@ -72,7 +94,7 @@ describe('PrimitivePalette reusable summaries', () => {
 
     expect(markup).toContain('2 internal modules');
     expect(markup).toContain('3-round body: Pass Bits');
-    expect(markup).toContain('Your reusable');
+    expect(markup).toContain('This workspace');
     expect(markup).toContain('Built-in architecture');
     expect(markup).toContain('Inputs: in:bits · Outputs: out:bits');
   });
@@ -81,6 +103,8 @@ describe('PrimitivePalette reusable summaries', () => {
     const markup = renderToStaticMarkup(
       <PrimitivePalette
         registry={registry}
+        activeWorkspaceId="workspace-a"
+        compositeLibrary={compositeLibrary}
         viewMode="expanded"
         onToggleViewMode={() => undefined}
         onAddModule={() => undefined}
@@ -89,6 +113,7 @@ describe('PrimitivePalette reusable summaries', () => {
         onEditClockedIterator={() => undefined}
         onDuplicateReusable={() => undefined}
         onRenameReusable={() => undefined}
+        onPromoteReusable={() => undefined}
         onOpenPrimitiveMicroDemo={() => undefined}
         onExportCompositeLibrary={() => undefined}
         onRemoveComposite={() => undefined}
@@ -99,9 +124,10 @@ describe('PrimitivePalette reusable summaries', () => {
 
     expect(markup).toContain('Reusable Library');
     expect(markup).toContain('All Reusables');
-    expect(markup).toContain('Your Reusables');
+    expect(markup).toContain('This Workspace');
+    expect(markup).toContain('Personal Library');
     expect(markup).toContain('Built-In');
-    expect(markup).toContain('Duplicate makes a new reusable definition');
-    expect(markup).toContain('Rename changes one reusable name, not one placed instance');
+    expect(markup).toContain('New authored reusables belong to this workspace by default.');
+    expect(markup).toContain('Workspace-local reusables still travel with the workspace document.');
   });
 });

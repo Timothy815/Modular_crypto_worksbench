@@ -4,7 +4,7 @@ import { join } from 'node:path';
 const distAssetsDir = join(process.cwd(), 'dist', 'assets');
 
 const thresholds = {
-  index: 318 * 1024, // raised narrowly for the shipped local-document/durability line plus package-library and authored-reuse ergonomics
+  index: 321 * 1024, // raised narrowly for the shipped local-document/durability line plus workspace-scoped reusable ownership and promotion ergonomics
   react: 210 * 1024,
   maxChunk: 420 * 1024, // raised narrowly for the shipped AES/ECC teaching line plus the new ECC validation-consequence seeded content without forcing premature demo-data splitting
 };

@@ -21,6 +21,7 @@ describe('detached-window-orchestration', () => {
       payloadByKind: {
         palette: {
           theme: 'light',
+          activeWorkspaceId: 'demo',
           paletteViewMode: 'expanded',
           compositeLibrary: [],
           compositeUsageCountById: {},
