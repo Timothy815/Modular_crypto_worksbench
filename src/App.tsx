@@ -136,11 +136,11 @@ import {
   saveWorkspaceToLocalFileAs,
 } from './ui/workspace-local-document';
 import { prepareWorkbenchDocumentImport } from './ui/workspace-document-reusables';
-import { getReusableDependencyVisibility } from './ui/reusable-dependency-visibility';
 import {
-  createPersonalReusablePromotionCopy,
+  buildPromoteWithDependenciesPreview,
   createWorkspaceScopedReusableEntry,
   createUserOwnedReusableDuplicate,
+  promoteReusableWithSelectedDependencies,
   renameReusableDisplayName,
 } from './ui/reusable-library';
 import { getPrimitiveMicroDemo } from './ui/primitive-micro-demos';
@@ -318,6 +318,11 @@ interface PaletteCanvasDropRequest {
   requestId: number;
   clientX: number;
   clientY: number;
+}
+
+interface PromoteDependenciesDialogState {
+  rootDefId: string;
+  selectedDependencyIds: string[];
 }
 
 function App() {
@@ -552,6 +557,8 @@ function MainApp() {
   const [multiConditionalBranchCount, setMultiConditionalBranchCount] = useState<2 | 4 | 8>(2);
   const [multiConditionalBranchDefIds, setMultiConditionalBranchDefIds] = useState<string[]>(['', '']);
   const [multiConditionalDialogError, setMultiConditionalDialogError] = useState<string | null>(null);
+  const [promoteDependenciesDialogState, setPromoteDependenciesDialogState] =
+    useState<PromoteDependenciesDialogState | null>(null);
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
   const [isChallengeResetConfirmOpen, setIsChallengeResetConfirmOpen] = useState(false);
   const [isChallengeCaptureOpen, setIsChallengeCaptureOpen] = useState(false);
@@ -627,6 +634,100 @@ function MainApp() {
       .filter((project): project is DemoProject => project !== null);
   }, [availableProjects, openWorkspaceIds]);
   const effectiveRegistry = getEffectiveRegistry(V1_REGISTRY, state.compositeLibrary);
+  const promoteDependenciesDialogEntry = useMemo(
+    () =>
+      promoteDependenciesDialogState
+        ? state.compositeLibrary.find((entry) => entry.id === promoteDependenciesDialogState.rootDefId) ?? null
+        : null,
+    [promoteDependenciesDialogState, state.compositeLibrary],
+  );
+  const promoteDependenciesPreview = useMemo(
+    () =>
+      promoteDependenciesDialogEntry
+        ? buildPromoteWithDependenciesPreview(
+            promoteDependenciesDialogEntry,
+            state.compositeLibrary,
+            activeProjectDefinition.id,
+            promoteDependenciesDialogState?.selectedDependencyIds ?? [],
+          )
+        : null,
+    [
+      activeProjectDefinition.id,
+      promoteDependenciesDialogEntry,
+      promoteDependenciesDialogState?.selectedDependencyIds,
+      state.compositeLibrary,
+    ],
+  );
+  const promoteDependenciesResultPreview = useMemo(
+    () =>
+      promoteDependenciesDialogEntry && promoteDependenciesPreview
+        ? promoteReusableWithSelectedDependencies(
+            promoteDependenciesDialogEntry,
+            state.compositeLibrary,
+            promoteDependenciesDialogState?.selectedDependencyIds ?? [],
+            activeProjectDefinition.id,
+          )
+        : null,
+    [
+      activeProjectDefinition.id,
+      promoteDependenciesDialogEntry,
+      promoteDependenciesDialogState?.selectedDependencyIds,
+      promoteDependenciesPreview,
+      state.compositeLibrary,
+    ],
+  );
+  const openPromoteDependenciesDialog = useCallback(
+    (defId: string) => {
+      const entry = state.compositeLibrary.find((candidate) => candidate.id === defId);
+      if (
+        !entry ||
+        entry.source === 'built-in' ||
+        entry.scope !== 'workspace' ||
+        entry.workspaceId !== activeProjectDefinition.id
+      ) {
+        return;
+      }
+
+      setPromoteDependenciesDialogState({
+        rootDefId: defId,
+        selectedDependencyIds: [],
+      });
+    },
+    [activeProjectDefinition.id, state.compositeLibrary],
+  );
+  const closePromoteDependenciesDialog = useCallback(() => {
+    setPromoteDependenciesDialogState(null);
+  }, []);
+  const togglePromoteDependencySelection = useCallback((dependencyId: string) => {
+    setPromoteDependenciesDialogState((current) => {
+      if (!current) {
+        return current;
+      }
+
+      const isSelected = current.selectedDependencyIds.includes(dependencyId);
+      return {
+        ...current,
+        selectedDependencyIds: isSelected
+          ? current.selectedDependencyIds.filter((id) => id !== dependencyId)
+          : [...current.selectedDependencyIds, dependencyId],
+      };
+    });
+  }, []);
+  const handleConfirmPromoteDependencies = useCallback(() => {
+    if (!promoteDependenciesDialogEntry || !promoteDependenciesPreview || !promoteDependenciesResultPreview) {
+      return;
+    }
+
+    for (const entry of promoteDependenciesResultPreview.promotedEntries) {
+      dispatch({ type: 'addCompositeToLibrary', entry });
+    }
+
+    setPromoteDependenciesDialogState(null);
+  }, [
+    promoteDependenciesDialogEntry,
+    promoteDependenciesPreview,
+    promoteDependenciesResultPreview,
+  ]);
   const detachedWorkspaceSnapshot = useMemo<DetachedWorkspaceSnapshot | null>(() => {
     if (!detachedWorkspaceState) {
       return null;
@@ -3688,39 +3789,7 @@ function MainApp() {
         dispatch({ type: 'updateCompositeInLibrary', entry: nextEntry });
       },
       promoteReusable: (defId: string) => {
-        const entry = state.compositeLibrary.find((candidate) => candidate.id === defId);
-        if (
-          !entry ||
-          entry.source === 'built-in' ||
-          entry.scope !== 'workspace' ||
-          entry.workspaceId !== activeProjectDefinition.id
-        ) {
-          return;
-        }
-
-        const promotion = createPersonalReusablePromotionCopy(entry, state.compositeLibrary);
-        const dependencyVisibility = getReusableDependencyVisibility(
-          entry,
-          state.compositeLibrary,
-          activeProjectDefinition.id,
-        );
-        const confirmationParts: string[] = [];
-        if (promotion.hadConflict) {
-          confirmationParts.push(
-            `A personal-library reusable with id "${entry.id}" already exists. Promote this workspace reusable as "${promotion.entry.name}" (${promotion.entry.id}) instead?`,
-          );
-        }
-        if (dependencyVisibility.promotionWarning) {
-          confirmationParts.push(dependencyVisibility.promotionWarning);
-        }
-        if (confirmationParts.length > 0) {
-          const confirmed = window.confirm(confirmationParts.join('\n\n'));
-          if (!confirmed) {
-            return;
-          }
-        }
-
-        dispatch({ type: 'addCompositeToLibrary', entry: promotion.entry });
+        openPromoteDependenciesDialog(defId);
       },
       insertStarterChain: (starterId: string) => {
         const starter = getStarterById(starterId);
@@ -5556,40 +5625,7 @@ function MainApp() {
                   });
                 }}
                 onPromoteReusable={(defId) => {
-                  const entry = state.compositeLibrary.find((candidate) => candidate.id === defId);
-                  if (
-                    !entry ||
-                    entry.source === 'built-in' ||
-                    entry.scope !== 'workspace' ||
-                    entry.workspaceId !== activeProjectDefinition.id
-                  ) {
-                    return;
-                  }
-                  const promotion = createPersonalReusablePromotionCopy(entry, state.compositeLibrary);
-                  const dependencyVisibility = getReusableDependencyVisibility(
-                    entry,
-                    state.compositeLibrary,
-                    activeProjectDefinition.id,
-                  );
-                  const confirmationParts: string[] = [];
-                  if (promotion.hadConflict) {
-                    confirmationParts.push(
-                      `A personal-library reusable with id "${entry.id}" already exists. Promote this workspace reusable as "${promotion.entry.name}" (${promotion.entry.id}) instead?`,
-                    );
-                  }
-                  if (dependencyVisibility.promotionWarning) {
-                    confirmationParts.push(dependencyVisibility.promotionWarning);
-                  }
-                  if (confirmationParts.length > 0) {
-                    const confirmed = window.confirm(confirmationParts.join('\n\n'));
-                    if (!confirmed) {
-                      return;
-                    }
-                  }
-                  dispatch({
-                    type: 'addCompositeToLibrary',
-                    entry: promotion.entry,
-                  });
+                  openPromoteDependenciesDialog(defId);
                 }}
                 onOpenPrimitiveMicroDemo={handleOpenPrimitiveMicroDemo}
                 onRemoveComposite={(defId) =>
@@ -7092,6 +7128,119 @@ function MainApp() {
           </div>
         );
       })() : null}
+      {promoteDependenciesDialogEntry && promoteDependenciesPreview && promoteDependenciesResultPreview ? (
+        <div
+          className="dialog-backdrop"
+          onClick={closePromoteDependenciesDialog}
+        >
+          <div
+            className="dialog-panel"
+            onKeyDown={createDialogKeyHandler(
+              handleConfirmPromoteDependencies,
+              closePromoteDependenciesDialog,
+            )}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="panel-label">Promote Dependencies Too</p>
+            <h2>Promote Reusable With Selected Dependencies</h2>
+            <p className="dialog-copy">
+              Promote creates personal-library copies for future reuse. The current workspace keeps
+              its workspace-local originals, and only immediate workspace-local dependencies are
+              selectable in this slice.
+            </p>
+
+            <p className="dialog-selection-summary">
+              Primary reusable: <strong>{promoteDependenciesDialogEntry.name}</strong> ({promoteDependenciesDialogEntry.id})
+              <br />
+              Selected for promotion: <strong>{promoteDependenciesPreview.selectedEntryIds.length}</strong>
+              {' · '}
+              Excluded immediate dependencies: <strong>{promoteDependenciesPreview.excludedImmediateDependencyIds.length}</strong>
+            </p>
+
+            <div className="dialog-composite-preview">
+              <p className="dialog-composite-preview-copy">
+                Immediate workspace-local dependencies default to unselected. Promote only what you
+                want copied into the personal library now.
+              </p>
+              {promoteDependenciesPreview.dependencyCandidates.length > 0 ? (
+                <div className="selected-ports dialog-selected-ports">
+                  {promoteDependenciesPreview.dependencyCandidates.map((dependency) => {
+                    const isSelected = promoteDependenciesDialogState?.selectedDependencyIds.includes(dependency.id) ?? false;
+                    return (
+                      <label key={dependency.id} className="checkbox-field">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => togglePromoteDependencySelection(dependency.id)}
+                        />
+                        <span>
+                          <strong>{dependency.name}</strong> ({dependency.id})
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="comparison-copy">No immediate workspace-local reusable dependencies need selection.</p>
+              )}
+            </div>
+
+            <p className="comparison-copy dialog-inline-help">
+              Dependency scope is about what this reusable still relies on. Promote creates
+              personal-library copies, not a fully independent package, and excluded dependencies
+              remain workspace-local until promoted later.
+            </p>
+
+            {promoteDependenciesPreview.warningMessages.length > 0 ? (
+              <div className="compare-warning">
+                <p className="panel-label">Promotion Boundary</p>
+                {promoteDependenciesPreview.warningMessages.map((message) => (
+                  <p key={message} className="comparison-copy">{message}</p>
+                ))}
+              </div>
+            ) : null}
+
+            {promoteDependenciesResultPreview.hadConflict ? (
+              <div className="compare-warning">
+                <p className="panel-label">Copy Identity Conflict</p>
+                <p className="comparison-copy">
+                  One or more selected reusables already exist in the personal library. MCW will
+                  create safe derived copy ids/names instead of overwriting them.
+                </p>
+                <div className="selected-ports dialog-selected-ports">
+                  {promoteDependenciesResultPreview.promotedEntries
+                    .filter((entry) => {
+                      const original = state.compositeLibrary.find((candidate) => candidate.id === entry.id);
+                      return !original;
+                    })
+                    .map((entry) => (
+                      <div key={`promoted-${entry.id}`} className="selected-port-chip">
+                        {entry.name} ({entry.id})
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="dialog-actions">
+              <button
+                type="button"
+                className="secondary-dialog-button"
+                onClick={closePromoteDependenciesDialog}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="primary-dialog-button"
+                onClick={handleConfirmPromoteDependencies}
+              >
+                Promote Selected Copies
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {isCloseConfirmOpen ? (
         <div

@@ -1,8 +1,27 @@
 import {
+  isClockedIteratorDefinition,
+  isConditionalDefinition,
   isCompositeDefinition,
+  isIteratorDefinition,
+  isMultiConditionalDefinition,
   type CompositeLibraryEntry,
 } from '../engine/composites';
 import { cloneProject } from './project-clone';
+import { getImmediateReusableDependencyIds } from './workspace-document-reusables';
+
+export interface PromoteWithDependenciesPreview {
+  rootEntry: CompositeLibraryEntry;
+  dependencyCandidates: CompositeLibraryEntry[];
+  selectedEntryIds: string[];
+  excludedImmediateDependencyIds: string[];
+  unresolvedTransitiveWorkspaceDependencyIds: string[];
+  warningMessages: string[];
+}
+
+export interface PromoteWithDependenciesResult {
+  promotedEntries: CompositeLibraryEntry[];
+  hadConflict: boolean;
+}
 
 export function createUserOwnedReusableDuplicate(
   entry: CompositeLibraryEntry,
@@ -165,6 +184,233 @@ export function createPersonalReusablePromotionCopy(
       };
 
   return { entry: promoted, hadConflict: hasConflict };
+}
+
+export function buildPromoteWithDependenciesPreview(
+  rootEntry: CompositeLibraryEntry,
+  library: CompositeLibraryEntry[],
+  activeWorkspaceId: string,
+  selectedDependencyIds: string[],
+): PromoteWithDependenciesPreview {
+  const reusableById = new Map(library.map((entry) => [entry.id, entry]));
+  const dependencyCandidates = getImmediateReusableDependencyIds(rootEntry.definition, reusableById)
+    .map((dependencyId) => reusableById.get(dependencyId))
+    .filter(
+      (entry): entry is CompositeLibraryEntry =>
+        Boolean(
+          entry &&
+            entry.source !== 'built-in' &&
+            (entry.scope ?? 'personal') === 'workspace' &&
+            entry.workspaceId === activeWorkspaceId,
+        ),
+    );
+  const selectedDependencyIdSet = new Set(selectedDependencyIds);
+  const selectedEntryIds = [rootEntry.id, ...dependencyCandidates
+    .filter((entry) => selectedDependencyIdSet.has(entry.id))
+    .map((entry) => entry.id)];
+  const excludedImmediateDependencyIds = dependencyCandidates
+    .filter((entry) => !selectedDependencyIdSet.has(entry.id))
+    .map((entry) => entry.id);
+  const selectedEntryIdSet = new Set(selectedEntryIds);
+  const unresolvedTransitiveWorkspaceDependencyIds = Array.from(
+    new Set(
+      selectedEntryIds.flatMap((entryId) => {
+        const entry = reusableById.get(entryId);
+        if (!entry) {
+          return [];
+        }
+        return getImmediateReusableDependencyIds(entry.definition, reusableById).filter((dependencyId) => {
+          const dependency = reusableById.get(dependencyId);
+          return Boolean(
+            dependency &&
+              dependency.source !== 'built-in' &&
+              (dependency.scope ?? 'personal') === 'workspace' &&
+              dependency.workspaceId === activeWorkspaceId &&
+              !selectedEntryIdSet.has(dependencyId),
+          );
+        });
+      }),
+    ),
+  );
+
+  const warningMessages: string[] = [];
+  if (excludedImmediateDependencyIds.length > 0) {
+    warningMessages.push('Excluded dependencies remain workspace-local.');
+  }
+  if (unresolvedTransitiveWorkspaceDependencyIds.length > 0) {
+    warningMessages.push(
+      'Included dependencies still have further workspace-local dependencies outside this selected set.',
+    );
+  }
+
+  return {
+    rootEntry,
+    dependencyCandidates,
+    selectedEntryIds,
+    excludedImmediateDependencyIds,
+    unresolvedTransitiveWorkspaceDependencyIds,
+    warningMessages,
+  };
+}
+
+export function promoteReusableWithSelectedDependencies(
+  rootEntry: CompositeLibraryEntry,
+  library: CompositeLibraryEntry[],
+  selectedDependencyIds: string[],
+  activeWorkspaceId: string,
+): PromoteWithDependenciesResult {
+  const preview = buildPromoteWithDependenciesPreview(
+    rootEntry,
+    library,
+    activeWorkspaceId,
+    selectedDependencyIds,
+  );
+  const selectedEntries = preview.selectedEntryIds
+    .map((entryId) => library.find((entry) => entry.id === entryId))
+    .filter((entry): entry is CompositeLibraryEntry => Boolean(entry));
+
+  const existingIds = new Set(library.map((entry) => entry.id));
+  const existingPersonalNames = new Set(
+    library
+      .filter((entry) => entry.source !== 'built-in' && (entry.scope ?? 'personal') === 'personal')
+      .map((entry) => entry.name),
+  );
+  const idMap = new Map<string, string>();
+  const nameMap = new Map<string, string>();
+  let hadConflict = false;
+
+  for (const entry of selectedEntries) {
+    const personalConflict = library.some(
+      (candidate) =>
+        candidate.source !== 'built-in' &&
+        (candidate.scope ?? 'personal') === 'personal' &&
+        candidate.id === entry.id,
+    );
+    const nextId = personalConflict ? createDuplicateReusableId(entry.id, existingIds) : entry.id;
+    const nextName = personalConflict ? createDuplicateReusableName(entry.name, existingPersonalNames) : entry.name;
+    hadConflict = hadConflict || personalConflict;
+    idMap.set(entry.id, nextId);
+    nameMap.set(entry.id, nextName);
+    existingIds.add(nextId);
+    existingPersonalNames.add(nextName);
+  }
+
+  const promotedEntries = selectedEntries.map((entry) =>
+    rewriteReusableForPromotion(entry, idMap, nameMap),
+  );
+
+  return { promotedEntries, hadConflict };
+}
+
+function rewriteReusableForPromotion(
+  entry: CompositeLibraryEntry,
+  idMap: Map<string, string>,
+  nameMap: Map<string, string>,
+): CompositeLibraryEntry {
+  const nextId = idMap.get(entry.id) ?? entry.id;
+  const nextName = nameMap.get(entry.id) ?? entry.name;
+
+  if (isCompositeDefinition(entry.definition)) {
+    return {
+      ...entry,
+      id: nextId,
+      name: nextName,
+      source: 'user',
+      scope: 'personal',
+      workspaceId: undefined,
+      definition: {
+        ...entry.definition,
+        id: nextId,
+        name: nextName,
+        project: {
+          ...cloneProject(entry.definition.project),
+          modules: entry.definition.project.modules.map((moduleInstance) => ({
+            ...moduleInstance,
+            params: { ...moduleInstance.params },
+            defId: idMap.get(moduleInstance.defId) ?? moduleInstance.defId,
+          })),
+        },
+        layout: entry.definition.layout
+          ? Object.fromEntries(
+              Object.entries(entry.definition.layout).map(([moduleId, position]) => [
+                moduleId,
+                { ...position },
+              ]),
+            )
+          : undefined,
+        inputBindings: entry.definition.inputBindings.map((binding) => ({ ...binding })),
+        outputBindings: entry.definition.outputBindings.map((binding) => ({ ...binding })),
+      },
+    };
+  }
+
+  if (isIteratorDefinition(entry.definition) || isClockedIteratorDefinition(entry.definition)) {
+    return {
+      ...entry,
+      id: nextId,
+      name: nextName,
+      source: 'user',
+      scope: 'personal',
+      workspaceId: undefined,
+      definition: {
+        ...entry.definition,
+        id: nextId,
+        name: nextName,
+        roundDefId: idMap.get(entry.definition.roundDefId) ?? entry.definition.roundDefId,
+      },
+    };
+  }
+
+  if (isConditionalDefinition(entry.definition)) {
+    return {
+      ...entry,
+      id: nextId,
+      name: nextName,
+      source: 'user',
+      scope: 'personal',
+      workspaceId: undefined,
+      definition: {
+        ...entry.definition,
+        id: nextId,
+        name: nextName,
+        thenDefId: idMap.get(entry.definition.thenDefId) ?? entry.definition.thenDefId,
+        elseDefId: idMap.get(entry.definition.elseDefId) ?? entry.definition.elseDefId,
+      },
+    };
+  }
+
+  if (isMultiConditionalDefinition(entry.definition)) {
+    return {
+      ...entry,
+      id: nextId,
+      name: nextName,
+      source: 'user',
+      scope: 'personal',
+      workspaceId: undefined,
+      definition: {
+        ...entry.definition,
+        id: nextId,
+        name: nextName,
+        branchDefIds: entry.definition.branchDefIds.map(
+          (branchDefId) => idMap.get(branchDefId) ?? branchDefId,
+        ),
+      },
+    };
+  }
+
+  return {
+    ...entry,
+    id: nextId,
+    name: nextName,
+    source: 'user',
+    scope: 'personal',
+    workspaceId: undefined,
+    definition: {
+      ...(entry.definition as Record<string, unknown>),
+      id: nextId,
+      name: nextName,
+    },
+  } as CompositeLibraryEntry;
 }
 
 
