@@ -1,6 +1,6 @@
 # MCW Active Docs
 
-Last updated: May 22, 2026
+Last updated: May 23, 2026
 
 This is the canonical starting point for humans and agents.
 
@@ -9,6 +9,7 @@ This is the canonical starting point for humans and agents.
 - `AGENTS.md`
 - `PROJECT.md`
 - `ENGINE-V1-CONTRACT.md`
+- `CURRENT-HANDOFF.md`
 - `IMPLEMENTATION-STATUS.md`
 - `EXPERIENTIAL-NORTH-STAR-V1.md`
 - `docs/live/contracts/2026-04/CODE-FIRST-CAPABILITIES-AUDIT-2026-04-29.md`

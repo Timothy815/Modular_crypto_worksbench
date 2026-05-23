@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: May 22, 2026
+Last updated: May 23, 2026
 
 ---
 
@@ -124,7 +124,12 @@ The motivation is straightforward: local browser persistence is now a real proje
 
 **Latest reusable-dependency trust work:** `REUSABLE-DEPENDENCY-AND-PROMOTION-VISIBILITY-V1` is now shipped on `main`. MCW now shows immediate reusable dependency scope in the library surface, exposes which dependencies are built-in / workspace-local / personal-library, and warns during promotion when a personal-library copy still relies on workspace-local internals that are not being promoted with it.
 
-**Latest reusable-promotion actionability work:** `PROMOTE-DEPENDENCIES-TOO-V1` is now shipped locally. MCW now opens a bounded promote-with-dependencies dialog, keeps immediate workspace-local dependencies unselected by default, lets authors include selected immediate dependencies in the same personal-library promotion pass, preserves workspace-local originals, and continues warning when excluded or transitive workspace-local dependencies remain unresolved.
+**Latest reusable-promotion actionability work:** `PROMOTE-DEPENDENCIES-TOO-V1` is now shipped on `main`. MCW now opens a bounded promote-with-dependencies dialog, keeps immediate workspace-local dependencies unselected by default, lets authors include selected immediate dependencies in the same personal-library promotion pass, preserves workspace-local originals, and continues warning when excluded or transitive workspace-local dependencies remain unresolved.
+
+No next authored-reuse follow-on is drafted yet after this slice. The two most likely next directions are:
+
+1. `PERSONAL-LIBRARY-ORGANIZATION-V1`
+2. `REUSABLE-IMPACT-AND-REFERENCES-V1`
 
 ## Practical Restart Guidance
 
