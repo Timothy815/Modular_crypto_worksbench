@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: May 23, 2026
+Last updated: June 3, 2026
 
 ---
 
@@ -126,10 +126,11 @@ The motivation is straightforward: local browser persistence is now a real proje
 
 **Latest reusable-promotion actionability work:** `PROMOTE-DEPENDENCIES-TOO-V1` is now shipped on `main`. MCW now opens a bounded promote-with-dependencies dialog, keeps immediate workspace-local dependencies unselected by default, lets authors include selected immediate dependencies in the same personal-library promotion pass, preserves workspace-local originals, and continues warning when excluded or transitive workspace-local dependencies remain unresolved.
 
-No next authored-reuse follow-on is drafted yet after this slice. The two most likely next directions are:
+**Latest personal-library organization work:** `PERSONAL-LIBRARY-ORGANIZATION-V1` is now implemented. MCW now lets authors add normalized personal tags to promoted reusable entries, browse personal-library entries by tag from the reusable palette, and export/persist those tags with the personal-library entries. This is intentionally a lightweight recognition/filtering layer, not folders or package-manager semantics.
 
-1. `PERSONAL-LIBRARY-ORGANIZATION-V1`
-2. `REUSABLE-IMPACT-AND-REFERENCES-V1`
+No next authored-reuse follow-on is drafted yet after this slice. The most likely next direction is:
+
+1. `REUSABLE-IMPACT-AND-REFERENCES-V1`
 
 ## Practical Restart Guidance
 

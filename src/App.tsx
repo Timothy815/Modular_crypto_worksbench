@@ -5624,6 +5624,15 @@ function MainApp() {
                     entry: nextEntry,
                   });
                 }}
+                onUpdateReusableTags={(defId, personalTags) =>
+                  dispatch({
+                    type: 'updateCompositeInLibrary',
+                    entry: {
+                      ...state.compositeLibrary.find((candidate) => candidate.id === defId)!,
+                      personalTags,
+                    },
+                  })
+                }
                 onPromoteReusable={(defId) => {
                   openPromoteDependenciesDialog(defId);
                 }}

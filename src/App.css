@@ -1482,6 +1482,32 @@ body.dock-resizing {
   color: var(--muted);
 }
 
+.primitive-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.primitive-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface-soft));
+  color: color-mix(in srgb, var(--accent) 82%, var(--ink));
+  font-size: 0.72rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.primitive-reuse-summary .primitive-tag-chip {
+  margin-right: 5px;
+  margin-top: 4px;
+}
+
 .primitive-card + .primitive-card,
 .trace-card + .trace-card {
   margin-top: 12px;
@@ -3270,6 +3296,10 @@ body.dock-resizing {
 }
 .palette-chain-chip {
   border-color: color-mix(in srgb, var(--accent) 46%, var(--line));
+}
+
+.palette-tag-filter {
+  margin-top: 10px;
 }
 
 /* ── Mid-drag palette drop targets ────────────────────────────────────── */

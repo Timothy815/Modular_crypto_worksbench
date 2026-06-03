@@ -1,14 +1,14 @@
 # Current Handoff
 
-Last updated: May 23, 2026
+Last updated: June 3, 2026
 
 This file is the fastest restart point for a fresh agent session.
 
 ## Current Branch And Commit
 
 - branch: `main`
-- latest shipped commit on `main`: `9a1d5c9`
-- latest shipped message: `Add dependency-aware reusable promotion`
+- latest shipped commit on `main`: pending commit after `886317b`
+- latest shipped message: `Add personal library organization`
 
 ## Working Tree
 
@@ -17,19 +17,17 @@ This file is the fastest restart point for a fresh agent session.
 
 ## What Just Shipped
 
-The latest authored-reuse slice is now live on `main`:
+The latest authored-reuse slice is now implemented in the working tree:
 
-- `PROMOTE-DEPENDENCIES-TOO-V1`
+- `PERSONAL-LIBRARY-ORGANIZATION-V1`
 
 MCW now supports:
 
-- workspace-scoped reusables by default
-- explicit promotion to `Personal Library`
-- immediate dependency visibility and promotion warnings
-- bounded `Promote Reusable With Selected Dependencies` flow
-- unselected-by-default immediate workspace-local dependency checklist
-- copy-based multi-entry promotion
-- continued warnings when excluded or still-transitive workspace-local dependencies remain unresolved
+- personal-library tags on promoted reusable entries
+- normalized/deduplicated tag metadata that persists and exports with personal reusables
+- a Personal Tags filter in the reusable palette
+- per-card tag display and comma-separated tag editing for personal-library entries
+- existing copy-based promotion and workspace-local ownership boundaries remain unchanged
 
 ## Current Product State
 
@@ -48,6 +46,7 @@ Already shipped on `main`:
 - workspace-scoped reusables
 - reusable dependency visibility
 - dependency-aware reusable promotion
+- personal-library tag organization
 
 ## Canonical Restart Read Order
 
@@ -61,30 +60,26 @@ Already shipped on `main`:
 
 ## Next Likely Work
 
-No next slice is drafted yet after `PROMOTE-DEPENDENCIES-TOO-V1`.
+No next slice is drafted yet after `PERSONAL-LIBRARY-ORGANIZATION-V1`.
 
 The most likely next authored-reuse follow-ons are:
 
-1. `PERSONAL-LIBRARY-ORGANIZATION-V1`
-- lightweight tags/groups/filtering for the personal library
-- best if clutter in the personal layer is becoming the next pain point
-
-2. `REUSABLE-IMPACT-AND-REFERENCES-V1`
+1. `REUSABLE-IMPACT-AND-REFERENCES-V1`
 - show where a reusable is used before rename/delete/promotion
 - best if trust and safe cleanup are the next concern
 
-3. a smaller promotion follow-on only if needed
-- for example, more explicit post-promotion placement/reuse cues
-- but only if real use shows the current bounded dialog is still insufficient
+2. a smaller personal-library organization follow-on only if needed
+- for example, richer grouping, tag rename, or tag cleanup
+- but only if real use shows the current bounded tag layer is insufficient
 
 Recommended next direction if no new user priority overrides it:
 
-- `PERSONAL-LIBRARY-ORGANIZATION-V1`
+- `REUSABLE-IMPACT-AND-REFERENCES-V1`
 
 Reason:
 
-- ownership and promotion trust are now in good shape
-- the next likely pain point is personal-library clutter and recognition rather than promotion mechanics
+- personal-library clutter now has a first lightweight tag/filter layer
+- the next likely trust gap is knowing where a reusable is referenced before editing or deleting it
 
 ## Verification Baseline
 

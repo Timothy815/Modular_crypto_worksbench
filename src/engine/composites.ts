@@ -91,6 +91,7 @@ export interface CompositeLibraryEntry {
   source?: 'built-in' | 'user';
   scope?: ReusableScope;
   workspaceId?: string;
+  personalTags?: string[];
   definition: CompositeDef | IteratorDef | ClockedIteratorDef | ConditionalDef | MultiConditionalDef;
 }
 

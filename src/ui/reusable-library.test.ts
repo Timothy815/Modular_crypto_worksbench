@@ -7,7 +7,9 @@ import {
   createUserOwnedReusableDuplicate,
   createWorkspaceScopedReusableEntry,
   promoteReusableWithSelectedDependencies,
+  parseReusablePersonalTagDraft,
   renameReusableDisplayName,
+  updateReusablePersonalTags,
 } from './reusable-library';
 
 const compositeEntry: CompositeLibraryEntry = {
@@ -170,6 +172,25 @@ describe('reusable-library helpers', () => {
     expect(renamed.definition.name).toBe('Round Pair Variant');
     expect(renamed.definition.inputs).toEqual(compositeEntry.definition.inputs);
     expect(renamed.definition.outputs).toEqual(compositeEntry.definition.outputs);
+  });
+
+  it('normalizes personal-library tags from comma-separated drafts', () => {
+    expect(parseReusablePersonalTagDraft(' AES, classroom, aes,  Round  Study ')).toEqual([
+      'AES',
+      'classroom',
+      'Round Study',
+    ]);
+  });
+
+  it('updates and clears personal-library organization tags without mutating the definition', () => {
+    const tagged = updateReusablePersonalTags(compositeEntry, ['rounds', 'aes', 'rounds']);
+
+    expect(tagged.personalTags).toEqual(['aes', 'rounds']);
+    expect(tagged.definition).toBe(compositeEntry.definition);
+
+    const cleared = updateReusablePersonalTags(tagged, []);
+    expect(cleared.personalTags).toBeUndefined();
+    expect(cleared.definition).toBe(compositeEntry.definition);
   });
 
   it('duplicates a reusable into a distinct user-authored definition', () => {

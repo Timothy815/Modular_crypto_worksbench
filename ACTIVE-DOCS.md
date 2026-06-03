@@ -1,6 +1,6 @@
 # MCW Active Docs
 
-Last updated: May 23, 2026
+Last updated: June 3, 2026
 
 This is the canonical starting point for humans and agents.
 
@@ -41,6 +41,7 @@ This is the canonical starting point for humans and agents.
 - `docs/live/contracts/2026-05/WORKSPACE-SCOPED-REUSABLES-V1.md` when reviewing the shipped authored-reuse storage-model slice after package-library ergonomics — making new reusables workspace-local by default and promotion into a personal shared library explicit
 - `docs/live/contracts/2026-05/REUSABLE-DEPENDENCY-AND-PROMOTION-VISIBILITY-V1.md` when reviewing the shipped authored-reuse trust slice after workspace-scoped reusables — making immediate dependency scope and promotion consequence visible before authors treat promoted reusables as broadly reusable
 - `docs/live/contracts/2026-05/PROMOTE-DEPENDENCIES-TOO-V1.md` when reviewing the shipped authored-reuse actionability slice after dependency visibility — making immediate workspace-local dependency inclusion explicit during personal-library promotion without drifting into recursive package tooling
+- `docs/live/contracts/2026-06/PERSONAL-LIBRARY-ORGANIZATION-V1.md` when reviewing the shipped first personal-library organization slice — personal tags, tag filtering, and tag editing for promoted reusable entries without package-manager semantics
 - `docs/live/contracts/2026-05/ECC-POINT-PYTHON-EXPORT-PARITY-V1.md` when closing the remaining Python export gap for the shipped ECC point family
 - `docs/live/contracts/2026-05/VISIBLE-DOUBLE-AND-ADD-V1.md` when reviewing the shipped ECC visibility slice after the scalar-multiplication/ECDH/Schnorr line — unpacking scalar multiplication into an explicit repeated-action machine
 - `docs/live/contracts/2026-05/TOY-CURVE-POINT-MAP-V1.md` when reviewing the shipped toy-curve ECC intuition slice after visible double-and-add — making one toy finite-field curve legible as a visible point set and repeated-action landscape

@@ -23,6 +23,43 @@ export interface PromoteWithDependenciesResult {
   hadConflict: boolean;
 }
 
+export function normalizeReusablePersonalTags(tags: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const normalizedTags: string[] = [];
+
+  for (const tag of tags) {
+    const normalized = tag.trim().replace(/\s+/g, ' ');
+    const normalizedKey = normalized.toLowerCase();
+    if (!normalized || seen.has(normalizedKey)) {
+      continue;
+    }
+    seen.add(normalizedKey);
+    normalizedTags.push(normalized);
+  }
+
+  return normalizedTags.sort((left, right) => left.localeCompare(right));
+}
+
+export function parseReusablePersonalTagDraft(draft: string): string[] {
+  return normalizeReusablePersonalTags(draft.split(','));
+}
+
+export function updateReusablePersonalTags(
+  entry: CompositeLibraryEntry,
+  tags: readonly string[],
+): CompositeLibraryEntry {
+  const personalTags = normalizeReusablePersonalTags(tags);
+  if (personalTags.length === 0) {
+    const { personalTags: _personalTags, ...entryWithoutTags } = entry;
+    return entryWithoutTags;
+  }
+
+  return {
+    ...entry,
+    personalTags,
+  };
+}
+
 export function createUserOwnedReusableDuplicate(
   entry: CompositeLibraryEntry,
   library: CompositeLibraryEntry[],

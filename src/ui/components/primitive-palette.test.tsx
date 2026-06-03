@@ -36,6 +36,12 @@ const iteratorDef: IteratorDef = {
   iterationCount: 3,
 };
 
+const personalCompositeDef: CompositeDef = {
+  ...compositeDef,
+  id: 'PersonalRound',
+  name: 'Personal Round',
+};
+
 const compositeLibrary: CompositeLibraryEntry[] = [
   {
     id: 'RoundPair',
@@ -53,6 +59,15 @@ const compositeLibrary: CompositeLibraryEntry[] = [
     source: 'built-in',
     definition: iteratorDef,
   },
+  {
+    id: 'PersonalRound',
+    name: 'Personal Round',
+    version: 1,
+    source: 'user',
+    scope: 'personal',
+    personalTags: ['AES', 'Classroom'],
+    definition: personalCompositeDef,
+  },
 ];
 
 const registry: ModuleRegistry = {
@@ -66,6 +81,7 @@ const registry: ModuleRegistry = {
   },
   RoundPair: compositeDef,
   ByteRoundIterator: iteratorDef,
+  PersonalRound: personalCompositeDef,
 };
 
 describe('PrimitivePalette reusable summaries', () => {
@@ -76,6 +92,7 @@ describe('PrimitivePalette reusable summaries', () => {
         activeWorkspaceId="workspace-a"
         compositeLibrary={compositeLibrary}
         viewMode="expanded"
+        initialActiveTab="composites"
         onToggleViewMode={() => undefined}
         onAddModule={() => undefined}
         onInsertStarterChain={() => undefined}
@@ -83,6 +100,7 @@ describe('PrimitivePalette reusable summaries', () => {
         onEditClockedIterator={() => undefined}
         onDuplicateReusable={() => undefined}
         onRenameReusable={() => undefined}
+        onUpdateReusableTags={() => undefined}
         onPromoteReusable={() => undefined}
         onOpenPrimitiveMicroDemo={() => undefined}
         onExportCompositeLibrary={() => undefined}
@@ -106,6 +124,7 @@ describe('PrimitivePalette reusable summaries', () => {
         activeWorkspaceId="workspace-a"
         compositeLibrary={compositeLibrary}
         viewMode="expanded"
+        initialActiveTab="composites"
         onToggleViewMode={() => undefined}
         onAddModule={() => undefined}
         onInsertStarterChain={() => undefined}
@@ -113,6 +132,7 @@ describe('PrimitivePalette reusable summaries', () => {
         onEditClockedIterator={() => undefined}
         onDuplicateReusable={() => undefined}
         onRenameReusable={() => undefined}
+        onUpdateReusableTags={() => undefined}
         onPromoteReusable={() => undefined}
         onOpenPrimitiveMicroDemo={() => undefined}
         onExportCompositeLibrary={() => undefined}
@@ -127,7 +147,10 @@ describe('PrimitivePalette reusable summaries', () => {
     expect(markup).toContain('This Workspace');
     expect(markup).toContain('Personal Library');
     expect(markup).toContain('Built-In');
-    expect(markup).toContain('New authored reusables belong to this workspace by default.');
-    expect(markup).toContain('Workspace-local reusables still travel with the workspace document.');
+    expect(markup).toContain('Dependency scope shows what a reusable still relies on.');
+    expect(markup).toContain('Personal Tags');
+    expect(markup).toContain('All Tags');
+    expect(markup).toContain('AES');
+    expect(markup).toContain('Classroom');
   });
 });

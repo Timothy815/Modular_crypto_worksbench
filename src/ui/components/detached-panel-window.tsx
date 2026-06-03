@@ -715,6 +715,16 @@ function renderDetachedPane(
         onRenameReusable={(defId, nextName) =>
           sendCommand('palette', { type: 'renameReusable', defId, nextName })
         }
+        onUpdateReusableTags={(defId, tags) => {
+          const entry = (payload as DetachedPaletteSnapshot).compositeLibrary.find((candidate) => candidate.id === defId);
+          if (!entry || entry.source === 'built-in' || (entry.scope ?? 'personal') !== 'personal') {
+            return;
+          }
+          postAction({
+            type: 'updateCompositeInLibrary',
+            entry: tags.length > 0 ? { ...entry, personalTags: tags } : { ...entry, personalTags: undefined },
+          });
+        }}
         onPromoteReusable={(defId) => sendCommand('palette', { type: 'promoteReusable', defId })}
         onOpenPrimitiveMicroDemo={(defId) =>
           sendCommand('palette', { type: 'openPrimitiveMicroDemo', defId })

@@ -38,6 +38,7 @@ import {
   getReusableOriginLabel,
 } from '../reusable-definition-summary';
 import { getReusableDependencyVisibility } from '../reusable-dependency-visibility';
+import { parseReusablePersonalTagDraft } from '../reusable-library';
 
 interface PrimitivePaletteProps {
   registry: ModuleRegistry;
@@ -52,6 +53,7 @@ interface PrimitivePaletteProps {
   onEditClockedIterator: (defId: string) => void;
   onDuplicateReusable: (defId: string) => void;
   onRenameReusable: (defId: string, nextName: string) => void;
+  onUpdateReusableTags: (defId: string, tags: string[]) => void;
   onPromoteReusable: (defId: string) => void;
   onOpenPrimitiveMicroDemo: (defId: string) => void;
   onExportCompositeLibrary: () => void;
@@ -62,6 +64,7 @@ interface PrimitivePaletteProps {
   hoveredInputPort?: PaletteHoveredInputPortHint | null;
   onDropForPendingConnection?: (defId: string, toPort: string) => void;
   onInsertChainForHoveredInput?: (chainId: string) => void;
+  initialActiveTab?: ModuleLibraryDomainTab;
 }
 
 function PaletteViewModeIcon({ viewMode }: { viewMode: 'compact' | 'expanded' }) {
@@ -125,6 +128,7 @@ export function PrimitivePalette({
   onEditClockedIterator,
   onDuplicateReusable,
   onRenameReusable,
+  onUpdateReusableTags,
   onPromoteReusable,
   onOpenPrimitiveMicroDemo,
   onExportCompositeLibrary,
@@ -135,9 +139,11 @@ export function PrimitivePalette({
   hoveredInputPort,
   onDropForPendingConnection,
   onInsertChainForHoveredInput,
+  initialActiveTab = 'all',
 }: PrimitivePaletteProps) {
-  const [activeTab, setActiveTab] = useState<ModuleLibraryDomainTab>('all');
+  const [activeTab, setActiveTab] = useState<ModuleLibraryDomainTab>(initialActiveTab);
   const [compositesView, setCompositesView] = useState<'all' | 'workspace' | 'personal' | 'built-in'>('all');
+  const [personalTagFilter, setPersonalTagFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -180,6 +186,18 @@ export function PrimitivePalette({
     [compositeLibrary],
   );
 
+  const personalReusableTags = useMemo(() => {
+    const tags = new Set<string>();
+    for (const entry of compositeLibrary) {
+      if (entry.source !== 'built-in' && (entry.scope ?? 'personal') === 'personal') {
+        for (const tag of entry.personalTags ?? []) {
+          tags.add(tag);
+        }
+      }
+    }
+    return Array.from(tags).sort((left, right) => left.localeCompare(right));
+  }, [compositeLibrary]);
+
   const contextRank = useMemo(
     () =>
       new Map(
@@ -212,6 +230,19 @@ export function PrimitivePalette({
       return orderedVisibleDefs;
     }
 
+    const matchesPersonalTagFilter = (defId: string) => {
+      if (personalTagFilter === 'all') {
+        return true;
+      }
+      const entry = reusableEntryById.get(defId);
+      return Boolean(
+        entry &&
+          entry.source !== 'built-in' &&
+          (entry.scope ?? 'personal') === 'personal' &&
+          (entry.personalTags ?? []).includes(personalTagFilter),
+      );
+    };
+
     if (compositesView === 'workspace') {
       return orderedVisibleDefs.filter((def) => {
         const entry = reusableEntryById.get(def.id);
@@ -222,7 +253,11 @@ export function PrimitivePalette({
     if (compositesView === 'personal') {
       return orderedVisibleDefs.filter((def) => {
         const entry = reusableEntryById.get(def.id);
-        return !builtInReusableIds.includes(def.id) && (entry?.scope ?? 'personal') === 'personal';
+        return (
+          !builtInReusableIds.includes(def.id) &&
+          (entry?.scope ?? 'personal') === 'personal' &&
+          matchesPersonalTagFilter(def.id)
+        );
       });
     }
 
@@ -230,8 +265,8 @@ export function PrimitivePalette({
       return orderedVisibleDefs.filter((def) => builtInReusableIds.includes(def.id));
     }
 
-    return orderedVisibleDefs;
-  }, [activeTab, activeWorkspaceId, builtInReusableIds, compositesView, orderedVisibleDefs, reusableEntryById]);
+    return orderedVisibleDefs.filter((def) => matchesPersonalTagFilter(def.id));
+  }, [activeTab, activeWorkspaceId, builtInReusableIds, compositesView, orderedVisibleDefs, personalTagFilter, reusableEntryById]);
 
   const hoveredTargetChains = useMemo<CanonicalChainDefinition[]>(
     () =>
@@ -255,6 +290,12 @@ export function PrimitivePalette({
         .filter((section) => section.defs.length > 0),
     [orderedVisibleDefs],
   );
+
+  useEffect(() => {
+    if (personalTagFilter !== 'all' && !personalReusableTags.includes(personalTagFilter)) {
+      setPersonalTagFilter('all');
+    }
+  }, [personalReusableTags, personalTagFilter]);
 
   useEffect(() => {
     const handleWindowKeyDown = (event: KeyboardEvent) => {
@@ -447,6 +488,33 @@ export function PrimitivePalette({
                 copy, not a fully independent package. Workspace-local dependencies remain local unless
                 explicitly promoted later.
               </p>
+              {personalReusableTags.length > 0 ? (
+                <div className="palette-tag-filter" data-no-palette-drag="true">
+                  <p className="palette-starters-label">Personal Tags</p>
+                  <div className="palette-starters-chips">
+                    <button
+                      type="button"
+                      className={`palette-starter-chip${personalTagFilter === 'all' ? ' palette-starter-chip-active' : ''}`}
+                      onClick={() => setPersonalTagFilter('all')}
+                    >
+                      All Tags
+                    </button>
+                    {personalReusableTags.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        className={`palette-starter-chip${personalTagFilter === tag ? ' palette-starter-chip-active' : ''}`}
+                        onClick={() => {
+                          setCompositesView('personal');
+                          setPersonalTagFilter(tag);
+                        }}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : null}
           {searchActive ? (
@@ -475,6 +543,7 @@ export function PrimitivePalette({
                 onEditClockedIterator={onEditClockedIterator}
                 onDuplicateReusable={onDuplicateReusable}
                 onRenameReusable={onRenameReusable}
+                onUpdateReusableTags={onUpdateReusableTags}
                 onPromoteReusable={onPromoteReusable}
                 onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                 onRemoveComposite={onRemoveComposite}
@@ -517,6 +586,7 @@ export function PrimitivePalette({
                     onEditClockedIterator={onEditClockedIterator}
                     onDuplicateReusable={onDuplicateReusable}
                     onRenameReusable={onRenameReusable}
+                    onUpdateReusableTags={onUpdateReusableTags}
                     onPromoteReusable={onPromoteReusable}
                     onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                     onRemoveComposite={onRemoveComposite}
@@ -712,6 +782,7 @@ export function PrimitivePalette({
                       onEditClockedIterator={onEditClockedIterator}
                       onDuplicateReusable={onDuplicateReusable}
                       onRenameReusable={onRenameReusable}
+                      onUpdateReusableTags={onUpdateReusableTags}
                       onPromoteReusable={onPromoteReusable}
                       onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                       onRemoveComposite={onRemoveComposite}
@@ -755,6 +826,7 @@ interface ModuleLibraryCardProps {
   onEditClockedIterator: (defId: string) => void;
   onDuplicateReusable: (defId: string) => void;
   onRenameReusable: (defId: string, nextName: string) => void;
+  onUpdateReusableTags: (defId: string, tags: string[]) => void;
   onPromoteReusable: (defId: string) => void;
   onOpenPrimitiveMicroDemo: (defId: string) => void;
   onRemoveComposite: (defId: string) => void;
@@ -782,6 +854,7 @@ function ModuleLibraryCard({
   onEditClockedIterator,
   onDuplicateReusable,
   onRenameReusable,
+  onUpdateReusableTags,
   onPromoteReusable,
   onOpenPrimitiveMicroDemo,
   onRemoveComposite,
@@ -797,7 +870,9 @@ function ModuleLibraryCard({
   const isReusable = isComposite || isIterator || isClockedIterator || isConditional || isMultiConditional;
   const [showHelp, setShowHelp] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
+  const [isEditingTags, setIsEditingTags] = useState(false);
   const [renameDraft, setRenameDraft] = useState(def.name);
+  const [tagDraft, setTagDraft] = useState((entry?.personalTags ?? []).join(', '));
   const primitiveMicroDemo = getPrimitiveMicroDemo(def.id);
   const moduleRole = getModuleRole(def);
   const moduleRoleDetail = getModuleRoleDetail(def);
@@ -812,6 +887,9 @@ function ModuleLibraryCard({
     : null;
   const canPromoteReusable =
     Boolean(entry) && entry?.scope === 'workspace' && entry.workspaceId === activeWorkspaceId;
+  const canOrganizeReusable =
+    entry !== null && entry.source !== 'built-in' && (entry.scope ?? 'personal') === 'personal';
+  const personalTags = canOrganizeReusable ? entry?.personalTags ?? [] : [];
   const reusableStructuralSummary = isReusable ? formatReusableStructuralSummary(def, registry) : '';
   const reusablePortCounts = isReusable ? formatReusablePortCounts(def) : '';
   const reusableInterfaceSummary = isReusable ? formatReusableInterfaceSummary(def) : '';
@@ -824,6 +902,10 @@ function ModuleLibraryCard({
     setRenameDraft(def.name);
   }, [def.name]);
 
+  useEffect(() => {
+    setTagDraft((entry?.personalTags ?? []).join(', '));
+  }, [entry?.personalTags]);
+
   function submitRename() {
     const normalized = renameDraft.trim();
     if (!normalized || normalized === def.name) {
@@ -833,6 +915,15 @@ function ModuleLibraryCard({
     }
     onRenameReusable(def.id, normalized);
     setIsRenaming(false);
+  }
+
+  function submitTags() {
+    if (!entry || !canOrganizeReusable) {
+      setIsEditingTags(false);
+      return;
+    }
+    onUpdateReusableTags(def.id, parseReusablePersonalTagDraft(tagDraft));
+    setIsEditingTags(false);
   }
 
   const compatibleDropPort = pendingConnectionSourceType
@@ -895,6 +986,13 @@ function ModuleLibraryCard({
             ) : null}
             {isReusable && reusableDependencyVisibility ? (
               <p className="primitive-reuse-summary">{reusableDependencyVisibility.summary}</p>
+            ) : null}
+            {personalTags.length > 0 ? (
+              <p className="primitive-reuse-summary">
+                {personalTags.map((tag) => (
+                  <span key={`${def.id}-${tag}`} className="primitive-tag-chip">{tag}</span>
+                ))}
+              </p>
             ) : null}
           </div>
           <div className="primitive-compact-actions">
@@ -989,6 +1087,17 @@ function ModuleLibraryCard({
                 aria-label={`Promote ${def.name} to Personal Library`}
               >
                 ⇪
+              </button>
+            ) : null}
+            {canOrganizeReusable ? (
+              <button
+                type="button"
+                className="primitive-action-button"
+                onClick={() => setIsEditingTags((current) => !current)}
+                title={`Organize ${def.name} with personal-library tags`}
+                aria-label={`Organize ${def.name} with personal-library tags`}
+              >
+                #
               </button>
             ) : null}
             {isReusable && !isBuiltInReusable ? (
@@ -1150,6 +1259,17 @@ function ModuleLibraryCard({
                 ?
               </button>
             ) : null}
+            {canOrganizeReusable ? (
+              <button
+                type="button"
+                className="primitive-action-button"
+                onClick={() => setIsEditingTags((current) => !current)}
+                title={`Organize ${def.name} with personal-library tags`}
+                aria-label={`Organize ${def.name} with personal-library tags`}
+              >
+                #
+              </button>
+            ) : null}
             {isReusable && !isBuiltInReusable ? (
               <button
                 type="button"
@@ -1189,6 +1309,13 @@ function ModuleLibraryCard({
             <p className="primitive-reuse-summary">
               <strong>{reusableDependencyVisibility.summary}</strong>
             </p>
+          ) : null}
+          {personalTags.length > 0 ? (
+            <div className="primitive-tag-row" aria-label={`${def.name} personal-library tags`}>
+              {personalTags.map((tag) => (
+                <span key={`${def.id}-${tag}`} className="primitive-tag-chip">{tag}</span>
+              ))}
+            </div>
           ) : null}
           {isReusable && reusableDependencyVisibility && reusableDependencyVisibility.immediateDependencies.length > 0 ? (
             <div className="primitive-help-card" data-no-palette-drag="true">
@@ -1251,6 +1378,54 @@ function ModuleLibraryCard({
                   onClick={() => {
                     setIsRenaming(false);
                     setRenameDraft(def.name);
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : null}
+          {canOrganizeReusable && isEditingTags ? (
+            <div className="primitive-help-card" data-no-palette-drag="true">
+              <p className="primitive-help-role">
+                <span className="meta-label">Personal Tags</span> Comma-separated labels for browsing your personal library.
+              </p>
+              <label className="workspace-version-item">
+                <div>
+                  <strong>Tags</strong>
+                </div>
+                <input
+                  type="text"
+                  value={tagDraft}
+                  placeholder="rounds, aes, classroom"
+                  onChange={(event) => setTagDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      submitTags();
+                    }
+                    if (event.key === 'Escape') {
+                      event.preventDefault();
+                      setIsEditingTags(false);
+                      setTagDraft((entry?.personalTags ?? []).join(', '));
+                    }
+                  }}
+                />
+              </label>
+              <div className="primitive-button-row">
+                <button
+                  type="button"
+                  className="primitive-action-button"
+                  onClick={submitTags}
+                >
+                  Save Tags
+                </button>
+                <button
+                  type="button"
+                  className="primitive-action-button"
+                  onClick={() => {
+                    setIsEditingTags(false);
+                    setTagDraft((entry?.personalTags ?? []).join(', '));
                   }}
                 >
                   Cancel
