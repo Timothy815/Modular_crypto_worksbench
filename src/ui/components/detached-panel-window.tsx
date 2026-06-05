@@ -697,6 +697,7 @@ function renderDetachedPane(
         viewMode={(payload as DetachedPaletteSnapshot).paletteViewMode}
         onToggleViewMode={() => sendCommand('palette', { type: 'togglePaletteViewMode' })}
         compositeUsageCountById={(payload as DetachedPaletteSnapshot).compositeUsageCountById}
+        reusableReferenceProjects={(payload as DetachedPaletteSnapshot).reusableReferenceProjects}
         builtInReusableIds={(payload as DetachedPaletteSnapshot).builtInReusableIds}
         onAddModule={(defId) => sendCommand('palette', { type: 'addModule', defId })}
         onStartCanvasDrag={(defId, clientX, clientY) =>

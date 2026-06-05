@@ -26,6 +26,7 @@ import type {
 } from './verification-workflow';
 import type { WorkbenchAnnotation } from './workbench-document';
 import type { WorkspaceMode } from './workspace-mode';
+import type { ReusableReferenceProject } from './reusable-references';
 
 export type DetachedPanelKind = 'palette' | 'inspector' | 'learning';
 export type ThemeMode = 'light' | 'dark';
@@ -41,6 +42,7 @@ export interface DetachedPaletteSnapshot {
   paletteViewMode: 'compact' | 'expanded';
   compositeLibrary: CompositeLibraryEntry[];
   compositeUsageCountById: Record<string, number>;
+  reusableReferenceProjects: ReusableReferenceProject[];
   builtInReusableIds: string[];
 }
 

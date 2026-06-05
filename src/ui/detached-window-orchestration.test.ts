@@ -25,6 +25,7 @@ describe('detached-window-orchestration', () => {
           paletteViewMode: 'expanded',
           compositeLibrary: [],
           compositeUsageCountById: {},
+          reusableReferenceProjects: [],
           builtInReusableIds: [],
         },
         inspector: {

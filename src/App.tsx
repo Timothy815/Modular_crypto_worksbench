@@ -933,19 +933,26 @@ function MainApp() {
     },
     [availableProjects, openWorkspaceIds, openWorkspaceTabs.length, state.activeProjectId],
   );
-  const compositeUsageCountById = Object.values(state.projectStates).reduce<Record<string, number>>(
-    (counts, project) => {
-      for (const moduleInstance of project.modules) {
+  const reusableReferenceProjects = useMemo(
+    () =>
+      availableProjects.map((project) => ({
+        id: project.id,
+        name: project.name,
+        project: state.projectStates[project.id] ?? project.project,
+      })),
+    [availableProjects, state.projectStates],
+  );
+  const compositeUsageCountById = useMemo(
+    () => reusableReferenceProjects.reduce<Record<string, number>>((counts, referenceProject) => {
+      for (const moduleInstance of referenceProject.project.modules) {
         if (!state.compositeLibrary.some((entry) => entry.id === moduleInstance.defId)) {
           continue;
         }
-
         counts[moduleInstance.defId] = (counts[moduleInstance.defId] ?? 0) + 1;
       }
-
       return counts;
-    },
-    {},
+    }, {}),
+    [reusableReferenceProjects, state.compositeLibrary],
   );
   const builtInReusableIds = state.compositeLibrary
     .filter((entry) => entry.source === 'built-in')
@@ -1949,9 +1956,10 @@ function MainApp() {
       paletteViewMode,
       compositeLibrary: state.compositeLibrary,
       compositeUsageCountById,
+      reusableReferenceProjects,
       builtInReusableIds,
     }),
-    [activeProjectDefinition.id, builtInReusableIds, compositeUsageCountById, paletteViewMode, state.compositeLibrary, theme],
+    [activeProjectDefinition.id, builtInReusableIds, compositeUsageCountById, paletteViewMode, reusableReferenceProjects, state.compositeLibrary, theme],
   );
   const detachedInspectorSnapshot = useMemo<DetachedInspectorSnapshot>(
     () => ({
@@ -5527,6 +5535,7 @@ function MainApp() {
                   })
                 }
                 compositeUsageCountById={compositeUsageCountById}
+                reusableReferenceProjects={reusableReferenceProjects}
                 builtInReusableIds={builtInReusableIds}
                 onAddModule={(defId) => {
                   const moduleDef = effectiveRegistry[defId] ?? null;

@@ -40,6 +40,10 @@ const personalCompositeDef: CompositeDef = {
   ...compositeDef,
   id: 'PersonalRound',
   name: 'Personal Round',
+  project: {
+    modules: [{ id: 'round-pair-ref', defId: 'RoundPair', params: {} }],
+    connections: [],
+  },
 };
 
 const compositeLibrary: CompositeLibraryEntry[] = [
@@ -84,6 +88,17 @@ const registry: ModuleRegistry = {
   PersonalRound: personalCompositeDef,
 };
 
+const reusableReferenceProjects = [
+  {
+    id: 'workspace-a',
+    name: 'Workspace A',
+    project: {
+      modules: [{ id: 'round-pair-1', defId: 'RoundPair', params: {} }],
+      connections: [],
+    },
+  },
+];
+
 describe('PrimitivePalette reusable summaries', () => {
   it('renders stronger structural and origin summaries for reusables', () => {
     const markup = renderToStaticMarkup(
@@ -106,6 +121,7 @@ describe('PrimitivePalette reusable summaries', () => {
         onExportCompositeLibrary={() => undefined}
         onRemoveComposite={() => undefined}
         compositeUsageCountById={{ RoundPair: 1 }}
+        reusableReferenceProjects={reusableReferenceProjects}
         builtInReusableIds={['ByteRoundIterator']}
       />,
     );
@@ -115,6 +131,8 @@ describe('PrimitivePalette reusable summaries', () => {
     expect(markup).toContain('This workspace');
     expect(markup).toContain('Built-in architecture');
     expect(markup).toContain('Inputs: in:bits · Outputs: out:bits');
+    expect(markup).toContain('Placed 1 time in saved local work · Referenced by 1 reusable');
+    expect(markup).toContain('Delete unavailable while this reusable is placed in saved local work and referenced by another reusable.');
   });
 
   it('renders authored-library guidance in the composites view', () => {
@@ -138,6 +156,7 @@ describe('PrimitivePalette reusable summaries', () => {
         onExportCompositeLibrary={() => undefined}
         onRemoveComposite={() => undefined}
         compositeUsageCountById={{ RoundPair: 1 }}
+        reusableReferenceProjects={reusableReferenceProjects}
         builtInReusableIds={['ByteRoundIterator']}
       />,
     );
@@ -152,5 +171,36 @@ describe('PrimitivePalette reusable summaries', () => {
     expect(markup).toContain('All Tags');
     expect(markup).toContain('AES');
     expect(markup).toContain('Classroom');
+  });
+
+  it('blocks delete when reusable-definition references exist without placed usage', () => {
+    const markup = renderToStaticMarkup(
+      <PrimitivePalette
+        registry={registry}
+        activeWorkspaceId="workspace-a"
+        compositeLibrary={compositeLibrary}
+        viewMode="expanded"
+        initialActiveTab="composites"
+        onToggleViewMode={() => undefined}
+        onAddModule={() => undefined}
+        onInsertStarterChain={() => undefined}
+        onOpenComposite={() => undefined}
+        onEditClockedIterator={() => undefined}
+        onDuplicateReusable={() => undefined}
+        onRenameReusable={() => undefined}
+        onUpdateReusableTags={() => undefined}
+        onPromoteReusable={() => undefined}
+        onOpenPrimitiveMicroDemo={() => undefined}
+        onExportCompositeLibrary={() => undefined}
+        onRemoveComposite={() => undefined}
+        compositeUsageCountById={{}}
+        reusableReferenceProjects={[]}
+        builtInReusableIds={['ByteRoundIterator']}
+      />,
+    );
+
+    expect(markup).toContain('Referenced by 1 reusable');
+    expect(markup).toContain('Delete unavailable while another reusable references this reusable.');
+    expect(markup).toContain('disabled=""');
   });
 });

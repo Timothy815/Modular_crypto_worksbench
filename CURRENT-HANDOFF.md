@@ -7,8 +7,8 @@ This file is the fastest restart point for a fresh agent session.
 ## Current Branch And Commit
 
 - branch: `main`
-- latest shipped commit on `main`: pending commit after `886317b`
-- latest shipped message: `Add personal library organization`
+- latest shipped commit on `main`: pending commit after `34c32eb`
+- latest shipped message: `Add reusable impact references`
 
 ## Working Tree
 
@@ -19,15 +19,15 @@ This file is the fastest restart point for a fresh agent session.
 
 The latest authored-reuse slice is now implemented in the working tree:
 
-- `PERSONAL-LIBRARY-ORGANIZATION-V1`
+- `REUSABLE-IMPACT-AND-REFERENCES-V1`
 
 MCW now supports:
 
-- personal-library tags on promoted reusable entries
-- normalized/deduplicated tag metadata that persists and exports with personal reusables
-- a Personal Tags filter in the reusable palette
-- per-card tag display and comma-separated tag editing for personal-library entries
-- existing copy-based promotion and workspace-local ownership boundaries remain unchanged
+- reusable impact summaries in the reusable palette
+- separate placed-instance counts from reusable-definition reference counts
+- saved-local reference copy that does not imply external-file scanning
+- delete blocking when either placed instances or other reusable definitions reference an entry
+- rename copy that clarifies display-name changes keep stable ids and references unchanged
 
 ## Current Product State
 
@@ -47,6 +47,7 @@ Already shipped on `main`:
 - reusable dependency visibility
 - dependency-aware reusable promotion
 - personal-library tag organization
+- reusable impact/reference visibility
 
 ## Canonical Restart Read Order
 
@@ -60,26 +61,26 @@ Already shipped on `main`:
 
 ## Next Likely Work
 
-No next slice is drafted yet after `PERSONAL-LIBRARY-ORGANIZATION-V1`.
+No next slice is drafted yet after `REUSABLE-IMPACT-AND-REFERENCES-V1`.
 
 The most likely next authored-reuse follow-ons are:
 
-1. `REUSABLE-IMPACT-AND-REFERENCES-V1`
-- show where a reusable is used before rename/delete/promotion
-- best if trust and safe cleanup are the next concern
-
-2. a smaller personal-library organization follow-on only if needed
+1. a smaller personal-library organization follow-on only if needed
 - for example, richer grouping, tag rename, or tag cleanup
 - but only if real use shows the current bounded tag layer is insufficient
 
+2. a reusable cleanup/actionability follow-on only if needed
+- for example, jump-to-reference or replace-reference workflows
+- only if real use shows read-only impact visibility is insufficient
+
 Recommended next direction if no new user priority overrides it:
 
-- `REUSABLE-IMPACT-AND-REFERENCES-V1`
+- no automatic authored-reuse follow-on yet; evaluate by classroom/user pain
 
 Reason:
 
 - personal-library clutter now has a first lightweight tag/filter layer
-- the next likely trust gap is knowing where a reusable is referenced before editing or deleting it
+- reusable cleanup trust now has read-only placed/reference impact visibility
 
 ## Verification Baseline
 

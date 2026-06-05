@@ -39,6 +39,11 @@ import {
 } from '../reusable-definition-summary';
 import { getReusableDependencyVisibility } from '../reusable-dependency-visibility';
 import { parseReusablePersonalTagDraft } from '../reusable-library';
+import {
+  buildReusableReferenceSummaries,
+  type ReusableReferenceProject,
+  type ReusableReferenceSummary,
+} from '../reusable-references';
 
 interface PrimitivePaletteProps {
   registry: ModuleRegistry;
@@ -59,6 +64,7 @@ interface PrimitivePaletteProps {
   onExportCompositeLibrary: () => void;
   onRemoveComposite: (defId: string) => void;
   compositeUsageCountById: Record<string, number>;
+  reusableReferenceProjects: ReusableReferenceProject[];
   builtInReusableIds: string[];
   pendingConnectionSourceType?: string | null;
   hoveredInputPort?: PaletteHoveredInputPortHint | null;
@@ -134,6 +140,7 @@ export function PrimitivePalette({
   onExportCompositeLibrary,
   onRemoveComposite,
   compositeUsageCountById,
+  reusableReferenceProjects,
   builtInReusableIds,
   pendingConnectionSourceType,
   hoveredInputPort,
@@ -184,6 +191,10 @@ export function PrimitivePalette({
   const reusableEntryById = useMemo(
     () => new Map(compositeLibrary.map((entry) => [entry.id, entry])),
     [compositeLibrary],
+  );
+  const reusableReferenceSummaryById = useMemo(
+    () => buildReusableReferenceSummaries(compositeLibrary, reusableReferenceProjects, activeWorkspaceId),
+    [activeWorkspaceId, compositeLibrary, reusableReferenceProjects],
   );
 
   const personalReusableTags = useMemo(() => {
@@ -536,6 +547,7 @@ export function PrimitivePalette({
                 activeWorkspaceId={activeWorkspaceId}
                 viewMode={viewMode}
                 usageCount={compositeUsageCountById[def.id] ?? 0}
+                referenceSummary={reusableReferenceSummaryById[def.id] ?? null}
                 isBuiltInReusable={builtInReusableIds.includes(def.id)}
                   onAddModule={onAddModule}
                   onStartCanvasDrag={onStartCanvasDrag}
@@ -579,6 +591,7 @@ export function PrimitivePalette({
                     activeWorkspaceId={activeWorkspaceId}
                     viewMode={viewMode}
                     usageCount={compositeUsageCountById[def.id] ?? 0}
+                    referenceSummary={reusableReferenceSummaryById[def.id] ?? null}
                     isBuiltInReusable={false}
                 onAddModule={onAddModule}
                 onStartCanvasDrag={onStartCanvasDrag}
@@ -775,6 +788,7 @@ export function PrimitivePalette({
                       activeWorkspaceId={activeWorkspaceId}
                       viewMode={viewMode}
                       usageCount={compositeUsageCountById[def.id] ?? 0}
+                      referenceSummary={reusableReferenceSummaryById[def.id] ?? null}
                       isBuiltInReusable={builtInReusableIds.includes(def.id)}
                       onAddModule={onAddModule}
                       onStartCanvasDrag={onStartCanvasDrag}
@@ -819,6 +833,7 @@ interface ModuleLibraryCardProps {
   activeWorkspaceId: string;
   viewMode: 'compact' | 'expanded';
   usageCount: number;
+  referenceSummary: ReusableReferenceSummary | null;
   isBuiltInReusable: boolean;
   onAddModule: (defId: string) => void;
   onStartCanvasDrag?: (defId: string, clientX: number, clientY: number) => void;
@@ -847,6 +862,7 @@ function ModuleLibraryCard({
   activeWorkspaceId,
   viewMode,
   usageCount,
+  referenceSummary,
   isBuiltInReusable,
   onAddModule,
   onStartCanvasDrag,
@@ -897,6 +913,10 @@ function ModuleLibraryCard({
     isReusable && entry
       ? getReusableDependencyVisibility(entry, compositeLibrary, activeWorkspaceId)
       : null;
+  const effectiveReferenceSummary = isReusable ? referenceSummary : null;
+  const deleteBlockReason =
+    effectiveReferenceSummary?.deleteBlockReason ??
+    (usageCount > 0 ? 'Delete unavailable while this reusable is placed in saved local work.' : null);
 
   useEffect(() => {
     setRenameDraft(def.name);
@@ -986,6 +1006,9 @@ function ModuleLibraryCard({
             ) : null}
             {isReusable && reusableDependencyVisibility ? (
               <p className="primitive-reuse-summary">{reusableDependencyVisibility.summary}</p>
+            ) : null}
+            {isReusable && effectiveReferenceSummary ? (
+              <p className="primitive-reuse-summary">{effectiveReferenceSummary.compactSummary}</p>
             ) : null}
             {personalTags.length > 0 ? (
               <p className="primitive-reuse-summary">
@@ -1105,12 +1128,8 @@ function ModuleLibraryCard({
                 type="button"
                 className="primitive-action-button primitive-action-button-danger"
                 onClick={() => onRemoveComposite(def.id)}
-                disabled={usageCount > 0}
-                title={
-                  usageCount > 0
-                    ? 'Remove composite instances from the workbench before deleting it from the library.'
-                    : `Remove ${def.name}`
-                }
+                disabled={deleteBlockReason !== null}
+                title={deleteBlockReason ?? `Remove ${def.name}`}
                 aria-label={`Remove ${def.name}`}
               >
                 x
@@ -1275,12 +1294,8 @@ function ModuleLibraryCard({
                 type="button"
                 className="primitive-action-button primitive-action-button-danger"
                 onClick={() => onRemoveComposite(def.id)}
-                disabled={usageCount > 0}
-                title={
-                  usageCount > 0
-                    ? 'Remove composite instances from the workbench before deleting it from the library.'
-                    : `Remove ${def.name}`
-                }
+                disabled={deleteBlockReason !== null}
+                title={deleteBlockReason ?? `Remove ${def.name}`}
                 aria-label={`Remove ${def.name}`}
               >
                 x
@@ -1310,6 +1325,11 @@ function ModuleLibraryCard({
               <strong>{reusableDependencyVisibility.summary}</strong>
             </p>
           ) : null}
+          {isReusable && effectiveReferenceSummary ? (
+            <p className="primitive-reuse-summary">
+              <strong>{effectiveReferenceSummary.compactSummary}</strong>
+            </p>
+          ) : null}
           {personalTags.length > 0 ? (
             <div className="primitive-tag-row" aria-label={`${def.name} personal-library tags`}>
               {personalTags.map((tag) => (
@@ -1337,11 +1357,49 @@ function ModuleLibraryCard({
               </ul>
             </div>
           ) : null}
+          {isReusable && effectiveReferenceSummary && (effectiveReferenceSummary.placedReferences.length > 0 || effectiveReferenceSummary.definitionReferences.length > 0) ? (
+            <div className="primitive-help-card" data-no-palette-drag="true">
+              <p className="primitive-help-role">
+                <span className="meta-label">References</span> Saved-local placements and immediate reusable references.
+              </p>
+              {effectiveReferenceSummary.placedReferences.length > 0 ? (
+                <ul className="primitive-list">
+                  {effectiveReferenceSummary.placedReferences.map((reference) => (
+                    <li key={`${def.id}-${reference.projectId}`} className="primitive-card primitive-compact-row">
+                      <div className="primitive-compact-main">
+                        <div className="primitive-compact-meta">
+                          <strong className="primitive-title">{reference.projectName}</strong>
+                          <p className="primitive-reuse-summary">
+                            Placed {reference.count} time{reference.count === 1 ? '' : 's'}
+                          </p>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {effectiveReferenceSummary.definitionReferences.length > 0 ? (
+                <ul className="primitive-list">
+                  {effectiveReferenceSummary.definitionReferences.map((reference) => (
+                    <li key={`${def.id}-${reference.id}`} className="primitive-card primitive-compact-row">
+                      <div className="primitive-compact-main">
+                        <div className="primitive-compact-meta">
+                          <strong className="primitive-title">{reference.name}</strong>
+                          <span className="primitive-def-id">{reference.id}</span>
+                          <p className="primitive-reuse-summary">{reference.scopeLabel}</p>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          ) : null}
           {isReusable && !isBuiltInReusable && isRenaming ? (
             <div className="primitive-help-card" data-no-palette-drag="true">
               <p className="primitive-help-role">
                 <span className="meta-label">Rename Reusable</span> Display name only. Stable id stays{' '}
-                <strong>{def.id}</strong>.
+                <strong>{def.id}</strong>; existing references stay unchanged.
               </p>
               <label className="workspace-version-item">
                 <div>

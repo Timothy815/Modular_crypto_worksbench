@@ -128,9 +128,9 @@ The motivation is straightforward: local browser persistence is now a real proje
 
 **Latest personal-library organization work:** `PERSONAL-LIBRARY-ORGANIZATION-V1` is now implemented. MCW now lets authors add normalized personal tags to promoted reusable entries, browse personal-library entries by tag from the reusable palette, and export/persist those tags with the personal-library entries. This is intentionally a lightweight recognition/filtering layer, not folders or package-manager semantics.
 
-No next authored-reuse follow-on is drafted yet after this slice. The most likely next direction is:
+**Latest reusable-impact trust work:** `REUSABLE-IMPACT-AND-REFERENCES-V1` is now implemented. MCW now separates placed-instance counts from reusable-definition references, shows compact impact summaries in the reusable palette, blocks delete when saved-local placements or immediate reusable-definition references exist, and clarifies that display-name rename leaves stable ids and references unchanged.
 
-1. `REUSABLE-IMPACT-AND-REFERENCES-V1`
+No next authored-reuse follow-on is drafted yet after this slice. The most likely future directions are a smaller personal-library organization follow-on or a jump-to-reference/replace-reference actionability slice, but neither is contracted.
 
 ## Practical Restart Guidance
 
