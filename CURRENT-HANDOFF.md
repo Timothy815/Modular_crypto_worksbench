@@ -7,8 +7,8 @@ This file is the fastest restart point for a fresh agent session.
 ## Current Branch And Commit
 
 - branch: `main`
-- latest shipped commit on `main`: pending commit after `34c32eb`
-- latest shipped message: `Add reusable impact references`
+- latest shipped commit on `main`: `6b1dc01`
+- latest shipped message: `Add reusable jump to references`
 
 ## Working Tree
 
@@ -17,7 +17,7 @@ This file is the fastest restart point for a fresh agent session.
 
 ## What Just Shipped
 
-The latest authored-reuse slice is now implemented in the working tree:
+The latest authored-reuse slices are now shipped on `main`:
 
 - `REUSABLE-IMPACT-AND-REFERENCES-V1`
 - `REUSABLE-JUMP-TO-REFERENCES-V1`

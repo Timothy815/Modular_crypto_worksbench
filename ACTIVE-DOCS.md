@@ -1,6 +1,6 @@
 # MCW Active Docs
 
-Last updated: June 3, 2026
+Last updated: June 5, 2026
 
 This is the canonical starting point for humans and agents.
 
