@@ -12,6 +12,8 @@ export interface ReusablePlacedReference {
   projectId: string;
   projectName: string;
   count: number;
+  targetModuleId: string | null;
+  jumpDisabledReason: string | null;
 }
 
 export interface ReusableDefinitionReference {
@@ -19,6 +21,8 @@ export interface ReusableDefinitionReference {
   name: string;
   scope: 'built-in' | 'workspace' | 'personal';
   scopeLabel: 'Built-In' | 'This Workspace' | 'Workspace Local' | 'Personal Library';
+  kind: 'composite' | 'iterator' | 'clocked-iterator' | 'conditional' | 'multi-conditional';
+  jumpDisabledReason: string | null;
 }
 
 export interface ReusableReferenceSummary {
@@ -51,11 +55,19 @@ export function buildReusableReferenceSummary(
 ): ReusableReferenceSummary {
   const reusableById = new Map(compositeLibrary.map((entry) => [entry.id, entry]));
   const placedReferences = projects
-    .map((project) => ({
-      projectId: project.id,
-      projectName: project.name,
-      count: project.project.modules.filter((moduleInstance) => moduleInstance.defId === reusableId).length,
-    }))
+    .map((project) => {
+      const matchingModules = project.project.modules.filter((moduleInstance) => moduleInstance.defId === reusableId);
+      return {
+        projectId: project.id,
+        projectName: project.name,
+        count: matchingModules.length,
+        targetModuleId: matchingModules[0]?.id ?? null,
+        jumpDisabledReason:
+          matchingModules[0]?.id ?? null
+            ? null
+            : 'Jump unavailable (target not currently open)',
+      };
+    })
     .filter((reference) => reference.count > 0);
   const definitionReferences = compositeLibrary
     .filter((entry) => entry.id !== reusableId)
@@ -65,6 +77,8 @@ export function buildReusableReferenceSummary(
       name: entry.name,
       scope: getReusableScope(entry),
       scopeLabel: getReusableReferenceScopeLabel(entry, activeWorkspaceId),
+      kind: entry.definition.kind,
+      jumpDisabledReason: getReusableDefinitionJumpDisabledReason(entry.definition.kind),
     }));
   const placedCount = placedReferences.reduce((sum, reference) => sum + reference.count, 0);
   const definitionReferenceCount = definitionReferences.length;
@@ -121,4 +135,20 @@ function formatDeleteBlockReason(placedCount: number, definitionReferenceCount: 
     return 'Delete unavailable while another reusable references this reusable.';
   }
   return null;
+}
+
+function getReusableDefinitionJumpDisabledReason(
+  kind: ReusableDefinitionReference['kind'],
+): string | null {
+  switch (kind) {
+    case 'composite':
+    case 'clocked-iterator':
+      return null;
+    case 'iterator':
+    case 'conditional':
+    case 'multi-conditional':
+      return 'Edit not yet available for this reusable kind.';
+    default:
+      return 'Jump unavailable (target not currently open)';
+  }
 }

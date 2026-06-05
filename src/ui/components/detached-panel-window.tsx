@@ -712,6 +712,9 @@ function renderDetachedPane(
           })
         }
         onEditClockedIterator={(defId) => sendCommand('palette', { type: 'editClockedIterator', defId })}
+        onOpenReusableReferenceProject={(projectId, moduleId) =>
+          sendCommand('palette', { type: 'openRefProject', projectId, moduleId })
+        }
         onDuplicateReusable={(defId) => sendCommand('palette', { type: 'duplicateReusable', defId })}
         onRenameReusable={(defId, nextName) =>
           sendCommand('palette', { type: 'renameReusable', defId, nextName })

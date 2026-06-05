@@ -113,6 +113,7 @@ describe('PrimitivePalette reusable summaries', () => {
         onInsertStarterChain={() => undefined}
         onOpenComposite={() => undefined}
         onEditClockedIterator={() => undefined}
+        onOpenReusableReferenceProject={() => undefined}
         onDuplicateReusable={() => undefined}
         onRenameReusable={() => undefined}
         onUpdateReusableTags={() => undefined}
@@ -148,6 +149,7 @@ describe('PrimitivePalette reusable summaries', () => {
         onInsertStarterChain={() => undefined}
         onOpenComposite={() => undefined}
         onEditClockedIterator={() => undefined}
+        onOpenReusableReferenceProject={() => undefined}
         onDuplicateReusable={() => undefined}
         onRenameReusable={() => undefined}
         onUpdateReusableTags={() => undefined}
@@ -186,6 +188,7 @@ describe('PrimitivePalette reusable summaries', () => {
         onInsertStarterChain={() => undefined}
         onOpenComposite={() => undefined}
         onEditClockedIterator={() => undefined}
+        onOpenReusableReferenceProject={() => undefined}
         onDuplicateReusable={() => undefined}
         onRenameReusable={() => undefined}
         onUpdateReusableTags={() => undefined}

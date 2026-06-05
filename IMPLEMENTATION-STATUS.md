@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: June 3, 2026
+Last updated: June 5, 2026
 
 ---
 
@@ -130,7 +130,9 @@ The motivation is straightforward: local browser persistence is now a real proje
 
 **Latest reusable-impact trust work:** `REUSABLE-IMPACT-AND-REFERENCES-V1` is now implemented. MCW now separates placed-instance counts from reusable-definition references, shows compact impact summaries in the reusable palette, blocks delete when saved-local placements or immediate reusable-definition references exist, and clarifies that display-name rename leaves stable ids and references unchanged.
 
-No next authored-reuse follow-on is drafted yet after this slice. The most likely future directions are a smaller personal-library organization follow-on or a jump-to-reference/replace-reference actionability slice, but neither is contracted.
+**Latest reusable-jump actionability work:** `REUSABLE-JUMP-TO-REFERENCES-V1` is now implemented. MCW now lets authors jump from placed-reference rows into the saved-local board that currently contains a reusable, uses the existing open/edit path for composite and clocked-iterator definition references, preserves previous-view return behavior, and shows bounded disabled-state copy when a reference target is not currently jumpable.
+
+No next authored-reuse follow-on is drafted yet after this slice. The most likely future directions are a bounded replace-reference follow-on or a smaller personal-library organization refinement, but neither is contracted.
 
 ## Practical Restart Guidance
 

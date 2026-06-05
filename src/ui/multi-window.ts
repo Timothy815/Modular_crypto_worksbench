@@ -164,6 +164,7 @@ export type DetachedPanelCommand =
   | { type: 'insertStarterChain'; starterId: string }
   | { type: 'openComposite'; defId: string }
   | { type: 'editClockedIterator'; defId: string }
+  | { type: 'openRefProject'; projectId: string; moduleId: string }
   | { type: 'duplicateReusable'; defId: string }
   | { type: 'renameReusable'; defId: string; nextName: string }
   | { type: 'promoteReusable'; defId: string }

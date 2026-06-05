@@ -56,6 +56,7 @@ interface PrimitivePaletteProps {
   onInsertStarterChain: (starterId: string) => void;
   onOpenComposite: (defId: string) => void;
   onEditClockedIterator: (defId: string) => void;
+  onOpenReusableReferenceProject: (projectId: string, moduleId: string) => void;
   onDuplicateReusable: (defId: string) => void;
   onRenameReusable: (defId: string, nextName: string) => void;
   onUpdateReusableTags: (defId: string, tags: string[]) => void;
@@ -132,6 +133,7 @@ export function PrimitivePalette({
   onInsertStarterChain,
   onOpenComposite,
   onEditClockedIterator,
+  onOpenReusableReferenceProject,
   onDuplicateReusable,
   onRenameReusable,
   onUpdateReusableTags,
@@ -553,6 +555,7 @@ export function PrimitivePalette({
                   onStartCanvasDrag={onStartCanvasDrag}
                 onOpenComposite={onOpenComposite}
                 onEditClockedIterator={onEditClockedIterator}
+                onOpenReusableReferenceProject={onOpenReusableReferenceProject}
                 onDuplicateReusable={onDuplicateReusable}
                 onRenameReusable={onRenameReusable}
                 onUpdateReusableTags={onUpdateReusableTags}
@@ -597,6 +600,7 @@ export function PrimitivePalette({
                 onStartCanvasDrag={onStartCanvasDrag}
                     onOpenComposite={onOpenComposite}
                     onEditClockedIterator={onEditClockedIterator}
+                    onOpenReusableReferenceProject={onOpenReusableReferenceProject}
                     onDuplicateReusable={onDuplicateReusable}
                     onRenameReusable={onRenameReusable}
                     onUpdateReusableTags={onUpdateReusableTags}
@@ -794,6 +798,7 @@ export function PrimitivePalette({
                       onStartCanvasDrag={onStartCanvasDrag}
                       onOpenComposite={onOpenComposite}
                       onEditClockedIterator={onEditClockedIterator}
+                      onOpenReusableReferenceProject={onOpenReusableReferenceProject}
                       onDuplicateReusable={onDuplicateReusable}
                       onRenameReusable={onRenameReusable}
                       onUpdateReusableTags={onUpdateReusableTags}
@@ -839,6 +844,7 @@ interface ModuleLibraryCardProps {
   onStartCanvasDrag?: (defId: string, clientX: number, clientY: number) => void;
   onOpenComposite: (defId: string) => void;
   onEditClockedIterator: (defId: string) => void;
+  onOpenReusableReferenceProject: (projectId: string, moduleId: string) => void;
   onDuplicateReusable: (defId: string) => void;
   onRenameReusable: (defId: string, nextName: string) => void;
   onUpdateReusableTags: (defId: string, tags: string[]) => void;
@@ -868,6 +874,7 @@ function ModuleLibraryCard({
   onStartCanvasDrag,
   onOpenComposite,
   onEditClockedIterator,
+  onOpenReusableReferenceProject,
   onDuplicateReusable,
   onRenameReusable,
   onUpdateReusableTags,
@@ -1373,6 +1380,22 @@ function ModuleLibraryCard({
                             Placed {reference.count} time{reference.count === 1 ? '' : 's'}
                           </p>
                         </div>
+                        <div className="primitive-compact-actions">
+                          <button
+                            type="button"
+                            className="primitive-action-button"
+                            disabled={reference.targetModuleId === null}
+                            title={reference.jumpDisabledReason ?? `Open ${reference.projectName}`}
+                            onClick={() => {
+                              if (!reference.targetModuleId) {
+                                return;
+                              }
+                              onOpenReusableReferenceProject(reference.projectId, reference.targetModuleId);
+                            }}
+                          >
+                            Open board
+                          </button>
+                        </div>
                       </div>
                     </li>
                   ))}
@@ -1387,6 +1410,28 @@ function ModuleLibraryCard({
                           <strong className="primitive-title">{reference.name}</strong>
                           <span className="primitive-def-id">{reference.id}</span>
                           <p className="primitive-reuse-summary">{reference.scopeLabel}</p>
+                        </div>
+                        <div className="primitive-compact-actions">
+                          <button
+                            type="button"
+                            className="primitive-action-button"
+                            disabled={reference.jumpDisabledReason !== null}
+                            title={reference.jumpDisabledReason ?? `Open ${reference.name}`}
+                            onClick={() => {
+                              if (reference.jumpDisabledReason !== null) {
+                                return;
+                              }
+                              if (reference.kind === 'composite') {
+                                onOpenComposite(reference.id);
+                                return;
+                              }
+                              if (reference.kind === 'clocked-iterator') {
+                                onEditClockedIterator(reference.id);
+                              }
+                            }}
+                          >
+                            Open reusable
+                          </button>
                         </div>
                       </div>
                     </li>

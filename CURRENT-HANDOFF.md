@@ -1,6 +1,6 @@
 # Current Handoff
 
-Last updated: June 3, 2026
+Last updated: June 5, 2026
 
 This file is the fastest restart point for a fresh agent session.
 
@@ -20,6 +20,7 @@ This file is the fastest restart point for a fresh agent session.
 The latest authored-reuse slice is now implemented in the working tree:
 
 - `REUSABLE-IMPACT-AND-REFERENCES-V1`
+- `REUSABLE-JUMP-TO-REFERENCES-V1`
 
 MCW now supports:
 
@@ -28,6 +29,9 @@ MCW now supports:
 - saved-local reference copy that does not imply external-file scanning
 - delete blocking when either placed instances or other reusable definitions reference an entry
 - rename copy that clarifies display-name changes keep stable ids and references unchanged
+- `Open board` actions from reusable placed-reference rows into the saved-local board that currently contains the reusable
+- `Open reusable` actions from reusable-definition reference rows when that reusable kind already has an edit/open affordance
+- bounded disabled-state copy when a reference target is not currently jumpable
 
 ## Current Product State
 
@@ -48,6 +52,7 @@ Already shipped on `main`:
 - dependency-aware reusable promotion
 - personal-library tag organization
 - reusable impact/reference visibility
+- reusable jump-to-reference navigation
 
 ## Canonical Restart Read Order
 
@@ -61,26 +66,20 @@ Already shipped on `main`:
 
 ## Next Likely Work
 
-No next slice is drafted yet after `REUSABLE-IMPACT-AND-REFERENCES-V1`.
+No next authored-reuse follow-on is drafted yet after `REUSABLE-JUMP-TO-REFERENCES-V1`.
 
-The most likely next authored-reuse follow-ons are:
+The most likely future authored-reuse directions are:
 
-1. a smaller personal-library organization follow-on only if needed
-- for example, richer grouping, tag rename, or tag cleanup
-- but only if real use shows the current bounded tag layer is insufficient
+1. a reusable cleanup/actionability follow-on only if real use shows jump-only navigation is insufficient
+- for example, a bounded replace-reference workflow
+- but only with a fresh contract, since this slice intentionally stopped short of retargeting semantics
 
-2. a reusable cleanup/actionability follow-on only if needed
-- for example, jump-to-reference or replace-reference workflows
-- only if real use shows read-only impact visibility is insufficient
+2. a smaller personal-library organization follow-on only if the current tag layer proves too thin
+- for example, tag rename or tag cleanup
 
 Recommended next direction if no new user priority overrides it:
 
-- no automatic authored-reuse follow-on yet; evaluate by classroom/user pain
-
-Reason:
-
-- personal-library clutter now has a first lightweight tag/filter layer
-- reusable cleanup trust now has read-only placed/reference impact visibility
+- pause automatic authored-reuse follow-ons and evaluate where real author friction remains
 
 ## Verification Baseline
 

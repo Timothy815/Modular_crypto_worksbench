@@ -2805,6 +2805,32 @@ function MainApp() {
     setImportError(null);
   }
 
+  function openClockedIteratorEditor(defId: string) {
+    const entry = state.compositeLibrary.find((candidate) => candidate.id === defId);
+    if (!entry || !('kind' in entry.definition) || entry.definition.kind !== 'clocked-iterator') {
+      return;
+    }
+
+    const def = entry.definition;
+    setClockedIteratorEditingId(defId);
+    setClockedIteratorName(def.name);
+    setClockedIteratorId(def.id);
+    setClockedIteratorRoundDefId(def.roundDefId);
+    setClockedIteratorRoundCount(String(def.roundCount));
+    setClockedIteratorEndPolicy(def.endPolicy);
+    setClockedIteratorDialogError(null);
+    setIsClockedIteratorDialogOpen(true);
+  }
+
+  function handleOpenReusableReferenceProject(projectId: string, moduleId: string) {
+    setCompositeDrilldown(null);
+    if (state.compositeEditor) {
+      dispatch({ type: 'closeCompositeEditor' });
+    }
+    dispatch({ type: 'switchProject', projectId });
+    setRequestedWorkspaceFocusModuleId(moduleId);
+  }
+
   function handleAutoWireSelection(mode: AutoWireMode) {
     if (!activeProjectDefinition) {
       return;
@@ -3758,17 +3784,10 @@ function MainApp() {
           entryId: defId,
         }),
       editClockedIterator: (defId: string) => {
-        const entry = state.compositeLibrary.find((e) => e.id === defId);
-        if (!entry || !('kind' in entry.definition) || entry.definition.kind !== 'clocked-iterator') return;
-        const def = entry.definition;
-        setClockedIteratorEditingId(defId);
-        setClockedIteratorName(def.name);
-        setClockedIteratorId(def.id);
-        setClockedIteratorRoundDefId(def.roundDefId);
-        setClockedIteratorRoundCount(String(def.roundCount));
-        setClockedIteratorEndPolicy(def.endPolicy);
-        setClockedIteratorDialogError(null);
-        setIsClockedIteratorDialogOpen(true);
+        openClockedIteratorEditor(defId);
+      },
+      openReusableReferenceProject: (projectId: string, moduleId: string) => {
+        handleOpenReusableReferenceProject(projectId, moduleId);
       },
       duplicateReusable: (defId: string) => {
         const entry = state.compositeLibrary.find((candidate) => candidate.id === defId);
@@ -5582,19 +5601,8 @@ function MainApp() {
                     entryId: defId,
                   });
                 }}
-                onEditClockedIterator={(defId) => {
-                  const entry = state.compositeLibrary.find((e) => e.id === defId);
-                  if (!entry || !('kind' in entry.definition) || entry.definition.kind !== 'clocked-iterator') return;
-                  const def = entry.definition;
-                  setClockedIteratorEditingId(defId);
-                  setClockedIteratorName(def.name);
-                  setClockedIteratorId(def.id);
-                  setClockedIteratorRoundDefId(def.roundDefId);
-                  setClockedIteratorRoundCount(String(def.roundCount));
-                  setClockedIteratorEndPolicy(def.endPolicy);
-                  setClockedIteratorDialogError(null);
-                  setIsClockedIteratorDialogOpen(true);
-                }}
+                onEditClockedIterator={openClockedIteratorEditor}
+                onOpenReusableReferenceProject={handleOpenReusableReferenceProject}
                 onDuplicateReusable={(defId) => {
                   const entry = state.compositeLibrary.find((candidate) => candidate.id === defId);
                   if (!entry) {

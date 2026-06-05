@@ -151,6 +151,7 @@ export interface DetachedPanelCommandHandlers {
   insertStarterChain: (starterId: string) => void;
   openComposite: (defId: string) => void;
   editClockedIterator: (defId: string) => void;
+  openReusableReferenceProject: (projectId: string, moduleId: string) => void;
   duplicateReusable: (defId: string) => void;
   renameReusable: (defId: string, nextName: string) => void;
   promoteReusable: (defId: string) => void;
@@ -315,6 +316,9 @@ export function connectDetachedPanelChannel(args: DetachedPanelChannelBridgeArgs
         return;
       case 'editClockedIterator':
         args.commandHandlers.editClockedIterator(command.defId);
+        return;
+      case 'openRefProject':
+        args.commandHandlers.openReusableReferenceProject(command.projectId, command.moduleId);
         return;
       case 'duplicateReusable':
         args.commandHandlers.duplicateReusable(command.defId);

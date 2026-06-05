@@ -137,7 +137,13 @@ describe('buildReusableReferenceSummary', () => {
 
     expect(summary.placedCount).toBe(2);
     expect(summary.placedReferences).toEqual([
-      { projectId: 'workspace-a', projectName: 'Workspace A', count: 2 },
+      {
+        projectId: 'workspace-a',
+        projectName: 'Workspace A',
+        count: 2,
+        targetModuleId: 'round-1',
+        jumpDisabledReason: null,
+      },
     ]);
     expect(summary.definitionReferenceCount).toBe(3);
     expect(summary.definitionReferences.map((reference) => reference.id)).toEqual([
@@ -158,18 +164,24 @@ describe('buildReusableReferenceSummary', () => {
         name: 'Wrapper Composite',
         scope: 'workspace',
         scopeLabel: 'This Workspace',
+        kind: 'composite',
+        jumpDisabledReason: null,
       },
       {
         id: 'PersonalIterator',
         name: 'Personal Iterator',
         scope: 'personal',
         scopeLabel: 'Personal Library',
+        kind: 'iterator',
+        jumpDisabledReason: 'Edit not yet available for this reusable kind.',
       },
       {
         id: 'BuiltInConditional',
         name: 'Built-In Conditional',
         scope: 'built-in',
         scopeLabel: 'Built-In',
+        kind: 'conditional',
+        jumpDisabledReason: 'Edit not yet available for this reusable kind.',
       },
     ]);
   });
