@@ -75,7 +75,7 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
   Rationale: Hash functions are entirely absent from the standard teaching flow. This is the largest remaining gap in modern cryptographic vocabulary. SHA-256 round structure or a real sponge construction would be the most significant single teaching addition remaining.
   Done when: At least one hash construction board exists, verified against a known test vector, with a tutorial that explains what the round function is doing and why.
 
-- [ ] **Consequence board: stream cipher IV/nonce reuse**
+- [x] **Consequence board: stream cipher IV/nonce reuse** *(shipped June 7, 2026)*
   Rationale: The Schnorr nonce reuse and ECDH low-order point boards are the strongest in the product. A stream cipher or CTR-mode IV-reuse consequence board in the same style would teach one of the most practically important failure modes in modern cryptography.
   Done when: A bounded board shows two messages encrypted with the same keystream, with visible key recovery. A repair challenge or analysis surface is present.
 

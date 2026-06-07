@@ -101,6 +101,9 @@ const visibleCompressionHashProject = demoProjects.find(
 );
 const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
 const toySpongeHashProject = demoProjects.find((project) => project.id === 'toy-sponge-hash');
+const ivReuseProject = demoProjects.find(
+  (project) => project.id === 'stream-cipher-iv-reuse-consequence',
+);
 
 if (!bridgeProject) {
   throw new Error('Expected bridge demo project to seed starter challenges.');
@@ -230,6 +233,9 @@ if (!toyCompressionHashProject) {
 }
 if (!toySpongeHashProject) {
   throw new Error('Expected toy-sponge-hash project to seed starter challenges.');
+}
+if (!ivReuseProject) {
+  throw new Error('Expected stream-cipher-iv-reuse-consequence project to seed starter challenges.');
 }
 if (!toyRsaProject) {
   throw new Error('Expected toy-rsa demo project to seed starter challenges.');
@@ -414,6 +420,22 @@ const toyCompressionHashTarget = cloneProject(toyCompressionHashProject.project)
 const toyCompressionHashCollisionStart = cloneProject(toyCompressionHashProject.project);
 const toySpongeHashTarget = cloneProject(toySpongeHashProject.project);
 const toySpongeHashCollisionStart = cloneProject(toySpongeHashProject.project);
+
+// IV Reuse challenge: same board structure but with a separate 'crib' BitSource for
+// the recovery step, so the student can independently adjust the known-plaintext guess.
+const ivReuseTarget = cloneProject(ivReuseProject.project);
+ivReuseTarget.modules.push({ id: 'crib', defId: 'BitSource', params: { stream: [0, 1, 1, 0, 1, 0, 1, 0] } });
+ivReuseTarget.connections = ivReuseTarget.connections.filter(
+  (c) => !(c.from.moduleId === 'msg-a' && c.to.moduleId === 'recover-b' && c.to.port === 'b'),
+);
+ivReuseTarget.connections.push({ from: { moduleId: 'crib', port: 'out' }, to: { moduleId: 'recover-b', port: 'b' } });
+
+const brokenIvReuseStart = cloneProject(ivReuseProject.project);
+brokenIvReuseStart.modules.push({ id: 'crib', defId: 'BitSource', params: { stream: [0, 0, 0, 0, 0, 0, 0, 0] } });
+brokenIvReuseStart.connections = brokenIvReuseStart.connections.filter(
+  (c) => !(c.from.moduleId === 'msg-a' && c.to.moduleId === 'recover-b' && c.to.port === 'b'),
+);
+brokenIvReuseStart.connections.push({ from: { moduleId: 'crib', port: 'out' }, to: { moduleId: 'recover-b', port: 'b' } });
 const toyRsaTarget = cloneProject(toyRsaProject.project);
 const brokenToyRsaStart = cloneProject(toyRsaProject.project);
 const diffieHellmanTarget = cloneProject(diffieHellmanProject.project);
@@ -1406,6 +1428,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'Only the left path S-Box (l-sub) is wrong. The right path and compress step are correct.',
       'The correct S-Box for this hash is the inverting table: each byte is replaced by 255 minus itself.',
       'Click l-sub, open the Inspector, and find the table parameter. It currently reads 0,1,2,...,255. Change it to the inverse: 255,254,...,0.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-iv-reuse-attack',
+    title: 'Repair the IV Reuse Attack',
+    projectId: 'stream-cipher-iv-reuse-consequence',
+    group: 'Stream Cipher Security',
+    stage: 'modern-bit-machines' as const,
+    order: 181.5,
+    difficulty: 'beginner' as const,
+    recommendedAfter: ['stream-cipher-iv-reuse-consequence'],
+    prompt:
+      "Two messages were encrypted with the same LFSR keystream. XORing the ciphertexts gives mA⊕mB. The attacker's crib (known-plaintext guess) is wrong — all zeros instead of Alice's real message. The recovery output does not match Bob's secret. Fix the crib to match Alice's actual message and watch the Equals module confirm recovery.",
+    startingProject: brokenIvReuseStart,
+    startingLayout: { ...ivReuseProject.layout, crib: { x: 1300, y: 540 } },
+    targetProject: ivReuseTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      "The crib module is the attacker's guess of Alice's message. It currently reads all zeros, which is wrong.",
+      "Look at the msg-a module — that shows Alice's actual plaintext bits. Set crib to the same bit pattern.",
+      'Click crib, open the Inspector, and change the stream parameter to 0,1,1,0,1,0,1,0.',
     ],
   },
   {

@@ -735,4 +735,42 @@ describe('seeded teaching content', () => {
     // Broken starting project produces a different digest
     expect(starting.output).not.toBe(target.output);
   });
+
+  it('keeps the stream cipher IV reuse demo deterministic and the repair challenge broken', () => {
+    const demo = demoProjects.find((project) => project.id === 'stream-cipher-iv-reuse-consequence');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    const demoBits = getBitOutputMap(demo.project);
+    // LFSR seed=[1,0,0,1,1,0,1,0] taps='0,2' length=8 → keystream 01011001
+    expect(demoBits['ks-out']).toBe('01011001');
+    // ctA = keystream XOR msgA = 01011001 XOR 01101010 = 00110011
+    expect(demoBits['ct-a-out']).toBe('00110011');
+    // ctB = keystream XOR msgB = 01011001 XOR 10110101 = 11101100
+    expect(demoBits['ct-b-out']).toBe('11101100');
+    // XOR of ciphertexts = XOR of messages (keystream cancels) = 11011111
+    expect(demoBits['xor-cts-out']).toBe('11011111');
+    // Recovered msgB = ctXor XOR msgA = 11011111 XOR 01101010 = 10110101
+    expect(demoBits['recover-b-out']).toBe('10110101');
+    // Equals confirms full recovery
+    expect(demoBits['secret-check-out']).toBe('1');
+
+    const challenge = STARTER_CHALLENGES.find((entry) => entry.id === 'repair-the-iv-reuse-attack');
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    // Target: correct crib → recovery succeeds
+    const targetBits = getBitOutputMap(challenge.targetProject);
+    expect(targetBits['secret-check-out']).toBe('1');
+    expect(targetBits['recover-b-out']).toBe('10110101');
+
+    // Broken start: wrong crib (all zeros) → recovery fails
+    const startBits = getBitOutputMap(challenge.startingProject);
+    expect(startBits['secret-check-out']).toBe('0');
+    expect(startBits['recover-b-out']).not.toBe('10110101');
+  });
 });

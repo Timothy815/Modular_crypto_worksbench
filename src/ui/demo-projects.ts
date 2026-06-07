@@ -1213,6 +1213,83 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'stream-cipher-iv-reuse-consequence',
+    name: 'Stream Cipher IV Reuse Consequence',
+    group: 'Stream Cipher Security',
+    stage: 'modern-bit-machines',
+    order: 181,
+    recommendedAfter: ['visible-stateful-family'],
+    summary:
+      'Two messages are encrypted with the same LFSR keystream (reused IV/seed). XORing the two ciphertexts cancels the keystream, exposing the XOR of the plaintexts. Given one known message, the attacker recovers the secret in one XOR step.',
+    pipeline:
+      'LFSR(seed) -> XOR(msgA) -> ctA and LFSR(seed) -> XOR(msgB) -> ctB, then XOR(ctA,ctB) -> XOR(msgA) -> recovered msgB -> Equals',
+    project: {
+      modules: [
+        { id: 'lfsr', defId: 'LFSR', params: { seed: [1, 0, 0, 1, 1, 0, 1, 0], taps: '0,2', outputLength: 8 } },
+        { id: 'ks-out', defId: 'BitOutput', params: {} },
+
+        { id: 'msg-a', defId: 'BitSource', params: { stream: [0, 1, 1, 0, 1, 0, 1, 0] } },
+        { id: 'enc-a', defId: 'XOR', params: {} },
+        { id: 'ct-a-out', defId: 'BitOutput', params: {} },
+
+        { id: 'msg-b', defId: 'BitSource', params: { stream: [1, 0, 1, 1, 0, 1, 0, 1] } },
+        { id: 'enc-b', defId: 'XOR', params: {} },
+        { id: 'ct-b-out', defId: 'BitOutput', params: {} },
+
+        { id: 'xor-cts', defId: 'XOR', params: {} },
+        { id: 'xor-cts-out', defId: 'BitOutput', params: {} },
+
+        { id: 'recover-b', defId: 'XOR', params: {} },
+        { id: 'recover-b-out', defId: 'BitOutput', params: {} },
+
+        { id: 'secret-check', defId: 'Equals', params: {} },
+        { id: 'secret-check-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'lfsr', port: 'out' }, to: { moduleId: 'ks-out', port: 'in' } },
+
+        { from: { moduleId: 'lfsr', port: 'out' }, to: { moduleId: 'enc-a', port: 'a' } },
+        { from: { moduleId: 'msg-a', port: 'out' }, to: { moduleId: 'enc-a', port: 'b' } },
+        { from: { moduleId: 'enc-a', port: 'out' }, to: { moduleId: 'ct-a-out', port: 'in' } },
+
+        { from: { moduleId: 'lfsr', port: 'out' }, to: { moduleId: 'enc-b', port: 'a' } },
+        { from: { moduleId: 'msg-b', port: 'out' }, to: { moduleId: 'enc-b', port: 'b' } },
+        { from: { moduleId: 'enc-b', port: 'out' }, to: { moduleId: 'ct-b-out', port: 'in' } },
+
+        { from: { moduleId: 'enc-a', port: 'out' }, to: { moduleId: 'xor-cts', port: 'a' } },
+        { from: { moduleId: 'enc-b', port: 'out' }, to: { moduleId: 'xor-cts', port: 'b' } },
+        { from: { moduleId: 'xor-cts', port: 'out' }, to: { moduleId: 'xor-cts-out', port: 'in' } },
+
+        { from: { moduleId: 'xor-cts', port: 'out' }, to: { moduleId: 'recover-b', port: 'a' } },
+        { from: { moduleId: 'msg-a', port: 'out' }, to: { moduleId: 'recover-b', port: 'b' } },
+        { from: { moduleId: 'recover-b', port: 'out' }, to: { moduleId: 'recover-b-out', port: 'in' } },
+
+        { from: { moduleId: 'msg-b', port: 'out' }, to: { moduleId: 'secret-check', port: 'a' } },
+        { from: { moduleId: 'recover-b', port: 'out' }, to: { moduleId: 'secret-check', port: 'b' } },
+        { from: { moduleId: 'secret-check', port: 'out' }, to: { moduleId: 'secret-check-out', port: 'in' } },
+      ],
+    },
+    layout: {
+      lfsr: { x: 300, y: 80 },
+      'ks-out': { x: 600, y: 80 },
+
+      'msg-a': { x: 80, y: 280 },
+      'enc-a': { x: 600, y: 280 },
+      'ct-a-out': { x: 900, y: 280 },
+
+      'msg-b': { x: 80, y: 480 },
+      'enc-b': { x: 600, y: 480 },
+      'ct-b-out': { x: 900, y: 480 },
+
+      'xor-cts': { x: 1100, y: 700 },
+      'xor-cts-out': { x: 1380, y: 700 },
+      'recover-b': { x: 1650, y: 700 },
+      'recover-b-out': { x: 1930, y: 700 },
+      'secret-check': { x: 2180, y: 700 },
+      'secret-check-out': { x: 2460, y: 700 },
+    },
+  },
+  {
     id: 'visible-stepped-mechanisms',
     name: 'Visible Stepped Mechanisms',
     group: 'Conditional Clocking',
