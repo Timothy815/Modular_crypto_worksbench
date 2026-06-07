@@ -847,4 +847,39 @@ describe('seeded teaching content', () => {
     const startTrace = new Map(startResult.trace.map((entry) => [entry.moduleId, entry]));
     expect(startTrace.get('sym-b')?.outputs.out?.value).toBe('N');
   });
+
+  it('keeps the columnar transposition demo deterministic and the repair challenge broken', () => {
+    const demo = demoProjects.find((project) => project.id === 'columnar-transposition-cipher');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    const result = executeProject(demo.project, registry);
+    const trace = new Map(result.trace.map((entry) => [entry.moduleId, entry]));
+
+    // Grid rows visible via SymbolWindow
+    expect(trace.get('row1')?.outputs.out?.value).toBe('ATT');
+    expect(trace.get('row2')?.outputs.out?.value).toBe('ACK');
+    // Correct columnar transposition: E(col1:pos1,4) K(col0:pos0,3) Y(col2:pos2,5)
+    expect(trace.get('transpose')?.outputs.out?.value).toBe('TCAATK');
+
+    const challenge = STARTER_CHALLENGES.find(
+      (entry) => entry.id === 'repair-the-transposition-order',
+    );
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    // Target: correct order → ciphertext TCAATK
+    const targetResult = executeProject(challenge.targetProject, registry);
+    const targetTrace = new Map(targetResult.trace.map((entry) => [entry.moduleId, entry]));
+    expect(targetTrace.get('transpose')?.outputs.out?.value).toBe('TCAATK');
+
+    // Broken: K,E,Y position order → ciphertext AATCTK (wrong)
+    const startResult = executeProject(challenge.startingProject, registry);
+    const startTrace = new Map(startResult.trace.map((entry) => [entry.moduleId, entry]));
+    expect(startTrace.get('transpose')?.outputs.out?.value).toBe('AATCTK');
+  });
 });

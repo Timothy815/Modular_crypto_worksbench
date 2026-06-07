@@ -4451,6 +4451,42 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'columnar-transposition-cipher',
+    name: 'Columnar Transposition Cipher',
+    group: 'Classical Machines',
+    stage: 'classical-symbol-machines',
+    order: 55,
+    recommendedAfter: ['visible-vigenere-cipher'],
+    summary:
+      'Plaintext "ATTACK" is written into a 2×3 grid and read off column by column in the alphabetical rank order of keyword "KEY" — E(col1)→K(col0)→Y(col2) — producing "TCAATK". SymbolWindow shows both grid rows; SymbolPermutation performs the reordering in one visible step.',
+    pipeline:
+      'TextInput("ATTACK") → SymbolWindow(row1) and SymbolWindow(row2) [grid display] + SymbolPermutation(order=1,4,0,3,2,5) → TextOutput("TCAATK")',
+    project: {
+      modules: [
+        { id: 'plaintext', defId: 'TextInput', params: { value: 'ATTACK' } },
+        // Grid row display — outputs not connected to a sink; visible via signal chips
+        { id: 'row1', defId: 'SymbolWindow', params: { start: 0, width: 3 } },
+        { id: 'row2', defId: 'SymbolWindow', params: { start: 3, width: 3 } },
+        // Columnar transposition: E(col1:pos1,4) → K(col0:pos0,3) → Y(col2:pos2,5)
+        { id: 'transpose', defId: 'SymbolPermutation', params: { order: '1,4,0,3,2,5' } },
+        { id: 'ct-out', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        { from: { moduleId: 'plaintext', port: 'out' }, to: { moduleId: 'row1', port: 'in' } },
+        { from: { moduleId: 'plaintext', port: 'out' }, to: { moduleId: 'row2', port: 'in' } },
+        { from: { moduleId: 'plaintext', port: 'out' }, to: { moduleId: 'transpose', port: 'in' } },
+        { from: { moduleId: 'transpose', port: 'out' }, to: { moduleId: 'ct-out', port: 'in' } },
+      ],
+    },
+    layout: {
+      plaintext: { x: 80, y: 240 },
+      row1: { x: 380, y: 80 },
+      row2: { x: 380, y: 400 },
+      transpose: { x: 660, y: 240 },
+      'ct-out': { x: 960, y: 240 },
+    },
+  },
+  {
     id: 'baudot-bridge',
     name: 'Baudot Telegraph',
     group: 'Historical Bridges',

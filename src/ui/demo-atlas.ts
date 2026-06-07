@@ -105,6 +105,7 @@ const FULL_DEMO_SECTION_MAP: Record<string, AtlasSectionId> = {
   'visible-bridge-family': 'foundations',
 
   'visible-vigenere-cipher': 'classical-systems',
+  'columnar-transposition-cipher': 'classical-systems',
   'baudot-bridge': 'classical-systems',
   'pollux-fractionation': 'classical-systems',
   'pollux-round-trip': 'classical-systems',

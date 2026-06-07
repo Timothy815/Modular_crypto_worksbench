@@ -88,7 +88,7 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
   Done when: A Vigenere encryption board exists with a tutorial and a repair challenge. A companion cryptanalysis board shows Kasiski test or index of coincidence as visible analysis.
   Note: Encryption board (`visible-vigenere-cipher`, "AIDE"+"KEY"→"KMBO"), 5-step tutorial, and beginner repair challenge shipped. Automated Kasiski/IC analysis requires new frequency-counting module primitives not yet in the engine — noted as a future P4/P5 engine addition.
 
-- [ ] **Classical cipher breadth: Transposition cipher**
+- [x] **Classical cipher breadth: Transposition cipher** *(shipped June 7, 2026)*
   Rationale: No transposition cipher teaching exists at all. Columnar transposition would fill a curriculum gap and demonstrate a fundamentally different class of transformation from substitution.
   Done when: A columnar transposition board exists with a tutorial. A repair challenge is present.
 

@@ -110,6 +110,9 @@ const cbcPaddingOracleProject = demoProjects.find(
 const visibleVigenereProject = demoProjects.find(
   (project) => project.id === 'visible-vigenere-cipher',
 );
+const columnarTranspositionProject = demoProjects.find(
+  (project) => project.id === 'columnar-transposition-cipher',
+);
 
 if (!bridgeProject) {
   throw new Error('Expected bridge demo project to seed starter challenges.');
@@ -248,6 +251,9 @@ if (!cbcPaddingOracleProject) {
 }
 if (!visibleVigenereProject) {
   throw new Error('Expected visible-vigenere-cipher project to seed starter challenges.');
+}
+if (!columnarTranspositionProject) {
+  throw new Error('Expected columnar-transposition-cipher project to seed starter challenges.');
 }
 if (!toyRsaProject) {
   throw new Error('Expected toy-rsa demo project to seed starter challenges.');
@@ -457,6 +463,16 @@ if (!brokenVigenereKb) {
   throw new Error('Expected visible-vigenere-cipher project to contain k-b module.');
 }
 brokenVigenereKb.params.value = 'F';
+
+// Transposition challenge: broken order reads columns in keyword-position order (K,E,Y)
+// instead of alphabetical-rank order (E,K,Y). Student must fix the order parameter.
+const transpositionTarget = cloneProject(columnarTranspositionProject.project);
+const brokenTranspositionStart = cloneProject(columnarTranspositionProject.project);
+const brokenTranspose = brokenTranspositionStart.modules.find((m) => m.id === 'transpose');
+if (!brokenTranspose) {
+  throw new Error('Expected columnar-transposition-cipher project to contain transpose module.');
+}
+brokenTranspose.params.order = '0,3,1,4,2,5';
 
 // CBC padding oracle challenge: c1-guess starts all-zeros (wrong); student must set it
 // to I XOR 0x01 (= 0x22 = [0,0,1,0,0,0,1,0]) so the oracle returns 1 (valid padding)
@@ -1336,6 +1352,30 @@ if (!brokenTapModule) {
 brokenTapModule.params.taps = '1,4';
 
 export const STARTER_CHALLENGES: GuidedChallenge[] = [
+  {
+    version: 1,
+    id: 'repair-the-transposition-order',
+    title: 'Repair the Transposition Order',
+    projectId: 'columnar-transposition-cipher',
+    group: 'Classical Machines',
+    stage: 'classical-symbol-machines' as const,
+    order: 55.5,
+    difficulty: 'beginner' as const,
+    recommendedAfter: ['columnar-transposition-cipher'],
+    prompt:
+      'The column reading order is wrong. The current permutation reads columns in keyword-position order (K first, then E, then Y) instead of alphabetical-rank order. With keyword "KEY", the correct rank order is E=1st, K=2nd, Y=3rd. Fix the SymbolPermutation order so the ciphertext matches the reference.',
+    startingProject: brokenTranspositionStart,
+    startingLayout: cloneProject(columnarTranspositionProject.layout),
+    targetProject: transpositionTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The keyword is KEY. Rank each letter alphabetically: E=1st (column 1), K=2nd (column 0), Y=3rd (column 2).',
+      'Read column 1 first (positions 1 and 4 in a 6-char input), then column 0 (positions 0,3), then column 2 (positions 2,5).',
+      "Click the transpose module, open the Inspector, and set the order parameter to '1,4,0,3,2,5'.",
+    ],
+  },
   {
     version: 1,
     id: 'repair-the-vigenere-key',
