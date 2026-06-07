@@ -343,7 +343,13 @@ export function getVerificationResultGuidance(
   hasBaseline: boolean,
 ): VerificationGuidance | null {
   if (result.passed) {
-    return null;
+    return {
+      label: 'What PASS means',
+      meaning:
+        'The workspace produced the expected output for this specific input. This is a behavioral trust claim: the board matches this known reference value at this input.',
+      nextStep:
+        'PASS on one input does not guarantee correctness for all inputs. Add more test vectors — especially values from the NIST standard or edge cases — to build stronger confidence. A FAIL on any vector is informative: it tells you exactly where the board diverges.',
+    };
   }
 
   if (result.error) {

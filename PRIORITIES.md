@@ -18,16 +18,17 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
 ## P1 — Critical Gaps
 *These break stated product promises. Nothing in P2–P5 should take priority over finishing this tier.*
 
-- [ ] **GF2/AES Python export parity**
+- [x] **GF2/AES Python export parity** *(shipped May 14, 2026 — commit 2880305)*
   Rationale: GF2Mul and GF2Inv generate no Python code. The AES building blocks line — the product's strongest single demonstration of depth — is verified inside MCW but cannot be exported. The flagship lab capstone steps that depend on verify_parity.py are incomplete without this.
   Done when: GF2Mul and GF2Inv produce correct Python, and verify_parity.py passes for a Visible MixColumns board using the FIPS 197 test vector.
 
-- [ ] **Verification workflow: explain PASS and FAIL in-product**
+- [x] **Verification workflow: explain PASS and FAIL in-product** *(shipped June 7, 2026)*
   Rationale: Students treat PASS as a score rather than a behavioral trust claim. The manual explains the distinction, but the surface itself does not. This is a teaching failure embedded in the product's most important quality-assurance step.
   Done when: The verification station includes in-product language (not just in the manual) that clearly states what PASS means and why a FAIL case is informative, without requiring the user to leave the surface.
 
 - [ ] **Student-first onboarding path**
   Rationale: Current first-session guidance depends on instructor scaffolding. Quick Start and Atlas are improvements but are not sufficient for a student arriving alone. The product's classroom value depends on students being able to begin productively without hand-holding.
+  Note: `FIRST-SESSION-ONBOARDING-V1` shipped (April 2026) — added Start Here guidance, Quick Start pipeline micro-demos, and Atlas. The behavioral done condition below has not been validated in a real session.
   Done when: A student with no prior MCW experience can reach their first repair success in under 15 minutes, starting from a fresh session, without instructor intervention.
 
 ---

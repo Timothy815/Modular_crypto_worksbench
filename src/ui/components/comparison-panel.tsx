@@ -251,8 +251,10 @@ export function ComparisonPanel({
           <div className="comparison-card comparison-card-wide">
             <span className="meta-label">Verification Station</span>
             <p className="comparison-copy">
-              Verified means this workspace matches the chosen reference behavior. It does not mean
-              the machine is secure or certified.
+              A PASS means this workspace produced the expected output for a known reference input —
+              a behavioral trust claim, not a security certification. A FAIL is informative: it tells
+              you where the board diverges from the reference, which is exactly what you need to find
+              a bug or repair a challenge.
             </p>
             {!baseline ? (
               <p className="comparison-copy">
@@ -493,10 +495,10 @@ export function ComparisonPanel({
                                   divergence.
                                 </p>
                               )}
-                              {guidance ? (
-                                <VerificationGuidanceBlock guidance={guidance} />
-                              ) : null}
                             </>
+                          ) : null}
+                          {guidance ? (
+                            <VerificationGuidanceBlock guidance={guidance} />
                           ) : null}
                         </div>
                       );
