@@ -113,6 +113,9 @@ const visibleVigenereProject = demoProjects.find(
 const visibleRsaKeyGenProject = demoProjects.find(
   (project) => project.id === 'visible-rsa-key-generation',
 );
+const tlsHandshakeProject = demoProjects.find(
+  (project) => project.id === 'tls-adjacent-handshake',
+);
 const columnarTranspositionProject = demoProjects.find(
   (project) => project.id === 'columnar-transposition-cipher',
 );
@@ -257,6 +260,9 @@ if (!visibleVigenereProject) {
 }
 if (!visibleRsaKeyGenProject) {
   throw new Error('Expected visible-rsa-key-generation project to seed starter challenges.');
+}
+if (!tlsHandshakeProject) {
+  throw new Error('Expected tls-adjacent-handshake project to seed starter challenges.');
 }
 if (!columnarTranspositionProject) {
   throw new Error('Expected columnar-transposition-cipher project to seed starter challenges.');
@@ -489,6 +495,16 @@ if (!brokenDInv) {
   throw new Error('Expected visible-rsa-key-generation project to contain d-inv module.');
 }
 brokenDInv.params.modulus = '16';
+
+// TLS challenge: received-ct tampered (0xEF instead of authentic 0xEE)
+// → Bob's expected-tag ≠ Alice's mac-tag → tag-match fails → gate blocks → round-trip [0]
+const tlsTarget = cloneProject(tlsHandshakeProject.project);
+const brokenTlsStart = cloneProject(tlsHandshakeProject.project);
+const brokenReceivedCt = brokenTlsStart.modules.find((m) => m.id === 'received-ct');
+if (!brokenReceivedCt) {
+  throw new Error('Expected tls-adjacent-handshake project to contain received-ct module.');
+}
+brokenReceivedCt.params.value = 'EF';
 
 // CBC padding oracle challenge: c1-guess starts all-zeros (wrong); student must set it
 // to I XOR 0x01 (= 0x22 = [0,0,1,0,0,0,1,0]) so the oracle returns 1 (valid padding)
@@ -1368,6 +1384,30 @@ if (!brokenTapModule) {
 brokenTapModule.params.taps = '1,4';
 
 export const STARTER_CHALLENGES: GuidedChallenge[] = [
+  {
+    version: 1,
+    id: 'repair-the-tls-kdf-constant',
+    title: 'Repair the TLS KDF Constant',
+    projectId: 'tls-adjacent-handshake',
+    group: 'Systems Composition',
+    stage: 'asymmetric-verification-and-systems-composition' as const,
+    order: 260.5,
+    difficulty: 'intermediate' as const,
+    recommendedAfter: ['tls-adjacent-handshake'],
+    prompt:
+      'The ciphertext received by Bob has been tampered in transit — one bit is flipped. The MAC check fails because the expected tag no longer matches Alice\'s tag, the gate blocks decryption, and final-out shows [0]. Find the authentic ciphertext value from Alice\'s encrypt module and restore received-ct to make the AEAD pipeline succeed.',
+    startingProject: brokenTlsStart,
+    startingLayout: cloneProject(tlsHandshakeProject.layout),
+    targetProject: tlsTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      "Alice's ciphertext is shown by the ciphertext module (plaintext XOR enc_key = 0x42 XOR 0xAC = 0xEE). The received-ct currently says 0xEF — one bit different.",
+      'Click received-ct and open the Inspector. Change its value from EF to EE to restore the authentic ciphertext.',
+      "With received-ct='EE', Bob's expected tag matches Alice's tag (both 0xBD), tag-match flips to [1], and the gate passes the decrypted plaintext.",
+    ],
+  },
   {
     version: 1,
     id: 'repair-the-rsa-private-exponent',

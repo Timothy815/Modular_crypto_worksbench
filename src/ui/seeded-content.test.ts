@@ -923,4 +923,43 @@ describe('seeded teaching content', () => {
     expect(startMap.get('d-bth')?.outputs.out?.value).toBe('09');
     expect(startMap.get('m-bth')?.outputs.out?.value).toBe('16');
   });
+
+  it('keeps the TLS-adjacent handshake demo deterministic and the repair challenge broken', () => {
+    const demo = demoProjects.find((project) => project.id === 'tls-adjacent-handshake');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    const result = executeProject(demo.project, registry);
+    const trace = new Map(result.trace.map((entry) => [entry.moduleId, entry]));
+
+    // DH: shared=9=0x09, both parties agree
+    expect(trace.get('kex-match')?.outputs.out?.value).toEqual([1]);
+    // KDF: enc_key=0x09 XOR 0xA5=0xAC, mac_key=0x09 XOR 0x5A=0x53
+    expect(trace.get('enc-key')?.outputs.out).toBeTruthy();
+    // AEAD: ciphertext=0x42 XOR 0xAC=0xEE, tag=0xEE XOR 0x53=0xBD
+    expect(trace.get('tag-match')?.outputs.out?.value).toEqual([1]);
+    // Round-trip confirmed
+    expect(trace.get('round-trip')?.outputs.out?.value).toEqual([1]);
+
+    const challenge = STARTER_CHALLENGES.find(
+      (entry) => entry.id === 'repair-the-tls-kdf-constant',
+    );
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    // Target: correct constant → MAC valid, round-trip succeeds
+    const targetResult = executeProject(challenge.targetProject, registry);
+    const targetTrace = new Map(targetResult.trace.map((entry) => [entry.moduleId, entry]));
+    expect(targetTrace.get('tag-match')?.outputs.out?.value).toEqual([1]);
+    expect(targetTrace.get('round-trip')?.outputs.out?.value).toEqual([1]);
+
+    // Broken: tampered received-ct (0xEF) → expected-tag ≠ mac-tag → tag-match fails
+    const startResult = executeProject(challenge.startingProject, registry);
+    const startTrace = new Map(startResult.trace.map((entry) => [entry.moduleId, entry]));
+    expect(startTrace.get('tag-match')?.outputs.out?.value).toEqual([0]);
+  });
 });

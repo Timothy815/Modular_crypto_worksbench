@@ -125,7 +125,7 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
 ## P5 — Strategic Growth
 *These are meaningful expansions that are not urgent but should be planned. Do not start these until P1 is complete and P2/P3 are substantially advanced.*
 
-- [ ] **TLS-adjacent protocol handshake board**
+- [x] **TLS-adjacent protocol handshake board** *(shipped June 7, 2026)*
   Rationale: A pedagogical TLS-like handshake (key exchange → session key derivation → AEAD encryption) would be the most sophisticated protocol teaching board in the product and would demonstrate the "systems IDE" identity most clearly.
   Done when: A bounded pedagogical protocol handshake board shows the full pipeline — key exchange, symmetric key derivation, authenticated encryption — with a tutorial. Verified against test vectors where applicable.
 

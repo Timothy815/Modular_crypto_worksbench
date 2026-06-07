@@ -3799,6 +3799,138 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'tls-adjacent-handshake',
+    name: 'TLS-Adjacent Handshake',
+    group: 'Systems Composition',
+    stage: 'asymmetric-verification-and-systems-composition',
+    order: 260,
+    recommendedAfter: ['visible-secure-handshake'],
+    summary:
+      'Three-phase pedagogical TLS: DH key exchange (g=5, p=23) derives shared=0x09; KDF mixes shared with domain-separation constants to produce separate enc_key=0xAC and mac_key=0x53; AEAD encrypt-then-MAC protects plaintext=0x42 to ciphertext=0xEE with tag=0xBD; receiver verifies tag then decrypts.',
+    pipeline:
+      'DH(alice,bob) → shared → XOR(enc_const) enc_key + XOR(mac_const) mac_key → XOR(plaintext) ct + XOR(mac_key) tag → Equals(tag) gate → XOR(enc_key) decrypt → Equals(plaintext)',
+    project: {
+      modules: [
+        // ---- Phase 1: DH Key Exchange ----
+        { id: 'kex-g', defId: 'HexSource', params: { value: '05' } },
+        { id: 'alice-priv', defId: 'HexSource', params: { value: '06' } },
+        { id: 'bob-priv', defId: 'HexSource', params: { value: '09' } },
+        { id: 'alice-pub', defId: 'ModExp', params: { modulus: '17' } },
+        { id: 'bob-pub', defId: 'ModExp', params: { modulus: '17' } },
+        { id: 'alice-shared', defId: 'ModExp', params: { modulus: '17' } },
+        { id: 'bob-shared', defId: 'ModExp', params: { modulus: '17' } },
+        { id: 'kex-match', defId: 'Equals', params: {} },
+        { id: 'kex-out', defId: 'BitOutput', params: {} },
+
+        // ---- Phase 2: Key Derivation ----
+        { id: 'kdf-enc-c', defId: 'HexSource', params: { value: 'A5' } },
+        { id: 'kdf-mac-c', defId: 'HexSource', params: { value: '5A' } },
+        { id: 'enc-key', defId: 'XOR', params: {} },
+        { id: 'mac-key', defId: 'XOR', params: {} },
+
+        // ---- Phase 3a: Encrypt-then-MAC ----
+        { id: 'plaintext', defId: 'HexSource', params: { value: '42' } },
+        { id: 'ciphertext', defId: 'XOR', params: {} },
+        { id: 'mac-tag', defId: 'XOR', params: {} },
+
+        // ---- Phase 3b: Verify-then-Decrypt ----
+        // received-ct represents the ciphertext as received over the network
+        { id: 'received-ct', defId: 'HexSource', params: { value: 'EE' } },
+        { id: 'bob-enc-key', defId: 'XOR', params: {} },
+        { id: 'bob-mac-key', defId: 'XOR', params: {} },
+        { id: 'expected-tag', defId: 'XOR', params: {} },
+        { id: 'tag-match', defId: 'Equals', params: {} },
+        { id: 'decrypt', defId: 'XOR', params: {} },
+        { id: 'decrypt-gate', defId: 'Gate', params: {} },
+        { id: 'round-trip', defId: 'Equals', params: {} },
+        { id: 'final-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        // DH: public keys
+        { from: { moduleId: 'kex-g', port: 'out' }, to: { moduleId: 'alice-pub', port: 'base' } },
+        { from: { moduleId: 'alice-priv', port: 'out' }, to: { moduleId: 'alice-pub', port: 'exp' } },
+        { from: { moduleId: 'kex-g', port: 'out' }, to: { moduleId: 'bob-pub', port: 'base' } },
+        { from: { moduleId: 'bob-priv', port: 'out' }, to: { moduleId: 'bob-pub', port: 'exp' } },
+        // DH: shared secrets
+        { from: { moduleId: 'bob-pub', port: 'out' }, to: { moduleId: 'alice-shared', port: 'base' } },
+        { from: { moduleId: 'alice-priv', port: 'out' }, to: { moduleId: 'alice-shared', port: 'exp' } },
+        { from: { moduleId: 'alice-pub', port: 'out' }, to: { moduleId: 'bob-shared', port: 'base' } },
+        { from: { moduleId: 'bob-priv', port: 'out' }, to: { moduleId: 'bob-shared', port: 'exp' } },
+        // DH: confirm match
+        { from: { moduleId: 'alice-shared', port: 'out' }, to: { moduleId: 'kex-match', port: 'a' } },
+        { from: { moduleId: 'bob-shared', port: 'out' }, to: { moduleId: 'kex-match', port: 'b' } },
+        { from: { moduleId: 'kex-match', port: 'out' }, to: { moduleId: 'kex-out', port: 'in' } },
+        // KDF: enc_key = shared XOR enc_const
+        { from: { moduleId: 'alice-shared', port: 'out' }, to: { moduleId: 'enc-key', port: 'a' } },
+        { from: { moduleId: 'kdf-enc-c', port: 'out' }, to: { moduleId: 'enc-key', port: 'b' } },
+        // KDF: mac_key = shared XOR mac_const
+        { from: { moduleId: 'alice-shared', port: 'out' }, to: { moduleId: 'mac-key', port: 'a' } },
+        { from: { moduleId: 'kdf-mac-c', port: 'out' }, to: { moduleId: 'mac-key', port: 'b' } },
+        // Encrypt: ciphertext = plaintext XOR enc_key
+        { from: { moduleId: 'plaintext', port: 'out' }, to: { moduleId: 'ciphertext', port: 'a' } },
+        { from: { moduleId: 'enc-key', port: 'out' }, to: { moduleId: 'ciphertext', port: 'b' } },
+        // MAC: tag = ciphertext XOR mac_key
+        { from: { moduleId: 'ciphertext', port: 'out' }, to: { moduleId: 'mac-tag', port: 'a' } },
+        { from: { moduleId: 'mac-key', port: 'out' }, to: { moduleId: 'mac-tag', port: 'b' } },
+        // Bob's KDF
+        { from: { moduleId: 'bob-shared', port: 'out' }, to: { moduleId: 'bob-enc-key', port: 'a' } },
+        { from: { moduleId: 'kdf-enc-c', port: 'out' }, to: { moduleId: 'bob-enc-key', port: 'b' } },
+        { from: { moduleId: 'bob-shared', port: 'out' }, to: { moduleId: 'bob-mac-key', port: 'a' } },
+        { from: { moduleId: 'kdf-mac-c', port: 'out' }, to: { moduleId: 'bob-mac-key', port: 'b' } },
+        // Verify: expected_tag = received_ct XOR bob_mac_key
+        { from: { moduleId: 'received-ct', port: 'out' }, to: { moduleId: 'expected-tag', port: 'a' } },
+        { from: { moduleId: 'bob-mac-key', port: 'out' }, to: { moduleId: 'expected-tag', port: 'b' } },
+        // Tag match check (sender tag vs receiver expected)
+        { from: { moduleId: 'mac-tag', port: 'out' }, to: { moduleId: 'tag-match', port: 'a' } },
+        { from: { moduleId: 'expected-tag', port: 'out' }, to: { moduleId: 'tag-match', port: 'b' } },
+        // Decrypt: decrypt = received_ct XOR bob_enc_key
+        { from: { moduleId: 'received-ct', port: 'out' }, to: { moduleId: 'decrypt', port: 'a' } },
+        { from: { moduleId: 'bob-enc-key', port: 'out' }, to: { moduleId: 'decrypt', port: 'b' } },
+        // Gate on MAC validity
+        { from: { moduleId: 'decrypt', port: 'out' }, to: { moduleId: 'decrypt-gate', port: 'in' } },
+        { from: { moduleId: 'tag-match', port: 'out' }, to: { moduleId: 'decrypt-gate', port: 'control' } },
+        // Round-trip verification
+        { from: { moduleId: 'decrypt-gate', port: 'out' }, to: { moduleId: 'round-trip', port: 'a' } },
+        { from: { moduleId: 'plaintext', port: 'out' }, to: { moduleId: 'round-trip', port: 'b' } },
+        { from: { moduleId: 'round-trip', port: 'out' }, to: { moduleId: 'final-out', port: 'in' } },
+      ],
+    },
+    layout: {
+      // Phase 1: DH Key Exchange
+      'kex-g': { x: 80, y: 80 },
+      'alice-priv': { x: 80, y: 220 },
+      'bob-priv': { x: 80, y: 360 },
+      'alice-pub': { x: 380, y: 140 },
+      'bob-pub': { x: 380, y: 300 },
+      'alice-shared': { x: 660, y: 140 },
+      'bob-shared': { x: 660, y: 300 },
+      'kex-match': { x: 940, y: 220 },
+      'kex-out': { x: 1160, y: 220 },
+
+      // Phase 2: KDF
+      'kdf-enc-c': { x: 80, y: 540 },
+      'kdf-mac-c': { x: 80, y: 660 },
+      'enc-key': { x: 380, y: 540 },
+      'mac-key': { x: 380, y: 660 },
+
+      // Phase 3a: Encrypt-then-MAC
+      'plaintext': { x: 80, y: 840 },
+      'ciphertext': { x: 660, y: 800 },
+      'mac-tag': { x: 940, y: 800 },
+
+      // Phase 3b: Verify-then-Decrypt
+      'received-ct': { x: 80, y: 980 },
+      'bob-enc-key': { x: 380, y: 1020 },
+      'bob-mac-key': { x: 380, y: 1120 },
+      'expected-tag': { x: 660, y: 1060 },
+      'tag-match': { x: 940, y: 980 },
+      'decrypt': { x: 660, y: 900 },
+      'decrypt-gate': { x: 1160, y: 940 },
+      'round-trip': { x: 1420, y: 940 },
+      'final-out': { x: 1660, y: 940 },
+    },
+  },
+  {
     id: 'key-schedule-workshop',
     name: 'Key Schedule Workshop',
     group: 'Key Schedule',

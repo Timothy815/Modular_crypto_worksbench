@@ -203,6 +203,7 @@ const FULL_DEMO_SECTION_MAP: Record<string, AtlasSectionId> = {
   'visible-rsa-key-generation': 'public-key-and-ecc',
   'visible-signature-verification': 'public-key-and-ecc',
   'visible-secure-handshake': 'public-key-and-ecc',
+  'tls-adjacent-handshake': 'protocols-and-integrity',
   'visible-message-window': 'modern-machines',
   'visible-symbol-scramble': 'modern-machines',
   'visible-key-selection': 'protocols-and-integrity',
