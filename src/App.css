@@ -117,6 +117,13 @@
   background: color-mix(in srgb, var(--accent) 10%, var(--surface-panel));
 }
 
+.manual-toc-entry-link.is-active {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-panel));
+  color: var(--ink-strong);
+  font-weight: 600;
+}
+
 .manual-index-link,
 .manual-search-result {
   display: grid;
@@ -2416,6 +2423,71 @@ body.dock-resizing {
 
 .manual-diagnosis-row:last-child {
   border-bottom: none;
+}
+
+/* ── Recently Viewed ─────────────────────────────────────────── */
+
+.manual-recent-list {
+  display: grid;
+  gap: 6px;
+}
+
+.manual-recent-link {
+  display: grid;
+  gap: 2px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-soft) 76%, var(--surface));
+  text-decoration: none;
+  color: inherit;
+}
+
+.manual-recent-link strong {
+  font-size: 0.9rem;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.manual-recent-link span {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.manual-recent-link:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-panel));
+}
+
+/* ── See Also ────────────────────────────────────────────────── */
+
+.manual-see-also {
+  margin-top: 14px;
+}
+
+.manual-see-also-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.manual-see-also-link {
+  padding: 5px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-soft) 80%, var(--surface));
+  color: color-mix(in srgb, var(--ink) 88%, var(--muted));
+  font-size: 0.86rem;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color 0.1s, background 0.1s;
+}
+
+.manual-see-also-link:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-panel));
+  color: var(--ink-strong);
 }
 
 .comparison-panel {

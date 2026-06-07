@@ -97,6 +97,17 @@ describe('manual support helpers', () => {
     }
   });
 
+  it('all seeAlso IDs resolve to valid entries', () => {
+    const allEntries = USER_MANUAL_SECTIONS.flatMap((s) => s.entries);
+    const validIds = new Set(allEntries.map((e) => e.id));
+
+    for (const entry of allEntries) {
+      for (const ref of entry.seeAlso ?? []) {
+        expect(validIds.has(ref), `entry "${entry.id}" has seeAlso ref "${ref}" that does not exist`).toBe(true);
+      }
+    }
+  });
+
   it('searches V2 task-language terms', () => {
     const intentResults = searchManualContent(USER_MANUAL_SECTIONS, 'intent gateways');
     expect(intentResults.some((r) => r.entryId === 'intent-gateways')).toBe(true);

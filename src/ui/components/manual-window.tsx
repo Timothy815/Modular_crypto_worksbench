@@ -1,10 +1,41 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { type DiagnosisBlock, type IntentGateway, type RouteBlock, USER_MANUAL_SECTIONS } from '../manual-content';
+import {
+  type DiagnosisBlock,
+  type IntentGateway,
+  type RouteBlock,
+  USER_MANUAL_SECTIONS,
+} from '../manual-content';
 import { buildManualIndex, searchManualContent } from '../manual-support';
 
 interface ManualWindowProps {
   initialTheme: 'light' | 'dark';
+}
+
+interface RecentEntry {
+  id: string;
+  title: string;
+  sectionTitle: string;
+}
+
+const RECENT_STORAGE_KEY = 'mcw-manual-last-visited';
+const RECENT_MAX = 3;
+
+function loadRecentEntries(): RecentEntry[] {
+  try {
+    const raw = localStorage.getItem(RECENT_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as RecentEntry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentEntries(entries: RecentEntry[]): void {
+  try {
+    localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(entries));
+  } catch {
+    // localStorage may be unavailable
+  }
 }
 
 function renderManualInline(text: string) {
@@ -89,18 +120,123 @@ function DiagnosisBlockView({ block }: { block: DiagnosisBlock }) {
   );
 }
 
+function SeeAlsoBlock({
+  ids,
+  entryMap,
+}: {
+  ids: string[];
+  entryMap: Map<string, { title: string; sectionTitle: string }>;
+}) {
+  const resolved = ids.flatMap((id) => {
+    const info = entryMap.get(id);
+    return info ? [{ id, title: info.title }] : [];
+  });
+
+  if (resolved.length === 0) return null;
+
+  return (
+    <div className="manual-see-also">
+      <span className="manual-entry-subhead">See also</span>
+      <div className="manual-see-also-links">
+        {resolved.map(({ id, title }) => (
+          <a key={id} href={`#${id}`} className="manual-see-also-link">
+            {title}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function ManualWindow({ initialTheme }: ManualWindowProps) {
   const [query, setQuery] = useState('');
+  const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
+  const [recentlyVisited, setRecentlyVisited] = useState<RecentEntry[]>(loadRecentEntries);
+
   const indexEntries = useMemo(() => buildManualIndex(USER_MANUAL_SECTIONS), []);
   const searchResults = useMemo(
     () => searchManualContent(USER_MANUAL_SECTIONS, query),
     [query],
   );
 
+  const entryMap = useMemo(() => {
+    const map = new Map<string, { title: string; sectionTitle: string }>();
+    for (const section of USER_MANUAL_SECTIONS) {
+      for (const entry of section.entries) {
+        map.set(entry.id, { title: entry.title, sectionTitle: section.title });
+      }
+    }
+    return map;
+  }, []);
+
   useEffect(() => {
     document.documentElement.dataset.theme = initialTheme;
     document.title = 'MCW User Manual';
   }, [initialTheme]);
+
+  // Track which entry the user is currently reading via IntersectionObserver
+  useEffect(() => {
+    const intersecting = new Set<string>();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            intersecting.add(entry.target.id);
+          } else {
+            intersecting.delete(entry.target.id);
+          }
+        }
+
+        // Pick the topmost visible entry in DOM order
+        const allCards = document.querySelectorAll<HTMLElement>('.manual-entry-card[id]');
+        for (const card of allCards) {
+          if (intersecting.has(card.id)) {
+            setActiveEntryId(card.id);
+            return;
+          }
+        }
+      },
+      { rootMargin: '0px 0px -40% 0px', threshold: 0 },
+    );
+
+    document.querySelectorAll<HTMLElement>('.manual-entry-card[id]').forEach((el) => {
+      observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Scroll the active TOC link into view (nearest, no jump if already visible)
+  const activeTocLinkRef = useRef<HTMLAnchorElement | null>(null);
+  useEffect(() => {
+    if (!activeEntryId) return;
+    const link = document.querySelector<HTMLAnchorElement>(
+      `.manual-toc-entry-link[href="#${activeEntryId}"]`,
+    );
+    activeTocLinkRef.current = link;
+    link?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [activeEntryId]);
+
+  // Record a visit after the entry has been in view for 1 second
+  useEffect(() => {
+    if (!activeEntryId) return;
+    const info = entryMap.get(activeEntryId);
+    if (!info) return;
+
+    const timer = setTimeout(() => {
+      setRecentlyVisited((prev) => {
+        const next: RecentEntry[] = [
+          { id: activeEntryId, title: info.title, sectionTitle: info.sectionTitle },
+          ...prev.filter((e) => e.id !== activeEntryId),
+        ].slice(0, RECENT_MAX);
+        saveRecentEntries(next);
+        return next;
+      });
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [activeEntryId, entryMap]);
 
   return (
     <div className="manual-shell">
@@ -134,7 +270,11 @@ export function ManualWindow({ initialTheme }: ManualWindowProps) {
                 </a>
                 <div className="manual-toc-entries">
                   {section.entries.map((entry) => (
-                    <a key={entry.id} href={`#${entry.id}`} className="manual-toc-entry-link">
+                    <a
+                      key={entry.id}
+                      href={`#${entry.id}`}
+                      className={`manual-toc-entry-link${activeEntryId === entry.id ? ' is-active' : ''}`}
+                    >
                       {entry.title}
                     </a>
                   ))}
@@ -143,6 +283,20 @@ export function ManualWindow({ initialTheme }: ManualWindowProps) {
             ))}
           </div>
         </section>
+
+        {recentlyVisited.length > 0 ? (
+          <section className="manual-sidebar-block">
+            <span className="meta-label">Recently Viewed</span>
+            <div className="manual-recent-list">
+              {recentlyVisited.map((recent) => (
+                <a key={recent.id} href={`#${recent.id}`} className="manual-recent-link">
+                  <strong>{recent.title}</strong>
+                  <span>{recent.sectionTitle}</span>
+                </a>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <section className="manual-sidebar-block">
           <span className="meta-label">Index</span>
@@ -222,6 +376,9 @@ export function ManualWindow({ initialTheme }: ManualWindowProps) {
                     ) : null}
                     {entry.routeBlock ? (
                       <RouteBlockView block={entry.routeBlock} />
+                    ) : null}
+                    {entry.seeAlso?.length ? (
+                      <SeeAlsoBlock ids={entry.seeAlso} entryMap={entryMap} />
                     ) : null}
                   </article>
                 ))}

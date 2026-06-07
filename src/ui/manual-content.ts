@@ -25,6 +25,7 @@ export interface ManualEntry {
   routeBlock?: RouteBlock;
   intents?: IntentGateway[];
   diagnosis?: DiagnosisBlock;
+  seeAlso?: string[];
   indexTerms: string[];
 }
 
@@ -114,6 +115,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           ifRepairPractice:
             'Switch to **Challenge** mode on any board with a repair task, or go to **Where To Find The Flagship Labs**.',
         },
+        seeAlso: ['atlas-and-learning-surfaces', 'find-flagship-labs'],
         indexTerms: [
           'start',
           'begin',
@@ -154,6 +156,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           ifRepairPractice:
             'Look for boards with a **Challenge** badge, or use **Where To Go For Repair Challenges**.',
         },
+        seeAlso: ['where-to-begin', 'repair-challenges'],
       },
       {
         id: 'workspace-modes',
@@ -219,6 +222,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           ifRepairPractice:
             'Open **Iterated Byte Rounds** in **Build** mode to see how composites structure a real cipher round.',
         },
+        seeAlso: ['create-iterator', 'reusable-library-practical'],
         indexTerms: [
           'create composite',
           'composite from selection',
@@ -245,6 +249,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           then: 'Inspect the iterator parameters to verify the repetition policy is what you expected.',
           ifRepairPractice: 'Open **Iterated Byte Rounds** or **Scheduled Byte Iterator** to study a reference model first.',
         },
+        seeAlso: ['create-composite', 'create-clocked-iterator'],
         indexTerms: [
           'create iterator',
           'iterator from round',
@@ -275,6 +280,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'clocked byte round iterator',
           'clocked round traversal',
         ],
+        seeAlso: ['create-iterator'],
       },
       {
         id: 'save-workspaces-and-versions',
@@ -297,6 +303,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'project menu',
           'workspace file',
         ],
+        seeAlso: ['reusable-library-practical'],
       },
       {
         id: 'reusable-library-practical',
@@ -317,6 +324,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'dependencies',
           'composite library',
         ],
+        seeAlso: ['save-workspaces-and-versions'],
       },
       {
         id: 'analyze-inspect-and-replace',
@@ -356,6 +364,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           ifRepairPractice:
             'Use known-vector import to bring NIST FIPS 197 vectors into an AES board verification.',
         },
+        seeAlso: ['export-and-parity', 'what-verified-means'],
         indexTerms: [
           'verification station',
           'known vectors',
@@ -384,6 +393,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           ifRepairPractice:
             'Run the parity script against a repaired flagship lab capstone to complete **LAB-1.3** or **LAB-2.4**.',
         },
+        seeAlso: ['verification-station', 'what-verified-means'],
         indexTerms: [
           'python export',
           'json export',
@@ -413,6 +423,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           whatToDoNext:
             'Select a coherent cluster with at least one interior connection, then try **Edit > Create Composite** or **Cmd/Ctrl+G** again.',
         },
+        seeAlso: ['create-composite'],
         indexTerms: [
           "why can't i create a composite",
           'create composite not working',
@@ -432,6 +443,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           whatToDoNext:
             'Open a board from the flagship lines or the AES and ECC challenge families from **Atlas** — those boards are designed with challenges attached.',
         },
+        seeAlso: ['find-flagship-labs', 'repair-challenges'],
         indexTerms: [
           'challenge empty',
           'challenge mode empty',
@@ -451,6 +463,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           whatToDoNext:
             'Use **Project > Open Workspace** to open a file-backed document, or use **Save As** to create a new file binding for the current workspace.',
         },
+        seeAlso: ['save-workspaces-and-versions'],
         indexTerms: [
           'save not working',
           'save not writing',
@@ -471,6 +484,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           whatToDoNext:
             'Promote the reusable to the **Personal Library** from the **Inspector** or **Palette** context action. Resolve any workspace-local dependencies first, or the promoted reusable will still silently pull from the original workspace scope.',
         },
+        seeAlso: ['reusable-library-practical'],
         indexTerms: [
           'reusable not portable',
           'personal library',
@@ -491,6 +505,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           whatToDoNext:
             'Fix any verification divergences in MCW, then re-export. Run **verify_parity.py** after re-export and inspect the first failing case in the output.',
         },
+        seeAlso: ['verification-station', 'export-and-parity'],
         indexTerms: [
           'python not matching',
           'parity mismatch',
@@ -533,6 +548,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'feistel network',
           'avalanche effect',
         ],
+        seeAlso: ['aes-route', 'ecc-route', 'repair-challenges'],
       },
       {
         id: 'start-here-boards',
@@ -587,6 +603,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'repair the shiftrows rule',
           'repair the mixcolumns rule',
         ],
+        seeAlso: ['find-flagship-labs', 'repair-challenges'],
       },
       {
         id: 'ecc-route',
@@ -617,6 +634,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'ecc public-key validation consequence',
           'repair the visible ecdh',
         ],
+        seeAlso: ['find-flagship-labs', 'repair-challenges'],
       },
       {
         id: 'repair-challenges',
@@ -637,6 +655,7 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'aes repairs',
           'ecc repairs',
         ],
+        seeAlso: ['find-flagship-labs', 'aes-route', 'ecc-route'],
       },
       {
         id: 'prng-and-randomness-route',
