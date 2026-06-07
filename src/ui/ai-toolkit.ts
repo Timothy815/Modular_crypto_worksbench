@@ -335,7 +335,10 @@ An AI agent should generate JSON artifacts that MCW can import, validate, inspec
 - Modern round-structure machines (S-Box, XOR, permutation, Feistel round)
 - ECC point mechanic boards (scalar multiply, point add, ECDH structure)
 - GF(2⁸) field arithmetic boards (GF2Mul, GF2Inv, AES MixColumns-style paths)
-- Modular arithmetic boards (FieldAdd, FieldMul, FieldInverse, ModExp)
+- Integer-domain field arithmetic boards (FieldAdd, FieldSub, FieldMul, FieldInverse — real-scale bigint-hex modulus)
+- Bits-domain small modular arithmetic boards (AddMod, SubMod, MulMod, ModInverse, Modulo, ModExp — JS-number modulus)
+- LFSR / stream cipher boards (Clock → LFSR → Gate → BitOutput)
+- Schnorr signature boards (ScalarMultiply + ChallengeCombine + ScalarLinearCombine)
 - Mixed-domain boards using explicit bridge modules between domains
 
 ## What You Must Not Assume
@@ -404,8 +407,9 @@ Each field in a module's \`paramSchema\` has a \`kind\` property. Use the correc
 - Symbol and bits domains cannot connect directly; use explicit bridge modules.
 - Integer and ec-point domains cannot connect to symbol or bits ports.
 - Module ids must be unique within a project.
-- Output sinks must be explicit modules (\`Output\`, \`BitOutput\`, \`HexOutput\`, \`IntegerOutput\`) — not implied by prose.
+- Output sinks must be explicit modules (\`Output\`, \`BitOutput\`, \`HexOutput\`, \`IntegerOutput\`, \`PointOutput\`) — not implied by prose.
 - Never wire \`NamedCurveBasePoint.order\` (integer) directly to \`ScalarMultiply.point\` (ec-point).
+- \`PointOutput\` is the correct sink for ec-point signals; \`Output\` accepts symbol only.
 
 ---
 
@@ -426,8 +430,11 @@ ECC modules operate in the \`ec-point\` and \`integer\` domains. All curve-shape
 | \`PointOnCurve\` | \`in: ec-point\` | \`out: bits\` (1 bit result) | params: p, a, b |
 | \`PointOrder\` | \`in: ec-point\` | \`out: integer\` | params: p, a, b, n |
 | \`PointEquals\` | \`a: ec-point\`, \`b: ec-point\` | \`out: bits\` | params: p, a, b |
-| \`ScalarLinearCombine\` | \`a: integer\`, \`b: integer\` | \`out: integer\` | modular linear combination; params: n |
-| \`ChallengeCombine\` | \`r: ec-point\`, \`pk: ec-point\`, \`message: integer\` | \`out: integer\` | pedagogical Schnorr challenge formation |
+| \`PointSelector\` | \`select: bits\`, \`keep: ec-point\`, \`take: ec-point\` | \`out: ec-point\` | conditional point routing; params: p, a, b |
+| \`ScalarLinearCombine\` | \`nonce: integer\`, \`challenge: integer\`, \`private: integer\` | \`out: integer\` | Schnorr response s = nonce + challenge×private mod n; params: n |
+| \`ChallengeCombine\` | \`commitment: ec-point\`, \`publicKey: ec-point\`, \`message: integer\` | \`out: integer\` | pedagogical Schnorr challenge hash; params: p, a, b, n |
+| \`PointOutput\` | \`in: ec-point\` | none | ec-point sink — use instead of Output for ec-point results |
+| \`ToyPointMap\` | none | \`selectedPoint: ec-point\`, \`walk3: ec-point\` | toy-curve point landscape source; params: p, a, b, selectedX, selectedY |
 
 ### NamedCurveBasePoint
 
@@ -462,6 +469,74 @@ The AES reduction polynomial is \`x⁸ + x⁴ + x³ + x + 1\` = 0x11B. Store it 
 For AES-family boards, the MixColumns coefficients are 0x02 (\`”2”\`) and 0x03 (\`”3”\`).
 
 GF2Inv(0) = 0 by convention. GF2Inv is the first stage of the AES SubBytes S-Box before the affine transform.
+
+---
+
+## Modular Arithmetic — Two Separate Families
+
+MCW has two distinct modular arithmetic families. Using the wrong one produces a type error.
+
+### Integer-domain field arithmetic (real-scale, bigint-hex modulus)
+
+These modules carry \`integer\` signals and use bigint-hex for the modulus param. Use for real-scale RSA, DH, or prime-field arithmetic.
+
+| Module id | Inputs | Outputs | Modulus param |
+|---|---|---|---|
+| \`FieldAdd\` | \`a: integer\`, \`b: integer\` | \`out: integer\` | \`modulus: bigint-hex\` |
+| \`FieldSub\` | \`a: integer\`, \`b: integer\` | \`out: integer\` | \`modulus: bigint-hex\` |
+| \`FieldMul\` | \`a: integer\`, \`b: integer\` | \`out: integer\` | \`modulus: bigint-hex\` |
+| \`FieldInverse\` | \`in: integer\` | \`out: integer\` | \`modulus: bigint-hex\` |
+
+These modules connect only to \`integer\`-typed ports. Use \`BitsToInteger\` / \`IntegerToBits\` to cross into or out of this domain.
+
+### Bits-domain small modular arithmetic (JS-number modulus)
+
+These modules carry \`bits\` signals and use JS numbers for the modulus param. Use for small-modulus classical cipher arithmetic (Caesar shifts, toy examples).
+
+| Module id | Inputs | Outputs | Modulus param |
+|---|---|---|---|
+| \`AddMod\` | \`a: bits\`, \`b: bits\` | \`out: bits\` | none (implicit) |
+| \`SubMod\` | \`a: bits\`, \`b: bits\` | \`out: bits\` | none |
+| \`MulMod\` | \`a: bits\`, \`b: bits\` | \`out: bits\` | none |
+| \`Modulo\` | \`in: bits\` | \`out: bits\` | \`modulus: number\` |
+| \`ModInverse\` | \`in: bits\` | \`out: bits\` | \`modulus: number\` |
+| \`ModExp\` | \`base: bits\`, \`exp: bits\` | \`out: bits\` | \`modulus: number\` |
+
+**Do not mix these families.** If you need real-scale modular exponentiation, use \`FieldMul\` in a loop pattern — \`ModExp\` is bits-only and cannot handle secp256k1-scale values.
+
+---
+
+## Ticked / Clocked Execution
+
+Some modules advance their state on clock pulses rather than evaluating as pure combinational logic. Use these when the machine should produce one symbol or bit per tick (stream ciphers, LFSR, rotor stepping).
+
+### Key ticked modules
+
+| Module id | Role | Notes |
+|---|---|---|
+| \`Clock\` | Pulse generator | outputs \`pulse: bits\`; params: period, offset, length |
+| \`LFSR\` | Linear feedback shift register | \`clock: bits\` input; params: seed, taps, outputLength |
+| \`Counter\` | Incrementing counter | \`clock: bits\` input; params: width, value, step |
+| \`Gate\` | Controlled bit pass-through | \`in: bits\`, \`control: bits\` → \`out: bits\` |
+| \`Rotor\` | Stepped substitution cipher | \`in: symbol\`, \`clock: bits\` → \`out: symbol\`, \`turnover: bits\` |
+| \`RotorReverse\` | Return path (linked to Rotor) | same clock-driven stepping as Rotor |
+| \`SymbolSequenceToTicked\` | Feed symbol sequence one at a time | \`clock\` advances the index |
+| \`BitsSequenceToTicked\` | Feed bits sequence one word at a time | \`clock\` advances, params: wordWidth |
+| \`TickedSymbolsToSequence\` | Collect ticked symbols into a sequence | params: collected, count |
+| \`TickedBitsToSequence\` | Collect ticked bits into a sequence | params: collected, count |
+
+### Minimal LFSR keystream pattern
+
+\`\`\`json
+{ "id": "clk-1", "defId": "Clock",  "params": { "period": 1, "offset": 0, "length": 8 } }
+{ "id": "lfsr-1","defId": "LFSR",   "params": { "seed": [1,0,0,1], "taps": [0,3], "outputLength": 8 } }
+{ "id": "gate-1","defId": "Gate",   "params": {} }
+{ "id": "key-1", "defId": "BitSource", "params": { "value": [1,0,1,0,1,0,1,0] } }
+{ "id": "out-1", "defId": "BitOutput","params": {} }
+\`\`\`
+Connections: clk-1.pulse → lfsr-1.clock, lfsr-1.out → gate-1.in, key-1.out → gate-1.control, gate-1.out → out-1.in
+
+Only introduce ticked modules when the user explicitly requests stream cipher, LFSR, keystream, or stepping behaviour.
 
 ---
 

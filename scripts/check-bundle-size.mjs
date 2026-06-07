@@ -4,7 +4,7 @@ import { join } from 'node:path';
 const distAssetsDir = join(process.cwd(), 'dist', 'assets');
 
 const thresholds = {
-  index: 340 * 1024, // raised narrowly for AI toolkit V2 update (four-domain signal types, bigint-hex guidance, ECC/GF2 sections, new examples)
+  index: 344 * 1024, // raised narrowly for AI toolkit V2 update (four-domain signals, bigint-hex, ECC/GF2 sections, modular arithmetic families, ticked execution)
   react: 210 * 1024,
   maxChunk: 420 * 1024, // raised narrowly for the shipped AES/ECC teaching line plus the new ECC validation-consequence seeded content without forcing premature demo-data splitting
 };
