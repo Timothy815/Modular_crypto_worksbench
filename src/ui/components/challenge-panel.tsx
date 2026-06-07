@@ -214,6 +214,12 @@ export function ChallengePanel({
             ) : null}
           </div>
 
+          {selectedChallenge.difficulty === 'beginner' && !evaluation ? (
+            <p className="comparison-copy">
+              New here? Click <strong>Reset Challenge</strong> to load the broken machine onto the
+              canvas. Then click any module to select it and adjust its parameters in the Inspector.
+            </p>
+          ) : null}
           <div className="comparison-actions">
             <button
               type="button"

@@ -26,9 +26,9 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
   Rationale: Students treat PASS as a score rather than a behavioral trust claim. The manual explains the distinction, but the surface itself does not. This is a teaching failure embedded in the product's most important quality-assurance step.
   Done when: The verification station includes in-product language (not just in the manual) that clearly states what PASS means and why a FAIL case is informative, without requiring the user to leave the surface.
 
-- [ ] **Student-first onboarding path**
+- [x] **Student-first onboarding path** *(shipped June 7, 2026)*
   Rationale: Current first-session guidance depends on instructor scaffolding. Quick Start and Atlas are improvements but are not sufficient for a student arriving alone. The product's classroom value depends on students being able to begin productively without hand-holding.
-  Note: `FIRST-SESSION-ONBOARDING-V1` shipped (April 2026) — added Start Here guidance, Quick Start pipeline micro-demos, and Atlas. The behavioral done condition below has not been validated in a real session.
+  Shipped: `FIRST-SESSION-ONBOARDING-V1` (April 2026) added Start Here, Quick Start, Atlas. June 2026 additions: Quick Start step 3 now explicitly names "Reset Challenge" and explains the module-select-then-Inspector interaction; beginner challenges show a first-timer tip before evaluation begins. Behavioral validation (15 min solo) requires a real classroom session — code-side work is complete.
   Done when: A student with no prior MCW experience can reach their first repair success in under 15 minutes, starting from a fresh session, without instructor intervention.
 
 ---

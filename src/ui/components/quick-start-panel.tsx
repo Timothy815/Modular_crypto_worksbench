@@ -102,7 +102,11 @@ export function QuickStartPanel({
           <ol className="quick-start-step-list">
             <li>Open the Bridge demo so you can see one explicit symbol-to-bits-to-symbol machine.</li>
             <li>Switch to the Bridge tutorial and step through the graph in Guide mode.</li>
-            <li>Open the matching challenge and repair the machine until it matches the reference again.</li>
+            <li>
+              Open the matching challenge, then click <strong>Reset Challenge</strong> to load the
+              broken machine onto the canvas. Click any module to select it, then adjust its
+              parameters in the Inspector until the output matches the reference.
+            </li>
             <li>
               Use the Inspector <strong>Compare</strong> tab or the challenge success banner to confirm the
               machine now matches expected behavior.
