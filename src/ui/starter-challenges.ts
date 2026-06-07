@@ -96,6 +96,9 @@ const visibleAuthenticatedEncryptionProject = demoProjects.find(
   (project) => project.id === 'visible-authenticated-encryption',
 );
 const sequentialProject = demoProjects.find((project) => project.id === 'sequential');
+const visibleCompressionHashProject = demoProjects.find(
+  (project) => project.id === 'visible-compression-hash',
+);
 const toyCompressionHashProject = demoProjects.find((project) => project.id === 'toy-compression-hash');
 const toySpongeHashProject = demoProjects.find((project) => project.id === 'toy-sponge-hash');
 
@@ -218,6 +221,9 @@ if (!visibleMessageWindowProject) {
 }
 if (!sequentialProject) {
   throw new Error('Expected sequential demo project to seed starter challenges.');
+}
+if (!visibleCompressionHashProject) {
+  throw new Error('Expected visible-compression-hash project to seed starter challenges.');
 }
 if (!toyCompressionHashProject) {
   throw new Error('Expected toy-compression-hash project to seed starter challenges.');
@@ -393,6 +399,17 @@ const brokenVisibleMessageWindowStart = cloneProject(visibleMessageWindowProject
 const sequentialTarget = cloneProject(sequentialProject.project);
 const brokenSequentialStart = cloneProject(sequentialProject.project);
 const brokenSequentialTapsStart = cloneProject(sequentialProject.project);
+const visibleCompressionHashTarget = cloneProject(visibleCompressionHashProject.project);
+const brokenVisibleCompressionHashStart = cloneProject(visibleCompressionHashProject.project);
+// Break: left SBox uses identity (no substitution) instead of the inverting table
+const brokenCompressionLSub = brokenVisibleCompressionHashStart.modules.find(
+  (m) => m.id === 'l-sub',
+);
+if (!brokenCompressionLSub) {
+  throw new Error('Expected visible-compression-hash project to contain l-sub module.');
+}
+brokenCompressionLSub.params.table = Array.from({ length: 256 }, (_, i) => i).join(',');
+
 const toyCompressionHashTarget = cloneProject(toyCompressionHashProject.project);
 const toyCompressionHashCollisionStart = cloneProject(toyCompressionHashProject.project);
 const toySpongeHashTarget = cloneProject(toySpongeHashProject.project);
@@ -1368,6 +1385,27 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       'The split, XOR keys, and join are already correct.',
       'Focus on the targetWidth parameter of the BitPad module.',
       'An 8-bit source needs to be padded to 16 bits so the split can produce two 8-bit halves.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'repair-the-hash-substitution',
+    title: 'Repair the Hash Substitution',
+    projectId: 'visible-compression-hash',
+    group: 'Hash Foundations',
+    difficulty: 'beginner',
+    prompt:
+      'The left path substitution has been replaced with an identity mapping — input passes through unchanged. The final digest no longer matches the reference. Restore the correct inverting S-Box on the left path so the output matches the expected digest.',
+    startingProject: brokenVisibleCompressionHashStart,
+    startingLayout: cloneProject(visibleCompressionHashProject.layout),
+    targetProject: visibleCompressionHashTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Only the left path S-Box (l-sub) is wrong. The right path and compress step are correct.',
+      'The correct S-Box for this hash is the inverting table: each byte is replaced by 255 minus itself.',
+      'Click l-sub, open the Inspector, and find the table parameter. It currently reads 0,1,2,...,255. Change it to the inverse: 255,254,...,0.',
     ],
   },
   {

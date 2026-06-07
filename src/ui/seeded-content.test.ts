@@ -708,4 +708,31 @@ describe('seeded teaching content', () => {
       'honest-verify-equals-out': '0',
     });
   });
+
+  it('keeps the visible compression hash demo deterministic and the repair challenge broken on the output', () => {
+    const demo = demoProjects.find((project) => project.id === 'visible-compression-hash');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    const demoOutputs = getHexOutputMap(demo.project);
+    // Board must produce a deterministic digest for inputs A3 and 6F
+    expect(demoOutputs.output).toBeTruthy();
+    expect(typeof demoOutputs.output).toBe('string');
+    expect(demoOutputs.output.length).toBe(2); // 1 byte = 2 hex chars
+
+    const challenge = STARTER_CHALLENGES.find((entry) => entry.id === 'repair-the-hash-substitution');
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    const target = getHexOutputMap(challenge.targetProject);
+    const starting = getHexOutputMap(challenge.startingProject);
+    // Target matches the correct demo output
+    expect(target.output).toBe(demoOutputs.output);
+    // Broken starting project produces a different digest
+    expect(starting.output).not.toBe(target.output);
+  });
 });

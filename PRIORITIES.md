@@ -68,9 +68,10 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
 
 - [ ] **Pedagogical multi-round AES board (4 rounds minimum)**
   Rationale: The one-round AES board is the current capability ceiling. A multi-round board with explicit key schedule and round operations is the product's strongest possible single demonstration of depth and would complete the AES teaching line.
+  Note: Blocked on composite packaging. A flat 4-round board would be 500+ modules; requires an AesRoundComposite first. Key schedule step now exists (visible-aes-key-schedule). Resume when composite infrastructure is ready.
   Done when: A board wires at least 4 full AES rounds with the key schedule feeding each round key explicitly. Verified against a standard test vector. Tutorial present.
 
-- [ ] **Hash construction: SHA-256 round decomposition or sponge pedagogy**
+- [x] **Hash construction: SHA-256 round decomposition or sponge pedagogy** *(shipped June 7, 2026)*
   Rationale: Hash functions are entirely absent from the standard teaching flow. This is the largest remaining gap in modern cryptographic vocabulary. SHA-256 round structure or a real sponge construction would be the most significant single teaching addition remaining.
   Done when: At least one hash construction board exists, verified against a known test vector, with a tutorial that explains what the round function is doing and why.
 

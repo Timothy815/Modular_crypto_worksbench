@@ -159,6 +159,7 @@ const FULL_DEMO_SECTION_MAP: Record<string, AtlasSectionId> = {
   'visible-block-chaining': 'protocols-and-integrity',
   'visible-tamper-check': 'protocols-and-integrity',
   'visible-authenticated-encryption': 'protocols-and-integrity',
+  'visible-compression-hash': 'protocols-and-integrity',
   'toy-compression-hash': 'protocols-and-integrity',
   'hash-digest-round': 'protocols-and-integrity',
   'toy-sponge-hash': 'protocols-and-integrity',

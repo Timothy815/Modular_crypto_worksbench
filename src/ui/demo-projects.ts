@@ -5343,6 +5343,96 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'visible-compression-hash',
+    name: 'Visible Compression Hash',
+    group: 'Hash Foundations',
+    summary:
+      'A two-input compression function built from explicit primitives: each message byte travels a separate substitution-and-permutation path, the paths are XOR-compressed into one byte, and four digest rounds finalize the hash. Every transformation is a visible canvas node with a drillable interior.',
+    pipeline:
+      'HexSource(M_L) → SBox(invert) → Permutation(bit-reverse) → XOR ← Permutation(bit-reverse) ← SBox(invert) ← Permutation(bit-reverse) ← HexSource(M_R) → HashDigestRoundIterator(4) → BitsToHex → HexOutput',
+    project: {
+      modules: [
+        // Message inputs
+        { id: 'msg-l', defId: 'HexSource', params: { value: 'A3' } },
+        { id: 'msg-r', defId: 'HexSource', params: { value: '6F' } },
+        // Left path: substitute → bit-reverse
+        {
+          id: 'l-sub',
+          defId: 'SBox',
+          params: { table: Array.from({ length: 256 }, (_, i) => 255 - i).join(',') },
+        },
+        { id: 'l-perm', defId: 'Permutation', params: { order: '7,6,5,4,3,2,1,0' } },
+        // Right path: bit-reverse → substitute → bit-reverse
+        { id: 'r-pre', defId: 'Permutation', params: { order: '7,6,5,4,3,2,1,0' } },
+        {
+          id: 'r-sub',
+          defId: 'SBox',
+          params: { table: Array.from({ length: 256 }, (_, i) => 255 - i).join(',') },
+        },
+        { id: 'r-perm', defId: 'Permutation', params: { order: '7,6,5,4,3,2,1,0' } },
+        // Visible intermediate outputs for left and right paths
+        { id: 'l-bth', defId: 'BitsToHex', params: {} },
+        { id: 'l-out', defId: 'HexOutput', params: {} },
+        { id: 'r-bth', defId: 'BitsToHex', params: {} },
+        { id: 'r-out', defId: 'HexOutput', params: {} },
+        // Compress: XOR left and right
+        { id: 'compress', defId: 'XOR', params: {} },
+        // Visible compressed byte
+        { id: 'c-bth', defId: 'BitsToHex', params: {} },
+        { id: 'c-out', defId: 'HexOutput', params: {} },
+        // Finalize: 4 digest rounds
+        { id: 'digest', defId: 'HashDigestRoundIterator', params: { iterationCount: 4 } },
+        { id: 'out-bth', defId: 'BitsToHex', params: {} },
+        { id: 'output', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        // Left path
+        { from: { moduleId: 'msg-l', port: 'out' }, to: { moduleId: 'l-sub', port: 'in' } },
+        { from: { moduleId: 'l-sub', port: 'out' }, to: { moduleId: 'l-perm', port: 'in' } },
+        { from: { moduleId: 'l-perm', port: 'out' }, to: { moduleId: 'l-bth', port: 'in' } },
+        { from: { moduleId: 'l-bth', port: 'out' }, to: { moduleId: 'l-out', port: 'in' } },
+        { from: { moduleId: 'l-perm', port: 'out' }, to: { moduleId: 'compress', port: 'a' } },
+        // Right path
+        { from: { moduleId: 'msg-r', port: 'out' }, to: { moduleId: 'r-pre', port: 'in' } },
+        { from: { moduleId: 'r-pre', port: 'out' }, to: { moduleId: 'r-sub', port: 'in' } },
+        { from: { moduleId: 'r-sub', port: 'out' }, to: { moduleId: 'r-perm', port: 'in' } },
+        { from: { moduleId: 'r-perm', port: 'out' }, to: { moduleId: 'r-bth', port: 'in' } },
+        { from: { moduleId: 'r-bth', port: 'out' }, to: { moduleId: 'r-out', port: 'in' } },
+        { from: { moduleId: 'r-perm', port: 'out' }, to: { moduleId: 'compress', port: 'b' } },
+        // Compress and visible compressed byte
+        { from: { moduleId: 'compress', port: 'out' }, to: { moduleId: 'c-bth', port: 'in' } },
+        { from: { moduleId: 'c-bth', port: 'out' }, to: { moduleId: 'c-out', port: 'in' } },
+        { from: { moduleId: 'compress', port: 'out' }, to: { moduleId: 'digest', port: 'in' } },
+        // Finalize
+        { from: { moduleId: 'digest', port: 'out' }, to: { moduleId: 'out-bth', port: 'in' } },
+        { from: { moduleId: 'out-bth', port: 'out' }, to: { moduleId: 'output', port: 'in' } },
+      ],
+    },
+    layout: {
+      // Left path (top row)
+      'msg-l': { x: 60, y: 80 },
+      'l-sub': { x: 260, y: 80 },
+      'l-perm': { x: 460, y: 80 },
+      'l-bth': { x: 660, y: 80 },
+      'l-out': { x: 860, y: 80 },
+      // Right path (bottom row)
+      'msg-r': { x: 60, y: 300 },
+      'r-pre': { x: 260, y: 300 },
+      'r-sub': { x: 460, y: 300 },
+      'r-perm': { x: 660, y: 300 },
+      'r-bth': { x: 860, y: 300 },
+      'r-out': { x: 1060, y: 300 },
+      // Compress (center)
+      compress: { x: 660, y: 180 },
+      'c-bth': { x: 860, y: 180 },
+      'c-out': { x: 1060, y: 180 },
+      // Finalize
+      digest: { x: 1060, y: 80 },
+      'out-bth': { x: 1260, y: 80 },
+      output: { x: 1460, y: 80 },
+    },
+  },
+  {
     id: 'toy-sponge-hash',
     name: 'Toy Sponge Hash',
     group: 'Hash Foundations',

@@ -1388,6 +1388,52 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
   },
   {
     version: 1,
+    id: 'visible-compression-hash',
+    title: 'How A Compression Function Works',
+    group: 'Hash Foundations',
+    summary:
+      'Walk through every visible step: two message bytes travel separate substitution-and-permutation paths, are XOR-compressed into one byte, and four digest rounds finalize the digest.',
+    projectId: 'visible-compression-hash',
+    steps: [
+      {
+        id: 'ch-inputs',
+        title: 'Two Message Bytes Enter Separate Paths',
+        body: 'The left HexSource (A3) and right HexSource (6F) feed two different transformation paths. Keeping the paths separate means a one-bit change in either input has a chance to affect every output bit before the paths merge — that\'s the avalanche property every good hash aims for.',
+        focusModuleId: 'msg-l',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'ch-left-path',
+        title: 'The Left Path: Substitute Then Bit-Reverse',
+        body: 'The left byte passes through an inverting SBox (output = 255 - input), then a Permutation that reverses the bit order. The SBox provides nonlinearity — it breaks linear relationships between input and output. The bit-reverse mixes which positions carry which information. The HexOutput below the path shows the value at this stage.',
+        focusModuleId: 'l-sub',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'ch-right-path',
+        title: 'The Right Path: Bit-Reverse First, Then The Same Steps',
+        body: 'The right byte is bit-reversed before its SBox and final bit-reverse. This asymmetry means the two inputs take structurally different routes to the compress step, so left and right cannot cancel each other out when XORed. Real hash functions use multiple nonlinear round functions for the same reason.',
+        focusModuleId: 'r-pre',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'ch-compress',
+        title: 'XOR Merges Two Bytes Into One',
+        body: 'The compress XOR combines the two path outputs into one byte. This is the compression step: two bytes in, one byte out. The compressed byte (visible below) carries information from both inputs. If you change A3 by one bit, the compressed byte should also change — try it to see the diffusion.',
+        focusModuleId: 'compress',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'ch-digest',
+        title: 'Four Digest Rounds Finalize The Hash',
+        body: 'The HashDigestRoundIterator applies four rounds of substitute → rotate → XOR-constant to the compressed byte. Each round spreads any remaining input structure through the full output byte. After four rounds, a single-bit input change should flip roughly half the output bits. Click the digest module to drilldown and inspect each internal round.',
+        focusModuleId: 'digest',
+        targetStepIndex: 0,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'toy-sponge-hash',
     title: 'The Toy Sponge Hash',
     group: 'Hash Foundations',
