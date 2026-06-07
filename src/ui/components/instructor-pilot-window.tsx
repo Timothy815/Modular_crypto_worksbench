@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
+import type { DiagnosisBlock, PilotDecision, RouteBlock } from '../manual-content';
 import { INSTRUCTOR_PILOT_SECTIONS } from '../instructor-pilot-content';
 import { buildManualIndex, searchManualContent } from '../manual-support';
 
@@ -7,79 +8,318 @@ interface InstructorPilotWindowProps {
   initialTheme: 'light' | 'dark';
 }
 
+interface RecentEntry {
+  id: string;
+  title: string;
+  sectionTitle: string;
+}
+
+const RECENT_STORAGE_KEY = 'mcw-pilot-last-visited';
+const RECENT_MAX = 3;
+
+function loadRecentEntries(): RecentEntry[] {
+  try {
+    const raw = localStorage.getItem(RECENT_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as RecentEntry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentEntries(entries: RecentEntry[]): void {
+  try {
+    localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(entries));
+  } catch {
+    // localStorage may be unavailable
+  }
+}
+
+function detectPrintMode(): boolean {
+  return new URLSearchParams(window.location.search).get('print') === '1';
+}
+
+function renderInline(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={`${part}:${index}`}>{part.slice(2, -2)}</strong>;
+    }
+    return <span key={`${part}:${index}`}>{part}</span>;
+  });
+}
+
+function PilotDecisionGrid({ decisions }: { decisions: PilotDecision[] }) {
+  return (
+    <div className="pilot-decision-grid">
+      {decisions.map((d) => (
+        <div key={d.label} className="pilot-decision-card">
+          <p className="pilot-decision-label">{d.label}</p>
+          <p className="pilot-decision-description">{d.description}</p>
+          <div className="pilot-decision-row">
+            <span className="pilot-decision-row-label">Best for</span>
+            <span className="pilot-decision-row-value">{d.bestFor}</span>
+          </div>
+          <div className="pilot-decision-row">
+            <span className="pilot-decision-row-label">Start with</span>
+            <span className="pilot-decision-row-value">{d.startWith}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RouteBlockView({ block }: { block: RouteBlock }) {
+  return (
+    <div className="manual-route-block">
+      {block.useThisWhen ? (
+        <div className="manual-route-row">
+          <span className="manual-route-label">Use this when</span>
+          <span className="manual-route-value">{renderInline(block.useThisWhen)}</span>
+        </div>
+      ) : null}
+      {block.openNext ? (
+        <div className="manual-route-row">
+          <span className="manual-route-label">Open next</span>
+          <span className="manual-route-value">{renderInline(block.openNext)}</span>
+        </div>
+      ) : null}
+      {block.then ? (
+        <div className="manual-route-row">
+          <span className="manual-route-label">Then</span>
+          <span className="manual-route-value">{renderInline(block.then)}</span>
+        </div>
+      ) : null}
+      {block.ifRepairPractice ? (
+        <div className="manual-route-row">
+          <span className="manual-route-label">If repair early</span>
+          <span className="manual-route-value">{renderInline(block.ifRepairPractice)}</span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function DiagnosisBlockView({ block }: { block: DiagnosisBlock }) {
+  return (
+    <div className="manual-diagnosis-block">
+      <div className="manual-diagnosis-row">
+        <span className="manual-route-label">Likely cause</span>
+        <span className="manual-route-value">{renderInline(block.likelyCause)}</span>
+      </div>
+      <div className="manual-diagnosis-row">
+        <span className="manual-route-label">What to check</span>
+        <span className="manual-route-value">{renderInline(block.whatToCheck)}</span>
+      </div>
+      <div className="manual-diagnosis-row">
+        <span className="manual-route-label">What to do next</span>
+        <span className="manual-route-value">{renderInline(block.whatToDoNext)}</span>
+      </div>
+    </div>
+  );
+}
+
+function SeeAlsoBlock({
+  ids,
+  entryMap,
+}: {
+  ids: string[];
+  entryMap: Map<string, { title: string; sectionTitle: string }>;
+}) {
+  const resolved = ids.flatMap((id) => {
+    const info = entryMap.get(id);
+    return info ? [{ id, title: info.title }] : [];
+  });
+  if (resolved.length === 0) return null;
+  return (
+    <div className="manual-see-also">
+      <span className="manual-entry-subhead">See also</span>
+      <div className="manual-see-also-links">
+        {resolved.map(({ id, title }) => (
+          <a key={id} href={`#${id}`} className="manual-see-also-link">
+            {title}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function InstructorPilotWindow({ initialTheme }: InstructorPilotWindowProps) {
+  const isPrint = useMemo(detectPrintMode, []);
   const [query, setQuery] = useState('');
+  const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
+  const [recentlyVisited, setRecentlyVisited] = useState<RecentEntry[]>(loadRecentEntries);
+
   const indexEntries = useMemo(() => buildManualIndex(INSTRUCTOR_PILOT_SECTIONS), []);
   const searchResults = useMemo(
     () => searchManualContent(INSTRUCTOR_PILOT_SECTIONS, query),
     [query],
   );
 
+  const entryMap = useMemo(() => {
+    const map = new Map<string, { title: string; sectionTitle: string }>();
+    for (const section of INSTRUCTOR_PILOT_SECTIONS) {
+      for (const entry of section.entries) {
+        map.set(entry.id, { title: entry.title, sectionTitle: section.title });
+      }
+    }
+    return map;
+  }, []);
+
   useEffect(() => {
     document.documentElement.dataset.theme = initialTheme;
-    document.title = 'MCW Instructor Pilot Pack';
-  }, [initialTheme]);
+    document.title = isPrint ? 'MCW Instructor Pilot Pack — Print' : 'MCW Instructor Pilot Pack';
+  }, [initialTheme, isPrint]);
+
+  useEffect(() => {
+    if (isPrint) return;
+    const intersecting = new Set<string>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) intersecting.add(entry.target.id);
+          else intersecting.delete(entry.target.id);
+        }
+        const allCards = document.querySelectorAll<HTMLElement>('.manual-entry-card[id]');
+        for (const card of allCards) {
+          if (intersecting.has(card.id)) {
+            setActiveEntryId(card.id);
+            return;
+          }
+        }
+      },
+      { rootMargin: '0px 0px -40% 0px', threshold: 0 },
+    );
+    document.querySelectorAll<HTMLElement>('.manual-entry-card[id]').forEach((el) =>
+      observer.observe(el),
+    );
+    return () => observer.disconnect();
+  }, [isPrint]);
+
+  const activeTocLinkRef = useRef<HTMLAnchorElement | null>(null);
+  useEffect(() => {
+    if (!activeEntryId) return;
+    const link = document.querySelector<HTMLAnchorElement>(
+      `.manual-toc-entry-link[href="#${activeEntryId}"]`,
+    );
+    activeTocLinkRef.current = link;
+    link?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [activeEntryId]);
+
+  useEffect(() => {
+    if (!activeEntryId || isPrint) return;
+    const info = entryMap.get(activeEntryId);
+    if (!info) return;
+    const timer = setTimeout(() => {
+      setRecentlyVisited((prev) => {
+        const next: RecentEntry[] = [
+          { id: activeEntryId, title: info.title, sectionTitle: info.sectionTitle },
+          ...prev.filter((e) => e.id !== activeEntryId),
+        ].slice(0, RECENT_MAX);
+        saveRecentEntries(next);
+        return next;
+      });
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [activeEntryId, entryMap, isPrint]);
+
+  const shellClass = `manual-shell${isPrint ? ' manual-shell--print' : ''}`;
 
   return (
-    <div className="manual-shell">
-      <aside className="manual-sidebar panel">
-        <div className="panel-head">
-          <p className="panel-label">Instructor Pilot Pack</p>
-          <h2>Plan a first classroom run</h2>
-          <p className="comparison-copy">
-            Use this pack to choose the right flagship lab, structure a first pilot, and decide
-            what evidence to collect from students.
-          </p>
-        </div>
+    <div className={shellClass}>
+      {!isPrint ? (
+        <aside className="manual-sidebar panel">
+          <div className="panel-head">
+            <p className="panel-label">Instructor Pilot Pack</p>
+            <h2>Plan a first classroom run</h2>
+            <p className="comparison-copy">
+              Use this pack to choose the right flagship lab, structure a first pilot, and decide
+              what evidence to collect from students.
+            </p>
+          </div>
 
-        <label className="verification-field">
-          <span className="meta-label">Search</span>
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search pilot steps, labs, or teaching notes"
-          />
-        </label>
+          <label className="verification-field">
+            <span className="meta-label">Search</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search pilot steps, labs, or teaching notes"
+            />
+          </label>
 
-        <section className="manual-sidebar-block">
-          <span className="meta-label">Table Of Contents</span>
-          <div className="manual-toc">
-            {INSTRUCTOR_PILOT_SECTIONS.map((section) => (
-              <div key={section.id} className="manual-toc-section">
-                <a href={`#${section.id}`} className="manual-toc-section-link">
-                  {section.title}
-                </a>
-                <div className="manual-toc-entries">
-                  {section.entries.map((entry) => (
-                    <a key={entry.id} href={`#${entry.id}`} className="manual-toc-entry-link">
-                      {entry.title}
-                    </a>
-                  ))}
+          <section className="manual-sidebar-block">
+            <span className="meta-label">Table Of Contents</span>
+            <div className="manual-toc">
+              {INSTRUCTOR_PILOT_SECTIONS.map((section) => (
+                <div key={section.id} className="manual-toc-section">
+                  <a href={`#${section.id}`} className="manual-toc-section-link">
+                    {section.title}
+                  </a>
+                  <div className="manual-toc-entries">
+                    {section.entries.map((entry) => (
+                      <a
+                        key={entry.id}
+                        href={`#${entry.id}`}
+                        className={`manual-toc-entry-link${activeEntryId === entry.id ? ' is-active' : ''}`}
+                      >
+                        {entry.title}
+                      </a>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
 
-        <section className="manual-sidebar-block">
-          <span className="meta-label">Index</span>
-          <div className="manual-index-list">
-            {indexEntries.map((entry) => (
-              <a
-                key={`${entry.term}:${entry.entryId}`}
-                href={`#${entry.entryId}`}
-                className="manual-index-link"
-              >
-                <strong>{entry.term}</strong>
-                <span>{entry.entryTitle}</span>
-              </a>
-            ))}
-          </div>
-        </section>
-      </aside>
+          {recentlyVisited.length > 0 ? (
+            <section className="manual-sidebar-block">
+              <span className="meta-label">Recently Viewed</span>
+              <div className="manual-recent-list">
+                {recentlyVisited.map((recent) => (
+                  <a key={recent.id} href={`#${recent.id}`} className="manual-recent-link">
+                    <strong>{recent.title}</strong>
+                    <span>{recent.sectionTitle}</span>
+                  </a>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <section className="manual-sidebar-block">
+            <span className="meta-label">Index</span>
+            <div className="manual-index-list">
+              {indexEntries.map((entry) => (
+                <a
+                  key={`${entry.term}:${entry.entryId}`}
+                  href={`#${entry.entryId}`}
+                  className="manual-index-link"
+                >
+                  <strong>{entry.term}</strong>
+                  <span>{entry.entryTitle}</span>
+                </a>
+              ))}
+            </div>
+          </section>
+        </aside>
+      ) : null}
 
       <main className="manual-main">
+        {isPrint ? (
+          <div className="manual-print-header">
+            <div>
+              <p className="panel-label">MCW Instructor Pilot Pack</p>
+              <p className="comparison-copy">
+                All sections — printed {new Date().toLocaleDateString()}
+              </p>
+            </div>
+            <button className="manual-print-button" onClick={() => window.print()}>
+              Print this page
+            </button>
+          </div>
+        ) : null}
+
         {query.trim() ? (
           <section className="panel manual-search-panel">
             <div className="panel-head">
@@ -101,8 +341,8 @@ export function InstructorPilotWindow({ initialTheme }: InstructorPilotWindowPro
                 ))
               ) : (
                 <p className="comparison-copy">
-                  No pilot-pack entries matched that search. Try `lab 1`, `lab 2`, `verification`,
-                  `parity`, or `one class`.
+                  No pilot-pack entries matched that search. Try `lab 1`, `lab 2`, `one class`,
+                  `verification`, `parity`, or `repair challenge`.
                 </p>
               )}
             </div>
@@ -121,10 +361,29 @@ export function InstructorPilotWindow({ initialTheme }: InstructorPilotWindowPro
                 {section.entries.map((entry) => (
                   <article key={entry.id} id={entry.id} className="manual-entry-card">
                     <h3>{entry.title}</h3>
-                    <p>{entry.body}</p>
-                    <p className="manual-entry-terms">
-                      <strong>Index Terms:</strong> {entry.indexTerms.join(', ')}
-                    </p>
+                    <p className="manual-entry-body">{renderInline(entry.body)}</p>
+                    {entry.pilotDecisions?.length ? (
+                      <PilotDecisionGrid decisions={entry.pilotDecisions} />
+                    ) : null}
+                    {entry.keyPoints?.length ? (
+                      <>
+                        <p className="manual-entry-subhead">Steps</p>
+                        <ol className="manual-entry-key-points">
+                          {entry.keyPoints.map((point) => (
+                            <li key={point}>{renderInline(point)}</li>
+                          ))}
+                        </ol>
+                      </>
+                    ) : null}
+                    {entry.diagnosis ? (
+                      <DiagnosisBlockView block={entry.diagnosis} />
+                    ) : null}
+                    {entry.routeBlock ? (
+                      <RouteBlockView block={entry.routeBlock} />
+                    ) : null}
+                    {entry.seeAlso?.length ? (
+                      <SeeAlsoBlock ids={entry.seeAlso} entryMap={entryMap} />
+                    ) : null}
                   </article>
                 ))}
               </div>

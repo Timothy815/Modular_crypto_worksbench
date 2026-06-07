@@ -2562,6 +2562,56 @@ details:not([open]) > .manual-body-summary::before {
   border-bottom: none;
 }
 
+/* ── Pilot Decision Grid ─────────────────────────────────────── */
+
+.pilot-decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.pilot-decision-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-panel);
+}
+
+.pilot-decision-label {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink-strong);
+}
+
+.pilot-decision-description {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.pilot-decision-row {
+  display: grid;
+  gap: 3px;
+}
+
+.pilot-decision-row-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.pilot-decision-row-value {
+  font-size: 0.9rem;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
 /* ── Recently Viewed ─────────────────────────────────────────── */
 
 .manual-recent-list {

@@ -1,3 +1,10 @@
+export interface PilotDecision {
+  label: string;
+  description: string;
+  bestFor: string;
+  startWith: string;
+}
+
 export interface RouteBlock {
   useThisWhen?: string;
   openNext?: string;
@@ -26,6 +33,7 @@ export interface ManualEntry {
   intents?: IntentGateway[];
   diagnosis?: DiagnosisBlock;
   seeAlso?: string[];
+  pilotDecisions?: PilotDecision[];
   indexTerms: string[];
 }
 
