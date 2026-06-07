@@ -228,8 +228,7 @@ export function InstructorPilotWindow({ initialTheme }: InstructorPilotWindowPro
 
   return (
     <div className={shellClass}>
-      {!isPrint ? (
-        <aside className="manual-sidebar panel">
+      <aside className="manual-sidebar panel">
           <div className="panel-head">
             <p className="panel-label">Instructor Pilot Pack</p>
             <h2>Plan a first classroom run</h2>
@@ -303,7 +302,6 @@ export function InstructorPilotWindow({ initialTheme }: InstructorPilotWindowPro
             </div>
           </section>
         </aside>
-      ) : null}
 
       <main className="manual-main">
         {isPrint ? (

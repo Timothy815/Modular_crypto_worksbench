@@ -2379,6 +2379,10 @@ details:not([open]) > .manual-body-summary::before {
   padding: 36px 24px 64px;
 }
 
+.manual-shell--print .manual-sidebar {
+  display: none;
+}
+
 .manual-print-header {
   display: flex;
   align-items: center;

@@ -291,8 +291,7 @@ export function ManualWindow({ initialTheme }: ManualWindowProps) {
 
   return (
     <div className={shellClass}>
-      {!isPrint ? (
-        <aside className="manual-sidebar panel">
+      <aside className="manual-sidebar panel">
           <div className="panel-head">
             <p className="panel-label">User Manual</p>
             <h2>Find workflows and boards</h2>
@@ -366,7 +365,6 @@ export function ManualWindow({ initialTheme }: ManualWindowProps) {
             </div>
           </section>
         </aside>
-      ) : null}
 
       <main className="manual-main">
         {isPrint ? (
