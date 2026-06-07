@@ -133,6 +133,11 @@ describe('PrimitivePalette reusable summaries', () => {
     expect(markup).toContain('Built-in architecture');
     expect(markup).toContain('Inputs: in:bits · Outputs: out:bits');
     expect(markup).toContain('Placed 1 time in saved local work · Referenced by 1 reusable');
+    expect(markup).toContain('References');
+    expect(markup).toContain('2 items');
+    expect(markup).toContain('Expand references for Round Pair');
+    expect(markup).not.toContain('Open board');
+    expect(markup).not.toContain('Open reusable');
     expect(markup).toContain('Delete unavailable while this reusable is placed in saved local work and referenced by another reusable.');
   });
 
@@ -173,6 +178,10 @@ describe('PrimitivePalette reusable summaries', () => {
     expect(markup).toContain('All Tags');
     expect(markup).toContain('AES');
     expect(markup).toContain('Classroom');
+    expect(markup).toContain('Immediate Dependencies');
+    expect(markup).toContain('1 item');
+    expect(markup).toContain('Expand immediate dependencies for Personal Round');
+    expect(markup).not.toContain('RoundPair</span>');
   });
 
   it('blocks delete when reusable-definition references exist without placed usage', () => {
@@ -205,5 +214,36 @@ describe('PrimitivePalette reusable summaries', () => {
     expect(markup).toContain('Referenced by 1 reusable');
     expect(markup).toContain('Delete unavailable while another reusable references this reusable.');
     expect(markup).toContain('disabled=""');
+  });
+
+  it('uses compact accessible labels for reference actions when expanded', () => {
+    const markup = renderToStaticMarkup(
+      <PrimitivePalette
+        registry={registry}
+        activeWorkspaceId="workspace-a"
+        compositeLibrary={compositeLibrary}
+        viewMode="expanded"
+        initialActiveTab="composites"
+        onToggleViewMode={() => undefined}
+        onAddModule={() => undefined}
+        onInsertStarterChain={() => undefined}
+        onOpenComposite={() => undefined}
+        onEditClockedIterator={() => undefined}
+        onOpenReusableReferenceProject={() => undefined}
+        onDuplicateReusable={() => undefined}
+        onRenameReusable={() => undefined}
+        onUpdateReusableTags={() => undefined}
+        onPromoteReusable={() => undefined}
+        onOpenPrimitiveMicroDemo={() => undefined}
+        onExportCompositeLibrary={() => undefined}
+        onRemoveComposite={() => undefined}
+        compositeUsageCountById={{ RoundPair: 1 }}
+        reusableReferenceProjects={reusableReferenceProjects}
+        builtInReusableIds={['ByteRoundIterator']}
+      />,
+    );
+
+    expect(markup).toContain('aria-label="Expand references for Round Pair"');
+    expect(markup).toContain('title="Expand references">+</button>');
   });
 });

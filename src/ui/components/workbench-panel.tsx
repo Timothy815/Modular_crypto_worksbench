@@ -109,6 +109,7 @@ import { WORKBENCH_GRID_SIZE } from '../store';
 import {
   computeViewportForRect,
   createWorkspaceSavedViewRegion,
+  MAX_WORKSPACE_SAVED_VIEW_REGIONS,
   type WorkspaceFrameRect,
   type WorkspaceViewState,
 } from '../workspace-navigation';
@@ -2933,6 +2934,19 @@ export function WorkbenchPanel({
     onSaveWorkspaceViewRegion(createWorkspaceSavedViewRegion(name, getCurrentViewportView()));
   }
 
+  function requestSaveCurrentView() {
+    if (savedViewRegions.length >= MAX_WORKSPACE_SAVED_VIEW_REGIONS) {
+      return;
+    }
+
+    const proposedName = window.prompt('Save current view as:', 'Round output');
+    const normalized = proposedName?.trim();
+    if (!normalized) {
+      return;
+    }
+    saveCurrentView(normalized);
+  }
+
   function recallSavedView(regionId: string) {
     const region = savedViewRegions.find((candidate) => candidate.id === regionId);
     if (!region) {
@@ -2949,7 +2963,6 @@ export function WorkbenchPanel({
     );
   }
 
-  const navigationZoomPercent = Math.round(workspaceZoom * 100);
   const canFrameSelection = selectedModuleIds.length > 0;
 
   useEffect(() => {
@@ -3847,18 +3860,8 @@ export function WorkbenchPanel({
           exportStatus={exportStatus}
           currentDocumentFingerprint={currentDocumentFingerprint}
           fileBinding={fileBinding}
-          navigationZoomPercent={navigationZoomPercent}
-          canFrameSelection={canFrameSelection}
-          canReturnToPreviousView={previousView !== null}
-          savedViewRegions={savedViewRegions}
           onSwitchProject={onSwitchProject}
           onJumpToModule={jumpToModule}
-          onFrameWorkspace={fitWorkspaceView}
-          onFrameSelection={frameSelectionView}
-          onReturnToPreviousView={returnToPreviousView}
-          onSaveCurrentView={saveCurrentView}
-          onRecallSavedView={recallSavedView}
-          onDeleteSavedView={onRemoveWorkspaceViewRegion}
           onRequestRestoreVersion={onRequestRestoreVersion}
           onRequestRestoreAutosave={onRequestRestoreAutosave}
           onSetComparisonVersionId={setComparisonVersionId}
@@ -3923,6 +3926,15 @@ export function WorkbenchPanel({
             canvasSurfaceRef.current?.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
           }}
           onFitView={fitWorkspaceView}
+          canFrameSelection={canFrameSelection}
+          canReturnToPreviousView={previousView !== null}
+          savedViewRegions={savedViewRegions}
+          onRequestFrameWorkspace={fitWorkspaceView}
+          onRequestFrameSelection={frameSelectionView}
+          onRequestReturnToPreviousView={returnToPreviousView}
+          onRequestSaveCurrentView={requestSaveCurrentView}
+          onRequestRecallSavedView={recallSavedView}
+          onRequestDeleteSavedView={onRemoveWorkspaceViewRegion}
           onRequestSaveVersion={onRequestSaveVersion}
           onRequestArrangeSelection={onRequestArrangeSelection}
           onRequestAddGroupBox={onAddGroupBox}

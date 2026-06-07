@@ -45,26 +45,8 @@ describe('WorkbenchProjectContext durability UX', () => {
         exportStatus={{ lastExportedAt: null, exportedFingerprint: null }}
         currentDocumentFingerprint="fingerprint-1"
         fileBinding={null}
-        navigationZoomPercent={82}
-        canFrameSelection={true}
-        canReturnToPreviousView={true}
-        savedViewRegions={[
-          {
-            id: 'view-1',
-            name: 'Verifier lane',
-            scrollLeft: 100,
-            scrollTop: 60,
-            zoom: 0.82,
-          },
-        ]}
         onSwitchProject={() => undefined}
         onJumpToModule={() => undefined}
-        onFrameWorkspace={() => undefined}
-        onFrameSelection={() => undefined}
-        onReturnToPreviousView={() => undefined}
-        onSaveCurrentView={() => undefined}
-        onRecallSavedView={() => undefined}
-        onDeleteSavedView={() => undefined}
         onRequestRestoreVersion={() => undefined}
         onRequestRestoreAutosave={() => undefined}
         onSetComparisonVersionId={() => undefined}
@@ -73,13 +55,13 @@ describe('WorkbenchProjectContext durability UX', () => {
     );
 
     expect(markup).toContain('Workspace Durability');
-    expect(markup).toContain('Workspace Navigation');
-    expect(markup).toContain('Zoom:');
-    expect(markup).toContain('Frame Workspace');
-    expect(markup).toContain('Frame Selection');
-    expect(markup).toContain('Back To Previous View');
-    expect(markup).toContain('Save Current View');
-    expect(markup).toContain('Verifier lane');
+    expect(markup).toContain('Pipeline Summary');
+    expect(markup).toContain('Expand pipeline summary');
+    expect(markup).not.toContain('Workspace Navigation');
+    expect(markup).not.toContain('Frame Workspace');
+    expect(markup).not.toContain('Frame Selection');
+    expect(markup).not.toContain('Back To Previous View');
+    expect(markup).not.toContain('Save Current View');
     expect(markup).toContain('Degraded local save mode');
     expect(markup).toContain('Last durable save:');
     expect(markup).toContain('Browser-local workspace only.');
@@ -87,8 +69,9 @@ describe('WorkbenchProjectContext durability UX', () => {
     expect(markup).toContain('Open Snapshots (1)');
     expect(markup).toContain('This workspace has not been exported yet.');
     expect(markup).toContain('portable backup path');
-    expect(markup).toContain('How local durability works');
-    expect(markup).toContain('How local workspace files work');
+    expect(markup).not.toContain('How local durability works');
+    expect(markup).not.toContain('How local workspace files work');
     expect(markup).not.toContain('Recent Snapshots');
+    expect(markup).not.toContain(activeProject.pipeline);
   });
 });

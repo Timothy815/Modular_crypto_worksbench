@@ -1326,8 +1326,25 @@ body.dock-resizing {
   margin: 8px 0 0;
 }
 
+.primitive-help-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.primitive-help-card-head .primitive-help-role {
+  margin: 0;
+}
+
 .primitive-help-role {
   margin-top: 0;
+}
+
+.primitive-help-copy {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
 }
 
 .primitive-help-ports {
@@ -1439,6 +1456,11 @@ body.dock-resizing {
   font-weight: 700;
   color: var(--ink);
   cursor: pointer;
+}
+
+.primitive-icon-button {
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .primitive-action-button-danger {
@@ -1729,9 +1751,25 @@ body.dock-resizing {
   color: var(--muted);
 }
 
+.project-context-subsection {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.project-context-subsection-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.project-context-subsection-head strong {
+  margin-bottom: 0;
+}
+
 .project-context-card code {
   display: inline-block;
-  margin-top: 8px;
   font-family: var(--mono);
   font-size: 0.84rem;
   color: var(--ink);
@@ -2128,6 +2166,27 @@ body.dock-resizing {
   border-radius: 16px;
   background: var(--surface-panel);
   box-shadow: 0 18px 40px rgba(40, 28, 12, 0.12);
+}
+
+.workbench-menu-section {
+  display: grid;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+.workbench-menu-section-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.workbench-menu-inline-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
 }
 
 .workbench-menu-action-button {

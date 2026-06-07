@@ -154,6 +154,8 @@ export function PrimitivePalette({
   const [compositesView, setCompositesView] = useState<'all' | 'workspace' | 'personal' | 'built-in'>('all');
   const [personalTagFilter, setPersonalTagFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [collapsedReferenceSections, setCollapsedReferenceSections] = useState<Record<string, boolean>>({});
+  const [collapsedDependencySections, setCollapsedDependencySections] = useState<Record<string, boolean>>({});
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const sortedDefs = useMemo(() => Object.values(registry).sort((left, right) => {
@@ -342,6 +344,24 @@ export function PrimitivePalette({
       event.preventDefault();
       setSearchQuery('');
     }
+  };
+
+  const isReferenceSectionCollapsed = (defId: string) => collapsedReferenceSections[defId] ?? true;
+
+  const toggleReferenceSection = (defId: string) => {
+    setCollapsedReferenceSections((current) => ({
+      ...current,
+      [defId]: !(current[defId] ?? true),
+    }));
+  };
+
+  const isDependencySectionCollapsed = (defId: string) => collapsedDependencySections[defId] ?? true;
+
+  const toggleDependencySection = (defId: string) => {
+    setCollapsedDependencySections((current) => ({
+      ...current,
+      [defId]: !(current[defId] ?? true),
+    }));
   };
 
   return (
@@ -562,6 +582,10 @@ export function PrimitivePalette({
                 onPromoteReusable={onPromoteReusable}
                 onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                 onRemoveComposite={onRemoveComposite}
+                isDependencySectionCollapsed={isDependencySectionCollapsed(def.id)}
+                onToggleDependencySection={() => toggleDependencySection(def.id)}
+                isReferenceSectionCollapsed={isReferenceSectionCollapsed(def.id)}
+                onToggleReferenceSection={() => toggleReferenceSection(def.id)}
                 pendingConnectionSourceType={pendingConnectionSourceType}
                 hoveredInputPort={hoveredInputPort}
                 onDropForPendingConnection={onDropForPendingConnection}
@@ -607,6 +631,10 @@ export function PrimitivePalette({
                     onPromoteReusable={onPromoteReusable}
                     onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                     onRemoveComposite={onRemoveComposite}
+                    isDependencySectionCollapsed={isDependencySectionCollapsed(def.id)}
+                    onToggleDependencySection={() => toggleDependencySection(def.id)}
+                    isReferenceSectionCollapsed={isReferenceSectionCollapsed(def.id)}
+                    onToggleReferenceSection={() => toggleReferenceSection(def.id)}
                     pendingConnectionSourceType={pendingConnectionSourceType}
                     hoveredInputPort={hoveredInputPort}
                     onDropForPendingConnection={onDropForPendingConnection}
@@ -805,6 +833,10 @@ export function PrimitivePalette({
                       onPromoteReusable={onPromoteReusable}
                       onOpenPrimitiveMicroDemo={onOpenPrimitiveMicroDemo}
                       onRemoveComposite={onRemoveComposite}
+                      isDependencySectionCollapsed={isDependencySectionCollapsed(def.id)}
+                      onToggleDependencySection={() => toggleDependencySection(def.id)}
+                      isReferenceSectionCollapsed={isReferenceSectionCollapsed(def.id)}
+                      onToggleReferenceSection={() => toggleReferenceSection(def.id)}
                       pendingConnectionSourceType={pendingConnectionSourceType}
                       hoveredInputPort={hoveredInputPort}
                       onDropForPendingConnection={onDropForPendingConnection}
@@ -851,6 +883,10 @@ interface ModuleLibraryCardProps {
   onPromoteReusable: (defId: string) => void;
   onOpenPrimitiveMicroDemo: (defId: string) => void;
   onRemoveComposite: (defId: string) => void;
+  isDependencySectionCollapsed: boolean;
+  onToggleDependencySection: () => void;
+  isReferenceSectionCollapsed: boolean;
+  onToggleReferenceSection: () => void;
   pendingConnectionSourceType?: string | null;
   hoveredInputPort?: PaletteHoveredInputPortHint | null;
   onDropForPendingConnection?: (defId: string, toPort: string) => void;
@@ -881,6 +917,10 @@ function ModuleLibraryCard({
   onPromoteReusable,
   onOpenPrimitiveMicroDemo,
   onRemoveComposite,
+  isDependencySectionCollapsed,
+  onToggleDependencySection,
+  isReferenceSectionCollapsed,
+  onToggleReferenceSection,
   pendingConnectionSourceType,
   hoveredInputPort,
   onDropForPendingConnection,
@@ -1346,97 +1386,139 @@ function ModuleLibraryCard({
           ) : null}
           {isReusable && reusableDependencyVisibility && reusableDependencyVisibility.immediateDependencies.length > 0 ? (
             <div className="primitive-help-card" data-no-palette-drag="true">
-              <p className="primitive-help-role">
-                <span className="meta-label">Immediate Dependencies</span> Immediate reusable names and scopes only.
-              </p>
-              <ul className="primitive-list">
-                {reusableDependencyVisibility.immediateDependencies.map((dependency) => (
-                  <li key={`${def.id}-${dependency.id}`} className="primitive-card primitive-compact-row">
-                    <div className="primitive-compact-main">
-                      <div className="primitive-compact-meta">
-                        <strong className="primitive-title">{dependency.name}</strong>
-                        <span className="primitive-def-id">{dependency.id}</span>
-                        <p className="primitive-reuse-summary">{dependency.scopeLabel}</p>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <div className="primitive-help-card-head">
+                <p className="primitive-help-role">
+                  <span className="meta-label">Immediate Dependencies</span>{' '}
+                  {reusableDependencyVisibility.immediateDependencies.length} item
+                  {reusableDependencyVisibility.immediateDependencies.length === 1 ? '' : 's'}
+                </p>
+                <button
+                  type="button"
+                  className="collapse-toggle-button"
+                  aria-label={isDependencySectionCollapsed ? `Expand immediate dependencies for ${def.name}` : `Collapse immediate dependencies for ${def.name}`}
+                  title={isDependencySectionCollapsed ? 'Expand immediate dependencies' : 'Collapse immediate dependencies'}
+                  onClick={onToggleDependencySection}
+                >
+                  {isDependencySectionCollapsed ? '+' : '\u2212'}
+                </button>
+              </div>
+              {!isDependencySectionCollapsed ? (
+                <>
+                  <p className="primitive-help-copy">
+                    Immediate reusable names and scopes only.
+                  </p>
+                  <ul className="primitive-list">
+                    {reusableDependencyVisibility.immediateDependencies.map((dependency) => (
+                      <li key={`${def.id}-${dependency.id}`} className="primitive-card primitive-compact-row">
+                        <div className="primitive-compact-main">
+                          <div className="primitive-compact-meta">
+                            <strong className="primitive-title">{dependency.name}</strong>
+                            <span className="primitive-def-id">{dependency.id}</span>
+                            <p className="primitive-reuse-summary">{dependency.scopeLabel}</p>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
             </div>
           ) : null}
           {isReusable && effectiveReferenceSummary && (effectiveReferenceSummary.placedReferences.length > 0 || effectiveReferenceSummary.definitionReferences.length > 0) ? (
             <div className="primitive-help-card" data-no-palette-drag="true">
-              <p className="primitive-help-role">
-                <span className="meta-label">References</span> Saved-local placements and immediate reusable references.
-              </p>
-              {effectiveReferenceSummary.placedReferences.length > 0 ? (
-                <ul className="primitive-list">
-                  {effectiveReferenceSummary.placedReferences.map((reference) => (
-                    <li key={`${def.id}-${reference.projectId}`} className="primitive-card primitive-compact-row">
-                      <div className="primitive-compact-main">
-                        <div className="primitive-compact-meta">
-                          <strong className="primitive-title">{reference.projectName}</strong>
-                          <p className="primitive-reuse-summary">
-                            Placed {reference.count} time{reference.count === 1 ? '' : 's'}
-                          </p>
-                        </div>
-                        <div className="primitive-compact-actions">
-                          <button
-                            type="button"
-                            className="primitive-action-button"
-                            disabled={reference.targetModuleId === null}
-                            title={reference.jumpDisabledReason ?? `Open ${reference.projectName}`}
-                            onClick={() => {
-                              if (!reference.targetModuleId) {
-                                return;
-                              }
-                              onOpenReusableReferenceProject(reference.projectId, reference.targetModuleId);
-                            }}
-                          >
-                            Open board
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              {effectiveReferenceSummary.definitionReferences.length > 0 ? (
-                <ul className="primitive-list">
-                  {effectiveReferenceSummary.definitionReferences.map((reference) => (
-                    <li key={`${def.id}-${reference.id}`} className="primitive-card primitive-compact-row">
-                      <div className="primitive-compact-main">
-                        <div className="primitive-compact-meta">
-                          <strong className="primitive-title">{reference.name}</strong>
-                          <span className="primitive-def-id">{reference.id}</span>
-                          <p className="primitive-reuse-summary">{reference.scopeLabel}</p>
-                        </div>
-                        <div className="primitive-compact-actions">
-                          <button
-                            type="button"
-                            className="primitive-action-button"
-                            disabled={reference.jumpDisabledReason !== null}
-                            title={reference.jumpDisabledReason ?? `Open ${reference.name}`}
-                            onClick={() => {
-                              if (reference.jumpDisabledReason !== null) {
-                                return;
-                              }
-                              if (reference.kind === 'composite') {
-                                onOpenComposite(reference.id);
-                                return;
-                              }
-                              if (reference.kind === 'clocked-iterator') {
-                                onEditClockedIterator(reference.id);
-                              }
-                            }}
-                          >
-                            Open reusable
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+              <div className="primitive-help-card-head">
+                <p className="primitive-help-role">
+                  <span className="meta-label">References</span>{' '}
+                  {effectiveReferenceSummary.placedReferences.length + effectiveReferenceSummary.definitionReferences.length} item
+                  {effectiveReferenceSummary.placedReferences.length + effectiveReferenceSummary.definitionReferences.length === 1 ? '' : 's'}
+                </p>
+                <button
+                  type="button"
+                  className="collapse-toggle-button"
+                  aria-label={isReferenceSectionCollapsed ? `Expand references for ${def.name}` : `Collapse references for ${def.name}`}
+                  title={isReferenceSectionCollapsed ? 'Expand references' : 'Collapse references'}
+                  onClick={onToggleReferenceSection}
+                >
+                  {isReferenceSectionCollapsed ? '+' : '\u2212'}
+                </button>
+              </div>
+              {!isReferenceSectionCollapsed ? (
+                <>
+                  <p className="primitive-help-copy">
+                    Saved-local placements and immediate reusable references.
+                  </p>
+                  {effectiveReferenceSummary.placedReferences.length > 0 ? (
+                    <ul className="primitive-list">
+                      {effectiveReferenceSummary.placedReferences.map((reference) => (
+                        <li key={`${def.id}-${reference.projectId}`} className="primitive-card primitive-compact-row">
+                          <div className="primitive-compact-main">
+                            <div className="primitive-compact-meta">
+                              <strong className="primitive-title">{reference.projectName}</strong>
+                              <p className="primitive-reuse-summary">
+                                Placed {reference.count} time{reference.count === 1 ? '' : 's'}
+                              </p>
+                            </div>
+                            <div className="primitive-compact-actions">
+                              <button
+                                type="button"
+                                className="primitive-action-button primitive-icon-button"
+                                aria-label={`Open board ${reference.projectName}`}
+                                disabled={reference.targetModuleId === null}
+                                title={reference.jumpDisabledReason ?? `Open board ${reference.projectName}`}
+                                onClick={() => {
+                                  if (!reference.targetModuleId) {
+                                    return;
+                                  }
+                                  onOpenReusableReferenceProject(reference.projectId, reference.targetModuleId);
+                                }}
+                              >
+                                ↗
+                              </button>
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {effectiveReferenceSummary.definitionReferences.length > 0 ? (
+                    <ul className="primitive-list">
+                      {effectiveReferenceSummary.definitionReferences.map((reference) => (
+                        <li key={`${def.id}-${reference.id}`} className="primitive-card primitive-compact-row">
+                          <div className="primitive-compact-main">
+                            <div className="primitive-compact-meta">
+                              <strong className="primitive-title">{reference.name}</strong>
+                              <span className="primitive-def-id">{reference.id}</span>
+                              <p className="primitive-reuse-summary">{reference.scopeLabel}</p>
+                            </div>
+                            <div className="primitive-compact-actions">
+                              <button
+                                type="button"
+                                className="primitive-action-button primitive-icon-button"
+                                aria-label={`Open reusable ${reference.name}`}
+                                disabled={reference.jumpDisabledReason !== null}
+                                title={reference.jumpDisabledReason ?? `Open reusable ${reference.name}`}
+                                onClick={() => {
+                                  if (reference.jumpDisabledReason !== null) {
+                                    return;
+                                  }
+                                  if (reference.kind === 'composite') {
+                                    onOpenComposite(reference.id);
+                                    return;
+                                  }
+                                  if (reference.kind === 'clocked-iterator') {
+                                    onEditClockedIterator(reference.id);
+                                  }
+                                }}
+                              >
+                                ↗
+                              </button>
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </>
               ) : null}
             </div>
           ) : null}

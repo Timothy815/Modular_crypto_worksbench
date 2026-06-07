@@ -6,7 +6,9 @@ import type {
   WorkbenchLayoutDirection,
   WorkbenchRoutingMode,
   WorkbenchWireColorMode,
+  WorkspaceSavedViewRegion,
 } from '../workbench-document';
+import { MAX_WORKSPACE_SAVED_VIEW_REGIONS } from '../workspace-navigation';
 
 interface WorkbenchActionsProps {
   isCompositeEditor: boolean;
@@ -59,6 +61,15 @@ interface WorkbenchActionsProps {
   onZoomIn: () => void;
   onResetView: () => void;
   onFitView: () => void;
+  canFrameSelection: boolean;
+  canReturnToPreviousView: boolean;
+  savedViewRegions: WorkspaceSavedViewRegion[];
+  onRequestFrameWorkspace: () => void;
+  onRequestFrameSelection: () => void;
+  onRequestReturnToPreviousView: () => void;
+  onRequestSaveCurrentView: () => void;
+  onRequestRecallSavedView: (regionId: string) => void;
+  onRequestDeleteSavedView: (regionId: string) => void;
   onRequestOpenWorkspace: () => void;
   onRequestSaveDocument: () => void;
   onRequestSaveDocumentAs: () => void;
@@ -659,6 +670,15 @@ export function WorkbenchActions({
   onZoomIn,
   onResetView,
   onFitView,
+  canFrameSelection,
+  canReturnToPreviousView,
+  savedViewRegions,
+  onRequestFrameWorkspace,
+  onRequestFrameSelection,
+  onRequestReturnToPreviousView,
+  onRequestSaveCurrentView,
+  onRequestRecallSavedView,
+  onRequestDeleteSavedView,
   onRequestOpenWorkspace,
   onRequestSaveDocument,
   onRequestSaveDocumentAs,
@@ -709,7 +729,7 @@ export function WorkbenchActions({
   const canDistributeSelection = selectedModuleIds.length >= 3;
   const showSelectionToolbar = canAlignSelection;
   const showWireToolbar = canDeleteWire;
-  const showViewMenu = Boolean(onToggleTutorialNotes);
+  const showViewMenu = true;
   const currentDomainLabel =
     selectedConnectionDomainTone === 'bits'
       ? 'Domain Bits'
@@ -1062,7 +1082,49 @@ export function WorkbenchActions({
           ) : null}
 
           {showViewMenu ? (
-            <WorkbenchActionMenu label="View" description="Optional overlays">
+            <WorkbenchActionMenu label="View" description="Navigate and toggle overlays">
+              <WorkbenchMenuActionButton label="Fit View" onSelect={onFitView} />
+              <WorkbenchMenuActionButton label="Reset View" onSelect={onResetView} />
+              <WorkbenchMenuActionButton
+                label="Frame Workspace"
+                onSelect={onRequestFrameWorkspace}
+              />
+              <WorkbenchMenuActionButton
+                label="Frame Selection"
+                onSelect={onRequestFrameSelection}
+                disabled={!canFrameSelection}
+              />
+              <WorkbenchMenuActionButton
+                label="Back To Previous View"
+                onSelect={onRequestReturnToPreviousView}
+                disabled={!canReturnToPreviousView}
+              />
+              <WorkbenchMenuActionButton
+                label={
+                  savedViewRegions.length >= MAX_WORKSPACE_SAVED_VIEW_REGIONS
+                    ? `Saved Views Full (${MAX_WORKSPACE_SAVED_VIEW_REGIONS})`
+                    : 'Save Current View...'
+                }
+                onSelect={onRequestSaveCurrentView}
+                disabled={savedViewRegions.length >= MAX_WORKSPACE_SAVED_VIEW_REGIONS}
+              />
+              {savedViewRegions.length > 0 ? (
+                <div className="workbench-menu-section">
+                  <span className="workbench-menu-section-label">Saved Regions</span>
+                  {savedViewRegions.map((region) => (
+                    <div key={region.id} className="workbench-menu-inline-actions">
+                      <WorkbenchMenuActionButton
+                        label={region.name}
+                        onSelect={() => onRequestRecallSavedView(region.id)}
+                      />
+                      <WorkbenchMenuActionButton
+                        label="Remove"
+                        onSelect={() => onRequestDeleteSavedView(region.id)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
               <WorkbenchMenuActionButton
                 label={tutorialNotesVisible ? 'Hide Step Notes' : 'Show Step Notes'}
                 onSelect={() => onToggleTutorialNotes?.(!tutorialNotesVisible)}
