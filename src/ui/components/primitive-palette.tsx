@@ -1200,11 +1200,11 @@ function ModuleLibraryCard({
           <p className="primitive-def-id">{def.id}</p>
           <div className="primitive-role-line">
             <span className={`primitive-role-chip ${getRoleClassName(def)}`}>{moduleRole}</span>
-            <span className="primitive-role-detail">{moduleRoleDetail}</span>
+            {!isReusable ? <span className="primitive-role-detail">{moduleRoleDetail}</span> : null}
           </div>
-          <p className="primitive-purpose">{getModulePurpose(def)}</p>
-          {moduleTypicalPath ? <p className="primitive-typical-path">{moduleTypicalPath}</p> : null}
-          {!moduleTypicalPath && (chainsBefore.length > 0 || chainsAfter.length > 0) ? (
+          {!isReusable ? <p className="primitive-purpose">{getModulePurpose(def)}</p> : null}
+          {!isReusable && moduleTypicalPath ? <p className="primitive-typical-path">{moduleTypicalPath}</p> : null}
+          {!isReusable && !moduleTypicalPath && (chainsBefore.length > 0 || chainsAfter.length > 0) ? (
             <div className="primitive-inline-chains">
               {chainsBefore.length > 0 ? (
                 <span className="primitive-inline-chain-group">
@@ -1360,21 +1360,6 @@ function ModuleLibraryCard({
             <p className="primitive-reuse-summary">
               <strong>{reusablePortCounts}</strong>
               {reusableStructuralSummary ? ` · ${reusableStructuralSummary}` : ''}
-            </p>
-          ) : null}
-          {isReusable ? (
-            <p className="primitive-reuse-summary">
-              <strong>{reusableInterfaceSummary}</strong>
-            </p>
-          ) : null}
-          {isReusable && reusableDependencyVisibility ? (
-            <p className="primitive-reuse-summary">
-              <strong>{reusableDependencyVisibility.summary}</strong>
-            </p>
-          ) : null}
-          {isReusable && effectiveReferenceSummary ? (
-            <p className="primitive-reuse-summary">
-              <strong>{effectiveReferenceSummary.compactSummary}</strong>
             </p>
           ) : null}
           {personalTags.length > 0 ? (
@@ -1645,6 +1630,29 @@ function ModuleLibraryCard({
           <p className="primitive-help-ports">
             Outputs: <strong>{def.outputs.map((port) => `${port.name}:${port.type}`).join(', ') || 'none'}</strong>
           </p>
+          {isReusable ? (
+            <>
+              <p className="primitive-help-ports">
+                Scope: <strong>{reusableOriginLabel ?? 'Reusable'}</strong>
+              </p>
+              <p className="primitive-help-ports">
+                Structure: <strong>{reusablePortCounts}{reusableStructuralSummary ? ` · ${reusableStructuralSummary}` : ''}</strong>
+              </p>
+              <p className="primitive-help-ports">
+                Interface: <strong>{reusableInterfaceSummary}</strong>
+              </p>
+              {reusableDependencyVisibility ? (
+                <p className="primitive-help-ports">
+                  Dependencies: <strong>{reusableDependencyVisibility.summary}</strong>
+                </p>
+              ) : null}
+              {effectiveReferenceSummary ? (
+                <p className="primitive-help-ports">
+                  References: <strong>{effectiveReferenceSummary.compactSummary}</strong>
+                </p>
+              ) : null}
+            </>
+          ) : null}
           {chainsBefore.length > 0 ? (
             <div className="primitive-chains-row">
               <span className="meta-label">Comes after</span>

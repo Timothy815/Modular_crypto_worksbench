@@ -131,8 +131,8 @@ describe('PrimitivePalette reusable summaries', () => {
     expect(markup).toContain('3-round body: Pass Bits');
     expect(markup).toContain('This workspace');
     expect(markup).toContain('Built-in architecture');
-    expect(markup).toContain('Inputs: in:bits · Outputs: out:bits');
-    expect(markup).toContain('Placed 1 time in saved local work · Referenced by 1 reusable');
+    expect(markup).not.toContain('Inputs: in:bits · Outputs: out:bits');
+    expect(markup).not.toContain('Placed 1 time in saved local work · Referenced by 1 reusable');
     expect(markup).toContain('References');
     expect(markup).toContain('2 items');
     expect(markup).toContain('Expand references for Round Pair');
@@ -182,6 +182,7 @@ describe('PrimitivePalette reusable summaries', () => {
     expect(markup).toContain('1 item');
     expect(markup).toContain('Expand immediate dependencies for Personal Round');
     expect(markup).not.toContain('RoundPair</span>');
+    expect(markup).not.toContain('Depends on 1 workspace reusable');
   });
 
   it('blocks delete when reusable-definition references exist without placed usage', () => {
@@ -211,7 +212,8 @@ describe('PrimitivePalette reusable summaries', () => {
       />,
     );
 
-    expect(markup).toContain('Referenced by 1 reusable');
+    expect(markup).toContain('References');
+    expect(markup).toContain('1 item');
     expect(markup).toContain('Delete unavailable while another reusable references this reusable.');
     expect(markup).toContain('disabled=""');
   });

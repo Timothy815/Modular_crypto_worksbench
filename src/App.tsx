@@ -4484,6 +4484,18 @@ function MainApp() {
                   ? `${activeCompositeDrilldownDefinition.inputs.length} in -> instance drill-down -> ${activeCompositeDrilldownDefinition.outputs.length} out`
                   : undefined
             }
+            showPaletteToggle={showPaletteInMain && !isCompositeDrilldownActive}
+            isPaletteVisible={showPaletteInMain && !leftDockCollapsed}
+            onTogglePaletteVisible={
+              showPaletteInMain && !isCompositeDrilldownActive
+                ? () => setLeftDockCollapsed((current) => !current)
+                : undefined
+            }
+            showInspectorToggle={showInspectorInMain}
+            isInspectorVisible={showInspectorInMain && !rightDockCollapsed}
+            onToggleInspectorVisible={
+              showInspectorInMain ? () => setRightDockCollapsed((current) => !current) : undefined
+            }
             activeProjectState={compositeDrilldownContext?.project ?? activeProjectState}
             theme={theme}
             layout={compositeDrilldownContext?.layout ?? activeLayout}
@@ -5504,32 +5516,10 @@ function MainApp() {
             </div>
           ) : null}
         </div>
-        {showPaletteInMain && leftDockCollapsed && !isCompositeDrilldownActive ? (
-          <div className="workbench-dock-toggle workbench-dock-toggle-left">
-            <button
-              type="button"
-              className="collapse-toggle-button"
-              aria-label="Expand tool palette"
-              title="Expand tool palette"
-              onClick={() => setLeftDockCollapsed(false)}
-            >
-              +
-            </button>
-          </div>
-        ) : null}
         {showPaletteInMain && !leftDockCollapsed && !isCompositeDrilldownActive ? (
           <div
             className={paletteViewMode === 'compact' ? 'workbench-dock workbench-dock-left workbench-dock-compact' : 'workbench-dock workbench-dock-left'}
           >
-            <button
-              type="button"
-              className="collapse-toggle-button workbench-dock-toggle-button workbench-dock-toggle-button-left"
-              aria-label="Collapse tool palette"
-              title="Collapse tool palette"
-              onClick={() => setLeftDockCollapsed(true)}
-            >
-              −
-            </button>
             <Suspense fallback={<LazyPanelFallback label="Tools" title="Loading palette…" />}>
               <PrimitivePalette
                 registry={effectiveRegistry}
@@ -5732,30 +5722,8 @@ function MainApp() {
             />
           </div>
         ) : null}
-        {showInspectorInMain && rightDockCollapsed ? (
-          <div className="workbench-dock-toggle workbench-dock-toggle-right">
-            <button
-              type="button"
-              className="collapse-toggle-button"
-              aria-label="Expand inspector"
-              title="Expand inspector"
-              onClick={() => setRightDockCollapsed(false)}
-            >
-              +
-            </button>
-          </div>
-        ) : null}
         {showInspectorInMain && !rightDockCollapsed ? (
           <div className="workbench-dock workbench-dock-right">
-            <button
-              type="button"
-              className="collapse-toggle-button workbench-dock-toggle-button workbench-dock-toggle-button-right"
-              aria-label="Collapse inspector"
-              title="Collapse inspector"
-              onClick={() => setRightDockCollapsed(true)}
-            >
-              −
-            </button>
             <Suspense fallback={<LazyPanelFallback label="Analyze" title="Loading inspector…" />}>
               <ParameterInspector
                 execution={compositeDrilldownContext?.execution ?? execution}

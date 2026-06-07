@@ -453,44 +453,6 @@
   pointer-events: auto;
 }
 
-.workbench-dock-toggle {
-  position: sticky;
-  top: 84px;
-  z-index: 18;
-  grid-column: 1;
-  grid-row: 1;
-  pointer-events: none;
-}
-
-.workbench-dock-toggle-left {
-  justify-self: start;
-  margin-left: 8px;
-}
-
-.workbench-dock-toggle-right {
-  justify-self: end;
-  margin-right: 8px;
-}
-
-.workbench-dock-toggle > .collapse-toggle-button,
-.workbench-dock-toggle-button {
-  pointer-events: auto;
-  box-shadow: 0 10px 22px rgba(40, 28, 12, 0.08);
-}
-
-.workbench-dock-toggle-button {
-  position: absolute;
-  top: 16px;
-}
-
-.workbench-dock-toggle-button-left {
-  right: 12px;
-}
-
-.workbench-dock-toggle-button-right {
-  right: 12px;
-}
-
 .workbench-dock-left {
   justify-self: start;
   width: min(var(--left-dock-width), calc(100vw - 48px));
@@ -570,6 +532,57 @@ body.dock-resizing {
 
 .panel-head {
   margin-bottom: 14px;
+}
+
+.canvas-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.canvas-panel-head-copy {
+  min-width: 0;
+}
+
+.canvas-panel-toggle-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-soft) 82%, var(--surface-panel));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.canvas-panel-toggle-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.canvas-panel-toggle-button:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--surface-button) 74%, white);
+}
+
+.canvas-panel-toggle-button.active {
+  color: var(--ink);
+  background: var(--surface-panel);
+  box-shadow: 0 6px 14px rgba(40, 28, 12, 0.08);
 }
 
 .cryptanalysis-mode-switch {
@@ -3417,12 +3430,13 @@ body.dock-resizing {
 
 .palette-search-shortcut {
   margin-left: auto;
-  font: 700 0.72rem / 1 var(--font-mono, monospace);
+  font: 600 0.7rem / 1 var(--font-mono, monospace);
   color: var(--muted);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  padding: 1px 5px;
-  background: var(--surface-button);
+  border: 1px dashed color-mix(in srgb, var(--line) 75%, transparent);
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: color-mix(in srgb, var(--surface-soft) 82%, transparent);
+  opacity: 0.8;
   user-select: none;
   pointer-events: none;
 }

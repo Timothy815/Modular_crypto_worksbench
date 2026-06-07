@@ -553,6 +553,12 @@ interface WorkbenchPanelProps {
   requestedFocusModuleId?: string | null;
   onWorkspaceFocusHandled?: () => void;
   onSwitchProject: (projectId: string) => void;
+  showPaletteToggle?: boolean;
+  isPaletteVisible?: boolean;
+  onTogglePaletteVisible?: () => void;
+  showInspectorToggle?: boolean;
+  isInspectorVisible?: boolean;
+  onToggleInspectorVisible?: () => void;
   onAddConnection: (
     fromModuleId: string,
     fromPort: string,
@@ -797,6 +803,12 @@ export function WorkbenchPanel({
   requestedFocusModuleId = null,
   onWorkspaceFocusHandled,
   onSwitchProject,
+  showPaletteToggle = false,
+  isPaletteVisible = false,
+  onTogglePaletteVisible,
+  showInspectorToggle = false,
+  isInspectorVisible = false,
+  onToggleInspectorVisible,
   onAddConnection,
   onReplaceConnection,
   onRemoveConnection,
@@ -3829,9 +3841,37 @@ export function WorkbenchPanel({
 
   return (
     <section className={challengeSolved ? 'panel canvas-panel canvas-panel-success' : 'panel canvas-panel'}>
-      <div className="panel-head">
-        <p className="panel-label">Workbench</p>
-        <h2>{title ?? 'Demo Graphs'}</h2>
+      <div className="panel-head canvas-panel-head">
+        <div className="canvas-panel-head-copy">
+          <p className="panel-label">Workbench</p>
+          <h2>{title ?? 'Demo Graphs'}</h2>
+        </div>
+        {showPaletteToggle || showInspectorToggle ? (
+          <div className="canvas-panel-toggle-group" aria-label="Workbench side panels">
+            {showPaletteToggle ? (
+              <button
+                type="button"
+                className={`canvas-panel-toggle-button${isPaletteVisible ? ' active' : ''}`}
+                aria-pressed={isPaletteVisible}
+                title={isPaletteVisible ? 'Hide Tools' : 'Show Tools'}
+                onClick={onTogglePaletteVisible}
+              >
+                Tools
+              </button>
+            ) : null}
+            {showInspectorToggle ? (
+              <button
+                type="button"
+                className={`canvas-panel-toggle-button${isInspectorVisible ? ' active' : ''}`}
+                aria-pressed={isInspectorVisible}
+                title={isInspectorVisible ? 'Hide Inspect' : 'Show Inspect'}
+                onClick={onToggleInspectorVisible}
+              >
+                Inspect
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <Suspense fallback={null}>
