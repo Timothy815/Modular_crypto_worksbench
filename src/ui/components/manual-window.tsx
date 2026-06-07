@@ -7,6 +7,18 @@ interface ManualWindowProps {
   initialTheme: 'light' | 'dark';
 }
 
+function renderManualInline(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={`${part}:${index}`}>{part.slice(2, -2)}</strong>;
+    }
+
+    return <span key={`${part}:${index}`}>{part}</span>;
+  });
+}
+
 export function ManualWindow({ initialTheme }: ManualWindowProps) {
   const [query, setQuery] = useState('');
   const indexEntries = useMemo(() => buildManualIndex(USER_MANUAL_SECTIONS), []);
@@ -25,10 +37,10 @@ export function ManualWindow({ initialTheme }: ManualWindowProps) {
       <aside className="manual-sidebar panel">
         <div className="panel-head">
           <p className="panel-label">User Manual</p>
-          <h2>Find features fast</h2>
+          <h2>Find workflows and boards</h2>
           <p className="comparison-copy">
-            Use the table of contents to orient yourself, search when you know the task, and use the
-            index when you know the feature name.
+            Use the table of contents for orientation, search when you know the task you want to
+            complete, and use the index when you know a feature or module name.
           </p>
         </div>
 
@@ -101,8 +113,8 @@ export function ManualWindow({ initialTheme }: ManualWindowProps) {
                 ))
               ) : (
                 <p className="comparison-copy">
-                  No manual entries matched that search. Try a feature name like `split view`,
-                  `verify_parity.py`, `palette`, or `save version`.
+                  No manual entries matched that search. Try a task or route like `create
+                  composite`, `flagship labs`, `verify_parity.py`, `atlas`, or `save version`.
                 </p>
               )}
             </div>
@@ -121,17 +133,17 @@ export function ManualWindow({ initialTheme }: ManualWindowProps) {
                 {section.entries.map((entry) => (
                   <article key={entry.id} id={entry.id} className="manual-entry-card">
                     <h3>{entry.title}</h3>
-                    <p>{entry.body}</p>
+                    <p className="manual-entry-body">{renderManualInline(entry.body)}</p>
                     {entry.keyPoints?.length ? (
-                      <ul className="manual-entry-key-points">
-                        {entry.keyPoints.map((point) => (
-                          <li key={point}>{point}</li>
-                        ))}
-                      </ul>
+                      <>
+                        <p className="manual-entry-subhead">Stops</p>
+                        <ol className="manual-entry-key-points">
+                          {entry.keyPoints.map((point) => (
+                            <li key={point}>{renderManualInline(point)}</li>
+                          ))}
+                        </ol>
+                      </>
                     ) : null}
-                    <p className="manual-entry-terms">
-                      <strong>Index Terms:</strong> {entry.indexTerms.join(', ')}
-                    </p>
                   </article>
                 ))}
               </div>
