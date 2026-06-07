@@ -3,6 +3,36 @@ import { getModuleCategory, type ModuleCategory } from './module-categories';
 
 const TOOLKIT_FILE_NAME = 'mcw-ai-toolkit.md';
 
+const ENGINE_TYPES = `// ── Signal domains ───────────────────────────────────────────────────────────
+// MCW has four signal types. No implicit conversion between them.
+
+export type SignalType = 'symbol' | 'bits' | 'integer' | 'ec-point';
+
+export interface SymbolSignal  { type: 'symbol';   value: string;   }
+export interface BitsSignal    { type: 'bits';     value: number[]; } // array of 0/1
+export interface IntegerSignal { type: 'integer';  value: string;   } // hex string, no 0x prefix, e.g. "FF" for 255
+export interface EcPointSignal { type: 'ec-point'; value: EcPointSignalValue; }
+
+export type EcPointSignalValue =
+  | { kind: 'affine';   curve: EcCurveDescriptor; x: string; y: string }
+  | { kind: 'infinity'; curve: EcCurveDescriptor };
+
+export interface EcCurveDescriptor { p: bigint; a: bigint; b: bigint; }
+
+export type Signal = SymbolSignal | BitsSignal | IntegerSignal | EcPointSignal;
+
+// ── Param kinds ───────────────────────────────────────────────────────────────
+// Each field in a module's paramSchema declares a kind.
+
+export type ParamKind =
+  | 'number'     // JavaScript number; safe for small integers only
+  | 'bigint-hex' // large integer stored as uppercase hex string WITHOUT 0x prefix
+  | 'string'     // plain text
+  | 'boolean'    // true / false
+  | 'select'     // enum; paramSchema will list allowed options
+  | 'wiring'     // string[] pairs for plugboard-style wiring, e.g. ["AB","CD"]
+  | 'bits';      // number[] for bit-array params`;
+
 const WORKBENCH_TYPES = `export interface WorkbenchPosition {
   x: number;
   y: number;
@@ -154,6 +184,72 @@ const CHALLENGE_EXAMPLE = {
   ],
 } as const;
 
+// Toy curve: y² = x² + 2x + 3  mod 11  (p=B, a=2, b=3)
+// Generator G = (5, 1), k=3 → k·G computed by ScalarMultiply
+// All bigint-hex params are uppercase hex strings without 0x prefix.
+// "B" = 11, "2" = 2, "3" = 3, "5" = 5, "1" = 1
+const ECC_WORKSPACE_EXAMPLE = {
+  version: 1,
+  project: {
+    modules: [
+      { id: 'k-bits-1', defId: 'BitSource', params: { value: [0, 0, 0, 0, 0, 0, 1, 1] } },
+      { id: 'k-int-1', defId: 'BitsToInteger', params: {} },
+      {
+        id: 'base-1',
+        defId: 'PointSource',
+        params: { p: 'B', a: '2', b: '3', x: '5', y: '1' },
+      },
+      { id: 'mul-1', defId: 'ScalarMultiply', params: { p: 'B', a: '2', b: '3' } },
+      { id: 'out-1', defId: 'Output', params: {} },
+    ],
+    connections: [
+      { from: { moduleId: 'k-bits-1', port: 'out' }, to: { moduleId: 'k-int-1', port: 'in' } },
+      { from: { moduleId: 'k-int-1', port: 'out' }, to: { moduleId: 'mul-1', port: 'scalar' } },
+      { from: { moduleId: 'base-1', port: 'out' }, to: { moduleId: 'mul-1', port: 'point' } },
+      { from: { moduleId: 'mul-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+    ],
+  },
+  ui: {
+    layout: {
+      'k-bits-1': { x: 80, y: 80 },
+      'k-int-1': { x: 280, y: 80 },
+      'base-1': { x: 80, y: 220 },
+      'mul-1': { x: 480, y: 150 },
+      'out-1': { x: 680, y: 150 },
+    },
+    annotations: [],
+  },
+} as const;
+
+// GF(2⁸) multiply: a=0x02, b=0x03, poly=0x11B (AES reduction polynomial)
+// Both inputs are 8-bit arrays. poly is stored as bigint-hex "11B".
+// GF2Mul and GF2Inv operate entirely in the bits domain.
+const GF2_WORKSPACE_EXAMPLE = {
+  version: 1,
+  project: {
+    modules: [
+      { id: 'a-1', defId: 'BitSource', params: { value: [0, 0, 0, 0, 0, 0, 1, 0] } },
+      { id: 'b-1', defId: 'BitSource', params: { value: [0, 0, 0, 0, 0, 0, 1, 1] } },
+      { id: 'mul-1', defId: 'GF2Mul', params: { poly: '11B' } },
+      { id: 'out-1', defId: 'BitOutput', params: {} },
+    ],
+    connections: [
+      { from: { moduleId: 'a-1', port: 'out' }, to: { moduleId: 'mul-1', port: 'a' } },
+      { from: { moduleId: 'b-1', port: 'out' }, to: { moduleId: 'mul-1', port: 'b' } },
+      { from: { moduleId: 'mul-1', port: 'out' }, to: { moduleId: 'out-1', port: 'in' } },
+    ],
+  },
+  ui: {
+    layout: {
+      'a-1': { x: 80, y: 80 },
+      'b-1': { x: 80, y: 220 },
+      'mul-1': { x: 300, y: 150 },
+      'out-1': { x: 500, y: 150 },
+    },
+    annotations: [],
+  },
+} as const;
+
 function formatPorts(
   ports: {
     name: string;
@@ -223,23 +319,161 @@ export function generateAiToolkitDocument(options: AiToolkitOptions = {}) {
 Generated: ${generatedAt}
 Artifact: single-file prompt pack for external LLMs
 
+---
+
 ## What MCW Is
 
-Modular Cryptography Workbench (MCW) is a graph-based systems IDE for explicit cryptographic machines. It is not a freeform code runner. An AI should generate JSON artifacts that MCW can import, validate, inspect, verify, and export.
+Modular Cryptography Workbench (MCW) is a graph-based systems IDE for building explicit cryptographic machines. It is not a freeform code runner. The full product spans four signal domains (symbol, bits, integer, ec-point), real-scale ECC arithmetic over secp256k1 and P-256, GF(2⁸) field arithmetic for AES-family operations, classical cipher primitives, and structured verification and Python export parity.
+
+An AI agent should generate JSON artifacts that MCW can import, validate, inspect, verify, and export — not prose descriptions, not pseudo-JSON, and not artifacts with invented module ids or ports.
 
 ## What You May Generate
 
-- \`WorkbenchDocument\` JSON for workspace layouts
+- \`WorkbenchDocument\` JSON for workspace layouts across all four signal domains
 - \`GuidedChallenge\` JSON for challenge authoring
-- small, structurally valid starter labs
+- Classical cipher machines (Enigma-style rotors, plugboards, reflectors)
+- Modern round-structure machines (S-Box, XOR, permutation, Feistel round)
+- ECC point mechanic boards (scalar multiply, point add, ECDH structure)
+- GF(2⁸) field arithmetic boards (GF2Mul, GF2Inv, AES MixColumns-style paths)
+- Modular arithmetic boards (FieldAdd, FieldMul, FieldInverse, ModExp)
+- Mixed-domain boards using explicit bridge modules between domains
 
 ## What You Must Not Assume
 
-- No hidden symbol<->bits conversion
+- No hidden signal-type conversion between domains — all transitions need explicit bridge modules
 - No cycles in project graphs
 - No multiple wires into one input port
 - No unsupported module ids or invented ports
+- ECC params (p, a, b, x, y, scalar) use the \`bigint-hex\` param kind — hex strings, not JS numbers
 - Generated artifacts are starting points; the human must still validate and verify inside MCW
+
+---
+
+## Signal Domains
+
+MCW has four signal types. Ports are typed. Connections between mismatched types are illegal.
+
+| Domain | Wire carries | JS representation | Typical use |
+|---|---|---|---|
+| \`symbol\` | single character / word | \`string\` | classical cipher text, alphabet-based transforms |
+| \`bits\` | bit array | \`number[]\` (each element 0 or 1) | XOR, S-Box, permutation, byte-level AES ops |
+| \`integer\` | large non-negative integer | \`string\` (hex, no 0x prefix) | ECC scalar, field arithmetic, modular exponent |
+| \`ec-point\` | affine ECC point or point-at-infinity | object (see types below) | ECC point operations, ECDH, Schnorr |
+
+Every domain transition requires an explicit bridge module. The four-domain rule is strict — there are no implicit coercions anywhere in the engine.
+
+### Explicit domain bridges
+
+| Bridge | From | To |
+|---|---|---|
+| \`SymbolToBits\`, \`AsciiCharToBits\`, \`AsciiSequenceToBits\` | symbol | bits |
+| \`BitsToSymbol\`, \`BitsToAscii\`, \`BitsToAsciiChar\` | bits | symbol |
+| \`BitsToHex\`, \`BitsToHexDigit\` | bits | symbol (hex) |
+| \`HexToBits\`, \`HexDigitToBits\` | symbol (hex) | bits |
+| \`BitsToInteger\` | bits | integer |
+| \`IntegerToBits\` | integer | bits |
+| \`AsciiToHex\`, \`HexToAscii\` | symbol ↔ symbol (encoding change) |
+
+There is no direct path from \`symbol\` to \`integer\` or from \`bits\` to \`ec-point\`. Route through the correct intermediate bridge if needed.
+
+---
+
+## Param Kinds
+
+Each field in a module's \`paramSchema\` has a \`kind\` property. Use the correct storage format when writing params in JSON.
+
+| Kind | Storage format | Example |
+|---|---|---|
+| \`number\` | JS number | \`14\` |
+| \`bigint-hex\` | uppercase hex string, no 0x prefix | \`”11B”\` for 0x11B, \`”FFFFFFFE...FC2F”\` for secp256k1 p |
+| \`string\` | JS string | \`”HELLO”\` |
+| \`boolean\` | JS boolean | \`true\` |
+| \`select\` | string matching one of the listed options | \`”secp256k1”\` |
+| \`wiring\` | string array of letter pairs | \`[“AB”,”CD”]\` |
+| \`bits\` | number array of 0/1 | \`[0,1,1,0]\` |
+
+**Critical rule for ECC and field arithmetic:** all curve params (\`p\`, \`a\`, \`b\`, \`x\`, \`y\`, scalar values) use the \`bigint-hex\` kind. Store them as uppercase hex strings without any \`0x\` prefix. For small values: 11 → \`”B”\`, 2 → \`”2”\`, 0 → \`”0”\`. For secp256k1 p: \`”FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F”\`.
+
+---
+
+## Connection Rules
+
+- Port signal types must match exactly at every connection boundary.
+- Every input port may have at most one incoming connection.
+- Projects must be acyclic — no feedback loops.
+- Symbol and bits domains cannot connect directly; use explicit bridge modules.
+- Integer and ec-point domains cannot connect to symbol or bits ports.
+- Module ids must be unique within a project.
+- Output sinks must be explicit modules (\`Output\`, \`BitOutput\`, \`HexOutput\`, \`IntegerOutput\`) — not implied by prose.
+- Never wire \`NamedCurveBasePoint.order\` (integer) directly to \`ScalarMultiply.point\` (ec-point).
+
+---
+
+## ECC Module Family
+
+ECC modules operate in the \`ec-point\` and \`integer\` domains. All curve-shape params (\`p\`, \`a\`, \`b\`) are \`bigint-hex\` and must be consistent across every module in the same computation path.
+
+### Key ECC modules
+
+| Module id | Inputs | Outputs | Notes |
+|---|---|---|---|
+| \`PointSource\` | none | \`out: ec-point\` | Explicit point; params: p, a, b, x, y (all bigint-hex) |
+| \`NamedCurveBasePoint\` | none | \`point: ec-point\`, \`order: integer\` | Preset curves; param: \`curve\` (select: “secp256k1” or “P-256”) |
+| \`PointAdd\` | \`a: ec-point\`, \`b: ec-point\` | \`out: ec-point\` | params: p, a, b (curve shape) |
+| \`PointDouble\` | \`in: ec-point\` | \`out: ec-point\` | params: p, a, b |
+| \`ScalarMultiply\` | \`scalar: integer\`, \`point: ec-point\` | \`out: ec-point\` | params: p, a, b |
+| \`PointNegate\` | \`in: ec-point\` | \`out: ec-point\` | params: p, a, b |
+| \`PointOnCurve\` | \`in: ec-point\` | \`out: bits\` (1 bit result) | params: p, a, b |
+| \`PointOrder\` | \`in: ec-point\` | \`out: integer\` | params: p, a, b, n |
+| \`PointEquals\` | \`a: ec-point\`, \`b: ec-point\` | \`out: bits\` | params: p, a, b |
+| \`ScalarLinearCombine\` | \`a: integer\`, \`b: integer\` | \`out: integer\` | modular linear combination; params: n |
+| \`ChallengeCombine\` | \`r: ec-point\`, \`pk: ec-point\`, \`message: integer\` | \`out: integer\` | pedagogical Schnorr challenge formation |
+
+### NamedCurveBasePoint
+
+Use \`NamedCurveBasePoint\` for real-scale secp256k1 or P-256 boards. It outputs both the generator point \`G\` and the subgroup order \`n\`:
+
+\`\`\`json
+{ “id”: “curve-1”, “defId”: “NamedCurveBasePoint”, “params”: { “curve”: “secp256k1” } }
+\`\`\`
+
+Wire \`curve-1.point\` to \`ScalarMultiply.point\` and a scalar source to \`ScalarMultiply.scalar\`. The curve-shape params on \`ScalarMultiply\` (p, a, b) must still be set to the corresponding secp256k1 values when using explicit point modules alongside it.
+
+### ECDH pattern
+
+To generate one ECDH shared-point on a toy curve:
+1. \`PointSource\` → \`ScalarMultiply\` (Alice's private key × G = Alice's public key)
+2. \`PointSource\` → \`ScalarMultiply\` (Bob's private key × Alice's public key = shared point)
+Both multiplications must use identical p, a, b params.
+
+---
+
+## GF(2⁸) Field Arithmetic
+
+\`GF2Mul\` and \`GF2Inv\` operate entirely in the \`bits\` domain. Inputs and outputs are 8-bit arrays.
+
+| Module id | Inputs | Outputs | Key param |
+|---|---|---|---|
+| \`GF2Mul\` | \`a: bits\` (8), \`b: bits\` (8) | \`out: bits\` (8) | \`poly: bigint-hex\` — reduction polynomial |
+| \`GF2Inv\` | \`in: bits\` (8) | \`out: bits\` (8) | \`poly: bigint-hex\` — reduction polynomial |
+
+The AES reduction polynomial is \`x⁸ + x⁴ + x³ + x + 1\` = 0x11B. Store it as \`”11B”\` in \`bigint-hex\` form.
+
+For AES-family boards, the MixColumns coefficients are 0x02 (\`”2”\`) and 0x03 (\`”3”\`).
+
+GF2Inv(0) = 0 by convention. GF2Inv is the first stage of the AES SubBytes S-Box before the affine transform.
+
+---
+
+## Structured Features
+
+- Explicit primitive graphs are preferred for toolkit output unless the user explicitly asks for structured reuse.
+- Composites and iterators are supported but are authoring features; toolkit JSON should use primitive modules.
+- Stateful and ticked machines are available but should only be introduced when the user asks for temporal behavior.
+- Challenge generation should stay bounded: starting project, target project, prompt, success condition, optional hints.
+- Python export parity is available for all primitives including GF2 and ECC families; the verification station uses known-vector cases to prove behavioral equivalence before export.
+
+---
 
 ## Prompt Scaffold
 
@@ -247,30 +481,23 @@ Modular Cryptography Workbench (MCW) is a graph-based systems IDE for explicit c
 You are generating Modular Cryptography Workbench (MCW) JSON artifacts.
 
 Return only valid JSON unless the user explicitly asks for explanation.
-Use only supported MCW module ids and legal port names.
-Respect signal types at every connection boundary.
-If a symbol<->bits transition is needed, insert an explicit bridge module.
-Keep ids unique, keep the graph acyclic, and never connect more than one source to the same input port.
+Use only supported MCW module ids and legal port names from the primitive inventory.
+Respect signal types at every connection boundary — four types: symbol, bits, integer, ec-point.
+Every domain transition requires an explicit bridge module. There are no implicit conversions.
+For ECC and field arithmetic modules, store all large-integer params as uppercase hex strings without 0x prefix (bigint-hex kind).
+Keep module ids unique, keep the graph acyclic, and never connect more than one source to the same input port.
 Prefer the smallest valid graph that satisfies the request.
 When asked for a workspace, emit one WorkbenchDocument object.
 When asked for a challenge, emit one GuidedChallenge object.
 \`\`\`
 
-## Connection Rules
+---
 
-- Port signal types must match exactly at connection boundaries.
-- Every input port may have at most one incoming connection.
-- Projects must stay acyclic.
-- Symbol-domain and bits-domain modules cannot be wired together directly.
-- Use explicit bridge modules such as \`SymbolToBits\`, \`BitsToSymbol\`, \`BitsToAscii\`, \`BitsToHex\`, \`AsciiToHex\`, or \`HexToAscii\`.
-- Module ids must be unique within a project.
-- Output sinks should be explicit modules, not implied by “final result” prose.
+## Engine Types
 
-## Structured Features
-
-- MCW supports reusable composites and iterators, but V1 toolkit output should prefer explicit primitive graphs unless the user explicitly asks for structured reuse.
-- Stateful and ticked machines are allowed, but the AI should only introduce them when the user clearly asks for temporal behavior.
-- Challenge generation should stay bounded: starting project, target project, prompt, success rule, optional hints.
+\`\`\`ts
+${ENGINE_TYPES}
+\`\`\`
 
 ## Workspace Types
 
@@ -284,17 +511,39 @@ ${WORKBENCH_TYPES}
 ${CHALLENGE_TYPES}
 \`\`\`
 
+---
+
 ## Primitive Inventory
 
 ${primitiveInventory}
 
-## Minimal Workspace Example
+---
+
+## Minimal Workspace Example (symbol → bits)
 
 \`\`\`json
 ${JSON.stringify(SIMPLE_WORKSPACE_EXAMPLE, null, 2)}
 \`\`\`
 
-## Structured Machine Example
+## ECC Workspace Example (integer + ec-point domains, toy curve)
+
+Toy curve: p=11, a=2, b=3. Scalar k=3 (as 8-bit source → BitsToInteger). Generator G=(5,1).
+Bigint-hex values: p=”B”, a=”2”, b=”3”, x=”5”, y=”1”.
+
+\`\`\`json
+${JSON.stringify(ECC_WORKSPACE_EXAMPLE, null, 2)}
+\`\`\`
+
+## GF(2⁸) Workspace Example (bits domain, AES polynomial)
+
+GF2Mul: 0x02 × 0x03 in GF(2⁸) with AES reduction polynomial (poly=”11B”).
+Both inputs are 8-bit BitSource values. Output is an 8-bit BitOutput.
+
+\`\`\`json
+${JSON.stringify(GF2_WORKSPACE_EXAMPLE, null, 2)}
+\`\`\`
+
+## Structured Machine Example (symbol domain, Enigma path)
 
 \`\`\`json
 ${JSON.stringify(STRUCTURED_WORKSPACE_EXAMPLE, null, 2)}
@@ -306,9 +555,11 @@ ${JSON.stringify(STRUCTURED_WORKSPACE_EXAMPLE, null, 2)}
 ${JSON.stringify(CHALLENGE_EXAMPLE, null, 2)}
 \`\`\`
 
+---
+
 ## Final Reminder
 
-Return valid JSON artifacts, not pseudo-code. Keep the graph minimal, explicit, and typed. The human user will still validate the result in MCW, run verification cases, and use export parity when needed.
+Return valid JSON artifacts, not pseudo-code. Keep the graph minimal, explicit, and typed. The human user will still validate the result in MCW, run verification cases, and use export parity when needed. Signal types must match at every port. All ECC/field params are bigint-hex (uppercase hex strings, no 0x prefix). There are no implicit domain conversions.
 `;
 }
 
