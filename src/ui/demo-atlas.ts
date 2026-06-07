@@ -176,6 +176,7 @@ const FULL_DEMO_SECTION_MAP: Record<string, AtlasSectionId> = {
   'visible-shiftrows': 'arithmetic-and-aes',
   'visible-add-round-key': 'arithmetic-and-aes',
   'aes-round-full': 'arithmetic-and-aes',
+  'visible-aes-key-schedule': 'arithmetic-and-aes',
   'aes-row-perturbation': 'arithmetic-and-aes',
   'keyed-sbox-authoring': 'arithmetic-and-aes',
   'aes-column-perturbation': 'arithmetic-and-aes',

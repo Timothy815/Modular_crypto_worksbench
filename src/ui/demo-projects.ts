@@ -2375,6 +2375,143 @@ export const demoProjects: DemoProject[] = [
     layout: AES_ROUND_FULL_WORKSPACE.layout,
   },
   {
+    id: 'visible-aes-key-schedule',
+    name: 'Visible AES Key Schedule',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.94,
+    recommendedAfter: ['aes-round-full'],
+    summary:
+      'One round of the AES-128 key schedule built from explicit primitives: RotWord (ByteRotate), SubWord (four AES S-Box lookups), XOR with Rcon[1], and the four-word XOR cascade. Uses the NIST FIPS 197 Appendix A.1 key 2B7E1516…09CF4F3C and produces Round Key 1 A0FAFE17 88542CB1 23A33939 2A6C7605.',
+    pipeline:
+      'HexSource(W[0..3]) -> ByteRotate(RotWord) -> 4x BitWindow -> 4x SBox(AES) -> 3x BitJoin(SubWord) -> XOR(Rcon[1]=01000000) -> 4x XOR(cascade) -> BitsToHex -> HexOutput',
+    project: {
+      modules: [
+        // Original key: W[0..3] (FIPS 197 Appendix A.1)
+        { id: 'w0', defId: 'HexSource', params: { value: '2B7E1516' } },
+        { id: 'w1', defId: 'HexSource', params: { value: '28AED2A6' } },
+        { id: 'w2', defId: 'HexSource', params: { value: 'ABF71588' } },
+        { id: 'w3', defId: 'HexSource', params: { value: '09CF4F3C' } },
+        // RotWord: rotate W[3] left by 1 byte → CF4F3C09
+        { id: 'rotword', defId: 'ByteRotate', params: { amount: 1, direction: 'left' } },
+        // Split rotated word into 4 bytes for SubWord
+        { id: 'rb0', defId: 'BitWindow', params: { start: 0, width: 8 } },   // CF
+        { id: 'rb1', defId: 'BitWindow', params: { start: 8, width: 8 } },   // 4F
+        { id: 'rb2', defId: 'BitWindow', params: { start: 16, width: 8 } },  // 3C
+        { id: 'rb3', defId: 'BitWindow', params: { start: 24, width: 8 } },  // 09
+        // SubWord: AES S-Box on each byte → 8A 84 EB 01
+        { id: 'sub0', defId: 'SBox', params: { table: AES_SBOX_TABLE } },
+        { id: 'sub1', defId: 'SBox', params: { table: AES_SBOX_TABLE } },
+        { id: 'sub2', defId: 'SBox', params: { table: AES_SBOX_TABLE } },
+        { id: 'sub3', defId: 'SBox', params: { table: AES_SBOX_TABLE } },
+        // Rejoin SubWord bytes: two pairs then final word
+        { id: 'join-sb01', defId: 'BitJoin', params: {} },  // [8A, 84]
+        { id: 'join-sb23', defId: 'BitJoin', params: {} },  // [EB, 01]
+        { id: 'subword', defId: 'BitJoin', params: {} },    // [8A, 84, EB, 01]
+        // Rcon[1] = 01 00 00 00
+        { id: 'rcon1', defId: 'HexSource', params: { value: '01000000' } },
+        // XOR SubWord with Rcon → g(W[3]) = 8B 84 EB 01
+        { id: 'gw3', defId: 'XOR', params: {} },
+        // XOR cascade: W[4..7] = Round Key 1 words
+        { id: 'xor4', defId: 'XOR', params: {} },  // W[4] = W[0] ⊕ g(W[3]) → A0FAFE17
+        { id: 'xor5', defId: 'XOR', params: {} },  // W[5] = W[1] ⊕ W[4]   → 88542CB1
+        { id: 'xor6', defId: 'XOR', params: {} },  // W[6] = W[2] ⊕ W[5]   → 23A33939
+        { id: 'xor7', defId: 'XOR', params: {} },  // W[7] = W[3] ⊕ W[6]   → 2A6C7605
+        // Output: Round Key 1 words
+        { id: 'hex4', defId: 'BitsToHex', params: {} },
+        { id: 'hex5', defId: 'BitsToHex', params: {} },
+        { id: 'hex6', defId: 'BitsToHex', params: {} },
+        { id: 'hex7', defId: 'BitsToHex', params: {} },
+        { id: 'out4', defId: 'HexOutput', params: {} },  // A0FAFE17
+        { id: 'out5', defId: 'HexOutput', params: {} },  // 88542CB1
+        { id: 'out6', defId: 'HexOutput', params: {} },  // 23A33939
+        { id: 'out7', defId: 'HexOutput', params: {} },  // 2A6C7605
+      ],
+      connections: [
+        // W[3] → RotWord
+        { from: { moduleId: 'w3', port: 'out' }, to: { moduleId: 'rotword', port: 'in' } },
+        // RotWord → byte windows
+        { from: { moduleId: 'rotword', port: 'out' }, to: { moduleId: 'rb0', port: 'in' } },
+        { from: { moduleId: 'rotword', port: 'out' }, to: { moduleId: 'rb1', port: 'in' } },
+        { from: { moduleId: 'rotword', port: 'out' }, to: { moduleId: 'rb2', port: 'in' } },
+        { from: { moduleId: 'rotword', port: 'out' }, to: { moduleId: 'rb3', port: 'in' } },
+        // Byte windows → SubWord S-Boxes
+        { from: { moduleId: 'rb0', port: 'out' }, to: { moduleId: 'sub0', port: 'in' } },
+        { from: { moduleId: 'rb1', port: 'out' }, to: { moduleId: 'sub1', port: 'in' } },
+        { from: { moduleId: 'rb2', port: 'out' }, to: { moduleId: 'sub2', port: 'in' } },
+        { from: { moduleId: 'rb3', port: 'out' }, to: { moduleId: 'sub3', port: 'in' } },
+        // SubWord byte pairs → BitJoin tree
+        { from: { moduleId: 'sub0', port: 'out' }, to: { moduleId: 'join-sb01', port: 'a' } },
+        { from: { moduleId: 'sub1', port: 'out' }, to: { moduleId: 'join-sb01', port: 'b' } },
+        { from: { moduleId: 'sub2', port: 'out' }, to: { moduleId: 'join-sb23', port: 'a' } },
+        { from: { moduleId: 'sub3', port: 'out' }, to: { moduleId: 'join-sb23', port: 'b' } },
+        { from: { moduleId: 'join-sb01', port: 'out' }, to: { moduleId: 'subword', port: 'a' } },
+        { from: { moduleId: 'join-sb23', port: 'out' }, to: { moduleId: 'subword', port: 'b' } },
+        // SubWord ⊕ Rcon → g(W[3])
+        { from: { moduleId: 'subword', port: 'out' }, to: { moduleId: 'gw3', port: 'a' } },
+        { from: { moduleId: 'rcon1', port: 'out' }, to: { moduleId: 'gw3', port: 'b' } },
+        // XOR cascade: W[4..7]
+        { from: { moduleId: 'w0', port: 'out' }, to: { moduleId: 'xor4', port: 'a' } },
+        { from: { moduleId: 'gw3', port: 'out' }, to: { moduleId: 'xor4', port: 'b' } },
+        { from: { moduleId: 'w1', port: 'out' }, to: { moduleId: 'xor5', port: 'a' } },
+        { from: { moduleId: 'xor4', port: 'out' }, to: { moduleId: 'xor5', port: 'b' } },
+        { from: { moduleId: 'w2', port: 'out' }, to: { moduleId: 'xor6', port: 'a' } },
+        { from: { moduleId: 'xor5', port: 'out' }, to: { moduleId: 'xor6', port: 'b' } },
+        { from: { moduleId: 'w3', port: 'out' }, to: { moduleId: 'xor7', port: 'a' } },
+        { from: { moduleId: 'xor6', port: 'out' }, to: { moduleId: 'xor7', port: 'b' } },
+        // Outputs
+        { from: { moduleId: 'xor4', port: 'out' }, to: { moduleId: 'hex4', port: 'in' } },
+        { from: { moduleId: 'xor5', port: 'out' }, to: { moduleId: 'hex5', port: 'in' } },
+        { from: { moduleId: 'xor6', port: 'out' }, to: { moduleId: 'hex6', port: 'in' } },
+        { from: { moduleId: 'xor7', port: 'out' }, to: { moduleId: 'hex7', port: 'in' } },
+        { from: { moduleId: 'hex4', port: 'out' }, to: { moduleId: 'out4', port: 'in' } },
+        { from: { moduleId: 'hex5', port: 'out' }, to: { moduleId: 'out5', port: 'in' } },
+        { from: { moduleId: 'hex6', port: 'out' }, to: { moduleId: 'out6', port: 'in' } },
+        { from: { moduleId: 'hex7', port: 'out' }, to: { moduleId: 'out7', port: 'in' } },
+      ],
+    },
+    layout: {
+      // Original key words (left column)
+      w0: { x: 60, y: 80 },
+      w1: { x: 60, y: 280 },
+      w2: { x: 60, y: 480 },
+      w3: { x: 60, y: 800 },
+      // RotWord
+      rotword: { x: 280, y: 800 },
+      // Byte windows (split rotated word)
+      rb0: { x: 480, y: 680 },
+      rb1: { x: 480, y: 760 },
+      rb2: { x: 480, y: 840 },
+      rb3: { x: 480, y: 920 },
+      // SubWord S-Boxes
+      sub0: { x: 660, y: 680 },
+      sub1: { x: 660, y: 760 },
+      sub2: { x: 660, y: 840 },
+      sub3: { x: 660, y: 920 },
+      // BitJoin tree for SubWord
+      'join-sb01': { x: 860, y: 700 },
+      'join-sb23': { x: 860, y: 860 },
+      subword: { x: 1040, y: 780 },
+      // Rcon and g() function
+      rcon1: { x: 1040, y: 960 },
+      gw3: { x: 1220, y: 860 },
+      // XOR cascade (right side, aligned with W words)
+      xor4: { x: 1420, y: 80 },
+      xor5: { x: 1420, y: 280 },
+      xor6: { x: 1420, y: 480 },
+      xor7: { x: 1420, y: 800 },
+      // Outputs
+      hex4: { x: 1620, y: 80 },
+      hex5: { x: 1620, y: 280 },
+      hex6: { x: 1620, y: 480 },
+      hex7: { x: 1620, y: 800 },
+      out4: { x: 1820, y: 80 },
+      out5: { x: 1820, y: 280 },
+      out6: { x: 1820, y: 480 },
+      out7: { x: 1820, y: 800 },
+    },
+  },
+  {
     id: 'aes-row-perturbation',
     name: 'AES Row Perturbation',
     group: 'AES Building Blocks',

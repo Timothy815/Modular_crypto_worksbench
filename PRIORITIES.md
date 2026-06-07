@@ -62,7 +62,7 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
 ## P3 — Teaching Depth
 *These complete teaching arcs that are currently partial or absent. Each one closes a specific gap in the product's classroom coverage.*
 
-- [ ] **AES key schedule: visible board with tutorial**
+- [x] **AES key schedule: visible board with tutorial** *(shipped June 7, 2026)*
   Rationale: All four AES round operations are visible and verified. The key schedule is the missing link. Without it, the AES teaching story stops at "one round" and cannot connect to a complete cipher.
   Done when: A visible key schedule board shows how a 128-bit key expands to 11 round keys, includes a tutorial, and is verified against a NIST FIPS 197 test vector. A repair challenge is present.
 
@@ -94,7 +94,7 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
   Rationale: RSA is the most commonly taught public-key system. The product has the modular arithmetic vocabulary to express it but has no dedicated board.
   Done when: A bounded RSA board shows key generation (toy scale), encryption, and decryption as explicit visible operations. Verified against known test values. Tutorial present.
 
-- [ ] **DH key exchange board**
+- [x] **DH key exchange board** *(shipped — diffie-hellman-key-exchange demo + tutorial already present)*
   Rationale: Diffie-Hellman is the foundation of most key agreement protocols and is notably absent despite the product's strong modular arithmetic capabilities.
   Done when: A visible DH board shows the shared-secret computation with both Alice and Bob's perspectives. Tutorial present.
 

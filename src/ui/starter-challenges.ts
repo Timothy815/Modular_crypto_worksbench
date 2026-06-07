@@ -660,6 +660,23 @@ if (!brokenAddRoundKeyModule) {
 }
 brokenAddRoundKeyModule.params.value = 'B0';
 
+const visibleAesKeyScheduleProject = demoProjects.find(
+  (project) => project.id === 'visible-aes-key-schedule',
+);
+if (!visibleAesKeyScheduleProject) {
+  throw new Error('Expected visible-aes-key-schedule demo project to seed starter challenges.');
+}
+const visibleAesKeyScheduleTarget = cloneProject(visibleAesKeyScheduleProject.project);
+const brokenAesKeyScheduleStart = cloneProject(visibleAesKeyScheduleProject.project);
+// Break: change Rcon[1] from 01000000 to 03000000 (wrong round constant)
+const brokenRconModule = brokenAesKeyScheduleStart.modules.find(
+  (moduleInstance) => moduleInstance.id === 'rcon1',
+);
+if (!brokenRconModule) {
+  throw new Error('Expected visible-aes-key-schedule demo project to contain rcon1 module.');
+}
+brokenRconModule.params.value = '03000000';
+
 const aesRoundFullTarget = cloneProject(aesRoundFullProject.project);
 const brokenAesRoundFullStart = cloneProject(aesRoundFullProject.project);
 const brokenAesRoundSBox = brokenAesRoundFullStart.modules.find(
@@ -2281,13 +2298,37 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
   },
   {
     version: 1,
+    id: 'repair-the-aes-rcon',
+    title: 'Repair the AES Round Constant',
+    projectId: 'visible-aes-key-schedule',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.96,
+    recommendedAfter: ['visible-aes-key-schedule'],
+    difficulty: 'beginner',
+    prompt:
+      'The AES key schedule is producing the wrong Round Key 1. The RotWord and SubWord steps are correct, but the round constant for the first round has been changed from 01000000 to 03000000. Restore the correct Rcon[1] value so all four Round Key 1 words match the NIST FIPS 197 Appendix A.1 test vector.',
+    startingProject: brokenAesKeyScheduleStart,
+    startingLayout: cloneProject(visibleAesKeyScheduleProject.layout),
+    targetProject: visibleAesKeyScheduleTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'Only the Rcon[1] source module (rcon1) needs to change.',
+      'Rcon[1] is the first round constant in AES. It is defined as 0x01 in the first byte position, with the remaining bytes zero.',
+      'The correct value for the rcon1 HexSource is 01000000.',
+    ],
+  },
+  {
+    version: 1,
     id: 'repair-the-aes-round',
     title: 'Repair the AES Round',
     projectId: 'aes-round-full',
     group: 'AES Building Blocks',
     stage: 'advanced-arithmetic-and-number-theory',
     order: 228.97,
-    recommendedAfter: ['aes-round-full'],
+    recommendedAfter: ['repair-the-aes-rcon'],
     difficulty: 'intermediate',
     prompt:
       'One SubBytes board inside this full AES round has been replaced with the identity mapping, so one byte is no longer being substituted at all. The final round output now disagrees with FIPS 197 in exactly one output column. Find the broken S-box and restore the correct Rijndael table.',

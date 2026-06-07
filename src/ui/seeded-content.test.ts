@@ -243,6 +243,38 @@ describe('seeded teaching content', () => {
     expect(mismatchedOutputs.sort()).toEqual(['out-0-3', 'out-1-3', 'out-2-3', 'out-3-3']);
   });
 
+  it('keeps the AES key schedule demo aligned to the FIPS 197 Appendix A.1 Round Key 1 vector', () => {
+    const demo = demoProjects.find((project) => project.id === 'visible-aes-key-schedule');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    // FIPS 197 Appendix A.1: key 2B7E1516 28AED2A6 ABF71588 09CF4F3C
+    // Round Key 1: A0FAFE17 88542CB1 23A33939 2A6C7605
+    expect(getHexOutputMap(demo.project)).toEqual({
+      out4: 'A0FAFE17',
+      out5: '88542CB1',
+      out6: '23A33939',
+      out7: '2A6C7605',
+    });
+  });
+
+  it('keeps the AES key schedule repair challenge broken only at the Rcon byte', () => {
+    const challenge = STARTER_CHALLENGES.find((entry) => entry.id === 'repair-the-aes-rcon');
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    const target = getHexOutputMap(challenge.targetProject);
+    const starting = getHexOutputMap(challenge.startingProject);
+    // All four Round Key 1 words should differ (Rcon error propagates through XOR cascade)
+    expect(Object.keys(target).filter((id) => target[id] !== starting[id]).sort()).toEqual(
+      ['out4', 'out5', 'out6', 'out7'],
+    );
+  });
+
   it('keeps the AES row perturbation demo aligned to the named ShiftRows and final-output consequences', () => {
     const demo = demoProjects.find((project) => project.id === 'aes-row-perturbation');
     expect(demo).toBeTruthy();
