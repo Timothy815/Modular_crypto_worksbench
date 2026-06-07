@@ -105,13 +105,15 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
 ## P4 — Technical Health
 *These are architecture and code-quality items that are not user-visible but will constrain future work if deferred. Do not let these fall further behind.*
 
-- [ ] **parameter-inspector.tsx refactor**
+- [x] **parameter-inspector.tsx refactor** *(shipped June 7, 2026)*
   Rationale: The parameter inspector is the largest acknowledged technical debt in the UI. It is already constraining future analysis work and will continue to slow cryptanalysis feature development. The May 2026 state-of-the-union named it explicitly.
   Done when: parameter-inspector.tsx is split into focused, coherent components. No behavior changes visible to the user. No new surface area added during the refactor.
+  Shipped: 9 static module analysis useMemos extracted to `inspector-module-analysis.ts`; port ordering, side layout, drag state, and bypass eligibility extracted to `inspector-port-layout.ts`. Main file: 1196 → 1076 lines.
 
-- [ ] **workbench-panel.tsx splitting**
+- [x] **workbench-panel.tsx splitting** *(shipped June 7, 2026)*
   Rationale: At 5,739 lines, this is the largest single source file. It is hard to navigate, review, and modify safely. Any future canvas or workbench feature touches it.
   Done when: workbench-panel.tsx is split into sub-components with clear responsibilities. No behavior changes.
+  Shipped: All pure canvas geometry helpers (grid snapping, hit-testing, SVG path generation, port placement, node sizing, inline param formatting) extracted to `workbench-canvas-geometry.ts`. Main file: 5768 → 5525 lines; 308-line geometry file is independently testable and has no React dependencies.
 
 - [ ] **store.ts audit and thinning**
   Rationale: At 6,184 lines, the UI store is large enough to be a maintenance burden. Reducers and selectors that have drifted or accumulated should be identified and cleaned.

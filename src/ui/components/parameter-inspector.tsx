@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { isClockedIteratorDefinition } from '../../engine/composites';
-import { getBypassIneligibilityReason, isBypassEligibleDefinition } from '../../engine/bypass';
 import { isOutputSinkDefId } from '../../engine/output-sinks';
 import type {
   ExecutionResult,
@@ -43,11 +42,6 @@ import type {
   WorkbenchPosition,
 } from '../workbench-document';
 import type { ExecutionComparison } from '../execution-compare';
-import {
-  getNodeOrientation,
-  getPortSideForModulePort,
-} from '../node-orientation';
-import { getOrderedPorts } from '../port-ordering';
 import { getIteratorRoundSummary } from '../iterator-workflow';
 import type {
   VerificationCase,
@@ -59,19 +53,11 @@ import {
   getIteratorRoundOptions,
   getTraceEntries,
   getTransformationView,
-  getSBoxAnalysisFromParams,
-  getPermutationAnalysisFromParams,
-  getToyPointMapAnalysis,
-  getKeyedSBoxAnalysis,
-  getAesConsequenceAnalysis,
-  getLFSRAnalysis,
-  getPlugboardAnalysis,
-  getReflectorAnalysis,
-  getModulusAnalysis,
   groupIssuesByTarget,
 } from '../inspector-analysis';
-import type { SBoxAnalysis, PermutationAnalysis, ToyPointMapAnalysis, KeyedSBoxAnalysis, AesConsequenceAnalysis, LFSRAnalysis, PlugboardAnalysis, ReflectorAnalysis, ModulusAnalysis } from '../inspector-analysis';
-import { InspectorTabButton, PORT_SIDE_ORDER } from './inspector-controls';
+import { InspectorTabButton } from './inspector-controls';
+import { useInspectorModuleAnalysis } from './inspector-module-analysis';
+import { useInspectorPortLayout } from './inspector-port-layout';
 
 interface ParameterInspectorProps {
   execution: ExecutionResult | null;
@@ -303,6 +289,35 @@ export function ParameterInspector({
   const [permutationBlockSize, setPermutationBlockSize] = useState<number | null>(null);
   const [copiedStageSignalKey, setCopiedStageSignalKey] = useState<string | null>(null);
   const copiedStageSignalTimeoutRef = useRef<number | null>(null);
+
+  const selectedTrace =
+    execution?.trace.find((entry) => entry.moduleId === moduleInstance?.id) ?? null;
+
+  const {
+    staticSBoxAnalysis,
+    staticPermutationAnalysis,
+    staticLFSRAnalysis,
+    staticPlugboardAnalysis,
+    staticReflectorAnalysis,
+    staticModulusAnalysis,
+    staticToyPointMapAnalysis,
+    staticKeyedSBoxAnalysis,
+    staticAesConsequenceAnalysis,
+  } = useInspectorModuleAnalysis(inspectorTab, moduleInstance, selectedTrace, permutationBlockSize);
+
+  const {
+    orderedInputPorts,
+    orderedOutputPorts,
+    activePortLayoutPreset,
+    draggingPortSide,
+    setDraggingPortSide,
+    inputPortsBySide,
+    outputPortsBySide,
+    explicitInputPortSides,
+    explicitOutputPortSides,
+    canBypassSelectedModule,
+    bypassIneligibilityReason,
+  } = useInspectorPortLayout(moduleDef, modulePosition, layoutDirection);
 
   useEffect(() => {
     return () => {
@@ -592,8 +607,6 @@ export function ParameterInspector({
     );
   }, [activeOutputSummaryModuleId, outputSummaries]);
   const hasCollectedOutput = isTickedMode && collectedOutput !== null;
-  const selectedTrace =
-    execution?.trace.find((entry) => entry.moduleId === moduleInstance?.id) ?? null;
   const stageSignalInspection = useMemo(
     () =>
       buildStageSignalInspection({
@@ -753,139 +766,6 @@ export function ParameterInspector({
   const transformationView = activeTransformationEntry
     ? getTransformationView(activeTransformationEntry, project, registry)
     : null;
-  const staticSBoxAnalysis: SBoxAnalysis | null = useMemo(() => {
-    if (inspectorTab !== 'analyze' || moduleInstance?.defId !== 'SBox') {
-      return null;
-    }
-    return getSBoxAnalysisFromParams(moduleInstance.params);
-  }, [inspectorTab, moduleInstance]);
-  const isPermutationModule =
-    moduleInstance?.defId === 'Permutation' || moduleInstance?.defId === 'PermutationBits';
-  const staticPermutationAnalysis: PermutationAnalysis | null = useMemo(() => {
-    if (inspectorTab !== 'analyze' || !isPermutationModule || !moduleInstance) {
-      return null;
-    }
-    return getPermutationAnalysisFromParams(
-      moduleInstance.params,
-      permutationBlockSize ?? undefined,
-    );
-  }, [inspectorTab, isPermutationModule, moduleInstance, permutationBlockSize]);
-  const staticLFSRAnalysis: LFSRAnalysis | null = useMemo(() => {
-    if (inspectorTab !== 'analyze' || moduleInstance?.defId !== 'LFSR' || !moduleInstance) return null;
-    return getLFSRAnalysis(moduleInstance.params as Record<string, unknown>);
-  }, [inspectorTab, moduleInstance]);
-  const staticPlugboardAnalysis: PlugboardAnalysis | null = useMemo(() => {
-    if (inspectorTab !== 'analyze' || moduleInstance?.defId !== 'Plugboard' || !moduleInstance) return null;
-    return getPlugboardAnalysis(moduleInstance.params as Record<string, unknown>);
-  }, [inspectorTab, moduleInstance]);
-  const staticReflectorAnalysis: ReflectorAnalysis | null = useMemo(() => {
-    if (inspectorTab !== 'analyze' || moduleInstance?.defId !== 'Reflector' || !moduleInstance) return null;
-    return getReflectorAnalysis(moduleInstance.params as Record<string, unknown>);
-  }, [inspectorTab, moduleInstance]);
-  const staticModulusAnalysis: ModulusAnalysis | null = useMemo(() => {
-    if (inspectorTab !== 'analyze' || !moduleInstance) return null;
-    if (moduleInstance.defId !== 'ModExp' && moduleInstance.defId !== 'ModInverse') return null;
-    return getModulusAnalysis(moduleInstance.params as Record<string, unknown>);
-  }, [inspectorTab, moduleInstance]);
-  const staticToyPointMapAnalysis: ToyPointMapAnalysis | null = useMemo(() => {
-    if (inspectorTab !== 'analyze' || moduleInstance?.defId !== 'ToyPointMap' || !moduleInstance) {
-      return null;
-    }
-    return getToyPointMapAnalysis(moduleInstance.params as Record<string, unknown>);
-  }, [inspectorTab, moduleInstance]);
-  const staticKeyedSBoxAnalysis: KeyedSBoxAnalysis | null = useMemo(() => {
-    if (inspectorTab !== 'analyze' || moduleInstance?.defId !== 'KeyedSBox4' || !moduleInstance || !selectedTrace) {
-      return null;
-    }
-    const keySignal = selectedTrace.inputs.key;
-    if (selectedTrace.moduleId !== moduleInstance.id || selectedTrace.defId !== 'KeyedSBox4' || keySignal?.type !== 'bits') {
-      return null;
-    }
-    return getKeyedSBoxAnalysis(keySignal.value);
-  }, [inspectorTab, moduleInstance, selectedTrace]);
-  const staticAesConsequenceAnalysis: AesConsequenceAnalysis | null = useMemo(() => {
-    if (inspectorTab !== 'analyze' || moduleInstance?.defId !== 'AesConsequenceSummary' || !moduleInstance || !selectedTrace) {
-      return null;
-    }
-    if (selectedTrace.moduleId !== moduleInstance.id || selectedTrace.defId !== 'AesConsequenceSummary') {
-      return null;
-    }
-    const canonicalStage0 = selectedTrace.inputs.canonicalStage0;
-    const perturbedStage0 = selectedTrace.inputs.perturbedStage0;
-    const canonicalStage1 = selectedTrace.inputs.canonicalStage1;
-    const perturbedStage1 = selectedTrace.inputs.perturbedStage1;
-    if (
-      canonicalStage0?.type !== 'bits' ||
-      perturbedStage0?.type !== 'bits' ||
-      canonicalStage1?.type !== 'bits' ||
-      perturbedStage1?.type !== 'bits'
-    ) {
-      return null;
-    }
-    return getAesConsequenceAnalysis({
-      stage0Label: moduleInstance.params.stage0Label,
-      stage1Label: moduleInstance.params.stage1Label,
-      ruleChanged: moduleInstance.params.ruleChanged,
-      claimBoundary: moduleInstance.params.claimBoundary,
-      canonicalStage0,
-      perturbedStage0,
-      canonicalStage1,
-      perturbedStage1,
-    });
-  }, [inspectorTab, moduleInstance, selectedTrace]);
-  const canBypassSelectedModule = moduleDef ? isBypassEligibleDefinition(moduleDef) : false;
-  const orderedInputPorts = useMemo(
-    () =>
-      moduleDef
-        ? getOrderedPorts(moduleDef.inputs, modulePosition?.inputOrder)
-        : [],
-    [moduleDef, modulePosition],
-  );
-  const orderedOutputPorts = useMemo(
-    () =>
-      moduleDef
-        ? getOrderedPorts(moduleDef.outputs, modulePosition?.outputOrder)
-        : [],
-    [moduleDef, modulePosition],
-  );
-  const activePortLayoutPreset = modulePosition?.portLayoutPreset ?? null;
-  const activeNodeOrientation = getNodeOrientation(modulePosition?.orientation, layoutDirection);
-  const [draggingPortSide, setDraggingPortSide] = useState<{
-    direction: 'input' | 'output';
-    portName: string;
-  } | null>(null);
-  const inputPortsBySide = useMemo(
-    () =>
-      Object.fromEntries(
-        PORT_SIDE_ORDER.map((side) => [
-          side,
-          orderedInputPorts.filter(
-            (port) =>
-              getPortSideForModulePort(modulePosition ?? undefined, activeNodeOrientation, 'in', port.name) ===
-              side,
-          ),
-        ]),
-      ) as Record<WorkbenchPortSide, typeof orderedInputPorts>,
-    [activeNodeOrientation, modulePosition, orderedInputPorts],
-  );
-  const outputPortsBySide = useMemo(
-    () =>
-      Object.fromEntries(
-        PORT_SIDE_ORDER.map((side) => [
-          side,
-          orderedOutputPorts.filter(
-            (port) =>
-              getPortSideForModulePort(modulePosition ?? undefined, activeNodeOrientation, 'out', port.name) ===
-              side,
-          ),
-        ]),
-      ) as Record<WorkbenchPortSide, typeof orderedOutputPorts>,
-    [activeNodeOrientation, modulePosition, orderedOutputPorts],
-  );
-  const explicitInputPortSides = modulePosition?.inputPortSides ?? {};
-  const explicitOutputPortSides = modulePosition?.outputPortSides ?? {};
-  const bypassIneligibilityReason =
-    moduleDef && !canBypassSelectedModule ? getBypassIneligibilityReason(moduleDef) : null;
   const effectiveLookupChunkIndex =
     transformationView?.kind === 'lookup'
       ? transformationView.chunks[
