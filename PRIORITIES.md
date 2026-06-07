@@ -83,9 +83,10 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
   Rationale: Padding oracle is one of the most consequential real-world attacks and fits the MCW consequence-board model well. Even a bounded teaching version would be high value.
   Done when: A bounded board shows the oracle structure — a ciphertext block, a padding check, and the information leak — in a way that makes the attack mechanism legible without being a live attack tool.
 
-- [ ] **Classical cipher breadth: Vigenere with cryptanalysis**
+- [x] **Classical cipher breadth: Vigenere with cryptanalysis** *(shipped June 7, 2026)*
   Rationale: The classical flagship lab covers Enigma in depth. Beyond Enigma, the classical curriculum is empty. Vigenere is the most important missing classical cipher — both to build and to break.
   Done when: A Vigenere encryption board exists with a tutorial and a repair challenge. A companion cryptanalysis board shows Kasiski test or index of coincidence as visible analysis.
+  Note: Encryption board (`visible-vigenere-cipher`, "AIDE"+"KEY"→"KMBO"), 5-step tutorial, and beginner repair challenge shipped. Automated Kasiski/IC analysis requires new frequency-counting module primitives not yet in the engine — noted as a future P4/P5 engine addition.
 
 - [ ] **Classical cipher breadth: Transposition cipher**
   Rationale: No transposition cipher teaching exists at all. Columnar transposition would fill a curriculum gap and demonstrate a fundamentally different class of transformation from substitution.

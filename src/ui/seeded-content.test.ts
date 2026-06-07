@@ -811,4 +811,40 @@ describe('seeded teaching content', () => {
     expect(startBits['oracle-out']).toBe('0');
     expect(startBits['i-match-out']).toBe('0');
   });
+
+  it('keeps the visible Vigenere cipher demo deterministic and the repair challenge broken', () => {
+    const demo = demoProjects.find((project) => project.id === 'visible-vigenere-cipher');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    const result = executeProject(demo.project, registry);
+    const trace = new Map(result.trace.map((entry) => [entry.moduleId, entry]));
+
+    // Lane A: A(0)+K(10)=10 → K
+    expect(trace.get('sym-a')?.outputs.out?.value).toBe('K');
+    // Lane B: I(8)+E(4)=12 → M
+    expect(trace.get('sym-b')?.outputs.out?.value).toBe('M');
+    // Lane C: D(3)+Y(24)=27 → 27%26=1 → B (the mod-26 wrap case)
+    expect(trace.get('sym-c')?.outputs.out?.value).toBe('B');
+    // Lane D: E(4)+K(10)=14 → O
+    expect(trace.get('sym-d')?.outputs.out?.value).toBe('O');
+
+    const challenge = STARTER_CHALLENGES.find((entry) => entry.id === 'repair-the-vigenere-key');
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    // Target: correct key → lane B produces M
+    const targetResult = executeProject(challenge.targetProject, registry);
+    const targetTrace = new Map(targetResult.trace.map((entry) => [entry.moduleId, entry]));
+    expect(targetTrace.get('sym-b')?.outputs.out?.value).toBe('M');
+
+    // Broken: k-b='F' (I+F=13) → lane B produces N instead of M
+    const startResult = executeProject(challenge.startingProject, registry);
+    const startTrace = new Map(startResult.trace.map((entry) => [entry.moduleId, entry]));
+    expect(startTrace.get('sym-b')?.outputs.out?.value).toBe('N');
+  });
 });

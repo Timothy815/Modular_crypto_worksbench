@@ -4331,6 +4331,126 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'visible-vigenere-cipher',
+    name: 'Visible Vigenere Cipher',
+    group: 'Classical Machines',
+    stage: 'classical-symbol-machines',
+    order: 50,
+    summary:
+      'Four visible Vigenere character lanes encrypt "AIDE" with keyword "KEY" (cycling K,E,Y,K). Each lane converts a plaintext letter and its key letter to 5-bit indices, adds them mod 32 via AddMod, and reads back the alphabet position through BitsToSymbol — which applies the mod-26 wrap. Output is "KMBO".',
+    pipeline:
+      'TextInput(pt) + TextInput(k) → SymbolToBits × 2 → AddMod → BitsToSymbol → TextOutput (repeated for each character)',
+    project: {
+      modules: [
+        // Character A: A + K = K
+        { id: 'pt-a', defId: 'TextInput', params: { value: 'A' } },
+        { id: 'k-a', defId: 'TextInput', params: { value: 'K' } },
+        { id: 'sb-a', defId: 'SymbolToBits', params: {} },
+        { id: 'ksb-a', defId: 'SymbolToBits', params: {} },
+        { id: 'add-a', defId: 'AddMod', params: {} },
+        { id: 'sym-a', defId: 'BitsToSymbol', params: {} },
+        { id: 'out-a', defId: 'TextOutput', params: {} },
+
+        // Character B: I + E = M
+        { id: 'pt-b', defId: 'TextInput', params: { value: 'I' } },
+        { id: 'k-b', defId: 'TextInput', params: { value: 'E' } },
+        { id: 'sb-b', defId: 'SymbolToBits', params: {} },
+        { id: 'ksb-b', defId: 'SymbolToBits', params: {} },
+        { id: 'add-b', defId: 'AddMod', params: {} },
+        { id: 'sym-b', defId: 'BitsToSymbol', params: {} },
+        { id: 'out-b', defId: 'TextOutput', params: {} },
+
+        // Character C: D + Y = 27 → B (wraps mod 26 inside BitsToSymbol)
+        { id: 'pt-c', defId: 'TextInput', params: { value: 'D' } },
+        { id: 'k-c', defId: 'TextInput', params: { value: 'Y' } },
+        { id: 'sb-c', defId: 'SymbolToBits', params: {} },
+        { id: 'ksb-c', defId: 'SymbolToBits', params: {} },
+        { id: 'add-c', defId: 'AddMod', params: {} },
+        { id: 'sym-c', defId: 'BitsToSymbol', params: {} },
+        { id: 'out-c', defId: 'TextOutput', params: {} },
+
+        // Character D: E + K = O (key cycles back to K)
+        { id: 'pt-d', defId: 'TextInput', params: { value: 'E' } },
+        { id: 'k-d', defId: 'TextInput', params: { value: 'K' } },
+        { id: 'sb-d', defId: 'SymbolToBits', params: {} },
+        { id: 'ksb-d', defId: 'SymbolToBits', params: {} },
+        { id: 'add-d', defId: 'AddMod', params: {} },
+        { id: 'sym-d', defId: 'BitsToSymbol', params: {} },
+        { id: 'out-d', defId: 'TextOutput', params: {} },
+      ],
+      connections: [
+        // Lane A
+        { from: { moduleId: 'pt-a', port: 'out' }, to: { moduleId: 'sb-a', port: 'in' } },
+        { from: { moduleId: 'k-a', port: 'out' }, to: { moduleId: 'ksb-a', port: 'in' } },
+        { from: { moduleId: 'sb-a', port: 'out' }, to: { moduleId: 'add-a', port: 'a' } },
+        { from: { moduleId: 'ksb-a', port: 'out' }, to: { moduleId: 'add-a', port: 'b' } },
+        { from: { moduleId: 'add-a', port: 'out' }, to: { moduleId: 'sym-a', port: 'in' } },
+        { from: { moduleId: 'sym-a', port: 'out' }, to: { moduleId: 'out-a', port: 'in' } },
+
+        // Lane B
+        { from: { moduleId: 'pt-b', port: 'out' }, to: { moduleId: 'sb-b', port: 'in' } },
+        { from: { moduleId: 'k-b', port: 'out' }, to: { moduleId: 'ksb-b', port: 'in' } },
+        { from: { moduleId: 'sb-b', port: 'out' }, to: { moduleId: 'add-b', port: 'a' } },
+        { from: { moduleId: 'ksb-b', port: 'out' }, to: { moduleId: 'add-b', port: 'b' } },
+        { from: { moduleId: 'add-b', port: 'out' }, to: { moduleId: 'sym-b', port: 'in' } },
+        { from: { moduleId: 'sym-b', port: 'out' }, to: { moduleId: 'out-b', port: 'in' } },
+
+        // Lane C
+        { from: { moduleId: 'pt-c', port: 'out' }, to: { moduleId: 'sb-c', port: 'in' } },
+        { from: { moduleId: 'k-c', port: 'out' }, to: { moduleId: 'ksb-c', port: 'in' } },
+        { from: { moduleId: 'sb-c', port: 'out' }, to: { moduleId: 'add-c', port: 'a' } },
+        { from: { moduleId: 'ksb-c', port: 'out' }, to: { moduleId: 'add-c', port: 'b' } },
+        { from: { moduleId: 'add-c', port: 'out' }, to: { moduleId: 'sym-c', port: 'in' } },
+        { from: { moduleId: 'sym-c', port: 'out' }, to: { moduleId: 'out-c', port: 'in' } },
+
+        // Lane D
+        { from: { moduleId: 'pt-d', port: 'out' }, to: { moduleId: 'sb-d', port: 'in' } },
+        { from: { moduleId: 'k-d', port: 'out' }, to: { moduleId: 'ksb-d', port: 'in' } },
+        { from: { moduleId: 'sb-d', port: 'out' }, to: { moduleId: 'add-d', port: 'a' } },
+        { from: { moduleId: 'ksb-d', port: 'out' }, to: { moduleId: 'add-d', port: 'b' } },
+        { from: { moduleId: 'add-d', port: 'out' }, to: { moduleId: 'sym-d', port: 'in' } },
+        { from: { moduleId: 'sym-d', port: 'out' }, to: { moduleId: 'out-d', port: 'in' } },
+      ],
+    },
+    layout: {
+      // Column A (base_x = 0)
+      'pt-a': { x: 80, y: 80 },
+      'k-a': { x: 80, y: 320 },
+      'sb-a': { x: 360, y: 80 },
+      'ksb-a': { x: 360, y: 320 },
+      'add-a': { x: 600, y: 200 },
+      'sym-a': { x: 840, y: 200 },
+      'out-a': { x: 1060, y: 200 },
+
+      // Column B (base_x = 1160)
+      'pt-b': { x: 1240, y: 80 },
+      'k-b': { x: 1240, y: 320 },
+      'sb-b': { x: 1520, y: 80 },
+      'ksb-b': { x: 1520, y: 320 },
+      'add-b': { x: 1760, y: 200 },
+      'sym-b': { x: 2000, y: 200 },
+      'out-b': { x: 2220, y: 200 },
+
+      // Column C (base_x = 2320)
+      'pt-c': { x: 2400, y: 80 },
+      'k-c': { x: 2400, y: 320 },
+      'sb-c': { x: 2680, y: 80 },
+      'ksb-c': { x: 2680, y: 320 },
+      'add-c': { x: 2920, y: 200 },
+      'sym-c': { x: 3160, y: 200 },
+      'out-c': { x: 3380, y: 200 },
+
+      // Column D (base_x = 3480)
+      'pt-d': { x: 3560, y: 80 },
+      'k-d': { x: 3560, y: 320 },
+      'sb-d': { x: 3840, y: 80 },
+      'ksb-d': { x: 3840, y: 320 },
+      'add-d': { x: 4080, y: 200 },
+      'sym-d': { x: 4320, y: 200 },
+      'out-d': { x: 4540, y: 200 },
+    },
+  },
+  {
     id: 'baudot-bridge',
     name: 'Baudot Telegraph',
     group: 'Historical Bridges',

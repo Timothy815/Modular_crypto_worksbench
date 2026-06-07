@@ -3,6 +3,53 @@ import type { GuidedTutorial } from './tutorials';
 export const STARTER_TUTORIALS: GuidedTutorial[] = [
   {
     version: 1,
+    id: 'visible-vigenere-cipher',
+    title: 'Visible Vigenere Cipher',
+    group: 'Classical Machines',
+    stage: 'classical-symbol-machines',
+    order: 50,
+    summary: 'Learn how the Vigenere cipher encrypts each character with a different Caesar shift drawn from a repeating keyword.',
+    projectId: 'visible-vigenere-cipher',
+    steps: [
+      {
+        id: 'vigenere-intro',
+        title: 'Four Lanes, One Keyword — Each Lane Is A Different Caesar Shift',
+        body: 'Vigenere is a polyalphabetic substitution cipher: each plaintext character is shifted by a different amount depending on its position in the keyword. Each column on this board is one character. The keyword "KEY" repeats — K for position 1, E for position 2, Y for position 3, then K again for position 4.',
+        focusModuleId: 'pt-a',
+        targetStepIndex: 0,
+      },
+      {
+        id: 'vigenere-symbol-to-bits',
+        title: 'SymbolToBits Converts Each Letter To A 5-bit Index',
+        body: 'SymbolToBits maps A=0, B=1, ..., Z=25 into a 5-bit number. Lane A: plaintext A=00000 and key K=01010. Lane B: plaintext I=01000 and key E=00100. These are the alphabet position values that AddMod will add together.',
+        focusModuleId: 'sb-a',
+        targetStepIndex: 1,
+      },
+      {
+        id: 'vigenere-addmod',
+        title: 'AddMod Adds The Two Indices — BitsToSymbol Wraps To The Alphabet',
+        body: 'AddMod computes (plaintext_idx + key_idx) mod 32. BitsToSymbol then applies % 26 to get the final letter. For lane A: 0+10=10 → K. For lane C: D(3)+Y(24)=27 → 27%26=1 → B. Lane C shows the wrap-around: the sum exceeds 25 but stays within mod-26 range.',
+        focusModuleId: 'add-c',
+        targetStepIndex: 2,
+      },
+      {
+        id: 'vigenere-key-cycle',
+        title: 'The Key Cycles Back To K For The Fourth Character',
+        body: 'Lane D uses key letter K again — the keyword "KEY" has only 3 letters, so position 4 repeats position 1. E(4)+K(10)=14=O. This cycling is why Vigenere is more resistant to simple frequency analysis than Caesar: the same plaintext letter maps to different ciphertext letters depending on where it falls in the keyword period.',
+        focusModuleId: 'k-d',
+        targetStepIndex: 3,
+      },
+      {
+        id: 'vigenere-weakness',
+        title: 'Polyalphabetic — But The Period Is The Weakness',
+        body: 'The full ciphertext "KMBO" hides that two different plaintext letters (A and E) both happen to map through key letter K at positions 1 and 4. If an attacker can find the keyword period (using Kasiski analysis or index of coincidence), they reduce the cipher to several independent Caesar ciphers and frequency-analyze each.',
+        focusModuleId: 'out-d',
+        targetStepIndex: 4,
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'visible-control-family',
     title: 'Visible Control Family',
     group: 'Foundations',

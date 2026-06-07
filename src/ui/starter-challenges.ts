@@ -107,6 +107,9 @@ const ivReuseProject = demoProjects.find(
 const cbcPaddingOracleProject = demoProjects.find(
   (project) => project.id === 'cbc-padding-oracle-consequence',
 );
+const visibleVigenereProject = demoProjects.find(
+  (project) => project.id === 'visible-vigenere-cipher',
+);
 
 if (!bridgeProject) {
   throw new Error('Expected bridge demo project to seed starter challenges.');
@@ -242,6 +245,9 @@ if (!ivReuseProject) {
 }
 if (!cbcPaddingOracleProject) {
   throw new Error('Expected cbc-padding-oracle-consequence project to seed starter challenges.');
+}
+if (!visibleVigenereProject) {
+  throw new Error('Expected visible-vigenere-cipher project to seed starter challenges.');
 }
 if (!toyRsaProject) {
   throw new Error('Expected toy-rsa demo project to seed starter challenges.');
@@ -442,6 +448,15 @@ brokenIvReuseStart.connections = brokenIvReuseStart.connections.filter(
   (c) => !(c.from.moduleId === 'msg-a' && c.to.moduleId === 'recover-b' && c.to.port === 'b'),
 );
 brokenIvReuseStart.connections.push({ from: { moduleId: 'crib', port: 'out' }, to: { moduleId: 'recover-b', port: 'b' } });
+
+// Vigenere challenge: k-b starts as 'F' instead of 'E', producing 'N' instead of 'M'
+const vigenereTarget = cloneProject(visibleVigenereProject.project);
+const brokenVigenereStart = cloneProject(visibleVigenereProject.project);
+const brokenVigenereKb = brokenVigenereStart.modules.find((m) => m.id === 'k-b');
+if (!brokenVigenereKb) {
+  throw new Error('Expected visible-vigenere-cipher project to contain k-b module.');
+}
+brokenVigenereKb.params.value = 'F';
 
 // CBC padding oracle challenge: c1-guess starts all-zeros (wrong); student must set it
 // to I XOR 0x01 (= 0x22 = [0,0,1,0,0,0,1,0]) so the oracle returns 1 (valid padding)
@@ -1321,6 +1336,30 @@ if (!brokenTapModule) {
 brokenTapModule.params.taps = '1,4';
 
 export const STARTER_CHALLENGES: GuidedChallenge[] = [
+  {
+    version: 1,
+    id: 'repair-the-vigenere-key',
+    title: 'Repair the Vigenere Key',
+    projectId: 'visible-vigenere-cipher',
+    group: 'Classical Machines',
+    stage: 'classical-symbol-machines' as const,
+    order: 50.5,
+    difficulty: 'beginner' as const,
+    recommendedAfter: ['visible-vigenere-cipher'],
+    prompt:
+      'The second key letter in the Vigenere board is wrong. The second character should encrypt I with E to produce M, but the current key letter shifts it incorrectly. Fix the key letter in lane B so the ciphertext output matches the reference.',
+    startingProject: brokenVigenereStart,
+    startingLayout: cloneProject(visibleVigenereProject.layout),
+    targetProject: vigenereTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The keyword is KEY. Lane B is the second character, which should use key letter E.',
+      "Click the k-b module (the second key input) and check what letter it currently holds. Change it to E.",
+      "I+E = 8+4 = 12 → M. The current wrong letter shifts I to N instead. Fix k-b's value to 'E'.",
+    ],
+  },
   {
     version: 1,
     id: 'repair-mask-word',
