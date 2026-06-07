@@ -92,7 +92,7 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
   Rationale: No transposition cipher teaching exists at all. Columnar transposition would fill a curriculum gap and demonstrate a fundamentally different class of transformation from substitution.
   Done when: A columnar transposition board exists with a tutorial. A repair challenge is present.
 
-- [ ] **RSA teaching board**
+- [x] **RSA teaching board** *(shipped June 7, 2026)*
   Rationale: RSA is the most commonly taught public-key system. The product has the modular arithmetic vocabulary to express it but has no dedicated board.
   Done when: A bounded RSA board shows key generation (toy scale), encryption, and decryption as explicit visible operations. Verified against known test values. Tutorial present.
 

@@ -3565,6 +3565,124 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'visible-rsa-key-generation',
+    name: 'Visible RSA Key Generation',
+    group: 'Number Theory',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 226,
+    recommendedAfter: ['diffie-hellman-key-exchange'],
+    summary:
+      'Toy RSA key generation made fully visible: p=5, q=7 → n=35, φ(n)=24, e=5, d=5. MulMod computes n and φ(n); SubMod derives p-1 and q-1; ModInverse finds d from e and φ(n). ModExp encrypts m=2 to C=32 and decrypts back to M=2.',
+    pipeline:
+      'HexSource(p,q) → MulMod(n) + SubMod(p-1,q-1) → MulMod(φ) → ModInverse(d) → ModExp(C=m^e mod n) → ModExp(M=C^d mod n) → HexOutput',
+    project: {
+      modules: [
+        // Primes and constant 1
+        { id: 'p', defId: 'HexSource', params: { value: '05' } },
+        { id: 'q', defId: 'HexSource', params: { value: '07' } },
+        { id: 'one', defId: 'HexSource', params: { value: '01' } },
+
+        // n = p × q = 35
+        { id: 'n-prod', defId: 'MulMod', params: {} },
+        { id: 'n-bth', defId: 'BitsToHex', params: {} },
+        { id: 'n-out', defId: 'HexOutput', params: {} },
+
+        // φ(n) = (p-1)(q-1) = 24
+        { id: 'p-min1', defId: 'SubMod', params: {} },
+        { id: 'q-min1', defId: 'SubMod', params: {} },
+        { id: 'phi', defId: 'MulMod', params: {} },
+        { id: 'phi-bth', defId: 'BitsToHex', params: {} },
+        { id: 'phi-out', defId: 'HexOutput', params: {} },
+
+        // d = e⁻¹ mod φ(n) = 5
+        { id: 'e', defId: 'HexSource', params: { value: '05' } },
+        { id: 'd-inv', defId: 'ModInverse', params: { modulus: '18' } },
+        { id: 'd-bth', defId: 'BitsToHex', params: {} },
+        { id: 'd-out', defId: 'HexOutput', params: {} },
+
+        // Encryption: C = m^e mod n = 2^5 mod 35 = 32
+        { id: 'm', defId: 'HexSource', params: { value: '02' } },
+        { id: 'encrypt', defId: 'ModExp', params: { modulus: '23' } },
+        { id: 'c-bth', defId: 'BitsToHex', params: {} },
+        { id: 'c-out', defId: 'HexOutput', params: {} },
+
+        // Decryption: M = C^d mod n = 32^5 mod 35 = 2
+        { id: 'decrypt', defId: 'ModExp', params: { modulus: '23' } },
+        { id: 'm-bth', defId: 'BitsToHex', params: {} },
+        { id: 'm-out', defId: 'HexOutput', params: {} },
+      ],
+      connections: [
+        // n = p × q
+        { from: { moduleId: 'p', port: 'out' }, to: { moduleId: 'n-prod', port: 'a' } },
+        { from: { moduleId: 'q', port: 'out' }, to: { moduleId: 'n-prod', port: 'b' } },
+        { from: { moduleId: 'n-prod', port: 'out' }, to: { moduleId: 'n-bth', port: 'in' } },
+        { from: { moduleId: 'n-bth', port: 'out' }, to: { moduleId: 'n-out', port: 'in' } },
+
+        // φ(n) = (p-1)(q-1)
+        { from: { moduleId: 'p', port: 'out' }, to: { moduleId: 'p-min1', port: 'a' } },
+        { from: { moduleId: 'one', port: 'out' }, to: { moduleId: 'p-min1', port: 'b' } },
+        { from: { moduleId: 'q', port: 'out' }, to: { moduleId: 'q-min1', port: 'a' } },
+        { from: { moduleId: 'one', port: 'out' }, to: { moduleId: 'q-min1', port: 'b' } },
+        { from: { moduleId: 'p-min1', port: 'out' }, to: { moduleId: 'phi', port: 'a' } },
+        { from: { moduleId: 'q-min1', port: 'out' }, to: { moduleId: 'phi', port: 'b' } },
+        { from: { moduleId: 'phi', port: 'out' }, to: { moduleId: 'phi-bth', port: 'in' } },
+        { from: { moduleId: 'phi-bth', port: 'out' }, to: { moduleId: 'phi-out', port: 'in' } },
+
+        // d = e⁻¹ mod φ(n)
+        { from: { moduleId: 'e', port: 'out' }, to: { moduleId: 'd-inv', port: 'in' } },
+        { from: { moduleId: 'd-inv', port: 'out' }, to: { moduleId: 'd-bth', port: 'in' } },
+        { from: { moduleId: 'd-bth', port: 'out' }, to: { moduleId: 'd-out', port: 'in' } },
+
+        // Encryption: C = m^e mod n
+        { from: { moduleId: 'm', port: 'out' }, to: { moduleId: 'encrypt', port: 'base' } },
+        { from: { moduleId: 'e', port: 'out' }, to: { moduleId: 'encrypt', port: 'exp' } },
+        { from: { moduleId: 'encrypt', port: 'out' }, to: { moduleId: 'c-bth', port: 'in' } },
+        { from: { moduleId: 'c-bth', port: 'out' }, to: { moduleId: 'c-out', port: 'in' } },
+
+        // Decryption: M = C^d mod n
+        { from: { moduleId: 'encrypt', port: 'out' }, to: { moduleId: 'decrypt', port: 'base' } },
+        { from: { moduleId: 'd-inv', port: 'out' }, to: { moduleId: 'decrypt', port: 'exp' } },
+        { from: { moduleId: 'decrypt', port: 'out' }, to: { moduleId: 'm-bth', port: 'in' } },
+        { from: { moduleId: 'm-bth', port: 'out' }, to: { moduleId: 'm-out', port: 'in' } },
+      ],
+    },
+    layout: {
+      // Key params (left column)
+      p: { x: 80, y: 80 },
+      q: { x: 80, y: 260 },
+      one: { x: 80, y: 540 },
+
+      // n = p×q
+      'n-prod': { x: 380, y: 80 },
+      'n-bth': { x: 640, y: 80 },
+      'n-out': { x: 840, y: 80 },
+
+      // φ(n)
+      'p-min1': { x: 380, y: 340 },
+      'q-min1': { x: 380, y: 540 },
+      phi: { x: 640, y: 440 },
+      'phi-bth': { x: 900, y: 440 },
+      'phi-out': { x: 1100, y: 440 },
+
+      // d = e⁻¹ mod φ(n)
+      e: { x: 80, y: 780 },
+      'd-inv': { x: 380, y: 780 },
+      'd-bth': { x: 640, y: 780 },
+      'd-out': { x: 840, y: 780 },
+
+      // Encryption
+      m: { x: 80, y: 1020 },
+      encrypt: { x: 380, y: 980 },
+      'c-bth': { x: 640, y: 980 },
+      'c-out': { x: 840, y: 980 },
+
+      // Decryption
+      decrypt: { x: 640, y: 1180 },
+      'm-bth': { x: 900, y: 1180 },
+      'm-out': { x: 1100, y: 1180 },
+    },
+  },
+  {
     id: 'visible-signature-verification',
     name: 'Visible Signature Verification',
     group: 'Asymmetric Verification',

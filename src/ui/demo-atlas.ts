@@ -200,6 +200,7 @@ const FULL_DEMO_SECTION_MAP: Record<string, AtlasSectionId> = {
   'schnorr-challenge-binding-consequence': 'public-key-and-ecc',
   'toy-rsa': 'public-key-and-ecc',
   'diffie-hellman-key-exchange': 'public-key-and-ecc',
+  'visible-rsa-key-generation': 'public-key-and-ecc',
   'visible-signature-verification': 'public-key-and-ecc',
   'visible-secure-handshake': 'public-key-and-ecc',
   'visible-message-window': 'modern-machines',

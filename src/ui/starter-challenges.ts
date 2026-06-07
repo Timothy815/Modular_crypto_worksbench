@@ -110,6 +110,9 @@ const cbcPaddingOracleProject = demoProjects.find(
 const visibleVigenereProject = demoProjects.find(
   (project) => project.id === 'visible-vigenere-cipher',
 );
+const visibleRsaKeyGenProject = demoProjects.find(
+  (project) => project.id === 'visible-rsa-key-generation',
+);
 const columnarTranspositionProject = demoProjects.find(
   (project) => project.id === 'columnar-transposition-cipher',
 );
@@ -251,6 +254,9 @@ if (!cbcPaddingOracleProject) {
 }
 if (!visibleVigenereProject) {
   throw new Error('Expected visible-vigenere-cipher project to seed starter challenges.');
+}
+if (!visibleRsaKeyGenProject) {
+  throw new Error('Expected visible-rsa-key-generation project to seed starter challenges.');
 }
 if (!columnarTranspositionProject) {
   throw new Error('Expected columnar-transposition-cipher project to seed starter challenges.');
@@ -473,6 +479,16 @@ if (!brokenTranspose) {
   throw new Error('Expected columnar-transposition-cipher project to contain transpose module.');
 }
 brokenTranspose.params.order = '0,3,1,4,2,5';
+
+// RSA challenge: d-inv uses wrong φ(n) modulus '16'=22 instead of '18'=24
+// → d=9 instead of d=5 → decryption gives 22 instead of 2
+const rsaKeyGenTarget = cloneProject(visibleRsaKeyGenProject.project);
+const brokenRsaKeyGenStart = cloneProject(visibleRsaKeyGenProject.project);
+const brokenDInv = brokenRsaKeyGenStart.modules.find((m) => m.id === 'd-inv');
+if (!brokenDInv) {
+  throw new Error('Expected visible-rsa-key-generation project to contain d-inv module.');
+}
+brokenDInv.params.modulus = '16';
 
 // CBC padding oracle challenge: c1-guess starts all-zeros (wrong); student must set it
 // to I XOR 0x01 (= 0x22 = [0,0,1,0,0,0,1,0]) so the oracle returns 1 (valid padding)
@@ -1352,6 +1368,30 @@ if (!brokenTapModule) {
 brokenTapModule.params.taps = '1,4';
 
 export const STARTER_CHALLENGES: GuidedChallenge[] = [
+  {
+    version: 1,
+    id: 'repair-the-rsa-private-exponent',
+    title: 'Repair the RSA Private Exponent',
+    projectId: 'visible-rsa-key-generation',
+    group: 'Number Theory',
+    stage: 'advanced-arithmetic-and-number-theory' as const,
+    order: 226.5,
+    difficulty: 'intermediate' as const,
+    recommendedAfter: ['visible-rsa-key-generation'],
+    prompt:
+      'The ModInverse module is using the wrong modulus to compute the private exponent d. The decryption output should recover the original message 0x02, but it does not. Fix the ModInverse modulus to the correct value of φ(n), then watch the full RSA round trip succeed.',
+    startingProject: brokenRsaKeyGenStart,
+    startingLayout: cloneProject(visibleRsaKeyGenProject.layout),
+    targetProject: rsaKeyGenTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The private exponent d = e⁻¹ mod φ(n). The ModInverse modulus must be φ(n), not some other number.',
+      'φ(n) = (p−1)(q−1) = 4×6 = 24. In hex, 24 = 0x18.',
+      "Click d-inv, open the Inspector, and change the modulus parameter from '16' to '18'.",
+    ],
+  },
   {
     version: 1,
     id: 'repair-the-transposition-order',

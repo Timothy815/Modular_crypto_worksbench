@@ -882,4 +882,45 @@ describe('seeded teaching content', () => {
     const startTrace = new Map(startResult.trace.map((entry) => [entry.moduleId, entry]));
     expect(startTrace.get('transpose')?.outputs.out?.value).toBe('AATCTK');
   });
+
+  it('keeps the visible RSA key generation demo deterministic and the repair challenge broken', () => {
+    const demo = demoProjects.find((project) => project.id === 'visible-rsa-key-generation');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    const result = executeProject(demo.project, registry);
+    const traceMap = new Map(result.trace.map((entry) => [entry.moduleId, entry]));
+
+    // n = p×q = 35 = 0x23
+    expect(traceMap.get('n-bth')?.outputs.out?.value).toBe('23');
+    // φ(n) = 24 = 0x18
+    expect(traceMap.get('phi-bth')?.outputs.out?.value).toBe('18');
+    // d = e⁻¹ mod φ(n) = 5 = 0x05
+    expect(traceMap.get('d-bth')?.outputs.out?.value).toBe('05');
+    // C = 2^5 mod 35 = 32 = 0x20
+    expect(traceMap.get('c-bth')?.outputs.out?.value).toBe('20');
+    // M = 32^5 mod 35 = 2 = 0x02 (matches original message)
+    expect(traceMap.get('m-bth')?.outputs.out?.value).toBe('02');
+
+    const challenge = STARTER_CHALLENGES.find(
+      (entry) => entry.id === 'repair-the-rsa-private-exponent',
+    );
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    // Target: correct d → decryption gives 0x02
+    const targetResult = executeProject(challenge.targetProject, registry);
+    const targetMap = new Map(targetResult.trace.map((entry) => [entry.moduleId, entry]));
+    expect(targetMap.get('m-bth')?.outputs.out?.value).toBe('02');
+
+    // Broken: wrong φ(n) modulus → d=9 → decryption gives 0x16 (22)
+    const startResult = executeProject(challenge.startingProject, registry);
+    const startMap = new Map(startResult.trace.map((entry) => [entry.moduleId, entry]));
+    expect(startMap.get('d-bth')?.outputs.out?.value).toBe('09');
+    expect(startMap.get('m-bth')?.outputs.out?.value).toBe('16');
+  });
 });
