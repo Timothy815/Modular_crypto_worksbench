@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { USER_MANUAL_SECTIONS } from '../manual-content';
+import { type DiagnosisBlock, type IntentGateway, type RouteBlock, USER_MANUAL_SECTIONS } from '../manual-content';
 import { buildManualIndex, searchManualContent } from '../manual-support';
 
 interface ManualWindowProps {
@@ -17,6 +17,76 @@ function renderManualInline(text: string) {
 
     return <span key={`${part}:${index}`}>{part}</span>;
   });
+}
+
+function IntentGatewayGrid({ intents }: { intents: IntentGateway[] }) {
+  return (
+    <div className="manual-intent-grid">
+      {intents.map((item) => (
+        <div key={item.intent} className="manual-intent-card">
+          <p className="manual-intent-label">{item.intent}</p>
+          <p className="manual-intent-destination">
+            <span className="meta-label">Go to</span>
+            <strong>{item.destination}</strong>
+          </p>
+          <p className="manual-intent-surface">
+            <span className="meta-label">Open</span>
+            {item.surface}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RouteBlockView({ block }: { block: RouteBlock }) {
+  return (
+    <div className="manual-route-block">
+      {block.useThisWhen ? (
+        <div className="manual-route-row">
+          <span className="manual-route-label">Use this when</span>
+          <span className="manual-route-value">{renderManualInline(block.useThisWhen)}</span>
+        </div>
+      ) : null}
+      {block.openNext ? (
+        <div className="manual-route-row">
+          <span className="manual-route-label">Open next</span>
+          <span className="manual-route-value">{renderManualInline(block.openNext)}</span>
+        </div>
+      ) : null}
+      {block.then ? (
+        <div className="manual-route-row">
+          <span className="manual-route-label">Then</span>
+          <span className="manual-route-value">{renderManualInline(block.then)}</span>
+        </div>
+      ) : null}
+      {block.ifRepairPractice ? (
+        <div className="manual-route-row">
+          <span className="manual-route-label">Repair practice</span>
+          <span className="manual-route-value">{renderManualInline(block.ifRepairPractice)}</span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function DiagnosisBlockView({ block }: { block: DiagnosisBlock }) {
+  return (
+    <div className="manual-diagnosis-block">
+      <div className="manual-diagnosis-row">
+        <span className="manual-route-label">Likely cause</span>
+        <span className="manual-route-value">{renderManualInline(block.likelyCause)}</span>
+      </div>
+      <div className="manual-diagnosis-row">
+        <span className="manual-route-label">What to check</span>
+        <span className="manual-route-value">{renderManualInline(block.whatToCheck)}</span>
+      </div>
+      <div className="manual-diagnosis-row">
+        <span className="manual-route-label">What to do next</span>
+        <span className="manual-route-value">{renderManualInline(block.whatToDoNext)}</span>
+      </div>
+    </div>
+  );
 }
 
 export function ManualWindow({ initialTheme }: ManualWindowProps) {
@@ -134,6 +204,9 @@ export function ManualWindow({ initialTheme }: ManualWindowProps) {
                   <article key={entry.id} id={entry.id} className="manual-entry-card">
                     <h3>{entry.title}</h3>
                     <p className="manual-entry-body">{renderManualInline(entry.body)}</p>
+                    {entry.intents?.length ? (
+                      <IntentGatewayGrid intents={entry.intents} />
+                    ) : null}
                     {entry.keyPoints?.length ? (
                       <>
                         <p className="manual-entry-subhead">Stops</p>
@@ -143,6 +216,12 @@ export function ManualWindow({ initialTheme }: ManualWindowProps) {
                           ))}
                         </ol>
                       </>
+                    ) : null}
+                    {entry.diagnosis ? (
+                      <DiagnosisBlockView block={entry.diagnosis} />
+                    ) : null}
+                    {entry.routeBlock ? (
+                      <RouteBlockView block={entry.routeBlock} />
                     ) : null}
                   </article>
                 ))}

@@ -1,8 +1,30 @@
+export interface RouteBlock {
+  useThisWhen?: string;
+  openNext?: string;
+  then?: string;
+  ifRepairPractice?: string;
+}
+
+export interface IntentGateway {
+  intent: string;
+  destination: string;
+  surface: string;
+}
+
+export interface DiagnosisBlock {
+  likelyCause: string;
+  whatToCheck: string;
+  whatToDoNext: string;
+}
+
 export interface ManualEntry {
   id: string;
   title: string;
   body: string;
   keyPoints?: string[];
+  routeBlock?: RouteBlock;
+  intents?: IntentGateway[];
+  diagnosis?: DiagnosisBlock;
   indexTerms: string[];
 }
 
@@ -27,6 +49,54 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
         indexTerms: ['what is mcw', 'overview', 'about', 'systems ide', 'foundry'],
       },
       {
+        id: 'intent-gateways',
+        title: 'What Do You Want To Do?',
+        body: 'Choose the intent that matches your goal. Each one names a manual destination and a first board or surface to open.',
+        intents: [
+          {
+            intent: 'I want a first tour',
+            destination: 'Where To Begin',
+            surface: 'Atlas → Start Here → Bridge Pipeline',
+          },
+          {
+            intent: 'I want to build',
+            destination: 'Core Workflows',
+            surface: 'Build mode on any open board',
+          },
+          {
+            intent: 'I want repair practice',
+            destination: 'Where To Go For Repair Challenges',
+            surface: 'Challenge mode → flagship lines or AES / ECC family',
+          },
+          {
+            intent: 'I want to learn AES',
+            destination: 'Where To Go For AES',
+            surface: 'Visible MixColumns → Visible SubBytes → AES Round (Full)',
+          },
+          {
+            intent: 'I want to learn ECC',
+            destination: 'Where To Go For ECC',
+            surface: 'Visible Point Mechanics → Visible ECDH Key Agreement',
+          },
+          {
+            intent: 'I want to verify or export',
+            destination: 'How To Export To Python And Prove Parity',
+            surface: 'Import/Export → Python Export → verify_parity.py',
+          },
+        ],
+        indexTerms: [
+          'what do you want to do',
+          'intent',
+          'first tour',
+          'i want to build',
+          'i want repair practice',
+          'i want to learn aes',
+          'i want to learn ecc',
+          'i want to verify or export',
+          'intent gateways',
+        ],
+      },
+      {
         id: 'where-to-begin',
         title: 'Where To Begin',
         body:
@@ -37,6 +107,13 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'Switch to **Guide** mode if you want the board taught step by step.',
           'Stay in **Build** mode if you want to inspect and edit the machine directly.',
         ],
+        routeBlock: {
+          useThisWhen: 'You are starting MCW for the first time or want to reset your orientation.',
+          openNext: 'The **Atlas** tab in the **Learning** dock.',
+          then: 'Open **Bridge Pipeline** or **Modern Toy Round** from **Atlas → Start Here**.',
+          ifRepairPractice:
+            'Switch to **Challenge** mode on any board with a repair task, or go to **Where To Find The Flagship Labs**.',
+        },
         indexTerms: [
           'start',
           'begin',
@@ -70,6 +147,13 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'learning surfaces',
           'which board should i open',
         ],
+        routeBlock: {
+          useThisWhen: 'You know the topic but do not yet know which board to open.',
+          openNext: 'The **Atlas** tab in the **Learning** dock.',
+          then: 'Use the **Start Here** area in Atlas or browse by family.',
+          ifRepairPractice:
+            'Look for boards with a **Challenge** badge, or use **Where To Go For Repair Challenges**.',
+        },
       },
       {
         id: 'workspace-modes',
@@ -128,6 +212,13 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'Check that the selected cluster already has the inputs and outputs you want to expose.',
           'Use the resulting reusable when one local machine is repeated or the board has become too noisy to read.',
         ],
+        routeBlock: {
+          useThisWhen: 'A cluster is repeated on the canvas, or the board is too noisy to read comfortably.',
+          openNext: 'Select the cluster, then **Edit > Create Composite** or **Cmd/Ctrl+G**.',
+          then: 'Open or inspect the composite to verify the exposed ports are what you intended.',
+          ifRepairPractice:
+            'Open **Iterated Byte Rounds** in **Build** mode to see how composites structure a real cipher round.',
+        },
         indexTerms: [
           'create composite',
           'composite from selection',
@@ -148,6 +239,12 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'Use the iterator when repetition should stay explicit instead of being manually unrolled.',
           'Study **Iterated Byte Rounds** or **Scheduled Byte Iterator** first if you want an example before authoring your own.',
         ],
+        routeBlock: {
+          useThisWhen: 'You have a working round and want explicit, non-manual repetition.',
+          openNext: 'Select the body, then **Edit > Create Iterator** or **Cmd/Ctrl+Shift+G**.',
+          then: 'Inspect the iterator parameters to verify the repetition policy is what you expected.',
+          ifRepairPractice: 'Open **Iterated Byte Rounds** or **Scheduled Byte Iterator** to study a reference model first.',
+        },
         indexTerms: [
           'create iterator',
           'iterator from round',
@@ -252,6 +349,13 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'Import known vectors when a standard or classroom reference already provides them.',
           'Treat verification as in-product behavioral trust, not as the same thing as Python export parity.',
         ],
+        routeBlock: {
+          useThisWhen: 'You want to prove the current machine matches a reference behavior before trusting or exporting it.',
+          openNext: 'The **Verification** panel for the current workspace.',
+          then: 'Add cases, capture a baseline, or import known vectors from a standard.',
+          ifRepairPractice:
+            'Use known-vector import to bring NIST FIPS 197 vectors into an AES board verification.',
+        },
         indexTerms: [
           'verification station',
           'known vectors',
@@ -273,6 +377,13 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'Verify the machine inside MCW before you trust the exported artifact.',
           'Run **verify_parity.py**, or explain its role if Python is unavailable, so export trust stays explicit.',
         ],
+        routeBlock: {
+          useThisWhen: 'The workspace already behaves correctly and you want an artifact outside MCW.',
+          openNext: '**Import/Export > Python Export**.',
+          then: 'Run **verify_parity.py** from the bundle to prove the Python artifact matches the authored machine.',
+          ifRepairPractice:
+            'Run the parity script against a repaired flagship lab capstone to complete **LAB-1.3** or **LAB-2.4**.',
+        },
         indexTerms: [
           'python export',
           'json export',
@@ -281,6 +392,111 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'mcw_runtime.py',
           'zip bundle',
           'export to python',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'troubleshoot',
+    title: 'Troubleshooting',
+    summary: 'Quick diagnosis for the most common first-user friction points.',
+    entries: [
+      {
+        id: 'why-cant-create-composite',
+        title: "Why Can't I Create A Composite?",
+        body: 'The most common cause is that nothing is selected, or the selection spans a boundary that cannot be packaged.',
+        diagnosis: {
+          likelyCause:
+            'Nothing is selected, or the selected cluster includes only output-only sinks with no interior connections.',
+          whatToCheck:
+            'Verify at least one module is selected on the canvas. Check that the selection contains at least one wire connecting two selected modules.',
+          whatToDoNext:
+            'Select a coherent cluster with at least one interior connection, then try **Edit > Create Composite** or **Cmd/Ctrl+G** again.',
+        },
+        indexTerms: [
+          "why can't i create a composite",
+          'create composite not working',
+          'composite error',
+          'nothing selected',
+        ],
+      },
+      {
+        id: 'why-challenge-empty',
+        title: 'Why Is Challenge Empty On This Board?',
+        body: 'Not all boards have a challenge attached. Challenge mode only activates when a repair task is present for the current board.',
+        diagnosis: {
+          likelyCause:
+            'The current board does not have a challenge, or you opened a demo rather than a board from a challenge-enabled family.',
+          whatToCheck:
+            'Check whether a **Challenge** badge or indicator appears for the current board in the **Learning** dock. Boards without challenges show nothing in **Challenge** mode.',
+          whatToDoNext:
+            'Open a board from the flagship lines or the AES and ECC challenge families from **Atlas** — those boards are designed with challenges attached.',
+        },
+        indexTerms: [
+          'challenge empty',
+          'challenge mode empty',
+          'no challenge',
+          'why is challenge empty',
+        ],
+      },
+      {
+        id: 'why-save-not-writing',
+        title: 'Why Is Save Not Writing To A File?',
+        body: 'Save writes to a bound file. If no file is bound, MCW opens Save As instead.',
+        diagnosis: {
+          likelyCause:
+            'The workspace is not bound to a file. MCW requires an explicit file binding before Save can write directly.',
+          whatToCheck:
+            'Look at the workspace title or **Project** menu to see whether a file path appears as the current binding.',
+          whatToDoNext:
+            'Use **Project > Open Workspace** to open a file-backed document, or use **Save As** to create a new file binding for the current workspace.',
+        },
+        indexTerms: [
+          'save not working',
+          'save not writing',
+          'save as',
+          'file binding',
+          'why is save not writing',
+        ],
+      },
+      {
+        id: 'why-reusable-not-portable',
+        title: 'Why Is My Reusable Not Portable?',
+        body: 'A reusable saved to the workspace library belongs to that document only. Personal library promotion is required for cross-workspace portability.',
+        diagnosis: {
+          likelyCause:
+            'The reusable was saved to the workspace library, or it still depends on workspace-local pieces that were not promoted along with it.',
+          whatToCheck:
+            'Open the **Palette** and check whether the reusable appears under **Personal Library** or only under **Workspace Library**.',
+          whatToDoNext:
+            'Promote the reusable to the **Personal Library** from the **Inspector** or **Palette** context action. Resolve any workspace-local dependencies first, or the promoted reusable will still silently pull from the original workspace scope.',
+        },
+        indexTerms: [
+          'reusable not portable',
+          'personal library',
+          'workspace library',
+          'promote reusable',
+          'why is my reusable not portable',
+        ],
+      },
+      {
+        id: 'why-python-not-matching',
+        title: 'Why Does Exported Python Not Match The Board?',
+        body: 'The exported Python can only match what the machine was doing at export time. Unverified behavior or partial-parity modules will cause divergence.',
+        diagnosis: {
+          likelyCause:
+            'The workspace had unverified behavior before export, or one or more modules in the export path have partial or missing Python parity.',
+          whatToCheck:
+            'Use the **Verification Station** to verify the machine against explicit or imported cases before re-exporting. Check whether any modules are flagged as having partial Python support.',
+          whatToDoNext:
+            'Fix any verification divergences in MCW, then re-export. Run **verify_parity.py** after re-export and inspect the first failing case in the output.',
+        },
+        indexTerms: [
+          'python not matching',
+          'parity mismatch',
+          'export mismatch',
+          'verify_parity.py failing',
+          'why does exported python not match',
         ],
       },
     ],
@@ -300,6 +516,13 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'Use **LAB-2.1** through **LAB-2.4** for the Modern flagship line, with **LAB-2.1A**, **LAB-2.1B**, and **LAB-2.2A** as the linked repairs.',
           'Use **Atlas** or the **Learning** dock titles directly when you want to jump into one of these lines from the top.',
         ],
+        routeBlock: {
+          useThisWhen: 'You want a structured capstone sequence rather than standalone boards.',
+          openNext: '**Atlas** or the **Learning** dock to enter the flagship line from the top.',
+          then: 'For Classical, begin at **LAB-1.1**. For Modern, begin at **LAB-2.1**.',
+          ifRepairPractice:
+            'Each flagship line includes dedicated repair stops: **LAB-1.2A** and **LAB-1.2B** for Classical; **LAB-2.1A**, **LAB-2.1B**, and **LAB-2.2A** for Modern.',
+        },
         indexTerms: [
           'flagship labs',
           'classical flagship lab',
@@ -344,6 +567,13 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'Use **AES Round (Full)** when you want the entire round assembled as one machine.',
           'Use the AES repair family when you want break-and-repair practice rather than straight walkthroughs.',
         ],
+        routeBlock: {
+          useThisWhen: 'The learning goal is AES building blocks or round structure.',
+          openNext: '**Visible MixColumns** first.',
+          then: 'Continue through **Visible SubBytes**, **Visible ShiftRows**, **Visible AddRoundKey**, then **AES Round (Full)**.',
+          ifRepairPractice:
+            'Use the AES repair family: **Repair the MixColumns Coefficient**, **Repair the Affine Constant**, **Repair the Round Key**.',
+        },
         indexTerms: [
           'aes',
           'visible mixcolumns',
@@ -369,6 +599,13 @@ export const USER_MANUAL_SECTIONS: ManualSection[] = [
           'Use the consequence boards when you want structural failure cases rather than only honest reference paths.',
           'Use the ECC challenge family when you want repair-based ECC practice.',
         ],
+        routeBlock: {
+          useThisWhen: 'The learning goal is elliptic curve point mechanics or key agreement.',
+          openNext: '**Visible Point Mechanics** first.',
+          then: 'Continue through **Visible ECDH Key Agreement** and **secp256k1 ECDH** for the protocol route.',
+          ifRepairPractice:
+            'Use the ECC challenge family: **Repair the Visible Point Mechanics**, **Repair the Visible ECDH**, or the Schnorr challenges.',
+        },
         indexTerms: [
           'ecc',
           'ecdh',

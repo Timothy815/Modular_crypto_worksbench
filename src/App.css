@@ -2317,6 +2317,107 @@ body.dock-resizing {
   font-weight: 800;
 }
 
+/* ── Intent Gateway Grid ─────────────────────────────────────── */
+
+.manual-intent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.manual-intent-card {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface-panel));
+}
+
+.manual-intent-label {
+  margin: 0;
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: var(--ink-strong);
+}
+
+.manual-intent-destination,
+.manual-intent-surface {
+  margin: 0;
+  display: grid;
+  gap: 2px;
+  font-size: 0.88rem;
+  color: color-mix(in srgb, var(--ink) 88%, var(--muted));
+  line-height: 1.45;
+}
+
+.manual-intent-destination .meta-label,
+.manual-intent-surface .meta-label {
+  display: block;
+  font-size: 0.72rem;
+}
+
+/* ── Route Block ─────────────────────────────────────────────── */
+
+.manual-route-block {
+  margin-top: 14px;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, var(--accent) 30%);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.manual-route-row {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  align-items: baseline;
+}
+
+.manual-route-row:last-child {
+  border-bottom: none;
+}
+
+.manual-route-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.manual-route-value {
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--ink) 92%, var(--muted));
+}
+
+/* ── Diagnosis Block ─────────────────────────────────────────── */
+
+.manual-diagnosis-block {
+  margin-top: 14px;
+  border: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  border-radius: 14px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface-soft) 60%, var(--surface));
+}
+
+.manual-diagnosis-row {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent);
+  align-items: baseline;
+}
+
+.manual-diagnosis-row:last-child {
+  border-bottom: none;
+}
+
 .comparison-panel {
   margin-top: 18px;
 }
