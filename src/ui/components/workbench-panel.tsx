@@ -2392,6 +2392,35 @@ export function WorkbenchPanel({
     return () => window.removeEventListener('keydown', handleWindowKeyDown);
   }, [pendingConnection, pendingReferenceChainSelection, pendingRepairInsertion, quickAdd]);
 
+  // F key: frame selection (when modules selected) or fit whole workspace.
+  // Uses a ref so the handler stays fresh without re-registering on every render.
+  const frameKeyActionRef = useRef<() => void>(() => {});
+  frameKeyActionRef.current = () => {
+    if (selectedModuleIds.length > 0) {
+      frameSelectionView();
+    } else {
+      fitWorkspaceView();
+    }
+  };
+  useEffect(() => {
+    function handleFrameKey(event: KeyboardEvent) {
+      if (
+        event.defaultPrevented ||
+        event.key.toLowerCase() !== 'f' ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        isEditableShortcutTarget(event.target)
+      ) {
+        return;
+      }
+      event.preventDefault();
+      frameKeyActionRef.current();
+    }
+    window.addEventListener('keydown', handleFrameKey);
+    return () => window.removeEventListener('keydown', handleFrameKey);
+  }, []);
+
   function isCompatibleReferenceOutput(port: {
     type: SignalType;
     kind?: PortKind;

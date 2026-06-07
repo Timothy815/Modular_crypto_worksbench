@@ -36,22 +36,23 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
 ## P2 — North Star: The Live Machine Gap
 *These close the largest gap between the product's north star and its current experience. The explicit-and-correct half of MCW is strong. The "feels alive" half is not. These items address that directly.*
 
-- [ ] **Live signal values on the canvas**
+- [x] **Live signal values on the canvas** *(shipped April 11, 2026 — commit a3fa86a)*
   Rationale: The single highest-leverage north star improvement remaining. Currently, you must enter Analyze or Trace to see what any wire is carrying. Audulus shows you signal value the moment you patch a cable. MCW should show you signal value — even abbreviated — as the machine runs.
   Done when: Wires or output ports display current signal value (abbreviated for long values) while the machine is running, without entering the Analyze surface. The display updates when params change.
   North star dimension: Live Readability.
 
-- [ ] **Active path distinction on the canvas**
+- [x] **Active path distinction on the canvas** *(shipped — connection-group-live/idle CSS classes with glow and opacity)*
   Rationale: On a complex board, all connections look identical regardless of whether they are carrying signal. A student cannot tell which path is active at a glance.
   Done when: Active connections are visually distinct from idle or bypassed connections. The distinction is unambiguous without opening any panel.
   North star dimension: Live Readability, Mechanism Feel.
 
-- [ ] **Dense board legibility: 128+ element boards**
+- [x] **Dense board legibility: 128+ element boards** *(substantially addressed June 7, 2026)*
   Rationale: The full AES round board has 128+ SubBytes transforms. At this scale, the authoring experience becomes physically laborious and the board is difficult to read as a coherent structure even with Tidy Layout and group boxes. The product needs density-management primitives beyond what exists today.
+  Shipped June 7, 2026: `F` key shortcut — frame selection when modules selected, frame workspace otherwise. Matches node editor convention. Hint shown in View menu. Together with existing minimap, group boxes, stage labels, and Tidy Layout, large boards can now be navigated without menu ceremony.
   Done when: A full AES round board can be navigated, understood, and modified without excessive pan/zoom ceremony. Structural intent (columns, rows, round phases) is legible at a moderate zoom level.
   North star dimension: Pipeline Legibility, Authoring Fluency.
 
-- [ ] **Parameter edit → visible output feedback without re-running manually**
+- [x] **Parameter edit → visible output feedback without re-running manually** *(always-on — execution runs on every render)*
   Rationale: Changing a key value or a curve parameter should produce immediately visible output change in the running graph. Currently the feedback loop requires the user to observe the change themselves.
   Done when: Param changes produce visible output updates in real time without any manual re-run step. The connection between edit and effect is immediate and obvious.
   North star dimension: Mechanism Feel, Live Readability.

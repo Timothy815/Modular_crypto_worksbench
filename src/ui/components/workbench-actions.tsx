@@ -1086,11 +1086,11 @@ export function WorkbenchActions({
               <WorkbenchMenuActionButton label="Fit View" onSelect={onFitView} />
               <WorkbenchMenuActionButton label="Reset View" onSelect={onResetView} />
               <WorkbenchMenuActionButton
-                label="Frame Workspace"
+                label="Frame Workspace  F"
                 onSelect={onRequestFrameWorkspace}
               />
               <WorkbenchMenuActionButton
-                label="Frame Selection"
+                label="Frame Selection  F"
                 onSelect={onRequestFrameSelection}
                 disabled={!canFrameSelection}
               />
