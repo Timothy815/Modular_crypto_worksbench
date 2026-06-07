@@ -38,6 +38,10 @@ function saveRecentEntries(entries: RecentEntry[]): void {
   }
 }
 
+function detectPrintMode(): boolean {
+  return new URLSearchParams(window.location.search).get('print') === '1';
+}
+
 function renderManualInline(text: string) {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
 
@@ -148,10 +152,42 @@ function SeeAlsoBlock({
   );
 }
 
+interface EntryBodyProps {
+  entryId: string;
+  body: string;
+  isCollapsible: boolean;
+  isPrint: boolean;
+  isOpen: boolean;
+  onToggle: (id: string, nowOpen: boolean) => void;
+}
+
+function EntryBody({ entryId, body, isCollapsible, isPrint, isOpen, onToggle }: EntryBodyProps) {
+  const paragraph = <p className="manual-entry-body">{renderManualInline(body)}</p>;
+
+  if (!isCollapsible || isPrint) {
+    return paragraph;
+  }
+
+  return (
+    <details
+      className="manual-body-details"
+      open={isOpen}
+      onToggle={(e) => {
+        onToggle(entryId, (e.currentTarget as HTMLDetailsElement).open);
+      }}
+    >
+      <summary className="manual-body-summary">Context</summary>
+      {paragraph}
+    </details>
+  );
+}
+
 export function ManualWindow({ initialTheme }: ManualWindowProps) {
+  const isPrint = useMemo(detectPrintMode, []);
   const [query, setQuery] = useState('');
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
   const [recentlyVisited, setRecentlyVisited] = useState<RecentEntry[]>(loadRecentEntries);
+  const [collapsedBodies, setCollapsedBodies] = useState<Set<string>>(new Set());
 
   const indexEntries = useMemo(() => buildManualIndex(USER_MANUAL_SECTIONS), []);
   const searchResults = useMemo(
@@ -171,11 +207,13 @@ export function ManualWindow({ initialTheme }: ManualWindowProps) {
 
   useEffect(() => {
     document.documentElement.dataset.theme = initialTheme;
-    document.title = 'MCW User Manual';
-  }, [initialTheme]);
+    document.title = isPrint ? 'MCW User Manual — Print' : 'MCW User Manual';
+  }, [initialTheme, isPrint]);
 
   // Track which entry the user is currently reading via IntersectionObserver
   useEffect(() => {
+    if (isPrint) return;
+
     const intersecting = new Set<string>();
 
     const observer = new IntersectionObserver(
@@ -188,7 +226,6 @@ export function ManualWindow({ initialTheme }: ManualWindowProps) {
           }
         }
 
-        // Pick the topmost visible entry in DOM order
         const allCards = document.querySelectorAll<HTMLElement>('.manual-entry-card[id]');
         for (const card of allCards) {
           if (intersecting.has(card.id)) {
@@ -205,9 +242,9 @@ export function ManualWindow({ initialTheme }: ManualWindowProps) {
     });
 
     return () => observer.disconnect();
-  }, []);
+  }, [isPrint]);
 
-  // Scroll the active TOC link into view (nearest, no jump if already visible)
+  // Scroll the active TOC link into view
   const activeTocLinkRef = useRef<HTMLAnchorElement | null>(null);
   useEffect(() => {
     if (!activeEntryId) return;
@@ -220,7 +257,7 @@ export function ManualWindow({ initialTheme }: ManualWindowProps) {
 
   // Record a visit after the entry has been in view for 1 second
   useEffect(() => {
-    if (!activeEntryId) return;
+    if (!activeEntryId || isPrint) return;
     const info = entryMap.get(activeEntryId);
     if (!info) return;
 
@@ -236,87 +273,120 @@ export function ManualWindow({ initialTheme }: ManualWindowProps) {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [activeEntryId, entryMap]);
+  }, [activeEntryId, entryMap, isPrint]);
+
+  const handleBodyToggle = (entryId: string, nowOpen: boolean) => {
+    setCollapsedBodies((prev) => {
+      const next = new Set(prev);
+      if (nowOpen) {
+        next.delete(entryId);
+      } else {
+        next.add(entryId);
+      }
+      return next;
+    });
+  };
+
+  const shellClass = `manual-shell${isPrint ? ' manual-shell--print' : ''}`;
 
   return (
-    <div className="manual-shell">
-      <aside className="manual-sidebar panel">
-        <div className="panel-head">
-          <p className="panel-label">User Manual</p>
-          <h2>Find workflows and boards</h2>
-          <p className="comparison-copy">
-            Use the table of contents for orientation, search when you know the task you want to
-            complete, and use the index when you know a feature or module name.
-          </p>
-        </div>
-
-        <label className="verification-field">
-          <span className="meta-label">Search</span>
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search features, workflows, or terms"
-          />
-        </label>
-
-        <section className="manual-sidebar-block">
-          <span className="meta-label">Table Of Contents</span>
-          <div className="manual-toc">
-            {USER_MANUAL_SECTIONS.map((section) => (
-              <div key={section.id} className="manual-toc-section">
-                <a href={`#${section.id}`} className="manual-toc-section-link">
-                  {section.title}
-                </a>
-                <div className="manual-toc-entries">
-                  {section.entries.map((entry) => (
-                    <a
-                      key={entry.id}
-                      href={`#${entry.id}`}
-                      className={`manual-toc-entry-link${activeEntryId === entry.id ? ' is-active' : ''}`}
-                    >
-                      {entry.title}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            ))}
+    <div className={shellClass}>
+      {!isPrint ? (
+        <aside className="manual-sidebar panel">
+          <div className="panel-head">
+            <p className="panel-label">User Manual</p>
+            <h2>Find workflows and boards</h2>
+            <p className="comparison-copy">
+              Use the table of contents for orientation, search when you know the task you want to
+              complete, and use the index when you know a feature or module name.
+            </p>
           </div>
-        </section>
 
-        {recentlyVisited.length > 0 ? (
+          <label className="verification-field">
+            <span className="meta-label">Search</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search features, workflows, or terms"
+            />
+          </label>
+
           <section className="manual-sidebar-block">
-            <span className="meta-label">Recently Viewed</span>
-            <div className="manual-recent-list">
-              {recentlyVisited.map((recent) => (
-                <a key={recent.id} href={`#${recent.id}`} className="manual-recent-link">
-                  <strong>{recent.title}</strong>
-                  <span>{recent.sectionTitle}</span>
+            <span className="meta-label">Table Of Contents</span>
+            <div className="manual-toc">
+              {USER_MANUAL_SECTIONS.map((section) => (
+                <div key={section.id} className="manual-toc-section">
+                  <a href={`#${section.id}`} className="manual-toc-section-link">
+                    {section.title}
+                  </a>
+                  <div className="manual-toc-entries">
+                    {section.entries.map((entry) => (
+                      <a
+                        key={entry.id}
+                        href={`#${entry.id}`}
+                        className={`manual-toc-entry-link${activeEntryId === entry.id ? ' is-active' : ''}`}
+                      >
+                        {entry.title}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {recentlyVisited.length > 0 ? (
+            <section className="manual-sidebar-block">
+              <span className="meta-label">Recently Viewed</span>
+              <div className="manual-recent-list">
+                {recentlyVisited.map((recent) => (
+                  <a key={recent.id} href={`#${recent.id}`} className="manual-recent-link">
+                    <strong>{recent.title}</strong>
+                    <span>{recent.sectionTitle}</span>
+                  </a>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <section className="manual-sidebar-block">
+            <span className="meta-label">Index</span>
+            <div className="manual-index-list">
+              {indexEntries.map((entry) => (
+                <a
+                  key={`${entry.term}:${entry.entryId}`}
+                  href={`#${entry.entryId}`}
+                  className="manual-index-link"
+                >
+                  <strong>{entry.term}</strong>
+                  <span>{entry.entryTitle}</span>
                 </a>
               ))}
             </div>
           </section>
-        ) : null}
-
-        <section className="manual-sidebar-block">
-          <span className="meta-label">Index</span>
-          <div className="manual-index-list">
-            {indexEntries.map((entry) => (
-              <a
-                key={`${entry.term}:${entry.entryId}`}
-                href={`#${entry.entryId}`}
-                className="manual-index-link"
-              >
-                <strong>{entry.term}</strong>
-                <span>{entry.entryTitle}</span>
-              </a>
-            ))}
-          </div>
-        </section>
-      </aside>
+        </aside>
+      ) : null}
 
       <main className="manual-main">
-        {query.trim() ? (
+        {isPrint ? (
+          <div className="manual-print-header">
+            <div>
+              <p className="panel-label">MCW User Manual</p>
+              <p className="comparison-copy">
+                All sections — printed {new Date().toLocaleDateString()}
+              </p>
+            </div>
+            <button
+              className="manual-print-button"
+              onClick={() => window.print()}
+            >
+              Print this page
+            </button>
+          </div>
+        ) : null}
+
+        {!isPrint && query.trim() ? (
           <section className="panel manual-search-panel">
             <div className="panel-head">
               <p className="panel-label">Search Results</p>
@@ -354,34 +424,46 @@ export function ManualWindow({ initialTheme }: ManualWindowProps) {
                 <p className="comparison-copy">{section.summary}</p>
               </div>
               <div className="manual-entry-list">
-                {section.entries.map((entry) => (
-                  <article key={entry.id} id={entry.id} className="manual-entry-card">
-                    <h3>{entry.title}</h3>
-                    <p className="manual-entry-body">{renderManualInline(entry.body)}</p>
-                    {entry.intents?.length ? (
-                      <IntentGatewayGrid intents={entry.intents} />
-                    ) : null}
-                    {entry.keyPoints?.length ? (
-                      <>
-                        <p className="manual-entry-subhead">Stops</p>
-                        <ol className="manual-entry-key-points">
-                          {entry.keyPoints.map((point) => (
-                            <li key={point}>{renderManualInline(point)}</li>
-                          ))}
-                        </ol>
-                      </>
-                    ) : null}
-                    {entry.diagnosis ? (
-                      <DiagnosisBlockView block={entry.diagnosis} />
-                    ) : null}
-                    {entry.routeBlock ? (
-                      <RouteBlockView block={entry.routeBlock} />
-                    ) : null}
-                    {entry.seeAlso?.length ? (
-                      <SeeAlsoBlock ids={entry.seeAlso} entryMap={entryMap} />
-                    ) : null}
-                  </article>
-                ))}
+                {section.entries.map((entry) => {
+                  const isCollapsible = Boolean(entry.keyPoints?.length || entry.diagnosis);
+                  const isOpen = !collapsedBodies.has(entry.id);
+
+                  return (
+                    <article key={entry.id} id={entry.id} className="manual-entry-card">
+                      <h3>{entry.title}</h3>
+                      <EntryBody
+                        entryId={entry.id}
+                        body={entry.body}
+                        isCollapsible={isCollapsible}
+                        isPrint={isPrint}
+                        isOpen={isOpen}
+                        onToggle={handleBodyToggle}
+                      />
+                      {entry.intents?.length ? (
+                        <IntentGatewayGrid intents={entry.intents} />
+                      ) : null}
+                      {entry.keyPoints?.length ? (
+                        <>
+                          <p className="manual-entry-subhead">Stops</p>
+                          <ol className="manual-entry-key-points">
+                            {entry.keyPoints.map((point) => (
+                              <li key={point}>{renderManualInline(point)}</li>
+                            ))}
+                          </ol>
+                        </>
+                      ) : null}
+                      {entry.diagnosis ? (
+                        <DiagnosisBlockView block={entry.diagnosis} />
+                      ) : null}
+                      {entry.routeBlock ? (
+                        <RouteBlockView block={entry.routeBlock} />
+                      ) : null}
+                      {entry.seeAlso?.length ? (
+                        <SeeAlsoBlock ids={entry.seeAlso} entryMap={entryMap} />
+                      ) : null}
+                    </article>
+                  );
+                })}
               </div>
             </section>
           ))}

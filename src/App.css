@@ -2324,6 +2324,143 @@ body.dock-resizing {
   font-weight: 800;
 }
 
+/* ── Collapsible Body ────────────────────────────────────────── */
+
+.manual-body-details {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.manual-body-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 0 8px;
+  padding: 3px 10px 3px 8px;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-soft) 70%, var(--surface));
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.1s, color 0.1s;
+}
+
+.manual-body-summary::-webkit-details-marker {
+  display: none;
+}
+
+.manual-body-summary::before {
+  content: '▾';
+  font-size: 0.78rem;
+  display: inline-block;
+  transition: transform 0.15s;
+}
+
+details:not([open]) > .manual-body-summary::before {
+  content: '▸';
+}
+
+.manual-body-summary:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+  color: var(--ink);
+}
+
+/* ── Print Mode Shell ────────────────────────────────────────── */
+
+.manual-shell--print {
+  grid-template-columns: 1fr;
+  max-width: 860px;
+  padding: 36px 24px 64px;
+}
+
+.manual-print-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-panel);
+  margin-bottom: 4px;
+}
+
+.manual-print-button {
+  padding: 8px 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.manual-print-button:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+}
+
+/* ── @media print ────────────────────────────────────────────── */
+
+@media print {
+  .manual-sidebar {
+    display: none !important;
+  }
+
+  .manual-shell {
+    grid-template-columns: 1fr !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 0 !important;
+  }
+
+  .manual-print-header {
+    display: none;
+  }
+
+  .manual-section {
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    page-break-inside: avoid;
+    margin-bottom: 12px;
+  }
+
+  .manual-entry-card {
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+    page-break-inside: avoid;
+  }
+
+  .manual-route-block,
+  .manual-diagnosis-block {
+    page-break-inside: avoid;
+  }
+
+  .manual-see-also,
+  .manual-body-summary {
+    display: none !important;
+  }
+
+  .manual-body-details > p {
+    display: block !important;
+  }
+}
+
 /* ── Intent Gateway Grid ─────────────────────────────────────── */
 
 .manual-intent-grid {
