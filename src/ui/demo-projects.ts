@@ -1290,6 +1290,97 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'cbc-padding-oracle-consequence',
+    name: 'CBC Padding Oracle Consequence',
+    group: 'Stream Cipher Security',
+    stage: 'modern-bit-machines',
+    order: 182,
+    recommendedAfter: ['stream-cipher-iv-reuse-consequence'],
+    summary:
+      'A toy CBC-mode board shows the padding oracle structure: the server decrypts C2 XOR C1_guess, checks for a 0x01 pad byte, and returns one bit. That one bit leaks the intermediate value, letting the attacker recover the plaintext without the key.',
+    pipeline:
+      'key + C2 -> XOR(I) -> oracle XOR(C1_guess) -> Equals(0x01) -> 1-bit leak, then C1_guess XOR 0x01 -> recovered I -> XOR(C1_orig) -> recovered P -> Equals(I)',
+    project: {
+      modules: [
+        // Cipher setup — key and ciphertext block
+        { id: 'key', defId: 'BitSource', params: { stream: [0, 1, 0, 1, 1, 0, 1, 0] } },
+        { id: 'c2', defId: 'BitSource', params: { stream: [0, 1, 1, 1, 1, 0, 0, 1] } },
+        { id: 'c1-orig', defId: 'BitSource', params: { stream: [0, 0, 1, 1, 1, 1, 1, 1] } },
+        // Server decryption: C2 XOR key = intermediate value I
+        { id: 'decrypt', defId: 'XOR', params: {} },
+        { id: 'i-out', defId: 'BitOutput', params: {} },
+        // Attacker's modified C1 — chosen so oracle returns valid padding
+        { id: 'c1-guess', defId: 'BitSource', params: { stream: [0, 0, 1, 0, 0, 0, 1, 0] } },
+        // Oracle decryption: I XOR C1_guess — what the server sees as plaintext
+        { id: 'oracle-p', defId: 'XOR', params: {} },
+        { id: 'oracle-p-out', defId: 'BitOutput', params: {} },
+        // Padding reference: 0x01 (PKCS7 single-byte pad)
+        { id: 'pad-ref', defId: 'BitSource', params: { stream: [0, 0, 0, 0, 0, 0, 0, 1] } },
+        // Oracle response: 1 = valid padding (the 1-bit information leak)
+        { id: 'padding-check', defId: 'Equals', params: {} },
+        { id: 'oracle-out', defId: 'BitOutput', params: {} },
+        // Recovery: C1_guess XOR 0x01 = I (attacker recovers intermediate from oracle)
+        { id: 'recover-i', defId: 'XOR', params: {} },
+        { id: 'recover-i-out', defId: 'BitOutput', params: {} },
+        // Verify intermediate recovery: Equals(recovered I, actual I)
+        { id: 'i-match', defId: 'Equals', params: {} },
+        { id: 'i-match-out', defId: 'BitOutput', params: {} },
+        // Final step: recovered I XOR C1_orig = plaintext P
+        { id: 'recover-p', defId: 'XOR', params: {} },
+        { id: 'recover-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        // Server decryption: key XOR c2 = I
+        { from: { moduleId: 'key', port: 'out' }, to: { moduleId: 'decrypt', port: 'a' } },
+        { from: { moduleId: 'c2', port: 'out' }, to: { moduleId: 'decrypt', port: 'b' } },
+        { from: { moduleId: 'decrypt', port: 'out' }, to: { moduleId: 'i-out', port: 'in' } },
+        // Oracle: I XOR C1_guess → padding check
+        { from: { moduleId: 'decrypt', port: 'out' }, to: { moduleId: 'oracle-p', port: 'a' } },
+        { from: { moduleId: 'c1-guess', port: 'out' }, to: { moduleId: 'oracle-p', port: 'b' } },
+        { from: { moduleId: 'oracle-p', port: 'out' }, to: { moduleId: 'oracle-p-out', port: 'in' } },
+        { from: { moduleId: 'oracle-p', port: 'out' }, to: { moduleId: 'padding-check', port: 'a' } },
+        { from: { moduleId: 'pad-ref', port: 'out' }, to: { moduleId: 'padding-check', port: 'b' } },
+        { from: { moduleId: 'padding-check', port: 'out' }, to: { moduleId: 'oracle-out', port: 'in' } },
+        // Recovery: C1_guess XOR 0x01 = recovered I
+        { from: { moduleId: 'c1-guess', port: 'out' }, to: { moduleId: 'recover-i', port: 'a' } },
+        { from: { moduleId: 'pad-ref', port: 'out' }, to: { moduleId: 'recover-i', port: 'b' } },
+        { from: { moduleId: 'recover-i', port: 'out' }, to: { moduleId: 'recover-i-out', port: 'in' } },
+        // Verify: recovered I == actual I
+        { from: { moduleId: 'recover-i', port: 'out' }, to: { moduleId: 'i-match', port: 'a' } },
+        { from: { moduleId: 'decrypt', port: 'out' }, to: { moduleId: 'i-match', port: 'b' } },
+        { from: { moduleId: 'i-match', port: 'out' }, to: { moduleId: 'i-match-out', port: 'in' } },
+        // Final plaintext: recovered I XOR C1_orig
+        { from: { moduleId: 'recover-i', port: 'out' }, to: { moduleId: 'recover-p', port: 'a' } },
+        { from: { moduleId: 'c1-orig', port: 'out' }, to: { moduleId: 'recover-p', port: 'b' } },
+        { from: { moduleId: 'recover-p', port: 'out' }, to: { moduleId: 'recover-out', port: 'in' } },
+      ],
+    },
+    layout: {
+      // Phase 1: Cipher
+      key: { x: 80, y: 80 },
+      c2: { x: 80, y: 280 },
+      decrypt: { x: 380, y: 180 },
+      'i-out': { x: 660, y: 180 },
+
+      // Phase 2: Oracle interaction
+      'c1-orig': { x: 80, y: 480 },
+      'c1-guess': { x: 80, y: 680 },
+      'oracle-p': { x: 660, y: 580 },
+      'oracle-p-out': { x: 940, y: 580 },
+      'pad-ref': { x: 80, y: 880 },
+      'padding-check': { x: 660, y: 780 },
+      'oracle-out': { x: 940, y: 780 },
+
+      // Phase 3: Recovery
+      'recover-i': { x: 1180, y: 780 },
+      'recover-i-out': { x: 1460, y: 780 },
+      'i-match': { x: 1180, y: 580 },
+      'i-match-out': { x: 1460, y: 580 },
+      'recover-p': { x: 1700, y: 680 },
+      'recover-out': { x: 1980, y: 680 },
+    },
+  },
+  {
     id: 'visible-stepped-mechanisms',
     name: 'Visible Stepped Mechanisms',
     group: 'Conditional Clocking',

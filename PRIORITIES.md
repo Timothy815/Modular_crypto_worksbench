@@ -79,7 +79,7 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
   Rationale: The Schnorr nonce reuse and ECDH low-order point boards are the strongest in the product. A stream cipher or CTR-mode IV-reuse consequence board in the same style would teach one of the most practically important failure modes in modern cryptography.
   Done when: A bounded board shows two messages encrypted with the same keystream, with visible key recovery. A repair challenge or analysis surface is present.
 
-- [ ] **Consequence board: CBC padding oracle pattern (pedagogical)**
+- [x] **Consequence board: CBC padding oracle pattern (pedagogical)** *(shipped June 7, 2026)*
   Rationale: Padding oracle is one of the most consequential real-world attacks and fits the MCW consequence-board model well. Even a bounded teaching version would be high value.
   Done when: A bounded board shows the oracle structure — a ciphertext block, a padding check, and the information leak — in a way that makes the attack mechanism legible without being a live attack tool.
 

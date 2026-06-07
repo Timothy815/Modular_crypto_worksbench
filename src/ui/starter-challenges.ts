@@ -104,6 +104,9 @@ const toySpongeHashProject = demoProjects.find((project) => project.id === 'toy-
 const ivReuseProject = demoProjects.find(
   (project) => project.id === 'stream-cipher-iv-reuse-consequence',
 );
+const cbcPaddingOracleProject = demoProjects.find(
+  (project) => project.id === 'cbc-padding-oracle-consequence',
+);
 
 if (!bridgeProject) {
   throw new Error('Expected bridge demo project to seed starter challenges.');
@@ -236,6 +239,9 @@ if (!toySpongeHashProject) {
 }
 if (!ivReuseProject) {
   throw new Error('Expected stream-cipher-iv-reuse-consequence project to seed starter challenges.');
+}
+if (!cbcPaddingOracleProject) {
+  throw new Error('Expected cbc-padding-oracle-consequence project to seed starter challenges.');
 }
 if (!toyRsaProject) {
   throw new Error('Expected toy-rsa demo project to seed starter challenges.');
@@ -436,6 +442,17 @@ brokenIvReuseStart.connections = brokenIvReuseStart.connections.filter(
   (c) => !(c.from.moduleId === 'msg-a' && c.to.moduleId === 'recover-b' && c.to.port === 'b'),
 );
 brokenIvReuseStart.connections.push({ from: { moduleId: 'crib', port: 'out' }, to: { moduleId: 'recover-b', port: 'b' } });
+
+// CBC padding oracle challenge: c1-guess starts all-zeros (wrong); student must set it
+// to I XOR 0x01 (= 0x22 = [0,0,1,0,0,0,1,0]) so the oracle returns 1 (valid padding)
+// and the intermediate recovery confirms match.
+const cbcPaddingOracleTarget = cloneProject(cbcPaddingOracleProject.project);
+const brokenCbcPaddingOracleStart = cloneProject(cbcPaddingOracleProject.project);
+const brokenOracleC1Guess = brokenCbcPaddingOracleStart.modules.find((m) => m.id === 'c1-guess');
+if (!brokenOracleC1Guess) {
+  throw new Error('Expected cbc-padding-oracle-consequence project to contain c1-guess module.');
+}
+brokenOracleC1Guess.params.stream = [0, 0, 0, 0, 0, 0, 0, 0];
 const toyRsaTarget = cloneProject(toyRsaProject.project);
 const brokenToyRsaStart = cloneProject(toyRsaProject.project);
 const diffieHellmanTarget = cloneProject(diffieHellmanProject.project);
@@ -1452,6 +1469,30 @@ export const STARTER_CHALLENGES: GuidedChallenge[] = [
       "The crib module is the attacker's guess of Alice's message. It currently reads all zeros, which is wrong.",
       "Look at the msg-a module — that shows Alice's actual plaintext bits. Set crib to the same bit pattern.",
       'Click crib, open the Inspector, and change the stream parameter to 0,1,1,0,1,0,1,0.',
+    ],
+  },
+  {
+    version: 1,
+    id: 'find-the-oracle-c1-guess',
+    title: 'Find the Oracle C1 Guess',
+    projectId: 'cbc-padding-oracle-consequence',
+    group: 'Stream Cipher Security',
+    stage: 'modern-bit-machines' as const,
+    order: 182.5,
+    difficulty: 'intermediate' as const,
+    recommendedAfter: ['cbc-padding-oracle-consequence'],
+    prompt:
+      "The padding oracle query is broken. c1-guess is set to all zeros, so the oracle decrypts to the wrong value and returns 0 (invalid padding). Find the correct c1-guess value that forces oracle-p = 0x01. Hint: look at i-out to read the intermediate value I, then compute I XOR 0x01.",
+    startingProject: brokenCbcPaddingOracleStart,
+    startingLayout: cloneProject(cbcPaddingOracleProject.layout),
+    targetProject: cbcPaddingOracleTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'The oracle checks whether I XOR c1-guess equals 0x01. You need to find c1-guess such that this holds.',
+      'Read I from the i-out module. XOR each bit of I with the corresponding bit of 0x01 (00000001) to get the attack c1-guess.',
+      "I = 00100011. XOR with 00000001 gives 00100010. Set c1-guess stream to 0,0,1,0,0,0,1,0.",
     ],
   },
   {

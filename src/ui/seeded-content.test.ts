@@ -773,4 +773,42 @@ describe('seeded teaching content', () => {
     expect(startBits['secret-check-out']).toBe('0');
     expect(startBits['recover-b-out']).not.toBe('10110101');
   });
+
+  it('keeps the CBC padding oracle demo deterministic and the repair challenge broken', () => {
+    const demo = demoProjects.find((project) => project.id === 'cbc-padding-oracle-consequence');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    const demoBits = getBitOutputMap(demo.project);
+    // key=0x5A, C2=0x79 → I = XOR = 0x23 = 00100011
+    expect(demoBits['i-out']).toBe('00100011');
+    // c1-guess=0x22; oracle-p = I XOR c1-guess = 0x01 = 00000001
+    expect(demoBits['oracle-p-out']).toBe('00000001');
+    // Oracle says valid padding
+    expect(demoBits['oracle-out']).toBe('1');
+    // Recovered intermediate = c1-guess XOR 0x01 = 0x23 = 00100011
+    expect(demoBits['recover-i-out']).toBe('00100011');
+    // Intermediate match confirmed
+    expect(demoBits['i-match-out']).toBe('1');
+    // Plaintext recovered = I XOR c1-orig = 0x23 XOR 0x3F = 0x1C = 00011100
+    expect(demoBits['recover-out']).toBe('00011100');
+
+    const challenge = STARTER_CHALLENGES.find((entry) => entry.id === 'find-the-oracle-c1-guess');
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    // Target: correct c1-guess → oracle valid, intermediate recovered
+    const targetBits = getBitOutputMap(challenge.targetProject);
+    expect(targetBits['oracle-out']).toBe('1');
+    expect(targetBits['i-match-out']).toBe('1');
+
+    // Broken start: c1-guess all zeros → oracle invalid, intermediate mismatch
+    const startBits = getBitOutputMap(challenge.startingProject);
+    expect(startBits['oracle-out']).toBe('0');
+    expect(startBits['i-match-out']).toBe('0');
+  });
 });
