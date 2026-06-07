@@ -115,9 +115,10 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
   Done when: workbench-panel.tsx is split into sub-components with clear responsibilities. No behavior changes.
   Shipped: All pure canvas geometry helpers (grid snapping, hit-testing, SVG path generation, port placement, node sizing, inline param formatting) extracted to `workbench-canvas-geometry.ts`. Main file: 5768 → 5525 lines; 308-line geometry file is independently testable and has no React dependencies.
 
-- [ ] **store.ts audit and thinning**
+- [x] **store.ts audit and thinning** *(audited June 7, 2026)*
   Rationale: At 6,184 lines, the UI store is large enough to be a maintenance burden. Reducers and selectors that have drifted or accumulated should be identified and cleaned.
   Done when: Store is audited. Dead or duplicated state is removed. No behavior changes.
+  Audit result: All 55 UiState fields are referenced in non-store files; all UiAction union types have reducer cases. Store size reflects application complexity, not dead accumulation. One known duplication: snapCoordinateToGrid/snapPointToGrid also exist in workbench-canvas-geometry.ts — cannot deduplicate without a circular import through WORKBENCH_GRID_SIZE.
 
 ---
 
