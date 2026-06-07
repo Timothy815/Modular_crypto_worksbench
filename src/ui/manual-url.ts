@@ -15,6 +15,7 @@ export function createUserManualUrl(theme: ManualThemeMode) {
   url.searchParams.delete(DETACHED_PANEL_QUERY_KEY);
   url.searchParams.delete(DETACHED_PANEL_HOST_QUERY_KEY);
   url.searchParams.delete(DETACHED_PANEL_WINDOW_QUERY_KEY);
+  url.searchParams.delete('print');
   url.searchParams.set(USER_MANUAL_QUERY_KEY, '1');
   url.searchParams.set(THEME_QUERY_KEY, theme);
   return url.toString();

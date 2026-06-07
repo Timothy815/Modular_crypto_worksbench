@@ -386,7 +386,7 @@ export function ManualWindow({ initialTheme }: ManualWindowProps) {
           </div>
         ) : null}
 
-        {!isPrint && query.trim() ? (
+        {query.trim() ? (
           <section className="panel manual-search-panel">
             <div className="panel-head">
               <p className="panel-label">Search Results</p>
