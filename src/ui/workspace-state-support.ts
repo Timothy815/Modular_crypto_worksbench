@@ -32,6 +32,7 @@ export interface WorkspaceHistorySnapshot {
   showFurniture: boolean;
   showOverviewNavigator: boolean;
   showGrid: boolean;
+  showTickPulse: boolean;
   snapToGrid: boolean;
   snapToGuides: boolean;
   layoutDirection: WorkbenchLayoutDirection;
@@ -61,6 +62,7 @@ interface WorkspaceSnapshotState {
   showOverviewNavigatorByProject: Record<string, boolean>;
   savedViewRegionsByProject: Record<string, WorkspaceSavedViewRegion[]>;
   showGridByProject: Record<string, boolean>;
+  showTickPulseByProject: Record<string, boolean>;
   snapToGridByProject: Record<string, boolean>;
   snapToGuidesByProject: Record<string, boolean>;
   layoutDirectionByProject: Record<string, WorkbenchLayoutDirection>;
@@ -179,6 +181,7 @@ export function cloneWorkspaceHistorySnapshot(
     showFurniture: snapshot.showFurniture,
     showOverviewNavigator: snapshot.showOverviewNavigator,
     showGrid: snapshot.showGrid,
+    showTickPulse: snapshot.showTickPulse,
     snapToGrid: snapshot.snapToGrid,
     snapToGuides: snapshot.snapToGuides,
     layoutDirection: snapshot.layoutDirection,
@@ -213,6 +216,7 @@ export function buildWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
     showFurniture: state.showFurnitureByProject[projectId] ?? true,
     showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
     showGrid: state.showGridByProject[projectId] ?? false,
+    showTickPulse: state.showTickPulseByProject[projectId] ?? true,
     snapToGrid: state.snapToGridByProject[projectId] ?? false,
     snapToGuides: state.snapToGuidesByProject[projectId] ?? false,
     layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
@@ -279,6 +283,10 @@ export function applyWorkspaceHistorySnapshot<State extends WorkspaceSnapshotSta
     showGridByProject: {
       ...state.showGridByProject,
       [projectId]: snapshot.showGrid,
+    },
+    showTickPulseByProject: {
+      ...state.showTickPulseByProject,
+      [projectId]: snapshot.showTickPulse,
     },
     snapToGridByProject: {
       ...state.snapToGridByProject,
@@ -385,6 +393,7 @@ export function buildWorkbenchDocument<State extends WorkspaceVersionHostState>(
         state.savedViewRegionsByProject[projectId] ?? [],
       ),
       showGrid: state.showGridByProject[projectId] ?? false,
+      showTickPulse: state.showTickPulseByProject[projectId] ?? true,
       snapToGrid: state.snapToGridByProject[projectId] ?? false,
       snapToGuides: state.snapToGuidesByProject[projectId] ?? false,
       layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
@@ -549,6 +558,10 @@ export function applyRestoreWorkbenchDocument<State extends WorkspaceVersionHost
     showGridByProject: {
       ...state.showGridByProject,
       [projectId]: document.ui.showGrid ?? false,
+    },
+    showTickPulseByProject: {
+      ...state.showTickPulseByProject,
+      [projectId]: document.ui.showTickPulse ?? true,
     },
     snapToGridByProject: {
       ...state.snapToGridByProject,

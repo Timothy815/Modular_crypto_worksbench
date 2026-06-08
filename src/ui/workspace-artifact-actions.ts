@@ -119,6 +119,7 @@ export interface BuildShareableLabPackArgs {
   showFurniture?: boolean;
   showOverviewNavigator?: boolean;
   showGrid?: boolean;
+  showTickPulse?: boolean;
   snapToGrid?: boolean;
   snapToGuides?: boolean;
   layoutDirection: 'horizontal' | 'vertical';
@@ -152,6 +153,7 @@ export function buildShareableLabPack({
   showFurniture = true,
   showOverviewNavigator = false,
   showGrid = false,
+  showTickPulse = true,
   snapToGrid = false,
   snapToGuides = false,
   layoutDirection,
@@ -185,6 +187,7 @@ export function buildShareableLabPack({
         showFurniture,
         showOverviewNavigator,
         showGrid,
+        showTickPulse,
         snapToGrid,
         snapToGuides,
         layoutDirection,
@@ -323,9 +326,11 @@ export function prepareImportedLabPack({
         stageLabels: cloneStageLabels(pack.workspace.ui.stageLabels ?? []),
         groupBoxes: cloneGroupBoxes(pack.workspace.ui.groupBoxes ?? []),
         guideRails: cloneGuideRails(pack.workspace.ui.guideRails ?? []),
+        showFurniture: pack.workspace.ui.showFurniture ?? true,
         showOverviewNavigator:
           pack.workspace.ui.showOverviewNavigator ?? isLargeWorkspace(pack.workspace.project),
         showGrid: pack.workspace.ui.showGrid ?? false,
+        showTickPulse: pack.workspace.ui.showTickPulse ?? true,
         snapToGrid: pack.workspace.ui.snapToGrid ?? false,
         snapToGuides: pack.workspace.ui.snapToGuides ?? false,
         layoutDirection: pack.workspace.ui.layoutDirection ?? 'horizontal',

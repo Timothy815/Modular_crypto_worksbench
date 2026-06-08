@@ -19,6 +19,7 @@ interface WorkbenchActionsProps {
   wireColorMode: WorkbenchWireColorMode;
   showOverviewNavigator: boolean;
   showGrid: boolean;
+  showTickPulse: boolean;
   snapToGrid: boolean;
   snapToGuides: boolean;
   canUndo: boolean;
@@ -52,6 +53,7 @@ interface WorkbenchActionsProps {
   onSetWireColorMode: (mode: WorkbenchWireColorMode) => void;
   onToggleOverviewNavigator: (visible: boolean) => void;
   onToggleGrid: (visible: boolean) => void;
+  onToggleTickPulse: (visible: boolean) => void;
   onToggleSnapToGrid: (enabled: boolean) => void;
   onToggleSnapToGuides: (enabled: boolean) => void;
   onRequestUndo: () => void;
@@ -256,6 +258,7 @@ type WorkbenchInlineIconName =
   | 'wire-color-high-contrast'
   | 'overview'
   | 'grid'
+  | 'tick-pulse'
   | 'snap'
   | 'snap-guides'
   | 'hide-furniture'
@@ -384,6 +387,14 @@ function WorkbenchInlineIcon({ name }: { name: WorkbenchInlineIconName }) {
       return (
         <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
           <path d="M4 4h12M4 8h12M4 12h12M4 16h12M4 4v12M8 4v12M12 4v12M16 4v12" />
+        </svg>
+      );
+    case 'tick-pulse':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M3 10h3l2-4 3.5 8 2.5-5H17" />
+          <circle cx="4" cy="10" r="1.1" fill="currentColor" stroke="none" />
+          <circle cx="16" cy="9" r="1.1" fill="currentColor" stroke="none" />
         </svg>
       );
     case 'snap':
@@ -638,6 +649,7 @@ export function WorkbenchActions({
   wireColorMode,
   showOverviewNavigator,
   showGrid,
+  showTickPulse,
   snapToGrid,
   snapToGuides,
   canUndo,
@@ -671,6 +683,7 @@ export function WorkbenchActions({
   onSetWireColorMode,
   onToggleOverviewNavigator,
   onToggleGrid,
+  onToggleTickPulse,
   onToggleSnapToGrid,
   onToggleSnapToGuides,
   onRequestUndo,
@@ -874,6 +887,12 @@ export function WorkbenchActions({
                 title={showGrid ? 'Hide Grid' : 'Show Grid'}
                 onSelect={() => onToggleGrid(!showGrid)}
                 active={showGrid}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="tick-pulse" />}
+                title={showTickPulse ? 'Hide Tick Pulse' : 'Show Tick Pulse'}
+                onSelect={() => onToggleTickPulse(!showTickPulse)}
+                active={showTickPulse}
               />
               <WorkbenchInlineActionButton
                 content={<WorkbenchInlineIcon name="snap" />}

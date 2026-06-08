@@ -223,6 +223,7 @@ function cloneWorkspaceDocument(document: WorkbenchDocument): WorkbenchDocument 
       showFurniture: document.ui.showFurniture ?? true,
       showOverviewNavigator: document.ui.showOverviewNavigator ?? false,
       showGrid: document.ui.showGrid ?? false,
+      showTickPulse: document.ui.showTickPulse ?? true,
       snapToGrid: document.ui.snapToGrid ?? false,
       snapToGuides: document.ui.snapToGuides ?? false,
       layoutDirection: document.ui.layoutDirection ?? 'horizontal',
@@ -291,6 +292,7 @@ function buildDefaultDocument(project: DemoProject): WorkbenchDocument {
       showFurniture: true,
       showOverviewNavigator: false,
       showGrid: false,
+      showTickPulse: true,
       snapToGrid: false,
       snapToGuides: false,
       layoutDirection: 'horizontal',
@@ -358,6 +360,7 @@ export function buildPersistedWorkspace(
             showFurniture: state.showFurnitureByProject[projectId] ?? true,
             showOverviewNavigator: state.showOverviewNavigatorByProject[projectId] ?? false,
             showGrid: state.showGridByProject[projectId] ?? false,
+            showTickPulse: state.showTickPulseByProject[projectId] ?? true,
             snapToGrid: state.snapToGridByProject[projectId] ?? false,
             snapToGuides: state.snapToGuidesByProject[projectId] ?? false,
             layoutDirection: state.layoutDirectionByProject[projectId] ?? 'horizontal',
@@ -1239,6 +1242,7 @@ function isWorkbenchDocument(value: unknown): value is WorkbenchDocument {
     (candidate.ui.showOverviewNavigator === undefined ||
       typeof candidate.ui.showOverviewNavigator === 'boolean') &&
     (candidate.ui.showGrid === undefined || typeof candidate.ui.showGrid === 'boolean') &&
+    (candidate.ui.showTickPulse === undefined || typeof candidate.ui.showTickPulse === 'boolean') &&
     (candidate.ui.snapToGrid === undefined || typeof candidate.ui.snapToGrid === 'boolean') &&
     (candidate.ui.snapToGuides === undefined || typeof candidate.ui.snapToGuides === 'boolean') &&
     (candidate.ui.layoutDirection === undefined ||

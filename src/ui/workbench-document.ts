@@ -104,6 +104,7 @@ export interface WorkbenchUiMetadata {
   showFurniture?: boolean;
   showOverviewNavigator?: boolean;
   showGrid?: boolean;
+  showTickPulse?: boolean;
   snapToGrid?: boolean;
   snapToGuides?: boolean;
   layoutDirection?: WorkbenchLayoutDirection;

@@ -4,6 +4,39 @@
   padding: 18px 0 72px;
 }
 
+html {
+  scrollbar-color:
+    color-mix(in srgb, var(--line) 82%, var(--surface-soft-strong))
+    color-mix(in srgb, var(--surface-soft) 92%, transparent);
+}
+
+* {
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+*::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--surface-soft) 92%, transparent);
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid color-mix(in srgb, var(--surface-soft) 92%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line) 82%, var(--surface-soft-strong));
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--accent) 32%, var(--line));
+}
+
+*::-webkit-scrollbar-corner {
+  background: color-mix(in srgb, var(--surface-soft) 92%, transparent);
+}
+
 .detached-panel-shell {
   width: min(100%, calc(100% - 24px));
   min-height: calc(100vh - 24px);
@@ -4430,6 +4463,56 @@ body.canvas-resizing {
     transform 120ms ease;
 }
 
+.connection-tick-pulse {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 11.5;
+  opacity: 0;
+  pointer-events: none;
+  stroke-dasharray: 42 999;
+  filter:
+    drop-shadow(0 0 8px color-mix(in srgb, white 62%, transparent))
+    drop-shadow(0 0 18px color-mix(in srgb, currentColor 48%, transparent))
+    drop-shadow(0 0 28px color-mix(in srgb, currentColor 24%, transparent));
+  mix-blend-mode: screen;
+  animation: connection-tick-pulse 620ms ease-out forwards;
+}
+
+.connection-tick-pulse-bits {
+  stroke: color-mix(in srgb, #0a67ff 48%, white 52%);
+}
+
+.connection-tick-pulse-symbol {
+  stroke: color-mix(in srgb, #ff7a12 46%, white 54%);
+}
+
+.connection-tick-pulse-integer {
+  stroke: color-mix(in srgb, #23b261 46%, white 54%);
+}
+
+.connection-tick-pulse-ec-point {
+  stroke: color-mix(in srgb, #9166ff 44%, white 56%);
+}
+
+@keyframes connection-tick-pulse {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 175;
+    transform: scale(1);
+  }
+  12% {
+    opacity: 1;
+  }
+  36% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    stroke-dashoffset: -175;
+    transform: scale(1.01);
+  }
+}
+
 .connection-group-wire-mode-domain .connection-visible-path {
   stroke: color-mix(in srgb, var(--connection-stroke) 78%, white 22%);
   stroke-width: 3.2;
@@ -5357,6 +5440,34 @@ body.canvas-resizing {
 
 .graph-node-invalid {
   box-shadow: 0 0 0 2px var(--danger-text);
+}
+
+.graph-node-tick-pulse-halo {
+  position: absolute;
+  inset: -18px;
+  border-radius: 30px;
+  pointer-events: none;
+  border: 4px solid color-mix(in srgb, var(--accent) 38%, white);
+  box-shadow:
+    0 0 0 10px color-mix(in srgb, var(--accent) 18%, transparent),
+    0 0 42px color-mix(in srgb, var(--accent) 34%, transparent),
+    0 0 64px color-mix(in srgb, white 14%, transparent);
+  opacity: 0;
+  animation: graph-node-tick-pulse-halo 620ms ease-out forwards;
+}
+
+@keyframes graph-node-tick-pulse-halo {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  14% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.08);
+  }
 }
 
 .graph-node-compare-added {

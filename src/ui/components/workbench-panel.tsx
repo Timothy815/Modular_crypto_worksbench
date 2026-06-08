@@ -113,6 +113,11 @@ import {
   getSpliceEligiblePorts,
 } from '../live-machine-feel-tier2';
 import {
+  deriveTickActiveConnectionKeys,
+  projectTickPulseVisibility,
+  shouldSuppressTickPulseDuringScrub,
+} from '../live-machine-feel-tier4';
+import {
   buildSidePortGroups,
   formatInlineEditableValue,
   getConnectionPath,
@@ -215,6 +220,11 @@ interface PendingReferenceChainSelection {
   };
 }
 
+interface TickPulseState {
+  sequence: number;
+  activeConnectionKeys: string[];
+}
+
 
 interface WorkbenchPanelProps {
   activeProject: DemoProject;
@@ -235,6 +245,7 @@ interface WorkbenchPanelProps {
   showFurniture: boolean;
   showOverviewNavigator: boolean;
   showGrid: boolean;
+  showTickPulse: boolean;
   snapToGrid: boolean;
   snapToGuides: boolean;
   execution: ExecutionResult | null;
@@ -290,6 +301,7 @@ interface WorkbenchPanelProps {
   onSetFurnitureVisible: (visible: boolean) => void;
   onSetOverviewNavigatorVisible: (visible: boolean) => void;
   onSetGridVisible: (visible: boolean) => void;
+  onSetTickPulseVisible: (visible: boolean) => void;
   onSetSnapToGrid: (enabled: boolean) => void;
   onSetSnapToGuides: (enabled: boolean) => void;
   onMoveAnnotation: (annotationId: string, x: number, y: number) => void;
@@ -481,6 +493,7 @@ export function WorkbenchPanel({
   showFurniture,
   showOverviewNavigator,
   showGrid,
+  showTickPulse,
   snapToGrid,
   snapToGuides,
   execution,
@@ -536,6 +549,7 @@ export function WorkbenchPanel({
   onSetFurnitureVisible,
   onSetOverviewNavigatorVisible,
   onSetGridVisible,
+  onSetTickPulseVisible,
   onSetSnapToGrid,
   onSetSnapToGuides,
   onMoveAnnotation,
@@ -814,6 +828,11 @@ export function WorkbenchPanel({
     clientWidth: 0,
     clientHeight: 0,
   });
+  const [tickPulseState, setTickPulseState] = useState<TickPulseState | null>(null);
+  const isTickScrubbingRef = useRef(false);
+  const lastScrubTickAtRef = useRef<number | null>(null);
+  const lastTickRef = useRef(currentTick);
+  const pulseTimeoutRef = useRef<number | null>(null);
   const [previousView, setPreviousView] = useState<WorkspaceViewState | null>(null);
   const pendingViewportRef = useRef<{ view: WorkspaceViewState; behavior: ScrollBehavior } | null>(
     null,
@@ -2839,6 +2858,195 @@ export function WorkbenchPanel({
       }),
     [activeProjectState, canvasModuleErrorStateById, execution],
   );
+  useEffect(() => {
+    return () => {
+      if (pulseTimeoutRef.current !== null && typeof window !== 'undefined') {
+        window.clearTimeout(pulseTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!showTickPulse || !isTickedMode) {
+      lastTickRef.current = currentTick;
+      setTickPulseState(null);
+      if (pulseTimeoutRef.current !== null && typeof window !== 'undefined') {
+        window.clearTimeout(pulseTimeoutRef.current);
+        pulseTimeoutRef.current = null;
+      }
+      return;
+    }
+
+    if (currentTick === lastTickRef.current) {
+      return;
+    }
+
+    const nowMs = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const suppressPulse = shouldSuppressTickPulseDuringScrub(
+      isTickScrubbingRef.current,
+      nowMs,
+      lastScrubTickAtRef.current,
+    );
+    lastTickRef.current = currentTick;
+    lastScrubTickAtRef.current = isTickScrubbingRef.current ? nowMs : null;
+
+    if (suppressPulse) {
+      setTickPulseState(null);
+      return;
+    }
+
+    const activeConnectionKeys = deriveTickActiveConnectionKeys(activeProjectState, execution);
+    if (activeConnectionKeys.length === 0) {
+      setTickPulseState(null);
+      return;
+    }
+
+    setTickPulseState((current) => ({
+      sequence: (current?.sequence ?? 0) + 1,
+      activeConnectionKeys,
+    }));
+
+    if (pulseTimeoutRef.current !== null && typeof window !== 'undefined') {
+      window.clearTimeout(pulseTimeoutRef.current);
+    }
+    if (typeof window !== 'undefined') {
+      pulseTimeoutRef.current = window.setTimeout(() => {
+        setTickPulseState(null);
+        pulseTimeoutRef.current = null;
+      }, 420);
+    }
+  }, [activeProjectState, currentTick, execution, isTickedMode, showTickPulse]);
+
+  const tickPulseProjection = useMemo(() => {
+    if (!tickPulseState || !showTickPulse || !isTickedMode) {
+      return null;
+    }
+
+    const activeConnectionKeySet = new Set(tickPulseState.activeConnectionKeys);
+    const viewportLeft = viewportMetrics.scrollLeft / workspaceZoom;
+    const viewportTop = viewportMetrics.scrollTop / workspaceZoom;
+    const viewportRight = (viewportMetrics.scrollLeft + viewportMetrics.clientWidth) / workspaceZoom;
+    const viewportBottom = (viewportMetrics.scrollTop + viewportMetrics.clientHeight) / workspaceZoom;
+    const visibilityPadding = 36;
+
+    const entries = activeProjectState.connections.flatMap((connection) => {
+      const connectionKey = getConnectionComparisonKey(connection);
+      if (!activeConnectionKeySet.has(connectionKey)) {
+        return [];
+      }
+
+      const from = effectiveLayout[connection.from.moduleId];
+      const to = effectiveLayout[connection.to.moduleId];
+      const sourceDef = registry[
+        activeProjectState.modules.find((moduleInstance) => moduleInstance.id === connection.from.moduleId)
+          ?.defId ?? ''
+      ];
+      const targetDef = registry[
+        activeProjectState.modules.find((moduleInstance) => moduleInstance.id === connection.to.moduleId)?.defId ??
+          ''
+      ];
+      if (!from || !to || !sourceDef || !targetDef) {
+        return [];
+      }
+
+      const orderedSourcePorts = getOrderedModulePorts(sourceDef, from, 'output');
+      const orderedTargetPorts = getOrderedModulePorts(targetDef, to, 'input');
+      const sourceIndex = Math.max(
+        0,
+        orderedSourcePorts.findIndex((port) => port.name === connection.from.port),
+      );
+      const sourcePort = orderedSourcePorts[sourceIndex];
+      if (!sourcePort) {
+        return [];
+      }
+
+      const sourceOrientation = getNodeOrientation(from.orientation, layoutDirection);
+      const targetOrientation = getNodeOrientation(to.orientation, layoutDirection);
+      const { side: sourceSide, sideIndex: sourceAnchorIndex } = getPortPlacementForModulePort(
+        [],
+        orderedSourcePorts,
+        from,
+        sourceOrientation,
+        'out',
+        connection.from.port,
+      );
+      const { side: targetSide, sideIndex: targetAnchorIndex } = getPortPlacementForModulePort(
+        orderedTargetPorts,
+        [],
+        to,
+        targetOrientation,
+        'in',
+        connection.to.port,
+      );
+      const connSourceConfig =
+        nodeSizeByModuleId[connection.from.moduleId]?.config ?? NODE_SIZE_CONFIGS.standard;
+      const connTargetConfig =
+        nodeSizeByModuleId[connection.to.moduleId]?.config ?? NODE_SIZE_CONFIGS.standard;
+      const sourceAnchor = getAnchorPosition(
+        from.x,
+        from.y,
+        sourceSide,
+        sourceAnchorIndex,
+        connSourceConfig.width,
+        connSourceConfig.height,
+        connSourceConfig.portStartY,
+        connSourceConfig.portGap,
+      );
+      const targetAnchor = getAnchorPosition(
+        to.x,
+        to.y,
+        targetSide,
+        targetAnchorIndex,
+        connTargetConfig.width,
+        connTargetConfig.height,
+        connTargetConfig.portStartY,
+        connTargetConfig.portGap,
+      );
+      const minX = Math.min(sourceAnchor.x, targetAnchor.x) - visibilityPadding;
+      const maxX = Math.max(sourceAnchor.x, targetAnchor.x) + visibilityPadding;
+      const minY = Math.min(sourceAnchor.y, targetAnchor.y) - visibilityPadding;
+      const maxY = Math.max(sourceAnchor.y, targetAnchor.y) + visibilityPadding;
+      const visible =
+        maxX >= viewportLeft &&
+        minX <= viewportRight &&
+        maxY >= viewportTop &&
+        minY <= viewportBottom;
+
+      return [
+        {
+          connectionKey,
+          targetModuleId: connection.to.moduleId,
+          domain: sourcePort.type,
+          visible,
+        },
+      ];
+    });
+
+    return projectTickPulseVisibility(entries);
+  }, [
+    activeProjectState.connections,
+    activeProjectState.modules,
+    effectiveLayout,
+    isTickedMode,
+    layoutDirection,
+    nodeSizeByModuleId,
+    registry,
+    showTickPulse,
+    tickPulseState,
+    viewportMetrics.clientHeight,
+    viewportMetrics.clientWidth,
+    viewportMetrics.scrollLeft,
+    viewportMetrics.scrollTop,
+    workspaceZoom,
+  ]);
+  const tickPulseConnectionKeySet = useMemo(
+    () => new Set(tickPulseProjection?.wireConnectionKeys ?? []),
+    [tickPulseProjection],
+  );
+  const tickPulseHaloModuleIdSet = useMemo(
+    () => new Set(tickPulseProjection?.haloModuleIds ?? []),
+    [tickPulseProjection],
+  );
 
   const executionSignalByModuleId = useMemo(() => buildExecutionSignalByModuleId(execution), [execution]);
 
@@ -3624,6 +3832,25 @@ export function WorkbenchPanel({
               : undefined
           }
         />
+        {layer === 'base' && tickPulseConnectionKeySet.has(connectionKey) && tickPulseState ? (
+          <path
+            key={`tick-pulse:${tickPulseState.sequence}:${connectionKey}`}
+            className={[
+              'connection-tick-pulse',
+              tickPulseProjection?.domainByConnectionKey[connectionKey]
+                ? `connection-tick-pulse-${tickPulseProjection.domainByConnectionKey[connectionKey]}`
+                : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            d={pathD}
+            style={
+              visualOffset
+                ? ({ transform: `translate(${visualOffset.x}px, ${visualOffset.y}px)` } as CSSProperties)
+                : undefined
+            }
+          />
+        ) : null}
         {shouldShowDirectionCues ? (
           (() => {
             const directionCueFill = isSelectedConnection
@@ -4216,6 +4443,7 @@ export function WorkbenchPanel({
           wireColorMode={wireColorMode}
           showOverviewNavigator={showOverviewNavigator}
           showGrid={showGrid}
+          showTickPulse={showTickPulse}
           snapToGrid={snapToGrid}
           snapToGuides={snapToGuides}
           canUndo={canUndo}
@@ -4249,6 +4477,7 @@ export function WorkbenchPanel({
           onSetWireColorMode={onSetWireColorMode}
           onToggleOverviewNavigator={onSetOverviewNavigatorVisible}
           onToggleGrid={onSetGridVisible}
+          onToggleTickPulse={onSetTickPulseVisible}
           onToggleSnapToGrid={onSetSnapToGrid}
           onToggleSnapToGuides={onSetSnapToGuides}
           onRequestUndo={onRequestUndo}
@@ -4529,7 +4758,21 @@ export function WorkbenchPanel({
                 min={0}
                 max={tickCount - 1}
                 value={currentTick}
-                onChange={(e) => onSetCurrentTick?.(Number(e.target.value))}
+                onPointerDown={() => {
+                  isTickScrubbingRef.current = true;
+                  lastScrubTickAtRef.current = null;
+                }}
+                onPointerUp={() => {
+                  isTickScrubbingRef.current = false;
+                  lastScrubTickAtRef.current = null;
+                }}
+                onChange={(e) => {
+                  if (isTickScrubbingRef.current) {
+                    lastScrubTickAtRef.current =
+                      typeof performance !== 'undefined' ? performance.now() : Date.now();
+                  }
+                  onSetCurrentTick?.(Number(e.target.value));
+                }}
                 aria-label="Tick scrubber"
               />
               <button
@@ -5151,6 +5394,13 @@ export function WorkbenchPanel({
                 }
                 style={{ left: `${position.x}px`, top: `${position.y}px` }}
               >
+                {tickPulseHaloModuleIdSet.has(moduleInstance.id) && tickPulseState ? (
+                  <span
+                    key={`tick-halo:${tickPulseState.sequence}:${moduleInstance.id}`}
+                    className="graph-node-tick-pulse-halo"
+                    aria-hidden="true"
+                  />
+                ) : null}
                 <div
                   className="graph-node-body"
                   onMouseEnter={() => {

@@ -37,6 +37,7 @@ export interface DetachedWorkspaceSnapshot {
   showFurniture: boolean;
   showOverviewNavigator: boolean;
   showGrid: boolean;
+  showTickPulse: boolean;
   snapToGrid: boolean;
   snapToGuides: boolean;
   layoutDirection: WorkbenchLayoutDirection;

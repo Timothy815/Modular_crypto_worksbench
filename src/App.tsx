@@ -770,6 +770,7 @@ function MainApp() {
       showFurniture: state.showFurnitureByProject[targetProject.id] ?? true,
       showOverviewNavigator: state.showOverviewNavigatorByProject[targetProject.id] ?? false,
       showGrid: state.showGridByProject[targetProject.id] ?? false,
+      showTickPulse: state.showTickPulseByProject[targetProject.id] ?? true,
       snapToGrid: state.snapToGridByProject[targetProject.id] ?? false,
       snapToGuides: state.snapToGuidesByProject[targetProject.id] ?? false,
       layoutDirection: state.layoutDirectionByProject[targetProject.id] ?? 'horizontal',
@@ -794,6 +795,7 @@ function MainApp() {
     state.routingModeByProject,
     state.showFurnitureByProject,
     state.showGridByProject,
+    state.showTickPulseByProject,
     state.showOverviewNavigatorByProject,
     state.snapToGridByProject,
     state.snapToGuidesByProject,
@@ -832,6 +834,7 @@ function MainApp() {
   const activeShowOverviewNavigator =
     state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false;
   const activeShowGrid = state.showGridByProject[activeProjectDefinition.id] ?? false;
+  const activeShowTickPulse = state.showTickPulseByProject[activeProjectDefinition.id] ?? true;
   const activeSnapToGrid = state.snapToGridByProject[activeProjectDefinition.id] ?? false;
   const activeSnapToGuides = state.snapToGuidesByProject[activeProjectDefinition.id] ?? false;
   const activeCompositeEntry = state.compositeEditor
@@ -846,6 +849,41 @@ function MainApp() {
   const activeStageLabels = useMemo(
     () => (state.compositeEditor ? [] : state.stageLabelsByProject[activeProjectDefinition.id] ?? []),
     [activeProjectDefinition.id, state.compositeEditor, state.stageLabelsByProject],
+  );
+  const activeWorkbenchUiConfig = useMemo(
+    () => ({
+      annotations: activeAnnotations,
+      stageLabels: activeStageLabels,
+      groupBoxes: state.compositeEditor ? [] : activeGroupBoxes,
+      guideRails: state.compositeEditor ? [] : activeGuideRails,
+      showFurniture: state.compositeEditor ? true : activeShowFurniture,
+      showOverviewNavigator: state.compositeEditor ? false : activeShowOverviewNavigator,
+      showGrid: state.compositeEditor ? false : activeShowGrid,
+      showTickPulse: state.compositeEditor ? true : activeShowTickPulse,
+      snapToGrid: state.compositeEditor ? false : activeSnapToGrid,
+      snapToGuides: state.compositeEditor ? false : activeSnapToGuides,
+      layoutDirection: activeLayoutDirection,
+      routingMode: activeRoutingMode,
+      wireColorMode: activeWireColorMode,
+      connectionLayout: activeConnectionLayout,
+    }),
+    [
+      activeAnnotations,
+      activeConnectionLayout,
+      activeGuideRails,
+      activeGroupBoxes,
+      activeLayoutDirection,
+      activeRoutingMode,
+      activeShowFurniture,
+      activeShowGrid,
+      activeShowOverviewNavigator,
+      activeShowTickPulse,
+      activeSnapToGrid,
+      activeSnapToGuides,
+      activeStageLabels,
+      activeWireColorMode,
+      state.compositeEditor,
+    ],
   );
   const effectiveSelectedModuleId = state.compositeEditor
     ? state.compositeEditor.selectedModuleId
@@ -1516,6 +1554,7 @@ function MainApp() {
         showFurniture: activeShowFurniture,
         showOverviewNavigator: activeShowOverviewNavigator,
         showGrid: activeShowGrid,
+        showTickPulse: activeShowTickPulse,
         snapToGrid: activeSnapToGrid,
         snapToGuides: activeSnapToGuides,
         layoutDirection: activeLayoutDirection,
@@ -3439,24 +3478,7 @@ function MainApp() {
           project: replacement.project,
           ui: {
             layout: replacement.layout,
-            annotations: state.annotationsByProject[activeProjectDefinition.id] ?? [],
-            stageLabels: state.stageLabelsByProject[activeProjectDefinition.id] ?? [],
-            groupBoxes: state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
-            guideRails: state.guideRailsByProject[activeProjectDefinition.id] ?? [],
-            showFurniture:
-              state.showFurnitureByProject[activeProjectDefinition.id] ?? true,
-            showOverviewNavigator:
-              state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
-            showGrid:
-              state.showGridByProject[activeProjectDefinition.id] ?? false,
-            snapToGrid:
-              state.snapToGridByProject[activeProjectDefinition.id] ?? false,
-            snapToGuides:
-              state.snapToGuidesByProject[activeProjectDefinition.id] ?? false,
-            layoutDirection: activeLayoutDirection,
-            routingMode: activeRoutingMode,
-            wireColorMode: activeWireColorMode,
-            connectionLayout: activeConnectionLayout,
+            ...activeWorkbenchUiConfig,
           },
         },
       });
@@ -3546,25 +3568,7 @@ function MainApp() {
         project: unzipped.project,
         ui: {
           layout: unzipped.layout,
-          annotations: state.compositeEditor
-            ? []
-            : state.annotationsByProject[activeProjectDefinition.id] ?? [],
-          groupBoxes: state.compositeEditor
-            ? []
-            : state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
-          guideRails: state.compositeEditor
-            ? []
-            : state.guideRailsByProject[activeProjectDefinition.id] ?? [],
-          showFurniture: state.compositeEditor
-            ? true
-            : state.showFurnitureByProject[activeProjectDefinition.id] ?? true,
-          showOverviewNavigator: state.compositeEditor
-            ? false
-            : state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
-          layoutDirection: activeLayoutDirection,
-          routingMode: activeRoutingMode,
-          wireColorMode: activeWireColorMode,
-          connectionLayout: activeConnectionLayout,
+          ...activeWorkbenchUiConfig,
         },
       },
     });
@@ -4542,6 +4546,7 @@ function MainApp() {
             showFurniture={isCompositeDrilldownActive ? true : activeShowFurniture}
             showOverviewNavigator={isCompositeDrilldownActive ? false : activeShowOverviewNavigator}
             showGrid={isCompositeDrilldownActive ? false : activeShowGrid}
+            showTickPulse={isCompositeDrilldownActive ? false : activeShowTickPulse}
             snapToGrid={isCompositeDrilldownActive ? false : activeSnapToGrid}
             snapToGuides={isCompositeDrilldownActive ? false : activeSnapToGuides}
             execution={compositeDrilldownContext?.execution ?? execution}
@@ -4783,6 +4788,15 @@ function MainApp() {
                 ? undefined
                 : dispatch({
                     type: 'setGridVisible',
+                    projectId: activeProjectDefinition.id,
+                    visible,
+                  })
+            }
+            onSetTickPulseVisible={(visible) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'setTickPulseVisible',
                     projectId: activeProjectDefinition.id,
                     visible,
                   })
@@ -5159,34 +5173,7 @@ function MainApp() {
                 project: activeProjectState,
                 ui: {
                   layout: activeLayout,
-                  annotations: state.compositeEditor
-                    ? []
-                    : state.annotationsByProject[activeProjectDefinition.id] ?? [],
-                  groupBoxes: state.compositeEditor
-                    ? []
-                    : state.groupBoxesByProject[activeProjectDefinition.id] ?? [],
-                  guideRails: state.compositeEditor
-                    ? []
-                    : state.guideRailsByProject[activeProjectDefinition.id] ?? [],
-                  showFurniture: state.compositeEditor
-                    ? true
-                    : state.showFurnitureByProject[activeProjectDefinition.id] ?? true,
-                  showOverviewNavigator: state.compositeEditor
-                    ? false
-                    : state.showOverviewNavigatorByProject[activeProjectDefinition.id] ?? false,
-                  showGrid: state.compositeEditor
-                    ? false
-                    : state.showGridByProject[activeProjectDefinition.id] ?? false,
-                  snapToGrid: state.compositeEditor
-                    ? false
-                    : state.snapToGridByProject[activeProjectDefinition.id] ?? false,
-                  snapToGuides: state.compositeEditor
-                    ? false
-                    : state.snapToGuidesByProject[activeProjectDefinition.id] ?? false,
-                  layoutDirection: activeLayoutDirection,
-                  routingMode: activeRoutingMode,
-                  wireColorMode: activeWireColorMode,
-                  connectionLayout: activeConnectionLayout,
+                  ...activeWorkbenchUiConfig,
                 },
               });
               if (activeDocumentFingerprint) {
@@ -7363,6 +7350,8 @@ function MainApp() {
                         state.showOverviewNavigatorByProject[selectedChallengeProjectId] ?? false,
                       showGrid:
                         state.showGridByProject[selectedChallengeProjectId] ?? false,
+                      showTickPulse:
+                        state.showTickPulseByProject[selectedChallengeProjectId] ?? true,
                       snapToGrid:
                         state.snapToGridByProject[selectedChallengeProjectId] ?? false,
                       snapToGuides:
@@ -7428,6 +7417,8 @@ function MainApp() {
                           state.showOverviewNavigatorByProject[selectedChallengeProjectId] ?? false,
                         showGrid:
                           state.showGridByProject[selectedChallengeProjectId] ?? false,
+                        showTickPulse:
+                          state.showTickPulseByProject[selectedChallengeProjectId] ?? true,
                         snapToGrid:
                           state.snapToGridByProject[selectedChallengeProjectId] ?? false,
                         snapToGuides:

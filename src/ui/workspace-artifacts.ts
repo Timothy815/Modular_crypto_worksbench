@@ -280,6 +280,13 @@ export function buildHydratedUiState(
           initialState.showGridByProject[project.id],
       ]),
     ),
+    showTickPulseByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.documentsByProjectId[project.id]?.ui.showTickPulse ??
+          initialState.showTickPulseByProject[project.id],
+      ]),
+    ),
     snapToGridByProject: Object.fromEntries(
       allProjects.map((project) => [
         project.id,
@@ -575,6 +582,7 @@ export interface BuildShareableLabPackArgs {
   showFurniture?: boolean;
   showOverviewNavigator?: boolean;
   showGrid?: boolean;
+  showTickPulse?: boolean;
   snapToGrid?: boolean;
   snapToGuides?: boolean;
   layoutDirection: 'horizontal' | 'vertical';
@@ -608,6 +616,7 @@ export function buildShareableLabPack({
   showFurniture = true,
   showOverviewNavigator = false,
   showGrid = false,
+  showTickPulse = true,
   snapToGrid = false,
   snapToGuides = false,
   layoutDirection,
@@ -641,6 +650,7 @@ export function buildShareableLabPack({
         showFurniture,
         showOverviewNavigator,
         showGrid,
+        showTickPulse,
         snapToGrid,
         snapToGuides,
         layoutDirection,
@@ -777,6 +787,7 @@ export function prepareImportedLabPack({
         showOverviewNavigator:
           pack.workspace.ui.showOverviewNavigator ?? isLargeWorkspace(pack.workspace.project),
         showGrid: pack.workspace.ui.showGrid ?? false,
+        showTickPulse: pack.workspace.ui.showTickPulse ?? true,
         snapToGrid: pack.workspace.ui.snapToGrid ?? false,
         snapToGuides: pack.workspace.ui.snapToGuides ?? false,
         layoutDirection: pack.workspace.ui.layoutDirection ?? 'horizontal',

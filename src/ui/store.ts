@@ -102,6 +102,7 @@ export interface UiState {
   showOverviewNavigatorByProject: Record<string, boolean>;
   savedViewRegionsByProject: Record<string, WorkspaceSavedViewRegion[]>;
   showGridByProject: Record<string, boolean>;
+  showTickPulseByProject: Record<string, boolean>;
   snapToGridByProject: Record<string, boolean>;
   snapToGuidesByProject: Record<string, boolean>;
   layoutDirectionByProject: Record<string, WorkbenchLayoutDirection>;
@@ -236,6 +237,7 @@ export type UiAction =
   | { type: 'selectModules'; projectId: string; moduleIds: string[]; additive?: boolean }
   | { type: 'moveModule'; projectId: string; moduleId: string; x: number; y: number }
   | { type: 'setGridVisible'; projectId: string; visible: boolean }
+  | { type: 'setTickPulseVisible'; projectId: string; visible: boolean }
   | { type: 'setFurnitureVisible'; projectId: string; visible: boolean }
   | { type: 'setSnapToGrid'; projectId: string; enabled: boolean }
   | { type: 'setSnapToGuides'; projectId: string; enabled: boolean }
@@ -1149,6 +1151,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     showGridByProject: Object.fromEntries(
       projects.map((project) => [project.id, false]),
     ),
+    showTickPulseByProject: Object.fromEntries(
+      projects.map((project) => [project.id, true]),
+    ),
     snapToGridByProject: Object.fromEntries(
       projects.map((project) => [project.id, false]),
     ),
@@ -1434,6 +1439,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.showGridByProject,
           [action.workspaceId]: false,
         },
+        showTickPulseByProject: {
+          ...state.showTickPulseByProject,
+          [action.workspaceId]: true,
+        },
         snapToGridByProject: {
           ...state.snapToGridByProject,
           [action.workspaceId]: false,
@@ -1590,6 +1599,7 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
       const sourceShowOverviewNavigator =
         state.showOverviewNavigatorByProject[action.sourceProjectId] ?? false;
       const sourceShowGrid = state.showGridByProject[action.sourceProjectId] ?? false;
+      const sourceShowTickPulse = state.showTickPulseByProject[action.sourceProjectId] ?? true;
       const sourceSnapToGrid = state.snapToGridByProject[action.sourceProjectId] ?? false;
       const sourceSnapToGuides = state.snapToGuidesByProject[action.sourceProjectId] ?? false;
       const sourceLayoutDirection =
@@ -1654,6 +1664,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         showGridByProject: {
           ...state.showGridByProject,
           [action.workspaceId]: sourceShowGrid,
+        },
+        showTickPulseByProject: {
+          ...state.showTickPulseByProject,
+          [action.workspaceId]: sourceShowTickPulse,
         },
         snapToGridByProject: {
           ...state.snapToGridByProject,
@@ -1876,6 +1890,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.showGridByProject,
           [action.workspaceId]: false,
         },
+        showTickPulseByProject: {
+          ...state.showTickPulseByProject,
+          [action.workspaceId]: true,
+        },
         snapToGridByProject: {
           ...state.snapToGridByProject,
           [action.workspaceId]: false,
@@ -2023,6 +2041,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           action.workspaceId,
         ),
         showGridByProject: removeProjectEntry(state.showGridByProject, action.workspaceId),
+        showTickPulseByProject: removeProjectEntry(
+          state.showTickPulseByProject,
+          action.workspaceId,
+        ),
         snapToGridByProject: removeProjectEntry(state.snapToGridByProject, action.workspaceId),
         snapToGuidesByProject: removeProjectEntry(state.snapToGuidesByProject, action.workspaceId),
         layoutDirectionByProject: removeProjectEntry(
@@ -2258,6 +2280,23 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         ...state,
         showGridByProject: {
           ...state.showGridByProject,
+          [action.projectId]: action.visible,
+        },
+      };
+    }
+    case 'setTickPulseVisible': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      if ((state.showTickPulseByProject[action.projectId] ?? true) === action.visible) {
+        return state;
+      }
+
+      return {
+        ...state,
+        showTickPulseByProject: {
+          ...state.showTickPulseByProject,
           [action.projectId]: action.visible,
         },
       };
@@ -4904,6 +4943,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         showGridByProject: {
           ...state.showGridByProject,
           [action.projectId]: action.document.ui.showGrid ?? false,
+        },
+        showTickPulseByProject: {
+          ...state.showTickPulseByProject,
+          [action.projectId]: action.document.ui.showTickPulse ?? true,
         },
         snapToGridByProject: {
           ...state.snapToGridByProject,

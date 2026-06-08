@@ -209,6 +209,7 @@ export function DetachedWorkspaceWindow({
             showFurniture={snapshot.showFurniture}
             showOverviewNavigator={snapshot.showOverviewNavigator}
             showGrid={snapshot.showGrid}
+            showTickPulse={snapshot.showTickPulse}
             snapToGrid={snapshot.snapToGrid}
             snapToGuides={snapshot.snapToGuides}
             execution={snapshot.execution}
@@ -236,6 +237,7 @@ export function DetachedWorkspaceWindow({
             onSetFurnitureVisible={() => undefined}
             onSetOverviewNavigatorVisible={() => undefined}
             onSetGridVisible={() => undefined}
+            onSetTickPulseVisible={() => undefined}
             onSetSnapToGrid={() => undefined}
             onSetSnapToGuides={() => undefined}
             onMoveAnnotation={() => undefined}

@@ -539,7 +539,7 @@ describe('uiReducer', () => {
     expect(initialState.showOverviewNavigatorByProject[projectId]).toBe(false);
   });
 
-  it('toggles grid visibility, snap-to-grid, and snap-to-guides per workspace', () => {
+  it('toggles grid visibility, tick pulse, snap-to-grid, and snap-to-guides per workspace', () => {
     const initialState = createInitialUiState(demoProjects);
     const projectId = 'sequential';
 
@@ -548,7 +548,12 @@ describe('uiReducer', () => {
       projectId,
       visible: true,
     });
-    const withSnap = uiReducer(withGrid, {
+    const withPulseDisabled = uiReducer(withGrid, {
+      type: 'setTickPulseVisible',
+      projectId,
+      visible: false,
+    });
+    const withSnap = uiReducer(withPulseDisabled, {
       type: 'setSnapToGrid',
       projectId,
       enabled: true,
@@ -560,6 +565,7 @@ describe('uiReducer', () => {
     });
 
     expect(withGrid.showGridByProject[projectId]).toBe(true);
+    expect(withPulseDisabled.showTickPulseByProject[projectId]).toBe(false);
     expect(withSnap.snapToGridByProject[projectId]).toBe(true);
     expect(withGuideSnap.snapToGuidesByProject[projectId]).toBe(true);
   });
