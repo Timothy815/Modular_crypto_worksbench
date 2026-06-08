@@ -141,7 +141,7 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
   Rationale: Teachers need evidence of student engagement beyond "they were in the room." Even lightweight local tracking — challenge attempts, verification passes, repair completions — would support assessment in a classroom setting.
   Done when: Some bounded form of session evidence is visible to the teacher after a pilot, without requiring external infrastructure or accounts.
 
-- [ ] **Lab-pack curation: a second curated subject pack**
+- [x] **Lab-pack curation: a second curated subject pack** *(shipped June 8, 2026)*
   Rationale: The instructor pilot pack and manual are now strong. A curated lab pack for a specific subject (e.g., "AES Building Blocks Pack" or "ECC Teaching Pack") would make the product more immediately usable by a teacher who is not yet comfortable building their own labs.
   Done when: One new curated lab pack is available as an importable artifact, with a pilot-pack entry and manual routing for it.
 

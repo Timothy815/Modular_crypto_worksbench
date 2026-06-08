@@ -4288,11 +4288,21 @@ function MainApp() {
                   );
                 } else if (value === 'ai-toolkit') {
                   downloadAiToolkitDocument();
+                } else if (value === 'tls-lab-pack') {
+                  void (async () => {
+                    const [{ buildTlsTeachingLabPack }, { downloadShareableLabPack }] =
+                      await Promise.all([
+                        import('./ui/curated-tls-lab-pack'),
+                        import('./ui/shareable-lab-pack-persistence'),
+                      ]);
+                    downloadShareableLabPack('tls-protocol-teaching-pack', buildTlsTeachingLabPack());
+                  })();
                 }
               }}
             >
               <option value="">Open…</option>
               <option value="ai-toolkit">AI Toolkit</option>
+              <option value="tls-lab-pack">TLS Protocol Lab Pack</option>
               <option value="instructor-pilot-pack">Instructor Pilot Pack</option>
               <option value="user-manual">User Manual</option>
               <option value="notes">Notes</option>
