@@ -418,6 +418,12 @@ export function buildPersistedWorkspace(
         state.completedTutorialsByProject[projectId] ?? [],
       ]),
     ),
+    completedChallengesByProjectId: Object.fromEntries(
+      Object.keys(state.projectStates).map((projectId) => [
+        projectId,
+        state.completedChallengesByProject[projectId] ?? [],
+      ]),
+    ),
     tutorialNotesVisibleByProjectId: Object.fromEntries(
       Object.keys(state.projectStates).map((projectId) => [
         projectId,
@@ -681,6 +687,14 @@ export function loadWorkspaceFromStorage(
       ),
       completedTutorialsByProjectId: Object.fromEntries(
         Object.entries(parsed.completedTutorialsByProjectId ?? {}).filter(
+          ([projectId, ids]) =>
+            allowedProjectIds.has(projectId) &&
+            Array.isArray(ids) &&
+            ids.every((id) => typeof id === 'string'),
+        ),
+      ),
+      completedChallengesByProjectId: Object.fromEntries(
+        Object.entries(parsed.completedChallengesByProjectId ?? {}).filter(
           ([projectId, ids]) =>
             allowedProjectIds.has(projectId) &&
             Array.isArray(ids) &&
@@ -1114,6 +1128,28 @@ export function downloadCompositeLibraryDocument(
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = 'composite-library.mcw.json';
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+export function downloadSessionReport(
+  completedTutorials: string[],
+  completedChallenges: string[],
+): void {
+  const report = {
+    exportedAt: new Date().toISOString(),
+    completedTutorials,
+    completedChallenges,
+    summary: {
+      tutorialCount: completedTutorials.length,
+      challengeCount: completedChallenges.length,
+    },
+  };
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `mcw-session-${new Date().toISOString().slice(0, 10)}.json`;
   anchor.click();
   URL.revokeObjectURL(url);
 }

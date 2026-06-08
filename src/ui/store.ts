@@ -109,6 +109,7 @@ export interface UiState {
   activeTutorialIdByProject: Record<string, string | null>;
   activeTutorialStepByProject: Record<string, number>;
   completedTutorialsByProject: Record<string, string[]>;
+  completedChallengesByProject: Record<string, string[]>;
   tutorialNotesVisibleByProject: Record<string, boolean>;
   probedModuleIdsByProject: Record<string, string[]>;
   workspaceModeByProject: Record<string, WorkspaceMode>;
@@ -470,6 +471,7 @@ export type UiAction =
   | { type: 'upsertTutorial'; tutorial: GuidedTutorial }
   | { type: 'setTutorialStep'; projectId: string; stepIndex: number }
   | { type: 'completeTutorial'; projectId: string; tutorialId: string }
+  | { type: 'completeChallenge'; projectId: string; challengeId: string }
   | { type: 'resetTutorialProgress'; projectId: string }
   | { type: 'setTutorialNotesVisible'; projectId: string; visible: boolean }
   | { type: 'toggleProbe'; projectId: string; moduleId: string }
@@ -1169,6 +1171,9 @@ export function createInitialUiState(projects: DemoProject[]): UiState {
     completedTutorialsByProject: Object.fromEntries(
       projects.map((project) => [project.id, []]),
     ),
+    completedChallengesByProject: Object.fromEntries(
+      projects.map((project) => [project.id, []]),
+    ),
     tutorialNotesVisibleByProject: Object.fromEntries(
       projects.map((project) => [project.id, true]),
     ),
@@ -1454,6 +1459,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.completedTutorialsByProject,
           [action.workspaceId]: [],
         },
+        completedChallengesByProject: {
+          ...state.completedChallengesByProject,
+          [action.workspaceId]: [],
+        },
         tutorialNotesVisibleByProject: {
           ...state.tutorialNotesVisibleByProject,
           [action.workspaceId]: true,
@@ -1691,6 +1700,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.completedTutorialsByProject,
           [action.workspaceId]: [],
         },
+        completedChallengesByProject: {
+          ...state.completedChallengesByProject,
+          [action.workspaceId]: [],
+        },
         tutorialNotesVisibleByProject: {
           ...state.tutorialNotesVisibleByProject,
           [action.workspaceId]: true,
@@ -1888,6 +1901,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
           ...state.completedTutorialsByProject,
           [action.workspaceId]: [],
         },
+        completedChallengesByProject: {
+          ...state.completedChallengesByProject,
+          [action.workspaceId]: [],
+        },
         tutorialNotesVisibleByProject: {
           ...state.tutorialNotesVisibleByProject,
           [action.workspaceId]: true,
@@ -2020,6 +2037,10 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         ),
         completedTutorialsByProject: removeProjectEntry(
           state.completedTutorialsByProject,
+          action.workspaceId,
+        ),
+        completedChallengesByProject: removeProjectEntry(
+          state.completedChallengesByProject,
           action.workspaceId,
         ),
         tutorialNotesVisibleByProject: removeProjectEntry(
@@ -4939,6 +4960,20 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         completedTutorialsByProject: {
           ...state.completedTutorialsByProject,
           [action.projectId]: [...existing, action.tutorialId],
+        },
+      };
+    }
+    case 'completeChallenge': {
+      const existingChallenges = state.completedChallengesByProject[action.projectId] ?? [];
+      if (existingChallenges.includes(action.challengeId)) {
+        return state;
+      }
+
+      return {
+        ...state,
+        completedChallengesByProject: {
+          ...state.completedChallengesByProject,
+          [action.projectId]: [...existingChallenges, action.challengeId],
         },
       };
     }

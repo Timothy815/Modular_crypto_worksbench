@@ -356,6 +356,14 @@ export function buildHydratedUiState(
           [],
       ]),
     ),
+    completedChallengesByProject: Object.fromEntries(
+      allProjects.map((project) => [
+        project.id,
+        persistedWorkspace.completedChallengesByProjectId?.[project.id] ??
+          initialState.completedChallengesByProject[project.id] ??
+          [],
+      ]),
+    ),
     tutorialNotesVisibleByProject: Object.fromEntries(
       allProjects.map((project) => [
         project.id,

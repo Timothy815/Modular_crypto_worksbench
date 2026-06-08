@@ -219,6 +219,7 @@ export interface PersistedWorkspaceDocument {
   activeTutorialIdByProjectId: Record<string, string | null>;
   activeTutorialStepByProjectId: Record<string, number>;
   completedTutorialsByProjectId: Record<string, string[]>;
+  completedChallengesByProjectId?: Record<string, string[]>;
   tutorialNotesVisibleByProjectId?: Record<string, boolean>;
   workspaceModeByProjectId?: Record<string, WorkspaceMode>;
   cryptanalysisModeByProjectId?: Record<string, CryptanalysisMode>;

@@ -137,7 +137,7 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
   Rationale: As new modules ship, Python export parity needs to be maintained. This item tracks the ongoing discipline of keeping export parity current.
   Done when: Every module in V1_REGISTRY either has Python export support or is explicitly documented as export-unsupported in the compatibility table.
 
-- [ ] **Student progress evidence (lightweight)**
+- [x] **Student progress evidence (lightweight)** *(shipped June 8, 2026)*
   Rationale: Teachers need evidence of student engagement beyond "they were in the room." Even lightweight local tracking — challenge attempts, verification passes, repair completions — would support assessment in a classroom setting.
   Done when: Some bounded form of session evidence is visible to the teacher after a pilot, without requiring external infrastructure or accounts.
 

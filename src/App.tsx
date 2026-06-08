@@ -53,6 +53,7 @@ import {
   downloadAiToolkitDocument,
   downloadCompositeLibraryDocument,
   downloadGuidedChallengeDocument,
+  downloadSessionReport,
   parseGuidedChallengeDocument,
 } from './ui/persistence';
 import { cloneProject } from './ui/project-clone';
@@ -2243,6 +2244,23 @@ function MainApp() {
       cancelled = true;
     };
   }, [isDurabilityBootReady, state.activeProjectId]);
+
+  useEffect(() => {
+    if (challengeEvaluation?.status !== 'success' || !selectedChallenge) {
+      return;
+    }
+    const alreadyDone = (
+      state.completedChallengesByProject[activeProjectDefinition.id] ?? []
+    ).includes(selectedChallenge.id);
+    if (alreadyDone) {
+      return;
+    }
+    dispatch({
+      type: 'completeChallenge',
+      projectId: activeProjectDefinition.id,
+      challengeId: selectedChallenge.id,
+    });
+  }, [challengeEvaluation?.status, selectedChallenge?.id, activeProjectDefinition.id]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -7499,6 +7517,28 @@ function MainApp() {
               />
               <span>Download a `.challenge.json` immediately after capture</span>
             </label>
+
+            <div className="field-section">
+              <p className="field-label">Session Progress Report</p>
+              <p className="field-hint">
+                Download a JSON summary of completed tutorials and challenges
+                for the active workspace. Useful as lightweight session evidence
+                for classroom pilots.
+              </p>
+              <button
+                type="button"
+                className="secondary-dialog-button"
+                onClick={() => {
+                  const completedTutorials =
+                    state.completedTutorialsByProject[activeProjectDefinition.id] ?? [];
+                  const completedChallenges =
+                    state.completedChallengesByProject[activeProjectDefinition.id] ?? [];
+                  downloadSessionReport(completedTutorials, completedChallenges);
+                }}
+              >
+                Download Session Report
+              </button>
+            </div>
 
             {challengeCaptureError ? (
               <p className="field-error">{challengeCaptureError}</p>
