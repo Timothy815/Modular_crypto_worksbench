@@ -66,10 +66,9 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
   Rationale: All four AES round operations are visible and verified. The key schedule is the missing link. Without it, the AES teaching story stops at "one round" and cannot connect to a complete cipher.
   Done when: A visible key schedule board shows how a 128-bit key expands to 11 round keys, includes a tutorial, and is verified against a NIST FIPS 197 test vector. A repair challenge is present.
 
-- [ ] **Pedagogical multi-round AES board (4 rounds minimum)**
+- [x] **Pedagogical multi-round AES board (4 rounds minimum)** *(shipped June 8, 2026)*
   Rationale: The one-round AES board is the current capability ceiling. A multi-round board with explicit key schedule and round operations is the product's strongest possible single demonstration of depth and would complete the AES teaching line.
-  Note: Blocked on composite packaging. A flat 4-round board would be 500+ modules; requires an AesRoundComposite first. Key schedule step now exists (visible-aes-key-schedule). Resume when composite infrastructure is ready.
-  Done when: A board wires at least 4 full AES rounds with the key schedule feeding each round key explicitly. Verified against a standard test vector. Tutorial present.
+  Shipped: `AesRound` composite (SubBytes→ShiftRows→MixColumns→AddRoundKey, bits[128] state + roundKey ports), key schedule computed from FIPS 197 key `2b7e...4f3c`, 4-round chained demo (`aes-4-round`), 5-step tutorial, FIPS 197 Appendix B Round 1 acceptance test. All 1261 tests pass.
 
 - [x] **Hash construction: SHA-256 round decomposition or sponge pedagogy** *(shipped June 7, 2026)*
   Rationale: Hash functions are entirely absent from the standard teaching flow. This is the largest remaining gap in modern cryptographic vocabulary. SHA-256 round structure or a real sponge construction would be the most significant single teaching addition remaining.
