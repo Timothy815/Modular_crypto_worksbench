@@ -4331,6 +4331,50 @@ export const STARTER_TUTORIALS: GuidedTutorial[] = [
   },
   {
     version: 1,
+    id: 'aes-4-round',
+    title: 'Four AES Rounds: Confusion and Diffusion Compound',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.935,
+    recommendedAfter: ['aes-round-full'],
+    summary:
+      'Watch four complete AES rounds execute in sequence, each using a different FIPS 197 round key. After round 1 the output already differs from the input in every byte; by round 4 the wide-trail strategy has fully activated — every output bit depends on every input and key bit.',
+    projectId: 'aes-4-round',
+    steps: [
+      {
+        id: 'aes-4r-intro',
+        title: 'Four Rounds, One Machine',
+        body: 'AES-128 uses 10 rounds; this board shows the first four in a single workspace, each encapsulated as an AES Round composite module. The initial state (19 3D E3 BE … 08) is the FIPS 197 Appendix B state after the initial AddRoundKey. Hover any intermediate HexOutput to read the state between rounds.',
+        focusModuleId: 'initial-state',
+      },
+      {
+        id: 'aes-4r-round1',
+        title: 'Round 1: The First Transformation',
+        body: 'The first composite (Round 1) applies SubBytes, ShiftRows, MixColumns, and AddRoundKey with round key A0 FA FE 17 … 2A 6C 76 05. Hover r1-out — the 32-character hex string A4 9C 7F F2 … 49 should appear, matching FIPS 197 Appendix B exactly. Every byte has already changed.',
+        focusModuleId: 'round1',
+      },
+      {
+        id: 'aes-4r-accumulate',
+        title: 'Rounds 2–3: Diffusion Builds',
+        body: 'Each subsequent composite uses a different round key derived by the AES key schedule. The ShiftRows step ensures bytes from different columns mix into MixColumns, which then propagates each byte into four output bytes. By round 2 the state has no recognizable relationship to the input; by round 3 even single-bit changes in the original state affect roughly half of all output bits.',
+        focusModuleId: 'round3',
+      },
+      {
+        id: 'aes-4r-round4',
+        title: 'Round 4: Wide-Trail Strategy',
+        body: 'Hover r4-out to read the state after four rounds. AES designers proved that after 4 rounds every output bit depends on every input bit and every key bit — this is the wide-trail argument. 10 rounds (AES-128) provides the full security margin; four rounds is the minimum for full diffusion.',
+        focusModuleId: 'round4',
+      },
+      {
+        id: 'aes-4r-structure',
+        title: 'Composites as Building Blocks',
+        body: 'Each AES Round module encapsulates 130+ internal primitives: 16 S-Boxes, a ShiftRows permutation, 8 GF(2⁸) multiplications per column, and 16 XOR gates for AddRoundKey. Drill into any composite to inspect the full subgraph. This is what MCW calls a cryptographic systems IDE: every operation visible, every intermediate provable, the structure navigable at any depth.',
+        focusModuleId: 'r4-out',
+      },
+    ],
+  },
+  {
+    version: 1,
     id: 'visible-aes-key-schedule',
     title: 'How AES Derives Its Round Keys',
     group: 'AES Building Blocks',

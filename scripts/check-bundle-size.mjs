@@ -6,7 +6,7 @@ const distAssetsDir = join(process.cwd(), 'dist', 'assets');
 const thresholds = {
   index: 344 * 1024, // raised narrowly for AI toolkit V2 update (four-domain signals, bigint-hex, ECC/GF2 sections, modular arithmetic families, ticked execution)
   react: 210 * 1024,
-  maxChunk: 440 * 1024, // raised narrowly for TLS-adjacent handshake and prior consequence boards
+  maxChunk: 450 * 1024, // raised narrowly for AES 4-round composite demo data (aes-4-round + AesRound composite subgraph)
 };
 
 function formatKiB(bytes) {

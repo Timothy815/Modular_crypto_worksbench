@@ -1,6 +1,7 @@
 import { executeProject } from '../engine/executor';
 import { serializeSBoxTable } from '../engine/modules/s-box';
 import { V1_REGISTRY } from '../engine/modules';
+import { computeAes128KeySchedule, roundKeyToHexString } from './aes-round-composite';
 import type {
   ExecutionResult,
   ModuleRegistry,
@@ -688,6 +689,61 @@ function buildKeyedSBoxAuthoringWorkspace(keyBits: [number, number]): {
 }
 
 const KEYED_SBOX_AUTHORING_WORKSPACE = buildKeyedSBoxAuthoringWorkspace([0, 1]);
+
+// FIPS 197 Appendix A.1 key: 2b7e151628aed2a6abf7158809cf4f3c
+const FIPS_197_KEY_BYTES = [
+  0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
+  0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c,
+];
+const FIPS_197_ROUND_KEYS = computeAes128KeySchedule(FIPS_197_KEY_BYTES);
+
+// FIPS 197 Appendix B: state after initial AddRoundKey (plaintext XOR round key 0), column-major
+const AES_4ROUND_INITIAL_STATE_HEX = '193DE3BEA0F4E22B9AC68D2AE9F84808';
+
+function buildAes4RoundDemoWorkspace(): {
+  project: Project;
+  layout: Record<string, { x: number; y: number }>;
+} {
+  const modules: Project['modules'] = [];
+  const connections: Project['connections'] = [];
+  const layout: Record<string, { x: number; y: number }> = {};
+
+  modules.push({ id: 'initial-state', defId: 'HexSource', params: { value: AES_4ROUND_INITIAL_STATE_HEX } });
+  layout['initial-state'] = { x: 80, y: 260 };
+
+  const rkHexStrings = FIPS_197_ROUND_KEYS.slice(1, 5).map(roundKeyToHexString);
+  for (let i = 0; i < 4; i++) {
+    const rkId = `rk${i + 1}`;
+    modules.push({ id: rkId, defId: 'HexSource', params: { value: rkHexStrings[i] } });
+    layout[rkId] = { x: 300 + i * 600, y: 80 };
+  }
+
+  let prevId = 'initial-state';
+  for (let r = 1; r <= 4; r++) {
+    const roundId = `round${r}`;
+    const hexId = `r${r}-hex`;
+    const outId = `r${r}-out`;
+
+    modules.push({ id: roundId, defId: 'AesRound', params: {} });
+    connections.push({ from: { moduleId: prevId, port: 'out' }, to: { moduleId: roundId, port: 'state' } });
+    connections.push({ from: { moduleId: `rk${r}`, port: 'out' }, to: { moduleId: roundId, port: 'roundKey' } });
+
+    modules.push({ id: hexId, defId: 'BitsToHex', params: {} });
+    modules.push({ id: outId, defId: 'HexOutput', params: {} });
+    connections.push({ from: { moduleId: roundId, port: 'out' }, to: { moduleId: hexId, port: 'in' } });
+    connections.push({ from: { moduleId: hexId, port: 'out' }, to: { moduleId: outId, port: 'in' } });
+
+    layout[roundId] = { x: 300 + (r - 1) * 600, y: 260 };
+    layout[hexId] = { x: 480 + (r - 1) * 600, y: 260 };
+    layout[outId] = { x: 600 + (r - 1) * 600, y: 260 };
+
+    prevId = roundId;
+  }
+
+  return { project: { modules, connections }, layout };
+}
+
+const AES_4ROUND_WORKSPACE = buildAes4RoundDemoWorkspace();
 
 export const demoProjects: DemoProject[] = [
   {
@@ -2541,6 +2597,20 @@ export const demoProjects: DemoProject[] = [
       '16x HexSource(state) -> 16x SBox(AES) -> BitJoin tree -> Permutation(ShiftRows) -> 16x BitWindow -> 4x MixColumns GF2Mul/XOR columns -> 16x XOR(round key) -> 16x BitsToHex -> 16x HexOutput',
     project: AES_ROUND_FULL_WORKSPACE.project,
     layout: AES_ROUND_FULL_WORKSPACE.layout,
+  },
+  {
+    id: 'aes-4-round',
+    name: 'AES: 4 Rounds Chained',
+    group: 'AES Building Blocks',
+    stage: 'advanced-arithmetic-and-number-theory',
+    order: 228.935,
+    recommendedAfter: ['aes-round-full'],
+    summary:
+      'Four complete AES rounds wired in sequence using the packaged AES Round composite module. Each round takes the previous state and a FIPS 197 Appendix A.1 round key. The output after each round is visible; the state after round 4 can be verified against the FIPS 197 Appendix B trace.',
+    pipeline:
+      'HexSource(initial state) -> 4x AesRound(composite) -> 4x BitsToHex -> 4x HexOutput; 4x HexSource(round keys rk1–rk4)',
+    project: AES_4ROUND_WORKSPACE.project,
+    layout: AES_4ROUND_WORKSPACE.layout,
   },
   {
     id: 'visible-aes-key-schedule',

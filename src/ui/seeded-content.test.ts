@@ -243,6 +243,33 @@ describe('seeded teaching content', () => {
     expect(mismatchedOutputs.sort()).toEqual(['out-0-3', 'out-1-3', 'out-2-3', 'out-3-3']);
   });
 
+  it('keeps the 4-round chain aligned: round 1 output matches FIPS 197 Appendix B, chain is internally consistent', () => {
+    const demo = demoProjects.find((project) => project.id === 'aes-4-round');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    const outputs = getHexOutputMap(demo.project);
+
+    // Round 1 output: FIPS 197 Appendix B column-major byte string
+    // s[3][2]=43, s[2][3]=50 — note the existing aes-round-full demo has these swapped (known latent issue)
+    expect(outputs['r1-out']).toBe('A49C7FF2689F352B6B5BEA43026A5049');
+
+    // All four intermediate outputs must be 32-char hex strings (128-bit states)
+    for (const key of ['r1-out', 'r2-out', 'r3-out', 'r4-out']) {
+      expect(outputs[key]).toMatch(/^[0-9A-F]{32}$/);
+    }
+
+    // Each round must produce a different state (no round is a no-op)
+    const values = ['r1-out', 'r2-out', 'r3-out', 'r4-out'].map((k) => outputs[k]);
+    const unique = new Set(values);
+    expect(unique.size).toBe(4);
+
+    // Snapshot r4-out to pin the 4-round chain output
+    expect(outputs['r4-out']).toMatchSnapshot();
+  });
+
   it('keeps the AES key schedule demo aligned to the FIPS 197 Appendix A.1 Round Key 1 vector', () => {
     const demo = demoProjects.find((project) => project.id === 'visible-aes-key-schedule');
     expect(demo).toBeTruthy();

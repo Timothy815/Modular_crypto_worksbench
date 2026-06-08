@@ -1,6 +1,14 @@
 import type { CompositeLibraryEntry } from '../engine/composites';
+import { buildAesRoundCompositeDef } from './aes-round-composite';
 
 export const STARTER_COMPOSITE_LIBRARY: CompositeLibraryEntry[] = [
+  {
+    id: 'AesRound',
+    name: 'AES Round',
+    version: 1,
+    source: 'built-in',
+    definition: buildAesRoundCompositeDef(),
+  },
   {
     id: 'RotorDoubleStepControl',
     name: 'Rotor Double-Step Control',
