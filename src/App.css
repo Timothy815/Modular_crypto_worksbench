@@ -4879,6 +4879,13 @@ body.canvas-resizing {
   pointer-events: none;
 }
 
+.pending-connection-snap {
+  stroke: var(--success-text);
+  stroke-width: 3;
+  stroke-dasharray: 0;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--success-bg) 34%, transparent));
+}
+
 .graph-node {
   position: absolute;
   width: 144px;
@@ -5605,7 +5612,7 @@ body.canvas-resizing {
   overflow-wrap: anywhere;
 }
 
-.graph-node-issue-badge {
+.graph-node-error-badge {
   position: absolute;
   top: 10px;
   right: 12px;
@@ -5617,6 +5624,43 @@ body.canvas-resizing {
   font-size: 0.76rem;
   font-weight: 800;
   text-align: center;
+  cursor: help;
+}
+
+.graph-node-error-tooltip {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 7;
+  display: none;
+  min-width: 160px;
+  max-width: 240px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--danger-text) 24%, var(--line));
+  background: color-mix(in srgb, var(--surface-panel) 94%, white);
+  box-shadow: 0 8px 24px color-mix(in srgb, black 18%, transparent);
+  color: var(--ink);
+  text-align: left;
+  white-space: normal;
+}
+
+.graph-node-error-tooltip strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--danger-text);
+  font-size: 0.76rem;
+}
+
+.graph-node-error-tooltip span {
+  display: block;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.graph-node-error-badge:hover .graph-node-error-tooltip,
+.graph-node-error-badge:focus-within .graph-node-error-tooltip {
+  display: block;
 }
 
 .graph-node-tutorial-badge {
@@ -5911,6 +5955,12 @@ body.canvas-resizing {
     0 0 0 8px color-mix(in srgb, var(--success-bg) 34%, transparent);
 }
 
+.graph-port-snap-preview .graph-port-dot {
+  box-shadow:
+    0 0 0 4px var(--success-bg),
+    0 0 0 9px color-mix(in srgb, var(--success-bg) 44%, transparent);
+}
+
 .graph-port-invalid {
   color: var(--danger-text);
   opacity: 0.96;
@@ -5921,6 +5971,12 @@ body.canvas-resizing {
   box-shadow:
     0 0 0 4px var(--danger-bg-strong),
     0 0 0 8px color-mix(in srgb, var(--danger-bg-strong) 24%, transparent);
+}
+
+.graph-port-rejecting .graph-port-dot {
+  box-shadow:
+    0 0 0 4px var(--danger-bg-strong),
+    0 0 0 10px color-mix(in srgb, var(--danger-text) 18%, transparent);
 }
 
 .graph-port-replace {
@@ -6080,7 +6136,7 @@ body.canvas-resizing {
   border-radius: 4px;
   white-space: nowrap;
   pointer-events: auto;
-  cursor: default;
+  cursor: crosshair;
   user-select: none;
   opacity: 0.88;
   max-width: 7ch;

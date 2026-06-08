@@ -83,7 +83,6 @@ import {
   buildActiveAnalysisSignalByModuleId,
   buildExecutionSignalByModuleId,
   buildIncomingConnectionIndexByInputKey,
-  buildModuleIssueCountById,
   formatVersionTimestamp,
   getAnchorPosition,
   getModuleDragAlignmentGuides,
@@ -103,6 +102,11 @@ import {
   type CanonicalChainDefinition,
 } from '../canonical-chain-insertion';
 import { isEditableShortcutTarget } from '../keyboard-shortcuts';
+import {
+  deriveCanvasModuleErrorStateById,
+  handleSignalChipPointerDown,
+  resolvePendingSnapTarget,
+} from '../live-machine-feel-tier1';
 import {
   buildSidePortGroups,
   formatInlineEditableValue,
@@ -127,7 +131,6 @@ import {
   ANCHOR_INSERTION_HIT_TOLERANCE,
   snapCoordinateToGrid,
   snapPointToGrid,
-  isPointerNearPortAnchor,
   type NodeSizeClass,
   type NodeSizeConfig,
 } from './workbench-canvas-geometry';
@@ -692,6 +695,8 @@ export function WorkbenchPanel({
   const [selectedConnectionIndex, setSelectedConnectionIndex] = useState<number | null>(null);
   const [hoveredConnectionIndex, setHoveredConnectionIndex] = useState<number | null>(null);
   const [hoveredPendingTargetKey, setHoveredPendingTargetKey] = useState<string | null>(null);
+  const [snapPendingTargetKey, setSnapPendingTargetKey] = useState<string | null>(null);
+  const [rejectedPendingTargetKey, setRejectedPendingTargetKey] = useState<string | null>(null);
   const [bendDragState, setBendDragState] = useState<{
     connectionKey: string;
     axis: 'x' | 'y';
@@ -2032,23 +2037,22 @@ export function WorkbenchPanel({
         zoom: workspaceZoom,
       });
 
-      let nextHoveredTargetKey: string | null = null;
-      let bestDistance = Number.POSITIVE_INFINITY;
-      for (const candidate of pendingTargetAnchors) {
-        if (!isPointerNearPortAnchor(pointer, candidate.anchor, candidate.side)) {
-          continue;
-        }
+      const snapResolution = resolvePendingSnapTarget({
+        pointer,
+        currentSnapTargetKey: snapPendingTargetKey,
+        candidateAnchors: pendingTargetAnchors.map((candidate) => ({
+          key: candidate.key,
+          x: candidate.anchor.x,
+          y: candidate.anchor.y,
+        })),
+        targetValidityByKey: Object.fromEntries(
+          Object.entries(targetPortStates).map(([key, state]) => [key, Boolean(state?.valid)]),
+        ),
+      });
 
-        const dx = pointer.x - candidate.anchor.x;
-        const dy = pointer.y - candidate.anchor.y;
-        const distance = dx * dx + dy * dy;
-        if (distance < bestDistance) {
-          bestDistance = distance;
-          nextHoveredTargetKey = candidate.key;
-        }
-      }
-
-      setHoveredPendingTargetKey(nextHoveredTargetKey);
+      setHoveredPendingTargetKey(snapResolution.hoveredTargetKey);
+      setSnapPendingTargetKey(snapResolution.snapTargetKey);
+      setRejectedPendingTargetKey(snapResolution.rejectedTargetKey);
 
       setPendingConnection((prev) =>
         prev
@@ -2062,6 +2066,14 @@ export function WorkbenchPanel({
     }
 
     function handleConnectionUp() {
+      if (snapPendingTargetKey) {
+        const [moduleId, portName] = snapPendingTargetKey.split(':');
+        if (moduleId && portName) {
+          completeConnectionOnInput(moduleId, portName);
+          return;
+        }
+      }
+
       clearPendingConnectionUi();
     }
 
@@ -2072,7 +2084,13 @@ export function WorkbenchPanel({
       window.removeEventListener('mousemove', handleConnectionMove);
       window.removeEventListener('mouseup', handleConnectionUp);
     };
-  }, [pendingConnection, pendingTargetAnchors, workspaceZoom]);
+  }, [
+    pendingConnection,
+    pendingTargetAnchors,
+    snapPendingTargetKey,
+    targetPortStates,
+    workspaceZoom,
+  ]);
 
   const pendingFromModuleId = pendingConnection?.fromModuleId ?? null;
   const pendingFromPort = pendingConnection?.fromPort ?? null;
@@ -2102,6 +2120,9 @@ export function WorkbenchPanel({
       setPendingConnection(null);
     }
     setConnectionFeedback(null);
+    setHoveredPendingTargetKey(null);
+    setSnapPendingTargetKey(null);
+    setRejectedPendingTargetKey(null);
   }
 
   function clearReferenceChainSelection() {
@@ -2141,7 +2162,7 @@ export function WorkbenchPanel({
 
       if (pendingConnection) {
         event.preventDefault();
-        setPendingConnection(null);
+        clearPendingConnectionUi();
       }
     };
 
@@ -2383,7 +2404,16 @@ export function WorkbenchPanel({
     effectiveSelectedConnectionAnchorIndex,
   ]);
 
-  const moduleIssueCountById = useMemo(() => buildModuleIssueCountById(validationIssues), [validationIssues]);
+  const canvasModuleErrorStateById = useMemo(
+    () =>
+      deriveCanvasModuleErrorStateById(
+        activeProjectState,
+        registry,
+        validationIssues,
+        execution,
+      ),
+    [activeProjectState, execution, registry, validationIssues],
+  );
 
   const executionSignalByModuleId = useMemo(() => buildExecutionSignalByModuleId(execution), [execution]);
 
@@ -2476,6 +2506,9 @@ export function WorkbenchPanel({
       sourceSizeConfig.portGap,
     );
     setConnectionFeedback(null);
+    setHoveredPendingTargetKey(null);
+    setSnapPendingTargetKey(null);
+    setRejectedPendingTargetKey(null);
     setPendingConnection(null);
 
     const handleInitialPointerMove = (event: MouseEvent) => {
@@ -2567,6 +2600,8 @@ export function WorkbenchPanel({
     setConnectionFeedback(null);
     setHoveredPortHintKey(null);
     setHoveredPendingTargetKey(null);
+    setSnapPendingTargetKey(null);
+    setRejectedPendingTargetKey(null);
     setPendingConnection({
       fromModuleId: connection.from.moduleId,
       fromPort: connection.from.port,
@@ -2629,8 +2664,7 @@ export function WorkbenchPanel({
             x: Math.round((sourcePos.x + targetPos.x) / 2),
             y: Math.round((sourcePos.y + targetPos.y) / 2),
           });
-          setPendingConnection(null);
-          setConnectionFeedback(null);
+          clearPendingConnectionUi();
           return;
         }
       }
@@ -2660,8 +2694,7 @@ export function WorkbenchPanel({
       );
     }
     setConnectionFeedback(null);
-    setHoveredPendingTargetKey(null);
-    setPendingConnection(null);
+    clearPendingConnectionUi();
     setSelectedConnectionIndex(null);
   }
 
@@ -4413,19 +4446,17 @@ export function WorkbenchPanel({
 
             {pendingConnection && pendingConnection.isDragging ? (() => {
               const { fromAnchor, fromSide, mouseX, mouseY } = pendingConnection;
+              const snapTargetAnchor = snapPendingTargetKey
+                ? pendingTargetAnchors.find((candidate) => candidate.key === snapPendingTargetKey)?.anchor ?? null
+                : null;
+              const targetPoint = snapTargetAnchor ?? { x: mouseX, y: mouseY };
               return (
                 <path
-                  className="pending-connection"
+                  className={snapTargetAnchor ? 'pending-connection pending-connection-snap' : 'pending-connection'}
                   d={
                     routingMode === 'orthogonal'
-                      ? getOrthogonalPendingPath(fromAnchor, fromSide, {
-                          x: mouseX,
-                          y: mouseY,
-                        })
-                      : getPendingConnectionPath(fromAnchor, fromSide, {
-                          x: mouseX,
-                          y: mouseY,
-                        })
+                      ? getOrthogonalPendingPath(fromAnchor, fromSide, targetPoint)
+                      : getPendingConnectionPath(fromAnchor, fromSide, targetPoint)
                   }
                 />
               );
@@ -4489,6 +4520,7 @@ export function WorkbenchPanel({
           {activeProjectState.modules.map((moduleInstance) => {
             const position = effectiveLayout[moduleInstance.id] ?? { x: 24, y: 24 };
             const def = registry[moduleInstance.defId];
+            const canvasErrorState = canvasModuleErrorStateById[moduleInstance.id] ?? null;
             const category = def ? getModuleCategory(def) : getModuleCategory(moduleInstance.defId);
             const orientation = getNodeOrientation(position.orientation, layoutDirection);
             const sequentialRole = isTickedMode
@@ -4523,7 +4555,7 @@ export function WorkbenchPanel({
                   (moduleInstance.id === divergenceModuleId ? ' graph-node-divergence' : '') +
                   (moduleInstance.id === tutorialStep?.focusModuleId ? ' graph-node-tutorial-focus' : '') +
                   (probedModuleIds.includes(moduleInstance.id) ? ' graph-node-probed' : '') +
-                  ((moduleIssueCountById[moduleInstance.id] ?? 0) > 0 ? ' graph-node-invalid' : '') +
+                  (canvasErrorState ? ' graph-node-invalid' : '') +
                   ` graph-node-orientation-${orientation}` +
                   (workspaceComparison
                     ? workspaceComparison.currentModuleStatusById[moduleInstance.id] === 'added'
@@ -4796,9 +4828,16 @@ export function WorkbenchPanel({
                   {moduleInstance.bypass ? (
                     <span className="graph-node-bypass-badge">Bypass</span>
                   ) : null}
-                  {(moduleIssueCountById[moduleInstance.id] ?? 0) > 0 ? (
-                    <span className="graph-node-issue-badge">
-                      {moduleIssueCountById[moduleInstance.id]}
+                  {canvasErrorState ? (
+                    <span
+                      className={`graph-node-error-badge graph-node-error-badge-${canvasErrorState.kind}`}
+                      aria-label={`${canvasErrorState.label}: ${canvasErrorState.detail}`}
+                    >
+                      !
+                      <span className="graph-node-error-tooltip" role="tooltip">
+                        <strong>{canvasErrorState.label}</strong>
+                        <span>{canvasErrorState.detail}</span>
+                      </span>
                     </span>
                   ) : null}
                   {isTickedMode && tickedParamsByModule?.[moduleInstance.id] && tickCount > 0 ? (() => {
@@ -4938,6 +4977,10 @@ export function WorkbenchPanel({
                             emphasizedConnectionPortKeys.has(`in:${moduleInstance.id}:${port.name}`)
                               ? ' graph-port-anchor-emphasized'
                               : ''
+                          }${
+                            snapPendingTargetKey === inputKey ? ' graph-port-snap-preview' : ''
+                          }${
+                            rejectedPendingTargetKey === inputKey ? ' graph-port-rejecting' : ''
                           }`}
                           style={getPortAnchorStyle(side, sideIndex, nodeSizeConfig)}
                           title={title}
@@ -5090,6 +5133,17 @@ export function WorkbenchPanel({
                             <span
                               key={chipText}
                               className={`graph-port-signal-chip graph-port-signal-chip-${sig.type}`}
+                              onMouseDown={(event) => {
+                                if (isObservationMode || pendingReferenceChainSelection) {
+                                  return;
+                                }
+                                handleSignalChipPointerDown(
+                                  event,
+                                  startConnectionFromOutput,
+                                  moduleInstance.id,
+                                  port.name,
+                                );
+                              }}
                             >
                               {chipText}
                               <span className="graph-port-signal-chip-detail" aria-hidden="true">
