@@ -47,7 +47,6 @@ All items across PRIORITIES.md P1–P5 are now shipped. There is no contracted o
 **Genuine next open work (verified against source, June 8, 2026 — NOT yet contracted):**
 - AES decryption primitives (`InvSubBytes`, `InvShiftRows`, `InvMixColumns`) — not in engine
 - Full 10-round AES-128 (current demo covers 4 rounds; final round also differs — no MixColumns)
-- Latent byte-swap in `aes-round-full` demo: bytes 11 and 14 are swapped vs. FIPS 197 column-major; `AesRound` composite is correct
 - Bundle headroom tight: `maxChunk` at 450 KiB with demo-data near ceiling
 
 Read `docs/live/contracts/2026-05/REAL-WORLD-CRYPTO-CAPABILITY-ROADMAP-V1.md` for the real-world capability framing history.

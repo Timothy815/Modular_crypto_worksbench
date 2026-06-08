@@ -253,7 +253,7 @@ describe('seeded teaching content', () => {
     const outputs = getHexOutputMap(demo.project);
 
     // Round 1 output: FIPS 197 Appendix B column-major byte string
-    // s[3][2]=43, s[2][3]=50 — note the existing aes-round-full demo has these swapped (known latent issue)
+    // s[3][2]=43 (byte 11), s[2][3]=50 (byte 14) — matches aes-round-full demo and FIPS 197 exactly
     expect(outputs['r1-out']).toBe('A49C7FF2689F352B6B5BEA43026A5049');
 
     // All four intermediate outputs must be 32-char hex strings (128-bit states)

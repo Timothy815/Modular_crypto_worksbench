@@ -167,8 +167,7 @@ src/utils/     — Shared helpers
 
 **Genuine next open work (verified against source June 2026):**
 - AES decryption primitives (`InvSubBytes`, `InvShiftRows`, `InvMixColumns`) — not in engine; no decrypt path exists
-- Full 10-round AES-128 (current `aes-4-round` demo stops at 4 rounds; final round differs — no MixColumns)
-- Latent byte-swap in `aes-round-full` demo: bytes 11 and 14 are swapped relative to FIPS 197 column-major ordering (the `AesRound` composite is correct; the older single-round demo is not)
+- Full 10-round AES-128 (current `aes-4-round` demo stops at 4 rounds; final round also differs — no MixColumns)
 - Bundle headroom is tight: `maxChunk` is at 450 KiB with demo-data near the ceiling — any large new demo risks hitting the guard
 
 **Bundle guard:** `maxChunk` is 450 KiB. demo-data chunk sits near the ceiling. Watch before adding more large demos.
