@@ -187,6 +187,25 @@ const SUPPORTED_STATEFUL_PYTHON_EXPORT_COMPANION_DEF_IDS = new Set([
   'Plugboard',
 ]);
 
+// Modules intentionally excluded from Python export — all are MCW-specific
+// analysis or visualization helpers with no meaningful Python translation:
+//
+//   AesConsequenceSummary — derives a text summary of AES avalanche consequence
+//                           data; UI-only analysis, not a crypto transform
+//   KeyedSBox4            — 4-bit keyed SBox used for the AES teaching board's
+//                           visual walkthrough; not a standalone crypto primitive
+//   PointSelector         — selects between two EC points by a control bit;
+//                           analysis utility with no crypto semantics on its own
+//   ToyPointMap           — maps integers to toy-curve EC points for the Enigma-
+//                           style ECC visual; educational model, not real crypto
+const INTENTIONALLY_EXCLUDED_FROM_PYTHON_EXPORT = new Set([
+  'AesConsequenceSummary',
+  'KeyedSBox4',
+  'PointSelector',
+  'ToyPointMap',
+]);
+export { INTENTIONALLY_EXCLUDED_FROM_PYTHON_EXPORT };
+
 const SYMBOL_SINK_DEF_IDS = new Set(['Output', 'TextOutput', 'BaudotOutput']);
 const BIT_SINK_DEF_IDS = new Set(['BitOutput']);
 const HEX_SINK_DEF_IDS = new Set(['HexOutput']);

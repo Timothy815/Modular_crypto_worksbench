@@ -133,7 +133,7 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
   Rationale: The PRNG / LFSR / Randomness Lab boards teach structure but not consequence. A board that shows what happens when a weak PRNG feeds a cipher — predictable output, recoverable key — would complete that teaching arc.
   Done when: A bounded consequence board shows LFSR-based keystream prediction with a visible recovery path. Tutorial present.
 
-- [ ] **Python export: additional coverage audit**
+- [x] **Python export: additional coverage audit** *(audited June 8, 2026)*
   Rationale: As new modules ship, Python export parity needs to be maintained. This item tracks the ongoing discipline of keeping export parity current.
   Done when: Every module in V1_REGISTRY either has Python export support or is explicitly documented as export-unsupported in the compatibility table.
 
