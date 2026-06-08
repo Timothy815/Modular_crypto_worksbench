@@ -34,7 +34,7 @@ interface WorkbenchActionsProps {
   selectedConnectionWaypointMode: boolean;
   selectedConnectionSourceLabel: string | null;
   selectedConnectionTargetLabel: string | null;
-  selectedConnectionDomainTone: 'bits' | 'symbol' | null;
+  selectedConnectionDomainTone: 'bits' | 'symbol' | 'integer' | 'ec-point' | null;
   selectedConnectionLaneAxis: 'x' | 'y' | null;
   selectedConnectionLanePreference: 'negative' | 'positive' | null;
   selectedConnectionColorOverride: WorkbenchConnectionColorOverride | null;
@@ -747,7 +747,11 @@ export function WorkbenchActions({
       ? 'Domain Bits'
       : selectedConnectionDomainTone === 'symbol'
         ? 'Domain Symbol'
-        : 'Domain Mixed';
+        : selectedConnectionDomainTone === 'integer'
+          ? 'Domain Integer'
+          : selectedConnectionDomainTone === 'ec-point'
+            ? 'Domain EC Point'
+            : 'Domain Mixed';
   const hasSelectionDetails = Boolean(selectedFurnitureKind && selectedFurnitureTitle) || showWireToolbar;
 
   return (

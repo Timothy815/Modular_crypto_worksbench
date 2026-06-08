@@ -3,6 +3,14 @@ import type { ModuleDefinition } from '../engine/types';
 
 export type ModuleCategory = 'source' | 'operator' | 'bridge' | 'sink' | 'composite';
 
+export const MODULE_CATEGORY_LABELS: Record<ModuleCategory, string> = {
+  source: 'Sources',
+  operator: 'Operators',
+  bridge: 'Bridges',
+  sink: 'Sinks',
+  composite: 'Composites',
+};
+
 const CATEGORY_MAP: Record<string, ModuleCategory> = {
   TextInput: 'source',
   KeyInput: 'source',

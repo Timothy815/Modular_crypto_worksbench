@@ -22,7 +22,7 @@ import {
   getSortedLearningGroups,
   inferLearningStage,
 } from '../learning-sequence';
-import { getModuleCategory } from '../module-categories';
+import { getModuleCategory, MODULE_CATEGORY_LABELS } from '../module-categories';
 import { buildLiveStateSummary } from '../live-state-display';
 import { formatEcPointAsText } from '../../engine/modules/ec-point';
 import { buildSignalChipDetail, formatSignalChip } from '../signal-chip-format';
@@ -149,6 +149,15 @@ import {
 
 const NODE_WIDTH = CANVAS_NODE_WIDTH;
 const NODE_HEIGHT = CANVAS_NODE_HEIGHT;
+const DOMAIN_LEGEND_ITEMS: Array<{
+  domain: 'bits' | 'symbol' | 'integer' | 'ec-point';
+  label: string;
+}> = [
+  { domain: 'bits', label: 'bits' },
+  { domain: 'symbol', label: 'symbol' },
+  { domain: 'integer', label: 'integer' },
+  { domain: 'ec-point', label: 'ec-point' },
+];
 
 const WorkbenchActions = lazy(() =>
   import('./workbench-actions').then((module) => ({
@@ -654,6 +663,18 @@ export function WorkbenchPanel({
   } | null>(null);
   const [selectedStageLabelId, setSelectedStageLabelId] = useState<string | null>(null);
   const [selectedGroupBoxId, setSelectedGroupBoxId] = useState<string | null>(null);
+  const [groupBoxTitleEdit, setGroupBoxTitleEdit] = useState<{
+    groupBoxId: string;
+    value: string;
+    originalTitle: string;
+    untouchedHint: boolean;
+    createdFromSelection: boolean;
+  } | null>(null);
+  const [pendingGroupBoxCreation, setPendingGroupBoxCreation] = useState<{
+    mode: 'selection' | 'blank';
+    previousIds: string[];
+    hint: string;
+  } | null>(null);
   const [selectedGuideRailId, setSelectedGuideRailId] = useState<string | null>(null);
   const [groupBoxDragState, setGroupBoxDragState] = useState<{
     groupBoxId: string;
@@ -1088,7 +1109,7 @@ export function WorkbenchPanel({
     );
     const sourceDef = sourceModule ? registry[sourceModule.defId] : null;
     const sourcePort = sourceDef?.outputs.find((port) => port.name === selectedConnection.from.port);
-    return sourcePort?.type === 'bits' ? 'bits' : sourcePort?.type === 'symbol' ? 'symbol' : null;
+    return sourcePort?.type ?? null;
   }, [activeProjectState.modules, registry, selectedConnection]);
   const selectedGroupBox = useMemo(
     () =>
@@ -1097,6 +1118,60 @@ export function WorkbenchPanel({
         : null,
     [effectiveSelectedGroupBoxId, groupBoxes],
   );
+  const selectedModulesGroupBoxBounds = useMemo(() => {
+    const selectedPositions = selectedModuleIds
+      .map((moduleId) => effectiveLayout[moduleId])
+      .filter((position): position is WorkbenchPosition => Boolean(position));
+    if (selectedPositions.length === 0) {
+      return null;
+    }
+
+    const minX = Math.min(...selectedPositions.map((position) => position.x));
+    const maxX = Math.max(...selectedPositions.map((position) => position.x));
+    const minY = Math.min(...selectedPositions.map((position) => position.y));
+    const maxY = Math.max(...selectedPositions.map((position) => position.y));
+
+    return {
+      x: Math.max(16, minX - 36),
+      y: Math.max(16, minY - 36),
+      width: maxX - minX + CANVAS_NODE_WIDTH + 72,
+      height: maxY - minY + CANVAS_NODE_HEIGHT + 72,
+    };
+  }, [effectiveLayout, selectedModuleIds]);
+  const selectionCategoryHint = useMemo(() => {
+    if (selectedModuleIds.length === 0) {
+      return '';
+    }
+
+    const categories = new Set(
+      selectedModuleIds
+        .map((moduleId) =>
+          activeProjectState.modules.find((moduleInstance) => moduleInstance.id === moduleId),
+        )
+        .filter((moduleInstance): moduleInstance is typeof activeProjectState.modules[number] => Boolean(moduleInstance))
+        .map((moduleInstance) => getModuleCategory(registry[moduleInstance.defId] ?? moduleInstance.defId)),
+    );
+
+    if (categories.size !== 1) {
+      return '';
+    }
+
+    const category = [...categories][0];
+    return MODULE_CATEGORY_LABELS[category];
+  }, [activeProjectState.modules, registry, selectedModuleIds]);
+  const selectionAlreadyHasTightGroupBox = useMemo(() => {
+    if (!selectedModulesGroupBoxBounds) {
+      return false;
+    }
+
+    return groupBoxes.some(
+      (groupBox) =>
+        groupBox.x === selectedModulesGroupBoxBounds.x &&
+        groupBox.y === selectedModulesGroupBoxBounds.y &&
+        groupBox.width === selectedModulesGroupBoxBounds.width &&
+        groupBox.height === selectedModulesGroupBoxBounds.height,
+    );
+  }, [groupBoxes, selectedModulesGroupBoxBounds]);
   const selectedGuideRail = useMemo(
     () =>
       effectiveSelectedGuideRailId
@@ -1104,6 +1179,14 @@ export function WorkbenchPanel({
         : null,
     [effectiveSelectedGuideRailId, guideRails],
   );
+  useEffect(() => {
+    if (!groupBoxTitleEdit) {
+      return;
+    }
+    if (selectedGroupBoxId !== groupBoxTitleEdit.groupBoxId) {
+      setGroupBoxTitleEdit(null);
+    }
+  }, [groupBoxTitleEdit, selectedGroupBoxId]);
   const selectedStageLabel = useMemo(
     () =>
       effectiveSelectedStageLabelId
@@ -2404,6 +2487,40 @@ export function WorkbenchPanel({
     setRejectedPendingTargetKey(null);
   }
 
+  function commitGroupBoxTitleEdit(nextValue?: string) {
+    if (!groupBoxTitleEdit) {
+      return;
+    }
+
+    const groupBox = groupBoxes.find((entry) => entry.id === groupBoxTitleEdit.groupBoxId);
+    if (!groupBox) {
+      setGroupBoxTitleEdit(null);
+      return;
+    }
+
+    const valueToCommit = nextValue ?? groupBoxTitleEdit.value;
+    if (groupBox.title !== valueToCommit) {
+      onUpdateGroupBoxTitle(groupBox.id, valueToCommit);
+    }
+    setGroupBoxTitleEdit(null);
+  }
+
+  function cancelGroupBoxTitleEdit() {
+    if (!groupBoxTitleEdit) {
+      return;
+    }
+
+    const nextValue =
+      groupBoxTitleEdit.createdFromSelection && groupBoxTitleEdit.untouchedHint
+        ? ''
+        : groupBoxTitleEdit.originalTitle;
+    const groupBox = groupBoxes.find((entry) => entry.id === groupBoxTitleEdit.groupBoxId);
+    if (groupBox && groupBox.title !== nextValue) {
+      onUpdateGroupBoxTitle(groupBox.id, nextValue);
+    }
+    setGroupBoxTitleEdit(null);
+  }
+
   function clearReferenceChainSelection() {
     setPendingReferenceChainSelection(null);
   }
@@ -2439,6 +2556,12 @@ export function WorkbenchPanel({
         return;
       }
 
+      if (groupBoxTitleEdit) {
+        event.preventDefault();
+        cancelGroupBoxTitleEdit();
+        return;
+      }
+
       if (pendingConnection) {
         event.preventDefault();
         clearPendingConnectionUi();
@@ -2447,14 +2570,28 @@ export function WorkbenchPanel({
 
     window.addEventListener('keydown', handleWindowKeyDown);
     return () => window.removeEventListener('keydown', handleWindowKeyDown);
-  }, [pendingConnection, pendingReferenceChainSelection, pendingRepairInsertion, quickAdd]);
+  }, [groupBoxTitleEdit, pendingConnection, pendingReferenceChainSelection, pendingRepairInsertion, quickAdd]);
 
   // F key: frame selection (when modules selected) or fit whole workspace.
   // Uses a ref so the handler stays fresh without re-registering on every render.
+  function handleFrameSelectionIntent() {
+    if (selectionAlreadyHasTightGroupBox) {
+      frameSelectionView();
+      return;
+    }
+
+    setPendingGroupBoxCreation({
+      mode: 'selection',
+      previousIds: groupBoxes.map((groupBox) => groupBox.id),
+      hint: selectionCategoryHint,
+    });
+    onAddGroupBoxFromSelection();
+  }
+
   const frameKeyActionRef = useRef<() => void>(() => {});
   frameKeyActionRef.current = () => {
     if (selectedModuleIds.length > 0) {
-      frameSelectionView();
+      handleFrameSelectionIntent();
     } else {
       fitWorkspaceView();
     }
@@ -3130,6 +3267,35 @@ export function WorkbenchPanel({
   }, [activePaletteModuleDrag, getPaletteModulePlacement]);
 
   useEffect(() => {
+    if (!pendingGroupBoxCreation) {
+      return;
+    }
+
+    const nextGroupBox = groupBoxes.find(
+      (groupBox) => !pendingGroupBoxCreation.previousIds.includes(groupBox.id),
+    );
+    if (!nextGroupBox) {
+      return;
+    }
+
+    const initialTitle = pendingGroupBoxCreation.mode === 'selection' ? '' : nextGroupBox.title;
+    if (nextGroupBox.title !== initialTitle) {
+      onUpdateGroupBoxTitle(nextGroupBox.id, initialTitle);
+    }
+    setSelectedGroupBoxId(nextGroupBox.id);
+    setSelectedGuideRailId(null);
+    setSelectedStageLabelId(null);
+    setGroupBoxTitleEdit({
+      groupBoxId: nextGroupBox.id,
+      value: pendingGroupBoxCreation.hint || initialTitle,
+      originalTitle: initialTitle,
+      untouchedHint: Boolean(pendingGroupBoxCreation.hint),
+      createdFromSelection: pendingGroupBoxCreation.mode === 'selection',
+    });
+    setPendingGroupBoxCreation(null);
+  }, [groupBoxes, onUpdateGroupBoxTitle, pendingGroupBoxCreation]);
+
+  useEffect(() => {
     if (!activePaletteModuleDrag || !onClearPaletteModuleDrag) {
       return undefined;
     }
@@ -3250,8 +3416,7 @@ export function WorkbenchPanel({
       orderedTargetPorts.findIndex((port) => port.name === connection.to.port),
     );
     const sourcePort = orderedSourcePorts[sourceIndex];
-    const connectionDomainTone =
-      sourcePort?.type === 'bits' ? 'bits' : sourcePort?.type === 'symbol' ? 'symbol' : '';
+    const connectionDomainTone = sourcePort?.type ?? '';
 
     const sourceOrientation = getNodeOrientation(from.orientation, layoutDirection);
     const targetOrientation = getNodeOrientation(to.orientation, layoutDirection);
@@ -4105,7 +4270,7 @@ export function WorkbenchPanel({
           canJumpToFirstError={firstBrokenModuleId !== null}
           savedViewRegions={savedViewRegions}
           onRequestFrameWorkspace={fitWorkspaceView}
-          onRequestFrameSelection={frameSelectionView}
+          onRequestFrameSelection={handleFrameSelectionIntent}
           onRequestReturnToPreviousView={returnToPreviousView}
           onRequestJumpToFirstError={() => {
             if (firstBrokenModuleId) {
@@ -4117,8 +4282,22 @@ export function WorkbenchPanel({
           onRequestDeleteSavedView={onRemoveWorkspaceViewRegion}
           onRequestSaveVersion={onRequestSaveVersion}
           onRequestArrangeSelection={onRequestArrangeSelection}
-          onRequestAddGroupBox={onAddGroupBox}
-          onRequestAddGroupBoxFromSelection={onAddGroupBoxFromSelection}
+          onRequestAddGroupBox={() => {
+            setPendingGroupBoxCreation({
+              mode: 'blank',
+              previousIds: groupBoxes.map((groupBox) => groupBox.id),
+              hint: '',
+            });
+            onAddGroupBox();
+          }}
+          onRequestAddGroupBoxFromSelection={() => {
+            setPendingGroupBoxCreation({
+              mode: 'selection',
+              previousIds: groupBoxes.map((groupBox) => groupBox.id),
+              hint: selectionCategoryHint,
+            });
+            onAddGroupBoxFromSelection();
+          }}
           onRequestAddGuideRail={onAddGuideRail}
           onRequestCopySelection={onRequestCopySelection}
           onRequestPasteSelection={onRequestPasteSelection}
@@ -4689,8 +4868,51 @@ export function WorkbenchPanel({
                   {isSelected ? (
                     <input
                       className="canvas-group-box-title-input"
-                      value={groupBox.title}
-                      onChange={(event) => onUpdateGroupBoxTitle(groupBox.id, event.target.value)}
+                      value={
+                        groupBoxTitleEdit?.groupBoxId === groupBox.id
+                          ? groupBoxTitleEdit.value
+                          : groupBox.title
+                      }
+                      autoFocus={groupBoxTitleEdit?.groupBoxId === groupBox.id}
+                      onFocus={() => {
+                        if (groupBoxTitleEdit?.groupBoxId === groupBox.id) {
+                          return;
+                        }
+                        setGroupBoxTitleEdit({
+                          groupBoxId: groupBox.id,
+                          value: groupBox.title,
+                          originalTitle: groupBox.title,
+                          untouchedHint: false,
+                          createdFromSelection: false,
+                        });
+                      }}
+                      onChange={(event) =>
+                        setGroupBoxTitleEdit((current) =>
+                          current && current.groupBoxId === groupBox.id
+                            ? {
+                                ...current,
+                                value: event.target.value,
+                                untouchedHint: false,
+                              }
+                            : {
+                                groupBoxId: groupBox.id,
+                                value: event.target.value,
+                                originalTitle: groupBox.title,
+                                untouchedHint: false,
+                                createdFromSelection: false,
+                              },
+                        )
+                      }
+                      onBlur={() => commitGroupBoxTitleEdit()}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          commitGroupBoxTitleEdit();
+                        } else if (event.key === 'Escape') {
+                          event.preventDefault();
+                          cancelGroupBoxTitleEdit();
+                        }
+                      }}
                       onMouseDown={(event) => event.stopPropagation()}
                     />
                   ) : (
@@ -5899,6 +6121,17 @@ export function WorkbenchPanel({
             {showSignalChips ? 'Chips \u25cf' : 'Chips \u25cb'}
           </button>
         ) : null}
+      </div>
+      <div className="graph-meta graph-meta-legend" aria-label="Wire domain legend">
+        {DOMAIN_LEGEND_ITEMS.map((item) => (
+          <span key={item.domain} className="workbench-domain-legend-item">
+            <span
+              className={`workbench-domain-legend-swatch workbench-domain-legend-swatch-${item.domain}`}
+              aria-hidden="true"
+            />
+            <span className="workbench-domain-legend-label">{item.label}</span>
+          </span>
+        ))}
       </div>
 
       {quickAdd ? (
