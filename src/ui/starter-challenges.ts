@@ -116,6 +116,9 @@ const visibleRsaKeyGenProject = demoProjects.find(
 const tlsHandshakeProject = demoProjects.find(
   (project) => project.id === 'tls-adjacent-handshake',
 );
+const weakPrngProject = demoProjects.find(
+  (project) => project.id === 'weak-prng-cipher-consequence',
+);
 const columnarTranspositionProject = demoProjects.find(
   (project) => project.id === 'columnar-transposition-cipher',
 );
@@ -263,6 +266,9 @@ if (!visibleRsaKeyGenProject) {
 }
 if (!tlsHandshakeProject) {
   throw new Error('Expected tls-adjacent-handshake project to seed starter challenges.');
+}
+if (!weakPrngProject) {
+  throw new Error('Expected weak-prng-cipher-consequence project to seed starter challenges.');
 }
 if (!columnarTranspositionProject) {
   throw new Error('Expected columnar-transposition-cipher project to seed starter challenges.');
@@ -505,6 +511,16 @@ if (!brokenReceivedCt) {
   throw new Error('Expected tls-adjacent-handshake project to contain received-ct module.');
 }
 brokenReceivedCt.params.value = 'EF';
+
+// Weak PRNG challenge: attack-lfsr2 seed is wrong [0,0,0,0,1] → predicts wrong ks2
+// → attack-decrypt gives wrong msg2 → recover-verify=[0]
+const weakPrngTarget = cloneProject(weakPrngProject.project);
+const brokenWeakPrngStart = cloneProject(weakPrngProject.project);
+const brokenAttackLfsr = brokenWeakPrngStart.modules.find((m) => m.id === 'attack-lfsr2');
+if (!brokenAttackLfsr) {
+  throw new Error('Expected weak-prng-cipher-consequence project to contain attack-lfsr2 module.');
+}
+brokenAttackLfsr.params.seed = [0, 0, 0, 0, 1];
 
 // CBC padding oracle challenge: c1-guess starts all-zeros (wrong); student must set it
 // to I XOR 0x01 (= 0x22 = [0,0,1,0,0,0,1,0]) so the oracle returns 1 (valid padding)
@@ -1384,6 +1400,30 @@ if (!brokenTapModule) {
 brokenTapModule.params.taps = '1,4';
 
 export const STARTER_CHALLENGES: GuidedChallenge[] = [
+  {
+    version: 1,
+    id: 'find-the-lfsr-seed',
+    title: 'Find the LFSR Seed',
+    projectId: 'weak-prng-cipher-consequence',
+    group: 'Consequence Boards',
+    stage: 'streams-and-scheduling' as const,
+    order: 137.5,
+    difficulty: 'intermediate' as const,
+    recommendedAfter: ['weak-prng-cipher-consequence'],
+    prompt:
+      'The attacker\'s LFSR has the wrong seed. The predicted ks2 does not match the actual ks2, so the recovered message 2 is wrong and recover-verify shows [0]. Read the recovered ks1 from the recover-ks1 module, then determine the correct LFSR seed by finding which seed produces the keystream that starts with those bits.',
+    startingProject: brokenWeakPrngStart,
+    startingLayout: cloneProject(weakPrngProject.layout),
+    targetProject: weakPrngTarget,
+    success: {
+      kind: 'output-match-target',
+    },
+    hints: [
+      'recover-ks1 shows the attacker already recovered ks1=[1,1,0,0,1] from the known plaintext. Now find which 5-bit seed produces this output.',
+      'A 5-bit LFSR with taps [0,2] and seed [1,0,0,1,1] produces 11001 as its first 5 bits. That matches ks1.',
+      "Click attack-lfsr2 and change its seed parameter from '0,0,0,0,1' to '1,0,0,1,1'. Watch recover-verify flip to [1].",
+    ],
+  },
   {
     version: 1,
     id: 'repair-the-tls-kdf-constant',

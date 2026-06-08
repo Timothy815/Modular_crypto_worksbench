@@ -924,6 +924,39 @@ describe('seeded teaching content', () => {
     expect(startMap.get('m-bth')?.outputs.out?.value).toBe('16');
   });
 
+  it('keeps the weak PRNG cipher demo deterministic and the seed-finding challenge broken', () => {
+    const demo = demoProjects.find((project) => project.id === 'weak-prng-cipher-consequence');
+    expect(demo).toBeTruthy();
+    if (!demo) {
+      return;
+    }
+
+    const result = executeProject(demo.project, registry);
+    const trace = new Map(result.trace.map((entry) => [entry.moduleId, entry]));
+
+    // ks1=[1,1,0,0,1] recovered: ct1 XOR known_msg1 = ks1
+    expect(trace.get('recover-ks1')?.outputs.out?.value).toEqual([1, 1, 0, 0, 1]);
+    // attack-decrypt recovers msg2=[1,0,1,0,1] using predicted ks2
+    expect(trace.get('attack-decrypt')?.outputs.out?.value).toEqual([1, 0, 1, 0, 1]);
+
+    const challenge = STARTER_CHALLENGES.find((entry) => entry.id === 'find-the-lfsr-seed');
+    expect(challenge).toBeTruthy();
+    if (!challenge) {
+      return;
+    }
+
+    // Target: correct seed → msg2 correctly recovered
+    const targetResult = executeProject(challenge.targetProject, registry);
+    const targetTrace = new Map(targetResult.trace.map((entry) => [entry.moduleId, entry]));
+    expect(targetTrace.get('attack-decrypt')?.outputs.out?.value).toEqual([1, 0, 1, 0, 1]);
+
+    // Broken: wrong seed [0,0,0,0,1] → wrong ks2 prediction → attack-decrypt gives wrong msg2
+    const startResult = executeProject(challenge.startingProject, registry);
+    const startTrace = new Map(startResult.trace.map((entry) => [entry.moduleId, entry]));
+    const brokenDecrypt = startTrace.get('attack-decrypt')?.outputs.out?.value;
+    expect(brokenDecrypt).not.toEqual([1, 0, 1, 0, 1]);
+  });
+
   it('keeps the TLS-adjacent handshake demo deterministic and the repair challenge broken', () => {
     const demo = demoProjects.find((project) => project.id === 'tls-adjacent-handshake');
     expect(demo).toBeTruthy();

@@ -169,6 +169,7 @@ const FULL_DEMO_SECTION_MAP: Record<string, AtlasSectionId> = {
   'randomness-lab': 'protocols-and-integrity',
   'differential-characteristic': 'protocols-and-integrity',
   'lfsr-predictability': 'protocols-and-integrity',
+  'weak-prng-cipher-consequence': 'protocols-and-integrity',
   'stream-cipher-iv-reuse-consequence': 'protocols-and-integrity',
   'cbc-padding-oracle-consequence': 'protocols-and-integrity',
 

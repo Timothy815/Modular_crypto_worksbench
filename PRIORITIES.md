@@ -129,7 +129,7 @@ Current north star realization: approximately **55–60%**. The explicit-and-cor
   Rationale: A pedagogical TLS-like handshake (key exchange → session key derivation → AEAD encryption) would be the most sophisticated protocol teaching board in the product and would demonstrate the "systems IDE" identity most clearly.
   Done when: A bounded pedagogical protocol handshake board shows the full pipeline — key exchange, symmetric key derivation, authenticated encryption — with a tutorial. Verified against test vectors where applicable.
 
-- [ ] **Weak PRNG consequence board**
+- [x] **Weak PRNG consequence board** *(shipped June 8, 2026)*
   Rationale: The PRNG / LFSR / Randomness Lab boards teach structure but not consequence. A board that shows what happens when a weak PRNG feeds a cipher — predictable output, recoverable key — would complete that teaching arc.
   Done when: A bounded consequence board shows LFSR-based keystream prediction with a visible recovery path. Tutorial present.
 

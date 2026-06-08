@@ -6142,6 +6142,75 @@ export const demoProjects: DemoProject[] = [
     },
   },
   {
+    id: 'weak-prng-cipher-consequence',
+    name: 'Weak PRNG Cipher Consequence',
+    group: 'Consequence Boards',
+    stage: 'streams-and-scheduling',
+    order: 137,
+    recommendedAfter: ['lfsr-predictability'],
+    summary:
+      'Two messages are encrypted with consecutive portions of the same 5-bit LFSR keystream. An attacker with one known plaintext recovers the first keystream segment, reconstructs the LFSR seed, and predicts the next segment — decrypting the second message without the key.',
+    pipeline:
+      'LFSR(seed) → BitWindow(ks1) + BitWindow(ks2) → XOR(msg1)=ct1 + XOR(msg2)=ct2; known_msg1 XOR ct1 → ks1_recovered → seed → attack-LFSR → ks2_predicted → XOR(ct2) → msg2 recovered',
+    project: {
+      modules: [
+        // ---- Encryption side ----
+        { id: 'msg1', defId: 'BitSource', params: { stream: [0, 1, 1, 0, 1] } },
+        { id: 'msg2', defId: 'BitSource', params: { stream: [1, 0, 1, 0, 1] } },
+        // lfsr-enc1 generates ks1 (5 bits); lfsr-enc2 continues from the next LFSR state
+        { id: 'lfsr-enc1', defId: 'LFSR', params: { seed: [1, 0, 0, 1, 1], taps: '0,2', outputLength: 5 } },
+        { id: 'lfsr-enc2', defId: 'LFSR', params: { seed: [0, 1, 0, 1, 1], taps: '0,2', outputLength: 5 } },
+        { id: 'enc1', defId: 'XOR', params: {} },
+        { id: 'enc2', defId: 'XOR', params: {} },
+
+        // ---- Attacker recovers ks1 from known plaintext ----
+        { id: 'known-msg1', defId: 'BitSource', params: { stream: [0, 1, 1, 0, 1] } },
+        { id: 'recover-ks1', defId: 'XOR', params: {} },
+        { id: 'ks1-out', defId: 'BitOutput', params: {} },
+
+        // ---- Attacker predicts ks2 using reconstructed next-state seed ----
+        { id: 'attack-lfsr2', defId: 'LFSR', params: { seed: [0, 1, 0, 1, 1], taps: '0,2', outputLength: 5 } },
+        { id: 'attack-decrypt', defId: 'XOR', params: {} },
+        { id: 'recover-out', defId: 'BitOutput', params: {} },
+      ],
+      connections: [
+        // Encryption
+        { from: { moduleId: 'msg1', port: 'out' }, to: { moduleId: 'enc1', port: 'a' } },
+        { from: { moduleId: 'lfsr-enc1', port: 'out' }, to: { moduleId: 'enc1', port: 'b' } },
+        { from: { moduleId: 'msg2', port: 'out' }, to: { moduleId: 'enc2', port: 'a' } },
+        { from: { moduleId: 'lfsr-enc2', port: 'out' }, to: { moduleId: 'enc2', port: 'b' } },
+        // Attacker recovers ks1: ct1 XOR known_msg1 = ks1
+        { from: { moduleId: 'enc1', port: 'out' }, to: { moduleId: 'recover-ks1', port: 'a' } },
+        { from: { moduleId: 'known-msg1', port: 'out' }, to: { moduleId: 'recover-ks1', port: 'b' } },
+        { from: { moduleId: 'recover-ks1', port: 'out' }, to: { moduleId: 'ks1-out', port: 'in' } },
+        // Attacker decrypts msg2: ct2 XOR attack_ks2 = msg2
+        { from: { moduleId: 'enc2', port: 'out' }, to: { moduleId: 'attack-decrypt', port: 'a' } },
+        { from: { moduleId: 'attack-lfsr2', port: 'out' }, to: { moduleId: 'attack-decrypt', port: 'b' } },
+        { from: { moduleId: 'attack-decrypt', port: 'out' }, to: { moduleId: 'recover-out', port: 'in' } },
+      ],
+    },
+    layout: {
+      // Encryption side (two parallel lanes)
+      'msg1': { x: 80, y: 80 },
+      'lfsr-enc1': { x: 80, y: 260 },
+      'enc1': { x: 380, y: 80 },
+
+      'msg2': { x: 80, y: 480 },
+      'lfsr-enc2': { x: 80, y: 660 },
+      'enc2': { x: 380, y: 480 },
+
+      // Attacker recovers ks1
+      'known-msg1': { x: 80, y: 900 },
+      'recover-ks1': { x: 380, y: 900 },
+      'ks1-out': { x: 660, y: 900 },
+
+      // Attacker predicts and decrypts
+      'attack-lfsr2': { x: 80, y: 1100 },
+      'attack-decrypt': { x: 660, y: 1100 },
+      'recover-out': { x: 900, y: 1100 },
+    },
+  },
+  {
     id: 'gated-keystream',
     name: 'Gated Keystream',
     group: 'Conditional Clocking',
