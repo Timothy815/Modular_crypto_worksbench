@@ -67,7 +67,7 @@ Use `git log --oneline --graph` to understand history before any reset.
 
 ## Key Concepts
 
-- **One unified system, multiple signal domains** — symbol and bits are domains within the same engine, connected by explicit bridge/conversion modules
+- **One unified system, multiple signal domains** — symbol, bits, integer, and ec-point are four distinct signal domains within the same engine, connected by explicit bridge/conversion modules
 - **Definition vs Instance vs Runtime** — three distinct data layers
 - **Persistence is foundational** — composition creates identity
 - **Iterative topological execution** — precomputed order, each module evaluates once per run, deterministic
@@ -76,7 +76,7 @@ Use `git log --oneline --graph` to understand history before any reset.
 ## Key Constraints
 
 - **Engine layer (`src/engine/`) has zero external dependencies** — no UI, no persistence, no side effects
-- **Signals are typed** (`symbol` or `bits`) — never silently coerce between domains
+- **Signals are typed** (`symbol`, `bits`, `integer`, or `ec-point`) — never silently coerce between domains
 - **All transformations are explicit** — every domain conversion must be a visible module in the graph
 - **Composite modules are first-class** — they behave identically to primitives
 - **Execution is deterministic** — topological sort, synchronous, no side effects in `evaluate()`
@@ -84,7 +84,12 @@ Use `git log --oneline --graph` to understand history before any reset.
 ## Core Types
 
 ```ts
-type Signal = { type: 'symbol'; value: string } | { type: 'bits'; value: number[] };
+type SignalType = 'symbol' | 'bits' | 'integer' | 'ec-point';
+type Signal =
+  | { type: 'symbol'; value: string }
+  | { type: 'bits'; value: number[] }
+  | { type: 'integer'; value: string }        // hex string, no 0x prefix
+  | { type: 'ec-point'; value: EcPointSignalValue };  // affine {x,y} or infinity
 type ModuleDef = { id, name, inputs, outputs, paramSchema, evaluate };
 type ModuleInstance = { id, defId, params };
 type Connection = { from: { moduleId, port }, to: { moduleId, port } };
@@ -124,34 +129,49 @@ src/utils/     — Shared helpers
 - Composite modules tested for equivalence with expanded graphs
 - Seeded-content tests in `starter-challenges.ts` catch demo/challenge drift
 
-## Current State (as of May 2026)
+## Current State (as of June 2026)
 
 **`v2.0.0` is shipped.** MCW is a full cryptographic systems IDE with:
 - complete primitive vocabulary through GF(2⁸) field arithmetic (`GF2Mul`, `GF2Inv`)
 - full ECC teaching line: point mechanics, scalar multiplication, ECDH, Schnorr signatures
 - full asymmetric teaching line: RSA, DH, AEAD, digital signatures, protocol handshakes
-- Python export parity for all primitives including GF2 and ECC point family
+- Python export parity for all 149 primitives (4 intentionally excluded: AesConsequenceSummary, KeyedSBox4, PointSelector, ToyPointMap)
 - substantial builder UX: orthogonal routing, stage group boxes, minimap, node rotation, alignment guides, Tidy Layout, multi-select, cross-workspace clipboard, wire coloring
+- UI-driven composite authoring: select modules → Save as Composite → unzip; port name customization; validation
 - verification station with known-vector import and export parity workflow
 - multi-window detachable panels, shareable lab packs, instructor pilot pack
 
-**Post-`v2.0.0` additions on `main`:**
+**Post-`v2.0.0` additions on `main` (through June 2026):**
 - `REAL-SCALE-ARITHMETIC-SUBSTRATE-V1`: `bigint-hex` param kind, lifted `Number.isSafeInteger` ceiling
 - `NAMED-CURVE-SOURCES-V1`: `NamedCurveBasePoint` with secp256k1 and P-256 presets
 - `GF2-FIELD-ARITHMETIC-V1`: `GF2Mul` and `GF2Inv` over GF(2⁸) in the bits domain
-- `Visible MixColumns` demo, tutorial, and `Repair the MixColumns Coefficient` challenge (NIST FIPS 197 [D4,BF,5D,30] → [04,66,81,E5])
-- `Visible SubBytes` demo, tutorial, and `Repair the Affine Constant` challenge (GF2Inv + affine; FIPS 197 vector)
-- `Visible ShiftRows` demo and tutorial (128-bit byte permutation; FIPS 197 vector D4271…30 → D4BF5…E5)
-- `Visible AddRoundKey` demo, tutorial, and `Repair the Round Key` challenge (4-byte XOR; FIPS 197 vector)
-- Palette reorganization: new `Elliptic Curves & Fields` section split from Modular Arithmetic; optgroup filter dropdown with section-level granularity; GF2Mul/GF2Inv/NamedCurveBasePoint properly catalogued
-- EC point inspector rework: stacked card layout for real-scale secp256k1 coordinates; `formatSignalCompact` truncation in trace/stepper contexts
+- All four AES round operations individually visible with demos, tutorials, FIPS 197 vectors, and challenges: MixColumns, SubBytes, ShiftRows, AddRoundKey
+- `AES-ROUND-COMPOSITE-V1`: `AesRound` composite (SubBytes→ShiftRows→MixColumns→AddRoundKey, bits[128] ports), FIPS 197 Appendix B verified
+- `aes-4-round` demo: 4-round chained AES using `AesRound` composite with FIPS 197 key schedule
+- `visible-aes-key-schedule` demo, tutorial, and `Repair the AES Rcon` challenge
+- AES consequence boards: row-rotation perturbation, MixColumns-coefficient perturbation, local consequence analysis
+- Keyed S-box authoring board with 2-bit key selection over explicit 4-bit table family
+- GF2/AES Python export parity: `GF2Mul` and `GF2Inv` produce correct Python; FIPS 197 verify_parity.py passes
+- Visible double-and-add ECC board; toy-curve point map
+- All classical ciphers: Vigenere (encryption board + tutorial + challenge), columnar transposition
+- Consequence boards: stream cipher IV reuse, CBC padding oracle, Schnorr nonce reuse, ECDH low-order point
+- Hash teaching: SHA-256 round decomposition, toy sponge hash
+- Protocol boards: TLS-adjacent handshake
+- Student progress tracking with session report download
+- Verification station: in-product PASS/FAIL explanation; student-first onboarding (Quick Start, Atlas, first-timer tips)
+- Palette reorganization: `Elliptic Curves & Fields` section; optgroup filter dropdown
+- EC point inspector: stacked card layout for real-scale coordinates; `formatSignalCompact` in trace/stepper contexts
+- F-key shortcut: frame selection or frame workspace
+- 16 built-in composites in `STARTER_COMPOSITE_LIBRARY` (AesRound, Feistel, Hash, Sponge, Enigma helpers, and more)
+- 149 engine modules, 111 demos, 112 tutorials, 83 challenges
 
-**Genuine next open work:**
-- Full AES round composite: wire SubBytes + ShiftRows + MixColumns + AddRoundKey as a single composed module — all four building blocks now individually visible and verified
-- Python export parity for GF2/AES domain primitives (`GF2Mul`, `GF2Inv`)
-- UI refactor pass on large surfaces (`parameter-inspector.tsx` is the primary candidate)
+**Genuine next open work (verified against source June 2026):**
+- AES decryption primitives (`InvSubBytes`, `InvShiftRows`, `InvMixColumns`) — not in engine; no decrypt path exists
+- Full 10-round AES-128 (current `aes-4-round` demo stops at 4 rounds; final round differs — no MixColumns)
+- Latent byte-swap in `aes-round-full` demo: bytes 11 and 14 are swapped relative to FIPS 197 column-major ordering (the `AesRound` composite is correct; the older single-round demo is not)
+- Bundle headroom is tight: `maxChunk` is at 450 KiB with demo-data near the ceiling — any large new demo risks hitting the guard
 
-**Bundle guard:** `maxChunk` is 340 KiB (raised from 330 KiB for ShiftRows/AddRoundKey). demo-data chunk sits near the ceiling. Watch before adding more large demos.
+**Bundle guard:** `maxChunk` is 450 KiB. demo-data chunk sits near the ceiling. Watch before adding more large demos.
 
 ## Key Contracts to Check Before Implementation
 

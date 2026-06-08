@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: June 5, 2026
+Last updated: June 8, 2026
 
 ---
 
@@ -18,6 +18,7 @@ If a new agent session starts from scratch, the shortest accurate read is:
 - MCW is already a substantial teaching-oriented cryptography IDE, not just a visual construction toy
 - several features previously treated as “next” or “open” are already shipped in source
 - future work should now start from a code-first baseline, not from older queue memory
+- **as of June 8, 2026: all P1–P5 priorities are complete** — see PRIORITIES.md
 
 ## Highest-Confidence Reality Checks
 
@@ -30,12 +31,26 @@ These features are already shipped on `main` and should not be treated as open f
 - iterator, clocked iterator, conditional, and multi-conditional authoring
 - saved cryptanalysis cases
 - keyboard shortcuts with manual coverage
+- **UI-driven composite authoring** (select modules → Save as Composite → unzip) — shipped v1.13.0
+- **minimap, multi-select, Tidy Layout, cross-workspace clipboard** — shipped v1.13.0
+- **four signal domains**: `symbol`, `bits`, `integer`, `ec-point` — not just symbol and bits
+- **AES composite (`AesRound`) + 4-round chained demo** — shipped June 8, 2026
+- **AES key schedule** — `visible-aes-key-schedule` demo + tutorial + challenge shipped June 2026
+- **full curriculum coverage**: classical + AES + ECC + asymmetric + hashing + protocols + consequence boards
+- **149 engine modules, 111 demos, 112 tutorials, 83 challenges, 16 built-in composites** (verified June 2026)
+- **Python export**: 145 of 149 modules supported (4 intentionally excluded)
 
-## Current Product Direction: Real-World Crypto Capability
+## Current Product Direction: All Priority Tiers Complete (June 8, 2026)
 
-As of May 2026, MCW has shipped a complete ECC teaching line, Python export parity, and the first AES field arithmetic layer. The current open phase is extending the AES capability toward a full visible AES round.
+All items across PRIORITIES.md P1–P5 are now shipped. There is no contracted open work.
 
-Read `docs/live/contracts/2026-05/REAL-WORLD-CRYPTO-CAPABILITY-ROADMAP-V1.md` first for the full framing.
+**Genuine next open work (verified against source, June 8, 2026 — NOT yet contracted):**
+- AES decryption primitives (`InvSubBytes`, `InvShiftRows`, `InvMixColumns`) — not in engine
+- Full 10-round AES-128 (current demo covers 4 rounds; final round also differs — no MixColumns)
+- Latent byte-swap in `aes-round-full` demo: bytes 11 and 14 are swapped vs. FIPS 197 column-major; `AesRound` composite is correct
+- Bundle headroom tight: `maxChunk` at 450 KiB with demo-data near ceiling
+
+Read `docs/live/contracts/2026-05/REAL-WORLD-CRYPTO-CAPABILITY-ROADMAP-V1.md` for the real-world capability framing history.
 
 The three contracts from this line are now all shipped:
 
@@ -60,7 +75,7 @@ All use NIST FIPS 197 test vectors. Group routing, GROUP_STAGE_MAP, and PRIMITIV
 - Palette reorganization: new `Elliptic Curves & Fields` section; optgroup filter dropdown with section-level granularity
 - EC point inspector: stacked card layout for real-scale secp256k1/P-256 coordinates; `formatSignalCompact` in trace/stepper contexts
 
-**AES Round Composite shipped (May 14, 2026).** AES now has a first full-round board on `main`:
+**AES Round Composite shipped (May 14, 2026). 4-round chained demo shipped (June 8, 2026).** AES now has a packaged composite and a multi-round board on `main`:
 
 | Composite | Demo | Tutorial | Challenge |
 |---|---|---|---|
