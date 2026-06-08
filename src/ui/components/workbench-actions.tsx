@@ -63,10 +63,12 @@ interface WorkbenchActionsProps {
   onFitView: () => void;
   canFrameSelection: boolean;
   canReturnToPreviousView: boolean;
+  canJumpToFirstError: boolean;
   savedViewRegions: WorkspaceSavedViewRegion[];
   onRequestFrameWorkspace: () => void;
   onRequestFrameSelection: () => void;
   onRequestReturnToPreviousView: () => void;
+  onRequestJumpToFirstError: () => void;
   onRequestSaveCurrentView: () => void;
   onRequestRecallSavedView: (regionId: string) => void;
   onRequestDeleteSavedView: (regionId: string) => void;
@@ -261,6 +263,7 @@ type WorkbenchInlineIconName =
   | 'autowire-ltr'
   | 'autowire-ttb'
   | 'save-version'
+  | 'jump-error'
   | 'delete-wire'
   | 'reset-wire'
   | 'stage-row'
@@ -436,6 +439,13 @@ function WorkbenchInlineIcon({ name }: { name: WorkbenchInlineIconName }) {
           <path d="M4 4h9l3 3v9H4z" />
           <rect x="6" y="4.5" width="6" height="4" rx="0.8" />
           <rect x="7" y="12" width="6" height="3.5" rx="0.8" />
+        </svg>
+      );
+    case 'jump-error':
+      return (
+        <svg className="workbench-inline-action-icon" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M10 2.8 17.2 10 10 17.2 2.8 10Z" />
+          <path d="M10 6.1v5.2M10 14.1h.01" />
         </svg>
       );
     case 'delete-wire':
@@ -672,10 +682,12 @@ export function WorkbenchActions({
   onFitView,
   canFrameSelection,
   canReturnToPreviousView,
+  canJumpToFirstError,
   savedViewRegions,
   onRequestFrameWorkspace,
   onRequestFrameSelection,
   onRequestReturnToPreviousView,
+  onRequestJumpToFirstError,
   onRequestSaveCurrentView,
   onRequestRecallSavedView,
   onRequestDeleteSavedView,
@@ -765,6 +777,12 @@ export function WorkbenchActions({
                 content={<WorkbenchInlineIcon name="zoom-in" />}
                 title="Zoom In"
                 onSelect={onZoomIn}
+              />
+              <WorkbenchInlineActionButton
+                content={<WorkbenchInlineIcon name="jump-error" />}
+                title="Jump To First Error"
+                onSelect={onRequestJumpToFirstError}
+                disabled={!canJumpToFirstError}
               />
               <WorkbenchInlineActionButton
                 content={<WorkbenchInlineIcon name="fit-view" />}
@@ -1085,6 +1103,11 @@ export function WorkbenchActions({
             <WorkbenchActionMenu label="View" description="Navigate and toggle overlays">
               <WorkbenchMenuActionButton label="Fit View" onSelect={onFitView} />
               <WorkbenchMenuActionButton label="Reset View" onSelect={onResetView} />
+              <WorkbenchMenuActionButton
+                label="Jump To First Error"
+                onSelect={onRequestJumpToFirstError}
+                disabled={!canJumpToFirstError}
+              />
               <WorkbenchMenuActionButton
                 label="Frame Workspace  F"
                 onSelect={onRequestFrameWorkspace}

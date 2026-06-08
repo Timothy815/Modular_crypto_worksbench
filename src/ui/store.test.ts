@@ -2783,4 +2783,123 @@ describe('uiReducer', () => {
       '5:2': 4,
     });
   });
+
+  it('splices a module onto an existing connection and transfers wire metadata', () => {
+    let state = createInitialUiState(demoProjects);
+    state = uiReducer(state, {
+      type: 'createBlankWorkspace',
+      workspaceId: 'splice-test',
+      name: 'Splice Test',
+      summary: 'Bounded splice-on-wire reducer test.',
+      pipeline: 'BitSource -> NOT',
+    });
+
+    state = uiReducer(state, {
+      type: 'addModule',
+      projectId: 'splice-test',
+      moduleDef: V1_REGISTRY.BitSource,
+      position: { x: 80, y: 120 },
+    });
+    state = uiReducer(state, {
+      type: 'addModule',
+      projectId: 'splice-test',
+      moduleDef: V1_REGISTRY.NOT,
+      position: { x: 300, y: 120 },
+    });
+
+    const sourceModuleId = state.projectStates['splice-test'].modules.find(
+      (moduleInstance) => moduleInstance.defId === 'BitSource',
+    )?.id;
+    const targetModuleId = state.projectStates['splice-test'].modules.find(
+      (moduleInstance) => moduleInstance.defId === 'NOT',
+    )?.id;
+    if (!sourceModuleId || !targetModuleId) {
+      throw new Error('Expected source and target modules to exist.');
+    }
+
+    state = uiReducer(state, {
+      type: 'addConnection',
+      projectId: 'splice-test',
+      fromModuleId: sourceModuleId,
+      fromPort: 'out',
+      toModuleId: targetModuleId,
+      toPort: 'in',
+    });
+
+    const originalConnection = state.projectStates['splice-test'].connections[0];
+    const originalConnectionKey = getConnectionComparisonKey(originalConnection);
+    state = uiReducer(state, {
+      type: 'setConnectionOrthogonalAnchors',
+      projectId: 'splice-test',
+      connectionKey: originalConnectionKey,
+      anchors: [
+        { x: 180, y: 120 },
+        { x: 240, y: 120 },
+      ],
+    });
+    state = uiReducer(state, {
+      type: 'setConnectionLanePreference',
+      projectId: 'splice-test',
+      connectionKey: originalConnectionKey,
+      preference: 'positive',
+    });
+
+    const splicedState = uiReducer(state, {
+      type: 'spliceModuleOnConnection',
+      projectId: 'splice-test',
+      connectionIndex: 0,
+      moduleDef: V1_REGISTRY.NOT,
+      position: { x: 190, y: 96 },
+      inputPortName: 'in',
+      outputPortName: 'out',
+      anchorInsertIndex: 1,
+    });
+
+    const insertedModule = splicedState.projectStates['splice-test'].modules.find(
+      (moduleInstance) =>
+        moduleInstance.defId === 'NOT' &&
+        moduleInstance.id !== targetModuleId,
+    );
+    expect(insertedModule).toBeTruthy();
+    expect(splicedState.projectStates['splice-test'].connections).toHaveLength(2);
+    expect(splicedState.selectedModuleIdByProject['splice-test']).toBe(insertedModule?.id);
+    expect(splicedState.layoutByProject['splice-test']?.[insertedModule!.id]).toMatchObject({
+      x: 190,
+      y: 96,
+    });
+
+    const sourceToInserted = splicedState.projectStates['splice-test'].connections.find(
+      (connection) =>
+        connection.from.moduleId === sourceModuleId &&
+        connection.to.moduleId === insertedModule?.id,
+    );
+    const insertedToTarget = splicedState.projectStates['splice-test'].connections.find(
+      (connection) =>
+        connection.from.moduleId === insertedModule?.id &&
+        connection.to.moduleId === targetModuleId,
+    );
+    expect(sourceToInserted).toBeTruthy();
+    expect(insertedToTarget).toBeTruthy();
+
+    const sourceToInsertedLayout =
+      splicedState.connectionLayoutByProject['splice-test']?.[
+        getConnectionComparisonKey(sourceToInserted!)
+      ];
+    const insertedToTargetLayout =
+      splicedState.connectionLayoutByProject['splice-test']?.[
+        getConnectionComparisonKey(insertedToTarget!)
+      ];
+
+    expect(sourceToInsertedLayout).toEqual({
+      orthogonalAnchors: [{ x: 180, y: 120 }],
+      orthogonalLanePreference: 'positive',
+    });
+    expect(insertedToTargetLayout).toEqual({
+      orthogonalAnchors: [{ x: 240, y: 120 }],
+      orthogonalLanePreference: 'positive',
+    });
+    expect(
+      splicedState.connectionLayoutByProject['splice-test']?.[originalConnectionKey],
+    ).toBeUndefined();
+  });
 });

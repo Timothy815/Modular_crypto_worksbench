@@ -74,6 +74,7 @@ import type {
   WorkspaceVersionDocument,
 } from '../workbench-document';
 import {
+  getDefaultNodeOrientation,
   getNodeOrientation,
   getPortSideForModulePort,
   type PortSide,
@@ -107,6 +108,10 @@ import {
   handleSignalChipPointerDown,
   resolvePendingSnapTarget,
 } from '../live-machine-feel-tier1';
+import {
+  deriveFirstBrokenModuleId,
+  getSpliceEligiblePorts,
+} from '../live-machine-feel-tier2';
 import {
   buildSidePortGroups,
   formatInlineEditableValue,
@@ -430,6 +435,14 @@ interface WorkbenchPanelProps {
     attachTarget?: { fromIndex: number; fromPort: string; toModuleId: string; toPort: string },
     attachInputs?: Array<{ fromModuleId: string; fromPort: string; toIndex: number; toPort: string }>,
   ) => void;
+  onSpliceModuleOnConnection: (
+    connectionIndex: number,
+    moduleDef: ModuleDefinition,
+    position: { x: number; y: number },
+    inputPortName: string,
+    outputPortName: string,
+    anchorInsertIndex: number | null,
+  ) => void;
   onPendingConnectionChange?: (
     info: { fromModuleId: string; fromPort: string; sourceType: SignalType; sourceKind: PortKind } | null,
   ) => void;
@@ -603,6 +616,7 @@ export function WorkbenchPanel({
   onPaletteModuleDropRequestHandled,
   onInsertModuleAndConnect,
   onInsertChain,
+  onSpliceModuleOnConnection,
   onPendingConnectionChange,
   onHoveredInputPortChange,
   projects,
@@ -1200,6 +1214,270 @@ export function WorkbenchPanel({
 
     const nodeSizeClass = getNodeSizeClass(moduleDef.inputs.length + moduleDef.outputs.length);
     const nodeSizeConfig = NODE_SIZE_CONFIGS[nodeSizeClass];
+    const defaultOrientation = getDefaultNodeOrientation(layoutDirection);
+    const spliceCandidates = activeProjectState.connections
+      .map((connection, connectionIndex) => {
+        const sourcePosition = effectiveLayout[connection.from.moduleId];
+        const targetPosition = effectiveLayout[connection.to.moduleId];
+        const sourceDef = registry[
+          activeProjectState.modules.find((moduleInstance) => moduleInstance.id === connection.from.moduleId)
+            ?.defId ?? ''
+        ];
+        const targetDef = registry[
+          activeProjectState.modules.find((moduleInstance) => moduleInstance.id === connection.to.moduleId)?.defId ??
+            ''
+        ];
+        if (!sourcePosition || !targetPosition || !sourceDef || !targetDef) {
+          return null;
+        }
+
+        const sourcePort = sourceDef.outputs.find((port) => port.name === connection.from.port);
+        if (!sourcePort) {
+          return null;
+        }
+
+        const splicePorts = getSpliceEligiblePorts(moduleDef, sourcePort.type);
+        if (!splicePorts) {
+          return null;
+        }
+
+        const orderedSourcePorts = getOrderedModulePorts(sourceDef, sourcePosition, 'output');
+        const orderedTargetPorts = getOrderedModulePorts(targetDef, targetPosition, 'input');
+        const sourceOrientation = getNodeOrientation(sourcePosition.orientation, layoutDirection);
+        const targetOrientation = getNodeOrientation(targetPosition.orientation, layoutDirection);
+        const { side: sourceSide, sideIndex: sourceAnchorIndex } = getPortPlacementForModulePort(
+          [],
+          orderedSourcePorts,
+          sourcePosition,
+          sourceOrientation,
+          'out',
+          connection.from.port,
+        );
+        const { side: targetSide, sideIndex: targetAnchorIndex } = getPortPlacementForModulePort(
+          orderedTargetPorts,
+          [],
+          targetPosition,
+          targetOrientation,
+          'in',
+          connection.to.port,
+        );
+        const sourceSizeConfig =
+          nodeSizeByModuleId[connection.from.moduleId]?.config ?? NODE_SIZE_CONFIGS.standard;
+        const targetSizeConfig =
+          nodeSizeByModuleId[connection.to.moduleId]?.config ?? NODE_SIZE_CONFIGS.standard;
+        const sourceAnchor = getAnchorPosition(
+          sourcePosition.x,
+          sourcePosition.y,
+          sourceSide,
+          sourceAnchorIndex,
+          sourceSizeConfig.width,
+          sourceSizeConfig.height,
+          sourceSizeConfig.portStartY,
+          sourceSizeConfig.portGap,
+        );
+        const targetAnchor = getAnchorPosition(
+          targetPosition.x,
+          targetPosition.y,
+          targetSide,
+          targetAnchorIndex,
+          targetSizeConfig.width,
+          targetSizeConfig.height,
+          targetSizeConfig.portStartY,
+          targetSizeConfig.portGap,
+        );
+
+        let projection:
+          | {
+              x: number;
+              y: number;
+              distance: number;
+              anchorInsertIndex: number | null;
+            }
+          | null = null;
+
+        if (routingMode === 'orthogonal') {
+          const orthogonalPathData = getOrthogonalPathData(
+            sourceAnchor,
+            sourceSide,
+            targetAnchor,
+            targetSide,
+            Math.max(0, orderedSourcePorts.findIndex((port) => port.name === connection.from.port)),
+            Math.max(0, orderedTargetPorts.findIndex((port) => port.name === connection.to.port)),
+            connectionLayout[getConnectionComparisonKey(connection)],
+          );
+          const anchorPoints = orthogonalPathData.anchorHandles.map((anchor) => ({ x: anchor.x, y: anchor.y }));
+          let anchorInsertIndex = 0;
+          for (let index = 0; index < orthogonalPathData.points.length - 1; index += 1) {
+            const start = orthogonalPathData.points[index];
+            const end = orthogonalPathData.points[index + 1];
+            const nearestPoint = getNearestPointOnOrthogonalSegment(pointer, { start, end });
+            if (!projection || nearestPoint.distance < projection.distance) {
+              projection = {
+                x: nearestPoint.x,
+                y: nearestPoint.y,
+                distance: nearestPoint.distance,
+                anchorInsertIndex,
+              };
+            }
+            if (anchorPoints.some((anchor) => anchor.x === end.x && anchor.y === end.y)) {
+              anchorInsertIndex += 1;
+            }
+          }
+        } else {
+          const horizontal = sourceSide === 'left' || sourceSide === 'right';
+          const primaryDistance = horizontal
+            ? Math.abs(targetAnchor.x - sourceAnchor.x)
+            : Math.abs(targetAnchor.y - sourceAnchor.y);
+          const bend = Math.max(56, primaryDistance * 0.42);
+          const sourceControl = horizontal
+            ? {
+                x: sourceSide === 'right' ? sourceAnchor.x + bend : sourceAnchor.x - bend,
+                y: sourceAnchor.y,
+              }
+            : {
+                x: sourceAnchor.x,
+                y: sourceSide === 'bottom' ? sourceAnchor.y + bend : sourceAnchor.y - bend,
+              };
+          const targetControl = horizontal
+            ? {
+                x: targetSide === 'left' ? targetAnchor.x - bend : targetAnchor.x + bend,
+                y: targetAnchor.y,
+              }
+            : {
+                x: targetAnchor.x,
+                y: targetSide === 'top' ? targetAnchor.y - bend : targetAnchor.y + bend,
+              };
+
+          let bestDistance = Number.POSITIVE_INFINITY;
+          let bestPoint = sourceAnchor;
+          const steps = 24;
+          let previousPoint = sourceAnchor;
+          for (let step = 1; step <= steps; step += 1) {
+            const t = step / steps;
+            const mt = 1 - t;
+            const samplePoint = {
+              x:
+                mt * mt * mt * sourceAnchor.x +
+                3 * mt * mt * t * sourceControl.x +
+                3 * mt * t * t * targetControl.x +
+                t * t * t * targetAnchor.x,
+              y:
+                mt * mt * mt * sourceAnchor.y +
+                3 * mt * mt * t * sourceControl.y +
+                3 * mt * t * t * targetControl.y +
+                t * t * t * targetAnchor.y,
+            };
+            const segmentDx = samplePoint.x - previousPoint.x;
+            const segmentDy = samplePoint.y - previousPoint.y;
+            const segmentLengthSquared = segmentDx * segmentDx + segmentDy * segmentDy;
+            if (segmentLengthSquared > 0) {
+              const rawT =
+                ((pointer.x - previousPoint.x) * segmentDx + (pointer.y - previousPoint.y) * segmentDy)
+                / segmentLengthSquared;
+              const clampedT = Math.max(0, Math.min(1, rawT));
+              const projectedPoint = {
+                x: previousPoint.x + segmentDx * clampedT,
+                y: previousPoint.y + segmentDy * clampedT,
+              };
+              const distance = Math.hypot(pointer.x - projectedPoint.x, pointer.y - projectedPoint.y);
+              if (distance < bestDistance) {
+                bestDistance = distance;
+                bestPoint = projectedPoint;
+              }
+            }
+            previousPoint = samplePoint;
+          }
+
+          projection = {
+            x: bestPoint.x,
+            y: bestPoint.y,
+            distance: bestDistance,
+            anchorInsertIndex: null,
+          };
+        }
+
+        if (!projection) {
+          return null;
+        }
+
+        const position = {
+          x: Math.max(16, Math.round(projection.x - nodeSizeConfig.width / 2)),
+          y: Math.max(16, Math.round(projection.y - nodeSizeConfig.height / 2)),
+        };
+        const previewPosition = {
+          x: position.x,
+          y: position.y,
+          orientation: defaultOrientation,
+        };
+        const orderedPreviewInputs = getOrderedModulePorts(moduleDef, previewPosition, 'input');
+        const orderedPreviewOutputs = getOrderedModulePorts(moduleDef, previewPosition, 'output');
+        const { side: previewInputSide, sideIndex: previewInputIndex } = getPortPlacementForModulePort(
+          orderedPreviewInputs,
+          [],
+          previewPosition,
+          defaultOrientation,
+          'in',
+          splicePorts.inputPortName,
+        );
+        const { side: previewOutputSide, sideIndex: previewOutputIndex } = getPortPlacementForModulePort(
+          [],
+          orderedPreviewOutputs,
+          previewPosition,
+          defaultOrientation,
+          'out',
+          splicePorts.outputPortName,
+        );
+
+        return {
+          connectionIndex,
+          connection,
+          distance: projection.distance,
+          anchorInsertIndex: projection.anchorInsertIndex,
+          sourceAnchor,
+          sourceSide,
+          targetAnchor,
+          targetSide,
+          previewInputAnchor: getAnchorPosition(
+            position.x,
+            position.y,
+            previewInputSide,
+            previewInputIndex,
+            nodeSizeConfig.width,
+            nodeSizeConfig.height,
+            nodeSizeConfig.portStartY,
+            nodeSizeConfig.portGap,
+          ),
+          previewInputSide,
+          previewOutputAnchor: getAnchorPosition(
+            position.x,
+            position.y,
+            previewOutputSide,
+            previewOutputIndex,
+            nodeSizeConfig.width,
+            nodeSizeConfig.height,
+            nodeSizeConfig.portStartY,
+            nodeSizeConfig.portGap,
+          ),
+          previewOutputSide,
+          inputPortName: splicePorts.inputPortName,
+          outputPortName: splicePorts.outputPortName,
+          position,
+        };
+      })
+      .filter((candidate): candidate is NonNullable<typeof candidate> => candidate !== null)
+      .filter((candidate) => candidate.distance <= 12)
+      .sort((left, right) => left.distance - right.distance);
+
+    const splicePreview = spliceCandidates.length === 1 ? spliceCandidates[0] : null;
+    if (splicePreview) {
+      return {
+        nodeSizeClass,
+        nodeSizeConfig,
+        position: splicePreview.position,
+        splicePreview,
+      };
+    }
+
     const rawPosition = {
       x: Math.max(16, pointer.x),
       y: Math.max(16, pointer.y),
@@ -1221,6 +1499,7 @@ export function WorkbenchPanel({
       nodeSizeClass,
       nodeSizeConfig,
       position: snappedPosition,
+      splicePreview: null,
     };
   }
 
@@ -2414,6 +2693,15 @@ export function WorkbenchPanel({
       ),
     [activeProjectState, execution, registry, validationIssues],
   );
+  const firstBrokenModuleId = useMemo(
+    () =>
+      deriveFirstBrokenModuleId({
+        project: activeProjectState,
+        executionOrder: execution?.order ?? null,
+        canvasModuleErrorStateById,
+      }),
+    [activeProjectState, canvasModuleErrorStateById, execution],
+  );
 
   const executionSignalByModuleId = useMemo(() => buildExecutionSignalByModuleId(execution), [execution]);
 
@@ -2854,7 +3142,18 @@ export function WorkbenchPanel({
           event.clientY,
         );
         if (dropTarget && !isCompositeEditor) {
-          onAddModule(activePaletteModuleDrag.moduleDef, dropTarget.position);
+          if (dropTarget.splicePreview) {
+            onSpliceModuleOnConnection(
+              dropTarget.splicePreview.connectionIndex,
+              activePaletteModuleDrag.moduleDef,
+              dropTarget.position,
+              dropTarget.splicePreview.inputPortName,
+              dropTarget.splicePreview.outputPortName,
+              dropTarget.splicePreview.anchorInsertIndex,
+            );
+          } else {
+            onAddModule(activePaletteModuleDrag.moduleDef, dropTarget.position);
+          }
         }
       }
 
@@ -2868,6 +3167,7 @@ export function WorkbenchPanel({
     getPaletteModulePlacement,
     isCompositeEditor,
     onAddModule,
+    onSpliceModuleOnConnection,
     onClearPaletteModuleDrag,
   ]);
 
@@ -2886,7 +3186,18 @@ export function WorkbenchPanel({
       paletteModuleDropRequest.clientY,
     );
     if (dropTarget && !isCompositeEditor) {
-      onAddModule(activePaletteModuleDrag.moduleDef, dropTarget.position);
+      if (dropTarget.splicePreview) {
+        onSpliceModuleOnConnection(
+          dropTarget.splicePreview.connectionIndex,
+          activePaletteModuleDrag.moduleDef,
+          dropTarget.position,
+          dropTarget.splicePreview.inputPortName,
+          dropTarget.splicePreview.outputPortName,
+          dropTarget.splicePreview.anchorInsertIndex,
+        );
+      } else {
+        onAddModule(activePaletteModuleDrag.moduleDef, dropTarget.position);
+      }
     }
     onPaletteModuleDropRequestHandled();
   }, [
@@ -2894,6 +3205,7 @@ export function WorkbenchPanel({
     getPaletteModulePlacement,
     isCompositeEditor,
     onAddModule,
+    onSpliceModuleOnConnection,
     onPaletteModuleDropRequestHandled,
     paletteModuleDropRequest,
   ]);
@@ -3061,6 +3373,9 @@ export function WorkbenchPanel({
           layer === 'base' && legibilityState.dimmed ? 'connection-group-dimmed' : '',
           layer === 'base' && execution !== null && execution.outputsByModuleId[connection.from.moduleId]?.[connection.from.port] != null ? 'connection-group-live' : '',
           layer === 'base' && execution !== null && execution.outputsByModuleId[connection.from.moduleId]?.[connection.from.port] == null ? 'connection-group-idle' : '',
+          layer === 'base' && paletteModuleGhost?.splicePreview?.connectionIndex === connectionIndex
+            ? 'connection-group-splice-preview'
+            : '',
           workspaceComparison
             ? workspaceComparison.currentConnectionStatusByKey[getConnectionComparisonKey(connection)] === 'added'
               ? 'connection-group-compare-added'
@@ -3787,10 +4102,16 @@ export function WorkbenchPanel({
           onFitView={fitWorkspaceView}
           canFrameSelection={canFrameSelection}
           canReturnToPreviousView={previousView !== null}
+          canJumpToFirstError={firstBrokenModuleId !== null}
           savedViewRegions={savedViewRegions}
           onRequestFrameWorkspace={fitWorkspaceView}
           onRequestFrameSelection={frameSelectionView}
           onRequestReturnToPreviousView={returnToPreviousView}
+          onRequestJumpToFirstError={() => {
+            if (firstBrokenModuleId) {
+              jumpToModule(firstBrokenModuleId);
+            }
+          }}
           onRequestSaveCurrentView={requestSaveCurrentView}
           onRequestRecallSavedView={recallSavedView}
           onRequestDeleteSavedView={onRemoveWorkspaceViewRegion}
@@ -4484,36 +4805,79 @@ export function WorkbenchPanel({
               : null;
 
             return (
-              <div
-                className={
-                  `graph-node graph-node-${category} graph-node-palette-ghost` +
-                  (paletteModuleGhost.nodeSizeClass !== 'standard'
-                    ? ` graph-node--${paletteModuleGhost.nodeSizeClass}`
-                    : '')
-                }
-                style={{
-                  left: `${paletteModuleGhost.position.x}px`,
-                  top: `${paletteModuleGhost.position.y}px`,
-                }}
-              >
-                <div className="graph-node-body">
-                  <div className="graph-node-meta-row">
-                    <span className="graph-node-type">{moduleDef.id}</span>
-                  </div>
-                  {sequentialRole ? (
-                    <div className="graph-node-role-row">
-                      <span className={`graph-node-role-badge graph-node-role-badge-${sequentialRole}`}>
-                        {getSequentialRoleLabel(sequentialRole)}
-                      </span>
+              <>
+                {paletteModuleGhost.splicePreview ? (
+                  <svg
+                    className="graph-connections graph-connections-overlay graph-connections-splice-preview"
+                    viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
+                    preserveAspectRatio="none"
+                  >
+                    <path
+                      className="pending-connection pending-connection-snap"
+                      d={
+                        routingMode === 'orthogonal'
+                          ? getOrthogonalPendingPath(
+                              paletteModuleGhost.splicePreview.sourceAnchor,
+                              paletteModuleGhost.splicePreview.sourceSide,
+                              paletteModuleGhost.splicePreview.previewInputAnchor,
+                            )
+                          : getPendingConnectionPath(
+                              paletteModuleGhost.splicePreview.sourceAnchor,
+                              paletteModuleGhost.splicePreview.sourceSide,
+                              paletteModuleGhost.splicePreview.previewInputAnchor,
+                            )
+                      }
+                    />
+                    <path
+                      className="pending-connection pending-connection-snap"
+                      d={
+                        routingMode === 'orthogonal'
+                          ? getOrthogonalPendingPath(
+                              paletteModuleGhost.splicePreview.previewOutputAnchor,
+                              paletteModuleGhost.splicePreview.previewOutputSide,
+                              paletteModuleGhost.splicePreview.targetAnchor,
+                            )
+                          : getPendingConnectionPath(
+                              paletteModuleGhost.splicePreview.previewOutputAnchor,
+                              paletteModuleGhost.splicePreview.previewOutputSide,
+                              paletteModuleGhost.splicePreview.targetAnchor,
+                            )
+                      }
+                    />
+                  </svg>
+                ) : null}
+                <div
+                  className={
+                    `graph-node graph-node-${category} graph-node-palette-ghost` +
+                    (paletteModuleGhost.splicePreview ? ' graph-node-palette-splice-preview' : '') +
+                    (paletteModuleGhost.nodeSizeClass !== 'standard'
+                      ? ` graph-node--${paletteModuleGhost.nodeSizeClass}`
+                      : '')
+                  }
+                  style={{
+                    left: `${paletteModuleGhost.position.x}px`,
+                    top: `${paletteModuleGhost.position.y}px`,
+                  }}
+                >
+                  <div className="graph-node-body">
+                    <div className="graph-node-meta-row">
+                      <span className="graph-node-type">{moduleDef.id}</span>
                     </div>
-                  ) : null}
-                  <strong className="graph-node-title">{moduleDef.name}</strong>
-                  <div className="graph-node-ports">
-                    <span>{moduleDef.inputs.length} in</span>
-                    <span>{moduleDef.outputs.length} out</span>
+                    {sequentialRole ? (
+                      <div className="graph-node-role-row">
+                        <span className={`graph-node-role-badge graph-node-role-badge-${sequentialRole}`}>
+                          {getSequentialRoleLabel(sequentialRole)}
+                        </span>
+                      </div>
+                    ) : null}
+                    <strong className="graph-node-title">{moduleDef.name}</strong>
+                    <div className="graph-node-ports">
+                      <span>{moduleDef.inputs.length} in</span>
+                      <span>{moduleDef.outputs.length} out</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </>
             );
           })() : null}
 

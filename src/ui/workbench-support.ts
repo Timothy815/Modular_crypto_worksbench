@@ -644,6 +644,7 @@ export function getOrthogonalPathData(
 
   return {
     path: buildRoundedOrthogonalPath(chain.points),
+    points: chain.points,
     bendHandle: chain.bendHandle,
     anchorHandles: chain.anchorHandles,
     editableSegments: chain.editableSegments,

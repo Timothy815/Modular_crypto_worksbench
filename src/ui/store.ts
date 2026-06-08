@@ -79,6 +79,10 @@ import type {
   InsertChainConnectionTemplate,
   InsertChainModuleTemplate,
 } from './canonical-chain-insertion';
+import {
+  getSpliceEligiblePorts,
+  splitConnectionLayoutForSplice,
+} from './live-machine-feel-tier2';
 
 export interface UiState {
   activeProjectId: string;
@@ -393,6 +397,16 @@ export type UiAction =
         toIndex: number;
         toPort: string;
       }>;
+    }
+  | {
+      type: 'spliceModuleOnConnection';
+      projectId: string;
+      connectionIndex: number;
+      moduleDef: ModuleDefinition;
+      position: { x: number; y: number };
+      inputPortName: string;
+      outputPortName: string;
+      anchorInsertIndex: number | null;
     }
   | { type: 'removeModule'; projectId: string; moduleId: string }
   | {
@@ -825,6 +839,7 @@ const AUTHORING_HISTORY_ACTIONS = new Set<UiAction['type']>([
   'insertBridgeConnection',
   'insertModuleAndConnect',
   'insertChain',
+  'spliceModuleOnConnection',
   'removeModule',
   'addConnection',
   'autoWireSelection',
@@ -4382,6 +4397,134 @@ function reduceUiStateCore(state: UiState, action: UiAction): UiState {
         projectStates: {
           ...state.projectStates,
           [action.projectId]: nextProject,
+        },
+      };
+    }
+    case 'spliceModuleOnConnection': {
+      if (state.compositeEditor) {
+        return state;
+      }
+
+      const currentProject = state.projectStates[action.projectId];
+      const currentLayout = state.layoutByProject[action.projectId];
+      const currentLayoutDirection = state.layoutDirectionByProject[action.projectId] ?? 'horizontal';
+      if (!currentProject || !currentLayout) {
+        return state;
+      }
+
+      const targetConnection = currentProject.connections[action.connectionIndex];
+      if (!targetConnection) {
+        return state;
+      }
+
+      const sourceInstance = currentProject.modules.find(
+        (moduleInstance) => moduleInstance.id === targetConnection.from.moduleId,
+      );
+      const sourceDef = sourceInstance ? V1_REGISTRY[sourceInstance.defId] : null;
+      const sourceOutput = sourceDef?.outputs.find((port) => port.name === targetConnection.from.port) ?? null;
+      const splicePorts = sourceOutput
+        ? getSpliceEligiblePorts(action.moduleDef, sourceOutput.type)
+        : null;
+
+      if (
+        !sourceOutput ||
+        !splicePorts ||
+        splicePorts.inputPortName !== action.inputPortName ||
+        splicePorts.outputPortName !== action.outputPortName
+      ) {
+        return state;
+      }
+
+      const nextModuleId = createModuleId(currentProject, action.moduleDef.id);
+      const nextProject = cloneProject(currentProject);
+      nextProject.modules = [
+        ...nextProject.modules,
+        {
+          id: nextModuleId,
+          defId: action.moduleDef.id,
+          params: buildDefaultParams(action.moduleDef),
+        },
+      ];
+      nextProject.connections = currentProject.connections
+        .filter((_, index) => index !== action.connectionIndex)
+        .map((connection) => ({
+          from: { ...connection.from },
+          to: { ...connection.to },
+        }));
+      const sourceConnection = {
+        from: {
+          moduleId: targetConnection.from.moduleId,
+          port: targetConnection.from.port,
+        },
+        to: {
+          moduleId: nextModuleId,
+          port: action.inputPortName,
+        },
+      };
+      const targetConnectionReplacement = {
+        from: {
+          moduleId: nextModuleId,
+          port: action.outputPortName,
+        },
+        to: {
+          moduleId: targetConnection.to.moduleId,
+          port: targetConnection.to.port,
+        },
+      };
+      nextProject.connections.push(sourceConnection, targetConnectionReplacement);
+
+      const oldConnectionKey = getConnectionComparisonKey(targetConnection);
+      const oldConnectionLayout = state.connectionLayoutByProject[action.projectId]?.[oldConnectionKey] ?? null;
+      const splitLayout = splitConnectionLayoutForSplice(oldConnectionLayout, action.anchorInsertIndex);
+      const nextConnectionLayout = {
+        ...(state.connectionLayoutByProject[action.projectId] ?? {}),
+      };
+      delete nextConnectionLayout[oldConnectionKey];
+      const sourceConnectionKey = getConnectionComparisonKey(sourceConnection);
+      const targetConnectionKey = getConnectionComparisonKey(targetConnectionReplacement);
+      if (splitLayout.sourceLayout) {
+        nextConnectionLayout[sourceConnectionKey] = splitLayout.sourceLayout;
+      }
+      if (splitLayout.targetLayout) {
+        nextConnectionLayout[targetConnectionKey] = splitLayout.targetLayout;
+      }
+
+      return {
+        ...state,
+        projectStates: {
+          ...state.projectStates,
+          [action.projectId]: nextProject,
+        },
+        layoutByProject: {
+          ...state.layoutByProject,
+          [action.projectId]: {
+            ...currentLayout,
+            [nextModuleId]: {
+              x: action.position.x,
+              y: action.position.y,
+              orientation: getDefaultNodeOrientation(currentLayoutDirection),
+            },
+          },
+        },
+        connectionLayoutByProject: {
+          ...state.connectionLayoutByProject,
+          [action.projectId]: nextConnectionLayout,
+        },
+        selectedModuleIdByProject: {
+          ...state.selectedModuleIdByProject,
+          [action.projectId]: nextModuleId,
+        },
+        selectedModuleIdsByProject: {
+          ...state.selectedModuleIdsByProject,
+          [action.projectId]: [nextModuleId],
+        },
+        currentTickByProject: {
+          ...state.currentTickByProject,
+          [action.projectId]: 0,
+        },
+        isTickPlaybackActiveByProject: {
+          ...state.isTickPlaybackActiveByProject,
+          [action.projectId]: false,
         },
       };
     }

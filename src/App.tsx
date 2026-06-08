@@ -5389,6 +5389,27 @@ function MainApp() {
                     ...(attachInputs && attachInputs.length > 0 ? { attachInputs } : {}),
                   })
             }
+            onSpliceModuleOnConnection={(
+              connectionIndex,
+              moduleDef,
+              position,
+              inputPortName,
+              outputPortName,
+              anchorInsertIndex,
+            ) =>
+              state.compositeEditor || isCompositeDrilldownActive
+                ? undefined
+                : dispatch({
+                    type: 'spliceModuleOnConnection',
+                    projectId: activeProjectDefinition.id,
+                    connectionIndex,
+                    moduleDef,
+                    position,
+                    inputPortName,
+                    outputPortName,
+                    anchorInsertIndex,
+                  })
+            }
               projects={state.compositeEditor || isCompositeDrilldownActive ? [activeProjectDefinition] : availableProjects}
               isCompositeEditor={Boolean(state.compositeEditor)}
             />

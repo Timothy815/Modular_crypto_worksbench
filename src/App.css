@@ -4601,6 +4601,16 @@ body.canvas-resizing {
   filter: drop-shadow(0 0 4px color-mix(in srgb, #c46a12 28%, transparent));
 }
 
+.connection-group-splice-preview .connection-visible-underlay {
+  stroke: color-mix(in srgb, var(--accent) 44%, white 56%);
+  opacity: 0.92;
+}
+
+.connection-group-splice-preview .connection-visible-path {
+  stroke: color-mix(in srgb, var(--accent) 56%, var(--connection-stroke));
+  stroke-width: 3.8;
+}
+
 .connection-group-dimmed .connection-visible-path {
   stroke-width: 1.9;
   opacity: 0.11;
@@ -4884,6 +4894,16 @@ body.canvas-resizing {
   stroke-width: 3;
   stroke-dasharray: 0;
   filter: drop-shadow(0 0 6px color-mix(in srgb, var(--success-bg) 34%, transparent));
+}
+
+.graph-connections-splice-preview {
+  pointer-events: none;
+}
+
+.graph-node-palette-splice-preview {
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--accent) 52%, white 48%),
+    0 10px 24px rgba(15, 23, 42, 0.2);
 }
 
 .graph-node {

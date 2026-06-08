@@ -311,6 +311,7 @@ export function DetachedWorkspaceWindow({
             onAddModule={() => undefined}
             onInsertModuleAndConnect={() => undefined}
             onInsertChain={() => undefined}
+            onSpliceModuleOnConnection={() => undefined}
             projects={[activeProject]}
           />
         </Suspense>
