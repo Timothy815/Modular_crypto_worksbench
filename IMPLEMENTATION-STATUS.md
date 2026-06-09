@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: June 8, 2026
+Last updated: June 9, 2026
 
 ---
 
@@ -19,6 +19,8 @@ If a new agent session starts from scratch, the shortest accurate read is:
 - several features previously treated as “next” or “open” are already shipped in source
 - future work should now start from a code-first baseline, not from older queue memory
 - **as of June 8, 2026: all P1–P5 priorities are complete** — see PRIORITIES.md
+- **as of June 8, 2026: `LIVE-MACHINE-FEEL-V1` is also complete on `main`** — all contracted experiential sub-slices for this revision are now shipped
+- **as of June 9, 2026: `CANVAS-FEEDBACK-REFINEMENT-V1` is also complete on `main`** — the follow-on canvas legibility and precision fixes are now shipped
 
 ## Highest-Confidence Reality Checks
 
@@ -43,6 +45,8 @@ These features are already shipped on `main` and should not be treated as open f
 ## Current Product Direction: All Priority Tiers Complete (June 8, 2026)
 
 All items across PRIORITIES.md P1–P5 are now shipped. There is no contracted open work.
+
+**Latest experiential/UI work:** both `LIVE-MACHINE-FEEL-V1` and its bounded polish follow-on `CANVAS-FEEDBACK-REFINEMENT-V1` are now shipped on `main`. MCW now includes canvas error badges with categorized hover copy plus port-level mismatch summaries, snap-preview wire authoring, signal-chip drag initiation, jump-to-first-error navigation, splice-on-wire insertion, a compact four-domain legend, one-gesture frame-and-label flow, tick pulse / halo timing feedback for ticked execution, domain-colored dense-board halos, minimap error visibility, and enlarged input-port hit targets. This closes the contracted “live machine” pass and its immediate canvas feedback cleanup follow-on.
 
 **Genuine next open work (verified against source, June 8, 2026 — NOT yet contracted):**
 - AES decryption primitives (`InvSubBytes`, `InvShiftRows`, `InvMixColumns`) — not in engine

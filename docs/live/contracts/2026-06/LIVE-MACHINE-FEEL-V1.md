@@ -1,7 +1,7 @@
 # Live Machine Feel V1
 
 Last updated: June 8, 2026
-Status: Under Review — Rev 2 (incorporates Gemini + Codex review feedback)
+Status: Shipped on `main`
 
 ---
 

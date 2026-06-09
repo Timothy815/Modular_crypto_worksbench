@@ -1,14 +1,14 @@
 # Current Handoff
 
-Last updated: June 5, 2026
+Last updated: June 9, 2026
 
 This file is the fastest restart point for a fresh agent session.
 
 ## Current Branch And Commit
 
 - branch: `main`
-- latest shipped commit on `main`: `6b1dc01`
-- latest shipped message: `Add reusable jump to references`
+- latest shipped commit on `main`: `3b24d3c`
+- latest shipped message: `Add port-level mismatch detail to canvas errors`
 
 ## Working Tree
 
@@ -17,25 +17,29 @@ This file is the fastest restart point for a fresh agent session.
 
 ## What Just Shipped
 
-The latest authored-reuse slices are now shipped on `main`:
+`CANVAS-FEEDBACK-REFINEMENT-V1` is now complete on `main` as a bounded follow-on after `LIVE-MACHINE-FEEL-V1`.
 
-- `REUSABLE-IMPACT-AND-REFERENCES-V1`
-- `REUSABLE-JUMP-TO-REFERENCES-V1`
+The latest shipped refinement includes:
 
-MCW now supports:
+- larger effective hit targets on input ports
+- minimap error visibility for broken regions
+- domain-colored halo mode for dense tick-pulse boards
+- port-level type-mismatch summary inside the canvas error tooltip
 
-- reusable impact summaries in the reusable palette
-- separate placed-instance counts from reusable-definition reference counts
-- saved-local reference copy that does not imply external-file scanning
-- delete blocking when either placed instances or other reusable definitions reference an entry
-- rename copy that clarifies display-name changes keep stable ids and references unchanged
-- `Open board` actions from reusable placed-reference rows into the saved-local board that currently contains the reusable
-- `Open reusable` actions from reusable-definition reference rows when that reusable kind already has an edit/open affordance
-- bounded disabled-state copy when a reference target is not currently jumpable
+`LIVE-MACHINE-FEEL-V1` remains fully shipped beneath that refinement layer:
+
+- `A` canvas error badges with categorized hover copy
+- `B` port hover snap-preview
+- `F` connection drag from output chip
+- `E` jump-to-first-error
+- `D` splice-on-wire
+- `C` wire domain legend
+- `G` one-gesture label+frame with auto-label hint
+- `I` tick pulse on wires
 
 ## Current Product State
 
-MCW is now in a strong post-crypto, post-durability, post-document-workflow authoring phase.
+MCW is now in a strong post-crypto, post-durability, post-document-workflow, post-live-machine-feel, post-canvas-feedback-refinement phase.
 
 Already shipped on `main`:
 
@@ -53,6 +57,8 @@ Already shipped on `main`:
 - personal-library tag organization
 - reusable impact/reference visibility
 - reusable jump-to-reference navigation
+- the complete bounded `LIVE-MACHINE-FEEL-V1` experiential pass
+- the bounded `CANVAS-FEEDBACK-REFINEMENT-V1` polish follow-on
 
 ## Canonical Restart Read Order
 
@@ -66,20 +72,20 @@ Already shipped on `main`:
 
 ## Next Likely Work
 
-No next authored-reuse follow-on is drafted yet after `REUSABLE-JUMP-TO-REFERENCES-V1`.
+There is no contracted automatic follow-on after `CANVAS-FEEDBACK-REFINEMENT-V1`.
 
-The most likely future authored-reuse directions are:
+Recommended next direction:
 
-1. a reusable cleanup/actionability follow-on only if real use shows jump-only navigation is insufficient
-- for example, a bounded replace-reference workflow
-- but only with a fresh contract, since this slice intentionally stopped short of retargeting semantics
+- reassess the product fresh against `EXPERIENTIAL-NORTH-STAR-V1.md`
+- verify in current source where the highest real friction still remains
+- draft the next bounded contract from the present codebase, not from older queue memory
 
-2. a smaller personal-library organization follow-on only if the current tag layer proves too thin
-- for example, tag rename or tag cleanup
+The likely candidate categories are:
 
-Recommended next direction if no new user priority overrides it:
-
-- pause automatic authored-reuse follow-ons and evaluate where real author friction remains
+1. operator guidance / onboarding coherence
+2. workflow/discovery coherence
+3. another bounded experiential pass only if a real remaining north-star gap is still obvious
+4. a new crypto-capability slice only if product-shaping friction is no longer the bottleneck
 
 ## Verification Baseline
 
@@ -95,3 +101,4 @@ Before the latest commit, the following were green:
 - keep workspace documents self-contained
 - do not silently retarget current workspaces to personal-library copies
 - do not drift into package-manager semantics without a contract
+- do not infer a `LIVE-MACHINE-FEEL-V2` or `CANVAS-FEEDBACK-REFINEMENT-V2` automatically; reassess first
