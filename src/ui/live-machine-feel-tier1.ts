@@ -15,6 +15,7 @@ export interface CanvasModuleErrorState {
   kind: CanvasModuleErrorKind;
   label: string;
   detail: string;
+  portSummary?: string;
 }
 
 export interface PendingSnapAnchor {
@@ -60,6 +61,51 @@ const TYPE_MISMATCH_CODES = new Set<ValidationIssue['code']>([
   'signal-kind-mismatch',
   'signal-width-mismatch',
 ]);
+
+function formatPortSummary(
+  project: Project,
+  registry: ModuleRegistry,
+  issue: ValidationIssue,
+): string | undefined {
+  const connection = issue.connection;
+  if (!connection) {
+    return undefined;
+  }
+
+  const targetModuleInstance = project.modules.find(
+    (moduleInstance) => moduleInstance.id === connection.to.moduleId,
+  );
+  const sourceModuleInstance = project.modules.find(
+    (moduleInstance) => moduleInstance.id === connection.from.moduleId,
+  );
+  if (!targetModuleInstance || !sourceModuleInstance) {
+    return undefined;
+  }
+
+  const targetDef = registry[targetModuleInstance.defId];
+  const sourceDef = registry[sourceModuleInstance.defId];
+  if (!targetDef || !sourceDef) {
+    return undefined;
+  }
+
+  const targetPort = targetDef.inputs.find((port) => port.name === connection.to.port);
+  const sourcePort = sourceDef.outputs.find((port) => port.name === connection.from.port);
+  if (!targetPort || !sourcePort) {
+    return undefined;
+  }
+
+  if (issue.code === 'signal-kind-mismatch') {
+    const targetKind = targetPort.kind;
+    const sourceKind = sourcePort.kind;
+    if (!targetKind || !sourceKind) {
+      return undefined;
+    }
+
+    return `Port "${connection.to.port}": expects ${targetKind} ${targetPort.type}, got ${sourceKind}`;
+  }
+
+  return `Port "${connection.to.port}": expects ${targetPort.type}, got ${sourcePort.type}`;
+}
 
 export function deriveCanvasModuleErrorStateById(
   project: Project,
@@ -114,6 +160,7 @@ export function deriveCanvasModuleErrorStateById(
         kind: 'type-mismatch',
         label: 'Type mismatch',
         detail: mismatchIssue.message,
+        portSummary: formatPortSummary(project, registry, mismatchIssue),
       };
       continue;
     }

@@ -5680,6 +5680,11 @@ export function WorkbenchPanel({
                       !
                       <span className="graph-node-error-tooltip" role="tooltip">
                         <strong>{canvasErrorState.label}</strong>
+                        {canvasErrorState.portSummary ? (
+                          <code className="graph-node-error-tooltip-port">
+                            {canvasErrorState.portSummary}
+                          </code>
+                        ) : null}
                         <span>{canvasErrorState.detail}</span>
                       </span>
                     </span>

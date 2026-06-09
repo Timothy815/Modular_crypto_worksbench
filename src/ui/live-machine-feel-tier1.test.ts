@@ -89,6 +89,7 @@ describe('deriveCanvasModuleErrorStateById', () => {
     expect(errorStateById.mid?.kind).toBe('upstream-failure');
     expect(errorStateById.sink).toBeUndefined();
     expect(errorStateById.typed?.kind).toBe('type-mismatch');
+    expect(errorStateById.typed?.portSummary).toBe('Port "in": expects symbol, got bits');
   });
 
   it('treats unconnected required inputs as missing-input failures', () => {
@@ -104,6 +105,38 @@ describe('deriveCanvasModuleErrorStateById', () => {
       label: 'Missing input',
       detail: 'Input in is not connected.',
     });
+  });
+
+  it('leaves portSummary undefined when mismatch port lookup fails', () => {
+    const project: Project = {
+      modules: [
+        { id: 'src', defId: 'MissingSourceDef', params: {} },
+        { id: 'typed', defId: 'SymbolSink', params: {} },
+      ],
+      connections: [
+        {
+          from: { moduleId: 'src', port: 'out' },
+          to: { moduleId: 'typed', port: 'in' },
+        },
+      ],
+    };
+
+    const validationIssues: ValidationIssue[] = [
+      {
+        code: 'signal-type-mismatch',
+        message: 'src.out bits cannot connect to typed.in symbol.',
+        connection: {
+          from: { moduleId: 'src', port: 'out' },
+          to: { moduleId: 'typed', port: 'in' },
+        },
+      },
+    ];
+
+    const errorStateById = deriveCanvasModuleErrorStateById(project, registry, validationIssues, null);
+
+    expect(errorStateById.typed?.kind).toBe('type-mismatch');
+    expect(errorStateById.typed?.detail).toBe('src.out bits cannot connect to typed.in symbol.');
+    expect(errorStateById.typed?.portSummary).toBeUndefined();
   });
 
   it('falls back to output-missing failures during an execution run', () => {

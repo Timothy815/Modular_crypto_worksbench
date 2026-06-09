@@ -5852,6 +5852,19 @@ body.canvas-resizing {
   font-size: 0.76rem;
 }
 
+.graph-node-error-tooltip-port {
+  display: block;
+  margin: 0 0 6px;
+  padding: 4px 6px;
+  border-left: 2px solid color-mix(in srgb, var(--danger-text) 48%, transparent);
+  background: color-mix(in srgb, var(--surface-alt) 72%, transparent);
+  color: color-mix(in srgb, var(--ink-muted) 88%, var(--ink));
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  white-space: normal;
+}
+
 .graph-node-error-tooltip span {
   display: block;
   font-size: 0.76rem;
