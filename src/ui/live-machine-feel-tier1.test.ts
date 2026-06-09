@@ -139,6 +139,38 @@ describe('deriveCanvasModuleErrorStateById', () => {
     expect(errorStateById.typed?.portSummary).toBeUndefined();
   });
 
+  it('leaves portSummary undefined for width mismatches', () => {
+    const project: Project = {
+      modules: [
+        { id: 'src', defId: 'SourceBits', params: {} },
+        { id: 'mid', defId: 'PassBits', params: {} },
+      ],
+      connections: [
+        {
+          from: { moduleId: 'src', port: 'out' },
+          to: { moduleId: 'mid', port: 'in' },
+        },
+      ],
+    };
+
+    const validationIssues: ValidationIssue[] = [
+      {
+        code: 'signal-width-mismatch',
+        message: 'src.out width 4 cannot connect to mid.in width 8.',
+        connection: {
+          from: { moduleId: 'src', port: 'out' },
+          to: { moduleId: 'mid', port: 'in' },
+        },
+      },
+    ];
+
+    const errorStateById = deriveCanvasModuleErrorStateById(project, registry, validationIssues, null);
+
+    expect(errorStateById.mid?.kind).toBe('type-mismatch');
+    expect(errorStateById.mid?.detail).toBe('src.out width 4 cannot connect to mid.in width 8.');
+    expect(errorStateById.mid?.portSummary).toBeUndefined();
+  });
+
   it('falls back to output-missing failures during an execution run', () => {
     const project: Project = {
       modules: [

@@ -67,6 +67,10 @@ function formatPortSummary(
   registry: ModuleRegistry,
   issue: ValidationIssue,
 ): string | undefined {
+  if (issue.code !== 'signal-type-mismatch' && issue.code !== 'signal-kind-mismatch') {
+    return undefined;
+  }
+
   const connection = issue.connection;
   if (!connection) {
     return undefined;
