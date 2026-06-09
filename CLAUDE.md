@@ -165,10 +165,26 @@ src/utils/     — Shared helpers
 - 16 built-in composites in `STARTER_COMPOSITE_LIBRARY` (AesRound, Feistel, Hash, Sponge, Enigma helpers, and more)
 - 149 engine modules, 111 demos, 112 tutorials, 83 challenges
 
-**Genuine next open work (verified against source June 2026):**
-- AES decryption primitives (`InvSubBytes`, `InvShiftRows`, `InvMixColumns`) — not in engine; no decrypt path exists
-- Full 10-round AES-128 (current `aes-4-round` demo stops at 4 rounds; final round also differs — no MixColumns)
-- Bundle headroom is tight: `maxChunk` is at 450 KiB with demo-data near the ceiling — any large new demo risks hitting the guard
+**Also shipped (June 8, 2026) — LIVE-MACHINE-FEEL-V1 (all four tiers):**
+- Canvas error badges with error-kind tooltip (missing input / type mismatch / upstream failure / invalid parameter)
+- Port hover snap-preview with 20px snap zone, 24px hysteresis, anti-hijack rule
+- Connection drag from output signal chip
+- Jump-to-first-error (topological order, previous-view preserved)
+- Splice-on-wire (one-gesture mid-wire insertion; control ports excluded; wire metadata preserved)
+- Wire domain legend always visible in workspace chrome
+- One-gesture label+frame (F key creates group box + opens label; auto-label hint for homogeneous selections)
+- Tick pulse on wires (wire mode ≤24 concurrent; halo mode above threshold; viewport-bounded; per-workspace toggle)
+
+**Genuine next open work (verified against source June 8, 2026):**
+- `CANVAS-FEEDBACK-REFINEMENT-V1` (not yet contracted) — four low-effort items:
+  port-level mismatch detail in error badge tooltip; domain-colored halos in halo mode;
+  minimap error-state overlay; input port hit-target enlargement.
+  Full assessment: `docs/live/contracts/2026-06/NORTH-STAR-REMAINING-GAPS-2026-06.md`
+- Splice-on-wire V2: eligibility by required ports only (not total ports) — covers XOR, SBox, BitShifter with optional key inputs
+- Group box nesting (hierarchy) — not yet contracted; needs design decisions first
+- AES decryption primitives (`InvSubBytes`, `InvShiftRows`, `InvMixColumns`) — not in engine; genuine gap but not immediate priority
+- Full 10-round AES-128 — current `aes-4-round` demo covers 4 rounds; final round also differs (no MixColumns)
+- Bundle headroom: `maxChunk` at 450 KiB with demo-data near ceiling — watch before adding large demos
 
 **Bundle guard:** `maxChunk` is 450 KiB. demo-data chunk sits near the ceiling. Watch before adding more large demos.
 
