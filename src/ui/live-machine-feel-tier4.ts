@@ -13,6 +13,7 @@ export interface TickPulseProjection {
   wireConnectionKeys: string[];
   haloModuleIds: string[];
   domainByConnectionKey: Record<string, TickPulseProjectionEntry['domain']>;
+  domainByModuleId: Record<string, TickPulseProjectionEntry['domain']>;
 }
 
 const MAX_VISIBLE_WIRE_PULSES = 24;
@@ -57,11 +58,21 @@ export function projectTickPulseVisibility(
   ) as Record<string, TickPulseProjectionEntry['domain']>;
 
   if (visibleEntries.length > MAX_VISIBLE_WIRE_PULSES) {
+    const domainByModuleId = visibleEntries.reduce<
+      Record<string, TickPulseProjectionEntry['domain']>
+    >((map, entry) => {
+      if (!(entry.targetModuleId in map)) {
+        map[entry.targetModuleId] = entry.domain;
+      }
+      return map;
+    }, {});
+
     return {
       mode: 'halo',
       wireConnectionKeys: [],
       haloModuleIds: [...new Set(visibleEntries.map((entry) => entry.targetModuleId))],
       domainByConnectionKey: {},
+      domainByModuleId,
     };
   }
 
@@ -70,6 +81,7 @@ export function projectTickPulseVisibility(
     wireConnectionKeys: visibleEntries.map((entry) => entry.connectionKey),
     haloModuleIds: [],
     domainByConnectionKey,
+    domainByModuleId: {},
   };
 }
 

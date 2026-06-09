@@ -49,6 +49,9 @@ describe('live-machine-feel Tier 4 helpers', () => {
       wireConnectionKeys: [],
       haloModuleIds: entries.map((entry) => entry.targetModuleId),
       domainByConnectionKey: {},
+      domainByModuleId: Object.fromEntries(
+        entries.map((entry) => [entry.targetModuleId, 'bits']),
+      ),
     });
   });
 
@@ -75,7 +78,34 @@ describe('live-machine-feel Tier 4 helpers', () => {
       domainByConnectionKey: {
         'src:out->mid:in': 'integer',
       },
+      domainByModuleId: {},
     });
+  });
+
+  it('uses the first visible incoming domain for each halo module', () => {
+    const projection = projectTickPulseVisibility([
+      {
+        connectionKey: 'a:out->shared:inA',
+        targetModuleId: 'shared',
+        domain: 'symbol',
+        visible: true,
+      },
+      {
+        connectionKey: 'b:out->shared:inB',
+        targetModuleId: 'shared',
+        domain: 'bits',
+        visible: true,
+      },
+      ...Array.from({ length: 23 }, (_, index) => ({
+        connectionKey: `m${index}:out->n${index}:in`,
+        targetModuleId: `n${index}`,
+        domain: 'bits' as const,
+        visible: true,
+      })),
+    ]);
+
+    expect(projection.mode).toBe('halo');
+    expect(projection.domainByModuleId.shared).toBe('symbol');
   });
 
   it('suppresses rapid scrub pulses but not isolated tick changes', () => {

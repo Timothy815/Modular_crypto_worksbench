@@ -3047,6 +3047,10 @@ export function WorkbenchPanel({
     () => new Set(tickPulseProjection?.haloModuleIds ?? []),
     [tickPulseProjection],
   );
+  const tickPulseHaloDomainByModuleId = useMemo(
+    () => tickPulseProjection?.domainByModuleId ?? {},
+    [tickPulseProjection],
+  );
 
   const executionSignalByModuleId = useMemo(() => buildExecutionSignalByModuleId(execution), [execution]);
 
@@ -5397,7 +5401,11 @@ export function WorkbenchPanel({
                 {tickPulseHaloModuleIdSet.has(moduleInstance.id) && tickPulseState ? (
                   <span
                     key={`tick-halo:${tickPulseState.sequence}:${moduleInstance.id}`}
-                    className="graph-node-tick-pulse-halo"
+                    className={`graph-node-tick-pulse-halo${
+                      tickPulseHaloDomainByModuleId[moduleInstance.id]
+                        ? ` graph-node-tick-pulse-halo-${tickPulseHaloDomainByModuleId[moduleInstance.id]}`
+                        : ''
+                    }`}
                     aria-hidden="true"
                   />
                 ) : null}

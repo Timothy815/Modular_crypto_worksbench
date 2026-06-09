@@ -5461,6 +5461,38 @@ body.canvas-resizing {
   animation: graph-node-tick-pulse-halo 620ms ease-out forwards;
 }
 
+.graph-node-tick-pulse-halo-bits {
+  border-color: color-mix(in srgb, #0a67ff 38%, white);
+  box-shadow:
+    0 0 0 10px color-mix(in srgb, #0a67ff 18%, transparent),
+    0 0 42px color-mix(in srgb, #0a67ff 34%, transparent),
+    0 0 64px color-mix(in srgb, white 14%, transparent);
+}
+
+.graph-node-tick-pulse-halo-symbol {
+  border-color: color-mix(in srgb, #ff7a12 38%, white);
+  box-shadow:
+    0 0 0 10px color-mix(in srgb, #ff7a12 18%, transparent),
+    0 0 42px color-mix(in srgb, #ff7a12 34%, transparent),
+    0 0 64px color-mix(in srgb, white 14%, transparent);
+}
+
+.graph-node-tick-pulse-halo-integer {
+  border-color: color-mix(in srgb, #23b261 38%, white);
+  box-shadow:
+    0 0 0 10px color-mix(in srgb, #23b261 18%, transparent),
+    0 0 42px color-mix(in srgb, #23b261 34%, transparent),
+    0 0 64px color-mix(in srgb, white 14%, transparent);
+}
+
+.graph-node-tick-pulse-halo-ec-point {
+  border-color: color-mix(in srgb, #9166ff 38%, white);
+  box-shadow:
+    0 0 0 10px color-mix(in srgb, #9166ff 18%, transparent),
+    0 0 42px color-mix(in srgb, #9166ff 34%, transparent),
+    0 0 64px color-mix(in srgb, white 14%, transparent);
+}
+
 @keyframes graph-node-tick-pulse-halo {
   0% {
     opacity: 0;
