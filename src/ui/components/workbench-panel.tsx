@@ -6273,6 +6273,8 @@ export function WorkbenchPanel({
                   key={moduleId}
                   className={`workbench-minimap-node${
                     selectedModuleIds.includes(moduleId) ? ' selected' : ''
+                  }${
+                    canvasModuleErrorStateById[moduleId] ? ' error' : ''
                   }`}
                   style={{
                     left: `${position.x * minimapMetrics.scale}px`,

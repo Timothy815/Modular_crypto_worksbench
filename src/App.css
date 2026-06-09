@@ -4167,6 +4167,11 @@ details:not([open]) > .manual-body-summary::before {
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 34%, transparent);
 }
 
+.workbench-minimap-node.error {
+  background: color-mix(in srgb, var(--danger-text) 88%, #ff8a5c);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger-text) 34%, transparent);
+}
+
 .workbench-minimap-annotation {
   width: 6px;
   height: 6px;
