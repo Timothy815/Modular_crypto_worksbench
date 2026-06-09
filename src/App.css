@@ -6061,6 +6061,14 @@ body.canvas-resizing {
   filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 18%, transparent));
 }
 
+.graph-port-anchor-in::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  pointer-events: auto;
+  background: transparent;
+}
+
 .graph-port-anchor-emphasized {
   color: color-mix(in srgb, var(--accent) 88%, var(--ink));
   filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 20%, transparent));
