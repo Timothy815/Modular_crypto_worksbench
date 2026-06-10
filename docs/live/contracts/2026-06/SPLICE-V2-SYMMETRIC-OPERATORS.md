@@ -53,7 +53,7 @@ gating behavior today is:
 2. `nonMatchingInputs.length > 0` rejects modules with extra data inputs of other domains
 
 In current shipped source, the first rule is the real classroom problem. The second rule is not the
-thing blocking common splice targets.
+thing blocking the named common splice targets in this contract.
 
 Examples:
 
@@ -64,6 +64,12 @@ Examples:
 
 So this contract does **not** reopen splice into a broad "required-only port" policy. It targets the
 actual pain point in current source: symmetric multi-input operators on the same wire domain.
+
+The mixed-type extra-input case is explicitly deferred. For example, removing the
+`nonMatchingInputs.length > 0` gate would also widen splice eligibility for modules like
+`ScalarMultiply` on `ec-point` wires by wiring `point` and leaving `scalar(integer)` unconnected.
+That behavior is coherent, but it is not needed for the named classroom targets here and should be
+evaluated separately rather than bundled into this slice.
 
 ---
 
@@ -134,18 +140,19 @@ If there is one or more matching input, choose:
 
 where `matchingInputs` preserves the module definition order from `moduleDef.inputs`.
 
-### 2. Remove the non-matching-input rejection gate
+### 2. Keep the mixed-type extra-input rejection gate unchanged
 
-Remove this rejection:
+Keep this rejection unchanged:
 
 - reject when `nonMatchingInputs.length > 0`
 
 Reason:
 
-- it is not the real blocker for current common splice targets
-- this slice is about selecting the first matching input, not demanding a single-input module shape
-
-This does **not** authorize hidden wiring to the non-matching ports. They remain unconnected.
+- it is not the real blocker for the named target modules in this slice
+- removing it would create newly eligible mixed-type cases that this contract does not need to
+  justify or test
+- this slice is specifically about same-domain multi-input operators like `XOR`, not a broader
+  expansion of splice semantics
 
 ### 3. Resulting splice behavior
 
@@ -163,7 +170,18 @@ That means the inserted module may immediately show:
 This is correct and desired. The graph is not "finished," but the splice still saved the teacher the
 mechanical sever-place-reconnect work on the main path.
 
-### 4. No new hidden semantics
+### 4. Preview behavior remains unchanged
+
+No special preview rewrite is needed for newly eligible multi-input modules.
+
+The splice preview should continue to anchor to:
+
+- `splicePorts.inputPortName`
+
+For `XOR`, that means the preview anchors to `a`, while `b` simply remains visibly unconnected in the
+preview and after commit. This is the desired honest behavior.
+
+### 5. No new hidden semantics
 
 The following remain forbidden:
 
@@ -197,7 +215,8 @@ Expected shape:
 1. compute `matchingInputs` and `matchingOutputs` as today
 2. reject if `matchingInputs.length < 1`
 3. reject if `matchingOutputs.length !== 1`
-4. return `matchingInputs[0].name` and `matchingOutputs[0].name`
+4. keep the existing `nonMatchingInputs.length > 0` rejection
+5. return `matchingInputs[0].name` and `matchingOutputs[0].name`
 
 No other helper semantics should change unless required by tests.
 
@@ -228,25 +247,30 @@ The point is to prove the rule generalizes beyond `XOR`, not that every module n
 
 ### Behavior-level test
 
-Add one graph-level test proving that the new splice model remains honest:
+Add one concrete graph-level test proving that the new splice model remains honest:
 
-- after splicing a symmetric operator into a wire
-- the auto-wired first input is connected
-- the remaining required input is still unconnected
-- the resulting module is surfaced through the existing canvas error logic as `Missing input`
+- start from a minimal project with two modules connected by a `bits` wire
+- splice `XOR` into that connection using the existing splice/reducer path, not a bespoke shortcut
+- assert that the resulting graph now has:
+  - two connections instead of one
+  - the inserted `XOR` wired through its first matching input (`a`)
+  - its remaining required input left unconnected
+- assert that `deriveCanvasModuleErrorStateById` reports `Missing input` for the inserted `XOR`
 
-This test does not need to exercise the full drag UI if there is already a lower-cost helper path for
-constructing the post-splice project shape. The goal is to prove the semantics, not pointer choreography.
+This test does not need to exercise full pointer choreography. The goal is to prove the resulting
+graph semantics, not the mouse interaction layer.
 
 ### Regression expectations
 
 The following existing behaviors must remain true:
 
 - modules with no matching inputs are still ineligible
+- modules with mixed-type extra data inputs remain ineligible under the unchanged gate
 - modules with multiple matching outputs are still ineligible
 - control-port exclusion still works
 - ambiguous crossing-wire drops still do not auto-insert
 - splice undo remains atomic
+- update the existing helper-test description so it no longer claims symmetric multi-input modules are rejected
 
 ---
 
@@ -258,10 +282,11 @@ The following existing behaviors must remain true:
 4. The canvas shows the resulting `Missing input` state using the already shipped error-badge path.
 5. `Jump To First Error` can still locate the newly incomplete splice result without any special-case logic.
 6. One-input transforms that were already eligible remain eligible.
-7. Modules with multiple matching outputs remain ineligible.
-8. No hidden secondary-input wiring or constant injection is introduced.
-9. `npx vitest run` passes.
-10. `npm run build` passes and bundle guard remains under `450 KiB`.
+7. Modules with mixed-type extra data inputs remain ineligible.
+8. Modules with multiple matching outputs remain ineligible.
+9. No hidden secondary-input wiring or constant injection is introduced.
+10. `npx vitest run` passes.
+11. `npm run build` passes and bundle guard remains under `450 KiB`.
 
 ---
 
