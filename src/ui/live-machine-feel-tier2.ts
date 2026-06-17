@@ -73,7 +73,7 @@ export function getSpliceEligiblePorts(
 
   const matchingInputs = dataInputs.filter((port) => port.type === wireType);
   const matchingOutputs = dataOutputs.filter((port) => port.type === wireType);
-  if (matchingInputs.length !== 1 || matchingOutputs.length !== 1) {
+  if (matchingInputs.length < 1 || matchingOutputs.length !== 1) {
     return null;
   }
 

@@ -46,12 +46,19 @@ describe('live-machine-feel Tier 2 helpers', () => {
     ).toBe('middle');
   });
 
-  it('accepts one-in one-out data modules for splicing and rejects extra required inputs', () => {
+  it('accepts eligible splice shapes, including same-domain multi-input operators, and rejects ineligible shapes', () => {
     expect(getSpliceEligiblePorts(V1_REGISTRY.NOT, 'bits')).toEqual({
       inputPortName: 'in',
       outputPortName: 'out',
     });
-    expect(getSpliceEligiblePorts(V1_REGISTRY.XOR, 'bits')).toBeNull();
+    expect(getSpliceEligiblePorts(V1_REGISTRY.XOR, 'bits')).toEqual({
+      inputPortName: 'a',
+      outputPortName: 'out',
+    });
+    expect(getSpliceEligiblePorts(V1_REGISTRY.AND, 'bits')).toEqual({
+      inputPortName: 'a',
+      outputPortName: 'out',
+    });
     expect(getSpliceEligiblePorts(V1_REGISTRY.Gate, 'bits')).toEqual({
       inputPortName: 'in',
       outputPortName: 'out',

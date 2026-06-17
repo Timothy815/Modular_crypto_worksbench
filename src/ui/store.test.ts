@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { V1_REGISTRY } from '../engine/modules';
 import { CANVAS_NODE_HEIGHT, CANVAS_NODE_WIDTH } from './canvas-selection';
 import { demoProjects } from './demo-projects';
+import { deriveCanvasModuleErrorStateById } from './live-machine-feel-tier1';
 import { createInitialUiState, uiReducer } from './store';
 import { getConnectionComparisonKey } from './workspace-comparison';
 
@@ -2907,5 +2908,97 @@ describe('uiReducer', () => {
     expect(
       splicedState.connectionLayoutByProject['splice-test']?.[originalConnectionKey],
     ).toBeUndefined();
+  });
+
+  it('splices XOR onto a bits wire, wires the first matching input, and leaves the second input visibly missing', () => {
+    let state = createInitialUiState(demoProjects);
+    state = uiReducer(state, {
+      type: 'createBlankWorkspace',
+      workspaceId: 'splice-xor-test',
+      name: 'Splice XOR Test',
+      summary: 'Symmetric multi-input splice test.',
+      pipeline: 'BitSource -> NOT',
+    });
+
+    state = uiReducer(state, {
+      type: 'addModule',
+      projectId: 'splice-xor-test',
+      moduleDef: V1_REGISTRY.BitSource,
+      position: { x: 80, y: 120 },
+    });
+    state = uiReducer(state, {
+      type: 'addModule',
+      projectId: 'splice-xor-test',
+      moduleDef: V1_REGISTRY.NOT,
+      position: { x: 300, y: 120 },
+    });
+
+    const sourceModuleId = state.projectStates['splice-xor-test'].modules.find(
+      (moduleInstance) => moduleInstance.defId === 'BitSource',
+    )?.id;
+    const targetModuleId = state.projectStates['splice-xor-test'].modules.find(
+      (moduleInstance) => moduleInstance.defId === 'NOT',
+    )?.id;
+    if (!sourceModuleId || !targetModuleId) {
+      throw new Error('Expected source and target modules to exist.');
+    }
+
+    state = uiReducer(state, {
+      type: 'addConnection',
+      projectId: 'splice-xor-test',
+      fromModuleId: sourceModuleId,
+      fromPort: 'out',
+      toModuleId: targetModuleId,
+      toPort: 'in',
+    });
+
+    const splicedState = uiReducer(state, {
+      type: 'spliceModuleOnConnection',
+      projectId: 'splice-xor-test',
+      connectionIndex: 0,
+      moduleDef: V1_REGISTRY.XOR,
+      position: { x: 190, y: 96 },
+      inputPortName: 'a',
+      outputPortName: 'out',
+      anchorInsertIndex: null,
+    });
+
+    const insertedModule = splicedState.projectStates['splice-xor-test'].modules.find(
+      (moduleInstance) => moduleInstance.defId === 'XOR',
+    );
+    expect(insertedModule).toBeTruthy();
+    expect(splicedState.projectStates['splice-xor-test'].connections).toHaveLength(2);
+
+    const sourceToInserted = splicedState.projectStates['splice-xor-test'].connections.find(
+      (connection) =>
+        connection.from.moduleId === sourceModuleId &&
+        connection.to.moduleId === insertedModule?.id,
+    );
+    const insertedToTarget = splicedState.projectStates['splice-xor-test'].connections.find(
+      (connection) =>
+        connection.from.moduleId === insertedModule?.id &&
+        connection.to.moduleId === targetModuleId,
+    );
+    expect(sourceToInserted).toEqual({
+      from: { moduleId: sourceModuleId, port: 'out' },
+      to: { moduleId: insertedModule!.id, port: 'a' },
+    });
+    expect(insertedToTarget).toEqual({
+      from: { moduleId: insertedModule!.id, port: 'out' },
+      to: { moduleId: targetModuleId, port: 'in' },
+    });
+
+    const errorStates = deriveCanvasModuleErrorStateById(
+      splicedState.projectStates['splice-xor-test'],
+      V1_REGISTRY,
+      [],
+      null,
+    );
+
+    expect(errorStates[insertedModule!.id]).toEqual({
+      kind: 'missing-input',
+      label: 'Missing input',
+      detail: 'Input b is not connected.',
+    });
   });
 });
