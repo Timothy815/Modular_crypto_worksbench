@@ -1,7 +1,7 @@
 # Splice V2 — Symmetric Operators
 
-Last updated: June 9, 2026
-Status: Draft
+Last updated: June 17, 2026
+Status: Shipped on `main`
 
 Related:
 - [LIVE-MACHINE-FEEL-V1.md](/Users/timothykoerner/Desktop/modular_cryptography/docs/live/contracts/2026-06/LIVE-MACHINE-FEEL-V1.md)

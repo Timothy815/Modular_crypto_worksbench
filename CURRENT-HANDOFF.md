@@ -1,14 +1,14 @@
 # Current Handoff
 
-Last updated: June 9, 2026
+Last updated: June 17, 2026
 
 This file is the fastest restart point for a fresh agent session.
 
-## Current Branch And Commit
+## Current Branch And Feature Commit
 
 - branch: `main`
-- latest shipped commit on `main`: `3b24d3c`
-- latest shipped message: `Add port-level mismatch detail to canvas errors`
+- latest shipped feature commit on `main`: `a6ada0f`
+- latest shipped feature message: `Implement Splice V2 for symmetric operators`
 
 ## Working Tree
 
@@ -17,16 +17,21 @@ This file is the fastest restart point for a fresh agent session.
 
 ## What Just Shipped
 
-`CANVAS-FEEDBACK-REFINEMENT-V1` is now complete on `main` as a bounded follow-on after `LIVE-MACHINE-FEEL-V1`.
+`SPLICE-V2-SYMMETRIC-OPERATORS` is now complete on `main`.
 
-The latest shipped refinement includes:
+The latest shipped authoring improvement includes:
 
-- larger effective hit targets on input ports
-- minimap error visibility for broken regions
-- domain-colored halo mode for dense tick-pulse boards
-- port-level type-mismatch summary inside the canvas error tooltip
+- splice-on-wire now accepts same-domain multi-input operators like `XOR` and `AND`
+- splice chooses the first matching input by definition order
+- remaining required inputs are left visibly unconnected
+- existing missing-input badges and jump-to-error continue to surface the unfinished state honestly
 
-`LIVE-MACHINE-FEEL-V1` remains fully shipped beneath that refinement layer:
+The immediately preceding shipped experiential/UI layers remain intact:
+
+- `CANVAS-FEEDBACK-REFINEMENT-V1`
+- `LIVE-MACHINE-FEEL-V1`
+
+Those shipped layers include:
 
 - `A` canvas error badges with categorized hover copy
 - `B` port hover snap-preview
@@ -39,7 +44,7 @@ The latest shipped refinement includes:
 
 ## Current Product State
 
-MCW is now in a strong post-crypto, post-durability, post-document-workflow, post-live-machine-feel, post-canvas-feedback-refinement phase.
+MCW is now in a strong post-crypto, post-durability, post-document-workflow, post-live-machine-feel, post-canvas-feedback-refinement, post-splice-v2 phase.
 
 Already shipped on `main`:
 
@@ -59,6 +64,7 @@ Already shipped on `main`:
 - reusable jump-to-reference navigation
 - the complete bounded `LIVE-MACHINE-FEEL-V1` experiential pass
 - the bounded `CANVAS-FEEDBACK-REFINEMENT-V1` polish follow-on
+- the bounded `SPLICE-V2-SYMMETRIC-OPERATORS` splice-authoring follow-on
 
 ## Canonical Restart Read Order
 
@@ -72,7 +78,7 @@ Already shipped on `main`:
 
 ## Next Likely Work
 
-There is no contracted automatic follow-on after `CANVAS-FEEDBACK-REFINEMENT-V1`.
+There is no contracted automatic follow-on after `SPLICE-V2-SYMMETRIC-OPERATORS`.
 
 Recommended next direction:
 
@@ -101,4 +107,4 @@ Before the latest commit, the following were green:
 - keep workspace documents self-contained
 - do not silently retarget current workspaces to personal-library copies
 - do not drift into package-manager semantics without a contract
-- do not infer a `LIVE-MACHINE-FEEL-V2` or `CANVAS-FEEDBACK-REFINEMENT-V2` automatically; reassess first
+- do not infer a `LIVE-MACHINE-FEEL-V2`, `CANVAS-FEEDBACK-REFINEMENT-V2`, or `SPLICE-V3` automatically; reassess first
