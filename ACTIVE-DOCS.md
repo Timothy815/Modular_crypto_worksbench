@@ -1,6 +1,6 @@
 # MCW Active Docs
 
-Last updated: June 8, 2026
+Last updated: July 10, 2026
 
 This is the canonical starting point for humans and agents.
 
@@ -46,6 +46,7 @@ This is the canonical starting point for humans and agents.
 - `docs/live/contracts/2026-06/REUSABLE-JUMP-TO-REFERENCES-V1.md` when reviewing the shipped authored-reuse jump/actionability slice after reusable impact visibility — jumping from local reference rows to the actual saved-local board or referring reusable without replacement semantics
 - `docs/live/contracts/2026-06/LIVE-MACHINE-FEEL-V1.md` when planning the north-star experiential gap closure — nine bounded canvas/interaction sub-slices (error badges, port snap, wire legend, splice-on-wire, jump-to-error, chip drag, label+frame gesture, auto-label hint, tick pulse) that close the remaining 30% between current state and the "live machine" north star
 - `docs/live/contracts/2026-06/NORTH-STAR-REMAINING-GAPS-2026-06.md` when deciding what to work on next — code-first assessment of the remaining ~15% gap after LIVE-MACHINE-FEEL-V1 shipped, with ranked remaining work and explicit "do not work on next" guidance
+- `docs/live/contracts/2026-06/SPLICE-V2-SYMMETRIC-OPERATORS.md` when reviewing the shipped bounded splice follow-on after LIVE-MACHINE-FEEL-V1 and CANVAS-FEEDBACK-REFINEMENT-V1 — same-domain multi-input operators like XOR now splice into their first matching input and surface the remaining missing input honestly
 - `docs/live/contracts/2026-05/ECC-POINT-PYTHON-EXPORT-PARITY-V1.md` when closing the remaining Python export gap for the shipped ECC point family
 - `docs/live/contracts/2026-05/VISIBLE-DOUBLE-AND-ADD-V1.md` when reviewing the shipped ECC visibility slice after the scalar-multiplication/ECDH/Schnorr line — unpacking scalar multiplication into an explicit repeated-action machine
 - `docs/live/contracts/2026-05/TOY-CURVE-POINT-MAP-V1.md` when reviewing the shipped toy-curve ECC intuition slice after visible double-and-add — making one toy finite-field curve legible as a visible point set and repeated-action landscape

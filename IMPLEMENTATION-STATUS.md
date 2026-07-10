@@ -1,6 +1,6 @@
 # MCW — Implementation Status
 
-Last updated: June 17, 2026
+Last updated: July 10, 2026
 
 ---
 
@@ -48,6 +48,11 @@ These features are already shipped on `main` and should not be treated as open f
 All items across PRIORITIES.md P1–P5 are now shipped. There is no contracted open work.
 
 **Latest experiential/UI work:** `LIVE-MACHINE-FEEL-V1`, `CANVAS-FEEDBACK-REFINEMENT-V1`, and `SPLICE-V2-SYMMETRIC-OPERATORS` are now shipped on `main`. MCW now includes canvas error badges with categorized hover copy plus port-level mismatch summaries, snap-preview wire authoring, signal-chip drag initiation, jump-to-first-error navigation, splice-on-wire insertion, a compact four-domain legend, one-gesture frame-and-label flow, tick pulse / halo timing feedback for ticked execution, domain-colored dense-board halos, minimap error visibility, enlarged input-port hit targets, and first-input splice insertion for same-domain multi-input operators like `XOR` and `AND`. This closes the contracted “live machine” pass, its immediate canvas feedback cleanup follow-on, and the next bounded splice-authoring follow-on.
+
+**Current restart reality (July 10, 2026):**
+- `main` is clean and stable
+- no implementation is currently in progress in the working tree
+- the next step is reassessment and next-contract selection, not resuming unfinished code
 
 **Genuine next open work (verified against source, June 8, 2026 — NOT yet contracted):**
 - AES decryption primitives (`InvSubBytes`, `InvShiftRows`, `InvMixColumns`) — not in engine
